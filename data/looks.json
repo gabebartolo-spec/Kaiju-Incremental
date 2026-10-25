@@ -15,12 +15,12 @@
 			"_note": "What each weather lays over the time of day's look (WeatherView, VFX): multipliers on the look's ambient, sun and fog, the sky and fog colours pulled toward their own grey and dimmed, how wet the streets are (0..1, the ground shader's `wet`) and whether rain falls. Clear has no layer: nothing is built and the look is untouched. 'like' copies another weather's layer. Fog, overcast and the storm's own darkness are other builders' layers.",
 			"rain": {
 				"rain": true,
-				"wet": 0.9,
-				"ambient_mul": 0.97,
-				"sun_mul": 0.88,
-				"fog_mul": 1.5,
+				"wet": 1.0,
+				"ambient_mul": 1.0,
+				"sun_mul": 0.95,
+				"fog_mul": 1.3,
 				"sky_grey": 0.5,
-				"sky_dim": 0.85
+				"sky_dim": 0.9
 			},
 			"thunderstorm": {"like": "rain"}
 		}

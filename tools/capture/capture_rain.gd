@@ -8,6 +8,8 @@ extends SceneTree
 ## --clip does not pause: it plays CLIP_FRAMES more frames for `--write-movie` (game speed, 60 fps).
 ## Run it once per shot, clear and rain, so the frame is the same seeded one:
 ##
+## --nostreaks / --nosplash hide the streaks / the splashes (the rest of the frame, the grade and the sheen, stays).
+##
 ##   godot --path . --windowed --fixed-fps 60 --resolution 3840x2160 \
 ##     --script tools/capture/capture_rain.gd -- --time=night --weather=rain --name=night_rain --out=<dir>
 ##
@@ -34,6 +36,9 @@ func _initialize() -> void:
 			"clip": false,
 			"play": PLAY_FRAMES,
 			"nokaiju": false,
+			"nostreaks": false,
+			"nosplash": false,
+			"nosmear": false,
 		}
 	)
 	DirAccess.make_dir_recursive_absolute(str(a["out"]))
@@ -45,6 +50,12 @@ func _initialize() -> void:
 
 func _run(a: Dictionary) -> void:
 	await process_frame
+	# The OS clamps a window to the work area (3840x2097 on a 4K screen with a taskbar): ask again,
+	# so a still is exactly the 4K the director plays on.
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_size(Vector2i(3840, 2160))
+		await process_frame
+		await process_frame
 	PlayerSettings.graphics = str(a["graphics"])
 	Content.set_time(str(a["time"]))
 	Content.set_weather(str(a["weather"]))
@@ -60,6 +71,14 @@ func _run(a: Dictionary) -> void:
 		await Kit.frames(self, CLIP_FRAMES)  # the movie writer records these
 		quit()
 		return
+	if a["nostreaks"] == true or a["nosplash"] == true or a["nosmear"] == true:  # the same frame without the streaks or splashes, for the density measure
+		for view: Node in rampage.find_children("*", "WeatherView", true, false):
+			var weather := view as WeatherView
+			for particles: GPUParticles3D in weather.layers:
+				particles.visible = a["nostreaks"] != true
+			weather.splashes.visible = a["nosplash"] != true
+			if weather.smears != null:
+				weather.smears.visible = a["nosmear"] != true
 	paused = true
 	await Kit.frames(self, SETTLE_FRAMES)
 	Kit.measure_on(self)

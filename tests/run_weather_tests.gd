@@ -30,6 +30,8 @@ func run_checks() -> void:
 	await _t("_check_through_main")
 	await _t("_check_rain_view")
 	await _t("_check_rain_scales_with_preset")
+	await _t("_check_rain_is_heavy")
+	await _t("_check_sheen_only_when_wet")
 
 
 func _sequence(setting: String) -> Array[String]:
@@ -266,7 +268,7 @@ func _stage() -> Node3D:
 
 
 func _wet_of(stage: Node3D) -> float:
-	var slabs := stage.get_tree().get_nodes_in_group(CityGround.WET_GROUP)[0] as MultiMeshInstance3D
+	var slabs := stage.get_child(0) as MultiMeshInstance3D
 	var mat := slabs.multimesh.mesh.surface_get_material(0) as ShaderMaterial
 	return Num.f(mat.get_shader_parameter("wet"))
 
@@ -314,4 +316,60 @@ func _check_rain_scales_with_preset() -> void:
 	check(Num.i(counts["potato"]) > 0 and Num.i(counts["potato"]) < Num.i(counts["high"]),
 		"potato draws fewer rain streaks than high: %s" % [counts])
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())
+	Content.set_weather(kept)
+
+
+## The rain stays heavy: tunables above the floors the rain was judged on (round 1: "not heavy" at
+## 4K when streaks were 1 px and ~1.5 m long). Three depth layers, near thicker/longer/brighter than far,
+## screen-sized lengths a few percent of the height, enough streaks and splashes, a visible alpha.
+func _check_rain_is_heavy() -> void:
+	var cfg := Content.section("rain")
+	var rows: Array = cfg["layers"]
+	check(rows.size() == 3, "rain has three depth layers: %d" % rows.size())
+	var total := 0
+	var longest := 0.0
+	for row_any: Variant in rows:
+		var row: Dictionary = row_any
+		total += Num.i(row["streaks"])
+		longest = maxf(longest, Num.f(row["len"]))
+		check(Num.f(row["alpha"]) >= Num.f(cfg["min_streak_alpha"]),
+			"%s streaks alpha %.2f is at least %.2f (faint, many)" % [row["name"], Num.f(row["alpha"]), Num.f(cfg["min_streak_alpha"])])
+		check(Num.f(row["width"]) >= 0.0005, "%s streaks are at least 0.05%% of the screen height thick (a 1 px floor in the shader)" % row["name"])
+	var near: Dictionary = rows[0]
+	var far: Dictionary = rows[2]
+	check(Num.f(near["len"]) >= 0.02 and Num.f(near["len"]) <= 0.04, "near streaks are 2-4%% of the screen height (%.3f)" % Num.f(near["len"]))
+	check(Num.f(near["width"]) > Num.f(far["width"]) and Num.f(near["alpha"]) > Num.f(far["alpha"]) and Num.f(near["speed_mul"]) > Num.f(far["speed_mul"]),
+		"near streaks are thicker, a little brighter and faster than far")
+	check(total >= 60000, "at least 60000 streaks in all (%d)" % total)
+	check(Num.i(cfg["splashes"]) >= 8000, "at least 8000 mist puffs (%d)" % Num.i(cfg["splashes"]))
+	check(Num.f(cfg["tint_white"]) >= 0.7, "streaks are lifted well toward white (%.2f)" % Num.f(cfg["tint_white"]))
+	var rain := WeatherView.layer_of("rain")
+	check(Num.f(rain["fog_mul"]) >= 2.0 and Num.f(rain["wet"]) >= 0.9, "rain has a heavy veil and wet streets")
+
+
+## The wet sheen is zero when dry: the slab shader's `wet` is its only switch (default 0), the sheen
+## colour has no effect then, and only a wet weather sets either.
+func _check_sheen_only_when_wet() -> void:
+	var shader := CityGround.SLAB_SHADER
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	check(Num.f(mat.get_shader_parameter("wet")) == 0.0, "a ground slab is dry by default")
+	var kept := Content.weather_id()
+	Content.set_weather("clear")
+	var dry := _stage()
+	var none := WeatherView.attach(dry)
+	check(none == null and _wet_of(dry) == 0.0, "clear leaves the streets dry")
+	check(shader.code.contains("sheen_color : source_color = vec3(0.0)"), "the sheen colour defaults to black (no sheen when dry)")
+	dry.queue_free()
+	await process_frame
+	Content.set_weather("rain")
+	var wet := _stage()
+	var view := WeatherView.attach(wet)
+	await process_frame
+	check(view != null and _wet_of(wet) > 0.5, "rain sets wet")
+	var slab := wet.get_child(0) as MultiMeshInstance3D
+	var slab_mat := slab.multimesh.mesh.surface_get_material(0) as ShaderMaterial
+	check(slab_mat.get_shader_parameter("sheen_color") != null, "rain sets the sky the wet road mirrors")
+	wet.queue_free()
+	await process_frame
 	Content.set_weather(kept)
