@@ -124,6 +124,10 @@ func _start_rampage(endless := false) -> void:
 	Content.set_weather(weather_id)
 	_save["last_weather"] = weather_id
 	SaveSystem.save_game(_save)
+	# The whole run intro on the first run and the first after an evolution (a new size: a new
+	# body to show); the short cut otherwise (R 20.4). Saved with the run's result.
+	rampage.full_intro = Num.i(_save.get("intro_size", -1)) != tier
+	_save["intro_size"] = tier
 	rampage.finished.connect(_on_rampage_finished)
 	_swap(rampage)
 

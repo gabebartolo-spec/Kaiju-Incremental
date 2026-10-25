@@ -5,17 +5,21 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 30 \
 ##     --write-movie <dir>/clip.avi --script tools/capture/capture_river.gd -- --stage=1
-##   ... -- --still-at=<s> --out=<dir>  (also a PNG of the frame that many seconds in)
+##   ... -- --still-at=<s> --out=<dir>  (also a PNG of the frame that many seconds in; a comma list
+##   such as --still-at=0.5,1.0,1.5 saves one PNG per time)
 ##   ... -- --side=<m>  (a close side camera that far east of the rise point, at the street,
 ##   looking west across the bay: the deck he bursts through and the shore he climbs)
+##   ... -- --short  (the run intro's short cut, as on a run with nothing new to show; default:
+##   the whole intro, as on the first run)
 
 const LEVELS: Array[Dictionary] = [{"claws": 2, "hide": 2}, {"claws": 3, "evolve1": 1}]
 
 var _stage := 1
 var _seconds := 4.5
-var _still_at := -1.0
+var _still_at: Array[float] = []
 var _out := "user://river"
 var _side := 0.0
+var _full := true
 
 
 func _initialize() -> void:
@@ -25,9 +29,12 @@ func _initialize() -> void:
 		elif arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()
 		elif arg.begins_with("--still-at="):
-			_still_at = arg.substr(11).to_float()
+			for at: String in arg.substr(11).split(","):
+				_still_at.append(at.to_float())
 		elif arg.begins_with("--side="):
 			_side = arg.substr(7).to_float()
+		elif arg == "--short":
+			_full = false
 		elif arg.begins_with("--out="):
 			_out = arg.substr(6)
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -40,6 +47,7 @@ func _run() -> void:
 	var tree := UpgradeTree.new(Content.upgrades(), LEVELS[_stage - 1])
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var rampage := Rampage.new()
+	rampage.full_intro = _full
 	rampage.setup(
 		species, stats, CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0)), 0
 	)
@@ -54,13 +62,16 @@ func _run() -> void:
 	var cam: Camera3D = _side_camera(rampage.sim.kaiju_pos) if _side > 0.0 else null
 	var frames := roundi(_seconds * Engine.physics_ticks_per_second)
 	var emerged := -1
-	var still := roundi(_still_at * Engine.physics_ticks_per_second)
+	var stills: Array[int] = []
+	for at: float in _still_at:
+		stills.append(roundi(at * Engine.physics_ticks_per_second))
 	for frame: int in frames:
 		await physics_frame
 		if cam:
 			cam.make_current()  # over the game camera, every frame
-		if frame == still:
-			var shot := _out.path_join("river_s%d_%.1fs.png" % [_stage, _still_at])
+		if frame in stills:
+			var at := float(frame) / Engine.physics_ticks_per_second
+			var shot := _out.path_join("river_s%d_%.2fs.png" % [_stage, at])
 			root.get_texture().get_image().save_png(shot)
 			print("saved ", shot)
 		if emerged < 0 and not rampage.sim.emerge.active:

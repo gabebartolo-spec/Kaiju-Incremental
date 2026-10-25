@@ -232,10 +232,11 @@ static func check_walkers(
 ) -> void:
 	var bay := CityRiver.bay(CityGen.map(sim.city), sim.city)
 	var wet := 0
-	for a: int in street._nodes.size():
-		for b: int in street._links[a]:
+	var walk: Pavements = street._pavements
+	for a: int in walk.nodes.size():
+		for b: int in walk.links[a]:
 			for k: int in 11:
-				var p := street._nodes[a].lerp(street._nodes[b], k / 10.0)
+				var p := walk.nodes[a].lerp(walk.nodes[b], k / 10.0)
 				for basin: Rect2 in bay:
 					if basin.has_point(p):
 						wet += 1

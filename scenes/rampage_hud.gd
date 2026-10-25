@@ -69,6 +69,13 @@ func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> vo
 	_hud = UiKit.ui()["hud"]
 
 
+## The HUD comes up over `seconds` (the run intro's hand-over: no pop on one frame).
+func fade_in(seconds: float) -> void:
+	visible = true
+	_widgets.modulate.a = 0.0
+	create_tween().tween_property(_widgets, "modulate:a", 1.0, seconds)
+
+
 ## The sim's result plus what only the view counts: the civilians it crushed and those who fled.
 func result() -> Dictionary:
 	return sim.result().merged(HudCounts.of(street))

@@ -39,17 +39,17 @@ func _init(p_focus: Vector3, p_offset: Vector3) -> void:
 	_chase = Damped.new(p_focus)
 
 
-## Eases toward the body at `target` and the rest offset `rest` (already zoomed). Along the
+## Eases toward the body at `target` and the rest offset `p_rest` (already zoomed). Along the
 ## view (the offset's ground direction) the aim keeps up with the body at once: a lag there would
 ## move the camera nearer or farther as the body walks toward or away from it (its size would bob).
-func step(target: Vector3, rest: Vector3, delta: float) -> void:
+func step(target: Vector3, p_rest: Vector3, delta: float) -> void:
 	var view := Vector3(offset.x, 0.0, offset.z).normalized()
 	focus += view * (target - focus).dot(view)
 	_chase.value = focus
 	_chase.velocity -= view * _chase.velocity.dot(view)
 	var accel := Num.f(_cfg["follow_accel"]) * framed_scale
 	focus = _chase.step(target, Num.f(_cfg["follow_s"]), accel, delta)
-	offset = offset.lerp(rest, minf(1.0, delta * OFFSET_FOLLOW))
+	offset = offset.lerp(p_rest, minf(1.0, delta * OFFSET_FOLLOW))
 
 
 ## The look-ahead from the body's position `at` this frame, for a body of `body_scale`; `hold`:

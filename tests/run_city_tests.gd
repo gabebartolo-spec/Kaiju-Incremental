@@ -16,6 +16,7 @@ const Kerb := preload("res://tests/lib/city_kerb.gd")
 const BreathTrees := preload("res://tests/lib/city_breath_trees.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
+const RiseTime := preload("res://tests/lib/city_rise_time.gd")
 const EdgeMark := preload("res://tests/lib/city_arena_edge.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
@@ -45,6 +46,7 @@ func run_checks() -> void:
 	await _t("_check_river_sites")
 	await _t("_check_bridges_meet_land")
 	await _t("_check_rise_bursts_decks")
+	await _t("_check_rise_fits_intro")
 	await _h(
 		"city_light_pool",
 		func() -> void: preload("res://tests/lib/city_light_pool.gd").check(root, check)
@@ -242,3 +244,11 @@ func _check_rise_bursts_decks() -> void:
 	for tier: int in [1, 2, 3]:
 		for map_seed: int in COVERAGE_SEEDS:
 			RiverBay.check_burst(tier, map_seed, check)
+
+
+## The whole start fits the 3 s run intro at stages 1-3, base and biggest body
+## (tests/lib/city_rise_time.gd; director 2026-10-20 #11, R 20.1).
+func _check_rise_fits_intro() -> void:
+	for tier: int in [1, 2, 3]:
+		for map_seed: int in COVERAGE_SEEDS:
+			RiseTime.check(tier, map_seed, {}, check)
