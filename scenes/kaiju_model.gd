@@ -117,6 +117,17 @@ func foot_drift() -> float:
 
 ## Where the body is drawn now (world): its root bone, which can lag or lead the node (an insect's
 ## hold and dart, an octopus's surge); cameras follow this. The node's position when unrigged.
+## How far its head's crown (the "head1" bone, the first of it to break the water as it rises)
+## stands ahead of its hips, along its facing, in model units (x body scale for the world);
+## `fallback` for a body without that bone. The run intro founts the water over it.
+func head_ahead(fallback: float) -> float:
+	if _rig == null or not _rig.has_bone("head1") or not _rig.has_bone(_rig.bone_names()[0]):
+		return fallback
+	var head := to_local(_rig.bone("head1").global_position)
+	var hips := to_local(_rig.bone(_rig.bone_names()[0]).global_position)
+	return hips.z - head.z  # the model faces -z; to_local undoes its scale
+
+
 func focus() -> Vector3:
 	if _rig == null:
 		return global_position

@@ -70,6 +70,7 @@ var _stomp_radius := 0.0
 var _stomp_wait := 0.0
 var _reader := RunInput.new()
 var _intro: RunIntro
+var _head_ahead := 0.0  # the head's crown ahead of the hips (world units, KaijuModel.head_ahead)
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
@@ -171,8 +172,10 @@ func _ready() -> void:
 
 ## The rise from the river: its splashes, the intro's ripples and fount, and the intro's pacing.
 func _add_rise() -> void:
-	add_child(RiverView.new(sim, _city.fx))
-	add_child(IntroWater.new(sim, _city.fx))
+	var fallback := Num.f(Content.section("intro")["aim_ahead"])
+	_head_ahead = _kaiju.head_ahead(fallback) * sim.body_scale()
+	add_child(RiverView.new(sim, _city.fx, _head_ahead))
+	add_child(IntroWater.new(sim, _city.fx, _head_ahead))
 	_intro = RunIntro.new(sim, full_intro)
 
 
@@ -381,7 +384,8 @@ func _place_camera(delta: float) -> void:
 	var fov := camera_fov
 	if sim.emerge.active:  # the run intro's shot, ending exactly on this camera (RunIntro)
 		var frac := Engine.get_physics_interpolation_fraction()
-		var shot := RunIntro.shot(sim, _kaiju_at, [eye, aim, fov], frac)
+		var view := {"body": _kaiju_at, "eye": eye, "aim": aim, "fov": fov, "ahead": _head_ahead}
+		var shot := RunIntro.shot(sim, view, frac)
 		eye = shot["eye"]
 		aim = shot["aim"]
 		fov = Num.f(shot["fov"])

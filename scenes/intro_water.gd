@@ -14,10 +14,13 @@ var _rings := 0
 var _fount: GPUParticles3D
 var _burst: GPUParticles3D
 var _burst_done := false
+var _ahead := 0.0
 var _break := 0.0  # seconds into the rise the head's top breaks the water
 
 
-func _init(sim: RampageSim, fx: Fx) -> void:
+## ahead: how far the head's crown stands ahead of the hips (world units, KaijuModel.head_ahead).
+func _init(sim: RampageSim, fx: Fx, ahead: float) -> void:
+	_ahead = ahead
 	_sim = sim
 	_fx = fx
 	_cfg = Content.section("intro")["water"]
@@ -28,7 +31,7 @@ func _ready() -> void:
 		return
 	_break = _sim.emerge.break_at(_sim)
 	var s := _sim.body_scale()
-	var ahead := _sim.facing * Num.f(Content.section("intro")["aim_ahead"]) * s
+	var ahead := _sim.facing * _ahead
 	var water := -Num.f(_sim.city.get("river_depth", 0.0))
 	position = Vector3(_sim.kaiju_pos.x + ahead.x, water + 0.05, _sim.kaiju_pos.y + ahead.y)
 	_fount = _spray(Num.i(_cfg["fount_amount"]), Num.f(_cfg["fount_speed"]) * s, false)

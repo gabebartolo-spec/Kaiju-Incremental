@@ -1,5 +1,5 @@
 # intro-cinematic-2 handoff, 2026-10-25
-## State: port done and compiling; re-shooting the camera to the brief's beats
+## State: shot, fixes and lints done; final suites, then 4K clip + stills, pr-body
 ## Task (lead brief 2026-10-25, TOP PRIORITY)
 Run intro (#11): "a quick, dramatic camera shot, zoomed in on the water which begins to ripple and fount before our
 kaiju emerges, roaring with rage before the camera zooms out into the play angle ... no longer than 3 seconds".
@@ -29,8 +29,28 @@ Native dll copied from ../komodo-clips (same native/src tree b5eacd45).
 - flow_intro: pop vs the real gameplay eye; new jerk check (second difference of camera position per frame,
   break to handover+30, <= 0.01 of offset).
 
-## Next
-Probe geometry + tune "intro" data; run city + flow + load suites; fix debris pop; 4K clip + 4 stills; pr-body.
+## Since (commits 100a5fd6, 7a.., head)
+- Shot data: yaw 45 from his front, distance 9, height 2.5 over water / clearance 1.5 over the ground under the
+  eye (Emergence.ground_at), pull_from 1.6, height leads the pull-out (done at 2/3). Stage 3 still: gape open,
+  head and shoulders fill the frame over the skyline. Stage 1 jaw reads open at 45 (25 looked under the chin).
+- Debris pop: RiverView's break splash used tail=true (street dust puffs on the water) and deck_burst fired at
+  the water line while the head was under the deck. Now foam water_ring, and deck_burst when the top reaches 0.
+- Ripples were dust-brown: Fx.water_ring with the spray's foam tone.
+- Hand-over stutter: real gameplay camera blended onto (above); wade eases in/out (smoothstep, 1.0 s) so the body
+  never jolts at 1.8 s; short cut on whole ticks (2/frame, ~1.0 s) - uneven 1-2-1 ticks stuttered.
+- ClipGait never counted the roar jaw hold down (maw open for good): BipedHead.tick_hold from both gaits.
+- Fount/break ring now over the head's crown: KaijuModel.head_ahead (head1 vs hips, 6.4/7.6/10.3 per scale by
+  stage; data aim_ahead 8.8 is only the model-less fallback, used by fade_spawn).
+- City fixes from the ported emerge-shore: stand-ins clear of the rise (EmergeReach.fit -> river_bay
+  view_clear, EmergeReach.in_view); pavement rings the bay leaves no room for are dropped (Pavements._ring).
+- fade_spawn now calls use_species before emerge.start (as Rampage.setup).
+- First suite run (100a5fd6): city 5 fails (stand-ins x3, walkers x2), flow 3 (jerk whole 0.018 / short 0.037,
+  same-state from my double await), load 1 (stage 1 roar sight, the use_species miss). All addressed after.
+- 4K clip method: override.cfg needs borderless + window_width/height_override 3840x2160 or the movie is 1080p.
+  ffmpeg: imageio_ffmpeg binary (C:/Users/DANTE/AppData/Roaming/Python/Python314/site-packages/imageio_ffmpeg/
+  binaries/ffmpeg-win-x86_64-v7.1.exe). Scratch C:/Users/DANTE/AppData/Local/Temp/ic2 (render.sh, sheet.py).
 
+## Next
+Commit; city + flow + load green; re-render 4K clip + stills (stage 1, the first run); pr-body.md; push.
 ## Open decisions
 - none (shot angle is a camera choice inside the approved beats; flagged to the lead in the report).

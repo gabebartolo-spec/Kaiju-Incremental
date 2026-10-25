@@ -65,18 +65,20 @@ func on_input(event: InputEvent) -> void:
 		skipped = true
 
 
-## The intro's camera for this frame while the kaiju emerges: {"eye", "aim", "fov"}. `body`: the
-## drawn body's position; `rest`: the gameplay camera this frame [eye, aim, fov] (Rampage's
-## CameraFollow, already stepped, with its head-room tilt), which the shot ends on exactly, so the
-## hand-over has no pop; `frac`: the share of a tick drawn past the last one.
+## The intro's camera for this frame while the kaiju emerges: {"eye", "aim", "fov"}. `view`:
+## "body", the drawn body's position; "eye", "aim", "fov", the gameplay camera this frame
+## (Rampage's CameraFollow, already stepped, with its head-room tilt), which the shot ends on
+## exactly, so the hand-over has no pop; "ahead", how far the head's crown stands ahead of the
+## hips (world units, KaijuModel.head_ahead). `frac`: the share of a tick drawn past the last one.
 ## The shot (beat sheet A, research 20): low and close on the water in front of him, a quarter
 ## off his line ("yaw_deg"), pushing in while the water ripples and founts; the head bursts out
 ## roaring into a low-angle hero frame; from "pull_from_seconds" one eased pull-out swings round
 ## him and rises onto the gameplay camera behind him, in cylinder coordinates about the body so
 ## it never passes through him.
-static func shot(sim: RampageSim, body: Vector3, rest: Array, frac: float) -> Dictionary:
-	var rest_eye: Vector3 = rest[0]
-	var rest_aim: Vector3 = rest[1]
+static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
+	var body: Vector3 = view["body"]
+	var rest_eye: Vector3 = view["eye"]
+	var rest_aim: Vector3 = view["aim"]
 	var cfg: Dictionary = Content.section("intro")
 	var emerge := sim.emerge
 	var total := emerge.total()
@@ -87,7 +89,7 @@ static func shot(sim: RampageSim, body: Vector3, rest: Array, frac: float) -> Di
 	var x := clampf((t - pull_from) / maxf(0.001, total - pull_from), 0.0, 1.0)
 	var w := x * x * x * (x * (x * 6.0 - 15.0) + 10.0)  # smootherstep: still at both ends
 	# The pivot: the head (ahead of the hips) for the water shot, the body at the gameplay camera.
-	var ahead := sim.facing * Num.f(cfg["aim_ahead"]) * s
+	var ahead := sim.facing * Num.f(view["ahead"])
 	var head_at := Vector2(body.x + ahead.x, body.z + ahead.y)
 	var pivot := head_at.lerp(Vector2(body.x, body.z), w)
 	# A slow push in over the wait, ending at the break on the shot's distance.
@@ -99,18 +101,34 @@ static func shot(sim: RampageSim, body: Vector3, rest: Array, frac: float) -> Di
 	var yaw := front + wrapf(back_yaw - front, -PI, PI) * w
 	var radius := lerpf(close, Vector2(back.x, back.z).length(), w)
 	var eye := Vector3(pivot.x + cos(yaw) * radius, 0.0, pivot.y + sin(yaw) * radius)
-	# Low: "height" over the water, or "clearance" over the shore or street under the eye. The
-	# height leads the pull-out (done by two thirds of it), so the eye is up before it swings round.
-	var under := maxf(water, emerge.ground_at(Vector2(eye.x, eye.z)))
-	var low_eye := maxf(water + Num.f(cfg["height"]) * s, under + Num.f(cfg["clearance"]) * s)
+	# The height leads the pull-out (done by two thirds of it): the eye is up before it swings.
 	var xh := minf(1.0, x * 1.5)
-	eye.y = lerpf(low_eye, rest_eye.y, xh * xh * xh * (xh * (xh * 6.0 - 15.0) + 10.0))
-	# It looks at the water over the head, then follows the head up as it rises (a soft max, so
-	# the aim eases off the water as the head climbs; a hard one starts at a jerk).
+	var up := xh * xh * xh * (xh * (xh * 6.0 - 15.0) + 10.0)
+	eye.y = lerpf(_low_eye(sim, cfg, Num.f(view["ahead"]), front), rest_eye.y, up)
+	var head_aim := Vector3(head_at.x, _aim_y(sim, cfg, water), head_at.y)
+	var fov := lerpf(Num.f(cfg["fov"]), Num.f(view["fov"]), w)
+	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}
+
+
+## The water shot's eye height: "height" over the water, or "clearance" over the shore or street
+## under it, wherever the push-in puts it. One height for the whole shot, read about the rise
+## point, so the eye never steps as it swings over a quay edge (a 1.6 m step jolted it).
+static func _low_eye(sim: RampageSim, cfg: Dictionary, ahead: float, front: float) -> float:
+	var s := sim.body_scale()
+	var water := -Num.f(sim.city.get("river_depth", 0.0))
+	var head := sim.emerge.rise_at + sim.facing * ahead
+	var out := Vector2(cos(front), sin(front)) * Num.f(cfg["distance"]) * s
+	var under := water
+	for k: float in [1.0, 1.0 + Num.f(cfg["push_in"])]:
+		under = maxf(under, sim.emerge.ground_at(head + out * k))
+	return maxf(water + Num.f(cfg["height"]) * s, under + Num.f(cfg["clearance"]) * s)
+
+
+## The water shot's aim height: the water over the head, then the head as it rises (a soft max,
+## so the aim eases off the water as the head climbs; a hard one starts at a jerk).
+static func _aim_y(sim: RampageSim, cfg: Dictionary, water: float) -> float:
+	var s := sim.body_scale()
 	var head := sim.stand_y + sim.reach_height() * Num.f(cfg["aim_head"])
 	var low := water + Num.f(cfg["aim_height"]) * s
 	var rise := head - low
-	var aim_y := low + 0.5 * (rise + sqrt(rise * rise + pow(Num.f(cfg["aim_soft"]) * s, 2.0)))
-	var head_aim := Vector3(head_at.x, aim_y, head_at.y)
-	var fov := lerpf(Num.f(cfg["fov"]), Num.f(rest[2]), w)
-	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}
+	return low + 0.5 * (rise + sqrt(rise * rise + pow(Num.f(cfg["aim_soft"]) * s, 2.0)))

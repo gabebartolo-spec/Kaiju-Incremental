@@ -65,7 +65,9 @@ func _stage(stage: int) -> void:
 			var body := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 			var rest_eye := body + CameraTuning.offset() * zoom
 			var rest_aim := body + Vector3(0, CameraFollow.LOOK_UP * s, 0)
-			var shot := RunIntro.shot(sim, body, [rest_eye, rest_aim, fov], 0.0)
+			var ahead := Num.f(Content.section("intro")["aim_ahead"]) * s
+			var view := {"body": body, "eye": rest_eye, "aim": rest_aim, "fov": fov, "ahead": ahead}
+			var shot := RunIntro.shot(sim, view, 0.0)
 			var eye: Vector3 = shot["eye"]
 			var aim: Vector3 = shot["aim"]
 			var ground := CityRiver.floor_at(plan, sim.city, Vector2(eye.x, eye.z))

@@ -50,6 +50,7 @@ func _stage(stage: int) -> void:
 	var tier := Num.i(stats["size"])
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
+	sim.body.use_species("reptilian")  # first, as Rampage.setup: the body places the rise
 	sim.emerge.start(sim)
 	var water := -Num.f(sim.city.get("river_depth", 0.0))
 	var body := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
@@ -74,8 +75,10 @@ func _stage(stage: int) -> void:
 		follow.step_lead(body, sim.body_scale(), sim.emerge.active, DT)
 		var eye := follow.eye()
 		if sim.emerge.active:  # the run intro's shot, as Rampage._place_camera takes it
-			var rest := [eye, follow.look_at(sim.body_scale()), CameraTuning.fov()]
-			eye = RunIntro.shot(sim, body, rest, 0.0)["eye"]
+			var ahead := Num.f(Content.section("intro")["aim_ahead"]) * sim.body_scale()  # no model
+			var view := {"body": body, "eye": eye, "fov": CameraTuning.fov(), "ahead": ahead}
+			view["aim"] = follow.look_at(sim.body_scale())
+			eye = RunIntro.shot(sim, view, 0.0)["eye"]
 		fade.update(eye, BuildingFade.sight_of(sim, eye), DT)
 		var hiding: Array[RampageSim.Building] = []
 		for n: int in sim.buildings.size():

@@ -19,6 +19,8 @@ var active := false
 ## through": he rises up through the bridge deck and breaks it; the street grid stays whole).
 var burst: Array[Rect2] = []
 var burst_ns: Array[Rect2] = []  # the same over the north-south decks (bay_bridges_ns)
+## Where it rose (x, z), once start() has placed it; the run intro's shot is set about it.
+var rise_at := Vector2.ZERO
 ## Whether its head has broken the water's surface yet (the "surface_break" event; the intro
 ## roars on it, R 20.3).
 var surfaced := false
@@ -62,6 +64,7 @@ func start(sim: RampageSim) -> void:
 	surfaced = false
 	_wade_from = Vector2.INF
 	sim.kaiju_pos = _rise_point(sim)
+	rise_at = sim.kaiju_pos
 	# Wholly under the water at first, its top "depth" (per body scale) below the surface, so the
 	# water ripples and founts before anything shows (#11).
 	_start_y = -_bed - sim.reach_height() - _depth * sim.body_scale()
