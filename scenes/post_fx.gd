@@ -85,7 +85,7 @@ func update(delta: float, hp_share: float, motion: float) -> void:
 	_vignette_mat.set_shader_parameter("strength", state.vignette_alpha)
 	_vignette_mat.set_shader_parameter("red_tint", state.red_color)
 	_vignette_mat.set_shader_parameter("red_alpha", state.red_alpha)
-	_fringe.visible = state.fringe_px > 0.0
+	_fringe.visible = state.fringe_px > 0.0 and PlayerSettings.fringe_on()  # Reduce flashing
 	if _fringe.visible:
 		_fringe_mat.set_shader_parameter("amount_px", state.fringe_px)
 
