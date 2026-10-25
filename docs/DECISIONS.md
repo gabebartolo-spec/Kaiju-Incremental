@@ -4,6 +4,26 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-26 · D-264 · Director · The stomp plays 20% slower; a tree node brings it back to 10% slower
+
+After the stomp-button clip (PR #223): "i think the stomp needs to be slowed down maybe 10-15%, maybe even slow it down 20% then a node on the upgrade tree can increase its speed to eventually 10% slower than i see in that clip"; "it looks too fast, it makes it looks weightless rather than titanic". He held #223 until it is slowed. Lead's fix: the stomp motion plays at 0.80x at every stage, and the stomp interval stretches with it (0.7 s to 0.875 s); the croc's Frenzy node ("Stomp more often", 4 levels) becomes that speed-up, his pick "Frenzy becomes your speed-up": each level lifts the speed 0.80 -> 0.825 -> 0.85 -> 0.875 -> 0.90x, never faster, the interval always the clip's length (other species keep Frenzy as it was).
+
+## 2026-10-26 · D-265 · Director · Overnight shift; End rampage is a death
+
+Going to sleep: "keep working": prepare animation prototypes to assess tomorrow (picked "Croc kit moves" and "Croc idle/walk/turn/roar redo": leap, charged stomp, snap bite, defeat collapse, and the everyday clips re-keyed in Cascadeur); "voxelise all our new buildings and implement them into the games city generation" (picked "Yes, on by default": he culls from boards and in-game shots tomorrow); "start building the districts, landmarks and explosive sites and codify the logic which generates their appearance in a seed" (picked "Play area, then districts"); audits: road layouts natural and realistic in all seeds, seeds meaningfully different, every asset appears often and none never; "keep working on things that dont require my eye, coding tasks, first drafts of visual items are also fine". Team: "+2 builders tonight" (five builders until he returns). Pause "End rampage" kills the kaiju ("Yes, he dies"): every run ends in a death unless the city falls. Note: D-263's red-light answer replaced D-257's "Suggestive signage"; the question did not quote the older ruling.
+
+## 2026-10-26 · D-266 · Director · Tripo street-life props, up to 1,500 credits
+
+"if you somehow run out of things to do, please start generating some streetlife props in Tripo"; picked "Up to 1,500 credits" (about 20 props, the most common street things first, every model Private). Balance before: about 9,855. Props go through the same six-view inspection and straight to him.
+
+## 2026-10-26 · D-263 · Director · Interview of 9: charged stomp, bite, combo, time's up, results, city seeds, red-light
+
+Asked ahead of the croc kit, shell and city queue ("ask me questions about jobs next in your queue too"). Charged stomp "Rooted while charging" (he plants and crouches until release). Snap bite "No, snaps mid-stride" (eating never slows him). Combo "Any kill or building break" keeps the ~3 s window going. Time's up: offered a retreat, he answered "wait no i want him to die": at zero the "Army's final strike" (one overwhelming jet run or railgun volley) kills him, he collapses in the street as on defeat, and "Yes, every death counts" (the specimen number goes up on every death). Results: "Headline per ending" (city falls / killed by the final strike / lost to the army). City order "Different per save" (each save slot's own seed plus the run index; replays and tests still reproduce). Red-light district "Neon and signs only" (nothing suggestive, original names).
+
+## 2026-10-26 · D-262 · Director · The croc's leap arcs high and lands on the target's roof
+
+The leap (D-259, replaces the dash) first flew a realistic low arc (about half to one hip height), lower than most buildings, so the body would plough through whatever stood between the croc and its target. Asked how the leap meets "a leap that lands on a building and crushes it with a shockwave", he picked "High arc, lands on roof": the croc springs high over the street and comes down on top of the target building, crushing it with the shockwave; nothing in between is hit. The reader's realistic apex bar (L5) no longer applies to the sim's flight path; every other leap bar stands. Player copy says "Leap", not "Dash".
+
 ## 2026-10-26 · D-261 · Director · Cities from shuffled building blocks; railgun warning fits the leap; more slots; trial clips in dev builds
 
 City: today every run in a stage is the same city (fixed map_seed, building stream index 0), short of D-133's per-run landmarks. Ruling: "our city mostly randomised but with pre-determined blocks of buildings" (authored blocks built from the Tripo heroes and fillers, district by district, shuffled onto the street grid each run with the landmarks and explosive sites); streets "Shuffle within a few street plans" (2-3 tested plans per growth stage). "we can also create more districts if that helps". Railgun vs leap (D-178): the lock warning grows to fit the leap's crouch, "Longer warning, scaled by size" (about 0.6 / 0.75 / 1.0 s), so a leap at the lock still dodges the volley. Team: an extra builder slot "for the Shell work", and "open another slot temporarily for the road agent" ("dont leave work half finished"). Cascadeur: "we still have more time on the trial ... continue": trial animations may be used in development builds (register: DEV ONLY); the paid licence (Indie covers every feature we use) and a re-run of each kept animation come before any release; no more asking until then.
@@ -377,23 +397,3 @@ His first Suno takes from the old briefs: "the songs are way too intense based o
 ## 2026-10-23 · D-171 · Director · New heads come after the demo, unlocked with the Colossus
 
 Asked (the VFX lead is fitting the Komodo head, D-164): "After the demo": the Komodo head (and later the python) stays out of the Itch demo; model and fitting work may go on, nothing head-related enters a demo build. "Unlocked with the Colossus": when he becomes the Colossus, the evolve screen offers the croc, Komodo or python head (a look only, D-166). Owners: VFX lead (head swap and re-fit), lead (evolve-screen picker), after the demo.
-
-## 2026-10-23 · D-170 · Director · Tools and spend: a 100-credit rig test, Tripo in the browser only, no local AI yet, a second concept round
-
-Asked at the interview (from the AI-3D pipeline research). Rig test: "Yes, up to 100": up to 100 Tripo credits, taken from what is left of D-162's 8000, to try Tripo's quadruped and "others" rig on the croc's tail; it does not change the croc's look. Tripo API from a script ($10 cap): "Browser only": Tripo stays in the built-in browser (rulebook unchanged). Local ComfyUI: "Not now"; revisit after the rig test. Next concepts: "Yes, iterate": a more serpentine python head and an albino skin from the D-162 budget left (6500 of 8000), boards to the director. Owner: the VFX lead's asset session.
-
-## 2026-10-23 · D-169 · Director · He makes the Suno music this week; M1 ships with it
-
-Asked (M1 waits for every item, D-155): "I'll make them this week". Prompts in docs/audio/music-briefs.md (one per city, instrumental, "Get Stems", about 2 takes each). The lead cuts the loops, sets the layers (D-125) and registers each track in docs/provenance/music.md.
-
-## 2026-10-23 · D-168 · Director · The whale swims in the water between the play city and the distant city
-
-Asked by the demo-end session (river vs a new bay). He: "we already have a river/bay between the play city and the distant city"; confirmed: "Yes, that water": the whale (one per run, untouchable, D-155) surfaces and spouts there, well away from where the kaiju rises. No map change, no new water.
-
-## 2026-10-23 · D-167 · Director · Pacing and city: a cheaper Thunder Beam, Endless regrowth, wrecks crush the army, five weathers
-
-Asked at the interview. Pacing (the last unlock measured at 2.62 h after the three growth steps, D-156 asks about 2 h): "Cheaper Thunder Beam": its three levels cost less so the last unlock lands at about 2 h; nothing earlier changes. Amended the same day: the beam alone cannot reach 2 h (a free beam still ends at 2.11 h; the four other Colossus upgrades take about 33 runs); asked, he chose "Beam at a third, ~2.25 h": only r_beam, at about 30% of its price, the Colossus keeps a full act of about 1 h. Endless (D-156): "About 5% a minute" of the flattened city comes back, with the army worsening forever. Helicopter wrecks: "Also the army": a crashing wreck razes and burns buildings and also crushes tanks and rooftop squads below it; it still never hurts the kaiju (amends D-140's "only the city"; PR #166 goes back to the first build). Tall towers: "Keep it": the Colossus takes about 1.5x as long on the tallest towers of the wider city. First baby city: "Leave it": a new baby may not reach the eerie quiet. Weather: "Five, as built": clear, overcast, rain, fog banks, thunderstorm.
-
-## 2026-10-23 · D-166 · Director · Play: damage lands on impact, rare claw swats, staggered railgun volleys, heads are looks first
-
-Asked at the interview. Wind-up: "Damage lands on impact": a big attack wrecks when the jaws or foot land, a visible beat of about 0.5-1.5 s after the press (a sim change: the damage waits for the strike). Claw swat on jetpack agents: "Rare lucky swat": as now (about 1 in 85 swipes); toppling their roof stays the real answer. Railgun volley: "Stagger the shots": one squad never lands more than about 2 hits' worth in a second, which leaves the dash time to save you (D-161). New heads: "Look only first": a head is picked as a cosmetic on the evolve screen until he decides its play (D-124); how heads unlock stays his call.
