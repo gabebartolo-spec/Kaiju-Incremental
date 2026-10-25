@@ -54,6 +54,7 @@ var walk_frames := 0.0
 ## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
 var tail_shown := 0.0
+var life: WalkLife  # the held arms' swing and the head's bob with the walk
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
@@ -111,6 +112,8 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)
 	swing.trail = ClawTrail.new(rig)
+	life = WalkLife.new(rig.walk_life, _steps)
+	swing.life = life
 
 
 func update(delta: float) -> void:
@@ -118,12 +121,14 @@ func update(delta: float) -> void:
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
+	life.tick(dt, state == "walk", clip_time)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
 	_apply(pose, dt)
 	_look_ahead(dt)
+	life.nod(rig, hip_height * s)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
 	_measure_slide()

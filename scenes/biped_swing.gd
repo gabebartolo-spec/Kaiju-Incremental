@@ -58,6 +58,7 @@ var size := 1.0
 var yaw_rate := 0.0
 ## A gait that poses the arms itself sets this, and the raking claw lays its streak from the arm.
 var trail: ClawTrail
+var life: WalkLife  # a held arm's swing with the walk (WalkLife), or null
 var _straight: Array[float] = []
 var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone
 var _whip := 0.0  # 1 -> 0 over a tail whip
@@ -221,6 +222,8 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 static func rest_arm_bases(rig: KaijuRig) -> Dictionary:
 	var out: Dictionary = {}
 	var dirs: Array[Vector3] = [ARM_UPPER, ARM_FORE, ARM_HAND]
+	if not rig.arm_pose.is_empty():  # a held pose (the young croc): its skin is bound in it
+		dirs = rig.arm_pose.duplicate()
 	for side: String in ["l", "r"]:
 		if not rig.has_bone("arm_%s0" % side):
 			continue
@@ -273,7 +276,9 @@ func hold_arms(skip: float = 0.0) -> void:
 	for side: String in ["l", "r"]:
 		var names := _arm_names(side)
 		if names.size() == 3 and _arm_out(names) != skip:
-			_aim_arm(names, _held(names, body), _arm_out(names), body)
+			var held := _held(names, body)
+			held = life.swung(held, side == "l") if life != null else held
+			_aim_arm(names, held, _arm_out(names), body)
 
 
 ## Where an arm is held before a rake takes it (heading frame, x outward): the rig's arm_pose, else

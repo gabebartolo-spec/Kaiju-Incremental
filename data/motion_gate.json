@@ -39,5 +39,11 @@
 		"short_max": [0.34, 0.06, 0.11],
 		"clear_min": 2.0,
 		"home_s": 2.0
+	},
+	"walk_life": {
+		"_note": "Bars for the young croc's walk (scenes/walk_life.gd; tests/lib/walk_life_probe.gd run by the croc standing suite, printed by tools/walk_life_probe.gd), at body scale 0.5 walking at kaiju.speed. Director 2026-10-25: the short arms get a small swing of +-10-15 deg with the walk's steps; D-243: a slight head bob of a few cm per step. swing_deg: each arm's fore-aft swing each way from the shoulder; with_foot_min: its correlation with the other foot's fore-aft place (each arm forward as the opposite foot comes forward); bob_m: the head's own dip at each step, world units (0.05 = 5 cm game scale, as claw_arm.clear_min). Measured on claude/claw-anim-525a2a: swing 12.0 / 12.0 deg, with the other foot 0.88 / 0.87, the head's dip 0.041 (the walk clip alone already moves the snout 0.095 against the hips per step).",
+		"swing_deg": [10.0, 15.0],
+		"with_foot_min": 0.6,
+		"bob_m": [0.025, 0.06]
 	}
 }

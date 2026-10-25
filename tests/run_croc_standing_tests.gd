@@ -9,6 +9,7 @@ extends "res://tests/lib/runner.gd"
 
 const CrocStompCentre := preload("res://tests/lib/croc_stomp_centre.gd")
 const ClawArmProbe := preload("res://tests/lib/claw_arm_probe.gd")
+const WalkLifeProbe := preload("res://tests/lib/walk_life_probe.gd")
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
 ## Stomps on the sim's 0.7 s beat, and the footfall weight below which a step is not a stomp.
@@ -28,6 +29,9 @@ func run_checks() -> void:
 	await _t("_check_claw_rake")
 	await _t("_check_claw_trail")
 	await _h("ClawArmProbe", func() -> void: await ClawArmProbe.new().run(self, check))
+	await _h(
+		"WalkLifeProbe", func() -> void: await WalkLifeProbe.new().run(self, check, "baby", 0.5)
+	)
 	await _h("CrocStompCentre", func() -> void: await CrocStompCentre.new(self, check).run())
 
 

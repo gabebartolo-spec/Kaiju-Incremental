@@ -155,12 +155,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		mm.set_instance_color(i, tint)
 		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
 		at += 15
-	_cubes = ShaderMaterial.new()
-	_cubes.shader = CUBE_SHADER
-	_cubes.set_shader_parameter("voxel", voxel)
-	_cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
-	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
-	_cubes.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
+	_cubes = _cube_material(rig, voxel)
 	var cubes := MultiMeshInstance3D.new()
 	_cube_node = cubes
 	cubes.multimesh = mm
@@ -217,6 +212,18 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		fill.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 		add_child(fill)
 	_hide_rig_voxels()
+
+
+## The cubes' material for a rig whose voxels are `voxel` units.
+static func _cube_material(rig: KaijuRig, voxel: float) -> ShaderMaterial:
+	var cubes := ShaderMaterial.new()
+	cubes.shader = CUBE_SHADER
+	cubes.set_shader_parameter("voxel", voxel)
+	cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
+	cubes.set_shader_parameter("turn_blend", 1.0 if rig.skin_turn else 0.0)
+	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
+	cubes.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
+	return cubes
 
 
 ## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps

@@ -14,6 +14,10 @@ uniform float gap_fill = 1.0;
 // Cubes keep one size: growth is off by default (lead review round 2); the filler covers gaps.
 uniform float max_grow = 0.0;
 // 0 = jaw shut (mouth inside drawn as a dark lip seam), 1 = open or a snarl (its pink shows).
+// 1 = a cube turns with its blended bones instead of its main bone alone, so across a joint the
+// cubes turn a little at a time and never part (rig.json "skin_blend" "turn": the young croc's
+// slits, director 2026-10-25).
+uniform float turn_blend = 0.0;
 uniform float mouth_open = 0.0;
 uniform float seam_dark = 0.22;
 uniform float roughness_value = 0.9;
@@ -41,7 +45,7 @@ void vertex() {
 	float grow = 1.0 + min(max_grow, gap_fill * max(0.0, shrink));
 	// The main bone's turn only: its scale (a gait's swell or stretch) never reaches a cube, so
 	// every cube keeps one size and square axes (lead review round 2: no slats).
-	mat3 m = mat3(bones[b0]);
+	mat3 m = mat3(bones[b0]) * (1.0 - turn_blend) + mat3(blend) * turn_blend;
 	vec3 ax = normalize(m[0]);
 	vec3 ay = normalize(m[1] - ax * dot(ax, m[1]));
 	mat3 turn = mat3(ax, ay, cross(ax, ay));

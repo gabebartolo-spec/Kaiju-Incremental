@@ -31,6 +31,7 @@ import numpy as np
 VERSION = 2
 LATTICE_PASSES = 12  # joint blend width, in voxel-lattice smoothing passes (look test round 2)
 MIXED = 0.98  # a voxel whose main bone has less than this share is in a joint: it gets filler
+TISSUE = 0.05  # neighbours sharing at least this much bone weight are one tissue (blend_tissue)
 FILL_INSET = 0.3  # voxels: the filler sits this far inside the cubes
 MOUTH_RED = 1.35  # BipedHead.MOUTH_RED: the sculpt's pink mouth inside
 MOUTH_BONES = ("head1", "jaw")
@@ -207,7 +208,7 @@ def blend_pairs(w, owner, nbr, names, blend):
     if not blend:
         return w
     pair = np.zeros((len(names), len(names)), dtype=bool)
-    for a, b in blend["pairs"]:
+    for a, b in blend.get("pairs", []):
         i, j = names.index(a), names.index(b)
         pair[i, j] = pair[j, i] = pair[i, i] = pair[j, j] = True
     for _ in range(int(blend["passes"])):
@@ -216,6 +217,35 @@ def blend_pairs(w, owner, nbr, names, blend):
         for k in range(6):
             has = nbr[:, k] >= 0
             has[has] = pair[owner[has], owner[nbr[has, k]]]
+            acc[has] += w[nbr[has, k]]
+            cnt[has] += 1
+        w = acc / cnt
+    return w
+
+
+def tissue(w, nbr):
+    """(cells x 6) True where a voxel and its neighbour are one tissue: they share bone weight (a
+    forearm resting on the chest shares none, and parts from it; a jaw never blends)."""
+    link = np.zeros(nbr.shape, dtype=bool)
+    for k in range(6):
+        has = nbr[:, k] >= 0
+        link[has, k] = (w[has] * w[nbr[has, k]]).sum(1) > TISSUE
+    return link
+
+
+def blend_tissue(w, nbr, blend):
+    """Weights smoothed over the voxel lattice wherever neighbours are one tissue (rig.json
+    "skin_blend": {"tissue_passes": n}): the Blender weights jump from voxel to voxel enough that
+    neighbours drift apart as the body moves, and the director saw it ("theres slits in the model
+    when he moves", 2026-10-25)."""
+    if not blend or not blend.get("tissue_passes"):
+        return w
+    link = tissue(w, nbr)
+    for _ in range(int(blend["tissue_passes"])):
+        acc = w.copy()
+        cnt = np.ones((len(w), 1))
+        for k in range(6):
+            has = link[:, k]
             acc[has] += w[nbr[has, k]]
             cnt[has] += 1
         w = acc / cnt
@@ -283,6 +313,7 @@ def bake(name, rest, kdir, rig):
         w = own_only(w, kvox_owner, names, rig.get("skin_blend"))
         owner = np.argmax(w, axis=1)
         w = blend_pairs(w, owner, nbr, names, rig.get("skin_blend"))
+        w = blend_tissue(w, nbr, rig.get("skin_blend"))
     for _ in range(LATTICE_PASSES if from_blender is None else 0):
         acc = w.copy()
         cnt = np.ones((count, 1))

@@ -44,18 +44,17 @@ var body_plan := "biped"
 ## The hands are held in line with the forearms, never drooping at the wrist (rig.json "lock_wrist";
 ## director 2026-10-25 on the young croc: short, stumpy arms with no dangle). BipedSwing keeps it.
 var lock_wrist := false
-## The arms' length against the sculpt they were rigged from (rig.json "arm_length",
-## tools/kaiju_skin/shorten_arms.py): below 1 the elbows and wrists sit nearer the shoulder than in
-## the baked clips' rest, which KaijuClips.fit allows.
+## The arms' length against their sculpt (rig.json "arm_length", tools/kaiju_skin/shorten_arms.py):
+## below 1 the elbows and wrists sit nearer the shoulder than the clips' rest (KaijuClips.fit).
 var arm_length := 1.0
-## Where this rig holds its arms instead of where its clips put them (rig.json "arm_pose": upper,
-## fore, hand directions in the heading frame, x outward), or empty. The young croc's short arms
-## stand out and down clear of the chest (lead review 2026-10-25). BipedSwing keeps it.
+## Where this rig holds its arms instead of its clips (rig.json "arm_pose": upper, fore, hand in the
+## heading frame, x out), or empty: the young croc's stand clear of the chest (BipedSwing keeps it).
 var arm_pose: Array[Vector3] = []
 ## How far (deg) a claw rake may turn toward the snout line on this rig (rig.json "aim_max_deg"), or
-## -1 for claw_fx's: the young croc's short arm would drag its claws across its belly reaching
-## for it.
+## -1 for claw_fx's: the young croc's short arm would drag its claws across its belly for it.
 var aim_max_deg := -1.0
+var walk_life: Dictionary = {}  # rig.json "walk_life": the arms' swing, the head's bob (WalkLife)
+var skin_turn := false  # rig.json "skin_blend" "turn": cubes turn with blended bones (VoxelSkin)
 var gait: KaijuGait
 var chains: Array[SpringChain] = []
 ## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).
@@ -158,12 +157,15 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 
 
 ## The rig's body plan and arm shape from its spec (rig.json "type", "lock_wrist", "arm_length",
-## "arm_pose", "aim_max_deg").
+## "arm_pose", "aim_max_deg", "walk_life").
 func _read_plan(spec: Dictionary) -> void:
 	body_plan = str(spec.get("type", "biped"))
 	lock_wrist = spec.get("lock_wrist", false) == true
 	arm_length = Num.f(spec.get("arm_length", 1.0))
 	aim_max_deg = Num.f(spec.get("aim_max_deg", -1.0))
+	walk_life = spec.get("walk_life", {})
+	var blend: Dictionary = spec.get("skin_blend", {})
+	skin_turn = blend.get("turn", false) == true
 	for v: Array in spec.get("arm_pose", []):
 		arm_pose.append(Vector3(Num.f(v[0]), Num.f(v[1]), Num.f(v[2])).normalized())
 

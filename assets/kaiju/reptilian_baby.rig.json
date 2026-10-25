@@ -463,7 +463,13 @@
    "arm_r0",
    "arm_r1",
    "arm_r2"
-  ]
+  ],
+  "turn": true,
+  "tissue_passes": 8
  },
- "aim_max_deg": 20.0
+ "aim_max_deg": 20.0,
+ "walk_life": {
+  "arm_swing_deg": 12.0,
+  "head_bob": 0.025
+ }
 }

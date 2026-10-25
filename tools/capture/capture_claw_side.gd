@@ -1,12 +1,13 @@
 extends SceneTree
 ## One side-on clip of the claw swipe's raking arm (docs/claw_swipe_plan.md) for the motion check:
-## the young croc rakes once, then the Colossus, each on a plain stage at its run body scale, framed
-## to its own size from the raking arm's side, at game speed. 6 s at 60 fps. Needs a window (the
+## the young croc walks (its arms swing, its head bobs: WalkLife), stops and rakes once, then the
+## Colossus rakes, each on a plain stage at its run body scale, framed to its own size from the
+## raking arm's side and following it, at game speed. ~6 s at 60 fps. Needs a window (the
 ## off-screen no_focus override.cfg) and --write-movie.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/c.avi \
 ##     --script tools/capture/capture_claw_side.gd [-- --still=<dir> --name=<shot>]
-## --front: the young croc alone, 4 s, the camera in front of him at chest height looking back.
+## --front: the young croc alone, the camera in front of him at chest height looking back.
 ## --still: no movie; one PNG of the young croc standing at rest (arms in their held pose) instead.
 ## Both modes print where the near arm shows against the body's side-view silhouette, in px at the
 ## run's resolution: at rest, the share of the hand and of the forearm's outer half outside it; at
@@ -27,7 +28,12 @@ const AIM_AHEAD := 0.35
 ## _arm_px: points sampled along each part, and the margin (px) a point must clear the outline by.
 const SAMPLES := 11
 const VOXEL_PX := 2.0
-const SHOTS := [["baby", 0.5, "Young croc"], ["adult", 1.3, "Colossus"]]
+## Per shot: stage, body scale, label, frames it walks first (at kaiju.speed) before the windup.
+const SHOTS := [["baby", 0.5, "Young croc", 90], ["adult", 1.3, "Colossus", 0]]
+## Frames from stopping to the windup cue (the walk settles into the stand), and a walking shot's
+## frames after the hit (the arm is home).
+const STOP_SETTLE := 15
+const AFTER_HIT := 50
 ## --only=<n>: just the first n shots (1: the young croc).
 ## --front: its shot length (frames), windup frame, the camera's height, the height it looks at and
 ## its distance in front of the snout (shares of the snout's height).
@@ -86,13 +92,14 @@ func _run() -> void:
 		var snout := rig.tail_world("head1") - kaiju.global_position
 		var aim := Vector3(0, snout.y * AIM_UP, snout.z * AIM_AHEAD)
 		cam.position = aim + Vector3(side * snout.y * CAM_DIST, 0, 0)
-		var shot_frames := SHOT
-		var windup_at := WINDUP_AT
+		var walk := Num.i(shot[3]) if _still == "" else 0
+		var windup_at := WINDUP_AT if walk == 0 else walk + STOP_SETTLE
+		var shot_frames := SHOT if walk == 0 else windup_at + hit + AFTER_HIT
 		if _front:  # in front of him at chest height, looking back at him
 			cam.position = Vector3(0, snout.y * FRONT_UP, snout.z - snout.y * FRONT_DIST)
 			aim = Vector3(0, snout.y * FRONT_LOOK, 0)
-			shot_frames = FRONT_SHOT
-			windup_at = FRONT_WINDUP
+			shot_frames = FRONT_SHOT + walk
+			windup_at = FRONT_WINDUP + walk
 		cam.look_at(aim)
 		label.text = str(shot[2])
 		if _still != "":
@@ -103,12 +110,17 @@ func _run() -> void:
 			print(Kit.still(self, _still, _name))
 			print("%s at rest: %s" % [shot[2], _arm_px(rig, cam, side)])
 			break
+		var step := Vector3.FORWARD * Num.f(Content.section("kaiju")["speed"]) * DT
+		var cam_from := cam.global_transform
 		for f: int in shot_frames:
+			if f < walk:
+				kaiju.position += step
+			cam.global_transform = Transform3D(cam_from.basis, cam_from.origin + kaiju.position)
 			if f == windup_at:
 				kaiju.tail_sweep(side, "claw_windup")
 			if f == windup_at + hit:
 				kaiju.tail_sweep(side, "claw")
-			kaiju.animate(DT, 0.0)
+			kaiju.animate(DT, 1.0 if f < walk else 0.0)
 			await process_frame
 			if f == windup_at + hit and not _front:
 				print("%s at the hit: %s" % [shot[2], _arm_px(rig, cam, side)])
