@@ -358,7 +358,10 @@ func _without_save() -> void:
 		for found: Node in title.find_children("*", "", true, false):
 			if found is Control and (found as Control).get_global_rect().position.y < 1.0:
 				var c := found as Control
-				if c.get_global_rect().size.y < 30.0 and c.get_global_rect().size.x >= CANVAS.x - 1.0:
+				if (
+					c.get_global_rect().size.y < 30.0
+					and c.get_global_rect().size.x >= CANVAS.x - 1.0
+				):
 					no_tape = false
 		check.call(no_tape, "no hazard tape runs along the top edge (director 2026-10-25)")
 		_focus_order(title, [fresh, gear, exit], "with no save")

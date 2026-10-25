@@ -7,9 +7,10 @@ extends RefCounted
 var defs: Dictionary = {}
 var order: Array[String] = []
 var levels: Dictionary = {}
-var _tiers: Dictionary = {}
-## Every price x this (data/species.json cost_mult of the kaiju's species, D-167 pacing bar); 1 for "".
+## Every price x this (data/species.json cost_mult of the kaiju's species, D-167 pacing bar);
+## 1 for "".
 var cost_mult := 1.0
+var _tiers: Dictionary = {}
 
 ## species_id "" keeps every branch (data checks); a game passes its kaiju's species.
 
