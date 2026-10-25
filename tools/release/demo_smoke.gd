@@ -188,7 +188,7 @@ func _font_ok(node: Node) -> bool:
 	return s.contains("kaiju") and not s.contains("open sans")
 
 
-## True once Kaiju Creation's pour is done and INJECT KAIJU JUICE can be pressed.
+## True once Kaiju Creation's pour is done and INJECT SPECIAL K can be pressed.
 func _inject_ready(lab: Node) -> bool:
 	for found: Node in lab.find_children("*", "Button", true, false):
 		var b: Button = found

@@ -1,7 +1,8 @@
 extends "res://tests/lib/runner.gd"
 ## Kaiju Creation suite (D-207): New Game opens the lab, where only the croc genome can be picked
 ## (the Komodo and serpent genomes greyed and locked, read from data and the save); the pick and
-## the injection are real input (keyboard, then pad); the sequence runs on its data timings into
+## the injection are real input (keyboard, then pad); the pick sends the injector's needle into
+## the croc's vial and then the dish (no vial flies); the sequence runs on its data timings into
 ## the black with the egg crack, and the first run starts with the river rise. Seeded: the city
 ## and the army use pinned streams and the lab draws no random numbers.
 ##   godot --headless --path . --script tests/run_creation_tests.gd
@@ -66,11 +67,16 @@ func _check_new_game_opens_lab() -> void:
 	await _frames(2)
 	lab = _screen(main)
 	await GuiInput.key(self, KEY_ENTER)
-	var inject := await _wait_inject(lab)
+	var trip := await _watch_place(lab)
+	var inject: Button = trip.get("inject")
 	check(
 		inject != null and inject.has_focus(),
-		"Enter puts the croc genome in the dish, then INJECT KAIJU JUICE takes the focus"
+		"Enter puts the croc genome in the dish, then INJECT SPECIAL K takes the focus"
 	)
+	var visited: bool = trip["vial"] == true and trip["dish"] == true
+	check(visited, "the needle goes down into the croc's vial, then into the dish: %s" % [trip])
+	var still: bool = trip["moved"] == false
+	check(still, "the croc's vial stays in the rack (no vial flies to the dish)")
 	if inject == null:
 		main.queue_free()
 		await _frames(2)
@@ -109,6 +115,37 @@ func _rack_ok(lab: Node) -> void:
 			if px < UiKit.SIZE_BODY:
 				small.append("%s %d" % [c.name, px])
 	check(small.is_empty(), "every line in the lab is 24 px or more at 1080p: %s" % [small])
+
+
+## Waits out the pick and watches the injector's trip (director 2026-10-25: "injector rotates to
+## the croc vial, drains it, moves to dish and puts croc gene into dish", "i do NOT want the vials
+## magically flying over to the dish"): the needle tip goes down into the croc's vial, then into
+## the dish, and the vial's liquid never leaves the rack. Returns what it saw and the INJECT
+## button.
+func _watch_place(lab: Node) -> Dictionary:
+	var room: CreationLab = lab.get("lab")
+	var vial_at := room.vial_point(0)
+	var liquid: Node3D = room.vials[0].node
+	var home := liquid.global_position
+	var cfg: Dictionary = CreationSet.cfg()["injector"]
+	var near := Num.f(CreationSet.cfg()["voxel"]) * 3.0
+	var seen := {"vial": false, "dish": false, "moved": false}
+	for _i: int in STEP_CAP:
+		var tip := room.injector.tip
+		var off_vial := Vector2(tip.x - vial_at.x, tip.z - vial_at.z).length()
+		if off_vial < near and tip.y < Num.f(cfg["vial_top"]):
+			seen["vial"] = true
+		var in_dish := Vector2(tip.x, tip.z).length() < near and tip.y < Num.f(cfg["cradle_top"])
+		if seen["vial"] == true and in_dish:
+			seen["dish"] = true
+		if liquid.global_position.distance_to(home) > 0.001:
+			seen["moved"] = true
+		var b := GuiInput.button(lab, "INJECT")
+		if b != null and not b.disabled and b.has_focus():
+			seen["inject"] = b
+			return seen
+		await physics_frame
+	return seen
 
 
 func _wait_inject(lab: Node) -> Button:

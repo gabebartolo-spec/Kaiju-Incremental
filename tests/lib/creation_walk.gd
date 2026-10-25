@@ -1,6 +1,6 @@
 extends RefCounted
 ## Walks Kaiju Creation (D-207) the way a player does, for checks that start a new game through
-## Main: click the croc genome, wait for the pour, click INJECT KAIJU JUICE, then wait out the
+## Main: click the croc genome, wait for the pour, click INJECT SPECIAL K, then wait out the
 ## takeover, the zoom and the black until Main shows the next screen (the run). Real input only.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
