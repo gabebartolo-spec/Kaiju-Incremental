@@ -97,7 +97,12 @@ static func shot(sim: RampageSim, body: Vector3, rest: Array, frac: float) -> Di
 	var yaw := front + wrapf(back_yaw - front, -PI, PI) * w
 	var radius := lerpf(close, Vector2(back.x, back.z).length(), w)
 	var eye := Vector3(pivot.x + cos(yaw) * radius, 0.0, pivot.y + sin(yaw) * radius)
-	eye.y = lerpf(water + Num.f(cfg["height"]) * s, rest_eye.y, w)
+	# Low: "height" over the water, or "clearance" over the shore or street under the eye. The
+	# height leads the pull-out (done by two thirds of it), so the eye is up before it swings round.
+	var under := maxf(water, emerge.ground_at(Vector2(eye.x, eye.z)))
+	var low_eye := maxf(water + Num.f(cfg["height"]) * s, under + Num.f(cfg["clearance"]) * s)
+	var xh := minf(1.0, x * 1.5)
+	eye.y = lerpf(low_eye, rest_eye.y, xh * xh * xh * (xh * (xh * 6.0 - 15.0) + 10.0))
 	# It looks at the water over the head, then follows the head up as it rises (a soft max, so
 	# the aim eases off the water as the head climbs; a hard one starts at a jerk).
 	var head := sim.stand_y + sim.reach_height() * Num.f(cfg["aim_head"])

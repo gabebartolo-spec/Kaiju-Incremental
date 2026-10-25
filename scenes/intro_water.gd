@@ -46,7 +46,8 @@ func _process(_delta: float) -> void:
 	if emerge.active and not emerge.surfaced and t >= _rings * every:
 		_rings += 1  # one ring a frame at most, so a fast-forward never stacks them
 		var grow := 1.0 + Num.f(_cfg["ripple_grow"]) * t
-		_fx.shockwave(global_position, Num.f(_cfg["ripple_radius"]) * _sim.body_scale() * grow)
+		var radius := Num.f(_cfg["ripple_radius"]) * _sim.body_scale() * grow
+		_fx.shockwave(global_position, radius, false, false, foam(_cfg))
 	# It builds to its peak as the head breaks and plays on while the head clears the water.
 	var from := Num.f(_cfg["fount_from_seconds"])
 	var due := emerge.active and t >= from and t < _break + Num.f(_cfg["fount_after_seconds"])
@@ -96,6 +97,12 @@ func _spray(amount: int, speed: float, one_shot: bool) -> GPUParticles3D:
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20) * s, Vector3(40, 30, 40) * s)
 	add_child(p)
 	return p
+
+
+## The ripples' tone on the water: the spray's middle tone (tuning intro.water.colors).
+static func foam(cfg: Dictionary) -> Color:
+	var tones: Array = cfg["colors"]
+	return Color(str(tones[1]))
 
 
 ## A texture of `colors` (hex strings): a smooth ramp over a life, or hard steps to pick one from.

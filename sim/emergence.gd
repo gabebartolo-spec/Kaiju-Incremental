@@ -90,6 +90,12 @@ func total() -> float:
 	return _hold + _rise + _wade
 
 
+## How high the ground stands at p (CityRiver.floor_at: the street, the shore's slope, the
+## river's floor); the run intro keeps its low camera over it.
+func ground_at(p: Vector2) -> float:
+	return CityRiver.floor_at(_plan, _city, p)
+
+
 ## Seconds into the start the head breaks the surface (the intro's short cut starts near it).
 func break_at(sim: RampageSim) -> float:
 	var up := (-_bed - sim.reach_height() - _start_y) / maxf(0.001, -_bed - _start_y)
@@ -144,14 +150,15 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 	return true
 
 
-## The tick its top clears the water: "surface_break", and he breaks up through any deck over him
-## (the deck's holes, "deck_burst").
+## The tick its top clears the water: "surface_break"; the tick it reaches the street (a deck's
+## top) he breaks up through any deck over him ("deck_burst"; its fragments fly from the deck,
+## so they wait for the head to get there rather than pop in while it is still below).
 func _surface(sim: RampageSim) -> void:
-	if surfaced or sim.stand_y + sim.reach_height() < -_bed:
-		return
-	surfaced = true
-	sim.events.append({"type": "surface_break"})
-	if not _broke and not (burst.is_empty() and burst_ns.is_empty()):
+	var top := sim.stand_y + sim.reach_height()
+	if not surfaced and top >= -_bed:
+		surfaced = true
+		sim.events.append({"type": "surface_break"})
+	if surfaced and not _broke and top >= 0.0 and not (burst.is_empty() and burst_ns.is_empty()):
 		_broke = true
 		sim.events.append({"type": "deck_burst", "holes": burst, "holes_ns": burst_ns})
 

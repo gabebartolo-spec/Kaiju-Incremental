@@ -207,8 +207,10 @@ func sparks(at: Vector3) -> void:
 ## A foot's ring (foot) starts out at foot_start of its radius, clear of the foot that
 ## made it, on the landing frame. A tail slam (tail) draws no ring: a few footfall puffs thrown
 ## out around the tip instead (lead review PR #54: three custom rings in a row popped; the step
-## puff of #62 reads right).
-func shockwave(at: Vector3, radius: float, tail := false, foot := false) -> void:
+## puff of #62 reads right). `tint` (alpha above 0) replaces the dust tone: a ring on water.
+func shockwave(
+	at: Vector3, radius: float, tail := false, foot := false, tint := Color(0, 0, 0, 0)
+) -> void:
 	if tail:
 		_slam_puff(at + Vector3(0, 0.2, 0), radius * SLAM_SIZE)
 		for k: int in SLAM_PUFFS:
@@ -221,7 +223,7 @@ func shockwave(at: Vector3, radius: float, tail := false, foot := false) -> void
 	plane.size = Vector2.ONE * radius * Num.f(cfg["radius_scale"]) * 2.4
 	var mat := ShaderMaterial.new()
 	mat.shader = SHOCKWAVE
-	mat.set_shader_parameter("tint", _dust_tone())
+	mat.set_shader_parameter("tint", tint if tint.a > 0.0 else _dust_tone())
 	mat.set_shader_parameter("peak", Num.f(cfg["alpha"]))
 	mat.set_shader_parameter("soft", Num.f(cfg["soft"]))
 	var start := Num.f(cfg["foot_start"]) if foot else 0.0  # a foot's ring starts outside it

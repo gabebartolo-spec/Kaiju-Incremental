@@ -20,15 +20,18 @@ func _init(sim: RampageSim, fx: Fx) -> void:
 func _process(_delta: float) -> void:
 	var emerge := _sim.emerge
 	if _beat == 0 and emerge.active:
-		_splash(0.6, false)
+		_splash(0.6)
 	elif _beat == 1 and emerge.surfaced:  # the head breaks the surface
-		_splash(1.4, true)
+		_splash(1.4)
 	elif _beat == 2 and not emerge.active:
-		_splash(1.0, false)
+		_splash(1.0)
 
 
-func _splash(size: float, tail: bool) -> void:
+func _splash(size: float) -> void:
 	_beat += 1
 	var water := -Num.f(_sim.city.get("river_depth", 0.0))
 	var at := Vector3(_sim.kaiju_pos.x, maxf(_sim.stand_y, water) + 0.02, _sim.kaiju_pos.y)
-	_fx.shockwave(at, RING * _sim.body_scale() * size, tail)
+	# A foam ring on the water, never the street's dust puffs (they popped in at the break).
+	var spray: Dictionary = Content.section("intro")["water"]
+	var foam := IntroWater.foam(spray)
+	_fx.shockwave(at, RING * _sim.body_scale() * size, false, false, foam)

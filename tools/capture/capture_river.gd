@@ -1,6 +1,6 @@
 extends SceneTree
 ## The start of a run (D-083): the kaiju rises from the city's river and steps out, on the game
-## camera, at a stage (1 young, 2 Behemoth). Prints the frame it emerged on. Pair with
+## camera, at a stage (1 hatchling, 2 adolescent, 3 adult: capture_kit STAGE_LEVELS). Prints the frame it emerged on. Pair with
 ## --write-movie for the clip. Needs a window: CI, or off-screen with the no-focus override.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 30 \
@@ -12,7 +12,7 @@ extends SceneTree
 ##   ... -- --short  (the run intro's short cut, as on a run with nothing new to show; default:
 ##   the whole intro, as on the first run)
 
-const LEVELS: Array[Dictionary] = [{"claws": 2, "hide": 2}, {"claws": 3, "evolve1": 1}]
+const Kit := preload("res://tools/capture/capture_kit.gd")
 
 var _stage := 1
 var _seconds := 4.5
@@ -25,7 +25,7 @@ var _full := true
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--stage="):
-			_stage = clampi(arg.substr(8).to_int(), 1, LEVELS.size())
+			_stage = clampi(arg.substr(8).to_int(), 1, Kit.STAGE_LEVELS.size())
 		elif arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()
 		elif arg.begins_with("--still-at="):
@@ -44,12 +44,13 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), LEVELS[_stage - 1])
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[_stage - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
+	var tier := Num.i(stats["size"])
 	var rampage := Rampage.new()
 	rampage.full_intro = _full
 	rampage.setup(
-		species, stats, CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0)), 0
+		species, stats, CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0)), 0
 	)
 	rampage.autoplay_signature = false
 	root.add_child(rampage)
