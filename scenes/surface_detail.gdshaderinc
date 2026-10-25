@@ -150,10 +150,12 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 		return col;
 	}
 	// Worn wheel tracks: two lighter polished strips in each lane, patchy along the street.
-	float drift = (sd_vn(vec2(along / 9.0, li * 3.7)) - 0.5) * 0.22;
+	float drift = (sd_vn(vec2(along / 4.0, li * 3.7)) - 0.5) * 0.22;
 	float tr = 1.0 - smoothstep(0.08, 0.22, abs(abs(lm + drift) - 0.42));
-	float tmod = smoothstep(0.3, 0.7, sd_vn(vec2(along / 3.0, li * 7.3 + 3.0)) * 0.6 + sd_vn(vec2(along / 11.0, li * 2.1 + 8.0)) * 0.5);
-	col = col * (1.0 + track * 1.7 * tr * (0.35 + 0.65 * tmod)) + vec3(0.012, 0.012, 0.013) * track * tr * tmod;
+	// Broken into short worn stretches and single blocks, so no cell is stretched along the road.
+	float tmod = smoothstep(0.52, 0.78, sd_vn(vec2(along / 1.5, li * 7.3 + 3.0)) * 0.55 + sd_vn(vec2(along / 6.0, li * 2.1 + 8.0)) * 0.5);
+	tmod *= 0.65 + 0.35 * sd_h(vec2(floor(along / block), li + 13.0));
+	col = col * (1.0 + track * 1.7 * tr * (0.1 + 0.9 * tmod)) + vec3(0.012, 0.012, 0.013) * track * tr * tmod;
 	// Tar seams: cracks across the street every ~9 m, wobbling and broken.
 	float sid = floor(along / 9.0);
 	float spos = (sid + 0.15 + 0.7 * sd_h(vec2(sid, 9.0))) * 9.0;
@@ -163,7 +165,7 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 	// ...and the lane joint where two lanes meet.
 	float je = min(fract(u), 1.0 - fract(u)) * lane_w;
 	float joint = (1.0 - smoothstep(0.05, 0.14, je)) * step(0.4, u) * step(u, floor(half_w * 2.0 / lane_w + 0.5) - 0.4);
-	joint *= step(0.25, sd_vn(vec2(along / 3.5, 11.0)));
+	joint *= step(0.55, sd_vn(vec2(along / 1.3, 11.0)));
 	col *= 1.0 - tar * 0.7 * clamp(line + joint * 0.8, 0.0, 1.0);
 	// The kerb's gutter: darker, with grit swept into it.
 	float kd = half_w - abs(lat);
@@ -175,11 +177,18 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 
 // Paving: 1 m flags with a tone each, joints, a darker kerb edge (kerb_d: m to the slab's edge), stains.
 vec3 sd_pavement(vec3 base, vec2 pc, float kerb_d) {
-	vec2 fc = floor(pc);
+	// Running bond: each row of flags is shifted by its own seeded amount, flags are 0.75-1.25 m long, so
+	// no joint lines up with the next row's and the pattern never repeats.
+	float row = floor(pc.y);
+	float shift = sd_h(vec2(row, 5.0)) * 3.0;
+	float len = 0.75 + 0.5 * sd_h(vec2(row, 21.0));
+	vec2 fp = vec2((pc.x + shift) / len, pc.y);
+	vec2 fc = vec2(floor(fp.x), row);
 	float flag = sd_h(fc * 1.3 + 7.0) * 2.0 - 1.0;
-	float k = 1.0 + flag * paving + (sd_fbm(pc, 3.5) - 0.5) * 0.18;
-	vec2 f = fract(pc);
-	vec2 e = min(f, 1.0 - f);
+	float k = 1.0 + flag * paving * 1.3 + (sd_fbm(pc, 3.5) - 0.5) * 0.18;
+	k *= 1.0 + (sd_vn(pc / 0.45 + fc) - 0.5) * 0.1;  // each flag's own slight gradient
+	vec2 f = vec2(fract(fp.x) * len, fract(pc.y));
+	vec2 e = min(f, vec2(len, 1.0) - f);
 	float joint = 1.0 - step(0.075, min(e.x, e.y));
 	vec3 col = base * k;
 	col *= 1.0 - 0.3 * joint;
@@ -270,14 +279,13 @@ vec3 sd_concrete(vec3 base, vec2 uv, float wy, vec3 n, float water_y) {
 // Road paint (a dash, a zebra bar, a bay line): the paint's colour with grime and tyre-dark smears; the
 // caller discards a chipped block (see sd_paint_chip).
 vec3 sd_paint(vec3 base, vec2 pc) {
-	float k = 0.72 + 0.4 * sd_fbm(pc, 1.1) + 0.16 * (sd_h(floor(pc / block)) - 0.5);
+	float k = 0.94 + 0.1 * (sd_h(floor(pc / block)) - 0.5);
 	return base * k;
 }
 
 // 0..1, how likely a block of paint is worn away: edges (edge_d, m to the nearest edge) wear first, and
 // whole patches where the traffic runs.
 float sd_paint_chip(vec2 pc, float edge_d) {
-	float edge = (1.0 - smoothstep(0.0, 0.3, edge_d)) * 0.4;
-	float patch_w = smoothstep(0.6, 0.85, sd_vn(pc / 0.9 + 5.0)) * 0.4;
-	return edge + patch_w;
+	// Only the end blocks of a bar can wear, and never more than half of them: a dash is never knocked out.
+	return (1.0 - smoothstep(0.0, 0.2, edge_d)) * 0.45;
 }
