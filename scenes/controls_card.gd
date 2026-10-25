@@ -1,7 +1,8 @@
 class_name ControlsCard
 extends PanelContainer
 ## The controls, keyboard and pad, on one broadcast card (b2-10): shown once at the start of
-## the first rampage (RampageHud). Settings > CONTROLS lists and rebinds them (ControlsMenu). Never on the HUD otherwise.
+## the first rampage (RampageHud). Settings > CONTROLS lists and rebinds them
+## (ControlsMenu). Never on the HUD otherwise.
 
 ## The first-run card lists only these (the full list stays in Settings > CONTROLS).
 const FIRST_RUN: Array[String] = ["Move", "Signature attack", "Dash"]

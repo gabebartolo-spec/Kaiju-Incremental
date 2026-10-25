@@ -90,7 +90,8 @@ func _rumble() -> void:
 		await t.physics_frame
 	rampage.set_autoplay(false)
 	check.call(
-		sent.has(foot), "walking thuds the pad at stage %d's footfall %s (%s)" % [tier + 1, foot, sent]
+		sent.has(foot),
+		"walking thuds the pad at stage %d's footfall %s (%s)" % [tier + 1, foot, sent]
 	)
 	var size: Variant = rampage.sim.stats["size"]
 	rampage.sim.stats["size"] = 3.0  # an adult's feet

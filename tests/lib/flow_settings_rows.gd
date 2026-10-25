@@ -82,7 +82,10 @@ static func _blocks(check: Callable, menu: SettingsMenu, time: Rect2) -> void:
 			controls != null
 			and access != null
 			and controls.get_global_rect().position.y - time.end.y >= BLOCK_GAP - EPS
-			and absf(controls.get_global_rect().position.y - access.get_global_rect().position.y) < EPS
+			and (
+				absf(controls.get_global_rect().position.y - access.get_global_rect().position.y)
+				< EPS
+			)
 		),
 		"settings: 20 px or more above the CONTROLS and ACCESSIBILITY buttons, side by side"
 	)

@@ -50,6 +50,8 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
+## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
+var rumble: PadRumble
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
@@ -76,8 +78,6 @@ var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
 ## Presses made while the rise from the river holds the sim back, kept for its first live tick.
-## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
-var rumble: PadRumble
 var _held := HeldButton.new()  # the held move: hold or toggle (D-259)
 var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 

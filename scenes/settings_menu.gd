@@ -27,6 +27,8 @@ const BACK_MARGIN := 10.0
 var effects: HSlider
 ## Camera motion (shake, footfall dip, breath swing).
 var motion: HSlider
+## The page open over the settings (ControlsMenu, AccessMenu), or null.
+var page: OptionsPage
 var _volume: HSlider
 var _volume_text: Label
 var _effects_text: Label
@@ -37,8 +39,6 @@ var _fps: Button
 var _graphics: Button
 var _time: Button
 var _weather: Button
-## The page open over the settings (ControlsMenu, AccessMenu), or null.
-var page: OptionsPage
 
 
 func _ready() -> void:

@@ -356,9 +356,11 @@ func _check_settings() -> void:
 			% [PlayerSettings.sfx_volume, sfx_db]
 		)
 	)
+	await GuiInput.click(t, GuiInput.button(menu, "CONTROLS"))  # its own page (D-259)
 	var texts: Array[String] = []
-	for node: Node in menu.find_children("*", "Label", true, false):
-		texts.append((node as Label).text)
+	for node: Node in menu.find_children("*", "Control", true, false):  # labels and buttons
+		texts.append(str(node.get("text")))
+	menu.page.close()
 	check.call(
 		texts.has("Ultimate") and texts.has("E") and texts.has("Y") and texts.has("Start"),
 		"the controls list shows keyboard and pad"
