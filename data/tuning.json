@@ -894,6 +894,15 @@
 			}
 		}
 	},
+	"rail": {
+		"_note": "The elevated railway (Rail; the director 2026-10-21 #63 \"train stations + tracks with trains on them\", #69 \"Derail and smash\"; 2026-10-25 \"research train locomotion and derailment physics\", the 022 result). A two-track viaduct up the north-south avenue nearest the middle, deck_y up, deck_width wide, tracks track_gap apart, from span[0] to span[1] x the city's half extent along z (crossing the river), its station at station_share of the way. Trains of cars (the first a locomotive), car_length long, coupler_gap apart, at most max_trains running, one every headway_s (the first after first_s), entering at enter_share of cruise, speeding up at accel, braking at brake (emergency for broken track), dwelling dwell_s. Scaled from metro practice (1.0 m/s2 accel and brake, 1.3 emergency) to the city's scale. A hit of derail_damage or more on a car (car_radius) derails its train: the hit car kicked sideways at kick, the rest folding alternately (yaw_rate, roll_rate), sliding with friction (a share of g; post-derailment estimates 0.4-0.6), spin_damp, a car off the deck falling and keeping land_keep of its speed on landing, a car within pile_share of a length of the one ahead sharing its speed. The track breaks where it is hit; a train behind stops stop_short before it, or derails if it reaches it above crash_speed. The kaiju's body derails a train when it reaches the deck (body_share of its stomp radius). Each car pays rubble_share of army.tank_rubble (the vehicle rule). PLACEHOLDER NUMBERS (tune).",
+		"span": [-0.95, 1.4], "deck_y": 3.5, "deck_width": 4.6, "track_gap": 1.8, "station_share": 0.4,
+		"cars": 5, "car_length": 4.0, "coupler_gap": 0.3, "max_trains": 2, "headway_s": 16.0, "first_s": 3.0,
+		"cruise": 8.0, "enter_share": 1.0, "accel": 1.5, "brake": 2.0, "emergency": 3.5, "dwell_s": 4.0,
+		"stop_short": 2.0, "crash_speed": 0.5, "derail_damage": 4.0, "car_radius": 1.6, "body_share": 0.6,
+		"kick": 5.0, "yaw_rate": 1.4, "roll_rate": 2.2, "friction": 0.5, "spin_damp": 1.5, "land_keep": 0.5,
+		"pile_share": 0.8, "rubble_share": 1.0
+	},
 	"chain": {
 		"step_hz": 60.0,
 		"max_substeps": 4,

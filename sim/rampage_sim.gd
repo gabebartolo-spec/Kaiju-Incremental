@@ -75,6 +75,8 @@ var hp: float
 var max_hp: float
 var time_left: float
 var rubble: float = 0.0
+## The elevated railway and its trains (Rail).
+var rail: Rail
 var chunks_destroyed := 0
 var chunks_total := 0
 var falls: Array[Fall] = []
@@ -147,6 +149,7 @@ func _init(
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
+	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
 
 
 func stat(stat_name: String) -> float:
@@ -238,6 +241,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	army_units.step(dt)
 	air.step(dt)
+	rail.step(dt)
 	Endless.step(self, dt)
 	var why := Endless.over_reason(self)
 	if why != "":
@@ -315,6 +319,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
+	rail.hit(force, damage)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.
