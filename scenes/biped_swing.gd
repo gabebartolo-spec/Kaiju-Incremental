@@ -346,12 +346,12 @@ func _rake_dir(t: float, i: int, rest: Array[Vector3]) -> Vector3:
 	if t <= start - lift or t >= start + strike + back:
 		return rest[i]
 	if t < start:
-		return _blend(i, rest, cocked, smoothstep(0.0, 1.0, (t - start + lift) / lift))
+		return ArmArc.blend(i, rest, cocked, smoothstep(0.0, 1.0, (t - start + lift) / lift))
 	if t < start + strike:
 		# A curve on the sphere (de Casteljau with slerps): smooth speed, no kink at contact.
 		var u := smoothstep(0.0, 1.0, (t - start) / strike)
 		return cocked[i].slerp(contact[i], u).slerp(contact[i].slerp(through[i], u), u)
-	return _blend(i, through, rest, smoothstep(0.0, 1.0, (t - start - strike) / back))
+	return ArmArc.blend(i, through, rest, smoothstep(0.0, 1.0, (t - start - strike) / back))
 
 
 ## The turn about up (heading frame, x outward) of the contact and through poses that puts this
@@ -373,26 +373,6 @@ func _contact_yaw(names: Array[String], body: Basis) -> float:
 	var aim := atan2(reach.x, -reach.z) + asin(clampf(shoulder.x * _rake_side / r, -1.0, 1.0))
 	var most := deg_to_rad(Num.f(_claw["aim_max_deg"]))
 	return clampf(aim, -most, most)
-
-
-## Bone i's direction k (0..1) of the way from pose `from` to pose `to`, along arcs: the upper arm
-## turns along its own arc; a forearm or hand turns within the frame of the bone above it, so the
-## elbow and wrist bends move straight from one pose's to the next and never flick open mid-way.
-static func _blend(i: int, from: Array[Vector3], to: Array[Vector3], k: float) -> Vector3:
-	if i == 0:
-		return from[0].slerp(to[0], k)
-	var local_from := _frame(from[i - 1]).transposed() * from[i]
-	var local_to := _frame(to[i - 1]).transposed() * to[i]
-	return _frame(_blend(i - 1, from, to, k)) * local_from.slerp(local_to, k)
-
-
-## A frame along direction d (z = d), rolled so its x stays level: the same d gives the same frame.
-static func _frame(d: Vector3) -> Basis:
-	var side := Vector3.UP.cross(d)
-	if side.length() < 0.001:
-		side = Vector3.RIGHT
-	side = side.normalized()
-	return Basis(side, d.cross(side), d)
 
 
 ## A "claw_fx" arm pose: [upper, fore, hand] directions in the heading frame (x outward).
