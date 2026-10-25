@@ -26,8 +26,8 @@ class Result:
 	var peak: Array[float] = [0.0, 0.0, 0.0]  # deg/s: upper, fore, hand
 	var tip := 0.0  # claw tip peak speed (hip heights/s)
 	var hit := 0  # the frame the sim's hit lands
-	var crossed := -1  # the frame the claw crosses the snout line
-	var off := 0.0  # the tip past the snout line at the hit (hip heights; negative: short of it)
+	var fastest_at := -1  # the frame the claw tip moves fastest near the hit: the chop's contact
+	var short := INF  # nearest the claw comes to the snout line in the strike (hip heights)
 	var away := 0.0  # s the arm is off its held pose
 	var home := -1  # the frame it is back
 	var rows: Array[String] = []
@@ -83,12 +83,13 @@ func measure(root: Node, stage: String, body_scale: float) -> Result:
 			for i: int in 3:
 				speed[i] = rad_to_deg(before[i].angle_to(dirs[i])) / DT
 				out.peak[i] = maxf(out.peak[i], speed[i])
-			out.tip = maxf(out.tip, (tip - tip_before).length() / DT / hip)
+			var tip_speed := (tip - tip_before).length() / DT / hip
 			var near_hit := absi(f - out.hit) <= CROSS_WINDOW
-			if out.crossed < 0 and near_hit and signf(tip.x) != signf(tip_before.x):
-				out.crossed = f
-		if f == out.hit:
-			out.off = -tip.x * side / hip
+			if near_hit and tip_speed > out.tip:
+				out.fastest_at = f
+			out.tip = maxf(out.tip, tip_speed)
+		if absi(f - out.hit) <= CROSS_WINDOW:
+			out.short = minf(out.short, tip.x * side / hip)
 		before = dirs
 		tip_before = tip
 		var calm_tip := rig_calm.tail_world(names[2]) - rig_calm.global_position
@@ -111,8 +112,8 @@ func measure(root: Node, stage: String, body_scale: float) -> Result:
 ## The croc standing suite's checks (bars: data/motion_gate.json "claw_arm"): at every growth step
 ## no arm bone changes length, the elbow and wrist stay in a plausible range, the upper arm never
 ## swings far across the chest, no bone turns faster than the size's bar (bigger is slower), the
-## claw lands as near the snout line as the stage's arm reaches as the sim's hit lands (D-190), and
-## the arm is home before the next swipe.
+## chop is fastest as the sim's hit lands, its claw comes as near the snout line as the stage's arm
+## reaches (D-190), and the arm is home before the next swipe.
 func run(suite: SceneTree, check: Callable) -> void:
 	var bars: Dictionary = Content.load_json("res://data/motion_gate.json")["claw_arm"]
 	var scales: Array = bars["body_scales"]
@@ -141,8 +142,15 @@ func run(suite: SceneTree, check: Callable) -> void:
 			m.fastest() <= bar, "%s: fastest bone %.0f deg/s (bar %.0f)" % [tag, m.fastest(), bar]
 		)
 		check.call(
-			absf(m.off) <= Num.f(bars["short_max"][i]),
-			"%s: at the hit the claw is %+.2f hip heights from the snout line" % [tag, m.off]
+			absi(m.fastest_at - m.hit) <= Num.i(bars["contact_frames"]),
+			"%s: the chop is fastest at f%d, the hit lands at f%d" % [tag, m.fastest_at, m.hit]
+		)
+		check.call(
+			m.short <= Num.f(bars["short_max"][i]),
+			(
+				"%s: the claw comes within %.2f hip heights of the snout line"
+				% [tag, maxf(m.short, 0.0)]
+			)
 		)
 		check.call(
 			m.home >= 0 and m.home * DT < Num.f(bars["home_s"]),

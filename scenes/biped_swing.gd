@@ -118,7 +118,8 @@ func strike(limb: String, side: float) -> void:
 ## beat after the hit.
 func strike_window() -> Vector2:
 	var strike := _rake_s("strike_s")
-	return Vector2(_cross - strike * 0.5, _cross + strike * 0.8)
+	var hit := Num.f(_claw["hit_at"])
+	return Vector2(_cross - strike * hit, _cross + strike * (1.3 - hit))
 
 
 ## A "claw_fx" time (s) for this rake: the baby's, times sqrt(size).
@@ -304,8 +305,9 @@ func _aim_arm(names: Array[String], dirs: Array[Vector3], out: float, body: Basi
 
 
 ## The raking arm's upper, fore and hand directions t seconds into the rake (after the windup cue).
-## Each bone runs the same path a joint lag apart (eased in over the last quarter of the cock), the
-## hand on time and the shoulder leading: `rest` (where the clip holds it) -> cocked (lift_s,
+## Each bone runs the same path a joint lag apart (eased in over the last quarter of the cock): the
+## shoulder a lag early, the forearm on time, the hand a lag late, so the claw is fastest as the
+## hit lands: `rest` (where the clip holds it) -> cocked (lift_s,
 ## eased) -> through (strike_s, one eased curve bent toward contact, crossing the snout line as the
 ## hit lands: _contact_yaw) -> `rest` (recover_s, eased). Every leg turns along arcs.
 func _rake_dirs(t: float, rest: Array[Vector3]) -> Array[Vector3]:
@@ -313,11 +315,11 @@ func _rake_dirs(t: float, rest: Array[Vector3]) -> Array[Vector3]:
 	for d: Vector3 in rest:
 		held.append(d.normalized())
 	var lift := _rake_s("lift_s")
-	var cocked := _cross - _rake_s("strike_s") * 0.5
+	var cocked := _cross - _rake_s("strike_s") * Num.f(_claw["hit_at"])
 	var lag := _rake_s("joint_lag_s") * clampf((t - cocked + lift * 0.25) / (lift * 0.25), 0.0, 1.0)
 	var out: Array[Vector3] = []
 	for i: int in held.size():
-		out.append(_rake_dir(t + (held.size() - 1 - i) * lag, i, held))
+		out.append(_rake_dir(t + (1 - i) * lag, i, held))
 	return out
 
 
@@ -332,7 +334,7 @@ func _rake_dir(t: float, i: int, rest: Array[Vector3]) -> Vector3:
 	for n: int in rest.size():
 		contact.append(aim * _pose("arm_contact")[n])
 		through.append(aim * _pose("arm_through")[n])
-	var start := _cross - strike * 0.5
+	var start := _cross - strike * Num.f(_claw["hit_at"])
 	if t <= start - lift or t >= start + strike + back:
 		return rest[i]
 	if t < start:

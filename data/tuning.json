@@ -970,7 +970,7 @@
 		}
 	},
 	"claw_fx": {
-		"_note": "The raking arm (docs/claw_swipe_plan.md): held (the clip's arm) -> cocked (lift_s, the anticipation: forearm up in front of the shoulder) -> a short chop down in front of the chest, turned toward the snout line by at most aim_max_deg (a short arm cannot reach it) as the sim's hit lands -> through (strike_s, cocked to through) -> held (recover_s). Every time grows with sqrt(body scale / the baby's); the upper arm leads the forearm and hand by joint_lag_s each. Poses are [upper, fore, hand] directions in the heading frame (x outward, y up, -z forward); bones never change length.",
+		"_note": "The raking arm (docs/claw_swipe_plan.md): held (the clip's arm) -> cocked (lift_s, the anticipation: forearm up in front of the shoulder) -> a short chop down in front of the chest, turned toward the snout line by at most aim_max_deg (a short arm cannot reach it) as the sim's hit lands (hit_at of the way through the strike, where the claw is fastest) -> through (strike_s, cocked to through) -> held (recover_s). Every time grows with sqrt(body scale / the baby's); the upper arm leads the forearm and hand by joint_lag_s each. Poses are [upper, fore, hand] directions in the heading frame (x outward, y up, -z forward); bones never change length.",
 		"lift_s": 0.28,
 		"strike_s": 0.22,
 		"recover_s": 0.45,
@@ -979,6 +979,7 @@
 		"arm_contact": [[0.3, -0.4, -0.87], [-0.35, -0.6, -0.72], [-0.4, -0.7, -0.6]],
 		"arm_through": [[0.2, -0.7, -0.68], [-0.4, -0.85, -0.35], [-0.4, -0.9, -0.15]],
 		"aim_max_deg": 45.0,
+		"hit_at": 0.32,
 		"slash_delay_s": 0.04,
 		"fx_ref_scale": 1.0,
 		"fx_boost_max": 2.0,
