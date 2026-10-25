@@ -62,8 +62,11 @@ static func pieces(city: Dictionary, cfg: Dictionary) -> Array[Dictionary]:
 	return out
 
 
-## Appends the railway's pieces to the sim's buildings (the viaduct is built like the city); returns the first index.
-static func add_pieces(buildings: Array[RampageSim.Building], city: Dictionary, cfg: Dictionary) -> int:
+## Appends the railway's pieces to the sim's buildings (built like the city).
+## Returns the index of the first piece.
+static func add_pieces(
+	buildings: Array[RampageSim.Building], city: Dictionary, cfg: Dictionary
+) -> int:
 	var first := buildings.size()
 	for entry: Dictionary in pieces(city, cfg):
 		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))

@@ -150,7 +150,8 @@ func _init(
 		b.start_chunks = b.frame.alive_count
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
-	var rail_from := RailLayout.add_pieces(buildings, city, tuning["rail"])
+	var rail_cfg: Dictionary = tuning["rail"]
+	var rail_from := RailLayout.add_pieces(buildings, city, rail_cfg)
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)
