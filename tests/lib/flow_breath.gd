@@ -51,4 +51,16 @@ static func track_aim(rampage: Rampage, tally: Dictionary) -> void:
 	worst = maxf(worst, at_a.distance_to(at_b))
 	worst = maxf(worst, absf(dir_a.angle_to(dir_b)))
 	worst = maxf(worst, absf(Num.f(drawn["reach"]) - Num.f(sim["reach"])))
-	tally["worst"] = maxf(worst, absf(Num.f(drawn["half_angle"]) - Num.f(sim["half_angle"])))
+	worst = maxf(worst, absf(Num.f(drawn["half_angle"]) - Num.f(sim["half_angle"])))
+	# It must not draw over his own body (director 2026-10-25): depth-tested, with only a ghost
+	# pass where something stands in front. Drawing over everything counts as a full miss.
+	var main := aim.material_override as BaseMaterial3D
+	var ghost := main.next_pass as BaseMaterial3D if main != null else null
+	var under := (
+		main != null
+		and not main.no_depth_test
+		and ghost != null
+		and ghost.depth_test == BaseMaterial3D.DEPTH_TEST_INVERTED
+	)
+	tally["under_body"] = under
+	tally["worst"] = worst if under else 1.0
