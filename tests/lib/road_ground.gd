@@ -79,11 +79,7 @@ func holds(r: int, p: Vector2, into: float) -> bool:
 	var dir: Vector2 = road["dir"]
 	var along := (p - a).dot(dir)
 	var across := absf((p - a).cross(dir))
-	return (
-		along >= -into
-		and along <= Num.f(road["length"]) + into
-		and across < Num.f(road["half"])
-	)
+	return along >= -into and along <= Num.f(road["length"]) + into and across < Num.f(road["half"])
 
 
 ## Every road whose carriageway (reaching `into` into its crossings; below 0, half its own width)
@@ -136,7 +132,10 @@ func _is(kind: String, top: float, road: int = -1) -> Dictionary:
 ## on a deck, any street.
 func _road_holding(p: Vector2, any: bool) -> int:
 	for r: int in _near(_road_hash, p):
-		if (any or str(roads[r]["kind"]) != CityGen.DIAGONAL) and holds(r, p, Num.f(roads[r]["half"])):
+		if (
+			(any or str(roads[r]["kind"]) != CityGen.DIAGONAL)
+			and holds(r, p, Num.f(roads[r]["half"]))
+		):
 			return r
 	return -1
 
@@ -163,6 +162,12 @@ func _paving(block: Dictionary, p: Vector2) -> Dictionary:
 func _off_diagonal(p: Vector2) -> bool:
 	var keep := CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + Num.f(cfg["sidewalk"])
 	return CityGen.diagonal_distance(plan, p) >= keep
+
+
+## The use of the block whose pavement holds p ("park", "plaza", ...), or "" off every block.
+func use_at(p: Vector2) -> String:
+	var n := _block_at(p)
+	return str(_blocks[n]["use"]) if n >= 0 else ""
 
 
 func _block_at(p: Vector2) -> int:

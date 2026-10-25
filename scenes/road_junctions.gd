@@ -13,6 +13,7 @@ extends RefCounted
 ##     gutter, laid over both.
 ## Alleys get no slab: the pavements either side meet across them. Presentation only.
 
+
 ## node -> Vector2(the box's half extent along x, along z), for every square junction.
 static func boxes(plan: Dictionary, coast: float) -> Dictionary:
 	var nodes: Array[Vector2] = plan["nodes"]
@@ -79,7 +80,9 @@ static func streets(plan: Dictionary, coast: float, junctions: Dictionary) -> Ar
 ## The patches where the diagonal (its pieces as drawn, `diagonal`: polygons) crosses the street
 ## pieces `pieces` ({rect, data}): {poly (x, z), data: the street's kind data, its gutter off}, so
 ## the street's lanes run on through the crossing with no kerb gutter across the diagonal's mouth.
-static func crossings(diagonal: Array[PackedVector2Array], pieces: Array[Dictionary]) -> Array[Dictionary]:
+static func crossings(
+	diagonal: Array[PackedVector2Array], pieces: Array[Dictionary]
+) -> Array[Dictionary]:
 	var merged: Array[PackedVector2Array] = []
 	for poly: PackedVector2Array in diagonal:
 		var left: Array[PackedVector2Array] = [poly]
@@ -93,7 +96,12 @@ static func crossings(diagonal: Array[PackedVector2Array], pieces: Array[Diction
 		var piece: Rect2 = street["rect"]
 		var d: Color = street["data"]
 		var rect := PackedVector2Array(
-			[piece.position, Vector2(piece.end.x, piece.position.y), piece.end, Vector2(piece.position.x, piece.end.y)]
+			[
+				piece.position,
+				Vector2(piece.end.x, piece.position.y),
+				piece.end,
+				Vector2(piece.position.x, piece.end.y)
+			]
 		)
 		for band: PackedVector2Array in merged:
 			for common: PackedVector2Array in Geometry2D.intersect_polygons(rect, band):
@@ -102,7 +110,9 @@ static func crossings(diagonal: Array[PackedVector2Array], pieces: Array[Diction
 
 
 ## How far a street's slab reaches past node n along its axis (negative: stops short of it).
-static func _reach(junctions: Dictionary, runs_on: Dictionary, n: int, axis: int, half: float) -> float:
+static func _reach(
+	junctions: Dictionary, runs_on: Dictionary, n: int, axis: int, half: float
+) -> float:
 	if junctions.has(n):
 		var box: Vector2 = junctions[n]
 		return -(box.x if axis == 0 else box.y)

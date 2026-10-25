@@ -20,7 +20,7 @@ const Joins := preload("res://tools/capture/road_joins.gd")
 const LIMIT := 0.035
 const STRIP := 0.5  # a strip's depth either side of a join line (m)
 const STEP := 0.05  # sample spacing in a strip (m)
-const REF_REACH := 8.0  # the road's own steps: read this far along an arm, half its length at most (m)
+const REF_REACH := 8.0  # the road's own steps: this far along an arm, half its length at most
 const VIEW := 24.0  # the top-down shot's width (m)
 const BANK := 1.5  # a join this near the river is left out (quays, parapets in its strips) (m)
 const HIGH := 30.0  # the camera's height (m), inside the ground detail's near fade
@@ -129,7 +129,9 @@ func _city(tier: int, map_seed: int, out: String) -> void:
 		for join: Dictionary in by_node[n]:
 			bad = _measure(shot, join, "stage %d seed %d" % [tier, map_seed]) or bad
 		if bad:
-			shot.save_png(out.path_join("seam_s%d_%d_%d_%d.png" % [tier, map_seed, roundi(c.x), roundi(c.y)]))
+			shot.save_png(
+				out.path_join("seam_s%d_%d_%d_%d.png" % [tier, map_seed, roundi(c.x), roundi(c.y)])
+			)
 	ground.free()
 
 
@@ -174,7 +176,9 @@ func _measure(shot: Image, join: Dictionary, label: String) -> bool:
 	var free := Num.f(join["free"])
 	var d := STRIP * 2.0
 	while d + STRIP * 2.0 <= minf(free * 0.5, REF_REACH):
-		_refs.append(absf(_strip(shot, join, d, d + STRIP) - _strip(shot, join, d + STRIP, d + STRIP * 2.0)))
+		_refs.append(
+			absf(_strip(shot, join, d, d + STRIP) - _strip(shot, join, d + STRIP, d + STRIP * 2.0))
+		)
 		d += STRIP
 	if step <= _limit:
 		return false

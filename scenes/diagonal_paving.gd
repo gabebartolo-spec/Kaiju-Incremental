@@ -51,16 +51,22 @@ static func meshes(ground: CityGround, colors: Dictionary, mat: ShaderMaterial) 
 		var tint: Color = spec[3]
 		for piece: PackedVector2Array in pieces(rect.grow(-Num.f(spec[0])), kerbed):
 			prism(st, piece, Vector2(top + Num.f(spec[1]), 0.3), tint)
-	var patch := Vector2(CityGround.CROSSING_TOP, 0.01)
-	for cross: Dictionary in RoadJunctions.crossings(ground.diagonal_pieces, ground.street_pieces):
-		var poly: PackedVector2Array = cross["poly"]
-		var data: Color = cross["data"]
-		prism(_tool(tools, data), poly, patch, asphalt)
+	_crossings(ground, tools, asphalt)
 	var out := []
 	for data: Color in tools:
 		var st: SurfaceTool = tools[data]
 		out.append(_instance(st, data, mat))
 	return out
+
+
+## Where the diagonal crosses a street (RoadJunctions.crossings): the street's asphalt, its gutter
+## off, over both.
+static func _crossings(ground: CityGround, tools: Dictionary, asphalt: Color) -> void:
+	var patch := Vector2(CityGround.CROSSING_TOP, 0.01)
+	for cross: Dictionary in RoadJunctions.crossings(ground.diagonal_pieces, ground.street_pieces):
+		var poly: PackedVector2Array = cross["poly"]
+		var data: Color = cross["data"]
+		prism(_tool(tools, data), poly, patch, asphalt)
 
 
 static func _tool(tools: Dictionary, data: Color) -> SurfaceTool:
@@ -116,7 +122,12 @@ static func band(plan: Dictionary, cfg: Dictionary, grow: float) -> PackedVector
 ## What is left of rect once the band is cut out of it.
 static func pieces(rect: Rect2, cut: PackedVector2Array) -> Array[PackedVector2Array]:
 	var poly := PackedVector2Array(
-		[rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+		[
+			rect.position,
+			Vector2(rect.end.x, rect.position.y),
+			rect.end,
+			Vector2(rect.position.x, rect.end.y)
+		]
 	)
 	var out: Array[PackedVector2Array] = []
 	out.assign(Geometry2D.clip_polygons(poly, cut))

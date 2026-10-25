@@ -23,9 +23,28 @@ const Edges := preload("res://tests/lib/road_edges.gd")
 const STAGES: Array[int] = [1, 2, 3]
 ## 20 cities: the three the city suite pins, then 17 more.
 const SEEDS: Array[int] = [
-	7301, 1234, 98765, 11, 42, 77, 123, 256, 404, 512, 777, 1001, 2024, 3141, 4242, 5150, 6502,
-	8086, 9999, 31337
+	7301,
+	1234,
+	98765,
+	11,
+	42,
+	77,
+	123,
+	256,
+	404,
+	512,
+	777,
+	1001,
+	2024,
+	3141,
+	4242,
+	5150,
+	6502,
+	8086,
+	9999,
+	31337
 ]
+const PARK_DECK_X := -3.0  # the bridge into a park the director saw (stage 1, seed 7301)
 const SHOWN := 4  # violations quoted in a failure message (the count is always given)
 
 var _cities: Array[Dictionary] = []  # {tier, seed, ground, paint}
@@ -39,6 +58,7 @@ func run_checks() -> void:
 	_build()
 	await _t("_check_r1_road_ends")
 	await _t("_check_r2_bridges_land_on_roads")
+	await _t("_check_r2_names_a_bridge_into_a_park")
 	await _t("_check_r3_clean_junctions")
 	await _t("_check_r4_kerbed_pavement")
 	await _t("_check_r5_paint_stops_at_junctions")
@@ -48,22 +68,22 @@ func run_checks() -> void:
 func _build() -> void:
 	for tier: int in STAGES:
 		for map_seed: int in SEEDS:
-			var base: Dictionary = Content.tuning().duplicate(true)
-			var city: Dictionary = base["city"]
-			city["map_seed"] = map_seed
-			var cfg: Dictionary = CityGrowth.tuning_for(base, tier)["city"]
+			var cfg := _cfg(tier, map_seed)
 			var drawn := CityGround.new(cfg)
 			drawn._markings()
 			var paint: Array[Transform3D] = drawn._paint.duplicate()
-			_cities.append(
-				{
-					"tier": tier,
-					"seed": map_seed,
-					"ground": RoadGround.new(drawn.plan, cfg),
-					"paint": paint,
-				}
-			)
+			var city := {"tier": tier, "seed": map_seed, "paint": paint}
+			city["ground"] = RoadGround.new(drawn.plan, cfg)
+			_cities.append(city)
 			drawn.free()
+
+
+## The city config of a stage (1-3) and map seed.
+static func _cfg(tier: int, map_seed: int) -> Dictionary:
+	var base: Dictionary = Content.tuning().duplicate(true)
+	var city: Dictionary = base["city"]
+	city["map_seed"] = map_seed
+	return CityGrowth.tuning_for(base, tier)["city"]
 
 
 ## One check per stage and city: `found` takes its ground and paint and returns its violations.
@@ -95,6 +115,26 @@ func _check_r2_bridges_land_on_roads() -> void:
 	)
 
 
+## Known-bad fixture: the spot the director saw (stage 1, seed 7301, the deck at x=-3) with a park
+## laid over the landing at its low-z end; R2 must name it a bridge into a park.
+func _check_r2_names_a_bridge_into_a_park() -> void:
+	var cfg := _cfg(1, 7301)
+	var plan := CityGen.map(cfg)
+	var deck := Rect2()
+	for d: Rect2 in CityRiver.bridges(plan, cfg):
+		if absf(d.get_center().x - PARK_DECK_X) < 1.0:
+			deck = d
+	check(deck.has_area(), "stage 1, seed 7301 has a bridge deck at x=%.0f" % PARK_DECK_X)
+	var park := Rect2(deck.position.x - 4.0, deck.position.y - 10.0, deck.size.x + 8.0, 10.0)
+	var blocks: Array = plan["blocks"]
+	blocks.append({"rect": park, "use": "park"})
+	var bad := Net.r2_bridges(RoadGround.new(plan, cfg))
+	var named := bad.filter(func(m: String) -> bool: return m.begins_with("R2 bridge into a park"))
+	check(
+		not named.is_empty(), "R2 names the planted bridge into a park (got: %s)" % "; ".join(bad)
+	)
+
+
 func _check_r3_clean_junctions() -> void:
 	_each(
 		"R3 clean T or X junctions, matching widths, no jagged asphalt edge",
@@ -115,7 +155,8 @@ func _check_r4_kerbed_pavement() -> void:
 func _check_r5_paint_stops_at_junctions() -> void:
 	_each(
 		"R5 lane paint stops at junction edges, zebras only at the central junction",
-		func(g: RoadGround, paint: Array[Transform3D]) -> Array[String]: return Edges.r5_paint(g, paint)
+		func(g: RoadGround, paint: Array[Transform3D]) -> Array[String]:
+			return Edges.r5_paint(g, paint)
 	)
 
 

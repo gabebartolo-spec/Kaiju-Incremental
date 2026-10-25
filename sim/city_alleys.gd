@@ -31,7 +31,9 @@ static func lay(
 	var az := {}
 	for i: int in xs.size():
 		for j: int in zs.size() - 1:
-			var keep := av_x.has(i) or _on_site(plan, Vector2(xs[i], zs[j]), Vector2(xs[i], zs[j + 1]))
+			var keep := (
+				av_x.has(i) or _on_site(plan, Vector2(xs[i], zs[j]), Vector2(xs[i], zs[j + 1]))
+			)
 			if _ok(rng.randf(), [xs[i], zs[j], zs[j + 1]], full, keep, cfg):
 				ax[Vector2i(i, j)] = true
 	for j: int in zs.size():

@@ -16,8 +16,8 @@ const STEP := 0.5  # sample spacing along a road edge (m)
 const INSET := 0.25  # a sample's distance in from, or out past, the asphalt edge (m)
 const KERB := 0.05  # the least step from asphalt up to its pavement that reads as a kerb (m)
 const FLAT := 0.005  # the greatest height step two joined road pieces may have (m)
-const ZEBRA_SIZE := Vector2(0.3, 1.2)  # CityGround._zebra's stripe (across, along)
-const ZEBRA_OFF := 0.9  # CityGround._markings: a zebra's centre past the crossing's kerb line
+const ZEBRA_SIZE := Vector2(0.3, 1.2)  # RoadPaint._zebra's stripe (across, along)
+const ZEBRA_OFF := 0.9  # RoadPaint.marks: a zebra's centre past the crossing's kerb line
 const PERPENDICULAR := 0.999  # |sin| of a crossing whose junction box an edge runs through
 
 
@@ -83,8 +83,10 @@ static func _kerb_fault(ground: RoadGround, r: int, t: float, side: float) -> St
 	if kind == RoadGround.PAVE and Num.f(outer["top"]) >= Num.f(inner["top"]) + KERB:
 		return ""
 	var what := (
-		"a pavement with no kerb (%.2f m against the asphalt's %.2f m)"
-		% [Num.f(outer["top"]), Num.f(inner["top"])]
+		(
+			"a pavement with no kerb (%.2f m against the asphalt's %.2f m)"
+			% [Num.f(outer["top"]), Num.f(inner["top"])]
+		)
 		if kind == RoadGround.PAVE
 		else kind
 	)
@@ -132,7 +134,7 @@ static func r5_paint(ground: RoadGround, paint: Array[Transform3D]) -> Array[Str
 	var central := central_junction(ground)
 	var nodes: Array[Vector2] = ground.plan["nodes"]
 	# A zebra belongs to the central junction when it lies on one of its arms, within the widest
-	# avenue's width plus its stripe's offset and length (CityGround._zebra) of the crossing.
+	# avenue's width plus its stripe's offset and length (RoadPaint._zebra) of the crossing.
 	var avenue := CityGen.width_of(CityGen.AVENUE, ground.cfg)
 	var zebra_reach := Vector2(avenue * 0.5 + ZEBRA_OFF + ZEBRA_SIZE.y, avenue * 0.5).length()
 	for stripe: Transform3D in paint:
@@ -148,7 +150,9 @@ static func r5_paint(ground: RoadGround, paint: Array[Transform3D]) -> Array[Str
 			out.append(bad)
 	for n: int in zebra_at:
 		if n != central:
-			out.append("R5 zebra crossing at %s, not the central junction" % RoadGround.where(nodes[n]))
+			out.append(
+				"R5 zebra crossing at %s, not the central junction" % RoadGround.where(nodes[n])
+			)
 	if central >= 0 and not zebra_at.has(central):
 		out.append("R5 the central junction at %s has no zebra" % RoadGround.where(nodes[central]))
 	return out

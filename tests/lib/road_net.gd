@@ -92,14 +92,23 @@ static func r2_bridges(ground: RoadGround) -> Array[String]:
 		for z: float in [deck.position.y - PAST, deck.end.y + PAST]:
 			var bad := _lands_off(ground, deck, z, r)
 			if not bad.is_empty():
-				out.append(
-					(
-						"R2 deck at %s lands on %s at %s, not on its road"
-						% [RoadGround.where(c), bad[0], bad[1]]
-					)
-				)
+				out.append(_landing(c, bad))
 	out.append_array(_open_water(ground))
 	return out
+
+
+## A deck's bad landing, named: a bridge into a block (the director's bridge into a park, stage
+## 1, seed 7301, deck x=-3, 2026-10-26) says which.
+static func _landing(deck: Vector2, bad: Array) -> String:
+	if str(bad[2]) != "":
+		return (
+			"R2 bridge into a %s: the deck at %s lands on its %s at %s"
+			% [bad[2], RoadGround.where(deck), bad[0], bad[1]]
+		)
+	return (
+		"R2 deck at %s lands on %s at %s, not on its road"
+		% [RoadGround.where(deck), bad[0], bad[1]]
+	)
 
 
 ## The road a deck carries: along z, its centre line on the deck's, as wide as the deck.
@@ -114,8 +123,8 @@ static func _road_on(ground: RoadGround, deck: Rect2) -> int:
 	return -1
 
 
-## [kind, where] of the first point just past a deck end (across its width) that is not road r's
-## own asphalt; [] when the deck lands on its road all the way across.
+## [kind, where, block use ("" off a block)] of the first point just past a deck end (across its
+## width) that is not road r's own asphalt; [] when the deck lands on its road all the way across.
 static func _lands_off(ground: RoadGround, deck: Rect2, z: float, r: int) -> Array:
 	var x := deck.position.x + PAST
 	while x <= deck.end.x - PAST + EPS:
@@ -124,7 +133,7 @@ static func _lands_off(ground: RoadGround, deck: Rect2, z: float, r: int) -> Arr
 		var kind := str(got["kind"])
 		var on_road := kind in [RoadGround.ROAD, RoadGround.DECK]
 		if not on_road or not _carried(ground, p, r):
-			return [kind if not on_road else "another road", RoadGround.where(p)]
+			return [kind if not on_road else "another road", RoadGround.where(p), ground.use_at(p)]
 		x += STEP
 	return []
 
@@ -188,7 +197,10 @@ static func r3_junctions(ground: RoadGround) -> Array[String]:
 			continue
 		if list.size() > MAX_ARMS:
 			out.append(
-				"R3 %d roads meet at %s (an X has %d)" % [list.size(), RoadGround.where(p), MAX_ARMS]
+				(
+					"R3 %d roads meet at %s (an X has %d)"
+					% [list.size(), RoadGround.where(p), MAX_ARMS]
+				)
 			)
 		for i: int in list.size():
 			for j: int in range(i + 1, list.size()):
@@ -213,5 +225,7 @@ static func _pair(ground: RoadGround, p: Vector2, a: Dictionary, b: Dictionary) 
 			)
 		)
 	elif c < -NEAR_STRAIGHT and c > -COLLINEAR:
-		out.append("R3 kink at %s: two roads nearly, not quite, run on as one" % RoadGround.where(p))
+		out.append(
+			"R3 kink at %s: two roads nearly, not quite, run on as one" % RoadGround.where(p)
+		)
 	return out
