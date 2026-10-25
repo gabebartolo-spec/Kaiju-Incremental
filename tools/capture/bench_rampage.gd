@@ -11,6 +11,8 @@ extends SceneTree
 ## names the graphics preset (default: the one this screen would pick).
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+## The frame-time windows at the start and the end of the run (seconds).
+const WINDOW_S := 5.0
 
 var _species := "reptilian"
 var _seconds := 30.0
@@ -51,6 +53,9 @@ func _run() -> void:
 	var logic_max := 0.0
 	var slow := 0
 	var gap_max := 0.0
+	# Frame time over the first and the last WINDOW_S seconds: [frames, gap sum ms, gpu sum ms].
+	var head := [0, 0.0, 0.0]
+	var tail := [0, 0.0, 0.0]
 	var last := Time.get_ticks_usec()
 	var start := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - start < _seconds * 1000.0 and not rampage.sim.over:
@@ -69,10 +74,25 @@ func _run() -> void:
 		var gap := (now - last) / 1000.0
 		last = now
 		gap_max = maxf(gap_max, gap)
+		var t := (Time.get_ticks_msec() - start) / 1000.0
+		for win: Array in [head if t < WINDOW_S else [], tail if t > _seconds - WINDOW_S else []]:
+			if not win.is_empty():
+				win[0] += 1
+				win[1] += gap
+				win[2] += gpu
 		if gap > 33.4:
 			slow += 1
 			print("slow frame: %.1fms at %.1fs" % [gap, (Time.get_ticks_msec() - start) / 1000.0])
 	print("frame gaps: worst %.1fms, %d of %d frames over 33 ms" % [gap_max, slow, frames])
+	for win: Array in [["first", head], ["last", tail]]:
+		var got: Array = win[1]
+		var n := maxi(1, Num.i(got[0]))
+		print(
+			(
+				"frame time, %s %.0f s: %.2f ms (gpu %.2f ms) over %d frames"
+				% [win[0], WINDOW_S, Num.f(got[1]) / n, Num.f(got[2]) / n, got[0]]
+			)
+		)
 	print(
 		(
 			(

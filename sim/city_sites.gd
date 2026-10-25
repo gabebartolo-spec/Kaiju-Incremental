@@ -1,7 +1,7 @@
 class_name CitySites
 extends RefCounted
-## Landmark sites (part of CityGen.map, split out to keep files small). Each landmark in
-## city.landmarks takes the street-grid cells round its anchor, as many as its baked footprint
+## Landmark sites (part of CityGen.map, split out to keep files small). Each landmark the seeded
+## spread (CitySpread) places takes the street-grid cells round its anchor, as many as its baked footprint
 ## (city.landmark_shapes: data/landmarks.json, merged in by Content) plus a margin needs, as one
 ## plaza: the streets inside it are never laid, so traffic and the ground go round it. A site
 ## stays inside one district (it never swallows a ring avenue), clear of the diagonal avenue and
@@ -9,56 +9,95 @@ extends RefCounted
 ## Pure: the same city config always gives the same sites.
 
 
-## One site per landmark that fits: {"id", "spec", "shape", "i": Vector2i (first and last x cell),
-## "j": Vector2i (z cells), "outer": Rect2 between the street centre lines, "rect": Rect2 inside
-## the kerbs}.
+## One site per landmark the seeded spread places (CitySpread.landmarks): {"id", "spec",
+## "shape", "district", "i": Vector2i (first and last x cell), "j": Vector2i (z cells), "outer":
+## Rect2 between the street centre lines, "rect": Rect2 inside the kerbs}; a bridge's site also
+## carries "water" and "at" once CityRiver.mark has dug its inlet.
 static func find(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
-	var xs: Array[float] = plan["xs"]
-	var zs: Array[float] = plan["zs"]
-	var av_x: Dictionary = avenues[0]
-	var av_z: Dictionary = avenues[1]
-	var out: Array[Dictionary] = []
-	var raw: Array = cfg.get("landmarks", [])
-	var shapes: Dictionary = cfg.get("landmark_shapes", {})
-	for spec: Dictionary in raw:
-		var shape: Dictionary = shapes.get(str(spec["id"]), {})
-		if shape.is_empty():
-			continue
-		var pad := 2.0 * Num.f(spec["margin"])
-		var at: Array = spec["anchor"]
-		var along_x := {"lines": xs, "rings": rings, "avenues": av_x, "cfg": cfg}
-		var along_z := {"lines": zs, "rings": rings, "avenues": av_z, "cfg": cfg}
-		var i := _span(along_x, Num.f(at[0]), Num.f(shape["w"]) + pad)
-		var j := _span(along_z, Num.f(at[1]), Num.f(shape["d"]) + pad)
-		if i.x < 0 or j.x < 0:
-			continue
-		var river := CityRiver.river_row(zs, cfg)
-		if river >= 0 and j.x <= river and j.y >= river:
-			continue  # never in the river's row (CityRiver): it would stand in the water
-		var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
-		if _crosses_diagonal(plan, outer, cfg):
-			continue
-		var x0 := xs[i.x] + _inset(av_x, i.x, cfg)
-		var z0 := zs[j.x] + _inset(av_z, j.x, cfg)
-		var x1 := xs[i.y + 1] - _inset(av_x, i.y + 1, cfg)
-		var z1 := zs[j.y + 1] - _inset(av_z, j.y + 1, cfg)
-		(
-			out
-			. append(
-				{
-					"id": str(spec["id"]),
-					"spec": spec,
-					"shape": shape,
-					"i": i,
-					"j": j,
-					"outer": outer,
-					"rect": Rect2(x0, z0, x1 - x0, z1 - z0),
-				}
-			)
-		)
-	return out
+	return CitySpread.landmarks(plan, rings, avenues, cfg)
+
+
+## The site a landmark of `shape` would take round `anchor` (x, z), or {} where it cannot: it
+## fits between ring avenues, stays out of the river's row and clear of the diagonal.
+## axes: [along x, along z], each {lines, rings, avenues, cfg}.
+static func site_at(
+	plan: Dictionary, spec: Dictionary, shape: Dictionary, anchor: Vector2, axes: Array
+) -> Dictionary:
+	var along_x: Dictionary = axes[0]
+	var along_z: Dictionary = axes[1]
+	var cfg: Dictionary = along_x["cfg"]
+	var xs: Array[float] = along_x["lines"]
+	var zs: Array[float] = along_z["lines"]
+	var pad := 2.0 * Num.f(spec.get("margin", 0.0))
+	var i := _span(along_x, anchor.x, Num.f(shape["w"]) + pad)
+	var j := _span(along_z, anchor.y, Num.f(shape["d"]) + pad)
+	if i.x < 0 or j.x < 0:
+		return {}
+	var river := CityRiver.river_row(zs, cfg)
+	if river >= 0 and j.x <= river + 1 and j.y >= river:
+		return {}  # never in the river's row (CityRiver) nor its far bank, where inlets open
+	var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
+	if _crosses_diagonal(plan, outer, cfg):
+		return {}
+	return _site(spec, shape, i, j, outer, axes)
+
+
+## A bridge's site (spec "kind" "bridge"): `rows` rows of cells on the river's far bank, from the
+## x cell run round anchor_x wide enough for the span and its landings. Its "outer" (the streets
+## it cuts) reaches back over the river's row, so no street crosses the water inside it and its
+## inlet opens straight onto the river (CityRiver.mark digs it). {} where it cannot fit.
+static func bridge_at(
+	plan: Dictionary, spec: Dictionary, shape: Dictionary, anchor_x: float, axes: Array, rows: int
+) -> Dictionary:
+	var along_x: Dictionary = axes[0]
+	var along_z: Dictionary = axes[1]
+	var cfg: Dictionary = along_x["cfg"]
+	var xs: Array[float] = along_x["lines"]
+	var zs: Array[float] = along_z["lines"]
+	var rings: Array[float] = along_z["rings"]
+	var river := CityRiver.river_row(zs, cfg)
+	if river < 0 or river + 1 + rows >= zs.size():
+		return {}
+	for k: int in range(river + 2, river + 1 + rows):
+		if _is_ring(zs[k], rings):
+			return {}  # the inlet never swallows a ring avenue
+	var i := _span(along_x, anchor_x, Num.f(shape["w"]) + 2.0 * Num.f(spec.get("margin", 0.0)))
+	if i.x < 0:
+		return {}
+	var j := Vector2i(river + 1, river + rows)
+	var outer := Rect2(xs[i.x], zs[river], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[river])
+	if _crosses_diagonal(plan, outer, cfg):
+		return {}
+	return _site(spec, shape, i, j, outer, axes)
+
+
+static func _site(
+	spec: Dictionary, shape: Dictionary, i: Vector2i, j: Vector2i, outer: Rect2, axes: Array
+) -> Dictionary:
+	var along_x: Dictionary = axes[0]
+	var along_z: Dictionary = axes[1]
+	var cfg: Dictionary = along_x["cfg"]
+	var xs: Array[float] = along_x["lines"]
+	var zs: Array[float] = along_z["lines"]
+	var av_x: Dictionary = along_x["avenues"]
+	var av_z: Dictionary = along_z["avenues"]
+	var x0 := xs[i.x] + _inset(av_x, i.x, cfg)
+	var z0 := zs[j.x] + _inset(av_z, j.x, cfg)
+	var x1 := xs[i.y + 1] - _inset(av_x, i.y + 1, cfg)
+	var z1 := zs[j.y + 1] - _inset(av_z, j.y + 1, cfg)
+	var rect := Rect2(x0, z0, x1 - x0, z1 - z0)
+	return {
+		"id": str(spec["id"]),
+		"spec": spec,
+		"shape": shape,
+		"i": i,
+		"j": j,
+		"outer": outer,
+		"rect": rect,
+		"district": CityGen.district_of(rect, cfg),
+	}
 
 
 ## True when the street from a to b would run through a site (its middle lies inside one).
@@ -118,12 +157,13 @@ static func entries(plan: Dictionary, ring: int) -> Array[Dictionary]:
 		var shape: Dictionary = site["shape"]
 		var spec: Dictionary = site["spec"]
 		var rect: Rect2 = site["rect"]
+		var at: Vector2 = site.get("at", rect.get_center())  # a bridge stands over its water
 		(
 			out
 			. append(
 				{
-					"x": rect.get_center().x,
-					"z": rect.get_center().y,
+					"x": at.x,
+					"z": at.y,
 					"w": Num.i(shape["w"]),
 					"d": Num.i(shape["d"]),
 					"h": Num.i(shape["h"]),

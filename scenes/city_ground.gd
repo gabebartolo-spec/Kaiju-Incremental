@@ -77,8 +77,9 @@ func _block(block: Dictionary, asphalt: Color, pavement: Color) -> void:
 				kerb + Vector2(0.02, 0.0),
 				Look.color("outskirts")
 			)
-		"plaza", "landmark":  # a landmark stands on its own plaza
-			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement.lightened(0.12))
+		"plaza", "landmark":  # a landmark stands on its own plaza (round a bridge's inlet)
+			for piece: Rect2 in GroundKit.cut([walk], CityRiver.inlets(plan)):
+				_of(GroundKit.K_PAVEMENT, piece, kerb, pavement.lightened(0.12))
 		"parking":
 			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
 			var bay := rect.grow(-0.6)
@@ -328,7 +329,13 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
 			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
 		]
-		for side: Rect2 in GroundKit.cut(banks, bridges):
+		# No wall where a bridge's inlet opens off the river (or the river into the inlet).
+		var open: Array[Rect2] = []
+		open.assign(bridges)
+		for other: Rect2 in channels:
+			if other != channel:
+				open.append(other.grow(RIVER_QUAY))
+		for side: Rect2 in GroundKit.cut(banks, open):
 			_face(side, wall, stone, -depth)
 		_face(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone, -depth)
 		_face(

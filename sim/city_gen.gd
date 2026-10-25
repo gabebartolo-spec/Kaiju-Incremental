@@ -174,6 +174,7 @@ static func map(cfg: Dictionary) -> Dictionary:
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
 	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
+	plan["explosive_sites"] = CitySpread.explosive_sites(plan, cfg)
 	return plan
 
 
@@ -366,35 +367,5 @@ static func _blocks(
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
 	CityRiver.mark(plan, zs, cfg)
-	# One park per district: its biggest block between the towers and its ring. One plaza: the
-	# block at the heart of the first tower district.
-	var rings := districts(cfg)
-	var heart := cores(cfg)[0]
-	var parks: Array[int] = []
-	var park_area: Array[float] = []
-	for k: int in rings.size():
-		parks.append(-1)
-		park_area.append(0.0)
-	var best_plaza := -1
-	var plaza_away := INF
-	for n: int in inner:
-		if str(blocks[n]["use"]) != "built":
-			continue  # the river (CityRiver)
-		var rect: Rect2 = blocks[n]["rect"]
-		var ring := Num.i(blocks[n]["district"])
-		var town := CityLots.town_share(rect.get_center(), cfg)
-		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]
-		var inside := edge < 0.75 or ring > 0  # a later district is one ring of blocks deep
-		if town < 0.1 and inside and rect.get_area() > park_area[ring]:
-			parks[ring] = n
-			park_area[ring] = rect.get_area()
-		var away := rect.get_center().distance_to(Vector2(heart.x, heart.y))
-		if away < plaza_away:
-			best_plaza = n
-			plaza_away = away
-	for n: int in parks:
-		if n >= 0:
-			blocks[n]["use"] = "park"
-	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
-		blocks[best_plaza]["use"] = "plaza"
+	CityParks.pick(plan, inner, cfg)
 	CityBand.hold_back(plan, inner, cfg)
