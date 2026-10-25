@@ -24,8 +24,10 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 	env.ssao_intensity = Look.value("ssao")
 	env.ssao_power = Look.value("ssao_power")
 	env.ssao_radius = 1.5
-	# The haze carries the depth (D-163); CityHaze.apply's strength is what escalation scales.
-	CityHaze.apply(env, Num.f(sim.city.get("fog_scale", 1.0)))
+	env.fog_enabled = Look.value("fog_density") > 0.0
+	env.fog_light_color = Look.color("fog_color")
+	# A grown city (D-039) thins the fog with its size, so its far edge still reads as skyline.
+	env.fog_density = Look.value("fog_density") * Num.f(sim.city.get("fog_scale", 1.0))
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = Look.value("glow_threshold")
@@ -34,7 +36,6 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 	env.adjustment_enabled = true
 	env.adjustment_saturation = Look.value("saturation")
 	env.adjustment_contrast = Look.value("contrast")
-	LookGrade.apply(env)  # cool shadows, warm fire (D-163), on every graphics preset
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	world_env.add_to_group(GraphicsPresets.GROUP)

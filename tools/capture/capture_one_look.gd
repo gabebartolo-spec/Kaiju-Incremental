@@ -2,7 +2,7 @@ extends SceneTree
 ## One look, phase 1 proof (D-163): the same seeded rampage (city seed 0, the reptilian, the
 ## Behemoth body and its city, Medium preset, HUD on) with the phase-1 look or today's, as stills
 ## or a clip (--write-movie). Same seed, route and tick in both, so pairs differ only by the look.
-##   --today  zero the phase-1 keys (grade, haze, far blur, block ground): the picture before D-163
+##   --today  zero the phase-1 keys (far blur, block ground): the picture before D-163
 ##   --time=dusk|night|morning|noon   --stage=2 (STAGE_LEVELS index + 1)   --out=<dir>
 ##   --label=<name>   --stills=4,12 (seconds after the rise)   --seconds=6 --skip=9 (a clip:
 ##   the whole run is recorded; trim from the "risen at drawn frame" line + skip*60)
@@ -14,12 +14,7 @@ extends SceneTree
 const Kit := preload("res://tools/capture/capture_kit.gd")
 ## What --today zeroes: every number phase 1 added to the look (the keys that make a pair differ).
 const PHASE_ONE_KEYS: Array[String] = [
-	"grade_amount",
 	"far_blur_amount",
-	"haze_aerial",
-	"haze_sky_affect",
-	"haze_sun_scatter",
-	"haze_height_density",
 	"ground_block_noise",
 	"ground_patch_noise",
 	"ground_speck_chance",
