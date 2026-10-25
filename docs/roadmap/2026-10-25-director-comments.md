@@ -27,3 +27,7 @@
 | 23 | Rain: "droplets are looking too big ... like a bucket of water hitting the ground. overall its a little too loud ... a lighter misting effect upon impact would be more elegant" | atmosphere lead | atm-rain-2 | in progress (overrides critics' denser/brighter asks) |
 | 24 | Interview: VIP copy "Punchier / mocking" -> "COWARD GOVERNOR FLEES CITY BY CHOPPER" / "GOVERNOR SWATTED FROM THE SKY"; VIP heli "Same size, lit"; young croc arms "Small swing" with the walk; intro skip "1 s" | vip-heli builder, claw-anim | claude/vip-heli, #194 | in progress |
 | 25 | Nimbalyst next task (asked): "trains. he can have a fresh 1000 tripo credits, and he can make sounds on 11labs and he should research train locomotion and derailment physics" | Nimbalyst | claude/trains | briefed (022); D-240 |
+| 26 | "ask me a lot more questions" | lead | this PR | in force: questions every turn there is a real choice |
+| 27 | Trains (asked): "Keep running"; "Big one-off bonus"; "Elevated viaduct"; survivors flee after a derail; API $60 for trains; "make sure Nim gets that new train info" | Nimbalyst | claude/trains | 022 brief updated at the top; D-243 |
+| 28 | Roar gape "35-40°"; claw rake "Faint, short trail"; VIP headline 3 s, play continues; young croc walk "slight bob" | casc-anim, VFX lead, vip-heli builder, claw-anim | komodo anim, claw-rake-2, claude/vip-heli, #194 | sent to each; D-243 |
+| 29 | Next playtest "After the flat-surface pass"; survey on the 4K TV only | lead | ROADMAP milestone | build after P0-P2 merge; D-243 |
