@@ -25,6 +25,8 @@ var sorted_y: PackedInt32Array = PackedInt32Array()
 var built_cells: Array[Vector3i] = []
 ## Drawn size of each cube as a share of a cell (build()).
 var inset := 1.0
+## Whether build() adds the look's per-cell colour noise (off for a smooth painted surface).
+var noise := true
 
 
 func put(cell: Vector3i, key: String) -> void:
@@ -141,7 +143,7 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
 		var cube := Basis().scaled(Vector3.ONE * inset)
 		mm.set_instance_transform(i, Transform3D(cube, origin + Vector3(cell) * voxel + lift))
-		mm.set_instance_color(i, Look.jitter(base, cell, salt))
+		mm.set_instance_color(i, Look.jitter(base, cell, salt) if noise else base)
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	return mmi

@@ -43,7 +43,7 @@ records them in a board PR after the merge.
   suite's tests through `_t`, see kaiju-godot-tests). Remove your worktree when the PR merges.
 - At most 3 open PRs on the repo; merge green, approved PRs at once. Docs-only PRs skip the Godot
   jobs. Wait for CI in the background (one notification), never in polling turns.
-- Hand over at task boundaries: `agent-handoffs/<role>.md` (see kaiju-handoff).
+- Hand over at task boundaries: `~/.claude/handoffs/kaiju/<role>.md` (see kaiju-handoff).
 
 ## Learnings
 

@@ -34,6 +34,10 @@ var phase := 0.0
 ## (the legs scale the clip's foot travel by it, so a planted foot is passed at the pace the body
 ## walks).
 var step_ratio := 1.0
+## Stomps the sim has made (it counts them): they alternate feet, the left first.
+var stomps := 0
+## True on a step a foot came down (the step clock passed a whole number): `landed_foot`'s.
+var footfall_now := false
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -45,6 +49,9 @@ var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
 ## The feet at body scale 1: (how far ahead of kaiju_pos a foot comes down in a full step; half the
 ## gap between the feet).
 var _pivot := Vector2.ZERO
+## Where a stomp's foot comes down at body scale 1: (ahead of kaiju_pos along the heading, out to
+## the left foot's side); zero for a body with no entry (its stomp is centred on kaiju_pos).
+var _stomp_foot := Vector2.ZERO
 ## Where the last two feet to land stand in the world (they stay there until they lift): the newest
 ## first. The body turns about them.
 var _feet: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
@@ -75,6 +82,7 @@ func use_species(species_id: String) -> void:
 	var stages: Array = bodies.get(species_id, [])
 	_discs = []
 	_volume.discs = _discs
+	_stomp_foot = Vector2.ZERO  # a body without an entry stomps at kaiju_pos, never a stale foot
 	if not stages.is_empty():
 		var stage: Dictionary = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
 		_discs = stage["discs"]
@@ -83,6 +91,8 @@ func use_species(species_id: String) -> void:
 		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
+		var foot: Array = stage.get("stomp_foot", [0.0, 0.0])
+		_stomp_foot = Vector2(Num.f(foot[0]), Num.f(foot[1]))
 
 
 func active() -> bool:
@@ -117,6 +127,7 @@ func length() -> float:
 ## the planted foot like any turn: a held curve never drags the feet (D-177).
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
+	footfall_now = false
 	if want == Vector2.ZERO:
 		_stand(dt)
 		return 0.0
@@ -216,6 +227,35 @@ func _swing(was: Vector2, most: float) -> void:
 	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(clampf(was.angle_to(heading), -most, most))
 
 
+## The ground point a stomp lands on (world): the left foot's (or the right's) spot ahead of
+## kaiju_pos on the body's heading, so the damage is where the drawn ring is, not at the tail base.
+func stomp_foot(left: bool) -> Vector2:
+	var across := heading.orthogonal() * _stomp_foot.y * (1.0 if left else -1.0)
+	return sim.kaiju_pos + (heading * _stomp_foot.x + across) * sim.body_scale()
+
+
+## True when the body walks by its step clock (it has planted feet and the stick is pushed).
+func walking() -> bool:
+	return stepping() and not _standing
+
+
+## The foot that came down on the latest footfall (world), and whether it is the left: an even step
+## is the left foot's (the step clock and the legs agree). Read on a step `footfall_now` is true.
+func landed_foot() -> Vector2:
+	return _feet[0]
+
+
+func landed_left() -> bool:
+	return int(floorf(phase)) % 2 == 0
+
+
+## True when the stomp's next foot is on `target` (within half a stomp's reach): a scripted player
+## stops when this holds, so the foot that comes down next lands on the building, as a person aims
+## it (D-166). Every measuring player (tests, pacing, captures, autoplay) walks by this rule.
+func stomp_reaches(target: Vector2) -> bool:
+	return stomp_foot(stomps % 2 == 0).distance_to(target) <= sim.stomp_radius() * 0.5
+
+
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),
 ## `side` 1 on its own side of the middle, -1 on the other.
 func _foot_at(ahead: float, side: float) -> Vector2:
@@ -261,6 +301,7 @@ func walked(distance: float, dt: float) -> void:
 		if floorf(phase) != before:  # a footfall: that foot comes down short of a full step
 			var short := 0.5 * _step_len * (1.0 - step_ratio)
 			_feet = [_foot_at(_pivot.x - short, 1.0), _feet[0]]
+			footfall_now = true
 
 
 ## Carries a dash (dash_pressed: the button this step), faces the body where sim.facing points,
