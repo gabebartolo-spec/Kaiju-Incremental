@@ -62,6 +62,18 @@ static func pieces(city: Dictionary, cfg: Dictionary) -> Array[Dictionary]:
 	return out
 
 
+## Appends the railway's pieces to the sim's buildings (the viaduct is built like the city); returns the first index.
+static func add_pieces(buildings: Array[RampageSim.Building], city: Dictionary, cfg: Dictionary) -> int:
+	var first := buildings.size()
+	for entry: Dictionary in pieces(city, cfg):
+		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
+		b.rail = entry["rail"]
+		b.start_chunks = b.frame.alive_count
+		b.in_arena = false  # it breaks and pays, but the city's fall is its lots (CityBand's rule)
+		buildings.append(b)
+	return first
+
+
 static func _building(entry: Dictionary) -> RampageSim.Building:
 	var b := RampageSim.Building.new()
 	b.x = Num.f(entry["x"])

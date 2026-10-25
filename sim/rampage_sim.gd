@@ -150,14 +150,7 @@ func _init(
 		b.start_chunks = b.frame.alive_count
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
-	var rail_cfg: Dictionary = tuning["rail"]
-	var rail_from := buildings.size()
-	for entry: Dictionary in RailLayout.pieces(city, rail_cfg):  # the viaduct is built like the city
-		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
-		b.rail = entry["rail"]
-		b.start_chunks = b.frame.alive_count
-		b.in_arena = false  # it breaks and pays, but the city's fall is its lots (CityBand's rule)
-		buildings.append(b)
+	var rail_from := RailLayout.add_pieces(buildings, city, tuning["rail"])
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)
