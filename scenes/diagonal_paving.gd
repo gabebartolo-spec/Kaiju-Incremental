@@ -51,6 +51,11 @@ static func meshes(ground: CityGround, colors: Dictionary, mat: ShaderMaterial) 
 		var tint: Color = spec[3]
 		for piece: PackedVector2Array in pieces(rect.grow(-Num.f(spec[0])), kerbed):
 			prism(st, piece, Vector2(top + Num.f(spec[1]), 0.3), tint)
+	var patch := Vector2(CityGround.CROSSING_TOP, 0.01)
+	for cross: Dictionary in RoadJunctions.crossings(ground.diagonal_pieces, ground.street_pieces):
+		var poly: PackedVector2Array = cross["poly"]
+		var data: Color = cross["data"]
+		prism(_tool(tools, data), poly, patch, asphalt)
 	var out := []
 	for data: Color in tools:
 		var st: SurfaceTool = tools[data]

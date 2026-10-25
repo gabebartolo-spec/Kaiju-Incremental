@@ -19,10 +19,8 @@ const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
 const DASH_CLEAR := 2.5  # dashes stop this far short of a crossing road's asphalt
 const ZEBRA_HALF := 0.6  # half a zebra stripe's length
 const DASH_SLANT := 0.01  # |sin| below which a road runs on rather than crosses
-## A street slab lies this far over the land under it (x streets, then z streets over them at a
-## junction).
-const ROAD_TOP_X := 0.004
-const ROAD_TOP_Z := 0.007
+const ROAD_TOP := 0.005  # a street's slab and a junction box, over the land and the diagonal
+const CROSSING_TOP := 0.006  # where the diagonal crosses a street, the street's asphalt over both
 
 var plan: Dictionary
 var cfg: Dictionary
@@ -34,6 +32,10 @@ var _paint: Array[Transform3D] = []
 ## paves them).
 var cut_blocks: Array[Dictionary] = []
 var cut_walls: Array[Rect2] = []
+## The streets' carriageways ({rect, data: kind data}), and the diagonal's pieces as drawn:
+## RoadJunctions.crossings lays a plain patch where they cross (DiagonalPaving draws it).
+var street_pieces: Array[Dictionary] = []
+var diagonal_pieces: Array[PackedVector2Array] = []
 
 
 func _init(p_cfg: Dictionary) -> void:
@@ -117,33 +119,24 @@ func _of(kind: int, rect: Rect2, y: Vector2, color: Color) -> void:
 
 
 ## The streets as slabs of their own over the land (so the lanes, tracks and kerbs of
-## ground_slab.gdshader know where each street runs), cut where the river is: an x street at
-## ROAD_TOP_X, a z street over it.
+## ground_slab.gdshader know where each street runs), cut where the river is, meeting at plain
+## junction boxes (RoadJunctions: one surface where two roads meet, roads suite R6).
 func _roads(channels: Array[Rect2], asphalt: Color) -> void:
-	var nodes: Array[Vector2] = plan["nodes"]
-	for street: Dictionary in plan["streets"]:
-		var kind := str(street["kind"])
-		if kind == CityGen.DIAGONAL:
-			continue  # laid over the blocks by _diagonal
-		var a := nodes[Num.i(street["from"])]
-		var b := nodes[Num.i(street["to"])]
-		if minf(a.y, b.y) < coast:
-			continue
-		var width := Num.f(street["width"])
-		var along_x := is_equal_approx(a.y, b.y)
-		var centre := a.y if along_x else a.x
-		var lo := minf(a.x, b.x) if along_x else minf(a.y, b.y)
-		var hi := maxf(a.x, b.x) if along_x else maxf(a.y, b.y)
-		var span := hi - lo + width  # reaches half a width past each node, into the junction
-		var rect := (
-			Rect2(lo - width * 0.5, centre - width * 0.5, span, width)
-			if along_x
-			else Rect2(centre - width * 0.5, lo - width * 0.5, width, span)
-		)
-		var axis := GroundKit.ALONG_X if along_x else GroundKit.ALONG_Z
-		var data := GroundKit.road_kind(GroundKit.K_ROAD, axis, centre, width * 0.5)
+	var junctions := RoadJunctions.boxes(plan, coast)
+	var y := Vector2(ROAD_TOP, 0.3)
+	for street: Dictionary in RoadJunctions.streets(plan, coast, junctions):
+		var axis := GroundKit.ALONG_X if Num.i(street["axis"]) == 0 else GroundKit.ALONG_Z
+		var half := Num.f(street["half"])
+		var data := GroundKit.road_kind(GroundKit.K_ROAD, axis, Num.f(street["centre"]), half)
+		var rect: Rect2 = street["rect"]
 		for piece: Rect2 in GroundKit.cut([rect], channels):
-			_slab(piece, Vector2(ROAD_TOP_X if along_x else ROAD_TOP_Z, 0.3), asphalt, data)
+			_slab(piece, y, asphalt, data)
+			street_pieces.append({"rect": piece, "data": data})
+	for n: int in junctions:
+		var half: Vector2 = junctions[n]
+		var box := RoadJunctions.box_rect(plan, n, half)
+		for piece: Rect2 in GroundKit.cut([box], channels):
+			_of(GroundKit.K_JUNCTION, piece, y, asphalt)
 
 
 ## A flat box covering rect (x, z); y: (top, thickness).
@@ -185,6 +178,11 @@ func _diagonal(asphalt: Color) -> void:
 		var span := Vector2(length, width)
 		var data := GroundKit.road_kind(GroundKit.K_ROAD, GroundKit.TURNED, 0.0, width * 0.5)
 		_put(Rect2(mid - span * 0.5, span), Vector2(DIAG_TOP, 0.3), angle, [asphalt, data])
+		var dir := (b - a).normalized() * length * 0.5
+		var side := Vector2(-dir.y, dir.x).normalized() * width * 0.5
+		diagonal_pieces.append(
+			PackedVector2Array([mid - dir - side, mid + dir - side, mid + dir + side, mid - dir + side])
+		)
 
 
 ## Quiet road paint, readable from the kaiju's height: a dashed centre line on the avenues and
@@ -438,7 +436,7 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 		)
 	var over := CityRiver.diagonal_deck(plan, cfg)
 	if not over.is_empty():
-		_diagonal_deck(over, asphalt, stone)
+		_diagonal_deck(over, channels[0], [asphalt, stone])
 	for deck: Rect2 in bridges:
 		_abutments(deck, channels, depth, stone)
 		_slab(
@@ -474,8 +472,11 @@ func _abutments(deck: Rect2, channels: Array[Rect2], depth: float, stone: Color)
 
 
 ## The diagonal's bridge (CityRiver.diagonal_deck): its deck at the avenue's level with a parapet
-## along each side.
-func _diagonal_deck(over: Dictionary, asphalt: Color, stone: Color) -> void:
+## along each side, each running only over the channel (`water`, quays included), so neither
+## crosses a street along the bank. colors: [asphalt, stone].
+func _diagonal_deck(over: Dictionary, water: Rect2, colors: Array[Color]) -> void:
+	var asphalt := colors[0]
+	var stone := colors[1]
 	var a: Vector2 = over["from"]
 	var b: Vector2 = over["to"]
 	var width := Num.f(over["width"])
@@ -486,10 +487,14 @@ func _diagonal_deck(over: Dictionary, asphalt: Color, stone: Color) -> void:
 	var deck := Vector2(length, width)
 	var top := GroundKit.road_kind(GroundKit.K_DECK, GroundKit.TURNED, 0.0, width * 0.5)
 	_put(Rect2(mid - deck * 0.5, deck), Vector2(DIAG_TOP, 0.5), angle, [asphalt, top])
-	var rail := Vector2(length, PARAPET.y)
 	var face := GroundKit.kind(GroundKit.K_CONCRETE, GroundKit.NO_WATER)
 	for side: float in [-1.0, 1.0]:
-		var at := mid + Vector2(-dir.y, dir.x) * side * (width - PARAPET.y) * 0.5
+		var line := mid + Vector2(-dir.y, dir.x) * side * (width - PARAPET.y) * 0.5
+		# Where this parapet's line crosses the channel's two banks (z), as distances along dir.
+		var t0 := (water.position.y - line.y) / dir.y
+		var t1 := (water.end.y - line.y) / dir.y
+		var at := line + dir * (t0 + t1) * 0.5
+		var rail := Vector2(absf(t1 - t0), PARAPET.y)
 		_put(Rect2(at - rail * 0.5, rail), Vector2(PARAPET.x, 1.0), angle, [stone, face])
 
 

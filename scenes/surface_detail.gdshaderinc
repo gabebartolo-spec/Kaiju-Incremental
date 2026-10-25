@@ -176,7 +176,7 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 	col *= 1.0 - tar * 0.7 * clamp(line + joint * 0.8, 0.0, 1.0);
 	// The kerb's gutter: darker, with grit swept into it.
 	float kd = half_w - abs(lat);
-	float gut = 1.0 - smoothstep(0.12, 0.75, kd);
+	float gut = (1.0 - smoothstep(0.12, 0.75, kd)) * step(road, 1.5);  // road 2: no kerb, no gutter
 	col *= 1.0 - gutter * gut * (0.7 + 0.5 * sd_vn(pc / 0.8));
 	col *= 1.0 + 0.5 * gutter * gut * step(sd_h(pc * 8.0 + 3.0), 0.12);
 	return col;
