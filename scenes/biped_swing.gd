@@ -375,7 +375,9 @@ func _contact_yaw(names: Array[String], body: Basis) -> float:
 	# Turning by a about up takes the reach's sideways part from r sin(phi) to r sin(phi - a); a
 	# short arm turns at most aim_max_deg and chops in front of its own shoulder short of the line.
 	var aim := atan2(reach.x, -reach.z) + asin(clampf(shoulder.x * _rake_side / r, -1.0, 1.0))
-	var most := deg_to_rad(Num.f(_claw["aim_max_deg"]))
+	var most := deg_to_rad(
+		rig.aim_max_deg if rig.aim_max_deg >= 0.0 else Num.f(_claw["aim_max_deg"])
+	)
 	return clampf(aim, -most, most)
 
 

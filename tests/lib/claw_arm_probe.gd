@@ -12,6 +12,9 @@ const AWAY := 0.01
 const CROSS_WINDOW := 10
 ## A frame is part of the chop while the claw tip moves at this share of its peak speed or more.
 const CHOP_SHARE := 0.25
+## _clearance: points sampled along the hand, and how far (voxels) to look for the body.
+const CLAW_POINTS := 5
+const CLEAR_SEARCH := 4
 
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 
@@ -34,6 +37,7 @@ class Result:
 	var short := INF  # nearest the claw comes to the snout line in the strike (hip heights)
 	var away := 0.0  # s the arm is off its held pose
 	var home := -1  # the frame it is back
+	var clear := INF  # the claw's least gap to the body over the whole rake, in voxels
 	var rows: Array[String] = []
 
 	func fastest() -> float:
@@ -104,6 +108,7 @@ func measure(root: Node, stage: String, body_scale: float) -> Result:
 		if gap > AWAY:
 			away_from = f if away_from < 0 else away_from
 			out.home = f + 1
+		out.clear = minf(out.clear, _clearance(rig, names[2]))
 		out.rows.append(
 			(
 				"  f%02d up(%+.2f %+.2f %+.2f) elbow %5.1f wrist %5.1f deg/s %4.0f %4.0f %4.0f"
@@ -153,6 +158,10 @@ func run(suite: SceneTree, check: Callable) -> void:
 			absi(m.fastest_at - m.hit) <= Num.i(bars["contact_frames"]),
 			"%s: the chop is fastest at f%d, the hit lands at f%d" % [tag, m.fastest_at, m.hit]
 		)
+		check.call(
+			m.clear >= Num.f(bars["clear_min"]),
+			"%s: the claws stay %.1f voxels off the body" % [tag, m.clear]
+		)
 		var chop: Array = bars["chop_frames"]
 		check.call(
 			m.chop_frames >= Num.i(chop[0]) and m.chop_frames <= Num.i(chop[1]),
@@ -169,6 +178,32 @@ func run(suite: SceneTree, check: Callable) -> void:
 			m.home >= 0 and m.home * DT < Num.f(bars["home_s"]),
 			"%s: the arm is home at %.2f s" % [tag, m.home * DT]
 		)
+
+
+## The hand's least gap (voxels) to any voxel of a bone that is not an arm, from CLAW_POINTS points
+## along it (claws at the tip), looked for within CLEAR_SEARCH voxels: the rig's per-bone voxels sit
+## where the skin does to within a voxel.
+static func _clearance(rig: KaijuRig, hand: String) -> float:
+	var voxel := rig.voxel_size()
+	var best := float(CLEAR_SEARCH)
+	var from := rig.bone(hand).global_position
+	var to := rig.tail_world(hand)
+	for bone_name: String in rig.bone_names():
+		var part := rig.voxels_of(bone_name)
+		if bone_name.begins_with("arm_") or part == null:
+			continue
+		var into := rig.bone(bone_name).global_transform.affine_inverse()
+		for k: int in CLAW_POINTS:
+			var local := into * from.lerp(to, float(k) / (CLAW_POINTS - 1))
+			var at := (local + rig.head_of(bone_name)) / voxel - Vector3(0, 0.5, 0)
+			var cell := Vector3i(at.round())
+			for x: int in range(-CLEAR_SEARCH, CLEAR_SEARCH + 1):
+				for y: int in range(-CLEAR_SEARCH, CLEAR_SEARCH + 1):
+					for z: int in range(-CLEAR_SEARCH, CLEAR_SEARCH + 1):
+						var c := cell + Vector3i(x, y, z)
+						if part.cells.has(c):
+							best = minf(best, maxf(0.0, at.distance_to(Vector3(c)) - 0.5))
+	return best
 
 
 func _model(root: Node, stage: String, body_scale: float) -> KaijuModel:

@@ -52,6 +52,10 @@ var arm_length := 1.0
 ## fore, hand directions in the heading frame, x outward), or empty. The young croc's short arms
 ## stand out and down clear of the chest (lead review 2026-10-25). BipedSwing keeps it.
 var arm_pose: Array[Vector3] = []
+## How far (deg) a claw rake may turn toward the snout line on this rig (rig.json "aim_max_deg"), or
+## -1 for claw_fx's: the young croc's short arm would drag its claws across its belly reaching
+## for it.
+var aim_max_deg := -1.0
 var gait: KaijuGait
 var chains: Array[SpringChain] = []
 ## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).
@@ -154,11 +158,12 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 
 
 ## The rig's body plan and arm shape from its spec (rig.json "type", "lock_wrist", "arm_length",
-## "arm_pose").
+## "arm_pose", "aim_max_deg").
 func _read_plan(spec: Dictionary) -> void:
 	body_plan = str(spec.get("type", "biped"))
 	lock_wrist = spec.get("lock_wrist", false) == true
 	arm_length = Num.f(spec.get("arm_length", 1.0))
+	aim_max_deg = Num.f(spec.get("aim_max_deg", -1.0))
 	for v: Array in spec.get("arm_pose", []):
 		arm_pose.append(Vector3(Num.f(v[0]), Num.f(v[1]), Num.f(v[2])).normalized())
 

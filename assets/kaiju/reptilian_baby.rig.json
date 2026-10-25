@@ -427,5 +427,43 @@
    -0.85,
    -0.53
   ]
- ]
+ ],
+ "skin_blend": {
+  "pairs": [
+   [
+    "spine2",
+    "arm_l0"
+   ],
+   [
+    "spine2",
+    "arm_r0"
+   ],
+   [
+    "arm_l0",
+    "arm_l1"
+   ],
+   [
+    "arm_r0",
+    "arm_r1"
+   ],
+   [
+    "arm_l1",
+    "arm_l2"
+   ],
+   [
+    "arm_r1",
+    "arm_r2"
+   ]
+  ],
+  "passes": 8,
+  "own_only": [
+   "arm_l0",
+   "arm_l1",
+   "arm_l2",
+   "arm_r0",
+   "arm_r1",
+   "arm_r2"
+  ]
+ },
+ "aim_max_deg": 20.0
 }

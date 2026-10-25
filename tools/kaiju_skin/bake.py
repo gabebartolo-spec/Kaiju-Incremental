@@ -185,6 +185,43 @@ def blender_weights(kdir, name, cells, owner, names):
     return w / w.sum(1, keepdims=True)
 
 
+def own_only(w, kvox_owner, names, blend):
+    """Blender weights with the listed bones (rig.json "skin_blend": {"own_only": [...]}) taken
+    off every voxel the .kvox does not give them: a shortened arm's forearm and hand once lay
+    against the belly in the Blender skin, and lifting it tore the belly open."""
+    if not blend or not blend.get("own_only"):
+        return w
+    w = w.copy()
+    for bone in blend["own_only"]:
+        j = names.index(bone)
+        w[kvox_owner != j, j] = 0.0
+    empty = w.sum(1) <= 0
+    w[empty, kvox_owner[empty]] = 1.0
+    return w / w.sum(1, keepdims=True)
+
+
+def blend_pairs(w, owner, nbr, names, blend):
+    """Blender weights smoothed over the voxel lattice across the listed joints only (rig.json
+    "skin_blend": {"pairs": [[bone, bone], ...], "passes": n}), so the skin there bends instead of
+    parting: the young croc's chest tore open under a lifted arm (lead review 2026-10-25)."""
+    if not blend:
+        return w
+    pair = np.zeros((len(names), len(names)), dtype=bool)
+    for a, b in blend["pairs"]:
+        i, j = names.index(a), names.index(b)
+        pair[i, j] = pair[j, i] = pair[i, i] = pair[j, j] = True
+    for _ in range(int(blend["passes"])):
+        acc = w.copy()
+        cnt = np.ones((len(w), 1))
+        for k in range(6):
+            has = nbr[:, k] >= 0
+            has[has] = pair[owner[has], owner[nbr[has, k]]]
+            acc[has] += w[nbr[has, k]]
+            cnt[has] += 1
+        w = acc / cnt
+    return w
+
+
 def top3(w):
     top = np.argsort(-w, axis=1)[:, :3]
     tw = np.take_along_axis(w, top, 1)
@@ -243,6 +280,9 @@ def bake(name, rest, kdir, rig):
     if from_blender is not None:
         w = from_blender[src[keep]]
         owner = np.argmax(w, axis=1)
+        w = own_only(w, kvox_owner, names, rig.get("skin_blend"))
+        owner = np.argmax(w, axis=1)
+        w = blend_pairs(w, owner, nbr, names, rig.get("skin_blend"))
     for _ in range(LATTICE_PASSES if from_blender is None else 0):
         acc = w.copy()
         cnt = np.ones((count, 1))
