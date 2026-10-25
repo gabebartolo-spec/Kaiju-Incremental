@@ -1,5 +1,5 @@
 # intro-cinematic-2 handoff, 2026-10-25
-## State: shot, fixes and lints done; final suites, then 4K clip + stills, pr-body
+## State: done bar met on e6eb2f80 (suites green, 4K clip + stills, pr-body.md); main merged, RampageRise split, final suite run
 ## Task (lead brief 2026-10-25, TOP PRIORITY)
 Run intro (#11): "a quick, dramatic camera shot, zoomed in on the water which begins to ripple and fount before our
 kaiju emerges, roaring with rage before the camera zooms out into the play angle ... no longer than 3 seconds".
@@ -50,7 +50,14 @@ Native dll copied from ../komodo-clips (same native/src tree b5eacd45).
   ffmpeg: imageio_ffmpeg binary (C:/Users/DANTE/AppData/Roaming/Python/Python314/site-packages/imageio_ffmpeg/
   binaries/ffmpeg-win-x86_64-v7.1.exe). Scratch C:/Users/DANTE/AppData/Local/Temp/ic2 (render.sh, sheet.py).
 
-## Next
-Commit; city + flow + load green; re-render 4K clip + stills (stage 1, the first run); pr-body.md; push.
+## Final
+- e6eb2f80: city 9/9 fns 229 checks, flow 7/7 261, load 8/8 35, all 0 failures. Distance 12, aim at the
+  drawn skull+jaw (HeadFrame.head_box); a stand-back fit to the head box was tried and dropped (middle
+  distance again, eye behind the quay walls).
+- Merged origin/main 83f9c725 (09376648); Rampage hit 406 lines -> RampageRise split + _on_stomp (379).
+- Deliverables: C:/Users/DANTE/AppData/Local/Temp/ic2/final (run_intro_stage1_4k.mp4 3840x2160 60 fps
+  3.82 s; 1_water_ripple_0.50s, 2_burst_roar_1.25s, 3_hero_frame_1.60s, 4_handover_2.80s; stages sheet).
+- pr-body.md in the worktree root (untracked). No PR opened (brief).
+
 ## Open decisions
 - none (shot angle is a camera choice inside the approved beats; flagged to the lead in the report).
