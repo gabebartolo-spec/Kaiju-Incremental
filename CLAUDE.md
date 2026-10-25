@@ -1,7 +1,7 @@
 # Kaiju Incremental: working rules for every Claude Code session
 
 Godot 4.7.2, GDScript (static typing on). Read this file, then `docs/DESIGN.md` in full (the one design document),
-then your handoff (`agent-handoffs/<role>.md`), then only your assigned `docs/ROADMAP.md` section (never whole).
+then your handoff (`~/.claude/handoffs/kaiju/<role>.md`, outside git), then only your assigned `docs/ROADMAP.md` section (never whole).
 Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what is true for Kaiju Incremental.
 
 ## Philosophy
