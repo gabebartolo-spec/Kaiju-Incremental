@@ -235,9 +235,13 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 		face >= CANVAS.y * 0.0925 and face <= CANVAS.y * 0.1,
 		"the Continue plate's face is 9-10%% of the height, 200 px or more at 4K (%d)" % face
 	)
+	# Director 2026-10-25: "shift the settings button further into the corner".
 	check.call(
-		absf(gr.position.x - cr.position.x) <= 1.5,
-		"the gear's left edge is on the column's (%d vs %d)" % [gr.position.x, cr.position.x]
+		(
+			absf(gr.position.x - TitleScreen.GEAR_CORNER) <= 1.5
+			and absf(gr.position.y - TitleScreen.GEAR_CORNER) <= 1.5
+		),
+		"the gear sits in the top-left corner, %d px in (%s)" % [TitleScreen.GEAR_CORNER, gr]
 	)
 	var exit := _button(title, "RUN FOR YOUR LIFE")
 	var margin := CANVAS.x - (exit.get_global_rect().end.x - HazardBox.PLATE_SHADOW.x)
@@ -255,13 +259,12 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 		(
 			logo.get_global_rect().position.x >= SAFE_SIDE
 			and cr.position.x >= SAFE_SIDE
-			and gr.position.x >= SAFE_SIDE
 			and margin >= SAFE_SIDE
 			and tag == "BREAKING"
 			and tag_x >= SAFE_SIDE
 		),
 		(
-			"logo, plates, gear, exit and the ticker's tag stand inside the TV title-safe margin"
+			"logo, plates, exit and the ticker's tag stand inside the TV title-safe margin"
 			+ (
 				" (%d px, 192 at 4K): %d %d %d %d %d"
 				% [
@@ -328,13 +331,21 @@ func _without_save() -> void:
 	var exit := _button(title, "RUN FOR YOUR LIFE")
 	check.call(
 		_button(title, "CONTINUE") == null and fresh != null and fresh.text == "NEW KAIJU",
-		"with no save one wide New Kaiju replaces Continue: %s" % [_texts(title)]
+		"with no save one New Kaiju replaces Continue: %s" % [_texts(title)]
 	)
 	if fresh != null and gear != null and exit != null:
+		# Director 2026-10-25: "make the 'new kaiju' button significantly smaller".
 		check.call(
-			fresh.size.x > 500.0,
-			"that New Kaiju takes Continue's place and size (%d)" % fresh.size.x
+			fresh.size.x < 400.0 and fresh.size.y <= TitleScreen.ALONE_HEIGHT + 1.0,
+			"the lone New Kaiju is a small plate, not the row's width (%s)" % [fresh.size]
 		)
+		var no_tape := true
+		for found: Node in title.find_children("*", "", true, false):
+			if found is Control and (found as Control).get_global_rect().position.y < 1.0:
+				var c := found as Control
+				if c.get_global_rect().size.y < 30.0 and c.get_global_rect().size.x >= CANVAS.x - 1.0:
+					no_tape = false
+		check.call(no_tape, "no hazard tape runs along the top edge (director 2026-10-25)")
 		_focus_order(title, [fresh, gear, exit], "with no save")
 	title.queue_free()
 	await t.process_frame
