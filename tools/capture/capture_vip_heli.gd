@@ -44,6 +44,8 @@ var _last_aim := {}
 var _step := 0
 var _phase := "walk"
 var _pad_at := Vector2.ZERO
+var _strip_seen: NewsTicker
+var _prev: Image
 
 
 func _initialize() -> void:
@@ -191,6 +193,8 @@ func _measure() -> void:
 		_wreck(cam, _step - _down_frame)
 	if shot != null:
 		_edge_streak(shot)
+	_strip_size()
+	_breath_between(cam)
 
 
 ## The leader's width in px (1080p, and x2 for 4K) and its body voxels' brightness against the
@@ -282,3 +286,60 @@ func _edge_streak(shot: Image) -> void:
 				hot += 1
 	if hot > 10:
 		print("M EDGE-STREAK frame %d: %d yellow px in the left 60 px" % [_step, hot])
+
+
+## The headline strip's text size, once per strip: the font's size and the line it draws.
+func _strip_size() -> void:
+	var strip := _view._strip
+	if strip == null or strip == _strip_seen:
+		return
+	_strip_seen = strip
+	var label: Label = strip._crawl
+	var size := label.get_theme_font_size("font_size")
+	var font := label.get_theme_font("font")
+	print(
+		(
+			"M STRIP font %d px, line %.0f px, label %.0f x %.0f px at %s (1080p viewport)"
+			% [
+				size,
+				font.get_height(size),
+				label.size.x,
+				label.size.y,
+				root.get_visible_rect().size
+			]
+		)
+	)
+
+
+## Is the breath on screen between his mouth and the leader? On the kill frame and the 8 after it:
+## the mouth's and the leader's screen points, and how much of the line between them changed
+## against the frame before (the breath's own pixels; the aim wedge and stomps are off).
+func _breath_between(cam: Camera3D) -> void:
+	var shot := root.get_texture().get_image()
+	var sim := _rampage.sim
+	var frames := _step - _down_frame if _down_frame >= 0 else -1
+	if _prev != null and frames >= 0 and frames <= 8:
+		var bs := sim.body_scale()
+		var snout: Array = sim.city["breath_snout_ahead"]
+		var ahead := Num.f(snout[mini(sim.size_tier(), snout.size() - 1)]) * bs
+		var m := sim.kaiju_pos + sim.facing * ahead
+		var mouth := cam.unproject_position(Vector3(m.x, 4.0 * bs, m.y))
+		var h := sim.vip.pos
+		var heli := cam.unproject_position(Vector3(h.x, sim.vip.altitude(), h.y))
+		var scale := Vector2(shot.get_size()) / Vector2(root.get_visible_rect().size)
+		var changed := 0
+		for i: int in 40:
+			var q := Vector2i(mouth.lerp(heli, (i + 0.5) / 40.0) * scale)
+			if Rect2i(Vector2i.ZERO, shot.get_size()).has_point(q):
+				var d := absf(
+					shot.get_pixelv(q).get_luminance() - _prev.get_pixelv(q).get_luminance()
+				)
+				changed += 1 if d > 0.12 else 0
+		var verdict := "YES" if changed >= 12 else "NO"
+		print(
+			(
+				"M BREATH kill+%d: mouth px %s, leader px %s, %d of 40 points on the line changed -> %s"
+				% [frames, mouth.round(), heli.round(), changed, verdict]
+			)
+		)
+	_prev = shot

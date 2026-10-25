@@ -93,7 +93,6 @@ func _spawn() -> void:
 	_model = HelicopterModel.new()
 	add_child(_model)
 	var look: Dictionary = _cfg["look"]
-	_model.scale = Vector3.ONE * Num.f(look["scale"])  # a fancier, bigger machine than a gunship
 	_model.vip_look(Color(str(look["white"])), Color(str(look["gold"])))
 	_model.position = Vector3(_sim.vip.pos.x, _sim.vip.altitude(), _sim.vip.pos.y)
 	_rotor = AudioStreamPlayer3D.new()
