@@ -48,11 +48,11 @@
 		"fps_default": 120,
 		"menu_fps": 60,
 		"graphics": {
-			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1},
-			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2},
-			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2},
-			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3},
-			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4}
+			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1},
+			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "low", "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2},
+			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "medium", "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3},
+			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "high", "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4}
 		},
 		"graphics_renamed": {"balanced": "medium"},
 		"graphics_default": {"min_height": 2160, "large": "medium", "large_fps": 60, "small": "high"}
@@ -1400,5 +1400,32 @@
 			"fade_begin": 100.0,
 			"fade_length": 30.0
 		}
+	},
+	"rain": {
+		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks fall as camera-facing quads in a world-space volume that follows the camera; counts are x the graphics preset's particles ratio. Lengths and widths in metres, speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold).",
+		"streaks": 16000,
+		"volume": [150.0, 70.0, 150.0],
+		"ahead": 28.0,
+		"fall_speed": 30.0,
+		"speed_jitter": 0.08,
+		"wind_gain": 2.2,
+		"length": 1.5,
+		"width": 0.03,
+		"min_px": 1.1,
+		"alpha": 0.42,
+		"fade_in": 0.07,
+		"fade_out": 0.1,
+		"far_begin": 70.0,
+		"far_end": 125.0,
+		"tint_white": 0.55,
+		"max_channel": 0.82,
+		"clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
+		"splashes": 2600,
+		"splash_volume": [90.0, 90.0],
+		"splash_seconds": 0.35,
+		"splash_size": 0.5,
+		"splash_alpha": 0.5,
+		"splash_y": 0.11,
+		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7}
 	}
 }

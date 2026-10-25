@@ -4,6 +4,8 @@ extends "res://tests/lib/runner.gd"
 ## is saved in settings.cfg (an older file reads as Random); the pick is kept in the save as
 ## last_weather (an older save without it still plays) and is the run's one current weather,
 ## Content.weather_id(); the options row steps it by a real click.
+## The weather view (WeatherView): rain and the thunderstorm build streaks, splashes, wet streets
+## and a duller sky; every other weather builds nothing and leaves the stage as it was.
 ## Seeded by design: Weather draws from Seeds.make("weather", run); no clock.
 ##   godot --headless --path . --script tests/run_weather_tests.gd
 
@@ -26,6 +28,8 @@ func run_checks() -> void:
 	await _t("_check_old_save")
 	await _t("_check_options_row")
 	await _t("_check_through_main")
+	await _t("_check_rain_view")
+	await _t("_check_rain_scales_with_preset")
 
 
 func _sequence(setting: String) -> Array[String]:
@@ -230,3 +234,100 @@ func _check_through_main() -> void:
 	check(
 		seen[2] == "rain" and seen[3] == "rain", "a fixed rain plays rain every time: %s" % [seen]
 	)
+
+
+## A stage with what a CityView has for the view to reach: wet ground slabs, a sun and a
+## WorldEnvironment (with a sky) in the graphics group.
+func _stage() -> Node3D:
+	var stage := Node3D.new()
+	root.add_child(stage)
+	var slabs := MultiMeshInstance3D.new()
+	slabs.multimesh = MultiMesh.new()
+	var box := BoxMesh.new()
+	var mat := ShaderMaterial.new()
+	mat.shader = GroundKit.SLAB_SHADER
+	box.material = mat
+	slabs.multimesh.mesh = box
+	slabs.add_to_group(CityGround.WET_GROUP)
+	stage.add_child(slabs)
+	var sun := DirectionalLight3D.new()
+	sun.light_energy = 1.0
+	sun.add_to_group(GraphicsPresets.GROUP)
+	stage.add_child(sun)
+	var env := Environment.new()
+	env.sky = Sky.new()
+	env.sky.sky_material = ProceduralSkyMaterial.new()
+	env.ambient_light_energy = 1.0
+	var world := WorldEnvironment.new()
+	world.environment = env
+	world.add_to_group(GraphicsPresets.GROUP)
+	stage.add_child(world)
+	return stage
+
+
+func _wet_of(stage: Node3D) -> float:
+	var slabs := stage.get_tree().get_nodes_in_group(CityGround.WET_GROUP)[0] as MultiMeshInstance3D
+	var mat := slabs.multimesh.mesh.surface_get_material(0) as ShaderMaterial
+	return Num.f(mat.get_shader_parameter("wet"))
+
+
+func _check_rain_view() -> void:
+	var kept := Content.weather_id()
+	var seen: Dictionary[String, bool] = {}
+	for id: Variant in Content.weathers():
+		Content.set_weather(str(id))
+		var stage := _stage()
+		var view := WeatherView.attach(stage)
+		var sun := stage.get_child(1) as DirectionalLight3D
+		await process_frame
+		seen[str(id)] = view != null
+		if str(id) == "rain" or str(id) == "thunderstorm":
+			check(
+				view != null and view.streaks != null and view.splashes != null,
+				"%s builds the rain streaks and splashes" % id
+			)
+			check(_wet_of(stage) > 0.5, "%s wets the streets (wet %.2f)" % [id, _wet_of(stage)])
+			check(sun.light_energy < 0.9, "%s dulls the sun (%.2f)" % [id, sun.light_energy])
+			var tint := view.streak_color()
+			check(
+				maxf(tint.r, maxf(tint.g, tint.b)) < 0.9,
+				"%s streaks stay under the bloom threshold" % id
+			)
+		else:
+			check(view == null, "%s builds no weather view yet" % id)
+			check(
+				(
+					stage.get_child_count() == 3
+					and _wet_of(stage) == 0.0
+					and is_equal_approx(sun.light_energy, 1.0)
+				),
+				"%s leaves the streets dry, the sun and the stage untouched" % id
+			)
+		stage.queue_free()
+		await process_frame
+	check(
+		seen["clear"] == false and seen["rain"] == true,
+		"rain builds a view, clear does not: %s" % [seen]
+	)
+	Content.set_weather(kept)
+
+
+## Counts are x the graphics preset's particles ratio: potato draws fewer streaks than high.
+func _check_rain_scales_with_preset() -> void:
+	var kept := Content.weather_id()
+	Content.set_weather("rain")
+	var table: Dictionary = Content.section("display")["graphics"]
+	var counts := {}
+	for preset: String in ["potato", "high"]:
+		var row: Dictionary = table[preset]
+		GraphicsPresets.start_run(row)
+		var stage := _stage()
+		var view := WeatherView.attach(stage)
+		counts[preset] = view.streaks.amount
+		stage.queue_free()
+	check(
+		Num.i(counts["potato"]) > 0 and Num.i(counts["potato"]) < Num.i(counts["high"]),
+		"potato draws fewer rain streaks than high: %s" % [counts]
+	)
+	GraphicsPresets.start_run(PlayerSettings.graphics_row())
+	Content.set_weather(kept)
