@@ -419,7 +419,7 @@
 		"headlines": {
 			"liftoff": "COWARD {rank} FLEES CITY BY CHOPPER",
 			"killed": "{rank} SWATTED FROM THE SKY",
-			"escaped": "{rank} WAVES FROM THE SKY: 'GOOD LUCK, EVERYONE!'"
+			"escaped": "COWARD {rank} ESCAPES THE CITY"
 		},
 		"rotor_unit": 30.0,
 		"beacon": {"size": 0.6, "energy": 14.0, "light": 4.0, "range": 18.0, "height": 3.3, "period": 0.9, "on": 0.55},

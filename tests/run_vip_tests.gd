@@ -380,6 +380,7 @@ func _check_headlines() -> void:
 		(
 			str(lines["liftoff"]) == "COWARD {rank} FLEES CITY BY CHOPPER"
 			and str(lines["killed"]) == "{rank} SWATTED FROM THE SKY"
+			and str(lines["escaped"]) == "COWARD {rank} ESCAPES THE CITY"
 		),
 		"the headlines are the director's: %s / %s" % [lines["liftoff"], lines["killed"]]
 	)
