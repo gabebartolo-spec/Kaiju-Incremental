@@ -68,8 +68,11 @@ func on_input(event: InputEvent) -> void:
 ## The intro's camera for this frame while the kaiju emerges: {"eye", "aim", "fov"}. `view`:
 ## "body", the drawn body's position; "eye", "aim", "fov", the gameplay camera this frame
 ## (Rampage's CameraFollow, already stepped, with its head-room tilt), which the shot ends on
-## exactly, so the hand-over has no pop; "ahead", how far the head's crown stands ahead of the
-## hips (world units, KaijuModel.head_ahead). `frac`: the share of a tick drawn past the last one.
+## exactly, so the hand-over has no pop; "head", where the head's crown stands: x ahead of the
+## hips, y over the feet (world units, KaijuModel.head_at); "head_box" (optional), the drawn
+## head's box now (HeadFrame.head_box): the shot aims at its middle, so the roar sits whole in
+## the frame at any stage. `frac`: the share of a tick drawn
+## past the last one.
 ## The shot (beat sheet A, research 20): low and close on the water in front of him, a quarter
 ## off his line ("yaw_deg"), pushing in while the water ripples and founts; the head bursts out
 ## roaring into a low-angle hero frame; from "pull_from_seconds" one eased pull-out swings round
@@ -89,7 +92,8 @@ static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
 	var x := clampf((t - pull_from) / maxf(0.001, total - pull_from), 0.0, 1.0)
 	var w := x * x * x * (x * (x * 6.0 - 15.0) + 10.0)  # smootherstep: still at both ends
 	# The pivot: the head (ahead of the hips) for the water shot, the body at the gameplay camera.
-	var ahead := sim.facing * Num.f(view["ahead"])
+	var crown: Vector2 = view["head"]
+	var ahead := sim.facing * crown.x
 	var head_at := Vector2(body.x + ahead.x, body.z + ahead.y)
 	var pivot := head_at.lerp(Vector2(body.x, body.z), w)
 	# A slow push in over the wait, ending at the break on the shot's distance.
@@ -104,10 +108,21 @@ static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
 	# The height leads the pull-out (done by two thirds of it): the eye is up before it swings.
 	var xh := minf(1.0, x * 1.5)
 	var up := xh * xh * xh * (xh * (xh * 6.0 - 15.0) + 10.0)
-	eye.y = lerpf(_low_eye(sim, cfg, Num.f(view["ahead"]), front), rest_eye.y, up)
-	var head_aim := Vector3(head_at.x, _aim_y(sim, cfg, water), head_at.y)
+	eye.y = lerpf(_low_eye(sim, cfg, crown.x, front), rest_eye.y, up)
+	var head_aim := _head_aim(sim, view, head_at, water)
 	var fov := lerpf(Num.f(cfg["fov"]), Num.f(view["fov"]), w)
 	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}
+
+
+## Where the water shot looks: the drawn head's middle (view "head_box"), or without one the
+## crown over `head_at`; its height eases off the water as the head climbs (_aim_y).
+static func _head_aim(sim: RampageSim, view: Dictionary, head_at: Vector2, water: float) -> Vector3:
+	var cfg: Dictionary = Content.section("intro")
+	var box: AABB = view.get("head_box", AABB())
+	var crown: Vector2 = view["head"]
+	var mid := box.get_center() if box.size != Vector3.ZERO else Vector3(head_at.x, 0.0, head_at.y)
+	var lift := mid.y - sim.stand_y if box.size != Vector3.ZERO else crown.y
+	return Vector3(mid.x, _aim_y(sim, cfg, water, lift), mid.z)
 
 
 ## The water shot's eye height: "height" over the water, or "clearance" over the shore or street
@@ -124,11 +139,12 @@ static func _low_eye(sim: RampageSim, cfg: Dictionary, ahead: float, front: floa
 	return maxf(water + Num.f(cfg["height"]) * s, under + Num.f(cfg["clearance"]) * s)
 
 
-## The water shot's aim height: the water over the head, then the head as it rises (a soft max,
-## so the aim eases off the water as the head climbs; a hard one starts at a jerk).
-static func _aim_y(sim: RampageSim, cfg: Dictionary, water: float) -> float:
+## The water shot's aim height: the water over the head, then the head's crown (`crown` over
+## the feet) as it rises (a soft max, so the aim eases off the water as the head climbs; a hard
+## one starts at a jerk).
+static func _aim_y(sim: RampageSim, cfg: Dictionary, water: float, crown: float) -> float:
 	var s := sim.body_scale()
-	var head := sim.stand_y + sim.reach_height() * Num.f(cfg["aim_head"])
+	var head := sim.stand_y + crown
 	var low := water + Num.f(cfg["aim_height"]) * s
 	var rise := head - low
 	return low + 0.5 * (rise + sqrt(rise * rise + pow(Num.f(cfg["aim_soft"]) * s, 2.0)))

@@ -16,7 +16,9 @@ const FPS := 60.0
 ## The camera at the handover lies this close to the gameplay camera (share of its offset).
 const POP_SHARE := 0.02
 ## From the break to JERK_AFTER frames past the handover, the camera's frame-to-frame step changes
-## by at most JERK_SHARE of its offset per frame (no stutter at the hand-over, no pop at the break).
+## by at most JERK_SHARE of its offset per frame of camera time (no stutter at the hand-over, no
+## pop at the break): the short cut runs n sim ticks a frame, so a smooth move there changes n^2
+## times as fast and its change is divided by n^2.
 const JERK_SHARE := 0.01
 const JERK_AFTER := 30
 
@@ -136,7 +138,8 @@ static func _play(tree: SceneTree, full: bool, skip_at: int) -> Dictionary:
 			live += 1
 		if Num.i(out["broke"]) >= 0 and live <= JERK_AFTER and skip_at < 0:
 			path.append(rampage._camera.global_position)
-			_jerk(out, path, rampage._follow.offset.length(), frame)
+			var n := Num.f(rampage._intro.get("_rate")) if sim.emerge.active else 1.0
+			_jerk(out, path, rampage._follow.offset.length() * n * n, frame)
 	out["state"] = (
 		"at %s, facing %s, clock %.3f, hp %.1f"
 		% [sim.kaiju_pos.snappedf(0.001), sim.facing.snappedf(0.001), sim.time_left, sim.hp]

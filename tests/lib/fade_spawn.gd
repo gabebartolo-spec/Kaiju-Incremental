@@ -75,8 +75,7 @@ func _stage(stage: int) -> void:
 		follow.step_lead(body, sim.body_scale(), sim.emerge.active, DT)
 		var eye := follow.eye()
 		if sim.emerge.active:  # the run intro's shot, as Rampage._place_camera takes it
-			var ahead := Num.f(Content.section("intro")["aim_ahead"]) * sim.body_scale()  # no model
-			var view := {"body": body, "eye": eye, "fov": CameraTuning.fov(), "ahead": ahead}
+			var view := {"body": body, "eye": eye, "fov": CameraTuning.fov(), "head": _crown(sim)}
 			view["aim"] = follow.look_at(sim.body_scale())
 			eye = RunIntro.shot(sim, view, 0.0)["eye"]
 		fade.update(eye, BuildingFade.sight_of(sim, eye), DT)
@@ -123,6 +122,15 @@ func _stage(stage: int) -> void:
 			% [stage, shown, above, feet_seen, standing, roundi(SEEN_SHARE * 100.0)]
 		)
 	)
+
+
+## The head's crown with no model (KaijuModel.head_at's fallback): the data's share.
+static func _crown(sim: RampageSim) -> Vector2:
+	var cfg: Dictionary = Content.section("intro")
+	var at := Vector2(
+		Num.f(cfg["aim_ahead"]), Num.f(cfg["aim_head"]) * Num.f(sim.city["kaiju_height"])
+	)
+	return at * sim.body_scale()
 
 
 ## Whether a standing chunk of one of `buildings` lies on the segment eye -> to (or at `eye`
