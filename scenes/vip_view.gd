@@ -16,6 +16,8 @@ var _wreck: HeliWreck
 var _layer: CanvasLayer
 var _strip: NewsTicker
 var _strip_left := 0.0
+var _beacon: Node3D
+var _clock := 0.0
 
 
 func _init(p_sim: RampageSim, city: CityView, p_sfx: Sfx) -> void:
@@ -48,8 +50,9 @@ func on_event(event: Dictionary) -> bool:
 		"vip_killed":
 			_headline("killed", str(event["rank"]))
 		"vip_escaped":
-			_model.queue_free()
+			_model.queue_free()  # and its lamp with it
 			_model = null
+			_beacon = null
 			_headline("escaped", str(event["rank"]))
 		"heli_crashed":
 			if Num.i(event["heli"]) != VipHeli.ID:
@@ -62,6 +65,10 @@ func on_event(event: Dictionary) -> bool:
 
 ## Per frame: the model on the sim's flight, and the headline strip's time.
 func _process(delta: float) -> void:
+	_clock += delta
+	if _beacon != null:
+		var lamp: Dictionary = _cfg["beacon"]
+		_beacon.visible = fposmod(_clock, Num.f(lamp["period"])) < Num.f(lamp["on"])
 	if _strip != null:
 		_strip_left -= delta
 		_strip.modulate.a = clampf(_strip_left / 0.5, 0.0, 1.0)
@@ -99,6 +106,33 @@ func _spawn() -> void:
 	_rotor.unit_size = Num.f(_cfg["rotor_unit"])
 	_model.add_child(_rotor)
 	_rotor.play()
+	_beacon = _lamp()
+	_model.add_child(_beacon)
+
+
+## A blinking gold lamp on the mast and its light on the roofs: it reads in the dark as the leader,
+## unlike the gunships.
+func _lamp() -> Node3D:
+	var lamp: Dictionary = _cfg["beacon"]
+	var look: Dictionary = _cfg["look"]
+	var gold := Color(str(look["gold"]))
+	var holder := Node3D.new()
+	holder.position = Vector3(0.0, Num.f(lamp["height"]), 0.0)
+	var bulb := MeshInstance3D.new()
+	var ball := SphereMesh.new()
+	ball.radius = Num.f(lamp["size"])
+	ball.height = ball.radius * 2.0
+	ball.material = CityView.glow(gold, Num.f(lamp["energy"]))
+	bulb.mesh = ball
+	bulb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	holder.add_child(bulb)
+	var light := OmniLight3D.new()
+	light.light_color = gold
+	light.light_energy = Num.f(lamp["light"])
+	light.omni_range = Num.f(lamp["range"])
+	light.shadow_enabled = false
+	holder.add_child(light)
+	return holder
 
 
 ## Shot down: the wreck takes the model (HeliWreck draws the sim's fate); the rotor stops.
@@ -106,6 +140,9 @@ func _down(event: Dictionary) -> void:
 	if _model == null:
 		return
 	_rotor.stop()
+	_beacon.queue_free()
+	_beacon = null
+	_model.vip_unlit()  # the wreck burns like any gunship's, nothing glows of its own
 	_wreck.downed(_model, event)
 	_model = null
 
@@ -116,7 +153,7 @@ func _headline(key: String, rank: String) -> void:
 	var line := str(lines[key]).replace("{rank}", rank)
 	if _strip != null:
 		_strip.queue_free()
-	_strip = NewsTicker.new(PackedStringArray([line]))
+	_strip = NewsTicker.new(PackedStringArray([line]), false)
 	_strip.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	_strip.offset_top = -NewsTicker.HEIGHT
 	_layer.add_child(_strip)

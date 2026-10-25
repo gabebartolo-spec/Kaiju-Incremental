@@ -415,11 +415,12 @@
 		"rotor_db": 4.0,
 		"headline_seconds": 8.0,
 		"headlines": {
-			"liftoff": "THE {rank} IS FLEEING BY HELICOPTER - LISTEN FOR THE ROTORS",
-			"killed": "{rank} DOWN FROM A GREAT HEIGHT - CITY HALL ASKS FOR SOMEONE ELSE",
+			"liftoff": "THE {rank} IS FLEEING BY HELICOPTER",
+			"killed": "{rank}'S HELICOPTER DOWN",
 			"escaped": "{rank} WAVES FROM THE SKY: 'GOOD LUCK, EVERYONE!'"
 		},
 		"rotor_unit": 30.0,
+		"beacon": {"size": 0.45, "energy": 8.0, "light": 3.0, "range": 16.0, "height": 3.3, "period": 0.9, "on": 0.55},
 		"look": {"white": "f2efe6", "gold": "d8a53a", "bank": 0.35, "pitch": 0.008, "turn": 3.0}
 	},
 	"taskforce": {
@@ -1305,6 +1306,7 @@
 		"tank_clear": 2.0,
 		"heli_clear": 5.0,
 		"vip_dark": 0.25,
+		"vip_glow": 0.45,
 		"vip_band": [0.3, 0.42]
 	},
 	"destruction": {

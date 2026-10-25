@@ -1,23 +1,34 @@
 extends SceneTree
-## The leader's escape helicopter at the game camera (VipView, D-149): lift-off off a roof, the
-## banked lap with the headline on the news strip, then the kaiju's breath brings it down. The
-## breath fires on its own the moment the leader is in the cone (as a player would), so the shot
-## is what the sim does. Clip: --write-movie for the ~6 s of the flight and the kill. Stills
-## (--stills) at fixed seconds after lift-off instead. Needs a window and the no-focus override.cfg.
+## The leader's escape helicopter (VipView, D-149), the whole story: lift-off off a roof, the
+## banked lap, the dash, and the kaiju's Thunder Beam bringing it down once the dash is under
+## way (or, with --escape, nobody fires and it reaches the edge). The camera is the game's (its
+## field of view and tilt, from above and behind) but follows the leader, raised clear of towers;
+## the kaiju stays where the rampage started (its stomps held off) and only turns to face it.
+## Needs a window and the no-focus override.cfg. The sim runs as in the game; the capture only
+## holds the stomps off and steers the kaiju.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/vip.avi \
-##     --script tools/capture/capture_vip_heli.gd -- --out=<dir> --tier=2 --run=1 [--stills]
-##   --escape: nobody fires; it runs for the edge (the escape headline).
+##     --script tools/capture/capture_vip_heli.gd -- --out=<dir> --tier=2 --run=1 [--escape]
+##   --stills: PNGs at fixed seconds after lift-off instead of a clip.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 120
-## Seconds of flight the shot lasts, and the stills' moments (seconds after lift-off).
+## A roof near the kaiju (m): the camera follows the leader, the kaiju stays at the rampage's start.
 const PAD_RANGE := [10.0, 20.0]
-const CLIP_SECONDS := 6.5
-const STILLS := [0.4, 1.5, 3.0, 4.5]
+## The camera's place over and behind the leader (the game's tilt, a little raised).
+const CAMERA_FROM_VIP := Vector3(0.0, 24.0, 30.0)
+## The beam is held from this flight second (the lap closes and the dash begins about 9 s in).
+const APPROACH_FROM := 5.0
+const FIRE_FROM := 9.0
+## A light stick push toward the leader: the kaiju turns to it and edges after it.
+const TURN_ONLY := 0.4
+## Seconds filmed after the leader is down (the wreck falls and crashes), and the longest clip.
+const AFTER := 3.5
+const LONGEST := 18.0
+const STILLS := [0.4, 3.0, 6.0, 9.0]
 const LEVELS := [
 	{"claws": 2, "hide": 2},
-	{"claws": 5, "hide": 5, "rage": 3, "evolve1": 1},
+	{"claws": 5, "hide": 5, "rage": 3, "evolve1": 1, "r_beam": 1},
 	{"claws": 5, "hide": 5, "rage": 5, "evolve1": 1, "tail": 3, "sig_power": 3, "evolve2": 1}
 ]
 
@@ -25,7 +36,8 @@ var _out := "user://vip_heli"
 var _stills := false
 var _escape := false
 var _rampage: Rampage
-var _fire := false
+var _camera: Camera3D
+var _followed := Vector3.ZERO
 
 
 func _initialize() -> void:
@@ -45,6 +57,7 @@ func _run(run: int, tier: int) -> void:
 	PlayerSettings.controls_seen = true  # no first-run controls card over the shot
 	var levels: Dictionary = LEVELS[tier - 1]
 	var stats := Kit.stats("reptilian", levels)
+	stats["run_seconds"] = 600.0  # the clock never runs out (and never jumps) in the shot
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	_rampage = Kit.rampage("reptilian", stats, run, layout)
 	_rampage.scripted = _input
@@ -54,41 +67,57 @@ func _run(run: int, tier: int) -> void:
 		await physics_frame
 	await Kit.frames(self, SETTLE)
 	var sim := _rampage.sim
-	sim.time_left = 600.0
-	sim.vip.cfg["pad_range"] = PAD_RANGE  # a roof near the kaiju, in the camera
+	sim.vip.cfg["pad_range"] = PAD_RANGE
 	sim.vip._spawn_at = 0.0
 	while not sim.vip.flying():
 		await physics_frame
-	var pad := sim.vip.pos
-	print(
-		(
-			"lift-off at %s, kaiju at %s, rank %s, payout %.1f"
-			% [pad, sim.kaiju_pos, sim.vip.rank, sim.vip.payout]
-		)
-	)
-	_fire = not _escape
+	_camera = Camera3D.new()
+	_camera.fov = _rampage.camera_fov
+	root.add_child(_camera)
+	_camera.current = true
+	_follow()
+	print("lift-off at %s, rank %s, payout %.1f" % [sim.vip.pos, sim.vip.rank, sim.vip.payout])
 	if _stills:
 		await _shots()
 	else:
-		await Kit.ticks(self, roundi(CLIP_SECONDS * 60.0))
+		await _clip()
 	print("state %s after %.1f s, rubble %.1f" % [sim.vip.state, sim.vip.flight_t, sim.rubble])
 	quit()
 
 
-## The kaiju turns toward the leader and breathes when it is in the cone.
+## The clip: until the leader is gone (down or away) plus AFTER seconds, or LONGEST.
+func _clip() -> void:
+	var sim := _rampage.sim
+	var left := LONGEST
+	while sim.vip.flying() and left > 0.0:
+		await physics_frame
+		left -= 1.0 / 60.0
+		for event: Dictionary in sim.events:
+			if str(event["type"]) == "vip_killed":
+				print("killed by %s at %.1f s" % [event["by"], sim.vip.flight_t])
+	await Kit.ticks(self, roundi(AFTER * 60.0))
+
+
+## The kaiju turns toward the leader and, from FIRE_FROM, holds the Thunder Beam on it.
 func _input(sim: RampageSim) -> Dictionary:
-	if not _fire or not sim.vip.flying():
+	_follow()
+	sim._stomp_timer = 9.0  # the kaiju's own stomps never reach the low leader in the shot
+	if _escape or not sim.vip.flying() or sim.vip.flight_t < APPROACH_FROM:
 		return {}
 	var to := sim.vip.pos - sim.kaiju_pos
-	var aim := BreathCone.of(sim)
-	var in_cone := (
-		absf(sim.facing.angle_to(to)) < Num.f(aim["half_angle"])
-		and to.length() < sim.ability_reach()
-	)
-	return {
-		"move": to.normalized() if to.length() > sim.ability_reach() * 0.7 else Vector2.ZERO,
-		"signature": in_cone and sim.ability_ready_in <= 0.0
-	}
+	return {"move": to.normalized() * TURN_ONLY, "ultimate": sim.vip.flight_t >= FIRE_FROM}
+
+
+## The camera over and behind the leader (the game's tilt), eased so it glides.
+func _follow() -> void:
+	if _camera == null:
+		return
+	var sim := _rampage.sim
+	var at := Vector3(sim.vip.pos.x, sim.vip.altitude(), sim.vip.pos.y)
+	if sim.vip.flying():
+		_followed = _followed.lerp(at, 0.12) if _followed != Vector3.ZERO else at
+	_camera.position = _followed + CAMERA_FROM_VIP
+	_camera.look_at(_followed)
 
 
 func _shots() -> void:

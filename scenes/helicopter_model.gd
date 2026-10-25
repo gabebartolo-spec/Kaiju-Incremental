@@ -71,7 +71,9 @@ func _recolour(root: Node3D, base: Color, band: Color, dark: float) -> void:
 			continue
 		var mm := _copy(mmi.multimesh)
 		mmi.multimesh = mm
-		mmi.material_override = (mm.mesh as PrimitiveMesh).material.duplicate()
+		var mat := (mm.mesh as PrimitiveMesh).material.duplicate() as ShaderMaterial
+		mat.set_shader_parameter("glow", Num.f(_cfg["vip_glow"]))  # lit from within: reads at night
+		mmi.material_override = mat
 		var low := INF
 		var high := -INF
 		var shade := 0.0
@@ -89,7 +91,15 @@ func _recolour(root: Node3D, base: Color, band: Color, dark: float) -> void:
 			var y := mm.get_instance_transform(i).origin.y
 			var paint := band if y >= from and y <= to else base
 			var k := clampf(old.get_luminance() / maxf(0.01, shade), 0.8, 1.15)
-			mm.set_instance_color(i, Color(paint.r * k, paint.g * k, paint.b * k, old.a))
+			mm.set_instance_color(i, Color(paint.r * k, paint.g * k, paint.b * k, 0.0))  # 0: glows
+
+
+## The leader's own glow off, as it goes down (the wreck's flames and sparks carry the light).
+func vip_unlit() -> void:
+	for mmi: Node in find_children("*", "MultiMeshInstance3D", true, false):
+		var mat := (mmi as MultiMeshInstance3D).material_override as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("glow", 0.0)
 
 
 ## A copy of a shared voxel multimesh that can take its own colours.
