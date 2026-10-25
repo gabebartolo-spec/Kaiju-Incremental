@@ -4,7 +4,9 @@ extends Node3D
 ## it, moves to dish and puts croc gene into dish", then the same from the Special K canister, "i do
 ## NOT want the vials magically flying over to the dish"; "Use image A whole"). The Tripo injector
 ## in the set's blocks, split into a static post and a carriage (the boom and the syringe head)
-## that rises on the post and turns about it, like a lab pick-and-place arm. A trip (t 0..1): rise,
+## that rises on the post, turns about it and slides in and out through it (so the needle reaches
+## every vial, not only those at the boom's own length), like a lab pick-and-place arm. A trip
+## (t 0..1): rise,
 ## turn to the source, lower the needle into it, draw, rise, turn back, lower into the agar,
 ## dispense, park. The node stands at the post's axis; every size and share is in tuning
 ## "creation" "lab" "injector" and "trips".
@@ -139,6 +141,11 @@ func aim(target: Vector3) -> float:
 	return atan2(-d.z, d.x) - atan2(-_tip_local.z, _tip_local.x)
 
 
+## How far the boom slides out (metres, back if negative) to put the needle over `target`.
+func slide_for(target: Vector3) -> float:
+	return Vector2(target.x - position.x, target.z - position.z).length() - reach()
+
+
 ## The carriage's rise that puts the needle tip at height `h` (metres above the bench).
 func lift_for(h: float) -> float:
 	return h - _tip_local.y
@@ -166,7 +173,7 @@ func trip(t: float, key: String, source: Vector3, heights: Vector3) -> Vector2:
 	var end := 0
 	var progress := PackedFloat32Array()
 	progress.resize(shares.size())
-	var pose := poses[0]
+	var pose: Vector3 = poses[0]
 	var placed := false
 	for i: int in shares.size():
 		var share := Num.f(shares[i])
@@ -179,13 +186,13 @@ func trip(t: float, key: String, source: Vector3, heights: Vector3) -> Vector2:
 			var e := k * k if last else smoothstep(0.0, 1.0, k)
 			var a := poses[i]
 			var b := poses[i + 1]
-			pose = Vector2(lerp_angle(a.x, b.x, e), lerpf(a.y, b.y, e))
+			pose = Vector3(lerp_angle(a.x, b.x, e), lerpf(a.y, b.y, e), lerpf(a.z, b.z, e))
 			placed = true
 		acc += share
 		end = i + 1
 	if not placed:
 		pose = poses[end]
-	_pose(pose.x, pose.y)
+	_pose(pose.x, pose.y, pose.z)
 	return Vector2(progress[3], progress[7])
 
 
@@ -196,25 +203,27 @@ static func _rest_zero(shares: Array, from: int) -> bool:
 	return true
 
 
-## The trip's poses (turn, rise) at each phase's end, from the park over the dish.
-func _poses(source: Vector3, heights: Vector3) -> Array[Vector2]:
+## The trip's poses (turn, rise, slide) at each phase's end, from the park over the dish; the boom
+## slides as it turns.
+func _poses(source: Vector3, heights: Vector3) -> Array[Vector3]:
 	var home := aim(Vector3.ZERO)
 	var there := aim(source)
 	var up := lift_for(heights.y)
 	var down := lift_for(heights.x)
 	var dish := lift_for(heights.z)
 	var park := lift_for(Num.f(_cfg()["park_tip"]))
+	var out := slide_for(source)
 	return [
-		Vector2(home, park),
-		Vector2(home, up),
-		Vector2(there, up),
-		Vector2(there, down),
-		Vector2(there, down),
-		Vector2(there, up),
-		Vector2(home, up),
-		Vector2(home, dish),
-		Vector2(home, dish),
-		Vector2(home, park),
+		Vector3(home, park, 0.0),
+		Vector3(home, up, 0.0),
+		Vector3(there, up, out),
+		Vector3(there, down, out),
+		Vector3(there, down, out),
+		Vector3(there, up, out),
+		Vector3(home, up, 0.0),
+		Vector3(home, dish, 0.0),
+		Vector3(home, dish, 0.0),
+		Vector3(home, park, 0.0),
 	]
 
 
@@ -224,7 +233,10 @@ func rest(k: float, dish_tip: float) -> void:
 	_pose(aim(Vector3.ZERO), lerpf(lift_for(dish_tip), lift_for(Num.f(_cfg()["park_tip"])), e))
 
 
-func _pose(yaw: float, lift: float) -> void:
+func _pose(yaw: float, lift: float, slide := 0.0) -> void:
+	var out := (
+		Vector3(_tip_local.x, 0.0, _tip_local.z).normalized().rotated(Vector3.UP, yaw) * slide
+	)
 	_carriage.rotation.y = yaw
-	_carriage.position.y = lift
-	tip = position + Vector3(0.0, lift, 0.0) + _tip_local.rotated(Vector3.UP, yaw)
+	_carriage.position = Vector3(0.0, lift, 0.0) + out
+	tip = position + _carriage.position + _tip_local.rotated(Vector3.UP, yaw)

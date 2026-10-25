@@ -24,6 +24,7 @@ func run_checks() -> void:
 	SaveFile.delete_save()
 	await _t("_check_new_game_opens_lab")
 	await _t("_check_rack_reads_save")
+	await _t("_check_trip_reaches_every_vial")
 	SaveFile.delete_save()
 
 
@@ -193,6 +194,48 @@ func _sequence_ok(main: Node, lab: Node) -> void:
 		str(save.get("species", "")) == "reptilian" and Num.i(save.get("runs", -1)) == 0,
 		"the new save is a reptilian with no rampages yet: %s" % [save.get("species")]
 	)
+
+
+## The director 2026-10-25: "load the serpent and dragon serum into the vials, and ensure
+## the clip is functional for all 3" (asked: filled, still locked). Every vial holds its
+## genome's serum, locked or not, and for each genome the injector's needle goes down into that
+## vial and then the dish while the vial stays in the rack.
+func _check_trip_reaches_every_vial() -> void:
+	var titans := CreationRack.titans({})
+	var cfg: Dictionary = CreationSet.cfg()["injector"]
+	var near := Num.f(CreationSet.cfg()["voxel"]) * 3.0
+	for index: int in titans.size():
+		var room := CreationLab.new()
+		room.setup(titans)
+		root.add_child(room)
+		await _frames(1)
+		var id := str(titans[index]["id"])
+		check(room.vials.has(index), "the %s vial holds its serum" % id)
+		if not room.vials.has(index):
+			room.queue_free()
+			continue
+		var vial_at := room.vial_point(index)
+		var home := room.vials[index].node.global_position
+		var seen := {"vial": false, "dish": false}
+		var steps := 240
+		for i: int in steps + 1:
+			room.place(index, float(i) / steps)
+			var tip := room.injector.tip
+			var off_vial := Vector2(tip.x - vial_at.x, tip.z - vial_at.z).length()
+			if off_vial < near and tip.y < Num.f(cfg["vial_top"]):
+				seen["vial"] = true
+			var in_dish := Vector2(tip.x, tip.z).length() < near
+			if seen["vial"] == true and in_dish and tip.y < Num.f(cfg["cradle_top"]):
+				seen["dish"] = true
+		var drained := room.vials[index].level() < 0.01
+		var stayed := room.vials[index].node.global_position.distance_to(home) < 0.001
+		var trip_ok: bool = seen["vial"] == true and seen["dish"] == true and drained and stayed
+		check(
+			trip_ok,
+			"the needle drains the %s vial into the dish, the vial in the rack: %s" % [id, seen]
+		)
+		room.queue_free()
+		await _frames(1)
 
 
 ## The rack's data: croc, Komodo, serpent in order, the croc unlocked; a titan unlocked in the

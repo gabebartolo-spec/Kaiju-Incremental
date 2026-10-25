@@ -32,9 +32,11 @@ func _ready() -> void:
 	var cfg := CreationSet.cfg()
 	var dish: Dictionary = cfg["dish"]
 	_rng = Seeds.make("creation_bolt", 0)
-	_build_helix(Num.i(dish["surface_y"]))
+	# The dish's sizes are in the cradle's finer cells; the genome is on the set's grid.
+	var surface := roundi(CreationSet.dish_to_set(Num.f(dish["surface_y"])))
+	_build_helix(surface)
 	var glass: Dictionary = dish["glass"]
-	_build_bolt(Num.i(dish["surface_y"]), floori(Num.f(glass["inner"])) - 1)
+	_build_bolt(surface, floori(CreationSet.dish_to_set(Num.f(glass["inner"]))) - 1)
 	_time_takeover()
 	_light = OmniLight3D.new()
 	_light.light_color = CreationSet.color("bolt")

@@ -3,7 +3,7 @@ extends RefCounted
 ## The Kaiju Creation lab set (D-207, the board approved 2026-10-25): Tripo props voxelised to the
 ## game's blocks (assets/lab/*.kvox, one block size), a block bench and back wall, a cold key lamp,
 ## a warm rim and the screens' glow, under Shader Cinematic (D-104). The rack's vials are painted
-## per titan (unlocked: its genome glowing; locked: dark) and the croc's vial cells lift out so it
+## per titan (each genome's serum glowing, locked or not) and each vial's cells lift out so it
 ## can pour; the monitor screens are painted as lit readouts. Builders only: CreationLab owns the
 ## nodes. Every size, place and colour: tuning "creation" "lab".
 
@@ -36,7 +36,22 @@ static func read(name: String) -> VoxelBuilder:
 		return VoxelBuilder.new()
 	var vox: VoxelBuilder = kv.frames[0]
 	despeckle(vox)
+	# A smooth prop (its colours baked smooth by tools/kvox_smooth.py; the director 2026-10-25 on
+	# the dish: "a little less blocky, less speckled, more smooth") is drawn without the noise.
+	vox.noise = row["smooth"] != true
 	return vox
+
+
+## A prop's block size (metres): the cradle is finer than the rest (its "voxel").
+static func voxel_of(name: String) -> float:
+	var props: Dictionary = cfg()["props"]
+	var row: Dictionary = props[name]
+	return Num.f(row["voxel"])
+
+
+## A height or radius in the cradle's cells as cells of the set's grid (the genome's blocks).
+static func dish_to_set(cells: float) -> float:
+	return cells * voxel_of("cradle") / Num.f(cfg()["voxel"])
 
 
 ## Lone off-colour blocks (a voxelised texture's single bright or dark samples, which read as
@@ -73,7 +88,7 @@ static func place(parent: Node3D, name: String, vox: VoxelBuilder) -> Node3D:
 	holder.position = vec(row["at"])
 	holder.rotation_degrees.y = Num.f(row["yaw"]) + 180.0
 	parent.add_child(holder)
-	var voxel := Num.f(cfg()["voxel"])
+	var voxel := voxel_of(name)
 	vox.inset = gapless()
 	holder.add_child(vox.build({}, voxel, Num.f(cfg()["glow"]), Vector3.ZERO))
 	return holder
@@ -83,85 +98,6 @@ static func place(parent: Node3D, name: String, vox: VoxelBuilder) -> Node3D:
 ## afar, read as speckle on blocks this small this close.
 static func gapless() -> float:
 	return 1.0 / maxf(Look.value("voxel_inset"), 0.01)
-
-
-## The dish's agar as one clean surface: the model's lumps above it removed and its top cells one
-## even colour (the texture's grain, sampled per block, read as blotches). On it stands the glass
-## petri dish (director 2026-10-25: "Glass dish in the cradle"): a low, thin ring of pale glass
-## with a bright rim, so it reads as a shallow dish and not a sandpit.
-static func clean_dish(cradle: VoxelBuilder) -> void:
-	var dish: Dictionary = cfg()["dish"]
-	var top := Num.i(dish["surface_y"]) - 1
-	var flat := Num.i(dish["flat"])
-	var agar := color("agar")
-	for cell: Vector3i in cradle.colors.keys():
-		var r2 := cell.x * cell.x + cell.z * cell.z
-		if r2 <= flat * flat and cell.y > top:
-			cradle.cells.erase(cell)
-			cradle.colors.erase(cell)
-		elif r2 <= Num.i(dish["radius"]) * Num.i(dish["radius"]) and cell.y == top:
-			cradle.colors[cell] = agar
-	var r := Num.i(dish["radius"])
-	for x: int in range(-r, r + 1):
-		for z: int in range(-r, r + 1):
-			var cell := Vector3i(x, top, z)
-			if x * x + z * z <= r * r and not cradle.colors.has(cell):
-				cradle.put_color(cell, agar)
-	_glass_ring(cradle, top + 1)
-
-
-static func _glass_ring(cradle: VoxelBuilder, floor_y: int) -> void:
-	var g: Dictionary = cfg()["dish"]["glass"]
-	var r0 := Num.f(g["inner"])
-	var r1 := Num.f(g["outer"])
-	var h := Num.i(g["height"])
-	var n := ceili(r1)
-	for x: int in range(-n, n + 1):
-		for z: int in range(-n, n + 1):
-			var r := Vector2(x, z).length()
-			if r < r0 or r > r1:
-				continue
-			for dy: int in h:
-				var col := color("glass")
-				if dy == h - 1:
-					col = color("glint") if _in_arc(x, z, g["glint"]) else color("glass_rim")
-				cradle.put_color(Vector3i(x, floor_y + dy, z), col)
-
-
-## Moves the agar's top cells out of the cradle and draws them in clean tones (_agar_tone): the
-## look's per-block colour grain read as speckle on the agar.
-static func agar_node(cradle: VoxelBuilder) -> MultiMeshInstance3D:
-	var dish: Dictionary = cfg()["dish"]
-	var top := Num.i(dish["surface_y"]) - 1
-	var r := Num.f(dish["radius"])
-	var agar := VoxelBuilder.new()
-	for cell: Vector3i in cradle.colors.keys():
-		if cell.y == top and Vector2(cell.x, cell.z).length() <= r:
-			agar.put_color(cell, color("agar"))
-			cradle.cells.erase(cell)
-			cradle.colors.erase(cell)
-	agar.inset = gapless()
-	var node := agar.build({}, Num.f(cfg()["voxel"]), Num.f(cfg()["glow"]), Vector3.ZERO)
-	var inner := Num.f(dish["glass"]["inner"])
-	for i: int in agar.built_cells.size():
-		node.multimesh.set_instance_color(i, _agar_tone(agar.built_cells[i], inner, inner))
-	return node
-
-
-static func _in_arc(x: int, z: int, raw: Variant) -> bool:
-	var arc: Array = raw
-	var a := fposmod(rad_to_deg(atan2(z, x)), 360.0)
-	return a >= Num.f(arc[0]) and a <= Num.f(arc[1])
-
-
-## The agar's tone at a block: three steps from the middle out and a dark ring against the glass.
-static func _agar_tone(c: Vector3i, r: float, inner: float) -> Color:
-	var d := Vector2(c.x, c.z).length()
-	if d >= inner - 1.0:
-		return color("agar_ring")
-	if d > r * 0.72:
-		return color("agar_rim")
-	return color("agar_mid") if d > r * 0.4 else color("agar")
 
 
 ## Repaints every cell of `vox` through fn(cell, colour) -> colour.
@@ -190,8 +126,8 @@ static func is_liquid(col: Color) -> bool:
 	)
 
 
-## The rack's liquid per titan: an unlocked genome glows evenly in the colour it pours (lighter
-## streaks read as white specks, a lighter tint glowed cream), a locked one is dark glass.
+## The rack's liquid per titan: each genome's serum glows evenly in the colour it pours, locked or
+## not (lighter streaks read as white specks, a lighter tint glowed cream).
 static func vial_color(cell: Vector3i, col: Color, titans: Array[Dictionary]) -> Color:
 	var v: Dictionary = cfg()["vials"]
 	var by: Array = v["box_y"]
@@ -200,7 +136,7 @@ static func vial_color(cell: Vector3i, col: Color, titans: Array[Dictionary]) ->
 	if not is_liquid(col) and not _helix_print(cell, col):
 		return col
 	var i := titan_in(slot(cell))
-	if i < 0 or i >= titans.size() or titans[i]["locked"] == true:
+	if i < 0 or i >= titans.size():
 		return color("locked")
 	var genome: Color = titans[i]["genome"]
 	return Color(genome, 0.0)

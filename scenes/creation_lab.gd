@@ -14,7 +14,7 @@ var camera: Camera3D
 var flash := 0.0
 var genome: CreationGenome
 var injector: CreationInjector
-## Each unlocked titan's vial liquid (titan index -> CreationLiquid), and the Special K.
+## Each titan's vial liquid (titan index -> CreationLiquid), locked or not, and the Special K.
 var vials: Dictionary[int, CreationLiquid] = {}
 var special_k: CreationLiquid
 var _titans: Array[Dictionary] = []
@@ -39,7 +39,7 @@ func _ready() -> void:
 	CreationSet.environment(self)
 	CreationSet.lights(self)
 	CreationSet.slab(self, "bench", false)
-	CreationSet.slab(self, "wall", true)
+	CreationRoom.build(self)
 	_add_props()
 	genome = CreationGenome.new()
 	add_child(genome)
@@ -51,8 +51,8 @@ func _ready() -> void:
 
 func _add_props() -> void:
 	var cradle := CreationSet.read("cradle")
-	CreationSet.clean_dish(cradle)
-	var agar := CreationSet.agar_node(cradle)
+	CreationDish.clean_dish(cradle)
+	var agar := CreationDish.agar_node(cradle)
 	_agar = agar.multimesh
 	for i: int in _agar.instance_count:
 		_agar_tones.append(_agar.get_instance_color(i))
@@ -65,8 +65,8 @@ func _add_props() -> void:
 	_add_canister()
 
 
-## The rack, each unlocked genome's liquid drawn on its own so it can drain, and a port cut over
-## each for the needle.
+## The rack, each genome's serum drawn on its own so it can drain (a locked one too: the director
+## 2026-10-25, "load the serpent and dragon serum into the vials"), and a port cut over each.
 func _add_rack() -> void:
 	var rack := CreationSet.read("rack")
 	CreationSet.paint(
@@ -74,8 +74,7 @@ func _add_rack() -> void:
 	)
 	var liquids: Dictionary[int, Dictionary] = {}
 	for i: int in _titans.size():
-		if _titans[i]["locked"] != true:
-			liquids[i] = CreationSet.take_liquid(rack, CreationSet.vial_of(i))
+		liquids[i] = CreationSet.take_liquid(rack, CreationSet.vial_of(i))
 	_rack = CreationSet.place(self, "rack", rack)
 	for i: int in liquids:
 		var dna: Color = _titans[i]["genome"]

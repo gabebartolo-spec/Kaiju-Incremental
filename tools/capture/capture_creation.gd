@@ -9,6 +9,9 @@ extends SceneTree
 ##     --script tools/capture/capture_creation.gd -- --out=<dir>
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <dir>/clip.avi \
 ##     --script tools/capture/capture_creation.gd -- --out=<dir> --clip
+## --titan=<id> captures that genome's sequence instead of the croc's (the director 2026-10-25:
+## "ensure the clip is functional for all 3"). A locked genome is unlocked for the capture only,
+## and one with no kaiju to play yet plays the croc's (reptilian) run after the black.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -26,6 +29,7 @@ const CAP := 60 * 30
 
 var _out := "user://creation"
 var _clip := false
+var _titan := "croc"
 var _main: Node
 
 
@@ -35,6 +39,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--clip":
 			_clip = true
+		elif arg.begins_with("--titan="):
+			_titan = arg.substr(8)
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -45,6 +51,7 @@ func _run() -> void:
 		quit(1)
 		return
 	SaveFile.delete_save()
+	var down := _open_titan()
 	_main = (load(MAIN_SCENE) as PackedScene).instantiate()
 	root.add_child(_main)
 	await Kit.frames(self, SETTLE)
@@ -56,6 +63,8 @@ func _run() -> void:
 		printerr("capture: New Kaiju did not open Kaiju Creation")
 		quit(1)
 		return
+	for _i: int in down:
+		await _key(KEY_DOWN)
 	await Kit.frames(self, RACK_HOLD)
 	_shot("01_rack")
 	await _key(KEY_ENTER)
@@ -78,6 +87,25 @@ func _run() -> void:
 	await Kit.frames(self, AFTER)
 	print("CREATION_CAPTURE done -> %s" % _out)
 	quit(0)
+
+
+## Unlocks the captured genome in the loaded data (this process only) and gives one with no kaiju
+## yet the croc's species; returns how many presses of Down move the rack's focus onto it.
+func _open_titan() -> int:
+	var rows: Array = Content.section("creation")["titans"]
+	var down := 0
+	for i: int in rows.size():
+		var row: Dictionary = rows[i]
+		if str(row["id"]) != _titan:
+			continue
+		row["unlocked"] = true
+		if str(row["species"]) == "":
+			row["species"] = "reptilian"
+		for j: int in i:
+			var before: Dictionary = rows[j]
+			if before["unlocked"] == true and str(before["species"]) != "":
+				down += 1
+	return down
 
 
 ## Frames to `share` of a timing step (tuning "creation" "timing" `key`).
