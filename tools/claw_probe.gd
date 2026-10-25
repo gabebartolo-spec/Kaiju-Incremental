@@ -37,8 +37,8 @@ func _run() -> void:
 		)
 		print(
 			(
-				"  claw fastest at f%d, the hit at f%d; nearest the snout line %+.2f hip (<= 0 reaches it)"
-				% [m.fastest_at, m.hit, m.short]
+				"  claw fastest at f%d, the hit at f%d; chop %d frames; nearest the snout line %+.2f hip"
+				% [m.fastest_at, m.hit, m.chop_frames, m.short]
 			)
 		)
 		print(

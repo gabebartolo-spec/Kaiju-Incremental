@@ -10,6 +10,8 @@ const FRAMES := 120
 const AWAY := 0.01
 ## The snout-line crossing is looked for this many frames either side of the hit.
 const CROSS_WINDOW := 10
+## A frame is part of the chop while the claw tip moves at this share of its peak speed or more.
+const CHOP_SHARE := 0.25
 
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 
@@ -27,6 +29,8 @@ class Result:
 	var tip := 0.0  # claw tip peak speed (hip heights/s)
 	var hit := 0  # the frame the sim's hit lands
 	var fastest_at := -1  # the frame the claw tip moves fastest near the hit: the chop's contact
+	var chop_frames := 0  # frames round fastest_at the tip moves at CHOP_SHARE of its peak or more
+	var speeds: Array[float] = []  # the claw tip's speed per frame (hip heights/s)
 	var short := INF  # nearest the claw comes to the snout line in the strike (hip heights)
 	var away := 0.0  # s the arm is off its held pose
 	var home := -1  # the frame it is back
@@ -84,12 +88,15 @@ func measure(root: Node, stage: String, body_scale: float) -> Result:
 				speed[i] = rad_to_deg(before[i].angle_to(dirs[i])) / DT
 				out.peak[i] = maxf(out.peak[i], speed[i])
 			var tip_speed := (tip - tip_before).length() / DT / hip
+			out.speeds.append(tip_speed)
 			var near_hit := absi(f - out.hit) <= CROSS_WINDOW
 			if near_hit and tip_speed > out.tip:
 				out.fastest_at = f
 			out.tip = maxf(out.tip, tip_speed)
 		if absi(f - out.hit) <= CROSS_WINDOW:
 			out.short = minf(out.short, tip.x * side / hip)
+		if before.is_empty():
+			out.speeds.append(0.0)
 		before = dirs
 		tip_before = tip
 		var calm_tip := rig_calm.tail_world(names[2]) - rig_calm.global_position
@@ -103,6 +110,7 @@ func measure(root: Node, stage: String, body_scale: float) -> Result:
 				% [f, dirs[0].x, dirs[0].y, dirs[0].z, e, w, speed[0], speed[1], speed[2]]
 			)
 		)
+	out.chop_frames = _chop_frames(out.speeds, out.fastest_at)
 	out.away = (out.home - away_from) * DT if away_from >= 0 else 0.0
 	kaiju.queue_free()
 	calm.queue_free()
@@ -145,6 +153,11 @@ func run(suite: SceneTree, check: Callable) -> void:
 			absi(m.fastest_at - m.hit) <= Num.i(bars["contact_frames"]),
 			"%s: the chop is fastest at f%d, the hit lands at f%d" % [tag, m.fastest_at, m.hit]
 		)
+		var chop: Array = bars["chop_frames"]
+		check.call(
+			m.chop_frames >= Num.i(chop[0]) and m.chop_frames <= Num.i(chop[1]),
+			"%s: the chop takes %d frames" % [tag, m.chop_frames]
+		)
 		check.call(
 			m.short <= Num.f(bars["short_max"][i]),
 			(
@@ -168,3 +181,17 @@ func _model(root: Node, stage: String, body_scale: float) -> KaijuModel:
 
 func _len(rig: KaijuRig, n: String) -> float:
 	return (rig.tail_world(n) - rig.bone(n).global_position).length()
+
+
+## How many frames round `peak` the speed stays at CHOP_SHARE of speeds[peak] or more.
+static func _chop_frames(speeds: Array[float], peak: int) -> int:
+	if peak < 0:
+		return 0
+	var floor_speed := speeds[peak] * CHOP_SHARE
+	var first := peak
+	var last := peak
+	while first > 0 and speeds[first - 1] >= floor_speed:
+		first -= 1
+	while last < speeds.size() - 1 and speeds[last + 1] >= floor_speed:
+		last += 1
+	return last - first + 1

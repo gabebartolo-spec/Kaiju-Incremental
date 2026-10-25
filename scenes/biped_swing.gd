@@ -122,8 +122,11 @@ func strike_window() -> Vector2:
 	return Vector2(_cross - strike * hit, _cross + strike * (1.3 - hit))
 
 
-## A "claw_fx" time (s) for this rake: the baby's, times sqrt(size).
+## A "claw_fx" time (s) for this rake: the baby's, times sqrt(size); the strike itself grows as
+## size ^ strike_size_power instead.
 func _rake_s(key: String) -> float:
+	if key == "strike_s":
+		return Num.f(_claw[key]) * pow(_rake_k * _rake_k, Num.f(_claw["strike_size_power"]))
 	return Num.f(_claw[key]) * _rake_k
 
 
@@ -348,8 +351,9 @@ func _rake_dir(t: float, i: int, rest: Array[Vector3]) -> Vector3:
 	if t < start:
 		return ArmArc.blend(i, rest, cocked, smoothstep(0.0, 1.0, (t - start + lift) / lift))
 	if t < start + strike:
-		# A curve on the sphere (de Casteljau with slerps): smooth speed, no kink at contact.
-		var u := smoothstep(0.0, 1.0, (t - start) / strike)
+		# A curve on the sphere (de Casteljau with slerps): smooth speed, no kink at contact; eased
+		# out (strike_ease < 1): it starts softly, is fastest early and settles slowly into the chest.
+		var u := smoothstep(0.0, 1.0, pow((t - start) / strike, Num.f(_claw["strike_ease"])))
 		return cocked[i].slerp(contact[i], u).slerp(contact[i].slerp(through[i], u), u)
 	return ArmArc.blend(i, through, rest, smoothstep(0.0, 1.0, (t - start - strike) / back))
 
