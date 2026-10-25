@@ -1,5 +1,5 @@
 extends Node
-## Game flow: title -> species select (new game) -> rampage -> end beat -> results ->
+## Game flow: title -> Kaiju Creation (new game) -> rampage -> end beat -> results ->
 ## evolution tree (evolution reveal on an evolution) -> rampage ...
 ## The demo (D-050, data/tuning.json "demo") offers its species only. Buying its final upgrade (the
 ## whole tree) shows the thanks screen and unlocks Endless mode (Endless, D-156), started from the
@@ -65,11 +65,14 @@ func _summary() -> String:
 	)
 
 
+## New Kaiju: Kaiju Creation (D-207), the lab where the player picks a genome and makes the titan;
+## its rack reads which titans the save on disk has unlocked. Nothing is saved until it is done.
 func _new_game() -> void:
-	var select := SpeciesSelect.new()
-	select.chosen.connect(_on_species_chosen)
-	select.back_pressed.connect(_show_title)
-	_swap(select)
+	var lab := KaijuCreation.new()
+	lab.setup(_save)
+	lab.created.connect(_on_species_chosen)
+	lab.back_pressed.connect(_show_title)
+	_swap(lab)
 
 
 func _on_species_chosen(species_id: String) -> void:

@@ -1,11 +1,12 @@
 extends RefCounted
 ## The flow suite's demo checks (D-050, D-145, D-152, D-153), on the shipping data/tuning.json
-## "demo" section: species select offers only the demo's species; buying the final upgrade shows
+## "demo" section: Kaiju Creation offers only the croc genome; buying the final upgrade shows
 ## the thanks screen (the sim's totals, Leave feedback, Try Endless mode, Keep playing) and unlocks
 ## Endless mode; normal mode stays replayable. Every step is real input (mouse, keys, gamepad).
 ## The rest of the flow suite runs with the demo switched off (demo_off), so the full game stays
 ## covered.
 
+const CreationWalk := preload("res://tests/lib/creation_walk.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowDemoMenus := preload("res://tests/lib/flow_demo_menus.gd")
@@ -76,27 +77,22 @@ func _screen(main: Node) -> Node:
 	return main.call("screen")
 
 
-## New Kaiju: the select screen shows the demo's species only (the others are absent, not
-## greyed), and CHOOSE starts it.
+## New Kaiju: Kaiju Creation's rack lights the croc genome only (the Komodo and serpent greyed
+## and locked, D-207), and the croc genome with the injection starts it.
 func _check_species_filter() -> void:
 	var main := await _main()
 	await GuiInput.click(t, GuiInput.button(_screen(main), "NEW KAIJU"))
 	await _frames(2)
-	var select := _screen(main)
-	var picks: Array[Node] = []
-	var names: Array[String] = []
-	if select != null:
-		picks = select.find_children("*", "Button", true, false).filter(
-			func(b: Node) -> bool: return (b as Button).text == "CHOOSE"
-		)
-		for node: Node in select.find_children("*", "Label", true, false):
-			names.append((node as Label).text)
+	var lab := _screen(main)
+	var open: Array[String] = []
+	for b: Button in CreationWalk.genomes(lab):
+		if not b.disabled:
+			open.append(b.text)
 	check.call(
-		picks.size() == 1 and names.has("REPTILIAN") and not names.has("INSECTOID"),
-		"the demo's species select offers the reptilian only: %d cards" % picks.size()
+		lab is KaijuCreation and open == ["CROC GENOME"],
+		"the demo's creation rack offers the croc genome only: %s" % [open]
 	)
-	await GuiInput.click(t, GuiInput.button(select, "CHOOSE"))
-	await _frames(3)
+	await CreationWalk.walk(t, main)
 	var rampage := _screen(main) as Rampage
 	check.call(
 		rampage != null and str(rampage.species["id"]) == "reptilian",

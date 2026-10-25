@@ -33,9 +33,6 @@ jobs:
             [ -n "$cap" ] && check "$f" "$cap"
           done
           check CLAUDE.md 120
-          for f in agent-handoffs/*.md; do
-            [ -e "$f" ] && check "$f" 120
-          done
           exit $fail
 
   project-lints:

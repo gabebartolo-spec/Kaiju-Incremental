@@ -1,13 +1,13 @@
 ---
 name: kaiju-handoff
-description: Writing and starting from a Kaiju Incremental agent handoff - the file agent-handoffs/ROLE.md inside the repo that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when a lead's context nears 500k, before the director restarts or clears a session, and at the start of any new session.
+description: Writing and starting from a Kaiju Incremental agent handoff - the file ~/.claude/handoffs/kaiju/ROLE.md outside git that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when a lead's context nears 500k, before the director restarts or clears a session, and at the start of any new session.
 ---
 
 # Handoffs
 
 Fresh session at every task boundary for a lead; a lead hands off at about 500k (hard stop 600k).
 Write the handoff first, then start the new session from it.
-A helper (builder, critic, subagent) never stops or hands off for context size: it auto-compacts and keeps its
+A helper (builder, subagent) never stops or hands off for context size: it auto-compacts and keeps its
 handoff and commits current at each milestone. The lead respawns one with the same name from its handoff only if
 it cannot compact or drifts after compacting (director 2026-10-21). A top-level session
 starts its own successor only when safe (nothing of its own running, no half-done push or merge,
@@ -16,9 +16,12 @@ that changed the project without a fresh handoff; write it, never ask the direct
 
 ## Where
 
-`agent-handoffs/<role>.md`, cap 120 lines (CI checks it), **edited when state changes, never appended as a log and not
-rewritten from scratch every turn**, on your
-task branch so it travels with the PR. The skeleton is `agent-handoffs/README.md`.
+`~/.claude/handoffs/kaiju/<role>.md`: ONE copy per role, outside git, shared by both Claude accounts, so it is
+never on a branch and never stale on main (director 2026-10-25, after a regen lead could not find its handoff).
+Cap 120 lines, **edited when state changes, never appended as a log and not rewritten from scratch every turn**.
+Write it with Write/Edit; never commit it. Finished or stale roles move to `archive/` in that folder. The
+SessionStart hook lists the live ones, and from any folder (even a "No folder" session) it names the lead's file.
+The skeleton is `agent-handoffs/README.md` in the repo (the only file left there).
 
 ## What it says
 

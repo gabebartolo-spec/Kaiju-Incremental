@@ -4,15 +4,18 @@ extends MeshInstance3D
 ## to land"), presentation only: while the breath is ready, a faint wedge on the street shows the
 ## very cone the sim burns when it fires (BreathCone.of(): from the snout along the facing, out
 ## to the ability's reach), outlined, with a line down its middle. It follows the kaiju's turns,
-## so the player aims by facing; it hides while the breath cools down. Drawn over the city, so a
-## building between the kaiju and the camera never hides where the breath will land.
+## so the player aims by facing; it hides while the breath cools down. A solid, steady wash on
+## the street, layered behind the kaiju and anything else in front of it, never over him
+## (director 2026-10-25: "the aim wedge should also be more opaque, its too loud"; "the wedge
+## should be layered behind the kaiju").
 
 const SEGMENTS := 24  # the far arc's pieces
 const EDGE := 0.04  # outline and middle line width, as a share of the reach
-const FILL_ALPHA := 0.12
-const LINE_ALPHA := 0.55
+const FILL_ALPHA := 0.22
+const LINE_ALPHA := 0.6
 const LIFT := 0.15  # drawn this far over the kaiju's footing (no z-fight with the street)
 const PULSE_HZ := 1.2  # the outline breathes gently while ready
+const PULSE := 0.05  # how far the alpha breathes either side of 0.95
 
 var _sim: RampageSim
 var _tint: Color
@@ -31,12 +34,9 @@ func _init(sim: RampageSim, tint: Color) -> void:
 	_material = StandardMaterial3D.new()
 	_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	_material.vertex_color_use_as_albedo = true
-	_material.no_depth_test = true
 	_material.disable_fog = true
 	_material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_material.render_priority = 1
 	material_override = _material
 
 
@@ -74,8 +74,8 @@ func _physics_process(_delta: float) -> void:
 func _process(delta: float) -> void:
 	_age += delta
 	_shown = move_toward(_shown, 1.0, delta / Num.f(Content.section("intro")["aim_fade_seconds"]))
-	var pulse := 0.75 + 0.25 * sin(_age * TAU * PULSE_HZ)
-	_material.albedo_color = Color(1, 1, 1, pulse * _shown)
+	var alpha := 0.95 + PULSE * sin(_age * TAU * PULSE_HZ)
+	_material.albedo_color = Color(1, 1, 1, alpha * _shown)
 
 
 ## A flat wedge (+Z forward, apex at the origin) of this reach and half angle: a faint fill, its
