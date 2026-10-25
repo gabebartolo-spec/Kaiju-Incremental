@@ -1,0 +1,21 @@
+class_name RunTally
+extends RefCounted
+## The results screen's tally that only the sim can count (D-259 "Destruction tally": landmarks
+## felled). A landmark is felled once it has lost tuning "results" "landmark_felled_share" of the
+## chunks it stood with when the rampage began; a stadium never topples, so a share counts, not a
+## fall. Pure sim: read when the rampage ends (RampageSim.result).
+
+
+## How many landmarks in `buildings` (RampageSim.Building) are felled.
+static func landmarks_felled(buildings: Array) -> int:
+	var share := Num.f(Content.section("results")["landmark_felled_share"])
+	var n := 0
+	for b: RampageSim.Building in buildings:
+		if b.landmark != "" and felled(b.start_chunks, b.frame.alive_count, share):
+			n += 1
+	return n
+
+
+## True when a structure that started with `start` chunks and has `alive` left has lost `share`.
+static func felled(start: int, alive: int, share: float) -> bool:
+	return start > 0 and Num.f(start - alive) >= share * Num.f(start)

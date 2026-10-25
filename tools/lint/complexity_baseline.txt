@@ -11,7 +11,7 @@ scenes/city_environment.gd::attach 47 2
 scenes/city_greenery.gd::_park_garden 43 12
 scenes/city_greenery.gd::_yards 45 11
 scenes/city_greenery.gd::kerb_spots 73 22
-scenes/city_skyline.gd::_far_shore 48 6
+scenes/city_skyline.gd::_far_shore 47 6
 scenes/city_view.gd::_ready 43 11
 scenes/diagonal_parking.gd::park 40 14
 scenes/evolution_reveal.gd::_ready 42 2
@@ -32,8 +32,7 @@ scenes/police.gd::_start_blockade 46 16
 scenes/powers_view.gd::on_event 76 26
 scenes/powers_view.gd::update 52 17
 scenes/rampage.gd::_physics_process 41 11
-scenes/rampage.gd::_ready 56 8
-scenes/results_screen.gd::_ready 48 2
+scenes/rampage.gd::_ready 54 8
 scenes/settings_menu.gd::_ready 55 1
 scenes/sfx.gd::play 43 12
 scenes/stadium_match.gd::_play 32 13

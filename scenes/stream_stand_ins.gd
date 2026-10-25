@@ -46,6 +46,8 @@ func show(n: int) -> void:
 
 func _box(n: int) -> Transform3D:
 	var b := _buildings[n]
+	if b.is_rail():  # a viaduct is no box: it stays meshed (BuildingStream holds it)
+		return Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
 	return Transform3D(
 		Basis.from_scale(Vector3(b.w, b.height, b.d)), Vector3(b.x, b.height * 0.5, b.z)
 	)

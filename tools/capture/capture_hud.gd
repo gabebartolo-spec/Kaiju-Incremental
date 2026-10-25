@@ -51,6 +51,7 @@ func _run() -> void:
 	await _frames(SETTLE)
 	var title := _screen()
 	_press(title, "CONTINUE")
+	_press(title, "SLOT 1")
 	await _frames(SETTLE)
 	var tree := _screen() as UpgradeScreen
 	tree.start_pressed.emit()

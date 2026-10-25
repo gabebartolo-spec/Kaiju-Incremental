@@ -22,7 +22,7 @@ const StreamFrustum := preload("res://tests/lib/stream_frustum.gd")
 ## The full-detail depth every phase must keep (metres from the camera).
 const DEPTH_M := 48.0
 const DT := 1.0 / 60.0
-## The body the camera follows eases toward the sim's kaiju at this rate (Rampage._update_kaiju).
+## The body the camera follows eases toward the sim's kaiju at this rate (RampageAbility.place).
 const BODY_FOLLOW := 12.0
 const LOOK_M := StreamFrustum.LOOK_M
 ## Real time to wait for the stream to settle.
