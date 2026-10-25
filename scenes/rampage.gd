@@ -185,36 +185,48 @@ func _add_overlays() -> void:
 	add_child(_hud)
 
 
+## This tick's input: the player's (keyboard and mouse, or pad), a capture's script or the
+## autoplay; {"move", "signature", "held", "ultimate", "dash", "stomp"}. The sim ignores input while
+## it rises from the river: a tap before the handover is kept (InputLatch).
+func _read_input(delta: float) -> Dictionary:
+	var out := {
+		"move": Input.get_vector("move_left", "move_right", "move_up", "move_down"),
+		"signature": Input.is_action_just_pressed("signature"),
+		"held": Input.is_action_pressed("signature"),
+		"ultimate": Input.is_action_just_pressed("ultimate"),
+		"dash": Input.is_action_just_pressed("dash"),
+		"stomp": Input.is_action_just_pressed("stomp"),
+	}
+	if scripted.is_valid():  # captures: any of the keys above, the rest false
+		var script: Dictionary = scripted.call(sim)
+		for key: String in out:
+			out[key] = script.get(key, Vector2.ZERO if key == "move" else false)
+	elif _autoplay:
+		out["move"] = _walk.move(sim, _steps)
+		out["signature"] = autoplay_signature and sim.ability_ready_in <= 0.0
+		out["held"] = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
+		out["ultimate"] = autoplay_signature
+		out["stomp"] = true  # stomps whenever the button is ready (once per stomp_interval)
+	var taps := {
+		"signature": out["signature"], "ultimate": out["ultimate"], "dash": out["dash"],
+		"stomp": out["stomp"]
+	}
+	out.merge(_latch.through(sim.emerge.active, taps, delta), true)
+	return out
+
+
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var signature := Input.is_action_just_pressed("signature")
-	var held := Input.is_action_pressed("signature")
-	var ultimate := Input.is_action_just_pressed("ultimate")
-	var dash := Input.is_action_just_pressed("dash")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
-		var input: Dictionary = scripted.call(sim)
-		dash = input.get("dash", false)
-		move = input.get("move", Vector2.ZERO)
-		signature = input.get("signature", false)
-		held = input.get("held", false)
-		ultimate = input.get("ultimate", false)
-	elif _autoplay:
-		move = _walk.move(sim, _steps)
-		signature = autoplay_signature and sim.ability_ready_in <= 0.0
-		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		ultimate = autoplay_signature
-	# The sim ignores input while it rises from the river: a tap before the handover is kept.
-	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
-	now = _latch.through(sim.emerge.active, now, delta)
-	signature = now["signature"]
-	ultimate = now["ultimate"]
-	dash = now["dash"]
+	var input := _read_input(delta)
+	var move: Vector2 = input["move"]
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
-	var buttons := Dash.BUTTON if dash else 0
-	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
+	var buttons := Dash.BUTTON if input["dash"] else 0
+	buttons |= RampageSim.HELD if input["held"] else 0
+	buttons |= RampageSim.ULTIMATE if input["ultimate"] else 0
+	buttons |= RampageSim.STOMP if input["stomp"] else 0
+	var signature: bool = input["signature"]
 	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:

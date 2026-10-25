@@ -35,6 +35,7 @@ var rig_scale := 1.0
 var rig_origin := Vector3.ZERO
 var _clips: Dictionary = {}  # name -> Vector3i(first frame, frames, loops 0/1)
 var _cycles: Dictionary = {}  # name -> walk cycles the clip holds (1 unless the file says)
+var _stomps: Dictionary = {}  # name -> the stomps a clip keys: [{side, lift, land}] (clip frames)
 var _rest_heads: Array[Vector3] = []
 var _raw := PackedByteArray()
 var _data_at := 0
@@ -83,6 +84,7 @@ func _load(header: Dictionary, raw: PackedByteArray, data_at: int) -> bool:
 		_clips[str(c["name"])] = Vector3i(first, frames, 1 if c.get("loop", false) else 0)
 		var cycles: float = c.get("cycles", 1.0)
 		_cycles[str(c["name"])] = maxi(1, roundi(cycles))
+		_stomps[str(c["name"])] = c.get("stomps", [])
 		total = maxi(total, first + frames)
 	_raw = raw
 	_data_at = data_at
@@ -106,6 +108,12 @@ func frames_of(clip: String) -> int:
 ## Walk cycles (strides) the clip holds: its frames per stride is frames_of / cycles_of.
 func cycles_of(clip: String) -> int:
 	return _cycles.get(clip, 1)
+
+
+## The stomps a clip keys (the standing stomp, Cascadeur r10d): per stomp its foot ("left" or
+## "right"), the frame it lifts and the frame it lands; empty for a clip without stomps.
+func stomps_of(clip: String) -> Array:
+	return _stomps.get(clip, [])
 
 
 func loops(clip: String) -> bool:
@@ -160,7 +168,10 @@ func pose_at(clip: String, t: float) -> Pose:
 	var i0 := floori(at)
 	var i1 := (i0 + 1) % n if c.z == 1 else mini(i0 + 1, n - 1)
 	var a := at - i0
-	return mix(_frame(c.x + i0), _frame(c.x + i1), a)
+	var pose := mix(_frame(c.x + i0), _frame(c.x + i1), a)
+	if not stomps_of(clip).is_empty():
+		_snap_feet(pose, _frame(c.x + i0), _frame(c.x + i1))
+	return pose
 
 
 ## The first and last frames where a turn clip's yaw moves (0.5 deg from either end).
@@ -174,6 +185,16 @@ func yaw_span(turn: String) -> Vector2:
 	while last < n - 1 and absf(pose_at(turn, last).yaw - full) > 0.5:
 		last += 1
 	return Vector2(first, last)
+
+
+## A stomp's foot is down only where its clip has it down: between a frame with the foot up and
+## the next with it down (the stomp drives it into the street fastest at contact), the pose takes
+## the planted frame's toe once it counts as planted, and the lifting frame's until it is up, so a
+## footfall never goes out with the toe above the street.
+static func _snap_feet(pose: Pose, a: Pose, b: Pose) -> void:
+	for i: int in 2:
+		if a.planted[i] != b.planted[i] and pose.planted[i]:
+			pose.feet[i] = b.feet[i] if b.planted[i] else a.feet[i]
 
 
 ## Cross-fade of two poses (w = 0: a, 1: b).

@@ -1,7 +1,7 @@
 extends RefCounted
 ## Drives the croc titan at one growth step along one route with the real sim and its ClipGait at
-## 60 Hz, the way Rampage._update_kaiju does (the sim's stomps reach the body too), and measures
-## how it moves (the motion suite's bars, director D-177 "Motion first"):
+## 60 Hz, the way Rampage._update_kaiju does (the stomp button held, so the sim's stomps reach the
+## body too), and measures how it moves (the motion suite's bars, director D-177 "Motion first"):
 ##   slide      fastest a planted foot moves over the ground (world units/s)
 ##   catch      catch steps (ClipStomp.restep) a second
 ##   steps      the walk clip's steps a second (its clock: clip frames played / frames per step)
@@ -90,7 +90,7 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 		var t := f * DT
 		clock[0] = t
 		var move := stick(route, t)
-		for event: Dictionary in sim.step(DT, move, false, 0):
+		for event: Dictionary in sim.step(DT, move, false, RampageSim.STOMP):
 			if str(event["type"]) == "stomp":
 				kaiju.stomp()
 		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)

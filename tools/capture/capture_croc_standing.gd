@@ -1,14 +1,16 @@
 extends SceneTree
 ## The adult croc (Colossus) standing still in a real autoplay-less rampage at the game camera, HUD
-## on: no input, so the sim's own stomps (every 0.7 s) and claw rakes (every 2 s) are all that
-## happens. Prints when the rise from the river ends (the frame to cut a clip from), and with
-## --shots saves a still of the first stomp that plants a foot and of the first rake mid-swing,
-## each with a 2x crop round the croc. Needs a window; pair with --write-movie for a clip.
+## on: only the stomp button, held, so its stomps (once per stomp_interval, 0.7 s) and the claw
+## rakes (every 2 s) are all that happens. Prints when the rise from the river ends (the frame to
+## cut a clip from), and with --shots saves a still of the first stomp that plants a foot and of
+## the first rake mid-swing, each with a 2x crop round the croc. Needs a window; pair with
+## --write-movie for a clip.
 ## --walk=S: he first walks north for S seconds of the rampage, then stands (walking, then
 ## stomping, in one clip).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/c.avi \
-##     --script tools/capture/capture_croc_standing.gd -- --out=<dir> --seconds=8 [--shots] [--walk=3]
+##     --script tools/capture/capture_croc_standing.gd -- --out=<dir> --seconds=8 [--shots] \
+##     [--walk=3]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const ADULT_LEVELS := 2  ## Kit.STAGE_LEVELS: the Colossus
@@ -53,7 +55,7 @@ func _run() -> void:
 	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels), 1)
 	var walk := _walk
 	rampage.scripted = func(sim: RampageSim) -> Dictionary:
-		return {"move": Vector2(0, -1)} if sim.elapsed < walk else {}
+		return {"move": Vector2(0, -1)} if sim.elapsed < walk else {"stomp": true}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
 	var aim: Node3D = rampage.find_child("BreathAim", false, false)

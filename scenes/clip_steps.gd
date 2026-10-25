@@ -64,3 +64,23 @@ func _first_landing() -> float:
 			if now.planted[i] and not before.planted[i]:
 				return float(f)
 	return 0.0
+
+
+## The walk frame to start from: the one whose planted feet stand nearest where gait's feet are now
+## (rig space), so the first stance does not overreach.
+func entry(gait: ClipGait) -> float:
+	var best := 0.0
+	var best_cost := INF
+	var rig := gait.rig
+	var to_rig := rig.global_transform.affine_inverse()
+	for t: int in clips.frames_of("walk"):
+		var pose := clips.pose_at("walk", t)
+		var cost := 0.0
+		for i: int in mini(gait.legs.size(), 2):
+			if pose.planted[i]:
+				var now := to_rig * rig.tail_world(gait.legs[i].names[2])
+				cost += (clips.to_rig(pose.feet[i]) - now).length()
+		if cost < best_cost:
+			best_cost = cost
+			best = t
+	return best

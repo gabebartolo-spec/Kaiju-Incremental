@@ -60,6 +60,8 @@ class Tank:
 ## step() button flags.
 const HELD := 1
 const ULTIMATE := 2
+## The stomp button (RampageStomp); Dash.BUTTON is 4.
+const STOMP := 8
 ## A tank's footprint radius for area hits.
 const TANK_RADIUS := 0.6
 
@@ -206,7 +208,8 @@ func result() -> Dictionary:
 	}
 
 
-## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
+## Advances the rampage by dt (move, signature pressed, button flags HELD, ULTIMATE, Dash.BUTTON
+## and STOMP).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
@@ -224,7 +227,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
-	stomp.step(dt)
+	stomp.step(dt, buttons & STOMP != 0)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))

@@ -17,6 +17,9 @@ func _ready() -> void:
 	_button_action("signature", [KEY_SPACE], JOY_BUTTON_A)
 	_button_action("ultimate", [KEY_E], JOY_BUTTON_Y)
 	_button_action("dash", [KEY_SHIFT], JOY_BUTTON_B)
+	# The stomp has its own button (director 2026-10-26), on keyboard and mouse and on the pad.
+	_button_action("stomp", [KEY_F], JOY_BUTTON_X)
+	_mouse_action("stomp", MOUSE_BUTTON_LEFT)
 	_button_action("pause", [KEY_ESCAPE, KEY_P], JOY_BUTTON_START)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
 	# A confirms and B backs out in every menu (the Controls list says so): the engine's own menu
@@ -59,6 +62,12 @@ func _button_action(action: String, keys: Array[Key], button: JoyButton) -> void
 		var press := InputEventJoypadButton.new()
 		press.button_index = button
 		InputMap.action_add_event(action, press)
+
+
+func _mouse_action(action: String, button: MouseButton) -> void:
+	var click := InputEventMouseButton.new()
+	click.button_index = button
+	InputMap.action_add_event(action, click)
 
 
 func _menu_pad(action: String, button: JoyButton) -> void:

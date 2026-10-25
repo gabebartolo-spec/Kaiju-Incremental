@@ -73,6 +73,20 @@ func stomp(standing: bool) -> void:
 			return
 
 
+## A standing stomp the clip itself keys (the adult croc's Cascadeur stomp, D-199): no code lift,
+## the next foot in turn is named (lifted) and the clip brings it down. Returns that foot.
+func by_clip() -> int:
+	lifted = _next
+	_next = 1 - _next
+	_count += 1
+	return lifted
+
+
+## The weight of a stomp as a footfall at body scale s (an adult's is 1).
+static func weight(s: float) -> float:
+	return clampf(sqrt(s / BipedGait.ADULT_SCALE), WEIGHT_MIN, 1.0)
+
+
 ## The sim names the foot that stomps next ("left" or "right"; anything else leaves it be).
 func prefer(side: String) -> void:
 	if side == "left" or side == "right":
@@ -103,7 +117,7 @@ func rise(i: int, k: float) -> float:
 func landing(i: int, plain: float, s: float) -> float:
 	var weight := plain
 	if _stomping[i]:
-		weight = clampf(sqrt(s / BipedGait.ADULT_SCALE), WEIGHT_MIN, 1.0)
+		weight = ClipStomp.weight(s)
 		_since = 0.0
 	_stomping[i] = false
 	return weight

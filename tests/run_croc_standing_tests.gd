@@ -3,11 +3,14 @@ extends "res://tests/lib/runner.gd"
 ## of a body that stands. Each sim stomp lifts one foot, alternating, and plants it inside the
 ## scene's wait for it (Rampage.STOMP_WAIT) at a stomp's weight, so the ring and cracks land under
 ## a foot, and no foot slides; the claw rake swings the raking arm over the clip's pose, only it,
-## and it comes back to rest; with no rake called the arms match a calm kaiju's. Fixed 60 Hz
-## steps, no clock, no randomness.
+## and it comes back to rest; with no rake called the arms match a calm kaiju's. Every stomp
+## comes from the stomp button (tests/lib/stomp_button.gd). Fixed 60 Hz steps, no clock, no
+## randomness.
 ##   godot --headless --path . --script tests/run_croc_standing_tests.gd
 
 const CrocStompCentre := preload("res://tests/lib/croc_stomp_centre.gd")
+const StompButton := preload("res://tests/lib/stomp_button.gd")
+const ClipStompShape := preload("res://tests/lib/clip_stomp_shape.gd")
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
 ## Stomps on the sim's 0.7 s beat, and the footfall weight below which a step is not a stomp.
@@ -21,6 +24,7 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	await _t("_check_stomp_button")
 	await _t("_check_standing_stomp")
 	await _t("_check_stomp_shape")
 	await _t("_check_stomp_landing")
@@ -40,8 +44,14 @@ func _rig_of(kaiju: KaijuModel) -> KaijuRig:
 	return kaiju.find_children("*", "KaijuRig", true, false)[0]
 
 
+func _check_stomp_button() -> void:
+	StompButton.new(check).run()
+
+
 ## Standing, each sim stomp lifts one foot (alternating) and plants it inside the scene's wait, at
-## a stomp's weight, so the ring and cracks have a foot to land under; no foot slides.
+## a stomp's weight, so the ring and cracks have a foot to land under; no foot slides. A code-lifted
+## stomp (baby, adolescent) lifts the toe past 0.4 hip; a clip-keyed one (the adult) has its own
+## bars (ClipStompShape).
 func _check_standing_stomp() -> void:
 	var wait_frames := ceili(Rampage.STOMP_WAIT / DT)
 	for stage: String in STAGES:
@@ -82,8 +92,9 @@ func _check_standing_stomp() -> void:
 		for i: int in range(1, sides.size()):
 			alternate = alternate and sides[i] != sides[i - 1]
 		var hip := kaiju.hip_height()
+		var keyed := (rig.gait as ClipGait).clips.has_clip("stomp")
 		check(
-			wrong == 0 and alternate and rose > 0.4 * hip and finite,
+			wrong == 0 and alternate and (keyed or rose > 0.4 * hip) and finite,
 			(
 				(
 					"%s standing: each stomp lifts a foot (%.2f hip) and plants it within STOMP_WAIT, "
@@ -103,13 +114,19 @@ func _check_standing_stomp() -> void:
 		await process_frame
 
 
-## One standing stomp's shape, the adult's: the foot eases up (the first frames barely move it),
+## The adult's clip-keyed stomp: its own bars (ClipStompShape). One code-lifted standing stomp's
+## shape, the adolescent's: the foot eases up (the first frames barely move it),
 ## rises most of a leg's half, hangs a beat near its top, and its toe is on the street in the very
 ## frame its footfall goes out (not a frame on); the body sinks as it lands, back up within 0.3 s;
 ## and the six stomps differ in height and time (a hash of the stomp's number).
 func _check_stomp_shape() -> void:
-	var kaiju := _model("adult")
-	var calm := _model("adult")
+	var adult := _model("adult")
+	for i: int in 2:
+		await process_frame
+	ClipStompShape.new(check).run(adult, _rig_of(adult))
+	adult.queue_free()
+	var kaiju := _model("adolescent")
+	var calm := _model("adolescent")
 	var rig := _rig_of(kaiju)
 	var hip := kaiju.hip_height()
 	var landed: Array[int] = []

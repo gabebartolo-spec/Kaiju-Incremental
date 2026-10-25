@@ -1,25 +1,28 @@
 class_name RampageStomp
 extends RefCounted
-## The kaiju's stomp (D-166): a blow every stomp_interval that hurts what is under the foot that
-## comes down. A standing body stomps at once, feet alternating; a walking body (one with a step
-## clock) lets it fall on the footfall, on the foot that lands. Part of RampageSim.
+## The kaiju's stomp (D-166): a blow that hurts what is under the foot that comes down. It comes
+## from its own button (director 2026-10-26: "Its own button", "Button replaces it"; no stomp falls
+## on its own): a press stomps once stomp_interval has passed since the last (faster with
+## upgrades). A standing body stomps at once, feet alternating; a walking body (one with a step
+## clock) lets it fall on the next footfall, on the foot that lands. Part of RampageSim.
 
 var sim: RampageSim
-var _timer := 0.0
-var _due := false  # the timer ran out: a walking body lets the stomp fall on a footfall
+var _timer := 0.0  # seconds until the button stomps again
+var _due := false  # pressed: a walking body lets the stomp fall on a footfall
 
 
 func _init(p_sim: RampageSim) -> void:
 	sim = p_sim
 
 
-## Advances the stomp timer: a stomp comes due every stomp_interval, and falls when a walking
-## body's foot lands (a standing body stomps at once).
-func step(dt: float) -> void:
-	_timer -= dt
-	if _timer <= 0.0:
-		_timer += maxf(0.1, sim.stat("stomp_interval"))
-		_due = not sim.airborne
+## Advances the stomp by dt; `pressed` is the stomp button this step. A press once the last stomp's
+## stomp_interval has run out makes one stomp (a standing body stomps at once, a walking one on its
+## next footfall); a press sooner is not kept.
+func step(dt: float, pressed: bool) -> void:
+	_timer = maxf(0.0, _timer - dt)
+	if pressed and _timer <= 0.0 and not _due and not sim.airborne:
+		_timer = maxf(0.1, sim.stat("stomp_interval"))
+		_due = true
 	if _due and (sim.body.footfall_now or not sim.body.walking()):
 		_due = false
 		_land()

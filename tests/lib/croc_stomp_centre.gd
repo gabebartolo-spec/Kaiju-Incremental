@@ -1,11 +1,11 @@
 extends RefCounted
 ## The croc standing suite's stomp-centre check (D-166): the sim's stomp is centred on the foot
 ## that delivers it, so the damage lands where the ring does. At each growth step (young,
-## Behemoth, Colossus) and two headings, the sim stomps while the kaiju stands; the model, placed
-## where the sim puts it, lifts the foot the sim names (KaijuModel.prefer_foot) and plants it; the
-## sim's stomp point ("at" in its event) is within CENTRE_TOL of that planted foot. Then the damage
-## itself: a tank on the foot's spot takes the full blow, and one where the old centre (kaiju_pos)
-## was takes less.
+## Behemoth, Colossus) and two headings, the sim stomps (its button held) while the kaiju stands;
+## the model, placed where the sim puts it, lifts the foot the sim names (KaijuModel.prefer_foot)
+## and plants it; the sim's stomp point ("at" in its event) is within CENTRE_TOL of that planted
+## foot. Then the damage itself: a tank on the foot's spot takes the full blow, and one where the
+## old centre (kaiju_pos) was takes less.
 
 const DT := 1.0 / 60.0
 const BEAT_FRAMES := 42
@@ -40,7 +40,7 @@ func _walking(size: int) -> void:
 	var on_foot := 0
 	var wrong := 0
 	for i: int in 600:
-		for event: Dictionary in sim.step(DT, Vector2(0.0, -1.0), false):
+		for event: Dictionary in sim.step(DT, Vector2(0.0, -1.0), false, RampageSim.STOMP):
 			if str(event["type"]) != "stomp" or not event["on_foot"]:
 				continue
 			on_foot += 1
@@ -102,7 +102,7 @@ func _stage(size: int, turned: bool) -> void:
 		var old_centre := sim.kaiju_pos
 		var tank := _tank(sim, spots, old_centre)
 		var was := tank.hp
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) != "stomp":
 				continue
 			kaiju.prefer_foot(str(event["side"]))

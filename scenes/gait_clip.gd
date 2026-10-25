@@ -44,7 +44,8 @@ const NECK_SHARE := 0.4
 static var off := false
 
 var clips: KaijuClips
-## The clip playing ("idle", "walk", "turn_left", "turn_right" or "roar") and its time (frames).
+## The clip playing ("idle", "walk", "turn_left", "turn_right", "roar" or "stomp") and its time
+## (frames).
 var state := "idle"
 var clip_time := 0.0
 ## Walk cycles travelled so far (distance / stride), for tests and captures, and walk clip frames
@@ -72,7 +73,8 @@ var _plant_yaw: Array[float] = [0.0, 0.0]
 var _plant_heading: Array[float] = [0.0, 0.0]
 var _yaw_fix: Array[float] = [0.0, 0.0]
 var _was_planted: Array[bool] = [false, false]
-var _stomp := ClipStomp.new()  # catch steps, and the standing stomp
+var _stomp := ClipStomp.new()  # catch steps, and the standing stomp (clips without one)
+var _beat: StompBeat  # the standing stomp from the clip ("stomp", the adult's Cascadeur stomp)
 var _jaw_hold := 0.0
 var _jaw_peak := Quaternion.IDENTITY
 var _tail: ClipTail
@@ -103,6 +105,7 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	for turn: String in ["turn_left", "turn_right"]:
 		_turn_span[turn] = clips.yaw_span(turn)
 	_steps = ClipSteps.new(clips)
+	_beat = StompBeat.new(clips)
 	_path = SwingPath.new(_steps.swing_frames)
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
 	var tail_bones := 0
@@ -119,6 +122,7 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
+	_beat.tick(dt)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
 	_swing_tail(dt)
@@ -137,9 +141,17 @@ func roar() -> void:
 	_roar_queued = true
 
 
-## Standing, a sim stomp lifts a foot and drives it down for the ring and cracks (ClipStomp);
-## walking or turning, the clip footfalls deliver it; roaring, the feet stay planted.
+## Standing, a sim stomp lifts a foot and drives it down for the ring and cracks: the stomp clip
+## when the clips key one (StompBeat; the foot the sim names), else ClipStomp's lift; walking or
+## turning, the clip footfalls deliver it; roaring, the feet stay planted.
 func stomp() -> void:
+	if _beat.keyed() and (state == "idle" or state == "stomp"):
+		var i := _stomp.by_clip()
+		var side := "left" if legs[i].side < 0.0 else "right"
+		var at := _beat.on_stomp(state == "stomp", clip_time, side)
+		if at >= 0.0:
+			_go("stomp", at)
+		return
 	_stomp.stomp(state == "idle")
 
 
@@ -175,22 +187,29 @@ func _choose(dt: float) -> void:
 	elif moving:
 		if state != "walk":
 			_go("walk", _walk_start())
-	else:
-		var err := wrapf(model_yaw - body_yaw, -PI, PI)
-		if absf(err) > TURN_TRIGGER:
-			var turn := "turn_left" if err > 0.0 else "turn_right"
-			var span: Vector2 = _turn_span[turn]
-			_turn_from = body_yaw
-			_go(turn, maxf(0.0, span.x - TURN_PAD))
-		elif state != "idle":
-			_go("idle", 0.0)
+	elif state != "stomp" or _beat.done():  # a stomp plays out first
+		_stand()
 	if state == "walk":
 		_walk_clock(dt)
+	elif state == "stomp":
+		clip_time = _beat.advance(clip_time, dt)
 	else:
 		clip_time += dt * clips.fps
 	_blend = minf(1.0, _blend + dt / BLEND_SECONDS)
 	if state.begins_with("turn"):
 		_steer_turn()
+
+
+## Standing: a heading error past TURN_TRIGGER turns on the spot with a turn clip, else the idle.
+func _stand() -> void:
+	var err := wrapf(model_yaw - body_yaw, -PI, PI)
+	if absf(err) > TURN_TRIGGER:
+		var turn := "turn_left" if err > 0.0 else "turn_right"
+		var span: Vector2 = _turn_span[turn]
+		_turn_from = body_yaw
+		_go(turn, maxf(0.0, span.x - TURN_PAD))
+	elif state != "idle":
+		_go("idle", 0.0)
 
 
 ## The walk clip's clock: the sim's step clock when it gives one (the footfalls land where it
@@ -217,28 +236,9 @@ func _go(next: String, at: float) -> void:
 
 
 ## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
-## feet (_walk_entry).
+## feet (ClipSteps.entry).
 func _walk_start() -> float:
-	return _steps.frame_at(step_phase) if step_phase != INF else _walk_entry()
-
-
-## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
-## (rig space), so the first stance does not overreach.
-func _walk_entry() -> float:
-	var best := 0.0
-	var best_cost := INF
-	var to_rig := rig.global_transform.affine_inverse()
-	for t: int in clips.frames_of("walk"):
-		var pose := clips.pose_at("walk", t)
-		var cost := 0.0
-		for i: int in mini(legs.size(), 2):
-			if pose.planted[i]:
-				var now := to_rig * rig.tail_world(legs[i].names[2])
-				cost += (clips.to_rig(pose.feet[i]) - now).length()
-		if cost < best_cost:
-			best_cost = cost
-			best = t
-	return best
+	return _steps.frame_at(step_phase) if step_phase != INF else _steps.entry(self)
 
 
 ## The body follows the turn clip's yaw from where it faced to the new heading.
@@ -365,7 +365,11 @@ func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
 		_plant_heading[i] = _hold.foot_yaw(leg)
 		leg.plant_at = target
 		leg.drift = 0.0
-		var strength := _stomp.landing(i, clampf(0.2 + speed_k(), 0.0, 1.0), s)
+		var strength := (
+			ClipStomp.weight(s)
+			if state == "stomp"
+			else _stomp.landing(i, clampf(0.2 + speed_k(), 0.0, 1.0), s)
+		)
 		if _feet_primed:  # the first frame's feet were already down: no step, no ring
 			rig.foot_planted.emit("left" if leg.side < 0.0 else "right", strength, target)
 	_lag[i] = _lock[i] - clip_toe
