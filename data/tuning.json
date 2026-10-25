@@ -103,9 +103,20 @@
 			{"stat": "tallest_topple", "min": 10, "line": "{n}-FLOOR TOWER COMES DOWN - SKYLINE CHANGED FOREVER"},
 			{"stat": "toppled", "min": 1, "line": "INSURERS REFUSE CLAIMS: 'ACT OF MONSTER'"},
 			{"stat": "civilians", "min": 1, "line": "MASS EVACUATION ORDERED"},
-			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"}
-		],
-		"close": "THE CREATURE HAS RETREATED - FOR NOW"
+			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"},
+			{"stat": "landmarks", "min": 1, "line": "TOURISTS TOLD: 'THE LANDMARKS ARE CLOSED'"},
+			{"stat": "agents", "min": 1, "line": "TASKFORCE RECRUITING - NO EXPERIENCE NEEDED"}
+		]
+	},
+	"results": {
+		"_note": "The results screen (D-259, D-263, D-265). landmark_felled_share: a landmark counts as felled once it has lost this share of its chunks (a stadium never topples). endings: per way a rampage ends (the sim's end reason), the headline across the top and the last line of the news crawl; every ending but city_fallen is the kaiju's death.",
+		"landmark_felled_share": 0.5,
+		"endings": {
+			"city_fallen": {"headline": "CITY FALLS TO KAIJU", "close": "THE CREATURE HAS RETREATED - FOR NOW"},
+			"time": {"headline": "FINAL STRIKE FELLS KAIJU", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"},
+			"defeated": {"headline": "ARMY TAKES DOWN KAIJU", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"},
+			"ended": {"headline": "KAIJU COLLAPSES MID-RAMPAGE", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"}
+		}
 	},
 	"save": {
 		"_note": "v3 (D-135): upgrade nodes cut from the tree; a save holding one is refunded its rubble in full and the node removed. evolve3 (EVOLVE: Apex Titan) cost 444500. slots: how many save slots the title offers (director 2026-10-26, 'Three slots (Recommended)').",

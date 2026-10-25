@@ -13,9 +13,20 @@ const LEGACY_PATH := "user://save.json"
 const LEGACY_BACKUP := "user://save.json.pre_slots"
 const SLOT_PATH := "user://save_slot_%d.json"
 const VERSION := 5
-## The results screen's records: each is the best single rampage, per stat.
+## The results screen's records (personal bests, D-259): each is the best single rampage, per
+## stat, kept in the slot's save. A key an older save lacks starts at nothing (no migration);
+## "best_combo" is recorded once the combo system reports it.
 const BEST_KEYS: Array[String] = [
-	"rubble", "destruction", "toppled", "tallest_topple", "civilians", "tanks", "helis"
+	"rubble",
+	"best_combo",
+	"destruction",
+	"toppled",
+	"tallest_topple",
+	"landmarks",
+	"civilians",
+	"tanks",
+	"helis",
+	"agents",
 ]
 
 ## The rampage ends that count as the kaiju's death: killed, time's up (D-263) and End rampage
