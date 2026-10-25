@@ -87,6 +87,11 @@ func _hud_checks() -> void:
 		hud.news.showing() and hud.news.shown == PackedStringArray([line]),
 		"the crawl slides up with the rise's line: %s" % [hud.news.shown]
 	)
+	var strip := hud.news.ticker
+	check.call(
+		strip != null and strip.unit_width() >= strip.visible_width(),
+		"one line never shows twice on the strip at once"
+	)
 	sim.chunks_destroyed = chunks_at(sim, 1.0)
 	sim.collapse.toppled = 10
 	await _step(hud, sim)

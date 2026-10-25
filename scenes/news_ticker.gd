@@ -52,6 +52,11 @@ func _init(lines: PackedStringArray) -> void:
 	tag_box.add_child(_tag)
 
 
+## A strip sized before it entered the tree never heard its own resize: pad the cycle now.
+func _ready() -> void:
+	_fit_cycle()
+
+
 func _process(delta: float) -> void:
 	var loop := _crawl.get_minimum_size().x / REPEAT
 	_crawl.position.x -= SPEED * delta
