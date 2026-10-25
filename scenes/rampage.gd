@@ -232,7 +232,7 @@ func _physics_process(delta: float) -> void:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
+	_kaiju_at = _ability.place(delta, 0.0 if sim.body.dash.on() else move.length(), _kaiju_at)
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
@@ -323,6 +323,7 @@ func _on_event(event: Dictionary) -> void:
 		_:
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
+			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -339,17 +340,6 @@ func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
 func _power(stat_name: String) -> float:
 	var base: Dictionary = species["stats"]
 	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
-
-
-func _update_kaiju(delta: float, moving: float) -> void:
-	var target := _to_world(sim.kaiju_pos)
-	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
-	_kaiju_at = _ability.step(delta, target, _kaiju_at)
-	_kaiju.position = _kaiju_at
-	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-	# sim angle to model yaw: the sign flips
-	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
-	_kaiju.animate(delta, moving, -sim.body.turn_left)
 
 
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
