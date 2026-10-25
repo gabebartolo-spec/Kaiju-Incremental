@@ -1288,7 +1288,7 @@
 		"tail_rotor_spin": 45.0,
 		"heli_turn": 3.0,
 		"heli_lights": {
-			"_note": "Night flying lights on every gunship (D-183; one look across helicopters): red on the left and green on the right at wing height (wing = how far out, of half the hull's width), a white strobe on the tail (flash strobe_on of every strobe_period seconds, each helicopter on its own beat), a faint pale belly lamp so the underside reads; energies are the emission strength the bloom turns into glow; mast = lamp height in the hull's box. Placeholders for the critic.",
+			"_note": "Night flying lights on every gunship (D-183; one look across helicopters): red on the left and green on the right at wing height (wing = how far out, of half the hull's width), a white strobe on the tail (flash strobe_on of every strobe_period seconds, each helicopter on its own beat), a faint pale belly lamp so the underside reads, and self_light = every cell glows faintly in its own colour so the dark hull does not vanish against the night city; energies are the emission strength the bloom turns into glow; mast = lamp height in the hull's box. Placeholders for the critic.",
 			"red": "ff2a1a",
 			"green": "25ff5a",
 			"white": "ffffff",
@@ -1298,6 +1298,7 @@
 			"strobe_energy": 24.0,
 			"belly_energy": 2.5,
 			"belly_size": 0.3,
+			"self_light": 0.25,
 			"wing": 1.1,
 			"mast": 0.8,
 			"strobe_period": 1.3,

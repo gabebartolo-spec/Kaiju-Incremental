@@ -34,6 +34,10 @@ func _init() -> void:
 	_muzzle = Vector3(0, 0, parts.front("gun") - parts.pivot("gun").z)
 	_clock = float(get_instance_id() % 997) * 0.37  # each helicopter flashes on its own beat
 	_add_lights((_body as MultiMeshInstance3D).get_aabb())
+	for part: Node in find_children("*", "MultiMeshInstance3D", true, false):
+		var mat := (part as MultiMeshInstance3D).material_override as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("self_light", Num.f(_cfg["heli_lights"]["self_light"]))
 
 
 func _process(delta: float) -> void:

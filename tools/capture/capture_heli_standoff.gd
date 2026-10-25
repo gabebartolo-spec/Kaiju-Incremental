@@ -16,10 +16,14 @@ var _seconds := 6.0
 var _aim := Vector2(INF, INF)
 var _tick := 0
 var _closest := INF
+var _out := "user://heli_standoff"
+var _stills := 0
 
 
 func _initialize() -> void:
-	var a := Kit.args({"lead": _lead, "seconds": _seconds})
+	var a := Kit.args({"lead": _lead, "seconds": _seconds, "out": _out})
+	_out = str(a["out"])
+	DirAccess.make_dir_recursive_absolute(_out)
 	_lead = Num.f(a["lead"])
 	_seconds = Num.f(a["seconds"])
 	if not Kit.window_ok():
@@ -107,3 +111,12 @@ func _log(rampage: Rampage, frames: int) -> void:
 			]
 		)
 	print(line)
+	for heli: AirWing.Heli in sim.air.helis:  # a still, with the log line above to measure it
+		if (
+			heli.run
+			and heli.pos.distance_to(sim.kaiju_pos) < 24.0 * sim.body_scale()
+			and _stills < 40
+		):
+			_stills += 1
+			Kit.still(self, _out, "s%d" % frames)
+			break
