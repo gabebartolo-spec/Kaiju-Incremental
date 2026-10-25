@@ -4,6 +4,34 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-26 · D-256 · Director · Tripo district buildings: hero pieces and 40 fillers, up to 4700 credits
+
+"can probably make the architecture as tripo models then voxelise it if that works?"; picked "Hero buildings, <=1500 credits", then "id be happy for you to make like 30-40 buildings in tripo to act as filler buildings" and picked "Go to 40 filler" (<=3200). Districts total <=4700 credits. Every model gets a six-view check and is voxelised into carvable cell grids (tools/landmarks/bake.py, D-253); filler is placed with variation (facings, mirror, floor stretch, palettes, roof clutter), no model above 5% of a view, no identical neighbours. "can you get started on the tripo": the lead generates through the built-in browser.
+
+## 2026-10-26 · D-255 · Director · Districts grow by stage; street life; human clips may be premade; agents swing and jet
+
+Districts (comment #78): red-light district, Chinatown, docklands, a bar and restaurant street, a business district, neon commercial streets and a giant billboard intersection; picked "Grow by stage" (baby: bar strip + neon street; teen adds Chinatown, red-light, docklands; adult adds business district + billboard intersection). Street life (#77): traffic lights, power lines, manholes, bins, graffiti, street lights, phone booths, food trucks, plus "Add a few more" (hydrants, bus stops, benches, newsstands, bikes). Taskforce (#76): "spiderman" grapple swings then jetpacks, "Mix by situation"; "if the premade clips are better, then we use them" (humans only; kaiju stay Cascadeur); agents get "New voxel poses".
+
+## 2026-10-26 · D-254 · Director · Play area 1.5x wider; landmarks and explosive sites spread; the landmark bridge
+
+"id like to expand the play area for all 3 stages": "1.5x wider" (half-widths 75/120/225 m). "space out our landmarks (of which one is a bridge, so we can also put an expanded water area there) and explosive sites across the new expanded area"; the bridge is the D-133 suspension bridge tower Tripo model, "like a sydney harbor bay bridge/golden gate bridge style".
+
+## 2026-10-26 · D-253 · Director · Carving is universal for every building and structure
+
+"carve is a universal feature for all buildings" (standing rule). Every building and structure, railway included, breaks only through the one voxel carve and collapse path; a CI test fails any structure type that removes geometry another way (landmarks and river bridges are named known gaps until converted). PR #209 rail: "FIX. he doesnt carve it at all? he hits it once and it disappears".
+
+## 2026-10-26 · D-252 · Director · Croc focus to the Itch demo; dragon paused; subagent team; model per task; merge everything
+
+"can we pause all dragon work for now though", "I want to focus on getting croc shipped" (finish line: Itch demo, M4); croc stomp first ("Croc standing stomp", then "Croc stomp next"). Team: subagents, 3 builders + 1 reader; "i need you to determine whether a task demands opus or sonnet". Branches: "I want the branches fully cleaned up and stale ones removed / i want all mergable good work merged"; "why isnt it merged? ive been asking you to merge everything" (PR cap 8 until the backlog lands); branch force-delete unblocked in settings ("Remove the block"). Skeletons: "optimised for natural, smooth animation", "only interested in our reptilian skeletons".
+
+## 2026-10-26 · D-251 · Director · Komodo w29 walk approved; Komodo lands off
+
+"walk is good. ship it"; Komodo motion bars "His own, from w29"; Komodo work lands off by default while paused ("Land it too").
+
+## 2026-10-26 · D-250 · Director · Straight to him: every visual goes to the director, judged by no agent
+
+"just show me the clip, i will immediately know what is wrong and can describe the fix, you then workout how to do that fix"; every visual, every project. Replaces D-249's lead-looks-first route.
+
 ## 2026-10-25 · D-249 · Director · No critics: only the lead and the director judge art
 
 Director: "abandon our critics, all art passes through you who ACTUALLY LOOKS AT IT and then ASK ME, so the builders are never judging the art, only you and me". Confirmed by question: every project, and the VFX lead does not judge either. Why: critics were passing work he could see was wrong. What changes: no critic agents or sessions (the four critic agent types are retired); every image, capture and clip goes straight to the lead, who opens it, checks it at 1x and 2x crops beside a real reference, sends back defects with exact fixes, then asks him with labelled images. Builders and helpers never give an art verdict. RULEBOOK, ~/.claude/CLAUDE.md, art-qa-critic, game-studio-lead and the Kaiju proof and handoff skills updated.
@@ -369,30 +397,3 @@ Said before sleeping (2026-10-23, about 03:25): "feel free to spend some time an
 ## 2026-10-23 · D-161 · Director · Railgun and frost rules
 
 Asked (the non-author sim review of PR #161 found these agent-added): the railgun has to hit the body's middle (a shot that only crosses the tail or snout misses), so a step aside as the line locks dodges it in the open; while smashing through a building or slowed by frost a step is too slow and only the dash saves you (the dash also shatters the ice): "Only the dash saves you". The shot pierces buildings, no cover. Armour softens railgun hits like every other hit. Frost grenades land only on a kaiju standing still, so moving dodges them.
-
-## 2026-10-23 · D-160 · Director · The Taskforce first joins after a few minutes in the adolescent city
-
-Asked (PR #161 gated the first arrival per rampage, after about 150 chunks plus 6 s: agent-added): "arrives a few minutes into the adolescent city" (D-152) means total time there, not each rampage: "After a few min there". The player's first rampages as the Behemoth are army-only; once they have spent about 3 minutes of rampage time in the adolescent city (a play-time counter carried between rampages, in the save), the Taskforce joins every rampage after, and squads still come faster as more of the city falls (D-152). Never the baby city. The 3 minutes is the lead's pick inside "a few minutes", one data value.
-
-## 2026-10-23 · D-159 · Director · The team fits the PC; full tests on CI; clean code as you go; measure sim speed
-
-Asked "whats the best way for us to get stuff done on this project? tell me if this workflow is suboptimal" and "is our architecture sound? can it be improved". The lead measured: 14 engine jobs on 16 CPU threads at 100%, helpers mostly waiting on local test runs, a 2-hour balance run taking about 2 hours, 6 open PRs (rule: 3). Code on look-options 70ef2ac5: the sim is clean (no Node, input or clock), seeded streams, the six fixed autoloads, versioned saves, size caps enforced by lint; weak spots: 20 files packed at 390-400 lines, 77 grandfathered long functions (ratchet baseline), slow balance runs. Asked: "Fit the PC": about 4 engine-running builders at once in total, the lead's and the VFX lead's together (readers and critics that run no engine do not count). "GitHub runs them": builders run only the suites their change touches; the full suite runs on CI before merge, never locally. At most 3 open PRs (the standing rule). "Yes, as they go": builders split a crowded file at a natural seam and shrink a grandfathered long function whenever their work touches it. "Yes, after current work": the lead measures where the sim's step time goes so a balance run takes minutes; any game change it suggests goes to the director first.
-
-## 2026-10-23 · D-158 · Director · Title camera tilts up so the Colossus towers
-
-Asked by the VFX lead with the current title still: the title camera tilts up until the Colossus head stands 1.5-2x the tallest centre tower, the full head silhouette stays in frame, and the water band gets about a third thinner (accepted) with the fire reflections still visible in it. Amended 2026-10-23: the title builder measured that no tilt reaches 1.5-2x the 163 m centre tower with any water left (the head stood 1.15x the 102 m tower under it, 0.8x the 163 m one). Asked: "Bigger + lower tower": the Colossus grows (140 to about 185 m), the camera tilts about 7 degrees so the water band is a third thinner, and the 163 m tower is lowered on the title only, so nothing on screen is taller than the Colossus; its whole head stands 1.5-2x the tallest tower left in frame.
-
-## 2026-10-23 · D-157 · Director · The army's stray shells count as the kaiju's destruction
-
-Asked (sim review of PR #159 found it agent-added): when a tank's missed shell smashes part of a building, it all counts: the kaiju earns the biomass, the city's ruin rises, and the army escalates as usual (the army wrecking its own city in a panic feeds the predator). The D-066 damage budget is measured with helicopters on, including that escalation.
-
-## 2026-10-23 · D-156 · Director · The demo ends when the whole upgrade tree is unlocked; endless mode
-
-Asked what triggers the thanks screen; then he changed it: "i think we should measure until the upgrade tree is fully unlocked (2 hours roughly)". The thanks screen appears when the player buys the final upgrade; costs are tuned so that takes about 2 hours (D-152 window). "After they unlock the final upgrade they can unlock an endless mode maybe, where the city regenerates slowly and enemies escalate; otherwise players can feel free to replay the normal mode with their maxed out kaiju as many times as they want." Asked: endless mode is in the demo. Replaces D-153's free play in the ruined city and the old trigger (buying the Behemoth evolution). Then: "the game's balance will not be determined by endless mode. the normal mode is still the main way to play and all balance questions ultimately will be decided on whether it makes normal mode better" (DESIGN Progression).
-## 2026-10-23 · D-155 · Director · Atmosphere joins M1; weather; music and city sound; version; end confirm
-
-"keen to get stuck into the atmospheric stuff soon". Asked: all four parts, and all are part of M1 (M1 waits for them): rampage escalation (D-154: haze, orange sky, spreading blackouts), sky and sea life (clouds, birds that scatter, small boats, one untouchable whale per run; comments #63-64, #71), weather, and sound atmosphere. Weather is looks only: rain, fog banks, thunderstorm, overcast or clear; picked at random per run with the time of day, never the same twice in a row, with an options toggle to fix it. Music: the lead writes one short brief per city (style, tempo, mood, stems), the director generates in Suno (D-114) and the lead cuts and layers the stems (D-125). City sound: panic then eerie quiet (crowds and sirens swell early, then fade as people flee; the late city is fire, wind and military). Version tag: "DEMO 0.1", rising one step per milestone (M1 0.1, M2 0.2, M3 0.3), the Itch release is the 1.0 demo. End rampage in the pause menu asks "Are you sure?" first.
-
-## 2026-10-23 · D-154 · Director · Visual direction (12 answers in the VFX lead's session)
-
-Asked by the VFX lead (recorded in docs/VFX_STYLE.md "Visual direction", PR #154): fire is cinematic (deep orange-red, black smoke); as a rampage escalates the haze thickens and the sky turns orange; collapse dust walls may swallow the camera for 2-3 s (an exception to D-018); a big stomp's wave ripples through the blocks (cars hop, windows burst); debris rains for 2-4 s; rare split-second slow motion on the biggest moments; glass breaks into glittering shards; night blackouts spread as the city falls; crushed people are a bloodless puff; enemy kills are mostly small crushed pops; the croc's spines and throat crackle with white-hot lightning on charge, stronger with each evolution; Taskforce energy is clean, precise tech.
