@@ -139,11 +139,11 @@ func _tank(sim: RampageSim, spots: Array[Vector2], old_centre: Vector2) -> Rampa
 	return tank
 
 
-## The tank on the foot's spot lost the whole stomp_damage; one where the old centre was would have
-## lost only a part of it (or none). `shot`: {lost, spot, old}.
+## The tank on the foot's spot lost the whole stomp blow (RampageStomp.damage); one where the old
+## centre was would have lost only a part of it (or none). `shot`: {lost, spot, old}.
 func _damage(label: String, sim: RampageSim, shot: Dictionary) -> void:
 	var lost := Num.f(shot["lost"])
-	var full := sim.stat("stomp_damage") * sim.powers.hit_mult()
+	var full := sim.stomp.damage() * sim.powers.hit_mult()
 	var old: Vector2 = shot["old"]
 	var spot: Vector2 = shot["spot"]
 	var old_k := RampageSim.falloff(
