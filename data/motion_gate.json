@@ -1,0 +1,28 @@
+{
+	"_note": "Bars for tests/run_motion_tests.gd, the motion gate (D-177 'Motion first'). Every number was measured on origin/main 1f23937a (walk, 90/180 turns, turn from standing, held curve, 6 s each, seeded sim, 60 Hz) and set a small margin past the measured value; never widen a bar to get green, fix the motion. slide_max (units/s) and aloft_yaw_max (deg): measured 0.00 at every stage, bars sit just above zero. catch_straight: catch steps a second walking straight, measured 0, one step in the 5 s window is 0.2. catch_turn_smooth: the young croc's smooth turns (D-131), measured worst 1.00 (turn180), bar held at the 2026-10-23 lead ruling. steps_ratio_min/max: legs steps a second over the walk clip's authored pace, measured young 2.26, Behemoth 2.15, Colossus 1.75, bar about +-8%. step_tol: the sim's step vs half the clip's stride, measured 0.0% Behemoth, 0.2% Colossus. jerk_walk/jerk_turn: shin jerk p99 in deg/frame^2, measured walk 2.7/4.3/1.0, worst turn 4.83/6.95/5.36 (young/Behemoth/Colossus), bar about +15-20%. stretch_max: planted hip-ankle reach as a share of leg length, measured worst 0.93. pivot_max / centre_max: hip heights, measured worst 0.06 / 0.42. lift_min/lift_max: the walk clip's toe-tip rise as a share of hip height, measured 3.8% / 2.1% / 2.0%; the young croc may bounce a little (lead 2026-10-23), the lower bar says the feet do lift.",
+	"slide_max": 0.05,
+	"aloft_yaw_max": 0.0,
+	"catch_straight": 0.2,
+	"catch_turn_smooth": 1.0,
+	"step_tol": 0.01,
+	"stretch_max": 0.97,
+	"pivot_max": 0.08,
+	"centre_max": 0.5,
+	"stages": {
+		"young": {
+			"steps_ratio_min": 2.08, "steps_ratio_max": 2.30,
+			"jerk_walk": 3.2, "jerk_turn": 5.8,
+			"lift_min": 0.03, "lift_max": 0.044
+		},
+		"Behemoth": {
+			"steps_ratio_min": 1.98, "steps_ratio_max": 2.25,
+			"jerk_walk": 5.0, "jerk_turn": 8.0,
+			"lift_min": 0.016, "lift_max": 0.025
+		},
+		"Colossus": {
+			"steps_ratio_min": 1.62, "steps_ratio_max": 1.85,
+			"jerk_walk": 1.3, "jerk_turn": 6.4,
+			"lift_min": 0.015, "lift_max": 0.024
+		}
+	}
+}
