@@ -130,7 +130,7 @@ func _run_hits(rampage: Rampage) -> void:
 		if armour:
 			rampage.sim.stats["armor"] = 0.0
 		await Kit.ticks(self, 90)
-	print("WOUNDS %s live %d" % [tag, rampage._kaiju.wounds_live() if rampage._kaiju.has_method("wounds_live") else -1])
+	print("WOUNDS %s live %d" % [tag, _wounds(rampage)])
 
 
 func _run_worn(rampage: Rampage) -> void:
@@ -145,7 +145,7 @@ func _run_worn(rampage: Rampage) -> void:
 		if i % 1800 == 0:
 			print(
 				"WORN t=%ds hp %.1f wounds %d"
-				% [i / 60, rampage.sim.hp, rampage._kaiju.wounds_live() if rampage._kaiju.has_method("wounds_live") else -1]
+				% [i / 60, rampage.sim.hp, _wounds(rampage)]
 			)
 		if rampage.sim.over:
 			break
@@ -160,12 +160,24 @@ func _run_worn(rampage: Rampage) -> void:
 	Kit.crop_2x(shot, Kit.image_point(self, cam, chest, size), Vector2i(900, 900), path.replace(".png", "_2x.png"))
 	print(
 		"WORN done size %s wounds %d shots %d"
-		% [size, rampage._kaiju.wounds_live() if rampage._kaiju.has_method("wounds_live") else -1, shots]
+		% [size, _wounds(rampage), shots]
 	)
 
 
+func _wounds(rampage: Rampage) -> int:
+	var kaiju: Node = rampage._kaiju
+	if not kaiju.has_method("wounds_live"):
+		return -1
+	var n: int = kaiju.call("wounds_live")
+	return n
+
+
 func _voxel(rampage: Rampage) -> float:
-	return rampage._kaiju.voxel_world() if rampage._kaiju.has_method("voxel_world") else 0.12
+	var kaiju: Node = rampage._kaiju
+	if not kaiju.has_method("voxel_world"):
+		return 0.12
+	var v: float = kaiju.call("voxel_world")
+	return v
 
 
 func _flash_count(rampage: Rampage) -> int:
