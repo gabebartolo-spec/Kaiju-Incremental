@@ -145,25 +145,9 @@ func _start() -> void:
 ## a landing whose body would sit in one, is not landed on: the body comes down on the street
 ## before it, clear of it, and the blow chews its wall.
 func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
-	var stage := _now()
-	var s := sim.body_scale()
 	var feet := at + ahead * body.feet_ahead()
-	var reach := Num.f(stage["reach"]) * s
-	var near := Num.f(stage["min_reach"]) * s
-	var cone := cos(deg_to_rad(Num.f(cfg["aim_half_angle_deg"])))
-	var best := -1
-	var best_d := INF
-	for i: int in sim.buildings.size():
-		var b := sim.buildings[i]
-		if b.frame.alive_count == 0 or not b.in_arena:
-			continue
-		var off := Vector2(b.x, b.z) - feet
-		var d := off.length()
-		if d < near or d > reach or d >= best_d or off.normalized().dot(ahead) < cone:
-			continue
-		best = i
-		best_d = d
-	var land := feet + ahead * reach
+	var best := _nearest_ahead(feet, ahead)
+	var land := feet + ahead * Num.f(_now()["reach"]) * sim.body_scale()
 	var roof := 0.0
 	if best >= 0:
 		var b := sim.buildings[best]
@@ -176,6 +160,27 @@ func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 		while to != at and _in_tower(to, ahead, 0.0):
 			to = to.move_toward(at, step)
 	return {"building": best, "to": to, "roof": roof}
+
+
+## The nearest standing building in the arena whose centre is in the aim cone along `ahead` and
+## between min_reach and reach of `feet`; -1 for none.
+func _nearest_ahead(feet: Vector2, ahead: Vector2) -> int:
+	var s := sim.body_scale()
+	var reach := Num.f(_now()["reach"]) * s
+	var near := Num.f(_now()["min_reach"]) * s
+	var cone := cos(deg_to_rad(Num.f(cfg["aim_half_angle_deg"])))
+	var best := -1
+	var best_d := INF
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		var off := Vector2(b.x, b.z) - feet
+		var d := off.length()
+		if b.frame.alive_count == 0 or not b.in_arena or d < near or d > reach or d >= best_d:
+			continue
+		if off.normalized().dot(ahead) >= cone:
+			best = i
+			best_d = d
+	return best
 
 
 func _dwarfs(index: int) -> bool:
