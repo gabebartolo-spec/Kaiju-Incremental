@@ -1,6 +1,5 @@
 
-| 32 | Rubble: "i dont like the tangled mess of rectangular ruins clipping into one another. surely we can come up with a more visually appealling solution for rubble"; asked: pancaked floors + debris, below his knees, crunches flatter, right after ground | VFX lead | rubble branch | plan approved; D-245 |
-| 33 | Shot impacts: "look a bit flat, like theyre pasted on top of the image rather than actually hitting the kaiju"; "it glows too much"; "a toned down impact indicator with a tiny red blood mist at the impact site to emphasise the damage"; asked: faint lasting wounds | VFX lead | next free slot | briefed; D-245 |
-| 34 | Komodo mouth round 3 failed (closed-mouth Tripo head); asked: "Model a real mouth" | komodo-mouth asset session (local_530227a5) | komodo-mouth | plan first; interim ~10 deg roar at casc-anim; D-245 |
-| 35 | "the inside of the crocs mouth is also featureless, just black voxels, we should give all our models the same detailed, functional mouths with real anatomic features"; asked: croc first, then Komodo, then serpent; gums/teeth/lining, moving tongue, throat and palate; own real animal | komodo-mouth asset session | komodo-mouth | plan first; D-245 |
-| 36 | Komodo walk at 2.17x authored pace; asked: "Slow him to the clip" | komodo-clips builder | komodo-clips | in progress; D-245 |
+| 37 | "something funky going on with the distant city" (screenshot: skyline floats crisp above the haze) | lead (diagnosis), then owner | - | investigating |
+| 38 | "btw youre cooking the pc's ram too hard, ease up a bit" | all leads | - | 9 GB pool stopped; RAM limits in force; D-246 |
+| 39 | "what happened to our insectoid rampaging in the distant city? at one point it was in the game, but now i never see it anymore" | lead | - | investigating |
+| 40 | "im concerned that our serpent kaiju just resembles a giant snake, roadmap: revisit the serpent concepts and possibly make new models"; "dont do any serpent work until we decide on the final design"; asked: hood and frills + armour and horns; Tripo test models, 200 credits | VFX lead (Tripo) | - | serpent frozen; tests briefed; D-246 |
