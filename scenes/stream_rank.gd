@@ -24,6 +24,7 @@ var _cz := PackedFloat32Array()
 var _cr := PackedFloat32Array()
 var _keep := 0.0
 var _hold := 0.0
+var _fall_margin := 0.0
 var _ring := 0.0
 var _side := 0.0
 var _kaiju_extra := 0.0
@@ -87,6 +88,7 @@ func set_view(look: Array, city: Dictionary) -> void:
 	outside = Num.f(cfg["outside_m"])
 	_keep = Num.f(cfg["landmark_keep_m"])
 	_hold = Num.f(cfg.get("hold_m", 0.0))
+	_fall_margin = Num.f(cfg.get("fall_margin_m", 0.0))
 	_kaiju_extra = Num.f(cfg["kaiju_extra_m"])
 	var half: float = look[2]
 	var band := minf(PI, half + deg_to_rad(Num.f(cfg["margin_deg"])))
@@ -139,13 +141,34 @@ static func chunks(b: RampageSim.Building) -> int:
 	return b.frame.alive_count if b.model != "" else b.w * b.d * b.height
 
 
-## Whether building n (b) stays meshed wherever the plan's budget runs out: one Building.is_held
-## marks that keeps_landmark keeps, or any untouched one within stream_view.hold_m of the kaiju,
-## so a blow never waits on an on-the-spot build (D-256 frame bar).
+## Whether building n (b) stays meshed wherever the plan's budget runs out: a touched one, one
+## Building.is_held marks that keeps_landmark keeps, or any within stream_view.hold_m of the
+## kaiju, so a blow never waits on an on-the-spot build (D-256 frame bar).
 func holds(n: int, b: RampageSim.Building, kaiju: Vector2, touched: bool) -> bool:
-	if not touched and Vector2(_cx[n], _cz[n]).distance_to(kaiju) <= _hold:
+	if touched or Vector2(_cx[n], _cz[n]).distance_to(kaiju) <= _hold:
 		return true
 	return b.is_held() and keeps_landmark(n, kaiju)
+
+
+## The buildings a topple (a fall_start event with "to") lands on: every other one whose footprint
+## comes within the strip's half width plus stream_view.fall_margin_m of the line from its pivot
+## to its far end, the line reaching fall_margin_m further.
+func under_fall(event: Dictionary) -> Array[int]:
+	var out: Array[int] = []
+	if not event.has("to"):
+		return out
+	var pivot: Vector3 = event["pivot"]
+	var start := Vector2(pivot.x, pivot.z)
+	var finish: Vector2 = event["to"]
+	finish += (finish - start).normalized() * _fall_margin
+	var reach := Num.f(event["width"]) * 0.5 + _fall_margin
+	var own := Num.i(event["building"])
+	for n: int in _cx.size():
+		var here := Vector2(_cx[n], _cz[n])
+		var at := Geometry2D.get_closest_point_to_segment(here, start, finish)
+		if n != own and at.distance_to(here) - _cr[n] <= reach:
+			out.append(n)
+	return out
 
 
 ## Whether landmark n stays meshed: no camera, or the camera's wedge or margin band reaches it,

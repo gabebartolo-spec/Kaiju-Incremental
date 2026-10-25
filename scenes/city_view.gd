@@ -200,6 +200,7 @@ func fall_start(event: Dictionary) -> void:
 	var index := Num.i(event["building"])
 	var cells: Array[Vector3i] = event["cells"]
 	var pivot: Vector3 = event["pivot"]
+	_stream.expect_fall(event)  # a topple's landing strip is meshed before it lands
 	var piece := _stream.view(index).lift_piece(cells, pivot)
 	if LandmarkBurst.bursts(sim, event):  # a landmark's section bursts where it stands
 		piece = LandmarkBurst.new(piece, self, event)
