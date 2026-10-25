@@ -75,16 +75,17 @@ func _run() -> void:
 		await process_frame
 		if _log:
 			_log_camera(rampage, gait, float(Engine.get_process_frames() - start) / 60.0)
+		if rampage.stomp_ring_at.size() > stomps:
+			stomps = rampage.stomp_ring_at.size()
+			print("stomp %d landed at %.2f s: %d street rings alive" % [
+				stomps, float(Engine.get_process_frames() - start) / 60.0, _rings(rampage)
+			])
+			wait = STOMP_SHOT_DELAY + 1 if stomps <= STOMP_SHOTS else -1
 		if not _shots:
 			continue
 		wait -= 1
 		if wait == 0:
 			_snap(rampage, "stomp_%d" % stomps, rampage.stomp_ring_at[-1])
-		if rampage.stomp_ring_at.size() > stomps:
-			stomps = rampage.stomp_ring_at.size()
-			if _log:
-				print("stomp %d landed: %d street rings alive" % [stomps, _rings(rampage)])
-			wait = STOMP_SHOT_DELAY if stomps <= STOMP_SHOTS else -1
 		var rake_t := gait.swing._rake_t
 		var arms := gait.rig.bone("arm_l0").global_position
 		arms = (arms + gait.rig.bone("arm_r0").global_position) * 0.5
