@@ -97,19 +97,22 @@ func _check_aims_ahead() -> void:
 	var at_contact := 0
 	for _n: int in roundi(5.0 / DT):
 		var was := sim.chunks_destroyed
-		var crouching := sim.body.dash.phase() == "crouch"
 		var step := sim.step(DT, Vector2.ZERO, false, 0)
 		if not _first(step, "leap_land").is_empty():
 			landed = true
 			at_contact = sim.chunks_destroyed - was
 			break
-		early += sim.chunks_destroyed if crouching else 0
-	check(landed and early == 0, "the crouch breaks nothing (%d chunk-steps)" % early)
+		early += sim.chunks_destroyed
+	check(landed and early == 0, "nothing breaks in the crouch or the flight (%d)" % early)
 	check(at_contact > 0, "the landing blow breaks chunks on contact (%d)" % at_contact)
 	var feet := sim.kaiju_pos + sim.facing * sim.body.feet_ahead()
+	var roof := sim.body.dash.arc.land_y
 	check(
-		feet.distance_to(ahead) < 0.05,
-		"the feet land on the building's centre (%.2f off)" % feet.distance_to(ahead)
+		feet.distance_to(ahead) < 0.05 and roof == Num.f(layout[0]["h"]),
+		(
+			"the feet land on the building's roof, centre %.2f off, %.1f up"
+			% [feet.distance_to(ahead), roof]
+		)
 	)
 	var left := sim.buildings[0].frame.alive_count
 	check(left < before, "the landing breaks the building (%d of %d chunks left)" % [left, before])
@@ -183,7 +186,7 @@ func _check_phases() -> void:
 				absf(got - want) <= DT * 1.01,
 				"%s: the %s lasts %.3f s (data %.3f s)" % [stage, phase, got, want]
 			)
-		var top := Num.f(data["apex"]) * sim.body_scale()
+		var top := sim.body.dash.arc.top  # over open ground: the clearance above the street
 		check(
 			apex > top * 0.95 and apex <= top + 0.001 and sim.body.dash.height() == 0.0,
 			"%s: the body rises %.2f (apex %.2f) and is down after" % [stage, apex, top]
@@ -274,6 +277,14 @@ func _check_effect() -> void:
 		"croc.leap: one landing with the button, none without (%s / %s)" % [leapt, walked]
 	)
 	check(
+		(
+			Num.i(leapt["in_flight"]) == 0
+			and Num.i(leapt["blocked"]) == 0
+			and Num.f(leapt["roof"]) > 0.0
+		),
+		"croc.leap: a high arc onto a roof, nothing hit in flight (%s)" % [leapt]
+	)
+	check(
 		Num.i(leapt["chunks"]) > Num.i(walked["chunks"]),
 		(
 			"croc.leap: the leap breaks more of the city than walking the same seconds (%d vs %d)"
@@ -292,9 +303,18 @@ func _run_city(leap: bool) -> Dictionary:
 	for _n: int in roundi(FIXTURE_LEAD_S / DT):
 		sim.step(DT, north, false, 0)
 	sim.step(DT, north, false, BUTTON if leap else 0)
+	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
 	for _n: int in roundi(FIXTURE_WATCH_S / DT):
+		var flying := sim.body.dash.phase() == "flight"
+		var was := sim.body.broken
 		sim.step(DT, north, false, 0)
+		if flying and sim.body.dash.phase() == "flight":
+			in_flight += sim.body.broken - was
+			in_flight += sim.body.inside(sim.kaiju_pos, sim.body.heading).size()
 	return {
+		"in_flight": in_flight,
+		"roof": sim.body.dash.arc.land_y,
+		"blocked": sim.body.dash.arc.blocked,
 		"landings": sim.body.dash.landings,
 		"chunks": sim.chunks_destroyed,
 		"rubble": snappedf(sim.rubble, 0.001),

@@ -31,6 +31,8 @@ var from := Vector2.ZERO
 var to := Vector2.ZERO
 var target := -1
 var dir := Vector2.ZERO
+## The flight's height (LeapArc): high over the street, down on the target's roof.
+var arc: LeapArc
 var _stages: Array = []
 var _stage: Dictionary = {}
 var _phase := -1  # index into PHASES; -1: no leap
@@ -42,6 +44,7 @@ func _init(p_body: BodyContact, contact: Dictionary) -> void:
 	body = p_body
 	sim = body.sim
 	cfg = contact.get("leap", {})
+	arc = LeapArc.new(sim)
 
 
 ## Picks the species' stages (none: this species has no leap).
@@ -79,13 +82,16 @@ func phase_seconds(phase_name: String) -> float:
 	return _phase_s(PHASES.find(phase_name))
 
 
-## How high the body is above where it stands (world units): a parabola through the flight,
-## apex at mid-flight, zero on the ground.
+## How high the body is above the street (world units): the arc through the flight; through the
+## settle it sinks from the roof it landed on to the street as the building breaks under it (the
+## body's sweep breaks what it sinks into); zero otherwise.
 func height() -> float:
-	if phase() != "flight":
-		return 0.0
-	var s := phase_t()
-	return 4.0 * Num.f(_stage["apex"]) * sim.body_scale() * s * (1.0 - s)
+	match phase():
+		"flight":
+			return arc.at(phase_t())
+		"settle":
+			return arc.land_y * (1.0 - phase_t() * phase_t())
+	return 0.0
 
 
 ## Starts a leap when pressed and ready, then carries it through its phases. Before the sweep.
@@ -115,18 +121,29 @@ func _start() -> void:
 	var aim := aim_at(from, dir)
 	target = Num.i(aim["building"])
 	to = aim["to"]
+	var numbers := Vector4(
+		Num.f(aim["roof"]),
+		Num.f(_stage["clear"]) * sim.body_scale(),
+		Num.f(cfg["landing_step"]),
+		Num.f(cfg["arc_tries"])
+	)
+	arc.plan(body.discs(), PackedVector2Array([from, to]), dir, numbers)
 	_phase = 0
 	_t = 0.0
 	var leap := {"type": "leap", "from": from, "to": to, "building": target, "dir": dir}
 	for n: int in PHASES.size():
 		leap[PHASES[n]] = _phase_s(n)
-	leap["apex"] = Num.f(_stage["apex"]) * sim.body_scale()
+	leap["apex"] = arc.top
+	leap["roof"] = arc.land_y
 	sim.events.append(leap)
 
 
-## Where a leap from `at` along `ahead` lands: {"building": index or -1, "to": kaiju_pos there}.
-## The feet come down on the nearest standing building in the arena whose centre lies within the
-## aim cone and between min_reach and reach of them; with none, the full reach along `ahead`.
+## Where a leap from `at` along `ahead` lands: {"building": index or -1, "to": kaiju_pos there,
+## "roof": the height it lands at}. The feet come down on the roof of the nearest standing building
+## in the arena whose centre lies within the aim cone and between min_reach and reach of them; with
+## none, on the street at the full reach along `ahead`. A building that dwarfs the body (D-091), or
+## a landing whose body would sit in one, is not landed on: the body comes down on the street
+## before it, clear of it, and the blow chews its wall.
 func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 	var stage := _now()
 	var s := sim.body_scale()
@@ -147,31 +164,22 @@ func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 		best = i
 		best_d = d
 	var land := feet + ahead * reach
+	var roof := 0.0
 	if best >= 0:
-		land = Vector2(sim.buildings[best].x, sim.buildings[best].z)
+		var b := sim.buildings[best]
+		land = Vector2(b.x, b.z)
+		roof = float(b.height)
 	var to := sim.clamp_to_arena(land - ahead * body.feet_ahead())
-	return {"building": best, "to": _clear_of_towers(at, to, ahead)}
+	if best >= 0 and (_dwarfs(best) or _in_tower(to, ahead, roof)):
+		roof = 0.0
+		var step := Num.f(cfg["landing_step"])
+		while to != at and _in_tower(to, ahead, 0.0):
+			to = to.move_toward(at, step)
+	return {"building": best, "to": to, "roof": roof}
 
 
-## How far the leap from `start` to `land` gets before its body, on its arc, would enter a building
-## that dwarfs it (D-091: such a building is chewed, never passed through): it comes down at the
-## last clear pose, against that wall. Whatever else the body flies or lands in breaks
-## (BodyContact's sweep, lifted by the arc).
-func _clear_of_towers(start: Vector2, land: Vector2, ahead: Vector2) -> Vector2:
-	var step := Num.f(cfg["landing_step"])
-	var span := start.distance_to(land)
-	var apex := Num.f(_now()["apex"]) * sim.body_scale()
-	var clear := start
-	for n: int in ceili(span / step) + 1:
-		var f := minf(1.0, n * step / maxf(span, 0.001))
-		var pose := start.lerp(land, f)
-		if _in_tower(pose, ahead, 4.0 * apex * f * (1.0 - f)):
-			break
-		clear = pose
-	if clear != land:  # it comes down short: that pose on the ground must be clear too
-		while clear != start and _in_tower(clear, ahead, 0.0):
-			clear = clear.move_toward(start, step)
-	return clear
+func _dwarfs(index: int) -> bool:
+	return Growth.dwarf_mult(sim.size_tier(), sim.buildings[index].tier, sim.city) < 1.0
 
 
 ## Whether the body at `pose`, lifted `lift`, overlaps a standing building that dwarfs it.
@@ -180,7 +188,7 @@ func _in_tower(pose: Vector2, ahead: Vector2, lift: float) -> bool:
 	var inside := body.inside(pose, ahead)
 	body.set_lift(height())
 	for index: int in inside:
-		if Growth.dwarf_mult(sim.size_tier(), sim.buildings[index].tier, sim.city) < 1.0:
+		if _dwarfs(index):
 			return true
 	return false
 
@@ -223,7 +231,8 @@ func _land() -> void:
 	var force := func(p: Vector2, r: float) -> float:
 		return RampageSim.falloff(p.distance_to(centre) - r, ring)
 	_fling(centre, force, Num.f(_stage["fling"]) * s)
-	sim.hit_area(force, Num.f(_stage["damage"]) * sim.powers.hit_mult())
+	var top := maxi(ceili(sim.reach_top()), ceili(arc.land_y) + 1)  # landed on a roof: all of it
+	sim.hit_area(force, Num.f(_stage["damage"]) * sim.powers.hit_mult(), 0, top)
 
 
 ## Every tank the ring reaches slides outward from the centre by `fling` x its force (a tank under

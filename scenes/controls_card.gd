@@ -4,7 +4,7 @@ extends PanelContainer
 ## the first rampage (RampageHud) and from Settings > CONTROLS. Never on the HUD otherwise.
 
 ## The first-run card lists only these (the full list stays in Settings > CONTROLS).
-const FIRST_RUN: Array[String] = ["Move", "Signature attack", "Dash"]
+const FIRST_RUN: Array[String] = ["Move", "Signature attack", "Leap"]
 const PROMPT := "PRESS ANY KEY"
 ## Extra room under the full controls list (px at 1080p).
 const BOTTOM_PAD := 20
