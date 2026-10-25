@@ -2,8 +2,8 @@ extends "res://tests/lib/runner.gd"
 ## The croc turns over its planted foot only as far as the stick turned it (D-177, the sim review of
 ## the gait fix): the hand-over from the river, where the body still lies along the water about 90
 ## deg off the way it faces, catches its heading up about the middle and does not swing the body
-## about the feet; and a dash, which holds its own axis, is not slid sideways by a stick a little
-## off it.
+## about the feet; and a leap (the dash button), which holds its own axis, is not slid sideways
+## by a stick a little off it.
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
 const DT := 1.0 / 60.0
@@ -13,7 +13,7 @@ const DASH_BUTTON := 4  # Dash.BUTTON
 ## 12 frames after the hand-over the body has walked about a unit: a lurch is several.
 const HAND_OVER_FRAMES := 12
 const MAX_HAND_OVER := 3.0
-## A stick this far off the dash axis (rad) may not slide the body sideways more than this (units).
+## A stick this far off a leap's axis (rad) may not slide the body sideways more than this.
 const OFF_AXIS := 0.2
 const MAX_SLIDE := 1.0
 
@@ -85,18 +85,20 @@ func _check_dash() -> void:
 		var stick := axis.rotated(OFF_AXIS)
 		sim.step(DT, stick, false, DASH_BUTTON)
 		var dashed := sim.body.dash.on()
-		for _n: int in roundi(0.45 / DT):
-			sim.step(DT, stick, false, 0)  # the stick held a little off the axis for the whole dash
+		for _n: int in roundi(6.0 / DT):
+			if not sim.body.dash.on():
+				break
+			sim.step(DT, stick, false, 0)  # the stick held a little off the axis for the whole leap
 		var along := (sim.kaiju_pos - from).dot(axis)
 		var slide := absf((sim.kaiju_pos - from).dot(axis.orthogonal()))
 		check(
 			dashed and along > 5.0,
-			"%s: the dash carried the body %.1f units along its axis" % [stage, along]
+			"%s: the leap carried the body %.1f units along its axis" % [stage, along]
 		)
 		check(
 			slide < MAX_SLIDE,
 			(
-				"%s: a stick %.1f rad off the axis slides the dash %.1f units sideways (< %.0f)"
+				"%s: a stick %.1f rad off the axis slides the leap %.1f units sideways (< %.0f)"
 				% [stage, OFF_AXIS, slide, MAX_SLIDE]
 			)
 		)

@@ -68,8 +68,16 @@ func open(opener: Taskforce.Agent, agents: Array[Taskforce.Agent], dt: float) ->
 			_start_aim(agent, shots * gap + (0.0 if agent == opener else dt))
 			shots += 1
 	_volleys[opener.squad] = {
-		"lock": Num.f(cfg["aim_seconds"]) - Num.f(cfg["lock_seconds"]), "age": 0.0, "first": -1.0
+		"lock": Num.f(cfg["aim_seconds"]) - lock_seconds(), "age": 0.0, "first": -1.0
 	}
+
+
+## The warning between the lines locking and the first shot, by growth stage (director
+## 2026-10-26, "Longer warning, scaled by size"): long enough for a leap pressed at the lock to
+## crouch and be off the lock before the shot lands.
+func lock_seconds() -> float:
+	var by_stage: Array = cfg["lock_seconds_by_stage"]
+	return Num.f(by_stage[clampi(sim.size_tier() - 1, 0, by_stage.size() - 1)])
 
 
 ## One step of an aiming gunner: the line follows the kaiju until the squad's lines lock, then the

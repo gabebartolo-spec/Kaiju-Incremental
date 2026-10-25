@@ -221,7 +221,7 @@ func _physics_process(delta: float) -> void:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
+	_update_kaiju(delta, 0.0 if sim.body.dash.on() else move.length())  # a leap holds its pose
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
@@ -290,6 +290,7 @@ func _on_event(event: Dictionary) -> void:
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
+			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -310,7 +311,8 @@ func _power(stat_name: String) -> float:
 
 func _update_kaiju(delta: float, moving: float) -> void:
 	var target := _to_world(sim.kaiju_pos)
-	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
+	var lift := GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0
+	target.y = sim.stand_y + (sim.body.dash.height() if sim.body.dash.on() else lift)
 	_kaiju_at = _ability.step(delta, target, _kaiju_at)
 	_kaiju.position = _kaiju_at
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
