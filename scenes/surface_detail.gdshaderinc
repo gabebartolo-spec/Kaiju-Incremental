@@ -260,7 +260,7 @@ vec3 sd_concrete(vec3 base, vec2 uv, float wy, vec3 n, float water_y) {
 		float wet_band = 1.0 - smoothstep(edge - 0.1, edge + 0.04, h);
 		float slime = (1.0 - smoothstep(0.0, edge * 0.8, h)) * (0.7 + 0.3 * sd_vn(vec2(uv.x * 1.6, 9.0)));
 		col *= 1.0 - 0.7 * damp * wet_band;
-		col = mix(col, vec3(0.06, 0.075, 0.03), clamp(slime * damp * 0.9, 0.0, 0.8));
+		col = mix(col, vec3(0.05, 0.09, 0.02), clamp(slime * damp * 0.9, 0.0, 0.75));
 		float dried = (1.0 - smoothstep(0.0, 0.08, abs(h - edge - 0.14))) * damp;
 		col *= 1.0 + 0.3 * dried;
 	}

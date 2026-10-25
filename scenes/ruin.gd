@@ -48,15 +48,12 @@ static func heap(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> VoxelBui
 
 
 ## Rubble's own look (rubble.gdshader: broken concrete, chips, dust, cracks) on a built heap's
-## cubes. The mesh is the heap's own copy, so the shared voxel mesh keeps the city's material.
+## cubes. Every heap builds its own cube mesh (Look.voxel_mesh), so the city's material is untouched.
 static func rubbled(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:
-	var mesh := BoxMesh.new()
-	mesh.size = (mmi.multimesh.mesh as BoxMesh).size
 	var mat := ShaderMaterial.new()
 	mat.shader = RUBBLE
 	CityGround.apply_look(mat, Num.i(Content.section("city")["map_seed"]))
-	mesh.material = mat
-	mmi.multimesh.mesh = mesh
+	(mmi.multimesh.mesh as BoxMesh).material = mat  # each heap builds its own cube mesh
 	return mmi
 
 
