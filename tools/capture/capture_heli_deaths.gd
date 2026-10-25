@@ -129,7 +129,7 @@ func _spawn(toward: Array[Vector2]) -> Array[AirWing.Heli]:
 			var heli: AirWing.Heli = helis[n]
 			var at: Vector2 = toward[n]
 			heli.pos = at
-			heli.angle = (at - sim.kaiju_pos).angle()
+			heli.heading = (at - sim.kaiju_pos).angle()
 		await physics_frame
 	for node: Node3D in _rampage._powers.helis():
 		print("parked helicopter opacity %.2f" % Num.f(node.get_meta("opacity", 1.0)))
