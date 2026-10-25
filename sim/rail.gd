@@ -9,9 +9,13 @@ extends RefCounted
 ## sideways, the cars behind fold the other way and back again (the jackknife), all slide on with
 ## their momentum against friction, roll, and any car off the deck falls to the street; the
 ## couplers are gone, a car that runs into the one ahead shares its speed (the concertina). The
-## track breaks where it was hit and a train behind stops short of it, or ploughs in if it
-## cannot. Pure and seeded: positions are on the ground plane (x, z) with a height y; the
-## presentation reads them. Every number: tuning "rail".
+## viaduct and the station are voxel structures among the city's buildings (RailLayout, `pieces`):
+## the kaiju's body, its blows and toppled towers carve them, and they settle and fall, by the
+## rules every building does (Carving, Collapse; the director 2026-10-25 "destroyed with the same
+## logic as all other buildings"). The track is broken wherever the deck under it is gone: a
+## train over it derails, a train behind stops short of it, or ploughs in if it cannot. Pure and
+## seeded: positions are on the ground plane (x, z) with a height y; the presentation reads them.
+## Every number: tuning "rail".
 
 const RUN := "run"
 const DWELL := "dwell"
@@ -52,6 +56,10 @@ var trains: Array[Train] = []
 var length := 0.0
 var deck_y := 0.0
 var derailed := 0
+## The viaduct's pieces: their indices in the sim's buildings (RailLayout), north to south.
+var pieces: Array[int] = []
+## The station stands while the deck under it does.
+var station_standing := true
 var _sim: RampageSim
 var _rng: RandomNumberGenerator
 var _x := 0.0
@@ -61,13 +69,8 @@ var _next_id := 0
 var _dir := 1
 ## Broken track: along-line positions measured from the north end.
 var _breaks: Array[float] = []
-## The viaduct in bays (D-247 "pillars, deck and station break when the kaiju walks through"):
-## each bay is one column bent and its stretch of deck, aligned to multiples of bay_length on z;
-## `bay_first` is the index (z / bay_length) of the line's first bay. Hit points left per bay.
-var bay_first := 0
-var bay_hp: Array[float] = []
-## The station stands while every bay under it does.
-var station_standing := true
+## Piece index -> its standing chunks when last read.
+var _alive_seen: Dictionary = {}
 
 
 func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -81,10 +84,6 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	deck_y = Num.f(cfg["deck_y"])
 	_x = avenue_x(sim.city)
 	_next = Num.f(cfg["first_s"])
-	var bay := Num.f(cfg["bay_length"])
-	bay_first = floori(_z0 / bay)
-	for _i: int in ceili((_z0 + length) / bay) - bay_first:
-		bay_hp.append(Num.f(cfg["bay_hp"]))
 
 
 ## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan.
@@ -139,7 +138,7 @@ func step(dt: float) -> void:
 			if train.s - _tail(train) > length:
 				trains.erase(train)
 	_body_contact()
-	_walk_through(dt)
+	_read_deck()
 
 
 func _running() -> int:
@@ -240,13 +239,26 @@ func _blocked(train: Train) -> bool:
 	return false
 
 
-## Breaks both tracks at `at` along the line (from the north end).
+## Breaks both tracks at `at` along the line (from the north end); a train over it derails.
 func break_track(at: float) -> void:
 	for s: float in _breaks:
 		if absf(s - at) < Num.f(cfg["car_length"]):
 			return
 	_breaks.append(at)
 	_sim.events.append({"type": "track_broken", "at": point(at, 1), "s": at})
+	var st := station_span()
+	if station_standing and at > st.x and at < st.y:  # the station goes with the deck under it
+		station_standing = false
+		_sim.events.append({"type": "station_broken", "at": point(station_s(1), 1)})
+	var pitch := Num.f(cfg["car_length"]) + Num.f(cfg["coupler_gap"])
+	for train: Train in trains.duplicate():
+		if train.state == WRECK:
+			continue
+		var s := at if train.dir > 0 else length - at
+		if train.s >= s and train.s - _tail(train) <= s:
+			derail(
+				train, clampi(floori((train.s - s) / pitch), 0, train.cars.size() - 1), Vector2.ZERO
+			)
 
 
 func broken() -> Array[float]:
@@ -254,7 +266,7 @@ func broken() -> Array[float]:
 
 
 ## A hit (RampageSim.hit_area's force and damage): any car it hits hard enough derails its
-## train; the line under a hard hit breaks.
+## train. The viaduct under it is carved by the same hit, as a building (RampageSim.hit_area).
 func hit(force: Callable, damage: float) -> void:
 	var need := Num.f(cfg["derail_damage"])
 	for train: Train in trains:
@@ -265,34 +277,23 @@ func hit(force: Callable, damage: float) -> void:
 			if damage * k >= need:
 				derail(train, i, train.cars[i].pos)
 				break
-	var step_s := Num.f(cfg["car_length"])
-	var worst := {}
-	var s := 0.0
-	while s <= length:
-		var k: float = force.call(Vector2(_x, _z0 + s), 1.0)
-		var bay := bay_at(s)
-		worst[bay] = maxf(Num.f(worst.get(bay, 0.0)), damage * k)
-		s += step_s
-	for bay: int in worst:
-		damage_bay(bay, Num.f(worst[bay]))
 
 
-## The bay index holding `s` along the line (from the north end).
-func bay_at(s: float) -> int:
-	return clampi(
-		floori((_z0 + s) / Num.f(cfg["bay_length"])) - bay_first, 0, bay_hp.size() - 1
-	)
+## The pieces that lost a chunk since the last step are read again: the track breaks wherever
+## the deck under it is gone (RailLayout.deck_gaps).
+func _read_deck() -> void:
+	for n: int in pieces:
+		var alive := _sim.buildings[n].frame.alive_count
+		if Num.i(_alive_seen[n]) != alive:
+			_alive_seen[n] = alive
+			for at: float in RailLayout.deck_gaps(_sim.buildings[n], self):
+				break_track(at)
 
 
-## The along-line span (from the north end) bay `i` covers, clipped to the line.
-func bay_span(i: int) -> Vector2:
-	var bay := Num.f(cfg["bay_length"])
-	var z0 := (bay_first + i) * bay
-	return Vector2(maxf(z0, _z0) - _z0, minf(z0 + bay, _z0 + length) - _z0)
-
-
-func bay_standing(i: int) -> bool:
-	return bay_hp[i] > 0.0
+## Building n is a piece of the line (RampageSim builds them from RailLayout).
+func add_piece(n: int) -> void:
+	pieces.append(n)
+	_alive_seen[n] = _sim.buildings[n].frame.alive_count
 
 
 ## The viaduct's x centre (the deck and the station are built round it).
@@ -300,56 +301,10 @@ func centre_x() -> float:
 	return (track_x(1) + track_x(-1)) * 0.5
 
 
-## The station's span along the line (from the north end): the platform's length round its stop.
+## The station's span along the line (from the north end): its platforms (RailLayout).
 func station_span() -> Vector2:
-	var long := Num.i(cfg["cars"]) * (Num.f(cfg["car_length"]) + 0.3) + 2.0
-	var at := station_s(1)
-	return Vector2(at - long * 0.5, at + long * 0.5)
-
-
-## Damages one bay; when its pillar and deck are gone the track is broken there, and the station
-## goes with any bay under it.
-func damage_bay(i: int, amount: float) -> void:
-	if amount <= 0.0 or bay_hp[i] <= 0.0:
-		return
-	bay_hp[i] -= amount
-	if bay_hp[i] > 0.0:
-		return
-	var span := bay_span(i)
-	_sim.events.append(
-		{"type": "rail_bay_broken", "bay": i, "z0": span.x + _z0, "z1": span.y + _z0}
-	)
-	break_track((span.x + span.y) * 0.5)
-	var st := station_span()
-	if station_standing and span.x < st.y and span.y > st.x:
-		station_standing = false
-		_sim.events.append({"type": "station_broken", "at": point(station_s(1), 1)})
-
-
-## The kaiju's body walking through the viaduct (any size: the pillars stand at its feet).
-func _walk_through(dt: float) -> void:
-	var r := _sim.stomp_radius() * Num.f(cfg["body_share"])
-	var half_deck := Num.f(cfg["deck_width"]) * 0.5
-	var dx := maxf(0.0, absf(_sim.kaiju_pos.x - _x) - half_deck)
-	if dx >= r:
-		return
-	var reach := sqrt(r * r - dx * dx)
-	var lo := _sim.kaiju_pos.y - reach - _z0
-	var hi := _sim.kaiju_pos.y + reach - _z0
-	for i: int in bay_hp.size():
-		var span := bay_span(i)
-		if span.x < hi and span.y > lo:
-			damage_bay(i, Num.f(cfg["walk_dps"]) * dt)
-
-
-## A toppled tower landing on a strip (Collapse): `struck(centre, radius)` says whether a bay is
-## under it; each bay under it takes crush_damage.
-func crushed(struck: Callable) -> void:
-	var reach := Num.f(cfg["bay_length"]) * 0.5 + Num.f(cfg["deck_width"]) * 0.5
-	for i: int in bay_hp.size():
-		var span := bay_span(i)
-		if struck.call(Vector2(_x, _z0 + (span.x + span.y) * 0.5), reach):
-			damage_bay(i, Num.f(cfg["crush_damage"]))
+	var at := RailLayout.station_z(_sim.city, cfg)
+	return Vector2(at.x - _z0, at.y - _z0)
 
 
 ## The kaiju's body walking into a train (when it stands tall enough to reach the deck).
@@ -408,7 +363,7 @@ func _slide(train: Train, dt: float) -> void:
 	var half_deck := Num.f(cfg["deck_width"]) * 0.5
 	for i: int in train.cars.size():
 		var c := train.cars[i]
-		var on_deck := absf(c.pos.x - _x) <= half_deck and c.y >= deck_y - 0.01
+		var on_deck := absf(c.pos.x - _x) <= half_deck and c.y >= deck_y - 0.01 and _deck_under(c)
 		if on_deck or c.y <= 0.0:
 			var speed := c.vel.length()
 			c.vel = c.vel.normalized() * maxf(0.0, speed - mu * dt) if speed > 0.0 else c.vel
@@ -424,6 +379,15 @@ func _slide(train: Train, dt: float) -> void:
 		c.roll = clampf(c.roll + c.roll_rate * dt, -PI * 0.5, PI * 0.5)
 		if i > 0:
 			_concertina(train.cars[i - 1], c)
+
+
+## Whether the deck still stands under a car's middle (no break within half a car of it).
+func _deck_under(c: Car) -> bool:
+	var at := _along(c.pos)
+	for s: float in _breaks:
+		if absf(s - at) < Num.f(cfg["car_length"]) * 0.5:
+			return false
+	return true
 
 
 ## A car closing on the one ahead shares its speed and slews further (the pile-up).

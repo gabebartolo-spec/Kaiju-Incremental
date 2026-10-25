@@ -22,6 +22,15 @@ class Building:
 	var in_arena := true
 	## What its chunks pay, as a share of a smash: a burnt-out building's (FireSpread) is less.
 	var pay_share := 1.0
+	## A piece of the railway's viaduct or station (RailLayout: {"piece", "station"}), else empty.
+	var rail: Dictionary = {}
+
+	func is_rail() -> bool:
+		return not rail.is_empty()
+
+	## Kept meshed wherever the kaiju is (BuildingStream): a landmark, or the railway.
+	func is_held() -> bool:
+		return landmark != "" or is_rail()
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -138,6 +147,14 @@ func _init(
 		b.in_arena = CityBand.touches(b.x, b.z, Vector2(b.w, b.d), arena_half)
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
+	var rail_cfg: Dictionary = tuning["rail"]
+	var rail_from := buildings.size()
+	for entry: Dictionary in RailLayout.pieces(city, rail_cfg):  # the viaduct is built like the city
+		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
+		b.rail = entry["rail"]
+		b.in_arena = CityBand.touches(b.x, b.z, Vector2(b.w, b.d), arena_half)
+		buildings.append(b)
+		chunks_total += b.frame.alive_count if b.in_arena else 0
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)
@@ -150,6 +167,13 @@ func _init(
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
 	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
+	for n: int in range(rail_from, buildings.size()):
+		rail.add_piece(n)
+
+
+## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
+func lot_buildings() -> Array[Building]:
+	return buildings.filter(func(b: Building) -> bool: return not b.is_rail())
 
 
 func stat(stat_name: String) -> float:

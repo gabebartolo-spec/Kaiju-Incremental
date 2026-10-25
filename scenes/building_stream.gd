@@ -202,7 +202,7 @@ func _rank_keys(from: Vector2, marks: Array[int]) -> PackedFloat64Array:
 	var limit := _cutoff + _rank.outside + EVICT_MARGIN + PLAN_MOVE * 4.0  # INF while all fit
 	_held = 0
 	for n: int in _sim.buildings.size():
-		if _sim.buildings[n].landmark != "" and _rank.keeps_landmark(n, from):
+		if _sim.buildings[n].is_held() and _rank.keeps_landmark(n, from):
 			marks.append(n)
 			_held += _chunks[n]
 		elif _pinned[n] == 1:

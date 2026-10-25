@@ -265,7 +265,6 @@ func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) 
 					if b.frame.alive(c) and struck:
 						cells.append(c)
 		sim.damage_chunks(i, cells, impact)
-	sim.rail.crushed(in_strip)  # the viaduct under the strip breaks too (D-247)
 	for tank: RampageSim.Tank in sim.tanks:
 		var struck: bool = in_strip.call(tank.pos, 0.6)
 		if struck:
