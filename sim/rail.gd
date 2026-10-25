@@ -52,6 +52,8 @@ var trains: Array[Train] = []
 var length := 0.0
 var deck_y := 0.0
 var derailed := 0
+## The viaduct's pillars, deck spans and station as parts that break (RailParts).
+var parts: RailParts
 var _sim: RampageSim
 var _rng: RandomNumberGenerator
 var _x := 0.0
@@ -74,6 +76,7 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	deck_y = Num.f(cfg["deck_y"])
 	_x = avenue_x(sim.city)
 	_next = Num.f(cfg["first_s"])
+	parts = RailParts.new(sim, tuning, _x, _z0, _z0 + length)
 
 
 ## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan.
@@ -96,6 +99,22 @@ static func avenue_x(city: Dictionary) -> float:
 		best = 0.0
 	_x_cache[key] = best
 	return best
+
+
+## The x of the viaduct's middle.
+func avenue() -> float:
+	return _x
+
+
+## The station's length along the line.
+func station_length() -> float:
+	return station_long(cfg)
+
+
+## The station's length for a "rail" tuning section: a train's length and a little over.
+static func station_long(rail_cfg: Dictionary) -> float:
+	var pitch := Num.f(rail_cfg["car_length"]) + Num.f(rail_cfg["coupler_gap"])
+	return Num.i(rail_cfg["cars"]) * pitch + 2.0
 
 
 ## The x of the track a train running `dir` uses.
@@ -128,6 +147,7 @@ func step(dt: float) -> void:
 			if train.s - _tail(train) > length:
 				trains.erase(train)
 	_body_contact()
+	parts.step(dt)
 
 
 func _running() -> int:
@@ -241,8 +261,25 @@ func broken() -> Array[float]:
 	return _breaks.duplicate()
 
 
+## A span has come down (RailParts): the track is broken at both its ends, and a train on it
+## derails with it.
+func span_down(z0: float, z1: float) -> void:
+	break_track(_along(Vector2(0.0, z0)))
+	break_track(_along(Vector2(0.0, z1)))
+	var half_deck := Num.f(cfg["deck_width"]) * 0.5
+	for train: Train in trains:
+		if train.state == WRECK:
+			continue
+		for i: int in train.cars.size():
+			var car := train.cars[i]
+			var over := car.pos.y >= z0 - 0.2 and car.pos.y <= z1 + 0.2
+			if over and absf(car.pos.x - _x) <= half_deck and car.y >= deck_y - 0.01:
+				derail(train, i, Vector2.ZERO)
+				break
+
+
 ## A hit (RampageSim.hit_area's force and damage): any car it hits hard enough derails its
-## train; the line under a hard hit breaks.
+## train; the viaduct's parts take the blow like a building's chunks.
 func hit(force: Callable, damage: float) -> void:
 	var need := Num.f(cfg["derail_damage"])
 	for train: Train in trains:
@@ -253,13 +290,7 @@ func hit(force: Callable, damage: float) -> void:
 			if damage * k >= need:
 				derail(train, i, train.cars[i].pos)
 				break
-	var step_s := Num.f(cfg["car_length"])
-	var s := 0.0
-	while s <= length:
-		var k: float = force.call(Vector2(_x, _z0 + s), 1.0)
-		if damage * k >= need:
-			break_track(s)
-		s += step_s
+	parts.hit(force, damage)
 
 
 ## The kaiju's body walking into a train (when it stands tall enough to reach the deck).
@@ -318,7 +349,9 @@ func _slide(train: Train, dt: float) -> void:
 	var half_deck := Num.f(cfg["deck_width"]) * 0.5
 	for i: int in train.cars.size():
 		var c := train.cars[i]
-		var on_deck := absf(c.pos.x - _x) <= half_deck and c.y >= deck_y - 0.01
+		var on_deck := (
+			absf(c.pos.x - _x) <= half_deck and c.y >= deck_y - 0.01 and parts.deck_at(c.pos.y)
+		)
 		if on_deck or c.y <= 0.0:
 			var speed := c.vel.length()
 			c.vel = c.vel.normalized() * maxf(0.0, speed - mu * dt) if speed > 0.0 else c.vel

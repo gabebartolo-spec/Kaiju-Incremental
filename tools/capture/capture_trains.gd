@@ -1,21 +1,21 @@
 extends SceneTree
-## The railway on the game camera (the director 2026-10-21 #63, #69 "Derail and smash"; 022): the
-## kaiju waits beside the viaduct near the station, a train comes along, the kaiju steps onto it
-## and stomps, the train derails and smashes. Stills 01_station, 02_train, 03_derail (mid
-## tumble), 04_wreck; with --write-movie, the run from the train's approach to the wreck at game
-## speed. Local GPU, off-screen no_focus override.cfg:
-##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_trains.gd -- --out=<dir>
-##   godot --path . --resolution 1920x1080 --windowed --write-movie <dir>/clip.avi \
-##     --script tools/capture/capture_trains.gd -- --out=<dir> --clip
+## The railway on the game camera (the director 2026-10-21 #63, #69 "Derail and smash"; 2026-10-25
+## on trains.mp4: "the kaiju just clips right into the building, zero carve ... it needs to be
+## destroyed with the same logic as all other buildings", "Yes, all of it"): the kaiju is set on
+## the clear avenue south of the station and WALKS NORTH with real input, no teleport into
+## anything: his body snaps the stair, the platforms, the pillars; the spans they held drop into the
+## street and a train dwelling in the station goes down with its span. Stills 01_start (before),
+## 02_carving, 03_after; with --write-movie, the walk at game speed. Local GPU, off-screen
+## no_focus override.cfg:
+##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 ##     --script tools/capture/capture_trains.gd -- --out=<dir>
+##   godot --path . --resolution 3840x2160 --windowed --write-movie <dir>/clip.avi ##     --script tools/capture/capture_trains.gd -- --out=<dir> --clip
 
 const DAY_RUN := 0
-## How far beside the line the kaiju waits, how close the train comes before the clip starts,
-## and the frames held after the stomp for the tumble and the wreck.
-const BESIDE := 3.0
-const APPROACH := 26.0
-const TUMBLE := 36
-const WRECK := 200
+## How far south of the station's end the kaiju starts, how far north of the station he walks
+## before he stops, and the frames held after he stops for the spans to fall and the dust to clear.
+const START_SOUTH := 16.0
+const WALK_PAST := 6.0
+const AFTER := 150
 
 var _out := "user://trains"
 var _clip := false
@@ -48,49 +48,45 @@ func _run() -> void:
 		await physics_frame
 	var rail := _rampage.sim.rail
 	var station := rail.point(rail.station_s(1), 1)
-	_rampage.sim.kaiju_pos = Vector2(rail.track_x(-1) + BESIDE, station.y + 13.0)
-	await _frames(150)
-	_shot("01_station")
-	var train := await _train_near(APPROACH)
+	# Set down once on the clear avenue (no building there), facing north; everything after is input.
+	_rampage.sim.kaiju_pos = Vector2(rail.avenue(), station.y + START_SOUTH)
+	_rampage.sim.facing = Vector2(0, -1)
+	_rampage.sim.body.heading = Vector2(0, -1)
+	var train := await _train_dwelling()
 	if train == null:
-		printerr("trains: no train came")
+		printerr("trains: no train came to the station")
 		quit(1)
 		return
+	await _frames(30)
+	_shot("01_start")
 	print("CLIP_FROM %d" % Engine.get_frames_drawn())
-	await _frames(50)
-	_shot("02_train")
-	await _walk_on(train)
-	await _frames(TUMBLE)
-	_shot("03_derail")
-	await _frames(WRECK)
-	_shot("04_wreck")
+	await _walk_north(station.y - rail.station_length() - WALK_PAST, 60 * 12)
+	_shot("02_carving")
+	await _frames(AFTER)
+	_shot("03_after")
 	print("CLIP_TO %d" % Engine.get_frames_drawn())
-	print("TRAINS_CAPTURE derailed=%d -> %s" % [rail.derailed, _out])
+	var down := 0
+	for part: RailParts.Part in rail.parts.list:
+		down += int(not part.alive)
+	print("TRAINS_CAPTURE parts_down=%d derailed=%d -> %s" % [down, rail.derailed, _out])
 	quit(0)
 
 
-## The kaiju walks west onto the line (real input) as the train's lead car comes level, and
-## stops once it stands on the track; its footfalls stomp the train.
-func _walk_on(train: Rail.Train) -> void:
-	var rail := _rampage.sim.rail
-	for _i: int in 60 * 10:
-		if absf(train.cars[0].pos.y - _rampage.sim.kaiju_pos.y) < 6.0 or train.state == Rail.WRECK:
+## The kaiju walks north (the move_up action held) until he is past `z` or the frames run out.
+func _walk_north(z: float, frames: int) -> void:
+	Input.action_press("move_up")
+	for _i: int in frames:
+		if _rampage.sim.kaiju_pos.y <= z:
 			break
 		await process_frame
-	Input.action_press("move_left")
-	for _i: int in 60 * 3:
-		if _rampage.sim.kaiju_pos.x <= rail.track_x(train.dir) + 0.4 or train.state == Rail.WRECK:
-			break
-		await process_frame
-	Input.action_release("move_left")
+	Input.action_release("move_up")
 
 
-## Waits for a running train whose lead car is within `within` of the kaiju.
-func _train_near(within: float) -> Rail.Train:
+## Waits for a train to stand dwelling at the station.
+func _train_dwelling() -> Rail.Train:
 	for _i: int in 60 * 90:
 		for train: Rail.Train in _rampage.sim.rail.trains:
-			var near := train.cars[0].pos.distance_to(_rampage.sim.kaiju_pos) < within
-			if train.state == Rail.RUN and near:
+			if train.state == Rail.DWELL:
 				return train
 		await process_frame
 	return null

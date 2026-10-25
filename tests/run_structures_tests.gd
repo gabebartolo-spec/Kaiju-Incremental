@@ -35,24 +35,12 @@ func _city_sim() -> RampageSim:
 	return sim
 
 
-## The registry, loaded by path so this suite also runs (red) on a sim that has none.
-func _api() -> Script:
-	return load("res://sim/structures.gd")
-
-
-func _structures_api() -> bool:
-	return ResourceLoader.exists("res://sim/structures.gd")
-
-
 ## sim/*.gd files that declare `func structures()` must each be a registered source.
 func _check_registry_reaches_every_declaring_part() -> void:
-	check(_structures_api(), "the sim has a structure registry (sim/structures.gd)")
-	if not _structures_api():
-		return
 	var sim := _city_sim()
-	var reached: Array = _api().sources(sim).map(
-		func(src: Object) -> String: return src.get_script().resource_path
-	)
+	var reached: Array[String] = []
+	for src: Object in Structures.sources(sim):
+		reached.append(str(src.get_script().resource_path))
 	var declaring: Array[String] = []
 	for file: String in DirAccess.get_files_at("res://sim"):
 		if not file.ends_with(".gd"):
@@ -66,11 +54,8 @@ func _check_registry_reaches_every_declaring_part() -> void:
 
 
 func _check_every_structure_in_the_play_area_is_destroyable() -> void:
-	if not _structures_api():
-		check(false, "the sim has a structure registry")
-		return
 	var sim := _city_sim()
-	var all: Array = _api().all(sim)
+	var all: Array = Structures.all(sim)
 	var kinds := {}
 	for entry: Dictionary in all:
 		kinds[str(entry["kind"])] = true
@@ -79,10 +64,10 @@ func _check_every_structure_in_the_play_area_is_destroyable() -> void:
 	var inside := 0
 	var failed: Array[String] = []
 	for entry: Dictionary in all:
-		if not _api().in_play_area(sim, entry):
+		if not Structures.in_play_area(sim, entry):
 			continue
 		inside += 1
-		if not _api().destroy(sim, entry) or _api().alive(sim, entry):
+		if not Structures.destroy(sim, entry) or Structures.alive(sim, entry):
 			failed.append("%s %s" % [entry["kind"], entry["id"]])
 		sim.step(DT, Vector2.ZERO, false, 0)
 	check(inside > 100, "the play area holds many structures: %d" % inside)
@@ -90,12 +75,9 @@ func _check_every_structure_in_the_play_area_is_destroyable() -> void:
 
 
 func _check_city_layout_is_all_registered() -> void:
-	if not _structures_api():
-		check(false, "the sim has a structure registry")
-		return
 	var sim := _city_sim()
 	var buildings := 0
-	for entry: Dictionary in _api().all(sim):
+	for entry: Dictionary in Structures.all(sim):
 		buildings += int(str(entry["kind"]) == "building")
 	check(
 		buildings == sim.buildings.size(),

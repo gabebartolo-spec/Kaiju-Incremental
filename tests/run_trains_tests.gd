@@ -144,18 +144,16 @@ func _check_seeded() -> void:
 ## "Yes, all of it"). Every fixture is the player's effect: real walking, a real topple.
 
 
-## The rail's structural parts (RailParts), or null on a railway that has none.
-func _parts(sim: RampageSim) -> Variant:
-	return sim.rail.get("parts")
+## A true/false field of a result.
+func _is(r: Dictionary, key: String) -> bool:
+	var v: bool = r.get(key, false)
+	return v
 
 
 ## Part ids of `kind` that are no longer standing.
 func _down(sim: RampageSim, kind: String) -> Array:
 	var out: Array = []
-	var parts: Variant = _parts(sim)
-	if parts == null:
-		return out
-	for part: Variant in parts.list:
+	for part: RailParts.Part in sim.rail.parts.list:
 		if part.kind == kind and not part.alive:
 			out.append(part.id)
 	return out
@@ -171,14 +169,11 @@ func _walker(at: Vector2, gap: float) -> RampageSim:
 	return sim
 
 
-## The line's part of `kind` nearest `share` of the way down it, on the west side.
-func _part_near(sim: RampageSim, kind: String, share: float) -> Variant:
-	var parts: Variant = _parts(sim)
-	if parts == null:
-		return null
+## The west side's part of `kind` nearest `share` of the way down the line (null: none).
+func _part_near(sim: RampageSim, kind: String, share: float) -> RailParts.Part:
 	var want: float = sim.rail.point(sim.rail.length * share, 1).y
-	var best: Variant = null
-	for part: Variant in parts.list:
+	var best: RailParts.Part = null
+	for part: RailParts.Part in sim.rail.parts.list:
 		if part.kind != kind or part.x > sim.rail.track_x(1) + 0.1:
 			continue
 		if best == null or absf(part.z0 - want) < absf(best.z0 - want):
@@ -186,10 +181,17 @@ func _part_near(sim: RampageSim, kind: String, share: float) -> Variant:
 	return best
 
 
-## Walks east into the pillar `share` down the line and on for a minute; what the player sees.
+func _alive_string(sim: RampageSim) -> String:
+	var out := ""
+	for part: RailParts.Part in sim.rail.parts.list:
+		out += "1" if part.alive else "0"
+	return out
+
+
+## Walks east into the pillar 80% down the line and on for a minute; what the player sees.
 func _pillar_walk() -> Dictionary:
 	var sim := _scene()
-	var pillar: Variant = _part_near(sim, "pillar", 0.8)
+	var pillar := _part_near(sim, "pillar", 0.8)
 	if pillar == null:
 		return {"ok": false}
 	sim = _walker(Vector2(pillar.x, pillar.z0), 8.0)
@@ -198,57 +200,47 @@ func _pillar_walk() -> Dictionary:
 	for i: int in roundi(60.0 / DT):
 		for event: Dictionary in sim.step(DT, EAST, false, 0):
 			seen[str(event["type"])] = true
-		if snapped_at < 0.0 and not _parts(sim).list[pillar.id].alive:
+		if snapped_at < 0.0 and not sim.rail.parts.list[pillar.id].alive:
 			snapped_at = i * DT
 	var stopped := false
 	for train: Rail.Train in sim.rail.trains:
 		stopped = stopped or train.state == Rail.STOPPED or train.state == Rail.WRECK
+	var landed := 0
+	for part: RailParts.Part in sim.rail.parts.list:
+		landed += int(part.landed and part.kind == "span")
 	return {
 		"ok": true,
 		"snapped_at": snapped_at,
 		"spans_down": _down(sim, "span").size(),
-		"landed": _parts(sim).list.filter(func(p: Variant) -> bool: return p.landed).size(),
+		"landed": landed,
 		"broken": sim.rail.broken().size(),
 		"stopped": stopped,
 		"events": seen.keys(),
 		"alive": _alive_string(sim),
-		"rubble": _r3(sim.rubble),
+		"rubble": snappedf(sim.rubble, 0.001),
 	}
-
-
-func _r3(v: float) -> float:
-	return snappedf(v, 0.001)
-
-
-func _alive_string(sim: RampageSim) -> String:
-	var out := ""
-	var parts: Variant = _parts(sim)
-	if parts == null:
-		return out
-	for part: Variant in parts.list:
-		out += "1" if part.alive else "0"
-	return out
 
 
 ## Player-effect fixture: walking into a pillar snaps it, the deck spans it held drop into the
 ## street, the track is broken there and the trains behind stop short or plough in.
 func _check_walk_through_pillar() -> void:
 	var r := _pillar_walk()
-	check(r["ok"] == true, "the railway has pillars as parts of its own to break")
-	if r["ok"] != true:
+	check(_is(r, "ok"), "the railway has pillars as parts of its own to break")
+	if not _is(r, "ok"):
 		return
+	var events: Array = r["events"]
 	check(Num.f(r["snapped_at"]) >= 0.0, "walking into a pillar snaps it: %s" % [r])
 	check(Num.i(r["spans_down"]) >= 1, "the deck spans it held are down: %s" % [r])
 	check(Num.i(r["landed"]) >= 1, "a fallen span lands in the street: %s" % [r])
 	check(Num.i(r["broken"]) >= 1, "the track is broken where the span fell: %s" % [r])
-	check(r["stopped"] == true, "a train behind stops short of the gap or ploughs in: %s" % [r])
-	check(r["events"].has("rail_part_broken"), "the break is an event the view reads: %s" % [r])
+	check(_is(r, "stopped"), "a train behind stops short of the gap or ploughs in: %s" % [r])
+	check(events.has("rail_part_broken"), "the break is an event the view reads: %s" % [r])
 
 
 ## Player-effect fixture: the kaiju walking through the station carves it, platforms and canopy.
 func _check_walk_through_station() -> void:
 	var sim := _scene()
-	var seg: Variant = _part_near(sim, "station", 0.4)
+	var seg := _part_near(sim, "station", 0.4)
 	check(seg != null, "the station is made of parts of its own to break")
 	if seg == null:
 		return
@@ -264,18 +256,18 @@ func _check_walk_through_station() -> void:
 ## the train on it derails. The tower's base is eaten just before the train arrives under it.
 func _check_building_topples_on_line() -> void:
 	var r := _topple_run()
-	check(r["ok"] == true, "a tower beside the line can be toppled onto it")
-	if r["ok"] != true:
+	check(_is(r, "ok"), "a tower beside the line can be toppled onto it")
+	if not _is(r, "ok"):
 		return
-	check(r["toppled"] == true, "the tower topples: %s" % [r])
+	check(_is(r, "toppled"), "the tower topples: %s" % [r])
 	check(Num.i(r["spans_down"]) >= 1, "the toppled tower breaks the span it lands on: %s" % [r])
 	check(Num.i(r["broken"]) >= 1, "and the track there: %s" % [r])
-	check(r["derailed"] == true, "the train on that span derails: %s" % [r])
+	check(_is(r, "derailed"), "the train on that span derails: %s" % [r])
 
 
 func _topple_run() -> Dictionary:
 	var probe := _scene()
-	if _parts(probe) == null:
+	if probe.rail.parts.list.is_empty():
 		return {"ok": false}
 	var line_x: float = probe.rail.track_x(1)
 	var bz: float = probe.rail.point(probe.rail.length * 0.7, 1).y
@@ -289,22 +281,19 @@ func _topple_run() -> Dictionary:
 		for z: int in 8:
 			base.append(Vector3i(x, 0, z))
 	var cut := false
-	var seen := {}
 	for _i: int in roundi(70.0 / DT):
 		for train: Rail.Train in sim.rail.trains:
 			var ahead: float = train.cars[0].pos.y + train.v * fall_s
 			if not cut and train.dwelled and train.state == Rail.RUN and ahead >= bz - 1.0:
 				cut = true
 				sim.damage_chunks(0, base, INF)
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
-			seen[str(event["type"])] = true
+		sim.step(DT, Vector2.ZERO, false, 0)
 	return {
 		"ok": true,
 		"toppled": sim.collapse.toppled == 1,
 		"spans_down": _down(sim, "span").size(),
 		"broken": sim.rail.broken().size(),
 		"derailed": sim.rail.derailed >= 1,
-		"events": seen.keys(),
 		"alive": _alive_string(sim),
 	}
 
@@ -313,4 +302,4 @@ func _topple_run() -> Dictionary:
 func _check_carve_replay() -> void:
 	var a := _pillar_walk()
 	var b := _pillar_walk()
-	check(a["ok"] == true and str(a) == str(b), "a carved railway replays the same: %s / %s" % [a, b])
+	check(_is(a, "ok") and str(a) == str(b), "a carved railway replays the same: %s / %s" % [a, b])

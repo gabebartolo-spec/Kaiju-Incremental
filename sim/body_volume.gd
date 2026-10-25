@@ -92,13 +92,9 @@ func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector
 	var close := near(from, to, span)
 	if close.is_empty():
 		return 0
-	var turn := from_heading.angle_to(to_heading)
-	var travel := from.distance_to(to) + absf(turn) * span
-	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
 	var hits: Dictionary = {}
 	var broken := 0
-	for n: int in range(1, samples + 1):
-		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
+	for pose: Array in poses(from, from_heading, to, to_heading):
 		var at: Vector2 = pose[0]
 		var facing: Vector2 = pose[1]
 		collect(at, facing, hits, close)
@@ -117,6 +113,39 @@ func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector
 			sim.events[first]["pay"] = pay
 		broken += n
 	return broken
+
+
+## The poses [position, heading] a move and turn from one pose to the other is sampled at, the
+## last exactly the end pose: what the sweep breaks buildings with, and the railway's parts.
+func poses(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> Array:
+	var turn := from_heading.angle_to(to_heading)
+	var travel := from.distance_to(to) + absf(turn) * reach()
+	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
+	var out: Array = []
+	for n: int in range(1, samples + 1):
+		out.append(sweep_pose(from, from_heading, to, to_heading, float(n) / samples))
+	return out
+
+
+## Whether the body at a pose touches a box (its ground rectangle and height range, in world
+## units): any disc within its radius of the rectangle, over the heights it covers.
+func touches(pos: Vector2, facing: Vector2, box: Rect2, y_lo: float, y_hi: float) -> bool:
+	var s := sim.body_scale()
+	var skin := Num.f(cfg["skin"])
+	for d: Array in discs:
+		var centre := pos + facing * Num.f(d[0]) * s
+		var r := Num.f(d[1]) * s - skin
+		var bottom := sim.stand_y + Num.f(d[2]) * s + skin
+		var top := sim.stand_y + Num.f(d[3]) * s - skin
+		if r <= 0.0 or top < y_lo or bottom > y_hi:
+			continue
+		var gap := Vector2(
+			maxf(maxf(box.position.x - centre.x, centre.x - box.end.x), 0.0),
+			maxf(maxf(box.position.y - centre.y, centre.y - box.end.y), 0.0)
+		)
+		if gap.length() < r:
+			return true
+	return false
 
 
 ## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is

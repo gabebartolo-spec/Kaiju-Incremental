@@ -316,6 +316,7 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	var from_heading := heading if _last_pos.x == INF else _last_heading
 	_volume.step_s = dt
 	broken += _volume.sweep(from, from_heading, sim.kaiju_pos, heading)
+	broken += sim.rail.parts.sweep(_volume, from, from_heading, sim.kaiju_pos, heading)
 	held = not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
 	longest_hold = maxf(longest_hold, _hold_s)

@@ -10,12 +10,16 @@ extends Node3D
 ## The car's floor sits this far over the sim's height (the rails and sleepers under it).
 const FLOOR := 0.5
 const SOUNDS := "res://assets/sfx/%s.ogg"
+## How far a falling part leans per second of its fall, radians (towards its outer side).
+const TILT := 0.25
 
 var _host: Rampage
 var _sim: RampageSim
 var _city: CityView
 ## Train id -> its car nodes, lead first.
 var _cars: Dictionary = {}
+## Part id -> the node drawing it (RailParts); a broken part's node falls, then goes.
+var _parts: Dictionary = {}
 var _rumble: AudioStreamPlayer
 var _slide: AudioStreamPlayer
 ## Train id -> when its horn may sound again (it blares while the kaiju is near).
@@ -33,16 +37,35 @@ func _init(host: Rampage, sim: RampageSim, city: CityView) -> void:
 
 
 func _ready() -> void:
-	var rail := _sim.rail
-	var north := rail.point(0.0, 1)
-	var south := rail.point(rail.length, 1)
-	var mid := (north.x + rail.track_x(-1)) * 0.5
-	add_child(TrainModel.viaduct(mid, north.y, south.y, rail.cfg))
-	var at := rail.point(rail.station_s(1), 1)
-	var long := Num.i(rail.cfg["cars"]) * (Num.f(rail.cfg["car_length"]) + 0.3) + 2.0
-	add_child(TrainModel.station(mid, at.y - long * 0.5, long, rail.cfg))
+	for part: RailParts.Part in _sim.rail.parts.list:
+		var node := _part_model(part)
+		_parts[part.id] = node
+		add_child(node)
 	_rumble = _loop("train_rumble")
 	_slide = _loop("train_slide")
+
+
+## The voxel model of one part of the viaduct or station (RailParts), built in world cells.
+func _part_model(part: RailParts.Part) -> MultiMeshInstance3D:
+	var rail := _sim.rail
+	var cfg := rail.cfg
+	var mid := Vector2(rail.avenue(), 0.0)
+	match part.kind:
+		RailParts.PILLAR:
+			return TrainModel.column(part.x, part.z0, cfg)
+		RailParts.SPAN:
+			var ends := rail.point(rail.length, 1).y
+			return TrainModel.span(part.x, part.z0, part.z1, part.z1 >= ends - 0.01, cfg)
+		RailParts.STATION:
+			var south := rail.point(rail.station_s(1), 1).y
+			var long := rail.station_length()
+			mid.y = south - long * 0.5
+			return TrainModel.platform(part.side, Vector2(part.z0, part.z1), mid, long, cfg)
+		_:
+			var south := rail.point(rail.station_s(1), 1).y
+			var long := rail.station_length()
+			mid.y = south - long * 0.5
+			return TrainModel.stairs(part.side, mid, long, cfg)
 
 
 func _loop(sound: String) -> AudioStreamPlayer:
@@ -75,6 +98,7 @@ func _play(sound: String, at: Vector3) -> void:
 
 func _process(delta: float) -> void:
 	_clock += delta
+	_fall_parts()
 	_crawl_out(delta)
 	var seen := {}
 	var loudest := 0.0
@@ -153,6 +177,10 @@ func on_event(event: Dictionary) -> void:
 			for n: int in 6:
 				_city.debris(pos, TrainModel._c("concrete"), Vector3.UP)
 			_city.flash(pos, Color("ffd27a"), 4.0, 0.25)
+		"rail_part_broken":
+			_part_broken(event)
+		"rail_part_landed":
+			_part_landed(event)
 		"train_station":
 			_play("station_bell", Vector3(_sim.rail.track_x(1), _sim.rail.deck_y, 0.0))
 
@@ -187,3 +215,46 @@ func _crawl_out(delta: float) -> void:
 		for car: Rail.Car in train.cars:
 			var count := Num.i(_look()["survivors_per_car"])
 			WreckSurvivors.spill(_city.street, car.pos, count, _people_rng)
+
+
+## A part snapped or began to fall: a burst of its concrete where it went.
+func _part_broken(event: Dictionary) -> void:
+	var at: Vector3 = event["at"]
+	var count := 5 if str(event["kind"]) == RailParts.PILLAR else 3
+	for n: int in count:
+		_city.debris(at, TrainModel._c("column"), Vector3.UP)
+	_city.fx.dust(at, 0.8)
+	_host.add_trauma(_host.shake.source("drop"), at)
+	if str(event["kind"]) == RailParts.PILLAR:
+		_drop_node(Num.i(event["id"]))
+
+
+## A part that is falling comes down as the sim says (its fall time), tilting as it goes.
+func _fall_parts() -> void:
+	var gravity := Num.f(_sim.city["fall_gravity"])
+	for part: RailParts.Part in _sim.rail.parts.list:
+		if part.alive or part.landed or not _parts.has(part.id):
+			continue
+		var node: MultiMeshInstance3D = _parts[part.id]
+		var pivot := Vector3(part.x, part.y0, part.middle().y)
+		var tilt := Basis(Vector3.BACK, part.side * part.fall_t * TILT)
+		var drop := Vector3(0.0, -minf(0.5 * gravity * part.fall_t * part.fall_t, part.y0), 0.0)
+		node.transform = Transform3D(tilt, pivot - tilt * pivot + drop)
+
+
+## A fallen part breaks on the street: its rubble flies and the dust rises, and it is gone.
+func _part_landed(event: Dictionary) -> void:
+	var part: RailParts.Part = _sim.rail.parts.list[Num.i(event["id"])]
+	var at := Vector3(part.x, 0.4, part.middle().y)
+	for n: int in 8:
+		_city.debris(at, TrainModel._c("concrete"), Vector3.UP)
+	_city.fx.dust(at, 1.6)
+	_host.add_trauma(_host.shake.source("drop"), at)
+	_drop_node(part.id)
+
+
+func _drop_node(id: int) -> void:
+	if _parts.has(id):
+		var node: MultiMeshInstance3D = _parts[id]
+		node.queue_free()
+		_parts.erase(id)

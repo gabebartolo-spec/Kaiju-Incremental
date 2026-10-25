@@ -84,21 +84,29 @@ static func _bogies(vox: VoxelBuilder, nw: int, nl: int) -> void:
 					vox.put_color(Vector3i(x, 0, z), _c("wheel"))
 
 
-## The viaduct from z0 to z1 at track centre x (the lab's space is the world): a deck slab with
-## parapets, ballast, sleepers and two rails per track on bents of two columns every bent_every.
-static func viaduct(x: float, z0: float, z1: float, cfg: Dictionary) -> MultiMeshInstance3D:
+## One deck span from z0 to z1 at track centre x (the lab's space is the world): a deck slab with
+## parapets, ballast, sleepers and two rails per track (the bents under it are columns, below).
+## last: the span ends the line, so its far end cell is drawn too (spans meet at a shared edge).
+static func span(
+	x: float, z0: float, z1: float, last: bool, cfg: Dictionary
+) -> MultiMeshInstance3D:
 	var vox := VoxelBuilder.new()
 	var deck := roundi(Num.f(cfg["deck_y"]) / DECK_VOXEL)
 	var half := roundi(Num.f(cfg["deck_width"]) * 0.5 / DECK_VOXEL)
 	var cx := roundi(x / DECK_VOXEL)
-	var every := roundi(Num.f(look()["bent_every"]) / DECK_VOXEL)
 	var tcell := roundi(Num.f(cfg["track_gap"]) * 0.5 / DECK_VOXEL)
-	for z: int in range(roundi(z0 / DECK_VOXEL), roundi(z1 / DECK_VOXEL) + 1):
+	var end := roundi(z1 / DECK_VOXEL) + (1 if last else 0)
+	for z: int in range(roundi(z0 / DECK_VOXEL), end):
 		for dx: int in range(-half, half + 1):
 			_deck_column(vox, Vector3i(cx + dx, deck, z), Vector3i(dx, half, tcell), z)
-		if posmod(z, every) == 0:
-			for side: int in [-half + 2, half - 2]:
-				_bent(vox, Vector3i(cx + side, deck, z))
+	return vox.build({}, DECK_VOXEL, 1.3, Vector3.ZERO)
+
+
+## One column of a bent (a pillar part) at world x, z: from the ground up to under the deck, capped.
+static func column(x: float, z: float, cfg: Dictionary) -> MultiMeshInstance3D:
+	var vox := VoxelBuilder.new()
+	var deck := roundi(Num.f(cfg["deck_y"]) / DECK_VOXEL)
+	_bent(vox, Vector3i(roundi(x / DECK_VOXEL), deck, roundi(z / DECK_VOXEL)))
 	return vox.build({}, DECK_VOXEL, 1.3, Vector3.ZERO)
 
 
@@ -138,27 +146,46 @@ static func _bent(vox: VoxelBuilder, top: Vector3i) -> void:
 		vox.put_color(Vector3i(top.x + d, top.y - 2, top.z), _c("parapet"))
 
 
-## The station at track centre x, around z (its length along z): a platform each side of the
-## tracks with a canopy on posts, a glowing sign and stairs down to the street.
-static func station(x: float, z: float, length: float, cfg: Dictionary) -> MultiMeshInstance3D:
-	var vox := VoxelBuilder.new()
+## The station's middle cell on the deck's top, for its middle (x, z).
+static func _station_at(mid: Vector2, cfg: Dictionary) -> Vector3i:
 	var deck := roundi(Num.f(cfg["deck_y"]) / DECK_VOXEL)
-	var at := Vector3i(roundi(x / DECK_VOXEL), deck, roundi(z / DECK_VOXEL))
-	var dims := Vector3i(
+	return Vector3i(roundi(mid.x / DECK_VOXEL), deck, roundi(mid.y / DECK_VOXEL))
+
+
+## The station's size in cells: (deck half width, half length, platform width).
+static func _station_size(length: float, cfg: Dictionary) -> Vector3i:
+	return Vector3i(
 		roundi(Num.f(cfg["deck_width"]) * 0.5 / DECK_VOXEL),
 		roundi(length * 0.5 / DECK_VOXEL),
 		roundi(Num.f(look()["platform"]) / DECK_VOXEL)
 	)
-	for side: int in [-1, 1]:
-		_platform(vox, side, at, dims)
-		_sign_and_stairs(vox, side, at, dims)
+
+
+## One platform segment of the station (a station part): `side`'s paving with a yellow edge by the
+## track, its canopy and posts, from z0 to z1. The station's middle is at (x, z), `length` long.
+static func platform(
+	side: int, span_z: Vector2, mid: Vector2, length: float, cfg: Dictionary
+) -> MultiMeshInstance3D:
+	var vox := VoxelBuilder.new()
+	var zr := Vector2i(roundi(span_z.x / DECK_VOXEL), roundi(span_z.y / DECK_VOXEL))
+	_platform(vox, side, _station_at(mid, cfg), _station_size(length, cfg), zr)
 	return vox.build({}, DECK_VOXEL, 1.3, Vector3.ZERO)
 
 
-## One side's platform (paving with a yellow edge by the track), its canopy and posts. at: the
-## station's middle on the deck's top; dims: (deck half width, half length, platform width).
-static func _platform(vox: VoxelBuilder, side: int, at: Vector3i, dims: Vector3i) -> void:
-	for zz: int in range(at.z - dims.y, at.z + dims.y + 1):
+## One side's glowing sign under the canopy and its stairs down to the street (a stairs part).
+static func stairs(side: int, mid: Vector2, length: float, cfg: Dictionary) -> MultiMeshInstance3D:
+	var vox := VoxelBuilder.new()
+	_sign_and_stairs(vox, side, _station_at(mid, cfg), _station_size(length, cfg))
+	return vox.build({}, DECK_VOXEL, 1.3, Vector3.ZERO)
+
+
+## One side's platform (paving with a yellow edge by the track), its canopy and posts, over the
+## cell range `zr` (from, to exclusive). at: the station's middle on the deck's top; dims: (deck
+## half width, half length, platform width).
+static func _platform(
+	vox: VoxelBuilder, side: int, at: Vector3i, dims: Vector3i, zr: Vector2i
+) -> void:
+	for zz: int in range(maxi(zr.x, at.z - dims.y), mini(zr.y, at.z + dims.y + 1)):
 		for w: int in dims.z:
 			var px := at.x + side * (dims.x + 1 + w)
 			var pave := _c("platform") if posmod(zz + w, 4) != 0 else _c("seam_concrete")
