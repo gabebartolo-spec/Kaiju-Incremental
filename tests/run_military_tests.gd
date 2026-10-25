@@ -242,7 +242,7 @@ func _check_standoff_held() -> void:
 		var still := {}  # tank id -> seconds it has stood still
 		var last := {}
 		while not sim.over:
-			sim.step(DT, Vector2.ZERO, false)
+			sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 			var reach := _reach(sim)
 			var danger := _danger(sim)
 			var now := {}

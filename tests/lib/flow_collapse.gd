@@ -113,7 +113,7 @@ static func _check_drop_crumbles(check: Callable, rampage: Rampage) -> void:
 
 
 static func _check_sound_cap(check: Callable, sfx: Sfx) -> void:
-	sfx._process(1.0)  # last frame's sounds are out of the way
+	sfx._process(30.0)  # the rampage's sounds are done (a long collapse holds a voice past 1 s)
 	var before := sfx.played.count("collapse")
 	for n: int in LANDINGS:
 		sfx.collapse(n % 3 == 0)

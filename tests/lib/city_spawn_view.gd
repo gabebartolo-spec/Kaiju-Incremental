@@ -41,14 +41,16 @@ static func check(
 	var landed := false
 	var guard := 0
 	while not landed and guard < 3000:
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			landed = landed or str(event["type"]) == "kaiju_emerged"
 		guard += 1
 	var walked := 0.0
 	while walked < WALK_LIMIT and _standing(sim, near) > 0:
 		var goal := _nearest(sim, near)
 		var to := goal - sim.kaiju_pos
-		sim.step(DT, to.normalized() if to.length() > 0.2 else Vector2.ZERO, false)
+		sim.step(
+			DT, to.normalized() if to.length() > 0.2 else Vector2.ZERO, false, RampageSim.STOMP
+		)
 		walked += DT
 	var left := _standing(sim, near)
 	(

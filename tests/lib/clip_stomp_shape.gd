@@ -11,7 +11,11 @@ extends RefCounted
 ##       back to the clip's settled height (SETTLE) by 8 keyed frames on;
 ## the toe is on the street in the frame its footfall goes out (the suite's footfall bar), and the
 ## hand-over from the clip's end to the idle moves the hips at most SETTLE a frame (the
-## clip's end pose sits a little off the idle's: it must ease, never pop).
+## clip's end pose sits a little off the idle's: it must ease, never pop). The stomp plays at the
+## game's speed (`speed`, director 2026-10-26: 0.80x, Frenzy up to 0.90x) and lasts the keyed
+## stomp (21 frames, 0.7 s) over it, +-1 frame; the frame bars count keyed frames, so in game
+## seconds they stretch with it (S2 1-3 keyed frames = 0.042-0.125 s at 0.80x, was 0.033-0.1 s;
+## S7 +3 / +8 keyed frames = 0.125 / 0.333 s at 0.80x, was 0.1 / 0.267 s).
 
 const DT := 1.0 / 60.0
 const KEYED := 1.0 / 30.0  # s per keyed frame (r10d)
@@ -23,14 +27,18 @@ const SETTLE := 0.005
 const FRAMES := 150  # 2.5 s: the stomp, its hold, the hand-over and the idle
 
 var _check: Callable
+var _keyed := KEYED  # game seconds per keyed frame at the speed played
 
 
 func _init(check: Callable) -> void:
 	_check = check
 
 
-func run(kaiju: KaijuModel, rig: KaijuRig) -> void:
+func run(kaiju: KaijuModel, rig: KaijuRig, speed: float) -> void:
 	var gait := rig.gait as ClipGait
+	_keyed = KEYED / speed
+	kaiju.stomp_speed(speed)
+	var times: Array[float] = []
 	var hip := kaiju.hip_height()
 	var landed: Array[int] = []
 	var clock: Array[int] = [0]
@@ -59,13 +67,14 @@ func run(kaiju: KaijuModel, rig: KaijuRig) -> void:
 		knee.append(rig.bone("leg_l1").global_position.y / hip)
 		pelvis.append((_pelvis(rig) - pelvis0) / hip)
 		states.append(gait.state)
+		times.append(gait.clip_time if gait.state == "stomp" else -1.0)
 	var contact := landed[0] if not landed.is_empty() else FRAMES - 1
 	var top := _argmax(ankle, contact)
 	_check.call(
 		ankle[top] >= ANKLE_RISE,
 		"adult clip stomp S3: the ankle rises %.2f hip (>= %.2f)" % [ankle[top], ANKLE_RISE]
 	)
-	var lead := (top - _argmax(knee, contact)) * DT / KEYED
+	var lead := (top - _argmax(knee, contact)) * DT / _keyed
 	_check.call(
 		lead >= KNEE_LEAD.x - 0.5 and lead <= KNEE_LEAD.y + 0.5,
 		"adult clip stomp S2: the knee peaks %.1f keyed frames before the ankle (1-3)" % lead
@@ -84,6 +93,7 @@ func run(kaiju: KaijuModel, rig: KaijuRig) -> void:
 		)
 	)
 	_drive(ankle, top, contact)
+	_lasts(times, speed)
 	_settle(pelvis, contact, states.find("idle") - 1)
 	_hand_over(pelvis, states)
 
@@ -111,16 +121,31 @@ func _drive(ankle: Array[float], top: int, contact: int) -> void:
 ## idle takes over).
 func _settle(pelvis: Array[float], contact: int, rest: int) -> void:
 	var low := 0.0
-	for f: int in range(contact, mini(pelvis.size(), contact + roundi(3 * KEYED / DT) + 1)):
+	for f: int in range(contact, mini(pelvis.size(), contact + roundi(3 * _keyed / DT) + 1)):
 		low = minf(low, pelvis[f])
 	var settled := pelvis[maxi(0, rest)]
-	var back := pelvis[mini(pelvis.size() - 1, contact + roundi(8 * KEYED / DT))] - settled
+	var back := pelvis[mini(pelvis.size() - 1, contact + roundi(8 * _keyed / DT))] - settled
 	low -= pelvis[contact]
 	_check.call(
 		-low >= DROP and absf(back) <= SETTLE,
 		(
 			"adult clip stomp S7: the body drops %.3f hip (>= %.2f), back to %.4f by +8 (<= %.3f)"
 			% [-low, DROP, back, SETTLE]
+		)
+	)
+
+
+## The stomp lasts the keyed one (StompBeat.KEYED_INTERVAL) over the speed, +-1 frame: the frames
+## from the press until the clip stops on its end.
+func _lasts(times: Array[float], speed: float) -> void:
+	var end := Num.f(times.max())
+	var last := times.find(end)
+	var want := StompBeat.KEYED_INTERVAL / speed / DT
+	_check.call(
+		last > 0 and absf(last + 1 - want) <= 1.0,
+		(
+			"adult clip stomp at %.3fx lasts %d frames (%.1f +- 1: %.3fx the keyed stomp)"
+			% [speed, last + 1, want, (last + 1) * DT / StompBeat.KEYED_INTERVAL]
 		)
 	)
 

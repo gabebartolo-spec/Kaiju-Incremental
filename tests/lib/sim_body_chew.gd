@@ -180,7 +180,7 @@ func _chew_to_topple(sim: RampageSim) -> Dictionary:
 	var worst := 0
 	var fall: RampageSim.Fall = null
 	while steps < TOPPLE_STEPS and fall == null:
-		sim.step(DT, into, false)
+		sim.step(DT, into, false, RampageSim.STOMP)
 		worst = maxi(worst, Fixture.count(sim.body.inside(sim.kaiju_pos, sim.body.heading)))
 		for f: RampageSim.Fall in sim.falls:
 			if f.building == index and f.kind == "topple":
@@ -198,7 +198,7 @@ func _check_falls_by_physics(sim: RampageSim, fall: RampageSim.Fall) -> void:
 	var landed: Dictionary = {}
 	var steps := 0
 	while fall != null and landed.is_empty() and steps < TOPPLE_STEPS:
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "fall_land" and Num.i(event["id"]) == fall.id:
 				landed = event
 		steps += 1

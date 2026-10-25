@@ -223,7 +223,9 @@ func _check_climb() -> void:
 		var sim := _sim("insectoid", levels, [_b(0, 0, Vector3i(3, 3, 16))], Vector2(0, 3.0))
 		var highest := -1
 		for i: int in 30 * 6:
-			for event: Dictionary in sim.step(DT, NORTH if i < 13 else Vector2.ZERO, false):
+			for event: Dictionary in sim.step(
+				DT, NORTH if i < 13 else Vector2.ZERO, false, RampageSim.STOMP
+			):
 				if str(event["type"]) == "chunks_broken":
 					for c: Vector3i in event["cells"]:
 						highest = maxi(highest, c.y)
@@ -275,7 +277,7 @@ func _check_brood() -> void:
 	sim.tanks.append(tank)
 	var shot_young := false
 	for i: int in 30 * 3:
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "tank_fired" and event.has("at"):
 				shot_young = true
 	check(shot_young, "a tank near the young fires on them instead of the kaiju")

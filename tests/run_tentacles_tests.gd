@@ -176,7 +176,7 @@ func _check_helicopters() -> void:
 		octo.air.flight.start_pass(flyer)
 		for _i: int in roundi(PASS_SECONDS / DT):
 			octo.hp = octo.max_hp  # the passes run on; the helicopters' fire is not what is measured
-			octo.step(DT, Vector2.ZERO, false)
+			octo.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 			closest = minf(closest, flyer.pos.distance_to(octo.kaiju_pos))
 	check(
 		closest <= reach,
@@ -190,7 +190,7 @@ func _check_helicopters() -> void:
 	for _i: int in roundi(PASS_SECONDS / DT):
 		octo.hp = octo.max_hp
 		low.pos = octo.kaiju_pos + octo.facing.orthogonal() * reach * 0.5
-		for event: Dictionary in octo.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in octo.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "grab" and str(event["kind"]) == "heli":
 				grabbed = true
 	check(grabbed, "a cephalopod plucks a helicopter out of the sky")
@@ -215,7 +215,7 @@ func _check_heli_keeps_clear() -> void:
 	var closest := PI
 	var nearest := INF
 	for i: int in roundi(20.0 / DT):
-		sim.step(DT, Vector2.ZERO, false)
+		sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		for heli: AirWing.Heli in sim.air.helis:
 			var side := absf(wrapf((heli.pos - sim.kaiju_pos).angle() - bearing, -PI, PI))
 			closest = minf(closest, side)
@@ -259,7 +259,12 @@ func _check_replay() -> void:
 				if target.x < INF:
 					move = (target - sim.kaiju_pos).normalized()
 				var held := RampageSim.HELD if i % 40 < 20 else 0
-				sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE)
+				sim.step(
+					DT,
+					move,
+					sim.ability_ready_in <= 0.0,
+					held | RampageSim.ULTIMATE | RampageSim.STOMP
+				)
 			runs.append(sim.result())
 		same = same and runs[0] == runs[1]
 	check(same, "every species' full branch replays identically from the same seed")
@@ -293,7 +298,7 @@ func _check_caps() -> void:
 	swarm.chunks_destroyed = 99999
 	var most := 0
 	for i: int in 30 * 60:
-		swarm.step(DT, Vector2.ZERO, false)
+		swarm.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		most = maxi(most, swarm.air.helis.size())
 	check(
 		most == Num.i(air["max"]),

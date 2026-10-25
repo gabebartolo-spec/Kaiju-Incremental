@@ -172,7 +172,7 @@ func _check_topple_crush() -> void:
 	var rubble_before := sim.rubble
 	var landed := false
 	for i: int in 30 * 5:
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "fall_land":
 				landed = true
 		if landed:
@@ -248,7 +248,7 @@ func _check_species_differ() -> void:
 	)
 	var leap := _sim("insectoid", {})
 	var before := leap.kaiju_pos
-	leap.step(DT, Vector2.ZERO, true)
+	leap.step(DT, Vector2.ZERO, true, RampageSim.STOMP)
 	var expected := Num.f(leap.city["leap_distance"]) * leap.body_scale()
 	check(
 		leap.kaiju_pos.distance_to(before) >= expected * 0.95,

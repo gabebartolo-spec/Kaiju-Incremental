@@ -195,7 +195,7 @@ func _read_input(delta: float) -> Dictionary:
 		"held": Input.is_action_pressed("signature"),
 		"ultimate": Input.is_action_just_pressed("ultimate"),
 		"dash": Input.is_action_just_pressed("dash"),
-		"stomp": Input.is_action_just_pressed("stomp"),
+		"stomp": Input.is_action_pressed("stomp"),  # held, it stomps once per interval
 	}
 	if scripted.is_valid():  # captures: any of the keys above, the rest false
 		var script: Dictionary = scripted.call(sim)
@@ -206,7 +206,7 @@ func _read_input(delta: float) -> Dictionary:
 		out["signature"] = autoplay_signature and sim.ability_ready_in <= 0.0
 		out["held"] = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
 		out["ultimate"] = autoplay_signature
-		out["stomp"] = true  # stomps whenever the button is ready (once per stomp_interval)
+		out["stomp"] = true  # stomps whenever the button is ready (once per stomp interval)
 	var taps := {
 		"signature": out["signature"],
 		"ultimate": out["ultimate"],
@@ -274,13 +274,15 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
+			var speed := Num.f(event.get("speed", 1.0))
+			_kaiju.stomp_speed(speed)
 			_land.lift(_kaiju, str(event.get("side", "")))
 			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
 			# delivers the stomp (_on_footfall), so they land where and when a foot does.
 			_stomp_radius = Num.f(event["radius"])
 			stomp_sim_at.append(event["at"])
 			_stomp_side = str(event["side"]) if event["on_foot"] else ""
-			_stomp_wait = STOMP_WAIT
+			_stomp_wait = STOMP_WAIT / maxf(0.1, speed)  # a slower stomp takes longer to land
 			add_trauma(shake.source("stomp"))
 		"ability":
 			_kaiju.roar()

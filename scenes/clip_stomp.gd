@@ -51,9 +51,10 @@ func restep(i: int) -> void:
 	_start(i, RESTEP_SECONDS, 1.0, false)
 
 
-## A sim stomp: standing, the next foot in turn lifts. A stomp already in the air delivers this one
-## too, and a foot busy with a catch step is skipped.
-func stomp(standing: bool) -> void:
+## A sim stomp: standing, the next foot in turn lifts, its seconds over `speed` (the stomp's share
+## of its own pace). A stomp already in the air delivers this one too, and a foot busy with a catch
+## step is skipped.
+func stomp(standing: bool, speed: float = 1.0) -> void:
 	lifted = -1
 	if not standing:
 		return
@@ -67,7 +68,10 @@ func stomp(standing: bool) -> void:
 			_count += 1
 			var vary := Num.f(_cfg["vary"])
 			_start(
-				i, Num.f(_cfg["seconds"]) * (1.0 + vary * _hashed(0)), 1.0 + vary * _hashed(1), true
+				i,
+				Num.f(_cfg["seconds"]) * (1.0 + vary * _hashed(0)) / maxf(0.1, speed),
+				1.0 + vary * _hashed(1),
+				true
 			)
 			lifted = i
 			return

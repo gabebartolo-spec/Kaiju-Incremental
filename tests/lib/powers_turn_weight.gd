@@ -50,7 +50,7 @@ static func check(check: Callable, make: Callable) -> void:
 ## One step with the stick at `move`; returns the sideways share of the step against the heading.
 static func _step(sim: RampageSim, move: Vector2) -> float:
 	var from := sim.kaiju_pos
-	sim.step(DT, move, false, 0)
+	sim.step(DT, move, false, RampageSim.STOMP)
 	var d := sim.kaiju_pos - from
 	if d.length() < 0.0001:
 		return 0.0

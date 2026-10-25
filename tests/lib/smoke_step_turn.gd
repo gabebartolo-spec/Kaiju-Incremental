@@ -187,7 +187,7 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 		if turn_t == INF and t >= WALK_S and into >= 0.0 and into < SWING_NEAR:
 			turn_t = t
 		var move := Vector2(0, -1) if t < turn_t else Vector2(-1, 0)
-		sim.step(DT, move, false, 0)
+		sim.step(DT, move, false, RampageSim.STOMP)
 		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 		kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)

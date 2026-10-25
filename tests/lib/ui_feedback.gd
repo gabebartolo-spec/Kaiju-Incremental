@@ -179,7 +179,7 @@ static func played_sim() -> RampageSim:
 	sim.ability_type = str(ability["type"])
 	sim.body.use_species("reptilian")
 	for i: int in PLAY_STEPS:
-		sim.step(DT, Vector2.ZERO, false)
+		sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 	return sim
 
 

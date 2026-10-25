@@ -54,11 +54,11 @@ func _check_hand_over() -> void:
 		for _n: int in roundi(10.0 / DT):
 			if not sim.emerge.active:
 				break
-			sim.step(DT, Vector2.ZERO, false, 0)
+			sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		var off := rad_to_deg(absf(sim.body.heading.angle_to(sim.facing)))
 		var from := sim.kaiju_pos
 		for _n: int in HAND_OVER_FRAMES:
-			sim.step(DT, sim.facing, false, 0)  # the stick held from the first live tick
+			sim.step(DT, sim.facing, false, RampageSim.STOMP)  # the stick held from the first live tick
 		var moved := sim.kaiju_pos.distance_to(from)
 		check(
 			rose and not sim.emerge.active and off > 30.0,
@@ -79,14 +79,15 @@ func _check_dash() -> void:
 		var sim := _croc(levels)
 		sim.kaiju_pos = Vector2(0.0, 30.0)
 		for _n: int in 60:
-			sim.step(DT, sim.facing, false, 0)  # walking north
+			sim.step(DT, sim.facing, false, RampageSim.STOMP)  # walking north
 		var axis := sim.facing
 		var from := sim.kaiju_pos
 		var stick := axis.rotated(OFF_AXIS)
-		sim.step(DT, stick, false, DASH_BUTTON)
+		sim.step(DT, stick, false, DASH_BUTTON | RampageSim.STOMP)
 		var dashed := sim.body.dash.on()
 		for _n: int in roundi(0.45 / DT):
-			sim.step(DT, stick, false, 0)  # the stick held a little off the axis for the whole dash
+			# the stick held a little off the axis for the whole dash
+			sim.step(DT, stick, false, RampageSim.STOMP)
 		var along := (sim.kaiju_pos - from).dot(axis)
 		var slide := absf((sim.kaiju_pos - from).dot(axis.orthogonal()))
 		check(
@@ -109,10 +110,10 @@ func _check_straight() -> void:
 		var sim := _croc(levels)
 		sim.kaiju_pos = Vector2(0.0, 30.0)
 		for _n: int in 120:
-			sim.step(DT, sim.facing, false, 0)
+			sim.step(DT, sim.facing, false, RampageSim.STOMP)
 		var from := sim.kaiju_pos
 		for _n: int in 60:
-			sim.step(DT, sim.facing, false, 0)
+			sim.step(DT, sim.facing, false, RampageSim.STOMP)
 		var speed := sim.kaiju_pos.distance_to(from)  # in the last second
 		var top := sim.stat("speed")
 		check(

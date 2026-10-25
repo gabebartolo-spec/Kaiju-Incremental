@@ -45,7 +45,9 @@ func _step_sim(step: int) -> RampageSim:
 func _walk(sim: RampageSim, n: int, target: Vector2) -> Vector2:
 	var aim := sim.nearest_standing(sim.kaiju_pos) if n % 15 == 0 else target
 	var near := aim.x < INF and sim.kaiju_pos.distance_to(aim) > sim.stomp_radius() * 0.5
-	sim.step(DT, (aim - sim.kaiju_pos).normalized() if near else Vector2.ZERO, false)
+	sim.step(
+		DT, (aim - sim.kaiju_pos).normalized() if near else Vector2.ZERO, false, RampageSim.STOMP
+	)
 	sim.hp = sim.max_hp
 	return aim
 

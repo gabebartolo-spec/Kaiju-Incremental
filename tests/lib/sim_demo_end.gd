@@ -133,7 +133,7 @@ func _check_endless() -> void:
 	var peak := 0
 	for step: int in FREE_SECONDS * 30:
 		sim.hp = sim.max_hp  # an invincible kaiju: only the clock and the fall could end it
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "tank_spawned":
 				if step < EARLY_SECONDS * 30:
 					spawned_early += 1
@@ -164,7 +164,7 @@ func _check_endless() -> void:
 	control.time_left = 1.0
 	for i: int in 60:
 		control.hp = control.max_hp
-		control.step(DT, Vector2.ZERO, false)
+		control.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 	_check.call(
 		control.over and control.end_reason == "time", "a normal rampage still ends on the clock"
 	)
@@ -212,7 +212,7 @@ func _check_regrowth() -> void:
 	var regrown_events := 0
 	for _step: int in minutes * 60 * 30:
 		sim.hp = sim.max_hp
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "building_regrown":
 				regrown_events += 1
 	var share := Num.f(Endless.cfg()["regrow_share_per_minute"])

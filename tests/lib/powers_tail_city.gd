@@ -25,7 +25,7 @@ static func check(check: Callable) -> void:
 	var t := 0.0
 	while t < SECONDS and not sim.over:
 		t += dt
-		sim.step(dt, DIRS[int(t / LEG) % DIRS.size()], false, 0)
+		sim.step(dt, DIRS[int(t / LEG) % DIRS.size()], false, RampageSim.STOMP)
 	check.call(
 		sim.powers.tail_sweeps > 0 and sim.powers.tail_cut > 0,
 		(

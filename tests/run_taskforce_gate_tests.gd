@@ -237,7 +237,7 @@ func _check_squad_dash() -> void:
 		)
 		var from := sim.kaiju_pos
 		if dashes:
-			seen.append_array(sim.step(DT, way, false, DASH_BUTTON))
+			seen.append_array(sim.step(DT, way, false, DASH_BUTTON | RampageSim.STOMP))
 		seen.append_array(_run(sim, 4.0))
 		var types := _types(seen)
 		outcome[dashes] = [types.count("railgun_hit"), types.count("railgun_missed")]
@@ -274,7 +274,7 @@ func _volley(gap: float) -> Dictionary:
 			squad_of[_perched(sim, true).id] = squad
 	var times := {"locks": [[], []], "shots": [[], []]}
 	for n: int in roundi(10.0 / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			var kind := str(event["type"])
 			if kind in ["railgun_hit", "railgun_missed", "railgun_locked"]:
 				var lists: Array = times["locks" if kind == "railgun_locked" else "shots"]

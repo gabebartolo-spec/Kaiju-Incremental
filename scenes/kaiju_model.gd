@@ -183,6 +183,12 @@ func prefer_foot(side: String) -> void:
 		(_rig.gait as ClipGait).prefer_foot(side)
 
 
+## The stomp's speed (RampageSim's share of its keyed pace) for the stomps that follow.
+func stomp_speed(speed: float) -> void:
+	if _rig != null and _rig.gait is ClipGait:
+		(_rig.gait as ClipGait).stomp_speed = speed
+
+
 func stomp() -> void:
 	if _rig != null:
 		_rig.stomp()

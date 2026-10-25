@@ -3,7 +3,11 @@ extends RefCounted
 ## replaces it"; keyboard and mouse and pad): no stomp falls on its own; a press stomps once, a
 ## second press before stomp_interval has run out does not, the button held stomps once per
 ## interval, and walking a press falls on the next footfall. The "stomp" action is bound on the
-## keyboard, the mouse and the pad. The adult (Colossus), standing, fixed 60 Hz steps.
+## keyboard, the mouse and the pad. The croc's stomp is slowed (director 2026-10-26: 0.80x, "it
+## looks too fast ... weightless rather than titanic"), and Frenzy is its speed-up ("Frenzy becomes
+## your speed-up": 0.825 .. 0.90x over 4 levels): 10 held stomps come the clip's length apart,
+## 0.875 s at level 0 and 0.778 s at level 4 (+-1 frame), never faster; the other species' Frenzy
+## still shortens the interval. The adult (Colossus), standing, fixed 60 Hz steps.
 
 const DT := 1.0 / 60.0
 const HERO_HP := 1.0e9
@@ -19,7 +23,7 @@ func run() -> void:
 	var idle := _stomps(_sim(), func(_f: int) -> bool: return false, 180)
 	_check.call(idle.size() == 0, "no stomp without the button (%d in 3 s == 0)" % idle.size())
 	var sim := _sim()
-	var interval := sim.stat("stomp_interval")
+	var interval := sim.stomp.interval()
 	var gap := roundi(interval * 0.5 / DT)
 	var twice := _stomps(sim, func(f: int) -> bool: return f == 0 or f == gap, 180)
 	_check.call(
@@ -34,6 +38,37 @@ func run() -> void:
 	)
 	_walking()
 	_bindings()
+	_frenzy()
+
+
+## The player effect of the croc's Frenzy: level 0 and level 4 stomp at different paces, each the
+## clip's length at its speed, and the speed never passes 0.90x.
+func _frenzy() -> void:
+	var gaps: Array[float] = []
+	for lv: int in [0, 4]:
+		var sim := sim_at("reptilian", lv)
+		var held := _stomps(sim, func(_f: int) -> bool: return true, 600)
+		var want := StompBeat.KEYED_INTERVAL / (0.8 + 0.025 * lv)
+		var worst := 0.0
+		for i: int in range(1, mini(held.size(), 10)):
+			worst = maxf(worst, absf((held[i] - held[i - 1]) * DT - want))
+		gaps.append(float(held[mini(9, held.size() - 1)] - held[0]) * DT / 9.0)
+		(
+			_check
+			. call(
+				held.size() >= 10 and worst <= DT * 1.01 and sim.stomp.speed() <= 0.9,
+				(
+					"Frenzy %d: 10 held stomps %.3f s apart (%.3f +- 1 frame, worst off %.3f), speed %.3f"
+					% [lv, gaps[-1], want, worst, sim.stomp.speed()]
+				)
+			)
+		)
+	_check.call(gaps[0] > gaps[1], "Frenzy 4 stomps faster than none (%s)" % [gaps])
+	var bug := sim_at("insectoid", 4)
+	_check.call(
+		bug.stomp.speed() == 1.0 and bug.stomp.interval() < sim_at("insectoid", 0).stomp.interval(),
+		"the insectoid's Frenzy still shortens its stomp interval (%.2f s)" % bug.stomp.interval()
+	)
 
 
 ## Walking, a press falls on the next footfall, on the foot that lands.
@@ -80,14 +115,20 @@ func _stomps(sim: RampageSim, press: Callable, n: int) -> Array[int]:
 
 
 func _sim() -> RampageSim:
-	var species := Content.species_def("reptilian")
+	return sim_at("reptilian", 0)
+
+
+## A seeded rampage of `species` (the Colossus) with Frenzy at level `frenzy`.
+static func sim_at(species_id: String, frenzy: int) -> RampageSim:
+	var species := Content.species_def(species_id)
+	var levels := {"frenzy": frenzy} if frenzy > 0 else {}
 	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
 	)
 	stats["size"] = 3.0
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
-	sim.body.use_species("reptilian")
+	sim.body.use_species(species_id)
 	sim.hp = HERO_HP
 	sim.max_hp = HERO_HP
 	return sim

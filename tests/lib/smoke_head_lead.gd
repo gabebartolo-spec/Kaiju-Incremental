@@ -57,7 +57,7 @@ static func check(check: Callable, root: Node) -> void:
 
 
 static func _frame(sim: RampageSim, kaiju: KaijuModel, move: Vector2) -> void:
-	sim.step(DT, move, false, 0)
+	sim.step(DT, move, false, RampageSim.STOMP)
 	kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 	kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	kaiju.animate(DT, 1.0, -sim.body.turn_left)  # the yaw still to turn: the head leads by it

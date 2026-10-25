@@ -42,7 +42,7 @@ func _pair(levels: Dictionary, gap: float = 1.0) -> RampageSim:
 func _times(sim: RampageSim, seconds: float) -> Dictionary:
 	var first := {}
 	for i: int in roundi(seconds / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			var kind := str(event["type"])
 			if kind.begins_with("fire_"):
 				var key := "%d:%s" % [Num.i(event["building"]), kind]
@@ -109,9 +109,9 @@ func _check_burn_pay() -> void:
 	burnt.powers.fire.ignite(0)
 	var steps := 0
 	while burnt.powers.fire.burnt_out == 0 and steps < 900:
-		burnt.step(DT, Vector2.ZERO, false, 0)
+		burnt.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		if burnt.powers.fire.burnt_out == 0:
-			knocked.step(DT, Vector2.ZERO, false, 0)
+			knocked.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		steps += 1
 	var start := knocked.rubble  # the same in both runs until the burn-out step
 	# Knocked down the same way: the same ground cells in the same batches, no fire.
@@ -129,7 +129,7 @@ func _check_burn_pay() -> void:
 		amounts.fill(1000000.0)
 		knocked.damage_cells(0, batch, amounts)
 		for k: int in every:
-			knocked.step(DT, Vector2.ZERO, false, 0)
+			knocked.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 	_times(burnt, 8.0)
 	_times(knocked, 8.0)
 	var share := Num.f(Content.tuning()["powers"]["fire"]["burn_pay"])
@@ -150,7 +150,7 @@ func _check_firebreak() -> void:
 	var broke := false
 	var burned := false
 	for i: int in roundi(30.0 / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			var kind := str(event["type"])
 			if Num.i(event.get("building", -1)) != 1:
 				continue
@@ -272,7 +272,7 @@ func _breath_lights(levels: Dictionary) -> bool:
 	sim.stats["ability_damage"] = 0.0  # the block must stand to catch: this watches the fire
 	var seen := {}
 	for i: int in roundi(3.0 / DT):  # held down: the press counts once it has risen and is ready
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, true, 0):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, true, RampageSim.STOMP):
 			seen[str(event["type"])] = true
 	return seen.has("ability") and seen.has("fire_burning")
 

@@ -55,6 +55,8 @@ var walk_frames := 0.0
 ## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
 var tail_shown := 0.0
+## The stomp's speed (share of its keyed pace, RampageSim's): the clip's and the code lift's.
+var stomp_speed := 1.0
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
@@ -122,7 +124,6 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
-	_beat.tick(dt)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
 	_swing_tail(dt)
@@ -148,11 +149,12 @@ func stomp() -> void:
 	if _beat.keyed() and (state == "idle" or state == "stomp"):
 		var i := _stomp.by_clip()
 		var side := "left" if legs[i].side < 0.0 else "right"
-		var at := _beat.on_stomp(state == "stomp", clip_time, side)
+		_beat.speed = stomp_speed
+		var at := _beat.on_stomp(state == "stomp", side)
 		if at >= 0.0:
 			_go("stomp", at)
 		return
-	_stomp.stomp(state == "idle")
+	_stomp.stomp(state == "idle", stomp_speed)
 
 
 ## The foot the next standing stomp lifts (the sim chose it: its damage is centred under that foot).

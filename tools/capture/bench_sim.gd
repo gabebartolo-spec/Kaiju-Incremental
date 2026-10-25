@@ -54,7 +54,7 @@ func _run() -> void:
 			move = to.normalized()
 		var buttons := RampageSim.ULTIMATE | (RampageSim.HELD if s % CYCLE < HELD else 0)
 		var t0 := Time.get_ticks_usec()
-		var events := sim.step(dt, move, sim.ability_ready_in <= 0.0, buttons)
+		var events := sim.step(dt, move, sim.ability_ready_in <= 0.0, buttons | RampageSim.STOMP)
 		var spent := Time.get_ticks_usec() - t0
 		costs.append(spent)
 		if spent > _slow * 1000.0:

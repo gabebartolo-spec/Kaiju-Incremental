@@ -95,7 +95,7 @@ static func _curve(check: Callable, root: Node, stage: String) -> void:
 
 ## One frame: the stick `way` steps the sim, and the model follows it as the rampage scene does.
 static func _drive(sim: RampageSim, kaiju: KaijuModel, way: Vector2) -> void:
-	sim.step(DT, way, false, 0)
+	sim.step(DT, way, false, RampageSim.STOMP)
 	kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 	kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)

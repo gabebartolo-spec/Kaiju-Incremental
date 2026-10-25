@@ -108,7 +108,7 @@ func _break(n: int, kaiju: Node3D) -> void:
 		for _k: int in STEPS_PER_FRAME:
 			var to := goal - _sim.kaiju_pos
 			var move := to.normalized() if to.length() > 1.0 else Vector2.ZERO
-			_apply(_sim.step(DT, move, _sim.ability_ready_in <= 0.0))
+			_apply(_sim.step(DT, move, _sim.ability_ready_in <= 0.0, RampageSim.STOMP))
 			t += DT
 		_kaiju_at = Vector3(_sim.kaiju_pos.x, 0, _sim.kaiju_pos.y)
 		kaiju.position = _kaiju_at

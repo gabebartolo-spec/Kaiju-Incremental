@@ -112,7 +112,7 @@ func _run(
 ) -> Array[Dictionary]:
 	var seen: Array[Dictionary] = []
 	for _n: int in roundi(seconds / DT):
-		var events := sim.step(DT, move, false)
+		var events := sim.step(DT, move, false, RampageSim.STOMP)
 		seen.append_array(events)
 		if until != "" and not _first(events, until).is_empty():
 			break
@@ -131,7 +131,7 @@ func _play(sim: RampageSim, seconds: float, walk := true) -> Dictionary:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var near := target.x < INF and not sim.body.stomp_reaches(target)
 		var move := (target - sim.kaiju_pos).normalized() if near and walk else Vector2.ZERO
-		var events := sim.step(DT, move, false)
+		var events := sim.step(DT, move, false, RampageSim.STOMP)
 		out["hurt"] = Num.f(out["hurt"]) + sim.max_hp - sim.hp
 		sim.hp = sim.max_hp
 		for event: Dictionary in events:

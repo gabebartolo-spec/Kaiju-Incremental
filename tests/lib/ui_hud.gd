@@ -123,7 +123,9 @@ func _card(hud: RampageHud) -> void:
 	var count := 0
 	if not rows.is_empty():
 		count = (rows[0] as GridContainer).get_child_count() / 3 - 1
-	check.call(count == 3, "the first-run card has 3 rows (move, signature, dash): %d" % count)
+	check.call(
+		count == 4, "the first-run card has 4 rows (move, signature, dash, stomp): %d" % count
+	)
 	check.call(
 		texts.any(func(x: String) -> bool: return x.to_upper().contains("ANY KEY")),
 		"the first-run card says to press any key: %s" % [texts]

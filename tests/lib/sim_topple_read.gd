@@ -140,7 +140,7 @@ func _tower_take(log: Array[Dictionary]) -> void:
 	sim.body.heading = sim.facing
 	for n: int in TAKE_STEPS:
 		var move := sim.facing if n >= TAKE_LEAD_IN else Vector2.ZERO
-		_note(sim, sim.step(TAKE_DT, move, false), log)
+		_note(sim, sim.step(TAKE_DT, move, false, RampageSim.STOMP), log)
 
 
 ## A scripted rampage with Claws 5 (the runner's autoplay: walk to the nearest standing chunk).
@@ -155,7 +155,7 @@ func _rampage(run: int, log: Array[Dictionary]) -> void:
 		var move := Vector2.ZERO
 		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
-		_note(sim, sim.step(RUN_DT, move, sim.ability_ready_in <= 0.0), log)
+		_note(sim, sim.step(RUN_DT, move, sim.ability_ready_in <= 0.0, RampageSim.STOMP), log)
 
 
 ## A part with nothing under it that is taller than it is deep is a tower whose base is gone:

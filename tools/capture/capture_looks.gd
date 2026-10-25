@@ -128,7 +128,7 @@ func _city_shot(id: String, levels: Dictionary, stage_at: Vector2 = STAGE_AT) ->
 		tank.look_at_from_position(tank.position, at, Vector3.UP, true)
 	city.flash(at + Vector3(-7.0, 1.0, 9.0), Color("ffc070"), 4.0, 0.4)
 	for _f: int in FALL_FRAMES:  # let the undermined towers topple and land
-		_send(sim.step(1.0 / 60.0, Vector2.ZERO, false), city, at)
+		_send(sim.step(1.0 / 60.0, Vector2.ZERO, false, RampageSim.STOMP), city, at)
 		await process_frame
 	city.ring(at, sim.stomp_radius(), Color(1, 0.85, 0.6, 0.7), 0.35)
 	await _frames(DEBRIS_FRAMES)

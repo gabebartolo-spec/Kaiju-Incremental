@@ -159,7 +159,7 @@ func _pair(cam: Camera3D, pair: Array, number: int) -> void:
 	_demolish(Num.i(pair[1]))
 	var t := 0.0
 	while t < FALL_SECONDS:
-		_apply(_sim.step(DT, Vector2.ZERO, false))
+		_apply(_sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP))
 		t += DT
 		await process_frame
 	await _frames(AFTER)

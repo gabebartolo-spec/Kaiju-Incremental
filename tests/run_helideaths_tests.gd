@@ -52,7 +52,7 @@ func _down(sim: RampageSim, blow: float) -> Dictionary:
 func _until_crash(sim: RampageSim, seconds: float) -> Dictionary:
 	for i: int in roundi(seconds / DT):
 		var hp := sim.hp
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "heli_crashed":
 				event["hurt"] = hp - sim.hp
 				return event
@@ -115,7 +115,7 @@ func _crash_at(sim: RampageSim, at: Vector2) -> void:
 	down.pos = at
 	down.drift = Vector2.ZERO
 	down.left = DT * 0.5
-	sim.step(DT, Vector2.ZERO, false, 0)
+	sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 
 
 func _tank_at(sim: RampageSim, id: int, at: Vector2) -> RampageSim.Tank:

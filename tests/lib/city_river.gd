@@ -39,7 +39,7 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 	var clock_held := true
 	var limit := Num.f(Content.tuning()["emerge"]["max_seconds"]) + 1.0  # past the stall cap
 	while emerged == 0 and waited < limit:
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "kaiju_emerged":
 				emerged += 1
 		waited += DT

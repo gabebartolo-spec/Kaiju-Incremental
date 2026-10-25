@@ -87,7 +87,7 @@ func _rate_and_damage(at_reach: float) -> void:
 func _lands_on_a_building() -> void:
 	var sim: RampageSim = _make.call(1, 0)
 	for n: int in 300:  # until the first tanks are in the city
-		sim.step(DT, Vector2.ZERO, false)
+		sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 	var target := -1
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]

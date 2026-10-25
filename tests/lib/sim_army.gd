@@ -22,8 +22,8 @@ func run() -> void:
 	var soft: RampageSim = _make.call("reptilian", {}, 0, {})
 	var armoured: RampageSim = _make.call("reptilian", {"hide": 1, "scales": 4}, 0, {})
 	for i: int in ARRIVE_STEPS:
-		soft.step(DT, Vector2.ZERO, false)
-		armoured.step(DT, Vector2.ZERO, false)
+		soft.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
+		armoured.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 	if soft.tanks.size() > 0:
 		soft.kaiju_pos = soft.tanks[0].pos
 		armoured.kaiju_pos = soft.tanks[0].pos
@@ -48,7 +48,7 @@ func _tank_hit(sim: RampageSim) -> float:
 	var before := sim.hp
 	var fired := false
 	var other := false
-	for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+	for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 		fired = fired or str(event["type"]) == "tank_fired" and event.has("tank")
 		other = other or str(event["type"]) == "rooftop_fired"
 	return before - sim.hp if fired and not other else 0.0

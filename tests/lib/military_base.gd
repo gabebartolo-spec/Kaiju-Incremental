@@ -185,5 +185,5 @@ func _autoplay(sim: RampageSim, steps: int, target: Vector2) -> Vector2:
 	if target.x < INF and not sim.body.stomp_reaches(target):
 		move = (target - sim.kaiju_pos).normalized()
 	var held := RampageSim.HELD if steps % 30 < 15 else 0
-	sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE)
+	sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE | RampageSim.STOMP)
 	return target

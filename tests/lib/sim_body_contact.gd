@@ -87,7 +87,7 @@ func _check_dash() -> void:
 	var from := sim.kaiju_pos
 	var worst := 0
 	for n: int in DASH_STEPS:
-		sim.step(DT, dir, false, Dash.BUTTON if n == 1 else 0)
+		sim.step(DT, dir, false, (Dash.BUTTON if n == 1 else 0) | RampageSim.STOMP)
 		var inside := sim.body.inside(sim.kaiju_pos, sim.body.heading)
 		for index: int in inside:
 			var cells: Dictionary = inside[index]
@@ -128,7 +128,7 @@ func _walk(body: bool, tier: int) -> Dictionary:
 			move = -dir
 		elif n >= FORWARD_STEPS:
 			move = dir.orthogonal()
-		sim.step(DT, move, false)
+		sim.step(DT, move, false, RampageSim.STOMP)
 		held += 1 if sim.body.held else 0
 		worst = maxi(worst, Fixture.count(probe.inside(sim.kaiju_pos, sim.body.heading)))
 	return {"worst": worst, "held": held, "broken": sim.body.broken, "chunks": sim.chunks_destroyed}

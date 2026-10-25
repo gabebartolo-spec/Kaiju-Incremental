@@ -151,7 +151,7 @@ func _play(levels: Dictionary) -> Dictionary:
 	var shares: Array[float] = []
 	var far_max := 0.0
 	for step: int in roundi(SECONDS / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			var kind := str(event["type"])
 			if not kind.begins_with("fire_"):
 				continue

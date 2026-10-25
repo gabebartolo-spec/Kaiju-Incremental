@@ -52,7 +52,7 @@ func _stand(sim: RampageSim, at: Vector2, steps: int) -> Array[Dictionary]:
 	sim.kaiju_pos = at
 	var out: Array[Dictionary] = []
 	for s: int in steps:
-		out.append_array(sim.step(DT, Vector2.ZERO, false))
+		out.append_array(sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP))
 	return out
 
 

@@ -23,6 +23,11 @@ static func play(sim: RampageSim, start_goal: Vector2, max_steps: int = 0) -> in
 		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
 		var held := RampageSim.HELD if steps % 30 < 15 else 0
-		sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE | Dash.BUTTON)
+		sim.step(
+			DT,
+			move,
+			sim.ability_ready_in <= 0.0,
+			held | RampageSim.ULTIMATE | Dash.BUTTON | RampageSim.STOMP
+		)
 		steps += 1
 	return steps

@@ -62,6 +62,7 @@
 		"stomp_damage": {"line": "Stomps hit harder", "fmt": "%.0f"},
 		"stomp_radius": {"line": "Stomps reach further", "fmt": "%.1f"},
 		"stomp_interval": {"line": "Stomps come faster", "fmt": "inv", "unit": " a second"},
+		"stomp_speed": {"line": "A quicker stomping beat", "fmt": "x%.3f"},
 		"speed": {"line": "Moves faster", "fmt": "%.1f"},
 		"armor": {"line": "Shrugs off more damage", "fmt": "%.1f"},
 		"run_seconds": {"line": "Rampages last longer", "fmt": "%d", "unit": " seconds"},

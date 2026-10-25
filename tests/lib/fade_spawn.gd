@@ -56,7 +56,7 @@ func _stage(stage: int) -> void:
 	var left := int(SECONDS / DT)
 	while left > 0:
 		var rising := sim.emerge.active
-		sim.step(DT, Vector2.ZERO, false, 0)
+		sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		var at := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		body = body.lerp(at, minf(1.0, DT * BODY_FOLLOW))
 		follow.step(body, CameraTuning.offset() * zoom, DT)

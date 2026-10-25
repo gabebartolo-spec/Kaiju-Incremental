@@ -121,7 +121,7 @@ func _run() -> void:
 	for f: int in int(_seconds / DT):
 		var t := f * DT
 		var move := _stick(t)
-		sim.step(DT, move, false, 0)
+		sim.step(DT, move, false, RampageSim.STOMP)
 		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 		kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)

@@ -23,8 +23,7 @@ const CONTROLS: Array[Array] = [
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
 	["Fullscreen", "F11", "-"],
-	["Confirm", "Enter / Space", "A"],
-	["Back", "Esc", "B"],
+	["Confirm / Back", "Enter, Space / Esc", "A / B"],  # one row: the Stomp row fits at 125%
 ]
 
 static var volume := 0.8

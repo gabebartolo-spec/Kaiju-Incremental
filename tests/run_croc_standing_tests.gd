@@ -13,7 +13,8 @@ const StompButton := preload("res://tests/lib/stomp_button.gd")
 const ClipStompShape := preload("res://tests/lib/clip_stomp_shape.gd")
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
-## Stomps on the sim's 0.7 s beat, and the footfall weight below which a step is not a stomp.
+## Stomps on a 0.7 s beat (the keyed pace, speed 1: the code-arc checks), and the footfall weight
+## below which a step is not a stomp.
 const BEATS := 6
 const BEAT_FRAMES := 42
 const STOMP_WEIGHT := 0.35
@@ -40,6 +41,11 @@ func _model(stage: String) -> KaijuModel:
 	return kaiju
 
 
+## The croc's stomp speed with Frenzy at `frenzy` (the sim's, from data).
+func _speed(frenzy: int) -> float:
+	return StompBeat.KEYED_INTERVAL / StompButton.sim_at("reptilian", frenzy).stomp.interval()
+
+
 func _rig_of(kaiju: KaijuModel) -> KaijuRig:
 	return kaiju.find_children("*", "KaijuRig", true, false)[0]
 
@@ -53,9 +59,12 @@ func _check_stomp_button() -> void:
 ## stomp (baby, adolescent) lifts the toe past 0.4 hip; a clip-keyed one (the adult) has its own
 ## bars (ClipStompShape).
 func _check_standing_stomp() -> void:
-	var wait_frames := ceili(Rampage.STOMP_WAIT / DT)
+	var speed := _speed(0)
+	var wait_frames := ceili(Rampage.STOMP_WAIT / speed / DT)
+	var beat_frames := ceili(StompButton.sim_at("reptilian", 0).stomp.interval() / DT)
 	for stage: String in STAGES:
 		var kaiju := _model(stage)
+		kaiju.stomp_speed(speed)
 		var rig := _rig_of(kaiju)
 		var feet: Array[Dictionary] = []
 		var clock: Array[int] = [0]  # an array: a lambda copies plain ints
@@ -75,7 +84,7 @@ func _check_standing_stomp() -> void:
 			var called := clock[0]
 			var before := feet.size()
 			kaiju.stomp()
-			for f: int in BEAT_FRAMES:
+			for f: int in beat_frames:
 				clock[0] += 1
 				finite = finite and _step(kaiju, rig)
 				rose = maxf(rose, _toe_height(rig) - rest)
@@ -123,8 +132,13 @@ func _check_stomp_shape() -> void:
 	var adult := _model("adult")
 	for i: int in 2:
 		await process_frame
-	ClipStompShape.new(check).run(adult, _rig_of(adult))
+	ClipStompShape.new(check).run(adult, _rig_of(adult), _speed(0))
 	adult.queue_free()
+	var quick := _model("adult")  # Frenzy 4: the fastest the croc stomps
+	for i: int in 2:
+		await process_frame
+	ClipStompShape.new(check).run(quick, _rig_of(quick), _speed(4))
+	quick.queue_free()
 	var kaiju := _model("adolescent")
 	var calm := _model("adolescent")
 	var rig := _rig_of(kaiju)

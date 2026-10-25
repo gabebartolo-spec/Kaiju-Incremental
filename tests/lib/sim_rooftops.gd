@@ -91,7 +91,7 @@ func run() -> void:
 	ragged.kaiju_pos = ragged.army_units.squads[0].pos + Vector2(Num.f(cfg["range"]) * 0.5, 0)
 	var times: Array[float] = []
 	for i: int in ceili(Num.f(cfg["fire_interval"]) * 8.0 / DT):
-		for event: Dictionary in ragged.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in ragged.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == "rooftop_fired":
 				times.append(i * DT)
 	var gaps: Array[float] = []
@@ -226,7 +226,7 @@ func _one_squad(sim: RampageSim) -> RampageSim:
 func _steps_counting(sim: RampageSim, seconds: float, kind: String) -> int:
 	var count := 0
 	for i: int in ceili(seconds / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]) == kind:
 				count += 1
 	return count

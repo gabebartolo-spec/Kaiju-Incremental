@@ -1,6 +1,6 @@
 extends SceneTree
 ## The adult croc (Colossus) standing still in a real autoplay-less rampage at the game camera, HUD
-## on: only the stomp button, held, so its stomps (once per stomp_interval, 0.7 s) and the claw
+## on: only the stomp button, held, so its stomps (one per stomp interval, 0.875 s) and the claw
 ## rakes (every 2 s) are all that happens. Prints when the rise from the river ends (the frame to
 ## cut a clip from), and with --shots saves a still of the first stomp that plants a foot and of
 ## the first rake mid-swing, each with a 2x crop round the croc. Needs a window; pair with

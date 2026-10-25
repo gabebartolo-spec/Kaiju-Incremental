@@ -62,7 +62,7 @@ func step() -> void:
 	var move := Vector2.ZERO
 	if _target.x < INF and not sim.body.stomp_reaches(_target):
 		move = (_target - sim.kaiju_pos).normalized()
-	sim.step(DT, move, sim.ability_ready_in <= 0.0)
+	sim.step(DT, move, sim.ability_ready_in <= 0.0, RampageSim.STOMP)
 	sim.events.clear()
 	street._process(DT)
 	sound.advance(DT)

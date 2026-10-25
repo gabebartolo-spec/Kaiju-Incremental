@@ -52,7 +52,7 @@ func _check_arrival_and_cap() -> void:
 	var edge_ok := true
 	var arrivals := 0
 	for _n: int in roundi(180.0 / DT):
-		var events := sim.step(DT, Vector2.ZERO, false)
+		var events := sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		sim.hp = sim.max_hp
 		for event: Dictionary in events:
 			deployed += 1 if str(event["type"]) == "taskforce_deployed" else 0
@@ -139,7 +139,7 @@ func _check_railgun_hit() -> void:
 	var hit: Dictionary = {}
 	var steps := 0
 	for _n: int in roundi(4.0 / DT):
-		var events := sim.step(DT, Vector2.ZERO, false)
+		var events := sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP)
 		steps += 1
 		if not _first(events, "railgun_aim").is_empty():
 			aim = steps * DT
@@ -279,7 +279,7 @@ func _check_frost() -> void:
 	frost.launch(3, Vector3.ZERO)
 	_run(sim, Num.f(frost.cfg["flight_s"]) + 0.1)
 	check(frost.frost_left > 0.0, "iced again for the dash test")
-	var dashed := sim.step(DT, way, false, DASH_BUTTON)
+	var dashed := sim.step(DT, way, false, DASH_BUTTON | RampageSim.STOMP)
 	var shattered := _first(dashed, "frost_cracked")
 	check(
 		str(shattered.get("why", "")) == "dash" and frost.frost_left == 0.0,
@@ -290,7 +290,7 @@ func _check_frost() -> void:
 	var cold := walled.army_units.taskforce.frost
 	cold.launch(4, Vector3.ZERO)
 	_run(walled, Num.f(cold.cfg["flight_s"]) + 0.1)
-	var rammed := walled.step(DT, walled.facing, false, DASH_BUTTON)
+	var rammed := walled.step(DT, walled.facing, false, DASH_BUTTON | RampageSim.STOMP)
 	check(
 		not _first(rammed, "dash").is_empty() and not walled.body.dash.on(),
 		"the dash into a wall stopped at once: %s" % [_types(rammed)]
@@ -351,7 +351,7 @@ func _fingerprint() -> String:
 	sim.hp = sim.max_hp
 	var out := PackedStringArray()
 	for n: int in roundi(60.0 / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if (
 				str(event["type"]).begins_with("taskforce")
 				or str(event["type"]).begins_with("rail")

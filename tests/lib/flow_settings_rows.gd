@@ -80,7 +80,7 @@ static func _blocks(check: Callable, menu: SettingsMenu, time: Rect2) -> void:
 		var l := found as Label
 		if l.text == "CONTROLS":
 			controls = l
-		elif l.text == "Back":
+		elif l.text == "Confirm / Back":
 			last_row = l
 	check.call(
 		controls != null and controls.get_global_rect().position.y - time.end.y >= BLOCK_GAP - EPS,

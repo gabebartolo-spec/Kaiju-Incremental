@@ -35,7 +35,7 @@ func _watch(sim: RampageSim, seconds: float) -> Array[Dictionary]:
 	for n: int in roundi(seconds / DT):
 		for agent: Taskforce.Agent in sim.army_units.taskforce.agents:
 			agent.wait = 1.0e9
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.STOMP):
 			if str(event["type"]).begins_with("railgun_"):
 				seen.append({"step": n, "type": str(event["type"]), "agent": Num.i(event["agent"])})
 		sim.hp = sim.max_hp

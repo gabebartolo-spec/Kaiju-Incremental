@@ -226,7 +226,7 @@ func _play(tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary) ->
 		var move := Vector2.ZERO
 		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
-		sim.step(DT, move, sim.ability_ready_in <= 0.0)
+		sim.step(DT, move, sim.ability_ready_in <= 0.0, RampageSim.STOMP)
 		steps += 1
 	var out := sim.result()
 	out["chunks"] = sim.chunks_total
@@ -301,7 +301,7 @@ func _check_early_hook() -> void:
 				var move := Vector2.ZERO
 				if target.x < INF and not sim.body.stomp_reaches(target):
 					move = (target - sim.kaiju_pos).normalized()
-				sim.step(DT, move, sim.ability_ready_in <= 0.0)
+				sim.step(DT, move, sim.ability_ready_in <= 0.0, RampageSim.STOMP)
 				steps += 1
 			earned += Num.i(sim.result()["rubble"])
 		check(
@@ -346,7 +346,7 @@ func _check_young_pace() -> void:
 		var sim := RampageSim.new(stats, _tuning(tier), _layout(tier), Seeds.make("army", 0))
 		var start := sim.kaiju_pos
 		for frame: int in 30:
-			sim.step(1.0 / 30.0, Vector2(1, 0), false)
+			sim.step(1.0 / 30.0, Vector2(1, 0), false, RampageSim.STOMP)
 		walked.append((sim.kaiju_pos - start).length())
 		hp.append(sim.max_hp)
 	var body: Dictionary = _tuning(1)["body"]

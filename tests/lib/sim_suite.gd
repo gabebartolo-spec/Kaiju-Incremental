@@ -62,6 +62,6 @@ func _autoplay(sim: RampageSim, max_steps: int = MAX_STEPS) -> Dictionary:
 		var move := Vector2.ZERO
 		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
-		sim.step(DT, move, sim.ability_ready_in <= 0.0)
+		sim.step(DT, move, sim.ability_ready_in <= 0.0, RampageSim.STOMP)
 		steps += 1
 	return sim.result()
