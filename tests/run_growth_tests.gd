@@ -224,7 +224,7 @@ func _play(tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary) ->
 		if steps % 8 == 0:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
-		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
 		sim.step(DT, move, sim.ability_ready_in <= 0.0)
 		steps += 1
@@ -299,7 +299,7 @@ func _check_early_hook() -> void:
 				if steps % 8 == 0:
 					target = sim.nearest_standing(sim.kaiju_pos)
 				var move := Vector2.ZERO
-				if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+				if target.x < INF and not sim.body.stomp_reaches(target):
 					move = (target - sim.kaiju_pos).normalized()
 				sim.step(DT, move, sim.ability_ready_in <= 0.0)
 				steps += 1

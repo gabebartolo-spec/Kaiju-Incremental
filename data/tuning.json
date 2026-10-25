@@ -1057,6 +1057,7 @@
 	"arena_edge": {"out": 1.0, "spacing": 1.3, "size": [0.35, 1.1], "color": "e07a28", "glow": 0.5, "tree_clear": 0.6},
 	"body": {"speed_mult": 1.0, "hp_mult": 1.0},
 	"contact": {
+		"_note": "bodies[species][stage].stomp_foot = [ahead, across] at body scale 1: where a stomp's foot comes down against kaiju_pos (design units ahead along the heading, and out to the left foot; the right foot mirrors it). The sim's stomp damages around that point (RampageSim._stomp), the point the drawn ring lands on (measured with tools/capture/probe_stomp_foot.gd). No entry: the stomp is centred on kaiju_pos.",
 		"skin": 0.15,
 		"sample": 0.5,
 		"turn_rate": 1.85,
@@ -1086,11 +1087,11 @@
 		"dash": {"lengths": 1.5, "seconds": 0.4, "cooldown": 4.0, "tank_damage": 60.0},
 		"bodies": {
 			"reptilian": [
-				{"snout": 10.5, "pivot": [0.0, 0.0], "discs": [[8.8, 2.0, 3.0, 10.0], [5.0, 3.6, 0.0, 10.0], [2.0, 3.0, 0.0, 8.0],
+				{"snout": 10.5, "pivot": [0.0, 0.0], "stomp_foot": [4.72, 3.98], "discs": [[8.8, 2.0, 3.0, 10.0], [5.0, 3.6, 0.0, 10.0], [2.0, 3.0, 0.0, 8.0],
 					[-0.5, 1.8, 0.0, 5.0], [-3.0, 1.2, 0.0, 2.7], [-6.0, 0.9, 0.0, 1.9], [-9.0, 0.6, 0.0, 1.4]]},
-				{"snout": 10.3, "pivot": [7.0, 3.0], "step_len": 2.79, "discs": [[8.3, 2.4, 5.0, 10.0], [4.5, 2.9, 0.0, 9.5], [1.0, 1.4, 4.5, 7.5],
+				{"snout": 10.3, "pivot": [7.0, 3.0], "step_len": 2.79, "stomp_foot": [5.21, 2.99], "discs": [[8.3, 2.4, 5.0, 10.0], [4.5, 2.9, 0.0, 9.5], [1.0, 1.4, 4.5, 7.5],
 					[-2.5, 1.0, 4.8, 6.6], [-6.0, 0.6, 5.5, 6.8], [-9.0, 0.3, 6.0, 6.8]]},
-				{"snout": 13.5, "pivot": [10.0, 3.0], "step_len": 2.33, "discs": [[11.5, 1.8, 5.0, 10.0], [7.5, 4.4, 0.0, 10.0], [3.0, 1.6, 2.0, 7.5],
+				{"snout": 13.5, "pivot": [10.0, 3.0], "step_len": 2.33, "stomp_foot": [8.57, 2.99], "discs": [[11.5, 1.8, 5.0, 10.0], [7.5, 4.4, 0.0, 10.0], [3.0, 1.6, 2.0, 7.5],
 					[-0.5, 1.0, 1.5, 4.6], [-4.0, 0.8, 1.2, 3.6], [-8.0, 0.5, 0.8, 2.5], [-12.0, 0.3, 0.2, 1.5]]}
 			]
 		}

@@ -8,6 +8,8 @@ var defs: Dictionary = {}
 var order: Array[String] = []
 var levels: Dictionary = {}
 var _tiers: Dictionary = {}
+## Every price x this (data/species.json cost_mult of the kaiju's species, D-167 pacing bar); 1 for "".
+var cost_mult := 1.0
 
 ## species_id "" keeps every branch (data checks); a game passes its kaiju's species.
 
@@ -22,6 +24,8 @@ func _init(
 		var id: String = def["id"]
 		defs[id] = def
 		order.append(id)
+	if species_id != "":
+		cost_mult = Num.f(Content.species_def(species_id).get("cost_mult", 1.0))
 	for id: String in saved_levels:
 		if defs.has(id):
 			levels[id] = clampi(Num.i(saved_levels[id]), 0, max_level(id))
@@ -47,7 +51,7 @@ func cost(id: String) -> int:
 	var next := level(id)
 	if next >= costs.size() or is_maxed(id):
 		return -1
-	return Num.i(costs[next])
+	return roundi(Num.f(costs[next]) * cost_mult)
 
 
 ## Every prerequisite owned at level 1 or more.
