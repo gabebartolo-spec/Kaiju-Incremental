@@ -69,3 +69,11 @@ replaces the poses here.
 - The claw crosses the snout line within 1 frame of the sim's hit.
 - The arm is home before the next swipe's windup cue (2.0 s after this one).
 Then ONE ~6 s side-on clip, baby then Colossus, game speed, local GPU, off-screen; the lead runs the critic.
+
+## 5. Update, same day: the young croc's arms (director 2026-10-25)
+"the young crocs arms are too long ... realistically his arms are probably 40% long and dont require the dangle from
+the wrist"; "his long arms are the reason the claw animation looks bizarre". The young croc's arms are cut to 40%
+along their axis (shoulder fixed; the hand keeps 60% of its own length so the claws read), its hand is held in line
+with the forearm, and the strike is re-planned as a short chop: forearm forward at shoulder height, down in front of
+the chest. A 40% arm cannot reach the snout line, so the aim toward it is capped (claw_fx.aim_max_deg) and the bar
+became "within reach of the line" (motion_gate.json claw_arm short_max).

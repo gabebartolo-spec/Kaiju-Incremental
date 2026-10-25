@@ -1,7 +1,7 @@
 # Handoff: claw-anim (the claw swipe's arm motion)
 
 Updated 2026-10-25. Session started by the Kaiju lead (local_293f5c32). Worktree `.claude/worktrees/casc-anim-f911ce`,
-branch `claude/claw-anim-525a2a` (pushed, 9d202887); the lead opens the PR.
+branch `claude/claw-anim-525a2a` (pushed, 1628ad55); the lead opens the PR.
 
 ## The job
 Director 2026-10-25: "the arm movement during the claw swipe animation is really bad ... Especially the baby's arm
@@ -11,25 +11,28 @@ the 2026-10-25 animation rule (ONE ~6 s side-on clip a critic has passed; a thir
 Arm motion is mine; trail, flash and sparks are the VFX lead's (claude/claw-rake-2).
 
 ## State
-- Plan, research, bars: `docs/claw_swipe_plan.md`. Bars as data: `data/motion_gate.json` "claw_arm".
-- Code: `scenes/biped_swing.gd` (strike, _rake_dirs/_rake_dir, _blend/_frame local-frame interpolation,
-  _contact_yaw, strike_window, size); `swing.size` set in `gait_clip.gd` / `gait_biped.gd`; poses and times in
-  `data/tuning.json` "claw_fx" (lift_s, strike_s, recover_s, joint_lag_s, arm_cocked/contact/through);
-  `powers.swipe_windup` 0.7.
-- Measure: `tools/claw_probe.gd` (headless, prints per stage; `-- --frames` per frame), shared with the suite via
-  `tests/lib/claw_arm_probe.gd` (run from the croc standing suite through `_h`).
-- Clip: `tools/capture/capture_claw_side.gd` (windowed, needs the untracked no_focus override.cfg in the worktree,
-  excluded via info/exclude). Clip 1 sent to the lead for the critic: side-notes folder `claw-anim-clip1.mp4` + `.md`
-  (what to judge, numbers, the afk calls list for the director's interview).
-- Croc standing suite green locally (5/5 functions, 73 checks); gdlint/gdformat (`python3 -m gdtoolkit...`),
-  tuning_keys and complexity lint clean. CI runs the rest.
+- Director added (2026-10-25): "the young crocs arms are too long ... probably 40% long and dont require the dangle
+  from the wrist, short and stumpy arms are the aim"; "his long arms are the reason the claw animation looks bizarre".
+  Done, young only: `tools/kaiju_skin/shorten_arms.py reptilian_baby 0.4` (run ONCE; it cuts again if rerun) cut the
+  .kvox, rig.json and Blender skin (assets/kaiju/test/croctitan_baby.*), then `bake_all.sh` rebaked the vskin.
+  rig.json `lock_wrist` (hands in line, BipedSwing.hold_wrists / _aim_arm) and `arm_length` (KaijuClips.fit skips
+  the moved elbow/wrist heads; without it the young croc fell back to the procedural gait).
+- Swipe = a short chop in front of the chest; poses/times in `data/tuning.json` "claw_fx" (arm_cocked/contact/
+  through, aim_max_deg 45, lift_s, strike_s, recover_s, joint_lag_s); `powers.swipe_windup` 0.7. Code:
+  `scenes/biped_swing.gd` (_rake_dirs/_rake_dir, _blend/_frame, _contact_yaw, strike_window, hold_wrists).
+- Bars: `data/motion_gate.json` "claw_arm", checked by `tests/lib/claw_arm_probe.gd` from the croc standing suite
+  (green, 5/5, 73 checks). Print numbers: `tools/claw_probe.gd` (`-- --frames` per frame). Plan: docs/claw_swipe_plan.md.
+- Clip: `tools/capture/capture_claw_side.gd` (windowed, untracked no_focus override.cfg; `-- --still=<dir>
+  --name=<x>` for the rest still). Clip 2 + before/after still + notes sent to the lead (side-notes
+  claw-anim-clip2.*); clip 1 superseded unreviewed. VFX lead told the new claw_arc reach.
 
 ## Next
-- Wait for the critic verdict via the lead. FIX: change poses/timing in claw_fx, rerun the probe (all bars must pass),
-  render clip 2. Clip 3 failing = stop, find why, change the method (a Cascadeur swipe clip per stage is the fallback).
-- SHIP: the lead takes it to the director.
+- Critic verdict via the lead. FIX: retune claw_fx, all bars must pass, clip 3. Clip 3 failing = stop, find why,
+  change method (a Cascadeur swipe clip per stage).
 
 ## Gotchas
+- Python: numpy lives in the Roaming user site: keep APPDATA real when running bake.py (bake_all sets its own
+  APPDATA for Godot only).
 - Godot: `/c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe` (a folder named
   .exe); APPDATA=`$TEMP/claw-appdata`; `--import` segfaults on the missing native lib but scripts still run.
 - gdtoolkit only under `python3`/`py`, not `C:\Python314\python`; the formatter writes CRLF on Windows: convert to LF.
