@@ -548,6 +548,9 @@ state. No director clips or per-change approvals in between; clips only where mo
   reptilians and mecha boss / ... an expansion with a mammal, an avian, an aquatic" (plus build-your-own kaiju);
   mantis and octopus stay stretch goals. Owner: lead (milestones follow this). Status: recorded.
 
+## Interviews 2026-10-26 (D-257 to D-260)
+Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interviews.md`.
+
 ## Flat surfaces programme (director 2026-10-25: "flat textureless colour blocks need to go")
 P0 (roads, quays and river walls, bridge decks, pavements, lawns, expressway, rubble) is textured through scenes/surface_detail.gdshaderinc; the CI test tests/lib/flat_surfaces.gd fails any other untextured surface. Its KNOWN_FLAT list may only shrink (cap KNOWN_FLAT_MAX). Owner of every row: VFX lead. Target dates (VFX lead, 2026-10-25): P1 water 2026-10-28, P2 2026-10-31, P3 2026-11-04 (P1 water, P2 rooftops and building faces, P3 props, people, cars, the kaiju); next step for each row is to give the surface the surface_detail look or a texture, then delete its KNOWN_FLAT line and lower the cap.
 
