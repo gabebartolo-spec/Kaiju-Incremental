@@ -8,7 +8,8 @@ extends SceneTree
 ## stomping, in one clip).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/c.avi \
-##     --script tools/capture/capture_croc_standing.gd -- --out=<dir> --seconds=8 [--shots] [--walk=3]
+##     --script tools/capture/capture_croc_standing.gd -- --out=<dir> --seconds=8 [--shots] \
+##     [--walk=3]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const ADULT_LEVELS := 2  ## Kit.STAGE_LEVELS: the Colossus
