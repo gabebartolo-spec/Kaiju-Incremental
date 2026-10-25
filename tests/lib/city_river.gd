@@ -21,7 +21,7 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 			var rect: Rect2 = block["rect"]
 			rivers.append(rect)
 	var built := 0
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
 		for rect: Rect2 in rivers:
 			if rect.intersects(foot):
@@ -127,7 +127,7 @@ static func check_look(
 	var reach := Num.f(sim.city["quay"]["reach"])
 	var near := 0
 	var wet := 0
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
 		if landing.clamp(foot.position, foot.end).distance_to(landing) <= reach:
 			near += 1

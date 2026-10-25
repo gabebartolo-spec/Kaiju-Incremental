@@ -83,7 +83,7 @@ func _ready() -> void:
 	_rank = StreamRank.new(_sim.buildings)
 	for n: int in count:
 		var b := _sim.buildings[n]
-		_chunks[n] = b.w * b.d * b.height
+		_chunks[n] = 0 if b.is_rail() else b.w * b.d * b.height  # a viaduct piece is mostly air
 	_budget = Num.i(_sim.city.get("stream_chunks", 1 << 30))
 	_party = BuildingView.party_walls(_sim.buildings)
 	var order: Array[int] = []

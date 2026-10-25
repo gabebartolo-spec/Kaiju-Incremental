@@ -79,7 +79,7 @@ func _ready() -> void:
 	# A few people per building, spread over the blocks.
 	var per_lot := int(GraphicsPresets.cap("civilians"))
 	var blocks := _nodes.size() >> 2
-	for n: int in per_lot * sim.buildings.size():
+	for n: int in per_lot * sim.lot_buildings().size():
 		_spawn_civilian(n % maxi(1, blocks))
 	_capacity = pos.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	_capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
