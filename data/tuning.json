@@ -393,6 +393,7 @@
 		"strafe_gap": [28.0, 45.0],
 		"strafe_close": 5.0,
 		"pass_corridor": 2.5,
+		"screen": {"_note": "AirScreen: the kaiju hull box (snout to tail, hull_pad x a body radius either side, kaiju_height tall) and a helicopter (a bound of heli_bound world units: hull and rotor disc) as the gameplay camera sees them; no helicopter may come within margin (half screen heights) of the hull box, so nothing is ever drawn over the kaiju (director 2026-10-25).", "hull_pad": 1.25, "heli_bound": 4.0, "margin": 0.06, "step": 0.5},
 		"strafe_exit": 18.0,
 		"strafe_veer": 0.7,
 		"strafe_lead": 1.0,

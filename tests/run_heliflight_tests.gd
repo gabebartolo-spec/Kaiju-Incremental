@@ -66,6 +66,8 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 		"turn": 0.0,
 		"side": PI,
 		"lane": INF,
+		"over": 0,
+		"fade": 0,
 		"passes": 0,
 		"most": 0,
 		"twitch": 0.0,
@@ -86,6 +88,7 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 			var key := "pass" if heli.passing else "hold"
 			out[key] = minf(Num.f(out[key]), away.length())
 			var toward := Vector2.from_angle(bearing)
+			_screen(out, sim, heli)
 			var seen := heli.pos - sim.air.flight.anchor()  # the camera follows his smoothed position
 			if seen.dot(toward) > 0.0:  # a pass may cross the camera's side, never between it and him
 				out["lane"] = minf(Num.f(out["lane"]), absf(seen.dot(toward.orthogonal())))
@@ -154,6 +157,22 @@ func _mark(out: Dictionary, heli: AirWing.Heli, away: Vector2, on_mark: bool) ->
 	swung[heli.id] = rate
 
 
+## Counts a step in which `heli` is drawn over the kaiju's hull on the screen (AirScreen, no margin)
+## or near enough to the camera's line to him that the game would fade it to a screen door.
+func _screen(out: Dictionary, sim: RampageSim, heli: AirWing.Heli) -> void:
+	var anchor := sim.air.flight.anchor()
+	if AirScreen.overlaps(sim, anchor, heli.pos, 0.0):
+		out["over"] = Num.i(out["over"]) + 1
+	var bs := sim.body_scale()
+	var at := Vector3(sim.kaiju_pos.x, 3.5 * bs, sim.kaiju_pos.y)
+	var p := Vector3(heli.pos.x, sim.air.altitude(), heli.pos.y)
+	var clear := (
+		Num.f(sim.powers_cfg["body_radius"]) * bs + Num.f(Content.section("vehicles")["heli_clear"])
+	)
+	if VehicleFade._blocks(p, AirScreen.eye(bs, anchor), at, clear):
+		out["fade"] = Num.i(out["fade"]) + 1
+
+
 func _check_flight(step: int) -> void:
 	var sim := _step_sim(step)
 	var air: Dictionary = Content.section("air")
@@ -206,6 +225,20 @@ func _check_flight(step: int) -> void:
 		(
 			"%s: their slots stay %.0f degrees off the camera's side (%.0f)"
 			% [label, rad_to_deg(arc), rad_to_deg(Num.f(flew["side"]))]
+		)
+	)
+	check(
+		Num.i(flew["over"]) == 0,
+		(
+			"%s: no helicopter is drawn over the kaiju's hull (%d steps of 3600)"
+			% [label, Num.i(flew["over"])]
+		)
+	)
+	check(
+		Num.i(flew["fade"]) == 0,
+		(
+			"%s: none is ever faded to a screen door for the camera (%d steps)"
+			% [label, Num.i(flew["fade"])]
 		)
 	)
 	var lane := Num.f(air["pass_corridor"]) * bs
