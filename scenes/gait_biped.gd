@@ -144,6 +144,7 @@ func update(delta: float) -> void:
 	head.update(dt, standing)
 	swing.hip_drop = body.pelvis_speed / maxf(0.001, hip_height)
 	swing.youth = youth
+	swing.size = s / BABY_SCALE
 	swing.yaw_rate = yaw_rate
 	swing.update(time, body.hip_yaw, head.roar_open(), dt)
 	rig.simulate_chains(delta)

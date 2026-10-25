@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_croc_standing_tests.gd
 
 const CrocStompCentre := preload("res://tests/lib/croc_stomp_centre.gd")
+const ClawArmProbe := preload("res://tests/lib/claw_arm_probe.gd")
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
 ## Stomps on the sim's 0.7 s beat, and the footfall weight below which a step is not a stomp.
@@ -26,6 +27,7 @@ func run_checks() -> void:
 	await _t("_check_stomp_landing")
 	await _t("_check_claw_rake")
 	await _t("_check_claw_trail")
+	await _h("ClawArmProbe", func() -> void: await ClawArmProbe.new().run(self, check))
 	await _h("CrocStompCentre", func() -> void: await CrocStompCentre.new(self, check).run())
 
 
@@ -243,8 +245,9 @@ func _toe_height(rig: KaijuRig) -> float:
 	return top
 
 
-## The claw rake (a windup, then the swipe 0.3 s on) moves the raking arm and only that arm, and
-## it comes back to rest; with no rake called, nothing about the arms differs from a calm kaiju's.
+## The claw rake (a windup, then the swipe powers.swipe_windup on) moves the raking arm and only
+## that arm, and it comes back to rest; with no rake called, nothing about the arms differs from a
+## calm kaiju's.
 func _check_claw_rake() -> void:
 	for stage: String in STAGES:
 		await _rake_one(stage, -1.0)
@@ -263,8 +266,9 @@ func _rake_one(stage: String, side: float) -> void:
 	rake.tail_sweep(side, "claw_windup")
 	var gap: Array[float] = [0.0, 0.0]  # the widest the hands parted, by side of the body (-x, +x)
 	var end: Array[float] = [0.0, 0.0]
-	for f: int in 120:  # 2 s: the windup 0.3 s, then the rake; 0.7 s in all
-		if f == 18:
+	var hit := roundi(Num.f(Content.section("powers")["swipe_windup"]) / DT)
+	for f: int in 120:  # 2 s, the swipe interval: the windup, the rake and home again
+		if f == hit:
 			rake.tail_sweep(side, "claw")
 		finite = finite and _step(rake, rig) and _step(calm, rig_calm)
 		end = _arm_gap(rig, rig_calm)
@@ -295,8 +299,7 @@ func _rake_one(stage: String, side: float) -> void:
 func _check_claw_trail() -> void:
 	var kaiju := _model("adult")
 	var rig := _rig_of(kaiju)
-	var strike := Num.f(Content.section("claw_fx")["strike_s"])
-	var lift := Num.f(Content.section("powers")["swipe_windup"]) - strike * 0.5  # BipedSwing's lift_s
+	var hit := roundi(Num.f(Content.section("powers")["swipe_windup"]) / DT)
 	var life := Num.f(Content.section("claw_fx")["trail_s"])
 	for i: int in 40:
 		_step(kaiju, rig)
@@ -305,11 +308,12 @@ func _check_claw_trail() -> void:
 	var trailed: bool = arc.get("trailed", false)
 	check(trailed, "trail: the arm draws its own streak")
 	kaiju.tail_sweep(1.0, "claw_windup")
+	var window := gait.swing.strike_window()  # this rake's streak, s after the windup
 	var first := -1
 	var last := -1
 	var peak := 0
-	for f: int in 60:
-		if f == 18:
+	for f: int in 120:
+		if f == hit:
 			kaiju.tail_sweep(1.0, "claw")
 		_step(kaiju, rig)
 		await process_frame  # a freed mark leaves the tree
@@ -320,8 +324,8 @@ func _check_claw_trail() -> void:
 		if marks > 0:
 			first = f if first < 0 else first
 			last = f
-	var swing_start := floori(lift / DT)
-	var swing_end := ceili((lift + strike * 1.3 + life) / DT) + 2
+	var swing_start := floori(window.x / DT)
+	var swing_end := ceili((window.y + life) / DT) + 2
 	check(
 		first >= swing_start and last <= swing_end and peak > 0,
 		(

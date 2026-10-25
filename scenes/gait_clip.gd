@@ -265,6 +265,7 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		var offset := pose.offset * clips.rig_scale + drop if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
 	swing.youth = clampf((ADULT_SCALE - s) / (ADULT_SCALE - BABY_SCALE), 0.0, 1.0)
+	swing.size = s / BABY_SCALE
 	swing.pose_rake(dt)  # the claw rake, over the clip's arms
 
 
