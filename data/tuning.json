@@ -414,7 +414,7 @@
 		"strafe_seconds": 22.0,
 		"first_burst_delay": 1.5,
 		"heli_radius": 0.8,
-		"fire_interval": 1.6,
+		"fire_interval": 2.8,
 		"damage": 3,
 		"rubble": 4,
 		"camera_bearing": 90.0,
