@@ -71,7 +71,10 @@ func _process(delta: float) -> void:
 		_beacon.visible = fposmod(_clock, Num.f(lamp["period"])) < Num.f(lamp["on"])
 	if _strip != null:
 		_strip_left -= delta
-		_strip.modulate.a = clampf(_strip_left / 0.5, 0.0, 1.0)
+		var slide := Num.f(_cfg["slide_seconds"])  # the last moments it slides down off the screen
+		var gone := 1.0 - clampf(_strip_left / slide, 0.0, 1.0)
+		_strip.offset_top = -NewsTicker.HEIGHT * (1.0 - gone)
+		_strip.offset_bottom = NewsTicker.HEIGHT * gone
 		if _strip_left <= 0.0:
 			_strip.queue_free()
 			_strip = null
@@ -156,4 +159,5 @@ func _headline(key: String, rank: String) -> void:
 	_strip.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	_strip.offset_top = -NewsTicker.HEIGHT
 	_layer.add_child(_strip)
-	_strip_left = Num.f(_cfg["headline_seconds"])
+	# the swatted headline stays up killed_seconds with play running on, then slides away
+	_strip_left = Num.f(_cfg["killed_seconds" if key == "killed" else "headline_seconds"])

@@ -414,9 +414,11 @@
 		"rotor_pitch": 0.75,
 		"rotor_db": 4.0,
 		"headline_seconds": 8.0,
+		"killed_seconds": 3.0,
+		"slide_seconds": 0.4,
 		"headlines": {
-			"liftoff": "THE {rank} IS FLEEING BY HELICOPTER",
-			"killed": "{rank}'S HELICOPTER DOWN",
+			"liftoff": "COWARD {rank} FLEES CITY BY CHOPPER",
+			"killed": "{rank} SWATTED FROM THE SKY",
 			"escaped": "{rank} WAVES FROM THE SKY: 'GOOD LUCK, EVERYONE!'"
 		},
 		"rotor_unit": 30.0,

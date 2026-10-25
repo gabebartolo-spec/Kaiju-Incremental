@@ -21,7 +21,10 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 		frames += 1
 	check.call(view._model != null and vip.flying(), "the model lifts off with the sim")
 	check.call(
-		view._strip != null and view._strip._headlines.contains("MAYOR"),
+		(
+			view._strip != null
+			and view._strip._headlines.contains("COWARD MAYOR FLEES CITY BY CHOPPER")
+		),
 		"the strip announces the escape"
 	)
 	check.call(
@@ -52,8 +55,16 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 	await suite.physics_frame
 	await suite.physics_frame
 	check.call(
-		view._model == null and view._strip._headlines.contains("DOWN"),
+		view._model == null and view._strip._headlines.contains("MAYOR SWATTED FROM THE SKY"),
 		"shot down, the model goes to its wreck and the strip says so"
+	)
+	var hold := Num.f(Content.section("vip")["killed_seconds"])
+	check.call(
+		absf(view._strip_left - hold) < 0.2 and hold == 3.0,
+		(
+			"the swatted headline holds %.1f s (the director's 3 s) while play runs on"
+			% view._strip_left
+		)
 	)
 	rampage.queue_free()
 	await suite.process_frame

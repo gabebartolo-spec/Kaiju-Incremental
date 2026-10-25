@@ -29,6 +29,7 @@ func run_checks() -> void:
 	await _t("_check_payout_matters")
 	await _t("_check_block_payout")
 	await _t("_check_view")
+	await _t("_check_headlines")
 
 
 ## A rampage with one pad (a 5-floor block) and the kaiju beside it, the leader called in now:
@@ -354,3 +355,36 @@ func _check_block_payout() -> void:
 
 func _check_view() -> void:
 	await VipViewCheck.run(self, check, _stats("reptilian", {}))
+
+
+## The director's headlines (D-149) fit the held strip for every rank in the 1920 px design
+## canvas that 1080p and 4K both draw (4K is the same canvas at 2x): the widest line leaves the
+## tag's width and the title-safe margins either side.
+func _check_headlines() -> void:
+	var vip: Dictionary = Content.section("vip")
+	var lines: Dictionary = vip["headlines"]
+	var ranks: Array = vip["ranks"]
+	var room := 1920.0 - NewsTicker.TAG_WIDTH - UiKit.safe_margin().x * 2.0
+	var widest := 0.0
+	for key: String in lines:
+		for rank: Variant in ranks:
+			var text := str(lines[key]).replace("{rank}", str(rank))
+			var label := UiKit.label(text, UiKit.SIZE_BODY)
+			var font := label.get_theme_font("font")
+			var width := (
+				font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_BODY).x
+			)
+			widest = maxf(widest, width)
+			label.free()
+	check(
+		(
+			str(lines["liftoff"]) == "COWARD {rank} FLEES CITY BY CHOPPER"
+			and str(lines["killed"]) == "{rank} SWATTED FROM THE SKY"
+		),
+		"the headlines are the director's: %s / %s" % [lines["liftoff"], lines["killed"]]
+	)
+	print("WIDEST headline %.0f px of %.0f px room" % [widest, room])
+	check(
+		widest > 0.0 and widest <= room,
+		"the widest line is %.0f px of %.0f px room" % [widest, room]
+	)
