@@ -9,10 +9,11 @@ extends RefCounted
 ## and hovers facing him when he stops. When he comes within `pull_back` of it, its slot is
 ## straight behind it. After `hold_seconds` it glides along the ring to another slot (`glide_deg`).
 ## Now and then (`strafe_gap`) ONE helicopter makes a strafing pass: a fly-by at full speed along a
-## straight line across his front or flank that passes `strafe_close` from him, inside his claw
-## reach, aimed at where he will be (his smoothed walk); it never brakes, flies out the far end on
-## the ring and rejoins it there. Slots and passes keep `clear_arc` (and `clear_lead_deg` more)
-## off the camera's side (`camera_bearing`), the whole line of a pass too.
+## straight flank line along the camera's view that passes `strafe_close` from him, inside his claw
+## reach, aimed at where he will be (his smoothed walk); it never brakes, is over `strafe_exit` past
+## him and turns back out to its slot. Slots keep `clear_arc` (and `clear_lead_deg` more) off the
+## camera's side (`camera_bearing`); a pass flies a flank line that never crosses the corridor
+## between the camera and him.
 ## Part of AirWing; pure, on its own seeded stream.
 
 var sim: RampageSim
@@ -51,11 +52,19 @@ func place(heli: AirWing.Heli) -> void:
 
 ## One step for every helicopter: the strafing clock, then each one's plan and flight.
 func step(helis: Array[AirWing.Heli], dt: float) -> void:
+	if dt <= 0.0:
+		return
 	_watch_kaiju(dt)
 	_strafe_clock(helis, dt)
 	for heli: AirWing.Heli in helis:
 		_plan(heli, helis, dt)
 		_steer(heli, dt)
+
+
+## Where the pilots take the kaiju to be: his position smoothed over `anchor_seconds`, which is also
+## about where the camera looks (his stepped turns swing the root point ten units a step).
+func anchor() -> Vector2:
+	return _anchor
 
 
 ## The pilots' estimate of where the kaiju is and where it is heading: his position smoothed over
@@ -71,6 +80,7 @@ func _watch_kaiju(dt: float) -> void:
 func start_pass(heli: AirWing.Heli) -> void:
 	var line := _pass_line(heli)
 	heli.passing = true
+	heli.run = false
 	heli.pass_at = Vector2.from_angle(Num.f(line[0]))
 	heli.pass_dir = heli.pass_at.orthogonal() * Num.f(line[1])
 	heli.pass_left = Num.f(cfg["strafe_seconds"])
@@ -79,13 +89,15 @@ func start_pass(heli: AirWing.Heli) -> void:
 
 ## The line a pass of `heli` flies: [the bearing of its nearest point to the kaiju, +1 or -1 for
 ## the way along it, how far round the ring the heli's slot is from the line's entry end (radians)].
-## The line crosses his facing side `strafe_close` from him and runs out to the heli's ring at both
-## ends, so it reaches `half` round the kaiju each way; its centre keeps that clear of the camera
-## arc, and its entry is the end nearer the heli's slot.
+## The line passes `strafe_close` from him and runs out to the heli's ring at both ends. It is the
+## flank pass on the side of the heli's slot (so it never crosses to the other side) that keeps
+## clear of the corridor between the camera and him (`pass_corridor` x scale either side of the
+## camera's line to him; D-183: it may cross the camera's side but never fly between the camera and
+## him), so it runs along the camera's view beside him where the player sees it. Its entry is the
+## end nearer the heli's slot.
 func _pass_line(heli: AirWing.Heli) -> Array:
 	var close := Num.f(cfg["strafe_close"]) * sim.body_scale()
-	var half := atan2(sqrt(maxf(0.0, heli.ring * heli.ring - close * close)), close)
-	var centre := _clear_by(sim.facing.angle(), _arc() + half)
+	var centre := _flank(heli.slot, close, heli.ring)
 	var best := [centre, 1.0, INF]
 	for way: float in [1.0, -1.0]:
 		var entry := _line_end(centre, close, heli.ring, -way)
@@ -93,6 +105,33 @@ func _pass_line(heli: AirWing.Heli) -> Array:
 		if apart < Num.f(best[2]):
 			best = [centre, way, apart]
 	return best
+
+
+## The bearing of a pass's nearest point: the one of the two flanks (a quarter turn each side of the
+## camera's bearing) on the side of `slot`, turned on until its line clears the corridor.
+func _flank(slot: float, close: float, ring: float) -> float:
+	var side := 1.0 if wrapf(slot - _bearing(), -PI, PI) >= 0.0 else -1.0
+	for step: int in 37:
+		var centre := _bearing() + side * (PI * 0.5 + deg_to_rad(5.0) * step)
+		if _line_clear(centre, close, ring):
+			return centre
+	return _bearing() + side * PI
+
+
+## Does the pass line with nearest point `close` out at bearing `centre` keep out of the corridor
+## between the camera and the kaiju (on the camera's side, within `pass_corridor` of its line)?
+func _line_clear(centre: float, close: float, ring: float) -> bool:
+	var toward := Vector2.from_angle(_bearing())
+	var near := Vector2.from_angle(centre)
+	var half_len := sqrt(maxf(0.0, ring * ring - close * close))
+	var wide := Num.f(cfg["pass_corridor"]) * sim.body_scale()
+	var t := -half_len
+	while t <= half_len:
+		var at := near * close + near.orthogonal() * t
+		if at.dot(toward) > 0.0 and absf(at.dot(toward.orthogonal())) < wide:
+			return false
+		t += 1.0
+	return true
 
 
 ## The bearing from the kaiju of the end of the line (nearest point at bearing `centre`, `close`
@@ -144,22 +183,30 @@ func _plan(heli: AirWing.Heli, helis: Array[AirWing.Heli], dt: float) -> void:
 	heli.goal = _slot_point(heli)
 
 
-## A pass: the helicopter follows a point `strafe_carrot` ahead of it along the pass line (the line
-## moves with the kaiju's walk), so it joins the line from wherever it is, runs along it at full
-## speed and is over at the far end, where it takes the ring's slot there.
+## A pass in two parts. It lines up: the helicopter flies to the entry end of the line (on its own
+## side, beyond him, as it flies to a slot, braking to a hover) and once there (`arrive`) it runs:
+## it follows a point `strafe_carrot` ahead along the line (which moves with the kaiju's walk) at
+## full speed; once abeam of him the line bends outward (`strafe_veer`, so it never swings back
+## across the corridor) and it is over `strafe_exit` past him, where it turns back out to its slot.
 func _plan_pass(heli: AirWing.Heli, dt: float) -> void:
 	heli.pass_left -= dt
 	var close := Num.f(cfg["strafe_close"]) * sim.body_scale()
 	var origin := _anchor + _walk * Num.f(cfg["strafe_lead"]) + heli.pass_at * close
 	var reach := sqrt(maxf(0.0, heli.ring * heli.ring - close * close))
 	var along := (heli.pos - origin).dot(heli.pass_dir)
-	if along >= reach or heli.pass_left <= 0.0:
+	if not heli.run:
+		heli.goal = origin - heli.pass_dir * reach
+		heli.run = heli.pos.distance_to(heli.goal) <= Num.f(cfg["arrive"]) * 2.0
+	if heli.run and along >= Num.f(cfg["strafe_exit"]) * sim.body_scale() or heli.pass_left <= 0.0:
 		heli.passing = false
+		heli.run = false
 		heli.slot = _clear((heli.pos - sim.kaiju_pos).angle())
 		heli.hold = _span("hold_seconds")
 		return
-	var carrot := clampf(along, -reach, reach) + Num.f(cfg["strafe_carrot"]) * sim.body_scale()
-	heli.goal = origin + heli.pass_dir * carrot
+	if heli.run:
+		var carrot := clampf(along, -reach, reach) + Num.f(cfg["strafe_carrot"]) * sim.body_scale()
+		var veer := maxf(0.0, carrot) * Num.f(cfg["strafe_veer"])  # past him the line bends outward
+		heli.goal = origin + heli.pass_dir * carrot + heli.pass_at * veer
 
 
 ## The heli's slot moves along its ring by `glide_deg` to one side: the best of `slot_tries`
@@ -199,7 +246,7 @@ func _steer(heli: AirWing.Heli, dt: float) -> void:
 	var top := Num.f(cfg["heli_speed"])
 	var accel := Num.f(cfg["heli_accel"])
 	var want := _walk
-	if heli.passing:  # a fly-by: at full speed along the line, no braking
+	if heli.passing and heli.run:  # a fly-by: at full speed along the line, no braking
 		want = to.normalized() * top
 	elif to.length() > Num.f(cfg["arrive"]):
 		want += to.normalized() * minf(top, sqrt(2.0 * accel * to.length()))

@@ -60,6 +60,8 @@ func _run() -> void:
 		if sim.air.flight.passes != passes:
 			passes = sim.air.flight.passes
 			print("pass %d starts at frame %d" % [passes, Engine.get_frames_drawn()])
+		if frames % 6 == 0 and (passes > 0 or frames > int(_lead * 60.0)):
+			_log(rampage, frames)
 		for heli: AirWing.Heli in sim.air.helis:
 			if not heli.passing:
 				_closest = minf(_closest, heli.pos.distance_to(sim.kaiju_pos))
@@ -76,3 +78,32 @@ func _input(sim: RampageSim) -> Dictionary:
 		_aim = sim.nearest_standing(sim.kaiju_pos)
 	var near := _aim.x < INF and sim.kaiju_pos.distance_to(_aim) > sim.stomp_radius() * 0.5
 	return {"move": (_aim - sim.kaiju_pos).normalized() if near else Vector2.ZERO}
+
+
+## Each helicopter's place in the 1920x1080 frame: its screen point (inside the frame or not), the
+## pixels a metre spans at its height, its distance to the kaiju and whether it is on a pass; the
+## kaiju's screen point too.
+func _log(rampage: Rampage, frames: int) -> void:
+	var cam := root.get_viewport().get_camera_3d()
+	var size := Vector2(1920, 1080)
+	var sim := rampage.sim
+	var ka := Kit.image_point(self, cam, Vector3(sim.kaiju_pos.x, 3.0, sim.kaiju_pos.y), size)
+	var line := "f%d kaiju (%d,%d)" % [frames, ka.x, ka.y]
+	for heli: AirWing.Heli in sim.air.helis:
+		var at := Vector3(heli.pos.x, sim.air.altitude(), heli.pos.y)
+		var px := Kit.image_point(self, cam, at, size)
+		var metre := Kit.image_point(self, cam, at + cam.global_transform.basis.x, size)
+		var inside := Rect2(Vector2.ZERO, size).has_point(px)
+		line += (
+			" | h%d %s (%d,%d) %s %.0fpx/m d%.1f"
+			% [
+				heli.id,
+				("RUN" if heli.run else "LINE") if heli.passing else "ring",
+				px.x,
+				px.y,
+				"in" if inside else "OUT",
+				px.distance_to(metre),
+				heli.pos.distance_to(sim.kaiju_pos)
+			]
+		)
+	print(line)

@@ -5,8 +5,8 @@ extends "res://tests/lib/powers_base.gd"
 ##   godot --headless --path . --script tests/run_tentacles_tests.gd
 
 ## Strafing passes a helicopter is sent on, and the seconds each is given (strafe_seconds).
-const PASSES := 5
-const PASS_SECONDS := 12.0
+const PASSES := 8
+const PASS_SECONDS := 22.0
 
 
 func suite_name() -> String:
@@ -157,7 +157,7 @@ func _check_helicopters() -> void:
 	for pass_n: int in PASSES:
 		# A swipe lands every 2 s, so each pass starts a little later in that rhythm (a pass is
 		# in the claw's band for about 1.6 s of it).
-		_run(grown, 0.5 * pass_n, Vector2.ZERO)
+		_run(grown, 0.4 * pass_n, Vector2.ZERO)
 		grown.air.flight.start_pass(diver)
 		swatted = _run(grown, PASS_SECONDS, Vector2.ZERO)
 		if swatted.has("heli_destroyed"):

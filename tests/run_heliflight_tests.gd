@@ -65,6 +65,7 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 		"speed": 0.0,
 		"turn": 0.0,
 		"side": PI,
+		"lane": INF,
 		"passes": 0,
 		"most": 0,
 		"twitch": 0.0,
@@ -84,7 +85,11 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 			var away := heli.pos - sim.kaiju_pos
 			var key := "pass" if heli.passing else "hold"
 			out[key] = minf(Num.f(out[key]), away.length())
-			out["side"] = minf(Num.f(out["side"]), absf(wrapf(away.angle() - bearing, -PI, PI)))
+			var toward := Vector2.from_angle(bearing)
+			var seen := heli.pos - sim.air.flight.anchor()  # the camera follows his smoothed position
+			if seen.dot(toward) > 0.0:  # a pass may cross the camera's side, never between it and him
+				out["lane"] = minf(Num.f(out["lane"]), absf(seen.dot(toward.orthogonal())))
+			out["side"] = minf(Num.f(out["side"]), absf(wrapf(heli.slot - bearing, -PI, PI)))
 			passing += 1 if heli.passing else 0
 			var was: bool = flying.get(heli.id, false)
 			if heli.passing and not was:
@@ -112,6 +117,8 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 func _mark(out: Dictionary, heli: AirWing.Heli, away: Vector2, on_mark: bool) -> void:
 	var bear: Dictionary = out["bear"]
 	var path: Array = bear.get(heli.id, [])
+	if heli.passing:
+		path.clear()  # a pass is not an orbit
 	path.append(away.angle())
 	bear[heli.id] = path
 	if path.size() > roundi(10.0 / DT):
@@ -197,8 +204,16 @@ func _check_flight(step: int) -> void:
 	check(
 		Num.f(flew["side"]) >= arc - 0.02,
 		(
-			"%s: they stay %.0f degrees off the camera's side (%.0f)"
+			"%s: their slots stay %.0f degrees off the camera's side (%.0f)"
 			% [label, rad_to_deg(arc), rad_to_deg(Num.f(flew["side"]))]
+		)
+	)
+	var lane := Num.f(air["pass_corridor"]) * bs
+	check(
+		Num.f(flew["lane"]) >= lane,
+		(
+			"%s: a pass never flies between the camera and him (%.1f from the camera's line, corridor %.1f)"
+			% [label, Num.f(flew["lane"]), lane]
 		)
 	)
 	check(

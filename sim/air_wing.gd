@@ -27,7 +27,8 @@ class Heli:
 	var slot := 0.0  # the bearing from the kaiju of its firing position, on its ring (radians)
 	var goal := Vector2.ZERO  # the point it steers for now: its firing position, or a pass's point
 	var hold := 0.0  # seconds until it glides along the ring to another slot
-	var passing := false  # on a strafing pass: a fly-by along a line across his front
+	var passing := false  # on a strafing pass: a fly-by along a flank line past him
+	var run := false  # on a pass: lined up and running the line (else flying to its entry)
 	var pass_at := Vector2.ZERO  # unit vector from the kaiju to the pass line's nearest point
 	var pass_dir := Vector2.ZERO  # the way along the line it flies
 	var pass_left := 0.0
