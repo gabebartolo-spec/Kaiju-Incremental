@@ -17,7 +17,6 @@ var _endless := false
 
 
 func _ready() -> void:
-	_save = SaveSystem.load_game()
 	_show_title()
 
 
@@ -42,32 +41,73 @@ func _swap(next: Node) -> void:
 
 func _show_title() -> void:
 	var title := TitleScreen.new()
-	title.setup(_summary())
-	title.continue_pressed.connect(_continue)
+	var latest := SaveFile.latest_slot(_continues)
+	title.setup(_summary(SaveFile.load_game(latest)), _slots(), latest)
+	title.continue_pressed.connect(_continue_slot)
 	title.new_game_pressed.connect(_new_game)
+	title.delete_pressed.connect(func(n: int) -> void: _delete_slot(title, n))
 	_swap(title)
+
+
+## What each save slot holds, for the title's slot list (SlotList.slots).
+func _slots() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for n: int in range(1, SaveFile.slot_count() + 1):
+		var save := SaveFile.load_game(n)
+		var info := {"slot": n, "taken": not save.is_empty()}
+		if not save.is_empty():
+			info["continues"] = Demo.continues(save)
+			info["specimen"] = SaveFile.specimen_name(save)
+			info["summary"] = _summary(save)
+			info["species"] = str(GameData.species_def(str(save.get("species", "")))["name"])
+		out.append(info)
+	return out
 
 
 ## What Continue resumes, e.g. "Reptilian, 3 rampages, 120 biomass"; "" with no save (or a
 ## save of a species the demo leaves out).
-func _summary() -> String:
-	if not Demo.continues(_save):
+func _summary(save: Dictionary) -> String:
+	if not Demo.continues(save):
 		return ""
-	var runs := Num.i(_save.get("runs", 0))
+	var runs := Num.i(save.get("runs", 0))
 	return (
 		"%s, %d rampage%s, %d biomass"
 		% [
-			str(_species()["name"]),
+			str(GameData.species_def(str(save.get("species", "")))["name"]),
 			runs,
 			"" if runs == 1 else "s",
-			Num.i(_save.get("rubble", 0)),
+			Num.i(save.get("rubble", 0)),
 		]
 	)
 
 
-## New Kaiju: Kaiju Creation (D-207), the lab where the player picks a genome and makes the titan;
-## its rack reads which titans the save on disk has unlocked. Nothing is saved until it is done.
-func _new_game() -> void:
+## DELETE confirmed on slot `n`: the file goes, the slot list shows it empty.
+func _delete_slot(title: TitleScreen, n: int) -> void:
+	SaveFile.delete_save(n)
+	var latest := SaveFile.latest_slot(_continues)
+	var list := title.slot_list()
+	var mode := list.mode if list != null else SlotList.Mode.CONTINUE
+	title.refresh(_summary(SaveFile.load_game(latest)), _slots(), latest, mode)
+
+
+## Whether this build can continue `save` (Demo.continues, as a Callable for SaveFile).
+func _continues(save: Dictionary) -> bool:
+	return Demo.continues(save)
+
+
+## Continue on slot `n`: its save is the one in play.
+func _continue_slot(n: int) -> void:
+	SaveFile.slot = n
+	_save = SaveSystem.load_game()
+	_continue()
+
+
+## New Kaiju in slot `n`: Kaiju Creation (D-207), the lab where the player picks a genome and
+## makes the titan; its rack reads which titans the slot's save has unlocked. Nothing is saved
+## (the slot's old kaiju stays) until it is done.
+func _new_game(n: int) -> void:
+	SaveFile.slot = n
+	_save = SaveSystem.load_game()
 	var lab := KaijuCreation.new()
 	lab.setup(_save)
 	lab.created.connect(_on_species_chosen)
@@ -132,11 +172,14 @@ func _start_rampage(endless := false) -> void:
 
 
 ## Banks the rampage, then shows the results over the wrecked city, against the best before it.
+## A kaiju that died makes the next rise specimen K-0n+1 (director 2026-10-26), Endless included.
 ## An Endless run banks nothing; a demo rampage adds to the thanks screen's totals (Demo.add).
 func _on_rampage_finished(result: Dictionary) -> void:
 	var previous: Dictionary = _save.get("best", {})
 	if Num.i(_save.get("runs", 0)) == 0:
 		previous = {}
+	if SaveFile.note_end(_save, result):  # it died: the next rise is a new specimen
+		SaveSystem.save_game(_save)
 	if not _endless:
 		_save["rubble"] = Num.i(_save.get("rubble", 0)) + Num.i(result["rubble"])
 		_save["runs"] = Num.i(_save.get("runs", 0)) + 1
