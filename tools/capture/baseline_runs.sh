@@ -13,8 +13,10 @@ ENGINE_SLOT="$HOME/.claude/tools/engine_slot.sh"
 others() {  # the non-console Godot processes' command lines, one per line
   powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name like 'godot%' and not Name like '%console%'\" | ForEach-Object { \$_.CommandLine }" | tr -d '\r'
 }
-gpu_busy() {  # another windowed / movie / capture / bench Godot is going
-  others | grep -v -- "--headless" | grep -E "windowed|write-movie|capture_|bench_|ablate" >/dev/null
+gpu_busy() {  # another Godot is going
+  tasklist 2>/dev/null | grep -qi "League of Legends" && return 0  # his game: timings beside it are void
+  nvidia-smi --query-compute-apps=process_name --format=csv,noheader 2>/dev/null | grep -qi "League" && return 0
+  others | grep . >/dev/null  # any other Godot at all: a timing run needs the PC alone (director 2026-10-27)
 }
 wait_free() {
   while true; do

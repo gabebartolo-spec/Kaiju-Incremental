@@ -12,13 +12,20 @@ cd "$(dirname "$0")/../.." || exit 1
 ENGINE_SLOT="$HOME/.claude/tools/engine_slot.sh"
 
 cpu() {  # whole-PC CPU load now, percent
-  powershell -NoProfile -Command "(Get-CimInstance Win32_Processor | Measure-Object LoadPercentage -Average).Average" | tr -d ''
+  powershell -NoProfile -Command "(Get-CimInstance Win32_Processor | Measure-Object LoadPercentage -Average).Average" | tr -d '
+'
+}
+gpuload() {  # GPU utilisation now, percent
+  nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | head -1 | tr -d ' 
+'
 }
 others() {  # the non-console Godot processes' command lines, one per line
   powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name like 'godot%' and not Name like '%console%'\" | ForEach-Object { \$_.CommandLine }" | tr -d '\r'
 }
-gpu_busy() {  # another windowed / movie / capture / bench Godot is going
-  others | grep -v -- "--headless" | grep -E "windowed|write-movie|capture_|bench_|ablate" >/dev/null
+gpu_busy() {  # another Godot is going
+  tasklist 2>/dev/null | grep -qi "League of Legends" && return 0  # his game: timings beside it are void
+  nvidia-smi --query-compute-apps=process_name --format=csv,noheader 2>/dev/null | grep -qi "League" && return 0
+  others | grep . >/dev/null  # any other Godot at all: a timing run needs the PC alone (director 2026-10-27)
 }
 wait_free() {
   while true; do
@@ -35,11 +42,11 @@ godot_run() {  # label, script, args...
   shift 2
   wait_free
   bash "$ENGINE_SLOT" || return 3
-  echo "=== $label start $(date +%T) cpu $(cpu)%; other Godot processes:"; others | cut -c1-220
+  echo "=== $label start $(date +%T) cpu $(cpu)% gpu $(gpuload)%; other Godot processes:"; others | cut -c1-220
   APPDATA="$OUT/appdata_$label" timeout 1500 "$GODOT" --path . --resolution 3840x2160 --windowed \
     --fixed-fps 60 --disable-vsync --script "$script" -- "$@" 2>&1 | tee "$OUT/$label.log" \
     | grep -E "BENCH|ABLATE|SCRIPT ERROR|NVIDIA|refusing"
-  echo "=== $label end $(date +%T) cpu $(cpu)%; other Godot processes:"; others | cut -c1-220
+  echo "=== $label end $(date +%T) cpu $(cpu)% gpu $(gpuload)%; other Godot processes:"; others | cut -c1-220
 }
 
 mkdir -p "$OUT"
