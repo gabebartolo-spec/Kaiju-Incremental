@@ -1192,9 +1192,9 @@
 {
 "n": 171,
 "t": "balance: Thunder Beam costs x0.3 so the last unlock lands near 2.25 h (D-167)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-23",
-"m": ""
+"m": "2026-10-24"
 },
 {
 "n": 172,
@@ -1223,5 +1223,754 @@
 "s": "MERGED",
 "c": "2026-10-23",
 "m": "2026-10-23"
+},
+{
+"n": 176,
+"t": "sim: free each dropped rampage (RampageSim.dispose), fixes the per-run leak",
+"s": "MERGED",
+"c": "2026-10-23",
+"m": "2026-10-24"
+},
+{
+"n": 177,
+"t": "tools: ship .kclip animation clips in exported builds",
+"s": "MERGED",
+"c": "2026-10-23",
+"m": "2026-10-23"
+},
+{
+"n": 178,
+"t": "Bring main up to date with the working branch (claude/look-options)",
+"s": "MERGED",
+"c": "2026-10-24",
+"m": "2026-10-24"
+},
+{
+"n": 179,
+"t": "sim: stomp damage centres on the delivering foot (D-166)",
+"s": "MERGED",
+"c": "2026-10-24",
+"m": "2026-10-25"
+},
+{
+"n": 180,
+"t": "docs: D-232 Nimbalyst joins as a developer; worktrees branch off main",
+"s": "MERGED",
+"c": "2026-10-24",
+"m": "2026-10-24"
+},
+{
+"n": 181,
+"t": "docs: D-233 Komodo arms reach forward, ready to swipe",
+"s": "MERGED",
+"c": "2026-10-24",
+"m": "2026-10-24"
+},
+{
+"n": 182,
+"t": "docs: D-234 Komodo walking arms pose C",
+"s": "MERGED",
+"c": "2026-10-24",
+"m": "2026-10-24"
+},
+{
+"n": 183,
+"t": "docs: 2026-10-25 director comments chapter",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 184,
+"t": "tests: motion gate bars in data, tightened per growth step (D-177)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 185,
+"t": "ui: title has no top tape, a small New Kaiju, the gear in the corner",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 186,
+"t": "fix main: lint and flow red after #179/#185",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 187,
+"t": "docs: 10-25 director comments #7-#13",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 188,
+"t": "docs: D-235..D-238 decisions",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 189,
+"t": "Aim wedge: solid, steady, layered behind the kaiju",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 190,
+"t": "Roadmap: director comments #14-18 (10-25)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 191,
+"t": "D-239: the Komodo's drool is part of its design",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 192,
+"t": "Kaiju Creation: the new-game lab opening (D-207)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 193,
+"t": "D-240 trains (Nimbalyst, spend), D-241 Kaiju Creation ships",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 194,
+"t": "Claw swipe: short stumpy young-croc arms, no stretch, an eased chop on the hit",
+"s": "CLOSED",
+"c": "2026-10-25",
+"m": ""
+},
+{
+"n": 195,
+"t": "Roadmap: director comments #19-25 (10-25)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 196,
+"t": "D-242: the visual vision critics judge by",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 197,
+"t": "D-243: director's answers (trains, roar gape, claw trail, headline, walk bob, playtest)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 198,
+"t": "D-244: real water; VIP escape headline",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 199,
+"t": "D-245: rubble, shot impacts, real mouths, Komodo pace",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 200,
+"t": "D-246: serpent redesign (Tripo 200), RAM limits",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 201,
+"t": "Roadmap: audit of finished work not in the game",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 202,
+"t": "Animation audit: procedural moves marked for Cascadeur replacement",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 203,
+"t": "Animation audit: machines stay code (director ruling)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 204,
+"t": "D-247 + comments #41-#59: 10-25 rulings",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 205,
+"t": "docs: handoffs move to one fixed folder outside git",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 206,
+"t": "docs: D-248 + comments #60-#66 (10-25 late rulings)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 207,
+"t": "docs: D-249 no critics, only the lead and the director judge art",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 208,
+"t": "art: clean asphalt roads and textured river walls (one look, ground r5)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 209,
+"t": "Trains: a breakable railway and train sounds (D-247, Nim 023)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 210,
+"t": "Gunships hold a ring, strafe passes, night lights (D-183)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 211,
+"t": "Run intro: 3 s emergence cinematic (comments #11, #17, #27)",
+"s": "CLOSED",
+"c": "2026-10-25",
+"m": ""
+},
+{
+"n": 212,
+"t": "Strike delay (strike-delay-2)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-26"
+},
+{
+"n": 213,
+"t": "Far insectoid in the distant city (on by default)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-26"
+},
+{
+"n": 214,
+"t": "VIP helicopter (vip-heli)",
+"s": "CLOSED",
+"c": "2026-10-25",
+"m": ""
+},
+{
+"n": 215,
+"t": "Rain round 1: finer streaks, mist, wet sheen (atmosphere)",
+"s": "CLOSED",
+"c": "2026-10-25",
+"m": ""
+},
+{
+"n": 216,
+"t": "Hide hit: readable wounds on the kaiju's hide",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-26"
+},
+{
+"n": 217,
+"t": "docs: D-250 to D-256; unblock branch force-delete",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 218,
+"t": "docs: D-257 to D-260, director interviews and roadmap chapter",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 219,
+"t": "Adult croc: adult3 on the r10 rig in the game (retargeted clips)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 220,
+"t": "docs: D-261 city blocks, railgun warning, slots, trial animations",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 222,
+"t": "ui: three save slots, today's save into slot 1, specimen K-01",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 223,
+"t": "Stomp button replaces the auto stomp; adult stomps with the r10d clip",
+"s": "CLOSED",
+"c": "2026-10-25",
+"m": ""
+},
+{
+"n": 224,
+"t": "Decision log: D-262 leap arc, D-263 queue interview",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 225,
+"t": "sim: the croc leaps on the dash button, high onto a roof, and crushes it",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 226,
+"t": "Decision log: D-264 to D-266",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 227,
+"t": "art: roads meet in one surface, bridge names, no seams (R2, R6)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 228,
+"t": "ui: results screen: headline per ending, tally, body count, NEW RECORD",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 229,
+"t": "ui: options: rebind keys and pad, accessibility, rumble, flash flag",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 230,
+"t": "Gunships fire every 2.8 s: the grown Colossus survives its city again (growth check)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 231,
+"t": "ui: photo mode from pause: frozen world, free camera, controls card",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-25"
+},
+{
+"n": 232,
+"t": "tools: city audits: roads, seeds, assets (D-265)",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-26"
+},
+{
+"n": 233,
+"t": "Tripo city buildings: voxelised pool placed by district, on by default (D-256)",
+"s": "OPEN",
+"c": "2026-10-25",
+"m": ""
+},
+{
+"n": 234,
+"t": "ui: threat badge, news crawl on big moments, specimen lab card",
+"s": "MERGED",
+"c": "2026-10-25",
+"m": "2026-10-26"
+},
+{
+"n": 235,
+"t": "D-267, D-268: morning rulings; every leap carves in flight",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 236,
+"t": "sim: the city's red barrels explode (fuel silo, fireworks, chem lab)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 237,
+"t": "ui: the bar under the clock is the threat meter; lab card centred",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 238,
+"t": "Camera bubble replaces the screen-door fade on buildings and vehicles",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 239,
+"t": "Rain round 1: finer streaks, mist, wet sheen, lamp smears (supersedes #215)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 240,
+"t": "The kaiju dies in a Special K overload: stagger, stone, shatter; Death Blast nodes",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 241,
+"t": "sim: every stage's city 1.5x wider; landmarks spread, bridge over an inlet",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 242,
+"t": "tools: prepush.sh, the local gate before any push for merge",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 243,
+"t": "Road geometry: zero thin blocks, overlapping junctions, river alleys; islands where the diagonal meets avenues",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 244,
+"t": "Capture tools use the game camera (real Rampage in the occlusion clip)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 245,
+"t": "Run intro: the kaiju rises from the river at every run's start (#211 ported)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 246,
+"t": "Leader's escape helicopter, re-ported onto main (supersedes #214)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 247,
+"t": "tools: capture_bubble_window (clip window finder for the bubble and lit streets)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 248,
+"t": "Interview audit: every interview answer in the roadmap; D-269 to D-273",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 249,
+"t": "Decision log: D-275 tree ring layout, D-276 render plan focus",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 250,
+"t": "Decision log: D-277 beachfront round 2",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 251,
+"t": "CLAUDE.md: engine windows may show on screen, never steal focus",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 252,
+"t": "tools: debris bookkeeping cached per tick (render_opt.debris_cache)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 253,
+"t": "Kaiju shadow bounds: a tight per-frame box, not the fixed 24 m one (render plan item 2)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 254,
+"t": "Bench freeze fixed: render resources made on the main thread only",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 255,
+"t": "docs: tonight's rulings D-278..D-284 and the night's comment chapter",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 256,
+"t": "docs: unlanded-work audit 2026-10-27 (owner and next step per branch)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 257,
+"t": "Render plan P1c: night fog 0c1428, night-dark grading, debanding and FSR sharpen ON (D-279, D-285)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 258,
+"t": "tools: prepush picks only the suites a change reaches",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 259,
+"t": "tools: 4K render baseline bench, tables and ablation tooling (render plan Phase 0)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 260,
+"t": "tools: every script and shader has its .uid committed, and a lint keeps it so (debt 7)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 261,
+"t": "ci: shards run suites in lanes, timings re-measured, every job has a timeout (debt row 4)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 262,
+"t": "native: godot-cpp 10.0.0 (api 4.7); benches and captures refuse without the native DLL (debt rows 9, 14)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 263,
+"t": "tools: delete 61 capture and probe scripts nothing uses (debt 11)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 264,
+"t": "docs: delete the stale in-repo agent-handoffs/ and agent-briefs/ (debt 10)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 265,
+"t": "tools: kvox and vskin files go to Git LFS, with an LFS cache in CI (debt 8)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 266,
+"t": "docs: decisions D-285 to D-300, tonight's comments, tech-debt list",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 267,
+"t": "tools: commit the .uid of the three scripts #259 added (main's uid lint was red)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 268,
+"t": "tests: smoke tests for the Python tools CI and prepush run (debt 12)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 269,
+"t": "tools: the lead merge_on_green.sh and drive_timing.sh move into the repo (debt 13)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 270,
+"t": "tools: worktrees.sh flags merged and idle worktrees, no fixed total (D-053)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 271,
+"t": "data: a JSON schema per data file, checked in CI and prepush (debt row 5, D-295)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 272,
+"t": "assets: licence register backfilled, CI fails any assets/ file without a CLEARED row (debt row 6)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 273,
+"t": "docs: D-301 Cascadeur before release, D-302 croc walk rework, tonight's comment rows",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 274,
+"t": "Windows: wall faces behind balcony slabs draw again (the see-through strips across brick facades)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 275,
+"t": "docs: D-303 railings to sill tone, D-304 clips 1080p",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 276,
+"t": "Adult croc: r11 skin and the approved Cascadeur roar, rise and death stagger (debt 21)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 277,
+"t": "Pooled dust, sparks and fire particle systems (render plan item 8, P2c)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 278,
+"t": "Licence register: a DEV ONLY row wins over any CLEARED match (D-261, D-301)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 279,
+"t": "scenes: no tank or helicopter ever draws see-through; VehicleFade removed (D-290)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 280,
+"t": "docs: D-305..D-318, comment rows, debt chapter refresh",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 281,
+"t": "tests: track the two .uid files #254 left out (unblocks every PR)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 282,
+"t": "hygiene: main is the base everywhere (status board, native cache)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 283,
+"t": "tests: smoke tests for the licence register, data schemas and shard planner (debt row 12)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
 }
 ]
