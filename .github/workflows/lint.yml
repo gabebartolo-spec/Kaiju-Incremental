@@ -108,3 +108,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: ${{ github.workspace }}/.gitleaks.toml
+
+  # CLAUDE.md hard rule 5: every file under assets/ is covered by a CLEARED row of
+  # docs/LICENSING_REGISTER.md (debt row 6, D-295). Red when a file has no row.
+  licence-register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: The register covers every asset file
+        run: |
+          python3 tools/lint/licence_register.py --self-test
+          python3 tools/lint/licence_register.py
