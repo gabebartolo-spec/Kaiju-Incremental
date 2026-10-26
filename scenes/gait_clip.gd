@@ -84,6 +84,7 @@ var _feet_primed := false
 var _slam_low := Vector3(0, INF, 0)
 var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
+var _spring_tail := 0  # tail bones the turns bend (the spring chain; the adult's r12 tip bones play clips only)
 var _look := 0.0  # the head's look-ahead into the turn (rad)
 
 
@@ -107,12 +108,11 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_path = SwingPath.new(_steps.swing_frames)
 	var peak := clips.jaw_peak("roar", ROAR_PEAK_FRAME)
 	_jaw_peak = clips.pose_at("roar", peak).turns[clips.bones.find("jaw")]
-	var tail_bones := 0
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
-			tail_bones += 1
 			_tail_tip = bone_name
-	_tail = ClipTail.new(tail_bones)
+			_spring_tail += 1 if rig.in_chain(bone_name) else 0
+	_tail = ClipTail.new(_spring_tail)
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)
 	swing.trail = ClawTrail.new(rig)
@@ -263,7 +263,7 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		var q := pose.turns[i]
 		if bone_name == "jaw" and _jaw_hold > 0.0:
 			q = q.slerp(_jaw_peak, smoothstep(0.0, 1.0, _jaw_hold))  # the maw held open (the beam)
-		elif bone_name.begins_with("tail"):
+		elif bone_name.begins_with("tail") and bone_name.to_int() < _spring_tail:
 			var i_tail := bone_name.to_int()
 			var bend := swing.whip_yaw(i_tail) + _tail.bend(i_tail)
 			q = Quaternion(Vector3.UP, bend) * q

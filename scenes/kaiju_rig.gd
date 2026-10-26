@@ -192,6 +192,8 @@ func _collect_chains(defs: Array) -> void:
 				if children.size() != 1:
 					break
 				walk = str(children[0])
+				if not _is_physics(defs, walk):
+					break  # a run of physics bones ends at a plain one (the adult croc's clip-only tail tip)
 				chain.names.append(walk)
 			for _n: String in chain.names:
 				chain.drive.append(Basis.IDENTITY)
@@ -363,6 +365,14 @@ func _rest_points(chain: SpringChain) -> PackedVector3Array:
 			var r := rest_of(names[i + 1])
 			xform = xform * Transform3D(r.basis * chain.drive[i + 1], r.origin)
 	return points
+
+
+## True for a bone of a spring chain (a physics bone).
+func in_chain(bone_name: String) -> bool:
+	for chain: SpringChain in chains:
+		if chain.names.has(bone_name):
+			return true
+	return false
 
 
 func chain_named(first_bone: String) -> SpringChain:

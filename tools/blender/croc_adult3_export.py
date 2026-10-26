@@ -4,6 +4,8 @@ export() (skin.json/.skinw format) on the rig itself.
 - <out>/croc_adult3.glb: the mesh at rest, turned to face -Y (rig_voxel / skin_faces / motion_test input).
 - <out>/croc_adult3.skin.json + .skinw: the 37 r10 bones (helpers folded: half k -> (1-k) parent + k target,
   counter -> parent, forearm twist k -> (1-k) forearm + k hand), welded positions, top-4 weights, game axes.
+- r12 (D-307): every rig tail joint is its own game bone (tail0-11; r11 folded tail08-11 into tail8, so the tip's whip
+  never reached the game). The game's spring tail stays tail0-SPRING_TAIL ("physics"); the tip bones only play clips.
 - r11's eyelids are Blender-only (D-228): the lid bones fold into the head, and the lower-lid flaps (rigid shells
   hidden inside the head at rest, all their weight on lid_lo_*) are left out of every file, so the game mesh is r10's.
 - <out>/croc_adult3_landmarks.json: motion_test landmarks at the r10 joints (so its clips' game bones rest on them).
@@ -26,6 +28,7 @@ bpy.ops.object.mode_set(mode="EDIT")
 ROLLS = {e.name: e.roll for e in ad.edit_bones}
 bpy.ops.object.mode_set(mode="OBJECT")
 GAME = np.array([[-1.0, 0, 0], [0, 0, 1.0], [0, 1.0, 0]])
+SPRING_TAIL = 8  # game tail0-8: the spring tail the game bends on turns (r11's tail bones); tail9-11 follow clips only
 
 # --- drop the lower-lid flaps (r11; in memory only, the .blend is never saved) ----------------------------
 FLAPS = {g.index for g in mesh.vertex_groups if g.name.startswith("lid_lo")}
@@ -96,7 +99,7 @@ def game_bone(n):
     if n in fixed:
         return fixed[n]
     if n.startswith("tail"):
-        return f"tail{min(int(n[4:]), 8)}"
+        return f"tail{int(n[4:])}"
     return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
             "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}2"}[n[:-2]]
 
@@ -106,7 +109,7 @@ for b in order:
     bones.append({"name": b.name, "game": game_bone(b.name), "parent": b.parent.name if b.parent else None,
                   "head": skin(head[b.name]).round(4).tolist(), "tail": skin(tail[b.name]).round(4).tolist(),
                   "basis": (GAME @ basis).T.round(5).tolist(), "roll_blender": round(float(ROLLS[b.name]), 5),
-                  "physics": b.name.startswith("tail"), "jaw": b.name == "jaw"})
+                  "physics": b.name.startswith("tail") and int(b.name[4:]) <= SPRING_TAIL, "jaw": b.name == "jaw"})
 
 # --- welded positions and weights -----------------------------------------------------------------------
 key = np.round(P, 6)
