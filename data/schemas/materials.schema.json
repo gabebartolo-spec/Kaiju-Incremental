@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "data/materials.json",
+  "description": "Structure and types of this data file (CLAUDE.md hard rule 4); see data/schemas/README.md.",
+  "type": "object",
+  "properties": {
+    "materials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"$ref": "#/$defs/int"},
+          "name": {"$ref": "#/$defs/str"},
+          "strength": {"$ref": "#/$defs/num"},
+          "debris": {"$ref": "#/$defs/str"},
+          "fixture": {"$ref": "#/$defs/bool"}
+        },
+        "required": ["id", "name", "strength", "debris", "fixture"],
+        "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["materials"],
+  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+  "additionalProperties": false,
+  "$defs": {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"}
+  }
+}
