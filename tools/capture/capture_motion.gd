@@ -19,6 +19,8 @@ const SIDE_PIVOT := 9.2
 var plants := PackedStringArray()
 var _species := "reptilian"
 var _stage := "adult"
+## The kaiju on stage: the game camera's rig reads its drawn body.
+var _model: KaijuModel
 var _cam := "game"
 var _seconds := 15.0
 var _roar_at := 10.0  # s; capture_clips.gd moves it
@@ -268,7 +270,7 @@ func _place(cam: Camera3D, kaiju: KaijuModel, at: Vector3, fwd: Vector3, body_sc
 		cam.look_at(Vector3(0, 2.5 * body_scale, -9.0))
 		return
 	if _cam == "game":
-		Kit.place_game_camera(cam, kaiju, body_scale)
+		Kit.place_game_camera(cam, _model, body_scale)
 		return
 	if _species == "cephalopod":  # a wide body needs a wider shot
 		cam.position = at + Vector3(16.0 * 1.4, 4.0 * 1.4, 0) * body_scale
