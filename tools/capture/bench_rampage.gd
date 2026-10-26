@@ -18,6 +18,8 @@ var _stage := 0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args(
 		{"species": _species, "seconds": _seconds, "stage": _stage, "nofx": false, "preset": ""}
 	)

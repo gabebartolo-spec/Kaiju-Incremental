@@ -22,6 +22,8 @@ var _queue_max := 0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"species": _species, "seconds": _seconds, "slow": _slow})
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])

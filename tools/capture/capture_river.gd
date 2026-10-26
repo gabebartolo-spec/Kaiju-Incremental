@@ -13,6 +13,8 @@ var _seconds := 4.5
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--stage="):
 			_stage = clampi(arg.substr(8).to_int(), 1, LEVELS.size())

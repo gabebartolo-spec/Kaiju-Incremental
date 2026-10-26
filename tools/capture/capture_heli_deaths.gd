@@ -37,6 +37,8 @@ var _block := -1  # the building the wreck is dropped beside
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "run": 1, "clip": false})
 	_out = str(a["out"])
 	_clip = a["clip"] == true

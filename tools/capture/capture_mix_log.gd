@@ -14,6 +14,8 @@ const LEVELS := {"claws": 3, "evolve1": 1, "hide": 1, "regen": 1}
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_run.call_deferred()
 
 
