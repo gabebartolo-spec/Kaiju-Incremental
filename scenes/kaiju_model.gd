@@ -21,6 +21,8 @@ const PUPIL := Color("15130f")
 const EYE_KEEP_OFF := 3
 
 var species_id: String
+## His death (DeathOverload, DeathView): the stagger clip, the overload on his hide, the burst.
+var death := DeathPose.new()
 var _colors: Dictionary = {}
 var _vox := VoxelBuilder.new()
 ## Walk-cycle flipbook poses of a voxelized model (empty for code-built bodies).
@@ -49,11 +51,13 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
 		if _rig != null:
 			_skin = VoxelSkin.attach(_rig, base)  # D-041; null when debugging rigid voxels
+			death.bind(_rig, _skin)
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
 			return
 	if species_id == "cephalopod":  # no sculpt yet: a code-built octopus on the radial rig
 		_rig = CephalopodStandIn.build(colors, MODEL_HEIGHT, _glow())
+		death.bind(_rig, null)
 		_body.add_child(_rig)
 		return
 	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
@@ -100,6 +104,10 @@ func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 	_squash = maxf(0.0, _squash - delta * 5.0)
 	if _skin != null:
 		_skin.hits.age(delta, Num.f(Content.section("fx")["hide_hit"]["wound_seconds"]))
+	if death.dying:  # the stagger clip, never the gait (DeathPose)
+		death.update(delta)
+		VoxelSkin.sync_if(_skin)
+		return
 	if _rig != null:
 		_rig.gait.turn_ahead = turn_ahead
 		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
