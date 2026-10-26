@@ -67,6 +67,14 @@ func _stage(tier: int, map_seed: int) -> void:
 	var plan := CityGen.map(sim.city)
 	var spawn: Vector2 = plan.get("river_spawn", Vector2.ZERO)
 	var half := CityGen.half_extent(sim.city)
+	# Density per built-block m2 (director 2026-10-26, "same feel per street"): the blocks left
+	# for buildings, clipped to the play area; parks, plazas, river, roads and rail excluded.
+	var play := Rect2(-sim.arena_half, -sim.arena_half, sim.arena_half * 2.0, sim.arena_half * 2.0)
+	var built_m2 := 0.0
+	for block: Dictionary in plan["blocks"]:
+		var rect: Rect2 = block["rect"]
+		if str(block["use"]) == "built" and play.intersects(rect):
+			built_m2 += play.intersection(rect).get_area()
 	var sites := []
 	var blasts: Array = plan.get("explosive_sites", [])
 	for site: Dictionary in plan.get("sites", []):
@@ -80,7 +88,7 @@ func _stage(tier: int, map_seed: int) -> void:
 	print(
 		(
 			"stage %d map_seed %d half %.0f: %d buildings in play, %.2f per 1000 m2; empty %d of %d"
-			+ " play cells (%.3f); green %.1f%% (%d parks); rise %s; sites %s; explosive sites %d"
+			+ " play cells (%.3f); %.2f per 1000 built-block m2 (%.0f m2); green %.1f%% (%d parks); rise %s; sites %s; explosive sites %d"
 		)
 		% [
 			tier,
@@ -91,6 +99,8 @@ func _stage(tier: int, map_seed: int) -> void:
 			got["arena_empty"],
 			arena_cells,
 			Num.f(got["arena_empty"]) / maxf(1.0, arena_cells),
+			inside / maxf(1.0, built_m2) * 1000.0,
+			built_m2,
 			green["green_pct"],
 			green["parks"],
 			spawn,
