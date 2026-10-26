@@ -178,7 +178,6 @@ func _init(
 	strikes = Strikes.new(self, strike_cfg)
 
 
-
 ## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
 func lot_buildings() -> Array[Building]:
 	return buildings.filter(func(b: Building) -> bool: return not b.is_rail())
