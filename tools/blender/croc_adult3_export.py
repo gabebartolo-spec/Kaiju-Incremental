@@ -1,12 +1,15 @@
-"""Game export of the approved croc adult3 r10 rig (D-219 model, r10 rig): the skin the game samples and the files the
-repo's import tools take. Mirrors tools/blender/motion_test.py export() (skin.json/.skinw format) on the r10 rig itself.
-- <out>/croc_adult3.glb: the r10 mesh at rest, turned to face -Y (rig_voxel / skin_faces / motion_test input).
+"""Game export of the approved croc adult3 rig (D-219 model; rig r11 = the r10 skeleton with r11 skin weights and eyelid
+bones): the skin the game samples and the files the repo's import tools take. Mirrors tools/blender/motion_test.py
+export() (skin.json/.skinw format) on the rig itself.
+- <out>/croc_adult3.glb: the mesh at rest, turned to face -Y (rig_voxel / skin_faces / motion_test input).
 - <out>/croc_adult3.skin.json + .skinw: the 37 r10 bones (helpers folded: half k -> (1-k) parent + k target,
   counter -> parent, forearm twist k -> (1-k) forearm + k hand), welded positions, top-4 weights, game axes.
+- r11's eyelids are Blender-only (D-228): the lid bones fold into the head, and the lower-lid flaps (rigid shells
+  hidden inside the head at rest, all their weight on lid_lo_*) are left out of every file, so the game mesh is r10's.
 - <out>/croc_adult3_landmarks.json: motion_test landmarks at the r10 joints (so its clips' game bones rest on them).
 The repo keeps the landmarks as assets/kaiju/test/croc_adult3_landmarks.json (motion_test.py <it> <glb> <out> clips).
-blender -b croc_adult3_rig_r10.blend --python tools/blender/croc_adult3_export.py -- <out_dir> [height_vox=320]"""
-import bpy, sys, json, math
+blender -b croc_adult3_rig_r11.blend --python tools/blender/croc_adult3_export.py -- <out_dir> [height_vox=320]"""
+import bpy, bmesh, sys, json, math
 from pathlib import Path
 import numpy as np
 from mathutils import Matrix, Vector as V
@@ -24,6 +27,17 @@ ROLLS = {e.name: e.roll for e in ad.edit_bones}
 bpy.ops.object.mode_set(mode="OBJECT")
 GAME = np.array([[-1.0, 0, 0], [0, 0, 1.0], [0, 1.0, 0]])
 
+# --- drop the lower-lid flaps (r11; in memory only, the .blend is never saved) ----------------------------
+FLAPS = {g.index for g in mesh.vertex_groups if g.name.startswith("lid_lo")}
+bm = bmesh.new()
+bm.from_mesh(me)
+dl = bm.verts.layers.deform.verify()
+flap = [v for v in bm.verts if any(i in FLAPS and w > 0.0 for i, w in v[dl].items())]
+bmesh.ops.delete(bm, geom=flap, context="VERTS")
+bm.to_mesh(me)
+bm.free()
+print("FLAPS dropped", len(flap), "vertices; mesh now", len(me.vertices))
+
 # --- fold the helpers ---------------------------------------------------------------------------------
 HELP = {}
 for pb in arm.pose.bones:
@@ -40,6 +54,9 @@ for pb in arm.pose.bones:
         HELP[pb.name] = {par.name: 1 - k, c.subtarget: k} if c.subtarget != par.name else {par.name: 1.0}
     else:
         HELP[pb.name] = {par.name: 1.0}
+for pb in arm.pose.bones:
+    if pb.name.startswith("lid_"):  # r11 eyelids (Blender-only): the head carries them
+        HELP[pb.name] = {"head": 1.0}
 print("FOLD", {h: {b: round(w, 3) for b, w in m.items()} for h, m in HELP.items()})
 order = []
 def visit(b):
@@ -118,7 +135,7 @@ for i in range(3):
 M[:3, 3] = o0
 gall = np.array([skin(p) for p in P])
 doc = {"version": 1, "units": "m", "axes": "game: Y up, -Z forward, x = -blender x; origin on the ground under the "
-       "pelvis; model normalised to 100 m tall", "height_m": 100.0, "source": STEM + " (croc adult3 a3174b0f, rig r10)",
+       "pelvis; model normalised to 100 m tall", "height_m": 100.0, "source": STEM + " (croc adult3 a3174b0f, rig r11)",
        "bones": bones, "vertex_count": int(len(g)), "weights_file": f"{STEM}.skinw",
        "bbox_game": [gall.min(0).round(3).tolist(), gall.max(0).round(3).tolist()], "kvox_height": HV,
        "kvox_cell_to_skin": M.round(6).tolist(),
