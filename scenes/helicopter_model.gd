@@ -22,6 +22,13 @@ var _strobe: Node3D  # the white anti-collision flash
 var _clock := 0.0
 
 
+## A new model, already in `parent`.
+static func added_to(parent: Node) -> HelicopterModel:
+	var heli := HelicopterModel.new()
+	parent.add_child(heli)
+	return heli
+
+
 func _init() -> void:
 	_cfg = Content.section("vehicles")
 	var parts := VehicleParts.new(BASE, Num.f(_cfg["heli_height"]))
