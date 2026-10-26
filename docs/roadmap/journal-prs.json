@@ -1906,9 +1906,9 @@
 {
 "n": 274,
 "t": "Windows: wall faces behind balcony slabs draw again (the see-through strips across brick facades)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 275,
@@ -1976,6 +1976,27 @@
 {
 "n": 284,
 "t": "data: schema entries and .uid #257 left out (main's data-schema lint is red)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 285,
+"t": "docs: journal catches up to #283: days 10-24 to 10-27, 90 PRs placed",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 286,
+"t": "tools: merge_on_green lints the PR merged with current main before merging",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 287,
+"t": "docs: D-311 correction note (items 10/11 not built; the code runs only in a capture tool)",
 "s": "OPEN",
 "c": "2026-10-26",
 "m": ""

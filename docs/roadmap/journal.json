@@ -654,6 +654,13 @@
           "prs": [
             159
           ]
+        },
+        {
+          "text": "Brick towers: no see-through strip behind balcony slabs, and the railings take the window-sill tone (his window-bars comment, D-303)",
+          "status": "done",
+          "prs": [
+            274
+          ]
         }
       ],
       "asks": [
@@ -972,7 +979,8 @@
             259,
             252,
             253,
-            257
+            257,
+            284
           ]
         },
         {
