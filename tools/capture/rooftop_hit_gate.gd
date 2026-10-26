@@ -45,10 +45,7 @@ func _run() -> void:
 	root.add_child(rampage)
 	await rampage.wait_loaded()  # the city builds over several frames
 	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
-	var rig: KaijuRig = GuiInput.find_script(rampage, KaijuRig)
-	if rig == null:
-		for node: Node in rampage.find_children("*", "KaijuRig", true, false):
-			rig = node as KaijuRig
+	var rig := _player_rig(rampage)
 	var camera := root.get_viewport().get_camera_3d()
 	var logged := 0
 	var inside := 0
@@ -83,6 +80,18 @@ func _run() -> void:
 	print("worst volley hit search: %d usec" % roofs.worst_aim_usec)
 	print("worst round landed on the hide: %d usec" % roofs.worst_land_usec)
 	quit(0 if misses.is_empty() and on_screen > 0 else 1)
+
+
+## The rig standing on the sim's kaiju: the HUD keeps a portrait rig of its own in a SubViewport, far
+## off, that the first find would pick.
+func _player_rig(rampage: Rampage) -> KaijuRig:
+	var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
+	var best: KaijuRig = null
+	for node: Node in rampage.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		if best == null or rig.global_position.distance_to(at) < best.global_position.distance_to(at):
+			best = rig
+	return best
 
 
 ## Every voxel of the rig projected to the screen as a square its own size: the silhouette. Voxel

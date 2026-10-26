@@ -3,7 +3,8 @@ extends Node
 ## Slow motion only when a landmark falls (D-259: "Only when a landmark falls"; the VIP kill and
 ## the end beat have none, D-243). When the sim reports `landmark_felled` (RunNews) the world slows
 ## to tuning "slowmo" scale for hold_s real seconds, then eases back to normal speed over ease_s.
-## A second fall while it plays restarts the clock; it never stacks. Never during the end beat.
+## A second fall while it plays restarts the clock; it never stacks. Never during his death or the
+## end beat.
 ##
 ## Presentation only, and the sim is never told. Engine.time_scale shrinks the delta every physics
 ## tick gets (the tick rate stays 60 a second), so a sim fed that delta would take smaller steps in
@@ -108,9 +109,10 @@ func _apply() -> void:
 	Engine.time_scale = speed_at(_age, _cfg)
 
 
-## The end beat is up or the rampage is over: time stays whole.
+## His death is playing (DeathOverload), the end beat is up, or the rampage is over: time stays
+## whole, so the ending runs at the speed it was timed at.
 func _suppressed() -> bool:
-	return sim.over or (hud != null and hud.beat_running())
+	return sim.over or sim.death.active() or (hud != null and hud.beat_running())
 
 
 func _physics_process(delta: float) -> void:

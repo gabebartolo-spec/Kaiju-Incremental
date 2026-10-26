@@ -206,7 +206,7 @@ func _check_only_a_landmark_slows() -> void:
 
 
 ## Not during the end beat: a fall that comes with it starts nothing, and one already playing is
-## cut short as the beat begins; a finished rampage never slows either.
+## cut short as the beat begins; his death playing and a finished rampage never slow either.
 func _check_never_in_the_end_beat() -> void:
 	var sim := _sim()
 	var hud := _hud(sim)
@@ -231,9 +231,16 @@ func _check_never_in_the_end_beat() -> void:
 	)
 	hud2.finish_beat()
 	hud2.queue_free()
+	var dying := _sim()
+	var node4 := LandmarkSlowmo.new(dying, null)
+	dying.end("time")
+	check(dying.death.active() and not dying.over, "(his death is playing, the run not over yet)")
+	node4.trigger()
+	check(not node4.active() and Engine.time_scale == 1.0, "his death playing is not slowed")
+	node4.free()
 	var over := _sim()
 	var node3 := LandmarkSlowmo.new(over, null)
-	over.end("time")
+	over.end("time", true)
 	node3.trigger()
 	check(not node3.active() and Engine.time_scale == 1.0, "a finished rampage never slows")
 	node3.free()
