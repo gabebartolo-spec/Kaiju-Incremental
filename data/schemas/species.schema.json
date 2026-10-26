@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "data/species.json",
+  "description": "Structure and types of this data file (CLAUDE.md hard rule 4); see data/schemas/README.md.",
+  "type": "object",
+  "properties": {
+    "species": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"$ref": "#/$defs/str"},
+          "name": {"$ref": "#/$defs/str"},
+          "blurb": {"$ref": "#/$defs/str"},
+          "cost_mult": {"$ref": "#/$defs/num"},
+          "ability": {
+            "type": "object",
+            "properties": {
+              "type": {"$ref": "#/$defs/str"},
+              "name": {"$ref": "#/$defs/str"},
+              "hint": {"$ref": "#/$defs/str"}
+            },
+            "required": ["type", "name", "hint"],
+            "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+            "additionalProperties": false
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "hp": {"$ref": "#/$defs/num"},
+              "speed": {"$ref": "#/$defs/num"},
+              "stomp_damage": {"$ref": "#/$defs/num"},
+              "stomp_radius": {"$ref": "#/$defs/num"},
+              "stomp_interval": {"$ref": "#/$defs/num"},
+              "swipe_damage": {"$ref": "#/$defs/num"},
+              "swipe_width": {"$ref": "#/$defs/num"},
+              "ability_damage": {"$ref": "#/$defs/num"},
+              "ability_cooldown": {"$ref": "#/$defs/num"},
+              "ability_range": {"$ref": "#/$defs/num"}
+            },
+            "required": [
+              "hp", "speed", "stomp_damage", "stomp_radius", "stomp_interval", "ability_damage",
+              "ability_cooldown", "ability_range"
+            ],
+            "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+            "additionalProperties": false
+          },
+          "colors": {
+            "type": "object",
+            "properties": {
+              "body": {"$ref": "#/$defs/hex6"},
+              "belly": {"$ref": "#/$defs/hex6"},
+              "accent": {"$ref": "#/$defs/hex6"},
+              "eye": {"$ref": "#/$defs/hex6"}
+            },
+            "required": ["body", "belly", "accent", "eye"],
+            "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "name", "blurb", "ability", "stats", "colors"],
+        "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["species"],
+  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+  "additionalProperties": false,
+  "$defs": {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"}
+  }
+}
