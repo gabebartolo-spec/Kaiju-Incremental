@@ -23,6 +23,9 @@
 # the XDG dirs (Linux) point at a temp dir for the whole run, so two agents' runs never
 # share a save, a setting or an editor cache (CLAUDE.md "Machine rules").
 #
+# While a speed run holds the PC (D-299) it starts no Godot: it waits on the gate (tools/speed_gate.sh,
+# C:/kt/wait_window.sh) before the import and before each suite. No gate file, no effect.
+#
 #   GODOT=/path/to/godot tools/run_tests.sh          # everything
 #   SUITE_TIMEOUT=300 tools/run_tests.sh data smoke   # just some suites
 #   tools/run_tests.sh --quick data                   # the local loop: no re-import (QUICK=1 too)
@@ -90,11 +93,18 @@ note_error() {  # message
 	if [ "$in_ci" = 1 ]; then echo "::error::$1"; else echo "ERROR: $1"; fi
 }
 
+# D-299 (director 2026-10-27, "PC to itself"): a speed run needs zero Godot on the PC, so wait for
+# the gate before EVERY Godot launch below (version query, import, each suite), not only at the start:
+# a run of 7-20 suites would otherwise hold a speed run off for 20-40 minutes. tools/speed_gate.sh
+# has the details; where the gate file is absent (CI, Linux) it does nothing.
+. tools/speed_gate.sh
+wait_speed_gate
 say "== Godot: $("$GODOT" --headless --version 2> /dev/null | tail -1)"
 if [ "$QUICK" = 1 ]; then
 	say "== Quick: skipping the import (run once without QUICK=1 after asset changes)"
 else
 say "== Importing the project"
+wait_speed_gate
 timeout "$IMPORT_TIMEOUT" "$GODOT" --headless --path . --editor --import > "$LOG_DIR/import.log" 2>&1
 import_code=$?
 if [ "$import_code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$LOG_DIR/import.log"; then
@@ -110,6 +120,7 @@ timings=()
 for suite in ${SUITES[@]+"${SUITES[@]}"}; do
 	runner="$RUNNER_DIR/run_${suite}_tests.gd"
 	log="$LOG_DIR/$suite.log"
+	wait_speed_gate  # before the clock starts: a wait is not the suite's time (TIMINGS_FILE)
 	start=$(date +%s)
 	timeout "$SUITE_TIMEOUT" "$GODOT" --headless --fixed-fps 60 --path . --script "$runner" > "$log" 2>&1
 	code=$?

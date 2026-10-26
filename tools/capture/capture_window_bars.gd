@@ -36,6 +36,8 @@ var _env: Environment
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_opt = (
 		Kit
 		. args(
