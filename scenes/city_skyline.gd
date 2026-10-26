@@ -340,6 +340,7 @@ static func facade_material(haze: float) -> ShaderMaterial:
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
 	mat.set_shader_parameter("haze_color", Look.color("fog_color"))
 	mat.set_shader_parameter("haze", haze)
+	WindowPalette.apply_common(mat)
 	return mat
 
 

@@ -65,7 +65,7 @@ func origin() -> Vector3:
 
 func _make_palette(base: Color) -> void:
 	var lit := Look.color("window_lit_color")
-	lit.a = 0.0 if Look.value("window_glow") > 0.0 else 1.0
+	lit.a = WindowPalette.TAG if Look.value("window_glow") > 0.0 else 1.0
 	var shop_lit := Color("ffd9a0")
 	shop_lit.a = lit.a
 	palette = {
