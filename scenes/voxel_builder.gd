@@ -27,6 +27,9 @@ var built_cells: Array[Vector3i] = []
 var inset := 1.0
 ## Whether build() adds the look's per-cell colour noise (off for a smooth painted surface).
 var noise := true
+## Whether build() draws the cells in the city's surface family (Look.voxel_detail_mesh), each
+## instance carrying its cell's grid index in its custom data so the detail rides with the model.
+var detail := false
 
 
 func put(cell: Vector3i, key: String) -> void:
@@ -133,7 +136,8 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
-	mm.mesh = Look.voxel_mesh(voxel, glow)
+	mm.use_custom_data = detail
+	mm.mesh = Look.voxel_detail_mesh(voxel, glow) if detail else Look.voxel_mesh(voxel, glow)
 	mm.instance_count = shown.size()
 	var lift := Vector3(0, voxel * 0.5, 0)
 	for i: int in shown.size():
@@ -144,6 +148,8 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 		var cube := Basis().scaled(Vector3.ONE * inset)
 		mm.set_instance_transform(i, Transform3D(cube, origin + Vector3(cell) * voxel + lift))
 		mm.set_instance_color(i, Look.jitter(base, cell, salt) if noise else base)
+		if detail:
+			mm.set_instance_custom_data(i, Color(cell.x, cell.y, cell.z, 0.0))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	return mmi
