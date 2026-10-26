@@ -283,7 +283,7 @@ func _heli_fired(id: int, kaiju_at: Vector3) -> void:
 	var muzzle := heli.fire()
 	_streak(muzzle, target, TRACER, 0.12)
 	_city.flash(muzzle, TRACER, 3.0, 0.1)
-	_city.fx.sparks(target)
+	HideHit.land(_city.fx, _kaiju, muzzle, target)
 	if sfx != null:
 		sfx.play_at("heli_gun", muzzle)
 
