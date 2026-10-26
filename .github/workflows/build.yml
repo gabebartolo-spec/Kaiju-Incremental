@@ -22,7 +22,7 @@ on:
       - "**/*.md"
   # By hand, for any branch (the demo build comes from here): exports `ref` (default: the
   # branch the run is dispatched on) and uploads KaijuEvolution-<sha> for 7 days.
-  #   gh workflow run build.yml --ref claude/look-options [-f ref=<branch or sha>]
+  #   gh workflow run build.yml --ref main [-f ref=<branch or sha>]
   workflow_dispatch:
     inputs:
       ref:

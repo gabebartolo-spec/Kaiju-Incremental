@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 REPO = "gabebartolo-spec/Kaiju-Incremental"
-BASE = "claude/look-options"
+BASE = "main"
 DAYS = 2
 
 
@@ -62,7 +62,9 @@ def tasks(notes):
             continue
         with open(path, encoding="utf-8") as f:
             head = f.read(4000)
-        state = re.search(r"^#*\s*\**State\**:\s*(.+)$", head, re.M)
+        # "State: x", "STATE: x" mid-line, "State (date): x", or a "## State ..." heading with the state on the next line
+        state = (re.search(r"\bstate\b[^\n]{0,30}?:(?!\d)\s*(\S.*)$", head, re.M | re.I)
+                 or re.search(r"^#+\s*state\b[^\n]*\n+\s*[-*]?\s*(\S.*)$", head, re.M | re.I))
         branch = re.search(r"(?:^|[\s`(])(claude/[a-z0-9][\w.-]*)(?![\w/-]*\.md)", head, re.M)
         if state and re.match(r"(?i)\W*done\b", state.group(1)):
             continue  # finished: the lead archives it

@@ -82,6 +82,8 @@ run_data="$(mktemp -d)"
 trap 'rm -rf "$run_data"' EXIT
 native_path() { if command -v cygpath > /dev/null 2>&1; then cygpath -w "$1"; else echo "$1"; fi; }
 code=0
+. tools/speed_gate.sh  # D-299: no Godot while a speed run holds the PC; also gated in check_scripts.sh and run_tests.sh
+wait_speed_gate
 APPDATA="$(native_path "$run_data")" XDG_DATA_HOME="$run_data/data" XDG_CONFIG_HOME="$run_data/config" \
 	timeout 600 "$GODOT" --headless --path . --editor --import > "$run_data/import.log" 2>&1 || code=$?
 if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$run_data/import.log"; then

@@ -370,6 +370,8 @@ func _end_by(rampage: Rampage, reason: String) -> ResultsScreen:
 				sim.chunks_destroyed = sim.chunks_total
 		await process_frame
 	check(sim.end_reason == reason, "the run ends as '%s' (%s)" % [reason, sim.end_reason])
+	var burst := sim.death.phase == DeathOverload.Phase.SHATTER
+	check(burst == (reason != "city_fallen"), "'%s': results wait for a death's burst" % reason)
 	await _frames(RampageHud.BEAT_MIN_FRAMES + 2)
 	await GuiInput.key(self, KEY_ENTER)
 	await _frames(2)
