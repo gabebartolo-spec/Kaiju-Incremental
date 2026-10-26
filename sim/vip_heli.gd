@@ -31,6 +31,7 @@ var rank := ""
 var payout := 0.0
 var paid := 0.0
 var _rng: RandomNumberGenerator
+var _fall_rng: RandomNumberGenerator  # its own fall draws: a kill never shifts the air wing's
 var _hp := 0.0
 var _spawn_at := 0.0
 var _roof := 0.0
@@ -46,6 +47,7 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> 
 	sim = p_sim
 	cfg = p_cfg
 	_rng = rng
+	_fall_rng = Seeds.derive(rng, 0x71C)
 	var window: Array = cfg["window"]
 	_spawn_at = lerpf(Num.f(window[0]), Num.f(window[1]), _rng.randf()) * sim.stat("run_seconds")
 	var ranks: Array = cfg["ranks"]
@@ -130,7 +132,7 @@ func down(grabbed: bool, by: String) -> void:
 	elif _last_blow >= Num.f(air["hp"]) * Num.f(cfg["hp_mult"]) * Num.f(air["blow_apart"]):
 		event["fate"] = "burst"
 	else:
-		event.merge(sim.air._spin_down(heli))
+		event.merge(sim.air._spin_down(heli, _fall_rng))
 	sim.events.append(event)
 	sim.events.append({"type": "vip_killed", "rank": rank, "payout": paid, "by": by})
 
@@ -235,7 +237,7 @@ func _fly(dt: float) -> void:
 	if (
 		absf(pos.x) >= limit
 		or absf(pos.y) >= limit
-		or flight_t >= Num.f(cfg["window_seconds"]) * 2.0
+		or flight_t >= Num.f(cfg["window_seconds"]) * Num.f(cfg["escape_cap"])
 	):
 		state = "escaped"
 		sim.events.append({"type": "vip_escaped", "heli": ID, "rank": rank, "payout": payout})

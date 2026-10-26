@@ -16,6 +16,7 @@ class Played:
 	var tanks := 0
 	var helis := 0
 	var vip := ""
+	var fates: Array[String] = []  # each forced gunship kill: id, fate, fall time, drift, crew
 
 
 func suite_name() -> String:
@@ -24,10 +25,11 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_on_vs_off")
+	await _t("_check_vip_kill_leaves_gunship_falls")
 
 
 ## One idle rampage of SECONDS; `leader` false takes the leader out (no roof to lift off from).
-func _play(leader: bool) -> Played:
+func _play(leader: bool, kill_at := -1.0) -> Played:
 	var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), Content.species_def("reptilian"), tree
@@ -44,7 +46,15 @@ func _play(leader: bool) -> Played:
 		sim.vip.state = "none"
 	var out := Played.new()
 	var t := 0.0
+	var killed_vip := false
+	var round_at := kill_at
 	while t < SECONDS:
+		if kill_at >= 0.0 and t >= round_at:
+			if leader and not killed_vip:
+				killed_vip = true
+				sim.vip.down(false, "blow")
+			out.fates.append_array(_shoot_down_gunships(sim))
+			round_at += 10.0
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
 			var kind := str(event["type"])
 			if not kind.begins_with("vip_") and Num.i(event.get("heli", 0)) != VipHeli.ID:
@@ -86,3 +96,43 @@ func _check_on_vs_off() -> void:
 	)
 	var armies := [on.tanks, off.tanks, on.helis, off.helis]
 	check(on.tanks == off.tanks and on.helis == off.helis, "same tanks %d/%d, helis %d/%d" % armies)
+
+
+## Two gunships are called in, then every gunship in the sky falls at once to a light blow (it spins down, which draws the fall
+## stream); returns what each one's fate came to.
+func _shoot_down_gunships(sim: RampageSim) -> Array[String]:
+	var fates: Array[String] = []
+	for _i in 2:
+		sim.air.spawn()  # an idle kaiju draws none this early: call two in
+	var mark: int = sim.events.size()
+	for heli: AirWing.Heli in sim.air.helis:
+		heli.hp = 0.0
+		heli.last_blow = 0.0
+	sim.air.clear_dead()
+	for i in range(mark, sim.events.size()):
+		var event: Dictionary = sim.events[i]
+		if str(event["type"]) == "heli_destroyed":
+			var line := "%d %s %s %.4f %.4f %s"
+			line = (
+				line
+				% [
+					Num.i(event["heli"]),
+					event.get("fate"),
+					event.get("seconds"),
+					Num.f(event.get("dx", 0.0)),
+					Num.f(event.get("dz", 0.0)),
+					event.get("crew")
+				]
+			)
+			fates.append(line)
+	return fates
+
+
+## The leader shot down mid-flight, gunships up: every later gunship fall (drift, crew) is the
+## same as in a rampage with no leader, because the leader's wreck draws from its own stream.
+func _check_vip_kill_leaves_gunship_falls() -> void:
+	var on := _play(true, 10.0)
+	var off := _play(false, 10.0)
+	print("VIP_KILL_PARITY fates on %d, off %d" % [on.fates.size(), off.fates.size()])
+	check(on.fates.size() >= 3, "gunships fell after the leader (%d)" % on.fates.size())
+	check(on.fates == off.fates, "same gunship fates and drifts with the leader killed")
