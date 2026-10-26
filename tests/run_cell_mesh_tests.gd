@@ -206,7 +206,10 @@ func _check_balcony_rail_takes_the_sill_tone() -> void:
 	)
 	check(
 		rail.get_luminance() > base.get_luminance(),
-		"the rail is lighter than the wall (%.3f vs %.3f)" % [rail.get_luminance(), base.get_luminance()]
+		(
+			"the rail is lighter than the wall (%.3f vs %.3f)"
+			% [rail.get_luminance(), base.get_luminance()]
+		)
 	)
 
 
