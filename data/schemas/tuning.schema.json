@@ -1274,12 +1274,13 @@
         "look": {
           "type": "object",
           "properties": {
+            "white": {"$ref": "#/$defs/hex6"},
             "gold": {"$ref": "#/$defs/str"},
             "bank": {"$ref": "#/$defs/num"},
             "pitch": {"$ref": "#/$defs/num"},
             "turn": {"$ref": "#/$defs/num"}
           },
-          "required": ["gold", "bank", "pitch", "turn"],
+          "required": ["white", "gold", "bank", "pitch", "turn"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         }
