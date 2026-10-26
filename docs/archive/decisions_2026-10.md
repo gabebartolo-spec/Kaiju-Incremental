@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-24 · D-202 · Director · The three reptilians: their own trees, unlock order croc -> dragon -> snake, and their kits
+
+His notes: "different upgrade trees for each reptilian. Croc will still be our first titan, then dragon, then snake. dragon is our bulky brawler archetype, he has a death roll and poisonous saliva torrents. croc is our athletic fighter, can leap and crush, shoot lightning from his mouth. snake shoots caustic acid (new vfx needed for melting buildings), climbs and constricts, its tail acts as an autonomous limb in self defence". Asked: the order is the "Unlock order" (a new save starts with the croc; the Komodo dragon unlocks next, then the serpent); the demo ships "the croc" (replaces D-197's "whichever looks best"); the croc's autonomous-tail node "moves to the snake. but the crocs tail whip still in the game". Details of each kit: the interview that followed (D-203).
+
+## 2026-10-24 · D-201 · Director · The heavy Komodo moves only as fast as his animations show
+
+Two motion-critic rounds on the Komodo test build failed on the game's procedural layer, not on the Cascadeur clips: the sim turns faster than any clip can show (a ~120 deg body swing in under 0.5 s when the beam fires) and the game's foot-locking re-plants both feet within a frame (a double thud). Asked: "Yes, animations lead". His turns, starts and stops are capped to what his clips show (a 90 deg turn takes about his turn clip's time); the game stops re-planting his feet on its own and lets the clips' steps land. He steers more heavily, as the lumbering colossus (D-197); the beam still sweeps fast with his head (D-200). Applies to the heavy class first; the croc and serpent get their own answer when their clips exist.
+
 ## 2026-10-24 · D-200 · Director · Beam sweep on the heavy Komodo: the head aims, the body follows
 
 The Komodo test build's turn snap (motion critic: ~70-90 deg in 0.25 s) is the breath beam's sim turn rate (0.6 turns a second whatever the size; the gait follows at up to ~290 deg a second), not the turn clip. Asked how the heavy Komodo should sweep his beam: "Head aims, body follows": the beam keeps today's fast sweep (gameplay unchanged); the head and neck do the fast aiming, up to about 60 deg either side, while the body swings round after it at a heavy pace. Owner: lead (test branch claude/komodo-test, the presentation layer).
