@@ -323,9 +323,15 @@ func _on_event(event: Dictionary) -> void:
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
-			_powers.on_event(event, _kaiju_at)
+			_vip_or_power(event)
 			_rail.on_event(event)
 			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
+
+
+## The leader's helicopter (VipView) takes its own events, wreck crash too; powers get the rest.
+func _vip_or_power(event: Dictionary) -> void:
+	if not _powers.vip.on_event(event):
+		_powers.on_event(event, _kaiju_at)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

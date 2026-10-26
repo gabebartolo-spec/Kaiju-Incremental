@@ -98,8 +98,8 @@ func _check_on_vs_off() -> void:
 	check(on.tanks == off.tanks and on.helis == off.helis, "same tanks %d/%d, helis %d/%d" % armies)
 
 
-## Two gunships are called in, then every gunship in the sky falls at once to a light blow (it spins down, which draws the fall
-## stream); returns what each one's fate came to.
+## Two gunships are called in, then every gunship in the sky falls to a light blow (it spins
+## down, which draws the fall stream); returns what each one's fate came to.
 func _shoot_down_gunships(sim: RampageSim) -> Array[String]:
 	var fates: Array[String] = []
 	for _i in 2:
