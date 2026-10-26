@@ -55,6 +55,7 @@ var rumble: PadRumble
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
+var _blasts: BlastFx
 var _fade: VehicleFade
 var _cues: PowerCues
 var _hud: RampageHud
@@ -152,6 +153,7 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
+	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
@@ -251,8 +253,7 @@ func add_trauma(amount: float, at := Vector3.INF) -> void:
 
 ## Worst time (usec) spent per sim step and per event kind; read by the benchmark tool.
 func _note_cost(what: String, since: int) -> void:
-	var spent := Time.get_ticks_usec() - since
-	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
+	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), Time.get_ticks_usec() - since)
 
 
 ## The army's tanks (their voxels built once now, so the first spawn reuses them), the
@@ -270,6 +271,7 @@ func _to_world(p: Vector2) -> Vector3:
 
 
 func _on_event(event: Dictionary) -> void:
+	_blasts.on_event(event, _kaiju_at)
 	rumble.on_event(event)
 	match str(event["type"]):
 		"stomp":
@@ -375,6 +377,7 @@ func _place_camera(delta: float) -> void:
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
 	var nod := shake.turn(sim.body_scale(), motion).y
-	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))
+	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
+	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
 	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

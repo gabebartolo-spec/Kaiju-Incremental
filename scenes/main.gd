@@ -7,8 +7,6 @@ extends Node
 ## Owns the save state; screens get what they need through setup() and report back by signal.
 ## Progress comes only from playing: nothing accrues while the game is closed.
 
-const CITY_STREAM := "city"
-
 var _screen: Node
 var _save: Dictionary = {}
 var _tree: UpgradeTree
@@ -153,11 +151,12 @@ func _base_stats() -> Dictionary:
 func _start_rampage(endless := false) -> void:
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var tier := Num.i(stats["size"])
-	var layout := CityGrowth.layout(Content.tuning(), tier, Rng.make(CITY_STREAM, 0))
+	var runs := Num.i(_save.get("runs", 0))
+	# The run's city (CitySeed; the save has no seed of its own yet, so 0).
+	var layout := CitySeed.layout(Content.tuning(), tier, 0, runs)
 	_endless = endless
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
-	var runs := Num.i(_save.get("runs", 0))
 	rampage.city_seconds = Num.f(_save.get("city_seconds", 0.0))
 	rampage.setup(_species(), stats, layout, runs)
 	if endless:  # the demo's Endless mode (D-156)

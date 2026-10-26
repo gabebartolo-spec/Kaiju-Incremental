@@ -2,15 +2,12 @@ class_name HeliFx
 extends RefCounted
 ## The recipes a downed helicopter is drawn with (HeliWreck), each one an existing family's owner
 ## (docs/VFX_STYLE.md): the flash is family 5's flare shader, the fireball is family 1's flame
-## voxel (Fire's shader, ramp and voxel size) thrown in a ball, the smoke is family 2's shader.
+## flame (Fire's smooth tongues) thrown in a ball, the smoke is family 2's shader.
 ## Numbers: tuning "heli_wreck". Presentation only.
 
 const FLARE := preload("res://scenes/flare.gdshader")
 ## A flash is the shell-hit orange-white, hot at the core.
 const FLASH_TINT := Color("ffb468")
-## Fire's flame ramp spending less of its life cream: the same four colours (Fire.FLAME_COLORS),
-## at stops that suit a fireball seen at the game camera, not a street fire.
-const FIREBALL_STOPS: Array[float] = [0.0, 0.22, 0.5, 0.85]
 
 
 ## A flash of light: a hot core, a halo and short rays (flare.gdshader), `size` metres across,
@@ -39,7 +36,7 @@ static func flare(parent: Node3D, at: Vector3, size: float, seconds: float) -> v
 	tween.tween_callback(flash.queue_free)
 
 
-## A sudden ball of Fire's own flame voxels (same 0.18 m cube, shader and ramp), thrown out
+## A sudden ball of Fire's own flame (its tongue mesh and shader, graded by height), thrown out
 ## in every direction, slowing as it blooms and rising as it cools. `scale` multiplies how many
 ## and how far (a crash's is smaller than a kill's).
 static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
@@ -61,24 +58,19 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	var tex := CurveTexture.new()
 	tex.curve = curve
 	mat.scale_curve = tex
-	var ramp := Gradient.new()
-	var stops: Array[Color] = []  # the ramp's hexes as they read on screen (the shader is linear)
-	for hex: Color in Fire.FLAME_COLORS:
-		stops.append(hex.srgb_to_linear())
-	ramp.colors = PackedColorArray(stops)
-	ramp.offsets = PackedFloat32Array(FIREBALL_STOPS)
+	var ramp := Gradient.new()  # only the life fade: the colour is the flame shader's, by height
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)])
+	ramp.offsets = PackedFloat32Array([0.0, 0.06, 0.8, 1.0])
 	var ramp_tex := GradientTexture1D.new()
 	ramp_tex.gradient = ramp
 	mat.color_ramp = ramp_tex
-	var cube := BoxMesh.new()
-	cube.size = Vector3.ONE * 0.18
-	var hot := ShaderMaterial.new()
-	hot.shader = Fire.EMBER_SHADER
-	hot.set_shader_parameter("heat", Num.f(cfg["fireball_heat"]))  # per-owner heat
-	cube.material = hot
+	var tongue := Fire.flame_mesh(Num.f(cfg["fireball_tongue"]), at.x + at.z)
+	var flame := tongue.material as ShaderMaterial  # graded by height from the ball's foot up
+	flame.set_shader_parameter("base_y", at.y - Num.f(cfg["fireball_radius"]) * scale)
+	flame.set_shader_parameter("flame_h", Num.f(cfg["fireball_flame_h"]) * scale)
 	var life := Num.f(cfg["fireball_seconds"])
-	var voxels := roundi(Num.f(cfg["fireball_voxels"]) * scale)
-	_burst(parent, mat, cube, voxels, life, at, Num.f(cfg["fireball_spread"]))
+	var tongues := roundi(Num.f(cfg["fireball_tongues"]) * scale)
+	_burst(parent, mat, tongue, tongues, life, at, Num.f(cfg["fireball_spread"]))
 
 
 ## A puff of the smoke shader (Fire's own charcoal ramp, its first stop warmed by the flames
