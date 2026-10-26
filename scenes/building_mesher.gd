@@ -3,9 +3,10 @@ extends RefCounted
 ## Bakes a building's voxels (BuildingVoxels) into meshes of only the faces that can be seen.
 ## The building's hollow inside counts as solid while it stands, so the inner faces of its
 ## walls are never drawn; the floor slabs bake into a second mesh that is shown only once the
-## building is broken open. Every vertex carries its structural chunk and a per-voxel hash
-## (UV2) for building_baked.gdshader, and a few voxels per chunk are kept as samples for the
-## debris a broken chunk throws. Pure data: safe to run on a worker thread.
+## building is broken open; a slab proud of the walls (a balcony floor) is in neither mesh, so a
+## first blow changes only what it breaks (D-289). Every vertex carries its structural chunk and
+## a per-voxel hash (UV2) for building_baked.gdshader, and a few voxels per chunk are kept as
+## samples for the debris a broken chunk throws. Pure data: safe to run on a worker thread.
 
 const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
@@ -38,7 +39,11 @@ func _init(voxels: BuildingVoxels) -> void:
 	var slab_cells: Array[Vector3i] = []
 	for cell: Vector3i in _v.vox.cells:
 		if _v.vox.key_at(cell) == "slab":
-			slab_cells.append(cell)
+			# A slab proud of the walls (a balcony floor) is never drawn: it would pop in building-wide
+			# with the hidden floors at the first blow (director 2026-10-27, D-289). It still counts as
+			# solid, so the wall behind it draws as it always has.
+			if _in_footprint(cell):
+				slab_cells.append(cell)
 		else:
 			shell_cells.append(cell)
 	shell = _bake(shell_cells, true)
@@ -53,6 +58,11 @@ func chunk_index(cell: Vector3i) -> int:
 	var cy := clampi(floori(float(cell.y) / _res), 0, b.height - 1)
 	var cz := clampi(floori(float(cell.z) / _res), 0, b.d - 1)
 	return cx + cz * b.w + cy * b.w * b.d
+
+
+## Within the footprint (the walls and what they enclose), not proud of it.
+func _in_footprint(c: Vector3i) -> bool:
+	return c.x >= 0 and c.x < _w and c.z >= 0 and c.z < _d
 
 
 ## Inside the standing building: the hollow behind its walls, under its roof deck.
