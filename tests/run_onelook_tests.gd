@@ -83,7 +83,9 @@ func _check_clarity_knobs() -> void:
 				bad.append("%s sharpness %.2f" % [name, view.fsr_sharpness])
 			if view.use_debanding != deband:
 				bad.append("%s deband %s" % [name, view.use_debanding])
-	check(bad.is_empty(), "a viewport takes the preset's sharpness and the look's deband: %s" % [bad])
+	check(
+		bad.is_empty(), "a viewport takes the preset's sharpness and the look's deband: %s" % [bad]
+	)
 	var medium: Dictionary = table["medium"]
 	var soft := medium.duplicate()
 	soft["fsr_sharpness"] = 0.1

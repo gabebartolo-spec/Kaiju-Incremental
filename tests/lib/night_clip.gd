@@ -82,8 +82,10 @@ static func _check_grade(check: Callable) -> void:
 	var env := Environment.new()
 	CityEnvironment.grade(env)
 	check.call(
-		is_equal_approx(env.tonemap_agx_contrast, PROPOSED_AGX)
-		and is_equal_approx(env.adjustment_contrast, PROPOSED_POST),
+		(
+			is_equal_approx(env.tonemap_agx_contrast, PROPOSED_AGX)
+			and is_equal_approx(env.adjustment_contrast, PROPOSED_POST)
+		),
 		"the environment takes the toe contrast and the post contrast from the look"
 	)
 	check.call(
