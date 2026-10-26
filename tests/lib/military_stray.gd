@@ -10,7 +10,8 @@ const STEPS := 600
 ## The Colossus city, the strongest army left (D-135): the tanks fire often enough to count.
 const TIER := 3
 ## Re-probed for D-135: seed 4 saw no tank shot in the Colossus city; 0-3, 5 and 6 all pass.
-const SEED := 0
+## Re-probed after the 0.8x stomp beat: seed 0 saw no tank shot in 600 steps; seed 26 fires 11 (7 miss).
+const SEED := 26
 const SHOTS := 400
 ## How far the miss share may sit from the data's on SHOTS seeded shells (2.5 sigma at 40%).
 const RATE_SLACK := 0.06

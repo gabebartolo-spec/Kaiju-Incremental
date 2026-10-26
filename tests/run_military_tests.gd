@@ -28,7 +28,10 @@ const MIN_PARKED_IN_RANGE := 20
 ## Re-probed for the road-network PR (no alleys on the river banks moved the plans), Behemoth
 ## seeds 0-35: tank-steps in range 0 (7), 8 (5), 10 (7), 14 (9), 25 (4), 35 (18), none elsewhere;
 ## seeds 0, 10, 14 and 35 give 41 against the bar of 20 (the same 2x margin).
-const RAMPAGE_SEEDS: Array[int] = [0, 10, 14, 35]
+## Re-probed after the 0.8x stomp beat (the autoplay's path changed): Behemoth seeds 0-39 on main
+## park tanks in range on 8 seeds, on the PR on 13; seeds 12 (52), 4 (33), 36 (29) and 27 (24)
+## give 138 tank-steps against the bar of 20.
+const RAMPAGE_SEEDS: Array[int] = [12, 4, 36, 27]
 
 
 func suite_name() -> String:

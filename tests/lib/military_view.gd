@@ -26,7 +26,9 @@ const RETREAT_PACE := Vector2(3.0, 4.0)
 ## corner, and a pivot on the way counts as a slow step. The slow steps are the pivots, not a
 ## creep. These three read 96, 100 and 92% with the foot-centred stomp (96, 96 and 93% without),
 ## 115 tank-steps in all.
-const VIEW_RUNS: Array[int] = [3, 11, 17]
+## Re-swept over army seeds 1-20 after the 0.8x stomp beat (2026-10-26): runs 1, 6 and 11 read 96,
+## 96 and 96% (77 tank-steps in all); runs 2, 4, 7-10, 12 and 14 see no fall-back.
+const VIEW_RUNS: Array[int] = [1, 6, 11]
 
 var _shapes := {}  # tank part -> its footprint (_tank_shapes)
 
