@@ -18,7 +18,7 @@ Gate: director look approval recorded in `docs/DECISIONS.md`.
 Deliverables: the core loop playable end to end with placeholder content; player-effect fixtures
 for every system; save, reload, continue.
 Gate: a director playtest; the slice success test the vision names.
-Demo (D-050): the croc line only, hatchling to Behemoth, a Windows exe; the director's playtest of it is this gate.
+Demo (D-050, D-145): the croc line only, all three cities (about 90+ min), a Windows exe; the director's playtest of it is this gate.
 After the demo (D-083 order: playtest fixes first): better sound effects (ElevenLabs) and music (Suno), director
 2026-10-19. Both are paid for commercial use: the director's written spend yes in `docs/DECISIONS.md` and a CLEARED
 line in `docs/LICENSING_REGISTER.md` come before any generated audio enters `assets/`.
@@ -147,7 +147,7 @@ dash or speed above a threshold; does a fast turn's tail sweep carve?) (R 13.3).
 of our own trauma shake (R 7.2). Gate: clips through the motion critic, then build 5.
 
 **E. Progression: the upgrade tree.**
-b2-28 two to three times the nodes · b2-2 tail node · b2-27 drop "reptilian branch" · copy pass b2-15, b2-16,
+b2-28 two to three times the nodes, his node ideas first (croc build list, `docs/roadmap/2026-10-26-interview-audit.md` section 1) · b2-2 tail whip node (automatic; the autonomous tail limb moved to the snake, D-202) · b2-27 drop "reptilian branch" · copy pass b2-15, b2-16,
 b2-17, b2-24 and every other node text · then ONE balance pass on the new tree: p1-8 upgrade cadence and the young
 retune (#107 draft is superseded by it; its findings are inputs). Balance is his playtest. Gate: build 6.
 How (research): an upgrade affordable after every rampage and the first purchase inside about 60 s, costs geometric
@@ -260,7 +260,7 @@ whistle, boom (CC0 only), 4K capture through the screen critic (R 24.3) · an ed
 off-screen mortar fires (R 24.4) · a tower dropped onto a mortar nest kills it, combo bounty (R 24.5) · tree hooks
 (bounty, topple radius, falling debris kills, shell-shrug) for his pick (R 24.6). Not now: mid-run spawns, lead aim.
 Mecha boss finale (research 23): one boss rampage in the player's own city after the last evolution, army stood
-down, beating it ends the game (R 23.1, his question) · sim/mecha.gd + data/boss.json, a greybox body, attacks
+down, beating it ends the game (R 23.1, his question; body remade and approved: humanoid robot, cobra head, reptile tail, white with blue lights, rig in Cascadeur, D-227, D-230) · sim/mecha.gd + data/boss.json, a greybox body, attacks
 from a shuffle bag (PROPOSAL, his pick when the finale is planned: charge, salvo, stamp), phases with a minimum time, sim review (R 23.2) · telegraphs
 always visual, slow wind-ups, no feints, motion critic (R 23.3) · the city as the weapon: undercut a tower onto it,
 a charge that sticks in a building, thrown tanks after R 22's Flung (R 23.4) · two-target camera, a thin boss bar
@@ -551,6 +551,12 @@ state. No director clips or per-change approvals in between; clips only where mo
 
 ## Interviews 2026-10-26 (D-257 to D-260)
 Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interviews.md`.
+Unlanded work, every branch not on main with owner and next step (2026-10-27): `docs/roadmap/2026-10-27-unlanded-audit.md`.
+Director comments of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
+
+## Interview audit (D-272, 2026-10-26)
+Every interview answer and director message since 2026-10-16 (782 items) checked against the docs: `docs/roadmap/2026-10-26-interview-audit.md`.
+Its node ideas (section 1) feed E; its missing items (M rows) and decided-but-unrowed work (W rows) are open roadmap items, owner lead, briefed in queue order.
 
 ## Flat surfaces programme (director 2026-10-25: "flat textureless colour blocks need to go")
 P0 (roads, quays and river walls, bridge decks, pavements, lawns, expressway, rubble) is textured through scenes/surface_detail.gdshaderinc; the CI test tests/lib/flat_surfaces.gd fails any other untextured surface. Its KNOWN_FLAT list may only shrink (cap KNOWN_FLAT_MAX). Owner of every row: VFX lead. Target dates (VFX lead, 2026-10-25): P1 water 2026-10-28, P2 2026-10-31, P3 2026-11-04 (P1 water, P2 rooftops and building faces, P3 props, people, cars, the kaiju); next step for each row is to give the surface the surface_detail look or a texture, then delete its KNOWN_FLAT line and lower the cap.

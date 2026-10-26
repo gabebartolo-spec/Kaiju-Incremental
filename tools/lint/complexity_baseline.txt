@@ -4,7 +4,6 @@ scenes/ability_fx.gd::_first_hit 21 13
 scenes/biped_body.gd::update 43 6
 scenes/biped_head.gd::update 56 9
 scenes/building_mesher.gd::_bake 59 15
-scenes/carve_debris.gd::_physics_process 40 14
 scenes/cephalopod_stand_in.gd::build 55 5
 scenes/city_decor.gd::_streets 68 26
 scenes/city_environment.gd::attach 47 2
@@ -62,7 +61,6 @@ sim/structure.gd::_grounded 28 14
 sim/structure.gd::_topple_check 52 23
 sim/structure.gd::settle 30 14
 sim/tank_spacing.gd::blocker 33 19
-sim/tentacles.gd::_grab 41 11
 sim/voxel_support.gd::_attach_fixtures 30 14
 sim/voxel_support.gd::_flood 46 26
 sim/voxel_support.gd::_floors 40 15
