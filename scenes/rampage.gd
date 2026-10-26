@@ -280,8 +280,7 @@ func _note_cost(what: String, since: int) -> void:
 ## helicopters' voxels (the gunships' and the leader's own), and the railway.
 func _add_vehicles() -> void:
 	TankModel.new().free()
-	HelicopterModel.new().free()
-	HelicopterModel.new(HelicopterModel.VIP_BASE).free()
+	HelicopterModel.warm()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
 	_rail = RailView.new(self, sim, _city)
 	add_child(_rail)

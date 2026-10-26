@@ -31,7 +31,15 @@ static func added_to(parent: Node) -> HelicopterModel:
 	return heli
 
 
-## `base` is the parts file's path without ".parts.json": BASE for a gunship, VIP_BASE for the leader.
+## Builds both models' voxels once now (the gunship's and the leader's own), so a first spawn
+## reuses them.
+static func warm() -> void:
+	HelicopterModel.new().free()
+	HelicopterModel.new(VIP_BASE).free()
+
+
+## `base` is the parts file's path without ".parts.json": BASE for a gunship, VIP_BASE for the
+## leader.
 func _init(base := BASE) -> void:
 	_cfg = Content.section("vehicles")
 	var parts := VehicleParts.new(base, Num.f(_cfg["heli_height"]))
@@ -118,7 +126,8 @@ func vip_look() -> void:
 	_light(_body, Num.f(_cfg["vip_dark"]))
 
 
-## Every voxel of `root` glows at vip_glow in its own colour; voxels darker than `dark` are left alone.
+## Every voxel of `root` glows at vip_glow in its own colour; voxels darker than `dark` are left
+## alone.
 func _light(root: Node3D, dark: float) -> void:
 	var parts: Array[Node] = root.find_children("*", "MultiMeshInstance3D", true, false)
 	parts.append(root)  # the body is itself a voxel mesh
