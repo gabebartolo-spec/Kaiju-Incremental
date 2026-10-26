@@ -42,7 +42,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 					if lots.is_empty() and ring == 0:
 						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
-	out.append_array(CityRiver.sheds(plan, bare, cfg))
+	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, bare, cfg))  # + red barrels (#19)
 	return out
 
 

@@ -17,6 +17,8 @@ const ENDINGS := {"city_fallen": false, "time": true, "defeated": true, "ended":
 const TV_SIZE := Vector2i(3840, 2160)
 ## At most this many frames for a set ending to land (the rise from the river runs first).
 const END_WAIT_FRAMES := 60 * 20
+## The lab card's 2 s, with room to spare.
+const LAB_CARD_WAIT_MS := 6000
 const SAMPLE := {
 	"rubble": 420,
 	"destruction": 0.37,
@@ -327,9 +329,17 @@ func _check_endings_by_input() -> void:
 			break
 		await GuiInput.click(self, GuiInput.button(tree, "RAMPAGE"))
 		await _frames(2)
+		await _past_lab_card(main)
 	_slot_after_endings()
 	main.queue_free()
 	await _frames(2)
+
+
+## After a death the lab card shows about 2 s before the next rise (D-260): wait it out.
+func _past_lab_card(main: Node) -> void:
+	var start := Time.get_ticks_msec()
+	while _screen(main) is SpecimenCard and Time.get_ticks_msec() - start < LAB_CARD_WAIT_MS:
+		await process_frame
 
 
 ## The ending's headline as data writes it (tuning "results" "endings").

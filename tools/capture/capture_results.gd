@@ -59,6 +59,8 @@ func _run() -> void:
 	for reason: String in ENDINGS:
 		await GuiInput.click(self, GuiInput.button(_screen(), "RAMPAGE"))
 		await _frames(2)
+		while _screen() is SpecimenCard:  # after a death: the 2 s lab card, then the rise
+			await process_frame
 		var results := await _play_to(_screen() as Rampage, reason)
 		if results == null:
 			push_error("no report for " + reason)

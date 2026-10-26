@@ -6,6 +6,10 @@ beams, roars, sizzles, whooshes, the ready growl, regeneration bubbles). Everyth
 seeded, so a rebuild gives the same files. Needs numpy and ffmpeg (imageio-ffmpeg).
 
     python tools/sfx/build_sfx.py --kenney <dir with kenney_impact-sounds/, kenney_sci-fi-sounds/>
+    python tools/sfx/build_sfx.py --kenney <dir> --only blasts   (one group; leaves the rest alone)
+
+A full build also rewrites roar.ogg and the other sounds the ElevenLabs takes replaced (D-092):
+rebuild only the group you changed.
 """
 
 import argparse
@@ -531,11 +535,99 @@ def build_regen() -> None:
     save("regen_loop", x, -6.0, loop=True)
 
 
+def build_blasts() -> None:
+    """The red barrels going off (director comments #19, #20), as separate layers the game plays
+    together and delays by distance (research 25, section 4): a dry supersonic crack, a chesty
+    fuel-tank body with a sub thump and a fire whoosh, a long low rumble tail, and the sonic boom
+    (a double thump, the N-wave) that arrives later the further away you stand. Fireworks
+    crackle with whistles; a chem lab vents with a hiss and a metal creak."""
+    reseed("build_blast_crack")
+    x = np.zeros(seconds(0.45))
+    n = seconds(0.03)
+    snap = highpass(noise(n), 1500.0) * env(n, 0.0002, 0.006)
+    place(x, snap * 3.0, 0.0)
+    place(x, highpass(pitch(kenney("explosionCrunch_004"), 1.15), 400.0), 0.0, 0.9)
+    n = seconds(0.25)
+    place(x, bandpass(noise(n), np.linspace(3200, 900, n), 0.7) * env(n, 0.001, 0.05), 0.004, 1.3)
+    save("blast_crack", highpass(x, 150.0), -1.5)
+
+    reseed("build_blast_body")
+    x = np.zeros(seconds(1.8))
+    place(x, pitch(kenney("explosionCrunch_000"), 0.5), 0.0, 1.0)
+    place(x, pitch(kenney("explosionCrunch_002"), 0.62), 0.004, 0.8)
+    place(x, pitch(kenney("lowFrequency_explosion_000"), 0.7), 0.0, 1.0)
+    place(x, thump(1.4, 62, 30), 0.015, 0.9)
+    n = seconds(1.4)
+    roar = lowpass(lowpass(noise(n), 900.0), 900.0) * hump(n, 0.08) * np.exp(-np.arange(n) / RATE / 0.5)
+    place(x, roar / max(1e-9, np.max(np.abs(roar))), 0.03, 0.5)  # the fire whoosh
+    place(x, lowpass(crackle(seconds(1.5), 260, 0.5), 4000), 0.06, 0.35)
+    debris = np.zeros(seconds(1.4))
+    for i, at in enumerate([0.0, 0.25, 0.55]):
+        chunk = lowpass(pitch(kenney(f"impactMining_00{i + 2}"), 0.55), 3000)
+        place(debris, chunk / max(1e-9, np.max(np.abs(chunk))), at, 0.5 - 0.1 * i)
+    place(x, highpass(debris, 300.0), 0.25, 0.3)
+    save("blast_body", highpass(highpass(x, 28.0), 28.0), -1.5)
+
+    reseed("build_blast_rumble")
+    n = seconds(4.5)
+    rumble = lowpass(lowpass(np.cumsum(noise(n)) * 0.02, 320), 320)
+    rumble = highpass(rumble, 25.0)
+    t = np.arange(n) / RATE
+    rumble *= hump(n, 0.06) * np.exp(-t / 1.4) * (1.0 + 0.35 * np.sin(2 * np.pi * 0.9 * t))
+    rumble /= max(1e-9, np.max(np.abs(rumble)))
+    far = lowpass(pitch(kenney("lowFrequency_explosion_001"), 0.6), 900)
+    rumble[: len(far)] += far[: n] / max(1e-9, np.max(np.abs(far))) * 0.5
+    echo = lowpass(tail(rumble, 2.0, 0.8, 800), 800)
+    save("blast_rumble", highpass(rumble + echo * 0.4, 25.0), -2.0)
+
+    reseed("build_sonic_boom")
+    x = np.zeros(seconds(1.0))
+    for at, gain in [(0.0, 1.0), (0.11, 0.85)]:  # the N-wave's two shocks, about 0.1 s apart
+        place(x, thump(0.55, 75, 32), at, gain)
+        place(x, thump(0.3, 170, 85), at, 0.7 * gain)  # the thump small speakers can play
+        n = seconds(0.05)
+        place(x, lowpass(noise(n), 1800) * env(n, 0.0005, 0.012), at, 0.8 * gain)
+    place(x, lowpass(tail(x.copy(), 0.8, 0.3, 900), 900), 0.0, 0.25)
+    save("sonic_boom", highpass(highpass(x, 28.0), 28.0), -1.5)
+
+    reseed("build_fireworks_crackle")
+    x = np.zeros(seconds(2.0))
+    for k in range(14):
+        at = float(rng.uniform(0.0, 1.6))
+        pop = thump(0.12, 300, 120) * 0.5
+        n = seconds(0.01)
+        pop[:n] += highpass(noise(n), 1200) * env(n, 0.0002, 0.003) * 2.0
+        place(x, pop, at, float(rng.uniform(0.3, 1.0)))
+    place(x, lowpass(crackle(seconds(1.6), 600, 0.8), 5000), 0.2, 0.8)
+    for at in [0.05, 0.6]:  # a rising whistle
+        n = seconds(0.55)
+        f = np.linspace(1400, 2600, n)
+        whistle = np.sin(2 * np.pi * np.cumsum(f) / RATE) * hump(n, 0.6) * 0.25
+        place(x, whistle, at)
+    save("fireworks_crackle", highpass(x, 80.0), -2.0)
+
+    reseed("build_chem_hiss")
+    x = np.zeros(seconds(3.0))
+    n = seconds(2.9)
+    hiss = bandpass(noise(n), np.full(n, 3400.0), 0.7) + lowpass(highpass(noise(n), 2000.0), 7000.0) * 0.3
+    place(x, hiss * hump(n, 0.1) * 0.6, 0.0)
+    for i, at in enumerate([0.3, 1.4]):
+        creak = lowpass(pitch(kenney(f"impactMetal_heavy_00{i + 2}"), 0.45), 2500)
+        place(x, creak / max(1e-9, np.max(np.abs(creak))), at, 0.4)
+    save("chem_hiss", highpass(x, 60.0), -4.0)
+
+
 def main() -> None:
     global kenney_root
     parser = argparse.ArgumentParser()
     parser.add_argument("--kenney", required=True, help="folder holding the unzipped Kenney packs")
-    kenney_root = pathlib.Path(parser.parse_args().kenney)
+    parser.add_argument("--only", nargs="*", help="build only these (e.g. blasts), not every sound")
+    args = parser.parse_args()
+    kenney_root = pathlib.Path(args.kenney)
+    if args.only:
+        for name in args.only:
+            globals()["build_" + name]()
+        return
     build_stomps()
     build_footstep()
     build_stomp_crack()
@@ -551,6 +643,7 @@ def main() -> None:
     build_ready()
     build_deflect()
     build_regen()
+    build_blasts()
 
 
 if __name__ == "__main__":
