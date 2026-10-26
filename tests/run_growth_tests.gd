@@ -226,6 +226,8 @@ func _play(tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary) ->
 		var move := Vector2.ZERO
 		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
+		if not sim.strikes.pending.is_empty():
+			move = Vector2.ZERO  # holds still through the wind-up, as a player holds the button
 		sim.step(DT, move, sim.ability_ready_in <= 0.0)
 		steps += 1
 	var out := sim.result()
