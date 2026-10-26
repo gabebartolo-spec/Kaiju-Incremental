@@ -4,7 +4,8 @@ extends SceneTree
 ## frames in which this script calls _physics_process and _process by hand and times each with
 ## Time.get_ticks_usec (the engine's own calls are switched off, so the times are exactly the
 ## CarveDebris work). Run with --fixed-fps 60 so one physics tick follows each frame.
-##   godot --headless --fixed-fps 60 --path . --script tools/capture/bench_debris.gd \n##     -- --n=1000,3000
+##   godot --headless --fixed-fps 60 --path . --script tools/capture/bench_debris.gd
+##     -- --n=1000,3000
 ## Prints one BENCH_DEBRIS line per pass: p50 / p95 / max of (physics + process) in ms, the live
 ## count at the start and end, and the server reads per live piece per tick.
 
