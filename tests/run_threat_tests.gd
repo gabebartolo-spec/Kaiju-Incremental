@@ -4,7 +4,7 @@ extends "res://tests/lib/runner.gd"
 ## felled landmark and each tower total once; every report has a short crawl line (the VIP's wait
 ## for the helicopter); the badge shows the level by number and lit bars beside a centred clock;
 ## the crawl slides up for each moment in turn; every death owes one lab card; and by real input
-## through Main a death puts the lab card (K-01 LOST · K-02 RELEASED) before the next rise.
+## through Main a death puts the lab card (K-01 LOST - K-02 RELEASED) before the next rise.
 ## Seeded by design: the sims are built on pinned seeds and their state set by hand; no outcome
 ## of play is checked.
 ##   godot --headless --path . --script tests/run_threat_tests.gd

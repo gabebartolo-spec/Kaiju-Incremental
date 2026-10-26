@@ -229,11 +229,11 @@ func _lab_card(main: Node) -> void:
 	if card == null:
 		return
 	check.call(
-		card.title.text == "SPECIMEN K-02" and card.headline_text() == "K-01 LOST · K-02 RELEASED",
+		card.title.text == "SPECIMEN K-02" and card.headline_text() == "K-01 LOST - K-02 RELEASED",
 		"the card names K-02 and the loss: %s / %s" % [card.title.text, card.headline_text()]
 	)
 	var missing: Array[String] = []
-	for label: Label in [card.title, card.lost, card.released]:
+	for label: Label in [card.title, card.headline]:
 		var font := label.get_theme_font("font")
 		for i: int in label.text.length():
 			if not font.has_char(label.text.unicode_at(i)):
