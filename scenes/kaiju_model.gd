@@ -177,6 +177,12 @@ func limb_tip(limb_hint: int) -> Vector3:
 	return global_position
 
 
+## The foot the next standing stomp lifts (ClipGait.prefer_foot); other bodies have no such choice.
+func prefer_foot(side: String) -> void:
+	if _rig != null and _rig.gait is ClipGait:
+		(_rig.gait as ClipGait).prefer_foot(side)
+
+
 func stomp() -> void:
 	if _rig != null:
 		_rig.stomp()
@@ -195,6 +201,14 @@ func stomped_side() -> String:
 func roar() -> void:
 	if _rig != null:
 		_rig.roar()
+
+
+## The leap's pose hook (Dash phases "crouch", "flight", "settle", "recover"; t 0..1 through it):
+## a gait with a leap clip plays it there (the Cascadeur clip, K2); without one the body holds its
+## standing pose, as the rampage stops the legs through a leap. No procedural pose.
+func leap(phase: String, t: float) -> void:
+	if _rig != null and _rig.gait.has_method("leap"):
+		_rig.gait.call("leap", phase, t)
 
 
 func _lit(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:

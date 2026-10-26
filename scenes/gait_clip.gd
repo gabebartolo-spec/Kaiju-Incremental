@@ -64,9 +64,12 @@ var _steps: ClipSteps  # the walk clip against the sim's step clock
 var _path: SwingPath  # a lifted foot's way to its clip path
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
-## The body's world yaw when each foot went down, and the turn (rad) its toes are held to: a planted
-## foot keeps its world yaw while the body turns over it, and swings back to the clip's in the air.
+## The body's world yaw and each foot's flat heading (FootHold.foot_yaw) when it went down, and the
+## turn (rad) its toes are held to: a planted foot keeps its world yaw while the body turns over it
+## and, up to FootHold.ROLL_HOLD_MAX, while a splayed foot rolls over the stance; it swings back to
+## the clip's in the air.
 var _plant_yaw: Array[float] = [0.0, 0.0]
+var _plant_heading: Array[float] = [0.0, 0.0]
 var _yaw_fix: Array[float] = [0.0, 0.0]
 var _was_planted: Array[bool] = [false, false]
 var _stomp := ClipStomp.new()  # catch steps, and the standing stomp
@@ -138,6 +141,11 @@ func roar() -> void:
 ## walking or turning, the clip footfalls deliver it; roaring, the feet stay planted.
 func stomp() -> void:
 	_stomp.stomp(state == "idle")
+
+
+## The foot the next standing stomp lifts (the sim chose it: its damage is centred under that foot).
+func prefer_foot(side: String) -> void:
+	_stomp.prefer(side)
 
 
 ## The foot the latest stomp lifted ("left" or "right"); "" when it lifted none (walking, a roar).
@@ -308,7 +316,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var fixes: Array[float] = []  # each foot's yaw: a planted one held, a lifted one easing back
 	for i: int in mini(legs.size(), 2):
 		targets.append(_foot_target(i, pose, dt))
-		var held := wrapf(_plant_yaw[i] - _hold.rig_yaw(), -PI, PI)
+		var held := _hold.hold(_plant_yaw[i], _plant_heading[i], legs[i])
 		fixes.append(held if legs[i].planted else _yaw_fix[i] * exp(-FOOT_YAW_DECAY * dt))
 	_ik.lower_body(self, targets, fixes, dt)
 	for i: int in targets.size():
@@ -354,6 +362,7 @@ func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
 	if not _was_planted[i]:
 		_lock[i] = target
 		_plant_yaw[i] = _hold.rig_yaw()
+		_plant_heading[i] = _hold.foot_yaw(leg)
 		leg.plant_at = target
 		leg.drift = 0.0
 		var strength := _stomp.landing(i, clampf(0.2 + speed_k(), 0.0, 1.0), s)

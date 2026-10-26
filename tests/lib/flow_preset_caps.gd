@@ -64,7 +64,7 @@ static func _potato_reaches(tree: SceneTree, row: Dictionary, check_fn: Callable
 	for p: Node in city.find_children("*", "GPUParticles3D", true, false):
 		ratios[(p as GPUParticles3D).amount_ratio] = true
 	var people := city.street.civilians()
-	var want_people := Num.i(row["civilians"]) * rampage.sim.buildings.size()
+	var want_people := Num.i(row["civilians"]) * rampage.sim.lot_buildings().size()
 	check_fn.call(
 		(
 			city._debris._cap == Num.i(row["debris_pool"])

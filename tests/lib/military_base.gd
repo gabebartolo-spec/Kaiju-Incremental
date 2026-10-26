@@ -82,7 +82,7 @@ func _on_road(p: Vector2, roads: Dictionary) -> bool:
 ## Building footprints by 4 m cell, for the footprint check.
 func _footprints(sim: RampageSim) -> Dictionary:
 	var grid := {}
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():  # tanks drive on under the viaduct
 		var rect := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
 		for cx: int in range(floori(rect.position.x / 4.0), floori(rect.end.x / 4.0) + 1):
 			for cz: int in range(floori(rect.position.y / 4.0), floori(rect.end.y / 4.0) + 1):
@@ -182,7 +182,7 @@ func _autoplay(sim: RampageSim, steps: int, target: Vector2) -> Vector2:
 	if steps % 8 == 0:
 		target = sim.nearest_standing(sim.kaiju_pos)
 	var move := Vector2.ZERO
-	if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+	if target.x < INF and not sim.body.stomp_reaches(target):
 		move = (target - sim.kaiju_pos).normalized()
 	var held := RampageSim.HELD if steps % 30 < 15 else 0
 	sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE)

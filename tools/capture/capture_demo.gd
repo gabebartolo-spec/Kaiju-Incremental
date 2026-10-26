@@ -1,9 +1,9 @@
 extends SceneTree
 ## Captures the demo slice (D-050, D-145, D-156) through the real main scene by real input (mouse
-## clicks pushed through the viewport, never a handler call): title -> New Kaiju -> species select
-## (the demo's species only); then a save one level short of the whole tree: title -> Continue ->
-## buy the last node -> the thanks screen, held while the adult roars -> Try Endless mode -> the
-## endless city.
+## clicks pushed through the viewport, never a handler call): title -> New Kaiju -> Kaiju Creation
+## (the croc genome only, D-207); then a save one level short of the whole tree: title ->
+## Continue -> buy the last node -> the thanks screen, held while the adult roars -> Try Endless
+## mode -> the endless city.
 ## Render a 4K still of the thanks screen locally (off-screen no_focus override.cfg):
 ##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/capture_demo.gd \
 ##     -- --only=thanks --out=<dir>
@@ -54,7 +54,7 @@ func _run() -> void:
 		_shot("01_title_new")
 		await _click(_button(_screen(), "NEW KAIJU"))
 		await _frames(SETTLE)
-		_shot("02_species_select")
+		_shot("02_kaiju_creation")
 		_main.queue_free()
 		await _frames(2)
 	var defs: Array = Content.upgrades()
@@ -82,6 +82,7 @@ func _run() -> void:
 	SaveFile.save_game(save)
 	await _main_scene()
 	await _click(_button(_screen(), "CONTINUE"))
+	await _click(_button(_screen(), "SLOT 1"))
 	await _frames(SETTLE)
 	await _click((_screen() as UpgradeScreen).node_button(last))
 	await _frames(SETTLE)

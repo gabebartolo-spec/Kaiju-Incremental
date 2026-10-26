@@ -45,6 +45,7 @@ var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
 var city_meter: ProgressBar
+var photo: Callable  ## Rampage.photo_mode: the pause menu's photo mode (unset in HUD suites)
 var _time: Label
 ## The clock and its city meter: hidden while the end beat's headline is up.
 var _clock_column: Control
@@ -259,7 +260,7 @@ func refresh() -> void:
 	var dash := sim.body.dash
 	dash_ring.modulate.a = 1.0 if dash.available() else 0.0
 	if dash.available():
-		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, Num.f(dash.cfg["cooldown"])))
+		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, dash.cooldown()))
 
 
 func _process(delta: float) -> void:
@@ -319,7 +320,7 @@ func show_end_beat(reason: String) -> void:
 	_clock_column.visible = false
 	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
-	flash.color = Color(1.0, 0.55, 0.25, 0.45)
+	flash.color = Color(1.0, 0.55, 0.25, 0.45 * PlayerSettings.flash_scale())  # Reduce flashing
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UiKit.full_rect(flash)
 	add_child(flash)
@@ -365,9 +366,7 @@ func beat_running() -> bool:
 func pause() -> void:
 	if sim.over or get_tree().paused:
 		return
-	var menu := PauseMenu.new()
-	menu.sim = sim
-	menu.species_id = str(species["id"])
+	var menu := PauseMenu.new(sim, str(species["id"]), photo)
 	menu.end_pressed.connect(_end_now)
 	_widgets.visible = false
 	menu.tree_exited.connect(func() -> void: _widgets.visible = not _beat_done)

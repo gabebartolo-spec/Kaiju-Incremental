@@ -1,6 +1,6 @@
 # Release checks
 
-`demo_smoke.gd` walks a built demo: title, NEW KAIJU, species select (croc only), a rampage, then a save one evolution
+`demo_smoke.gd` walks a built demo: title, NEW KAIJU, Kaiju Creation (croc genome only), a rampage, then a save one evolution
 short through Continue, Behemoth, the reveal and the DEMO COMPLETE card back to the title; one PASS/FAIL line per check.
 The release exe ignores `--script`, so load its embedded pack into the same-version console editor binary (headless,
 scratch APPDATA, nothing windowed):

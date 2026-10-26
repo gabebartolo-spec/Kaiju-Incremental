@@ -5,13 +5,14 @@ extends Control
 ## first if it would replace the save); with no save one wide New Kaiju takes Continue's place. A
 ## settings gear sits top-left and "Run for your life!?" (it quits) bottom-right above the news
 ## ticker, so the burning city stays open. Focus order: Continue, New Kaiju, gear, exit.
-## Reports the choice by signal; main.gd owns the save.
+## Continue and New Kaiju? open the save slots in the same column (SlotList, director 2026-10-26:
+## "Three slots (Recommended)"); with every slot empty New Kaiju starts in slot 1 at once.
+## Reports the choice by signal; main.gd owns the saves.
 
-signal continue_pressed
-signal new_game_pressed
+signal continue_pressed(slot: int)
+signal new_game_pressed(slot: int)
+signal delete_pressed(slot: int)
 
-## The line over the Start over? buttons, one size up from body text so it reads on a TV.
-const NOTE_SIZE := 30
 ## The button row: Continue's width and New Kaiju?'s (px at 1080p), the gap between them and the
 ## height of a button.
 const ROW_GAP := 12
@@ -24,17 +25,20 @@ const BUTTON_HEIGHT := 110.0
 const ROW_INSET := 6.0
 ## Continue takes three shares of the row and New Kaiju? one.
 const CONTINUE_SHARE := 3.0
-## The settings gear's side, how far it stands below the screen's top and the exit button above
-## the ticker, and the hazard tape along the top edge (the gear stands below it). Both stand the
-## row's margin in from the screen's side.
+## The settings gear's side and how far it stands in from the top-left corner (director
+## 2026-10-25: "shift the settings button further into the corner"), and how far the exit button
+## stands above the ticker.
 const GEAR_SIZE := 76.0
-const CORNER_MARGIN := 60.0
+const GEAR_CORNER := 32.0
 const EXIT_LIFT := 20.0
+## With no save, New Kaiju stands alone at this share of the row's width and this height
+## (director 2026-10-25: "make the 'new kaiju' button significantly smaller").
+const ALONE_SHARE := 0.42
+const ALONE_HEIGHT := 80.0
 ## The logo's size: its width is the button row's and ends clear of the skyline.
 const LOGO_SIZE := 86
 ## The gap between the logo and the row.
 const LOGO_GAP := 10
-const TAPE := 18.0
 ## The exit button's wording.
 const EXIT_TEXT := "RUN FOR YOUR LIFE!?"
 ## The left column's width (px); it stands the TV title-safe margin in from the screen's edge.
@@ -44,8 +48,11 @@ const COLUMN_TOP := 0.21
 ## Texels along a side of the sky's glow textures (a coarse one shows as blocks when stretched).
 const GLOW_TEXELS := 512
 
-## summary: "" for no save, else what Continue resumes (e.g. "Reptilian, 3 rampages").
+## summary: "" for no save to continue, else the latest one (e.g. "Reptilian, 3 rampages").
 var summary := ""
+## The save slots (SlotList.slots) and the one played last (its plate takes focus first).
+var slots: Array[Dictionary] = []
+var latest_slot := 0
 ## The live dusk city behind the menu (tests that build a title without a renderer turn it off).
 var live_city := true
 var _col: VBoxContainer
@@ -57,8 +64,18 @@ var _gear: Button
 var _exit: Button
 
 
-func setup(p_summary: String) -> void:
+func setup(p_summary: String, p_slots: Array[Dictionary] = [], p_latest := 0) -> void:
 	summary = p_summary
+	slots = p_slots
+	latest_slot = p_latest
+
+
+## After a slot is deleted: the new slots and summary, the slot list shown again.
+func refresh(
+	p_summary: String, p_slots: Array[Dictionary], p_latest: int, mode: SlotList.Mode
+) -> void:
+	setup(p_summary, p_slots, p_latest)
+	show_slots(mode)
 
 
 func _ready() -> void:
@@ -168,12 +185,9 @@ func _add_sky() -> void:
 		add_child(blob)
 
 
-## Hazard tape along the top edge and the news crawl along the bottom: the city has seen you.
+## The news crawl along the bottom: the city has seen you. No tape along the top (director
+## 2026-10-25: "remove the yellow bar at the top").
 func _add_broadcast_frame() -> void:
-	var top := UiKit.tape(18.0)
-	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top.offset_bottom = 18.0
-	add_child(top)
 	var news := Content.section("news")
 	var title_lines: Array = news.get("title", [])
 	var lines := PackedStringArray(title_lines)
@@ -194,7 +208,7 @@ func _show_main() -> void:
 	_buttons.add_child(row)
 	if summary != "":
 		var label := "CONTINUE GAME\n%s" % summary.to_upper()
-		var cont := _add(label, UiKit.ACCENT, func() -> void: continue_pressed.emit(), row)
+		var cont := _add(label, UiKit.ACCENT, show_slots.bind(SlotList.Mode.CONTINUE), row)
 		cont.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cont.size_flags_stretch_ratio = CONTINUE_SHARE
 		new_button = _add("NEW KAIJU?", UiKit.PANEL_EDGE, _on_new, row)
@@ -202,7 +216,10 @@ func _show_main() -> void:
 		_wire_focus(cont, new_button)
 	else:
 		new_button = _add("NEW KAIJU", UiKit.ACCENT, _on_new, row)
-		new_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		new_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		new_button.custom_minimum_size = Vector2(
+			_buttons.custom_minimum_size.x * ALONE_SHARE, ALONE_HEIGHT
+		)
 		_wire_focus(null, new_button)
 
 
@@ -241,12 +258,10 @@ func _add_corner_buttons() -> void:
 	_gear.tooltip_text = "SETTINGS"
 	_gear.custom_minimum_size = Vector2(GEAR_SIZE, GEAR_SIZE)
 	_gear.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	var top := CORNER_MARGIN + TAPE
-	var side := _col.offset_left + ROW_INSET
-	_gear.offset_left = side
-	_gear.offset_top = top
-	_gear.offset_right = side + GEAR_SIZE
-	_gear.offset_bottom = top + GEAR_SIZE
+	_gear.offset_left = GEAR_CORNER
+	_gear.offset_top = GEAR_CORNER
+	_gear.offset_right = GEAR_CORNER + GEAR_SIZE
+	_gear.offset_bottom = GEAR_CORNER + GEAR_SIZE
 	var icon := GearIcon.new()
 	icon.color = UiKit.TEXT
 	UiKit.full_rect(icon)
@@ -262,6 +277,7 @@ func _add_corner_buttons() -> void:
 	_exit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_exit.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_exit.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var side := _col.offset_left + ROW_INSET
 	_exit.offset_right = -(side - HazardBox.PLATE_SHADOW.x)  # the plate's face, not its shadow
 	_exit.offset_bottom = -(NewsTicker.HEIGHT + EXIT_LIFT)
 	_exit.pressed.connect(func() -> void: QuitGame.now(get_tree()))
@@ -269,16 +285,37 @@ func _add_corner_buttons() -> void:
 	_corners.add_child(_exit)
 
 
+## New Kaiju: the slots to pick from, or slot 1 at once when every slot is empty.
 func _on_new() -> void:
-	if summary == "":
-		new_game_pressed.emit()
+	if slots.all(func(info: Dictionary) -> bool: return info.get("taken", false) != true):
+		new_game_pressed.emit(1)
 		return
+	show_slots(SlotList.Mode.NEW)
+
+
+## The save slots in the button column; BACK (or Esc) returns to the main row.
+func show_slots(mode: SlotList.Mode) -> void:
 	_clear()
-	_note("Start over? Your %s and every evolution are lost." % summary)
-	var keep := _add("KEEP MY KAIJU", UiKit.ACCENT, _show_main, _buttons)
-	var over := _add(
-		"YES, START OVER", UiKit.BAD, func() -> void: new_game_pressed.emit(), _buttons
+	var list := SlotList.new()
+	list.setup(mode, slots, latest_slot)
+	list.picked.connect(
+		func(n: int) -> void:
+			if mode == SlotList.Mode.CONTINUE:
+				continue_pressed.emit(n)
+			else:
+				new_game_pressed.emit(n)
 	)
+	list.delete_confirmed.connect(func(n: int) -> void: delete_pressed.emit(n))
+	list.back_pressed.connect(_show_main)
+	_buttons.add_child(list)
+
+
+## The slot list on show (tests and captures read it), or null.
+func slot_list() -> SlotList:
+	for child: Node in _buttons.get_children():
+		if child is SlotList:
+			return child
+	return null
 
 
 func _open_settings() -> void:
@@ -314,10 +351,3 @@ func _add(text: String, fill: Color, action: Callable, into: Container) -> Butto
 		_first = b
 		b.grab_focus.call_deferred()
 	return b
-
-
-func _note(text: String) -> void:
-	var l := UiKit.label(text, NOTE_SIZE, UiKit.MUTED)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_buttons.add_child(l)

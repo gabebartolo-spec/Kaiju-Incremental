@@ -1,9 +1,10 @@
 extends RefCounted
 ## The flow suite's screen checks (tests/run_flow_tests.gd runs them): the main menu, a new
-## game through species select into a rampage, pause and End Rampage, the end beat, the results
+## game through Kaiju Creation into a rampage, pause and End Rampage, the end beat, the results
 ## count-up, the evolution tree, the evolution reveal, settings, and quit-and-continue on the
 ## save. Every step is real input (mouse clicks at a control, key presses), not a handler call.
 
+const CreationWalk := preload("res://tests/lib/creation_walk.gd")
 const FlowDash := preload("res://tests/lib/flow_dash.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
@@ -28,7 +29,7 @@ func _init(runner: SceneTree, p_check: Callable) -> void:
 
 
 func run() -> void:
-	SaveFile.delete_save()
+	SaveFile.wipe()
 	await _check_new_game()
 	await _check_results_compare()
 	await _check_evolution_and_continue()
@@ -38,7 +39,7 @@ func run() -> void:
 	layout.currency_named()
 	layout.fonts_ours()
 	FlowSave.migration(check)
-	SaveFile.delete_save()
+	SaveFile.wipe()
 
 
 func _frames(n: int) -> void:
@@ -57,9 +58,10 @@ func _screen(main: Node) -> Node:
 	return main.call("screen")
 
 
-## No save: the title offers New Kaiju (no Continue); a click goes to species select, a click
-## there starts a rampage; Esc pauses it, End Rampage ends it, the end beat plays in slow motion
-## and gives way to the results over the city; EVOLVE opens the tree; the run is on disk.
+## No save: the title offers New Kaiju (no Continue); a click goes to Kaiju Creation, where the
+## croc genome and the injection start a rampage; Esc pauses it, End Rampage ends it, the end
+## beat plays in slow motion and gives way to the results over the city; EVOLVE opens the tree;
+## the run is on disk.
 func _check_new_game() -> void:
 	var main := await _main()
 	var title := _screen(main)
@@ -69,21 +71,19 @@ func _check_new_game() -> void:
 	)
 	await GuiInput.click(t, GuiInput.button(title, "NEW KAIJU"))
 	await _frames(2)
-	var select := _screen(main)
-	check.call(select is SpeciesSelect, "clicking NEW KAIJU opens species select")
-	await layout.fits_at_scales(select as Control, "species select")
+	var lab := _screen(main)
+	check.call(lab is KaijuCreation, "clicking NEW KAIJU opens Kaiju Creation")
+	await layout.fits_at_scales(lab as Control, "kaiju creation")
 	await GuiInput.key(t, KEY_ESCAPE)
 	await _frames(2)
-	check.call(_screen(main) is TitleScreen, "Esc on species select goes back to the title")
+	check.call(_screen(main) is TitleScreen, "Esc in Kaiju Creation goes back to the title")
 	await GuiInput.click(t, GuiInput.button(_screen(main), "NEW KAIJU"))
 	await _frames(2)
-	select = _screen(main)
-	await GuiInput.click(t, GuiInput.button(select, "CHOOSE"))
-	await _frames(3)
+	await CreationWalk.walk(t, main)
 	var rampage := _screen(main) as Rampage
 	check.call(
 		rampage != null and str(rampage.species["id"]) == "reptilian",
-		"clicking the first CHOOSE starts a reptilian rampage"
+		"the croc genome and the injection start a reptilian rampage"
 	)
 	if rampage == null:
 		main.queue_free()
@@ -183,14 +183,17 @@ func _check_results_compare() -> void:
 			results.is_new_best("rubble")
 			and results.is_new_best("toppled")
 			and not results.is_new_best("tanks")
-			and labels.count("NEW BEST") == 3
+			and labels.count(ResultsScreen.STAMP_TEXT) == 3
 		),
-		"new bests are marked, misses are not (%d marked)" % labels.count("NEW BEST")
+		(
+			"new records are stamped, misses are not (%d stamped)"
+			% labels.count(ResultsScreen.STAMP_TEXT)
+		)
 	)
 	var bests := labels.filter(func(l: String) -> bool: return l.begins_with("best "))
 	check.call(
-		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size() - 1,
-		"every row but the headline's shows its best or NEW BEST once: %s" % [bests]
+		bests.size() + labels.count(ResultsScreen.STAMP_TEXT) == result.size() - 2,
+		"every reported row but the headline's shows its best or NEW RECORD once: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
 	check.call(short.verdict() == "50 BIOMASS SHORT OF YOUR BEST", "a miss says how far short")
@@ -216,6 +219,7 @@ func _check_evolution_and_continue() -> void:
 	await layout.fits_at_scales(title as Control, "title screen")
 	layout.listen(title, "title")
 	await GuiInput.click(t, cont)
+	await GuiInput.click(t, GuiInput.button(title, "SLOT 1"))
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(tree != null, "Continue on a played save opens the evolution tree")
@@ -297,6 +301,7 @@ func _check_evolution_and_continue() -> void:
 	await _frames(2)
 	var again := await _main()
 	await GuiInput.click(t, GuiInput.button(_screen(again), "CONTINUE"))
+	await GuiInput.click(t, GuiInput.button(_screen(again), "SLOT 1"))
 	await _frames(3)
 	var reloaded := _screen(again) as UpgradeScreen
 	check.call(
@@ -351,9 +356,11 @@ func _check_settings() -> void:
 			% [PlayerSettings.sfx_volume, sfx_db]
 		)
 	)
+	await GuiInput.click(t, GuiInput.button(menu, "CONTROLS"))  # its own page (D-259)
 	var texts: Array[String] = []
-	for node: Node in menu.find_children("*", "Label", true, false):
-		texts.append((node as Label).text)
+	for node: Node in menu.find_children("*", "Control", true, false):  # labels and buttons
+		texts.append(str(node.get("text")))
+	menu.page.close()
 	check.call(
 		texts.has("Ultimate") and texts.has("E") and texts.has("Y") and texts.has("Start"),
 		"the controls list shows keyboard and pad"

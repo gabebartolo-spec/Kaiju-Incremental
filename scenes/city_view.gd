@@ -160,6 +160,7 @@ func _build_ground() -> void:
 	add_child(ground)
 	var streets := CityGround.new(sim.city)
 	add_child(streets)
+	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
 		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
 
@@ -340,7 +341,7 @@ func _broke(index: int, cells: Array[Vector3i]) -> void:
 func flash(at: Vector3, color: Color, energy: float, seconds: float) -> void:
 	var light := OmniLight3D.new()
 	light.light_color = color
-	light.light_energy = energy
+	light.light_energy = energy * PlayerSettings.flash_scale()  # Reduce flashing (D-259)
 	light.omni_range = 3.0 + energy
 	light.position = at
 	add_child(light)

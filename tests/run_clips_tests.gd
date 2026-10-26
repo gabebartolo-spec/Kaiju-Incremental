@@ -14,7 +14,7 @@ extends "res://tests/lib/runner.gd"
 const CLIPS := "res://assets/kaiju/reptilian_adult.kclip"
 ## Each croc titan stage and its Blender skin export (assets/kaiju/test/<name>.skin.json).
 const STAGES := {
-	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent", "adult": "croctitan"
+	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent", "adult": "croc_adult3"
 }
 const DT := 1.0 / 60.0
 
