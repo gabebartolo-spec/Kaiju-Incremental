@@ -4,17 +4,11 @@ extends RefCounted
 
 ## Expected corner levels, keyed by the corner's sign on the face's two in-plane axes (x, y, z
 ## order, the normal's axis left out). The back wall's +z face at the inside corner: all four.
-const XY_LADDER := {
-	Vector2i(-1, -1): 0, Vector2i(1, -1): 1, Vector2i(-1, 1): 2, Vector2i(1, 1): 3
-}
+const XY_LADDER := {Vector2i(-1, -1): 0, Vector2i(1, -1): 1, Vector2i(-1, 1): 2, Vector2i(1, 1): 3}
 ## The floor's top at (1, 0, 1): closed back-left, half closed beside the walls, open front-right.
-const XZ_FLOOR := {
-	Vector2i(-1, -1): 0, Vector2i(1, -1): 1, Vector2i(-1, 1): 1, Vector2i(1, 1): 3
-}
+const XZ_FLOOR := {Vector2i(-1, -1): 0, Vector2i(1, -1): 1, Vector2i(-1, 1): 1, Vector2i(1, 1): 3}
 ## The side wall's -x face at (0, 0, 1): the ground shades its foot, its top is open.
-const YZ_GROUND := {
-	Vector2i(-1, -1): 1, Vector2i(-1, 1): 1, Vector2i(1, -1): 3, Vector2i(1, 1): 3
-}
+const YZ_GROUND := {Vector2i(-1, -1): 1, Vector2i(-1, 1): 1, Vector2i(1, -1): 3, Vector2i(1, 1): 3}
 
 
 ## A mesher reset to a 3x3x3 grid at the ground (offset 0), every cell drawn as wall (id 1).
@@ -59,9 +53,9 @@ static func corner_levels(
 			continue
 		for q: int in 4:
 			var o := verts[at + q] - centre
-			out[Vector2i(signi(roundi(o[axes[0]] * 1000)), signi(roundi(o[axes[1]] * 1000)))] = (
-				roundi(uv[at + q].x * 3.0)
-			)
+			out[Vector2i(signi(roundi(o[axes[0]] * 1000)), signi(roundi(o[axes[1]] * 1000)))] = (roundi(
+				uv[at + q].x * 3.0
+			))
 	return out
 
 

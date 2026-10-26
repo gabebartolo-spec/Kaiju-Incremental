@@ -4,8 +4,9 @@ extends RefCounted
 ## The building's hollow inside counts as solid while it stands, so the inner faces of its
 ## walls are never drawn; the floor slabs bake into a second mesh that is shown only once the
 ## building is broken open. Every vertex carries its structural chunk and a per-voxel hash
-## (UV2) for building_baked.gdshader, and a few voxels per chunk are kept as samples for the
-## debris a broken chunk throws. Pure data: safe to run on a worker thread.
+## (UV2) for building_baked.gdshader and its corner AO and material finish (UV, VoxelAO), and a
+## few voxels per chunk are kept as samples for the debris a broken chunk throws. Pure data:
+## safe to run on a worker thread.
 
 const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
@@ -25,6 +26,23 @@ var _res: int
 var _w: int
 var _d: int
 var _h: int
+# Only while baking (cleared after: the mesher is kept): the voxels' cells, each palette key's
+# finish (VoxelAO), per NEIGHBOURS direction the face's corner vectors and AO ring, the cell
+# being meshed (colour, UV2 tag, finish) and the mesh's arrays.
+var _all: Dictionary = {}
+var _finish: Dictionary = {}
+var _face_u: Array[Vector3] = []
+var _face_v: Array[Vector3] = []
+var _rings: Array = []
+var _color: Color
+var _tag: Vector2
+var _finish_class := 0
+var _verts := PackedVector3Array()
+var _normals := PackedVector3Array()
+var _colors := PackedColorArray()
+var _uv := PackedVector2Array()
+var _uv2 := PackedVector2Array()
+var _index := PackedInt32Array()
 
 
 func _init(voxels: BuildingVoxels) -> void:
@@ -41,8 +59,10 @@ func _init(voxels: BuildingVoxels) -> void:
 			slab_cells.append(cell)
 		else:
 			shell_cells.append(cell)
+	_begin()
 	shell = _bake(shell_cells, true)
 	slabs = _bake(slab_cells, false)
+	_end()
 	_v = null  # the voxels are the bulk of a building's memory: BuildingView rebuilds them on demand
 
 
@@ -60,64 +80,125 @@ func _inside(c: Vector3i) -> bool:
 	return c.x >= 1 and c.x <= _w - 2 and c.z >= 1 and c.z <= _d - 2 and c.y >= 0 and c.y < _h - 1
 
 
+func _begin() -> void:
+	_all = _v.vox.cells
+	_finish = VoxelAO.finish_table()
+	var half := BuildingVoxels.VOXEL * 0.5
+	for d: Vector3i in NEIGHBOURS:
+		var nf := Vector3(d)
+		var a := Vector3.UP if d.y == 0 else Vector3.RIGHT
+		var u := a.cross(nf) * half
+		_face_u.append(u)
+		_face_v.append(nf.cross(u.normalized()) * half)
+		_rings.append(VoxelAO.ring_of(d))
+
+
+func _end() -> void:
+	_all = {}
+	_finish = {}
+	_face_u.clear()
+	_face_v.clear()
+	_rings.clear()
+
+
+## A mesh of these cells' visible faces; hollow_is_solid: the shell (its hollow hides the walls'
+## inner faces and shades their AO).
 func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var colors := PackedColorArray()
-	var uv2 := PackedVector2Array()
-	var index := PackedInt32Array()
-	var all: Dictionary = _v.vox.cells
 	var voxel := BuildingVoxels.VOXEL
-	var half := voxel * 0.5
-	var origin := _v.origin() + Vector3(0, half, 0)
-	var salt := _v.b.style
+	var origin := _v.origin() + Vector3(0, voxel * 0.5, 0)
 	for cell: Vector3i in cells:
-		var key: String = all[cell]
-		var base: Color = _v.palette.get(key, Color.MAGENTA)
-		if key == VoxelBuilder.DIRECT:
-			base = _v.vox.colors[cell]
 		var mask := _v.face_mask(cell)
-		var color := Look.jitter(base, cell, salt)
+		var hollow := hollow_is_solid and mask < 0  # a masked cell's faces meet real air
+		if mask < 0:
+			mask = _open_faces(cell, hollow)
+		if mask == 0:
+			continue
 		var centre := origin + Vector3(cell) * voxel
-		var chunk := chunk_index(cell)
-		# Bites come out in clumps of 2x2x2 voxels, not single-voxel confetti.
-		var clump := Vector3i(cell.x >> 1, cell.y >> 1, cell.z >> 1)
-		var h := float(absi(hash(clump * 7 + Vector3i(salt, 3, 11))) % 997) / 997.0
-		var faces := 0
+		_start_cell(cell)
 		for k: int in NEIGHBOURS.size():
-			var d := NEIGHBOURS[k]
-			var n := cell + d
-			if mask >= 0:
-				if mask & (1 << k) == 0:
-					continue
-			elif all.has(n) or (hollow_is_solid and _inside(n)) or (n.y < 0):
-				continue
-			faces += 1
-			var at := verts.size()
-			var nf := Vector3(d)
-			var a := Vector3.UP if d.y == 0 else Vector3.RIGHT
-			var u := a.cross(nf) * half
-			var v := nf.cross(u.normalized()) * half
-			var c := centre + nf * half
-			verts.append_array([c - u - v, c + u - v, c + u + v, c - u + v])
-			for i: int in 4:
-				normals.append(nf)
-				colors.append(color)
-				uv2.append(Vector2(chunk, h))
-			index.append_array([at, at + 2, at + 1, at, at + 3, at + 2])
-		if faces > 0 and hollow_is_solid:
-			_sample(chunk, centre, color)
+			if mask & (1 << k) != 0:
+				_quad(centre, k, VoxelAO.table(_ring_bits(cell + NEIGHBOURS[k], k, hollow)))
+		if hollow_is_solid:
+			_sample(chunk_index(cell), centre, _color)
+	return _mesh()
+
+
+## Whether a face towards n is hidden: a voxel, the ground, or (hollow) the building's inside.
+func _solid(n: Vector3i, hollow: bool) -> bool:
+	return _all.has(n) or (hollow and _inside(n)) or n.y < 0
+
+
+## The faces (one bit per NEIGHBOURS entry) of a cell that meet air.
+func _open_faces(cell: Vector3i, hollow: bool) -> int:
+	var mask := 0
+	for k: int in NEIGHBOURS.size():
+		if not _solid(cell + NEIGHBOURS[k], hollow):
+			mask |= 1 << k
+	return mask
+
+
+## The cell's colour (palette and jitter), UV2 tag (chunk, bite hash) and finish.
+func _start_cell(cell: Vector3i) -> void:
+	var key: String = _all[cell]
+	var base: Color = _v.palette.get(key, Color.MAGENTA)
+	if key == VoxelBuilder.DIRECT:
+		base = _v.vox.colors[cell]
+	var salt := _v.b.style
+	_color = Look.jitter(base, cell, salt)
+	# Bites come out in clumps of 2x2x2 voxels, not single-voxel confetti.
+	var clump := Vector3i(cell.x >> 1, cell.y >> 1, cell.z >> 1)
+	var h := float(absi(hash(clump * 7 + Vector3i(salt, 3, 11))) % 997) / 997.0
+	_tag = Vector2(chunk_index(cell), h)
+	_finish_class = int(_finish.get(key, 0))
+
+
+## Which of the 8 cells round a face's air cell are solid (VoxelAO.ring_of's bits).
+func _ring_bits(air: Vector3i, k: int, hollow: bool) -> int:
+	var steps: Array[Vector3i] = _rings[k]
+	var bits := 0
+	for i: int in 8:
+		if _solid(air + steps[i], hollow):
+			bits |= 1 << i
+	return bits
+
+
+## One face of the cell centred at `centre`; ao: its VoxelAO.table entry.
+func _quad(centre: Vector3, k: int, ao: int) -> void:
+	var at := _verts.size()
+	var nf := Vector3(NEIGHBOURS[k])
+	var u := _face_u[k]
+	var v := _face_v[k]
+	var c := centre + nf * (BuildingVoxels.VOXEL * 0.5)
+	_verts.append_array([c - u - v, c + u - v, c + u + v, c - u + v])
+	for q: int in 4:
+		_normals.append(nf)
+		_colors.append(_color)
+		_uv.append(VoxelAO.uv(ao, q, _finish_class))
+		_uv2.append(_tag)
+	var split := VoxelAO.SPLIT_13 if (ao & VoxelAO.FLIP) != 0 else VoxelAO.SPLIT_02
+	for i: int in split:
+		_index.append(at + i)
+
+
+## The baked arrays as a mesh; the arrays start over for the next bake.
+func _mesh() -> ArrayMesh:
 	var mesh := ArrayMesh.new()
-	if verts.is_empty():
-		return mesh
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_COLOR] = colors
-	arrays[Mesh.ARRAY_TEX_UV2] = uv2
-	arrays[Mesh.ARRAY_INDEX] = index
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	if not _verts.is_empty():
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = _verts
+		arrays[Mesh.ARRAY_NORMAL] = _normals
+		arrays[Mesh.ARRAY_COLOR] = _colors
+		arrays[Mesh.ARRAY_TEX_UV] = _uv
+		arrays[Mesh.ARRAY_TEX_UV2] = _uv2
+		arrays[Mesh.ARRAY_INDEX] = _index
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	_verts = PackedVector3Array()
+	_normals = PackedVector3Array()
+	_colors = PackedColorArray()
+	_uv = PackedVector2Array()
+	_uv2 = PackedVector2Array()
+	_index = PackedInt32Array()
 	return mesh
 
 

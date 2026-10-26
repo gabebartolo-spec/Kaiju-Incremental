@@ -8,6 +8,9 @@ render_mode cull_disabled;
 // alpha is the glow flag (0 = glows at `glow`), as in voxel.gdshader. Only outward faces are
 // baked, so through a hole you see the backs of the walls: they draw as the dark inside
 // (`inside` of their colour; a landmark's cut faces draw near their own colour instead).
+// Outward faces take the baked voxel AO and their material's finish (building_common).
+
+#include "res://scenes/building_common.gdshaderinc"
 
 uniform sampler2D alive : filter_nearest;
 uniform float glow = 0.0;
@@ -42,6 +45,13 @@ void fragment() {
 	if (FRONT_FACING) {
 		ALBEDO = albedo;
 		EMISSION = albedo * glow * (1.0 - COLOR.a);
+		AO = voxel_ao(UV);
+		AO_LIGHT_AFFECT = ao_light_affect;
+		if (finish_on) {
+			int f = voxel_finish(UV);
+			ROUGHNESS = finish_roughness[f];
+			SPECULAR = finish_specular[f];
+		}
 	} else {
 		ALBEDO = albedo * inside;
 		NORMAL = -NORMAL;

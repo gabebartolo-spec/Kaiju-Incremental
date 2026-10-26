@@ -7,9 +7,11 @@ extends RefCounted
 ## floor slabs are drawn as solid, not as the dark backs of the shell (BuildingMesher's
 ## standing-building trick). Colours are today's look: BuildingVoxels' palette, its lit-window
 ## roll (the cells it drew "lit" or "shop_lit") and Look.jitter per cell, so an uncarved
-## building looks as its baked BuildingView does. Two paths give the same bytes: the native
-## KaijuMesher (native/, WP2's extension) when it is loaded, and the GDScript below, the oracle
-## the native suite holds it to. Pure data: safe on a worker thread once set up.
+## building looks as its baked BuildingView does. Every corner carries its AO and the cell's
+## material finish in UV (VoxelAO; a solid neighbour or the ground shades it, off-grid is air).
+## Two paths give the same bytes: the native KaijuMesher (native/, WP2's extension) when it is
+## loaded, and the GDScript below, the oracle the native suite holds it to. Pure data: safe on a
+## worker thread once set up.
 
 const REGION := 16
 ## Look ids past the materials table (bytes in `looks`): the windows the view draws lit.
@@ -31,8 +33,21 @@ var looks: PackedByteArray
 var palette: PackedColorArray
 ## The native mesher when the extension is loaded (null: the GDScript path).
 var native: Object = null
+## Material id -> finish class (VoxelAO), 256 entries.
+var finish: PackedByteArray
 ## Face corners per NEIGHBOURS direction, from a cell's centre (as BuildingMesher builds them).
 var _corners: Array[PackedVector3Array] = []
+## Per NEIGHBOURS direction, the 8 cells round a face's air cell (VoxelAO.ring_of).
+var _rings: Array = []
+
+
+## One region's arrays while the oracle meshes it (a holder: packed arrays copy on write).
+class _Out:
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var colors := PackedColorArray()
+	var index := PackedInt32Array()
+	var uv := PackedVector2Array()
 
 
 ## voxels: the building's view voxels (its palette and lit roll); cells: its grid. use_native:
@@ -68,9 +83,14 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 		var v := nf.cross(u.normalized()) * half
 		var c := nf * half
 		_corners.append(PackedVector3Array([c - u - v, c + u - v, c + u + v, c - u + v]))
+		_rings.append(VoxelAO.ring_of(d))
+	finish = VoxelAO.finish_by_id()
 	if use_native and ClassDB.class_exists("KaijuMesher"):
 		native = ClassDB.instantiate("KaijuMesher")
 		native.call("setup", dims, offset, origin, voxel, salt, noise, looks, palette)
+		# A library older than item 12 has no AO: the oracle draws instead.
+		if not native.has_method("set_finish") or not native.call("set_finish", finish):
+			native = null
 
 
 ## Regions along each axis.
@@ -107,8 +127,8 @@ func regions_touching(lo: Vector3i, hi: Vector3i) -> Array[Vector3i]:
 	return out
 
 
-## Region r of grid `cells` as [vertices, normals, colours, indices] (empty arrays when it has
-## no visible face). Native when loaded, else the oracle.
+## Region r of grid `cells` as [vertices, normals, colours, indices, UVs (AO, finish)] (empty
+## arrays when it has no visible face). Native when loaded, else the oracle.
 func mesh_region(cells: PackedByteArray, r: Vector3i) -> Array:
 	if native != null:
 		return native.call("mesh_region", cells, r)
@@ -117,10 +137,7 @@ func mesh_region(cells: PackedByteArray, r: Vector3i) -> Array:
 
 ## The GDScript oracle of mesh_region.
 func mesh_region_gd(cells: PackedByteArray, r: Vector3i) -> Array:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var colors := PackedColorArray()
-	var index := PackedInt32Array()
+	var out := _Out.new()
 	var lo := r * REGION
 	var hi := (lo + Vector3i.ONE * REGION).min(dims)
 	var plan := dims.x * dims.z
@@ -128,27 +145,46 @@ func mesh_region_gd(cells: PackedByteArray, r: Vector3i) -> Array:
 		for z: int in range(lo.z, hi.z):
 			for x: int in range(lo.x, hi.x):
 				var i := x + z * dims.x + y * plan
-				if cells[i] == 0:
-					continue
-				var c := Vector3i(x, y, z)
-				var centre := origin + Vector3(c) * voxel
-				var color := Color.BLACK
-				var coloured := false
-				for k: int in NEIGHBOURS.size():
-					if not _open(cells, c + NEIGHBOURS[k]):
-						continue
-					if not coloured:
-						color = Look.jitter(palette[looks[i]], c + offset, salt)
-						coloured = true
-					var at := verts.size()
-					var corners := _corners[k]
-					var nf := Vector3(NEIGHBOURS[k])
-					for q: int in 4:
-						verts.append(centre + corners[q])
-						normals.append(nf)
-						colors.append(color)
-					index.append_array([at, at + 2, at + 1, at, at + 3, at + 2])
-	return [verts, normals, colors, index]
+				if cells[i] != 0:
+					_cell_faces(cells, Vector3i(x, y, z), i, out)
+	return [out.verts, out.normals, out.colors, out.index, out.uv]
+
+
+## The faces of solid grid cell c (index i) that meet air, into `out`.
+func _cell_faces(cells: PackedByteArray, c: Vector3i, i: int, out: _Out) -> void:
+	var centre := origin + Vector3(c) * voxel
+	var color := Color.BLACK
+	var coloured := false
+	var fin := finish[cells[i]]
+	for k: int in NEIGHBOURS.size():
+		var air := c + NEIGHBOURS[k]
+		if not _open(cells, air):
+			continue
+		if not coloured:
+			color = Look.jitter(palette[looks[i]], c + offset, salt)
+			coloured = true
+		var ao := VoxelAO.table(_ring_bits(cells, air, k))
+		var at := out.verts.size()
+		var corners := _corners[k]
+		var nf := Vector3(NEIGHBOURS[k])
+		for q: int in 4:
+			out.verts.append(centre + corners[q])
+			out.normals.append(nf)
+			out.colors.append(color)
+			out.uv.append(VoxelAO.uv(ao, q, fin))
+		var split := VoxelAO.SPLIT_13 if (ao & VoxelAO.FLIP) != 0 else VoxelAO.SPLIT_02
+		for s: int in split:
+			out.index.append(at + s)
+
+
+## Which of the 8 cells round a face's air cell are solid or ground (VoxelAO.ring_of's bits).
+func _ring_bits(cells: PackedByteArray, air: Vector3i, k: int) -> int:
+	var steps: Array[Vector3i] = _rings[k]
+	var bits := 0
+	for s: int in 8:
+		if not _open(cells, air + steps[s]):
+			bits |= 1 << s
+	return bits
 
 
 ## Whether a face towards grid cell n is drawn: it is air (empty or off the grid), not ground.
@@ -176,6 +212,7 @@ static func to_mesh(arrays: Array) -> ArrayMesh:
 	surface[Mesh.ARRAY_NORMAL] = arrays[1]
 	surface[Mesh.ARRAY_COLOR] = arrays[2]
 	surface[Mesh.ARRAY_INDEX] = arrays[3]
+	surface[Mesh.ARRAY_TEX_UV] = arrays[4]
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surface)
 	return mesh
@@ -189,10 +226,12 @@ static func digest(arrays: Array) -> String:
 	var normals: PackedVector3Array = arrays[1]
 	var colors: PackedColorArray = arrays[2]
 	var index: PackedInt32Array = arrays[3]
-	ctx.update(var_to_bytes([verts.size(), index.size()]))
+	var uv: PackedVector2Array = arrays[4]
+	ctx.update(var_to_bytes([verts.size(), index.size(), uv.size()]))
 	if not verts.is_empty():
 		ctx.update(verts.to_byte_array())
 		ctx.update(normals.to_byte_array())
 		ctx.update(colors.to_byte_array())
 		ctx.update(index.to_byte_array())
+		ctx.update(uv.to_byte_array())
 	return ctx.finish().hex_encode()

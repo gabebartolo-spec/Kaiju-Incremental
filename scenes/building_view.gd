@@ -168,6 +168,7 @@ func _material(tex: Texture2D) -> ShaderMaterial:
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
 	var shape: Dictionary = Content.landmarks().get(b.landmark, {})
 	mat.set_shader_parameter("inside", Num.f(shape.get("inside", 0.12)))  # cut faces' shade
+	VoxelAO.apply(mat)  # baked AO and material finish (render plan item 12)
 	return mat
 
 
