@@ -16,12 +16,15 @@ const DEFAULTS := {
 	"vsync": false,
 	"set": "",
 	"tune": "",
+	"levels": "",  # extra upgrade levels, "r_beam=1,r_shear=1": the body the route runs with
+	"beam-at": 0,  # >0: the ultimate fires on this route step only (the beam scenario), not every time
 }
 
 var rampage: Rampage
 var city: CityView
 var route: Array = []
 var steps := 0
+var _beam_at := 0
 ## The route's tally, read off the sim as it plays (a route must show these, plan section 2).
 var tally := {"stomps": 0, "swipes": 0, "breaths": 0, "beams": 0, "falls": 0}
 var _breath_ready := 0.0
@@ -69,11 +72,18 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 			printerr("BENCH viewport is not 3840x2160: refusing to measure")
 			return false
 	for pair: String in str(a["tune"]).split(",", false):
-		var tv := pair.split("=")  # section.key=value
+		var tv := pair.split("=")  # section.key[.key...]=value (a number, or text)
 		var path := tv[0].split(".")
-		Content.section(path[0])[path[1]] = float(tv[1])
+		var table: Dictionary = Content.section(path[0])
+		for k: int in range(1, path.size() - 1):
+			table = table[path[k]]
+		table[path[path.size() - 1]] = float(tv[1]) if tv[1].is_valid_float() else tv[1]
 	var stage := Num.i(a["stage"])
-	var stats := Kit.stats("reptilian", Kit.STAGE_LEVELS[stage - 1], "reptilian")
+	var owned: Dictionary = Kit.STAGE_LEVELS[stage - 1].duplicate()
+	for pair: String in str(a["levels"]).split(",", false):
+		var lv := pair.split("=")
+		owned[lv[0]] = int(lv[1])
+	var stats := Kit.stats("reptilian", owned, "reptilian")
 	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
 	rampage = Rampage.new()
 	rampage.setup(Content.species_def("reptilian"), stats, layout, 0)
@@ -103,6 +113,7 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 			printerr("BENCH no route at %s" % a["route-file"])
 			return false
 		route = parsed
+	_beam_at = Num.i(a["beam-at"])
 	rampage.scripted = _scripted
 	while rampage.sim.emerge.active:
 		await tree.physics_frame
@@ -116,12 +127,15 @@ func _scripted(sim: RampageSim) -> Dictionary:
 		return {}
 	_tally(sim)
 	var at: Array = route[mini(steps, route.size() - 1)]
+	var ultimate := Num.f(at[4]) > 0.5
+	if _beam_at > 0:
+		ultimate = steps == _beam_at  # one press on a fixed tick, through the real input path
 	steps += 1
 	return {
 		"move": Vector2(Num.f(at[0]), Num.f(at[1])),
 		"signature": Num.f(at[2]) > 0.5,
 		"held": Num.f(at[3]) > 0.5,
-		"ultimate": Num.f(at[4]) > 0.5,
+		"ultimate": ultimate,
 	}
 
 
