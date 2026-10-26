@@ -87,6 +87,7 @@ func _ready() -> void:
 	_plan_fires()
 	_build_lights(haze)
 	_build_smoke(haze)
+	_skyline.far_haze.track([_beast.material(), _smoke_mat])  # same air
 	for _i: int in VOICES:
 		var player := AudioStreamPlayer.new()
 		player.bus = "SFX"
@@ -214,10 +215,9 @@ func _reached(x: float, within: float) -> float:
 
 
 func _fall(i: int, t: float, away: float, smash: bool) -> Dictionary:
-	var crown_list: Array = _crowns.get(i, [])
 	return {
 		"index": i,
-		"crowns": crown_list,
+		"crowns": _crowns.get(i, []),
 		"at": t,
 		"dir": signf(away) if away != 0.0 else 1.0,
 		"smash": smash,

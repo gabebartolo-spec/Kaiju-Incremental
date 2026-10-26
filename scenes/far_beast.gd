@@ -3,8 +3,9 @@ extends Node3D
 ## The far kaiju of SkylineRampage, as an impostor: a real KaijuModel walks in a small world of
 ## its own (a SubViewport), filmed side-on from the player's camera direction, and the picture
 ## stands in the skyline on one camera-facing quad that hazes like the far towers
-## (far_impostor.gdshader). Its legs plant because the model really walks: its path is mirrored
-## into the little world at 1/size scale. Presentation only.
+## (far_impostor.gdshader; FarHaze swaps in its _fogged twin with theirs). Its legs plant
+## because the model really walks: its path is mirrored into the little world at 1/size scale.
+## Presentation only.
 
 ## Its footfalls (KaijuModel.foot_planted), at the feet in the skyline.
 signal foot_planted(side: String, strength: float, at: Vector3)
@@ -126,6 +127,11 @@ func _rim_light(euler: Vector3, color: Color, energy: float) -> void:
 	light.shadow_enabled = false
 	_view.add_child(light)
 	_rim_lights.append(light)
+
+
+## The picture's material (CitySkyline's FarHaze keeps its haze with the far towers').
+func material() -> ShaderMaterial:
+	return _mat
 
 
 ## Measuring (capture tools): the picture drawn as flat magenta, hazeless.

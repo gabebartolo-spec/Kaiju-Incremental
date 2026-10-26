@@ -171,13 +171,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -203,13 +204,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -235,13 +237,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -267,13 +270,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -299,13 +303,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -1969,7 +1974,20 @@
         "kaiju_height": {"$ref": "#/$defs/num"},
         "impact_damage": {"$ref": "#/$defs/num"},
         "fall_gravity": {"$ref": "#/$defs/num"},
-        "topple_bonus": {"$ref": "#/$defs/num"}
+        "topple_bonus": {"$ref": "#/$defs/num"},
+        "far_fog": {
+          "type": "object",
+          "properties": {
+            "on": {"$ref": "#/$defs/bool"},
+            "own_haze": {"$ref": "#/$defs/num"},
+            "base": {"$ref": "#/$defs/num"},
+            "base_height": {"$ref": "#/$defs/num"},
+            "start": {"$ref": "#/$defs/num"}
+          },
+          "required": ["on", "own_haze", "base", "base_height", "start"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
       },
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
@@ -1991,7 +2009,7 @@
         "min_height", "max_height", "tier_height", "size_scale_per_tier", "young_scale",
         "growth_per_level", "leap_distance", "cone_half_angle_deg", "breath_snout_ahead",
         "chunk_hp", "dwarf_exp", "chunk_rubble", "kaiju_height", "impact_damage", "fall_gravity",
-        "topple_bonus"
+        "topple_bonus", "far_fog"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -4775,9 +4793,10 @@
       "properties": {
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
-        "kaiju_bounds_slack": {"$ref": "#/$defs/num"}
+        "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "night_clip_max": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack"],
+      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "night_clip_max"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     }
