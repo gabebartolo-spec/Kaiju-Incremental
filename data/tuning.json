@@ -42,8 +42,8 @@
 		"tooltip_width": 330,
 		"species_spin_rate": 0.6,
 		"loading_news": ["CITY BRACES FOR IMPACT", "BRIDGES CLOSED UNTIL FURTHER NOTICE", "PETS SENSE SOMETHING"],
-		"_note_threat_badge": "The threat badge right of the clock (ThreatBadge, D-259): border and pad [x, y] of its box (px at 1080p), gap between word, digit and meter, digit_size (font px), the five meter bars' bar_heights, bar_width and bar_gap; from level alert_from it turns alert red; a rise pops it to pop_scale over pop_s; clock_gap between clock and badge.",
-		"threat_badge": {"border": 2.0, "pad": [10, 2], "gap": 10, "digit_size": 36, "bar_heights": [8, 13, 18, 23, 28], "bar_width": 6, "bar_gap": 3, "alert_from": 4, "pop_scale": 1.35, "pop_s": 0.35, "clock_gap": 18},
+		"_note_threat_bar": "The bar under the clock is the threat meter (ThreatBar, D-259): segments, gap (px), the empty segment outline alpha, the partial fill alpha, from level alert_from the filled segments turn alert red; a rise swells the new segment to pop_scale and back over pop_s. Same width and place as the old city meter (hud meter_size).",
+		"threat_bar": {"segments": 5, "gap": 3, "empty_alpha": 0.55, "partial_alpha": 0.6, "alert_from": 4, "pop_scale": 1.1, "pop_s": 0.2},
 		"_note_news_live": "The crawl during a rampage (RampageNews): slides up over slide_s, stays while the headline crosses behind the tag plus read_s (never under min_s), then slides away; at most queue lines wait.",
 		"news_live": {"slide_s": 0.25, "read_s": 0.5, "min_s": 3.0, "queue": 3},
 		"_note_specimen_card": "The lab card before a new specimen rises (SpecimenCard, D-260 'a 2 s Lab card'): seconds on screen, gap between title and headline.",
@@ -125,7 +125,7 @@
 		"specimen": {"title": "SPECIMEN K-{next}", "headline": ["K-{lost} LOST", "K-{next} RELEASED"]}
 	},
 	"threat": {
-		"_note": "The threat badge by the clock (D-259 'A small threat icon', 1-5; RunNews). Agent-added mapping, no decision: the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
+		"_note": "The threat meter, the bar under the clock (D-259 'A small threat icon', D-267 'The army's real strength'; 1-5; RunNews). Decided mapping (per-stage escalation comes from the army-balance branch): the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
 		"level_at": [0.25, 0.5, 0.75, 1.0],
 		"tower_counts": [10, 25, 50, 100]
 	},
@@ -1408,7 +1408,15 @@
 		"sweep_seconds": 0.5,
 		"leap_trail_seconds": 0.4,
 		"regen_tint": "8cffb0",
-		"deflect_tint": "cfe6ff"
+		"deflect_tint": "cfe6ff",
+		"hide_hit": {
+			"flash_voxels": 5.0, "flash_seconds": 0.08, "flash_tint": "d9702a", "flash_alpha": 0.85,
+			"glance_tint": "c8d2dc", "glance_seconds": 0.06,
+			"mist_voxels": 10.0, "mist_seconds": 0.5, "mist_tint": "7a0a0e", "mist_alpha": 0.6, "mist_count": 4,
+			"spark_count": 5, "glance_sparks": 8, "spark_voxels": 1.2, "spark_tint": "d9702a",
+			"max_wounds": 48, "wound_radius_voxels": 6.0, "wound_seconds": 360.0, "wound_tint": "1a0306",
+			"ray_extra": 8.0, "aim_rings": 0.8
+		}
 	},
 	"landmark_burst": {
 		"chunks": 360,
@@ -1581,30 +1589,31 @@
 		}
 	},
 	"rain": {
-		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks fall as camera-facing quads in a world-space volume that follows the camera; counts are x the graphics preset's particles ratio. Lengths and widths in metres, speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold).",
-		"streaks": 16000,
-		"volume": [150.0, 70.0, 150.0],
-		"ahead": 28.0,
+		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks are screen-facing quads at one screen angle (the fall direction as the camera sees it), in three depth layers, each its own world-space volume that follows the camera; counts are x the graphics preset's particles ratio. len and width are shares of the viewport height (so a streak is as long and as thick on a 1080p and a 4K screen), speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold). min_streak_share and min_streak_alpha are the floors the weather suite holds the look above (a rain you can see).",
+		"layers": [
+			{"name": "near", "streaks": 9000, "volume": [80.0, 50.0, 80.0], "ahead": 26.0, "speed_mul": 1.25, "len": 0.03, "width": 0.0008, "alpha": 0.3, "near_clear": 12.0, "near_full": 22.0, "far_begin": 40.0, "far_end": 62.0},
+			{"name": "mid", "streaks": 28000, "volume": [140.0, 60.0, 140.0], "ahead": 36.0, "speed_mul": 1.0, "len": 0.02, "width": 0.0006, "alpha": 0.24, "near_clear": 30.0, "near_full": 46.0, "far_begin": 80.0, "far_end": 105.0},
+			{"name": "far", "streaks": 34000, "volume": [220.0, 70.0, 220.0], "ahead": 60.0, "speed_mul": 0.85, "len": 0.013, "width": 0.0005, "alpha": 0.18, "near_clear": 70.0, "near_full": 95.0, "far_begin": 140.0, "far_end": 190.0}
+		],
+		"min_streak_share": 0.02,
+		"min_streak_alpha": 0.15,
 		"fall_speed": 30.0,
 		"speed_jitter": 0.08,
 		"wind_gain": 2.2,
-		"length": 1.5,
-		"width": 0.03,
-		"min_px": 1.1,
-		"alpha": 0.42,
 		"fade_in": 0.07,
 		"fade_out": 0.1,
-		"far_begin": 70.0,
-		"far_end": 125.0,
-		"tint_white": 0.55,
+		"tint_white": 0.7,
 		"max_channel": 0.82,
-		"clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
-		"splashes": 2600,
+		"clear": {"centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
+		"ahead": 28.0,
+		"splashes": 10000,
 		"splash_volume": [90.0, 90.0],
-		"splash_seconds": 0.35,
-		"splash_size": 0.5,
-		"splash_alpha": 0.5,
+		"splash_seconds": 0.5,
+		"splash_lifetime_spread": 0.5,
+		"splash_size": 0.8,
+		"splash_alpha": 0.2,
 		"splash_y": 0.11,
-		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7}
+		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7},
+		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
 	}
 }

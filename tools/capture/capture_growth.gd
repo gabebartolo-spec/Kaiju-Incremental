@@ -90,8 +90,7 @@ func _stage(tier: int) -> void:
 	_shot(id + "_kaiju")
 	print("stage %d kaiju view %s" % [tier, await _measure()])
 	# The rampage's own camera (Rampage._place_camera at rest): what the player sees.
-	cam.position = at + Kit.GAME_CAMERA * (0.75 + 0.4 * scale)
-	cam.look_at(at + Vector3(0, 3.5 * scale, 0))
+	Kit.place_game_camera(cam, kaiju, scale)
 	await _frames(_settle)
 	_shot(id + "_game")
 	stage.queue_free()

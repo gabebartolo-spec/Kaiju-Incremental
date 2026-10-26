@@ -2,7 +2,8 @@ extends "res://tests/lib/runner.gd"
 ## Threat suite (D-259 "A small threat icon", news crawl "On big events"; D-260 specimens): the
 ## threat level is the army's escalation read out (1-5, data rows); the sim reports each rise, each
 ## felled landmark and each tower total once; every report has a short crawl line (the VIP's wait
-## for the helicopter); the badge shows the level by number and lit bars beside a centred clock;
+## for the helicopter); the bar under the clock reads the level by filled segments and
+## the progress by the current one;
 ## the crawl slides up for each moment in turn; every death owes one lab card; and by real input
 ## through Main a death puts the lab card (K-01 LOST - K-02 RELEASED) before the next rise.
 ## Seeded by design: the sims are built on pinned seeds and their state set by hand; no outcome

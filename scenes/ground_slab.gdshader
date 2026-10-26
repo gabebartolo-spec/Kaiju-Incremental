@@ -24,10 +24,26 @@ uniform float wet : hint_range(0.0, 1.0) = 0.0;
 uniform vec4 tint : source_color = vec4(1.0);
 uniform float force_kind = -1.0;
 
-const float WET_DARKEN = 0.5;
+const float WET_DARKEN = 0.62;
 const float WET_ROUGHNESS = 0.18;
 const float WET_SPECULAR = 0.9;
 const float JUNCTION_BLEND = 1.5;  // how sharply a junction hands one street's lanes to the other's
+const float WET_PUDDLE_SCALE = 0.16;  // puddle patches per metre
+const float WET_PUDDLE_ROUGHNESS = 0.03;
+const float WET_SHEEN = 0.55;  // how much of the sky colour the glancing road gives back
+uniform vec3 sheen_color : source_color = vec3(0.0);  // the sky the wet road mirrors (set with `wet`)
+
+float wet_hash(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float wet_noise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(wet_hash(i), wet_hash(i + vec2(1.0, 0.0)), f.x),
+		mix(wet_hash(i + vec2(0.0, 1.0)), wet_hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -138,4 +154,11 @@ void fragment() {
 	// The river walls' damp band keeps its grain at night too (the tonemap's toe would crush it to black).
 	EMISSION += base * night_floor * BAND_NIGHT_GLOW * band_glow * pow(max(ratio, 0.0), BAND_NIGHT_GRAIN) * (1.0 - wet * 0.5);
 	SPECULAR = mix(mix(0.5, BAND_SPECULAR, band_wet), WET_SPECULAR, wet);
+	// Wet only, applied last: puddle patches are mirror-smooth and give the sky back at a glancing
+	// angle (fresnel), the rest of the road a faint sheen. Both are 0 when dry.
+	vec2 ground = world_pos.xz;
+	float puddle = smoothstep(0.45, 0.7, wet_noise(ground * WET_PUDDLE_SCALE) * 0.65 + wet_noise(ground * WET_PUDDLE_SCALE * 3.7) * 0.35);
+	ROUGHNESS = mix(ROUGHNESS, WET_PUDDLE_ROUGHNESS, wet * puddle);
+	float glance = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 2.5);
+	EMISSION += sheen_color * wet * WET_SHEEN * glance * (0.35 + 0.65 * puddle);
 }

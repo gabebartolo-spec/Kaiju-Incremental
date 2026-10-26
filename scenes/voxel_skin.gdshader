@@ -18,7 +18,14 @@ uniform float mouth_open = 0.0;
 uniform float seam_dark = 0.22;
 uniform float roughness_value = 0.9;
 
+// Faint wounds (SkinHits): xyz a point in the cubes' rest space (it rides the bones), w its strength
+// (0 = none, fading over minutes). A cube within wound_radius of one darkens to a wet, dull mark.
+uniform vec4 wounds[48];
+uniform float wound_radius = 0.2;
+uniform vec3 wound_tint : source_color = vec3(0.1, 0.01, 0.012);
+
 varying vec3 tint;
+varying vec3 rest_pos;
 
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
@@ -35,6 +42,7 @@ void vertex() {
 	float w1 = COLOR.a;
 	float w2 = max(0.0, 1.0 - w0 - w1);
 	vec3 centre = (to_skin * MODEL_MATRIX)[3].xyz;
+	rest_pos = centre + VERTEX;
 	mat4 blend = bones[b0] * w0 + bones[b1] * w1 + bones[b2] * w2;
 	vec3 moved = (blend * vec4(centre, 1.0)).xyz;
 	float shrink = 1.0 - min(length(blend[0].xyz), min(length(blend[1].xyz), length(blend[2].xyz)));
@@ -57,4 +65,16 @@ void vertex() {
 void fragment() {
 	ALBEDO = srgb_to_linear(tint);
 	ROUGHNESS = roughness_value;
+	float mark = 0.0;
+	for (int i = 0; i < 48; i++) {
+		if (wounds[i].w <= 0.0) {
+			continue;
+		}
+		// A ragged edge: the radius wobbles with the point's own position, the same every frame.
+		float wobble = 0.75 + 0.5 * fract(sin(dot(floor(rest_pos / (wound_radius * 0.35)), vec3(12.9, 78.2, 37.7))) * 43758.5);
+		float d = distance(rest_pos, wounds[i].xyz) / (wound_radius * wobble);
+		mark = max(mark, wounds[i].w * (1.0 - smoothstep(0.55, 1.0, d)));
+	}
+	ALBEDO = mix(ALBEDO, wound_tint, mark * 0.8);
+	ROUGHNESS = mix(roughness_value, 0.3, mark);
 }

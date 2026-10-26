@@ -4,14 +4,15 @@ extends RefCounted
 ## A script preloads it (`const Kit := preload("res://tools/capture/capture_kit.gd")`) and keeps
 ## its own flags, defaults and output names.
 
-## Rampage.CAMERA_OFFSET: the in-game camera, before its zoom by body scale.
-const GAME_CAMERA := Vector3(0, 27, 19)
 ## Upgrades owned at each growth stage, so the kaiju has that stage's body (size and growth).
 const STAGE_LEVELS: Array[Dictionary] = [
 	{"claws": 2, "hide": 2},
 	{"claws": 5, "hide": 5, "rage": 3, "evolve1": 1},
 	{"claws": 5, "hide": 5, "rage": 5, "evolve1": 1, "tail": 3, "sig_power": 3, "evolve2": 1},
 ]
+
+## Seconds place_game_camera steps the head frame, so its tilt is settled, not mid-ease.
+const HEAD_SETTLE_S := 10.0
 
 ## The mid-game build the frame benchmarks run (bench_rampage, bench_heavy).
 const BENCH_LEVELS := {"claws": 4, "hide": 3, "rage": 3, "quake": 2, "evolve1": 1, "sig_power": 2}
@@ -101,10 +102,29 @@ static func stage_sim(p_stats: Dictionary, tier: int, tuning: Dictionary) -> Ram
 ## A free camera under `parent`: the game's field of view, far enough for the whole city.
 static func camera(parent: Node) -> Camera3D:
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	cam.far = 4000.0
 	parent.add_child(cam)
 	return cam
+
+
+## The gameplay camera of a loaded rampage: the node the player's view comes from.
+static func game_camera(tree: SceneTree) -> Camera3D:
+	return tree.root.get_viewport().get_camera_3d()
+
+
+## Puts a hand-built `cam` where the game's camera rests on `kaiju` (in the tree, drawn): the
+## rig Rampage._place_camera makes with nothing moving. The eye is the body's drawn focus plus
+## CameraTuning's offset x zoom for `body_scale`; the aim is CameraFollow's, tilted up by
+## HeadFrame (settled) when the head would ride too high. FOV is CameraTuning's. A rampage places
+## its own camera: tools showing play instantiate Rampage and read game_camera.
+static func place_game_camera(cam: Camera3D, kaiju: KaijuModel, body_scale: float) -> void:
+	var follow := CameraFollow.new(
+		kaiju.focus(), CameraTuning.offset() * CameraTuning.zoom(body_scale)
+	)
+	cam.fov = CameraTuning.fov()
+	cam.position = follow.eye()
+	cam.look_at(follow.aim(kaiju, body_scale, Vector2(cam.fov, 0.0), HEAD_SETTLE_S))
 
 
 ## Draws a sim's break and fall events in the city view, as a rampage does.
