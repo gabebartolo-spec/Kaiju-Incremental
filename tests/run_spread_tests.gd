@@ -37,6 +37,8 @@ func run_checks() -> void:
 	await _t("_check_outer_cores")
 	await _t("_check_seeded")
 	await _t("_check_effect")
+	await _h("paired", Play.paired.bind(check))
+	await _h("bridge_breaks", Play.bridge_breaks.bind(check))
 
 
 func _seeds() -> Array[int]:

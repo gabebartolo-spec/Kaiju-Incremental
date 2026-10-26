@@ -24,9 +24,10 @@ const COLOSSUS := {
 	"sig_recharge": 4,
 	"evolve2": 1
 }
-## The growth on/off fixture's clock (s), the same for both runs: long enough that this Colossus
-## flattens the young city with growth off. The 1.5x stage-1 city (D-254) takes it about 98 s; a
-## Colossus never plays there, so the fixture sets its own clock and no game data changes.
+## The growth-off run's clock (s): long enough that this Colossus flattens the young city (the
+## 1.5x stage-1 city, D-254, takes it about 98 s); growth on keeps the real clock and must reach
+## it. A Colossus never plays the young city, so the fixture sets its own clock and no game data
+## changes (director 2026-10-26).
 const FIXTURE_CLOCK := 110.0
 
 
@@ -191,7 +192,7 @@ func _check_defences() -> void:
 ## standing: growth on vs off changes the city and the outcome.
 func _check_growth_matters() -> void:
 	var off := _play(Content.tuning(), _layout(1), COLOSSUS, FIXTURE_CLOCK)
-	var on := _play(_tuning(3), _layout(3), COLOSSUS, FIXTURE_CLOCK)
+	var on := _play(_tuning(3), _layout(3), COLOSSUS)
 	check(
 		Num.i(on["chunks"]) > Num.i(off["chunks"]) * 4,
 		(
