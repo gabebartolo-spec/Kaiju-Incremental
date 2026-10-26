@@ -166,7 +166,8 @@ jobs:
         env:
           KAIJU_NATIVE_REQUIRED: "1"
           SUITES: ${{ matrix.suites }}
-        run: VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
+          LANES: ${{ matrix.lanes }}
+        run: nproc; VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
 
       - name: Upload test logs
         if: failure()

@@ -28,6 +28,7 @@
 #   tools/run_tests.sh --quick data                   # the local loop: no re-import (QUICK=1 too)
 #   tools/run_tests.sh --verbose                      # every suite's line (VERBOSE=1 too)
 #   TIMINGS_FILE=tools/ci_timings.txt tools/run_tests.sh   # re-measure the CI shard plan
+#   LANES=2 tools/run_tests.sh sim city               # two suites at once (CI shards; each has its own user data)
 #
 # Exits nonzero if anything failed.
 set -u
@@ -107,11 +108,24 @@ summary+=("| import | pass | |")
 fi
 timings=()
 
-for suite in ${SUITES[@]+"${SUITES[@]}"}; do
-	runner="$RUNNER_DIR/run_${suite}_tests.gd"
-	log="$LOG_DIR/$suite.log"
+# One suite, start to finish. It writes everything the run reports to files in $LOG_DIR, so
+# several suites can run side by side (LANES) and the report stays in order:
+#   <suite>.log     the suite's own output          <suite>.status  pass | FAIL
+#   <suite>.report  the lines the run prints        <suite>.row     the step-summary table row
+#   <suite>.secs    its run time                    <suite>.done    written last
+# Every suite gets its own user data and settings dirs (APPDATA on Windows, XDG on Linux), so two
+# suites running at once never share a save or a cache.
+run_suite() {  # suite
+	local suite="$1"
+	local runner="$RUNNER_DIR/run_${suite}_tests.gd"
+	local log="$LOG_DIR/$suite.log"
+	local sdata="$RUN_DATA/suite_$suite"
+	mkdir -p "$sdata"
+	local start code secs result status detail ran ran_k ran_m skipped short
 	start=$(date +%s)
-	timeout "$SUITE_TIMEOUT" "$GODOT" --headless --fixed-fps 60 --path . --script "$runner" > "$log" 2>&1
+	APPDATA="$(native_path "$sdata")" XDG_DATA_HOME="$sdata/data" XDG_CONFIG_HOME="$sdata/config" \
+		XDG_CACHE_HOME="$sdata/cache" \
+		timeout "$SUITE_TIMEOUT" "$GODOT" --headless --fixed-fps 60 --path . --script "$runner" > "$log" 2>&1
 	code=$?
 	secs=$(($(date +%s) - start))
 	result=$(grep -E "[0-9]+ checks, [0-9]+ failures" "$log" | tail -1)
@@ -147,31 +161,71 @@ for suite in ${SUITES[@]+"${SUITES[@]}"}; do
 		status="FAIL"
 		detail="$detail; $short"
 	fi
-	timings+=("$suite $secs")
 	if [ "$skipped" -gt 0 ]; then
 		detail="$detail ($skipped skipped on purpose)"
 	fi
-	if [ "$VERBOSE" = 1 ] || [ "$status" = FAIL ]; then
-		printf '%-5s %-11s %4ss  %s\n' "$status" "$suite" "$secs" "$detail"
-	fi
-	if [ "$status" = FAIL ]; then
-		failed=1
-		note_error "suite '$suite' failed: $detail"
-		[ "$in_ci" = 1 ] && echo "::group::$suite log (failures and errors)"
-		grep -E -A4 "^FAIL:|SCRIPT ERROR|^ERROR" "$log" | head -60
-		[ "$in_ci" = 1 ] && echo "::endgroup::"
-		# Failed checks and parse errors become job annotations, so a red run can be
-		# read without downloading the logs.
-		if [ "$in_ci" = 1 ]; then
-			grep -E "SCRIPT ERROR|Parse Error|Compile Error" "$log" | head -20 | while IFS= read -r l; do
-				printf '::error::%s-log::%s\n' "$suite" "$l"
-			done
-			grep -E "^FAIL:" "$log" | head -30 | while IFS= read -r l; do
-				printf '::error::%s-check::%s\n' "$suite" "${l#FAIL: }"
-			done
+	{
+		if [ "$VERBOSE" = 1 ] || [ "$status" = FAIL ]; then
+			printf '%-5s %-11s %4ss  %s\n' "$status" "$suite" "$secs" "$detail"
 		fi
+		if [ "$status" = FAIL ]; then
+			note_error "suite '$suite' failed: $detail"
+			[ "$in_ci" = 1 ] && echo "::group::$suite log (failures and errors)"
+			grep -E -A4 "^FAIL:|SCRIPT ERROR|^ERROR" "$log" | head -60
+			[ "$in_ci" = 1 ] && echo "::endgroup::"
+			# Failed checks and parse errors become job annotations, so a red run can be
+			# read without downloading the logs.
+			if [ "$in_ci" = 1 ]; then
+				grep -E "SCRIPT ERROR|Parse Error|Compile Error" "$log" | head -20 | while IFS= read -r l; do
+					printf '::error::%s-log::%s\n' "$suite" "$l"
+				done
+				grep -E "^FAIL:" "$log" | head -30 | while IFS= read -r l; do
+					printf '::error::%s-check::%s\n' "$suite" "${l#FAIL: }"
+				done
+			fi
+		fi
+	} > "$LOG_DIR/$suite.report"
+	echo "| $suite | $status | $detail (${secs}s) |" > "$LOG_DIR/$suite.row"
+	echo "$secs" > "$LOG_DIR/$suite.secs"
+	echo "$status" > "$LOG_DIR/$suite.status"
+	: > "$LOG_DIR/$suite.done"
+}
+
+# Prints the report of every suite that has finished and has not been printed yet.
+flush_reports() {
+	local suite
+	for suite in ${SUITES[@]+"${SUITES[@]}"}; do
+		if [ -e "$LOG_DIR/$suite.done" ] && [ ! -e "$LOG_DIR/$suite.printed" ]; then
+			cat "$LOG_DIR/$suite.report"
+			: > "$LOG_DIR/$suite.printed"
+		fi
+	done
+}
+
+# LANES=N runs up to N suites at once (CI shards use it on 4-core runners). Each suite is
+# deterministic on its own fixed frame clock, so the result is the same as one at a time.
+LANES="${LANES:-1}"
+case "$LANES" in '' | *[!0-9]*) LANES=1 ;; esac
+[ "$LANES" -ge 1 ] || LANES=1
+for suite in ${SUITES[@]+"${SUITES[@]}"}; do
+	rm -f "$LOG_DIR/$suite.done" "$LOG_DIR/$suite.printed"
+	if [ "$LANES" = 1 ]; then
+		run_suite "$suite"
+		flush_reports
+	else
+		while [ "$(jobs -rp | wc -l)" -ge "$LANES" ]; do
+			wait -n || true
+			flush_reports
+		done
+		run_suite "$suite" &
 	fi
-	summary+=("| $suite | $status | $detail (${secs}s) |")
+done
+wait
+flush_reports
+for suite in ${SUITES[@]+"${SUITES[@]}"}; do
+	if [ "$(cat "$LOG_DIR/$suite.status" 2> /dev/null)" != pass ]; then failed=1; fi
+	summary+=("$(cat "$LOG_DIR/$suite.row" 2> /dev/null || echo "| $suite | FAIL | no result |")")
+	timings+=("$suite $(cat "$LOG_DIR/$suite.secs" 2> /dev/null || echo 0)")
 done
 
 # The harness checks itself: a test function that never ran or made no check must fail,

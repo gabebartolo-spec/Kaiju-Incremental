@@ -13,6 +13,7 @@ concurrency:
 jobs:
   doc-caps:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Enforce line caps
@@ -37,6 +38,7 @@ jobs:
 
   project-lints:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -51,9 +53,14 @@ jobs:
           else
             echo "tools/lint/run_all.sh not present yet; skipping"
           fi
+      - name: Every workflow job has a timeout
+        run: |
+          python tools/lint/workflow_timeouts.py --self-test
+          python tools/lint/workflow_timeouts.py
 
   gdlint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -88,6 +95,7 @@ jobs:
   # (the fake-secret pattern the gate plants, and a generic sk- key rule).
   gitleaks:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # gitleaks-action lists the PR's commits through the API; contents: read alone is a 403.
     permissions:
       contents: read
