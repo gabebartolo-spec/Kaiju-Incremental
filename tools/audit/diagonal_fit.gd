@@ -28,8 +28,12 @@ func _start() -> void:
 	var deg0 := Num.f(cfg["diagonal_deg"])
 	var full := CityGen.districts(cfg)[-1]
 	var fits_now := CityLineFit.x_runs_fit(cfg, CityGen.diagonal_of(cfg))
-	print("diagonal_fit: now through (%.2f, %.2f) at %.2f deg: %s" % [
-		x0, z0, deg0, "fits" if fits_now else "does NOT fit"])
+	print(
+		(
+			"diagonal_fit: now through (%.2f, %.2f) at %.2f deg: %s"
+			% [x0, z0, deg0, "fits" if fits_now else "does NOT fit"]
+		)
+	)
 	var tries: Array[Array] = []  # [deviation, z, deg], nearest first
 	var deg := deg0 - DEG_REACH
 	while deg <= deg0 + DEG_REACH + 0.001:
@@ -50,8 +54,12 @@ func _start() -> void:
 		printerr("diagonal_fit: no setting fits within the search")
 		quit(1)
 		return
-	print("diagonal_fit: pick through (%.2f, %.2f) at %.2f deg (moves up to %.1f m)" % [
-		x0, best["z"], best["deg"], best_dev])
+	print(
+		(
+			"diagonal_fit: pick through (%.2f, %.2f) at %.2f deg (moves up to %.1f m)"
+			% [x0, best["z"], best["deg"], best_dev]
+		)
+	)
 	if "--write" in OS.get_cmdline_user_args():
 		_write(x0, Num.f(best["z"]), Num.f(best["deg"]))
 	quit(0)

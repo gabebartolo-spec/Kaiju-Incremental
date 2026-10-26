@@ -23,22 +23,30 @@ func run() -> void:
 		for map_seed: int in SEEDS:
 			var got := _city(tier, map_seed, "diagonal_avenue")
 			var islands: Array = got["islands"]
-			_check.call(
-				islands.size() >= 1 and Num.i(got["off_crossing"]) == 0,
-				(
-					"stage %d, map_seed %d: islands where the diagonal meets avenues (%d at %s, %d"
-					+ " away from such a crossing)"
-				)
-				% [tier, map_seed, islands.size(), islands, Num.i(got["off_crossing"])]
-			)
-			_check.call(
-				Num.f(got["lane_gap"]) >= 0.0 and Num.i(got["on_cars"]) == 0,
-				(
+			(
+				_check
+				. call(
+					islands.size() >= 1 and Num.i(got["off_crossing"]) == 0,
 					(
-						"stage %d, map_seed %d: no island blocks a lane (closest %.2f clear of a car"
-						+ " in its lane) or stands on a parked car (%d do)"
+						(
+							"stage %d, map_seed %d: islands where the diagonal meets avenues (%d at %s, %d"
+							+ " away from such a crossing)"
+						)
+						% [tier, map_seed, islands.size(), islands, Num.i(got["off_crossing"])]
 					)
-					% [tier, map_seed, Num.f(got["lane_gap"]), Num.i(got["on_cars"])]
+				)
+			)
+			(
+				_check
+				. call(
+					Num.f(got["lane_gap"]) >= 0.0 and Num.i(got["on_cars"]) == 0,
+					(
+						(
+							"stage %d, map_seed %d: no island blocks a lane (closest %.2f clear of a car"
+							+ " in its lane) or stands on a parked car (%d do)"
+						)
+						% [tier, map_seed, Num.f(got["lane_gap"]), Num.i(got["on_cars"])]
+					)
 				)
 			)
 	var off := _city(1, SEEDS[0], "")

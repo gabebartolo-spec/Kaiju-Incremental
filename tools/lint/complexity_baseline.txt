@@ -38,7 +38,6 @@ scenes/sfx.gd::play 43 12
 scenes/stadium_match.gd::_play 32 13
 scenes/stadium_match.gd::_ready 45 7
 scenes/traffic.gd::_drive 40 13
-scenes/traffic_island.gd::spots 48 18
 scenes/upgrade_node.gd::show_state 45 21
 scenes/upgrade_screen.gd::_ready 41 3
 scenes/voxel_skin.gd::_setup 90 6
@@ -46,7 +45,7 @@ sim/building_layout.gd::_brick 11 17
 sim/building_layout.gd::_roof 30 15
 sim/building_layout.gd::_sign 28 20
 sim/building_layout.gd::_stone 12 14
-sim/city_gen.gd::map 90 23
+sim/city_gen.gd::map 70 16
 sim/city_river.gd::sheds 49 10
 sim/city_sites.gd::_span 22 13
 sim/claw_swipe.gd::_undermine 43 18

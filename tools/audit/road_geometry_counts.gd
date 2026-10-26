@@ -40,8 +40,17 @@ func _start() -> void:
 		quit(0)
 		return
 	for tier: int in [1, 2, 3]:
-		var sums := {"thin": [], "close!": [], "water": [], "arms": [], "close": [], "aspect": [],
-			"blocks": [], "short_dm": [], "long_dm": []}
+		var sums := {
+			"thin": [],
+			"close!": [],
+			"water": [],
+			"arms": [],
+			"close": [],
+			"aspect": [],
+			"blocks": [],
+			"short_dm": [],
+			"long_dm": []
+		}
 		for map_seed: int in Roads.seeds(_seeds):
 			var cfg := Roads.city(base, tier, map_seed)
 			var got := Roads.run(cfg)

@@ -102,19 +102,22 @@ static func _wedge_spot(
 		var q := p + dir * t
 		t += step
 		var box := Rect2(q, Vector2.ZERO).grow(foot)
-		if _wet(q, world["water"]) or _hits(box, world["taken"]):
+		var water: Array[Rect2] = world["water"]
+		var taken: Array[Rect2] = world["taken"]
+		if _wet(q, water) or _hits(box, taken):
 			continue
 		if _near_road(q, plan, foot + Num.f(cfg["kerb_gap"])):
 			continue
 		var crowded := false
-		for o: Vector2 in world["props"]:
+		var props: Array[Vector2] = world["props"]
+		for o: Vector2 in props:
 			crowded = crowded or o.distance_to(q) < foot + Num.f(cfg["prop_clear"])
 		if not crowded:
 			return q
 	return Vector2.INF
 
 
-static func _hits(box: Rect2, rects: Array) -> bool:
+static func _hits(box: Rect2, rects: Array[Rect2]) -> bool:
 	for r: Rect2 in rects:
 		if r.intersects(box):
 			return true

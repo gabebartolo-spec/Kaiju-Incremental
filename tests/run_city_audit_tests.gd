@@ -180,8 +180,10 @@ func _check_diagonal_fits() -> void:
 	var cfg := Roads.city(Content.tuning(), 1, Roads.SHIPPED_SEED)
 	check(
 		CityLineFit.x_runs_fit(cfg, CityGen.diagonal_of(cfg)),
-		"the shipped diagonal %s at %s deg fits the rings %s (else run tools/audit/diagonal_fit.gd)"
-		% [cfg["diagonal_through"], cfg["diagonal_deg"], cfg["districts"]]
+		(
+			"the shipped diagonal %s at %s deg fits the rings %s (else run tools/audit/diagonal_fit.gd)"
+			% [cfg["diagonal_through"], cfg["diagonal_deg"], cfg["districts"]]
+		)
 	)
 	var old := cfg.duplicate()
 	old["diagonal_through"] = [-6, 4]

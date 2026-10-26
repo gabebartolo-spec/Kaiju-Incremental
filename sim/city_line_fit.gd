@@ -16,6 +16,7 @@ extends RefCounted
 ## A run with no clean fit breaks as few of these rules as it can.
 ## Pure: the same stream, ends and rule give the same lines.
 
+const BIG := 1 << 20  # an unreachable run's cost
 const STEP := 1.0  # lines sit on whole metres; a z-line needs a window this wide between crossings
 
 
@@ -56,9 +57,6 @@ static func run(
 		d += best
 		out.append(start + Num.i(run_at[1]) * d)
 	return out
-
-
-const BIG := 1 << 20
 
 
 ## cost[d * states + st]: the fewest broken rules from a line at start + dir d, in avenue state
@@ -250,7 +248,7 @@ static func x_runs_fit(cfg: Dictionary, diag: Dictionary) -> bool:
 	for r: float in rings:
 		if not _pos_ok(roundi(r), rule) or not _pos_ok(-roundi(r), rule):
 			return false
-	var gaps := CityGen.line_gaps(cfg)
+	var gaps := CityLines.gaps(cfg)
 	var long: Array[int] = gaps["long"]
 	var cap := maxi(long[1], 2 * long[0] - 1)
 	var inner := rule.duplicate()
