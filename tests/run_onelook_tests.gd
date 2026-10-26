@@ -22,6 +22,7 @@ func run_checks() -> void:
 	await _t("_check_ground_seeded")
 	await _t("_check_ground_kinds")
 	await _t("_check_wet_is_last")
+	await _t("_check_train_detail")
 	await _h("FlatSurfaces", func() -> void: await FlatSurfaces.run(self, check))
 
 
@@ -216,3 +217,28 @@ func _check_wet_is_last() -> void:
 		),
 		"wet keeps its darken, roughness and specular, and the burley diffuse"
 	)
+
+
+## A train car draws in the city's surface family with the detail fixed to the car (debt row 25):
+## the detail shader, and every cube carrying its own cell's grid index (without it every cube reads
+## the same block and the car is one flat colour again, though the material scan passes).
+func _check_train_detail() -> void:
+	var car := TrainModel.car(true, Num.f(Content.section("rail")["car_length"]))
+	var mm := car.multimesh
+	var mat := mm.mesh.surface_get_material(0) as ShaderMaterial
+	check(
+		mat != null and mat.shader == Look.VOXEL_DETAIL_SHADER,
+		"a train car draws on voxel_detail.gdshader"
+	)
+	check(mm.use_custom_data, "a train car's cubes carry custom data")
+	var cells := {}
+	for i: int in mm.instance_count:
+		var c := mm.get_instance_custom_data(i)
+		var at := mm.get_instance_transform(i).origin / TrainModel.CAR_VOXEL
+		if Vector3(c.r, c.g, c.b).distance_to(at - Vector3(0, 0.5, 0)) < 0.01:
+			cells[Vector3i(roundi(c.r), roundi(c.g), roundi(c.b))] = true
+	check(
+		mm.instance_count > 100 and cells.size() == mm.instance_count,
+		"each cube carries its own cell (%d of %d)" % [cells.size(), mm.instance_count]
+	)
+	car.free()
