@@ -20,6 +20,7 @@ func run_checks() -> void:
 	await _t("_check_pure")
 	await _t("_check_sequence")
 	await _t("_check_shards_smash")
+	await _t("_check_shards_first")
 	await _t("_check_blast_steps")
 	await _t("_check_deaths_and_falls")
 	await _t("_check_replay")
@@ -133,6 +134,51 @@ func _check_sequence() -> void:
 	check(sim.end_reason == "defeated", "it ends as a defeat: %s" % sim.end_reason)
 	check(sim.kaiju_pos == at, "a dying kaiju takes no input: %s" % sim.kaiju_pos)
 	check(_of(events, "ability").is_empty(), "nor fires his powers")
+
+
+## D-294 "Shards first": his falling stone body smashes buildings, then the blast clears the rest.
+## With the three nodes bought, the shards break chunks AND the blast breaks chunks, and the blast
+## does not start until the last shard is down (nothing the front breaks before that).
+func _check_shards_first() -> void:
+	var sim := _sim(3)
+	sim.hp = -sim.max_hp
+	var events: Array[Dictionary] = []
+	var landed_all := false
+	var blast_before_last := 0  # what the front had broken when the last shard landed
+	for _s: int in int(30.0 / DT):
+		events.append_array(sim.step(DT, Vector2.ZERO, false))
+		if not landed_all and not sim.death.shards.is_empty():
+			landed_all = sim.death.shards.all(func(s: DeathOverload.Shard) -> bool: return s.landed)
+			if landed_all:
+				blast_before_last = sim.death.blast_chunks
+		if sim.over:
+			break
+	var last_shard := -1
+	for i: int in events.size():
+		last_shard = i if str(events[i]["type"]) == "death_shard" else last_shard
+	var blast := _index(events, "death_blast")
+	check(
+		sim.death.shard_chunks > 0, "3 nodes: the shards break chunks: %d" % sim.death.shard_chunks
+	)
+	check(
+		sim.death.blast_chunks > 0,
+		"3 nodes: then the blast breaks chunks: %d" % sim.death.blast_chunks
+	)
+	check(
+		blast > last_shard and last_shard >= 0,
+		"the blast starts after the last shard: %d, %d" % [blast, last_shard]
+	)
+	check(
+		blast_before_last == 0,
+		"the front has broken nothing when the last shard lands: %d" % blast_before_last
+	)
+	# Shards first changes only the order: with no node the same shards break the same chunks.
+	var bare := _sim(0)
+	_die(bare)
+	check(
+		bare.death.shard_chunks > 0,
+		"no node: the shards still break chunks: %d" % bare.death.shard_chunks
+	)
 
 
 ## Each shard that lands on a building breaks some of it; with no node, the shards alone pay.

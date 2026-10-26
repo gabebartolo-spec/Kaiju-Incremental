@@ -6,6 +6,10 @@ shader_type spatial;
 // its blended bones (smooth); it turns with its main bone's rotation (cubes of one bone stay on
 // one tidy grid) and keeps its size.
 
+// The stone's colour, variation and kept shade: one formula with the pieces that fly off when he
+// shatters (death_stone.gdshader).
+#include "res://scenes/stone_body.gdshaderinc"
+
 uniform mat4 bones[128];
 // The cubes' own node back to skin (rig) space, so the shader can read each instance's centre.
 uniform mat4 to_skin;
@@ -28,9 +32,6 @@ uniform float crackle_hz = 14.0;
 uniform float crackle_energy = 2.2;
 uniform float stone = 0.0;
 uniform float body_top = 10.0;
-uniform vec3 stone_color : source_color = vec3(0.54, 0.53, 0.5);
-uniform float stone_vary = 0.18;
-uniform float stone_keep = 0.25;
 
 // Faint wounds (SkinHits): xyz a point in the cubes' rest space (it rides the bones), w its strength
 // (0 = none, fading over minutes). A cube within wound_radius of one darkens to a wet, dull mark.
@@ -89,10 +90,7 @@ void fragment() {
 	if (stone > 0.0) {
 		float front = stone * 1.1 - 0.05 + (n - 0.5) * 0.1;
 		stoned = step(rest.y / body_top, front);
-		float shade = dot(tint, vec3(0.299, 0.587, 0.114));
-		vec3 rock = stone_color * (1.0 + (n - 0.5) * 2.0 * stone_vary);
-		rock = mix(rock, rock * (0.6 + shade), stone_keep);
-		albedo = mix(albedo, rock, stoned);
+		albedo = mix(albedo, stone_rock(tint, n), stoned);
 	}
 	float mark = 0.0;
 	for (int i = 0; i < 48; i++) {

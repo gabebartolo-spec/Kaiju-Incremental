@@ -325,9 +325,7 @@ func overload(charge: float, stone: float) -> void:
 			if m == null:
 				continue
 			m.set_shader_parameter("overload_color", violet)
-			m.set_shader_parameter("stone_color", Color(str(look["stone"])))
-			m.set_shader_parameter("stone_vary", Num.f(look["stone_vary"]))
-			m.set_shader_parameter("stone_keep", Num.f(look["stone_keep"]))
+			DeathStone.look(m)  # the stone the flying pieces are drawn with too
 			m.set_shader_parameter("body_top", maxf(0.001, _top))
 		_cubes.set_shader_parameter("crackle_share", Num.f(look["crackle_share"]))
 		_cubes.set_shader_parameter("crackle_hz", Num.f(look["crackle_hz"]))

@@ -7,10 +7,17 @@ extends SceneTree
 ## needs the untracked off-screen override.cfg to make the window borderless at 3840x2160
 ## (window/size/borderless, window_width_override, window_height_override): a bordered window is
 ## clamped to the screen and the movie comes out 1920x1080.
+## --key presses a key a second into the rise (before "film from"), as a player would, so the
+## first-run Controls card is gone from the clip.
+## --measure=<dir> instead of a clip: measures his stone (DeathMeasure). The mean luminance of the
+## stone body just before the shatter against that of his flying debris and shards, the pixels of
+## each picked by painting it unshaded magenta in the same paused frame; prints the ratios and
+## saves the frames to <dir>. Needs a window (and the no_focus override.cfg).
 ##
 ##   godot --path . --windowed --fixed-fps 30 --write-movie <dir>/death.avi \
-##     --script tools/capture/capture_death.gd -- --nodes=3 --seconds=6.5
+##     --script tools/capture/capture_death.gd -- --nodes=3 --seconds=6.5 --key
 
+const DeathMeasure := preload("res://tools/capture/death_measure.gd")
 const STAGES := {
 	"baby": {},
 	"adolescent": {"claws": 1, "hide": 1, "rage": 1, "evolve1": 1},
@@ -28,12 +35,16 @@ const STAGES := {
 }
 ## Seconds of the walk filmed before he dies, so the clip opens on him alive.
 const LEAD_IN := 0.5
+## Seconds into the rise when --key presses its key (the card ignores a key before 0.6 s).
+const KEY_AT := 1.0
 
 var _nodes := 0
 var _stage := "adult"
 var _walk := 2.5
 var _seconds := 6.5
 var _time := "noon"
+var _key := false
+var _measure := ""
 
 
 func _initialize() -> void:
@@ -48,6 +59,10 @@ func _initialize() -> void:
 			_seconds = arg.substr(10).to_float()
 		elif arg.begins_with("--time="):
 			_time = arg.substr(7)
+		elif arg == "--key":
+			_key = true
+		elif arg.begins_with("--measure="):
+			_measure = arg.substr(10)
 	_run.call_deferred()
 
 
@@ -68,8 +83,12 @@ func _run() -> void:
 	root.add_child(rampage)
 	await physics_frame
 	var sim := rampage.sim
+	var ticks := 0
 	while sim.emerge.active:
 		sim.hp = sim.max_hp
+		ticks += 1
+		if _key and ticks == roundi(KEY_AT * Engine.physics_ticks_per_second):
+			_press_key()
 		await physics_frame
 	var walked := 0.0
 	while walked < _walk:
@@ -80,6 +99,10 @@ func _run() -> void:
 	print("film from frame %d" % maxi(0, Engine.get_frames_drawn() - lead))
 	walking[0] = false
 	sim.hp = -sim.max_hp
+	if _measure != "":
+		await DeathMeasure.new(self, rampage, _measure).run()
+		quit()
+		return
 	var t := 0.0
 	while t < _seconds:
 		t += 1.0 / Engine.physics_ticks_per_second
@@ -99,3 +122,15 @@ func _run() -> void:
 		)
 	)
 	quit()
+
+
+## A player's key press (and release): the first-run Controls card goes.
+func _press_key() -> void:
+	var press := InputEventKey.new()
+	press.keycode = KEY_ENTER
+	press.physical_keycode = KEY_ENTER
+	press.pressed = true
+	Input.parse_input_event(press)
+	var release := press.duplicate() as InputEventKey
+	release.pressed = false
+	Input.parse_input_event(release)

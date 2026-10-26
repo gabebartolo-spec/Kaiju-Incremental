@@ -5,9 +5,13 @@ extends Node3D
 ## each frame: through the stagger a violet crackle builds over his hide with a violet light on
 ## the street (Special K, creation.lab.colors.special_k); the stone creeps up from his feet; at the
 ## shatter he is gone into his own blocks: a burst of his voxels (stone now) thrown out to land and
-## lie as rubble, the sim's shards flying their arcs to where they smash, a flash and the dust
-## ring of his blast. Restrained until the burst (D-242: his own power is the one thing that goes
-## big). Looks: data/tuning.json death.look. Presentation only: the sim decides every hit.
+## lie as rubble, the sim's shards flying their arcs to where they smash and a flash; then, once the
+## last shard is down (D-294 shards first), the dust ring of his blast. The flying blocks are drawn
+## with his own stone (death_stone.gdshader, the formula his hide turns to stone with), never a flat
+## box. Restrained until the burst (D-242: his own power is the one thing that goes big). Looks:
+## data/tuning.json death.look. Presentation only: the sim decides every hit.
+
+const STONE := preload("res://scenes/death_stone.gdshader")
 
 var sim: RampageSim
 var city: CityView
@@ -15,10 +19,10 @@ var kaiju: KaijuModel
 ## kick(amount, at): the camera's shake (Rampage.add_trauma).
 var kick: Callable
 var burst := false
+var _blasted := false
 var _look: Dictionary
 var _cfg: Dictionary
 var _violet: Color
-var _stone: Color
 var _light: OmniLight3D
 var _flash := 0.0
 var _rng := RandomNumberGenerator.new()
@@ -40,7 +44,6 @@ func _init(p_sim: RampageSim, p_city: CityView, p_kaiju: KaijuModel, p_kick: Cal
 	_cfg = Content.section("death")
 	_look = _cfg["look"]
 	_violet = Color(str(Content.section("creation")["lab"]["colors"]["special_k"]))
-	_stone = Color(str(_look["stone"]))
 	_rng.seed = 0xDEAD
 
 
@@ -65,6 +68,8 @@ func _process(delta: float) -> void:
 	_light.light_energy = Num.f(_look["burst_light"]) * _flash * _flash
 	_fly_debris(delta)
 	_fly_shards(d)
+	if d.blast_began and not _blasted:
+		_blast(d)
 
 
 ## He starts to die: the stagger clip (DeathPose) and the violet light.
@@ -96,21 +101,49 @@ func _burst(d: DeathOverload) -> void:
 		_debris_pos.append(p)
 		_debris_vel.append(v * sqrt(sim.body_scale()))
 		var own: Color = points[i]["color"]
-		_debris.multimesh.set_instance_color(i, _rock(own))
+		_debris.multimesh.set_instance_color(i, _piece(own))
 	_shards = _cubes(d.shards.size(), d.cell_size())
 	for s: DeathOverload.Shard in d.shards:
-		_shards.multimesh.set_instance_color(s.id, _rock(Color(0.5, 0.5, 0.5)))
+		_shards.multimesh.set_instance_color(s.id, _piece(_own_colour(points, s.from)))
 		_spin.append(Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0).normalized())
 	kick.call(Num.f(_look["burst_trauma"]), centre)
-	var ring := maxf(d.blast_radius, sim.body.length() * 0.5)
-	city.fx.shockwave(centre, ring)
+	city.fx.shockwave(centre, sim.body.length() * 0.5)
 
 
-## A stone block's colour: the stone grey varied block by block, keeping some of his own shade.
-func _rock(own: Color) -> Color:
-	var rock := _stone * (1.0 + _rng.randf_range(-1.0, 1.0) * Num.f(_look["stone_vary"]))
-	var keep := Num.f(_look["stone_keep"])
-	return rock.lerp(rock * (0.6 + own.get_luminance()), keep)
+## The blast front starts (the sim: the last shard is down): its dust ring out to the blast.
+func _blast(d: DeathOverload) -> void:
+	_blasted = true
+	var centre := Vector3(d.centre.x, 0.0, d.centre.y)
+	kick.call(Num.f(_look["burst_trauma"]), centre)
+	city.fx.shockwave(centre, d.blast_radius)
+
+
+## One stone for every flying block: his hide's stone (DeathStone) with the city's grain.
+func _stone() -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = STONE
+	DeathStone.look(mat)
+	return mat
+
+
+## A piece's instance colour: its own sRGB shade where it flew from, and in alpha its 0..1 hash
+## (what the shader varies the stone and shifts its grain by).
+func _piece(own: Color) -> Color:
+	return Color(own.r, own.g, own.b, _rng.randf())
+
+
+## His colour at `at`: that of the nearest of the points the burst was taken from.
+func _own_colour(points: Array[Dictionary], at: Vector3) -> Color:
+	var best := INF
+	var out := Color.GRAY
+	for p: Dictionary in points:
+		var pos: Vector3 = p["pos"]
+		var dist := at.distance_squared_to(pos)
+		if dist < best:
+			best = dist
+			var own: Color = p["color"]
+			out = own
+	return out
 
 
 func _cubes(count: int, size: float) -> MultiMeshInstance3D:
@@ -119,10 +152,7 @@ func _cubes(count: int, size: float) -> MultiMeshInstance3D:
 	mm.use_colors = true
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * size
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
-	box.material = mat
+	box.material = _stone()
 	mm.mesh = box
 	mm.instance_count = count
 	var node := MultiMeshInstance3D.new()

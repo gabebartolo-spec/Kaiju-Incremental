@@ -8,11 +8,13 @@ extends RefCounted
 ## path (it pays biomass as any blow does). The Death Blast nodes (stat death_blast) add a front
 ## that runs out from the body and wrecks every floor in a ring round his body: death_blast x
 ## per_node beyond the body's edge (director 2026-10-26, "Smaller: a ring round his body"; node 3
-## about one street block), also through hit_area. The run ends (RampageSim.end) settle_s after
-## the last shard and the front, so the results wait for the burst. Part of RampageSim; pure: one
-## derived stream, no clock.
+## about one street block), also through hit_area. Shards first (director 2026-10-27, D-294): his
+## falling stone body smashes buildings, then the blast clears the rest, so the front starts
+## blast_after_s after the last shard lands. The run ends (RampageSim.end) settle_s after the front
+## (or the last shard), so the results wait for the burst. Part of RampageSim; pure: one derived
+## stream, no clock.
 ## Events: death_begin {reason}, death_stone, death_shatter {shards, centre, blast}, death_shard
-## {id, x, z}, then run_over.
+## {id, x, z}, death_blast {radius, x, z} (the front starts), then run_over.
 
 enum Phase { NONE, STAGGER, STONE, SHATTER }
 
@@ -34,10 +36,15 @@ var reason := ""
 var t := 0.0
 var since_shatter := 0.0
 var shards: Array[Shard] = []
-## The blast front's centre, its full radius (0: no node) and how far it has run.
+## The blast front's centre, its full radius (0: no node), how far it has run and when it starts
+## (seconds after the shatter: the last shard's landing + blast_after_s, D-294 shards first).
 var centre := Vector2.ZERO
 var blast_radius := 0.0
 var blast_front := 0.0
+var blast_at := 0.0
+var blast_began := false
+## Seconds after the shatter when the last shard lands.
+var landing_end := 0.0
 ## What the shards and the front broke (chunks), for tests and the results.
 var shard_chunks := 0
 var blast_chunks := 0
@@ -105,13 +112,11 @@ func step(dt: float) -> void:
 	if phase != Phase.SHATTER:
 		return
 	since_shatter += dt
-	_run_front()
-	var last := 0.0
 	for s: Shard in shards:
-		last = maxf(last, s.t)
 		if not s.landed and since_shatter >= s.t:
 			_land(s)
-	var done := maxf(last, Num.f(cfg["blast_s"]) if blast_radius > 0.0 else 0.0)
+	_run_front()
+	var done := blast_at + Num.f(cfg["blast_s"]) if blast_radius > 0.0 else landing_end
 	if since_shatter >= done + Num.f(cfg["settle_s"]):
 		sim.end(reason, true)
 
@@ -144,6 +149,10 @@ func _shatter() -> void:
 	centre = sim.kaiju_pos
 	blast_radius = radius_for(sim.stat("death_blast"))
 	shards = _throw(_body_cells(), _rng)
+	landing_end = 0.0
+	for s: Shard in shards:
+		landing_end = maxf(landing_end, s.t)
+	blast_at = landing_end + Num.f(cfg["blast_after_s"])
 	var out: Array[Dictionary] = []
 	for s: Shard in shards:
 		out.append({"id": s.id, "from": s.from, "to": s.to, "t": s.t})
@@ -245,13 +254,19 @@ func _top_at(p: Vector2) -> int:
 	return top
 
 
-## The blast front moves on: everything between where it was and where it is now takes the blow
-## once, every floor (his own power, the one effect that goes big).
+## The blast front moves on once the last shard is down (blast_at): everything between where it
+## was and where it is now takes the blow once, every floor (his own power, the one effect that
+## goes big).
 func _run_front() -> void:
-	if blast_radius <= 0.0 or blast_front >= blast_radius:
+	if blast_radius <= 0.0 or blast_front >= blast_radius or since_shatter < blast_at:
 		return
+	if not blast_began:
+		blast_began = true
+		sim.events.append(
+			{"type": "death_blast", "radius": blast_radius, "x": centre.x, "z": centre.y}
+		)
 	var was := blast_front
-	var k := clampf(since_shatter / maxf(0.001, Num.f(cfg["blast_s"])), 0.0, 1.0)
+	var k := clampf((since_shatter - blast_at) / maxf(0.001, Num.f(cfg["blast_s"])), 0.0, 1.0)
 	blast_front = blast_radius * k
 	var now := blast_front
 	var at := centre
