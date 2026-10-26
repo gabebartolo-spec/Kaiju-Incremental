@@ -20,8 +20,6 @@ var slabs: ArrayMesh
 var samples: Dictionary = {}
 
 var _v: BuildingVoxels  # only while baking: a kept mesher must not hold the voxels
-## Only while baking: the slab cells outside the hollow (a brick building's balconies).
-var _open_slabs: Dictionary = {}
 var _b: RampageSim.Building
 var _res: int
 var _w: int
@@ -38,16 +36,16 @@ func _init(voxels: BuildingVoxels) -> void:
 	_h = _v.b.height * _res
 	var shell_cells: Array[Vector3i] = []
 	var slab_cells: Array[Vector3i] = []
+	var outside: Array[Vector3i] = []  # slabs outside the hollow (a brick building's balconies)
 	for cell: Vector3i in _v.vox.cells:
 		if _v.vox.key_at(cell) == "slab":
 			slab_cells.append(cell)
 			if not _inside(cell):
-				_open_slabs[cell] = true
+				outside.append(cell)
 		else:
 			shell_cells.append(cell)
-	shell = _bake(shell_cells, true)
-	slabs = _bake(slab_cells, false)
-	_open_slabs = {}
+	shell = _bake(shell_cells, true, _standing_solid(outside))
+	slabs = _bake(slab_cells, false, _v.vox.cells)
 	_v = null  # the voxels are the bulk of a building's memory: BuildingView rebuilds them on demand
 
 
@@ -65,7 +63,22 @@ func _inside(c: Vector3i) -> bool:
 	return c.x >= 1 and c.x <= _w - 2 and c.z >= 1 and c.z <= _d - 2 and c.y >= 0 and c.y < _h - 1
 
 
-func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
+## The cells that hide a shell face while the building stands: all of them but the floor slabs
+## `outside` the hollow (a brick balcony, proud of the wall). That slab is in the hidden mesh, so it
+## hides nothing, and the wall behind it must draw its own outward face, or a see-through strip
+## crosses the facade at every balcony (the dark flickering bars across the windows).
+func _standing_solid(outside: Array[Vector3i]) -> Dictionary:
+	var solid: Dictionary = _v.vox.cells
+	if outside.is_empty():
+		return solid
+	solid = solid.duplicate()
+	for cell: Vector3i in outside:
+		solid.erase(cell)
+	return solid
+
+
+## `all`: the cells whose faces hide the ones they touch.
+func _bake(cells: Array[Vector3i], hollow_is_solid: bool, all: Dictionary) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
@@ -96,10 +109,7 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 				if mask & (1 << k) == 0:
 					continue
 			elif all.has(n) or (hollow_is_solid and _inside(n)) or (n.y < 0):
-				# A balcony slab hides nothing: it is in the hidden mesh, so the wall behind it
-				# draws its own outward face (else a see-through strip crosses every balcony floor).
-				if not (hollow_is_solid and not _open_slabs.is_empty() and _open_slabs.has(n)):
-					continue
+				continue
 			faces += 1
 			var at := verts.size()
 			var nf := Vector3(d)
