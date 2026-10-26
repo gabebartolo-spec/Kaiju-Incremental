@@ -242,7 +242,7 @@
 			"conflag_max": 1.15,
 			"conflag_decay": 0.05,
 			"flammability": [1.0, 0.8, 0.6, 0.5],
-			"spread_landmarks": false,
+			"spread_landmarks": true,
 			"firestorm_grow": 0.5,
 			"grid": 16.0,
 			"spread_tick": 0.1,
@@ -390,6 +390,12 @@
 		"smoke_alpha": 2.0,
 		"trail_alpha": 1.8,
 		"smoke_centre_keep": 0.85
+	},
+	"strike": {
+		"_note": "Damage lands on impact (D-166, D-175; Strikes): the reptilian's big attacks wreck when the jaws or the foot land, a beat after the press, not on it. breath = seconds from the press to the strike by size tier (young, Behemoth, Colossus); the cone is read at the strike, from where he faces then. beam = seconds from the press to the Thunder Beam stream (the walk slow, powers.beam_move_mult, starts at the press). stomp_standing = seconds from a stomp tick to its damage when he stands still (a walking stomp lands on its tick; the view syncs it to the footfall). Cooldowns count from the press. Nothing lands if the rampage ends or the size tier changes first. The dash is instant (the crouch is view-only, D-165). The events carry the time: strike_windup (kind, strike_in) at the press for the breath and the beam, strike_in on the stomp event.",
+		"breath": [0.8, 1.1, 1.4],
+		"beam": 1.4,
+		"stomp_standing": 0.45
 	},
 	"air": {
 		"_note_deaths": "How a helicopter dies (D-140, D-141, D-145; AirWing): a killing blow of at least blow_apart x its hp blows it apart in the air; a lighter one sends it spinning down for fall_seconds, drifting fall_drift units, crew bailing out with chance bailout_chance (1..bailout_max of them); the wreck smashes crash_floors floors within crash_radius for crash_damage and sets the building it hits burning (City Ablaze). Placeholders, flagged for tuning.",

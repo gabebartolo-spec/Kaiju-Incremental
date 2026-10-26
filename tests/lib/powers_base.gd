@@ -51,3 +51,8 @@ func _run(sim: RampageSim, seconds: float, move: Vector2, buttons: int = 0) -> D
 
 func _alive(sim: RampageSim, index: int) -> int:
 	return sim.buildings[index].frame.alive_count
+
+
+## Seconds that carry a pressed Thunder Beam to its strike, where the stream starts (D-166).
+func _strike_wait() -> float:
+	return Num.f(Content.section("strike")["beam"])
