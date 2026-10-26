@@ -6,12 +6,13 @@ extends SceneTree
 ## nearest the middle (TrafficIsland: where the diagonal meets an avenue).
 ## Needs a window and the off-screen no_focus override.cfg on this PC (or CI):
 ##   godot --path . --resolution 3840x2160 --fixed-fps 60 \
-##     --script tools/capture/capture_city_overhead.gd -- --stage=1 --out=<dir> [--island]
+##     --script tools/capture/capture_city_overhead.gd -- --stage=1 --out=<dir> \
+##     [--island [--yaw=deg]]  (yaw turns the island camera about it, deg)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 90  # frames for streaming and lights to settle before the still
 const FOV := 40.0
-const ISLAND_VIEW := Vector3(0.0, 9.0, 11.0)  # the island still's camera, off the island (m)
+const ISLAND_VIEW := Vector3(0.0, 12.0, 7.0)  # the island still's camera, off the island (m)
 
 
 func _initialize() -> void:
@@ -23,7 +24,9 @@ func _run() -> void:
 	if not Kit.window_ok():
 		quit(2)
 		return
-	var a := Kit.args({"stage": 1, "out": "user://overhead", "island": false, "seed": 0})
+	var a := Kit.args(
+		{"stage": 1, "out": "user://overhead", "island": false, "seed": 0, "yaw": 0.0}
+	)
 	var stage: int = a["stage"]
 	var out: String = a["out"]
 	DirAccess.make_dir_recursive_absolute(out)
@@ -46,7 +49,7 @@ func _run() -> void:
 			quit(1)
 			return
 		var at := Vector3(spot.x, 0.0, spot.y)
-		cam.position = at + ISLAND_VIEW
+		cam.position = at + ISLAND_VIEW.rotated(Vector3.UP, deg_to_rad(Num.f(a["yaw"])))
 		cam.look_at(at, Vector3.UP)
 		shot = "stage%d_island" % stage
 		print("capture: island at %s" % spot)
