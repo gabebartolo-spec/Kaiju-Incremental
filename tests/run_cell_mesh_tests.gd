@@ -42,6 +42,7 @@ func run_checks() -> void:
 	_native = ClassDB.class_exists("KaijuMesher")
 	await _t("_check_native_loaded")
 	await _t("_check_matches_baked_view")
+	await _t("_check_no_face_hidden_by_a_hidden_slab")
 	await _t("_check_closed_surface_after_carves")
 	await _t("_check_only_touched_regions")
 	await _t("_check_incremental_equals_fresh")
@@ -103,6 +104,8 @@ func _check_native_loaded() -> void:
 
 ## Uncarved, the grid's mesh holds every face of the baked view (shell and slabs) in the same
 ## colour, and its only extra faces are wall and roof faces looking into the building's hollow.
+## The one face the baked view draws that the grid's mesh does not is a wall face behind a balcony
+## slab (the baked view hides that slab, so the wall must show; the grid draws the slab itself).
 func _check_matches_baked_view() -> void:
 	for f: Array in FIXTURES:
 		var b := _building(f)
@@ -143,11 +146,12 @@ func _check_matches_baked_view() -> void:
 			var inside := local.x >= 1 and local.x <= w - 2 and local.z >= 1 and local.z <= d - 2
 			if not (inside and local.y >= 0 and local.y < h - 1):
 				stray += 1
+		var behind := _faces_behind_balconies(voxels, baked)
 		check(
-			missing == 0 and recoloured == 0,
+			missing == behind.size() and recoloured == 0,
 			(
-				"%s: every baked face is drawn in its colour (%d missing, %d recoloured of %d)"
-				% [f[0], missing, recoloured, old.size()]
+				"%s: every baked face is drawn in its colour, bar the %d walls behind a balcony slab (%d missing, %d recoloured of %d)"
+				% [f[0], behind.size(), missing, recoloured, old.size()]
 			)
 		)
 		check(
@@ -157,6 +161,79 @@ func _check_matches_baked_view() -> void:
 				% [f[0], extra, stray]
 			)
 		)
+
+
+## Face centres (see _face_key) of the shell cells' faces that look at a floor slab outside the
+## hollow (a brick balcony).
+func _faces_behind_balconies(voxels: BuildingVoxels, baked: BuildingMesher) -> Array[Vector3i]:
+	var out: Array[Vector3i] = []
+	var cells: Dictionary = voxels.vox.cells
+	for cell: Vector3i in cells:
+		if cells[cell] == "slab":
+			continue
+		for d: Vector3i in BuildingMesher.NEIGHBOURS:
+			var o := cell + d
+			if cells.get(o, "") == "slab" and not baked._inside(o):
+				out.append(_face_key(voxels, cell, d))
+	return out
+
+
+## A face's centre on a 1/1024 m grid: the cell's centre, half a voxel out along `d`.
+func _face_key(voxels: BuildingVoxels, cell: Vector3i, d: Vector3i) -> Vector3i:
+	var half := BuildingVoxels.VOXEL * 0.5
+	var at := voxels.origin() + Vector3(0, half, 0) + Vector3(cell) * BuildingVoxels.VOXEL
+	return Vector3i(((at + Vector3(d) * half) * 1024.0).round())
+
+
+## The quad centres of a baked mesh, on the same 1/1024 m grid.
+func _quad_keys(mesh: ArrayMesh) -> Dictionary:
+	var out := {}
+	if mesh.get_surface_count() == 0:
+		return out
+	var verts: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	for q: int in range(0, verts.size(), 4):
+		var centre := (verts[q] + verts[q + 1] + verts[q + 2] + verts[q + 3]) * 0.25
+		out[Vector3i((centre * 1024.0).round())] = true
+	return out
+
+
+## The director's "flickering horizontal black bars across the windows" (2026-10-27): a wall cell
+## behind a balcony slab (brick facades, every other floor) had no face drawn, because the slab
+## that touches it is in the hidden mesh: a see-through strip with dark back faces behind it.
+## Every face of a shell cell is drawn unless a drawn cell, the hollow or the ground covers it;
+## the brick fixtures have such balconies (not blind).
+func _check_no_face_hidden_by_a_hidden_slab() -> void:
+	var balcony_fixtures := 0
+	for f: Array in FIXTURES:
+		var b := _building(f)
+		var voxels := BuildingVoxels.new(b, Color("8a7f72"), _party(f))
+		var baked := BuildingMesher.new(voxels)
+		var cells: Dictionary = voxels.vox.cells
+		var drawn := _quad_keys(baked.shell)
+		var hidden := 0
+		for cell: Vector3i in cells:
+			if cells[cell] == "slab":
+				continue
+			for d: Vector3i in BuildingMesher.NEIGHBOURS:
+				var o := cell + d
+				if drawn.has(_face_key(voxels, cell, d)):
+					continue
+				var covered := (
+					o.y < 0 or baked._inside(o) or (cells.has(o) and cells[o] != "slab")
+				)
+				if not covered:
+					hidden += 1
+		var behind := _faces_behind_balconies(voxels, baked).size()
+		if behind > 0:
+			balcony_fixtures += 1
+		check(
+			hidden == 0,
+			(
+				"%s: no shell face is hidden by a slab outside the hollow (%d hidden, %d balcony faces)"
+				% [f[0], hidden, behind]
+			)
+		)
+	check(balcony_fixtures >= 2, "the brick fixtures have balconies (%d)" % balcony_fixtures)
 
 
 ## After the carve sequence every solid cell meets air through exactly one face per side:
