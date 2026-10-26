@@ -1,0 +1,60 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.357 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4070 SUPER
+
+BENCH native C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/perf-baseline/native/bin/libkaiju_carve.windows.template_debug.x86_64.dll modified 2026-10-26T06:51:48
+BENCH ClassDB KaijuSettle=true
+BENCH window rect [P: (0, 0), S: (3840, 2160)] viewport (3840, 2160)
+BENCH start frames_drawn=265 size=(3840, 2160) gpu=NVIDIA GeForce RTX 4070 SUPER
+BENCH renderer=forward_plus buildings=2842
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
+ERROR: Condition "p_elem->_root != this" is true.
+   at: remove (./core/templates/self_list.h:80)
+ERROR: Condition "p_elem->_root" is true.
+   at: add (./core/templates/self_list.h:46)
