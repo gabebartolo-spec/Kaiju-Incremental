@@ -43,6 +43,18 @@
 		{"id": 40, "name": "station_canopy", "strength": 1.0, "debris": "frame", "fixture": false},
 		{"id": 41, "name": "station_rib", "strength": 1.0, "debris": "frame", "fixture": false},
 		{"id": 42, "name": "station_sign", "strength": 1.0, "debris": "frame", "fixture": false},
-		{"id": 43, "name": "station_stair", "strength": 1.0, "debris": "slab", "fixture": false}
+		{"id": 43, "name": "station_stair", "strength": 1.0, "debris": "slab", "fixture": false},
+		{"id": 44, "name": "hz_pad", "strength": 1.0, "debris": "slab", "fixture": false},
+		{"id": 45, "name": "hz_steel", "strength": 1.0, "debris": "gear", "fixture": false},
+		{"id": 46, "name": "hz_yellow", "strength": 1.0, "debris": "band", "fixture": false},
+		{"id": 47, "name": "hz_black", "strength": 1.0, "debris": "vent", "fixture": false},
+		{"id": 48, "name": "hz_red", "strength": 1.0, "debris": "awning", "fixture": false},
+		{"id": 49, "name": "hz_lamp", "strength": 1.0, "debris": "beacon", "fixture": false},
+		{"id": 50, "name": "hz_brick", "strength": 1.0, "debris": "wall", "fixture": false},
+		{"id": 51, "name": "hz_blue", "strength": 1.0, "debris": "band", "fixture": false},
+		{"id": 52, "name": "hz_green", "strength": 1.0, "debris": "band", "fixture": false},
+		{"id": 53, "name": "hz_white", "strength": 1.0, "debris": "wall", "fixture": false},
+		{"id": 54, "name": "hz_glow", "strength": 1.0, "debris": "glass", "fixture": false},
+		{"id": 55, "name": "hz_drum", "strength": 1.0, "debris": "pipe", "fixture": false}
 	]
 }

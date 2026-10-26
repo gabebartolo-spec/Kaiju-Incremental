@@ -18,6 +18,7 @@ class Building:
 	## A landmark's id (data/landmarks.json) or ""; rubble_bonus multiplies what its chunks pay.
 	var landmark := ""
 	var rubble_bonus := 1.0
+	var hazard := ""  # an explosive site's kind (CityHazards), or ""
 	## False past the arena's edge (CityBand): it breaks and pays, but never counts to the fall.
 	var in_arena := true
 	## What its chunks pay, as a share of a smash: a burnt-out building's (FireSpread) is less.
@@ -103,8 +104,9 @@ var next_fall_id := 0
 var collapse: Collapse
 ## The fine destruction grid (Carving): buildings carved cell by cell once first hit.
 var carving: Carving
-## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
+## The tanks' behaviour (Army); the tanks themselves are in `tanks`. Explosives: the red barrels.
 var army_units: Army
+var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
@@ -156,6 +158,7 @@ func _init(
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
+	explosives = Explosives.new(self, tuning, Seeds.derive(rng, 0xE7))
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
@@ -263,6 +266,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	powers.step(dt, signature_held)
 	brood.step(dt)
 	collapse.step(dt)
+	explosives.step(dt)
 	army_units.step(dt)
 	air.step(dt)
 	rail.step(dt)
@@ -348,20 +352,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.
 func nearest_standing(from: Vector2) -> Vector2:
-	var best := Vector2(INF, INF)
-	var best_d := INF
-	for b: Building in buildings:
-		if b.frame.alive_count == 0 or not b.in_arena:
-			continue
-		for x: int in b.w:
-			for z: int in b.d:
-				if b.frame.alive(Vector3i(x, 0, z)):
-					var p := b.chunk_world(Vector3i(x, 0, z))
-					var d := from.distance_squared_to(Vector2(p.x, p.z))
-					if d < best_d:
-						best_d = d
-						best = Vector2(p.x, p.z)
-	return best
+	return StandingChunks.nearest(self, from)
 
 
 ## Damages chunks of one building by the same amount each.
@@ -376,6 +367,8 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 ## takes less of each blow (Growth.dwarf_mult, D-091). Broken chunks pay rubble; then whatever
 ## lost support starts to fall. Returns chunks broken. A carved building goes to Carving.
 func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
+	if not cells.is_empty():
+		explosives.damaged(index)  # a red barrel lights its fuse at any blow
 	if carving.takes(index):
 		return carving.apply(index, cells, amounts)
 	var b := buildings[index]
