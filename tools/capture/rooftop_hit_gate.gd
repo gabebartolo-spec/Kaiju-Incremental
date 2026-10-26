@@ -39,8 +39,11 @@ func _run() -> void:
 	rampage.setup(species, stats, layout, _seed)
 	rampage.sim.kaiju_pos = Capture.new()._stand(rampage.sim)
 	rampage.sim.facing = Vector2(0, -1)
+	rampage.sim.emerge.active = false  # on land at the stand spot: the rise from the river is not
+	rampage.sim.stand_y = 0.0  # what this gate plays, and holds the army back until it ends
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	root.add_child(rampage)
+	await rampage.wait_loaded()  # the city builds over several frames
 	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
 	var rig: KaijuRig = GuiInput.find_script(rampage, KaijuRig)
 	if rig == null:
