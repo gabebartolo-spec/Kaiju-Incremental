@@ -41,7 +41,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
 	CityPool.place(out, rng, cfg, plan)  # lots take the pool's models (D-256), on their own stream
-	out.append_array(CityRiver.sheds(plan, bare, cfg))
+	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, bare, cfg))  # + red barrels (#19)
 	return out
 
 
@@ -110,28 +110,22 @@ static func map(cfg: Dictionary) -> Dictionary:
 	CityLines.extend(far, zs, outer, Num.i(short[0]) - 2, Num.i(short[1]) + 12)
 	var avenues_x := _avenues(rng, xs, rings, cfg)
 	var avenues_z := _avenues(rng, zs, rings, cfg)
-	# Which grid edges are alleys: x-line i between zs[j] and zs[j+1] is ax[Vector2i(i, j)].
-	var alley_x := {}
-	var alley_z := {}
-	for i: int in xs.size():
-		for j: int in zs.size() - 1:
-			if _alley_ok(xs[i], zs[j], zs[j + 1], full, avenues_x.has(i), rng, cfg):
-				alley_x[Vector2i(i, j)] = true
-	for j: int in zs.size():
-		for i: int in xs.size() - 1:
-			if _alley_ok(zs[j], xs[i], xs[i + 1], full, avenues_z.has(j), rng, cfg):
-				alley_z[Vector2i(j, i)] = true
-	var diag := _diagonal(cfg)
 	var plan := {
 		"nodes": [] as Array[Vector2],
 		"streets": [] as Array[Dictionary],
 		"blocks": [] as Array[Dictionary],
 		"sidewalk": Num.f(cfg["sidewalk"]),
-		"diagonal": diag,
+		"diagonal": _diagonal(cfg),
 		"xs": xs,
 		"zs": zs,
 	}
 	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
+	# Which grid edges are alleys (CityAlleys): x-line i between zs[j] and zs[j+1] is
+	# alley_x[Vector2i(i, j)].
+	var alleys := CityAlleys.lay(rng, plan, [avenues_x, avenues_z], cfg)
+	var alley_x: Dictionary = alleys["x"]
+	var alley_z: Dictionary = alleys["z"]
+	var diag: Dictionary = plan["diagonal"]
 	var index := {}
 	# x-lines (streets running along z), split at every crossing and where the diagonal crosses.
 	for i: int in xs.size():
@@ -196,21 +190,6 @@ static func _avenues(
 		inner.erase(pick)
 		out[pick] = true
 	return out
-
-
-static func _alley_ok(
-	line: float,
-	a: float,
-	b: float,
-	half: float,
-	avenue: bool,
-	rng: RandomNumberGenerator,
-	cfg: Dictionary
-) -> bool:
-	var roll := rng.randf()  # always drawn, so the plan does not shift when a rule changes
-	if avenue or absf(line) >= half - 0.01 or maxf(absf(a), absf(b)) > half + 0.01:
-		return false
-	return roll < Num.f(cfg["alley_chance"])
 
 
 ## The diagonal avenue: a point it passes and its direction (unit, ground plane).

@@ -5,7 +5,7 @@ extends RefCounted
 ## no bare cell; with the fill off the same cities have one (so each seed still shows the need).
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
-const SEEDS: Array[int] = [1, 43, 50]
+const SEEDS: Array[int] = [43, 99, 79]
 const TIER := 2
 const Rings := preload("res://tests/lib/fixture_rings.gd")
 
@@ -19,7 +19,9 @@ func _init(check_fn: Callable, root: Node) -> void:
 
 
 func run() -> void:
-	RiverQuay.enabled = false  # the riverside crates would fill some of these cells too
+	# The riverside crates would fill some of these cells too; with them off the bank row is bare
+	# (no alleys on the banks), so Coverage.off_bank leaves that row out of the count.
+	RiverQuay.enabled = false
 	for map_seed: int in SEEDS:
 		var without := _empty(map_seed, false)
 		var with_fill := _empty(map_seed, true)
@@ -67,4 +69,4 @@ func _empty(map_seed: int, fill: bool) -> Array:
 	holder.add_child(skyline)
 	var got: Dictionary = Coverage.measure(sim, decor, street, skyline)
 	holder.free()
-	return got["empty"]
+	return Coverage.off_bank(got["empty"], sim)

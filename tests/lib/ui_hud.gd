@@ -85,7 +85,8 @@ func _layout(hud: RampageHud) -> void:
 	check.call(said.is_empty(), "the HUD shows no controls or health text: %s" % [said])
 	var bars := hud.find_children("*", "ProgressBar", true, false)
 	check.call(
-		bars.size() == 1, "one meter on the HUD (the city's), no health bar: %d" % bars.size()
+		bars.is_empty(),
+		"no ProgressBar on the HUD (no city meter, no health bar): %d" % bars.size()
 	)
 	var at := hud.biomass.get_global_rect().get_center()
 	var boxed := false
@@ -116,14 +117,14 @@ func _card(hud: RampageHud) -> void:
 	for node: Node in card.find_children("*", "Label", true, false):
 		texts.append((node as Label).text)
 	check.call(
-		texts.has("Dash") and texts.has("Shift") and texts.has("Move"),
-		"the card lists the controls, dash included: %s" % [texts]
+		texts.has("Leap") and texts.has("Shift") and texts.has("Move"),
+		"the card lists the controls, leap included: %s" % [texts]
 	)
 	var rows := card.find_children("*", "GridContainer", true, false)
 	var count := 0
 	if not rows.is_empty():
 		count = (rows[0] as GridContainer).get_child_count() / 3 - 1
-	check.call(count == 3, "the first-run card has 3 rows (move, signature, dash): %d" % count)
+	check.call(count == 3, "the first-run card has 3 rows (move, signature, leap): %d" % count)
 	check.call(
 		texts.any(func(x: String) -> bool: return x.to_upper().contains("ANY KEY")),
 		"the first-run card says to press any key: %s" % [texts]
@@ -198,12 +199,12 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 	sim.chunks_total = 100
 	sim.chunks_destroyed = 35
 	hud.refresh()
-	var meter: ProgressBar = hud.city_meter
+	var meter: ThreatBar = hud.clock.threat
 	check.call(
-		absf(meter.value - 35.0) < 0.5 and meter.size.y >= 4.0 and meter.size.y <= 8.0,
+		meter.size.y >= 4.0 and meter.size.y <= 8.0 and meter.get_parent() == hud.clock,
 		(
-			"the city meter is a thin strip (%s) that reads 35%% when 35%% is destroyed (%.1f)"
-			% [meter.size, meter.value]
+			"the bar under the clock is a thin strip (%s) and the threat meter, not a city meter"
+			% meter.size
 		)
 	)
 	var peak := 0.0

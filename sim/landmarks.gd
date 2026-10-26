@@ -22,6 +22,7 @@ static func building(entry: Dictionary, chunk_hp: float) -> RampageSim.Building:
 	b.frame = Structure.new(b.w, b.d, b.height, chunk_hp * b.tier)
 	b.landmark = str(entry.get("landmark", ""))
 	b.rubble_bonus = Num.f(entry.get("rubble_bonus", 1.0))
+	b.hazard = str(entry.get("hazard", ""))
 	if entry.has("model"):  # a pool building: its baked model's chunks, turned as placed
 		b.model = str(entry["model"])
 		b.variant = ModelVariant.of(entry)

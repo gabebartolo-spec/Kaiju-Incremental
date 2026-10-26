@@ -22,6 +22,8 @@ var street: StreetLife
 ## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the fade keeps
 ## them in sight beside the sim's own points (R 19.4: a tower over the drawn head or chest fades).
 var drawn_sight := PackedVector3Array()
+## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
+var blast_break: BlastBreak
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _fade: BuildingFade
@@ -160,7 +162,7 @@ func _build_ground() -> void:
 	add_child(streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
-		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
+		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
 
 
 func _base_color(b: RampageSim.Building) -> Color:
@@ -174,6 +176,9 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	if sim.body.over(index):  # the body's bite tears a piece off (BodyBite)
 		BodyBite.tear(self, view, cells, kaiju_at, _rng)
 		_broke(index, cells)
+		return
+	if blast_break != null and blast_break.takes(index, cells, view):
+		_ruins.mark(index)
 		return
 	var parts := view.hide_chunks(cells)
 	parts.append_array(view.chip(cells, _rng))
@@ -297,7 +302,7 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 
 ## A fire that keeps burning on the ground (wrecks, a crash, a thrown landing); the oldest goes
 ## out past the cap. Nothing lights one on a collapse: rubble never burns (#111).
-func fire(at: Vector3, size: float) -> Fire:
+func fire(at: Vector3, size: float, seconds := 0.0) -> Fire:
 	var f := Fire.new(size, _rng.randf() * 10.0)
 	f.position = at
 	add_child(f)
@@ -305,7 +310,15 @@ func fire(at: Vector3, size: float) -> Fire:
 	if _fires.size() > int(GraphicsPresets.cap("max_fires")):
 		var old: Fire = _fires.pop_front()
 		old.queue_free()
+	if seconds > 0.0:  # a blast's fire burns for a few seconds, then goes out like any other
+		get_tree().create_timer(seconds).timeout.connect(_put_out.bind(f))
 	return f
+
+
+func _put_out(f: Fire) -> void:
+	if is_instance_valid(f) and _fires.has(f):
+		_fires.erase(f)
+		f.go_out()
 
 
 ## A fire the sim lit on one chunk (the beam's coat): it goes out when that chunk breaks or falls.

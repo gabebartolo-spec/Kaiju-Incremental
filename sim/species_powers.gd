@@ -60,7 +60,7 @@ func speed_mult() -> float:
 
 
 func _ground_mult() -> float:
-	if beam_left > 0.0:
+	if beam_left > 0.0 or sim.strikes.winding(Strikes.BEAM):  # slowed from the press (D-166)
 		return Num.f(cfg["beam_move_mult"])
 	if sim.airborne:
 		return Num.f(cfg["glide_speed_mult"])
@@ -239,12 +239,17 @@ func has_ultimate() -> bool:
 func ultimate() -> void:
 	sim.events.append({"type": "ultimate"})  # the view roars (D-145)
 	if sim.stat("beam_dps") > 0.0:
-		beam_left = Num.f(cfg["beam_seconds"])
-		sim.events.append({"type": "beam_start", "seconds": beam_left})
+		sim.strikes.beam()  # the stream starts at the strike, the jaws open (D-166)
 	elif sim.stat("brood_count") > 0.0:
 		sim.brood.lay(Num.i(sim.stat("brood_count")))
 	elif sim.stat("ink_dps") > 0.0:
 		_ink()
+
+
+## The jaws open: the Thunder Beam's stream starts (Strikes, after the wind-up).
+func start_beam() -> void:
+	beam_left = Num.f(cfg["beam_seconds"])
+	sim.events.append({"type": "beam_start", "seconds": beam_left})
 
 
 func step(dt: float, held: bool) -> void:
@@ -263,7 +268,7 @@ func _glide(dt: float, held: bool) -> void:
 			glide_left = sim.stat("glide_seconds")
 			sim.events.append({"type": "glide_start"})
 		return
-	if not sim.airborne:
+	if not sim.airborne or sim.body.dash.on():  # the croc's leap is airborne too, never a glide
 		return
 	glide_left -= dt
 	if held and glide_left > 0.0:

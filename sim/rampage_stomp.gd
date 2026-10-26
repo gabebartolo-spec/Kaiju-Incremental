@@ -20,6 +20,8 @@ func step(dt: float) -> void:
 	if _timer <= 0.0:
 		_timer += maxf(0.1, sim.stat("stomp_interval"))
 		_due = not sim.airborne
+	if sim.body.dash.on():  # no stomp through a leap, crouch to recovery (sim review of #225)
+		_due = false
 	if _due and (sim.body.footfall_now or not sim.body.walking()):
 		_due = false
 		_land()
@@ -32,6 +34,7 @@ func _land() -> void:
 	var left := body.landed_left() if on_foot else body.stomps % 2 == 0
 	var centre := body.landed_foot() if on_foot else body.stomp_foot(left)
 	body.stomps += 1
+	var wait := sim.strikes.stomp_delay(on_foot)  # the croc's standing stomp lands with the foot
 	sim.events.append(
 		{
 			"type": "stomp",
@@ -39,13 +42,8 @@ func _land() -> void:
 			"lift": sim.stand_y,
 			"at": centre,
 			"side": "left" if left else "right",
-			"on_foot": on_foot
+			"on_foot": on_foot,
+			"strike_in": wait
 		}
 	)
-	sim.hit_area(
-		func(p: Vector2, r: float) -> float:
-			return RampageSim.falloff(p.distance_to(centre) - r, radius),
-		sim.stat("stomp_damage") * sim.powers.hit_mult(),
-		maxi(0, floori(sim.stand_y) - Num.i(sim.powers_cfg["climb_dig"])),
-		ceili(sim.reach_top())
-	)
+	sim.strikes.stomp(centre, wait)

@@ -90,9 +90,11 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 func _make_voxels() -> BuildingVoxels:
 	if b.is_rail():
 		return RailVoxels.new(b, _base)
-	if b.landmark == "" and b.model == "":
-		return BuildingVoxels.new(b, _base, _party)
-	return LandmarkVoxels.new(b, _base)
+	if b.landmark != "" or b.model != "":
+		return LandmarkVoxels.new(b, _base)
+	if b.hazard != "":
+		return HazardVoxels.new(b, _base)  # a red barrel (comments #19)
+	return BuildingVoxels.new(b, _base, _party)
 
 
 ## A new city's build starts (BuildingStream): what it uses is marked as its own.
@@ -125,13 +127,16 @@ static func cached() -> int:
 	return _baked.size()
 
 
-## What makes two buildings bake alike: place, size, floors, landmark, wall colour, party walls,
-## and a pool building's model, variant and palette.
+## What makes two buildings bake alike: place, size, floors, landmark, hazard, wall colour,
+## party walls, and a pool building's model, variant and palette.
 static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> String:
 	var model := "%s|%s|%d" % [at.model, str(at.variant), at.palette]
 	return (
 		"%s|%s|%d|%d|%d|%s|%s|%s|%s"
-		% [at.x, at.z, at.w, at.d, at.height, at.landmark, base.to_html(), str(party), model]
+		% [
+			at.x, at.z, at.w, at.d, at.height, at.landmark + at.hazard, base.to_html(), str(party),
+			model
+		]
 	)
 
 
@@ -146,7 +151,7 @@ func set_opacity(value: float) -> void:
 ## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
 ## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
 ## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6).
-func promote(grid: BuildingCells) -> CellView:
+func promote(grid: CellGrid) -> CellView:
 	if cells_view != null:
 		return cells_view
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)

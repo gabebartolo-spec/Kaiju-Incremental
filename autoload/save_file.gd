@@ -137,6 +137,7 @@ static func new_save(species_id: String) -> Dictionary:
 		"demo_done": false,
 		"totals": {},
 		"specimen": 1,
+		"lab_card": false,
 	}
 
 
@@ -146,11 +147,22 @@ static func specimen_name(save: Dictionary) -> String:
 
 
 ## After a rampage `result`: every death (DEATHS, Endless too) makes the next rise a new
-## specimen, one number up. True when the number moved.
+## specimen, one number up, and owes the lab card (SpecimenCard) before it rises. True when the
+## number moved.
 static func note_end(save: Dictionary, result: Dictionary) -> bool:
 	if not DEATHS.has(str(result.get("reason", ""))):
 		return false
 	save["specimen"] = Num.i(save.get("specimen", 1)) + 1
+	save["lab_card"] = true
+	return true
+
+
+## True (once) when the next rise owes the lab card: the flag is cleared here. A save from before
+## the flag existed owes none.
+static func take_lab_card(save: Dictionary) -> bool:
+	if save.get("lab_card", false) != true:
+		return false
+	save["lab_card"] = false
 	return true
 
 

@@ -1,9 +1,10 @@
 class_name RampageHud
 extends CanvasLayer
 ## The rampage HUD, as little as it can be so the kaiju and the city's fall fill the screen
-## (director 2026-10-21): clock and city-destroyed strip on top, biomass bottom right, the breath,
-## dash and ultimate as three rings bottom left, health as a red edge vignette, the controls on a
-## card at the first rampage's start only; all inside the TV title-safe area, no text under 24 px.
+## (director 2026-10-21): clock and the threat bar (D-259, the bar is the threat) on top, biomass
+## bottom right, the breath, dash and ultimate as three rings bottom left, health as a red edge
+## vignette, the controls on a card at the first rampage's start only; all inside the TV
+## title-safe area, no text under 24 px. The news crawl slides up on big moments (RampageNews).
 ## Then the end beat (why it ended, big). Reads the sim; reports it by `beat_done`. Tuning "ui".
 
 signal beat_done(result: Dictionary)
@@ -25,8 +26,6 @@ const BEAT_TOP := 64
 const END_SLOWMO := 0.3
 ## The biomass figure snaps to the true value once this close.
 const ROLL_SNAP := 0.5
-## The clock's digits keep at least this width, so the box does not jump as they change.
-const CLOCK_MIN_WIDTH := 96.0
 ## The first-run card ignores keys for this long, so the key that started the run is not "any key".
 const CARD_MIN_SHOWN := 0.6
 
@@ -44,17 +43,16 @@ var ultimate_ring: HudRing
 var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
-var city_meter: ProgressBar
+## The clock and threat bar (hidden while the end beat's headline is up).
+var clock: HudClock
+## The news crawl's big moments (RampageNews).
+var news: RampageNews
 var photo: Callable  ## Rampage.photo_mode: the pause menu's photo mode (unset in HUD suites)
-var _time: Label
-## The clock and its city meter: hidden while the end beat's headline is up.
-var _clock_column: Control
 ## Everything on the HUD: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
 var _hud: Dictionary
 var _shown_biomass := 0.0
 var _last_biomass := 0.0
-var _last_second := -1
 var _pop: Tween
 var _card_left := 0.0
 var _card_age := 0.0
@@ -87,7 +85,10 @@ func _ready() -> void:
 	UiKit.safe_area(safe)
 	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_widgets.add_child(safe)
-	safe.add_child(_build_clock())
+	news = RampageNews.new(sim)
+	_widgets.add_child(news)
+	clock = HudClock.new(sim, _hud)
+	safe.add_child(clock)
 	safe.add_child(_lifted(_build_biomass(), true))
 	safe.add_child(_lifted(_build_rings(), false))
 	if not PlayerSettings.controls_seen:
@@ -95,27 +96,6 @@ func _ready() -> void:
 	_shown_biomass = sim.rubble
 	_last_biomass = sim.rubble
 	refresh()
-
-
-## The clock, a plain outlined number (red only in the last seconds), and the city strip under it.
-func _build_clock() -> Control:
-	var col := VBoxContainer.new()
-	col.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	col.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_theme_constant_override("separation", Num.i(_hud["meter_gap"]))
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_time = UiKit.label("", Num.i(_hud["clock_size"]))
-	_time.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_time.custom_minimum_size = Vector2(CLOCK_MIN_WIDTH, 0)
-	_time.resized.connect(func() -> void: _time.pivot_offset = _time.size / 2.0)
-	col.add_child(_time)
-	var meter: Array = _hud["meter_size"]
-	city_meter = UiKit.bar(UiKit.ACCENT, Num.i(meter[1]), false, false)
-	city_meter.custom_minimum_size.x = Num.f(meter[0])
-	city_meter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_child(city_meter)
-	_clock_column = col
-	return col
 
 
 ## `part` raised so its visible bottom edge sits tuning "ui" hud bottom_margin up from the screen's
@@ -238,16 +218,7 @@ func dismiss_controls() -> void:
 
 
 func refresh() -> void:
-	var second := ceili(maxf(0.0, sim.time_left))
-	_time.text = HudCounts.clock(sim)
-	# The last seconds: the clock turns red and pulses each second; otherwise it is plain white.
-	var hurry := sim.time_left < Num.f(_hud["hurry_seconds"]) and sim.endless == null
-	_time.add_theme_color_override("font_color", UiKit.ALERT if hurry else Color.WHITE)
-	if hurry and second != _last_second and _last_second >= 0 and not sim.over:
-		_time.scale = Vector2.ONE * Num.f(_hud["hurry_pulse_scale"])
-		create_tween().tween_property(_time, "scale", Vector2.ONE, Num.f(_hud["hurry_pulse_s"]))
-	_last_second = second
-	city_meter.value = sim.destruction() * 100.0
+	clock.refresh()
 	var gain := sim.rubble - _last_biomass
 	_last_biomass = sim.rubble
 	if gain >= Num.f(_hud["biomass_pop_gain"]):
@@ -260,7 +231,7 @@ func refresh() -> void:
 	var dash := sim.body.dash
 	dash_ring.modulate.a = 1.0 if dash.available() else 0.0
 	if dash.available():
-		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, Num.f(dash.cfg["cooldown"])))
+		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, dash.cooldown()))
 
 
 func _process(delta: float) -> void:
@@ -317,7 +288,9 @@ func show_end_beat(reason: String) -> void:
 	if _beat_frame >= 0:
 		return
 	_beat_frame = 0
-	_clock_column.visible = false
+	clock.visible = false
+	news.muted = true
+	news.visible = false
 	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.55, 0.25, 0.45 * PlayerSettings.flash_scale())  # Reduce flashing
@@ -350,12 +323,12 @@ func show_end_beat(reason: String) -> void:
 
 ## The clock's number (read by the ui suite).
 func clock_label() -> Label:
-	return _time
+	return clock.time
 
 
 ## True while the clock and its city meter are on screen.
 func clock_visible() -> bool:
-	return _clock_column.is_visible_in_tree()
+	return clock.is_visible_in_tree()
 
 
 func beat_running() -> bool:

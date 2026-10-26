@@ -55,6 +55,7 @@ var rumble: PadRumble
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
+var _blasts: BlastFx
 var _fade: VehicleFade
 var _cues: PowerCues
 var _hud: RampageHud
@@ -155,6 +156,7 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
+	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
@@ -232,7 +234,7 @@ func _physics_process(delta: float) -> void:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
+	_kaiju_at = _ability.place(delta, 0.0 if sim.body.dash.on() else move.length(), _kaiju_at)
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
@@ -270,8 +272,7 @@ func add_trauma(amount: float, at := Vector3.INF) -> void:
 
 ## Worst time (usec) spent per sim step and per event kind; read by the benchmark tool.
 func _note_cost(what: String, since: int) -> void:
-	var spent := Time.get_ticks_usec() - since
-	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
+	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), Time.get_ticks_usec() - since)
 
 
 ## The army's tanks (their voxels built once now, so the first spawn reuses them), the
@@ -289,6 +290,7 @@ func _to_world(p: Vector2) -> Vector3:
 
 
 func _on_event(event: Dictionary) -> void:
+	_blasts.on_event(event, _kaiju_at)
 	rumble.on_event(event)
 	match str(event["type"]):
 		"stomp":
@@ -323,6 +325,7 @@ func _on_event(event: Dictionary) -> void:
 		_:
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
+			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -339,17 +342,6 @@ func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
 func _power(stat_name: String) -> float:
 	var base: Dictionary = species["stats"]
 	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
-
-
-func _update_kaiju(delta: float, moving: float) -> void:
-	var target := _to_world(sim.kaiju_pos)
-	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
-	_kaiju_at = _ability.step(delta, target, _kaiju_at)
-	_kaiju.position = _kaiju_at
-	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-	# sim angle to model yaw: the sign flips
-	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
-	_kaiju.animate(delta, moving, -sim.body.turn_left)
 
 
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
@@ -402,6 +394,7 @@ func _place_camera(delta: float) -> void:
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
 	var nod := shake.turn(sim.body_scale(), motion).y
-	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))
+	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
+	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
 	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

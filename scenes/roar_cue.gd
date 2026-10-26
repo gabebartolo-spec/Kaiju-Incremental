@@ -15,7 +15,7 @@ var _at := INF  # the run clock (sim.time_left) at the last roar
 ## the pose asked of `kaiju` (a model with a roar() method).
 func on_event(event: Dictionary, left: float, parent: Node, kaiju: Node3D) -> void:
 	var kind := str(event["type"])
-	if kind != "dash" and kind != "ultimate":
+	if kind != "leap" and kind != "ultimate":  # the dash button's leap (D-259) took the dash's roar
 		return
 	if _at - left < Num.f(Content.section("sfx")["roar_cooldown"]):
 		return
