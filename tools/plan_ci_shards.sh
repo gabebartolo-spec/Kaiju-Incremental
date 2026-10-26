@@ -87,6 +87,6 @@ printf '%s' "$rows" | sort -k2,2nr -k1,1 | awk -v n="${shards:-1}" -v lanes="${l
 			for (j = 1; j <= n; j++) out = out (j > 1 ? "," : "") "{\"shard\":\"" j "\",\"lanes\":\"" lanes "\",\"suites\":\"" list[j] "\"}"
 			print out "]}"
 		} else {
-			for (j = 1; j <= n; j++) printf "shard %d (~%ds, %d lanes): %s\n", j, longest[j], lanes, list[j]
+			for (j = 1; j <= n; j++) printf "shard %d (~%ds%s): %s\n", j, longest[j], (lanes > 1 ? sprintf(", %d lanes", lanes) : ""), list[j]
 		}
 	}'
