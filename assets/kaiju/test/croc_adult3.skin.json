@@ -3,7 +3,7 @@
  "units": "m",
  "axes": "game: Y up, -Z forward, x = -blender x; origin on the ground under the pelvis; model normalised to 100 m tall",
  "height_m": 100.0,
- "source": "croc_adult3 (croc adult3 a3174b0f, rig r10)",
+ "source": "croc_adult3 (croc adult3 a3174b0f, rig r11)",
  "bones": [
   {
    "name": "pelvis",
