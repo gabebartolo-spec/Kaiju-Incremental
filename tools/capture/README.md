@@ -60,3 +60,10 @@ refusal with `bash tools/native_dll.sh fetch` (main's CI build); `KAIJU_NATIVE_O
 the GDScript path on purpose. A tool that never reaches the city or the sim goes on the exempt
 list in `tests/run_native_tests.gd`, which fails a tool that is neither guarded nor listed.
 `tools/prepush.sh` runs `tools/native_dll.sh check` (the local DLL's md5 against main's CI build).
+
+## Keeping the folder small
+
+A capture, probe or bench script stays only while something references it (CI, prepush, a test, another
+tool, a skill or a live handoff). A one-off made for a feature goes when the feature lands: git history
+keeps it (`git log --diff-filter=D -- tools/capture/<name>.gd`). 2026-10-27 (debt row 11, D-295): 61
+unreferenced scripts were removed; before adding a new one, extend `capture_kit.gd` or an existing script.

@@ -19,12 +19,8 @@ const WALL := 1
 ## they run without the library; every other tool starts with the guard.
 const GUARD_EXEMPT := {
 	"bake_colossus.gd": "bakes the kaiju model to PNGs",
-	"capture_headers.gd": "a UI header board",
-	"capture_loading.gd": "the loading overlay",
 	"capture_title.gd": "the title screen",
-	"capture_ui_sounds.gd": "UI sounds",
 	"font_board.gd": "a font board",
-	"capture_time_setting.gd": "the options menu row",
 }
 ## What a guarded tool's _initialize starts with.
 const GUARD_HEAD := "func _initialize() -> void:\n\tif not NativeGuard.ok(self):\n\t\treturn\n"
@@ -143,7 +139,7 @@ func _check_tools_start_with_the_guard() -> void:
 		elif not text.contains(GUARD_HEAD):
 			bad.append("%s does not start with the guard" % file)
 	check(
-		scanned > 50 and seen_exempt == GUARD_EXEMPT.size() and bad.is_empty(),
+		scanned > 30 and seen_exempt == GUARD_EXEMPT.size() and bad.is_empty(),
 		(
 			"%d tools scanned, %d exempt of %d listed; unguarded: %s"
 			% [scanned, seen_exempt, GUARD_EXEMPT.size(), bad]
