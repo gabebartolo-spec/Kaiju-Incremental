@@ -6,12 +6,15 @@ extends RefCounted
 ## without the cliff. Headless checks: the clip maths, the metric, and that CityEnvironment
 ## puts the look's two numbers on the Environment. In a windowed run it also renders the stage-3
 ## night still with the proposed numbers and holds its clipped share under tuning
-## render_opt.night_clip_max. The proposal (PROPOSED_*) is what the director sees as stills; when he
-## says yes the lead copies it into looks.json and this test then guards the shipped look too.
+## render_opt.night_clip_max. SHIPPED_* is the director's pick (D-285, "New grading"): the look must
+## carry it, so a change to looks.json that brings the cliff back fails here. OLD_* is the grade
+## before.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
-const PROPOSED_AGX := 1.6
-const PROPOSED_POST := 1.0
+const SHIPPED_AGX := 1.6
+const SHIPPED_POST := 1.0
+const OLD_AGX := 1.25
+const OLD_POST := 1.3
 ## "Clipped" = the brightest channel at or below this, of 255.
 const CLIP_LEVEL := 2
 ## One pixel in every STRIDE along both axes is read (a 4K still has 8 M).
@@ -77,14 +80,24 @@ static func _check_grade(check: Callable) -> void:
 	check.call(
 		saved_agx != null and saved_post != null, "the look carries agx_contrast and post_contrast"
 	)
-	look["agx_contrast"] = PROPOSED_AGX
-	look["post_contrast"] = PROPOSED_POST
+	check.call(
+		(
+			is_equal_approx(Num.f(saved_agx), SHIPPED_AGX)
+			and is_equal_approx(Num.f(saved_post), SHIPPED_POST)
+		),
+		(
+			"the night look ships the toe contrast %.2f and post contrast %.2f"
+			% [SHIPPED_AGX, SHIPPED_POST]
+		)
+	)
+	look["agx_contrast"] = SHIPPED_AGX
+	look["post_contrast"] = SHIPPED_POST
 	var env := Environment.new()
 	CityEnvironment.grade(env)
 	check.call(
 		(
-			is_equal_approx(env.tonemap_agx_contrast, PROPOSED_AGX)
-			and is_equal_approx(env.adjustment_contrast, PROPOSED_POST)
+			is_equal_approx(env.tonemap_agx_contrast, SHIPPED_AGX)
+			and is_equal_approx(env.adjustment_contrast, SHIPPED_POST)
 		),
 		"the environment takes the toe contrast and the post contrast from the look"
 	)
@@ -106,11 +119,11 @@ static func _check_grade(check: Callable) -> void:
 static func _check_render(suite: SceneTree, check: Callable) -> void:
 	var bar := Num.f(Content.section("render_opt")["night_clip_max"])
 	var look := Content.look()
-	var today_agx: Variant = look.get("agx_contrast")
-	var today_post: Variant = look.get("post_contrast")
-	var today := await _shoot(suite, Num.f(today_agx), Num.f(today_post))
-	var proposed := await _shoot(suite, PROPOSED_AGX, PROPOSED_POST)
-	print("NIGHTCLIP today %.3f proposed %.3f bar %.3f" % [today, proposed, bar])
+	var kept_agx: Variant = look.get("agx_contrast")
+	var kept_post: Variant = look.get("post_contrast")
+	var today := await _shoot(suite, OLD_AGX, OLD_POST)
+	var proposed := await _shoot(suite, Num.f(kept_agx), Num.f(kept_post))
+	print("NIGHTCLIP old %.3f shipped %.3f bar %.3f" % [today, proposed, bar])
 	check.call(
 		proposed < bar,
 		(
@@ -120,10 +133,10 @@ static func _check_render(suite: SceneTree, check: Callable) -> void:
 	)
 	check.call(
 		proposed < today,
-		"the proposal clips less than today's numbers (%.3f vs %.3f)" % [proposed, today]
+		"the shipped grade clips less than the old one (%.3f vs %.3f)" % [proposed, today]
 	)
-	look["agx_contrast"] = today_agx
-	look["post_contrast"] = today_post
+	look["agx_contrast"] = kept_agx
+	look["post_contrast"] = kept_post
 
 
 static func _shoot(suite: SceneTree, agx: float, post: float) -> float:

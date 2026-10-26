@@ -88,10 +88,16 @@ func _check_clarity_knobs() -> void:
 	)
 	var medium: Dictionary = table["medium"]
 	var soft := medium.duplicate()
-	soft["fsr_sharpness"] = 0.1
+	soft["fsr_sharpness"] = 0.35
 	GraphicsPresets.apply(soft, view)
-	check(is_equal_approx(view.fsr_sharpness, 0.1), "a row's sharpness reaches the viewport")
+	check(is_equal_approx(view.fsr_sharpness, 0.35), "a row's sharpness reaches the viewport")
 	look["deband"] = saved
+	# D-285 (director picked "Both" from the 20 stills): debanding on, Medium and Low sharpen to 0.1.
+	var on: bool = look.get("deband", false)
+	check(on, "the look ships with debanding on")
+	var low: Dictionary = table["low"]
+	var shipped: Array[float] = [Num.f(medium["fsr_sharpness"]), Num.f(low["fsr_sharpness"])]
+	check(shipped == [0.1, 0.1], "Medium and Low ship FSR sharpness 0.1: %s" % [shipped])
 	view.queue_free()
 
 
