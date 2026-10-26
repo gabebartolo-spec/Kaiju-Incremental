@@ -17,6 +17,7 @@ extends RefCounted
 ##   split     a road piece cut off from the rest (more than one connected component)
 ##   angle     two neighbouring arms of a junction closer than MIN_ANGLE_DEG
 ##   aspect    more than ASPECT_SHARE of the blocks longer than MAX_ASPECT times their width
+##   thin      a block whose short side is under THIN_M: no lot fits (CityGen.MIN_LOT_M)
 ## Metrics (Boeing's OSMnx city metrics): streets per node (mean, histogram), dead-end share,
 ## junction arm angles (10 degree histogram), block short and long sides and aspect ratios.
 ##
@@ -40,6 +41,7 @@ const MIN_ANGLE_DEG := 20.0
 const MAX_ASPECT := 4.0
 const ASPECT_SHARE := 0.05
 const ZERO_M := 0.05
+const THIN_M := CityGen.MIN_LOT_M
 const ANGLE_BIN := 10.0
 
 
@@ -310,6 +312,7 @@ static func _blocks(plan: Dictionary, cfg: Dictionary, metrics: Dictionary) -> A
 	var aspect_hist := {}
 	var count := 0
 	var stretched: Array[Dictionary] = []
+	var thin: Array[Dictionary] = []
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		if CityBand.near_edge(rect) >= extent or str(block["use"]) == "river":
@@ -319,6 +322,8 @@ static func _blocks(plan: Dictionary, cfg: Dictionary, metrics: Dictionary) -> A
 		var hi := maxf(rect.size.x, rect.size.y)
 		short_hist[floori(lo)] = Num.i(short_hist.get(floori(lo), 0)) + 1
 		long_hist[floori(hi)] = Num.i(long_hist.get(floori(hi), 0)) + 1
+		if lo < THIN_M:
+			thin.append(violation("thin", rect.get_center(), "block %.1f m deep" % lo))
 		var aspect := hi / maxf(lo, 0.01)
 		aspect_hist[floori(aspect)] = Num.i(aspect_hist.get(floori(aspect), 0)) + 1
 		if aspect > MAX_ASPECT:
@@ -329,7 +334,7 @@ static func _blocks(plan: Dictionary, cfg: Dictionary, metrics: Dictionary) -> A
 	metrics["block_short_hist"] = short_hist
 	metrics["block_long_hist"] = long_hist
 	metrics["block_aspect_hist"] = aspect_hist
-	var out: Array[Dictionary] = []
+	var out: Array[Dictionary] = thin
 	if float(stretched.size()) > ASPECT_SHARE * count:
-		out = stretched
+		out.append_array(stretched)
 	return out

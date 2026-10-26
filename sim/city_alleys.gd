@@ -7,7 +7,8 @@ extends RefCounted
 ## pavements in a natural, realistic way"; his crop: the road off a river bridge running into a
 ## paved block and stopping), an alley never lies where a road must run on:
 ## - along the river's banks (CityRiver.river_row), so the far bank has one road the whole way and
-##   every bridge lands on it (#12);
+##   every bridge lands on it (#12); nor across the river's row, where an alley would be a
+##   footpath over open water with no deck (city audit D-265);
 ## - round a landmark's site, whose plaza is inset for a street on every side (CitySites);
 ## - where it would leave a road ending at a pavement (a dead end), or turning a corner whose
 ##   outside is a block's square pavement corner (an L): the alley that carries the road on is
@@ -32,7 +33,9 @@ static func lay(
 	for i: int in xs.size():
 		for j: int in zs.size() - 1:
 			var keep := (
-				av_x.has(i) or _on_site(plan, Vector2(xs[i], zs[j]), Vector2(xs[i], zs[j + 1]))
+				av_x.has(i)
+				or j == bank  # across the river: a road with a bridge deck, never a footpath on water
+				or _on_site(plan, Vector2(xs[i], zs[j]), Vector2(xs[i], zs[j + 1]))
 			)
 			if _ok(rng.randf(), [xs[i], zs[j], zs[j + 1]], full, keep, cfg):
 				ax[Vector2i(i, j)] = true
