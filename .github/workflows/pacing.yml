@@ -121,6 +121,8 @@ jobs:
         with:
           ref: ${{ inputs.ref }} # empty on a push: the pushed commit
           submodules: true # the native core's godot-cpp, as in tests.yml
+      # The sim reads the landmark voxel models (LFS since debt row 8); cached by object id.
+      - uses: ./.github/actions/lfs-files
       # The same native library the tests use, from the cache when native/ is unchanged.
       - uses: ./.github/actions/native-build
       - uses: ./.github/actions/setup-godot
