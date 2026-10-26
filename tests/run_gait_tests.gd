@@ -1,8 +1,9 @@
 extends "res://tests/lib/runner.gd"
 ## The croc turns over its planted foot only as far as the stick turned it (D-177, the sim review of
-## the gait fix): the hand-over from the river, where the body still lies along the water about 90
-## deg off the way it faces, catches its heading up about the middle and does not swing the body
-## about the feet; and a leap (the dash button), which holds its own axis, is not slid sideways
+## the gait fix): a hand-over from the rise with the body about 90 deg off the way it faces (the
+## rise now ends facing the city, director 2026-10-21 #17, so the test turns the body off itself
+## at the hand-over: HAND_OVER_OFF) catches its heading up about the middle and does not swing
+## the body about the feet; and a leap (the dash button), which holds its own axis, is not slid sideways
 ## by a stick a little off it.
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
@@ -13,6 +14,8 @@ const DASH_BUTTON := 4  # Dash.BUTTON
 ## 12 frames after the hand-over the body has walked about a unit: a lurch is several.
 const HAND_OVER_FRAMES := 12
 const MAX_HAND_OVER := 3.0
+## How far (rad) the body is turned off its facing at the hand-over: the old river rise's 90 deg.
+const HAND_OVER_OFF := PI * 0.5
 ## A stick this far off a leap's axis (rad) may not slide the body sideways more than this.
 const OFF_AXIS := 0.2
 const MAX_SLIDE := 1.0
@@ -55,6 +58,7 @@ func _check_hand_over() -> void:
 			if not sim.emerge.active:
 				break
 			sim.step(DT, Vector2.ZERO, false, 0)
+		sim.body.heading = sim.facing.rotated(HAND_OVER_OFF)
 		var off := rad_to_deg(absf(sim.body.heading.angle_to(sim.facing)))
 		var from := sim.kaiju_pos
 		for _n: int in HAND_OVER_FRAMES:
