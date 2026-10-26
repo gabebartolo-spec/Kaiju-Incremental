@@ -13,6 +13,7 @@ const PACE_SPREAD := 0.2  # walkers differ in pace, so a crowd strings out inste
 const WALK_HZ := 3.0
 const RUN_HZ := 6.0
 const WALK_SAMPLE := 0.5  # a pavement line is checked for road this often
+const SLOT_STEP := 256  # the fewest people a buffered bucket holds
 const MAX_PUFFS_PER_CRUSH := 1  # each puff is a particle node: one per stomp keeps it cheap
 
 var sim: RampageSim
@@ -52,8 +53,9 @@ var _voxel: float
 var _pavements: Pavements
 var _nodes := PackedVector2Array()
 var _mms: Array[MultiMesh] = []
-var _counts := PackedInt32Array()
+var _buckets: MultiMeshBuckets
 var _capacity := 0
+var people_buffers := bool(Content.section("render_opt")["people_buffers"])
 var _clock := 0.0
 var _sport_rng: RandomNumberGenerator
 
@@ -88,13 +90,15 @@ func _ready() -> void:
 			var mm := MultiMesh.new()
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.mesh = VoxelPerson.mesh(dress, pose, _voxel)
-			mm.instance_count = _capacity
+			mm.instance_count = 1 if people_buffers else _capacity
 			mm.visible_instance_count = 0
 			var mmi := MultiMeshInstance3D.new()
 			mmi.multimesh = mm
 			add_child(mmi)
 			_mms.append(mm)
-	_counts.resize(_mms.size())
+	_buckets = MultiMeshBuckets.new(_mms, people_buffers, SLOT_STEP)
+	if people_buffers:  # culled by the pavements' bounds, not an AABB rebuilt from every slot
+		MultiMeshBuckets.bound(_mms, _nodes)
 	police = Police.new(self, Seeds.make("police", 0))
 	add_child(police)
 	var stadium := str(Content.sports()["pitch"]["landmark"])
@@ -384,17 +388,13 @@ func _pose(i: int) -> int:
 
 
 func _draw_people() -> void:
-	_counts.fill(0)
+	_buckets.begin()
 	for i: int in pos.size():
 		var bucket := outfit[i] * VoxelPerson.POSES + _pose(i)
-		if _counts[bucket] >= _capacity:
+		if _buckets.counts[bucket] >= _capacity:
 			continue
 		var look := heading[i]
 		var at := pos[i] + Vector2(-look.y, look.x) * side[i]
 		var basis := Basis(Vector3.UP, atan2(-look.x, -look.y))
-		_mms[bucket].set_instance_transform(
-			_counts[bucket], Transform3D(basis, Vector3(at.x, 0, at.y))
-		)
-		_counts[bucket] += 1
-	for i: int in _mms.size():
-		_mms[i].visible_instance_count = _counts[i]
+		_buckets.add(bucket, Transform3D(basis, Vector3(at.x, 0, at.y)))
+	_buckets.commit()
