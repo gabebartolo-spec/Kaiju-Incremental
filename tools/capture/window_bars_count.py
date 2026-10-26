@@ -85,7 +85,7 @@ def main() -> int:
     ap.add_argument("--save-overlay", default="")
     a = ap.parse_args()
     for d in a.dirs:
-        files = sorted(glob.glob(os.path.join(d, "f*.png")))
+        files = sorted(glob.glob(os.path.join(d, "f[0-9][0-9][0-9].png")))
         if not files:
             print(f"{d}: no frames", file=sys.stderr)
             continue
