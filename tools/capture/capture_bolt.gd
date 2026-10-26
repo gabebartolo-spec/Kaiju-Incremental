@@ -43,6 +43,8 @@ var _cam: Camera3D
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := (
 		Kit
 		. args(
