@@ -58,6 +58,13 @@ jobs:
           # The display fonts are LFS (3 files, ~26 KB): without them every label logs a
           # FreeType error with a backtrace and the render crawls past the time limit.
           lfs: true
+          # native/godot-cpp: the bench and capture tools refuse to run without the native library
+          # (tools/capture/native_guard.gd), so the run builds it, from the cache when unchanged.
+          submodules: true
+
+      - name: Build the native core
+        if: hashFiles('.github/actions/native-build/action.yml') != ''
+        uses: ./.github/actions/native-build
 
       - name: Cache Godot
         id: godot-cache

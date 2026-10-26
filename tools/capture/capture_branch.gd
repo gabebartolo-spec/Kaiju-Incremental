@@ -24,6 +24,8 @@ var _target := Vector2(INF, INF)
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "species": _species})
 	_out = str(a["out"])
 	_species = str(a["species"])

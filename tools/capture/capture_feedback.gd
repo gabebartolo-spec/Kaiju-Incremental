@@ -19,6 +19,8 @@ var _args := {}
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_args = Kit.args({"out": "user://feedback", "species": "reptilian"})
 	_run.call_deferred()
 

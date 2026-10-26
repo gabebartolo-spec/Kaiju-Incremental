@@ -7,6 +7,8 @@ extends SceneTree
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_run.call_deferred()
 
 

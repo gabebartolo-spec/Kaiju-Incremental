@@ -19,6 +19,8 @@ var _out := "user://kaiju_frame"
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"species": _species, "out": _out})
 	_species = str(a["species"])
 	_out = str(a["out"])

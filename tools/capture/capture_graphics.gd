@@ -20,6 +20,8 @@ var _out := "user://graphics"
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_out = str(Kit.args({"out": _out})["out"])
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():

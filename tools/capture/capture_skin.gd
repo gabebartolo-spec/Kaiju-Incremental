@@ -36,6 +36,8 @@ var _part := ""  # --skin-part=cubes|filler draws only that part of the skin (de
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--species="):
 			_species = arg.substr(10)

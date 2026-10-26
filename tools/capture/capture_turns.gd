@@ -18,6 +18,8 @@ var _last := Vector2(INF, INF)
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--species="):
 			_species = arg.substr(10)

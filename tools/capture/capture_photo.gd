@@ -13,6 +13,8 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_run.call_deferred()
 
 

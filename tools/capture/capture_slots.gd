@@ -18,6 +18,8 @@ var _delete := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	DisplayServer.window_set_position(Vector2i(OFF_SCREEN_X, 0))
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):

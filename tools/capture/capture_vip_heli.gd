@@ -49,6 +49,8 @@ var _prev: Image
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "run": 1, "tier": 2})
 	_out = str(a["out"])
 	DirAccess.make_dir_recursive_absolute(_out)

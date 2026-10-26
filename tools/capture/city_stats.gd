@@ -6,6 +6,8 @@ extends SceneTree
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for tier: int in range(1, CityGrowth.stage_count(Content.tuning()) + 1):
 		_stats(tier)
 	quit()

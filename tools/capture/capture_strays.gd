@@ -20,6 +20,8 @@ var _walked := 0.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--seconds="):
 			_seconds = float(arg.substr(10))

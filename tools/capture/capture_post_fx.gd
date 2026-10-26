@@ -25,6 +25,8 @@ var _a: Dictionary
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_a = (
 		Kit
 		. args(

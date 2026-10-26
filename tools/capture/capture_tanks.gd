@@ -30,6 +30,8 @@ var _air := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "species": _species, "air": _air})
 	_out = str(a["out"])
 	_species = str(a["species"])

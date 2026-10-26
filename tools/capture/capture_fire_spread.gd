@@ -101,6 +101,8 @@ class Plan:
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--run="):
 			_run = arg.substr(6).to_int()

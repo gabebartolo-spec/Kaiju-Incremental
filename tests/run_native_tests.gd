@@ -3,7 +3,9 @@ extends "res://tests/lib/runner.gd"
 ## the same grid digest as the GDScript oracle (the spike's carve_grid.gd algorithm, copied
 ## below as the test oracle) on one fixed fixture. Skips with a SKIP line where the library is
 ## not built; CI builds it and sets KAIJU_NATIVE_REQUIRED=1, which turns a missing library
-## into a failure.
+## into a failure. It also holds the tool guard (tools/capture/native_guard.gd, tech debt row 14):
+## the library has every class and method native/src binds, the guard names what is missing, and
+## every bench and capture tool starts by refusing to run without the library.
 ##   godot --headless --path . --script tests/run_native_tests.gd
 
 const RES := 4
@@ -13,6 +15,19 @@ const SLAB := 2
 const GLASS := 3
 const COLUMN := 4
 const WALL := 1
+## tools/capture scripts that never reach the city or the sim (UI screens, audio, a model bake):
+## they run without the library; every other tool starts with the guard.
+const GUARD_EXEMPT := {
+	"bake_colossus.gd": "bakes the kaiju model to PNGs",
+	"capture_headers.gd": "a UI header board",
+	"capture_loading.gd": "the loading overlay",
+	"capture_title.gd": "the title screen",
+	"capture_ui_sounds.gd": "UI sounds",
+	"font_board.gd": "a font board",
+	"capture_time_setting.gd": "the options menu row",
+}
+## What a guarded tool's _initialize starts with.
+const GUARD_HEAD := "func _initialize() -> void:\n\tif not NativeGuard.ok(self):\n\t\treturn\n"
 
 var _available := false
 
@@ -24,7 +39,11 @@ func suite_name() -> String:
 func run_checks() -> void:
 	_available = ClassDB.class_exists("KaijuCarve")
 	await _t("_check_loaded")
+	await _t("_check_guard_reads_the_sources")
+	await _t("_check_guard_names_what_is_missing")
+	await _t("_check_tools_start_with_the_guard")
 	if _available:
+		await _t("_check_library_complete")
 		await _t("_check_set_grid")
 		await _t("_check_carve_matches_oracle")
 		await _t("_check_flood_matches_oracle")
@@ -50,6 +69,84 @@ func _check_loaded() -> void:
 			)
 		)
 		check(true, "native library not built: skipped on purpose")
+
+
+func _check_library_complete() -> void:
+	var gone := NativeGuard.lacking()
+	check(
+		gone.is_empty(),
+		"the loaded library has every class and method native/src binds (lacking: %s)" % [gone]
+	)
+
+
+## The guard's list comes from the committed C++, with nothing dropped.
+func _check_guard_reads_the_sources() -> void:
+	var want := NativeGuard.expected()
+	for klass: String in ["KaijuCarve", "KaijuMesher", "KaijuSettle"]:
+		var names: Array = want.get(klass, [])
+		check(not names.is_empty(), "the guard reads %s's bound methods from native/src" % klass)
+	var mesher: Array = want.get("KaijuMesher", [])
+	var settle: Array = want.get("KaijuSettle", [])
+	check(
+		mesher.has("mesh_region") and settle.has("cells"),
+		"mesh_region and the native cells generator are on the guard's list"
+	)
+	var raw := 0
+	var dir := DirAccess.open(NativeGuard.SOURCE_DIR)
+	for file: String in dir.get_files():
+		if file.ends_with(".cpp"):
+			var source := FileAccess.get_file_as_string(NativeGuard.SOURCE_DIR.path_join(file))
+			raw += source.count("D_METHOD(")
+	var parsed := 0
+	for klass: String in want:
+		var names: Array = want[klass]
+		parsed += names.size()
+	check(raw > 10 and raw == parsed, "the guard reads all %d bound methods (read %d)" % [raw, parsed])
+
+
+## A known-bad table names exactly what is missing; a good one is clean (built-in classes, so it
+## holds with or without the library).
+func _check_guard_names_what_is_missing() -> void:
+	var bad := NativeGuard.lacking({"Node": ["add_child", "no_such_method"], "NoSuchClass": ["x"]})
+	check(
+		bad == ["Node.no_such_method (method missing)", "NoSuchClass (class not registered)"],
+		"a missing method and a missing class are named: %s" % [bad]
+	)
+	check(NativeGuard.lacking({"Node": ["add_child"]}).is_empty(), "a complete table is clean")
+	var text := NativeGuard.refusal(["X"])
+	check(
+		text.contains("tools/native_dll.sh") and text.contains(NativeGuard.OPTIONAL_ENV),
+		"a refusal says how to fix it and how to run on the GDScript path on purpose"
+	)
+
+
+## Every bench and capture tool refuses to run without the library: its _initialize starts with
+## the guard, or it is on the exempt list (and that list holds no tool that guards).
+func _check_tools_start_with_the_guard() -> void:
+	var bad: Array[String] = []
+	var scanned := 0
+	var seen_exempt := 0
+	var dir := DirAccess.open("res://tools/capture")
+	for file: String in dir.get_files():
+		if not file.ends_with(".gd"):
+			continue
+		var text := FileAccess.get_file_as_string("res://tools/capture/" + file)
+		if not text.contains("func _initialize() -> void:"):
+			continue
+		scanned += 1
+		if GUARD_EXEMPT.has(file):
+			seen_exempt += 1
+			if text.contains("NativeGuard.ok("):
+				bad.append("%s is exempt but guards" % file)
+		elif not text.contains(GUARD_HEAD):
+			bad.append("%s does not start with the guard" % file)
+	check(
+		scanned > 50 and seen_exempt == GUARD_EXEMPT.size() and bad.is_empty(),
+		(
+			"%d tools scanned, %d exempt of %d listed; unguarded: %s"
+			% [scanned, seen_exempt, GUARD_EXEMPT.size(), bad]
+		)
+	)
 
 
 func _check_set_grid() -> void:

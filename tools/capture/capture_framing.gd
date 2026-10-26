@@ -15,6 +15,8 @@ var _stills: Array[float] = [4.0, 9.0, 14.0, 19.0]
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--offset="):
 			var p := arg.substr(9).split(",")

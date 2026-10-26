@@ -37,6 +37,8 @@ var _stand := Vector2.INF  # --stand=x,z: the kaiju stands here for the shot (e.
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)

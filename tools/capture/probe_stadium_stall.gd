@@ -17,6 +17,8 @@ var _over := {}
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--frames="):
 			_frames = arg.substr(9).to_int()

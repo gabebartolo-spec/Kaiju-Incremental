@@ -14,6 +14,8 @@ var _out := "user://ruin_fire"
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"species": _species, "seconds": _seconds, "out": _out})
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])

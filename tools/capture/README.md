@@ -49,3 +49,14 @@ CI checkouts need `lfs: true` (fonts are in LFS).
 test's city and rampage, a staged city, frame waits, render timings, stills and 2x crops. A new
 script preloads it (`const Kit := preload("res://tools/capture/capture_kit.gd")`) instead of
 copying that code.
+
+## The native library guard
+
+A missing or stale native DLL does not stop the game: it falls back to the slow GDScript mesher
+and flood, so a bench would time the wrong thing. Every bench and capture tool therefore starts
+with `if not NativeGuard.ok(self): return` (`native_guard.gd`): it checks that each class and
+method `native/src` binds is loaded, prints what is missing and quits with exit code 2. Fix a
+refusal with `bash tools/native_dll.sh fetch` (main's CI build); `KAIJU_NATIVE_OPTIONAL=1` runs on
+the GDScript path on purpose. A tool that never reaches the city or the sim goes on the exempt
+list in `tests/run_native_tests.gd`, which fails a tool that is neither guarded nor listed.
+`tools/prepush.sh` runs `tools/native_dll.sh check` (the local DLL's md5 against main's CI build).
