@@ -7,8 +7,9 @@
 #   1. branch is not behind origin/main (a stale branch merges main first);
 #   2. tuning keys + complexity ratchet (tests.yml preflight);
 #   3. snake_case names, gdlint and gdformat --check on the changed .gd files (lint.yml);
-#   4. headless import + every script parsed and compiled (tests.yml preflight);
-#   4b. the local native DLL's md5 against main's CI build (tools/native_dll.sh): a stale or
+#   4. headless import + every script parsed and compiled (tests.yml preflight), then the repo lints
+#      (tools/lint/run_all.sh, also lint.yml: every script has its committed .uid, ...);
+#   4c. the local native DLL's md5 against main's CI build (tools/native_dll.sh): a stale or
 #      missing DLL silently runs the slow GDScript mesher in every bench and capture (a mismatch
 #      fails; a branch that changes native/ is not compared, its DLL is its own build);
 #   5. the touched suites: tools/lint/prepush_picks.py picks every suite whose runner, or code its
@@ -86,7 +87,10 @@ if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$run_d
 fi
 GODOT="$GODOT" tools/check_scripts.sh || fail "script compile"
 
-step "4b native DLL against main's CI build"
+step "4b repo lints (tools/lint/run_all.sh: .uid files, ...)"
+bash tools/lint/run_all.sh || fail "repo lints"
+
+step "4c native DLL against main's CI build"
 REF="$BASE" bash tools/native_dll.sh check || fail "native DLL (bash tools/native_dll.sh fetch)"
 
 step "5 touched suites"
