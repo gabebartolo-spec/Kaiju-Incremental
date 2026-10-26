@@ -6,6 +6,10 @@ extends RefCounted
 ## show through the gaps between voxels.
 
 const DIRECT := "#"
+## Floats per instance in pack()'s MultiMesh buffer: a 3x4 transform, then the colour.
+const STRIDE := 16
+## pack()'s stride with `detail` on: the colour is followed by the cell's grid index (custom data).
+const DETAIL_STRIDE := 20
 const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
 ]
@@ -124,7 +128,16 @@ func repaint(fn: Callable) -> void:
 ## One MultiMesh for every visible cell. palette: key -> Color (alpha 0 = glows at `glow`).
 ## A cell's centre sits at origin + cell * voxel, lifted half a voxel so y = 0 rests on the ground.
 ## Cubes are drawn at `inset` of their size (below 1: a filler layer that hides inside a skin).
+## Main thread only: a worker calls pack() and hands the buffer to instance() on the main thread.
 func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> MultiMeshInstance3D:
+	return instance(pack(palette, voxel, origin), voxel, glow, detail)
+
+
+## build()'s instances as plain data: the MultiMesh buffer (STRIDE floats each: the 3x4
+## transform row by row, then the colour; DETAIL_STRIDE with `detail`, then the cell index),
+## cells bottom-up; fills sorted_y and built_cells.
+## Makes no resource, so it is safe on a worker thread.
+func pack(palette: Dictionary, voxel: float, origin: Vector3) -> PackedFloat32Array:
 	var shown: Array[Vector3i] = []
 	for cell: Vector3i in cells:
 		if not buried(cell):
@@ -133,31 +146,66 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 	sorted_y = PackedInt32Array()
 	sorted_y.resize(shown.size())
 	built_cells = shown
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.use_custom_data = detail
-	mm.mesh = Look.voxel_detail_mesh(voxel, glow) if detail else Look.voxel_mesh(voxel, glow)
-	mm.instance_count = shown.size()
+	var stride := DETAIL_STRIDE if detail else STRIDE
+	var buf := PackedFloat32Array()
+	buf.resize(shown.size() * stride)  # zeroed: the transform's off-diagonal stays 0
 	var lift := Vector3(0, voxel * 0.5, 0)
 	for i: int in shown.size():
 		var cell := shown[i]
 		sorted_y[i] = cell.y
 		var key: String = cells[cell]
 		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
-		var cube := Basis().scaled(Vector3.ONE * inset)
-		mm.set_instance_transform(i, Transform3D(cube, origin + Vector3(cell) * voxel + lift))
-		mm.set_instance_color(i, Look.jitter(base, cell, salt) if noise else base)
+		var at := origin + Vector3(cell) * voxel + lift
+		var c: Color = Look.jitter(base, cell, salt) if noise else base
+		var k := i * stride
+		buf[k] = inset
+		buf[k + 3] = at.x
+		buf[k + 5] = inset
+		buf[k + 7] = at.y
+		buf[k + 10] = inset
+		buf[k + 11] = at.z
+		buf[k + 12] = c.r
+		buf[k + 13] = c.g
+		buf[k + 14] = c.b
+		buf[k + 15] = c.a
 		if detail:
-			mm.set_instance_custom_data(i, Color(cell.x, cell.y, cell.z, 0.0))
+			buf[k + 16] = cell.x
+			buf[k + 17] = cell.y
+			buf[k + 18] = cell.z
+	return buf
+
+
+## The drawn cubes (`voxel` wide, glowing at `glow`) of a pack()ed buffer. Main thread only.
+## detail: the buffer was packed with `detail` on (DETAIL_STRIDE); the cells draw in the
+## city's surface family.
+static func instance(
+	buf: PackedFloat32Array, voxel: float, glow: float, detail := false
+) -> MultiMeshInstance3D:
+	ThreadCheck.main_only("VoxelBuilder.instance")
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.use_custom_data = detail
+	mm.mesh = Look.voxel_detail_mesh(voxel, glow) if detail else Look.voxel_mesh(voxel, glow)
+	mm.instance_count = floori(buf.size() / float(DETAIL_STRIDE if detail else STRIDE))
+	if mm.instance_count > 0:
+		mm.buffer = buf
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	return mmi
 
 
 ## One merged mesh (vertex colours, hidden faces culled) for a small model that moves as a
-## whole: people and moving cars. palette as build(); `origin` offsets every cell.
+## whole: people and moving cars. palette as build(); `origin` offsets every cell. Main thread
+## only: a worker calls bake_arrays() and hands them to baked() on the main thread.
 func bake(palette: Dictionary, voxel: float, origin: Vector3, glow: float) -> ArrayMesh:
+	return baked(bake_arrays(palette, voxel, origin), glow)
+
+
+## bake()'s surface arrays ([] when there are no cells). Makes no resource: safe on a worker.
+func bake_arrays(palette: Dictionary, voxel: float, origin: Vector3) -> Array:
+	if cells.is_empty():
+		return []
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var lift := Vector3(0, voxel * 0.5, 0)
@@ -169,7 +217,16 @@ func bake(palette: Dictionary, voxel: float, origin: Vector3, glow: float) -> Ar
 		for d: Vector3i in NEIGHBOURS:
 			if not cells.has(cell + d):
 				_face(st, centre, Vector3(d), voxel * 0.5)
-	var mesh := st.commit()
+	return st.commit_to_arrays()
+
+
+## The mesh of bake_arrays() output, in the voxel material glowing at `glow`. Main thread only.
+static func baked(arrays: Array, glow: float) -> ArrayMesh:
+	ThreadCheck.main_only("VoxelBuilder.baked")
+	var mesh := ArrayMesh.new()
+	if arrays.is_empty():
+		return mesh
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	mesh.surface_set_material(0, Look.voxel_material(glow))
 	return mesh
 

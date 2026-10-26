@@ -110,17 +110,15 @@ var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
-## The leader's escape helicopter (D-149), its own part beside the air wing.
-var vip: VipHeli
+var vip: VipHeli  # the leader's escape helicopter (D-149), beside the air wing
 var brood: Brood
 var stomp: RampageStomp
-## The reptilian's big attacks that land a beat after the press (Strikes, D-166).
-var strikes: Strikes
+var strikes: Strikes  # the reptilian's big attacks, a beat after the press (D-166)
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
+var death: DeathOverload  # how he dies: stagger, stone, shatter
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
-## The big moments (threat level, felled landmarks, tower totals) as events for the HUD.
-var news: RunNews
+var news: RunNews  # the big moments (threat level, landmarks, tower totals) as HUD events
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -178,6 +176,7 @@ func _init(
 	for n: int in range(rail_from, buildings.size()):
 		rail.add_piece(n)
 	news = RunNews.new(self, tuning)
+	death = DeathOverload.new(self, tuning, Seeds.derive(rng, 0xDEAD))
 	var strike_cfg: Dictionary = tuning["strike"]
 	strikes = Strikes.new(self, strike_cfg)
 
@@ -238,7 +237,7 @@ func result() -> Dictionary:
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
-	if over or emerge.step(self, dt):
+	if death.holds(dt) or emerge.step(self, dt):
 		return _events
 	time_left -= dt
 	elapsed += dt
@@ -278,15 +277,17 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 
 
 ## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
-## freed: Godot never frees objects that count each other, and every rampage kept its city in
-## memory (about 240 MB a rampage in tools/pacing.gd). Call it when the rampage is over for good,
-## after result() is read: the parts no longer reach the sim, so it cannot be stepped again.
+## freed: Godot never frees objects that count each other (a rampage kept 240 MB, tools/pacing.gd).
+## Call it when the rampage is over for good, after result() is read; it cannot be stepped again.
 func dispose() -> void:
 	SimTeardown.cut(self)
 
 
-## Ends the rampage (also the pause menu's End Rampage, reason "ended"); earnings are kept.
-func end(reason: String) -> void:
+## Ends the rampage for `reason` (also the pause menu's End Rampage, "ended"); earnings are kept.
+## A death plays his overload first (DeathOverload ends it with now = true); `now` ends it at once.
+func end(reason: String, now := false) -> void:
+	if not now and death.begin(reason):
+		return
 	over = true
 	end_reason = reason
 	hp = maxf(0.0, hp)

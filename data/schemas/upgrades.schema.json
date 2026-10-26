@@ -57,7 +57,8 @@
               "limbs": {"$ref": "#/$defs/num"},
               "squeeze": {"$ref": "#/$defs/num"},
               "throw_damage": {"$ref": "#/$defs/num"},
-              "ink_dps": {"$ref": "#/$defs/num"}
+              "ink_dps": {"$ref": "#/$defs/num"},
+              "death_blast": {"$ref": "#/$defs/num"}
             },
             "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
             "additionalProperties": false

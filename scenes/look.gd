@@ -26,6 +26,7 @@ static func styles() -> Array[Color]:
 
 ## The MultiMesh material: instance colour is sRGB, alpha 0 marks a glowing cell.
 static func voxel_material(glow: float) -> ShaderMaterial:
+	ThreadCheck.main_only("Look.voxel_material")
 	var mat := ShaderMaterial.new()
 	mat.shader = VOXEL_SHADER
 	mat.set_shader_parameter("glow", glow)
@@ -34,6 +35,7 @@ static func voxel_material(glow: float) -> ShaderMaterial:
 
 ## A cube mesh for one voxel of `size`, inset by the look so the grid shows (or not).
 static func voxel_mesh(size: float, glow: float) -> BoxMesh:
+	ThreadCheck.main_only("Look.voxel_mesh")
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3.ONE * size * value("voxel_inset")
 	mesh.material = voxel_material(glow)
