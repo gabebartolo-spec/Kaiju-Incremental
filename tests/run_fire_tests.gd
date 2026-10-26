@@ -19,6 +19,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_spread")
 	await _t("_check_off_without_ablaze")
+	await _t("_check_landmarks_burn")
 	await _t("_check_burn_pay")
 	await _t("_check_firebreak")
 	await _t("_check_alarm")
@@ -95,6 +96,30 @@ func _check_off_without_ablaze() -> void:
 	check(
 		t.is_empty() and _alive(sim, 0) == 36,
 		"without City Ablaze no fire starts or spreads: %s" % [t]
+	)
+
+
+## Landmarks burn (director 2026-10-25: "Yes, landmarks burn"; powers.fire.spread_landmarks on):
+## a burning neighbour heats a landmark, which glows and then burns like any block. The same
+## scene with the flag turned off leaves it standing (the control that fails on the old default).
+func _check_landmarks_burn() -> void:
+	var lit := _pair(ABLAZE)
+	lit.buildings[1].landmark = "test_landmark"
+	lit.powers.fire.ignite(0)
+	var t := _times(lit, 30.0)
+	check(
+		t.has("1:fire_glow") and t.has("1:fire_burning"),
+		"a burning neighbour ignites a landmark by default: %s" % [t]
+	)
+	var held := _pair(ABLAZE)
+	held.buildings[1].landmark = "test_landmark"
+	held.powers.fire.cfg = held.powers.fire.cfg.duplicate()
+	held.powers.fire.cfg["spread_landmarks"] = false
+	held.powers.fire.ignite(0)
+	var kept := _times(held, 30.0)
+	check(
+		not kept.has("1:fire_glow") and _alive(held, 1) == 36,
+		"with spread_landmarks off the landmark stands: %s" % [kept]
 	)
 
 

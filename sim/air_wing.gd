@@ -183,17 +183,19 @@ func clear_dead(grabbed := false) -> void:
 
 
 ## A downed helicopter starts its fall: the fate, the fall's time and drift and the crew who jump.
-func _spin_down(heli: Heli) -> Dictionary:
+## `p_rng` is the stream those are drawn from (the air wing's own unless a caller brings one).
+func _spin_down(heli: Heli, p_rng: RandomNumberGenerator = null) -> Dictionary:
+	var rng := p_rng if p_rng != null else _fall_rng
 	var down := Falling.new()
 	down.id = heli.id
 	down.pos = heli.pos
 	down.left = Num.f(cfg["fall_seconds"])
-	var away := Vector2.from_angle(_fall_rng.randf() * TAU)
+	var away := Vector2.from_angle(rng.randf() * TAU)
 	down.drift = away * Num.f(cfg["fall_drift"]) / down.left
 	falling.append(down)
 	var crew := 0
-	if _fall_rng.randf() < Num.f(cfg["bailout_chance"]):
-		crew = _fall_rng.randi_range(1, Num.i(cfg["bailout_max"]))
+	if rng.randf() < Num.f(cfg["bailout_chance"]):
+		crew = rng.randi_range(1, Num.i(cfg["bailout_max"]))
 	return {
 		"fate": "spin", "seconds": down.left, "dx": down.drift.x, "dz": down.drift.y, "crew": crew
 	}

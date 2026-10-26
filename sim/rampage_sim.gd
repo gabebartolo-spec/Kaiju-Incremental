@@ -110,8 +110,12 @@ var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
+## The leader's escape helicopter (D-149), its own part beside the air wing.
+var vip: VipHeli
 var brood: Brood
 var stomp: RampageStomp
+## The reptilian's big attacks that land a beat after the press (Strikes, D-166).
+var strikes: Strikes
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
@@ -164,6 +168,8 @@ func _init(
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
+	var vip_cfg: Dictionary = tuning["vip"]
+	vip = VipHeli.new(self, vip_cfg, Seeds.derive(rng, 0x71B))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
@@ -172,6 +178,8 @@ func _init(
 	for n: int in range(rail_from, buildings.size()):
 		rail.add_piece(n)
 	news = RunNews.new(self, tuning)
+	var strike_cfg: Dictionary = tuning["strike"]
+	strikes = Strikes.new(self, strike_cfg)
 
 
 ## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
@@ -221,7 +229,9 @@ func destruction() -> float:
 
 ## What the rampage did, for the results screen and the save's bests (RunTally.result).
 func result() -> Dictionary:
-	return RunTally.result(self)
+	var out := RunTally.result(self)
+	out.merge(vip.summary())
+	return out
 
 
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
@@ -242,6 +252,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
+	strikes.step(dt)
 	stomp.step(dt)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
@@ -256,7 +267,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	explosives.step(dt)
 	army_units.step(dt)
-	air.step(dt)
+	_step_sky(dt)
 	rail.step(dt)
 	Endless.step(self, dt)
 	news.step(_events)
@@ -286,6 +297,12 @@ func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
 
 
+## The helicopters: the air wing's gunships, then the leader's escape (D-149).
+func _step_sky(dt: float) -> void:
+	air.step(dt)
+	vip.step(dt)
+
+
 ## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a
 ## wider crater, because more of the fading edge still beats what a chunk can take.
 static func falloff(distance: float, radius: float) -> float:
@@ -299,7 +316,7 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			BreathCone.breathe(self, reach, damage)
+			strikes.breath()  # the cone burns at the strike, where he faces then (D-166)
 		"leap":
 			var from := kaiju_pos
 			kaiju_pos = clamp_to_arena(
@@ -337,6 +354,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
 	rail.hit(force, damage)
+	vip.hit(force, damage)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.
