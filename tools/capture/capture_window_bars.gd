@@ -12,11 +12,14 @@ extends SceneTree
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_window_bars.gd -- --out=<dir> [--variants=base,noshadow]
 ##     [--style=-1] [--full] [--frames=24] [--step=0.06] [--time=night] [--gfx=medium]
-##     [--size=3840x2160]  (--full saves whole frames full<NNN>.png, for a clip)
+##     [--size=3840x2160]  (--full saves whole frames full<NNN>.png, for a clip;
+##     --step=-1 drifts at the kaiju's own walking pace, its speed stat per frame at 60 fps;
+##     --start=<m> begins that many metres along the drift, so a tower passes mid-clip)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SPECIES := "reptilian"
 const SETTLE_FRAMES := 6
+const FRAME_RATE := 60.0  # the --fixed-fps of a clip
 
 var _opt := {}
 var _out := ""
@@ -45,6 +48,7 @@ func _initialize() -> void:
 				"stage": 2,
 				"frames": 24,
 				"step": 0.06,
+				"start": 0.0,
 				"time": "night",
 				"gfx": "medium",
 				"size": "3840x2160",
@@ -291,9 +295,12 @@ func _building(n: int, scale: float, variant: String) -> void:
 	var dir := _out.path_join(variant).path_join(tag)
 	DirAccess.make_dir_recursive_absolute(dir)
 	var step := Num.f(_opt["step"])
+	if step < 0.0:  # the pace of the rampage: the kaiju's speed stat, metres per second
+		step = _sim.stat("speed") / FRAME_RATE
+		print("walking pace %.2f m/s = %.4f m per frame" % [_sim.stat("speed"), step])
 	var rect := Rect2i()
 	for f: int in Num.i(_opt["frames"]):
-		_kaiju.position = at + Vector3(0, 0, step * f)
+		_kaiju.position = at + Vector3(0, 0, Num.f(_opt["start"]) + step * f)
 		_kaiju.animate(0.0, 0.0)
 		Kit.place_game_camera(_cam, _kaiju, scale)
 		_eye.fov = _cam.fov

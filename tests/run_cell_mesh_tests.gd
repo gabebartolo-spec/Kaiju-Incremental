@@ -44,6 +44,7 @@ func run_checks() -> void:
 	await _t("_check_native_loaded")
 	await _t("_check_matches_baked_view")
 	await _t("_check_no_face_hidden_by_a_hidden_slab")
+	await _t("_check_balcony_rail_takes_the_sill_tone")
 	await _t("_check_closed_surface_after_carves")
 	await _t("_check_only_touched_regions")
 	await _t("_check_incremental_equals_fresh")
@@ -185,6 +186,28 @@ func _check_no_face_hidden_by_a_hidden_slab() -> void:
 			)
 		)
 	check(balcony_fixtures >= 2, "the brick fixtures have balconies (%d)" % balcony_fixtures)
+
+
+## D-303 (the director's "Lighten to sill tone"): a balcony railing is drawn in the window-sill
+## colour, so at night it reads as a railing and not as a black gap under the lit window.
+func _check_balcony_rail_takes_the_sill_tone() -> void:
+	var f := _fixture("brick")
+	var base := Color("8a7f72")
+	var voxels := BuildingVoxels.new(_building(f), base, _party(f))
+	var rails := 0
+	for cell: Vector3i in voxels.vox.cells:
+		rails += 1 if voxels.vox.cells[cell] == "rail" else 0
+	check(rails > 0, "the brick fixture has balcony rails (%d voxels)" % rails)
+	var rail: Color = voxels.palette["rail"]
+	var sill: Color = voxels.palette["sill"]
+	check(
+		rail == sill,
+		"the rail takes the sill colour (%s, sill %s)" % [rail.to_html(), sill.to_html()]
+	)
+	check(
+		rail.get_luminance() > base.get_luminance(),
+		"the rail is lighter than the wall (%.3f vs %.3f)" % [rail.get_luminance(), base.get_luminance()]
+	)
 
 
 ## After the carve sequence every solid cell meets air through exactly one face per side:
