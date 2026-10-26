@@ -118,6 +118,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The display fonts are LFS: as bare pointer files the import hung once on kaiju_claw.ttf
+          # (run 40364468498: 10 minutes, then red). The shards check out the real files and never hung.
+          lfs: true
       # Two seconds of Python, before Godot: a tuning key read in code exists in data/tuning.json
       # (audit 2026-10-21 #5), and no function newly breaks the 40-line / complexity-12 limits (#25).
       - name: Tuning keys and complexity ratchet
@@ -127,8 +131,14 @@ jobs:
       - uses: ./.github/actions/setup-godot
       - name: Import the project (compiles the scripts it loads)
         run: |
+          # The import takes about 20 s. A hung one (exit 124) is tried once more after 4 minutes, not 10.
           code=0
-          timeout 600 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+          for attempt in 1 2; do
+            code=0
+            timeout 240 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+            [ "$code" != 124 ] && break
+            echo "::warning::the import hung (attempt $attempt)"
+          done
           if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log"; then
             grep -E -A3 "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log" | head -40
             tail -5 "$RUNNER_TEMP/import.log"
