@@ -22,7 +22,7 @@ on:
       - "**/*.md"
   # By hand, for any branch (the demo build comes from here): exports `ref` (default: the
   # branch the run is dispatched on) and uploads KaijuEvolution-<sha> for 7 days.
-  #   gh workflow run build.yml --ref claude/look-options [-f ref=<branch or sha>]
+  #   gh workflow run build.yml --ref main [-f ref=<branch or sha>]
   workflow_dispatch:
     inputs:
       ref:
@@ -66,6 +66,22 @@ jobs:
         run: |
           python -m pip install scons
           cd native && python -m SCons platform=windows target=template_release arch=x86_64 -j4
+
+      # The small artifact tools/native_dll.sh reads (prepush compares a PC's DLL with it): the
+      # release DLL and native.txt, the git tree id of native/ it was built from. The link is
+      # reproducible (native/SConstruct, /Brepro), so one tree gives one md5.
+      - name: Keep the native DLL
+        run: |
+          mkdir -p native-out
+          cp native/bin/libkaiju_carve.windows.template_release.x86_64.dll native-out/
+          { echo "tree=$(git rev-parse HEAD:native)"; echo "md5=$(md5sum native-out/*.dll | cut -d' ' -f1)"; } > native-out/native.txt
+          cat native-out/native.txt
+      - name: Upload the native DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-windows
+          path: native-out/*
+          retention-days: 30
 
       - name: Cache Godot and its Windows export templates
         id: godot-cache

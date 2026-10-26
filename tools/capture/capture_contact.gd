@@ -27,6 +27,8 @@ var _dash_at := -1
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--body="):
 			_body = arg.substr(7) != "off"
