@@ -120,6 +120,7 @@ static func map(cfg: Dictionary) -> Dictionary:
 		"diagonal": _diagonal(cfg),
 		"xs": xs,
 		"zs": zs,
+		"rail_x": CityHarbour.rail_line(xs, avenues_x, cfg),
 	}
 	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
 	# Which grid edges are alleys (CityAlleys): x-line i between zs[j] and zs[j+1] is

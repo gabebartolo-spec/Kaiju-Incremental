@@ -23,9 +23,10 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 	var half := maxf(Num.f(h["width_share"]) * edge, Num.f(h.get("fit_width", 0.0)) * 0.5)
 	var apex := -edge + Num.f(h["reach_in"])
 	var curve := half * Num.f(h["crescent_share"])
-	var rail := Rail.avenue_of(plan, cfg)
+	var rail: float = plan["rail_x"] if plan.has("rail_x") else Rail.avenue_of(plan, cfg)
 	plan["rail_x"] = rail  # the railway's avenue, found before the bay takes its streets
-	var cx := _centre(plan, rail)
+	var xs: Array[float] = plan["xs"]
+	var cx := centre(xs, rail)
 	plan["harbour"] = {
 		"cx": cx,
 		"half": half,
@@ -87,8 +88,7 @@ static func _dry_part(rect: Rect2, water: Array[Rect2]) -> Rect2:
 
 ## The north-south street line nearest the city's centre line (x 0), never the railway's avenue
 ## (`rail`): the bay's centre, so the viaduct never runs up the kaiju's way out of the water.
-static func _centre(plan: Dictionary, rail: float) -> float:
-	var xs: Array[float] = plan["xs"]
+static func centre(xs: Array[float], rail: float) -> float:
 	var best := 0.0
 	var gap := INF
 	for x: float in xs:
@@ -202,4 +202,35 @@ static func dry(plan: Dictionary, cfg: Dictionary, entries: Array[Dictionary]) -
 		var r := Rect2(Num.f(e["x"]) - w * 0.5, Num.f(e["z"]) - d * 0.5, w, d)
 		if not water.any(func(b: Rect2) -> bool: return b.intersects(r)):
 			out.append(e)
+	return out
+
+
+## The railway's avenue (Rail): the north-south avenue line (`avenues`: CityGen's x-line indices)
+## nearest the city's centre line, inside the city's half; 0 without one.
+static func rail_line(xs: Array[float], avenues: Dictionary, cfg: Dictionary) -> float:
+	var half := CityGen.half_extent(cfg)
+	var best := INF
+	for i: int in avenues:
+		if absf(xs[i]) < half - 1.0 and absf(xs[i]) < absf(best):
+			best = xs[i]
+	return 0.0 if best == INF else best
+
+
+## Where the bay can reach at any stage (one box, x and z, per district ring of city "districts":
+## that stage's beach width, from its apex north), for CitySites to keep landmarks off: a site
+## clear of every box stays clear of the bay as the city grows, so it never moves between stages.
+static func reaches(xs: Array[float], rail: float, cfg: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if not cfg.has("harbour"):
+		return out
+	var h: Dictionary = cfg["harbour"]
+	var cx := centre(xs, rail)
+	var far := Num.f(cfg["outer_half"]) * 2.0
+	for ring: float in CityGen.districts(cfg):
+		var edge := ring + Num.f(cfg["arena_margin"])
+		var half := Num.f(h["width_share"]) * edge
+		if is_equal_approx(ring, CityGen.half_extent(cfg)):
+			half = maxf(half, Num.f(h.get("fit_width", 0.0)) * 0.5)
+		var apex := -edge + Num.f(h["reach_in"])
+		out.append(Rect2(cx - half, -far, half * 2.0, apex + far))
 	return out

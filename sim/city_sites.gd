@@ -4,8 +4,11 @@ extends RefCounted
 ## city.landmarks takes the street-grid cells round its anchor, as many as its baked footprint
 ## (city.landmark_shapes: data/landmarks.json, merged in by Content) plus a margin needs, as one
 ## plaza: the streets inside it are never laid, so traffic and the ground go round it. A site
-## stays inside one district (it never swallows a ring avenue), clear of the diagonal avenue and
-## out of the river's row (CityRiver.river_row); a landmark that cannot get one is left out.
+## stays inside one district (it never swallows a ring avenue), clear of the diagonal avenue,
+## out of the river's row (CityRiver.river_row) and off the sea bay at every stage
+## (CityHarbour.reaches: a site its anchor would put on the bay slides along its row to the
+## nearest cells clear of it and of the sites before it); a landmark that cannot get one is
+## left out.
 ## Pure: the same city config always gives the same sites.
 
 
@@ -20,6 +23,7 @@ static func find(
 	var av_x: Dictionary = avenues[0]
 	var av_z: Dictionary = avenues[1]
 	var out: Array[Dictionary] = []
+	var bay := CityHarbour.reaches(xs, Num.f(plan.get("rail_x", 0.0)), cfg)
 	var raw: Array = cfg.get("landmarks", [])
 	var shapes: Dictionary = cfg.get("landmark_shapes", {})
 	for spec: Dictionary in raw:
@@ -38,6 +42,15 @@ static func find(
 		if river >= 0 and j.x <= river and j.y >= river:
 			continue  # never in the river's row (CityRiver): it would stand in the water
 		var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
+		if _hits(outer, bay, out):
+			var row := Vector2(zs[j.x], zs[j.y + 1])
+			var ok := func(span: Vector2i) -> bool:
+				var o := Rect2(xs[span.x], row.x, xs[span.y + 1] - xs[span.x], row.y - row.x)
+				return not _hits(o, bay, out) and not _crosses_diagonal(plan, o, cfg)
+			i = _off_bay(along_x, Num.f(at[0]), Num.f(shape["w"]) + pad, ok)
+			if i.x < 0:
+				continue
+			outer = Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
 		if _crosses_diagonal(plan, outer, cfg):
 			continue
 		var x0 := xs[i.x] + _inset(av_x, i.x, cfg)
@@ -191,3 +204,33 @@ static func _crosses_diagonal(plan: Dictionary, outer: Rect2, cfg: Dictionary) -
 	var za := at.y + (outer.position.x - at.x) * dir.y / dir.x
 	var zb := at.y + (outer.end.x - at.x) * dir.y / dir.x
 	return maxf(za, zb) + clear >= outer.position.y and minf(za, zb) - clear <= outer.end.y
+
+
+## Whether a site's outer rect meets the bay's reach (`bay`) or a site placed before it (`placed`).
+static func _hits(outer: Rect2, bay: Array[Rect2], placed: Array[Dictionary]) -> bool:
+	if bay.any(func(b: Rect2) -> bool: return b.intersects(outer)):
+		return true
+	for p: Dictionary in placed:
+		var other: Rect2 = p["outer"]
+		if other.intersects(outer):
+			return true
+	return false
+
+
+## The x span nearest the anchor `v` along the site's row that `ok` accepts (clear of the bay,
+## the sites before it and the diagonal): each x cell's middle in turn, nearest first; (-1, -1)
+## for none.
+static func _off_bay(axis: Dictionary, v: float, need: float, ok: Callable) -> Vector2i:
+	var lines: Array[float] = axis["lines"]
+	var mids: Array[float] = []
+	for k: int in lines.size() - 1:
+		mids.append((lines[k] + lines[k + 1]) * 0.5)
+	mids.sort_custom(func(a: float, b: float) -> bool: return absf(a - v) < absf(b - v))
+	for m: float in mids:
+		var i := _span(axis, m, need)
+		if i.x < 0:
+			continue
+		var fits: bool = ok.call(i)
+		if fits:
+			return i
+	return Vector2i(-1, -1)
