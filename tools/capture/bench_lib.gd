@@ -25,7 +25,7 @@ var steps := 0
 ## The route's tally, read off the sim as it plays (a route must show these, plan section 2).
 var tally := {"stomps": 0, "swipes": 0, "breaths": 0, "beams": 0, "falls": 0}
 var _breath_ready := 0.0
-var _ult_ready := 0.0
+var _ult_ready := 0.0  # the beam seconds left on the last step
 
 
 ## Percentile `p` (0..1) of a sorted array (nearest rank).
@@ -58,6 +58,11 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 		printerr("BENCH native DLL lacks KaijuSettle: refusing to measure (BENCH_ALLOW_STALE_DLL=1 overrides)")
 		return false
 	PlayerSettings.graphics = str(a["graphics"])
+	if DisplayServer.get_name() != "headless":  # a bordered window is clamped under the taskbar
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+		DisplayServer.window_set_size(Vector2i(3840, 2160))
+		await tree.process_frame
+		await tree.process_frame
 	for pair: String in str(a["tune"]).split(",", false):
 		var tv := pair.split("=")  # section.key=value
 		var path := tv[0].split(".")
@@ -123,9 +128,10 @@ func _tally(sim: RampageSim) -> void:
 	if sim.ability_ready_in > _breath_ready + 0.5:
 		tally["breaths"] += 1
 	_breath_ready = sim.ability_ready_in
-	if sim.ultimate_ready_in > _ult_ready + 0.5:
+	var beam: float = sim.powers.beam_left if sim.powers != null else 0.0
+	if beam > 0.0 and _ult_ready <= 0.0:
 		tally["beams"] += 1
-	_ult_ready = sim.ultimate_ready_in
+	_ult_ready = beam
 
 
 ## Every node of `type` under the root, found by class name.
