@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-23 · D-180 · Director · Skins: a cohesive range, not big recolours; each skin sets his eye glow
+
+On the r6 skins board (Obsidian, Abyssal, Albino): "they all need work. the colouring is just way too much, they read as 'black' 'white' 'green', rather than a cohesive new skin range". Skins become variations within the croc's own family, not full-body colour swaps; none goes forward as is. Asked: "Yes, per skin": each skin also recolours his eye glow (breath, charge and effects). After the demo (D-119); owner VFX lead, after motion work.
+
+## 2026-10-23 · D-179 · Director · The balance run moves to GitHub's machines
+
+Asked (the hour-long tools/pacing.gd run was killed twice today by his Godot pauses): "Yes, run it on GitHub": a manual GitHub workflow runs the pacing run and keeps its output, so balance answers no longer need his PC (D-159 "GitHub runs them"). Owner: lead.
+
 ## 2026-10-23 · D-178 · Director · A Taskforce squad locks on together and fires in turn
 
 Asked (sim review of PR #170: as built each gunner locked on separately, so one dash dodged only one shot and a slowed croc took several hits per squad): "Lock together, fire in turn": a squad's aim lines lock at the same moment and its shots land 0.6 s apart, so one dash saves him from the whole squad, and standing still he takes at most about 2 hits a second from a squad (D-166, D-175 per squad).
