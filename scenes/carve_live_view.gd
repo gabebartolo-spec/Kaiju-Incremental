@@ -35,26 +35,24 @@ func draw(d: CarveDebris) -> void:
 	CarveRubble.fit(mm, n)
 	var buf := PackedFloat32Array()
 	buf.resize(mm.instance_count * CarveRubble.FLOATS)
-	var seen := _pack(d, buf, n)
+	_pack(d, buf, n)
 	if cached:
-		if not _bound.encloses(seen):
-			_bound = _bound.merge(seen)
-			mm.custom_aabb = _bound
 		_shown = n
 	mm.buffer = buf
 	mm.visible_instance_count = n
 
 
-## Writes the n pieces as drawn (sunk ones lifted, fading ones shrunk) into `buf`; returns the box
-## they lie in, grown by the largest piece.
-func _pack(d: CarveDebris, buf: PackedFloat32Array, n: int) -> AABB:
+## Writes the n pieces as drawn (sunk ones lifted, fading ones shrunk) into `buf`. With the cache
+## on, a piece whose origin leaves the bounds widens them (grown by that piece's size) and the
+## bounds are set again once.
+func _pack(d: CarveDebris, buf: PackedFloat32Array, n: int) -> void:
 	var t := d._t
-	var lo := Vector3(INF, INF, INF)
-	var hi := Vector3(-INF, -INF, -INF)
-	var reach := 0.0
+	var grown := false
 	for k: int in n:
 		var xf := d._xf_at(k)
-		var low := d._low_of(xf, k)
+		var size := d._sizes[k]
+		var b := xf.basis.scaled_local(size)
+		var low := xf.origin.y - 0.5 * (absf(b.x.y) + absf(b.y.y) + absf(b.z.y))
 		if low < t.ground - t.slop:
 			# The physics steps since the last fix can press a piece in again: never draw it so.
 			# Cached, the body is left to the next tick's fix (it sees this same state); the old
@@ -66,12 +64,12 @@ func _pack(d: CarveDebris, buf: PackedFloat32Array, n: int) -> AABB:
 					d._poses.vel(d._rids[k], PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY)
 				)
 			xf.origin.y += t.ground - low
-		var scale := d._sizes[k]
 		if d._fade[k] >= 0.0:
-			scale *= maxf(CarveDebris.SHRINK_MIN, 1.0 - d._fade[k] / t.fade_t)
-		var drawn := Transform3D(xf.basis.scaled_local(scale), xf.origin)
-		CarveRubble.pack(buf, k * CarveRubble.FLOATS, drawn, d._colors[k])
-		lo = lo.min(xf.origin)
-		hi = hi.max(xf.origin)
-		reach = maxf(reach, d._sizes[k].length())
-	return AABB(lo, hi - lo).grow(reach)
+			var shrunk := size * maxf(CarveDebris.SHRINK_MIN, 1.0 - d._fade[k] / t.fade_t)
+			b = xf.basis.scaled_local(shrunk)
+		CarveRubble.pack(buf, k * CarveRubble.FLOATS, Transform3D(b, xf.origin), d._colors[k])
+		if cached and not _bound.has_point(xf.origin):
+			_bound = _bound.expand(xf.origin).grow(size.length())
+			grown = true
+	if grown:
+		mm.custom_aabb = _bound
