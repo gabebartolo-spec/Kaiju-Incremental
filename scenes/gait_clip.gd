@@ -17,7 +17,8 @@ const TURN_PAD := 6
 const TURN_SETTLE := 24
 ## How fast a lifted foot's toes swing back to the clip's yaw after the body turned over them (1/s).
 const FOOT_YAW_DECAY := 12.0
-## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
+## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam; a clip file
+## that names its own (KaijuClips.jaw_peak: the adult's Cascadeur roar) wins.
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
 ## The roar's tail slam lands when the tip stops falling: watched from ROAR_SLAM_FRAME (motion_test:
@@ -104,7 +105,8 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 		_turn_span[turn] = clips.yaw_span(turn)
 	_steps = ClipSteps.new(clips)
 	_path = SwingPath.new(_steps.swing_frames)
-	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
+	var peak := clips.jaw_peak("roar", ROAR_PEAK_FRAME)
+	_jaw_peak = clips.pose_at("roar", peak).turns[clips.bones.find("jaw")]
 	var tail_bones := 0
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
@@ -282,9 +284,10 @@ func _look_ahead(dt: float) -> void:
 			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
 
 
-## The roar's tail slam lands as a heavy footfall where the tip meets the street.
+## The roar's tail slam lands as a heavy footfall where the tip meets the street (only for a roar
+## keyed with one: the adult's Cascadeur roar arches its tail up, KaijuClips.slams).
 func _slam_tail(roar_was: float) -> void:
-	if state != "roar":
+	if state != "roar" or not clips.slams("roar"):
 		return
 	if roar_was < 0.0 or clip_time < roar_was:  # a new roar
 		_slam_low = Vector3(0, INF, 0)

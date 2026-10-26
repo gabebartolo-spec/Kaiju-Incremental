@@ -31,6 +31,8 @@ var _hold := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args(
 		{
 			"out": _out,

@@ -26,6 +26,8 @@ var _bubble_off := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args(
 		{
 			"seconds": _seconds,
