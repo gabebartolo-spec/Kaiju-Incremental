@@ -18,7 +18,7 @@ extends SceneTree
 const FPS := 60.0
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const DISTANCE := 17.0
-const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
+const Kit := preload("res://tools/capture/capture_kit.gd")
 ## The close camera: this share of the game camera's distance, from 3/4 front, a little above.
 const CLOSE_SHARE := 0.5
 const CLOSE_PITCH := 0.45
@@ -90,7 +90,7 @@ func _run() -> void:
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
 	var cam := Camera3D.new()
-	cam.fov = 55.0 if _clip != "" else 40.0
+	cam.fov = CameraTuning.fov() if _clip != "" else 40.0
 	stage.add_child(cam)
 	root.add_child(stage)
 	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
@@ -178,9 +178,7 @@ func _run() -> void:
 func _place(cam: Camera3D, kaiju: KaijuModel, body_scale: float, dt: float) -> void:
 	var at := kaiju.position
 	if _clip == "game":
-		var zoom := 0.75 + 0.4 * body_scale
-		cam.position = at + CAMERA_OFFSET * zoom
-		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
+		Kit.place_game_camera(cam, kaiju, body_scale)
 		return
 	if _clip == "close":
 		# 3/4 from the front-right, easing round as the kaiju turns so a sharp turn stays readable.
@@ -188,7 +186,7 @@ func _place(cam: Camera3D, kaiju: KaijuModel, body_scale: float, dt: float) -> v
 		_view_dir = (
 			want if _view_dir == Vector3.ZERO else _view_dir.slerp(want, minf(1.0, dt * 2.0))
 		)
-		var reach := CAMERA_OFFSET.length() * (0.75 + 0.4 * body_scale) * CLOSE_SHARE
+		var reach := CameraTuning.offset().length() * CameraTuning.zoom(body_scale) * CLOSE_SHARE
 		var flat := Vector3(_view_dir.x, 0, _view_dir.z).normalized()
 		cam.position = at + (flat * cos(CLOSE_PITCH) + Vector3.UP * sin(CLOSE_PITCH)) * reach
 		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
