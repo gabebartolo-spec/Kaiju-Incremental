@@ -17,7 +17,8 @@ static func find(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
 	var xs: Array[float] = plan["xs"]
-	plan["rail_x"] = CityHarbour.rail_line(xs, avenues[0], cfg)  # the sea bay keeps off it
+	var along_x: Dictionary = avenues[0]
+	plan["rail_x"] = CityHarbour.rail_line(xs, along_x, cfg)  # the sea bay keeps off it
 	return CitySpread.landmarks(plan, rings, avenues, cfg)
 
 
