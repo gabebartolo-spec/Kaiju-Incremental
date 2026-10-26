@@ -4,7 +4,7 @@
 The sequential and lane times a suite takes on a GitHub runner are in the shard logs of past tests.yml runs
 ("pass  sim  166s  ..."). This reads the last N successful runs (default 6) of tests.yml on main and on
 pull requests, averages each suite's seconds, and rewrites the suite lines of tools/ci_timings.txt; the
-"shards", "lanes" and "pr_skip" lines and the comment header are kept (the header's run ids are updated).
+"shards", "lanes", "split" and "pr_skip" lines and the comment header are kept (the header's run ids are updated).
 Needs the gh CLI, logged in. Run at least weekly and after adding a slow suite (debt row 4, D-295):
 
     python tools/ci_retime.py            # last 6 successful runs
@@ -22,7 +22,7 @@ import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 TIMINGS = os.path.join(ROOT, "tools", "ci_timings.txt")
-LINE = re.compile(r"(?:pass|PASS|FAIL)\s+([a-z0-9_]+)\s+(\d+)s\s")
+LINE = re.compile(r"(?:pass|PASS|FAIL)\s+([a-z0-9_]+(?:@\d+/\d+)?)\s+(\d+)s\s")
 
 
 def gh(*args: str) -> str:
@@ -72,10 +72,10 @@ def main(argv: list[str]) -> int:
     keep = []
     if os.path.exists(TIMINGS):
         with open(TIMINGS, encoding="utf-8") as f:
-            keep = [ln.rstrip("\n") for ln in f if re.match(r"(shards|lanes|pr_skip)\s", ln)]
+            keep = [ln.rstrip("\n") for ln in f if re.match(r"(shards|lanes|split|pr_skip)\s", ln)]
     # only suites that still have a runner
     have = {n[len("run_") : -len("_tests.gd")] for n in os.listdir(os.path.join(ROOT, "tests")) if re.match(r"run_.*_tests\.gd$", n)}
-    rows = sorted(((s, round(sum(v) / len(v))) for s, v in secs.items() if s in have), key=lambda r: (-r[1], r[0]))
+    rows = sorted(((s, round(sum(v) / len(v))) for s, v in secs.items() if s.split("@")[0] in have), key=lambda r: (-r[1], r[0]))
     head = [
         f"# Seconds per suite on a CI runner (mean of {len(used)} runs: {', '.join(used)}), {datetime.date.today()}.",
         "# Nobody edits this per PR: a new suite counts as DEFAULT_SECS until the next re-measure (python tools/ci_retime.py, at least weekly).",
@@ -83,7 +83,7 @@ def main(argv: list[str]) -> int:
     ]
     with open(TIMINGS, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(head + keep + [f"{s} {t}" for s, t in rows]) + "\n")
-    missing = sorted(have - {s for s, _ in rows})
+    missing = sorted(have - {s.split("@")[0] for s, _ in rows})
     print(f"wrote {len(rows)} suites from runs {', '.join(used)}; total {sum(t for _, t in rows)} s")
     if missing:
         print("no timing for: " + ", ".join(missing) + " (count as the default until a run includes them)")

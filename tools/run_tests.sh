@@ -29,6 +29,8 @@
 #   tools/run_tests.sh --verbose                      # every suite's line (VERBOSE=1 too)
 #   TIMINGS_FILE=tools/ci_timings.txt tools/run_tests.sh   # re-measure the CI shard plan
 #   LANES=2 tools/run_tests.sh sim city               # two suites at once (CI shards; each has its own user data)
+#   tools/run_tests.sh flow@1/2 flow@2/2              # one suite as two parts (a "split" line of tools/ci_timings.txt):
+#                                                     # each part runs half of its calls, together exactly the suite
 #
 # Exits nonzero if anything failed.
 set -u
@@ -108,6 +110,12 @@ summary+=("| import | pass | |")
 fi
 timings=()
 
+# A suite's name as a file name: "flow@1/2" (part 1 of 2) is "flow_p1of2".
+skey() {  # suite
+	local key="${1//@/_p}"
+	echo "${key//\//of}"
+}
+
 # One suite, start to finish. It writes everything the run reports to files in $LOG_DIR, so
 # several suites can run side by side (LANES) and the report stays in order:
 #   <suite>.log     the suite's own output          <suite>.status  pass | FAIL
@@ -115,17 +123,22 @@ timings=()
 #   <suite>.secs    its run time                    <suite>.done    written last
 # Every suite gets its own user data and settings dirs (APPDATA on Windows, XDG on Linux), so two
 # suites running at once never share a save or a cache.
-run_suite() {  # suite
+run_suite() {  # suite, or suite@K/N for part K of a suite that CI runs in N parts
 	local suite="$1"
-	local runner="$RUNNER_DIR/run_${suite}_tests.gd"
-	local log="$LOG_DIR/$suite.log"
-	local sdata="$RUN_DATA/suite_$suite"
+	local key base part_args=()
+	key=$(skey "$suite")
+	base="${suite%%@*}"
+	[ "$base" != "$suite" ] && part_args=(-- "--part=${suite#*@}")
+	local runner="$RUNNER_DIR/run_${base}_tests.gd"
+	local log="$LOG_DIR/$key.log"
+	local sdata="$RUN_DATA/suite_$key"
 	mkdir -p "$sdata"
 	local start code secs result status detail ran ran_k ran_m skipped short
 	start=$(date +%s)
 	APPDATA="$(native_path "$sdata")" XDG_DATA_HOME="$sdata/data" XDG_CONFIG_HOME="$sdata/config" \
 		XDG_CACHE_HOME="$sdata/cache" \
-		timeout "$SUITE_TIMEOUT" "$GODOT" --headless --fixed-fps 60 --path . --script "$runner" > "$log" 2>&1
+		timeout "$SUITE_TIMEOUT" "$GODOT" --headless --fixed-fps 60 --path . --script "$runner" \
+		${part_args[@]+"${part_args[@]}"} > "$log" 2>&1
 	code=$?
 	secs=$(($(date +%s) - start))
 	result=$(grep -E "[0-9]+ checks, [0-9]+ failures" "$log" | tail -1)
@@ -154,7 +167,8 @@ run_suite() {  # suite
 		short="the line has no function count (call tests through _t, tests/lib/functions_ran.gd)"
 	elif [ -n "$ran" ] && [ "$ran_k" -lt "$ran_m" ]; then
 		short="functions short: $((ran_m - ran_k)) never ran (named in the log)"
-	elif [ -n "$ran" ] && [ "$ran_m" -eq 0 ]; then
+	elif [ -n "$ran" ] && [ "$ran_m" -eq 0 ] && [ "$base" = "$suite" ]; then
+		# (a part may count none: it counts a function in the part that ran its first call)
 		short="the suite has no _check_ functions"
 	fi
 	if [ -n "$short" ] && [ "$code" != 124 ]; then
@@ -184,20 +198,21 @@ run_suite() {  # suite
 				done
 			fi
 		fi
-	} > "$LOG_DIR/$suite.report"
-	echo "| $suite | $status | $detail (${secs}s) |" > "$LOG_DIR/$suite.row"
-	echo "$secs" > "$LOG_DIR/$suite.secs"
-	echo "$status" > "$LOG_DIR/$suite.status"
-	: > "$LOG_DIR/$suite.done"
+	} > "$LOG_DIR/$key.report"
+	echo "| $suite | $status | $detail (${secs}s) |" > "$LOG_DIR/$key.row"
+	echo "$secs" > "$LOG_DIR/$key.secs"
+	echo "$status" > "$LOG_DIR/$key.status"
+	: > "$LOG_DIR/$key.done"
 }
 
 # Prints the report of every suite that has finished and has not been printed yet.
 flush_reports() {
-	local suite
+	local suite key
 	for suite in ${SUITES[@]+"${SUITES[@]}"}; do
-		if [ -e "$LOG_DIR/$suite.done" ] && [ ! -e "$LOG_DIR/$suite.printed" ]; then
-			cat "$LOG_DIR/$suite.report"
-			: > "$LOG_DIR/$suite.printed"
+		key=$(skey "$suite")
+		if [ -e "$LOG_DIR/$key.done" ] && [ ! -e "$LOG_DIR/$key.printed" ]; then
+			cat "$LOG_DIR/$key.report"
+			: > "$LOG_DIR/$key.printed"
 		fi
 	done
 }
@@ -208,7 +223,7 @@ LANES="${LANES:-1}"
 case "$LANES" in '' | *[!0-9]*) LANES=1 ;; esac
 [ "$LANES" -ge 1 ] || LANES=1
 for suite in ${SUITES[@]+"${SUITES[@]}"}; do
-	rm -f "$LOG_DIR/$suite.done" "$LOG_DIR/$suite.printed"
+	rm -f "$LOG_DIR/$(skey "$suite").done" "$LOG_DIR/$(skey "$suite").printed"
 	if [ "$LANES" = 1 ]; then
 		run_suite "$suite"
 		flush_reports
@@ -223,9 +238,10 @@ done
 wait
 flush_reports
 for suite in ${SUITES[@]+"${SUITES[@]}"}; do
-	if [ "$(cat "$LOG_DIR/$suite.status" 2> /dev/null)" != pass ]; then failed=1; fi
-	summary+=("$(cat "$LOG_DIR/$suite.row" 2> /dev/null || echo "| $suite | FAIL | no result |")")
-	timings+=("$suite $(cat "$LOG_DIR/$suite.secs" 2> /dev/null || echo 0)")
+	key=$(skey "$suite")
+	if [ "$(cat "$LOG_DIR/$key.status" 2> /dev/null)" != pass ]; then failed=1; fi
+	summary+=("$(cat "$LOG_DIR/$key.row" 2> /dev/null || echo "| $suite | FAIL | no result |")")
+	timings+=("$suite $(cat "$LOG_DIR/$key.secs" 2> /dev/null || echo 0)")
 done
 
 # The harness checks itself: a test function that never ran or made no check must fail,
@@ -259,11 +275,12 @@ fi
 # TIMINGS_FILE: write each suite's seconds for tools/plan_ci_shards.sh, keeping its
 # "shards <n>" line. Re-measure at least weekly and after adding a slow suite.
 if [ -n "${TIMINGS_FILE:-}" ] && [ "${#timings[@]}" -gt 0 ]; then
-	shards_line=$(grep -E "^shards[[:space:]]" "$TIMINGS_FILE" 2> /dev/null || echo "shards 1")
+	# the plan's own lines (shards, lanes, split, pr_skip) stay; a suite line is a measurement
+	plan_lines=$(grep -E "^(shards|lanes|split|pr_skip)[[:space:]]" "$TIMINGS_FILE" 2> /dev/null || echo "shards 1")
 	{
 		echo "# Seconds per suite from tools/run_tests.sh (TIMINGS_FILE=...), $(date +%F)."
 		echo "# tools/plan_ci_shards.sh splits the suites across shards from these."
-		echo "$shards_line"
+		echo "$plan_lines"
 		printf '%s
 ' "${timings[@]}"
 	} > "$TIMINGS_FILE"

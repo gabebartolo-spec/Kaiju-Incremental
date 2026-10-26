@@ -43,6 +43,13 @@ uses) prints every suite's line.
   weekly or after adding a slow suite from real CI runs: `python tools/ci_retime.py` (reads the
   shard logs of the last green runs with gh), and raise `shards` when the heaviest shard passes
   about 8 minutes.
+- A suite longer than a lane's share (the heaviest are `streamview` and `flow`) is split with a
+  `split <suite> <n>` line in `tools/ci_timings.txt`: CI runs it as `<suite>@1/n` ... `<suite>@n/n`
+  and part K runs the `_t`/`_h` calls of `run_checks()` whose position is K-1 modulo n
+  (`tests/lib/functions_ran.gd`), so together the parts run each call once. Anything `run_checks()`
+  does outside `_t`/`_h` runs in every part; a check made there fails the part. Locally the suite
+  still runs whole (`tools/run_tests.sh flow`); `flow@1/2` runs one part, and `flow@1/1` runs the
+  whole suite and prints each call's time (`CALL <n> <name> <ms> ms`), to balance a split.
 - Seeds pinned; a suite with no randomness says `## Seeded by design: <why>`.
 - Autoloads in a `--script`: `load()` them after the first frame; never name them statically.
 - New checks prove themselves: show each failing on a known-bad fixture first.

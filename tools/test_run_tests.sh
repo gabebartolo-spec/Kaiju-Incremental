@@ -7,7 +7,9 @@
 # project's typing rules hold:
 #   4. tests/fixtures/compile/untyped_var.gd must fail to parse ("has no static type")
 #   5. tests/fixtures/compile/typed_ok.gd must parse
-# and that LANES=2 (two suites at once) passes two good suites and reports both bad fixtures.
+# and that LANES=2 (two suites at once) passes two good suites and reports both bad fixtures, that a suite run as
+# parts (suite@1/2, suite@2/2) makes exactly the checks the whole suite makes, and that the CI shard plan
+# (tools/test_plan_ci_shards.sh) runs every suite, and every part of a split suite, exactly once.
 set -u
 cd "$(dirname "$0")/.." || exit 1
 GODOT="${GODOT:-godot}"
@@ -57,6 +59,39 @@ elif grep -q "_check_x is never called" "$tmp/out.txt" && grep -q "_check_empty 
 else
 	echo "FAIL: LANES=2 lost a failure"
 	cat "$tmp/out.txt"
+	bad=1
+fi
+
+# A suite run as parts ("parts@1/2", "parts@2/2"): the parts make exactly the functions and checks the whole
+# suite makes, nothing twice and nothing dropped (tests/lib/functions_ran.gd part()).
+sums() {  # run_tests.sh output -> "functions checks" added up over its suite lines
+	grep -oE "[0-9]+ of [0-9]+ functions, [0-9]+ checks" "$1" | tr -dc '0-9 \n' | awk '{ k += $1; m += $2; c += $3 } END { print k, m, c }'
+}
+QUICK=1 VERBOSE=1 RUNNER_DIR=tests/fixtures SUITES_ONLY=1 tools/run_tests.sh parts > "$tmp/whole.txt" 2>&1
+QUICK=1 VERBOSE=1 LANES=2 RUNNER_DIR=tests/fixtures SUITES_ONLY=1 tools/run_tests.sh parts@1/2 parts@2/2 > "$tmp/parts.txt" 2>&1
+if [ "$(sums "$tmp/whole.txt")" = "3 3 8" ] && [ "$(sums "$tmp/parts.txt")" = "3 3 8" ] \
+	&& grep -q "All checks passed (2 suites)" "$tmp/parts.txt"; then
+	echo "ok: two parts of a suite make exactly the 3 functions and 8 checks the whole suite makes"
+else
+	echo "FAIL: parts@1/2 and parts@2/2 should add up to the whole suite (3 functions, 8 checks)"
+	echo "whole: $(sums "$tmp/whole.txt"); parts: $(sums "$tmp/parts.txt")"
+	cat "$tmp/whole.txt" "$tmp/parts.txt"
+	bad=1
+fi
+if QUICK=1 RUNNER_DIR=tests/fixtures SUITES_ONLY=1 tools/run_tests.sh stray > "$tmp/out.txt" 2>&1 \
+	&& ! QUICK=1 RUNNER_DIR=tests/fixtures SUITES_ONLY=1 tools/run_tests.sh stray@1/2 > "$tmp/out.txt" 2>&1 \
+	&& grep -q "outside _t and _h" "$tmp/out.txt"; then
+	echo "ok: a check made outside _t and _h fails a suite run in parts, not the whole suite"
+else
+	echo "FAIL: a stray check should pass whole and fail as a part"
+	cat "$tmp/out.txt"
+	bad=1
+fi
+if bash tools/test_plan_ci_shards.sh > "$tmp/plan.txt" 2>&1; then
+	cat "$tmp/plan.txt"
+else
+	echo "FAIL: the shard plan"
+	cat "$tmp/plan.txt"
 	bad=1
 fi
 

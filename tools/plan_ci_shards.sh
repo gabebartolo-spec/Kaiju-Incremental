@@ -3,7 +3,9 @@
 # shards is kept by hand (director 2026-10-19, github-hygiene §4). Suites are found by
 # filename (tests/run_<suite>_tests.gd). tools/ci_timings.txt holds "<suite> <seconds>"
 # lines from real CI runs, one "shards <n>" line and one "lanes <n>" line (suites a shard runs
-# at once); a suite with no timing yet counts as DEFAULT_SECS. Longest suite first, each into the
+# at once), and "split <suite> <n>" lines for a suite too long for one lane, which then runs as n
+# parts "<suite>@1/n" ... "<suite>@n/n" with their own timings (tools/run_tests.sh, tests/lib/functions_ran.gd);
+# a suite with no timing yet counts as DEFAULT_SECS. Longest suite first, each into the
 # lightest bin. Aim for a PR run of about 10-12 minutes: raise "shards" when the heaviest shard
 # passes about 8 minutes.
 #
@@ -31,7 +33,25 @@ for runner_file in tests/run_*_tests.gd; do
 	suite="${suite%_tests.gd}"
 	case "$skip" in *" $suite "*) continue ;; esac
 	secs=$(awk -v s="$suite" '$1 == s {print $2}' "$TIMINGS" 2> /dev/null | head -1)
-	rows+="$suite ${secs:-$DEFAULT_SECS}"$'\n'
+	parts=$(awk -v s="$suite" '$1 == "split" && $2 == s {print $3}' "$TIMINGS" 2> /dev/null | head -1)
+	if [ -n "$parts" ]; then
+		# "split <suite> <n>": the suite runs as n parts, <suite>@1/n ... <suite>@n/n (tests/lib/functions_ran.gd
+		# part()), each its own entry below; a part with no timing yet counts as an even share of the whole.
+		case "$parts" in '' | *[!0-9]*) echo "ERROR: split $suite $parts: the part count must be a whole number" >&2; exit 1 ;; esac
+		if [ "$parts" -lt 2 ]; then echo "ERROR: split $suite $parts: need at least 2 parts" >&2; exit 1; fi
+		k=1
+		while [ "$k" -le "$parts" ]; do
+			part_secs=$(awk -v s="$suite@$k/$parts" '$1 == s {print $2}' "$TIMINGS" 2> /dev/null | head -1)
+			rows+="$suite@$k/$parts ${part_secs:-$(((${secs:-$DEFAULT_SECS} + parts - 1) / parts))}"$'\n'
+			k=$((k + 1))
+		done
+	else
+		rows+="$suite ${secs:-$DEFAULT_SECS}"$'\n'
+	fi
+done
+# A split line for a suite that has no runner would drop nothing and say nothing: fail it.
+for named in $(awk '$1 == "split" {print $2}' "$TIMINGS" 2> /dev/null); do
+	if [ ! -e "tests/run_${named}_tests.gd" ]; then echo "ERROR: split $named: no tests/run_${named}_tests.gd" >&2; exit 1; fi
 done
 if [ -z "$rows" ]; then
 	echo "ERROR: no tests/run_*_tests.gd suites" >&2
