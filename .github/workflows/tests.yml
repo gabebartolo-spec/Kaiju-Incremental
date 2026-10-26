@@ -138,9 +138,11 @@ jobs:
       - name: Parse and compile every GDScript file
         run: GODOT="$HOME/godot/godot" tools/check_scripts.sh
 
+  # The shards start beside the preflight, not after it (about 0.5 minute off every run): a project that
+  # fails to import fails its shards in seconds (tools/run_tests.sh), and `test` still needs the preflight.
   shard:
     name: shard ${{ matrix.shard }}
-    needs: [plan, preflight, native]
+    needs: [plan, native]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -181,7 +183,7 @@ jobs:
   # check-less test function fails, an untyped declaration does not compile).
   extras:
     name: harness self-test
-    needs: [plan, preflight, native]
+    needs: [plan]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
