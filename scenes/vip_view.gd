@@ -4,9 +4,9 @@ extends Node3D
 ## (banking into its lap, leaning into its dash), its own lower, louder rotor, its wreck when it
 ## goes down, and the one news-strip headline each beat gets (lift-off, kill, escape); no marker
 ## anywhere. The sim (VipHeli) decides everything; this reads its state and events. Numbers:
-## tuning "vip". Presentation only; Rampage routes the vip_* events here.
+## tuning "vip". Presentation only; PowersView owns it and routes the vip_* events here.
 
-## The rampage's sounds (Rampage sets it): the wreck's crash.
+## The rampage's sounds (PowersView passes them): the wreck's crash.
 var sfx: Sfx
 var _sim: RampageSim
 var _cfg: Dictionary
