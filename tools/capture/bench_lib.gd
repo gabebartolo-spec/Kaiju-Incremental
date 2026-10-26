@@ -1,5 +1,6 @@
 extends RefCounted
-## What bench_frames.gd and ablate.gd share (Phase 0 render baseline, docs/research/2026-10-26-render-baseline.md):
+## What bench_frames.gd and ablate.gd share (Phase 0 render baseline,
+## docs/research/2026-10-26-render-baseline.md):
 ## the seeded adult-city run (stage, time, weather, preset) with a recorded route replayed on it,
 ## the route's tally of what it did, and percentiles. Tools only; no game code.
 
@@ -24,9 +25,9 @@ var rampage: Rampage
 var city: CityView
 var route: Array = []
 var steps := 0
-var _beam_at := 0
 ## The route's tally, read off the sim as it plays (a route must show these, plan section 2).
 var tally := {"stomps": 0, "swipes": 0, "breaths": 0, "beams": 0, "falls": 0}
+var _beam_at := 0
 var _breath_ready := 0.0
 var _ult_ready := 0.0  # the beam seconds left on the last step
 
@@ -53,12 +54,16 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 	var dll := ProjectSettings.globalize_path("res://native/bin")
 	for f: String in DirAccess.get_files_at("res://native/bin"):
 		if f.ends_with(".dll"):
-			var when := Time.get_datetime_string_from_unix_time(FileAccess.get_modified_time("res://native/bin/" + f))
+			var when := Time.get_datetime_string_from_unix_time(
+				FileAccess.get_modified_time("res://native/bin/" + f)
+			)
 			print("BENCH native %s/%s modified %s" % [dll, f, when])
 	var settle := ClassDB.class_exists("KaijuSettle")
 	print("BENCH ClassDB KaijuSettle=%s" % settle)
 	if not settle and not OS.has_environment("BENCH_ALLOW_STALE_DLL"):
-		printerr("BENCH native DLL lacks KaijuSettle: refusing to measure (BENCH_ALLOW_STALE_DLL=1 overrides)")
+		printerr(
+			"BENCH native DLL lacks KaijuSettle: refusing to measure (BENCH_ALLOW_STALE_DLL=1 overrides)"
+		)
 		return false
 	PlayerSettings.graphics = str(a["graphics"])
 	if DisplayServer.get_name() != "headless":  # a bordered window is clamped under the taskbar
@@ -67,7 +72,15 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 		DisplayServer.window_set_position(Vector2i(0, 0))  # on screen: the director watches the runs
 		await tree.process_frame
 		await tree.process_frame
-		print("BENCH window rect %s viewport %s" % [Rect2i(DisplayServer.window_get_position(), DisplayServer.window_get_size()), tree.root.size])
+		print(
+			(
+				"BENCH window rect %s viewport %s"
+				% [
+					Rect2i(DisplayServer.window_get_position(), DisplayServer.window_get_size()),
+					tree.root.size
+				]
+			)
+		)
 		if tree.root.size != Vector2i(3840, 2160):
 			printerr("BENCH viewport is not 3840x2160: refusing to measure")
 			return false

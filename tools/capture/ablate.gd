@@ -13,6 +13,11 @@ extends SceneTree
 const Lib := preload("res://tools/capture/bench_lib.gd")
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const CONTROL_FRAMES := 120
+const LINE_FMT := (
+	"ABLATE row=%s applied=%s before gpu mean %.3f p50 %.3f"
+	+ " | after gpu mean %.3f p50 %.3f p95 %.3f rcpu mean %.3f"
+	+ " | delta mean %.3f p50 %.3f (n=%d) stomps=%d falls=%d"
+)
 
 var _a: Dictionary
 var _lib := Lib.new()
@@ -20,7 +25,9 @@ var _lib := Lib.new()
 
 func _initialize() -> void:
 	var defaults := Lib.DEFAULTS.duplicate()
-	defaults.merge({"row": "baseline", "at": 3000, "measure": 300, "warmup": 120, "out": "user://bench"})
+	defaults.merge(
+		{"row": "baseline", "at": 3000, "measure": 300, "warmup": 120, "out": "user://bench"}
+	)
 	_a = Kit.args(defaults)
 	if not Kit.window_ok():
 		quit(1)
@@ -47,12 +54,21 @@ func _run() -> void:
 	var changed := _apply(str(_a["row"]))
 	var after := await _sample(vp, Num.i(_a["measure"]))
 	var line := (
-		"ABLATE row=%s applied=%s before gpu mean %.3f p50 %.3f | after gpu mean %.3f p50 %.3f p95 %.3f rcpu mean %.3f | delta mean %.3f p50 %.3f (n=%d) stomps=%d falls=%d"
+		LINE_FMT
 		% [
-			_a["row"], changed,
-			before[0], before[1], after[0], after[1], after[2], after[3],
-			after[0] - before[0], after[1] - before[1], Num.i(_a["measure"]),
-			_lib.tally["stomps"], _lib.tally["falls"],
+			_a["row"],
+			changed,
+			before[0],
+			before[1],
+			after[0],
+			after[1],
+			after[2],
+			after[3],
+			after[0] - before[0],
+			after[1] - before[1],
+			Num.i(_a["measure"]),
+			_lib.tally["stomps"],
+			_lib.tally["falls"],
 		]
 	)
 	print(line)
@@ -97,7 +113,9 @@ func _apply(row: String) -> int:
 						if row == "kaiju_cubes":
 							(child as MultiMeshInstance3D).visible = false
 						else:
-							(child as MultiMeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+							(child as MultiMeshInstance3D).cast_shadow = (
+								GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+							)
 						touched += 1
 		"kaiju_filler":
 			for skin: Node in Lib.nodes_of(self, "VoxelSkin"):

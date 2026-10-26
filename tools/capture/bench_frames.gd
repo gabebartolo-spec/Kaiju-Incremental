@@ -1,5 +1,6 @@
 extends SceneTree
-## The 4K speed baseline (render plan Phase 0, docs/research/2026-10-26-render-baseline.md): the adult
+## The 4K speed baseline (render plan Phase 0, docs/research/2026-10-26-render-baseline.md):
+## the adult
 ## city (stage 3, army seed 0, the reptilian) with a recorded route replayed on it, every frame
 ## measured, one CSV and one summary block. Grown from bench_rampage.gd.
 ##
@@ -8,20 +9,63 @@ extends SceneTree
 ##     --route-file=<route.json> --out=<dir> --label=A_medium
 ##   --frames=3600 --warmup=120   120 frames to settle, then 3600 measured (60 s at 60 fps)
 ##   --time=dusk|night|morning|noon  --weather=clear|rain  --graphics=potato|low|medium|high|max
-##   --route=replay (the recorded inputs; tools/capture/capture_one_look.gd --route=record makes them)
+##   --route=replay (the recorded inputs; capture_one_look.gd --route=record makes them)
 ##   --vsync   keep vsync on (the pacing run); default off for the GPU-time run
 ##   --set=key=value,...  (look overrides)  --tune=section.key=value,...  (tuning.json numbers)
-## Phases: walk-in = the first 600 measured frames; first collapses = frames 600-1200; peak ruin = the last 600. Every number is also in <out>/<label>.csv per frame.
+## Phases: walk-in = the first 600 measured frames; first collapses = frames 600-1200;
+## peak ruin = the last 600. Every number is also in <out>/<label>.csv per frame.
 
 const Lib := preload("res://tools/capture/bench_lib.gd")
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const SUMMARY_FMT := (
+	"BENCH_SUMMARY label=%s time=%s weather=%s graphics=%s "
+	+ "stage=%s frames=%d first_fall=%d vsync=%s"
+)
+const PHASE_FMT := (
+	"BENCH_PHASE %s n=%d wall p50 %.2f p95 %.2f p99 %.2f max %.2f "
+	+ "| gpu p50 %.2f p95 %.2f p99 %.2f | rcpu p95 %.2f "
+	+ "| proc+phys p95 %.2f p99 %.2f max %.2f | over16.7 %d over33.4 %d "
+	+ "| draws p50 %.0f vis_draws %.0f sh_draws %.0f vis_prims %.0f sh_prims %.0f "
+	+ "| vram_mb %.0f"
+)
+const TIMERS_FMT := (
+	"BENCH_TIMERS building_stream worst %.1f ms, island break worst %.1f ms, "
+	+ "street total %.1f ms worst %.1f ms (cumulative)"
+)
 const PHASE_FRAMES := 600
 const IDLE_SCAN := 120  # frames between scans of the island bodies (a node search is not free)
 const COLUMNS: Array[String] = [
-	"frame", "phase", "wall_ms", "gpu_ms", "rcpu_ms", "proc_ms", "phys_ms",
-	"draws", "prims", "objs", "vis_draws", "vis_prims", "vis_objs", "sh_draws", "sh_prims", "sh_objs",
-	"vram_mb", "tex_mb", "buf_mb", "pipe_canvas", "pipe_mesh", "pipe_surface", "pipe_draw", "pipe_spec",
-	"debris_live", "rubble", "bodies_all", "jolt_active", "nodes", "sim_step_ms", "street_ms",
+	"frame",
+	"phase",
+	"wall_ms",
+	"gpu_ms",
+	"rcpu_ms",
+	"proc_ms",
+	"phys_ms",
+	"draws",
+	"prims",
+	"objs",
+	"vis_draws",
+	"vis_prims",
+	"vis_objs",
+	"sh_draws",
+	"sh_prims",
+	"sh_objs",
+	"vram_mb",
+	"tex_mb",
+	"buf_mb",
+	"pipe_canvas",
+	"pipe_mesh",
+	"pipe_surface",
+	"pipe_draw",
+	"pipe_spec",
+	"debris_live",
+	"rubble",
+	"bodies_all",
+	"jolt_active",
+	"nodes",
+	"sim_step_ms",
+	"street_ms",
 ]
 
 var _a: Dictionary
@@ -51,8 +95,18 @@ func _run() -> void:
 	var rampage := _lib.rampage
 	var city := _lib.city
 	Kit.measure_on(self)
-	print("BENCH start frames_drawn=%d size=%s gpu=%s" % [Engine.get_frames_drawn(), root.size, RenderingServer.get_video_adapter_name()])
-	print("BENCH renderer=%s buildings=%d" % [RenderingServer.get_current_rendering_method(), rampage.sim.buildings.size()])
+	print(
+		(
+			"BENCH start frames_drawn=%d size=%s gpu=%s"
+			% [Engine.get_frames_drawn(), root.size, RenderingServer.get_video_adapter_name()]
+		)
+	)
+	print(
+		(
+			"BENCH renderer=%s buildings=%d"
+			% [RenderingServer.get_current_rendering_method(), rampage.sim.buildings.size()]
+		)
+	)
 	for _i: int in Num.i(_a["warmup"]):
 		await process_frame
 	rampage.cost_usec.clear()
@@ -103,7 +157,9 @@ func _run() -> void:
 			for node: Node in Lib.nodes_of(self, "IslandBody"):
 				break_max = maxi(break_max, Num.i(node.get("last_break_us")))
 		var v := [
-			i, 0, wall,
+			i,
+			0,
+			wall,
 			RenderingServer.viewport_get_measured_render_time_gpu(vp),
 			RenderingServer.viewport_get_measured_render_time_cpu(vp),
 			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
@@ -111,7 +167,12 @@ func _run() -> void:
 			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 			Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
 			Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
-			vis[0], vis[1], vis[2], shadow[0], shadow[1], shadow[2],
+			vis[0],
+			vis[1],
+			vis[2],
+			shadow[0],
+			shadow[1],
+			shadow[2],
 			Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
 			Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0,
 			Performance.get_monitor(Performance.RENDER_BUFFER_MEM_USED) / 1048576.0,
@@ -120,10 +181,13 @@ func _run() -> void:
 			Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SURFACE),
 			Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW),
 			Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SPECIALIZATION),
-			debris_live, rubble, all_bodies,
+			debris_live,
+			rubble,
+			all_bodies,
 			Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS),
 			Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
-			sim_step, street_ms,
+			sim_step,
+			street_ms,
 		]
 		for c: int in COLUMNS.size():
 			row[c] = Num.f(v[c])
@@ -131,16 +195,32 @@ func _run() -> void:
 		if rampage.sim.over:
 			print("BENCH run over at measured frame %d (%s)" % [i, rampage.sim.end_reason])
 			break
-	_write(rows, first_fall, costs_max, break_max, stream, street, rampage)
+	_write(
+		rows,
+		{
+			"first_fall": first_fall,
+			"costs_max": costs_max,
+			"break_max": break_max,
+			"stream": stream,
+			"street": street,
+			"rampage": rampage,
+		}
+	)
 	quit()
 
 
 ## [draw calls, primitives, objects] of one render pass kind this frame.
 func _info(vp: RID, kind: RenderingServer.ViewportRenderInfoType) -> Array:
 	return [
-		RenderingServer.viewport_get_render_info(vp, kind, RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME),
-		RenderingServer.viewport_get_render_info(vp, kind, RenderingServer.VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME),
-		RenderingServer.viewport_get_render_info(vp, kind, RenderingServer.VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME),
+		RenderingServer.viewport_get_render_info(
+			vp, kind, RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
+		),
+		RenderingServer.viewport_get_render_info(
+			vp, kind, RenderingServer.VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME
+		),
+		RenderingServer.viewport_get_render_info(
+			vp, kind, RenderingServer.VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME
+		),
 	]
 
 
@@ -155,7 +235,13 @@ func _phases(n: int, _first_fall: int) -> Array:
 	]
 
 
-func _write(rows: Array[PackedFloat64Array], first_fall: int, costs_max: Dictionary, break_max: int, stream: BuildingStream, street: StreetLife, rampage: Rampage) -> void:
+func _write(rows: Array[PackedFloat64Array], facts: Dictionary) -> void:
+	var first_fall: int = facts["first_fall"]
+	var costs_max: Dictionary = facts["costs_max"]
+	var break_max: int = facts["break_max"]
+	var stream: BuildingStream = facts["stream"]
+	var street: StreetLife = facts["street"]
+	var rampage: Rampage = facts["rampage"]
 	var label := str(_a["label"])
 	var dir := str(_a["out"])
 	var phases := _phases(rows.size(), first_fall)
@@ -170,7 +256,21 @@ func _write(rows: Array[PackedFloat64Array], first_fall: int, costs_max: Diction
 	csv.close()
 	var lines: Array[String] = []
 	var col := func(name: String) -> int: return COLUMNS.find(name)
-	lines.append("BENCH_SUMMARY label=%s time=%s weather=%s graphics=%s stage=%s frames=%d first_fall=%d vsync=%s" % [label, _a["time"], _a["weather"], _a["graphics"], _a["stage"], rows.size(), first_fall, _a["vsync"]])
+	lines.append(
+		(
+			SUMMARY_FMT
+			% [
+				label,
+				_a["time"],
+				_a["weather"],
+				_a["graphics"],
+				_a["stage"],
+				rows.size(),
+				first_fall,
+				_a["vsync"]
+			]
+		)
+	)
 	lines.append("BENCH_ROUTE steps=%d tally=%s" % [_lib.steps, _lib.tally])
 	for ph: Array in phases:
 		var from: int = ph[1]
@@ -194,19 +294,35 @@ func _write(rows: Array[PackedFloat64Array], first_fall: int, costs_max: Diction
 		var vis_d: Array = s.call("vis_draws")
 		var sh_d: Array = s.call("sh_draws")
 		var vram: Array = s.call("vram_mb")
-		lines.append(
-			(
-				"BENCH_PHASE %s n=%d wall p50 %.2f p95 %.2f p99 %.2f max %.2f | gpu p50 %.2f p95 %.2f p99 %.2f | rcpu p95 %.2f | proc+phys p95 %.2f p99 %.2f max %.2f | over16.7 %d over33.4 %d | draws p50 %.0f vis_draws %.0f sh_draws %.0f vis_prims %.0f sh_prims %.0f | vram_mb %.0f"
-				% [
-					ph[0], wall.size(),
-					Lib.pct(wall, 0.5), Lib.pct(wall, 0.95), Lib.pct(wall, 0.99), Lib.pct(wall, 1.0),
-					Lib.pct(gpu, 0.5), Lib.pct(gpu, 0.95), Lib.pct(gpu, 0.99),
-					Lib.pct(rcpu, 0.95),
-					Lib.pct(proc_phys, 0.95), Lib.pct(proc_phys, 0.99), Lib.pct(proc_phys, 1.0),
-					Lib.over(wall, 16.7), Lib.over(wall, 33.4),
-					Lib.pct(draws, 0.5), Lib.pct(vis_d, 0.5), Lib.pct(sh_d, 0.5), Lib.pct(vis_p, 0.5), Lib.pct(sh_p, 0.5),
-					Lib.pct(vram, 1.0),
-				]
+		(
+			lines
+			. append(
+				(
+					PHASE_FMT
+					% [
+						ph[0],
+						wall.size(),
+						Lib.pct(wall, 0.5),
+						Lib.pct(wall, 0.95),
+						Lib.pct(wall, 0.99),
+						Lib.pct(wall, 1.0),
+						Lib.pct(gpu, 0.5),
+						Lib.pct(gpu, 0.95),
+						Lib.pct(gpu, 0.99),
+						Lib.pct(rcpu, 0.95),
+						Lib.pct(proc_phys, 0.95),
+						Lib.pct(proc_phys, 0.99),
+						Lib.pct(proc_phys, 1.0),
+						Lib.over(wall, 16.7),
+						Lib.over(wall, 33.4),
+						Lib.pct(draws, 0.5),
+						Lib.pct(vis_d, 0.5),
+						Lib.pct(sh_d, 0.5),
+						Lib.pct(vis_p, 0.5),
+						Lib.pct(sh_p, 0.5),
+						Lib.pct(vram, 1.0),
+					]
+				)
 			)
 		)
 	# Pipeline compilations: any rise after the warm-up is a first-use hitch.
@@ -222,11 +338,21 @@ func _write(rows: Array[PackedFloat64Array], first_fall: int, costs_max: Diction
 	lines.append("BENCH_COSTS worst ms per frame: %s" % ", ".join(cost_text))
 	lines.append(
 		(
-			"BENCH_TIMERS building_stream worst %.1f ms, island break worst %.1f ms, street total %.1f ms worst %.1f ms (cumulative)"
-			% [stream.worst_usec / 1000.0, break_max / 1000.0, (street.total_usec / 1000.0) if street != null else 0.0, (street.worst_usec / 1000.0) if street != null else 0.0]
+			TIMERS_FMT
+			% [
+				stream.worst_usec / 1000.0,
+				break_max / 1000.0,
+				(street.total_usec / 1000.0) if street != null else 0.0,
+				(street.worst_usec / 1000.0) if street != null else 0.0
+			]
 		)
 	)
-	lines.append("BENCH_END sim_over=%s chunks_destroyed=%d" % [rampage.sim.over, rampage.sim.chunks_destroyed])
+	lines.append(
+		(
+			"BENCH_END sim_over=%s chunks_destroyed=%d"
+			% [rampage.sim.over, rampage.sim.chunks_destroyed]
+		)
+	)
 	var txt := FileAccess.open("%s/%s_summary.txt" % [dir, label], FileAccess.WRITE)
 	for line: String in lines:
 		print(line)
