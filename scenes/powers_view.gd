@@ -60,13 +60,7 @@ func _ready() -> void:
 	add_child(_thunder)
 	_beam_sound = SfxBeam.new(rampage.sfx)
 	add_child(_beam_sound)
-	_thunder.prewarm(_city.fx.keep)
-	_thunder.rig.fx = _city.fx
-	var kick := func(_n: int, at: Vector3) -> void:
-		rampage.add_trauma(rampage.shake.source("bolt_stroke"), at)
-	_thunder.rig.stroked.connect(kick)
-	rampage.ability_fx.seed_index = rampage.run_index  # a bolt's stroke shakes the camera too
-	rampage.ability_fx.breath_stroke.connect(kick)
+	_thunder.wire(rampage, _city.fx)
 
 
 func _hook(method: String, args: Array) -> void:

@@ -43,6 +43,18 @@ func prewarm(keep: ShaderKeep) -> void:
 		keep.hold("thunder_%d" % mat.get_instance_id(), mat)
 
 
+## Wires the beam into `rampage`: the city's sparks, the shader prewarm, and a camera kick on
+## every stroke of this bolt and of the breath's (seeded by the run, like this one).
+func wire(rampage: Rampage, fx: Fx) -> void:
+	prewarm(fx.keep)
+	rig.fx = fx
+	var kick := func(_n: int, at: Vector3) -> void:
+		rampage.add_trauma(rampage.shake.source("bolt_stroke"), at)
+	rig.stroked.connect(kick)
+	rampage.ability_fx.seed_index = rampage.run_index
+	rampage.ability_fx.breath_stroke.connect(kick)
+
+
 ## The beam begins (the sim's beam_start): lit for `seconds`, or until stop().
 func start(seconds: float, kaiju_at: Vector3) -> void:
 	_jaw = BreathBeam.jaw_of(_kaiju)

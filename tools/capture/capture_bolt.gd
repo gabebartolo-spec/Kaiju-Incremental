@@ -219,7 +219,12 @@ func _print_points(rampage: Rampage, shot_name: String) -> void:
 	var size := Vector2(root.get_texture().get_image().get_size())
 	var mouth := Kit.image_point(self, cam, rig._mouth, size)
 	var hit := Kit.image_point(self, cam, rig._hit, size)
-	print("POINTS %s mouth=%d,%d hit=%d,%d live=%s" % [shot_name, mouth.x, mouth.y, hit.x, hit.y, rig.live])
+	print(
+		(
+			"POINTS %s mouth=%d,%d hit=%d,%d live=%s"
+			% [shot_name, mouth.x, mouth.y, hit.x, hit.y, rig.live]
+		)
+	)
 	var lashes := 0  # branches that end up the wall above the struck point
 	for line: PackedVector3Array in rig.drawn_lines:
 		if line.size() > 1 and line[line.size() - 1].y > rig._hit.y + 1.0:

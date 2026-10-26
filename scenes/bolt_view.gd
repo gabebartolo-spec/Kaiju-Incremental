@@ -142,9 +142,7 @@ func _surface(mat: ShaderMaterial, lines: Array, taper: Vector2, bright: Vector2
 					other.append_array([there.x, there.y, there.z, 0.0])
 					info.append_array([share, lerpf(bright.x, bright.y, t), t, 0.0])
 					uvs.append(Vector2(float(end), side))
-			idx.append_array(
-				[base, base + 1, base + 2, base + 1, base + 3, base + 2]
-			)
+			idx.append_array([base, base + 1, base + 2, base + 1, base + 3, base + 2])
 	if verts.is_empty():
 		return
 	var arrays := []

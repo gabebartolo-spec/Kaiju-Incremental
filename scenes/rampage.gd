@@ -52,8 +52,8 @@ var camera_fov := CameraTuning.fov()
 var shake := CameraShake.new()
 ## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
 var rumble: PadRumble
-var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var run_index := 0  # the run number (setup's p_run): it seeds each bolt
+var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
 var _blasts: BlastFx

@@ -157,7 +157,8 @@ func _process(delta: float) -> void:
 
 
 ## The dim leader: the main channel growing from the mouth to the target, a frame at a time, until
-## the first stroke (a return stroke down a channel that is already there, never a bolt from nothing).
+## the first stroke (a return stroke down a channel that is already there, never a bolt from
+## nothing).
 func _feel() -> void:
 	if _index > 0:
 		return
