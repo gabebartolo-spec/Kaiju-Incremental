@@ -16,9 +16,11 @@ const Graph := preload("res://tools/audit/road_graph_audit.gd")
 const Ground := preload("res://tools/audit/road_ground_audit.gd")
 const SeedAudit := preload("res://tools/audit/seed_audit.gd")
 const AssetAudit := preload("res://tools/audit/asset_audit.gd")
+const LandmarkClear := preload("res://tools/audit/landmark_clear_audit.gd")
 const STAGES: Array[int] = [1, 2, 3]
 const ROAD_SEEDS := 6
 const ASSET_SEEDS := 8
+const LANDMARK_SEEDS := 20
 ## Road rules that hold at every stage and seed of the full run (2026-10-26; road geometry
 ## brought arms, water, thin blocks and overlapping junction boxes, "close!", to zero; short
 ## blocks, "close", and aspect still fail there; tools/audit/run_city_audit.gd reports them).
@@ -40,6 +42,7 @@ func run_checks() -> void:
 	await _t("_check_same_index_same_city")
 	await _t("_check_road_rules_held")
 	await _t("_check_diagonal_fits")
+	await _t("_check_landmarks_clear")
 	await _t("_check_layout_assets_held")
 
 
