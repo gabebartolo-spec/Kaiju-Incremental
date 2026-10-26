@@ -10,7 +10,6 @@ scenes/city_environment.gd::attach 47 2
 scenes/city_greenery.gd::_park_garden 43 12
 scenes/city_greenery.gd::_yards 45 11
 scenes/city_greenery.gd::kerb_spots 73 22
-scenes/city_skyline.gd::_far_shore 47 6
 scenes/city_view.gd::_ready 43 11
 scenes/diagonal_parking.gd::park 40 14
 scenes/evolution_reveal.gd::_ready 42 2
@@ -28,10 +27,10 @@ scenes/kaiju_rig.gd::_build 54 13
 scenes/pavements.gd::_init 46 26
 scenes/pitch_props.gd::mesh 45 16
 scenes/police.gd::_start_blockade 46 16
-scenes/powers_view.gd::on_event 76 26
-scenes/powers_view.gd::update 52 17
+scenes/powers_view.gd::on_event 71 24
+scenes/powers_view.gd::update 49 16
 scenes/rampage.gd::_physics_process 41 11
-scenes/rampage.gd::_ready 54 8
+scenes/rampage.gd::_ready 53 8
 scenes/settings_menu.gd::_ready 55 1
 scenes/sfx.gd::play 43 12
 scenes/stadium_match.gd::_play 32 13
@@ -45,7 +44,7 @@ sim/building_layout.gd::_brick 11 17
 sim/building_layout.gd::_roof 30 15
 sim/building_layout.gd::_sign 28 20
 sim/building_layout.gd::_stone 12 14
-sim/city_gen.gd::map 90 23
+sim/city_gen.gd::map 84 17
 sim/city_river.gd::sheds 49 10
 sim/city_sites.gd::_span 22 13
 sim/claw_swipe.gd::_undermine 43 18
@@ -62,7 +61,6 @@ sim/structure.gd::_grounded 28 14
 sim/structure.gd::_topple_check 52 23
 sim/structure.gd::settle 30 14
 sim/tank_spacing.gd::blocker 33 19
-sim/tentacles.gd::_grab 41 11
 sim/voxel_support.gd::_attach_fixtures 30 14
 sim/voxel_support.gd::_flood 46 26
 sim/voxel_support.gd::_floors 40 15
