@@ -41,7 +41,8 @@ var _res: int
 var _w: int
 var _d: int
 var _h: int
-# Only while baking (cleared after: the mesher is kept): the voxels' cells, each palette key's
+# Only while baking (cleared after: the mesher is kept): the cells that hide a face (_bake's
+# `all`), each palette key's
 # finish (VoxelAO), per NEIGHBOURS direction the face's corner vectors and AO ring, the cell
 # being meshed (colour, UV2 tag, finish) and the mesh's arrays.
 var _all: Dictionary = {}
@@ -69,14 +70,17 @@ func _init(voxels: BuildingVoxels) -> void:
 	_h = _v.b.height * _res
 	var shell_cells: Array[Vector3i] = []
 	var slab_cells: Array[Vector3i] = []
+	var outside: Array[Vector3i] = []  # slabs outside the hollow (a brick building's balconies)
 	for cell: Vector3i in _v.vox.cells:
 		if _v.vox.key_at(cell) == "slab":
 			slab_cells.append(cell)
+			if not _inside(cell):
+				outside.append(cell)
 		else:
 			shell_cells.append(cell)
 	_begin()
-	_shell_arrays = _bake(shell_cells, true)
-	_slab_arrays = _bake(slab_cells, false)
+	_shell_arrays = _bake(shell_cells, true, _standing_solid(outside))
+	_slab_arrays = _bake(slab_cells, false, _v.vox.cells)
 	_end()
 	_v = null  # the voxels are the bulk of a building's memory: BuildingView rebuilds them on demand
 
@@ -96,7 +100,6 @@ func _inside(c: Vector3i) -> bool:
 
 
 func _begin() -> void:
-	_all = _v.vox.cells
 	_finish = VoxelAO.finish_table()
 	var half := BuildingVoxels.VOXEL * 0.5
 	for d: Vector3i in NEIGHBOURS:
@@ -116,9 +119,25 @@ func _end() -> void:
 	_rings.clear()
 
 
+## The cells that hide a shell face while the building stands: all of them but the floor slabs
+## `outside` the hollow (a brick balcony, proud of the wall). That slab is in the hidden mesh, so it
+## hides nothing, and the wall behind it must draw its own outward face, or a see-through strip
+## crosses the facade at every balcony (the dark flickering bars across the windows).
+func _standing_solid(outside: Array[Vector3i]) -> Dictionary:
+	var solid: Dictionary = _v.vox.cells
+	if outside.is_empty():
+		return solid
+	solid = solid.duplicate()
+	for cell: Vector3i in outside:
+		solid.erase(cell)
+	return solid
+
+
 ## The surface arrays of these cells' visible faces ([] when none shows); hollow_is_solid: the
-## shell (its hollow hides the walls' inner faces and shades their AO).
-func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> Array:
+## shell (its hollow hides the walls' inner faces and shades their AO); `all`: the cells whose
+## faces hide the ones they touch and shade their AO.
+func _bake(cells: Array[Vector3i], hollow_is_solid: bool, all: Dictionary) -> Array:
+	_all = all
 	var voxel := BuildingVoxels.VOXEL
 	var origin := _v.origin() + Vector3(0, voxel * 0.5, 0)
 	for cell: Vector3i in cells:

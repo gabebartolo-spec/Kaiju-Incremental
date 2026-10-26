@@ -226,7 +226,10 @@
           "voxel_ao_light_affect": {"$ref": "#/$defs/num"},
           "finish_on": {"$ref": "#/$defs/bool"},
           "finish_roughness": {"$ref": "#/$defs/finish"},
-          "finish_specular": {"$ref": "#/$defs/finish"}
+          "finish_specular": {"$ref": "#/$defs/finish"},
+          "agx_contrast": {"$ref": "#/$defs/num"},
+          "post_contrast": {"$ref": "#/$defs/num"},
+          "deband": {"$ref": "#/$defs/bool"}
         },
         "required": [
           "id", "label", "name", "sky_top", "sky_horizon", "ambient", "sun_color", "sun_energy",
