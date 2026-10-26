@@ -17,8 +17,23 @@ uniform float max_grow = 0.0;
 uniform float mouth_open = 0.0;
 uniform float seam_dark = 0.22;
 uniform float roughness_value = 0.9;
+// The Special K overload as he dies (scenes/death_view.gd, DeathOverload): `overload` 0..1 lights
+// a share of the cubes violet, flickering cube by cube (the crackle); `stone` 0..1 turns him to
+// stone from the feet up to body_top (rest height, skin units), a ragged front cube by cube. A
+// stone cube keeps stone_keep of its own shade and varies by stone_vary: textured, never flat.
+uniform float overload = 0.0;
+uniform vec3 overload_color : source_color = vec3(0.54, 0.24, 1.0);
+uniform float crackle_share = 0.18;
+uniform float crackle_hz = 14.0;
+uniform float crackle_energy = 2.2;
+uniform float stone = 0.0;
+uniform float body_top = 10.0;
+uniform vec3 stone_color : source_color = vec3(0.54, 0.53, 0.5);
+uniform float stone_vary = 0.18;
+uniform float stone_keep = 0.25;
 
 varying vec3 tint;
+varying vec3 rest;
 
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
@@ -49,12 +64,33 @@ void vertex() {
 	VERTEX = (moved - centre) + turn * (VERTEX * grow);
 	NORMAL = normalize(turn * NORMAL);
 	tint = COLOR.rgb;
+	rest = centre;
 	if (mouth > 0.5) {
 		tint = mix(tint * seam_dark, tint, mouth_open);
 	}
 }
 
+float cube_hash(vec3 p) {
+	return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
+
 void fragment() {
-	ALBEDO = srgb_to_linear(tint);
-	ROUGHNESS = roughness_value;
+	vec3 albedo = srgb_to_linear(tint);
+	float n = cube_hash(floor(rest * 64.0));
+	float stoned = 0.0;
+	if (stone > 0.0) {
+		float front = stone * 1.1 - 0.05 + (n - 0.5) * 0.1;
+		stoned = step(rest.y / body_top, front);
+		float shade = dot(tint, vec3(0.299, 0.587, 0.114));
+		vec3 rock = stone_color * (1.0 + (n - 0.5) * 2.0 * stone_vary);
+		rock = mix(rock, rock * (0.6 + shade), stone_keep);
+		albedo = mix(albedo, rock, stoned);
+	}
+	ALBEDO = albedo;
+	ROUGHNESS = mix(roughness_value, 1.0, stoned);
+	if (overload > 0.0) {
+		float flick = cube_hash(floor(rest * 64.0) + floor(TIME * crackle_hz));
+		float lit = step(1.0 - crackle_share * overload, flick) * (1.0 - 0.6 * stoned);
+		EMISSION = overload_color * crackle_energy * overload * lit;
+	}
 }

@@ -28,6 +28,7 @@ var _rig: KaijuRig
 var _skin: VoxelSkin
 var _walk_phase := 0.0
 var _squash := 0.0
+var _death: DeathPose  # set when he dies: the stagger clip, then its last frame held
 
 
 ## stage: "baby", "adolescent" or "adult" (D-014); a missing stage falls back to the next one up.
@@ -96,6 +97,10 @@ func follow_steps(step_phase: float, step_ratio: float) -> void:
 func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)
 	_squash = maxf(0.0, _squash - delta * 5.0)
+	if _death != null:  # dying: the stagger clip, never the gait (DeathPose)
+		_death.update(delta)
+		VoxelSkin.sync_if(_skin)
+		return
 	if _rig != null:
 		_rig.gait.turn_ahead = turn_ahead
 		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
@@ -201,6 +206,26 @@ func stomped_side() -> String:
 func roar() -> void:
 	if _rig != null:
 		_rig.roar()
+
+
+## He dies (DeathOverload): the gait stops and `clip` plays once and holds (DeathPose).
+func die(clip: String) -> DeathPose:
+	if _death == null:
+		_death = DeathPose.new(_rig, clip)
+	return _death
+
+
+## The Special K overload on his hide: charge 0..1 the violet crackle, stone 0..1 how far the
+## stone has crept up from his feet (VoxelSkin.overload; no-op for a body without a skin).
+func overload(charge: float, stone: float) -> void:
+	if _skin != null:
+		_skin.overload(charge, stone)
+
+
+## Up to `most` of his voxels where they are drawn now (world) with their colours, evenly picked:
+## what the burst throws. Empty for a body without a skin.
+func body_points(most: int) -> Array[Dictionary]:
+	return _skin.world_points(most) if _skin != null else [] as Array[Dictionary]
 
 
 ## The leap's pose hook (Dash phases "crouch", "flight", "settle", "recover"; t 0..1 through it):

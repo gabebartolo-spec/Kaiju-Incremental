@@ -157,6 +157,7 @@ func _ready() -> void:
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
+	add_child(DeathView.new(sim, _city, _kaiju, add_trauma))  # his overload as he dies
 	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
@@ -356,9 +357,8 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
 	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
 	_city.fx.shockwave(at, ring, side == "tail", stomped)
-	_step_dip = maxf(
-		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
-	)
+	var dip := FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
+	_step_dip = maxf(_step_dip, dip)
 
 
 ## The waiting stomp lands under the foot that delivers it: cracks (if heavy enough), the street

@@ -113,6 +113,7 @@ var air: AirWing
 var brood: Brood
 var stomp: RampageStomp
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
+var death: DeathOverload  # how he dies: stagger, stone, shatter (director 2026-10-26)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
 ## The big moments (threat level, felled landmarks, tower totals) as events for the HUD.
@@ -172,6 +173,7 @@ func _init(
 	for n: int in range(rail_from, buildings.size()):
 		rail.add_piece(n)
 	news = RunNews.new(self, tuning)
+	death = DeathOverload.new(self, tuning, Seeds.derive(rng, 0xDEAD))
 
 
 ## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
@@ -228,7 +230,7 @@ func result() -> Dictionary:
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
-	if over or emerge.step(self, dt):
+	if _held_back(dt):
 		return _events
 	time_left -= dt
 	elapsed += dt
@@ -266,6 +268,12 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	return _events
 
 
+## True when the kaiju takes no step of his own: the run is over, he is dying (the world steps
+## on without him, DeathOverload.step_world) or he is still rising from the river.
+func _held_back(dt: float) -> bool:
+	return over or death.active() and death.step_world(dt) or emerge.step(self, dt)
+
+
 ## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
 ## freed: Godot never frees objects that count each other, and every rampage kept its city in
 ## memory (about 240 MB a rampage in tools/pacing.gd). Call it when the rampage is over for good,
@@ -274,8 +282,13 @@ func dispose() -> void:
 	SimTeardown.cut(self)
 
 
-## Ends the rampage (also the pause menu's End Rampage, reason "ended"); earnings are kept.
-func end(reason: String) -> void:
+## Ends the rampage for `reason` (also the pause menu's End Rampage, "ended"); earnings are
+## kept. A death plays his overload first (DeathOverload, which ends it with now = true once the
+## shards are down); the city's fall, or `now`, ends it at once.
+func end(reason: String, now := false) -> void:
+	if not now and death.is_death(reason):
+		death.begin(reason)
+		return
 	over = true
 	end_reason = reason
 	hp = maxf(0.0, hp)
