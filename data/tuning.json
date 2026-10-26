@@ -41,7 +41,13 @@
 		"controls_card": {"seconds": 9.0, "fade_s": 0.6, "width": 760, "first_run_width": 620, "first_run_lift": 90},
 		"tooltip_width": 330,
 		"species_spin_rate": 0.6,
-		"loading_news": ["CITY BRACES FOR IMPACT", "BRIDGES CLOSED UNTIL FURTHER NOTICE", "PETS SENSE SOMETHING"]
+		"loading_news": ["CITY BRACES FOR IMPACT", "BRIDGES CLOSED UNTIL FURTHER NOTICE", "PETS SENSE SOMETHING"],
+		"_note_threat_badge": "The threat badge right of the clock (ThreatBadge, D-259): border and pad [x, y] of its box (px at 1080p), gap between word, digit and meter, digit_size (font px), the five meter bars' bar_heights, bar_width and bar_gap; from level alert_from it turns alert red; a rise pops it to pop_scale over pop_s; clock_gap between clock and badge.",
+		"threat_badge": {"border": 2.0, "pad": [10, 2], "gap": 10, "digit_size": 36, "bar_heights": [8, 13, 18, 23, 28], "bar_width": 6, "bar_gap": 3, "alert_from": 4, "pop_scale": 1.35, "pop_s": 0.35, "clock_gap": 18},
+		"_note_news_live": "The crawl during a rampage (RampageNews): slides up over slide_s, stays while the headline crosses behind the tag plus read_s (never under min_s), then slides away; at most queue lines wait.",
+		"news_live": {"slide_s": 0.25, "read_s": 0.5, "min_s": 3.0, "queue": 3},
+		"_note_specimen_card": "The lab card before a new specimen rises (SpecimenCard, D-260 'a 2 s Lab card'): seconds on screen, gap between title and headline.",
+		"specimen_card": {"seconds": 2.0, "gap": 24}
 	},
 	"display": {
 		"fps_caps": [60, 120, 0],
@@ -106,7 +112,20 @@
 			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"},
 			{"stat": "landmarks", "min": 1, "line": "TOURISTS TOLD: 'THE LANDMARKS ARE CLOSED'"},
 			{"stat": "agents", "min": 1, "line": "TASKFORCE RECRUITING - NO EXPERIENCE NEEDED"}
-		]
+		],
+		"_note_live": "The crawl during a rampage (D-259 'On big events'; RampageNews): one line per sim event (RunNews). threat: by the level reached (2..5); landmarks: by landmark id, any other id takes 'landmark'; towers: '{n}' is the tower total reached; vip: by the VIP's event type (lines wait for the VIP helicopter). specimen: the lab card before a new specimen's first rise (SpecimenCard; '{lost}' and '{next}' are specimen numbers; the headline's two halves sit either side of a drawn dot, as the fonts have no middle dot).",
+		"live": {
+			"threat": {"2": "ARMY TOLD TO TAKE THIS SERIOUSLY", "3": "THREAT LEVEL 3 - ALL LEAVE CANCELLED", "4": "THREAT LEVEL 4 - GENERALS SWEATING", "5": "THREAT LEVEL 5 - EVERYBODY PANIC"},
+			"landmarks": {"stadium": "STADIUM CLOSED - GAME ABANDONED", "wheel": "BIG WHEEL GOES FOR A ROLL", "spire": "SPIRE SNAPPED LIKE A BREADSTICK", "megatower": "MEGATOWER FALLS - SKYLINE SHORTER", "landmark": "ANOTHER LANDMARK OFF THE MAP"},
+			"towers": "{n} TOWERS DOWN AND COUNTING",
+			"vip": {"vip_spawned": "VIP SPOTTED FLEEING BY CHOPPER", "vip_killed": "VIP FLIGHT CANCELLED - PERMANENTLY", "vip_escaped": "VIP ESCAPES - DENIES BEING HERE"}
+		},
+		"specimen": {"title": "SPECIMEN K-{next}", "headline": ["K-{lost} LOST", "K-{next} RELEASED"]}
+	},
+	"threat": {
+		"_note": "The threat badge by the clock (D-259 'A small threat icon', 1-5; RunNews). Agent-added mapping, no decision: the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
+		"level_at": [0.25, 0.5, 0.75, 1.0],
+		"tower_counts": [10, 25, 50, 100]
 	},
 	"results": {
 		"_note": "The results screen (D-259, D-263, D-265). landmark_felled_share: a landmark counts as felled once it has lost this share of its chunks (a stadium never topples). endings: per way a rampage ends (the sim's end reason), the headline across the top and the last line of the news crawl; every ending but city_fallen is the kaiju's death.",
