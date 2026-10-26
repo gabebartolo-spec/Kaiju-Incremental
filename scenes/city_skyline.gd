@@ -196,7 +196,7 @@ func _far_height(downtown: float) -> float:
 
 ## The stepped crown of the last far tower: 60% as wide, 12% as tall, on top.
 func _crown(color: Color, custom: Color) -> Dictionary:
-	var tower := _far.back()
+	var tower: Dictionary = _far.back()
 	var size: Vector3 = tower["size"]
 	var at: Vector3 = tower["at"]
 	var crown_size := Vector3(size.x * 0.6, size.y * 0.12, size.z * 0.6)
