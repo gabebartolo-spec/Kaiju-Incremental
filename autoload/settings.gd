@@ -22,6 +22,14 @@ func _ready() -> void:
 	_mouse_action("stomp", MOUSE_BUTTON_LEFT)
 	_button_action("pause", [KEY_ESCAPE, KEY_P], JOY_BUTTON_START)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
+	# Photo mode's own keys (PhotoMode, D-259): it moves on the move keys and turns on the mouse.
+	_button_action("photo_rise", [KEY_E], JOY_BUTTON_RIGHT_SHOULDER)
+	_button_action("photo_sink", [KEY_Q], JOY_BUTTON_LEFT_SHOULDER)
+	_button_action("photo_hint", [KEY_H], JOY_BUTTON_X)
+	_axis_action("photo_look_left", [], JOY_AXIS_RIGHT_X, -1.0)
+	_axis_action("photo_look_right", [], JOY_AXIS_RIGHT_X, 1.0)
+	_axis_action("photo_look_up", [], JOY_AXIS_RIGHT_Y, -1.0)
+	_axis_action("photo_look_down", [], JOY_AXIS_RIGHT_Y, 1.0)
 	# A confirms and B backs out in every menu (the Controls list says so): the engine's own menu
 	# actions carry no pad A or B here (checked 2026-10-23: ui_accept and ui_cancel were keys only).
 	_menu_pad("ui_accept", JOY_BUTTON_A)
@@ -31,6 +39,7 @@ func _ready() -> void:
 	var presets: Dictionary = Content.section("display")["graphics"]
 	for problem: String in GraphicsPresets.errors(presets):
 		push_error("tuning.json: " + problem)
+	KeyBinds.snapshot()  # the defaults, before the player's own bindings go on top
 	PlayerSettings.load_saved(OS.has_feature("template"))
 	PlayerSettings.apply()
 

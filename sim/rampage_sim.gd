@@ -22,6 +22,17 @@ class Building:
 	var in_arena := true
 	## What its chunks pay, as a share of a smash: a burnt-out building's (FireSpread) is less.
 	var pay_share := 1.0
+	## A piece of the railway's viaduct or station (RailLayout: {"piece", "station"}), else empty.
+	var rail: Dictionary = {}
+	## Chunks it stood with when the rampage began (RunTally reads a landmark's against it).
+	var start_chunks := 0
+
+	func is_rail() -> bool:
+		return not rail.is_empty()
+
+	## Kept meshed wherever the kaiju is (BuildingStream): a landmark, or the railway.
+	func is_held() -> bool:
+		return landmark != "" or is_rail()
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -77,6 +88,8 @@ var hp: float
 var max_hp: float
 var time_left: float
 var rubble: float = 0.0
+## The elevated railway and its trains (Rail).
+var rail: Rail
 var chunks_destroyed := 0
 var chunks_total := 0
 var falls: Array[Fall] = []
@@ -136,8 +149,11 @@ func _init(
 	for entry: Dictionary in layout:
 		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
 		b.in_arena = CityBand.touches(b.x, b.z, Vector2(b.w, b.d), arena_half)
+		b.start_chunks = b.frame.alive_count
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
+	var rail_cfg: Dictionary = tuning["rail"]
+	var rail_from := RailLayout.add_pieces(buildings, city, rail_cfg)
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)
@@ -149,6 +165,14 @@ func _init(
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
+	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
+	for n: int in range(rail_from, buildings.size()):
+		rail.add_piece(n)
+
+
+## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
+func lot_buildings() -> Array[Building]:
+	return buildings.filter(func(b: Building) -> bool: return not b.is_rail())
 
 
 func stat(stat_name: String) -> float:
@@ -191,6 +215,8 @@ func destruction() -> float:
 	return Num.f(chunks_destroyed) / maxf(1.0, Num.f(chunks_total))
 
 
+## What the rampage did, for the results screen (and the save's bests). "best_combo" is the combo
+## system's hook (D-259): it is absent until the combo lands, and the screen shows a dash.
 func result() -> Dictionary:
 	return {
 		"rubble": Num.i(floor(rubble)),
@@ -204,12 +230,12 @@ func result() -> Dictionary:
 		"city_seconds": army_units.taskforce.city_seconds(),
 		"toppled": collapse.toppled,
 		"tallest_topple": collapse.tallest_topple,
+		"landmarks": RunTally.landmarks_felled(buildings),
 		"reason": end_reason,
 	}
 
 
-## Advances the rampage by dt (move, signature pressed, button flags HELD, ULTIMATE, Dash.BUTTON
-## and STOMP).
+## Advances the rampage by dt (move, signature pressed, button flags HELD, ULTIMATE, Dash, STOMP).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
@@ -219,7 +245,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	elapsed += dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
 	var old_facing := facing
-	var moving := move.length() > 0.05
+	var moving := move.length() > 0.05 and not body.dash.on()  # a leap takes no stick
 	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
 	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
 		var speed := stat("speed") * powers.speed_mult() * stride
@@ -241,6 +267,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	army_units.step(dt)
 	air.step(dt)
+	rail.step(dt)
 	Endless.step(self, dt)
 	var why := Endless.over_reason(self)
 	if why != "":
@@ -318,6 +345,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
+	rail.hit(force, damage)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.

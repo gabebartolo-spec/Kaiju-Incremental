@@ -183,14 +183,17 @@ func _check_results_compare() -> void:
 			results.is_new_best("rubble")
 			and results.is_new_best("toppled")
 			and not results.is_new_best("tanks")
-			and labels.count("NEW BEST") == 3
+			and labels.count(ResultsScreen.STAMP_TEXT) == 3
 		),
-		"new bests are marked, misses are not (%d marked)" % labels.count("NEW BEST")
+		(
+			"new records are stamped, misses are not (%d stamped)"
+			% labels.count(ResultsScreen.STAMP_TEXT)
+		)
 	)
 	var bests := labels.filter(func(l: String) -> bool: return l.begins_with("best "))
 	check.call(
-		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size() - 1,
-		"every row but the headline's shows its best or NEW BEST once: %s" % [bests]
+		bests.size() + labels.count(ResultsScreen.STAMP_TEXT) == result.size() - 2,
+		"every reported row but the headline's shows its best or NEW RECORD once: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
 	check.call(short.verdict() == "50 BIOMASS SHORT OF YOUR BEST", "a miss says how far short")
@@ -353,9 +356,11 @@ func _check_settings() -> void:
 			% [PlayerSettings.sfx_volume, sfx_db]
 		)
 	)
+	await GuiInput.click(t, GuiInput.button(menu, "CONTROLS"))  # its own page (D-259)
 	var texts: Array[String] = []
-	for node: Node in menu.find_children("*", "Label", true, false):
-		texts.append((node as Label).text)
+	for node: Node in menu.find_children("*", "Control", true, false):  # labels and buttons
+		texts.append(str(node.get("text")))
+	menu.page.close()
 	check.call(
 		texts.has("Ultimate") and texts.has("E") and texts.has("Y") and texts.has("Start"),
 		"the controls list shows keyboard and pad"

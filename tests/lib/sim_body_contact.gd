@@ -17,8 +17,8 @@ const DT := 1.0 / 30.0
 const FORWARD_STEPS := 90
 const TURN_STEPS := 30
 const BACK_STEPS := 45
-## Steps that cover one dash and its end.
-const DASH_STEPS := 20
+## Steps that cover one leap and its end (the young croc's is about 2.1 s).
+const DASH_STEPS := 90
 ## A scripted young rampage: no wall holds the body longer than this at a stretch (a quarter of
 ## its 40 s). A body stuck on a wall would hold for the rest of the run.
 const HOLD_LIMIT_S := 10.0
@@ -78,8 +78,8 @@ func run() -> void:
 	_check_contact_data()
 
 
-## Playtest note 4: a dash at the nearest building carries the body through it at speed, and
-## the sweep still leaves nothing standing inside the body after any step.
+## The leap (the dash button, D-259) at the nearest building lands the body on it, and the sweep
+## still leaves nothing standing inside the body after any step on the ground.
 func _check_dash() -> void:
 	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
 	sim.body.use_species("reptilian")
@@ -94,10 +94,10 @@ func _check_dash() -> void:
 			worst = maxi(worst, cells.size())
 	var moved := sim.kaiju_pos.distance_to(from)
 	_check.call(
-		sim.body.dash.dashes == 1 and moved > sim.body.length() and worst == 0,
+		sim.body.dash.landings == 1 and moved > sim.body.length() * 0.25 and worst == 0,
 		(
 			(
-				"a dash carries the body %.1f m (body %.1f m) and leaves no chunk inside it (%d);"
+				"a leap lands the body %.1f m on (body %.1f m) and leaves no chunk inside it (%d);"
 				+ " %d chunks broken"
 			)
 			% [moved, sim.body.length(), worst, sim.body.broken]

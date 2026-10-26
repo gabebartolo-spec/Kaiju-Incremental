@@ -1,7 +1,7 @@
 class_name PlayerSettings
 extends RefCounted
-## The player's settings: volume (overall and sound effects), camera motion, fullscreen, UI scale
-## and the frame cap, kept in
+## The player's settings: volume (overall and sound effects), camera motion, fullscreen, UI scale,
+## the frame cap, held moves, reduce flashing, rumble, gore and the key bindings (KeyBinds), kept in
 ## their own file apart from the save. Static so the settings screen and tests reach them
 ## without the Settings autoload (which loads them at start and owns the input actions and F11).
 
@@ -18,7 +18,7 @@ const CONTROLS: Array[Array] = [
 	["Move", "WASD / arrows", "Left stick"],
 	["Signature attack", "Space", "A"],
 	["Glide (insectoid, hold)", "Hold Space", "Hold A", "insectoid"],
-	["Dash", "Shift", "B"],
+	["Leap", "Shift", "B"],
 	["Stomp", "Left click / F", "X"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
@@ -47,6 +47,17 @@ static var controls_seen := false
 static var time_of_day := TimeOfDay.RANDOM
 ## The weather every rampage plays (D-155): Weather.RANDOM (the default) or a weather's id.
 static var weather := Weather.RANDOM
+## Held moves (D-259 "Hold or toggle for held moves"): false = hold the button, true = one press
+## holds the move on and the next lets it go (HeldButton).
+static var hold_toggle := false
+## Reduce flashing (D-259): lights, flares and screen flashes at tuning "accessibility"
+## flash_scale, no colour fringe (flash_scale(), fringe_on()).
+static var reduce_flashing := false
+## Pad rumble (D-259 "Yes, scaled by size, with a toggle"; PadRumble), on by default.
+static var rumble := true
+## Gore (D-259 "On by default, with a toggle"): false = reduced gore, splatter and blood mist
+## become dust (the VFX reads gore_on()).
+static var gore := true
 
 
 static func set_volume(value: float) -> void:
@@ -145,6 +156,44 @@ static func next_time_of_day() -> void:
 	save()
 
 
+static func toggle_hold() -> void:
+	hold_toggle = not hold_toggle
+	save()
+
+
+static func toggle_flashing() -> void:
+	reduce_flashing = not reduce_flashing
+	save()
+
+
+static func toggle_rumble() -> void:
+	rumble = not rumble
+	save()
+
+
+static func toggle_gore() -> void:
+	gore = not gore
+	save()
+
+
+## How bright a flash of light is drawn (lights, flares, screen flashes): 1, or tuning
+## "accessibility" flash_scale while Reduce flashing is on.
+static func flash_scale() -> float:
+	if not reduce_flashing:
+		return 1.0
+	return Num.f(Content.section("accessibility")["flash_scale"])
+
+
+## True while the colour fringe may show (off under Reduce flashing).
+static func fringe_on() -> bool:
+	return not reduce_flashing
+
+
+## True while full gore shows (splatter and blood mist); false: dust instead.
+static func gore_on() -> bool:
+	return gore
+
+
 static func _levels() -> Array[String]:
 	var out: Array[String] = []
 	var table: Dictionary = Content.section("display")["graphics"]
@@ -241,6 +290,11 @@ static func save() -> void:
 	cfg.set_value("ui", "controls_seen", controls_seen)
 	cfg.set_value("display", "time_of_day", TimeOfDay.clean(time_of_day))
 	cfg.set_value("display", "weather", Weather.clean(weather))
+	cfg.set_value("access", "hold_toggle", hold_toggle)
+	cfg.set_value("access", "reduce_flashing", reduce_flashing)
+	cfg.set_value("access", "rumble", rumble)
+	cfg.set_value("access", "gore", gore)
+	KeyBinds.write(cfg)
 	cfg.save(PATH)
 
 
@@ -268,3 +322,8 @@ static func load_saved(start_full: bool) -> void:
 	# An older file has no time of day: Random. An unknown time (since renamed) counts as Random.
 	time_of_day = TimeOfDay.clean(str(cfg.get_value("display", "time_of_day", TimeOfDay.RANDOM)))
 	weather = Weather.clean(str(cfg.get_value("display", "weather", Weather.RANDOM)))
+	hold_toggle = cfg.get_value("access", "hold_toggle", false) == true
+	reduce_flashing = cfg.get_value("access", "reduce_flashing", false) == true
+	rumble = cfg.get_value("access", "rumble", true) != false
+	gore = cfg.get_value("access", "gore", true) != false
+	KeyBinds.read(cfg)

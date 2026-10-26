@@ -350,12 +350,15 @@ func _check_continue_after() -> void:
 	var run := _screen(main) as Rampage
 	await _settled(run)
 	check.call(run.sim.endless == null, "RAMPAGE is the normal mode")
+	# The result Main banks is the one `finished` reports; the street life keeps counting people
+	# who flee after the sim ends, so read the totals from that very dictionary, not a later HUD read.
+	var banked: Array[Dictionary] = []
+	run.finished.connect(func(r: Dictionary) -> void: banked.append(r))
 	run.sim.time_left = 0.05
 	await _frames(RampageHud.BEAT_MIN_FRAMES + 20)
 	await GuiInput.key(t, KEY_ENTER)
 	await _frames(2)
-	var hud := GuiInput.find_script(run, RampageHud) as RampageHud
-	var sim_totals := Demo.add({}, hud.result())
+	var sim_totals := Demo.add({}, banked[0] if not banked.is_empty() else {})
 	var results := GuiInput.find_script(run, ResultsScreen) as ResultsScreen
 	await GuiInput.click(t, GuiInput.button(results, "SKIP"))
 	await GuiInput.click(t, GuiInput.button(results, "EVOLVE"))

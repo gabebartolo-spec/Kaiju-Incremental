@@ -82,7 +82,7 @@ func _on_road(p: Vector2, roads: Dictionary) -> bool:
 ## Building footprints by 4 m cell, for the footprint check.
 func _footprints(sim: RampageSim) -> Dictionary:
 	var grid := {}
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():  # tanks drive on under the viaduct
 		var rect := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
 		for cx: int in range(floori(rect.position.x / 4.0), floori(rect.end.x / 4.0) + 1):
 			for cz: int in range(floori(rect.position.y / 4.0), floori(rect.end.y / 4.0) + 1):

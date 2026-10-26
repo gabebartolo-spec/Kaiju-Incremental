@@ -33,11 +33,12 @@ func step(dt: float) -> void:
 	if sim.stat("swipe_damage") <= 0.0:
 		return
 	_timer -= dt
-	if not _wound and _timer <= Num.f(cfg["swipe_windup"]) and not sim.airborne:
+	var busy := sim.airborne or sim.body.dash.on()  # nor a rake through a leap
+	if not _wound and _timer <= Num.f(cfg["swipe_windup"]) and not busy:
 		# The arm lifts this long before the rake lands (presentation's cue; changes nothing).
 		_wound = true
 		sim.events.append({"type": "swipe_windup", "side": -_side})
-	if _timer > 0.0 or sim.airborne:
+	if _timer > 0.0 or busy:
 		return
 	_timer += Num.f(cfg["swipe_interval"])
 	_wound = false

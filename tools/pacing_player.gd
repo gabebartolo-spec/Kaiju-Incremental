@@ -2,7 +2,8 @@ class_name PacingPlayer
 extends RefCounted
 ## The scripted player of tools/pacing.gd and tools/sim_leak_probe.gd: walks to the nearest standing
 ## building (heading for `goal` first, when it has one), presses the signature and the ultimate
-## whenever they are ready and glides half the time, until the rampage ends.
+## whenever they are ready, leaps only when a standing building is in reach ahead and the leap is
+## ready (at most once a cooldown), and glides half the time, until the rampage ends.
 
 ## The step the scripted player plays at (15 Hz).
 const DT := 1.0 / 15.0
@@ -23,11 +24,12 @@ static func play(sim: RampageSim, start_goal: Vector2, max_steps: int = 0) -> in
 		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
 		var held := RampageSim.HELD if steps % 30 < 15 else 0
+		var leap := Dash.BUTTON if sim.body.dash.target_ahead() >= 0 else 0
 		sim.step(
 			DT,
 			move,
 			sim.ability_ready_in <= 0.0,
-			held | RampageSim.ULTIMATE | Dash.BUTTON | RampageSim.STOMP
+			held | RampageSim.ULTIMATE | leap | RampageSim.STOMP
 		)
 		steps += 1
 	return steps

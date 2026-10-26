@@ -20,9 +20,11 @@ func _init(p_sim: RampageSim) -> void:
 ## next footfall); a press sooner is not kept.
 func step(dt: float, pressed: bool) -> void:
 	_timer = maxf(0.0, _timer - dt)
-	if pressed and _timer <= 0.0 and not _due and not sim.airborne:
+	if pressed and _timer <= 0.0 and not _due and not sim.airborne and not sim.body.dash.on():
 		_timer = interval()
 		_due = true
+	if sim.body.dash.on():  # no stomp through a leap, crouch to recovery (sim review of #225)
+		_due = false
 	if _due and (sim.body.footfall_now or not sim.body.walking()):
 		_due = false
 		_land()

@@ -19,8 +19,8 @@ const DIP_RECOVER := 4.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
-const AUTOPLAY_GLIDE_CYCLE := 90
-const AUTOPLAY_GLIDE_HELD := 50
+const AUTOPLAY_GLIDE_CYCLE := RampageInput.GLIDE_CYCLE
+const AUTOPLAY_GLIDE_HELD := RampageInput.GLIDE_HELD
 
 var sim: RampageSim
 ## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
@@ -50,6 +50,8 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
+## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
+var rumble: PadRumble
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
@@ -62,12 +64,13 @@ var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
 var _ability := RampageAbility.new()
 var _camera: Camera3D
 var _far_depth: FarDepth  ## the far blur, locked on the kaiju (D-163)
+var _aim: BreathAim
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
+var _rail: RailView
 var _fx_rng: RandomNumberGenerator
 var _autoplay := false
-var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 var _stomp_radius := 0.0
@@ -75,8 +78,7 @@ var _stomp_radius := 0.0
 var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
-## Presses made while the rise from the river holds the sim back, kept for its first live tick.
-var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
+var _input := RampageInput.new()
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
@@ -138,7 +140,8 @@ func _ready() -> void:
 	add_child(ability_fx)
 	if not await stages.next(self):
 		return
-	add_child(BreathAim.new(sim, Color(str(colors["eye"]))))  # where a ready breath will burn
+	_aim = BreathAim.new(sim, Color(str(colors["eye"])))  # where a ready breath will burn
+	add_child(_aim)
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
@@ -149,9 +152,7 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
-	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
-	HelicopterModel.new().free()
-	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
+	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
@@ -162,10 +163,7 @@ func _ready() -> void:
 	)
 	_kaiju.foot_planted.connect(_on_footfall)
 	_ability.bind(self, _city, _kaiju)
-	_camera = Camera3D.new()
-	_camera.fov = camera_fov
-	add_child(_camera)
-	_camera.current = true
+	_add_camera()
 	_start_sound()
 	_place_camera(1.0)
 	_add_overlays()
@@ -176,51 +174,31 @@ func _ready() -> void:
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
 
+func _add_camera() -> void:
+	_camera = Camera3D.new()
+	_camera.fov = camera_fov
+	add_child(_camera)
+	_camera.current = true
+
+
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
 	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
+	_hud.photo = photo_mode
+	rumble = PadRumble.new(sim)
+	_kaiju.foot_planted.connect(rumble.footfall)
 	add_child(_hud)
-
-
-## This tick's input: the player's (keyboard and mouse, or pad), a capture's script or the
-## autoplay; {"move", "signature", "held", "ultimate", "dash", "stomp"}. The sim ignores input while
-## it rises from the river: a tap before the handover is kept (InputLatch).
-func _read_input(delta: float) -> Dictionary:
-	var out := {
-		"move": Input.get_vector("move_left", "move_right", "move_up", "move_down"),
-		"signature": Input.is_action_just_pressed("signature"),
-		"held": Input.is_action_pressed("signature"),
-		"ultimate": Input.is_action_just_pressed("ultimate"),
-		"dash": Input.is_action_just_pressed("dash"),
-		"stomp": Input.is_action_pressed("stomp"),  # held, it stomps once per interval
-	}
-	if scripted.is_valid():  # captures: any of the keys above, the rest false
-		var script: Dictionary = scripted.call(sim)
-		for key: String in out:
-			out[key] = script.get(key, Vector2.ZERO if key == "move" else false)
-	elif _autoplay:
-		out["move"] = _walk.move(sim, _steps)
-		out["signature"] = autoplay_signature and sim.ability_ready_in <= 0.0
-		out["held"] = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		out["ultimate"] = autoplay_signature
-		out["stomp"] = true  # stomps whenever the button is ready (once per stomp interval)
-	var taps := {
-		"signature": out["signature"],
-		"ultimate": out["ultimate"],
-		"dash": out["dash"],
-		"stomp": out["stomp"]
-	}
-	out.merge(_latch.through(sim.emerge.active, taps, delta), true)
-	return out
 
 
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
-	var input := _read_input(delta)
+	_input.autoplay = _autoplay
+	_input.fire = autoplay_signature
+	var input := _input.read(sim, scripted, _steps, delta)
 	var move: Vector2 = input["move"]
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
@@ -235,7 +213,7 @@ func _physics_process(delta: float) -> void:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
+	_kaiju_at = _ability.place(delta, 0.0 if sim.body.dash.on() else move.length(), _kaiju_at)
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
@@ -255,6 +233,16 @@ func _process(delta: float) -> void:
 			sfx.stomp(_power("stomp_damage"), false)
 
 
+## The pause menu's photo mode (PhotoMode, D-259): the gameplay camera flies free round the frozen
+## kaiju; the breath's aim and the floating numbers hide while it is up.
+func photo_mode() -> PhotoMode:
+	var hide: Array[Node3D] = [_aim]
+	for node: Node in get_tree().get_nodes_in_group(CityView.FLOAT_TEXT):
+		hide.append(node as Node3D)
+	var rest := (camera_rest * CameraTuning.zoom(sim.body_scale())).length()
+	return PhotoMode.new(_camera, _kaiju_at, rest, hide)
+
+
 ## Shakes the camera (CameraShake): `amount` trauma from a hit at `at` (Vector3.INF: at the
 ## kaiju), fading with its distance from the camera's focus. Explosions and every other hit use it.
 func add_trauma(amount: float, at := Vector3.INF) -> void:
@@ -267,11 +255,22 @@ func _note_cost(what: String, since: int) -> void:
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
 
 
+## The army's tanks (their voxels built once now, so the first spawn reuses them), the
+## helicopters' voxels, and the railway.
+func _add_vehicles() -> void:
+	TankModel.new().free()
+	HelicopterModel.new().free()
+	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
+	_rail = RailView.new(self, sim, _city)
+	add_child(_rail)
+
+
 func _to_world(p: Vector2) -> Vector3:
 	return Vector3(p.x, 0.0, p.y)
 
 
 func _on_event(event: Dictionary) -> void:
+	rumble.on_event(event)
 	match str(event["type"]):
 		"stomp":
 			var speed := Num.f(event.get("speed", 1.0))
@@ -306,6 +305,8 @@ func _on_event(event: Dictionary) -> void:
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
+			_rail.on_event(event)
+			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -322,17 +323,6 @@ func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
 func _power(stat_name: String) -> float:
 	var base: Dictionary = species["stats"]
 	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
-
-
-func _update_kaiju(delta: float, moving: float) -> void:
-	var target := _to_world(sim.kaiju_pos)
-	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
-	_kaiju_at = _ability.step(delta, target, _kaiju_at)
-	_kaiju.position = _kaiju_at
-	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-	# sim angle to model yaw: the sign flips
-	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
-	_kaiju.animate(delta, moving, -sim.body.turn_left)
 
 
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
@@ -356,6 +346,7 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 ## crushed around that foot, one dust ripple. Sound is released by the same footfall (Sfx.footstep).
 func _land_stomp(side: String, at: Vector3) -> void:
 	_stomp_wait = 0.0
+	rumble.stomp()
 	var heavy := _power("stomp_damage")
 	sfx.stomp(heavy, _land.landed(side, ability_fx.stomp_cracks(at, _stomp_radius, heavy)))
 	var street := _city.street  # the foot lands wider than its ring (stomp_catch)

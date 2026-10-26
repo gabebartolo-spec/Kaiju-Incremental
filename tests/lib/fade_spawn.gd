@@ -18,7 +18,7 @@ const HIDES := 0.5
 const TOP := 0.9
 const FEET_SIGHT := 0.5
 ## The sight lines are sampled every SIGHT_STEP units; the model eases to the sim at BODY_FOLLOW/s
-## (Rampage._update_kaiju).
+## (RampageAbility.place).
 const SIGHT_STEP := 0.5
 const BODY_FOLLOW := 12.0
 const DT := 1.0 / 60.0

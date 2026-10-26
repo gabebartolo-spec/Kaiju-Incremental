@@ -25,7 +25,7 @@ var held := false
 var longest_hold := 0.0
 ## The snout tip's forward offset from kaiju_pos at body scale 1, design units ("snout").
 var snout := 0.0
-## The charge along the facing (Dash), which this body's sweep carries through the city.
+## The dash button's leap (Dash): the body crouches, flies and lands on what is ahead.
 var dash: Dash
 ## Steps walked so far (0 at the first step; an integer is a footfall, even the left foot, odd the
 ## right): the sim's step clock, which the legs follow (ClipGait) and which opens the yaw slices.
@@ -80,6 +80,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 func use_species(species_id: String) -> void:
 	var bodies: Dictionary = cfg.get("bodies", {})
 	var stages: Array = bodies.get(species_id, [])
+	dash.use_species(species_id)
 	_discs = []
 	_volume.discs = _discs
 	_stomp_foot = Vector2.ZERO  # a body without an entry stomps at kaiju_pos, never a stale foot
@@ -234,6 +235,16 @@ func stomp_foot(left: bool) -> Vector2:
 	return sim.kaiju_pos + (heading * _stomp_foot.x + across) * sim.body_scale()
 
 
+## Lifts the body volume off the ground (world units) for what it overlaps: a leap's arc.
+func set_lift(lift: float) -> void:
+	_volume.lift = lift
+
+
+## How far ahead of kaiju_pos the feet come down (world units): a leap aims them at its target.
+func feet_ahead() -> float:
+	return _stomp_foot.x * sim.body_scale()
+
+
 ## True when the body walks by its step clock (it has planted feet and the stick is pushed).
 func walking() -> bool:
 	return stepping() and not _standing
@@ -288,7 +299,7 @@ func step_clock() -> float:
 	return phase if stepping() else INF
 
 
-## The kaiju has walked `distance` world units in dt (a stride or a dash): the step clock follows,
+## The kaiju has walked `distance` world units in dt (a stride): the step clock follows,
 ## at least as fast as a turn's cadence (a turn takes short quick steps).
 func walked(distance: float, dt: float) -> void:
 	if stepping():
@@ -304,12 +315,13 @@ func walked(distance: float, dt: float) -> void:
 			footfall_now = true
 
 
-## Carries a dash (dash_pressed: the button this step), faces the body where sim.facing points,
+## Carries a leap (dash_pressed: the button this step), faces the body where sim.facing points,
 ## then breaks what the body moved or turned into.
 func step(dt: float, dash_pressed: bool = false) -> void:
 	dash.step(dt, dash_pressed)
 	_face(dt)
-	if not active() or sim.airborne:
+	_volume.lift = dash.height()  # a leap's flight breaks what its body passes through
+	if not active() or (sim.airborne and not dash.on()):
 		_last_pos = Vector2(INF, INF)
 		return
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
@@ -321,7 +333,6 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	longest_hold = maxf(longest_hold, _hold_s)
 	if held:
 		_hold(from, from_heading)
-		dash.left = 0.0  # a dash into a wall that has not given yet stops at it
 	_last_pos = sim.kaiju_pos
 	_last_heading = heading
 

@@ -116,15 +116,15 @@ func _card(hud: RampageHud) -> void:
 	for node: Node in card.find_children("*", "Label", true, false):
 		texts.append((node as Label).text)
 	check.call(
-		texts.has("Dash") and texts.has("Shift") and texts.has("Move"),
-		"the card lists the controls, dash included: %s" % [texts]
+		texts.has("Leap") and texts.has("Shift") and texts.has("Move"),
+		"the card lists the controls, leap included: %s" % [texts]
 	)
 	var rows := card.find_children("*", "GridContainer", true, false)
 	var count := 0
 	if not rows.is_empty():
 		count = (rows[0] as GridContainer).get_child_count() / 3 - 1
 	check.call(
-		count == 4, "the first-run card has 4 rows (move, signature, dash, stomp): %d" % count
+		count == 4, "the first-run card has 4 rows (move, signature, stomp, leap): %d" % count
 	)
 	check.call(
 		texts.any(func(x: String) -> bool: return x.to_upper().contains("ANY KEY")),

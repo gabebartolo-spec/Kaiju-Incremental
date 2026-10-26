@@ -86,7 +86,7 @@ static func _near_buildings(
 	sim: RampageSim, spawn: Vector2, land: Vector2
 ) -> Array[RampageSim.Building]:
 	var out: Array[RampageSim.Building] = []
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():  # the viaduct stands over a street
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
 		if _gap(foot, spawn, land) < NEAR:
 			out.append(b)
