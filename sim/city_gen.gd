@@ -92,18 +92,13 @@ static func map(cfg: Dictionary) -> Dictionary:
 	var rings := districts(cfg)
 	var full := rings[rings.size() - 1]
 	var outer := Num.f(cfg["outer_half"])
-	# Long blocks one way, short the other (Manhattan): x-lines far apart, z-lines close.
-	var long: Array = cfg["block_long"]
-	var short: Array = cfg["block_short"]
 	var diag := _diagonal(cfg)
 	var x_rule := CityLineFit.x_rule(cfg, diag, rings)
-	var long_gaps: Array[int] = [Num.i(long[0]), Num.i(long[1])]
-	var short_gaps: Array[int] = [Num.i(short[0]), Num.i(short[1])]
-	# The outskirts' blocks vary far more than the city's, so they are no even grid, but none is
-	# cut thinner than a lot between two avenues.
-	var thin := roundi(width_of(AVENUE, cfg) + 2.0 * Num.f(cfg["sidewalk"]) + MIN_LOT_M)
-	var far_long: Array[int] = [maxi(long_gaps[0] - 6, thin), long_gaps[1] + 14]
-	var far_short: Array[int] = [maxi(short_gaps[0] - 2, thin), short_gaps[1] + 12]
+	var gaps := line_gaps(cfg)
+	var long_gaps: Array[int] = gaps["long"]
+	var short_gaps: Array[int] = gaps["short"]
+	var far_long: Array[int] = gaps["far_long"]
+	var far_short: Array[int] = gaps["far_short"]
 	# Each later district's streets, out to its own ring avenue, draw from their own stream; the
 	# outskirts from theirs, so tuning them never reshuffles the city. The x-lines come first: the
 	# z-lines then sit between the diagonal's crossings with them (CityLineFit).
@@ -189,6 +184,27 @@ static func map(cfg: Dictionary) -> Dictionary:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
 	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
 	return plan
+
+
+## The street lines' gap bounds [lo, hi], m: long blocks one way, short the other (Manhattan):
+## x-lines far apart, z-lines close; the outskirts' ("far_") vary far more, so they are no even
+## grid, but none is cut thinner than a lot between two avenues.
+static func line_gaps(cfg: Dictionary) -> Dictionary:
+	var long: Array = cfg["block_long"]
+	var short: Array = cfg["block_short"]
+	var thin := roundi(width_of(AVENUE, cfg) + 2.0 * Num.f(cfg["sidewalk"]) + MIN_LOT_M)
+	var out := {
+		"long": [Num.i(long[0]), Num.i(long[1])] as Array[int],
+		"short": [Num.i(short[0]), Num.i(short[1])] as Array[int],
+	}
+	out["far_long"] = [maxi(Num.i(long[0]) - 6, thin), Num.i(long[1]) + 14] as Array[int]
+	out["far_short"] = [maxi(Num.i(short[0]) - 2, thin), Num.i(short[1]) + 12] as Array[int]
+	return out
+
+
+## The diagonal avenue of cfg: {at, dir} (city.diagonal_through, city.diagonal_deg).
+static func diagonal_of(cfg: Dictionary) -> Dictionary:
+	return _diagonal(cfg)
 
 
 ## Every district's ring lines and one or two lines through the first district are avenues; an

@@ -238,3 +238,39 @@ static func clearance(diag: Dictionary, axis: String, v: float, others: Array[fl
 		var c := crossing(diag, o if axis == "z" else v)
 		out = minf(out, absf((v if axis == "z" else o) - c))
 	return out
+
+
+## Whether the x-lines of cfg's plan can meet every rule whatever the seed (the runs between the
+## fixed ring lines and out to the outskirts; the z-lines then always fit between the diagonal's
+## crossings): the check tools/audit/diagonal_fit.gd uses to pick city.diagonal_through and
+## city.diagonal_deg. diag: CityGen.diagonal_of(cfg), or a candidate.
+static func x_runs_fit(cfg: Dictionary, diag: Dictionary) -> bool:
+	var rings := CityGen.districts(cfg)
+	var rule := x_rule(cfg, diag, rings)
+	for r: float in rings:
+		if not _pos_ok(roundi(r), rule) or not _pos_ok(-roundi(r), rule):
+			return false
+	var gaps := CityGen.line_gaps(cfg)
+	var long: Array[int] = gaps["long"]
+	var cap := maxi(long[1], 2 * long[0] - 1)
+	var inner := rule.duplicate()
+	inner["avenue"] = true
+	var r0 := roundi(rings[0])
+	if _costs([-r0, 1, 2 * r0], [long[0], cap], inner, 3)[0] != 0:
+		return false
+	for k: int in range(1, rings.size()):
+		var from := roundi(rings[k - 1])
+		for side: int in [1, -1]:
+			var run_at := [from * side, side, roundi(rings[k]) - from]
+			if _costs(run_at, [long[0], cap], rule, 1)[0] != 0:
+				return false
+	var far: Array[int] = gaps["far_long"]
+	var open := rule.duplicate()
+	open["open"] = true
+	var full := roundi(rings[-1])
+	var outer := ceili(Num.f(cfg["outer_half"]))
+	for side: int in [1, -1]:
+		var run_at := [full * side, side, outer - full]
+		if _costs(run_at, [far[0], maxi(far[1], 2 * far[0] - 1)], open, 1)[0] != 0:
+			return false
+	return true

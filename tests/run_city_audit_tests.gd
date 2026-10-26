@@ -39,6 +39,7 @@ func run_checks() -> void:
 	await _t("_check_planted_zero_weight_asset")
 	await _t("_check_same_index_same_city")
 	await _t("_check_road_rules_held")
+	await _t("_check_diagonal_fits")
 	await _t("_check_layout_assets_held")
 
 
@@ -170,6 +171,25 @@ func _check_road_rules_held() -> void:
 					% [tier, map_seed, "/".join(ROAD_RULES_HELD), bad.slice(0, 4)]
 				)
 			)
+
+
+## The shipped diagonal fits its rings (CityLineFit.x_runs_fit; tools/audit/diagonal_fit.gd
+## re-picks it when they change), and the pre-fix one (through (-6, 4) at 27 deg, which crossed
+## the grid 2.2 m from the ring corner (80, 50)) is caught as not fitting.
+func _check_diagonal_fits() -> void:
+	var cfg := Roads.city(Content.tuning(), 1, Roads.SHIPPED_SEED)
+	check(
+		CityLineFit.x_runs_fit(cfg, CityGen.diagonal_of(cfg)),
+		"the shipped diagonal %s at %s deg fits the rings %s (else run tools/audit/diagonal_fit.gd)"
+		% [cfg["diagonal_through"], cfg["diagonal_deg"], cfg["districts"]]
+	)
+	var old := cfg.duplicate()
+	old["diagonal_through"] = [-6, 4]
+	old["diagonal_deg"] = 27
+	check(
+		not CityLineFit.x_runs_fit(old, CityGen.diagonal_of(old)),
+		"the pre-fix diagonal (-6, 4) at 27 deg is caught as not fitting"
+	)
 
 
 ## Every layout asset (archetypes, facades, landmarks, signs) meets the bar on a few seeds.
