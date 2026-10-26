@@ -123,9 +123,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			add_child(_beam)
 		"beam_end":
 			_hook("jaw_open", [false])
-			if _beam != null:
-				_beam.queue_free()
-				_beam = null
+			_beam_gone()
 		"coated", "fire_burning":
 			_lit(event)
 		"glide_start":
@@ -162,9 +160,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"ink":
 			_city.ring(kaiju_at, Num.f(event["reach"]), INK, 0.8)
 		"heli_spawned":
-			var heli := HelicopterModel.new()
-			add_child(heli)
-			_helis[Num.i(event["heli"])] = heli
+			_heli_up(Num.i(event["heli"]))
 		"heli_fired":
 			_heli_fired(Num.i(event["heli"]), kaiju_at)
 		"heli_destroyed", "heli_crashed":
@@ -174,6 +170,20 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	if not played.has(str(event["type"])):
 		played.append(str(event["type"]))
 	return true
+
+
+## The breath beam's box goes.
+func _beam_gone() -> void:
+	if _beam != null:
+		_beam.queue_free()
+		_beam = null
+
+
+## A gunship's model joins the sky.
+func _heli_up(id: int) -> void:
+	var heli := HelicopterModel.new()
+	add_child(heli)
+	_helis[id] = heli
 
 
 ## Fire (beam) or ink glowing on a few of the newly coated chunks.
