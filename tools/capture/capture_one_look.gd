@@ -237,7 +237,13 @@ func _bench_frames(rampage: Rampage, city: CityView) -> void:
 	print(
 		(
 			"ONEL gpu ms mean %.3f median %.3f p95 %.3f max %.3f (n=%d)"
-			% [gsum / gpu.size(), gpu[gpu.size() / 2], gpu[int(gpu.size() * 0.95)], gpu[gpu.size() - 1], gpu.size()]
+			% [
+				gsum / gpu.size(),
+				gpu[gpu.size() / 2],
+				gpu[int(gpu.size() * 0.95)],
+				gpu[gpu.size() - 1],
+				gpu.size()
+			]
 		)
 	)
 
