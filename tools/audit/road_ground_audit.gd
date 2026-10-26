@@ -1,7 +1,8 @@
 extends RefCounted
 ## ROADS audit, ground half (D-265): what lies beside and under every road of the real city
 ## (CityBand.extent), read off the street plan (CityGen.map) the way CityGround lays it.
-##   water  a road piece over the river's open water off every bridge deck (CityRiver.bridges)
+##   water  a road piece over the river's open water off every bridge deck (CityRiver.bridges and
+##          the diagonal's, CityRiver.diagonal_deck)
 ##   kerb   a stretch of road edge, away from its junctions, with no kerbed pavement beside it
 ##          (CityGen.pavement of a block or a landmark's plaza), no other carriageway and no
 ##          water (a bridge's parapet or the quay); alleys carry no pavement by design
@@ -29,14 +30,26 @@ static func _water(g: Graph.Net) -> Array[Dictionary]:
 		return out
 	var channel := water[0].grow(-0.01)
 	var decks := CityRiver.bridges(g.plan, g.cfg)
+	var diagonal := CityRiver.diagonal_deck(g.plan, g.cfg)
 	for k: int in g.pieces:
 		var steps := maxi(1, ceili(g.length(k) / WATER_STEP))
 		for i: int in steps + 1:
 			var p := g.end_a(k).lerp(g.end_b(k), float(i) / steps)
-			if channel.has_point(p) and not _in_any(decks, p, 0.01):
+			var on_diagonal := g.kind(k) == CityGen.DIAGONAL and _on_deck(diagonal, p)
+			if channel.has_point(p) and not _in_any(decks, p, 0.01) and not on_diagonal:
 				out.append(Graph.violation("water", p, "%s over open water" % g.kind(k)))
 				break
 	return out
+
+
+## True when p lies on the diagonal's bridge (CityRiver.diagonal_deck; {} when it has none).
+static func _on_deck(deck: Dictionary, p: Vector2) -> bool:
+	if deck.is_empty():
+		return false
+	var a: Vector2 = deck["from"]
+	var b: Vector2 = deck["to"]
+	var on := Geometry2D.get_closest_point_to_segment(p, a, b)
+	return on.distance_to(p) <= Num.f(deck["width"]) * 0.5 + 0.01
 
 
 static func _in_any(rects: Array[Rect2], p: Vector2, grow: float) -> bool:
