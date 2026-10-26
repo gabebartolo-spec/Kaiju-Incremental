@@ -10,6 +10,8 @@ var _every := 10
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--every="):
 			_every = maxi(1, arg.substr(8).to_int())
