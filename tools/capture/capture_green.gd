@@ -156,7 +156,8 @@ func _stills() -> void:
 
 
 func _shot(cam: Camera3D, at: Vector3, zoom: float, shot_name: String) -> void:
-	cam.position = at + CameraTuning.offset() * zoom  # the game camera's direction, closer for the close-ups
+	# The game camera's direction, closer for the close-ups.
+	cam.position = at + CameraTuning.offset() * zoom
 	cam.look_at(at)
 	for _i: int in SETTLE:
 		await process_frame
