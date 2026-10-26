@@ -19,9 +19,12 @@ const AssetAudit := preload("res://tools/audit/asset_audit.gd")
 const STAGES: Array[int] = [1, 2, 3]
 const ROAD_SEEDS := 6
 const ASSET_SEEDS := 8
-## Road rules that hold on main at every stage and seed of the full run (2026-10-26; arms,
-## close, aspect and water fail there; tools/audit/run_city_audit.gd reports them).
-const ROAD_RULES_HELD: Array[String] = ["stub", "zero", "split", "angle", "kerb"]
+## Road rules that hold at every stage and seed of the full run (2026-10-26; road geometry
+## brought arms, water, thin blocks and overlapping junction boxes, "close!", to zero; short
+## blocks, "close", and aspect still fail there; tools/audit/run_city_audit.gd reports them).
+const ROAD_RULES_HELD: Array[String] = [
+	"stub", "zero", "split", "angle", "kerb", "arms", "water", "thin", "close!"
+]
 const STUB_M := 4.0  # the planted dead end: shorter than any block
 
 
@@ -155,7 +158,10 @@ func _check_road_rules_held() -> void:
 			var got := Roads.run(Roads.city(base, tier, map_seed))
 			var bad: Array[Dictionary] = []
 			for v: Dictionary in got["violations"]:
-				if v["rule"] in ROAD_RULES_HELD:
+				var rule := str(v["rule"])
+				if rule == "close" and str(v["note"]).contains("overlap"):
+					rule = "close!"  # junction boxes overlap (Roads.by_rule)
+				if rule in ROAD_RULES_HELD:
 					bad.append(v)
 			check(
 				bad.is_empty(),

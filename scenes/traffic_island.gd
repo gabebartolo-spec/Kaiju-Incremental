@@ -1,8 +1,10 @@
 class_name TrafficIsland
 extends RefCounted
-## D-062 (no empty ground): a ground cell (city.coverage_cell, the no-empty-ground grid) that is
-## all road junction, with no building, prop or car in it and no spot a parked car fits in
-## (DiagonalParking.fits_in), gets a small kerbed traffic island with a signal pole and bollards,
+## D-062 (no empty ground): a ground cell (city.coverage_cell, the no-empty-ground grid) with no
+## building, prop or car in it and no spot a parked car fits in (DiagonalParking.fits_in), whose
+## free spot lies inside a junction (on two streets' carriageways at once), gets a small kerbed
+## traffic island with a signal pole and bollards (the city audit, D-265: it used to need the
+## whole cell to be junction, which no plan leaves, so islands never appeared),
 ## each its own prop that flattens under the kaiju like a lamp. The island stands where no lane
 ## runs: city.traffic_island.lane_clear from every driving lane's line (and the diagonal's
 ## parked rows), node_clear from every crossing, never in the water. Presentation only; no RNG.
@@ -60,8 +62,6 @@ static func spots(decor: CityDecor) -> Array[Vector2]:
 			var near := _near_streets(plan, box)
 			if near.is_empty() or _wet(box.get_center(), water):
 				continue  # no street, or the river (the no-empty-ground grid skips it too)
-			if not _all_road(box, near, water):
-				continue
 			var best := Vector2.INF
 			var step := Num.f(cfg["search_step"])
 			var n := floori(size / step)
@@ -70,8 +70,8 @@ static func spots(decor: CityDecor) -> Array[Vector2]:
 					var p := box.position + Vector2(u + 0.5, w + 0.5) * step
 					if maxf(absf(p.x), absf(p.y)) > half or _wet(p, water):
 						continue
-					if not _clear(p, lanes, plan, cfg):
-						continue
+					if _roads_at(p, near) < 2 or not _clear(p, lanes, plan, cfg):
+						continue  # off a junction, or in a lane
 					if p.distance_to(box.get_center()) < best.distance_to(box.get_center()):
 						best = p
 			if best != Vector2.INF:
@@ -133,15 +133,13 @@ static func _near_streets(plan: Dictionary, box: Rect2) -> Array[Array]:
 	return out
 
 
-## Whether every point of box (sampled half a metre apart) lies on a carriageway or the water.
-static func _all_road(box: Rect2, streets: Array[Array], water: Array[Rect2]) -> bool:
-	var n := ceili(box.size.x / 0.5)
-	for u: int in n:
-		for w: int in n:
-			var p := box.position + Vector2(u + 0.5, w + 0.5) * 0.5
-			if not _wet(p, water) and not _on_road(p, streets):
-				return false
-	return true
+## How many carriageways hold p (2 or more: p lies inside a junction).
+static func _roads_at(p: Vector2, streets: Array[Array]) -> int:
+	var n := 0
+	for s: Array in streets:
+		if _on_road(p, [s]):
+			n += 1
+	return n
 
 
 static func _on_road(p: Vector2, streets: Array[Array]) -> bool:

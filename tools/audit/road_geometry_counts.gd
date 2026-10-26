@@ -27,6 +27,14 @@ func _start() -> void:
 		if arg == "--sweep":
 			_sweep = true
 	var base := Content.tuning()
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--diag="):  # z,deg: try another diagonal (through x stays)
+			var v := arg.trim_prefix("--diag=").split(",")
+			base = base.duplicate(true)
+			var city: Dictionary = base["city"]
+			var through: Array = city["diagonal_through"]
+			city["diagonal_through"] = [through[0], v[0].to_float()]
+			city["diagonal_deg"] = v[1].to_float()
 	if _sweep:
 		_run_sweep(base)
 		quit(0)

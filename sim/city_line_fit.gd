@@ -54,7 +54,7 @@ static func run(
 			best = length - d if not open else draw
 		st = _next(run_at, d, d + best, st, rule) if states > 1 else 0
 		d += best
-		out.append(start + int(run_at[1]) * d)
+		out.append(start + Num.i(run_at[1]) * d)
 	return out
 
 
@@ -101,19 +101,19 @@ static func _next(run_at: Array, d: int, e: int, st: int, rule: Dictionary) -> i
 	var avenue := Num.f(rule["s_avenue"])
 	if st == 1 and gap >= avenue + _s_of(b, rule) + STEP:
 		return 2
-	var inner := e != int(run_at[2])
+	var inner := e != Num.i(run_at[2])
 	return 1 if inner and gap >= avenue + _s_of(a, rule) + STEP else 0
 
 
 static func _at(run_at: Array, d: int) -> float:
-	return float(int(run_at[0]) + int(run_at[1]) * d)
+	return float(Num.i(run_at[0]) + Num.i(run_at[1]) * d)
 
 
 ## What a gap from d to e breaks: the line at e in a barred place (a fixed end line never
 ## counts), and the gap itself.
 static func _step_cost(run_at: Array, d: int, e: int, rule: Dictionary) -> int:
 	var n := 0 if _gap_ok(_at(run_at, d), _at(run_at, e), rule) else 1
-	var fixed: bool = e == int(run_at[2]) and not rule.get("open", false)
+	var fixed: bool = e == Num.i(run_at[2]) and not rule.get("open", false)
 	if not fixed and not _pos_ok(roundi(_at(run_at, e)), rule):
 		n += 1
 	return n
