@@ -85,7 +85,8 @@ func _layout(hud: RampageHud) -> void:
 	check.call(said.is_empty(), "the HUD shows no controls or health text: %s" % [said])
 	var bars := hud.find_children("*", "ProgressBar", true, false)
 	check.call(
-		bars.size() == 1, "one meter on the HUD (the city's), no health bar: %d" % bars.size()
+		bars.is_empty(),
+		"no ProgressBar on the HUD (no city meter or health bar; the threat bar is drawn): %d" % bars.size()
 	)
 	var at := hud.biomass.get_global_rect().get_center()
 	var boxed := false
