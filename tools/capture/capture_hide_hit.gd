@@ -176,8 +176,8 @@ func _wounds(rampage: Rampage) -> int:
 	var kaiju: Node = rampage._kaiju
 	if not kaiju.has_method("hide_hits"):
 		return -1
-	var n: int = kaiju.call("hide_hits").live()
-	return n
+	var hits: SkinHits = kaiju.call("hide_hits")
+	return hits.live()
 
 
 func _voxel(rampage: Rampage) -> float:

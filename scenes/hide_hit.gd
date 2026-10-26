@@ -54,7 +54,8 @@ static func land(
 		normal = hit["normal"]
 		var eye: bool = hit["eye"]
 		if not glance and not eye and kaiju.has_method("hide_hits"):
-			kaiju.call("hide_hits").add_wound(hit["rest"], 1.0)
+			var hits: SkinHits = kaiju.call("hide_hits")
+			hits.add_wound(hit["rest"], 1.0)
 	fx.hide_hit(point, normal, unit, away if glance else NO_GLANCE)
 	return {"point": point, "normal": normal, "hit": not hit.is_empty()}
 
