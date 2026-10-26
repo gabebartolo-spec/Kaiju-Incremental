@@ -5,8 +5,14 @@ shader_type spatial;
 // weights 1-2. Shaded like voxel faces: its normal snaps to the nearest axis of its main bone, so
 // a stretched patch reads as cube faces instead of a streaked sheet (lead review, PR #15).
 
+#include "res://scenes/stone_body.gdshaderinc"
+
 uniform mat4 bones[128];
 uniform float roughness_value = 0.9;
+// The stone creep as he dies (voxel_skin.gdshader's, same front): the filler turns with the cubes.
+uniform float stone = 0.0;
+uniform float body_top = 10.0;
+varying vec3 rest;
 
 varying flat vec3 axis_x;
 varying flat vec3 axis_y;
@@ -17,6 +23,7 @@ vec3 srgb_to_linear(vec3 c) {
 }
 
 void vertex() {
+	rest = VERTEX;
 	mat4 main_bone = bones[int(CUSTOM0.x + 0.5)];
 	mat4 blend = main_bone * CUSTOM0.w
 		+ bones[int(CUSTOM0.y + 0.5)] * CUSTOM1.x
@@ -40,6 +47,12 @@ void fragment() {
 	} else {
 		NORMAL = axis_z * sign(d.z);
 	}
-	ALBEDO = srgb_to_linear(COLOR.rgb);
+	vec3 albedo = srgb_to_linear(COLOR.rgb);
+	if (stone > 0.0) {
+		float n = fract(sin(dot(floor(rest * 64.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+		float stoned = step(rest.y / body_top, stone * 1.1 - 0.05 + (n - 0.5) * 0.1);
+		albedo = mix(albedo, stone_rock(COLOR.rgb, n), stoned);
+	}
+	ALBEDO = albedo;
 	ROUGHNESS = roughness_value;
 }
