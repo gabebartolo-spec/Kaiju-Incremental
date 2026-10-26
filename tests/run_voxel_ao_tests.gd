@@ -210,8 +210,12 @@ func _check_look_reaches_material() -> void:
 	look["finish_on"] = 0.0
 	view = BuildingView.new(_building(FIXTURES[0]), Color("8a7f72"))
 	var off := AoFaces.uniforms(view)
-	look["voxel_ao_on"] = keep[0]
-	look["finish_on"] = keep[1]
+	for k: int in 2:
+		var key: String = ["voxel_ao_on", "finish_on"][k]
+		if keep[k] == null:
+			look.erase(key)
+		else:
+			look[key] = keep[k]
 	check(
 		off[0] == 0.0 and off[1] == 0.0 and not off[2],
 		"off: AO strength 0, light affect 0, finish off (%s)" % [off]
