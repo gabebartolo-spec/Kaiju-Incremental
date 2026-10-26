@@ -1549,30 +1549,31 @@
 		}
 	},
 	"rain": {
-		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks fall as camera-facing quads in a world-space volume that follows the camera; counts are x the graphics preset's particles ratio. Lengths and widths in metres, speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold).",
-		"streaks": 16000,
-		"volume": [150.0, 70.0, 150.0],
-		"ahead": 28.0,
+		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks are screen-facing quads at one screen angle (the fall direction as the camera sees it), in three depth layers, each its own world-space volume that follows the camera; counts are x the graphics preset's particles ratio. len and width are shares of the viewport height (so a streak is as long and as thick on a 1080p and a 4K screen), speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold). min_streak_share and min_streak_alpha are the floors the weather suite holds the look above (a rain you can see).",
+		"layers": [
+			{"name": "near", "streaks": 9000, "volume": [80.0, 50.0, 80.0], "ahead": 26.0, "speed_mul": 1.25, "len": 0.03, "width": 0.0008, "alpha": 0.3, "near_clear": 12.0, "near_full": 22.0, "far_begin": 40.0, "far_end": 62.0},
+			{"name": "mid", "streaks": 28000, "volume": [140.0, 60.0, 140.0], "ahead": 36.0, "speed_mul": 1.0, "len": 0.02, "width": 0.0006, "alpha": 0.24, "near_clear": 30.0, "near_full": 46.0, "far_begin": 80.0, "far_end": 105.0},
+			{"name": "far", "streaks": 34000, "volume": [220.0, 70.0, 220.0], "ahead": 60.0, "speed_mul": 0.85, "len": 0.013, "width": 0.0005, "alpha": 0.18, "near_clear": 70.0, "near_full": 95.0, "far_begin": 140.0, "far_end": 190.0}
+		],
+		"min_streak_share": 0.02,
+		"min_streak_alpha": 0.15,
 		"fall_speed": 30.0,
 		"speed_jitter": 0.08,
 		"wind_gain": 2.2,
-		"length": 1.5,
-		"width": 0.03,
-		"min_px": 1.1,
-		"alpha": 0.42,
 		"fade_in": 0.07,
 		"fade_out": 0.1,
-		"far_begin": 70.0,
-		"far_end": 125.0,
-		"tint_white": 0.55,
+		"tint_white": 0.7,
 		"max_channel": 0.82,
-		"clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
-		"splashes": 2600,
+		"clear": {"centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
+		"ahead": 28.0,
+		"splashes": 10000,
 		"splash_volume": [90.0, 90.0],
-		"splash_seconds": 0.35,
-		"splash_size": 0.5,
-		"splash_alpha": 0.5,
+		"splash_seconds": 0.5,
+		"splash_lifetime_spread": 0.5,
+		"splash_size": 0.8,
+		"splash_alpha": 0.2,
 		"splash_y": 0.11,
-		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7}
+		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7},
+		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
 	}
 }
