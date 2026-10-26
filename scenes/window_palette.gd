@@ -69,7 +69,7 @@ static func apply(mat: ShaderMaterial, b: RampageSim.Building) -> void:
 
 
 ## The palette uniforms alone (the far stand-ins pick per lit facade cell instead).
-static func apply_common(mat: ShaderMaterial) -> void:
+static func apply_common(mat: ShaderMaterial) -> ShaderMaterial:
 	var cols := colours()
 	var ends := weight_ends()
 	mat.set_shader_parameter("window_palette_on", on() and not cols.is_empty())
@@ -79,6 +79,7 @@ static func apply_common(mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter("window_weight_end", ends)
 	mat.set_shader_parameter("window_palette_size", mini(_entries().size(), MAX))
 	mat.set_shader_parameter("window_gain", gain())
+	return mat
 
 
 ## (bays, floors) one lit window spans above the ground floor (BuildingLayout's lit rolls).
