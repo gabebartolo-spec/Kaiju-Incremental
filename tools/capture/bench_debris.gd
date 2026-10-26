@@ -17,6 +17,8 @@ var _passes := 2
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for a: String in OS.get_cmdline_user_args():
 		if a.begins_with("--n="):
 			_ns.clear()

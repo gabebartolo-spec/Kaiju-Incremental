@@ -22,6 +22,8 @@ var _timed := true
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "stage": _only, "quick": false})
 	_out = str(a["out"])
 	_only = Num.i(a["stage"])
