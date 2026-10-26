@@ -12,6 +12,8 @@ const AT: Array[float] = [0.0, 0.5, 0.8, 1.0, 1.2, 1.4, 1.6, 2.0, 2.4, 2.7]
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_run.call_deferred()
 
 

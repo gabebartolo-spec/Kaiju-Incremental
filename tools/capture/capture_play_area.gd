@@ -15,6 +15,8 @@ var _hud: RampageHud
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"stage": 1, "seconds": 6.0})
 	_stage = Num.i(a["stage"])
 	_frames = roundi(Num.f(a["seconds"]) * Engine.get_physics_ticks_per_second())

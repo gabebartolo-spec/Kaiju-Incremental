@@ -10,6 +10,8 @@ const Green := preload("res://tests/lib/city_green.gd")
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_run.call_deferred()
 
 
