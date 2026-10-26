@@ -237,6 +237,9 @@ func settle(n: int) -> Array[Dictionary]:
 		)
 		event["base"] = foot
 		event["gutted"] = not under and span.y > mini(base.size.x, base.size.y)
+		event["under"] = under
+		if under:  # the cell it stands on, for the readers that check what held it
+			event["support"] = CarvingCells.support(f, index, lo.y)
 		if str(part["kind"]) != "topple":
 			event["drop"] = CarvingCells.drop(f, index)
 		out.append(event)

@@ -130,3 +130,18 @@ static func drop(f: VoxelFrame, index: PackedInt32Array) -> float:
 
 static func _geo(g: Carving.Grid) -> PackedInt32Array:
 	return PackedInt32Array([g.frame.w, g.frame.d, g.frame.h, g.bw, g.bd])
+
+
+## The grid index of the cell that holds up an island whose lowest layer is `low`: the top cell
+## under the first of its lowest cells that has one (VoxelFrame.column_top), or -1.
+static func support(f: VoxelFrame, index: PackedInt32Array, low: int) -> int:
+	var plan := f.w * f.d
+	for i: int in index:
+		if i / plan != low:
+			continue
+		var x := i % f.w
+		var z := (i / f.w) % f.d
+		var y := f.column_top(x, z, low)
+		if y >= 0:
+			return x + z * f.w + y * plan
+	return -1
