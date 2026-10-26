@@ -36,9 +36,9 @@ static func width(rings: Array[float], ring: int) -> float:
 ## from its "min_ring" on with room left (spread "landmarks_per_ring"), at the first seeded cell
 ## of that district where it fits and keeps its distances. A landmark no district can take is
 ## left out. A spec's "max_ring" is the last district it may stand in (the stadium: districts 1
-## and 2, past the baby's edge in the young city and real and inside the play area from the stage
-## that opens its district, director 2026-10-20 / D-270). A spec with an "anchor" [x, z] stands
-## there instead (no spread).
+## and 2; district 1 cannot keep the stadium 187.5 m from a rise on the north edge, so it stands
+## in district 2: past the baby's edge until stage 3 opens it, b2-21 / D-254 / D-270, lead call
+## 2026-10-27). A spec with an "anchor" [x, z] stands there instead (no spread).
 static func landmarks(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
