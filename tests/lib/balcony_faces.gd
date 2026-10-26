@@ -1,8 +1,8 @@
 extends RefCounted
 ## Face helpers for tests/run_cell_mesh_tests.gd: the faces of a standing building's shell that look
-## at a floor slab outside the hollow (a brick balcony; the baked view does not draw one, D-289, and kept it in its hidden
-## slab mesh), and which of a shell's faces nothing drawn covers. Faces are keyed by their
-## centre on a 1/1024 m grid.
+## at a floor slab outside the hollow (a brick balcony, which the baked view never draws, D-289),
+## and which of a shell's faces nothing drawn covers. Faces are keyed by their centre on a
+## 1/1024 m grid.
 
 
 ## A face's centre: the cell's centre, half a voxel out along `d`.
