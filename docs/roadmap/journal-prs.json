@@ -1822,9 +1822,9 @@
 {
 "n": 262,
 "t": "native: godot-cpp 10.0.0 (api 4.7); benches and captures refuse without the native DLL (debt rows 9, 14)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 263,
@@ -1962,9 +1962,9 @@
 {
 "n": 282,
 "t": "hygiene: main is the base everywhere (status board, native cache)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 283,
@@ -1982,10 +1982,10 @@
 },
 {
 "n": 285,
-"t": "docs: journal catches up to #283: days 10-24 to 10-27, 90 PRs placed",
-"s": "OPEN",
+"t": "docs: journal catches up to #289: days 10-24 to 10-27, 96 PRs placed",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 286,
@@ -2018,6 +2018,34 @@
 {
 "n": 290,
 "t": "docs: every unlanded branch has an owner, date and next step",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 291,
+"t": "tools: no Godot launch while a speed run holds the PC (D-299)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 292,
+"t": "tools: PASS needs the test run's own pass line (a killed run no longer prints PASS)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 293,
+"t": "tests: split four 391-400 line files at their seams (debt row 15)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 294,
+"t": "ci: licence loose ends: MIT gitleaks CLI; export --release refuses DEV ONLY files",
 "s": "OPEN",
 "c": "2026-10-26",
 "m": ""
