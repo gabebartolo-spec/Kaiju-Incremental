@@ -220,7 +220,8 @@
           "water": {"$ref": "#/$defs/str"},
           "river": {"$ref": "#/$defs/str"},
           "ambient_color": {"$ref": "#/$defs/hex6"},
-          "lamp_energy": {"$ref": "#/$defs/num"}
+          "lamp_energy": {"$ref": "#/$defs/num"},
+          "sand": {"$ref": "#/$defs/str"}
         },
         "required": [
           "id", "label", "name", "sky_top", "sky_horizon", "ambient", "sun_color", "sun_energy",
