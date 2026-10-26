@@ -35,7 +35,7 @@ func on_event(event: Dictionary, city: CityView, kaiju: KaijuModel, hud: Rampage
 			city.deck_burst()
 			_run.add_trauma(_run.shake.source("drop"))
 		"surface_break":  # the head breaks the water: he roars with rage (#11, R 20.3)
-			kaiju.roar(Num.f(_cfg["roar_jaw_seconds"]))
+			kaiju.roar()  # the roar clip (REPLACE: the Cascadeur roar is queued)
 			Sfx.roar(_run)
 		"kaiju_emerged":
 			hud.fade_in(Num.f(_cfg["hud_fade_seconds"]))

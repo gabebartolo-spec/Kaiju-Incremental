@@ -120,7 +120,6 @@ func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
-	head.tick_hold(dt)  # the run intro's roar holds the maw open a while (BipedHead.hold_open)
 	_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
