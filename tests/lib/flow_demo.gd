@@ -9,6 +9,7 @@ extends RefCounted
 const CreationWalk := preload("res://tests/lib/creation_walk.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
+const DeathWait := preload("res://tests/lib/death_wait.gd")
 const FlowDemoMenus := preload("res://tests/lib/flow_demo_menus.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const LEFT_OVER := 100
@@ -279,6 +280,7 @@ func _endless_run(main: Node) -> void:
 	var menu := GuiInput.find_script(run, PauseMenu)
 	await GuiInput.click(t, GuiInput.button(menu, "END RAMPAGE"))
 	await GuiInput.click(t, GuiInput.button(menu, "YES"))
+	await DeathWait.until_over(t, run.sim)
 	await _frames(RampageHud.BEAT_MIN_FRAMES)
 	await GuiInput.key(t, KEY_ENTER)
 	await _frames(2)
@@ -355,6 +357,7 @@ func _check_continue_after() -> void:
 	var banked: Array[Dictionary] = []
 	run.finished.connect(func(r: Dictionary) -> void: banked.append(r))
 	run.sim.time_left = 0.05
+	await DeathWait.until_over(t, run.sim)
 	await _frames(RampageHud.BEAT_MIN_FRAMES + 20)
 	await GuiInput.key(t, KEY_ENTER)
 	await _frames(2)
