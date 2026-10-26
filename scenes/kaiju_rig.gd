@@ -294,14 +294,15 @@ func pose_basis(bone_name: String, b: Basis, offset: Vector3 = Vector3.ZERO) -> 
 	node.transform = Transform3D(rest.basis * b, rest.origin + offset)
 
 
-## Turns a bone (from its rest pose under its current parent) so its head->tail points from -> to.
-func aim(bone_name: String, from: Vector3, to: Vector3) -> void:
+## Turns a bone (from its rest pose under its current parent) so its head->tail points from -> to
+## (or, given `rest_dir`, so that rest vector does: a foot aimed by its toe tip past a toe bone).
+func aim(bone_name: String, from: Vector3, to: Vector3, rest_dir := Vector3.ZERO) -> void:
 	var node: Node3D = _bones[bone_name]
 	var parent := node.get_parent() as Node3D
 	var rest: Transform3D = _rest[bone_name]
 	var rest_world := parent.global_transform * rest
 	var want := to - from
-	var have := rest_world.basis * dir_of(bone_name)
+	var have := rest_world.basis * (dir_of(bone_name) if rest_dir == Vector3.ZERO else rest_dir)
 	if want.length() < 0.0001 or have.length() < 0.0001:
 		return
 	var turn := Quaternion(have.normalized(), want.normalized())

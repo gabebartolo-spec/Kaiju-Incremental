@@ -235,7 +235,7 @@ func _walk_entry() -> float:
 		var cost := 0.0
 		for i: int in mini(legs.size(), 2):
 			if pose.planted[i]:
-				var now := to_rig * rig.tail_world(legs[i].names[2])
+				var now := to_rig * rig.tail_world(legs[i].tip)
 				cost += (clips.to_rig(pose.feet[i]) - now).length()
 		if cost < best_cost:
 			best_cost = cost
@@ -392,5 +392,5 @@ func _overreached(leg: BipedGait.Leg, lock: Vector3, clip_toe: Vector3) -> bool:
 	if (lock - clip_toe).length() > RESTEP_GAP * stride():
 		return true
 	var hip := rig.bone(leg.names[0]).global_position
-	var ankle := lock + (rig.bone(leg.names[2]).global_position - rig.tail_world(leg.names[2]))
+	var ankle := lock + (rig.bone(leg.names[2]).global_position - rig.tail_world(leg.tip))
 	return (ankle - hip).length() > RESTEP_REACH * (leg.l1 + leg.l2) * s

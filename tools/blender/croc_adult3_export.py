@@ -6,6 +6,7 @@ export() (skin.json/.skinw format) on the rig itself.
   counter -> parent, forearm twist k -> (1-k) forearm + k hand), welded positions, top-4 weights, game axes.
 - r12 (D-307): every rig tail joint is its own game bone (tail0-11; r11 folded tail08-11 into tail8, so the tip's whip
   never reached the game). The game's spring tail stays tail0-SPRING_TAIL ("physics"); the tip bones only play clips.
+  The hind toe is its own game bone too (leg_x3; r11 folded it into the foot, leg_x2): the game locks its tip.
 - r11's eyelids are Blender-only (D-228): the lid bones fold into the head, and the lower-lid flaps (rigid shells
   hidden inside the head at rest, all their weight on lid_lo_*) are left out of every file, so the game mesh is r10's.
 - <out>/croc_adult3_landmarks.json: motion_test landmarks at the r10 joints (so its clips' game bones rest on them).
@@ -101,7 +102,7 @@ def game_bone(n):
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
     return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
-            "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}2"}[n[:-2]]
+            "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}3"}[n[:-2]]
 
 bones = []
 for b in order:

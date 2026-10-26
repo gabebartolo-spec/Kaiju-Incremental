@@ -15,8 +15,9 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
 A foot is planted while its toe tip is within PLANT_UP of its rest height and moves under PLANT_SLIDE to the next frame
 (world): from the keyed contact until the toe tip peels off (the walk's stance, as the game locks the toe tip).
 r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
-turns (tail9-11, after the 27 r11 bones). A file of the r11 bones is upgraded on the way: its clips get still tip bones
-(each turned as tail8, which is what r11's fold did), so a clip not re-baked plays exactly as before.
+turns (tail9-11) and the hind toes' (leg_x3), after the 27 r11 bones. A file of the r11 bones is upgraded on the
+way: its clips get still tip and toe bones (each turned as its parent, which is what r11's fold did), so a clip
+not re-baked plays exactly as before.
 The adult's keyed clips so far (director-approved; sources in C:/Users/DANTE/cascadeur_bridge/croc_new/rig11/, keys
 croc_<move>_<tag>.casc), added to the Blender clips' file:
     roar roar_intro/roar_c.blend 12 124 still | rise_bay roar_intro/rise_p.blend 0 120 still |
@@ -55,7 +56,7 @@ def game_bone(n):
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
     return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
-            "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}2"}[n[:-2]]
+            "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}3"}[n[:-2]]
 
 
 # The rest frame of croc_adult3_export.py: the mesh at rest without the lid flaps, 100 m tall, origin under the pelvis.
@@ -74,7 +75,7 @@ deform = [b for b in ad.bones if b.use_deform and not HELPER(b.name)]
 EXTRA = lambda n: (n.rstrip("0123456789"), int(n[len(n.rstrip("0123456789")):] or 0))
 GAME_BONES = BASE_BONES + sorted({game_bone(b.name) for b in deform} - set(BASE_BONES), key=EXTRA)
 first, last = {}, {}
-for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0, foot + toe = leg_x2)
+for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0; r12: the toe is leg_x3)
     g = game_bone(b.name)
     first.setdefault(g, b)
     if g not in last or (b.parent is not None and b.parent.name == last[g].name
