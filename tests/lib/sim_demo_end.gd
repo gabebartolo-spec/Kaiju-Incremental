@@ -162,7 +162,7 @@ func _check_endless() -> void:
 	)
 	var control: RampageSim = _make.call("reptilian", {"hide": 3}, 0, {})
 	control.time_left = 1.0
-	for i: int in 60:
+	for i: int in 300:  # the clock, then his death plays out (DeathOverload)
 		control.hp = control.max_hp
 		control.step(DT, Vector2.ZERO, false)
 	_check.call(
