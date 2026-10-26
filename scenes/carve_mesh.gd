@@ -50,6 +50,7 @@ static var _material: StandardMaterial3D
 
 ## One shared vertex-coloured material for every carved mesh.
 static func material() -> StandardMaterial3D:
+	ThreadCheck.main_only("CarveMesh.material")
 	if _material == null:
 		_material = StandardMaterial3D.new()
 		_material.vertex_color_use_as_albedo = true

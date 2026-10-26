@@ -89,7 +89,7 @@ func land(node: Node3D, event: Dictionary, voxels: BuildingVoxels) -> void:
 	var cfg := _cfg
 	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi)
 	_city.ruins().build(
-		func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
+		func() -> Dictionary: return Ruin.strip_plan(voxels, a, b, width, cfg), settle
 	)
 	_chunks(voxels, a, b, width)
 
@@ -161,11 +161,9 @@ func _chunks(voxels: BuildingVoxels, a: Vector3, b: Vector3, width: float) -> vo
 		var rest := at + slide + Vector3(0, Num.f(_cfg["heap_top"]) + size * 0.1, 0)
 		var start := at + Vector3(0, size, 0)
 		var place := func(chunk: MultiMeshInstance3D) -> void: _slide(chunk, start, turn, rest)
-		# Thousands of voxels each: built on a worker like the strip (b2-3: 7 chunks on the
+		# Thousands of voxels each: laid out on a worker like the strip (b2-3: 7 chunks on the
 		# landing frame took up to 250 ms), every random draw made here, in the same order.
-		_city.ruins().build(
-			func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt), place
-		)
+		_city.ruins().build(func() -> Dictionary: return Ruin.chunk_plan(voxels, dims, salt), place)
 
 
 ## A thrown chunk, once built: it starts at `start`, turned by `turn`, and slides to rest,
