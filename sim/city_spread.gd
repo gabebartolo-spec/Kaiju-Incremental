@@ -1,13 +1,12 @@
 class_name CitySpread
 extends RefCounted
-## Where a city's landmarks and explosive sites stand (D-254: "space out our landmarks ... and
-## explosive sites across the new expanded area"), seeded by the city's map_seed alone, so the
+## Where a city's landmarks stand (D-254: "space out our landmarks ... across the new expanded
+## area"; the explosive sites are CityHazards'), seeded by the city's map_seed alone, so the
 ## same seed always gives the same city and every stage shows the sites of the districts it has
 ## opened (D-039: sites never move between stages). Part of CityGen.map; pure.
 ##
-## The public interface other systems read (districts, city blocks, the explosives):
+## The public interface other systems read (districts, city blocks):
 ##   plan["sites"]            landmark sites (CitySites.find's dictionaries), "district" = ring
-##   plan["explosive_sites"]  explosive_sites(): {"at": Vector2, "district": int, "rect": Rect2}
 ##   opens_at(district)       the growth stage (1-based) a district first comes into play
 ##   width(rings, district)   that stage's play-area width
 ##
@@ -15,12 +14,9 @@ extends RefCounted
 ## of that stage's width; a pair with a site of an inner district keeps the share of the INNER
 ## stage's width. Landmarks also keep spawn_clear x width (or their own "rise_clear" m, the
 ## stadium: b2-21) from the kaiju's rise, plus rise_slack for the rise's exact spot, which the
-## river fixes only once the blocks are laid. Explosive sites cover all four quadrants of each
-## district and stand explosive_landmark_clear m off every landmark's plaza.
+## river fixes only once the blocks are laid.
 
 const LANDMARK_STREAM := "city_spread"
-const EXPLOSIVE_STREAM := "explosive_sites"
-const QUADRANTS: Array[Vector2] = [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
 
 
 ## The growth stage (1 = the young city) in which district `ring` first lies in the play area.
@@ -82,62 +78,6 @@ static func rise_estimate(zs: Array[float], cfg: Dictionary) -> Vector2:
 	if row < 0:
 		return Vector2(INF, INF)
 	return Vector2(0.0, (zs[row] + zs[row + 1]) * 0.5)
-
-
-## The explosive sites (after the blocks are laid): per district, spread "explosives_per_ring"
-## built blocks big enough for a lot, one in each quadrant first, then anywhere, keeping the
-## spacing, off the landmarks and the rise. Each is its block's centre: {"at", "district",
-## "rect"} (the block, so a reader can pick the building that stands there).
-static func explosive_sites(plan: Dictionary, cfg: Dictionary) -> Array[Dictionary]:
-	var spread: Dictionary = cfg.get("spread", {})
-	var counts: Array = spread.get("explosives_per_ring", [])
-	var rings := CityGen.districts(cfg)
-	var rng := Seeds.make(EXPLOSIVE_STREAM, Num.i(cfg["map_seed"]))
-	var rise: Vector2 = plan.get("river_spawn", Vector2(INF, INF))
-	var landmark_rects: Array[Rect2] = []
-	for site: Dictionary in plan.get("sites", []):
-		landmark_rects.append(site["rect"])
-	var out: Array[Dictionary] = []
-	for k: int in mini(rings.size(), counts.size()):
-		var pool: Array = []
-		for block: Dictionary in plan["blocks"]:
-			if _explosive_ok(block, k, rise, rings, landmark_rects, spread):
-				pool.append(block["rect"])
-		_shuffle(pool, rng)
-		var want := Num.i(counts[k])
-		var mine: Array[Dictionary] = []
-		for q: Vector2 in QUADRANTS:  # one in every quadrant first
-			for rect: Rect2 in pool:
-				if mine.size() < want and _quadrant(rect.get_center()) == q:
-					if _spaced(rect.get_center(), k, mine, out, rings, spread):
-						mine.append({"at": rect.get_center(), "district": k, "rect": rect})
-						break
-		for rect: Rect2 in pool:
-			if mine.size() >= want:
-				break
-			if _spaced(rect.get_center(), k, mine, out, rings, spread):
-				mine.append({"at": rect.get_center(), "district": k, "rect": rect})
-		out.append_array(mine)
-	return out
-
-
-## Distance from point p to rect (0 inside it).
-static func to_rect(p: Vector2, rect: Rect2) -> float:
-	var dx := maxf(maxf(rect.position.x - p.x, p.x - rect.end.x), 0.0)
-	var dz := maxf(maxf(rect.position.y - p.y, p.y - rect.end.y), 0.0)
-	return Vector2(dx, dz).length()
-
-
-## Gap between two rects (0 when they touch or overlap).
-static func rect_gap(a: Rect2, b: Rect2) -> float:
-	var dx := maxf(maxf(a.position.x - b.end.x, b.position.x - a.end.x), 0.0)
-	var dz := maxf(maxf(a.position.y - b.end.y, b.position.y - a.end.y), 0.0)
-	return Vector2(dx, dz).length()
-
-
-## The quadrant of the play area holding p (signs of x and z, 0 counted positive).
-static func _quadrant(p: Vector2) -> Vector2:
-	return Vector2(-1.0 if p.x < 0.0 else 1.0, -1.0 if p.y < 0.0 else 1.0)
 
 
 static func _place(
@@ -209,51 +149,6 @@ static func _landmark_ok(
 	return true
 
 
-static func _explosive_ok(
-	block: Dictionary,
-	k: int,
-	rise: Vector2,
-	rings: Array[float],
-	landmarks: Array[Rect2],
-	spread: Dictionary
-) -> bool:
-	if not str(block["use"]) in ["built", "outer"] or Num.i(block["district"]) != k:
-		return false  # the river, its far bank, parks, plazas and landmarks are no lots
-	if str(block.get("was", block["use"])) != "built":
-		return false
-	var rect: Rect2 = block["rect"]
-	if minf(rect.size.x, rect.size.y) < Num.f(spread["explosive_min_block"]):
-		return false
-	var at := rect.get_center()
-	if rise.x != INF and at.distance_to(rise) < Num.f(spread["spawn_clear"]) * width(rings, k):
-		return false
-	for lm: Rect2 in landmarks:
-		if rect_gap(rect, lm) < Num.f(spread["explosive_landmark_clear"]):
-			return false
-	return true
-
-
-static func _spaced(
-	at: Vector2,
-	k: int,
-	mine: Array[Dictionary],
-	inner: Array[Dictionary],
-	rings: Array[float],
-	spread: Dictionary
-) -> bool:
-	var share := Num.f(spread["explosive_gap"])
-	for s: Dictionary in mine:
-		var there: Vector2 = s["at"]
-		if at.distance_to(there) < share * width(rings, k):
-			return false
-	for s: Dictionary in inner:
-		var there: Vector2 = s["at"]
-		if at.distance_to(there) < share * width(rings, Num.i(s["district"])):
-			return false
-	return true
-
-
-## Fisher-Yates from `rng`, so the order is the seed's alone.
 static func _shuffle(items: Array, rng: RandomNumberGenerator) -> void:
 	for n: int in range(items.size() - 1, 0, -1):
 		var m := rng.randi_range(0, n)

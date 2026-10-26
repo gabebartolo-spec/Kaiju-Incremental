@@ -168,7 +168,6 @@ static func map(cfg: Dictionary) -> Dictionary:
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
 	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
-	plan["explosive_sites"] = CitySpread.explosive_sites(plan, cfg)
 	return plan
 
 

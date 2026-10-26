@@ -76,7 +76,6 @@ func _stage(tier: int, map_seed: int) -> void:
 		if str(block["use"]) == "built" and play.intersects(rect):
 			built_m2 += play.intersection(rect).get_area()
 	var sites := []
-	var blasts: Array = plan.get("explosive_sites", [])
 	for site: Dictionary in plan.get("sites", []):
 		var rect: Rect2 = site["rect"]
 		var at := rect.get_center()
@@ -88,7 +87,8 @@ func _stage(tier: int, map_seed: int) -> void:
 	print(
 		(
 			"stage %d map_seed %d half %.0f: %d buildings in play, %.2f per 1000 m2; empty %d of %d"
-			+ " play cells (%.3f); %.2f per 1000 built-block m2 (%.0f m2); green %.1f%% (%d parks); rise %s; sites %s; explosive sites %d"
+			+ " play cells (%.3f); %.2f per 1000 built-block m2 (%.0f m2); green %.1f%% (%d parks);"
+			+ " rise %s; sites %s"
 		)
 		% [
 			tier,
@@ -105,7 +105,6 @@ func _stage(tier: int, map_seed: int) -> void:
 			green["parks"],
 			spawn,
 			sites,
-			blasts.size(),
 		]
 	)
 	holder.free()

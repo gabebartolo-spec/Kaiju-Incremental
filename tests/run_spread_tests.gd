@@ -1,10 +1,10 @@
 extends "res://tests/lib/runner.gd"
 ## Play area and spread suite (D-254, director 2026-10-26: "1.5x wider", "space out our
-## landmarks ... and explosive sites across the new expanded area"; spacing among the sites a
-## stage newly opens, pairs with an inner district's site at the inner stage's share: lead call
-## 2026-10-26). Over SEEDS street plans (city.map_seed) and every growth stage: the play-area
-## half-widths, landmark and explosive-site spacing and rise clearance, explosive sites in all four
-## quadrants and off the landmarks, the stadium as far from the rise as before (b2-21), the bridge's
+## landmarks ... across the new expanded area"; spacing among the sites a stage newly opens,
+## pairs with an inner district's site at the inner stage's share: lead call 2026-10-26). Over
+## SEEDS street plans (city.map_seed) and every growth stage: the play-area half-widths, landmark
+## spacing and rise clearance, the red barrels (CityHazards, as tuned) all in play and none at
+## the rise, the stadium as far from the rise as before (b2-21), the bridge's
 ## inlet (at least 3x the river's width, joined to the river, the bridge on land at both ends,
 ## #12), no skyline core over a play area, and the same plan from the same seed.
 ## Seeded by design: city.map_seed per plan, the shipped tuning.
@@ -30,7 +30,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_halves")
 	await _t("_check_landmarks")
-	await _t("_check_explosives")
+	await _t("_check_hazards")
 	await _t("_check_bridge")
 	await _t("_check_outer_cores")
 	await _t("_check_seeded")
@@ -102,40 +102,37 @@ func _check_landmarks() -> void:
 	check(bad.is_empty(), "landmarks spread and clear of the rise in every plan: %s" % [bad])
 
 
-## Explosive sites in play at each stage cover all four quadrants; the sites a stage newly opens
-## keep 0.15 x its width apart (a pair with an inner one, the inner width's share); none within
-## 12 m of a landmark's plaza.
-func _check_explosives() -> void:
-	var spread: Dictionary = Content.section("city")["spread"]
-	var rings := _rings()
+## The red barrels (CityHazards, landed as tuned: "Land it", 2026-10-26) at 1.5x: each stage
+## tags its count, every one stands inside the stage's play area and spawn_clear m or more off
+## the kaiju's rise. Prints the counts per stage over the plans (for the PR).
+func _check_hazards() -> void:
+	var h: Dictionary = Content.section("city")["hazards"]
 	var bad: Array[String] = []
-	for map_seed: int in _seeds():
-		var plan := CityGen.map(_cfg(map_seed, 1))
-		var blasts: Array = plan["explosive_sites"]
-		for s: int in rings.size():
-			var quads := {}
-			for b: Dictionary in blasts:
-				if Num.i(b["district"]) <= s:
-					var at: Vector2 = b["at"]
-					quads[Vector2(signf(at.x), signf(at.y))] = true
-			if quads.size() < 4:
-				bad.append("%d stage %d: %d quadrants" % [map_seed, s + 1, quads.size()])
-		for a: int in blasts.size():
-			var one: Dictionary = blasts[a]
-			var at: Vector2 = one["at"]
-			for b: int in range(a + 1, blasts.size()):
-				var two: Dictionary = blasts[b]
-				var inner := mini(Num.i(one["district"]), Num.i(two["district"]))
-				var gap := Num.f(spread["explosive_gap"]) * CitySpread.width(rings, inner)
-				var there: Vector2 = two["at"]
-				if at.distance_to(there) < gap:
-					bad.append("%d sites %.0f m apart < %.0f" % [map_seed, at.distance_to(there), gap])
-			for site: Dictionary in plan["sites"]:
-				var rect: Rect2 = one["rect"]
-				var lm: Rect2 = site["rect"]
-				if CitySpread.rect_gap(rect, lm) < Num.f(spread["explosive_landmark_clear"]):
-					bad.append("%d site fused to %s" % [map_seed, site["id"]])
-	check(bad.is_empty(), "explosive sites spread over every stage's four quadrants: %s" % [bad])
+	for tier: int in [1, 2, 3]:
+		var counts: Array[int] = []
+		for map_seed: int in _seeds():
+			var base: Dictionary = Content.tuning().duplicate(true)
+			base["city"]["map_seed"] = map_seed
+			var cfg := _cfg(map_seed, tier)
+			var half := CityGen.half_extent(cfg)
+			var rise: Vector2 = CityGen.map(cfg)["river_spawn"]
+			var n := 0
+			for e: Dictionary in CityGrowth.layout(base, tier, Seeds.make("city", 0)):
+				if not e.has("hazard"):
+					continue
+				n += 1
+				var at := Vector2(Num.f(e["x"]), Num.f(e["z"]))
+				var which := "%d stage %d %s" % [map_seed, tier, e["hazard"]]
+				if maxf(absf(at.x), absf(at.y)) > half:
+					bad.append("%s at %s outside %.0f" % [which, at, half])
+				if at.distance_to(rise) < Num.f(h["spawn_clear"]):
+					bad.append("%s %.0f m from the rise" % [which, at.distance_to(rise)])
+			counts.append(n)
+		var want := Num.i(h["count"][mini(tier - 1, h["count"].size() - 1)])
+		print("  hazards stage %d over %d plans: %s (tuned %d)" % [tier, SEEDS, counts, want])
+		if counts.min() < want:
+			bad.append("stage %d: as few as %d of %d" % [tier, counts.min(), want])
+	check(bad.is_empty(), "every red barrel in play and clear of the rise, full count: %s" % [bad])
 
 
 ## Where a bridge is placed: its water is at least 3x the river's channel wide, starts where the
@@ -200,11 +197,11 @@ func _check_seeded() -> void:
 		for tier: int in [1, 2, 3]:
 			var again := CityGen.map(_cfg(map_seed, tier))
 			same = same and _digest(first) == _digest(again)
-	check(same, "a seed's landmark and explosive sites are the same every time and every stage")
+	check(same, "a seed's landmark sites are the same every time and every stage")
 
 
 ## Player-effect fixture (CitySpread): the seed moves what the player meets. Across the plans,
-## the landmarks stand in more than one district each and the explosive sites differ, so a city
+## the landmarks stand in more than one district each and their sites differ, so a city
 ## seed (per save, with the city blocks: D-263) changes where the big targets are.
 func _check_effect() -> void:
 	var districts := {}
@@ -217,7 +214,7 @@ func _check_effect() -> void:
 	check(
 		layouts.size() == SEEDS and districts.size() > 3,
 		(
-			"each seed lays its own landmarks and explosive sites (%d layouts of %d), landmarks"
+			"each seed lays its own landmarks (%d layouts of %d), landmarks"
 			+ " across districts: %s"
 		)
 		% [layouts.size(), SEEDS, districts.keys()]
@@ -228,8 +225,6 @@ func _digest(plan: Dictionary) -> String:
 	var parts: Array[String] = []
 	for site: Dictionary in plan["sites"]:
 		parts.append("%s%s" % [site["id"], site["rect"]])
-	for b: Dictionary in plan["explosive_sites"]:
-		parts.append(str(b["at"]))
 	return ",".join(parts)
 
 
