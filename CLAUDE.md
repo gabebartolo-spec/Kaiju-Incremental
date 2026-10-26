@@ -29,7 +29,11 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
   override.cfg window (it may show on his screen so he can watch, 2026-10-26; it never steals focus; `blender -b`), up to
   2 Godot processes per agent, until he says pause (2026-10-21, comment #41).
   CI captures (`tools/capture/ci_capture.sh`, xvfb, software: ~25-35 min a clip) only for gl_compatibility checks or
-  while paused. GPU jobs share the card by VRAM budget (rulebook: Machine and screen); timing benches run with no other Godot.
+  while paused. GPU jobs share the card by VRAM budget (rulebook: Machine and screen).
+- Speed runs get the PC to themselves (D-299): while a `C:/kt/BENCH_WINDOW_<owner>` under 20 min old exists, start no
+  Godot (headless included); run it behind `bash C:/kt/wait_window.sh && <command>`. The tool-gate hook refuses
+  otherwise; a run that saw another Godot (`others>0`) is void, and so is one taken while League is in a game.
+  `~/.claude/focus-pause` (his pause) stops every Godot start until it is gone.
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`; remove
   when the PR merges; `tools/lint/worktrees.sh` caps the total (D-053). Revert `.import` churn.
