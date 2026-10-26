@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "data/looks.json",
+  "description": "Structure and types of this data file (CLAUDE.md hard rule 4); see data/schemas/README.md.",
+  "type": "object",
+  "properties": {
+    "default": {"$ref": "#/$defs/str"},
+    "weather": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "object",
+          "properties": {
+            "clear": {"$ref": "#/$defs/str"},
+            "overcast": {"$ref": "#/$defs/str"},
+            "rain": {"$ref": "#/$defs/str"},
+            "fog": {"$ref": "#/$defs/str"},
+            "thunderstorm": {"$ref": "#/$defs/str"}
+          },
+          "required": ["clear", "overcast", "rain", "fog", "thunderstorm"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "random_label": {"$ref": "#/$defs/str"},
+        "order": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+        "layers": {
+          "type": "object",
+          "properties": {
+            "rain": {
+              "type": "object",
+              "properties": {
+                "rain": {"$ref": "#/$defs/bool"},
+                "wet": {"$ref": "#/$defs/num"},
+                "ambient_mul": {"$ref": "#/$defs/num"},
+                "sun_mul": {"$ref": "#/$defs/num"},
+                "fog_mul": {"$ref": "#/$defs/num"},
+                "sky_grey": {"$ref": "#/$defs/num"},
+                "sky_dim": {"$ref": "#/$defs/num"}
+              },
+              "required": ["rain", "wet", "ambient_mul", "sun_mul", "fog_mul", "sky_grey", "sky_dim"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "thunderstorm": {
+              "type": "object",
+              "properties": {"like": {"$ref": "#/$defs/str"}},
+              "required": ["like"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": ["rain", "thunderstorm"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
+      },
+      "required": ["labels", "random_label", "order", "layers"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "times": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "object",
+          "properties": {
+            "dusk": {"$ref": "#/$defs/str"},
+            "night": {"$ref": "#/$defs/str"},
+            "morning": {"$ref": "#/$defs/str"},
+            "noon": {"$ref": "#/$defs/str"}
+          },
+          "required": ["dusk", "night", "morning", "noon"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "random_label": {"$ref": "#/$defs/str"},
+        "order": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+        "dusk": {"type": "object"},
+        "night": {
+          "type": "object",
+          "properties": {
+            "sun_pitch": {"$ref": "#/$defs/num"},
+            "sun_color": {"$ref": "#/$defs/hex6"},
+            "sun_energy": {"$ref": "#/$defs/num"},
+            "sky_top": {"$ref": "#/$defs/str"},
+            "sky_horizon": {"$ref": "#/$defs/str"},
+            "ambient": {"$ref": "#/$defs/num"},
+            "ambient_color": {"$ref": "#/$defs/hex6"},
+            "fog_color": {"$ref": "#/$defs/hex6"},
+            "fog_density": {"$ref": "#/$defs/num"},
+            "window_lit": {"$ref": "#/$defs/num"},
+            "ground_night_floor": {"$ref": "#/$defs/num"},
+            "ground_lamp_pool": {"$ref": "#/$defs/num"},
+            "lamp_energy": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "sun_pitch", "sun_color", "sun_energy", "sky_top", "sky_horizon", "ambient",
+            "ambient_color", "fog_color", "fog_density", "window_lit", "ground_night_floor",
+            "ground_lamp_pool", "lamp_energy"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "morning": {
+          "type": "object",
+          "properties": {
+            "sun_pitch": {"$ref": "#/$defs/num"},
+            "sun_color": {"$ref": "#/$defs/hex6"},
+            "sun_energy": {"$ref": "#/$defs/num"},
+            "sky_top": {"$ref": "#/$defs/str"},
+            "sky_horizon": {"$ref": "#/$defs/str"},
+            "ambient": {"$ref": "#/$defs/num"},
+            "ambient_color": {"$ref": "#/$defs/hex6"},
+            "fog_color": {"$ref": "#/$defs/hex6"},
+            "fog_density": {"$ref": "#/$defs/num"},
+            "window_lit": {"$ref": "#/$defs/num"},
+            "lamp_energy": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "sun_pitch", "sun_color", "sun_energy", "sky_top", "sky_horizon", "ambient",
+            "ambient_color", "fog_color", "fog_density", "window_lit", "lamp_energy"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "noon": {
+          "type": "object",
+          "properties": {
+            "sun_pitch": {"$ref": "#/$defs/num"},
+            "sun_color": {"$ref": "#/$defs/hex6"},
+            "sun_energy": {"$ref": "#/$defs/num"},
+            "sky_top": {"$ref": "#/$defs/str"},
+            "sky_horizon": {"$ref": "#/$defs/str"},
+            "ambient": {"$ref": "#/$defs/num"},
+            "ambient_color": {"$ref": "#/$defs/hex6"},
+            "fog_color": {"$ref": "#/$defs/hex6"},
+            "fog_density": {"$ref": "#/$defs/num"},
+            "window_lit": {"$ref": "#/$defs/num"},
+            "lamp_energy": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "sun_pitch", "sun_color", "sun_energy", "sky_top", "sky_horizon", "ambient",
+            "ambient_color", "fog_color", "fog_density", "window_lit", "lamp_energy"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
+      },
+      "required": ["labels", "random_label", "order", "dusk", "night", "morning", "noon"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "looks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"$ref": "#/$defs/str"},
+          "label": {"$ref": "#/$defs/str"},
+          "name": {"$ref": "#/$defs/str"},
+          "sky_top": {"$ref": "#/$defs/str"},
+          "sky_horizon": {"$ref": "#/$defs/str"},
+          "ambient": {"$ref": "#/$defs/num"},
+          "sun_color": {"$ref": "#/$defs/hex6"},
+          "sun_energy": {"$ref": "#/$defs/num"},
+          "sun_pitch": {"$ref": "#/$defs/num"},
+          "fog_color": {"$ref": "#/$defs/hex6"},
+          "fog_density": {"$ref": "#/$defs/num"},
+          "saturation": {"$ref": "#/$defs/num"},
+          "contrast": {"$ref": "#/$defs/num"},
+          "glow": {"$ref": "#/$defs/num"},
+          "voxel_inset": {"$ref": "#/$defs/num"},
+          "color_noise": {"$ref": "#/$defs/num"},
+          "crease_strength": {"$ref": "#/$defs/num"},
+          "ssao": {"$ref": "#/$defs/num"},
+          "ssao_power": {"$ref": "#/$defs/num"},
+          "glow_threshold": {"$ref": "#/$defs/num"},
+          "crease_radius": {"$ref": "#/$defs/num"},
+          "crease_depth_step": {"$ref": "#/$defs/num"},
+          "crease_normal_step": {"$ref": "#/$defs/num"},
+          "crease_fade_near": {"$ref": "#/$defs/num"},
+          "crease_fade_far": {"$ref": "#/$defs/num"},
+          "kaiju_roughness": {"$ref": "#/$defs/num"},
+          "window_lit": {"$ref": "#/$defs/num"},
+          "window_glow": {"$ref": "#/$defs/num"},
+          "accent_glow": {"$ref": "#/$defs/num"},
+          "kaiju_lift": {"$ref": "#/$defs/num"},
+          "far_blur_amount": {"$ref": "#/$defs/num"},
+          "far_blur_start": {"$ref": "#/$defs/num"},
+          "far_blur_ramp": {"$ref": "#/$defs/num"},
+          "ground_block": {"$ref": "#/$defs/num"},
+          "ground_block_noise": {"$ref": "#/$defs/num"},
+          "ground_patch_noise": {"$ref": "#/$defs/num"},
+          "ground_speck_chance": {"$ref": "#/$defs/num"},
+          "ground_speck_dark": {"$ref": "#/$defs/num"},
+          "ground_seam": {"$ref": "#/$defs/num"},
+          "ground_fade_near": {"$ref": "#/$defs/num"},
+          "ground_fade_far": {"$ref": "#/$defs/num"},
+          "ground_mottle": {"$ref": "#/$defs/num"},
+          "ground_track": {"$ref": "#/$defs/num"},
+          "ground_tar": {"$ref": "#/$defs/num"},
+          "ground_patch_dark": {"$ref": "#/$defs/num"},
+          "ground_stain": {"$ref": "#/$defs/num"},
+          "ground_gutter": {"$ref": "#/$defs/num"},
+          "ground_panel": {"$ref": "#/$defs/num"},
+          "ground_damp": {"$ref": "#/$defs/num"},
+          "ground_streak": {"$ref": "#/$defs/num"},
+          "ground_soil": {"$ref": "#/$defs/num"},
+          "ground_paving": {"$ref": "#/$defs/num"},
+          "ground_band_h": {"$ref": "#/$defs/num"},
+          "ground_night_floor": {"$ref": "#/$defs/num"},
+          "ground_lamp_pool": {"$ref": "#/$defs/num"},
+          "styles": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+          "roof": {"$ref": "#/$defs/hex6"},
+          "window": {"$ref": "#/$defs/hex6"},
+          "window_lit_color": {"$ref": "#/$defs/hex6"},
+          "outskirts": {"$ref": "#/$defs/str"},
+          "asphalt": {"$ref": "#/$defs/str"},
+          "lot": {"$ref": "#/$defs/str"},
+          "water": {"$ref": "#/$defs/str"},
+          "river": {"$ref": "#/$defs/str"},
+          "ambient_color": {"$ref": "#/$defs/hex6"},
+          "lamp_energy": {"$ref": "#/$defs/num"},
+          "voxel_ao_on": {"$ref": "#/$defs/bool"},
+          "voxel_ao_strength": {"$ref": "#/$defs/num"},
+          "voxel_ao_light_affect": {"$ref": "#/$defs/num"},
+          "finish_on": {"$ref": "#/$defs/bool"},
+          "finish_roughness": {"$ref": "#/$defs/finish"},
+          "finish_specular": {"$ref": "#/$defs/finish"}
+        },
+        "required": [
+          "id", "label", "name", "sky_top", "sky_horizon", "ambient", "sun_color", "sun_energy",
+          "sun_pitch", "fog_color", "fog_density", "saturation", "contrast", "glow", "voxel_inset",
+          "color_noise", "crease_strength", "ssao", "ssao_power", "glow_threshold",
+          "crease_radius", "crease_depth_step", "crease_normal_step", "crease_fade_near",
+          "crease_fade_far", "kaiju_roughness", "window_lit", "window_glow", "accent_glow",
+          "kaiju_lift", "far_blur_amount", "far_blur_start", "far_blur_ramp", "ground_block",
+          "ground_block_noise", "ground_patch_noise", "ground_speck_chance", "ground_speck_dark",
+          "ground_seam", "ground_fade_near", "ground_fade_far", "ground_mottle", "ground_track",
+          "ground_tar", "ground_patch_dark", "ground_stain", "ground_gutter", "ground_panel",
+          "ground_damp", "ground_streak", "ground_soil", "ground_paving", "ground_band_h",
+          "ground_night_floor", "ground_lamp_pool", "styles", "roof", "window", "window_lit_color",
+          "outskirts", "asphalt", "lot", "water", "river", "ambient_color", "lamp_energy",
+          "voxel_ao_on", "voxel_ao_strength", "voxel_ao_light_affect", "finish_on",
+          "finish_roughness", "finish_specular"
+        ],
+        "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["default", "weather", "times", "looks"],
+  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+  "additionalProperties": false,
+  "$defs": {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"},
+    "finish": {
+      "type": "object",
+      "properties": {"rough": {"$ref": "#/$defs/num"}, "glass": {"$ref": "#/$defs/num"}, "metal": {"$ref": "#/$defs/num"}},
+      "required": ["rough", "glass", "metal"],
+      "additionalProperties": false
+    }
+  }
+}

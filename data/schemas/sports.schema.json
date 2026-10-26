@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "data/sports.json",
+  "description": "Structure and types of this data file (CLAUDE.md hard rule 4); see data/schemas/README.md.",
+  "type": "object",
+  "properties": {
+    "pitch": {
+      "type": "object",
+      "properties": {
+        "landmark": {"$ref": "#/$defs/str"},
+        "half": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "top": {"$ref": "#/$defs/num"},
+        "gate": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "voxel": {"$ref": "#/$defs/num"},
+        "player_speed": {"$ref": "#/$defs/num"},
+        "flee_speed": {"$ref": "#/$defs/num"},
+        "kick_every": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "kick_speed": {"$ref": "#/$defs/num"},
+        "ball_scale": {"$ref": "#/$defs/num"},
+        "ball_glow": {"$ref": "#/$defs/num"},
+        "sprint": {"$ref": "#/$defs/num"},
+        "chasers": {"$ref": "#/$defs/num"},
+        "drift": {"$ref": "#/$defs/num"},
+        "drift_hz": {"$ref": "#/$defs/num"},
+        "react": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "mouths": {"$ref": "#/$defs/num"},
+        "mouth": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+      },
+      "required": [
+        "landmark", "half", "top", "gate", "voxel", "player_speed", "flee_speed", "kick_every",
+        "kick_speed", "ball_scale", "ball_glow", "sprint", "chasers", "drift", "drift_hz", "react",
+        "mouths", "mouth"
+      ],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "sports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"$ref": "#/$defs/str"},
+          "shape": {"$ref": "#/$defs/str"},
+          "posts": {"$ref": "#/$defs/str"},
+          "line": {"$ref": "#/$defs/hex6"},
+          "post_color": {"$ref": "#/$defs/hex6"},
+          "ball": {"$ref": "#/$defs/hex6"},
+          "per_side": {"$ref": "#/$defs/int"},
+          "kits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "shirt": {"$ref": "#/$defs/hex6"},
+                "pants": {"$ref": "#/$defs/hex6"},
+                "hair": {"$ref": "#/$defs/hex6"}
+              },
+              "required": ["shirt", "pants", "hair"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "strip": {"$ref": "#/$defs/hex6"}
+        },
+        "required": ["id", "shape", "posts", "line", "post_color", "ball", "per_side", "kits"],
+        "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["pitch", "sports"],
+  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+  "additionalProperties": false,
+  "$defs": {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"}
+  }
+}

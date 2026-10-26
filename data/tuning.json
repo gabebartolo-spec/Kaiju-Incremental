@@ -54,11 +54,11 @@
 		"fps_default": 120,
 		"menu_fps": 60,
 		"graphics": {
-			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1},
-			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2},
-			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "low", "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2},
-			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "medium", "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3},
-			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "high", "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4}
+			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1, "fsr_sharpness": 0.2},
+			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2, "fsr_sharpness": 0.1},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "low", "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2, "fsr_sharpness": 0.1},
+			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "medium", "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3, "fsr_sharpness": 0.2},
+			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "high", "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4, "fsr_sharpness": 0.2}
 		},
 		"graphics_renamed": {"balanced": "medium"},
 		"graphics_default": {"min_height": 2160, "large": "medium", "large_fps": 60, "small": "high"}
@@ -1655,6 +1655,8 @@
 		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
 	},
 	"render_opt": {
+		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
+		"night_clip_max": 0.08,
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
 		"kaiju_bounds_slack": 1.05

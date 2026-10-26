@@ -5,21 +5,36 @@ extends RefCounted
 ## walls are never drawn; the floor slabs bake into a second mesh that is shown only once the
 ## building is broken open. Every vertex carries its structural chunk and a per-voxel hash
 ## (UV2) for building_baked.gdshader and its corner AO and material finish (UV, VoxelAO), and a
-## few voxels per chunk are kept as samples for the debris a broken chunk throws. Pure data:
-## safe to run on a worker thread.
+## few voxels per chunk are kept as samples for the debris a broken chunk throws. The bake is
+## pure data, safe on a worker thread; the meshes are made on the main thread (shell, slabs).
 
 const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
 ]
 const SAMPLES_PER_CHUNK := 12
 
-## The shell (walls, windows, roof, gear) and the hidden floor slabs.
-var shell: ArrayMesh
-var slabs: ArrayMesh
+## The shell (walls, windows, roof, gear) and the hidden floor slabs, made from the baked arrays
+## the first time the main thread asks (a worker only bakes the arrays: ThreadCheck).
+var shell: ArrayMesh:
+	get:
+		if _shell == null:
+			_shell = mesh_of(_shell_arrays)
+			_shell_arrays = []
+		return _shell
+var slabs: ArrayMesh:
+	get:
+		if _slabs == null:
+			_slabs = mesh_of(_slab_arrays)
+			_slab_arrays = []
+		return _slabs
 ## Chunk index -> [PackedVector3Array positions, PackedColorArray colours] (debris sources;
 ## parts_of).
 var samples: Dictionary = {}
 
+var _shell: ArrayMesh
+var _slabs: ArrayMesh
+var _shell_arrays: Array = []
+var _slab_arrays: Array = []
 var _v: BuildingVoxels  # only while baking: a kept mesher must not hold the voxels
 var _b: RampageSim.Building
 var _res: int
@@ -60,8 +75,8 @@ func _init(voxels: BuildingVoxels) -> void:
 		else:
 			shell_cells.append(cell)
 	_begin()
-	shell = _bake(shell_cells, true)
-	slabs = _bake(slab_cells, false)
+	_shell_arrays = _bake(shell_cells, true)
+	_slab_arrays = _bake(slab_cells, false)
 	_end()
 	_v = null  # the voxels are the bulk of a building's memory: BuildingView rebuilds them on demand
 
@@ -101,9 +116,9 @@ func _end() -> void:
 	_rings.clear()
 
 
-## A mesh of these cells' visible faces; hollow_is_solid: the shell (its hollow hides the walls'
-## inner faces and shades their AO).
-func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
+## The surface arrays of these cells' visible faces ([] when none shows); hollow_is_solid: the
+## shell (its hollow hides the walls' inner faces and shades their AO).
+func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> Array:
 	var voxel := BuildingVoxels.VOXEL
 	var origin := _v.origin() + Vector3(0, voxel * 0.5, 0)
 	for cell: Vector3i in cells:
@@ -120,7 +135,7 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 				_quad(centre, k, VoxelAO.table(_ring_bits(cell + NEIGHBOURS[k], k, hollow)))
 		if hollow_is_solid:
 			_sample(chunk_index(cell), centre, _color)
-	return _mesh()
+	return _arrays()
 
 
 ## Whether a face towards n is hidden: a voxel, the ground, or (hollow) the building's inside.
@@ -180,11 +195,10 @@ func _quad(centre: Vector3, k: int, ao: int) -> void:
 		_index.append(at + i)
 
 
-## The baked arrays as a mesh; the arrays start over for the next bake.
-func _mesh() -> ArrayMesh:
-	var mesh := ArrayMesh.new()
+## The baked arrays ([] when none shows); the arrays start over for the next bake.
+func _arrays() -> Array:
+	var arrays := []
 	if not _verts.is_empty():
-		var arrays := []
 		arrays.resize(Mesh.ARRAY_MAX)
 		arrays[Mesh.ARRAY_VERTEX] = _verts
 		arrays[Mesh.ARRAY_NORMAL] = _normals
@@ -192,13 +206,21 @@ func _mesh() -> ArrayMesh:
 		arrays[Mesh.ARRAY_TEX_UV] = _uv
 		arrays[Mesh.ARRAY_TEX_UV2] = _uv2
 		arrays[Mesh.ARRAY_INDEX] = _index
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	_verts = PackedVector3Array()
 	_normals = PackedVector3Array()
 	_colors = PackedColorArray()
 	_uv = PackedVector2Array()
 	_uv2 = PackedVector2Array()
 	_index = PackedInt32Array()
+	return arrays
+
+
+## The mesh of _bake() arrays (no surface when empty). Main thread only.
+static func mesh_of(arrays: Array) -> ArrayMesh:
+	ThreadCheck.main_only("BuildingMesher.mesh_of")
+	var mesh := ArrayMesh.new()
+	if not arrays.is_empty():
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
 
 
