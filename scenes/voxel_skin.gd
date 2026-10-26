@@ -43,6 +43,8 @@ var _cube_node: MultiMeshInstance3D
 var _fill: ShaderMaterial
 var _fill_node: MeshInstance3D
 var _hid_rig_voxels := 0
+var _top := 0.0  # the highest cube centre at rest (skin units): where the stone creep ends
+var _overload_set := false
 var _tight := false
 var _slack := 1.0
 var _reach: VoxelSkinReach
@@ -308,6 +310,47 @@ func sync() -> void:
 	_cubes.set_shader_parameter("wounds", hits.wounds())
 	mouth_open = _mouth_showing()
 	_cubes.set_shader_parameter("mouth_open", 1.0 if mouth_open else 0.0)
+
+
+## The Special K overload (DeathOverload; tuning death.look): charge 0..1 lights a crackle of
+## violet cubes, stone 0..1 turns him to stone from the feet up (cubes and the filler between).
+func overload(charge: float, stone: float) -> void:
+	if not _overload_set:
+		_overload_set = true
+		for i: int in _cube_node.multimesh.instance_count:
+			_top = maxf(_top, _cube_node.multimesh.get_instance_transform(i).origin.y)
+		var look: Dictionary = Content.section("death")["look"]
+		var violet := Color(str(Content.section("creation")["lab"]["colors"]["special_k"]))
+		for m: ShaderMaterial in [_cubes, _fill]:
+			if m == null:
+				continue
+			m.set_shader_parameter("overload_color", violet)
+			DeathStone.look(m)  # the stone the flying pieces are drawn with too
+			m.set_shader_parameter("body_top", maxf(0.001, _top))
+		_cubes.set_shader_parameter("crackle_share", Num.f(look["crackle_share"]))
+		_cubes.set_shader_parameter("crackle_hz", Num.f(look["crackle_hz"]))
+		_cubes.set_shader_parameter("crackle_energy", Num.f(look["crackle"]))
+	_cubes.set_shader_parameter("overload", charge)
+	_cubes.set_shader_parameter("stone", stone)
+	if _fill != null:
+		_fill.set_shader_parameter("stone", stone)
+
+
+## Up to `most` cubes, evenly picked, where they are drawn now (world): {"pos", "color"} each.
+## Each follows its main bone only (close enough for a burst); call after sync().
+func world_points(most: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var mm := _cube_node.multimesh
+	if pose.is_empty() or most <= 0:
+		return out
+	var g := _cube_node.global_transform
+	var every := maxi(1, ceili(float(mm.instance_count) / most))
+	for i: int in range(0, mm.instance_count, every):
+		var bone := int(mm.get_instance_custom_data(i).r + 0.5) % MAX_BONES
+		var at := mm.get_instance_transform(i).origin
+		var moved := Transform3D(pose[mini(bone, pose.size() - 1)]) * at
+		out.append({"pos": g * moved, "color": mm.get_instance_color(i)})
+	return out
 
 
 ## A bone's pose as its own voxels would show it: the bone, or the voxels' node when a gait scales

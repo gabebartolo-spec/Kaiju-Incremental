@@ -171,13 +171,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -203,13 +204,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -235,13 +237,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -267,13 +270,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -299,13 +303,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -593,6 +598,13 @@
           "required": ["line", "fmt"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "death_blast": {
+          "type": "object",
+          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
+          "required": ["line", "fmt"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
@@ -600,7 +612,8 @@
         "ability_damage", "ability_cooldown", "ability_range", "size", "regen", "rubble_mult",
         "swipe_damage", "swipe_width", "tail_damage", "tail_reach", "tail_floors", "momentum",
         "beam_dps", "glide_seconds", "climb", "brood_count", "limbs", "squeeze", "throw_damage",
-        "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm"
+        "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
+        "death_blast"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -868,14 +881,16 @@
         "fire_rate": {"$ref": "#/$defs/num"},
         "fire_wind": {"$ref": "#/$defs/num"},
         "fire_embers": {"$ref": "#/$defs/num"},
-        "firestorm": {"$ref": "#/$defs/num"}
+        "firestorm": {"$ref": "#/$defs/num"},
+        "death_blast": {"$ref": "#/$defs/num"}
       },
       "required": [
         "hp", "speed", "stomp_damage", "stomp_radius", "stomp_interval", "size", "armor", "regen",
         "rubble_mult", "run_seconds", "ability_damage", "ability_cooldown", "ability_range",
         "swipe_damage", "swipe_width", "tail_damage", "tail_reach", "tail_floors", "momentum",
         "beam_dps", "glide_seconds", "climb", "brood_count", "limbs", "throw_damage", "squeeze",
-        "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm"
+        "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
+        "death_blast"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -4786,9 +4801,76 @@
       "properties": {
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
-        "kaiju_bounds_slack": {"$ref": "#/$defs/num"}
+        "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "night_clip_max": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack"],
+      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "night_clip_max"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "death": {
+      "type": "object",
+      "properties": {
+        "reasons": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+        "stagger_s": {"$ref": "#/$defs/num"},
+        "stagger_clip": {"$ref": "#/$defs/str"},
+        "stone_s": {"$ref": "#/$defs/num"},
+        "settle_s": {"$ref": "#/$defs/num"},
+        "cell": {"$ref": "#/$defs/num"},
+        "shards": {"$ref": "#/$defs/num"},
+        "throw_min": {"$ref": "#/$defs/num"},
+        "throw_max": {"$ref": "#/$defs/num"},
+        "throw_jitter_deg": {"$ref": "#/$defs/num"},
+        "flight_s": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "shard_radius": {"$ref": "#/$defs/num"},
+        "shard_damage": {"$ref": "#/$defs/num"},
+        "shard_floors": {"$ref": "#/$defs/num"},
+        "fallback_disc": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "per_node": {"$ref": "#/$defs/num"},
+        "blast_after_s": {"$ref": "#/$defs/num"},
+        "blast_s": {"$ref": "#/$defs/num"},
+        "blast_damage": {"$ref": "#/$defs/num"},
+        "blast_floors": {"$ref": "#/$defs/num"},
+        "look": {
+          "type": "object",
+          "properties": {
+            "crackle": {"$ref": "#/$defs/num"},
+            "crackle_share": {"$ref": "#/$defs/num"},
+            "crackle_hz": {"$ref": "#/$defs/num"},
+            "stone": {"$ref": "#/$defs/str"},
+            "stone_vary": {"$ref": "#/$defs/num"},
+            "stone_keep": {"$ref": "#/$defs/num"},
+            "light_energy": {"$ref": "#/$defs/num"},
+            "light_range": {"$ref": "#/$defs/num"},
+            "burst_light": {"$ref": "#/$defs/num"},
+            "burst_s": {"$ref": "#/$defs/num"},
+            "debris_max": {"$ref": "#/$defs/num"},
+            "debris_size": {"$ref": "#/$defs/num"},
+            "debris_speed": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "debris_up": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "gravity": {"$ref": "#/$defs/num"},
+            "debris_s": {"$ref": "#/$defs/num"},
+            "shard_arc": {"$ref": "#/$defs/num"},
+            "crush_radius": {"$ref": "#/$defs/num"},
+            "burst_trauma": {"$ref": "#/$defs/num"},
+            "shard_trauma": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "crackle", "crackle_share", "crackle_hz", "stone", "stone_vary", "stone_keep",
+            "light_energy", "light_range", "burst_light", "burst_s", "debris_max", "debris_size",
+            "debris_speed", "debris_up", "gravity", "debris_s", "shard_arc", "crush_radius",
+            "burst_trauma", "shard_trauma"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "reasons", "stagger_s", "stagger_clip", "stone_s", "settle_s", "cell", "shards",
+        "throw_min", "throw_max", "throw_jitter_deg", "flight_s", "shard_radius", "shard_damage",
+        "shard_floors", "fallback_disc", "per_node", "blast_after_s", "blast_s", "blast_damage",
+        "blast_floors", "look"
+      ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     }
@@ -4800,7 +4882,7 @@
     "rail_look", "creation", "chain", "audio", "claw_fx", "clip_stomp", "camera", "slowmo", "camera_shake",
     "accessibility", "photo_mode", "rumble", "post_fx", "topple_fx", "skyline_rampage",
     "arena_edge", "body", "contact", "growth", "fx", "landmark_burst", "carve_physics", "crowd",
-    "street", "vehicles", "destruction", "lights", "rain", "render_opt"
+    "street", "vehicles", "destruction", "lights", "rain", "render_opt", "death"
   ],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,

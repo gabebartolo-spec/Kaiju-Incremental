@@ -12,6 +12,7 @@ const FlowSave := preload("res://tests/lib/flow_save.gd")
 const FlowStats := preload("res://tests/lib/flow_stats.gd")
 const FlowFps := preload("res://tests/lib/flow_fps.gd")
 const FlowSettingsRows := preload("res://tests/lib/flow_settings_rows.gd")
+const DeathWait := preload("res://tests/lib/death_wait.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -107,6 +108,7 @@ func _check_new_game() -> void:
 	check.call(not rampage.sim.over, "End Rampage asks first (Are you sure?) and the run goes on")
 	await GuiInput.click(t, GuiInput.button(menu, "YES"))
 	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	await DeathWait.end_rampage_dies(t, check, rampage, hud)
 	check.call(
 		rampage.sim.over and rampage.sim.end_reason == "ended" and not t.paused,
 		"End Rampage ends the run (reason %s)" % rampage.sim.end_reason
@@ -122,8 +124,7 @@ func _check_new_game() -> void:
 	await _frames(2)
 	var results := GuiInput.find_script(rampage, ResultsScreen) as ResultsScreen
 	check.call(
-		results != null and Engine.time_scale == 1.0,
-		"after the beat the results show over the city at normal speed"
+		results != null and Engine.time_scale == 1.0, "results at normal speed after the beat"
 	)
 	check.call(
 		not (GuiInput.find_script(rampage, RampageHud) as RampageHud).visible,

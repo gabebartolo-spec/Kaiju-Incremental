@@ -195,6 +195,7 @@ func _add_camera() -> void:
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
+	add_child(DeathView.new(sim, _city, _kaiju, add_trauma))  # his overload as he dies
 	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
@@ -390,9 +391,8 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
 	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
 	_city.fx.shockwave(at, ring, side == "tail", stomped)
-	_step_dip = maxf(
-		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
-	)
+	var dip := FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
+	_step_dip = maxf(_step_dip, dip)
 
 
 ## The waiting stomp lands under the foot that delivers it: cracks (if heavy enough), the street
