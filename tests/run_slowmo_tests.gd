@@ -152,17 +152,21 @@ func _check_fall_slows_and_restores() -> void:
 func _check_second_fall_restarts() -> void:
 	var cfg: Dictionary = Content.section("slowmo")
 	var low := Num.f(cfg["scale"])
+	var hold := Num.f(cfg["hold_s"])
 	var sim := _sim()
 	var node := LandmarkSlowmo.new(sim, null)
 	node.trigger()
 	check(Engine.time_scale == low, "the first fall slows to %s" % low)
 	node.advance(Num.f(cfg["hold_s"]) * 0.8)
 	node.trigger()
-	check(Engine.time_scale == low, "a second fall does not stack: still %s (%s)" % [low, Engine.time_scale])
+	check(
+		Engine.time_scale == low,
+		"a second fall does not stack: still %s (%s)" % [low, Engine.time_scale]
+	)
 	node.advance(Num.f(cfg["hold_s"]) * 0.8)
 	check(
 		Engine.time_scale == low,
-		"and it restarted the clock: %.2f s after the first fall it still holds" % (Num.f(cfg["hold_s"]) * 1.6)
+		"and it restarted the clock: %.2f s after the first fall it still holds" % (hold * 1.6)
 	)
 	node.advance(Num.f(cfg["hold_s"]) * 0.4 + Num.f(cfg["ease_s"]) * 0.5)
 	check(Engine.time_scale > low and Engine.time_scale < 1.0, "then it eases back once")
