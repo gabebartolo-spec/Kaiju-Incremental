@@ -165,7 +165,9 @@ func _check_buffers_byte_equal() -> void:
 	var full := true
 	for mm: MultiMesh in off.street._mms:
 		full = full and mm.instance_count == off.street._capacity
-	check(off.street._buckets.bufs.is_empty() and full, "flag off: no buffers, full-size MultiMeshes")
+	check(
+		off.street._buckets.bufs.is_empty() and full, "flag off: no buffers, full-size MultiMeshes"
+	)
 	check(
 		on.digest() == off.digest() and on.street.killed > 0,
 		"the people's state is the same with buffers on and off (and the run crushed some)"
@@ -201,7 +203,10 @@ func _check_buckets_resize() -> void:
 			var sized := got.size() == mm.instance_count * stride
 			check(
 				sized and mm.visible_instance_count == count,
-				"%d shown: %d floats for %d slots, stride %d" % [count, got.size(), mm.instance_count, stride]
+				(
+					"%d shown: %d floats for %d slots, stride %d"
+					% [count, got.size(), mm.instance_count, stride]
+				)
 			)
 			var held := got.slice(0, count * stride).to_byte_array() == want.to_byte_array()
 			check(held, "%d shown (colours %s): the buffer holds them in order" % [count, colored])
@@ -222,7 +227,9 @@ func _check_people_bounds() -> void:
 			var look := street.heading[i]
 			var at := street.pos[i] + Vector2(-look.y, look.x) * street.side[i]
 			var box := street._mms[0].custom_aabb
-			if not (box.has_point(Vector3(at.x, 0, at.y)) and box.has_point(Vector3(at.x, 1, at.y))):
+			if not (
+				box.has_point(Vector3(at.x, 0, at.y)) and box.has_point(Vector3(at.x, 1, at.y))
+			):
 				outside += 1
 	check(outside == 0, "every person is inside every MultiMesh's box (%d outside)" % outside)
 	replay.finish()

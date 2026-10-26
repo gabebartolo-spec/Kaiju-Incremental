@@ -45,6 +45,7 @@ var worst_usec := 0
 var total_usec := 0
 var frames := 0
 var toll := ArmyToll.new()  # what the army's own stray shells killed (not the kaiju's)
+var people_buffers := bool(Content.section("render_opt")["people_buffers"])
 var _officers: Array[Police.Officer] = []  # null for a civilian
 var _cfg: Dictionary
 var _fx: Fx
@@ -55,7 +56,6 @@ var _nodes := PackedVector2Array()
 var _mms: Array[MultiMesh] = []
 var _buckets: MultiMeshBuckets
 var _capacity := 0
-var people_buffers := bool(Content.section("render_opt")["people_buffers"])
 var _clock := 0.0
 var _sport_rng: RandomNumberGenerator
 
