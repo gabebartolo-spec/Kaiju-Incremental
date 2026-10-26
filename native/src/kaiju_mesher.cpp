@@ -171,7 +171,7 @@ Array KaijuMesher::mesh_region(const PackedByteArray &p_cells, const Vector3i &p
 				const int64_t i = x + z * int64_t(w) + y * plan;
 				if (!g[i]) continue;
 				const Vector3 centre = origin + Vector3(float(x), float(y), float(z)) * voxel;
-				const float finish_class = fin ? float(fin[g[i]]) : 0.0f;
+				const float finish_class = fin ? float(fin[lk[i]]) : 0.0f;
 				Color color;
 				bool coloured = false;
 				for (int k = 0; k < 6; k++) {

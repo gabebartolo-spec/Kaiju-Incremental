@@ -33,7 +33,8 @@ var looks: PackedByteArray
 var palette: PackedColorArray
 ## The native mesher when the extension is loaded (null: the GDScript path).
 var native: Object = null
-## Material id -> finish class (VoxelAO), 256 entries.
+## Look id -> finish class (VoxelAO), 256 entries: a lit window's cells are glass, mullions
+## included, as the baked BuildingMesher draws them.
 var finish: PackedByteArray
 ## Face corners per NEIGHBOURS direction, from a cell's centre (as BuildingMesher builds them).
 var _corners: Array[PackedVector3Array] = []
@@ -84,7 +85,7 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 		var c := nf * half
 		_corners.append(PackedVector3Array([c - u - v, c + u - v, c + u + v, c - u + v]))
 		_rings.append(VoxelAO.ring_of(d))
-	finish = VoxelAO.finish_by_id()
+	finish = VoxelAO.finish_by_look(LIT, SHOP_LIT)
 	if use_native and ClassDB.class_exists("KaijuMesher"):
 		native = ClassDB.instantiate("KaijuMesher")
 		native.call("setup", dims, offset, origin, voxel, salt, noise, looks, palette)
@@ -155,7 +156,7 @@ func _cell_faces(cells: PackedByteArray, c: Vector3i, i: int, out: _Out) -> void
 	var centre := origin + Vector3(c) * voxel
 	var color := Color.BLACK
 	var coloured := false
-	var fin := finish[cells[i]]
+	var fin := finish[looks[i]]
 	for k: int in NEIGHBOURS.size():
 		var air := c + NEIGHBOURS[k]
 		if not _open(cells, air):

@@ -93,6 +93,16 @@ static func finish_by_id() -> PackedByteArray:
 	return out
 
 
+## finish_by_id() plus the two look ids past the materials table that draw a window lit
+## (CellMesher.LIT, SHOP_LIT): the finish of what the cell is drawn as, as BuildingMesher keys it.
+static func finish_by_look(lit: int, shop_lit: int) -> PackedByteArray:
+	var out := finish_by_id()
+	var drawn := finish_table()
+	out[lit] = Num.i(drawn["lit"])
+	out[shop_lit] = Num.i(drawn["shop_lit"])
+	return out
+
+
 ## The look's AO strength, 0 when "voxel_ao_on" is off.
 static func strength() -> float:
 	return Look.value("voxel_ao_strength") if Look.value("voxel_ao_on") > 0.0 else 0.0
