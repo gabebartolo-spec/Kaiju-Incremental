@@ -3,9 +3,12 @@ extends SceneTree
 ## seed 0) with the croc at --stage (baby, adolescent, adult; default adult) and --nodes Death
 ## Blast nodes (0-3, the stat set directly). He rises, walks --walk seconds into the city, then dies
 ## (killed); the movie runs --seconds past that. It prints "film from frame N": the movie's frames
-## before N are the rise and the walk; cut there. Record with Godot's --write-movie:
+## before N are the rise and the walk; cut there. Record with Godot's --write-movie. A 4K movie
+## needs the untracked off-screen override.cfg to make the window borderless at 3840x2160
+## (window/size/borderless, window_width_override, window_height_override): a bordered window is
+## clamped to the screen and the movie comes out 1920x1080.
 ##
-##   godot --path . --windowed --resolution 3840x2160 --fixed-fps 30 --write-movie <dir>/death.avi \
+##   godot --path . --windowed --fixed-fps 30 --write-movie <dir>/death.avi \
 ##     --script tools/capture/capture_death.gd -- --nodes=3 --seconds=6.5
 
 const STAGES := {
