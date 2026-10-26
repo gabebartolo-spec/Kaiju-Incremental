@@ -56,6 +56,7 @@ var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kic
 var _city: CityView
 var _powers: PowersView
 var _blasts: BlastFx
+var _vip: VipView
 var _fade: VehicleFade
 var _cues: PowerCues
 var _hud: RampageHud
@@ -158,7 +159,7 @@ func _ready() -> void:
 	add_child(RiverView.new(sim, _city.fx))
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	_add_vehicles()
-	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
+	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _heli_nodes)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
 	_follow.focus = _kaiju_at
@@ -190,6 +191,8 @@ func _add_camera() -> void:
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
 	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
+	_vip = VipView.new(sim, _city, sfx)  # the leader's escape helicopter (D-149)
+	add_child(_vip)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	_hud.photo = photo_mode
@@ -292,6 +295,8 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	_blasts.on_event(event, _kaiju_at)
 	rumble.on_event(event)
+	if _vip.on_event(event):  # the leader's helicopter and its headlines
+		return
 	match str(event["type"]):
 		"stomp":
 			_land.lift(_kaiju, str(event.get("side", "")))
@@ -326,6 +331,13 @@ func _on_event(event: Dictionary) -> void:
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
 			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
+
+
+## Every helicopter in the air for the see-through fade: the gunships and the leader's.
+func _heli_nodes() -> Array:
+	var out: Array = _powers.helis()
+	out.append_array(_vip.nodes())
+	return out
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
