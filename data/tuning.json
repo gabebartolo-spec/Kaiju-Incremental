@@ -109,6 +109,8 @@
 			{"stat": "tallest_topple", "min": 10, "line": "{n}-FLOOR TOWER COMES DOWN - SKYLINE CHANGED FOREVER"},
 			{"stat": "toppled", "min": 1, "line": "INSURERS REFUSE CLAIMS: 'ACT OF MONSTER'"},
 			{"stat": "civilians", "min": 1, "line": "MASS EVACUATION ORDERED"},
+			{"stat": "vip_killed", "min": 1, "line": "THE LEADER'S HELICOPTER IS DOWN - ELECTIONS EARLY"},
+			{"stat": "vip_escaped", "min": 1, "line": "THE LEADER GOT AWAY - AND IS NOT HAPPY"},
 			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"},
 			{"stat": "landmarks", "min": 1, "line": "TOURISTS TOLD: 'THE LANDMARKS ARE CLOSED'"},
 			{"stat": "agents", "min": 1, "line": "TASKFORCE RECRUITING - NO EXPERIENCE NEEDED"}
@@ -446,6 +448,42 @@
 		"camera_bearing": 90.0,
 		"clear_arc": 60.0,
 		"clear_lead_deg": 40.0
+	},
+	"vip": {
+		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds, then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). hp = the air wing's hp x hp_mult; radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
+		"window": [0.12, 0.5],
+		"ranks": ["MAYOR", "GOVERNOR", "PRESIDENT"],
+		"payout": [38.0, 40.0, 40.0],
+		"hp_mult": 1.0,
+		"radius": 1.2,
+		"altitude": 9.0,
+		"pad_height": [3, 8],
+		"pad_range": [14.0, 40.0],
+		"liftoff_seconds": 3.0,
+		"climb_seconds": 8.0,
+		"circle_radius": 12.0,
+		"circle_seconds": 6.0,
+		"window_seconds": 15.0,
+		"escape_cap": 2.0,
+		"exit_margin": 6.0,
+		"exit_spread_deg": 50.0,
+		"turn_limit": 2.0,
+		"accel": 14.0,
+		"throw_pass": 2.5,
+		"throw_ceiling": 7.0,
+		"rotor_pitch": 0.75,
+		"rotor_db": 4.0,
+		"headline_seconds": 8.0,
+		"killed_seconds": 3.0,
+		"slide_seconds": 0.4,
+		"headlines": {
+			"liftoff": "COWARD {rank} FLEES CITY BY CHOPPER",
+			"killed": "{rank} SWATTED FROM THE SKY",
+			"escaped": "COWARD {rank} ESCAPES THE CITY"
+		},
+		"rotor_unit": 30.0,
+		"beacon": {"size": 0.6, "energy": 14.0, "light": 4.0, "range": 18.0, "height": 3.3, "period": 0.9, "on": 0.55},
+		"look": {"white": "f2efe6", "gold": "d8a53a", "bank": 0.35, "pitch": 0.008, "turn": 3.0}
 	},
 	"taskforce": {
 		"_note": "The Anti Kaiju Taskforce, agents only (Taskforce, TaskforceFrost, TaskforceVolley; D-137, D-139, D-141, D-143, D-145). PLACEHOLDER NUMBERS (tune) except the director's: railgun.share 0.08 of max health (D-143), railgun.aim_seconds 2.0 (D-139), railgun.cooldown 12 s per agent, frost.slow_mult 0.5 for frost.seconds 4 s, a kill pays a tank's worth (rubble_share 1.0 of army.tank_rubble) (D-152), squads of 3-4 and max 12 alive (D-139), none in the young city (D-137, D-152). max_by_tier = most alive at once per size tier (young, adolescent, ...). The Taskforce joins every rampage once first_arrival.city_seconds of rampage time are carried in from earlier rampages in the adolescent city or later (D-160, the save keeps the counter), its first squad first_arrival.run_delay seconds in, then every start_interval seconds less escalation_per_chunk x chunks destroyed (never under min_interval): faster the more of the city falls (D-145). Agents jetpack in from a ring edge_inset past the arena at jet_speed (units a second) and cruise jet_height up, then perch on the highest standing chunk of a column of a building at least perch_min_height tall, perch_range [near, far] from the kaiju, trying perch_tries chunks (with no building in the band, one of the perch_fallback nearest to it); a perched agent hops on after perch_seconds [min, max] (hop speed = jet_speed x hop_speed_share, arcing hop_arc up). rubble_share = biomass per kill as a share of this city's tank_rubble (x the kaiju's rubble_mult). hover_seconds = how long an agent with no roof to go to hovers before looking again, min_flight_s = the shortest flight. first_charge = the share of a cooldown a fresh agent has already waited. railgun: armour (stat armor) is taken off a hit as for a tank shell, never below army.min_damage; the line tracks the kaiju for aim_seconds - lock_seconds, then locks and lands on the lock; lock_seconds per growth stage (lock_seconds_by_stage, baby/adolescent/adult; director 2026-10-26 \"Longer warning, scaled by size\": a leap pressed at the lock, crouch included, clears the whole volley; was 0.4); it hits for share x max health only if the kaiju is within hit_radius of the lock (a late step dodges it); cooldown, range, hop_after (seconds before it hops on), squad_gap (D-166, D-178 Lock together, fire in turn: a squad's ready gunners put their lines up together and the lines lock at the same moment on one point, aim_seconds - lock_seconds after; the shots then land that many seconds apart, the first aim_seconds after the lines go up; over 0.5 so one squad never lands more than 2 hits in a second, and one leap at the lock leaves the kaiju clear of the whole volley; 0.6 is the pick inside about 2 hits' worth in a second). frost: cooldown per agent, range, flight_s grenade flight, radius (1.5) it must land within (the kaiju's feet: walking dodges, standing still is caught, D-161), seconds of slow, slow_mult speed multiplier; refreshes, never stacks, the dash shatters it. swat: radius of an agent hit by a claw swipe in the air; wall_range how far it looks for the wall it spins into.",
@@ -1476,6 +1514,7 @@
 		"ground_y": 0.0,
 		"ground_slop": 0.02,
 		"fade_seconds": 0.4,
+		"debris_aabb_margin_m": 40.0,
 		"indoor_seconds": 1.0,
 		"indoor_margin": 0.5,
 		"dust_interval": 0.25,
@@ -1564,7 +1603,10 @@
 		"fade_opacity": 0.35,
 		"fade_seconds": 0.25,
 		"tank_clear": 2.0,
-		"heli_clear": 5.0
+		"heli_clear": 5.0,
+		"vip_dark": 0.25,
+		"vip_glow": 1.0,
+		"vip_band": [0.3, 0.42]
 	},
 	"destruction": {
 		"res": 8,
@@ -1621,5 +1663,10 @@
 		"splash_y": 0.11,
 		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7},
 		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
+	},
+	"render_opt": {
+		"debris_cache": true,
+		"kaiju_tight_bounds": true,
+		"kaiju_bounds_slack": 1.05
 	}
 }
