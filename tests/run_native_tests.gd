@@ -101,7 +101,9 @@ func _check_guard_reads_the_sources() -> void:
 	for klass: String in want:
 		var names: Array = want[klass]
 		parsed += names.size()
-	check(raw > 10 and raw == parsed, "the guard reads all %d bound methods (read %d)" % [raw, parsed])
+	check(
+		raw > 10 and raw == parsed, "the guard reads all %d bound methods (read %d)" % [raw, parsed]
+	)
 
 
 ## A known-bad table names exactly what is missing; a good one is clean (built-in classes, so it

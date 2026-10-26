@@ -14,7 +14,7 @@ extends RefCounted
 
 ## Where the C++ sources are (a tool runs from the repo, never from an export).
 const SOURCE_DIR := "res://native/src"
-## Set to 1 to run on the GDScript path on purpose (a fallback measurement, a machine without a DLL).
+## Set to 1 to run on the GDScript path on purpose (a fallback measurement, no DLL on this PC).
 const OPTIONAL_ENV := "KAIJU_NATIVE_OPTIONAL"
 ## The exit code of a refused run (1 is the window check's).
 const EXIT_CODE := 2
@@ -24,7 +24,7 @@ const EXIT_CODE := 2
 static func expected() -> Dictionary:
 	var out := {}
 	var klass := RegEx.create_from_string("void\\s+(\\w+)::_bind_methods")
-	var method := RegEx.create_from_string("D_METHOD\\(\\s*\"(\\w+)\"")
+	var method := RegEx.create_from_string('D_METHOD\\(\\s*"(\\w+)"')
 	var dir := DirAccess.open(SOURCE_DIR)
 	if dir == null:
 		return out
