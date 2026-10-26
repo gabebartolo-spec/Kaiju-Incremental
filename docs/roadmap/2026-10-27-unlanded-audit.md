@@ -1,5 +1,8 @@
 # Unmerged-work audit, 2026-10-27 (read-only; origin/main = 6470129d after `git fetch`)
 
+Live status: the last section, "Where every row stands (2026-10-27 07:30)", has every branch's current owner, date and next step. The table
+below is the audit as found (classes, proof, "pushed?" columns are as of then; every PC-only commit was pushed afterwards, see "After the audit").
+
 Rule served: RULEBOOK "BUILT MEANS IN THE GAME": a branch off main is landed, finished, or a roadmap row with owner, date, next step.
 Method: `git log --no-merges origin/main..tip` (ahead = non-merge commits); `git diff --stat origin/main...tip`; 2-dot diff of the branch's key files against origin/main (empty = same content already on main); `gh pr view/list`; `git branch -r --contains`; `git rev-list origin/main..tip --not --remotes` (commits on no remote = only on this PC); `git status --porcelain` per worktree (.uid/.import/override.cfg ignored). Docs searched on origin/main: docs/ROADMAP.md, docs/DECISIONS.md, docs/roadmap/*.md (esp. 2026-10-25-unlanded-audit.md). Handoffs read from ~/.claude/handoffs/kaiju/.
 Skipped (live builders): perf-baseline, perf-p1c, perf-p2b, perf-p2c, freeze-fix, wt_main, tree-expand.
@@ -54,21 +57,54 @@ Unpushed but harmless (content already on main by PR, branch can be deleted): lo
 - ROADMAP.md rows "stand-off gunships ... queued after the volley rework" and "rolling out to every fire on claude/fire-smooth" are stale.
 - No ROADMAP row at all for: army-balance, intro-bay, komodo-land, komodo-mouth, prepush-deps, heli phase 3.
 - Stale dirty files in worktrees (safe to delete with the worktree): pr-body.md in far-insectoid, heli-standoff-2, intro-cinematic-2, komodo-clips; scratch probes tools/probe_army.gd (army-balance) and tools/probe_tmp/ (stomp-fix).
+- Resolved 2026-10-27 (docs-hygiene PR): the 2026-10-25 audit is re-stamped (Status column: #212, #213, #236, #239, #246, #210 with merge times); ROADMAP.md lost its two stale rows (stand-off gunships, fire-smooth) and gained rows for the Thunder Beam look, army-balance, escalation, intro bay and water, Komodo land and mouth, heli phase 3 (in the stand-off row) and the render plan P2b and P4c; prepush-deps landed as #258, so it needs no row.
 
 ## After the audit (lead, 2026-10-27 01:3x)
 - Every PC-only commit pushed: claude/thunder-beam-2, claude/army-balance, claude/intro-bay, claude/prepush-deps, backup/intro-cinematic-2 (intro water 10f3629c), backup/stomp-fix2.
 - Removed: worktrees and local branches of the 7 SUPERSEDED rows, the SCRATCH pacing run, stomp-fix2 (reversed), C:/kt/intro_sync. #223 closed (D-280); its branch stays for the dragon (D-281).
 - This audit replaces docs/roadmap/2026-10-25-unlanded-audit.md (six of its rows have since merged).
 
-## Roadmap rows (all after the render plan, D-276)
-| Item | Branch | Owner | Next step |
-|---|---|---|---|
-| Thunder Beam lightning look (r7 QA fix, r8 to do) | claude/thunder-beam-2 | VFX lead | round 8, clip straight to the director, then PR |
-| Escalation + far-city floating fix (asked for twice) | claude/atm-escalation-2 | atmosphere lead | sync with main, clip straight to the director, then PR |
-| Helicopters never block the view (phase 3) | claude/heli-standoff-2 | lead | sync, prove with a capture, PR |
-| Per-stage army tuning | claude/army-balance | lead | finish the 6 unique commits, balance run on GitHub, PR |
-| Sea bay rise, beach, quays (D-270 crescent bay) | claude/intro-bay | lead | after #245 merges: rebase, tests green, PR |
-| Intro real water | backup/intro-cinematic-2 (10f3629c) | lead | port onto #245's intro or close as superseded |
-| Komodo walk, turn, idle, stomp in the game | claude/komodo-land | lead | resolve its 6 motion/gait/clip reds, then PR |
-| Komodo mouth Blender tooling | claude/komodo-mouth-49564a | VFX lead | parked |
-| prepush picks suites by what they reference | claude/prepush-deps | lead | one gate run, PR |
+## Where every row stands (2026-10-27 07:30)
+Replaces "Roadmap rows (all after the render plan, D-276)": D-310 refines D-276, parked work starts tonight once every D-295 debt row has merged.
+Dates: a target day, or the day a row was parked. Merge times are GitHub UTC (`gh pr view N --json mergedAt`). Owner is the lead unless a builder is named.
+
+### Landing or running tonight
+| Branch | Where it stands | Owner | Date | Next step |
+|---|---|---|---|---|
+| claude/thunder-beam-2 | Thunder Beam as lightning, the r7 look: 16 commits, origin tip 99d94cad, none on main. Landing as claude/thunder-land (a merge of it into main; local only, no PR yet), ON by default (D-308). | thunder-land builder (Opus); the lead merges | 2026-10-27, tonight | prepush, push, PR (ready); the 1080p clip is saved in C:/kt/interview_2026-10-27/ for the morning; the lead deletes claude/thunder-beam-2 after the merge |
+| claude/army-balance | Per-stage army balance (D-259, about 1 defeat in 8 runs per stage): army range to the croc's body line, tanks always have a firing post, per-stage army escalation and damage rows in data/tuning.json, the pacing bot carries the Taskforce clock. Not on main. Tip 04c88ae1 (also on the scratch branch pacing-run/army-b); origin/claude/army-balance is at c772f47a. Two GitHub balance runs started 2026-10-26 18:54Z (pacing-run/army-b run 40381871503, army-replay/a run 40381900832). | army builder; the lead reviews the sim | 2026-10-27 | the PR follows the runs, with the defeat table and the sim-review packet |
+| claude/heli-standoff-2 (phase 3) | Core landed as #210 (merged 2026-10-25 14:47Z). Phase 3 is not on main: commit 353434c7 (AirScreen.overlaps, a pass never runs between camera and kaiju, hull tint and rim light, faint rotor disc, small lamps, strobe_on), "untested green", far behind main. | lead (sim) + the heli-phase3 builder; VFX lead for lamps and tint | 2026-10-27, after the Tripo vehicle swap merges (D-297; same helicopter files) | sync with main, heliflight and smoke suites, 4K night capture, PR |
+
+### Parked by D-310 (starts once every debt row has merged, in the order #243, #241, #245, then the rest)
+| Branch | Where it stands | Owner | Date | Next step |
+|---|---|---|---|---|
+| claude/atm-escalation-2 | Rampage escalation and the far-city "floating" fix (asked for twice): 12 commits at round 4, origin tip 62fd50a5, not on main. | lead | parked 2026-10-27 | sync with main; horizon seam, wide noon, dusk re-render, fog cost, clip straight to the director, PR (the far-city fix alone could land first) |
+| claude/intro-bay | Crescent sea bay, beach, quays (D-270), built on top of #245 (OPEN). Origin tip 4af591e3; commit says "tests red, paused for #245". Not on main. | lead | parked 2026-10-27 | #245 merges; rebase; fix the red city and creation tests; make the keyed rise_bay Cascadeur clip (never a code pose); PR |
+| backup/intro-cinematic-2 (10f3629c) | The intro itself is re-ported as PR #245 (OPEN; old #211 closed 2026-10-26 06:44Z); its 12 other commits are superseded by it once it merges. 10f3629c (the intro's real water, D-244) is only on this backup. | lead (VFX lead for the water) | parked 2026-10-27, behind #245 | #245 merges; port the water onto its intro or close as superseded |
+| claude/komodo-land (with claude/komodo-clips, folded in; that branch is gone) | The Komodo in the game: shipped walk, turn, idle, walking stomp, drool, heavy-body step clock. Origin tip 06c88b38, 38 commits, 80 files, none on main. Lands OFF by default (D-251; dragon work paused, D-252). | lead (+ casc-anim) | parked 2026-10-27 | the lead rules on the motion, gait and clip reds (komodo-land handoff); casc-anim re-keys arms and tail; croc digests re-pinned; PR (80 files incl. body contact = sim review) |
+| claude/komodo-mouth-49564a | Blender mouth tooling only (30 commits, no game asset; the last commit reverts the stray reptilian assets). Nothing reaches the player. | lead | parked 2026-10-27 | a watertight Komodo mouth shell, bake, import; or land only the croc mouth script and its built assets |
+
+### Today's new branches
+| Branch | Where it stands | Owner | Date | Next step |
+|---|---|---|---|---|
+| claude/perf-p2b (backups: backup/perf-p2b, backup/perf-p2b-meas) | Render plan P2b (item 7, crowds and rooftop squads in one buffer) missed its bar: the crowd cost ran +24.6% slower in the interleaved micro bench (the bar was 30% faster). Backup only, no PR, nothing merged. | perf-p2b builder; the lead decides | 2026-10-27 | re-plan is a native buffer fill on claude/perf-p2b-native (local worktree, not pushed; its DLL build waits on PR #262); the backups stay until the lead rules |
+| claude/perf-p4c | Render plan P4c (item 14, kaiju posed once per frame on the GPU): the spike measured no saving (kaiju cube cost 4.91 ms against 4.67 ms), so item 14 as planned is dropped. Spike files only; 05ae1e47 is pushed as a backup, no PR. Spike 2 (cut kaiju geometry, bar: kaiju cube cost down 30%) is running. | perf-p4c builder (Opus); the lead decides | 2026-10-27 | spike 2 result to the lead; no edit to voxel_skin.gd or voxel_skin.gdshader until PR #240 merges |
+| army-replay/a, pacing-run/army-b | The army builder's GitHub scratch branches for the balance runs above (pacing-run/army-a is already gone). Never a PR. | army builder | 2026-10-27 | deleted when the army PR opens |
+
+### Landed, superseded, reversed or scratch (content on main, or not wanted; the lead deletes any branch left)
+| Branch | Where it stands | Owner | Date | Next step |
+|---|---|---|---|---|
+| claude/prepush-deps | Landed: content on main by #258 (prepush picks only the suites a change reaches), merged 2026-10-26 15:16Z. Branch gone. | lead | done 2026-10-26 | none |
+| local/atm-rain-2 | Content on main by #239 (merged 2026-10-26 05:52Z; #215 closed). Branch gone. | atmosphere lead | done | none |
+| local/far-insectoid | Content on main by #213 (merged 2026-10-26 07:11Z). Branch gone. | lead | done | none |
+| claude/fire-smooth-2 | Content on main by #236 (merged 2026-10-26 01:06Z, with the red barrels). Branch gone. The helicopter fall round is a separate item (backup/heli-fall, no PR, VFX lead). | VFX lead | done | none |
+| local/hide-hit-2 | Content on main by #216 (merged 2026-10-26 05:22Z). Branch gone. | VFX lead | done | none |
+| local/strike-delay-2 | Content on main by #212 (merged 2026-10-26 07:04Z). Branch gone. | lead | done | none |
+| local/vip-heli | Content on main by #246 (merged 2026-10-26 08:34Z; #214 closed). Branch gone. | lead | done | none |
+| pacing-run/stomp-cost | Scratch (a GitHub pacing run, D-179). Its one idea, Reptilian upgrade prices x1.13 (species cost_mult), is on main by #179 (merged 2026-10-25 02:58Z). Branch gone. | lead | done | none |
+| claude/croc-stomp-button | Reversed (PR #223 closed 2026-10-26 14:02Z, D-280): main keeps the auto stomp. Origin tip 47afb3cb. Kept as the source of the dragon's kit (D-281; dragon work paused, D-252). | lead | 2026-10-27 | none until dragon work resumes; the croc's tail lash (D-280) is a separate item |
+| backup/stomp-fix2 (was tmp/stomp-fix2) | Reversed with #223: 14 commits that support the 0.80x stomp D-280 replaced. Origin 04e1bd7b; the local branch is gone. | lead | 2026-10-27 | the lead deletes it (low value, dragon-kit reference only) |
+
+### Other branches in the 07:27 rerun (C:/kt/unmerged_audit.out) that have no row above
+- Open PRs at 07:30 (owner: the PR's builder; the lead merges in the D-298/D-310 order; #257 perf-p1c and #283 pytools-tests merged 2026-10-26 20:30Z and 20:29Z): #238 claude/camera-bubble, #261 claude/ci-speed, #276 claude/croc-r11-export, #240 claude/death-overload, #282 claude/hygiene-main-base, #262 claude/native-bump, #277 claude/perf-p2c, #241 claude/play-area-1p5, #243 claude/road-geometry, #233 claude/tripo-buildings (draft), #279 claude/vehicle-solid, #274 claude/window-bars, #245 claude/intro-port; opened after the rerun: #284 claude/p1c-schema-fix, #285 claude/journal-catchup.
+- Backup branches on origin (ahead of main, no PR; owner lead; next step: the lead rules keep, land or delete; the rows of the 2026-10-25 audit name the work): backup/dash-burst (every file it touches already matches main), backup/heli-fall, backup/living-predator, backup/turn-weight-d187, backup/claw-rake-2, backup/claw-anim-525a2a, backup/rubble-smoke, backup/trains, backup/serpent-hood, backup/serpent-r4, backup/serpent-r5, backup/serpent-r6, backup/serpent-r7, backup/serpent-slither (serpent frozen, D-246), backup/pacing-run-beam-cost, backup/pacing-run-beam-cost-tee, backup/far-insectoid (#213 is on main), backup/strike-delay-2 (#212 is on main), backup/shell-threat (its work merged as #234 and #237), backup/intro-bay-checks (2 test commits that are not on claude/intro-bay: typed coverage points, the viaduct keeps clear of the rise).
