@@ -72,7 +72,7 @@ func _initialize() -> void:
 			for pair: String in arg.substr(6).split(","):
 				var kv := pair.split("=")
 				_sets[kv[0]] = float(kv[1]) if kv[1].is_valid_float() else kv[1]
-		elif arg.begins_with("--tune="):  # --tune=camera.fade_opacity=1 (a tuning.json number)
+		elif arg.begins_with("--tune="):  # --tune=camera.bubble_share=0.3 (a tuning.json number)
 			var tv := arg.substr(7).split("=")
 			var path := tv[0].split(".")
 			Content.section(path[0])[path[1]] = float(tv[1])

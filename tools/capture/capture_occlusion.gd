@@ -1,7 +1,7 @@
 extends SceneTree
 ## A clip of the Colossus walking north from the city's south edge into the towers, seen
 ## from the rampage's own camera (Rampage.CAMERA_OFFSET, zoomed by body scale): towers between
-## the camera and the kaiju fade to a screen door (BuildingFade, D-025), and far buildings
+## the camera and the kaiju are cut away by the camera bubble (CameraBubble), and far buildings
 ## stream in (BuildingStream). Record it with --write-movie (CI: ci_capture.sh --movie; local
 ## only off-screen with the no_focus override). --stage=N picks another stage.
 ##   godot --path . --resolution 1280x720 --windowed --write-movie out.avi --fixed-fps 30 \
@@ -46,6 +46,7 @@ func _run() -> void:
 	print("stage %d loaded in %d ms" % [_stage, Time.get_ticks_msec() - started])
 	sim.kaiju_pos.x = STREET_X  # walk up a street, not through the blocks
 	var zoom := 0.75 + 0.4 * scale
+	var bubble := CameraBubble.new()  # Rampage updates it in the game; the clip does it here
 	var frames := roundi(_seconds * FPS)
 	for f: int in frames:
 		var dt := 1.0 / FPS
@@ -55,5 +56,6 @@ func _run() -> void:
 		kaiju.animate(dt, 1.0)
 		cam.position = at + Kit.GAME_CAMERA * zoom
 		cam.look_at(at + Vector3(0, 3.5 * scale, 0))
+		bubble.update(cam.position, at + Vector3(0, 3.5 * scale, 0), dt)
 		await process_frame
 	quit()

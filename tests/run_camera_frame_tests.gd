@@ -3,9 +3,7 @@ extends "res://tests/lib/runner.gd"
 ## the view (no zoom bob), and HeadFrame tilts the aim up so a drawn head that would ride into the
 ## frame's top margin stays below camera.safe_top, while a head already in frame changes nothing.
 ## The follow and the tilt are critically damped (Damped): a target that jumps moves the camera up
-## to speed over many frames, within the acceleration cap, never overshooting. The fade's sight
-## points include the drawn body (HeadFrame.sight): a tower over the drawn head fades, though the
-## sim's own points stop short of the snout.
+## to speed over many frames, within the acceleration cap, never overshooting.
 ## Seeded by design: no randomness; the pose is the rig's rest pose, time stepped by hand.
 ##   godot --headless --path . --script tests/run_camera_frame_tests.gd
 
@@ -20,7 +18,8 @@ func run_checks() -> void:
 	await _t("_check_follow_keeps_distance")
 	await _t("_check_head_room")
 	await _t("_check_damped")
-	await _t("_check_drawn_sight")
+	await _t("_check_bubble")
+	await _t("_check_no_screen_door")
 
 
 ## A body walking 36 units/s straight at the camera: the eye stays one offset length from it every
@@ -124,27 +123,66 @@ func _check_damped() -> void:
 	check(jump <= 100.0 * FRAME + 0.0001, "a capped follower changes speed by %.3f a frame" % jump)
 
 
-## The sim's sight points sit a body radius or two ahead of the hips, short of the croc's drawn
-## snout; the drawn points reach it, so a tower standing between the camera and it fades.
-func _check_drawn_sight() -> void:
-	var def: Dictionary = Content.species_def("reptilian")
-	var colors: Dictionary = def["colors"]
-	var kaiju := KaijuModel.new("reptilian", colors, "adult")
-	root.add_child(kaiju)
-	var frame := HeadFrame.new(kaiju)
-	var points := frame.sight()
-	check(points.size() >= 27, "the drawn body gives sight points (%d)" % points.size())
-	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
-	var snout := rig.bone("head1").global_position
-	var eye := snout + Vector3(0, 6, 30)
-	var tower := RampageSim.Building.new()
-	tower.w = 2
-	tower.d = 2
-	tower.height = 60
-	tower.x = snout.x + (eye.x - snout.x) * 0.5
-	tower.z = snout.z + (eye.z - snout.z) * 0.5
-	var front := BuildingFade.blocks(eye, points, tower)
-	tower.x += 20.0
-	var beside := BuildingFade.blocks(eye, points, tower)
-	check(front and not beside, "a tower over the drawn snout fades, one 20 units aside does not")
-	kaiju.free()
+## The camera bubble (CameraBubble, director 2026-10-26): its radius is camera.bubble_share of the
+## camera-to-kaiju distance and clears everything near the camera in every direction (the shaders'
+## test is the same distance); a point inside is not drawn, one outside is fully solid.
+func _check_bubble() -> void:
+	var share := Num.f(Content.section("camera")["bubble_share"])
+	check(
+		is_equal_approx(CameraBubble.target(50.0), 50.0 * share)
+		and is_equal_approx(CameraBubble.target(100.0), 2.0 * CameraBubble.target(50.0)),
+		"the radius is %.2f of the camera-to-kaiju distance and scales with it" % share
+	)
+	var eye := Vector3(0, 20, 40)
+	var radius := CameraBubble.target(eye.distance_to(Vector3.ZERO))
+	var dirs := [Vector3.LEFT, Vector3.RIGHT, Vector3.UP, Vector3.DOWN, Vector3.BACK]
+	dirs.append(Vector3.FORWARD)
+	var all_sides := true
+	for dir: Vector3 in dirs:
+		var inside: bool = CameraBubble.hides(eye + dir * radius * 0.9, eye, radius)
+		var outside: bool = CameraBubble.hides(eye + dir * radius * 1.1, eye, radius)
+		all_sides = all_sides and inside and not outside
+	check(all_sides, "a point 0.9 radius from the camera is cut away and 1.1 stays, on every side")
+	var bubble := CameraBubble.new()
+	bubble.update(eye, Vector3.ZERO, FRAME)
+	var first := bubble.radius()
+	check(is_equal_approx(first, radius), "the radius starts at its size on the first frame")
+	var far := Vector3(0, 20, 140)
+	bubble.update(far, Vector3.ZERO, FRAME)
+	var step := bubble.radius() - first
+	var want := CameraBubble.target(far.distance_to(Vector3.ZERO))
+	var eased := step > 0.0 and step < (want - first) * 0.5
+	check(eased, "a zoom eases the radius, no pop (%.2f)" % step)
+	for _i: int in 60:
+		bubble.update(far, Vector3.ZERO, FRAME)
+	check(is_equal_approx(bubble.radius(), want), "the radius settles on the new size")
+
+
+## Nothing draws a screen door any more: no shader has the dither path, the baked building shader
+## and the voxel shader both read the bubble, a plain voxel material (the kaiju) is not cut by it,
+## and the old tuning keys are gone.
+func _check_no_screen_door() -> void:
+	var dir := DirAccess.open("res://scenes")
+	var clean := true
+	for file: String in dir.get_files():
+		if file.ends_with(".gdshader"):
+			var code := (load("res://scenes/" + file) as Shader).code
+			if code.contains("BAYER") or code.contains("DITHER") or code.contains("float opacity"):
+				clean = false
+				push_error("%s still has the dither path" % file)
+	check(clean, "no shader in scenes/ keeps the screen-door dither")
+	for path: String in ["res://scenes/building_baked.gdshader", "res://scenes/voxel.gdshader"]:
+		check((load(path) as Shader).code.contains("bubble_radius"), "%s reads the bubble" % path)
+	var kaiju_mat := Look.voxel_material(0.0)
+	var cut: Variant = kaiju_mat.get_shader_parameter("bubble_on")
+	check(
+		cut == null or Num.f(cut) == 0.0, "a plain voxel material (the kaiju's) is never cut by it"
+	)
+	var cam := Content.section("camera")
+	check(
+		not cam.has("fade_opacity") and not cam.has("fade_width"),
+		"the dead camera.fade_opacity and fade_width are gone"
+	)
+	check(
+		not Content.section("vehicles").has("fade_opacity"), "vehicles.fade_opacity is gone as well"
+	)

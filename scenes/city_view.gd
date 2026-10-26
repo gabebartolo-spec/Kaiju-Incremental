@@ -19,15 +19,10 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
-## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the fade keeps
-## them in sight beside the sim's own points (R 19.4: a tower over the drawn head or chest fades).
-var drawn_sight := PackedVector3Array()
 ## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
 var blast_break: BlastBreak
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
-var _fade: BuildingFade
-var _fall_fade := FallFade.new()
 var _falling: Dictionary = {}
 var _ruins: RuinYard
 var _topple: ToppleFx
@@ -59,7 +54,6 @@ func _ready() -> void:
 	_stream = BuildingStream.new(sim, colors)
 	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
 	add_child(_stream)
-	_fade = BuildingFade.new(sim.buildings, _stream.built)
 	fx = Fx.new()
 	add_child(fx)
 	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
@@ -130,17 +124,14 @@ func _process(delta: float) -> void:
 		return
 	_animate_falls(delta)
 	var camera := get_viewport().get_camera_3d()
-	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
+	if camera != null:
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var sight := BuildingFade.sight_of(sim, camera.global_position) + drawn_sight
-		_fade.update(camera.global_position, sight, delta)
-		_fall_fade.update(falling_pieces(), camera.global_position, sight, delta)  # toppling too
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
 
 
-## The sections falling now (FallFade; the capture tools read them).
+## The sections falling now (the capture tools read them).
 func falling_pieces() -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	for f: Dictionary in _falling.values():

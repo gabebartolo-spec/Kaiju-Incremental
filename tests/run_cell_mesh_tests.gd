@@ -303,8 +303,8 @@ func _check_native_matches_oracle() -> void:
 	)
 
 
-## Promoted, a building draws from its grid with the baked shader, and BuildingFade's
-## set_opacity still reaches it.
+## Promoted, a building draws from its grid with the baked shader, which carries the camera
+## bubble's cut-away (no dither path).
 func _check_promote_keeps_fade() -> void:
 	var f := _fixture("brick")
 	var b := _building(f)
@@ -320,11 +320,9 @@ func _check_promote_keeps_fade() -> void:
 		mat != null and mat.shader == BuildingView.SHADER,
 		"the region meshes use the baked building shader"
 	)
-	view.set_opacity(0.4)
-	var opacity: Variant = mat.get_shader_parameter("opacity")
 	check(
-		opacity is float and is_equal_approx(Num.f(opacity), 0.4),
-		"set_opacity (BuildingFade) reaches the cell view"
+		not BuildingView.SHADER.code.contains("opacity"),
+		"the baked shader has no screen-door opacity left"
 	)
 	var shown := 0
 	for child: Node in view.get_children():

@@ -37,7 +37,7 @@ func run_checks() -> void:
 	await _t("_check_voxel_skin")
 	await _t("_check_tank")
 	await _t("_check_heli")
-	await _t("_check_vehicle_fade")
+	await _t("_check_vehicle_bubble")
 	await _t("_check_crease_pass")
 
 
@@ -330,26 +330,22 @@ func _check_heli() -> void:
 	heli.free()
 
 
-## A helicopter between the camera and the kaiju fades to the screen door and one off to the side
-## stays solid; the sim keeps helicopters off the side the game camera actually views from.
-func _check_vehicle_fade() -> void:
+## A helicopter's parts are cut away by the camera bubble (not a screen door); the sim keeps
+## helicopters off the side the game camera actually views from.
+func _check_vehicle_bubble() -> void:
 	var front := HelicopterModel.new()
 	var side := HelicopterModel.new()
 	root.add_child(front)
 	root.add_child(side)
-	var eye := CameraTuning.offset()
-	front.position = eye * 0.5
-	side.position = Vector3(20, 9, 0)
-	var nodes: Array[Node3D] = [front, side]
-	var fade := VehicleFade.new(func() -> Array: return [], func() -> Array: return nodes)
-	for _i: int in 30:
-		fade.update(eye, Vector3.ZERO, 1.0, 1.0 / 30.0)
-	var low := Num.f(Content.section("vehicles")["fade_opacity"])
-	var a: float = front.get_meta("opacity", 1.0)
-	var b: float = side.get_meta("opacity", 1.0)
+	var parts := front.find_children("*", "MultiMeshInstance3D", true, false)
+	var all_on := not parts.is_empty()
+	for node: Node in parts:
+		var mat := (node as MultiMeshInstance3D).material_override as ShaderMaterial
+		all_on = all_on and mat != null and Num.f(mat.get_shader_parameter("bubble_on")) == 1.0
+	check(all_on, "every helicopter part is cut by the camera bubble (%d parts)" % parts.size())
 	check(
-		is_equal_approx(a, low) and b == 1.0,
-		"a helicopter in front of the kaiju fades to %.2f, one at the side stays %.2f" % [a, b]
+		front.find_children("*", "MultiMeshInstance3D", true, false).size() == parts.size(),
+		"no part is added without the bubble"
 	)
 	var bearing := rad_to_deg(atan2(CameraTuning.offset().z, CameraTuning.offset().x))
 	var air := Num.f(Content.section("air")["camera_bearing"])

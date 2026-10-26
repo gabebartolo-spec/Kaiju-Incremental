@@ -59,12 +59,6 @@ func flush() -> void:
 		_finish()
 
 
-## Screen-door share (1 = solid), as BuildingView.set_opacity.
-func set_opacity(value: float) -> void:
-	if material is ShaderMaterial:
-		(material as ShaderMaterial).set_shader_parameter("opacity", value)
-
-
 func _process(_delta: float) -> void:
 	if _task >= 0 and WorkerThreadPool.is_group_task_completed(_task):
 		WorkerThreadPool.wait_for_group_task_completion(_task)

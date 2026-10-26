@@ -61,8 +61,6 @@ func _init(city: CityView, sim: RampageSim) -> void:
 
 ## The sim downed helicopter `node` (its model, already off the circle) with `event`.
 func downed(node: Node3D, event: Dictionary) -> void:
-	node.set_meta("opacity", 1.0)  # a screen-door fade never carries on to the wreck
-	VehicleParts.set_opacity(node, 1.0)
 	var at := Vector3(Num.f(event["x"]), _sim.air.altitude(), Num.f(event["z"]))
 	match str(event.get("fate", "burst")):
 		"grabbed":
@@ -200,7 +198,6 @@ func _break_up(node: Node3D, reach: float, in_air: bool) -> void:
 func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	if not node.is_inside_tree():
 		add_child(node)  # a model the view never drew still carries the fire down
-	VehicleParts.set_opacity(node, 1.0)  # no longer fading for the camera: a solid wreck
 	var fall := Fall.new()
 	fall.node = node
 	fall.from = at

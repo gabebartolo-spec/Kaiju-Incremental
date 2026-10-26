@@ -13,11 +13,9 @@ uniform sampler2D alive : filter_nearest;
 uniform float glow = 0.0;
 uniform float roughness_value = 0.9;
 uniform float inside = 0.12;
-// Below 1, a screen-door fade (a building between the camera and the kaiju, D-025's rule as
-// the vehicles have it, voxel.gdshader): a share of its pixels is dropped in a fixed pattern.
-uniform float opacity = 1.0;
-const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
-const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
+// The cut-away bubble round the camera (CameraBubble, as voxel.gdshader): every fragment nearer
+// the camera than the global bubble_radius is not drawn: a hard edge on the building's own blocks.
+global uniform float bubble_radius;
 
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
@@ -31,11 +29,8 @@ void vertex() {
 }
 
 void fragment() {
-	if (opacity < 1.0) {
-		ivec2 p = ivec2(mod(floor(FRAGCOORD.xy / DITHER_PX), 4.0));  // cells of DITHER_PX pixels
-		if ((BAYER[p.y * 4 + p.x] + 0.5) / 16.0 >= opacity) {
-			discard;
-		}
+	if (length(VERTEX) < bubble_radius) {
+		discard;
 	}
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
 	ROUGHNESS = roughness_value;

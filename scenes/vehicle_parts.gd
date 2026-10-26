@@ -49,7 +49,9 @@ func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
 	var mm: MultiMesh = _mesh_cache[key]
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
-	mmi.material_override = (mm.mesh as PrimitiveMesh).material.duplicate()
+	var mat: ShaderMaterial = (mm.mesh as PrimitiveMesh).material.duplicate()
+	mat.set_shader_parameter("bubble_on", 1.0)  # a vehicle is cut away by the camera bubble
+	mmi.material_override = mat
 	return mmi
 
 
@@ -60,17 +62,6 @@ func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 	parent.add_child(node)
 	node.add_child(build(part, -pivot(part), salt))
 	return node
-
-
-## Fades every voxel part under `root` (1 = solid, lower drops a share of its pixels).
-static func set_opacity(root: Node, opacity: float) -> void:
-	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
-		var mmi := node as MultiMeshInstance3D
-		var mat := mmi.material_override as ShaderMaterial
-		if mat == null:
-			mat = (mmi.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
-		if mat != null:
-			mat.set_shader_parameter("opacity", opacity)
 
 
 func _read(part: String) -> Kvox:

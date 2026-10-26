@@ -136,14 +136,6 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 	)
 
 
-## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
-func set_opacity(value: float) -> void:
-	_shell_mat.set_shader_parameter("opacity", value)
-	_slab_mat.set_shader_parameter("opacity", value)
-	if cells_view != null:
-		cells_view.set_opacity(value)
-
-
 ## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
 ## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
 ## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6).
@@ -153,7 +145,6 @@ func promote(grid: CellGrid) -> CellView:
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
 	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
-	_cells_mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
 	cells_view = CellView.new(CellMesher.new(voxels, grid), grid.cells, _cells_mat)
 	add_child(cells_view)
 	_shell.visible = false
@@ -246,7 +237,7 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 		piece.add_child(mi)
 	piece.set_meta("parts", parts)
 	piece.set_meta("pivot", pivot)
-	if not cells.is_empty():  # its chunks at rest, world space (FallFade)
+	if not cells.is_empty():  # its chunks at rest, world space (CameraBubble reads it)
 		var box := AABB(b.chunk_world(cells[0]) - Vector3.ONE * 0.5, Vector3.ONE)
 		for c: Vector3i in cells:
 			box = box.merge(AABB(b.chunk_world(c) - Vector3.ONE * 0.5, Vector3.ONE))

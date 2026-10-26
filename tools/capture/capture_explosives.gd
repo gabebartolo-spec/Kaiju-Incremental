@@ -186,7 +186,7 @@ func _model_still(rampage: Rampage, i: int) -> void:
 	var away := (
 		Vector3(b.x - rampage.sim.kaiju_pos.x, 0.0, b.z - rampage.sim.kaiju_pos.y).normalized()
 	)
-	# From the side, so the line to the kaiju never crosses the site (BuildingFade would thin it).
+	# From the side, so the line to the kaiju never crosses the site (the bubble would cut it).
 	cam.position = at + (away.cross(Vector3.UP) * 1.5 + away * 0.3 + Vector3(0, 1.9, 0)) * span
 	for node: Node in rampage.get_children():
 		if node is KaijuModel or node is BreathAim:
