@@ -15,6 +15,13 @@ var cfg: Dictionary
 var step_s := 0.0
 ## How far the body is lifted off where it stands (world units): a leap's flight (Dash.height).
 var lift := 0.0
+## False in a leap: the shove (D-118) is the walk's, a leap only chews what dwarfs it (D-091).
+var walking := true
+## True once a wall has held the body for shove_s: what it touches then breaks outright, until the
+## body is clear of every building (settle).
+var shoved := false
+## True when the last sweep touched any standing chunk.
+var touching := false
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
@@ -88,8 +95,9 @@ func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) 
 
 ## Breaks every standing chunk the body touches moving and turning from one pose to the other in
 ## `step_s` seconds (a building that dwarfs the kaiju is chewed at bite_dps x step_s instead of
-## broken outright, D-091); returns the chunks broken.
+## broken outright, D-091, with a walk's shove, D-118); returns the chunks broken.
 func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> int:
+	touching = false
 	var span := reach()
 	var close := near(from, to, span)
 	if close.is_empty():
@@ -104,6 +112,7 @@ func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector
 		var at: Vector2 = pose[0]
 		var facing: Vector2 = pose[1]
 		collect(at, facing, hits, close)
+	touching = not hits.is_empty()
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
@@ -112,13 +121,63 @@ func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector
 		var first := sim.events.size()
 		var b := sim.buildings[index]
 		var dwarfs := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
-		var n := sim.damage_chunks(index, cells, Num.f(cfg["bite_dps"]) * step_s if dwarfs else INF)
+		dwarfs = dwarfs and not (walking and shoved)
+		var n := _break(index, cells, dwarfs)
 		var pay := 1.0 if dwarfs else Num.f(cfg["pay_mult"])
 		if n > 0:  # what the body breaks outright pays a share (pacing); chewed and falls in full
 			sim.rubble = before + (sim.rubble - before) * pay
 			sim.events[first]["pay"] = pay
 		broken += n
 	return broken
+
+
+## The walk's shove (D-118): the body has held at a wall for `hold_s`, and past shove_s the wall
+## gives way outright; the body clear of every building, the next wall holds again.
+func settle(held: bool, hold_s: float) -> void:
+	if hold_s >= Num.f(cfg["shove_s"]):
+		shoved = true
+	elif not held and not touching:
+		shoved = false
+
+
+## Damages `cells` of building `index`: a wall that dwarfs the body (`chew`) is bitten at bite_dps,
+## though a walk knocks the shove_chunks chunks nearest the kaiju off at once (D-118, "even big
+## building should take visible damage"); any other breaks outright. Returns the chunks broken.
+func _break(index: int, cells: Array[Vector3i], chew: bool) -> int:
+	if not chew:
+		return sim.damage_chunks(index, cells, INF)
+	var bite := Num.f(cfg["bite_dps"]) * step_s
+	var pushed := _nearest(index, cells, Num.i(cfg["shove_chunks"]) if walking else 0)
+	if pushed.is_empty():
+		return sim.damage_chunks(index, cells, bite)
+	var rest: Array[Vector3i] = []
+	for c: Vector3i in cells:
+		if not pushed.has(c):
+			rest.append(c)
+	var n := sim.damage_chunks(index, pushed, INF)
+	return n if rest.is_empty() else n + sim.damage_chunks(index, rest, bite)
+
+
+## The `count` chunks of `cells` (of building `index`) nearest the kaiju; on a tie the lower y, then
+## x, then z first.
+func _nearest(index: int, cells: Array[Vector3i], count: int) -> Array[Vector3i]:
+	var b := sim.buildings[index]
+	var at := sim.kaiju_pos
+	var ranked := cells.duplicate()
+	ranked.sort_custom(
+		func(p: Vector3i, q: Vector3i) -> bool:
+			var wp := b.chunk_world(p)
+			var wq := b.chunk_world(q)
+			var dp := Vector2(wp.x, wp.z).distance_squared_to(at)
+			var dq := Vector2(wq.x, wq.z).distance_squared_to(at)
+			if dp != dq:
+				return dp < dq
+			return p.y < q.y if p.y != q.y else (p.x < q.x if p.x != q.x else p.z < q.z)
+	)
+	var out: Array[Vector3i] = []
+	for n: int in mini(count, ranked.size()):
+		out.append(ranked[n])
+	return out
 
 
 ## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is

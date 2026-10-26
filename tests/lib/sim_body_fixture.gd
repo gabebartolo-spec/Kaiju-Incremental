@@ -52,6 +52,16 @@ static func nearest_tower(sim: RampageSim) -> int:
 	return nearest_of(sim, 2, Vector2i(TOWER_FLOORS, TOWER_SIDE), -1)
 
 
+## Gives `sim` a body with the D-118 shove set aside (no chunks knocked off at a touch, no wall that
+## ever gives way to a shove): a wall that dwarfs it yields to the D-091 chew alone.
+static func chew_only(sim: RampageSim) -> void:
+	var tuning := Content.tuning().duplicate(true)
+	var contact: Dictionary = tuning["contact"]
+	contact["shove_chunks"] = 0
+	contact["shove_s"] = 1.0e9
+	sim.body = BodyContact.new(sim, tuning)
+
+
 ## Sets the body down at `at` facing `facing`, wherever that is (it may overlap buildings).
 static func set_down(sim: RampageSim, at: Vector2, facing: Vector2) -> void:
 	sim.kaiju_pos = at

@@ -60,7 +60,7 @@ func _check_topple() -> void:
 		)
 	)
 	_check_falls_by_physics(sim, fall)
-	_check_swipe_undermines(Num.i(chew["steps"]))
+	_check_swipe_undermines()
 
 
 ## The same chew in other cities (CHEW_SEEDS): a real tall tower is found, the body starts with
@@ -103,10 +103,13 @@ func _check_chew_seeds() -> void:
 
 ## D-096 (director 2026-10-20, "Swipes undermine towers"): a claw hit on a tower's base counts as
 ## chewing it, so the same chew with the swipe on brings the tower down sooner than with it off.
-func _check_swipe_undermines(swiped_steps: int) -> void:
+## Both chew alone, with no shove (D-118), or the shove would topple it before a swipe helps.
+func _check_swipe_undermines() -> void:
+	var on: RampageSim = _make.call("reptilian", {}, 0, {})
+	var swiped_steps := Num.i(_chew_to_topple(on, true)["steps"])
 	var off: RampageSim = _make.call("reptilian", {}, 0, {})
 	off.stats["swipe_damage"] = 0.0
-	var chew := _chew_to_topple(off)
+	var chew := _chew_to_topple(off, true)
 	var fell := chew["fall"] != null
 	_check.call(
 		fell and swiped_steps < Num.i(chew["steps"]),
@@ -162,8 +165,11 @@ func _check_swipe_occlusion() -> void:
 ## does not hang on whichever style stands nearest: one swipe clears a brick tower's two front
 ## rows without tipping it sooner, red-115, senior dev review): {"steps", "worst" (most chunks
 ## inside the body after a step), "fall" (or null), "tower" (building index, -1 none found),
-## "backed" (how far the body backed off its first spot, -1 if it found no clear one)}.
-func _chew_to_topple(sim: RampageSim) -> Dictionary:
+## "backed" (how far the body backed off its first spot, -1 if it found no clear one)}. `chew_only`
+## sets the D-118 shove aside, so the tower yields to the bite alone.
+func _chew_to_topple(sim: RampageSim, chew_only: bool = false) -> Dictionary:
+	if chew_only:
+		Fixture.chew_only(sim)
 	sim.body.use_species("reptilian")
 	var out := {"steps": 0, "worst": 0, "fall": null, "tower": -1, "backed": -1.0}
 	var index := Fixture.nearest_tower(sim)

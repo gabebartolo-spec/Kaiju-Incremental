@@ -22,6 +22,15 @@ const DASH_STEPS := 90
 ## A scripted young rampage: no wall holds the body longer than this at a stretch (a quarter of
 ## its 40 s). A body stuck on a wall would hold for the rest of the run.
 const HOLD_LIMIT_S := 10.0
+## The walk-through (D-118): steps walked, the steps after contact in which chunks must already be
+## gone, how many, and the longest a wall may hold the body (seconds).
+const WALK_STEPS := 150
+const EARLY_STEPS := 6
+const EARLY_CHUNKS := 3
+const SHOVE_LIMIT_S := 1.0
+## The walls walked into: these tiers, every style (BuildingCells).
+const WALK_TIERS: Array[int] = [2, 3]
+const WALK_STYLES: Array[int] = [0, 1, 2, 3]
 
 var _check: Callable
 var _make: Callable
@@ -72,6 +81,7 @@ func run() -> void:
 	)
 	_check.call(on == _walk(true, 1), "the walk through a building replays identically")
 	_check_dash()
+	_check_walk_through()
 	Chew.new(_check, _make, _make_seeded).run()
 	_check_autoplay()
 	_check_sweep_end()
@@ -103,6 +113,83 @@ func _check_dash() -> void:
 			% [moved, sim.body.length(), worst, sim.body.broken]
 		)
 	)
+
+
+## D-118 (director 2026-10-21): "even big building should take visible damage, it should be easy
+## for him to tear through them, it just requires slightly more effort". The baby walks straight
+## into each building that dwarfs it, in every tier and style the city has: within EARLY_STEPS of
+## the first touch at least EARLY_CHUNKS chunks are gone (visible damage, not a wall that soaks the
+## walk up) and no wall holds the body longer than SHOVE_LIMIT_S (a short shove, then it gives).
+## The same walks with the shove off (the D-091 chew alone) leave at least one wall with fewer
+## chunks gone, so the shove is what changed it.
+func _check_walk_through() -> void:
+	var walls := 0
+	var soaked := 0
+	for tier: int in WALK_TIERS:
+		for style: int in WALK_STYLES:
+			var on := _walk_into(tier, style, true)
+			if on.is_empty():
+				continue
+			var off := _walk_into(tier, style, false)
+			walls += 1
+			soaked += 1 if Num.i(off["early"]) < EARLY_CHUNKS else 0
+			var said := "tier %d style %d (%s): %d chunks gone %.1f s after the first touch (>= %d),"
+			said += " the wall held the body %.2f s (<= %.1f); the chew alone: %d chunks, %.2f s"
+			_check.call(
+				Num.i(on["early"]) >= EARLY_CHUNKS and Num.f(on["held"]) <= SHOVE_LIMIT_S + DT,
+				(
+					said
+					% [
+						tier,
+						style,
+						on["size"],
+						Num.i(on["early"]),
+						EARLY_STEPS * DT,
+						EARLY_CHUNKS,
+						Num.f(on["held"]),
+						SHOVE_LIMIT_S,
+						Num.i(off["early"]),
+						Num.f(off["held"])
+					]
+				)
+			)
+	_check.call(
+		walls >= 3 and soaked >= 1,
+		(
+			"%d walls walked into; the chew alone gave under %d chunks early in %d"
+			% [walls, EARLY_CHUNKS, soaked]
+		)
+	)
+
+
+## One walk straight into the nearest building of `tier` and `style` (at least 6 floors, 4 across),
+## from 0.6 body lengths off its west face, for WALK_STEPS: {"early" (chunks broken EARLY_STEPS
+## after the first touch), "held" (longest hold, s), "size" ("WxDxH")}; empty with no such
+## building. `shove` off sets the D-118 shove aside (the chew alone).
+func _walk_into(tier: int, style: int, shove: bool) -> Dictionary:
+	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	if not shove:
+		Fixture.chew_only(sim)
+	sim.body.use_species("reptilian")
+	var index := Fixture.nearest_of(sim, tier, Vector2i(6, 4), style)
+	if index < 0:
+		return {}
+	var b := sim.buildings[index]
+	var dir := Vector2(1, 0)
+	Fixture.set_down(sim, Vector2(b.x - b.w * 0.5 - sim.body.length() * 0.6, b.z), dir)
+	var contact := -1
+	var early := 0
+	for n: int in WALK_STEPS:
+		sim.step(DT, dir, false)
+		if contact < 0 and sim.body.held:
+			contact = n
+		if contact >= 0 and n == contact + EARLY_STEPS:
+			early = sim.body.broken
+	return {
+		"early": early,
+		"held": sim.body.longest_hold,
+		"size": "%dx%dx%d" % [b.w, b.d, b.height],
+	}
 
 
 ## One seeded walk into the nearest building of `tier`, from just outside it; with `body` off

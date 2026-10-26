@@ -6,7 +6,8 @@ extends RefCounted
 ## path between two steps is swept in samples, so a fast move or a quick turn of the long snout
 ## or tail leaves nothing standing inside the body. A building that dwarfs the kaiju (D-091) is
 ## chewed at bite_dps x Growth.dwarf_mult instead of broken outright, and holds the body at its
-## wall until its chunks give. Part of RampageSim; pure, no randomness.
+## wall until its chunks give, but a walk shoves it (D-118): chunks fall at once and it breaks
+## after shove_s. Part of RampageSim; pure, no randomness.
 
 var sim: RampageSim
 var cfg: Dictionary
@@ -327,10 +328,12 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
 	var from_heading := heading if _last_pos.x == INF else _last_heading
 	_volume.step_s = dt
+	_volume.walking = not dash.on()
 	broken += _volume.sweep(from, from_heading, sim.kaiju_pos, heading)
 	held = not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
 	longest_hold = maxf(longest_hold, _hold_s)
+	_volume.settle(held, _hold_s)
 	if held:
 		_hold(from, from_heading)
 	_last_pos = sim.kaiju_pos

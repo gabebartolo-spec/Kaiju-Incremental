@@ -4093,6 +4093,8 @@
         "walk_off_s": {"$ref": "#/$defs/num"},
         "pay_mult": {"$ref": "#/$defs/num"},
         "bite_dps": {"$ref": "#/$defs/num"},
+        "shove_s": {"$ref": "#/$defs/num"},
+        "shove_chunks": {"$ref": "#/$defs/num"},
         "leap": {
           "type": "object",
           "properties": {
@@ -4167,7 +4169,8 @@
         "step_turn_rate_still", "step_turn_size_exp", "turn_accel", "step_len", "support_both",
         "slice_from", "slice_open", "turn_cadence", "step_ratio_min", "cadence_ease", "turn_min",
         "smooth_below", "slice_accel", "turn_ease_min", "turn_ease_peak", "turn_slow",
-        "stride_ease", "walk_off_s", "pay_mult", "bite_dps", "leap", "bodies"
+        "stride_ease", "walk_off_s", "pay_mult", "bite_dps", "shove_s", "shove_chunks", "leap",
+        "bodies"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
