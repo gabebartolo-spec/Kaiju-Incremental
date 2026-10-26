@@ -220,8 +220,10 @@ func _check_wet_is_last() -> void:
 
 
 ## A train car draws in the city's surface family with the detail fixed to the car (debt row 25):
-## the detail shader, and every cube carrying its own cell's grid index (without it every cube reads
-## the same block and the car is one flat colour again, though the material scan passes).
+## the detail shader, reading each cube's cell from its custom data, which the car's MultiMesh
+## carries (without it every cube reads the same block and the car is one flat colour again,
+## though the material scan passes). The per-cube values are not read back here: the headless
+## renderer keeps no MultiMesh instance data (every get_instance_* returns the default).
 func _check_train_detail() -> void:
 	var car := TrainModel.car(true, Num.f(Content.section("rail")["car_length"]))
 	var mm := car.multimesh
@@ -230,15 +232,12 @@ func _check_train_detail() -> void:
 		mat != null and mat.shader == Look.VOXEL_DETAIL_SHADER,
 		"a train car draws on voxel_detail.gdshader"
 	)
-	check(mm.use_custom_data, "a train car's cubes carry custom data")
-	var cells := {}
-	for i: int in mm.instance_count:
-		var c := mm.get_instance_custom_data(i)
-		var at := mm.get_instance_transform(i).origin / TrainModel.CAR_VOXEL
-		if Vector3(c.r, c.g, c.b).distance_to(at - Vector3(0, 0.5, 0)) < 0.01:
-			cells[Vector3i(roundi(c.r), roundi(c.g), roundi(c.b))] = true
 	check(
-		mm.instance_count > 100 and cells.size() == mm.instance_count,
-		"each cube carries its own cell (%d of %d)" % [cells.size(), mm.instance_count]
+		Look.VOXEL_DETAIL_SHADER.code.contains("INSTANCE_CUSTOM.xyz"),
+		"the detail shader places its grain from each cube's cell (INSTANCE_CUSTOM)"
+	)
+	check(
+		mm.use_custom_data and mm.instance_count > 100,
+		"a train car's %d cubes carry custom data" % mm.instance_count
 	)
 	car.free()
