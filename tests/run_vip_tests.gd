@@ -193,20 +193,6 @@ func _check_ranks() -> void:
 	)
 
 
-## Steps for `seconds` (buttons on the first step) with the leader held `offset` from the kaiju, so
-## a strike that lands a beat after the press (D-166) still finds it; returns the events seen.
-func _held_run(sim: RampageSim, seconds: float, offset: Vector2, buttons: int) -> Dictionary:
-	var seen := {}
-	for i: int in roundi(seconds / DT):
-		if sim.vip.flying():
-			sim.vip.pos = sim.kaiju_pos + offset
-		var flags := RampageSim.ULTIMATE if i == 0 and buttons & ULT else 0
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, i == 0 and buttons & PRESS != 0, flags):
-			var kind := str(event["type"])
-			seen[kind] = Num.i(seen.get(kind, 0)) + 1
-	return seen
-
-
 ## The breath, aimed at it, brings it down and pays; a breath at empty sky does not.
 func _check_breath() -> void:
 	var sim := _flying()
