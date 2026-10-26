@@ -1787,9 +1787,9 @@
 {
 "n": 257,
 "t": "Render plan P1c: night fog 0c1428, night-dark grading, debanding and FSR sharpen ON (D-279, D-285)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 258,
@@ -1969,6 +1969,13 @@
 {
 "n": 283,
 "t": "tests: smoke tests for the licence register, data schemas and shard planner (debt row 12)",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 284,
+"t": "data: schema entries and .uid #257 left out (main's data-schema lint is red)",
 "s": "OPEN",
 "c": "2026-10-26",
 "m": ""

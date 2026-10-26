@@ -216,7 +216,8 @@
             267,
             268,
             269,
-            270
+            270,
+            283
           ]
         },
         {
@@ -965,12 +966,13 @@
           ]
         },
         {
-          "text": "Render plan (D-276, D-298): a measured 4K baseline bench and its tools (Phase 0), debris bookkeeping cached per tick (item 1), the kaiju's shadow drawn in a tight box (item 2)",
+          "text": "Render plan (D-276, D-298): a measured 4K baseline bench and its tools (Phase 0), debris bookkeeping cached per tick (item 1), the kaiju's shadow drawn in a tight box (item 2), night fog, debanding and sharpen, and the new colour grading on by default (items 3 and 4, D-285)",
           "status": "done",
           "prs": [
             259,
             252,
-            253
+            253,
+            257
           ]
         },
         {
