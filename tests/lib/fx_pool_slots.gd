@@ -29,6 +29,7 @@ func run() -> void:
 	_pool = _fx.pool
 	var scale_before := Engine.time_scale
 	Engine.time_scale = SCALE
+	await _wait()  # Fx's own prewarm bursts are done and given back first
 	await _slots_and_materials()
 	await _reset_on_take()
 	await _exhausted_and_flag_off()

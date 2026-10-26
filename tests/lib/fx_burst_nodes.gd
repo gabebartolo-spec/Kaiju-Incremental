@@ -41,10 +41,11 @@ func run() -> void:
 	_fx = Fx.new()
 	_tree.root.add_child(_fx)
 	await _tree.process_frame
-	_tree.node_removed.connect(_removed)
-	var before := particles_under(_fx)
 	var scale_before := Engine.time_scale
 	Engine.time_scale = SCALE
+	await _tree.create_timer(LIFE).timeout  # Fx's prewarm bursts (HideHit's) finish and free first
+	_tree.node_removed.connect(_removed)
+	var before := particles_under(_fx)
 	var bursts := 0
 	for wave: int in WAVES:
 		for i: int in WAVE:

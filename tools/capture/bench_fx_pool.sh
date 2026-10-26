@@ -21,7 +21,7 @@ for pass in $(seq 1 "${PASSES:-2}"); do
       --script tools/capture/bench_frames.gd -- --time="${TIME:-night}" --weather="${WEATHER:-clear}" \
       --graphics="${GRAPHICS:-medium}" --route=replay --route-file="$ROUTE" --out="$OUT/${mode}_pass$pass" \
       --label="fxpool_${mode}_$pass" $tune --fx-pool-report 2>&1 \
-      | grep -E "BENCH_SUMMARY|BENCH native|FXPOOL|SCRIPT ERROR|NVIDIA"
+      | tee "$OUT/${mode}_pass$pass.log" | grep -E "BENCH_|BENCH native|FXPOOL|SCRIPT ERROR|NVIDIA"
   done
 done
 py -3 -I tools/capture/fx_pool_compare.py "$OUT"
