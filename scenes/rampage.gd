@@ -18,9 +18,6 @@ const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
-## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
-const AUTOPLAY_GLIDE_CYCLE := 90
-const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
 ## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
@@ -73,8 +70,6 @@ var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _rail: RailView
 var _fx_rng: RandomNumberGenerator
-var _autoplay := false
-var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 var _stomp_radius := 0.0
@@ -82,11 +77,7 @@ var _stomp_radius := 0.0
 var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
-## Presses made while the rise from the river holds the sim back, kept for its first live tick.
-var _held := HeldButton.new()  # the held move: hold or toggle (D-259)
-var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
-## Presses made on a tick the slow motion sat the sim out, kept for its next step (same window).
-var _waited := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
+var _reader := RunInput.new()  # this frame's presses (held move D-259, the rise's latch)
 ## How far the stick pushed on the last sim step (the walk cycle's pace between steps).
 var _move_len := 0.0
 
@@ -119,7 +110,7 @@ func wait_loaded() -> void:
 
 ## Test hook: the kaiju walks toward the nearest building it can topple on its own.
 func set_autoplay(on: bool) -> void:
-	_autoplay = on
+	_reader.autoplay = on
 
 
 ## Leaving the tree (Main._swap frees the rampage next): the sim's parts point back at it, so a
@@ -203,7 +194,7 @@ func _add_overlays() -> void:
 	rumble = PadRumble.new(sim)
 	_kaiju.foot_planted.connect(rumble.footfall)
 	add_child(_hud)
-	_slowmo = LandmarkSlowmo.new(sim, _hud)
+	_slowmo = LandmarkSlowmo.new(sim, _hud)  # the world slows when a landmark falls
 	add_child(_slowmo)
 
 
@@ -211,51 +202,23 @@ func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
 	# Slow motion (LandmarkSlowmo, D-259) steps the sim by whole ticks, on fewer of them: a tick it
-	# sits out only draws, and its presses wait for the next step. At full speed dt is delta.
+	# sits out only draws (steps -1: the tanks' every-tenth-step crush must not repeat).
 	var dt := _slowmo.sim_dt(delta)
-	var pressed := {
-		"signature": Input.is_action_just_pressed("signature"),
-		"ultimate": Input.is_action_just_pressed("ultimate"),
-		"dash": Input.is_action_just_pressed("dash"),
-	}
-	if dt <= 0.0:
-		_waited.hold(pressed, delta)
-		_present(delta, -1)  # -1: no step, so the tanks' every-tenth-step crush does not repeat
-		return
-	_step(dt, _waited.through(false, pressed, dt))
-	_present(delta, _steps)
+	if dt > 0.0:
+		_step(dt)
+	else:
+		_slowmo.sit_out(delta)
+	_present(delta, _steps if dt > 0.0 else -1)
 
 
-## One sim step of `dt` with this tick's presses (name -> bool), and what the step reported.
-func _step(dt: float, pressed: Dictionary) -> void:
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var signature: bool = pressed["signature"]
-	var held := _held.read(Input.is_action_pressed("signature"), signature)
-	var ultimate: bool = pressed["ultimate"]
-	var dash: bool = pressed["dash"]
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
-		var input: Dictionary = scripted.call(sim)
-		dash = input.get("dash", false)
-		move = input.get("move", Vector2.ZERO)
-		signature = input.get("signature", false)
-		held = input.get("held", false)
-		ultimate = input.get("ultimate", false)
-	elif _autoplay:
-		move = _walk.move(sim, _steps)
-		signature = autoplay_signature and sim.ability_ready_in <= 0.0
-		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		ultimate = autoplay_signature
-	# The sim ignores input while it rises from the river: a tap before the handover is kept.
-	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
-	now = _latch.through(sim.emerge.active, now, dt)
-	signature = now["signature"]
-	ultimate = now["ultimate"]
-	dash = now["dash"]
+## One sim step of `dt` with this tick's presses (and any kept from ticks the slow motion sat out).
+func _step(dt: float) -> void:
+	var now := _slowmo.merge(_reader.read(self, _steps, dt), dt)
+	var move: Vector2 = now["move"]
+	var signature: bool = now["signature"]
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
-	var buttons := Dash.BUTTON if dash else 0
-	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
-	var events := sim.step(dt, move, signature, buttons)
+	var events := sim.step(dt, move, signature, RunInput.buttons(now))
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
@@ -264,9 +227,7 @@ func _step(dt: float, pressed: Dictionary) -> void:
 	_move_len = 0.0 if sim.body.dash.on() else move.length()
 
 
-## One tick's drawing, stepped or not (delta is the tick's own, slowed by the time scale): the
-## kaiju eased to the sim's place, the cues, powers, tanks and HUD. `steps` is the sim's step
-## count, or -1 on a tick it sat out.
+## One tick's drawing, stepped or not (`delta` is the tick's own, slowed by the time scale).
 func _present(delta: float, steps: int) -> void:
 	_kaiju_at = _ability.place(delta, _move_len, _kaiju_at)
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))

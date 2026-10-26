@@ -255,7 +255,7 @@ func _scripted(sim: RampageSim) -> Dictionary:
 		if _target.x != INF and to.length() >= sim.stomp_radius() * 0.5:
 			move = to.normalized()
 		var sig := sim.ability_ready_in <= 0.0
-		var held := _steps % Rampage.AUTOPLAY_GLIDE_CYCLE < Rampage.AUTOPLAY_GLIDE_HELD
+		var held := _steps % RunInput.AUTOPLAY_GLIDE_CYCLE < RunInput.AUTOPLAY_GLIDE_HELD
 		input = {"move": move, "signature": sig, "held": held, "ultimate": true}
 		_route.append([move.x, move.y, 1.0 if sig else 0.0, 1.0 if held else 0.0, 1.0])
 	_steps += 1

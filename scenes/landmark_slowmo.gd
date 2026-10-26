@@ -31,6 +31,8 @@ var _read: Array[Dictionary] = []
 var _age := -1.0
 ## Sim time the slowed clock owes the sim, not yet stepped (s).
 var _owed := 0.0
+## Presses made on a tick the sim sat out, kept for its next step (the window the river's latch has).
+var _waited := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 
 
 func _init(p_sim: RampageSim, p_hud: RampageHud = null, tuning: Dictionary = {}) -> void:
@@ -103,6 +105,19 @@ func sim_dt(delta: float) -> float:
 		return 0.0
 	_owed -= whole
 	return whole
+
+
+## A tick the sim sits out: the presses made on it wait for the next step (merge).
+func sit_out(delta: float) -> void:
+	var pressed := {}
+	for action: String in ["signature", "ultimate", "dash"]:
+		pressed[action] = Input.is_action_just_pressed(action)
+	_waited.hold(pressed, delta)
+
+
+## The step's own input `now` (RunInput.read) with the presses kept from the ticks the sim sat out.
+func merge(now: Dictionary, dt: float) -> Dictionary:
+	return _waited.through(false, now, dt)
 
 
 func _apply() -> void:

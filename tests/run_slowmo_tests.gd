@@ -31,6 +31,7 @@ func run_checks() -> void:
 	await _t("_check_only_a_landmark_slows")
 	await _t("_check_never_in_the_end_beat")
 	await _t("_check_sim_takes_whole_ticks")
+	await _t("_check_press_waits")
 	await _h("Slowmo play", func() -> void: await SlowmoPlay.new(self, check).run())
 	Engine.time_scale = 1.0
 
@@ -274,3 +275,18 @@ func _check_sim_takes_whole_ticks() -> void:
 	Engine.time_scale = 1.0
 	check(node.sim_dt(tick) == tick, "and back at full speed it steps by the tick's delta again")
 	node.free()
+
+
+## A press made on a tick the sim sat out is not lost: the next step gets it, once.
+func _check_press_waits() -> void:
+	var node := LandmarkSlowmo.new(_sim(), null)
+	var tick := 1.0 / float(Engine.physics_ticks_per_second)
+	var quiet := {"move": Vector2.ZERO, "signature": false, "ultimate": false, "dash": false}
+	await process_frame  # out of the physics frame, so a press made now is "just pressed"
+	Input.action_press("signature")
+	node.sit_out(tick)
+	Input.action_release("signature")
+	var first: bool = node.merge(quiet, tick)["signature"]
+	var again: bool = node.merge(quiet, tick)["signature"]
+	check(first, "a press on a tick it sat out reaches the step")
+	check(not again, "and is given to one step only")
