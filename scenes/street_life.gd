@@ -315,18 +315,12 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 	var panic := _panic_radius()
 	var calm := panic * Num.f(_cfg["calm_radius"]) / Num.f(_cfg["panic_radius"])
 	var gawk := Num.f(_cfg["panic_gawk"])
-	var run := Num.f(_cfg["run_speed"])
-	var walk := Num.f(_cfg["walk_speed"])
+	var speeds := PackedFloat64Array([Num.f(_cfg["walk_speed"]), Num.f(_cfg["run_speed"])])
 	var far2 := _lod.far2  # past this from the kaiju and the camera: a step every few frames
 	var cam := _lod.cam
 	for i: int in range(pos.size() - 1, -1, -1):
 		if cop[i] == 1:
-			var officer := _officers[i]
-			if police.update_cop(officer, delta, kaiju):
-				_remove(i)
-			else:
-				pos[i] = officer.pos
-				heading[i] = officer.heading
+			_walk_cop(i, delta, kaiju)
 			continue
 		if pinned_until[i] > _clock:
 			continue
@@ -341,9 +335,8 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 			_startle(i, at, kaiju, gawk)
 		elif fleeing[i] == 1 and d > calm:
 			fleeing[i] = 0
-		var running := fleeing[i] == 1
 		var to := _nodes[to_node[i]] - at
-		var step := (run if running else walk) * pace[i] * dt
+		var step := speeds[fleeing[i]] * pace[i] * dt  # fleeing 1: running
 		if to.length() > step:
 			var dir := to.normalized()
 			heading[i] = dir
@@ -353,6 +346,16 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 		var next := _pavements.next_corner(to_node[i], from_node[i], kaiju, fleeing[i] == 1)
 		from_node[i] = to_node[i]
 		to_node[i] = next
+
+
+## Officer i takes its police step (Police.update_cop), or leaves when its job is done.
+func _walk_cop(i: int, delta: float, kaiju: Vector2) -> void:
+	var officer := _officers[i]
+	if police.update_cop(officer, delta, kaiju):
+		_remove(i)
+	else:
+		pos[i] = officer.pos
+		heading[i] = officer.heading
 
 
 ## Person i sees the kaiju: a moment (gawk) facing it, then runs; one walking toward it turns.

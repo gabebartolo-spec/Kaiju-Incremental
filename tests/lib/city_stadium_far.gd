@@ -3,8 +3,9 @@ extends RefCounted
 ## stadium is free biomass, it needs to be placed as far away from our spawn spot as possible";
 ## director 2026-10-20 picked "past the edge"): in the stage-1 city it stands wholly outside
 ## the baby's walk (real, in the band past the edge: the baby at the edge can still bite into
-## it, as with every band block) and at least FAR m from the river rise; in the stage-2 city it
-## is real and inside the play area. The wheel, moved with it, also stands past the baby's edge
+## it, as with every band block) and at least FAR m from the river rise; from the stage that
+## opens its district (stage 2 or later: CitySpread spreads sites ring by ring, D-254, lead call
+## 2026-10-26) it is real and inside the play area. The wheel also stands past the baby's edge
 ## and never overlaps the stadium; no block's lot overlaps a landmark's plaza.
 
 const FAR := 100.0
@@ -20,7 +21,7 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 	var rect: Rect2 = stadium["rect"]
 	var wheel_rect: Rect2 = wheel["rect"]
 	_check_lots(plan, [rect, wheel_rect], tier, map_seed, check_fn)
-	if tier >= 2:
+	if tier >= maxi(2, CitySpread.opens_at(Num.i(stadium["district"]))):
 		var inside := _reach(rect) <= here and CityBand.real(rect, sim.city)
 		check_fn.call(
 			inside,

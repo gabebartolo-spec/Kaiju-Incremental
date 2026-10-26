@@ -46,9 +46,14 @@ static func inventory(cfg: Dictionary) -> Dictionary:
 		out["building:" + a] = {"kind": "building", "hero": false, "allowed": true}
 	for i: int in Look.styles().size():
 		out["facade:%d" % i] = {"kind": "facade", "hero": false, "allowed": true}
+	# A landmark is allowed from the stage that opens its first district (its min_ring:
+	# CitySpread, D-254); the stage's own ring is the district just inside its edge.
+	var half := Num.f(cfg.get("half", 0.0))
+	var ring := CityGen.district_of(Rect2(-half + 0.01, -half + 0.01, 0.0, 0.0), cfg)
 	var listed: Array[String] = []
 	for spec: Dictionary in cfg.get("landmarks", []):
-		listed.append(str(spec["id"]))
+		if Num.i(spec.get("min_ring", 0)) <= ring:
+			listed.append(str(spec["id"]))
 	var shapes: Dictionary = cfg.get("landmark_shapes", {})
 	for id: String in shapes:
 		out["landmark:" + id] = {"kind": "landmark", "hero": true, "allowed": id in listed}

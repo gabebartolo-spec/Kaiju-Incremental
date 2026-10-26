@@ -128,7 +128,8 @@ func _check_hazards() -> void:
 				if at.distance_to(rise) < Num.f(h["spawn_clear"]):
 					bad.append("%s %.0f m from the rise" % [which, at.distance_to(rise)])
 			counts.append(n)
-		var want := Num.i(h["count"][mini(tier - 1, h["count"].size() - 1)])
+		var tuned: Array = h["count"]
+		var want := Num.i(tuned[mini(tier - 1, tuned.size() - 1)])
 		print("  hazards stage %d over %d plans: %s (tuned %d)" % [tier, SEEDS, counts, want])
 		if counts.min() < want:
 			bad.append("stage %d: as few as %d of %d" % [tier, counts.min(), want])
