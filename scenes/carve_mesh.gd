@@ -132,7 +132,8 @@ static func build_at(
 	site: CarveSite, cells: PackedInt32Array, src: Array, offset: Vector3
 ) -> ArrayMesh:
 	var mats: PackedByteArray = src[0]
-	var out := _Faces.new(site, src[1])
+	var solid: PackedByteArray = src[1]
+	var out := _Faces.new(site, solid)
 	var base := site.origin - offset
 	for k: int in cells.size():
 		var c := site.cell(cells[k])
