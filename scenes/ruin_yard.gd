@@ -1,10 +1,11 @@
 class_name RuinYard
 extends Node3D
 ## The ruins of a rampage, split out of CityView: a gone building's heap (Ruin.build) and a
-## toppled tower's rubble strip (Ruin.strip), each built on a worker thread (thousands of voxels)
-## and added when ready. A gone building's ruin rises only once the kaiju's body is off its
-## footprint: raised round the body, its heap would read as walls it stands inside
-## (playtest note 2). A ruin never burns: rubble, not a burning shell (#111, R 26.1).
+## toppled tower's rubble strip (Ruin.strip) and thrown chunks (Ruin.chunk), each laid out on a
+## worker thread (thousands of voxels), then made and added on the main thread. A gone building's
+## ruin rises only once the kaiju's body is off its footprint: raised round the body, its heap
+## would read as walls it stands inside (playtest note 2). A ruin never burns: rubble, not a
+## burning shell (#111, R 26.1).
 
 var sim: RampageSim
 var _view: Callable  # building index -> BuildingView
@@ -25,8 +26,9 @@ func mark(index: int) -> void:
 		_due.append(index)
 
 
-## Builds make() -> MultiMeshInstance3D on a worker thread and adds it when ready; ready(mmi), if
-## given, runs once it is in the tree (a toppled tower's heap settles).
+## Runs make() -> a ruin plan (Ruin.build_plan, strip_plan, chunk_plan: plain data) on a worker
+## thread; the main thread makes its heap (Ruin.make) and adds it. ready(mmi), if given, runs
+## once it is in the tree (a toppled tower's heap settles).
 func build(make: Callable, ready := Callable()) -> void:
 	_tasks.append(
 		WorkerThreadPool.add_task(func() -> void: _attach.call_deferred(make.call(), ready))
@@ -39,16 +41,19 @@ func _process(_delta: float) -> void:
 		var view: BuildingView = _view.call(index)
 		var voxels := view.voxels
 		var rng := Seeds.make("ruin", index)
-		build(func() -> MultiMeshInstance3D: return Ruin.build(voxels, rng))
+		build(func() -> Dictionary: return Ruin.build_plan(voxels, rng))
 
 
-func _attach(mmi: MultiMeshInstance3D, ready := Callable()) -> void:
+## Main thread: a finished plan becomes its heap, unless the yard has left the tree.
+func _attach(plan: Dictionary, ready := Callable()) -> void:
 	if is_inside_tree():
-		add_child(mmi)
-		if ready.is_valid():
-			ready.call(mmi)
-	else:
-		mmi.free()
+		_add(Ruin.make(plan), ready)
+
+
+func _add(mmi: MultiMeshInstance3D, ready := Callable()) -> void:
+	add_child(mmi)
+	if ready.is_valid():
+		ready.call(mmi)
 
 
 ## Never leave the scene while a ruin is still being built on another thread.
