@@ -42,8 +42,8 @@
 		"tooltip_width": 330,
 		"species_spin_rate": 0.6,
 		"loading_news": ["CITY BRACES FOR IMPACT", "BRIDGES CLOSED UNTIL FURTHER NOTICE", "PETS SENSE SOMETHING"],
-		"_note_threat_badge": "The threat badge right of the clock (ThreatBadge, D-259): border and pad [x, y] of its box (px at 1080p), gap between word, digit and meter, digit_size (font px), the five meter bars' bar_heights, bar_width and bar_gap; from level alert_from it turns alert red; a rise pops it to pop_scale over pop_s; clock_gap between clock and badge.",
-		"threat_badge": {"border": 2.0, "pad": [10, 2], "gap": 10, "digit_size": 36, "bar_heights": [8, 13, 18, 23, 28], "bar_width": 6, "bar_gap": 3, "alert_from": 4, "pop_scale": 1.35, "pop_s": 0.35, "clock_gap": 18},
+		"_note_threat_bar": "The bar under the clock is the threat meter (ThreatBar, D-259): segments, gap (px), the empty segment outline alpha, the partial fill alpha, from level alert_from the filled segments turn alert red; a rise swells the new segment to pop_scale and back over pop_s. Same width and place as the old city meter (hud meter_size).",
+		"threat_bar": {"segments": 5, "gap": 3, "empty_alpha": 0.55, "partial_alpha": 0.6, "alert_from": 4, "pop_scale": 1.1, "pop_s": 0.2},
 		"_note_news_live": "The crawl during a rampage (RampageNews): slides up over slide_s, stays while the headline crosses behind the tag plus read_s (never under min_s), then slides away; at most queue lines wait.",
 		"news_live": {"slide_s": 0.25, "read_s": 0.5, "min_s": 3.0, "queue": 3},
 		"_note_specimen_card": "The lab card before a new specimen rises (SpecimenCard, D-260 'a 2 s Lab card'): seconds on screen, gap between title and headline.",
@@ -123,7 +123,7 @@
 		"specimen": {"title": "SPECIMEN K-{next}", "headline": ["K-{lost} LOST", "K-{next} RELEASED"]}
 	},
 	"threat": {
-		"_note": "The threat badge by the clock (D-259 'A small threat icon', 1-5; RunNews). Agent-added mapping, no decision: the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
+		"_note": "The threat meter, the bar under the clock (D-259 'A small threat icon', D-267 'The army's real strength'; 1-5; RunNews). Decided mapping (per-stage escalation comes from the army-balance branch): the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
 		"level_at": [0.25, 0.5, 0.75, 1.0],
 		"tower_counts": [10, 25, 50, 100]
 	},

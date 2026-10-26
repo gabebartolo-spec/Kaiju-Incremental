@@ -1,6 +1,7 @@
 extends SceneTree
-## The threat badge and the in-play news crawl as the player meets them (D-259), for the director's
-## clip: a seed-0 young croc rampage plays on autoplay until the army escalates and the badge rises
+## The threat bar and the in-play news crawl as the player meets them (D-259), for the director's
+## clip: a seed-0 young croc rampage plays on autoplay until the army escalates and the bar
+## gains its second segment
 ## to 2 (no state is set: the city falls by play); the crawl slides up with the line. Prints the
 ## movie frame of the rise ("THREAT_RISE frame=N") so the clip is cut around it. With --card it
 ## saves a still of the lab card (SpecimenCard, K-02 after K-01 died) instead.
