@@ -10,8 +10,9 @@ extends SceneTree
 ## test's). Seeded by design: Seeds.make streams, the autoplay kaiju and a fixed frame clock.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
-## Frames the death is watched for (the stagger and the results card take well under this).
-const DEATH_FRAMES := 240
+## Frames the death is watched for at most: his overload (stagger, stone, shatter, the shards
+## landing) plays out before the run ends, about ten seconds with settle (D-294).
+const DEATH_FRAMES := 1800
 ## Frames after everything is freed, so deferred frees run before the engine exits.
 const DRAIN_FRAMES := 30
 
@@ -68,9 +69,11 @@ func _rampage(species_id: String) -> void:
 			% [species_id, rampage.sim.elapsed, Time.get_ticks_msec() - start]
 		)
 	)
-	rampage.sim.hp = 0.0  # a death: the sim ends the run "defeated" on its next step
-	for _i: int in DEATH_FRAMES:
+	rampage.sim.hp = 0.0  # a death: the overload plays, then the sim ends the run "defeated"
+	var waited := 0
+	while not rampage.sim.over and waited < DEATH_FRAMES:
+		waited += 1
 		await process_frame
-	print("log_smoke: %s ended %s" % [species_id, rampage.sim.end_reason])
+	print("log_smoke: %s ended %s after %d frames" % [species_id, rampage.sim.end_reason, waited])
 	rampage.queue_free()
 	await Kit.frames(self, DRAIN_FRAMES)
