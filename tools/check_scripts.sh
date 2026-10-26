@@ -27,6 +27,8 @@ native_path() { # Godot on Windows needs a Windows path in APPDATA
 }
 log="$run_data/check_scripts.log"
 code=0
+. tools/speed_gate.sh  # D-299: no Godot while a speed run holds the PC
+wait_speed_gate
 APPDATA="$(native_path "$run_data")" XDG_DATA_HOME="$run_data/data" \
 	XDG_CONFIG_HOME="$run_data/config" XDG_CACHE_HOME="$run_data/cache" \
 	timeout "$CHECK_TIMEOUT" "$GODOT" --headless --path . --script res://tools/check_scripts.gd \
