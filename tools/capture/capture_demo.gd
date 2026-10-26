@@ -82,6 +82,7 @@ func _run() -> void:
 	SaveFile.save_game(save)
 	await _main_scene()
 	await _click(_button(_screen(), "CONTINUE"))
+	await _click(_button(_screen(), "SLOT 1"))
 	await _frames(SETTLE)
 	await _click((_screen() as UpgradeScreen).node_button(last))
 	await _frames(SETTLE)

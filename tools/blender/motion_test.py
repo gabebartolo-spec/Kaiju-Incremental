@@ -840,7 +840,7 @@ def pose_frame(clip, f, P):
         walk_yaw = (TAIL_WALK[0] + TAIL_WALK[1] * k) * L.get("tail_sway", 1.0)
         walk_yaw *= math.cos(2 * math.pi * f / TAIL_WALK_PERIOD - math.pi * DUTY - TAIL_LAG * i) * gait * settle_t
         idle_yaw = (TAIL_IDLE[0] + TAIL_IDLE[1] * k) * math.sin(2 * math.pi * f / 72 - TAIL_LAG * i) * (idle + 0.6 * roar)
-        turn_yaw = (TAIL_DRAG[0] + TAIL_DRAG[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
+        turn_yaw = (TAIL_DRAG[0] + TAIL_DRAG[1] * k) * L.get("tail_drag", 1.0) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
         roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3) - 1.2 * look * (i >= 3)
         # Lift: an arc, root first, the tip trailing; slam: a wave down the tail that speeds up into
         # the street (no ease at the bottom: it lands hard), a short bounce, then it rests low.

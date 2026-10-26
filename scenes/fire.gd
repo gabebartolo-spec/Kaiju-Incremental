@@ -6,9 +6,19 @@ extends Node3D
 
 const SMOKE_SHADER := preload("res://scenes/smoke.gdshader")
 const EMBER_SHADER := preload("res://scenes/ember.gdshader")
+## The flame itself (director 2026-10-23: "Smooth flames"): camera-facing tongues, colour graded by
+## height, drawn by flame.gdshader. One look for every fire: the street's, the title's, the
+## helicopter's, the blast's (see flame_mesh).
+const FLAME_SHADER := preload("res://scenes/flame.gdshader")
+## A tongue's quad (metres) at a fire of size 1.2 and zoom 1, and how many a fire of size 1 has.
+const TONGUE := Vector2(1.15, 2.7)
+const TONGUES := 18
+## The ramp's height in metres at that quad: tips are dark red-brown at it.
+const FLAME_HEIGHT := 2.5
 const FLAME_COLORS: Array[Color] = [
 	Color("fff0b8"), Color("ff9a1e"), Color("e04a0c"), Color("3a1a10")
 ]
+const EMBER_START := Color("ffb040")  # embers and sparks start yellow-orange, never cream
 const WIND := Vector3(2.2, 0.0, 0.9)
 const SMOKE_COLORS: Array[Color] = [
 	Color(0.05, 0.05, 0.05, 0.0),
@@ -24,6 +34,12 @@ const SMOKE_LIT_FROM_BELOW: Array[Color] = [
 	Color(0.14, 0.08, 0.07, 0.42),
 	Color(0.05, 0.045, 0.05, 0.0),
 ]
+## The flame voxel: its cube (units) and the spread of sizes each flame takes of it, and where on a
+## flame's life each of FLAME_COLORS sits. A blast's flames (BlastParts.fireball) read these too:
+## a bigger fire is more flames, never bigger cubes (VFX lead, D-151).
+const FLAME_CUBE := 0.18
+const FLAME_SCALE := Vector2(0.5, 1.2)
+const FLAME_AT: Array[float] = [0.0, 0.1, 0.55, 1.0]
 
 var _light: PooledLight
 var _base_energy: float
@@ -48,6 +64,8 @@ var _ember_density := 1.0
 ## Smoke count multiplier of a zoomed fire (0: this fire gives no smoke of its own).
 var _smoke_density := 1.0
 var _embers_node: GPUParticles3D
+var _flame_mat: ShaderMaterial
+var _flame_base := 0.2
 
 
 ## far: {} for a fire in the street, else {"zoom", "smoke_share", "density", "wind", "puff",
@@ -113,7 +131,12 @@ func is_out() -> bool:
 	return _out
 
 
+func _ready() -> void:
+	_set_flame_place()
+
+
 func _process(delta: float) -> void:
+	_set_flame_place()
 	if _light == null:
 		return
 	_t += delta
@@ -121,12 +144,60 @@ func _process(delta: float) -> void:
 	_light.set_energy(_base_energy * flicker)
 
 
+## Tells the flame shader where the fire stands now (its floor for the height grading, its centre
+## for the heart): it rides what carries it.
+func _set_flame_place() -> void:
+	_flame_mat.set_shader_parameter("base_y", global_position.y + _flame_base)
+	_flame_mat.set_shader_parameter("fire_xz", Vector2(global_position.x, global_position.z))
+
+
 func _flames(size: float) -> GPUParticles3D:
 	var z := _zoom
-	var mat := _base(size * 0.6 * z, 12.0, Vector3(0, 2.5, 0) * z, Vector2(0.8, 2.0) * z)
-	_scale(mat, Vector2(0.5, 1.2) * z, Vector2(1.0, 0.1))
-	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array([0.0, 0.1, 0.55, 1.0]))
-	return _system(mat, _cube(0.18, true), roundi(130 * maxf(1.0, size) * _density), 1.0)
+	var grow := clampf(0.7 + 0.25 * size, 0.75, 1.5)  # bigger: a bit taller, many more
+	var mat := ParticleProcessMaterial.new()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	mat.emission_box_extents = Vector3(size * 0.4, 0.32, size * 0.4) * z  # feet at uneven heights
+	mat.direction = Vector3.UP
+	mat.spread = 5.0
+	mat.gravity = Vector3(0, 0.6, 0) * z
+	mat.initial_velocity_min = 0.4 * z
+	mat.initial_velocity_max = 1.0 * z
+	mat.scale_min = 0.8 * grow * z
+	mat.scale_max = 1.25 * grow * z
+	var curve := Curve.new()  # young tongues grow in, then hold
+	curve.add_point(Vector2(0.0, 0.55))
+	curve.add_point(Vector2(0.2, 1.0))
+	curve.add_point(Vector2(1.0, 0.8))
+	var tex := CurveTexture.new()
+	tex.curve = curve
+	mat.scale_curve = tex
+	_ramp(
+		mat,
+		PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)]),
+		PackedFloat32Array([0.0, 0.08, 0.82, 1.0])
+	)
+	var mesh := flame_mesh(grow * z, _seed)
+	_flame_mat = mesh.material
+	_flame_mat.set_shader_parameter("flame_h", FLAME_HEIGHT * grow * z)
+	_flame_mat.set_shader_parameter("half_w", (size * 0.4 + 0.3 * grow) * z)
+	var count := roundi(TONGUES * maxf(1.0, size) * _density)
+	var p := _system(mat, mesh, count, 1.0)
+	p.visibility_aabb = AABB(Vector3(-4, -2, -4) * z * grow, Vector3(8, 9, 8) * z * grow)
+	return p
+
+
+## A tongue's quad `scale` times its size, drawn by flame.gdshader with its own seed: the one
+## flame mesh every fire uses (a blast's, the helicopter's ball). The owner sets the material's
+## `base_y` (the floor the height grading starts at) and `flame_h` (how high the ramp runs).
+static func flame_mesh(scale: float, seed_value: float) -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = TONGUE * scale
+	quad.center_offset = Vector3(0, TONGUE.y * scale * 0.44, 0)  # the foot at the particle
+	var mat := ShaderMaterial.new()
+	mat.shader = FLAME_SHADER
+	mat.set_shader_parameter("fire_seed", fmod(seed_value, 97.0))
+	quad.material = mat
+	return quad
 
 
 func _embers(size: float) -> GPUParticles3D:
@@ -134,7 +205,7 @@ func _embers(size: float) -> GPUParticles3D:
 	var gravity := (_wind * 0.6 + Vector3(0, 1.2, 0)) * z
 	var mat := _base(size * 0.8 * z, 35.0, gravity, Vector2(1.5, 4.0) * z)
 	_scale(mat, Vector2(0.4, 1.0) * z, Vector2(1.0, 0.3))
-	_ramp(mat, PackedColorArray([Color("ffe9a0"), Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
+	_ramp(mat, PackedColorArray([EMBER_START, Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
 	return _system(mat, _cube(0.1, true), roundi(45 * maxf(1.0, size) * _ember_density), 3.2)
 
 

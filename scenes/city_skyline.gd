@@ -168,15 +168,15 @@ func _freeway(path: PackedVector2Array) -> void:
 		var mid := (a + b) * 0.5
 		var basis := Basis(Vector3.UP, -(b - a).angle())
 		var length := a.distance_to(b) + 0.2
-		_box(basis, AABB(Vector3(mid.x, DECK_Y, mid.y), Vector3(length, 0.7, DECK_WIDTH)), concrete)
+		var deck := AABB(Vector3(mid.x, DECK_Y, mid.y), Vector3(length, 0.7, DECK_WIDTH))
+		_concrete_box(basis, deck, concrete)
 		for side: float in [-1.0, 1.0]:  # parapets
 			var off := Vector2(-(b - a).normalized().y, (b - a).normalized().x) * side * 2.3
 			var at := Vector3(mid.x + off.x, DECK_Y + 0.65, mid.y + off.y)
-			_box(basis, AABB(at, Vector3(length, 0.6, 0.3)), concrete.lightened(0.1))
+			_concrete_box(basis, AABB(at, Vector3(length, 0.6, 0.3)), concrete.lightened(0.1))
 		if i % 3 == 0:  # a pillar every 18 units, and a lamp on it
-			_box(
-				Basis(), AABB(Vector3(a.x, DECK_Y * 0.5, a.y), Vector3(1.2, DECK_Y, 1.6)), concrete
-			)
+			var pillar := AABB(Vector3(a.x, DECK_Y * 0.5, a.y), Vector3(1.2, DECK_Y, 1.6))
+			_concrete_box(Basis(), pillar, concrete)
 			if a.length() < DETAIL_REACH * 1.5:
 				_lamps.append(Vector3(a.x, DECK_Y + 2.2, a.y))
 
@@ -195,9 +195,8 @@ func _far_shore() -> void:
 	var shore := ground.coast - Num.f(cfg["bay_width"])
 	var styles := Look.styles()
 	var concrete := Look.color("lot").darkened(0.2)
-	_box(
-		Basis(), AABB(Vector3(0, -0.2, shore - 200.0), Vector3(2400.0, 2.0, 400.0)), concrete, true
-	)
+	var quay := AABB(Vector3(0, -0.2, shore - 200.0), Vector3(2400.0, 2.0, 400.0))
+	_concrete_box(Basis(), quay, concrete, true)
 	var x := -700.0
 	while x < 700.0:
 		var downtown := maxf(0.0, 1.0 - absf(x - 60.0) / 260.0)
@@ -307,7 +306,13 @@ func _outer_lamps() -> void:
 ## A plain box; box.position is its centre (not a corner), turned by `turn` about the vertical.
 func _box(turn: Basis, box: AABB, color: Color, hazy: bool = false) -> void:
 	var t := Transform3D(turn * Basis.from_scale(box.size), box.position)
-	_plain.append({"t": t, "c": color, "hazy": hazy})
+	_plain.append({"t": t, "c": color, "hazy": hazy, "concrete": false})
+
+
+## The same in the ground's concrete look (the expressway, the far shore's quay).
+func _concrete_box(turn: Basis, box: AABB, color: Color, hazy: bool = false) -> void:
+	_box(turn, box, color, hazy)
+	_plain[-1]["concrete"] = true
 
 
 func _facades(boxes: Array[Dictionary], haze: float) -> MultiMeshInstance3D:
@@ -347,24 +352,32 @@ static func facade_material(haze: float) -> ShaderMaterial:
 	return mat
 
 
-## Concrete (expressway, the lattice tower, the far shore) and the hills, plain-coloured; the
-## hazy ones fade like the far skyline.
+## The plain boxes: roof gear and the lattice tower in the instance colour; the concrete
+## (expressway, far shore quay) in the ground's concrete look. The hazy ones fade like the far
+## skyline.
 func _plain_boxes() -> Node3D:
 	var holder := Node3D.new()
-	for hazy: bool in [false, true]:
+	for variant: int in 4:
+		var hazy := variant % 2 == 1
+		var concrete := variant >= 2
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.use_colors = true
 		mm.use_custom_data = true
 		var mesh := BoxMesh.new()
-		var mat := facade_material(Num.f(cfg["far_haze"]) * 1.6 if hazy else 0.0)
-		mat.set_shader_parameter("plain", true)
+		var haze := Num.f(cfg["far_haze"]) * 1.6 if hazy else 0.0
+		var mat := (
+			GroundKit.concrete_material(haze, hazy, Num.i(cfg["map_seed"]))
+			if concrete
+			else facade_material(haze)
+		)
+		if not concrete:
+			mat.set_shader_parameter("plain", true)
 		mesh.material = mat
 		mm.mesh = mesh
 		var picked: Array[Dictionary] = []
 		for box: Dictionary in _plain:
-			var is_hazy: bool = box["hazy"]
-			if is_hazy == hazy:
+			if box["hazy"] == hazy and box["concrete"] == concrete:
 				picked.append(box)
 		mm.instance_count = picked.size()
 		for i: int in picked.size():

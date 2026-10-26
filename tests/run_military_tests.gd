@@ -25,7 +25,10 @@ const MIN_PARKED_IN_RANGE := 20
 ## Seeds 3, 11, 15 and 25 give 38 tank-steps on Windows against the bar of 20; CI (Linux) read 16
 ## where Windows read 21 on the earlier pin (float drift, the same seeds repeat exactly on one
 ## machine), so the margin is about 1.9x.
-const RAMPAGE_SEEDS: Array[int] = [3, 11, 15, 25]
+## Re-probed for the road-network PR (no alleys on the river banks moved the plans), Behemoth
+## seeds 0-35: tank-steps in range 0 (7), 8 (5), 10 (7), 14 (9), 25 (4), 35 (18), none elsewhere;
+## seeds 0, 10, 14 and 35 give 41 against the bar of 20 (the same 2x margin).
+const RAMPAGE_SEEDS: Array[int] = [0, 10, 14, 35]
 
 
 func suite_name() -> String:

@@ -5,13 +5,14 @@ extends Control
 ## first if it would replace the save); with no save one wide New Kaiju takes Continue's place. A
 ## settings gear sits top-left and "Run for your life!?" (it quits) bottom-right above the news
 ## ticker, so the burning city stays open. Focus order: Continue, New Kaiju, gear, exit.
-## Reports the choice by signal; main.gd owns the save.
+## Continue and New Kaiju? open the save slots in the same column (SlotList, director 2026-10-26:
+## "Three slots (Recommended)"); with every slot empty New Kaiju starts in slot 1 at once.
+## Reports the choice by signal; main.gd owns the saves.
 
-signal continue_pressed
-signal new_game_pressed
+signal continue_pressed(slot: int)
+signal new_game_pressed(slot: int)
+signal delete_pressed(slot: int)
 
-## The line over the Start over? buttons, one size up from body text so it reads on a TV.
-const NOTE_SIZE := 30
 ## The button row: Continue's width and New Kaiju?'s (px at 1080p), the gap between them and the
 ## height of a button.
 const ROW_GAP := 12
@@ -47,8 +48,11 @@ const COLUMN_TOP := 0.21
 ## Texels along a side of the sky's glow textures (a coarse one shows as blocks when stretched).
 const GLOW_TEXELS := 512
 
-## summary: "" for no save, else what Continue resumes (e.g. "Reptilian, 3 rampages").
+## summary: "" for no save to continue, else the latest one (e.g. "Reptilian, 3 rampages").
 var summary := ""
+## The save slots (SlotList.slots) and the one played last (its plate takes focus first).
+var slots: Array[Dictionary] = []
+var latest_slot := 0
 ## The live dusk city behind the menu (tests that build a title without a renderer turn it off).
 var live_city := true
 var _col: VBoxContainer
@@ -60,8 +64,18 @@ var _gear: Button
 var _exit: Button
 
 
-func setup(p_summary: String) -> void:
+func setup(p_summary: String, p_slots: Array[Dictionary] = [], p_latest := 0) -> void:
 	summary = p_summary
+	slots = p_slots
+	latest_slot = p_latest
+
+
+## After a slot is deleted: the new slots and summary, the slot list shown again.
+func refresh(
+	p_summary: String, p_slots: Array[Dictionary], p_latest: int, mode: SlotList.Mode
+) -> void:
+	setup(p_summary, p_slots, p_latest)
+	show_slots(mode)
 
 
 func _ready() -> void:
@@ -194,7 +208,7 @@ func _show_main() -> void:
 	_buttons.add_child(row)
 	if summary != "":
 		var label := "CONTINUE GAME\n%s" % summary.to_upper()
-		var cont := _add(label, UiKit.ACCENT, func() -> void: continue_pressed.emit(), row)
+		var cont := _add(label, UiKit.ACCENT, show_slots.bind(SlotList.Mode.CONTINUE), row)
 		cont.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cont.size_flags_stretch_ratio = CONTINUE_SHARE
 		new_button = _add("NEW KAIJU?", UiKit.PANEL_EDGE, _on_new, row)
@@ -271,16 +285,37 @@ func _add_corner_buttons() -> void:
 	_corners.add_child(_exit)
 
 
+## New Kaiju: the slots to pick from, or slot 1 at once when every slot is empty.
 func _on_new() -> void:
-	if summary == "":
-		new_game_pressed.emit()
+	if slots.all(func(info: Dictionary) -> bool: return info.get("taken", false) != true):
+		new_game_pressed.emit(1)
 		return
+	show_slots(SlotList.Mode.NEW)
+
+
+## The save slots in the button column; BACK (or Esc) returns to the main row.
+func show_slots(mode: SlotList.Mode) -> void:
 	_clear()
-	_note("Start over? Your %s and every evolution are lost." % summary)
-	var keep := _add("KEEP MY KAIJU", UiKit.ACCENT, _show_main, _buttons)
-	var over := _add(
-		"YES, START OVER", UiKit.BAD, func() -> void: new_game_pressed.emit(), _buttons
+	var list := SlotList.new()
+	list.setup(mode, slots, latest_slot)
+	list.picked.connect(
+		func(n: int) -> void:
+			if mode == SlotList.Mode.CONTINUE:
+				continue_pressed.emit(n)
+			else:
+				new_game_pressed.emit(n)
 	)
+	list.delete_confirmed.connect(func(n: int) -> void: delete_pressed.emit(n))
+	list.back_pressed.connect(_show_main)
+	_buttons.add_child(list)
+
+
+## The slot list on show (tests and captures read it), or null.
+func slot_list() -> SlotList:
+	for child: Node in _buttons.get_children():
+		if child is SlotList:
+			return child
+	return null
 
 
 func _open_settings() -> void:
@@ -316,10 +351,3 @@ func _add(text: String, fill: Color, action: Callable, into: Container) -> Butto
 		_first = b
 		b.grab_focus.call_deferred()
 	return b
-
-
-func _note(text: String) -> void:
-	var l := UiKit.label(text, NOTE_SIZE, UiKit.MUTED)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_buttons.add_child(l)

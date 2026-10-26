@@ -117,7 +117,7 @@ static func _built(sim: RampageSim, cell: Vector2i) -> bool:
 	var size := Num.f(sim.city["coverage_cell"])
 	var n := ceili((sim.arena_half + Num.f(sim.city["view_beyond"])) * 2.0 / size)
 	var box := Rect2(Vector2(cell) * size - Vector2.ONE * n * size * 0.5, Vector2.ONE * size)
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():
 		if box.intersects(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)):
 			return true
 	return false
