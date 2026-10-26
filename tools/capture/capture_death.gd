@@ -52,7 +52,8 @@ func _run() -> void:
 	await process_frame
 	Content.set_time(_time)
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), STAGES.get(_stage, {}), "reptilian")
+	var levels: Dictionary = STAGES.get(_stage, {})
+	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	stats["death_blast"] = _nodes
 	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
