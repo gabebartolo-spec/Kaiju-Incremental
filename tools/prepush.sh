@@ -39,9 +39,9 @@ step() { echo "== $1"; }
 
 if [ "${PREPUSH_DRY:-0}" = 1 ]; then
 	range="${RANGE:-$BASE...HEAD}"
-	BASE_REF="${RANGE%%...*}"
+	BASE_REF="${RANGE:-}"; BASE_REF="${BASE_REF%%...*}"
 	[ -n "${RANGE:-}" ] || BASE_REF="$BASE"
-	NEW_REF="${RANGE##*...}"
+	NEW_REF="${RANGE:-}"; NEW_REF="${NEW_REF##*...}"
 	[ -n "${RANGE:-}" ] || NEW_REF=""
 	export BASE_REF NEW_REF
 	dry=$(git diff --name-only --diff-filter=ACMR "$range")
