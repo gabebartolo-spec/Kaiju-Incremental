@@ -13,16 +13,21 @@ ENGINE_SLOT="$HOME/.claude/tools/engine_slot.sh"
 others() {  # the non-console Godot processes' command lines, one per line
   powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name like 'godot%' and not Name like '%console%'\" | ForEach-Object { \$_.CommandLine }" | tr -d '\r'
 }
-gpu_busy() {  # another Godot is going
+WINDOW=/c/kt/BENCH_WINDOW_perf-p0  # the shared bench-window file (D-287): it stops other builders' windowed launches
+gpu_busy() {  # his game, another windowed Godot or another builder's bench window (headless Godot is fine, D-292)
   tasklist 2>/dev/null | grep -qi "League of Legends" && return 0  # his game: timings beside it are void
   nvidia-smi --query-compute-apps=process_name --format=csv,noheader 2>/dev/null | grep -qi "League" && return 0
-  others | grep . >/dev/null  # any other Godot at all: a timing run needs the PC alone (director 2026-10-27)
+  others | grep -v -- "--headless" | grep . >/dev/null && return 0
+  ls /c/kt/BENCH_WINDOW* 2>/dev/null | grep -v "BENCH_WINDOW_perf-p0" | grep . >/dev/null && return 0
+  return 1
 }
-wait_free() {
+wait_free() {  # take the bench window only when nothing else holds it; check twice, 20 s apart
   while true; do
     if ! gpu_busy; then
+      touch "$WINDOW"
       sleep 20
       if ! gpu_busy; then return 0; fi
+      rm -f "$WINDOW"
     fi
     sleep 30
   done
@@ -37,6 +42,7 @@ godot_run() {  # label, script, args...
   APPDATA="$OUT/appdata_$label" timeout 1500 "$GODOT" --path . --resolution 3840x2160 --windowed \
     --fixed-fps 60 --disable-vsync --script "$script" -- "$@" 2>&1 | tee "$OUT/$label.log" \
     | grep -E "BENCH|ABLATE|SCRIPT ERROR|NVIDIA|refusing"
+  rm -f "$WINDOW"
   echo "=== $label end $(date +%T); other Godot processes:"; others | cut -c1-220
 }
 
