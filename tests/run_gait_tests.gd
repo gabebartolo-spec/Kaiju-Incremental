@@ -4,8 +4,11 @@ extends "res://tests/lib/runner.gd"
 ## deg off the way it faces, catches its heading up about the middle and does not swing the body
 ## about the feet; and a leap (the dash button), which holds its own axis, is not slid sideways
 ## by a stick a little off it.
+## The big forms' U-turns are heavy and slow, their yaw spread evenly over real alternating steps,
+## and the young croc's smooth turns are as they were (D-187, tests/lib/gait_turn.gd).
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
+const GaitTurn := preload("res://tests/lib/gait_turn.gd")
 const DT := 1.0 / 60.0
 ## The growth steps that step their turns (the young croc turns smoothly, D-131).
 const STAGES := {"Behemoth": {"evolve1": 1}, "Colossus": {"evolve1": 1, "evolve2": 1}}
@@ -16,6 +19,15 @@ const MAX_HAND_OVER := 3.0
 ## A stick this far off a leap's axis (rad) may not slide the body sideways more than this.
 const OFF_AXIS := 0.2
 const MAX_SLIDE := 1.0
+## The young croc after each leg of its route, as the base gave it (x, z, heading degrees), and how
+## far it may differ (units, degrees): none to speak of, the sim is seeded.
+const YOUNG_TOL := 0.001
+const YOUNG_LEGS: Array[Vector3] = [
+	Vector3(0.0, 20.2967, 0.0),
+	Vector3(1.1186, 27.0072, 180.0),
+	Vector3(-4.4536, 28.1186, -90.0),
+	Vector3(-3.1870, 23.2611, 30.001),
+]
 
 
 func suite_name() -> String:
@@ -26,6 +38,8 @@ func run_checks() -> void:
 	await _t("_check_hand_over")
 	await _t("_check_dash")
 	await _t("_check_straight")
+	await _t("_check_u_turn")
+	await _t("_check_young_turn")
 
 
 ## The reptilian at `levels` on its stage's own tuning, as Rampage builds it, with a far building so
@@ -122,5 +136,32 @@ func _check_straight() -> void:
 			(
 				"%s: straight on, the croc walks %.2f units a second (the stage's speed %.2f)"
 				% [stage, speed, top]
+			)
+		)
+
+
+## A U-turn while walking at full stick: about 2 s as the Behemoth, 3 s as the Colossus (D-187).
+func _check_u_turn() -> void:
+	for stage: String in STAGES:
+		var levels: Dictionary = STAGES[stage]
+		GaitTurn.check_big(check, _croc, stage, levels)
+
+
+## The young croc turns smoothly (D-131) exactly as the base turned it: where it stands and which
+## way it faces after each leg of GaitTurn.YOUNG_ROUTE (base: claude/look-options 77d677ba).
+func _check_young_turn() -> void:
+	var legs := GaitTurn.young_legs(_croc({}))
+	for n: int in legs.size():
+		var pin: Vector3 = YOUNG_LEGS[n]
+		var got: Vector3 = legs[n]
+		var turned := absf(angle_difference(deg_to_rad(got.z), deg_to_rad(pin.z)))
+		check(
+			(
+				Vector2(got.x, got.y).distance_to(Vector2(pin.x, pin.y)) < YOUNG_TOL
+				and rad_to_deg(turned) < YOUNG_TOL
+			),
+			(
+				"young croc leg %d ends at (%.4f, %.4f) facing %.3f deg (the base: (%.4f, %.4f) %.3f)"
+				% [n + 1, got.x, got.y, got.z, pin.x, pin.y, pin.z]
 			)
 		)

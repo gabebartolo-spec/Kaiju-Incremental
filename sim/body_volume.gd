@@ -54,6 +54,20 @@ func near(from: Vector2, to: Vector2, reach: float) -> Array[int]:
 	return out
 
 
+## Whether the body at `pos` facing `facing` overlaps building `index`'s footprint.
+func over(index: int, pos: Vector2, facing: Vector2) -> bool:
+	var b := sim.buildings[index]
+	var s := sim.body_scale()
+	for d: Array in discs:
+		var c := pos + facing * Num.f(d[0]) * s
+		var gap := Vector2(
+			maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
+		)
+		if gap.length() < Num.f(d[1]) * s:
+			return true
+	return false
+
+
 func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) -> void:
 	var s := sim.body_scale()
 	var skin := Num.f(cfg["skin"])
