@@ -11,6 +11,8 @@ var _out := ""
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_out = OS.get_cmdline_user_args()[0]
 	_run.call_deferred()
 

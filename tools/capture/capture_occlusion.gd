@@ -20,6 +20,8 @@ var _frame := 60
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"stage": _stage, "seconds": _seconds, "time": _time, "frame": _frame})
 	_stage = Num.i(a["stage"])
 	_seconds = Num.f(a["seconds"])

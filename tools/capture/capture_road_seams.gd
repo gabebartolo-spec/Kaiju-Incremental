@@ -37,6 +37,8 @@ var _limit := LIMIT
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	if not Kit.window_ok():
 		quit(2)
 		return

@@ -48,6 +48,8 @@ var _measure := ""
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--nodes="):
 			_nodes = clampi(arg.substr(8).to_int(), 0, 3)
