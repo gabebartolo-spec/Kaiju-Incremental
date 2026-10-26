@@ -10,8 +10,8 @@ const AUTOPLAY_GLIDE_CYCLE := 90
 const AUTOPLAY_GLIDE_HELD := 50
 
 var autoplay := false
+var held_button := HeldButton.new()  # the held move: hold or toggle (D-259)
 var _walk := AutoWalk.new()
-var _held := HeldButton.new()  # the held move: hold or toggle (D-259)
 ## Presses made while the rise from the river holds the sim back, kept for its first live tick.
 var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 
@@ -23,7 +23,7 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 	var signature_on := run.autoplay_signature
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var signature := Input.is_action_just_pressed("signature")
-	var held := _held.read(Input.is_action_pressed("signature"), signature)
+	var held := held_button.read(Input.is_action_pressed("signature"), signature)
 	var ultimate := Input.is_action_just_pressed("ultimate")
 	var dash := Input.is_action_just_pressed("dash")
 	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
