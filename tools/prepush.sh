@@ -67,6 +67,9 @@ if [ -z "$suites" ]; then
 	echo "no suite named or touched; name the suites you iterated on in SUITES"
 	fail "no suites"
 fi
+for s in $suites; do
+	[ -f "tests/run_${s}_tests.gd" ] || fail "no suite '$s' (tests/run_${s}_tests.gd)"
+done
 echo "suites: $suites"
 # shellcheck disable=SC2086
 GODOT="$GODOT" tools/run_tests.sh --quick $suites || fail "suites ($suites)"
