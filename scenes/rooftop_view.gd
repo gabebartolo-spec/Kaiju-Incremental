@@ -51,6 +51,8 @@ var last_squad := -1
 var lit := Vector2i.ZERO
 ## The worst time one volley's hit search took, in microseconds (the gate tool reads it).
 var worst_aim_usec := 0
+## The rooftop update's cost per physics frame, in microseconds: running total (benchmarking).
+var total_usec := 0
 ## Every spark drawn: {"at": world point, "frame": physics frame} (the capture tool measures them).
 var spark_log: Array[Dictionary] = []
 var sim: RampageSim
@@ -205,6 +207,7 @@ func _roof(squad: Army.Squad) -> Rect2:
 
 ## Runs after Rampage stepped the sim this frame (a descendant processes after it).
 func _physics_process(delta: float) -> void:
+	var started := Time.get_ticks_usec()
 	_people.begin()
 	drawn = 0
 	var cap := Num.i(_cfg["max_drawn"])
@@ -227,6 +230,7 @@ func _physics_process(delta: float) -> void:
 	_draw_tracers(delta)
 	_draw_sparks()
 	lit = Vector2i(_flash_out.counts[0], _tracer_out.counts[0])
+	total_usec += Time.get_ticks_usec() - started
 
 
 ## The squads nearest the kaiju first: past max_drawn the far ones go undrawn (D-076).
