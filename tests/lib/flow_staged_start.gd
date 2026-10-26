@@ -63,11 +63,13 @@ static func _staged_build(tree: SceneTree, check: Callable) -> void:
 		rampage.find_children("*", "LoadingOverlay", false, false).is_empty(),
 		"the loading screen is gone once it is built"
 	)
+	# The far insectoid across the bay (FarBeast) carries its own little KaijuModel in a SubViewport:
+	# the run's kaiju is the one outside it.
+	var kaijus := rampage.find_children("*", "KaijuModel", true, false).filter(
+		func(m: Node) -> bool: return not _in_far_beast(m)
+	)
 	check.call(
-		(
-			rampage.find_children("*", "KaijuModel", true, false).size() == 1
-			and rampage.find_children("*", "RampageHud", true, false).size() == 1
-		),
+		kaijus.size() == 1 and rampage.find_children("*", "RampageHud", true, false).size() == 1,
 		"the finished run has its kaiju and its HUD"
 	)
 	for _i: int in 30:
@@ -75,6 +77,16 @@ static func _staged_build(tree: SceneTree, check: Callable) -> void:
 	check.call(rampage.sim.emerge.risen() > risen, "the sim steps once it is built")
 	rampage.queue_free()
 	await tree.process_frame
+
+
+## Is `node` somewhere under the far skyline's insectoid (FarBeast)?
+static func _in_far_beast(node: Node) -> bool:
+	var up := node.get_parent()
+	while up != null:
+		if up is FarBeast:
+			return true
+		up = up.get_parent()
+	return false
 
 
 static func _leave_mid_build(tree: SceneTree, check: Callable) -> void:

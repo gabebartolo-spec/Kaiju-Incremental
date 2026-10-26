@@ -209,7 +209,7 @@ func _check_wet_is_last() -> void:
 	)
 	check(
 		(
-			code.contains("const float WET_DARKEN = 0.5;")
+			code.contains("const float WET_DARKEN = 0.62;")
 			and code.contains("const float WET_ROUGHNESS = 0.18;")
 			and code.contains("const float WET_SPECULAR = 0.9;")
 			and code.contains("render_mode diffuse_burley;")

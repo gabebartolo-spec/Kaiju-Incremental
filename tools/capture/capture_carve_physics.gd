@@ -123,7 +123,7 @@ func _setup() -> void:
 		_views.append(view)
 		_spheres.append(STAGE.sphere(_world, Num.f(b["radius"])))
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	_world.add_child(cam)
 	match _scene:
 		"swipe":
