@@ -68,6 +68,7 @@ static func apply(base: Dictionary) -> void:
 			pinned.append(keep)
 	city["landmarks"] = pinned
 	city["park_every"] = PARK_EVERY
+	city.erase("harbour")  # no sea bay (D-270): the plan stays the one main's fixtures were made on
 	var stages: Array = base["growth"]["stages"]
 	for k: int in 2:
 		var over: Dictionary = stages[k]["city"]
