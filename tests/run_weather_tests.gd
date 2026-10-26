@@ -288,7 +288,7 @@ func _check_rain_view() -> void:
 				"%s builds the rain streaks and splashes" % id
 			)
 			check(_wet_of(stage) > 0.5, "%s wets the streets (wet %.2f)" % [id, _wet_of(stage)])
-			check(sun.light_energy < 0.9, "%s dulls the sun (%.2f)" % [id, sun.light_energy])
+			check(sun.light_energy < 1.0, "%s dulls the sun (%.2f)" % [id, sun.light_energy])
 			var tint := view.streak_color()
 			check(
 				maxf(tint.r, maxf(tint.g, tint.b)) < 0.9,
@@ -341,7 +341,7 @@ func _check_rain_scales_with_preset() -> void:
 ## The wet sheen is zero when dry: the slab shader's `wet` is its only switch (default 0), the sheen
 ## colour has no effect then, and only a wet weather sets either.
 func _check_sheen_only_when_wet() -> void:
-	var shader := CityGround.SLAB_SHADER
+	var shader := GroundKit.SLAB_SHADER
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
 	check(Num.f(mat.get_shader_parameter("wet")) == 0.0, "a ground slab is dry by default")

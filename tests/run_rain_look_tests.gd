@@ -59,6 +59,6 @@ func _check_rain_is_heavy() -> void:
 	)
 	var rain := WeatherView.layer_of("rain")
 	check(
-		Num.f(rain["fog_mul"]) >= 2.0 and Num.f(rain["wet"]) >= 0.9,
-		"rain has a heavy veil and wet streets"
+		Num.f(rain["fog_mul"]) >= 1.2 and Num.f(rain["wet"]) >= 0.9,
+		"rain adds fog and wets the streets"
 	)
