@@ -15,7 +15,7 @@ static var applied: float = -1.0
 
 ## The fade width in metres for a render_opt table: 0 (no fade) with the flag off or no width.
 static func soft_m_from(opt: Dictionary) -> float:
-	if opt.get("soft_smoke", false) != true:
+	if Num.i(opt.get("soft_smoke", 0)) == 0:
 		return 0.0
 	return maxf(Num.f(opt.get("soft_smoke_m", 0.0)), 0.0)
 

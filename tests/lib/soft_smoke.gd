@@ -75,7 +75,7 @@ func _project() -> void:
 
 func _data() -> void:
 	var opt := Content.section("render_opt")
-	_check.call(opt.get("soft_smoke", false) == true, "render_opt.soft_smoke is ON by default")
+	_check.call(Num.i(opt.get("soft_smoke", 0)) != 0, "render_opt.soft_smoke is ON by default")
 	var width := Num.f(opt.get("soft_smoke_m", 0.0))
 	_check.call(width > 0.0, "render_opt.soft_smoke_m is a positive width in metres (%.2f)" % width)
 	_check.call(width <= 5.0, "the fade width stays a soft edge, not a haze (%.2f m)" % width)
@@ -90,8 +90,14 @@ func _class() -> void:
 		return
 	var on := {"soft_smoke": true, "soft_smoke_m": 2.5}
 	var off := {"soft_smoke": false, "soft_smoke_m": 2.5}
+	var off_float := {"soft_smoke": 0.0, "soft_smoke_m": 2.5}  # what --tune=...=0 writes
+	var off_text := {"soft_smoke": "false", "soft_smoke_m": 2.5}  # what bench_lib's --tune writes
 	_check.call(script.call("soft_m_from", on) == 2.5, "flag on: the uniform is the data width")
 	_check.call(script.call("soft_m_from", off) == 0.0, "flag off: the uniform is 0, no fade")
+	_check.call(script.call("soft_m_from", off_float) == 0.0, "flag 0.0 (a --tune number): no fade")
+	_check.call(
+		script.call("soft_m_from", off_text) == 0.0, 'flag "false" (a bench --tune): no fade'
+	)
 	_check.call(script.call("soft_m_from", {}) == 0.0, "no data: no fade")
 	var shipped := Num.f(Content.section("render_opt").get("soft_smoke_m", -1.0))
 	_check.call(
