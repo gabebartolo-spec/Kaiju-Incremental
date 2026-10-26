@@ -49,3 +49,10 @@ CI checkouts need `lfs: true` (fonts are in LFS).
 test's city and rampage, a staged city, frame waits, render timings, stills and 2x crops. A new
 script preloads it (`const Kit := preload("res://tools/capture/capture_kit.gd")`) instead of
 copying that code.
+
+## Keeping the folder small
+
+A capture, probe or bench script stays only while something references it (CI, prepush, a test, another
+tool, a skill or a live handoff). A one-off made for a feature goes when the feature lands: git history
+keeps it (`git log --diff-filter=D -- tools/capture/<name>.gd`). 2026-10-27 (debt row 11, D-295): 61
+unreferenced scripts were removed; before adding a new one, extend `capture_kit.gd` or an existing script.
