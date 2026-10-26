@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Parsed .kvox per path and built voxels per part, shared by every vehicle of a type, so a tank
 ## or helicopter spawning mid-rampage reuses them instead of re-reading and re-filling (35-45 ms a
-## spawn before). Each vehicle still gets its own material, so one fades without the others.
+## spawn before). Each vehicle still gets its own material (the governor's is recoloured alone).
 static var _kvox_cache: Dictionary = {}
 static var _mesh_cache: Dictionary = {}
 
@@ -60,17 +60,6 @@ func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 	parent.add_child(node)
 	node.add_child(build(part, -pivot(part), salt))
 	return node
-
-
-## Fades every voxel part under `root` (1 = solid, lower drops a share of its pixels).
-static func set_opacity(root: Node, opacity: float) -> void:
-	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
-		var mmi := node as MultiMeshInstance3D
-		var mat := mmi.material_override as ShaderMaterial
-		if mat == null:
-			mat = (mmi.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
-		if mat != null:
-			mat.set_shader_parameter("opacity", opacity)
 
 
 func _read(part: String) -> Kvox:
