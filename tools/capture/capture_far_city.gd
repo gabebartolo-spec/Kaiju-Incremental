@@ -33,6 +33,8 @@ var _a := {}
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_a = Kit.args(
 		{"out": "", "tag": "before", "time": "night", "settle": 600, "walk": 300, "sweep": ""}
 	)
