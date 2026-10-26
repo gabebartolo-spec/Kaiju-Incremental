@@ -24,7 +24,8 @@
 # share a save, a setting or an editor cache (CLAUDE.md "Machine rules").
 #
 # While a speed run holds the PC (D-299) it starts no Godot: it waits on the gate (tools/speed_gate.sh,
-# C:/kt/wait_window.sh) before the import and before each suite. No gate file, no effect.
+# C:/kt/wait_window.sh) before the import and before each suite, and until 6144 MB of RAM is free (D-317, MIN_FREE_MB,
+# polled every RAM_POLL_SECS = 5 s); the waits are totalled on the last line. No gate file, no effect.
 #
 #   GODOT=/path/to/godot tools/run_tests.sh          # everything
 #   SUITE_TIMEOUT=300 tools/run_tests.sh data smoke   # just some suites
@@ -241,4 +242,6 @@ if [ "$failed" = 0 ]; then
 else
 	echo "Some checks FAILED ($n_suites suites run). Logs: $LOG_DIR"
 fi
+# Time spent waiting on the speed-run gate and the memory floor (tools/speed_gate.sh): in no suite's time above.
+if [ "${SPEED_GATE_WAITED:-0}" -gt 0 ]; then echo "Waited ${SPEED_GATE_WAITED}s for the speed-run gate and the memory floor."; fi
 exit "$failed"
