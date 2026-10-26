@@ -19,7 +19,6 @@ const SIDE_PIVOT := 9.2
 var plants := PackedStringArray()
 var _species := "reptilian"
 var _stage := "adult"
-## The kaiju on stage: the game camera's rig reads its drawn body.
 var _model: KaijuModel
 var _cam := "game"
 var _seconds := 15.0
@@ -113,6 +112,7 @@ func _run() -> void:
 	var interval := Num.f(stats["stomp_interval"])
 	var colors: Dictionary = def["colors"]
 	var kaiju := KaijuModel.new(_species, colors, _stage)
+	_model = kaiju
 	var body_scale: float = SCALES.get(_stage, 1.0)
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
@@ -185,7 +185,6 @@ func _run() -> void:
 		_focus = kaiju.focus()
 		_place(
 			cam,
-			kaiju,
 			_focus if _cam in ["game", "side"] else at,
 			Vector3(facing.x, 0, facing.y),
 			body_scale
@@ -251,7 +250,7 @@ func _run() -> void:
 	quit()
 
 
-func _place(cam: Camera3D, kaiju: KaijuModel, at: Vector3, fwd: Vector3, body_scale: float) -> void:
+func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void:
 	var right := fwd.cross(Vector3.UP).normalized()
 	if _cam == "front34":  # ahead and to one side, at head height: the roar's hinge and gape
 		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 8.5, 0)) * body_scale
