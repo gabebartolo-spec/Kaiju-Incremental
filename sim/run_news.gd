@@ -1,6 +1,6 @@
 class_name RunNews
 extends RefCounted
-## The rampage's big moments, as sim events the HUD turns into a threat badge and news crawl
+## The rampage's big moments, as sim events the HUD turns into a threat meter and news crawl
 ## lines (D-259: "A small threat icon", news crawl "On big events"). Pure sim; it decides nothing.
 ##
 ## The threat level (1-5) is the army's own escalation read out: how far the tanks' spawn rate
@@ -15,6 +15,8 @@ const LOWEST := 1
 
 ## The current threat level, LOWEST..LOWEST + level_at.size().
 var level := LOWEST
+## How far toward the next level the army's escalation is, 0-1 (1 at the top level).
+var progress := 0.0
 var _sim: RampageSim
 var _cfg: Dictionary
 ## Indices of the landmarks still standing (not yet reported felled).
@@ -49,10 +51,22 @@ static func level_for(share: float, level_at: Array) -> int:
 	return n
 
 
+## The share of the way from this level's row to the next one's, 0-1; 1 at the top level.
+static func progress_for(share: float, level_at: Array) -> float:
+	var n := level_for(share, level_at)
+	if n > level_at.size():
+		return 1.0
+	var from := 0.0 if n == LOWEST else Num.f(level_at[n - 2])
+	var to := Num.f(level_at[n - 1])
+	return clampf((share - from) / maxf(0.001, to - from), 0.0, 1.0)
+
+
 ## Appends this step's big moments to `events`.
 func step(events: Array[Dictionary]) -> void:
 	var at: Array = _cfg["level_at"]
-	var now := level_for(army_share(_sim), at)
+	var share := army_share(_sim)
+	var now := level_for(share, at)
+	progress = progress_for(share, at)
 	if now > level:
 		level = now
 		events.append({"type": "threat_up", "level": level})

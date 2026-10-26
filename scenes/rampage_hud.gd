@@ -1,7 +1,7 @@
 class_name RampageHud
 extends CanvasLayer
 ## The rampage HUD, as little as it can be so the kaiju and the city's fall fill the screen
-## (director 2026-10-21): clock, threat badge (D-259) and city-destroyed strip on top, biomass
+## (director 2026-10-21): clock and the threat bar (D-259, the bar is the threat) on top, biomass
 ## bottom right, the breath, dash and ultimate as three rings bottom left, health as a red edge
 ## vignette, the controls on a card at the first rampage's start only; all inside the TV
 ## title-safe area, no text under 24 px. The news crawl slides up on big moments (RampageNews).
@@ -43,8 +43,7 @@ var ultimate_ring: HudRing
 var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
-var city_meter: ProgressBar
-## The clock, threat badge and city meter (hidden while the end beat's headline is up).
+## The clock and threat bar (hidden while the end beat's headline is up).
 var clock: HudClock
 ## The news crawl's big moments (RampageNews).
 var news: RampageNews
@@ -89,7 +88,6 @@ func _ready() -> void:
 	news = RampageNews.new(sim)
 	_widgets.add_child(news)
 	clock = HudClock.new(sim, _hud)
-	city_meter = clock.city_meter
 	safe.add_child(clock)
 	safe.add_child(_lifted(_build_biomass(), true))
 	safe.add_child(_lifted(_build_rings(), false))
