@@ -7,20 +7,49 @@
 #   1. branch is not behind origin/main (a stale branch merges main first);
 #   2. tuning keys + complexity ratchet (tests.yml preflight);
 #   3. snake_case names, gdlint and gdformat --check on the changed .gd files (lint.yml);
-#   4. headless import + every script parsed and compiled (tests.yml preflight);
-#   5. the touched suites: every suite whose runner or tests/lib helper changed, plus SUITES.
+#   4. headless import + every script parsed and compiled (tests.yml preflight), then the repo lints
+#      (tools/lint/run_all.sh, also lint.yml: every script has its committed .uid, ...);
+#   5. the touched suites: tools/lint/prepush_picks.py picks every suite whose runner, or code its
+#      runner or tests/lib helpers reference (a changed sim/ or scenes/ script by class_name or
+#      res:// path, a changed data/tuning.json section), changed; plus SUITES. No cap on how many.
+#      PREPUSH_DRY=1 prints the picked suites with reasons and exits (RANGE="a...b" picks for
+#      another diff, e.g. RANGE=origin/main...origin/claude/some-pr).
 # The last line is "prepush: PASS <sha>" or "prepush: FAIL <step>"; paste it in your report.
 # The lead arms a merge only for a head that printed PASS.
 #
 #   GODOT=/path/to/godot_console.exe SUITES="sim city" tools/prepush.sh
 set -u
 cd "$(dirname "$0")/.." || exit 1
+# The Python user site, resolved before anything (a caller's APPDATA override hides it, and with
+# it gdtoolkit): put it on PYTHONPATH for every python call below.
+user_site="$(python -c 'import site;print(site.getusersitepackages())' 2> /dev/null || true)"
+if [ -n "$user_site" ]; then
+	if command -v cygpath > /dev/null 2>&1; then user_site="$(cygpath -u "$user_site")"; fi
+	export PYTHONPATH="$user_site${PYTHONPATH:+:$PYTHONPATH}"
+fi
 GODOT="${GODOT:-godot}"
 SUITES="${SUITES:-}"
 BASE="${BASE:-origin/main}"
 
+# picks: print "suite<TAB>reason" lines for a diff range, then the expected time
+picks() { printf '%s
+' "$1" | python tools/lint/prepush_picks.py --timings tools/ci_timings.txt; }
+
 fail() { echo "prepush: FAIL $1"; exit 1; }
 step() { echo "== $1"; }
+
+if [ "${PREPUSH_DRY:-0}" = 1 ]; then
+	range="${RANGE:-$BASE...HEAD}"
+	BASE_REF="${RANGE:-}"; BASE_REF="${BASE_REF%%...*}"
+	[ -n "${RANGE:-}" ] || BASE_REF="$BASE"
+	NEW_REF="${RANGE:-}"; NEW_REF="${NEW_REF##*...}"
+	[ -n "${RANGE:-}" ] || NEW_REF=""
+	export BASE_REF NEW_REF
+	dry=$(git diff --name-only --diff-filter=ACMR "$range")
+	[ -n "$dry" ] || { echo "no changed files in $range: no suites"; exit 0; }
+	picks "$dry"
+	exit 0
+fi
 
 step "1 up to date with $BASE"
 git fetch -q origin || fail "git fetch"
@@ -55,13 +84,12 @@ if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$run_d
 fi
 GODOT="$GODOT" tools/check_scripts.sh || fail "script compile"
 
+step "4b repo lints (tools/lint/run_all.sh: .uid files, ...)"
+bash tools/lint/run_all.sh || fail "repo lints"
+
 step "5 touched suites"
-auto=$(echo "$changed" | sed -n -E 's#^tests/run_([a-z0-9_]+)_tests\.gd$#\1#p')
-for lib in $(echo "$changed" | grep -E '^tests/lib/.*\.gd$' || true); do
-	for runner in $(grep -l -F "$lib" tests/run_*_tests.gd 2> /dev/null || true); do
-		auto="$auto $(basename "$runner" | sed -E 's/^run_(.*)_tests\.gd$/\1/')"
-	done
-done
+BASE_REF="$BASE" picks "$changed" | tee "$run_data/picks.txt" | sed 's/^/  /'
+auto=$(grep -v '^#' "$run_data/picks.txt" | cut -f1)
 suites=$(echo "$SUITES $auto" | tr ' ' '\n' | grep . | sort -u | tr '\n' ' ')
 if [ -z "$suites" ]; then
 	echo "no suite named or touched; name the suites you iterated on in SUITES"
