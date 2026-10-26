@@ -36,6 +36,8 @@ var _at := Vector3.ZERO  # where the kaiju stands for the building in hand
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_opt = Kit.args(
 		{
 			"out": "user://facade_carve",

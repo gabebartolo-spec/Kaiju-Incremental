@@ -14,6 +14,8 @@ var _opt := {}
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_opt = Kit.args(
 		{"stage": 3, "level": 2, "building": 116, "seconds": 14.0, "species": "reptilian"}
 	)
