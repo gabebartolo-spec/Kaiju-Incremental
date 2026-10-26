@@ -185,6 +185,14 @@ func body() -> PackedVector2Array:
 	return PackedVector2Array([sim.kaiju_pos, h, h + ahead, sim.kaiju_pos + ahead])
 
 
+## Where a tank at p aims: the nearest point of the kaiju's body line, origin (tail root) to head,
+## with no walk ahead. Its range is measured to this point, as its post is (Convoy.reach), so a
+## tank posted by the head of a long body fires (measured to the tail root, it never did).
+## at_head: the kaiju's head this step (head()), read once per step by the caller.
+func aim_point(p: Vector2, at_head: Vector2) -> Vector2:
+	return Geometry2D.get_closest_point_to_segment(p, sim.kaiju_pos, at_head)
+
+
 ## How far p is from the kaiju's body (body(): 0 inside it).
 func to_body(p: Vector2) -> float:
 	var at := body()

@@ -483,6 +483,8 @@
 			"reserve": 1.5,
 			"danger": 0.55,
 			"edge_gap": 8.0,
+			"_band_depth": "How far past the body's keep-away (body_radius + edge_gap + the hull's half diagonal) the tanks' firing band always reaches, in units: their reach is at least (keep-away + band_depth) / band[1], so a small kaiju (the young croc) is never out of every firing post (Convoy.reach).",
+			"band_depth": 4.0,
 			"retreat_speed": 3.5,
 			"lookahead": 3.0,
 			"danger_cost": 200.0,
