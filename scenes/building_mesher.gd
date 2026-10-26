@@ -149,7 +149,7 @@ func _start_cell(cell: Vector3i) -> void:
 	var clump := Vector3i(cell.x >> 1, cell.y >> 1, cell.z >> 1)
 	var h := float(absi(hash(clump * 7 + Vector3i(salt, 3, 11))) % 997) / 997.0
 	_tag = Vector2(chunk_index(cell), h)
-	_finish_class = int(_finish.get(key, 0))
+	_finish_class = Num.i(_finish.get(key, 0))
 
 
 ## Which of the 8 cells round a face's air cell are solid (VoxelAO.ring_of's bits).

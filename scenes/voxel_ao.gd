@@ -64,9 +64,10 @@ static func _make_table() -> PackedInt32Array:
 		var lv: Array[int] = []
 		for q: int in 4:
 			var at: Array = CORNER_BITS[q]
-			var side1 := (bits & (1 << at[0])) != 0
-			var side2 := (bits & (1 << at[1])) != 0
-			lv.append(level(side1, side2, (bits & (1 << at[2])) != 0))
+			var s1: int = at[0]
+			var s2: int = at[1]
+			var c: int = at[2]
+			lv.append(level(bits & (1 << s1) != 0, bits & (1 << s2) != 0, bits & (1 << c) != 0))
 		var packed := lv[0] | (lv[1] << 2) | (lv[2] << 4) | (lv[3] << 6)
 		out[bits] = packed | (FLIP if lv[1] + lv[3] > lv[0] + lv[2] else 0)
 	return out

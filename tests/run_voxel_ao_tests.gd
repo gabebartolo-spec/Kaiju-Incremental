@@ -64,7 +64,11 @@ func _check_regions_carry_uv() -> void:
 		if verts.is_empty():
 			continue
 		meshed += 1
-		if arrays.size() <= UV or (arrays[UV] as PackedVector2Array).size() != verts.size():
+		if arrays.size() <= UV:
+			bad += 1
+			continue
+		var got: PackedVector2Array = arrays[UV]
+		if got.size() != verts.size():
 			bad += 1
 			continue
 		var changed := arrays.duplicate(true)
@@ -122,8 +126,11 @@ func _check_ao_ladder() -> void:
 		[Vector3i(0, 0, 1), Vector3i(-1, 0, 0), AoFaces.YZ_GROUND, "side wall foot on the ground"],
 	]
 	for c: Array in cases:
-		var got := AoFaces.corner_levels(m, arrays, c[0], c[1])
-		check(got == c[2], "%s: corner levels %s (want %s)" % [c[3], got, c[2]])
+		var cell: Vector3i = c[0]
+		var normal: Vector3i = c[1]
+		var want: Dictionary = c[2]
+		var got := AoFaces.corner_levels(m, arrays, cell, normal)
+		check(got == want, "%s: corner levels %s (want %s)" % [c[3], got, want])
 
 
 ## Every face of the fixture splits along its brighter diagonal (ties keep the meshers' split);
@@ -134,7 +141,9 @@ func _check_split_brighter_diagonal() -> void:
 	if arrays.size() <= UV:
 		check(false, "the fixture's region carries UV (no UV array)")
 		return
-	var counts := AoFaces.splits(arrays[UV], arrays[3])
+	var uv: PackedVector2Array = arrays[UV]
+	var index: PackedInt32Array = arrays[3]
+	var counts := AoFaces.splits(uv, index)
 	check(counts[0] == 0, "no face splits along its darker diagonal (%d do)" % counts[0])
 	check(
 		counts[1] > 0 and counts[2] > 0,
@@ -201,8 +210,10 @@ func _check_look_reaches_material() -> void:
 	)
 	var view := BuildingView.new(_building(FIXTURES[0]), Color("8a7f72"))
 	var on := AoFaces.uniforms(view)
+	var on_ao: float = on[0]
+	var on_finish: bool = on[2]
 	check(
-		is_equal_approx(on[0], Look.value("voxel_ao_strength")) and on[0] > 0.0 and on[2],
+		is_equal_approx(on_ao, Look.value("voxel_ao_strength")) and on_ao > 0.0 and on_finish,
 		"on: the shell material has the look's AO strength and the finish (%s)" % [on]
 	)
 	view.free()
@@ -216,8 +227,11 @@ func _check_look_reaches_material() -> void:
 			look.erase(key)
 		else:
 			look[key] = keep[k]
+	var off_ao: float = off[0]
+	var off_affect: float = off[1]
+	var off_finish: bool = off[2]
 	check(
-		off[0] == 0.0 and off[1] == 0.0 and not off[2],
+		off_ao == 0.0 and off_affect == 0.0 and not off_finish,
 		"off: AO strength 0, light affect 0, finish off (%s)" % [off]
 	)
 	view.free()

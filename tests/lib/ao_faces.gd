@@ -84,7 +84,10 @@ static func cell_uvs(m: CellMesher, cells: PackedByteArray) -> Dictionary:
 	for r: Vector3i in m.all_regions():
 		var arrays := m.mesh_region(cells, r)
 		if arrays.size() > 4:
-			_uvs(arrays[0], arrays[1], arrays[4], out)
+			var verts: PackedVector3Array = arrays[0]
+			var normals: PackedVector3Array = arrays[1]
+			var uv: PackedVector2Array = arrays[4]
+			_uvs(verts, normals, uv, out)
 	return out
 
 
@@ -96,7 +99,10 @@ static func mesh_uvs(mesh: ArrayMesh) -> Dictionary:
 	var a := mesh.surface_get_arrays(0)
 	if a[Mesh.ARRAY_TEX_UV] == null:
 		return out
-	_uvs(a[Mesh.ARRAY_VERTEX], a[Mesh.ARRAY_NORMAL], a[Mesh.ARRAY_TEX_UV], out)
+	var verts: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
+	var uv: PackedVector2Array = a[Mesh.ARRAY_TEX_UV]
+	_uvs(verts, normals, uv, out)
 	return out
 
 
@@ -139,7 +145,7 @@ static func uniforms(view: BuildingView) -> Array:
 	var out := []
 	for name: String in ["ao_strength", "ao_light_affect"]:
 		var v: Variant = mat.get_shader_parameter(name) if mat != null else null
-		out.append(float(v) if v != null else -1.0)
+		out.append(Num.f(v) if v != null else -1.0)
 	var on: Variant = mat.get_shader_parameter("finish_on") if mat != null else null
 	out.append(on == true)
 	return out

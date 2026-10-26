@@ -93,8 +93,10 @@ class _Faces:
 		var out: Array[int] = []
 		for q: int in 4:
 			var steps: Array = CarveMesh._ao_steps[f][q]
-			var side1 := blocks(air + steps[0])
-			out.append(VoxelAO.level(side1, blocks(air + steps[1]), blocks(air + steps[2])))
+			var s1: Vector3i = steps[0]
+			var s2: Vector3i = steps[1]
+			var c: Vector3i = steps[2]
+			out.append(VoxelAO.level(blocks(air + s1), blocks(air + s2), blocks(air + c)))
 		return out
 
 	func blocks(q: Vector3i) -> bool:
