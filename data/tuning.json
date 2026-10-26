@@ -1404,7 +1404,7 @@
 			{
 				"city": {"half": 50, "coast_z": -120, "max_height": 26},
 				"air": {"max": 0},
-				"army": {"range": 11.0, "tank_damage": 9.8, "fire_interval": 0.7, "spawn_radius": 64,
+				"army": {"range": 11.0, "tank_damage": 9.4, "fire_interval": 0.7, "spawn_radius": 64,
 					"escalation_per_chunk": 0.0008},
 				"per_level": {},
 				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
@@ -1423,7 +1423,7 @@
 			{
 				"city": {"half": 150, "coast_z": -220, "max_height": 40, "tower_chance": 0.65,
 					"fog_scale": 0.34, "far_haze": 0.0014},
-				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 7.0,
+				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 7.3,
 					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.00002, "threat_per_chunk": 0.00008},
 				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 5.4,
 					"rubble": 30},
