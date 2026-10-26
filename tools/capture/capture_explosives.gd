@@ -32,6 +32,8 @@ var _side := Vector2.ZERO  # the side of the kaiju the chain is on (unit, ground
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--view="):
 			_view = arg.substr(7)
