@@ -151,7 +151,7 @@ func _check_matches_baked_view() -> void:
 		check(
 			missing == behind.size() and recoloured == 0,
 			(
-				"%s: every baked face is drawn in its colour, bar %d balcony walls (%d missing, %d recoloured of %d)"
+				"%s: every baked face is drawn in its colour, bar %d balcony walls (%d, %d of %d)"
 				% [f[0], behind.size(), missing, recoloured, old.size()]
 			)
 		)
