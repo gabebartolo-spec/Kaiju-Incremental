@@ -15,6 +15,8 @@ var _slow := 50.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()

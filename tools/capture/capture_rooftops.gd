@@ -41,6 +41,8 @@ var _in_reach: Array[int] = []  # squads with the kaiju in reach, sampled once a
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)

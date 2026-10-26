@@ -3,8 +3,14 @@
 #   scons platform=windows target=template_debug     (MSVC; run in a vcvars64 shell)
 #   scons platform=linux target=template_debug
 # Output: native/bin/libkaiju_carve.<platform>.<target>.<arch>.<dll|so>
-env = SConscript("godot-cpp/SConstruct")
+# api_version: the Godot minor the bindings target (godot-cpp 10 is versioned apart from Godot). The game
+# runs 4.7.2; kaiju_carve.gdextension carries the same minimum.
+env = SConscript("godot-cpp/SConstruct", {"api_version": "4.7"})
 env.Append(CPPPATH=["src/"])
+# A reproducible Windows link: the PE timestamp and debug GUID come from the output's bytes, so two
+# CI builds of the same sources give the same DLL and tools/native_dll.sh can compare md5s.
+if env.get("is_msvc", False):
+	env.Append(LINKFLAGS=["/Brepro"])
 sources = Glob("src/*.cpp")
 library = env.SharedLibrary(
 	"bin/libkaiju_carve{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
