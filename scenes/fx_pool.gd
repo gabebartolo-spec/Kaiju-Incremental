@@ -185,6 +185,7 @@ func release(p: GPUParticles3D) -> void:
 	p.set_meta("fx_gen", _gen(p) + 1)  # any timer still pending for the last take is void
 	p.emitting = false
 	p.visible = false
+	p.amount_ratio = GraphicsPresets.cap("particles")  # an idle slot holds the run's cap, not more
 	if p.get_parent() == self:
 		_file(p)
 	else:
@@ -263,6 +264,7 @@ func _make(kind: String) -> void:
 	p.set_meta("fx_kind", kind)
 	p.set_meta("fx_state", FREE)
 	p.set_meta("fx_gen", 0)
+	p.amount_ratio = GraphicsPresets.cap("particles")  # an idle slot holds the run's cap
 	p.finished.connect(_on_finished.bind(p))
 	add_child(p)
 	var spare: Array = k["free"]
