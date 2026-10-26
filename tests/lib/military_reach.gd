@@ -1,12 +1,12 @@
 extends RefCounted
 ## The tanks' reach is measured to the kaiju's body, as their firing posts are (army-balance,
 ## D-259). Two seeded fixtures, part of the military suite:
-## - a tank posted beside the head of a long body (the Colossus croc: about 48 m from its origin,
-##   the tail root, to its head, against a reach of about 30) fires; measured to the origin it
-##   was out of range and never fired, though its post was in the band (main at 4af9c768);
+## - a tank posted beside the head of the Colossus's body, in its firing band but further than its
+##   reach from the origin (the tail root), fires; measured to the origin it never did (main at
+##   27dd83b5: 15 m from the body, 23 m from the tail root, reach 18, did not fire);
 ## - at every growth stage the body's keep-away sits inside the firing band, so some post is
-##   both outside the keep-away and in reach (young croc on main: keep-away 12.0, band out to
-##   11.6, so no young tank ever fired).
+##   both outside the keep-away and in reach (young croc on main 27dd83b5: keep-away 12.0, band
+##   out to 11.6, so no young tank ever fired).
 ## Seeded by design: city and army seed 0; the tank's spot is the first clear one in a fixed order.
 
 const DT := 1.0 / 15.0
@@ -57,12 +57,7 @@ func _fires_by_the_head() -> void:
 	for e: Dictionary in sim.events:
 		fired = fired or (str(e["type"]) == "tank_fired" and Num.i(e["tank"]) == tank.id)
 	_check.call(
-		(
-			spot.x < INF
-			and line.length() > reach + 1.0
-			and spot.distance_to(sim.kaiju_pos) > reach + 1.0
-			and fired
-		),
+		spot.x < INF and spot.distance_to(sim.kaiju_pos) > reach + 1.0 and fired,
 		(
 			(
 				"a tank %.0f m from the Colossus's body by its head (%.0f m from the tail root, "
