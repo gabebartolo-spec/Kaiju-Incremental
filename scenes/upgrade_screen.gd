@@ -169,6 +169,9 @@ func _on_node_pressed(id: String) -> void:
 
 func _select(id: String) -> void:
 	_selected = id
+	if node_button(id).shape_only:
+		_show_shape()
+		return
 	var def: Dictionary = tree.defs[id]
 	_info_title.text = str(def["name"])
 	var role := role_of(id)
@@ -200,6 +203,15 @@ func _select(id: String) -> void:
 	_info_status.add_theme_color_override("font_color", tint)
 
 
+## A node in the next ring out keeps its secret: the panel shows its shape's "?" and nothing else.
+func _show_shape() -> void:
+	_info_title.text = UpgradeNode.SHAPE_TEXT
+	_info_role.text = ""
+	_info_body.clear()
+	_show_stats({}, {}, 0)
+	_info_status.text = ""
+
+
 func _status_line(id: String) -> String:
 	var head := "Level %d / %d   " % [tree.level(id), tree.max_level(id)]
 	if tree.is_maxed(id):
@@ -212,7 +224,8 @@ func _status_line(id: String) -> String:
 			if tree.level(req) < 1:
 				var req_def: Dictionary = tree.defs[req]
 				names.append(str(req_def["name"]))
-		return head + "Needs: " + ", ".join(names)
+		# Owned from an older save in a ring that is not open yet: nothing named to buy first.
+		return head + ("Needs: " + ", ".join(names) if not names.is_empty() else "Not yet")
 	# Three short lines, so no wrap ever leaves a dash or a lone word at a line end.
 	var nl := String.chr(10)
 	var have := ("Cost %d" + nl + "You have %d biomass" + nl) % [tree.cost(id), rubble]

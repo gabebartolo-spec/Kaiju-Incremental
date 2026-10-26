@@ -24,10 +24,17 @@ const ULTIMATE_BAND := 8.0
 ## The widest level-and-price line a node shows (prices from 10 000 up read "12k").
 const WIDEST_STATUS := "0/5 BUY 8888"
 
+## A verb node's border (px): heavier than a stat's 3, as heavy as an evolution's.
+const VERB_BORDER := 5
+## What a node in the next ring out shows: its shape, not its name or price (R 16.3).
+const SHAPE_TEXT := "?"
+
 var id: String
 ## "plain", "branch" (species branch), "evolve" (grows the kaiju) or "ultimate" (capstone).
 var role := "plain"
 var state := "locked"
+## True while the node is in the next ring out: shown as a shape only.
+var shape_only := false
 var _name := ""
 
 
@@ -72,6 +79,27 @@ func text_width(width: float) -> float:
 	return width - 2.0 * (PAD + Num.f(MAX_BORDER[role])) - 2.0
 
 
+## The node's state and words. Beyond the open rings (R 1.4, R 16.3) a node in the next ring
+## shows only its shape ("?", locked) and anything further out is not shown at all.
+func _show_text(tree: UpgradeTree, rubble: int) -> void:
+	var seen := tree.reveal(id)
+	visible = seen != UpgradeTree.Reveal.HIDDEN
+	shape_only = seen == UpgradeTree.Reveal.SHAPE
+	if tree.is_maxed(id):
+		state = "maxed"
+	elif not tree.is_unlocked(id):
+		state = "locked"
+	else:
+		state = "buy" if tree.can_buy(id, rubble) else "poor"
+	if shape_only:
+		text = SHAPE_TEXT
+		return
+	var price := short_price(tree.cost(id))
+	var status: String = {"maxed": "MAXED", "locked": "", "buy": "BUY " + price, "poor": price}[state]
+	var tag := "\n[E / Y]" if role == "ultimate" else ""
+	text = "%s\n%d/%d %s%s" % [_name, tree.level(id), tree.max_level(id), status, tag]
+
+
 ## A price as a node shows it: in full below 10 000, else in thousands ("32k").
 static func short_price(price: int) -> String:
 	return str(price) if price < 10000 else "%dk" % floori(price / 1000.0)
@@ -79,19 +107,11 @@ static func short_price(price: int) -> String:
 
 ## Redraws the node from the tree and the rubble in hand.
 func show_state(tree: UpgradeTree, rubble: int) -> void:
-	if tree.is_maxed(id):
-		state = "maxed"
-	elif not tree.is_unlocked(id):
-		state = "locked"
-	else:
-		state = "buy" if tree.can_buy(id, rubble) else "poor"
-	var price := short_price(tree.cost(id))
-	var status: String = {"maxed": "MAXED", "locked": "", "buy": "BUY " + price, "poor": price}[state]
-	var tag := "\n[E / Y]" if role == "ultimate" else ""
-	text = "%s\n%d/%d %s%s" % [_name, tree.level(id), tree.max_level(id), status, tag]
+	_show_text(tree, rubble)
 	var fill: Color = FILL[state]
 	var edge: Color = EDGE[state]
-	var width := 3
+	# A verb (changes what you do or see) draws heavier than a stat (R 16.4).
+	var width := VERB_BORDER if tree.kind(id) == "verb" else 3
 	if role == "evolve" and state != "maxed":
 		edge = UiKit.ALERT if state != "locked" else UiKit.ALERT.darkened(0.45)
 		fill = EVOLVE_FILL if state != "locked" else fill

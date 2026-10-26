@@ -70,13 +70,21 @@ func _layout() -> void:
 	queue_redraw()
 
 
+## Links join shown nodes only: nothing leads into a ring that is not shown yet (R 1.4).
 func _draw() -> void:
 	for id: String in tree.order:
 		var def: Dictionary = tree.defs[id]
 		var requires: Array = def.get("requires", [])
 		for req: String in requires:
+			if not _shown(id) or not _shown(req):
+				continue
 			var owned := tree.level(req) > 0
 			draw_line(_centre(req), _centre(id), UiKit.GOOD if owned else UiKit.LOCKED, 4.0, true)
+
+
+func _shown(id: String) -> bool:
+	var b: Button = buttons[id]
+	return b.visible
 
 
 func _centre(id: String) -> Vector2:

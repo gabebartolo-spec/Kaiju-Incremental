@@ -139,6 +139,28 @@
 			"ended": {"headline": "KAIJU COLLAPSES MID-RAMPAGE", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"}
 		}
 	},
+	"tree": {
+		"_note": "The upgrade tree's rings and pacing bars (ROADMAP E, R 16.1, R 1.1/1.4, b2-28). Every node of a species listed under species carries a ring (1 = the centre) and a kind: stat (a number goes up), verb (changes what the player does or sees), stage (an evolution). rings: in order from the centre, the growth stage each opens at and the node count it is meant to reach (about 14 / 16 / 18 / 10; D-135 cut the fourth body, so ring 4 is the adult's last climb). A ring is open (bought and shown in full) once the kaiju has reached its stage and owns a node of the ring before it; the next ring shows as shapes; evolutions always show. cost_rate: each level of a node costs this many times the level before (geometric, research 01 rec 1). pacing: the bars tools/pacing.gd and the tree suite check over the first window_hours of play (R 1.1): buys_per_visit after every rampage, at most max_runs_between_verbs runs between a new verb or stage, each evolution within evolve_tolerance of its target hour (evolve1 about 15 min, D-087; evolve2 about 1 h, research 16 rec 1), the first purchase within first_buy_seconds. income: the tree suite's stand-in for a rampage's pay at each stage (first -> last as that stage's levels are bought; run_seconds a rampage), from GitHub pacing run 40225039778 (main after #230); the real bot (tools/pacing.gd) measures it.",
+		"kinds": ["stat", "verb", "stage"],
+		"cost_rate": [1.07, 1.15],
+		"species": {
+			"reptilian": {"rings": [{"stage": 1, "target": 14}, {"stage": 2, "target": 16}, {"stage": 3, "target": 18}, {"stage": 3, "target": 10}]}
+		},
+		"pacing": {
+			"window_hours": 1.0,
+			"buys_per_visit": [1, 4],
+			"max_runs_between_verbs": 5,
+			"first_buy_seconds": 60.0,
+			"evolve_hours": {"evolve1": 0.25, "evolve2": 1.0},
+			"evolve_tolerance": 0.2,
+			"tree_seconds": 20.0,
+			"income": [
+				{"first": 206, "last": 676, "run_seconds": 48.0},
+				{"first": 3254, "last": 11615, "run_seconds": 64.5},
+				{"first": 39174, "last": 36127, "run_seconds": 59.0}
+			]
+		}
+	},
 	"save": {
 		"_note": "v3 (D-135): upgrade nodes cut from the tree; a save holding one is refunded its rubble in full and the node removed. evolve3 (EVOLVE: Apex Titan) cost 444500. slots: how many save slots the title offers (director 2026-10-26, 'Three slots (Recommended)').",
 		"refunds": {"evolve3": 444500},
