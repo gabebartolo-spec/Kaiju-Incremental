@@ -1377,7 +1377,15 @@
 		"sweep_seconds": 0.5,
 		"leap_trail_seconds": 0.4,
 		"regen_tint": "8cffb0",
-		"deflect_tint": "cfe6ff"
+		"deflect_tint": "cfe6ff",
+		"hide_hit": {
+			"flash_voxels": 5.0, "flash_seconds": 0.08, "flash_tint": "d9702a", "flash_alpha": 0.85,
+			"glance_tint": "c8d2dc", "glance_seconds": 0.06,
+			"mist_voxels": 10.0, "mist_seconds": 0.5, "mist_tint": "7a0a0e", "mist_alpha": 0.6, "mist_count": 4,
+			"spark_count": 5, "glance_sparks": 8, "spark_voxels": 1.2, "spark_tint": "d9702a",
+			"max_wounds": 48, "wound_radius_voxels": 6.0, "wound_seconds": 360.0, "wound_tint": "1a0306",
+			"ray_extra": 8.0, "aim_rings": 0.8
+		}
 	},
 	"landmark_burst": {
 		"chunks": 360,

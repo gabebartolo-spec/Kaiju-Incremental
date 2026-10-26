@@ -244,23 +244,15 @@ func regen(body_centre: Vector3, healing: bool) -> void:
 	_healing = healing
 
 
-## Armoured Scales: a shell glances off in a burst of sparks thrown back the way it came and a
-## short metallic flash on the hide.
-func deflect(at: Vector3, away: Vector3) -> void:
+## Armoured Scales: a shell glances off the hide (HideHit, glance): a tiny pale flash on the surface
+## and a few dull sparks thrown back the way it came. With the `kaiju` and the shell's origin `from`
+## it lands on the real cube the shell meets; without them it is drawn at `at`.
+func deflect(at: Vector3, away: Vector3, kaiju: Node3D = null, from := Vector3.ZERO) -> void:
 	played.append("deflect")
-	var cold := Color(str(_tune["deflect_tint"]))
-	var burst := FxParticles.sparks(cold)
-	burst.direction = away.normalized()
-	_burst(burst, 70, 0.6).position = at
-	# A glance, not a lens flare: one round soft white sprite (about 60 px core, nothing at the quad's
-	# edge, no rays), lifted clear of the road, gone in 0.12 s.
-	var flare := _flare(at + Vector3(0, 0.8 * _scale, 0), 5.5 * _scale, cold, 0.12)
-	flare.set_shader_parameter("streak", 1.0)
-	flare.set_shader_parameter("ray_gain", 0.0)
-	flare.set_shader_parameter("core_width", 3.2)
-	flare.set_shader_parameter("core_gain", 0.9)
-	flare.set_shader_parameter("halo_gain", 0.05)
-	_city.flash(at, cold, 1.0, 0.12)
+	if kaiju != null:
+		HideHit.land(_city.fx, kaiju, from, at, true, away)
+	else:
+		_city.fx.hide_hit(at, away.normalized(), 0.12 * _scale, away)
 
 
 ## Fraction of `span` from `from` at which the line first meets a standing chunk (1: none).
