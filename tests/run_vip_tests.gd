@@ -193,27 +193,41 @@ func _check_ranks() -> void:
 	)
 
 
+## Steps for `seconds` (buttons on the first step) with the leader held `offset` from the kaiju, so
+## a strike that lands a beat after the press (D-166) still finds it; returns the events seen.
+func _held_run(sim: RampageSim, seconds: float, offset: Vector2, buttons: int) -> Dictionary:
+	var seen := {}
+	for i: int in roundi(seconds / DT):
+		if sim.vip.flying():
+			sim.vip.pos = sim.kaiju_pos + offset
+		var flags := RampageSim.ULTIMATE if i == 0 and buttons & ULT else 0
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, i == 0 and buttons & PRESS != 0, flags):
+			var kind := str(event["type"])
+			seen[kind] = Num.i(seen.get(kind, 0)) + 1
+	return seen
+
+
 ## The breath, aimed at it, brings it down and pays; a breath at empty sky does not.
 func _check_breath() -> void:
 	var sim := _flying()
 	sim.vip.pos = sim.kaiju_pos + Vector2(5.0, 0.0)
 	var rubble := sim.rubble
-	sim.step(DT, Vector2.ZERO, true)
+	var seen := _held_run(sim, sim.strikes.breath_delay() + 0.2, Vector2(5.0, 0.0), PRESS)
 	check(
-		sim.vip.state == "killed" and _events_of(sim, "vip_killed").size() == 1,
-		"the breath brings the leader down (%s)" % sim.vip.state
+		sim.vip.state == "killed" and Num.i(seen.get("vip_killed", 0)) == 1,
+		"the breath brings the leader down at the strike (%s)" % sim.vip.state
 	)
 	check(sim.rubble > rubble + sim.vip.payout * 0.99, "...and pays the payout")
 	var miss := _flying()
 	miss.vip.pos = Vector2(-30.0, 30.0)
-	miss.step(DT, Vector2.ZERO, true)
+	_held_run(miss, miss.strikes.breath_delay() + 0.2, Vector2(-30.0, 30.0) - miss.kaiju_pos, PRESS)
 	check(miss.vip.flying(), "a breath that misses leaves it flying")
 
 
 func _check_beam() -> void:
 	var sim := _flying("reptilian", {"r_beam": 1})
 	sim.vip.pos = sim.kaiju_pos + Vector2(8.0, 0.0)
-	var seen := _run(sim, 0.6, Vector2.ZERO, ULT)
+	var seen := _held_run(sim, _strike_wait() + 0.6, Vector2(8.0, 0.0), ULT)
 	check(
 		sim.vip.state == "killed" and seen.has("vip_killed"),
 		"the Thunder Beam brings the leader down (%s)" % sim.vip.state
