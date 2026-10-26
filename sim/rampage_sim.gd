@@ -80,8 +80,7 @@ var army: Dictionary
 var city: Dictionary
 var ability_type := "ring"
 var buildings: Array[Building] = []
-## The buildings filed by ground cell, for questions about one spot (BuildingGrid).
-var grid: BuildingGrid
+var grid: BuildingGrid  # the buildings filed by ground cell, for questions about one spot
 var tanks: Array[Tank] = []
 var kaiju_pos := Vector2.ZERO
 var facing := Vector2(0, -1)

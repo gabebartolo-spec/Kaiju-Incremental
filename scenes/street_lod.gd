@@ -53,9 +53,7 @@ func update(camera: Camera3D) -> void:
 
 ## Draws every person in view into `mms` (one MultiMesh per outfit and pose), at most
 ## `capacity` each; `counts` is scratch, one per MultiMesh.
-func draw(
-	life: StreetLife, mms: Array[MultiMesh], counts: PackedInt32Array, capacity: int
-) -> void:
+func draw(life: StreetLife, mms: Array[MultiMesh], counts: PackedInt32Array, capacity: int) -> void:
 	counts.fill(0)
 	var pos := life.pos
 	var heading := life.heading

@@ -7,6 +7,10 @@ extends SceneTree
 ##     -- --stage=3 --preset=medium
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+## Savings under this (ms) are not printed: a tank or a helicopter, noise.
+const NOISE_MS := 0.3
+## Frames left to settle after a visibility change.
+const SETTLE := 5
 
 ## --live: the rampage plays on while measuring (each hidden stretch is compared with the shown
 ## stretches either side of it), else it is frozen.
@@ -14,18 +18,14 @@ var _live := false
 ## --at=N: frames played before measuring (90: past the start).
 var _at := 90
 ## Frames measured per state (shown, hidden).
-var FRAMES := 30
-## Savings under this (ms) are not printed: a tank or a helicopter, noise.
-const NOISE_MS := 0.3
-## Frames left to settle after a visibility change.
-const SETTLE := 5
+var _frames := 30
 
 
 func _initialize() -> void:
 	var a := Kit.args({"stage": 3, "preset": "", "live": false, "at": 90, "frames": 30})
 	_at = Num.i(a["at"])
 	_live = a["live"] == true
-	FRAMES = Num.i(a.get("frames", 30))
+	_frames = Num.i(a.get("frames", 30))
 	PlayerSettings.graphics = str(a["preset"])
 	if not Kit.window_ok():
 		quit(1)
@@ -87,17 +87,17 @@ func _label(node: Node) -> String:
 	return "%s %s" % [named, node.name] if not str(node.name).begins_with("@") else named
 
 
-## Average (gpu ms, frame ms) over FRAMES frames after SETTLE.
+## Average (gpu ms, frame ms) over the measured frames after SETTLE.
 func _measure() -> Vector2:
 	await Kit.frames(self, SETTLE)
 	var vp := root.get_viewport_rid()
 	var gpu := 0.0
 	var last := Time.get_ticks_usec()
 	var gap := 0.0
-	for n: int in FRAMES:
+	for n: int in _frames:
 		await process_frame
 		gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
 		var now := Time.get_ticks_usec()
 		gap += (now - last) / 1000.0
 		last = now
-	return Vector2(gpu / FRAMES, gap / FRAMES)
+	return Vector2(gpu / _frames, gap / _frames)

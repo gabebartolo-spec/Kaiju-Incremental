@@ -82,11 +82,15 @@ func _check_landmarks() -> void:
 			var at := _at(site)
 			var clear := Num.f(spread["spawn_clear"]) * CitySpread.width(rings, k)
 			if at.distance_to(rise) < clear:
-				bad.append("%d %s %.0f m from the rise" % [map_seed, site["id"], at.distance_to(rise)])
+				bad.append(
+					"%d %s %.0f m from the rise" % [map_seed, site["id"], at.distance_to(rise)]
+				)
 			if str(site["id"]) == "stadium":
 				for s: int in rings.size():
 					if at.distance_to(rise) < STADIUM_SHARE[s] * rings[s] - 0.5:
-						bad.append("%d stadium %.0f m from the rise" % [map_seed, at.distance_to(rise)])
+						bad.append(
+							"%d stadium %.0f m from the rise" % [map_seed, at.distance_to(rise)]
+						)
 			for b: int in range(a + 1, sites.size()):
 				var other: Dictionary = sites[b]
 				var inner := mini(k, Num.i(other["district"]))
@@ -169,10 +173,12 @@ func _check_bridge() -> void:
 			if ends.x < plaza.position.x or ends.y > plaza.end.x:
 				bad.append("%d bridge ends off its landings" % map_seed)
 	check(
-		bridges >= SEEDS / 2, "the bridge finds its water in most plans (%d of %d)" % [bridges, SEEDS]
+		bridges >= SEEDS / 2,
+		"the bridge finds its water in most plans (%d of %d)" % [bridges, SEEDS]
 	)
 	check(
-		bad.is_empty(), "every bridge spans a wide inlet off the river, land at both ends: %s" % [bad]
+		bad.is_empty(),
+		"every bridge spans a wide inlet off the river, land at both ends: %s" % [bad]
 	)
 
 
@@ -215,10 +221,12 @@ func _check_effect() -> void:
 	check(
 		layouts.size() == SEEDS and districts.size() > 3,
 		(
-			"each seed lays its own landmarks (%d layouts of %d), landmarks"
-			+ " across districts: %s"
+			(
+				"each seed lays its own landmarks (%d layouts of %d), landmarks"
+				+ " across districts: %s"
+			)
+			% [layouts.size(), SEEDS, districts.keys()]
 		)
-		% [layouts.size(), SEEDS, districts.keys()]
 	)
 
 

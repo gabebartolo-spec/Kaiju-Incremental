@@ -26,7 +26,9 @@ func _run() -> void:
 
 func _stage(tier: int, map_seed: int) -> void:
 	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), Content.species_def("reptilian"), UpgradeTree.new(Content.upgrades())
+		Content.section("kaiju"),
+		Content.species_def("reptilian"),
+		UpgradeTree.new(Content.upgrades())
 	)
 	var base := Content.tuning().duplicate(true)
 	base["city"]["map_seed"] = map_seed
@@ -61,7 +63,9 @@ func _stage(tier: int, map_seed: int) -> void:
 				arena_cells += 1
 	var inside := 0
 	for b: RampageSim.Building in sim.buildings:
-		inside += 1 if b.in_arena and absf(b.x) <= sim.arena_half and absf(b.z) <= sim.arena_half else 0
+		inside += (
+			1 if b.in_arena and absf(b.x) <= sim.arena_half and absf(b.z) <= sim.arena_half else 0
+		)
 	var area := pow(sim.arena_half * 2.0, 2.0)
 	var green: Dictionary = Green.measure(sim, decor)
 	var plan := CityGen.map(sim.city)
@@ -80,31 +84,34 @@ func _stage(tier: int, map_seed: int) -> void:
 		var rect: Rect2 = site["rect"]
 		var at := rect.get_center()
 		sites.append(
-			"%s (%.0f, %.0f) %.0f m from rise = %.2f x half" % [
-				site["id"], at.x, at.y, at.distance_to(spawn), at.distance_to(spawn) / half
-			]
+			(
+				"%s (%.0f, %.0f) %.0f m from rise = %.2f x half"
+				% [site["id"], at.x, at.y, at.distance_to(spawn), at.distance_to(spawn) / half]
+			)
 		)
 	print(
 		(
-			"stage %d map_seed %d half %.0f: %d buildings in play, %.2f per 1000 m2; empty %d of %d"
-			+ " play cells (%.3f); %.2f per 1000 built-block m2 (%.0f m2); green %.1f%% (%d parks);"
-			+ " rise %s; sites %s"
+			(
+				"stage %d map_seed %d half %.0f: %d buildings in play, %.2f per 1000 m2; empty %d of %d"
+				+ " play cells (%.3f); %.2f per 1000 built-block m2 (%.0f m2); green %.1f%% (%d parks);"
+				+ " rise %s; sites %s"
+			)
+			% [
+				tier,
+				map_seed,
+				half,
+				inside,
+				inside / area * 1000.0,
+				got["arena_empty"],
+				arena_cells,
+				Num.f(got["arena_empty"]) / maxf(1.0, arena_cells),
+				inside / maxf(1.0, built_m2) * 1000.0,
+				built_m2,
+				green["green_pct"],
+				green["parks"],
+				spawn,
+				sites,
+			]
 		)
-		% [
-			tier,
-			map_seed,
-			half,
-			inside,
-			inside / area * 1000.0,
-			got["arena_empty"],
-			arena_cells,
-			Num.f(got["arena_empty"]) / maxf(1.0, arena_cells),
-			inside / maxf(1.0, built_m2) * 1000.0,
-			built_m2,
-			green["green_pct"],
-			green["parks"],
-			spawn,
-			sites,
-		]
 	)
 	holder.free()
