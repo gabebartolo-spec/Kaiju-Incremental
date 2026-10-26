@@ -134,7 +134,14 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 	return (
 		"%s|%s|%d|%d|%d|%s|%s|%s|%s"
 		% [
-			at.x, at.z, at.w, at.d, at.height, at.landmark + at.hazard, base.to_html(), str(party),
+			at.x,
+			at.z,
+			at.w,
+			at.d,
+			at.height,
+			at.landmark + at.hazard,
+			base.to_html(),
+			str(party),
 			model
 		]
 	)

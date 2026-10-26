@@ -175,8 +175,10 @@ static func _means(rows: Array[Array]) -> void:
 		top.append("%s %.1f" % [k, Num.i(total[k]) / 1000.0 / n])
 	print(
 		(
-			("  mean/frame: wall %.0f process %.1f physics %.1f gpu %.1f render cpu %.1f"
-			+ " draws %.0f prims %.2f M objects %.0f | %s")
+			(
+				"  mean/frame: wall %.0f process %.1f physics %.1f gpu %.1f render cpu %.1f"
+				+ " draws %.0f prims %.2f M objects %.0f | %s"
+			)
 			% [
 				split_sum[0] / n,
 				split_sum[1] / n,
