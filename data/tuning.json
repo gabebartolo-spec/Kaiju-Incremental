@@ -45,7 +45,7 @@
 		"_note_threat_badge": "The threat badge right of the clock (ThreatBadge, D-259): border and pad [x, y] of its box (px at 1080p), gap between word, digit and meter, digit_size (font px), the five meter bars' bar_heights, bar_width and bar_gap; from level alert_from it turns alert red; a rise pops it to pop_scale over pop_s; clock_gap between clock and badge.",
 		"threat_badge": {"border": 2.0, "pad": [10, 2], "gap": 10, "digit_size": 36, "bar_heights": [8, 13, 18, 23, 28], "bar_width": 6, "bar_gap": 3, "alert_from": 4, "pop_scale": 1.35, "pop_s": 0.35, "clock_gap": 18},
 		"_note_news_live": "The crawl during a rampage (RampageNews): slides up over slide_s, stays while the headline crosses behind the tag plus read_s (never under min_s), then slides away; at most queue lines wait.",
-		"news_live": {"slide_s": 0.25, "read_s": 2.5, "min_s": 5.0, "queue": 3},
+		"news_live": {"slide_s": 0.25, "read_s": 0.5, "min_s": 3.0, "queue": 3},
 		"_note_specimen_card": "The lab card before a new specimen rises (SpecimenCard, D-260 'a 2 s Lab card'): seconds on screen, gap between title and headline, the headline's dot size and the space either side of it (px).",
 		"specimen_card": {"seconds": 2.0, "gap": 24, "dot": 10, "dot_gap": 18}
 	},

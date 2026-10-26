@@ -79,8 +79,8 @@ func _fit_cycle() -> void:
 		. x
 	)
 	var short := visible_width() - unit_width()
-	if once:
-		short += headlines_width()
+	if once:  # the next cycle stays a whole strip behind the line's end
+		short += headlines_width() + visible_width()
 	if short > 0.0 and space > 0.0:
 		_unit += " ".repeat(ceili(short / space))
 	_crawl.text = _unit.repeat(REPEAT)
