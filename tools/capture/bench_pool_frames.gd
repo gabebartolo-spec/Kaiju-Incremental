@@ -107,6 +107,9 @@ func _take(seconds: float) -> PackedFloat64Array:
 				Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
 				RenderingServer.viewport_get_measured_render_time_gpu(rid),
 				RenderingServer.viewport_get_measured_render_time_cpu(rid),
+				Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+				Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000000.0,
+				Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
 			]
 		)
 		rows.append([split, Engine.get_meta("frame_cost", {})])
@@ -155,7 +158,7 @@ static func _slow_frames(rows: Array[Array], median: float) -> void:
 ## The mean per frame of each split (process, physics, GPU, render CPU) and of each probed cost
 ## over a take, the costliest first: what every frame pays, as against the slow frames.
 static func _means(rows: Array[Array]) -> void:
-	var split_sum := PackedFloat64Array([0.0, 0.0, 0.0, 0.0, 0.0])
+	var split_sum := PackedFloat64Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 	var total: Dictionary = {}
 	for row: Array in rows:
 		var split: PackedFloat64Array = row[0]
@@ -172,13 +175,17 @@ static func _means(rows: Array[Array]) -> void:
 		top.append("%s %.1f" % [k, Num.i(total[k]) / 1000.0 / n])
 	print(
 		(
-			"  mean/frame: wall %.0f process %.1f physics %.1f gpu %.1f render cpu %.1f | %s"
+			("  mean/frame: wall %.0f process %.1f physics %.1f gpu %.1f render cpu %.1f"
+			+ " draws %.0f prims %.2f M objects %.0f | %s")
 			% [
 				split_sum[0] / n,
 				split_sum[1] / n,
 				split_sum[2] / n,
 				split_sum[3] / n,
 				split_sum[4] / n,
+				split_sum[5] / n,
+				split_sum[6] / n,
+				split_sum[7] / n,
 				", ".join(top)
 			]
 		)
