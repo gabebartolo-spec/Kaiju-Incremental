@@ -8,7 +8,7 @@ name: native-cache
 # after each change to native/ lets every later pull request restore it in seconds.
 on:
   push:
-    branches: [main, claude/look-options]
+    branches: [main]
     paths:
       - "native/**"
       - ".gitmodules"
