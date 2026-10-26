@@ -1,26 +1,30 @@
 extends SceneTree
-## A clip of the Colossus walking north from the city's south edge into the towers, seen
-## from the rampage's own camera (Rampage.CAMERA_OFFSET, zoomed by body scale): towers between
-## the camera and the kaiju fade to a screen door (BuildingFade, D-025), and far buildings
-## stream in (BuildingStream). Record it with --write-movie (CI: ci_capture.sh --movie; local
-## only off-screen with the no_focus override). --stage=N picks another stage.
-##   godot --path . --resolution 1280x720 --windowed --write-movie out.avi --fixed-fps 30 \
-##     --script tools/capture/capture_occlusion.gd -- [--stage=3] [--seconds=20]
+## A clip of a real autoplayed rampage (the game's own Rampage: its camera, lead, head frame,
+## shake and dip) walking into the towers: the ones between the camera and the kaiju are cut away
+## by the camera bubble, and far buildings stream in. --stage=0 is the hatchling a new save
+## plays (no upgrades, the flow test's city); 1-3 are the growth stages. --time picks the time of
+## day ("" keeps the game's default). Prints the camera's numbers (distance, pitch, FOV) at
+## --frame so a still can be checked against the player's run. Record it with --write-movie
+## (local only off-screen with the no_focus override).
+##   godot --path . --resolution 3840x2160 --windowed --write-movie out.avi --fixed-fps 30 \
+##     --script tools/capture/capture_occlusion.gd -- [--stage=0] [--seconds=6] [--time=night]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SPECIES := "reptilian"
 const FPS := 30.0
-const WALK_SPEED := 9.0  # sim units a second: a steady stride up the street
-const STREET_X := 5.0  # a north-south street line of the plan (CityGen.map xs)
 
-var _stage := 3
-var _seconds := 20.0
+var _stage := 0
+var _seconds := 6.0
+var _time := "night"
+var _frame := 60
 
 
 func _initialize() -> void:
-	var a := Kit.args({"stage": _stage, "seconds": _seconds})
+	var a := Kit.args({"stage": _stage, "seconds": _seconds, "time": _time, "frame": _frame})
 	_stage = Num.i(a["stage"])
 	_seconds = Num.f(a["seconds"])
+	_time = str(a["time"])
+	_frame = Num.i(a["frame"])
 	if not Kit.window_ok():
 		quit(1)
 		return
@@ -29,31 +33,34 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
-	var species := Content.species_def(SPECIES)
-	var stats := Kit.stats(SPECIES, Kit.STAGE_LEVELS[_stage - 1], SPECIES)
-	var sim := Kit.stage_sim(stats, _stage, CityGrowth.for_stats(stats))
-	var stage := Node3D.new()
-	var started := Time.get_ticks_msec()
-	stage.add_child(CityView.new(sim, Seeds.make("fx", 0)))
-	var colors: Dictionary = species["colors"]
-	var kaiju := KaijuModel.new(SPECIES, colors, KaijuModel.stage_for(sim.size_tier()))
-	var scale := sim.body_scale()
-	kaiju.scale = Vector3.ONE * scale
-	stage.add_child(kaiju)
-	var cam := Kit.camera(stage)
-	root.add_child(stage)
-	cam.current = true
-	print("stage %d loaded in %d ms" % [_stage, Time.get_ticks_msec() - started])
-	sim.kaiju_pos.x = STREET_X  # walk up a street, not through the blocks
-	var zoom := 0.75 + 0.4 * scale
-	var frames := roundi(_seconds * FPS)
-	for f: int in frames:
-		var dt := 1.0 / FPS
-		sim.kaiju_pos += Vector2(0, -WALK_SPEED * dt)
-		var at := Vector3(sim.kaiju_pos.x, 0, sim.kaiju_pos.y)
-		kaiju.position = at
-		kaiju.animate(dt, 1.0)
-		cam.position = at + Kit.GAME_CAMERA * zoom
-		cam.look_at(at + Vector3(0, 3.5 * scale, 0))
+	if _time != "":
+		Content.set_time(_time)
+	var rampage: Rampage
+	if _stage == 0:
+		rampage = Kit.autoplay(self, SPECIES, Kit.stats(SPECIES), 0)
+	else:
+		var stats := Kit.stats(SPECIES, Kit.STAGE_LEVELS[_stage - 1], SPECIES)
+		var layout := CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0))
+		rampage = Kit.autoplay(self, SPECIES, stats, 0, layout)
+	await rampage.wait_loaded()
+	var cam := Kit.game_camera(self)
+	for f: int in roundi(_seconds * FPS):
 		await process_frame
+		if rampage.sim.over:
+			break
+		if f == _frame:
+			var focus := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
+			var to := focus - cam.global_position
+			print(
+				(
+					"CAMERA frame %d: dist %.1f pitch %.1f fov %.1f body %.2f"
+					% [
+						f,
+						to.length(),
+						rad_to_deg(atan2(-to.y, Vector2(to.x, to.z).length())),
+						cam.fov,
+						rampage.sim.body_scale()
+					]
+				)
+			)
 	quit()
