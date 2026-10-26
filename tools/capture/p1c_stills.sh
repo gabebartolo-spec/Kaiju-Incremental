@@ -22,9 +22,24 @@ if [ ! -e override.cfg ]; then
   echo "wrote override.cfg (delete it when done)"
 fi
 
+bench_count() {  # Godot processes whose command line runs a bench_ script
+  powershell -NoProfile -Command "@(Get-CimInstance Win32_Process -Filter \"Name like 'Godot%'\" | Where-Object { \$_.CommandLine -match 'bench_' }).Count"
+}
+wait_no_bench() {  # returns once no bench_ Godot ran at two checks 20 s apart
+  while true; do
+    if [ "$(bench_count)" = 0 ]; then
+      sleep 20
+      [ "$(bench_count)" = 0 ] && return 0
+    fi
+    sleep 30
+  done
+}
+
 shoot() {  # shoot <label> <time> <still-second> <extra capture args...>
   local label="$1" time="$2" at="$3"
   shift 3
+  [ -e "$OUT/${label}_t$(printf %02d "$at").png" ] && return 0  # already rendered: a restart resumes
+  wait_no_bench  # before EVERY launch (lead 2026-10-27): no non-timing Godot starts beside a bench_
   echo "$label time=$time t=$at $*" >> "$OUT/RUNS.txt"
   bash ~/.claude/tools/engine_slot.sh && APPDATA="$OUT/appdata_$label" timeout 900 "$GODOT" --path . \
     --resolution 3840x2160 --windowed --fixed-fps 60 --script tools/capture/capture_one_look.gd -- \
