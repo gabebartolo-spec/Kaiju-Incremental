@@ -185,6 +185,16 @@ func body() -> PackedVector2Array:
 	return PackedVector2Array([sim.kaiju_pos, h, h + ahead, sim.kaiju_pos + ahead])
 
 
+## The body's keep-away from its line (a tank's centre): the body's edge (body_radius) + edge_gap
+## + the hull's half diagonal, so edge_gap holds from the hull's nearest corner whichever way it
+## lies (LEAD r7: the ground gap the player sees). Convoy.danger is at least this.
+func keep_away() -> float:
+	var hull: Array = cfg["hull"]
+	var corner := Vector2(Num.f(hull[0]), Num.f(hull[1])).length() * 0.5
+	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
+	return body + Num.f(cfg["edge_gap"]) + corner
+
+
 ## Where a tank at p aims: the nearest point of the kaiju's body line, origin (tail root) to head,
 ## with no walk ahead. Its range is measured to this point, as its post is (Convoy.reach), so a
 ## tank posted by the head of a long body fires (measured to the tail root, it never did).

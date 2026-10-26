@@ -29,30 +29,18 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
 	spacing = TankSpacing.new(self)
 
 
-## Full reach for the kaiju as it is now, measured from its body line (FiringPosts.aim_point):
-## the army's range past the stomp, and never so short that the firing band ends inside the
-## body's keep-away: the band always reaches band_depth past it, so a tank always has a post it
-## can fire from (the young croc's range 11 put the keep-away, 12.0, past the band's 11.6).
+## Full reach for the kaiju as it is now, measured from its body line (FiringPosts.aim_point),
+## never so short that the firing band ends inside the keep-away (band_depth past it).
 func reach() -> float:
 	var band: Array = cfg["band"]
-	var least := (keep_away() + Num.f(cfg["band_depth"])) / Num.f(band[1])
+	var least := (posts.keep_away() + Num.f(cfg["band_depth"])) / Num.f(band[1])
 	return maxf(Num.f(sim.army["range"]) + sim.stomp_radius(), least)
 
 
-## The body's keep-away from its line (a tank's centre): the body's edge (body_radius) +
-## edge_gap + the hull's half diagonal, so edge_gap holds from the hull's nearest corner
-## whichever way it lies (LEAD r7: the ground gap the player sees).
-func keep_away() -> float:
-	var hull: Array = cfg["hull"]
-	var corner := Vector2(Num.f(hull[0]), Num.f(hull[1])).length() * 0.5
-	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-	return body + Num.f(cfg["edge_gap"]) + corner
-
-
-## The danger radius, from the body line: the keep-away, or the danger share of reach when that
-## is further.
+## The danger radius, from the body line: the keep-away (FiringPosts.keep_away), or the danger
+## share of reach when that is further.
 func danger() -> float:
-	return maxf(reach() * Num.f(cfg["danger"]), keep_away())
+	return maxf(reach() * Num.f(cfg["danger"]), posts.keep_away())
 
 
 ## Is the line of fire from `from` to `to` clear (FiringPosts.clear_line)?
