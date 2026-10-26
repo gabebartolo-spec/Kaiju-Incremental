@@ -12,6 +12,8 @@ const DT := 1.0 / 30.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	await process_frame
 	var line := _sim([]).rail
 	var z := line.point(line.length * 0.75, 1).y

@@ -25,6 +25,8 @@ var _near_rail := 0.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var defaults := {
 		"species": _species,
 		"seconds": _seconds,
