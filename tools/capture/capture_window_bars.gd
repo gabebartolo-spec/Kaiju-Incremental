@@ -145,7 +145,7 @@ func _pick() -> Array[int]:
 
 
 ## Switches one suspect off; returns what puts it back.
-func _apply(variant: String, view: BuildingView) -> Callable:
+func _apply(variant: String, view: BuildingView, index: int) -> Callable:
 	var undo: Array[Callable] = []
 	for part: String in variant.split("+"):
 		match part:
@@ -183,6 +183,17 @@ func _apply(variant: String, view: BuildingView) -> Callable:
 			"slabs":
 				view._slabs.visible = true
 				undo.append(func() -> void: view._slabs.visible = false)
+			"box":
+				# The stand-in box (facade.gdshader) in place of the meshed building, as the stream shows
+				# a building it has not meshed.
+				var stream: BuildingStream = _city._stream
+				view.visible = false
+				stream._stand_ins.show(index)
+				undo.append(
+					func() -> void:
+						stream._stand_ins.hide(index)
+						view.visible = true
+				)
 			"hardshadow":
 				var old := _sun.light_angular_distance
 				_sun.light_angular_distance = 0.0
@@ -205,7 +216,7 @@ func _building(n: int, scale: float, variant: String) -> void:
 	_kaiju.rotation.y = PI * 0.5
 	var stream: BuildingStream = _city._stream
 	var view := stream.view(n)
-	var undo := _apply(variant, view)
+	var undo := _apply(variant, view, n)
 	var tag := "b%d_a%d" % [n, b.style % 4]
 	var dir := _out.path_join(variant).path_join(tag)
 	DirAccess.make_dir_recursive_absolute(dir)

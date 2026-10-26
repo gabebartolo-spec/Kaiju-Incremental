@@ -5,7 +5,7 @@ A lit window is a bright warm patch on a dark facade. A band is a run of dark pi
 --min-width columns wide side by side. Per frame: the bands, their pixels, and the lit pixels. Reads
 <dir>/f*.png (one building's rectangle per frame) and prints one line per frame and a total.
 
-  python -I tools/capture/window_bars_count.py <frames dir>... [--max-band 5] [--min-width 4]
+  python tools/capture/window_bars_count.py <frames dir>... [--max-band 5] [--min-width 4]
       [--lit 0.55] [--save-overlay <png of the worst frame>]
 """
 
