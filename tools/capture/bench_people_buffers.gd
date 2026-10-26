@@ -6,7 +6,8 @@ extends SceneTree
 ## steps, the other steps, nothing steps), the order swapping every cycle so a busy PC hits both
 ## alike. A frame's cost is the time from the end of the last frame to the end of this one (the
 ## street's own step, then the engine's box pass and buffer upload for what changed); the crowd's
-## cost is that minus the idle frame's. Needs the real renderer (not headless: the dummy server ignores MultiMesh writes).
+## cost is that minus the idle frame's. Needs the real renderer (not headless: the dummy server
+## ignores MultiMesh writes).
 ##
 ##   <engine> --path . --windowed --resolution 1280x720 --fixed-fps 60 --disable-vsync \
 ##     --script tools/capture/bench_people_buffers.gd -- [--tier=3] [--cycles=600]
@@ -20,6 +21,8 @@ var _cycles := 600
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--tier="):
 			_tier = arg.substr(7).to_int()
