@@ -1507,6 +1507,7 @@
 		"ground_y": 0.0,
 		"ground_slop": 0.02,
 		"fade_seconds": 0.4,
+		"debris_aabb_margin_m": 40.0,
 		"indoor_seconds": 1.0,
 		"indoor_margin": 0.5,
 		"dust_interval": 0.25,
@@ -1652,5 +1653,10 @@
 		"splash_y": 0.11,
 		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7},
 		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
+	},
+	"render_opt": {
+		"debris_cache": true,
+		"kaiju_tight_bounds": true,
+		"kaiju_bounds_slack": 1.05
 	}
 }
