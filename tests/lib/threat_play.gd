@@ -223,6 +223,29 @@ func _by_input() -> void:
 	SaveFile.wipe()
 
 
+## The drawn text of the title and the headline sits on the card's centre line (within 2 px).
+func _centred(card: SpecimenCard) -> void:
+	var panel: Control = card.headline
+	while panel != null and not panel is PanelContainer:
+		panel = panel.get_parent() as Control
+	if panel == null:
+		check.call(false, "the lab card has a panel")
+		return
+	var mid := panel.get_global_rect().get_center().x
+	for label: Label in [card.title, card.headline]:
+		var font := label.get_theme_font("font")
+		var w := font.get_string_size(
+			label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")
+		).x
+		var left := label.global_position.x
+		if label.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER:
+			left += (label.size.x - w) / 2.0
+		check.call(
+			absf(left + w / 2.0 - mid) <= 2.0,
+			"'%s' is centred in the card: text at %.1f, card at %.1f" % [label.text, left + w / 2.0, mid]
+		)
+
+
 func _lab_card(main: Node) -> void:
 	var card := _screen(main) as SpecimenCard
 	check.call(card != null, "RAMPAGE after a death opens the lab card: %s" % _screen(main))
@@ -239,6 +262,7 @@ func _lab_card(main: Node) -> void:
 			if not font.has_char(label.text.unicode_at(i)):
 				missing.append(label.text[i])
 	check.call(missing.is_empty(), "the card's fonts draw every letter: %s" % [missing])
+	_centred(card)
 	var frames := 0
 	while not _screen(main) is Rampage and frames < CARD_WAIT_FRAMES:
 		frames += 1
