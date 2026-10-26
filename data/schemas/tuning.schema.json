@@ -4595,10 +4595,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "fade_opacity": {"$ref": "#/$defs/num"},
-        "fade_seconds": {"$ref": "#/$defs/num"},
-        "tank_clear": {"$ref": "#/$defs/num"},
-        "heli_clear": {"$ref": "#/$defs/num"},
         "vip_dark": {"$ref": "#/$defs/num"},
         "vip_glow": {"$ref": "#/$defs/num"},
         "vip_band": {"type": "array", "items": {"$ref": "#/$defs/num"}}
@@ -4606,8 +4602,7 @@
       "required": [
         "tank_height", "turret_turn", "gun_elevation", "recoil", "recoil_seconds", "hull_turn",
         "heli_height", "main_rotor_spin", "tail_rotor_spin", "heli_turn", "heli_lights",
-        "fade_opacity", "fade_seconds", "tank_clear", "heli_clear", "vip_dark", "vip_glow",
-        "vip_band"
+        "vip_dark", "vip_glow", "vip_band"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
