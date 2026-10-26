@@ -1507,6 +1507,7 @@
 		"ground_y": 0.0,
 		"ground_slop": 0.02,
 		"fade_seconds": 0.4,
+		"debris_aabb_margin_m": 40.0,
 		"indoor_seconds": 1.0,
 		"indoor_margin": 0.5,
 		"dust_interval": 0.25,
@@ -1655,6 +1656,9 @@
 	},
 	"render_opt": {
 		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
-		"night_clip_max": 0.08
+		"night_clip_max": 0.08,
+		"debris_cache": true,
+		"kaiju_tight_bounds": true,
+		"kaiju_bounds_slack": 1.05
 	}
 }

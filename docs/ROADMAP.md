@@ -551,6 +551,7 @@ state. No director clips or per-change approvals in between; clips only where mo
 
 ## Interviews 2026-10-26 (D-257 to D-260)
 Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interviews.md`.
+Director comments of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
 
 ## Interview audit (D-272, 2026-10-26)
 Every interview answer and director message since 2026-10-16 (782 items) checked against the docs: `docs/roadmap/2026-10-26-interview-audit.md`.

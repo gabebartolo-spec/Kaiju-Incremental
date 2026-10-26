@@ -84,7 +84,8 @@ func _check_clarity_knobs() -> void:
 			if view.use_debanding != deband:
 				bad.append("%s deband %s" % [name, view.use_debanding])
 	check(bad.is_empty(), "a viewport takes the preset's sharpness and the look's deband: %s" % [bad])
-	var soft: Dictionary = (table["medium"] as Dictionary).duplicate()
+	var medium: Dictionary = table["medium"]
+	var soft := medium.duplicate()
 	soft["fsr_sharpness"] = 0.1
 	GraphicsPresets.apply(soft, view)
 	check(is_equal_approx(view.fsr_sharpness, 0.1), "a row's sharpness reaches the viewport")

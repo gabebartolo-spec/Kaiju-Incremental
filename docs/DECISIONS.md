@@ -4,6 +4,34 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-284 · Director · No floating biomass numbers
+
+"the biomass numbers also visible THROUGH te buildings and kaiju isnt great"; then, on a screenshot of +numbers sprinkled over the croc's tail (docs/captures/2026-10-26-clips/numbers_over_kaiju.webp): "i dont want to see the numbers. i want to see kaiju". Always-on-top numbers were agent-added at the greybox kickoff (8d02a024), no decision. First pick "Hidden behind it", then asked again: "Remove them entirely". Every floating +biomass number goes (callers in rampage.gd, rooftop_view.gd, rail_view.gd, tank_fx.gd); the biomass counter and its tick-up are the only readout. When: "With the bubble" (D-283), after the render plan.
+
+## 2026-10-27 · D-283 · Director · Camera bubble after the render plan
+
+"see why we need the bubble", "the bubble would solve unsightly views like the above" (screenshots: a building wall filling the frame; the screen-door fade over the croc at night, wall: docs/captures/2026-10-26-clips/bubble_why_wall.webp; the screen-door one was not saved to disk). Asked when to build it; picked "After the render plan". Rework #238 (solid by default, cut away only the 0-3 buildings between camera and kaiju, shadows kept); his two screenshots are the pass bar (no wall fills the frame, no screen-door over the kaiju); the clip goes straight to him. Re-asked 00:58 while League blocked the speed benches (start it now in the gap?): "Keep it after the plan".
+
+## 2026-10-27 · D-282 · Director · The freeze fix's 20-run test runs on GitHub first
+
+His question: "is it possible to do this on github instead?". Asked: "Yes, GitHub first": 20 runs on main and 20 on the fix on GitHub (software rendering, free on the public repo); main must freeze at least once there to prove GitHub catches it; then 20/20 clean on the fix passes. If main never freezes there, the test returns to the local GPU. Speed benches and stills stay on the local GPU (no GPU on GitHub). Not chosen: keep local, both.
+
+## 2026-10-27 · D-281 · Director · The charged stomp becomes the dragon's attack
+
+His words: "stomp fits the dragon more than the croc". Asked: "Yes, dragon's kit": the tap/hold charged stomp (D-260, D-263), its 0.80x speed and Frenzy speed-up (D-264) move to the dragon's design for when dragon work resumes (paused, D-25x); the dragon gets its own Cascadeur clip.
+
+## 2026-10-27 · D-280 · Director · Croc: the stomp turns automatic and weak; a tail lash takes its button
+
+His words: "we should probably revisit the stomp attack and replace it with something else, make stomp damage weaker and automatic / a stationary stomp goes against the croc's power fantasy as an athletic kaiju". Asked: auto stomp "Every footfall crushes" (damage under his feet as he walks and runs, never stops to stomp); power "Street-level only" (people, cars, trees, props underfoot; buildings only chip); the button "Tail lash" (mid-stride tail whip flattening a ring beside him, never breaking his run; Cascadeur clip); timing "After the render plan". Replaces D-260 "Button replaces it" and D-263 "Rooted while charging" for the croc. Not chosen: rhythm stomps, chipping buildings, death roll, lunge bite.
+
+## 2026-10-26 · D-279 · Director · Night sky: fog matched to the sky (B)
+
+Asked with 4 labelled 4K stills (docs/captures/2026-10-26-clips/night_sky_A-D.png) after his "too much white in the blue ... the lighting or the fog": "Which night look should ship?" Answer: "B: fog matched to sky". Night fog_color 1e2a46 -> 0c1428 (= sky_top); ambient stays 1.4. Measured sky luma 9.5 -> 1.9, facades 39.5 -> 38.3. Not chosen: D both, C dimmer buildings, A keep.
+
+## 2026-10-26 · D-278 · Director · Builder cap 4 for tonight's render plan
+
+Asked: "Can I run 4 builders tonight instead of 3, so the night-shadow, clarity and night-sky batch starts now?" after he said "wow, thats so slow, anyway we can speed it up?". Answer: "4 builders tonight (Recommended)". Kaiju cap is 4 builders + 1 Sonnet reader for tonight; drops back to 3 if anything freezes. Not chosen: 5 builders, keep 3.
+
 ## 2026-10-26 · D-277 · Director · Beachfront round 2 kept; defects fixed in Blender; nightclub V03r
 
 Round 2 (D-274's change of method: a reference image first, HD H3.1 chosen by a measured pilot over Smart Mesh, Remove Lighting; 1,365 of the 1,600 credits, balance 5,955) shown as a labelled board with the three round-1 keepers. He picked "All usable, fix defects": all 19 (B01-B07, V01, V02, V03r, V04-V06, S01-S04, P01, P02) go into the beach district; thin canopies, awnings and umbrella poles are thickened and blank backs filled in Blender, then voxelised. Nightclub: "V03r, no sand base". Blender fix waits until the render plan's Godot runs are done (D-276).
@@ -369,31 +397,3 @@ Asked in the VFX lead's session. Fire (the fire board of D-188's reassessment, b
 ## 2026-10-23 · D-189 · Director · Interview: atmosphere starts now in a third session; music opens low; helicopters never block the view; 6 builders
 
 He said "interview me". M1 (D-146, D-155) waits for all its items and several had not started; asked when he plays it: "start them now, create a third session". Asked what it owns: "Atmosphere": a third lead session owns M1's atmosphere end to end (sky and sea life with clouds, birds, small boats and the whale, D-168; weather looks; the rampage escalation of D-154: haze, orange sky, spreading blackouts), with its own builders and critics; the VFX lead keeps fire, explosions and the kaiju's motion; the lead keeps the game rules, music and city sound and builds the layered music now. Builder cap: "6 in total": two engine builders per session (amends the "Fit the PC" cap of about 4); drop back if the CPU pins at 100%. Music (D-125): "Low and creeping": a rampage opens on low strings and bass only, drums join at the first big collapses, brass and the full theme at the peak of the ruin. Endless mode: "Colossus track, fully built" (the Colossus city's track, layering as usual). A rampage's end: "Fade under the results" (the layers drop away over about 2 s into the results screen, leaving the low strings; no new music). Helicopters (D-183's "They still keep off the camera's side"): "Never block your view": they may pass briefly on the camera side while repositioning, but never fly between the camera and the kaiju.
-
-## 2026-10-23 · D-188 · Director · Visual reviews keep going until the critics pass; repeated failure changes the method
-
-He asked "are we in clip making purgatory again?" (the fire and helicopter look at round 7, the new breathing failed its first review as invisible at the game camera, the walk fix failed twice on the swivel). Asked how visual reviews run until M1, he chose "Keep going until critics pass": no round cap; critics keep failing merely acceptable work, so the M1 build shows finished visuals. Then: "but if something has failed 7 times in a row then our method is wrong, and needs to be reassessed": two failed rounds in a row (CLAUDE.md rule 8) mean the owner stops, finds why each round failed and changes the approach before the next round. The fire and helicopter look is reassessed before any round 8. Not chosen: two rounds then M1; fewer clips with the same rounds.
-
-## 2026-10-23 · D-187 · Director · The big forms turn heavier and slower
-
-The walk fix failed its motion review on the swivel he named ("he swivels rather than turns"). Measured: the sim turns the Behemoth and Colossus at peaks of 260-311 degrees a second, each step's yaw squeezed into its planted window, so the body snaps round on planted feet; the snap also swings his position 8-13 units about the planted foot (the lunge that lets him catch helicopters). Asked: "Heavier, slower": turns grow slower with size, spread evenly over the steps. The lead first quoted today's U-turn as about 1.2 s and offered 1.5 s / 2.5 s; measured, today's is 0.95 / 1.63 / 1.80 s (young croc / Behemoth / Colossus), so it re-asked: "Behemoth 2 s, Colossus 3 s" (the motion critic's bar: at least 4 alternating real steps in a 180, each over 0.3 foot length and at most 40 degrees). The young croc keeps its smooth turn (D-131) and small corrections stay smooth (D-130); amends D-130's "the turn rates stay as they were" for the two big forms. The lead re-checks the 10 s rise-point bar (D-131); a clip comes before it merges. Not chosen: same speed without the snap; keep as is.
-
-## 2026-10-23 · D-186 · Director · GitHub runs the long test suites
-
-He asked: "is there a way we can get things done faster without compromising quality". The lead measured: builders ran hour-long local chains of up to 11 suites before pushing, while GitHub runs the whole suite in 4 parallel shards in about 15 minutes, free (the repo is public); the PC sat at 57% CPU with 6 engine jobs. Asked: "GitHub runs long suites": a builder runs on this PC only the one or two suites it is iterating on, then pushes and lets GitHub run every other touched suite and the full suite. Same tests and bars; amends D-159's "touched suites locally". Not chosen: a fifth builder (the cap stays about 4). The lead also starts every task on a fresh builder and writes the design and pass bars before code.
-
-## 2026-10-23 · D-185 · Director · The claw swipe becomes a heavy raking arc
-
-"the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very suddenly, defying his anatomy, it looks terrible". Asked: "Heavy raking arc": his shoulders and body twist into it, the arm loads back, then sweeps low and wide with the claws raking through and a heavy follow-through; a slower wind-up, a fast strike, like a bear's or Godzilla's swat, within a croc's forelimb range. The hit lands at the same moment the sim deals it (presentation only). Owner: the VFX lead, under the D-177 motion checks at all three growth steps.
-
-## 2026-10-23 · D-184 · Director · The music ships: the 1954-Godzilla theme G1 on the menu and, re-arranged, in every city
-
-After "now the songs are too whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference", the lead made four takes in the style of the 1954 Godzilla score (G1, G2 a heavy march; G3, G4 "he appears", slow with silences). He: "ok the music is much better, ship it, but make a note in the roadmap to revisit music later". Asked: "download them all, but use G1 for the main menu"; the three cities get Suno Covers of G1 ("Cover it per city now", source "G1"), each a step heavier with the city (D-181, D-172). Then he made a Suno remaster of G2 (song 798f3c13): "use this one", asked: "Menu and cities": the remaster replaces G1 on the menu and as the Covers' source. Menu: the theme plays over the city sound ("Over the city sound"), which amends D-141's "no music, city sounds only" on the title. All four takes are downloaded as WAV; stems (Auto Split) only for the city tracks, which play in layers (D-125). A later music pass is on the ROADMAP. Takes, settings and credits: docs/provenance/music.md.
-
-## 2026-10-23 · D-183 · Director · Helicopters fight as stand-off gunships, moving gracefully
-
-"helicopters are hovering way too close to our kaiju, its completely unrealistic and looks odd how twitchy they are like an orbiting fly, they should move logically, strategically, gracefully". Cause (code): each helicopter's position was an offset pinned to the kaiju every step (snapping with his every move), a 14-unit circle diving to a fifth of that twice a lap, reversing at the ends of its arc. Asked: "Stand-off gunships": they hold firing positions well beyond his reach, glide between them with smooth banking turns (their own speed and turn limits, never pinned to him) and pull back when he advances; the breath, beam or a thrown tank reaches them, and an occasional strafing pass brings one within claw reach. They still keep off the camera's side. Motion first (D-177) applies.
-
-## 2026-10-23 · D-182 · Director · Music references: Jaws, Godzilla, the Imperial March, Isengard; not modern "epic"
-
-"the songs are sounding too 'epic', too Nolan Batman, should be more like Jaws or Godzilla or even Star Wars Imperial March sounding", and "peak reference": The Lord of the Rings, Isengard Theme (youtube.com/watch?v=KXVtpOHQqvY). The theme is a classic acoustic orchestra with a simple, menacing low motif and a march pulse (a stalking two-note figure, a villain's minor-key march, an anvil-struck five-beat war-machine rhythm), never modern hybrid trailer music (synths, braams, drones). References name qualities only; prompts never name or copy the works.
