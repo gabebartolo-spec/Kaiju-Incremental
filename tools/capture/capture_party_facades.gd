@@ -139,7 +139,7 @@ func _pair(cam: Camera3D, pair: Array, number: int) -> void:
 	print(tag, " A at ", a.x, ",", a.z, " M at ", m.x, ",", m.z, " side ", side)
 	# The middle of the shared wall, where the exposed part of A will show.
 	var joint := Vector3(a.x + side.x * a.w * 0.5, a.height * 0.35, a.z + side.y * a.d * 0.5)
-	var dir := Kit.GAME_CAMERA.normalized()
+	var dir := CameraTuning.offset().normalized()
 	if side.x != 0:
 		dir = Vector3(side.x * 0.8, 0.8, 0.45).normalized()
 	_sim.kaiju_pos = Vector2(joint.x, joint.z) + Vector2(side) * 20.0

@@ -75,7 +75,7 @@ func _stage(tier: int) -> void:
 		# the towers south of the plaza (faded in a rampage) do not hide it.
 		var centre := Vector3(b.x, b.height * 0.3, b.z)
 		var reach := maxf(maxf(b.w, b.d), b.height) * FRAME
-		cam.position = centre + Kit.GAME_CAMERA.normalized() * reach
+		cam.position = centre + CameraTuning.offset().normalized() * reach
 		cam.look_at(centre)
 		await _frames(SETTLE)
 		var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
