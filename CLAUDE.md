@@ -25,8 +25,9 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
 8. **Change method after two failed fixes.**
 
 ## Machine and repo (project detail on the rulebook)
-- Captures and clips render on the local GPU (RTX 4070 SUPER) always, even while he games, in an off-screen no_focus
-  override.cfg window (`blender -b`), up to 2 Godot processes per agent, until he says pause (2026-10-21, comment #41).
+- Captures and clips render on the local GPU (RTX 4070 SUPER) always, even while he games, in a no_focus
+  override.cfg window (it may show on his screen so he can watch, 2026-10-26; it never steals focus; `blender -b`), up to
+  2 Godot processes per agent, until he says pause (2026-10-21, comment #41).
   CI captures (`tools/capture/ci_capture.sh`, xvfb, software: ~25-35 min a clip) only for gl_compatibility checks or
   while paused. Generation jobs (ComfyUI, local models) one at a time on the GPU.
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
