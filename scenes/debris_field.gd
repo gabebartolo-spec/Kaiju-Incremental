@@ -110,6 +110,7 @@ func _mesh(size: float) -> BoxMesh:
 
 
 func _material(color: Color) -> StandardMaterial3D:
+	ThreadCheck.main_only("DebrisField._material")
 	var key := color.to_html(false)
 	if not _materials.has(key):
 		var mat := StandardMaterial3D.new()
