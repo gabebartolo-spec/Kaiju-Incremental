@@ -67,9 +67,7 @@ static func _dig_inlets(plan: Dictionary, band: Vector2, cfg: Dictionary) -> voi
 		var landing := Num.f(spec["landing"])
 		var wide := Num.f(shape["w"]) - 2.0 * landing
 		var top := band.y + walk  # where the river's open water ends (a sidewalk past its blocks)
-		var water := Rect2(
-			rect.get_center().x - wide * 0.5, top, wide, rect.end.y - landing - top
-		)
+		var water := Rect2(rect.get_center().x - wide * 0.5, top, wide, rect.end.y - landing - top)
 		site["water"] = water
 		site["at"] = Vector2(rect.get_center().x, water.get_center().y)
 

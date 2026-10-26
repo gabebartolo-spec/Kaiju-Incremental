@@ -24,6 +24,10 @@ const COLOSSUS := {
 	"sig_recharge": 4,
 	"evolve2": 1
 }
+## The growth on/off fixture's clock (s), the same for both runs: long enough that this Colossus
+## flattens the young city with growth off. The 1.5x stage-1 city (D-254) takes it about 98 s; a
+## Colossus never plays there, so the fixture sets its own clock and no game data changes.
+const FIXTURE_CLOCK := 110.0
 
 
 func suite_name() -> String:
@@ -186,8 +190,8 @@ func _check_defences() -> void:
 ## in its own grown city the same rampage runs to the clock, earns more and leaves city
 ## standing: growth on vs off changes the city and the outcome.
 func _check_growth_matters() -> void:
-	var off := _play(Content.tuning(), _layout(1), COLOSSUS)
-	var on := _play(_tuning(3), _layout(3), COLOSSUS)
+	var off := _play(Content.tuning(), _layout(1), COLOSSUS, FIXTURE_CLOCK)
+	var on := _play(_tuning(3), _layout(3), COLOSSUS, FIXTURE_CLOCK)
 	check(
 		Num.i(on["chunks"]) > Num.i(off["chunks"]) * 4,
 		(
@@ -211,10 +215,15 @@ func _check_growth_matters() -> void:
 	)
 
 
-func _play(tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary) -> Dictionary:
+## clock > 0 replaces the run's clock (s) for a fixture that sets its own.
+func _play(
+	tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary, clock := 0.0
+) -> Dictionary:
 	var species := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
+	if clock > 0.0:
+		stats["run_seconds"] = clock
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 1))
 	var ability: Dictionary = species["ability"]
 	sim.ability_type = str(ability["type"])

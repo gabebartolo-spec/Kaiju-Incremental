@@ -59,7 +59,9 @@ static func landmarks(
 		var shape: Dictionary = shapes[str(spec["id"])]
 		if spec.has("anchor"):  # pinned where the spec says (a test fixture's own plan)
 			var at: Array = spec["anchor"]
-			var pinned := CitySites.site_at(plan, spec, shape, Vector2(Num.f(at[0]), Num.f(at[1])), axes)
+			var pinned := CitySites.site_at(
+				plan, spec, shape, Vector2(Num.f(at[0]), Num.f(at[1])), axes
+			)
 			if not pinned.is_empty():
 				out.append(pinned)
 			continue

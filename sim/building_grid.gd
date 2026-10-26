@@ -10,10 +10,10 @@ extends RefCounted
 ## Side of a grid cell (m): about a block, so a body's reach spans a few cells.
 const CELL := 16.0
 
-var _cells := {}  # Vector2i -> PackedInt32Array of building indices, ascending
 ## The largest half-diagonal of any footprint (m): a building whose centre lies within r of a spot
 ## is always among around(spot, r + pad).
 var pad := 0.0
+var _cells := {}  # Vector2i -> PackedInt32Array of building indices, ascending
 
 
 func _init(buildings: Array) -> void:
