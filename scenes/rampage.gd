@@ -68,6 +68,7 @@ var _aim: BreathAim
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
+var _rail: RailView
 var _fx_rng: RandomNumberGenerator
 var _autoplay := false
 var _walk := AutoWalk.new()
@@ -154,9 +155,7 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
-	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
-	HelicopterModel.new().free()
-	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
+	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
@@ -233,7 +232,7 @@ func _physics_process(delta: float) -> void:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
+	_kaiju_at = _ability.place(delta, 0.0 if sim.body.dash.on() else move.length(), _kaiju_at)
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
@@ -275,6 +274,16 @@ func _note_cost(what: String, since: int) -> void:
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
 
 
+## The army's tanks (their voxels built once now, so the first spawn reuses them), the
+## helicopters' voxels, and the railway.
+func _add_vehicles() -> void:
+	TankModel.new().free()
+	HelicopterModel.new().free()
+	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
+	_rail = RailView.new(self, sim, _city)
+	add_child(_rail)
+
+
 func _to_world(p: Vector2) -> Vector3:
 	return Vector3(p.x, 0.0, p.y)
 
@@ -313,6 +322,8 @@ func _on_event(event: Dictionary) -> void:
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
+			_rail.on_event(event)
+			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -329,17 +340,6 @@ func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
 func _power(stat_name: String) -> float:
 	var base: Dictionary = species["stats"]
 	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
-
-
-func _update_kaiju(delta: float, moving: float) -> void:
-	var target := _to_world(sim.kaiju_pos)
-	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
-	_kaiju_at = _ability.step(delta, target, _kaiju_at)
-	_kaiju.position = _kaiju_at
-	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-	# sim angle to model yaw: the sign flips
-	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
-	_kaiju.animate(delta, moving, -sim.body.turn_left)
 
 
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that

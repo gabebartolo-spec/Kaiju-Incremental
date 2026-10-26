@@ -18,7 +18,7 @@ const CONTROLS: Array[Array] = [
 	["Move", "WASD / arrows", "Left stick"],
 	["Signature attack", "Space", "A"],
 	["Glide (insectoid, hold)", "Hold Space", "Hold A", "insectoid"],
-	["Dash", "Shift", "B"],
+	["Leap", "Shift", "B"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
 	["Fullscreen", "F11", "-"],

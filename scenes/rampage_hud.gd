@@ -233,7 +233,7 @@ func refresh() -> void:
 	var dash := sim.body.dash
 	dash_ring.modulate.a = 1.0 if dash.available() else 0.0
 	if dash.available():
-		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, Num.f(dash.cfg["cooldown"])))
+		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, dash.cooldown()))
 
 
 func _process(delta: float) -> void:
