@@ -171,13 +171,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -203,13 +204,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -235,13 +237,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -267,13 +270,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -299,13 +303,14 @@
                 "debris_static": {"$ref": "#/$defs/num"},
                 "particles": {"$ref": "#/$defs/num"},
                 "crowd_max": {"$ref": "#/$defs/num"},
-                "civilians": {"$ref": "#/$defs/num"}
+                "civilians": {"$ref": "#/$defs/num"},
+                "fsr_sharpness": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
                 "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
-                "crowd_max", "civilians"
+                "crowd_max", "civilians", "fsr_sharpness"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -4786,9 +4791,10 @@
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
         "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
-        "kaiju_three_faces": {"$ref": "#/$defs/bool"}
+        "kaiju_three_faces": {"$ref": "#/$defs/bool"},
+        "night_clip_max": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "kaiju_three_faces"],
+      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "kaiju_three_faces", "night_clip_max"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
