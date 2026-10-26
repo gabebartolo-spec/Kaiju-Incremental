@@ -21,6 +21,8 @@ var _stills := 0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"lead": _lead, "seconds": _seconds, "out": _out})
 	_out = str(a["out"])
 	DirAccess.make_dir_recursive_absolute(_out)

@@ -44,6 +44,8 @@ var _after := 0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "run": 1, "only": "", "after": 0})
 	_out = str(a["out"])
 	_only = str(a["only"]).split(",", false)
