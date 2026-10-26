@@ -24,6 +24,12 @@ func _init(base: String, height: float) -> void:
 	voxel = height / maxf(1.0, Num.f(meta.get("height", 2)) - 1.0)
 
 
+## Empties the shared caches (tests that need the first build to run again).
+static func clear_cache() -> void:
+	_kvox_cache.clear()
+	_mesh_cache.clear()
+
+
 ## A part's hinge in the model's space (world units).
 func pivot(part: String) -> Vector3:
 	var entry: Dictionary = _parts[part]

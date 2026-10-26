@@ -97,6 +97,14 @@ run_one() {
 	if [ "$name" = rampage ] && ! grep -q "^LOG_SMOKE done" "$log"; then
 		echo "log_smoke: FAIL the rampage run never finished"; tail -20 "$log"; failed=1; return
 	fi
+	if [ "$name" = rampage ]; then  # every species' run ended in the death this run staged (not on its own clock)
+		local runs deaths
+		runs=$(grep -c "^log_smoke: .* skyline beasts" "$log")
+		deaths=$(grep -c "^log_smoke: .* ended defeated" "$log")
+		if [ "$runs" = 0 ] || [ "$runs" != "$deaths" ]; then
+			echo "log_smoke: FAIL $deaths of $runs rampages ended in the staged death"; failed=1
+		fi
+	fi
 	if ! check_log "$log"; then failed=1; fi
 }
 

@@ -229,14 +229,14 @@ jobs:
       - name: Play the seeded rampages and read the engine log
         env:
           KAIJU_NATIVE_REQUIRED: "1"
-          LOG: ${{ runner.temp }}/log_smoke.log
+          LOGS: ${{ runner.temp }}/log-smoke
         run: GODOT="$HOME/godot/godot" tools/lint/log_smoke.sh
       - name: Upload the engine log
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: log-smoke
-          path: ${{ runner.temp }}/log_smoke.log
+          path: ${{ runner.temp }}/log-smoke
 
   # Slow suites (pr_skip; none yet): pushes to main only. CI runners vary in speed, so a red run is a
   # prompt to look, never a stop.

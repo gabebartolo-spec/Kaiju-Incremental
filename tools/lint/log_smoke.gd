@@ -71,5 +71,6 @@ func _rampage(species_id: String) -> void:
 	rampage.sim.hp = 0.0  # a death: the sim ends the run "defeated" on its next step
 	for _i: int in DEATH_FRAMES:
 		await process_frame
+	print("log_smoke: %s ended %s" % [species_id, rampage.sim.end_reason])
 	rampage.queue_free()
 	await Kit.frames(self, DRAIN_FRAMES)
