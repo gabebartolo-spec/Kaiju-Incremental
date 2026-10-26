@@ -21,6 +21,10 @@ const POP_SHARE := 0.02
 ## times as fast and its change is divided by n^2.
 const JERK_SHARE := 0.01
 const JERK_AFTER := 30
+## The intro's last frame lies this close to the gameplay camera it hands over to (the lead's brief
+## 2026-10-26: within 0.1 m and 0.5 degrees): eye (m), aim and field of view (degrees).
+const HAND_METRES := 0.1
+const HAND_DEGREES := 0.5
 
 
 static func run(tree: SceneTree, check: Callable) -> void:
@@ -75,6 +79,18 @@ static func run(tree: SceneTree, check: Callable) -> void:
 					+ " camera (<= %.2f)"
 				)
 				% [r["name"], r["pop"], POP_SHARE]
+			)
+		)
+	for r: Dictionary in [full, skipped, short]:
+		var hand: Array = r["hand"]
+		check.call(
+			hand[0] <= HAND_METRES and hand[1] <= HAND_DEGREES and hand[2] <= HAND_DEGREES,
+			(
+				(
+					"%s intro: its last frame is %.4f m, %.4f deg of aim and %.4f deg of fov from"
+					+ " the gameplay camera (<= %.1f m, %.1f deg)"
+				)
+				% [r["name"], hand[0], hand[1], hand[2], HAND_METRES, HAND_DEGREES]
 			)
 		)
 	check.call(
@@ -140,6 +156,9 @@ static func _play(tree: SceneTree, full: bool, skip_at: int) -> Dictionary:
 			path.append(rampage._camera.global_position)
 			var n := Num.f(rampage._rise.intro.get("_rate")) if sim.emerge.active else 1.0
 			_jerk(out, path, rampage._follow.offset.length() * n * n, frame)
+	out["hand"] = _hand(rampage._rise)
+	if skip_at >= 0:
+		out["name"] = "skipped"
 	out["state"] = (
 		"at %s, facing %s, clock %.3f, hp %.1f"
 		% [sim.kaiju_pos.snappedf(0.001), sim.facing.snappedf(0.001), sim.time_left, sim.hp]
@@ -156,6 +175,23 @@ static func _roaring(rampage: Rampage) -> bool:
 		if player.stream != null and player.stream.resource_path.ends_with("roar.ogg"):
 			return true
 	return false
+
+
+## The intro's last shot against the gameplay camera it hands over to (RampageRise.play_view and
+## shot_view, both kept from the last frame the rise ran): [eye metres, aim degrees, fov degrees].
+static func _hand(rise: RampageRise) -> Array[float]:
+	var play := rise.play_view
+	var shot := rise.shot_view
+	if shot.is_empty():
+		return [INF, INF, INF]
+	var p_eye: Vector3 = play["eye"]
+	var s_eye: Vector3 = shot["eye"]
+	var p_aim: Vector3 = play["aim"]
+	var s_aim: Vector3 = shot["aim"]
+	var p_dir := (p_aim - p_eye).normalized()
+	var s_dir := (s_aim - s_eye).normalized()
+	var fov := absf(Num.f(shot["fov"]) - Num.f(play["fov"]))
+	return [s_eye.distance_to(p_eye), rad_to_deg(s_dir.angle_to(p_dir)), fov]
 
 
 ## How far the camera is from the gameplay camera (CameraFollow's eye, which the intro hands over

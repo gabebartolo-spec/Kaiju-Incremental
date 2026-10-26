@@ -44,3 +44,13 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 	now["move"] = move
 	now["held"] = held
 	return now
+
+
+## The sim's button bits (Dash.BUTTON, RampageSim.HELD, RampageSim.ULTIMATE) for read's presses.
+static func buttons(now: Dictionary) -> int:
+	var dash: bool = now["dash"]
+	var held: bool = now["held"]
+	var ultimate: bool = now["ultimate"]
+	var out := Dash.BUTTON if dash else 0
+	out |= RampageSim.HELD if held else 0
+	return out | (RampageSim.ULTIMATE if ultimate else 0)

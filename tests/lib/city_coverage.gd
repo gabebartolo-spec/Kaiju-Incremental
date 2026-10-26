@@ -65,7 +65,7 @@ static func measure(
 		for i: int in n:
 			var c := Vector2i(i, j)
 			var centre := Vector2(origin + (i + 0.5) * size, origin + (j + 0.5) * size)
-			var wet := basin.any(func(b: Rect2) -> bool: return b.has_point(centre))
+			var wet := _wet(basin, centre, size)
 			if (
 				not road.has(c)
 				or centre.y < coast
@@ -106,3 +106,15 @@ static func off_bank(empty: Variant, sim: RampageSim) -> Array:
 		if at.y < river.x - pad or at.y > river.y + pad:
 			kept.append(at)
 	return kept
+
+
+## Whether the bay holds the cell's centre or covers at least half of the cell (one centred on
+## its edge is half water).
+static func _wet(basin: Array[Rect2], centre: Vector2, size: float) -> bool:
+	if basin.any(func(b: Rect2) -> bool: return b.has_point(centre)):
+		return true
+	var cell := Rect2(centre - Vector2.ONE * size * 0.5, Vector2.ONE * size)
+	var dry := 0.0
+	for piece: Rect2 in GroundKit.cut([cell], basin):
+		dry += piece.get_area()
+	return dry <= cell.get_area() * 0.5

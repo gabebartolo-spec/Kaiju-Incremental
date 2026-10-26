@@ -9,6 +9,9 @@ extends RefCounted
 var intro: RunIntro
 ## The head's crown: x how far ahead of the hips, y how high over the feet (world units).
 var head := Vector2.ZERO
+## The last intro frame's gameplay camera and the shot drawn instead ({eye, aim, fov}; tests).
+var play_view: Dictionary = {}
+var shot_view: Dictionary = {}
 var _run: Rampage
 var _cfg: Dictionary = Content.section("intro")
 
@@ -46,4 +49,16 @@ func on_event(event: Dictionary, city: CityView, kaiju: KaijuModel, hud: Rampage
 func shot(view: Dictionary, follow: CameraFollow) -> Dictionary:
 	view["head"] = head
 	view["head_box"] = follow.head.head_box()
-	return RunIntro.shot(_run.sim, view, Engine.get_physics_interpolation_fraction())
+	play_view = view
+	shot_view = RunIntro.shot(_run.sim, view, Engine.get_physics_interpolation_fraction())
+	return shot_view
+
+
+## Puts `camera` where `view` says ({eye, aim, fov}: the gameplay camera or the intro's shot),
+## its aim moved by `jitter` (a blast's own shake).
+static func aim_camera(camera: Camera3D, view: Dictionary, jitter: Vector3) -> void:
+	var eye: Vector3 = view["eye"]
+	var aim: Vector3 = view["aim"]
+	camera.fov = Num.f(view["fov"])
+	camera.position = eye
+	camera.look_at(aim + jitter)

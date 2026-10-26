@@ -2,8 +2,8 @@ extends RefCounted
 ## Which intro a run started through Main plays, from a real save on disk (R 20.4): the first run
 ## plays the whole intro, a run after an evolution (a bigger size than the last run's) plays it
 ## whole too, any other run plays the short cut; Main notes the size it showed in the save
-## ("intro_size"). Driven by real clicks (Continue, RAMPAGE). Seeded by design: no randomness is
-## read; the saves are fixtures.
+## ("intro_size"). Driven by real clicks (Continue, Slot 1, RAMPAGE). Seeded by design: no
+## randomness is read; the saves are fixtures.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -36,6 +36,8 @@ static func _case(
 	await _frames(tree, 3)
 	var title: Node = main.call("screen")
 	await GuiInput.click(tree, GuiInput.button(title, "CONTINUE"))
+	var slots: Node = main.call("screen")  # the save slots
+	await GuiInput.click(tree, GuiInput.button(slots, "SLOT 1"))
 	await _frames(tree, 3)
 	var screen: Node = main.call("screen")
 	if screen is UpgradeScreen:

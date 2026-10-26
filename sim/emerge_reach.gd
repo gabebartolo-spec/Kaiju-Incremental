@@ -95,3 +95,9 @@ static func in_view(plan: Dictionary, city: Dictionary, at: Vector2, size: Vecto
 		if p.clamp(foot.position, foot.end).distance_to(p) < clear:
 			return true
 	return false
+
+
+## in_view for a lot (CityLots: a dictionary with x, z, w, d).
+static func lot_in_view(plan: Dictionary, city: Dictionary, lot: Dictionary) -> bool:
+	var at := Vector2(Num.f(lot["x"]), Num.f(lot["z"]))
+	return in_view(plan, city, at, Vector2(Num.f(lot["w"]), Num.f(lot["d"])))

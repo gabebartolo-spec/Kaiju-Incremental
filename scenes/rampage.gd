@@ -199,15 +199,15 @@ func _physics_process(delta: float) -> void:
 		return
 	var now := _reader.read(self, _steps, delta)
 	var move: Vector2 = now["move"]
+	var signature: bool = now["signature"]
 	_steps += 1
-	var buttons := (Dash.BUTTON if now["dash"] else 0) | (RampageSim.HELD if now["held"] else 0)
-	buttons |= RampageSim.ULTIMATE if now["ultimate"] else 0
+	var buttons := RunInput.buttons(now)
 	var wading := sim.emerge.risen() >= 1.0 and sim.emerge.active
 	var ticks := _rise.intro.ticks()  # the intro's short cut and skip run the rise's ticks faster
 	for k: int in ticks:
 		if k > 0 and not sim.emerge.active:
 			break  # the first live tick takes this frame's presses, once
-		_step_sim(delta, move, now["signature"], buttons)
+		_step_sim(delta, move, signature, buttons)
 	var moving := 1.0 if wading else (0.0 if sim.body.dash.on() else move.length())
 	_kaiju_at = _ability.place(delta * ticks, moving, _kaiju_at)  # the legs keep going
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
@@ -393,8 +393,6 @@ func _place_camera(delta: float) -> void:
 	if sim.emerge.active:  # the run intro's shot, ending exactly on this camera (RunIntro)
 		view = _rise.shot(view, _follow)
 		_hud.visible = get_tree().paused  # no HUD over the intro (the pause menu shows)
-	_camera.fov = Num.f(view["fov"])
-	_camera.position = view["eye"]
-	_camera.look_at(view["aim"] + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
+	RampageRise.aim_camera(_camera, view, _blasts.jitter() * motion)  # + a blast's shake
 	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

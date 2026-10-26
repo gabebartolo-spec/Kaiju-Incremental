@@ -40,8 +40,12 @@ var _paint: Array[Transform3D] = []
 var _basin: Array[Rect2] = []  # the river's bay the kaiju rises in (CityRiver.bay): no pavement
 
 
-func _init(p_cfg: Dictionary) -> void:
+## rise: the run's Emergence, whose holes (burst, burst_ns) the bay's decks are drawn with.
+func _init(p_cfg: Dictionary, rise: Emergence = null) -> void:
 	cfg = p_cfg
+	if rise != null:
+		holes = rise.burst
+		holes_ns = rise.burst_ns
 	plan = CityGen.map(cfg)
 	coast = Num.f(cfg["coast_z"])
 
@@ -289,19 +293,20 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 	var along := bridges.filter(func(d: Rect2) -> bool: return not d in inside)
 	along.append_array(CityRiver.decks_after_ns(plan, cfg, holes_ns))
 	for deck: Rect2 in along:
-		_bridge(deck, channels, asphalt, stone, false)
+		_bridge(deck, channels, [asphalt, stone], false)
 	for deck: Rect2 in CityRiver.decks_after(plan, cfg, holes):  # east-west decks over the bay
-		_bridge(deck, [], asphalt, stone, true)
+		_bridge(deck, [], [asphalt, stone], true)
 	if not (holes.is_empty() and holes_ns.is_empty()):
 		deck_burst = DeckBurst.new(holes, holes_ns, asphalt, stone)
 		add_child(deck_burst)
 
 
 ## A street's bridge: its deck at street level, a parapet along each side, the bank walls
-## carried on under it. across: an east-west deck (over the bay), its parapets along x.
-func _bridge(
-	deck: Rect2, channels: Array[Rect2], asphalt: Color, stone: Color, across: bool
-) -> void:
+## carried on under it. colors: [asphalt, stone]; across: an east-west deck (over the bay), its
+## parapets along x.
+func _bridge(deck: Rect2, channels: Array[Rect2], colors: Array[Color], across: bool) -> void:
+	var asphalt := colors[0]
+	var stone := colors[1]
 	var depth := Num.f(cfg.get("river_depth", 0.0))
 	_abutments(deck, channels, depth, stone)
 	var axis := GroundKit.ALONG_X if across else GroundKit.ALONG_Z

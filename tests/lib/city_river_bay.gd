@@ -194,7 +194,8 @@ static func _check_bay(
 					break
 	var decks := CityRiver.bay_bridges(plan, sim.city).size()
 	var wet := 0
-	for b: RampageSim.Building in sim.buildings:
+	# The railway's viaduct is a bridge: it crosses the river's water like the decks do (D-247).
+	for b: RampageSim.Building in sim.lot_buildings():
 		for basin: Rect2 in bay:
 			if basin.intersects(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)):
 				wet += 1

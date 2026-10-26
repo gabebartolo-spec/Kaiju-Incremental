@@ -80,8 +80,7 @@ func _outer_blocks() -> void:
 		var scale := _rng.randf_range(0.5, 1.4)
 		for lot: Dictionary in CityLots.fill_block(_rng, ground.plan, block, outer_cfg, scale):
 			var at2 := Vector2(Num.f(lot["x"]), Num.f(lot["z"]))
-			var size2 := Vector2(Num.f(lot["w"]), Num.f(lot["d"]))
-			if _under_freeway(at2) or EmergeReach.in_view(ground.plan, cfg, at2, size2):
+			if _under_freeway(at2) or EmergeReach.lot_in_view(ground.plan, cfg, lot):
 				continue
 			var h := Num.f(lot["h"])
 			var at := Vector3(Num.f(lot["x"]), h * 0.5, Num.f(lot["z"]))
@@ -144,8 +143,7 @@ func _inland_x(side: float, z: float) -> float:
 	return side * (Num.f(cfg["half"]) + 62.0 + swing)
 
 
-## Whether p is under an inland freeway (no stand-ins there; the waterfront strip is kept
-## clear by block).
+## Whether p is under an inland freeway (no stand-ins; the waterfront strip is clear by block).
 func _under_freeway(p: Vector2) -> bool:
 	for side: float in [-1.0, 1.0]:
 		if absf(p.x - _inland_x(side, p.y)) < FREEWAY_CLEAR:

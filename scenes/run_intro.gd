@@ -11,9 +11,9 @@ extends RefCounted
 ## Pacing (R 20.4): the full intro on a run with something new to show (Main: the first run, the
 ## first after an evolution); otherwise the short cut, which runs the rise's first ticks at once
 ## and the rest a whole number of ticks a frame, so it lasts at most "short_seconds". Any press
-## skips: the rest of the rise runs "skip_ticks" sim ticks a frame. Either way the sim runs the
-## very same ticks with the same (ignored) input, so a replay matches whether or not anyone
-## skipped.
+## skips: the rest of the rise runs up to "skip_ticks" sim ticks a frame, fewer as it lands.
+## Either way the sim runs the very same ticks with the same (ignored) input, so a replay matches
+## whether or not anyone skipped.
 
 ## Whether this run plays the whole intro (false: the short cut).
 var full: bool
@@ -44,8 +44,11 @@ func _init(sim: RampageSim, p_full: bool) -> void:
 func ticks() -> int:
 	if not _sim.emerge.active:
 		return 1
-	if skipped:
-		return Num.i(_cfg["skip_ticks"])
+	if skipped:  # fast, slowing as it lands so the last frames step onto the play camera
+		var skip := Num.i(_cfg["skip_ticks"])
+		var tps := float(Engine.physics_ticks_per_second)
+		var left := roundi((1.0 - _sim.emerge.progress()) * _sim.emerge.total() * tps)
+		return clampi(ceili(float(left) / skip), 1, skip)
 	if not _started:
 		_started = true
 		return _first_ticks
