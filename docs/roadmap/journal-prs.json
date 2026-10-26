@@ -1955,9 +1955,9 @@
 {
 "n": 281,
 "t": "tests: track the two .uid files #254 left out (unblocks every PR)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 282,

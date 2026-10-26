@@ -977,7 +977,8 @@
           "text": "Bench freeze fixed: render resources made on the main thread only; merged at its speed check (D-282, D-286)",
           "status": "done",
           "prs": [
-            254
+            254,
+            281
           ]
         }
       ],
