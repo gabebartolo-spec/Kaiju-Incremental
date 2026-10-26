@@ -61,6 +61,8 @@ def project(root, run_tests_body, picks=""):
     """A scratch repo whose tools/prepush.sh is the real one and everything it calls is a stub."""
     root = Path(root)
     helpers.write(root, "tools/prepush.sh", PREPUSH.read_text(encoding="utf-8"))
+    # prepush.sh sources tools/speed_gate.sh (D-299); the real one, made a no-op by SPEED_GATE in prepush_env.
+    helpers.write(root, "tools/speed_gate.sh", Path(helpers.tool("tools", "speed_gate.sh")).read_text(encoding="utf-8"))
     for name in ("tuning_keys", "licence_register", "complexity_ratchet", "data_schemas"):
         helpers.write(root, f"tools/lint/{name}.py", "")
     # prepush_picks.py prints "suite<TAB>reason" lines; `picks` is the list of suites it picks.
@@ -68,6 +70,7 @@ def project(root, run_tests_body, picks=""):
     helpers.write(root, "tools/lint/prepush_picks.py", f'import sys\nsys.stdout.write("{lines}")\n')
     script(root, "tools/check_scripts.sh", "exit 0\n")
     script(root, "tools/lint/run_all.sh", "exit 0\n")
+    script(root, "tools/native_dll.sh", "exit 0\n")  # step 4c compares the DLL with main's CI build (needs gh)
     script(root, "godot_stub.sh", "exit 0\n")
     script(root, "tools/run_tests.sh", run_tests_body)
     for suite in ("alpha", "beta", "gamma"):
@@ -89,6 +92,7 @@ def project(root, run_tests_body, picks=""):
 def prepush_env(root):
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env["GODOT"] = str(Path(root) / "godot_stub.sh")
+    env["SPEED_GATE"] = str(Path(root) / "no_speed_gate.sh")  # absent file: wait_speed_gate returns at once
     env["SUITES"] = "alpha beta"
     env["BASE"] = "origin/main"
     return env
