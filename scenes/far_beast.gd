@@ -36,21 +36,7 @@ func _init(cfg: Dictionary, haze: float) -> void:
 	_view.size = Vector2i(px, px)
 	_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	add_child(_view)
-	var env := Environment.new()
-	env.background_mode = Environment.BG_CLEAR_COLOR
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	var has_ambient := Content.look().has("ambient_color")
-	env.ambient_light_color = Look.color("ambient_color" if has_ambient else "sky_horizon")
-	env.ambient_light_energy = Look.value("ambient")
-	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	var world_env := WorldEnvironment.new()
-	world_env.environment = env
-	_view.add_child(world_env)
-	var sun := DirectionalLight3D.new()  # the city's sun, so the beast is lit as the towers are
-	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
-	sun.light_energy = Look.value("sun_energy")
-	sun.light_color = Look.color("sun_color")
-	_view.add_child(sun)
+	_add_lighting()
 	var colors: Dictionary = Content.species_def(species)["colors"]
 	var fire := Color(str(cfg["fire"]))  # the burning towers' light on its back and belly
 	for yaw: float in [145.0, 215.0]:
@@ -68,6 +54,30 @@ func _init(cfg: Dictionary, haze: float) -> void:
 	for light: DirectionalLight3D in _rim_lights:  # they turn with the little camera
 		_view.remove_child(light)
 		_lens.add_child(light)
+	_add_screen(cfg, haze, px)
+
+
+## The little world's environment and sun: the city's, so the beast is lit as the towers are.
+func _add_lighting() -> void:
+	var env := Environment.new()
+	env.background_mode = Environment.BG_CLEAR_COLOR
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	var has_ambient := Content.look().has("ambient_color")
+	env.ambient_light_color = Look.color("ambient_color" if has_ambient else "sky_horizon")
+	env.ambient_light_energy = Look.value("ambient")
+	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	var world_env := WorldEnvironment.new()
+	world_env.environment = env
+	_view.add_child(world_env)
+	var sun := DirectionalLight3D.new()  # the city's sun, so the beast is lit as the towers are
+	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
+	sun.light_energy = Look.value("sun_energy")
+	sun.light_color = Look.color("sun_color")
+	_view.add_child(sun)
+
+
+## The quad that shows the little world on the skyline: haze, shade and the fire's rim.
+func _add_screen(cfg: Dictionary, haze: float, px: int) -> void:
 	_mat = ShaderMaterial.new()
 	_mat.shader = SHADER
 	_mat.set_shader_parameter("view", _view.get_texture())

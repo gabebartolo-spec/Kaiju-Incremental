@@ -7,7 +7,6 @@ extends Node3D
 const DEBRIS_PER_CHUNK := 8
 const DEBRIS_PER_LANDING := 160
 const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
-const SKYLINE_SALT := 16  # the far rampage's stream, drawn from the run's fx seed
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
 ## Staged (stages.on): _ready builds in stages, one per frame, while the owner draws its loading
@@ -163,10 +162,7 @@ func _build_ground() -> void:
 	add_child(streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
-		var skyline := CitySkyline.new(streets, Seeds.make("skyline", 0))
-		add_child(skyline)
-		if Content.section("skyline_rampage").get("on", false):
-			add_child(SkylineRampage.new(skyline, Seeds.derive(_rng, SKYLINE_SALT)))
+		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
 
 
 func _base_color(b: RampageSim.Building) -> Color:

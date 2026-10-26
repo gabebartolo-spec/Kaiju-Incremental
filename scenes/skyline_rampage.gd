@@ -7,6 +7,7 @@ extends Node3D
 ## data/tuning.json "skyline_rampage" "on". Presentation only: the scene is a pure function of
 ## the elapsed time and the run's seeded stream (jump_to), so a capture can show any moment.
 
+const SKYLINE_SALT := 16  # the far rampage's stream, drawn from the run's fx seed
 const FIRE_SHADER := preload("res://scenes/horizon_fire.gdshader")
 const SMOKE_SHADER := preload("res://scenes/horizon_smoke.gdshader")
 const BOOM := preload("res://assets/sfx/collapse.ogg")
@@ -54,6 +55,14 @@ var _pending: Array[Dictionary] = []  # sounds on their way: at (s), stream, db,
 var _players: Array[AudioStreamPlayer] = []
 var _next_voice := 0
 var _next_fall := 0
+
+
+## Adds the far skyline to `parent`, and the far insectoid rampaging across it when tuning
+## skyline_rampage.on says so (its stream is drawn from the run's fx seed `rng`).
+static func attach(parent: Node, skyline: CitySkyline, rng: RandomNumberGenerator) -> void:
+	parent.add_child(skyline)
+	if Content.section("skyline_rampage").get("on", false):
+		parent.add_child(SkylineRampage.new(skyline, Seeds.derive(rng, SKYLINE_SALT)))
 
 
 func _init(skyline: CitySkyline, rng: RandomNumberGenerator) -> void:
@@ -134,12 +143,7 @@ func _velocity(t: float) -> float:
 func _plan_falls() -> void:
 	var corridor := _f("corridor")
 	var reach := _f("reach")
-	for i: int in _boxes.size():
-		if _boxes[i].has("crown_of"):
-			var of := Num.i(_boxes[i]["crown_of"])
-			var list: Array = _crowns.get(of, [])
-			list.append(i)
-			_crowns[of] = list
+	_index_crowns()
 	var nearby: Array[int] = []
 	for i: int in _boxes.size():
 		var size: Vector3 = _boxes[i]["size"]
@@ -153,6 +157,23 @@ func _plan_falls() -> void:
 				_falls.append(_fall(i, t, at.x - beast_x(t), true))
 		elif dz < corridor * 3.0:
 			nearby.append(i)
+	_aftershocks(nearby, reach)
+	_falls.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["at"] < b["at"])
+	_standing_fires(nearby)
+
+
+## Fills `_crowns`: tower index -> the indices of its crown boxes.
+func _index_crowns() -> void:
+	for i: int in _boxes.size():
+		if _boxes[i].has("crown_of"):
+			var of := Num.i(_boxes[i]["crown_of"])
+			var list: Array = _crowns.get(of, [])
+			list.append(i)
+			_crowns[of] = list
+
+
+## A few towers beside its path fall late (aftershocks).
+func _aftershocks(nearby: Array[int], reach: float) -> void:
 	for _n: int in Num.i(_cfg["extra_falls"]):  # aftershocks: a few towers beside its path
 		if nearby.is_empty():
 			break
@@ -162,7 +183,10 @@ func _plan_falls() -> void:
 		if t >= 0.0:
 			t += _rng.randf_range(AFTERSHOCK.x, AFTERSHOCK.y)
 			_falls.append(_fall(i, t, _rng.randf_range(-1.0, 1.0), false))
-	_falls.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["at"] < b["at"])
+
+
+## A few of the towers still standing burn.
+func _standing_fires(nearby: Array[int]) -> void:
 	for _n: int in Num.i(_cfg["standing_fires"]):  # towers still standing, burning
 		if nearby.is_empty():
 			break
@@ -175,14 +199,8 @@ func _plan_falls() -> void:
 			at.z + size.z * 0.5 + 0.6
 		)
 		var start := _rng.randf_range(STANDING_START.x, STANDING_START.y)
-		_fires.append(
-			{
-				"pos": pos,
-				"size": _rng.randf_range(FLAME.x * 0.7, FLAME.y * 0.7),
-				"start": start,
-				"dust": false
-			}
-		)
+		var flame := _rng.randf_range(FLAME.x * 0.7, FLAME.y * 0.7)
+		_fires.append({"pos": pos, "size": flame, "start": start, "dust": false})
 
 
 ## The first time the beast comes within `within` of x, or -1 if it never does.
