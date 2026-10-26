@@ -25,8 +25,10 @@ const RETREAT_PACE := Vector2(3.0, 4.0)
 ## 0%): the foot-centred stomps break other buildings, the tanks turn the other way round a
 ## corner, and a pivot on the way counts as a slow step. The slow steps are the pivots, not a
 ## creep. These three read 96, 100 and 92% with the foot-centred stomp (96, 96 and 93% without),
-## 115 tank-steps in all.
-const VIEW_RUNS: Array[int] = [3, 11, 17]
+## 115 tank-steps in all. Re-swept for road geometry (#243: bigger blocks), runs 1-20: 91.2%
+## pooled (427 of 468 tank-steps, 15 runs see a fall-back); runs 3 and 11 now see 4 steps each,
+## mostly pivots. Runs 5, 9 and 17 read 94, 98 and 95% (94 of 98).
+const VIEW_RUNS: Array[int] = [5, 9, 17]
 
 var _shapes := {}  # tank part -> its footprint (_tank_shapes)
 

@@ -28,7 +28,10 @@ const MIN_PARKED_IN_RANGE := 20
 ## Re-probed for the road-network PR (no alleys on the river banks moved the plans), Behemoth
 ## seeds 0-35: tank-steps in range 0 (7), 8 (5), 10 (7), 14 (9), 25 (4), 35 (18), none elsewhere;
 ## seeds 0, 10, 14 and 35 give 41 against the bar of 20 (the same 2x margin).
-const RAMPAGE_SEEDS: Array[int] = [0, 10, 14, 35]
+## Re-probed for road geometry (#243: bigger blocks), seeds 0-23: tank-steps in range 2 (3),
+## 5 (3), 6 (17), 15 (17), 22 (5), all in the band, none elsewhere; seeds 2, 6, 15 and 22 give
+## 42 against the bar of 20.
+const RAMPAGE_SEEDS: Array[int] = [2, 6, 15, 22]
 
 
 func suite_name() -> String:

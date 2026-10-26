@@ -14,8 +14,10 @@ const FRAMES := 600
 ## change to street life, its tuning or the city plan re-pins it (3ce3931c7b6a5cdc ->
 ## 1532d9c3297b48fe, D-135: the cities are wider, so the plan and the people on it changed;
 ## -> e6dc7d4d2660f21f, road network: no alleys on the river banks, so the plan's streets, and the
-## pavements the people walk, differ at stage 1).
-const PINNED := "e6dc7d4d2660f21f"
+## pavements the people walk, differ at stage 1; -> e451a8ed2f5a4ead, road geometry #243: bigger
+## blocks, the diagonal mid-block and quay sheds by the bank change the plan and its lots; street
+## life and its tuning untouched).
+const PINNED := "e451a8ed2f5a4ead"
 
 
 func suite_name() -> String:
