@@ -159,15 +159,13 @@ func _cube_material(voxel: float, tune: Dictionary) -> ShaderMaterial:
 func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	_rig = rig
 	name = "VoxelSkin"
-	var origins := PackedVector3Array()
 	for bone_name: String in rig.bone_names():
 		var node := rig.bone(bone_name)
 		_nodes.append(node)
 		_binds.append(_to_rig(node).affine_inverse())
-		origins.append(_to_rig(node).origin)
-	_reach = VoxelSkinReach.new(origins)
+	_reach = VoxelSkinReach.new(_nodes.size())
 	var cfg: Dictionary = Content.section("render_opt")
-	_tight = bool(cfg["kaiju_tight_bounds"])
+	_tight = Num.i(cfg["kaiju_tight_bounds"]) != 0
 	_slack = maxf(1.0, Num.f(cfg["kaiju_bounds_slack"]))
 	var voxel := raw.decode_float(18)
 	var cells := raw.decode_u32(22)

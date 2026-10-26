@@ -37,7 +37,7 @@ func _init(p_check: Callable, p_root: Node) -> void:
 
 
 func run() -> void:
-	var on := bool(Content.section("render_opt").get("kaiju_tight_bounds", false))
+	var on := Num.i(Content.section("render_opt").get("kaiju_tight_bounds", false)) != 0
 	_check.call(on, "render_opt.kaiju_tight_bounds is ON by default")
 	for stage: String in STAGES:
 		await _stage(stage)
