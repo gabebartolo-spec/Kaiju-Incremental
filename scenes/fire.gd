@@ -101,7 +101,7 @@ static func prewarm(parent: Node) -> void:
 	var f := Fire.new(0.5, 0.0)
 	f.position = Vector3(0, -60, 0)
 	parent.add_child(f)
-	parent.get_tree().create_timer(1.0).timeout.connect(f.queue_free)
+	parent.get_tree().create_timer(1.0).timeout.connect(f.retire)
 
 
 ## Stops burning: the light goes off and no new flame, ember or smoke rises; what is already in the
@@ -122,9 +122,21 @@ func go_out(fade := 0.0) -> void:
 		if _light != null:
 			_light.set_energy(0.0)
 	if is_inside_tree():
-		get_tree().create_timer(maxf(_life, fade)).timeout.connect(queue_free)
+		get_tree().create_timer(maxf(_life, fade)).timeout.connect(retire)
 	else:
-		queue_free()
+		retire()
+
+
+## Frees the fire; the particle systems it took from the pool go back to it instead of being freed.
+## (A fire freed any other way loses them: the pool makes new ones, as before.)
+func retire() -> void:
+	for child: Node in get_children():
+		var system := child as GPUParticles3D
+		if system != null and system.has_meta("fx_gen"):
+			remove_child(system)
+			if not FxPool.give(system):
+				system.queue_free()
+	queue_free()
 
 
 func is_out() -> bool:
@@ -181,7 +193,7 @@ func _flames(size: float) -> GPUParticles3D:
 	_flame_mat.set_shader_parameter("flame_h", FLAME_HEIGHT * grow * z)
 	_flame_mat.set_shader_parameter("half_w", (size * 0.4 + 0.3 * grow) * z)
 	var count := roundi(TONGUES * maxf(1.0, size) * _density)
-	var p := _system(mat, mesh, count, 1.0)
+	var p := _system(_node("flames", count), mat, mesh, 1.0)
 	p.visibility_aabb = AABB(Vector3(-4, -2, -4) * z * grow, Vector3(8, 9, 8) * z * grow)
 	return p
 
@@ -206,7 +218,8 @@ func _embers(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.8 * z, 35.0, gravity, Vector2(1.5, 4.0) * z)
 	_scale(mat, Vector2(0.4, 1.0) * z, Vector2(1.0, 0.3))
 	_ramp(mat, PackedColorArray([EMBER_START, Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
-	return _system(mat, _cube(0.1, true), roundi(45 * maxf(1.0, size) * _ember_density), 3.2)
+	var count := roundi(45 * maxf(1.0, size) * _ember_density)
+	return _system(_node("embers", count), mat, _cube(0.1, true), 3.2)
 
 
 ## Thick charcoal smoke rising in a column and leaning with the wind; dense at the base.
@@ -230,9 +243,8 @@ func _smoke(size: float) -> GPUParticles3D:
 		draw.set_shader_parameter("near_full", 0.01)
 		draw.set_shader_parameter("centre_keep", 1.0)
 	quad.material = draw
-	var p := _system(
-		mat, quad, roundi(70 * maxf(1.0, size) * sqrt(_density) * _smoke_density), 10.0
-	)
+	var count := roundi(70 * maxf(1.0, size) * sqrt(_density) * _smoke_density)
+	var p := _system(_node("smoke", count), mat, quad, 10.0)
 	p.position.y = 1.8 * _zoom  # smoke starts above the flames, so their light does not wash it out
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20) * _smoke_zoom, Vector3(40, 50, 40) * _smoke_zoom)
 	return p
@@ -274,15 +286,29 @@ func _ramp(
 	mat.color_ramp = tex
 
 
-func _system(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
-	var p := GPUParticles3D.new()
+## A particle system for one of the fire's parts: a pooled `role` slot when FxPool has a free one
+## (render plan item 8; retire() gives it back), else a new one. Sized to `amount`.
+func _node(role: String, amount: int) -> GPUParticles3D:
+	var p := FxPool.take(role, amount)
+	if p == null:
+		p = GPUParticles3D.new()
+	if p.amount != amount:
+		p.amount = amount
+	return p
+
+
+## Sets the fire's own material, mesh and life on `p` (what it draws is the same pooled or not).
+func _system(
+	p: GPUParticles3D, mat: ParticleProcessMaterial, mesh: Mesh, life: float
+) -> GPUParticles3D:
 	p.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
 	p.process_material = mat
 	p.draw_pass_1 = mesh
-	p.amount = amount
 	p.lifetime = life
 	_life = maxf(_life, life)
 	p.position = Vector3(0, 0.2 * _zoom, 0)
+	if p.has_meta("fx_gen"):
+		p.restart()  # clears the last fire's particles; emitting, as a new system is
 	return p
 
 

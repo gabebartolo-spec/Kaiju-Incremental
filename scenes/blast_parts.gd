@@ -206,7 +206,9 @@ static func spark_cube() -> BoxMesh:
 	return cube
 
 
-## A particle system that emits once and frees itself after `life`.
+## A particle system that emits once and frees itself after `life`. It is a pooled system when
+## one is free (FxPool, render plan item 8), given back instead of freed; the material and mesh
+## are this blast's own either way, so what it draws is the same.
 static func emit(
 	host: Node3D,
 	mat: ParticleProcessMaterial,
@@ -216,20 +218,30 @@ static func emit(
 	at: Vector3,
 	free_after := -1.0
 ) -> GPUParticles3D:
-	var p := GPUParticles3D.new()
+	var p := FxPool.take("burst", maxi(1, amount))
+	var pooled := p != null
+	if not pooled:
+		p = GPUParticles3D.new()
 	p.process_material = mat
 	p.draw_pass_1 = mesh
-	p.amount = maxi(1, amount)
+	if p.amount != maxi(1, amount):  # a changed amount re-allocates the system's buffer
+		p.amount = maxi(1, amount)
 	p.lifetime = life
 	p.one_shot = true
 	p.explosiveness = 1.0
 	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	p.visibility_aabb = AABB(Vector3(-40, -5, -40), Vector3(80, 60, 80))
 	p.position = at
-	p.emitting = true
 	host.add_child(p)
+	if pooled:
+		p.restart()  # after the values, so no stale particle shows
+	else:
+		p.emitting = true
 	var gone := (free_after if free_after > 0.0 else life) + 0.3
-	host.get_tree().create_timer(gone).timeout.connect(p.queue_free)
+	if pooled:
+		FxPool.give_after(p, gone)
+	else:
+		host.get_tree().create_timer(gone).timeout.connect(p.queue_free)
 	return p
 
 

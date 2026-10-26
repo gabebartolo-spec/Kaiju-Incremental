@@ -177,16 +177,24 @@ static func _burst(
 	at: Vector3,
 	explosive := 0.95
 ) -> void:
-	var p := GPUParticles3D.new()
+	var p := FxPool.take("burst", amount)  # a pooled system when one is free (render plan item 8)
+	var pooled := p != null
+	if not pooled:
+		p = GPUParticles3D.new()
 	p.amount_ratio = GraphicsPresets.cap("particles")
 	p.process_material = mat
 	p.draw_pass_1 = mesh
-	p.amount = amount
+	if p.amount != amount:
+		p.amount = amount
 	p.lifetime = life
 	p.one_shot = true
 	p.explosiveness = explosive
-	p.emitting = true
 	p.visibility_aabb = AABB(Vector3(-40, -10, -40), Vector3(80, 60, 80))
 	p.position = at
 	parent.add_child(p)
-	parent.get_tree().create_timer(life + 0.3).timeout.connect(p.queue_free)
+	if pooled:
+		p.restart()  # after the values, so no stale particle shows
+		FxPool.give_after(p, life + 0.3)
+	else:
+		p.emitting = true
+		parent.get_tree().create_timer(life + 0.3).timeout.connect(p.queue_free)
