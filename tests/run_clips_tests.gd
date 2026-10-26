@@ -1,13 +1,13 @@
 extends "res://tests/lib/runner.gd"
-## Clips suite (D-047): the croc titan moves by its baked Blender clips (KaijuClips, ClipGait) at
-## every stage (baby, adolescent, adult).
+## Clips suite (D-047): the croc titan moves by its baked clips (KaijuClips, ClipGait) at every
+## stage, Blender clips, plus the adult's approved Cascadeur keys (rig r11): roar, rise, death.
 ## The clip file loads and fits the rig it was baked for (same bones and order as the skin), a
-## file for another skeleton is refused, the walk's phase follows the distance travelled, a
-## standing heading change turns on the spot, the roar opens the jaw and ends, no bone goes NaN,
-## a curve while walking swings the tail out and it settles, the clips (not the procedural tail)
-## own the tail bones, the roar's tail slam lands as one footfall, and every other kaiju keeps its
-## procedural gait. Fixed 60 Hz steps, no
-## clock, no randomness.
+## file for another skeleton is refused, the adult's keyed clips are all there (the rise ends on
+## the roar's start, the death stagger holds its stone pose), the walk's phase follows the distance
+## travelled, a standing heading change turns on the spot, the roar opens the jaw and ends, no bone
+## goes NaN, a curve while walking swings the tail out and it settles, the clips (not the
+## procedural tail) own the tail bones, a roar keyed with a tail slam lands it as one footfall,
+## and every other kaiju keeps its procedural gait. Fixed 60 Hz steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_clips_tests.gd
 ## Seeded by design: nothing here draws random numbers (the gaits seed their own twitches).
 
@@ -17,6 +17,13 @@ const STAGES := {
 	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent", "adult": "croc_adult3"
 }
 const DT := 1.0 / 60.0
+## The adult's clips keyed in Cascadeur on rig r11 that the director approved (D-199, D-216;
+## rise and roar D-274, the death stagger locked 2026-10-26): keyed at 30 fps, resampled to the
+## file's 24 fps (frames each). His idle, walk and turns stay the Blender clips until he approves
+## keyed ones (D-302).
+const ADULT_KEYED := {"roar": 99, "rise_bay": 96, "death_stagger": 33}
+## The death stagger's last frames are the stone pose (keyed still for its last 5 keyed frames).
+const STONE_FRAMES := 4
 
 
 func suite_name() -> String:
@@ -25,6 +32,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_file")
+	await _t("_check_adult_keyed")
 	await _t("_check_who_uses_clips")
 	await _t("_check_walk_phase")
 	await _t("_check_turn_and_roar")
@@ -74,6 +82,55 @@ func _check_file() -> void:
 		all_ok = all_ok and clips.loops("walk") and not clips.loops("roar")
 	check(tracks_ok, "each stage's clips have one track per game bone of its skin (%s)" % report)
 	check(all_ok, "every stage has idle, walk, both turns and the roar baked")
+
+
+## The adult plays his approved Cascadeur keys: each clip at its keyed length (played once), the
+## rise from the bay ends on the pose the roar starts from, and the death stagger ends in the stone
+## pose: its last frames are still and it holds that frame.
+func _check_adult_keyed() -> void:
+	var clips := KaijuClips.read(CLIPS)
+	var ok := true
+	var report := "fps %.0f" % clips.fps
+	for clip: String in ADULT_KEYED:
+		var n := clips.frames_of(clip) if clips.has_clip(clip) else 0
+		ok = ok and n == ADULT_KEYED[clip] and not clips.loops(clip)
+		report += ", %s %d" % [clip, n]
+	check(ok, "the adult's Cascadeur clips load with their keyed lengths (%s)" % report)
+	if not (clips.has_clip("rise_bay") and clips.has_clip("death_stagger")):
+		check(false, "the adult has the rise from the bay and the death stagger")
+		return
+	var rise_end := float(clips.frames_of("rise_bay") - 1)
+	var seam := _pose_gap(clips.pose_at("rise_bay", rise_end), clips.pose_at("roar", 0.0))
+	check(
+		seam.x < 0.02 and seam.y < 0.2,
+		"the rise from the bay ends on the roar's first pose (%.4f rad, %.3f m)" % [seam.x, seam.y]
+	)
+	var last := float(clips.frames_of("death_stagger") - 1)
+	var still := _pose_gap(
+		clips.pose_at("death_stagger", last - STONE_FRAMES), clips.pose_at("death_stagger", last)
+	)
+	var held := _pose_gap(
+		clips.pose_at("death_stagger", last), clips.pose_at("death_stagger", last + 120.0)
+	)
+	check(
+		# held: the same frame, so only float noise (angle_to of a turn with itself reads ~0.001 rad)
+		still.x < 0.01 and still.y < 0.1 and held.x < 0.002 and held.y < 0.001,
+		(
+			"the death stagger ends in the held stone pose (last %d frames %.4f rad, %.3f m; held %.4f)"
+			% [STONE_FRAMES, still.x, still.y, held.x]
+		)
+	)
+
+
+## The widest bone turn between two poses (rad) and the furthest pelvis or toe tip (m).
+func _pose_gap(a: KaijuClips.Pose, b: KaijuClips.Pose) -> Vector2:
+	var turn := 0.0
+	for i: int in a.turns.size():
+		turn = maxf(turn, a.turns[i].angle_to(b.turns[i]))
+	var move := (a.offset - b.offset).length()
+	for i: int in 2:
+		move = maxf(move, (a.feet[i] - b.feet[i]).length())
+	return Vector2(turn, move)
 
 
 ## The croc titan moves by clips at every stage; the other species keep their procedural gaits;
@@ -239,27 +296,38 @@ func _check_tail_owner() -> void:
 
 
 ## The roar's tail slam lands once, as a heavy footfall at the tail tip on the street (the scene's
-## dust, ring and camera dip), not as damage.
+## dust, ring and camera dip), not as damage, for a roar keyed with one (the adolescent's Blender
+## roar); the adult's Cascadeur roar arches its tail up and lands no slam.
 func _check_tail_slam() -> void:
-	var kaiju := _model("reptilian", "adult")
-	var rig := _rig_of(kaiju)
-	var slams: Array[Vector3] = []
-	rig.foot_planted.connect(
-		func(side: String, _strength: float, at: Vector3) -> void:
-			if side == "tail":
-				slams.append(at)
+	var counts: Dictionary[String, int] = {}
+	var behind := true
+	for stage: String in ["adolescent", "adult"]:
+		var kaiju := _model("reptilian", stage)
+		var rig := _rig_of(kaiju)
+		var slams: Array[Vector3] = []
+		rig.foot_planted.connect(
+			func(side: String, _strength: float, at: Vector3) -> void:
+				if side == "tail":
+					slams.append(at)
+		)
+		for frame: int in 30:
+			kaiju.animate(DT, 0.0)
+		kaiju.roar()
+		for frame: int in 420:
+			kaiju.animate(DT, 0.0)
+		counts[stage] = slams.size()
+		for at: Vector3 in slams:
+			behind = behind and (at - rig.global_position).length() > kaiju.hip_height()
+		kaiju.queue_free()
+		await process_frame
+	check(
+		counts["adolescent"] == 1 and behind,
+		(
+			"the Blender roar's tail slam lands once, behind the kaiju (%d slams)"
+			% counts["adolescent"]
+		)
 	)
-	for frame: int in 30:
-		kaiju.animate(DT, 0.0)
-	kaiju.roar()
-	for frame: int in 420:
-		kaiju.animate(DT, 0.0)
-	var behind := (
-		slams.size() == 1 and (slams[0] - rig.global_position).length() > kaiju.hip_height()
-	)
-	check(behind, "the roar's tail slam lands once, behind the kaiju (%d slams)" % slams.size())
-	kaiju.queue_free()
-	await process_frame
+	check(counts["adult"] == 0, "the adult's keyed roar lands no slam (%d slams)" % counts["adult"])
 
 
 func _step(kaiju: KaijuModel, rig: KaijuRig) -> bool:
