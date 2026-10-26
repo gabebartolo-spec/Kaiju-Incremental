@@ -345,10 +345,7 @@ func _check_warm_start() -> void:
 	var hull_a: MultiMeshInstance3D = a.get_child(0)
 	var hull_b: MultiMeshInstance3D = b.get_child(0)
 	var mat_b := hull_b.material_override as ShaderMaterial
-	check(
-		hull_a.multimesh == hull_b.multimesh,
-		"a second tank reuses the first one's voxels"
-	)
+	check(hull_a.multimesh == hull_b.multimesh, "a second tank reuses the first one's voxels")
 	check(
 		mat_b != null and Num.f(mat_b.get_shader_parameter("bubble_on")) == 1.0
 		and hull_a.material_override != hull_b.material_override,
