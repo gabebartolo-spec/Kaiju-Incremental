@@ -4,6 +4,30 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-26 · D-274 · Director · Rise and roar kept; beachfront regenerated (keep B01, S01, S02), up to 1,600 Tripo credits
+
+Shown the Cascadeur clips on r11: rise out of the bay (hips float up while the hind legs tuck under, legs push the last part) "Keep it"; intro roar (inhale, head up, held gape, four throat pulses) "Keep it". Both go into the run intro via the game_r11 export (after #223). Beachfront board after the Blender fixes: "regenerate new building instead, these are mostly unusable. surf shack, beach tower, and apartment tower are usable" (kept: S02 thatched beach bar, S01 lifeguard tower, B01 apartment tower). What was wrong: "Messy or broken geometry", "Muddy, dark textures". Spend: "Up to 1,600" Tripo credits for the other 16 (balance about 7,320). The Blender fixes of D-271 are dropped. Also on the audit's conflict questions: the six-way question "didnt make sense to me then and doesnt now either", the ticker one "meaningless without context", Smart Mesh "idk you said it didnt matter at the time": the lead keeps what is built (bigger blocks with the 6 m diagonal, #243; the helicopter headline cut; HD unless a method test shows Smart Mesh fixes the geometry).
+
+## 2026-10-26 · D-273 · Director · Sound-effect credits: no cap (recorded late, ruled 2026-10-25)
+
+On 2026-10-25 at 07:55 the sound session reported its sound-generation subscription at about 2,071 of 40,000 credits used, the train sounds at about 430-450 under a 500 limit, and spending stopped. His reply: "spend as much as u want" and "download them yourself". This is his written yes for spending that subscription's credits on the game's sound effects; it does not cover Tripo or any other service. Found by the interview audit (D-272).
+
+## 2026-10-26 · D-272 · Director · Godot paused, Cascadeur/Blender/code open; interview audit with 4 temporary readers
+
+"so you can use Casc and blender now but no godot"; "and you can do coding tasks, im sure theres plenty of nodes for hte upgrade trees you need to implement". On node ideas: "ill be mad if you havent been adding my ndoe comments to the roadmap / ive been saying node ideas throughout our interviews"; "there must be record of my interviews, find them, read them, then make sure EVERYTHING from the interviews is reflected in the roadmap". Audit slots: "4 temporary readers" (close when done). Every interview answer and director message from all Kaiju transcripts (2026-10-16 to 10-26) is checked against the roadmap; missing items go into ROADMAP or a chapter.
+
+## 2026-10-26 · D-271 · Director · Beachfront models fixed in Blender; landmark placement is per map seed
+
+Beachfront Tripo board (19 models + pier retry, 1,300 credits spent): "Fix in Blender": all 20 kept; builders cut the shed fused to the pier span (P02/P02r), trim B02's ragged balconies, fill B05's blank facade from a good one, and model the missing parts (V02 string lights, S03 boat doors, S04 changing block) as simple pieces; V03's pole canopy and loose sign and B07's bridged twin towers are fixed or trimmed the same way. No new spend. Stadium and wheel "south, past the river" (D-270) is a seeded placement rule, not a fixed spot: "havent we already agreed that this is random map seed reliant?" (D-133, D-261). The stage-2 stadium bar stands; #245 only keeps landmarks off the sea bay; the full per-run shuffle goes with the random-city work.
+
+## 2026-10-26 · D-270 · Director · Evening interview: rain kept, sea bay shape, keyed rise, stadium south, beach half the edge, bubble target
+
+Back from afk ("im back, interview me", "pause godot work": every Godot run stopped and held until he resumes; picked "Stay paused"). Rain round 1 (adult, dusk, rain clip): "Good, keep it". Sea bay: "Crescent bay" (cut from the coast into the city's north edge, ending inside the play area; a sand beach at its city end, quays on its flanks; by rule on every city), over moving the whole coast in. Rise: "Keyed rise" (Cascadeur clip rise_bay: head first, shoulders, legs push last, then the roar; never a pose lifted in code). Stadium and Ferris wheel leave the north edge: "South, past the river". Beach length at stage 1: "About half the edge" (~50 m of ~105 m, grows each stage). Camera bubble: the OFF/ON clip showed no building near the camera ("man, theres already no buildings. both the clips are identical"); on the rain clip's tower filling the right of frame: "this in the rain clip is a perfect example of why i dont like the buildings coming into the camera". The next bubble clip uses that run and moment, OFF vs ON.
+
+## 2026-10-26 · D-269 · Director · Beachfront district buildings from Tripo, up to 1,300 credits
+
+"so beachfront is officially our new district, we need bespoke buildings for it, get started on a tripo session". Picked "Up to 1300" credits (about 20 HD models at 65; D-256's district budget had 670 left) and the set "Towers and hotels, Promenade venues, Beach structures, A pier". 19 prompts (7 towers and hotels, 6 promenade venues, 4 beach structures, a pier head and a repeatable pier span), HD Model H3.1 as D-256 ("Keep HD"), Private on each, six-view checked, voxelised into carvable cells like the district set, one board for the district to him.
+
 ## 2026-10-26 · D-268 · Director · Every leap carves through what it hits in flight and lands with a smash
 
 Asked (the leap at a tower: the arc was blocked by the tower in its path): "he should carve right through what he hits in mid air and land with a smash"; then "Every leap", not only at towers. Replaces D-262's "nothing is hit in flight": the body breaks every building it passes through on the arc, then the landing smash hits as before. Owner: lead (sim + leap tests: "nothing hit in flight" becomes "carves what it hits").
@@ -373,28 +397,3 @@ On the r6 skins board (Obsidian, Abyssal, Albino): "they all need work. the colo
 ## 2026-10-23 · D-179 · Director · The balance run moves to GitHub's machines
 
 Asked (the hour-long tools/pacing.gd run was killed twice today by his Godot pauses): "Yes, run it on GitHub": a manual GitHub workflow runs the pacing run and keeps its output, so balance answers no longer need his PC (D-159 "GitHub runs them"). Owner: lead.
-
-## 2026-10-23 · D-178 · Director · A Taskforce squad locks on together and fires in turn
-
-Asked (sim review of PR #170: as built each gunner locked on separately, so one dash dodged only one shot and a slowed croc took several hits per squad): "Lock together, fire in turn": a squad's aim lines lock at the same moment and its shots land 0.6 s apart, so one dash saves him from the whole squad, and standing still he takes at most about 2 hits a second from a squad (D-166, D-175 per squad).
-
-## 2026-10-23 · D-177 · Director · Motion and destruction come first; a motion gate on every body or movement change
-
-"motion, alongside the destruction mechanics, is the most important element of our design. If we cant sell the fantasy of piloting a Kaiju then the game wont be fun" (after the adolescent's twitchy walk). Asked: "Motion first": the gait fix lands now, then a motion pass on every growth step (walk, turn, stop, dash, stomp, standing still) with measured pass bars and a fresh motion critic at game speed; the living predator (D-165) moves ahead of the one-look work (the night-glow fix carries on). "Yes, always": any change to his body, speed, steps or animation passes foot, step and turn checks at all three growth steps before merging (a CI suite built from the gait probe). DESIGN Pillar updated.
-
-## 2026-10-23 · D-176 · Director · Music: darker, not heavier, menacing like the classic Godzilla score
-
-On the first brooding takes: "theyre all a bit too 'heroic', I want them to be darker (not heavier), more menacing, reminiscent of the Godzilla theme". The briefs now ask for a sinister slow march in the 1950s Japanese monster-film style (a repeating low ostinato, low piano and contrabass, timpani, dissonant low strings and brass), and exclude heroic, triumphant, uplifting, fanfare, major key and choir. The theme is described by its qualities, never named or copied. Cities grow in fullness, not heroics.
-
-## 2026-10-23 · D-175 · Director · Damage on impact: per-squad volleys, the breath aims at the strike, the beam starts at the strike, the dash stays instant
-
-Asked after the audit of pressed attacks (D-166). Volleys: "Per squad": at most about 2 railgun hits a second from each squad (0.6 s gap); several squads lined up can still land more. Breath: lands 0.8 / 1.1 / 1.4 s after the press (young / Behemoth / Colossus), "Where he faces at the strike". Thunder Beam: "When the jaws open": its full 4 s starts at the strike, 1.4 s after the press; he slows from the press. Dash: "No, shown as he launches": the crouch is view-only, the dash still moves on the press (it is the escape from a locked railgun, D-161). Standing stomp lands 0.45 s after its tick, with the foot.
-
-## 2026-10-23 · D-174 · Director · Claude makes the Suno takes in the browser, up to 800 credits; he picks by ear
-
-"surely you can operate suno in your browser the same way you use tripo". Asked: "Up to 800 credits" on his Suno Pro plan for the three city tracks (D-169, D-172 briefs), run by the lead in the built-in browser after he signs in; each run's cost read off the Create button, stop at 800. "You pick by ear": the lead sends each city's takes, he names the winner, and only that take is split (Auto Split) and downloaded. Every take, its credits and the pick go in docs/provenance/music.md.
-
-## 2026-10-23 · D-173 · Director · A helicopter wreck also kills Taskforce agents perched on the roofs it smashes
-
-Asked (PR #166: the crash reached only floors 0-2, and nothing reached perched agents): "Yes, them too". A wreck kills tanks, army squads and Taskforce jetpack agents on any building it smashes, whatever the floor, like toppling their roof (D-161, D-166 swat); still never the kaiju (D-140, D-167). Crash only: stomps and bites keep their current reach.
-
