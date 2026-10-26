@@ -20,6 +20,8 @@ func step(dt: float) -> void:
 	if _timer <= 0.0:
 		_timer += maxf(0.1, sim.stat("stomp_interval"))
 		_due = not sim.airborne
+	if sim.body.dash.on():  # no stomp through a leap, crouch to recovery (sim review of #225)
+		_due = false
 	if _due and (sim.body.footfall_now or not sim.body.walking()):
 		_due = false
 		_land()

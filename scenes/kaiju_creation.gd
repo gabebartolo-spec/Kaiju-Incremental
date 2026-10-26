@@ -244,7 +244,7 @@ func _physics_process(_delta: float) -> void:
 		Step.ZOOM:
 			lab.zoom(t)
 			_black.color.a = smoothstep(_black_from, 1.0, t)
-	_white.color.a = lab.flash
+	_white.color.a = lab.flash * PlayerSettings.flash_scale()  # Reduce flashing (D-259)
 	if _tick >= Num.i(_ticks[step]):
 		_advance()
 

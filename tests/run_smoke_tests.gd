@@ -307,8 +307,9 @@ func _check_heli() -> void:
 	var tail: Node3D = heli._tail_rotor
 	var hub := main.position
 	heli._process(0.1)
+	var parts := heli.get_children().filter(func(c: Node) -> bool: return not c is MeshInstance3D)
 	check(
-		heli.get_child_count() == 4 and main.rotation.y > 0.5 and tail.rotation.x > 0.5,
+		parts.size() == 4 and main.rotation.y > 0.5 and tail.rotation.x > 0.5,
 		(
 			"the rotors spin about their hubs (main %.2f, tail %.2f rad)"
 			% [main.rotation.y, tail.rotation.x]

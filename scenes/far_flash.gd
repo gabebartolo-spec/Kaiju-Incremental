@@ -10,6 +10,7 @@ var _size: float
 var _color: Color
 var _rise: float
 var _grow: float
+var _bright := 1.0  # a flash's brightness share (PlayerSettings.flash_scale; 1 for smoke)
 
 
 ## spec: "color", "size", "life" (s) and optionally "rise" (how far it climbs over its life),
@@ -21,6 +22,7 @@ func _init(spec: Dictionary) -> void:
 	_rise = Num.f(spec.get("rise", 0.0))
 	_grow = Num.f(spec.get("grow", 1.0))
 	var additive: bool = spec.get("additive", true)
+	_bright = PlayerSettings.flash_scale() if additive else 1.0  # Reduce flashing (D-259); smoke stays
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE
 	mesh = quad
@@ -46,6 +48,6 @@ func _process(delta: float) -> void:
 		return
 	var mat := material_override as StandardMaterial3D
 	# A flash holds its light, then dies: a fireball must be seen for its whole life.
-	mat.albedo_color = Color(_color, _color.a * (1.0 - t * t))
+	mat.albedo_color = Color(_color, _color.a * (1.0 - t * t) * _bright)
 	scale = Vector3.ONE * _size * lerpf(1.0, _grow, t)
 	position.y += _rise / _life * delta

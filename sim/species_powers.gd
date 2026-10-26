@@ -268,7 +268,7 @@ func _glide(dt: float, held: bool) -> void:
 			glide_left = sim.stat("glide_seconds")
 			sim.events.append({"type": "glide_start"})
 		return
-	if not sim.airborne:
+	if not sim.airborne or sim.body.dash.on():  # the croc's leap is airborne too, never a glide
 		return
 	glide_left -= dt
 	if held and glide_left > 0.0:

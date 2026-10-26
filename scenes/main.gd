@@ -7,8 +7,6 @@ extends Node
 ## Owns the save state; screens get what they need through setup() and report back by signal.
 ## Progress comes only from playing: nothing accrues while the game is closed.
 
-const CITY_STREAM := "city"
-
 var _screen: Node
 var _save: Dictionary = {}
 var _tree: UpgradeTree
@@ -17,7 +15,6 @@ var _endless := false
 
 
 func _ready() -> void:
-	_save = SaveSystem.load_game()
 	_show_title()
 
 
@@ -42,32 +39,78 @@ func _swap(next: Node) -> void:
 
 func _show_title() -> void:
 	var title := TitleScreen.new()
-	title.setup(_summary())
-	title.continue_pressed.connect(_continue)
+	var latest := SaveFile.latest_slot(_continues)
+	title.setup(_summary(SaveFile.load_game(latest)), _slots(), latest)
+	title.continue_pressed.connect(_continue_slot)
 	title.new_game_pressed.connect(_new_game)
+	title.delete_pressed.connect(func(n: int) -> void: _delete_slot(title, n))
 	_swap(title)
+
+
+## What each save slot holds, for the title's slot list (SlotList.slots).
+func _slots() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for n: int in range(1, SaveFile.slot_count() + 1):
+		var save := SaveFile.load_game(n)
+		# A file that cannot be read (corrupt, newer) is still taken: never shown as EMPTY.
+		var info := {
+			"slot": n,
+			"taken": FileAccess.file_exists(SaveFile.path(n)),
+			"readable": not save.is_empty(),
+		}
+		if not save.is_empty():
+			info["continues"] = Demo.continues(save)
+			info["specimen"] = SaveFile.specimen_name(save)
+			info["summary"] = _summary(save)
+			info["species"] = str(GameData.species_def(str(save.get("species", "")))["name"])
+		out.append(info)
+	return out
 
 
 ## What Continue resumes, e.g. "Reptilian, 3 rampages, 120 biomass"; "" with no save (or a
 ## save of a species the demo leaves out).
-func _summary() -> String:
-	if not Demo.continues(_save):
+func _summary(save: Dictionary) -> String:
+	if not Demo.continues(save):
 		return ""
-	var runs := Num.i(_save.get("runs", 0))
+	var runs := Num.i(save.get("runs", 0))
 	return (
 		"%s, %d rampage%s, %d biomass"
 		% [
-			str(_species()["name"]),
+			str(GameData.species_def(str(save.get("species", "")))["name"]),
 			runs,
 			"" if runs == 1 else "s",
-			Num.i(_save.get("rubble", 0)),
+			Num.i(save.get("rubble", 0)),
 		]
 	)
 
 
-## New Kaiju: Kaiju Creation (D-207), the lab where the player picks a genome and makes the titan;
-## its rack reads which titans the save on disk has unlocked. Nothing is saved until it is done.
-func _new_game() -> void:
+## DELETE confirmed on slot `n`: the file goes, the slot list shows it empty.
+func _delete_slot(title: TitleScreen, n: int) -> void:
+	SaveFile.delete_save(n)
+	var latest := SaveFile.latest_slot(_continues)
+	var list := title.slot_list()
+	var mode := list.mode if list != null else SlotList.Mode.CONTINUE
+	title.refresh(_summary(SaveFile.load_game(latest)), _slots(), latest, mode)
+
+
+## Whether this build can continue `save` (Demo.continues, as a Callable for SaveFile).
+func _continues(save: Dictionary) -> bool:
+	return Demo.continues(save)
+
+
+## Continue on slot `n`: its save is the one in play.
+func _continue_slot(n: int) -> void:
+	SaveFile.slot = n
+	_save = SaveSystem.load_game()
+	_continue()
+
+
+## New Kaiju in slot `n`: Kaiju Creation (D-207), the lab where the player picks a genome and
+## makes the titan; its rack reads which titans the slot's save has unlocked. Nothing is saved
+## (the slot's old kaiju stays) until it is done.
+func _new_game(n: int) -> void:
+	SaveFile.slot = n
+	_save = SaveSystem.load_game()
 	var lab := KaijuCreation.new()
 	lab.setup(_save)
 	lab.created.connect(_on_species_chosen)
@@ -106,13 +149,20 @@ func _base_stats() -> Dictionary:
 
 
 func _start_rampage(endless := false) -> void:
+	if SaveFile.take_lab_card(_save):  # it died last time: the lab card, then the new specimen
+		SaveSystem.save_game(_save)
+		var card := SpecimenCard.new(Num.i(_save.get("specimen", 1)))
+		card.done.connect(_start_rampage.bind(endless))
+		_swap(card)
+		return
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var tier := Num.i(stats["size"])
-	var layout := CityGrowth.layout(Content.tuning(), tier, Rng.make(CITY_STREAM, 0))
+	var runs := Num.i(_save.get("runs", 0))
+	# The run's city (CitySeed; the save has no seed of its own yet, so 0).
+	var layout := CitySeed.layout(Content.tuning(), tier, 0, runs)
 	_endless = endless
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
-	var runs := Num.i(_save.get("runs", 0))
 	rampage.city_seconds = Num.f(_save.get("city_seconds", 0.0))
 	rampage.setup(_species(), stats, layout, runs)
 	if endless:  # the demo's Endless mode (D-156)
@@ -132,11 +182,15 @@ func _start_rampage(endless := false) -> void:
 
 
 ## Banks the rampage, then shows the results over the wrecked city, against the best before it.
+## Every death (killed, time's up, End rampage; SaveFile.DEATHS) makes the next rise a new
+## specimen, Endless included.
 ## An Endless run banks nothing; a demo rampage adds to the thanks screen's totals (Demo.add).
 func _on_rampage_finished(result: Dictionary) -> void:
 	var previous: Dictionary = _save.get("best", {})
 	if Num.i(_save.get("runs", 0)) == 0:
 		previous = {}
+	if SaveFile.note_end(_save, result):  # it died: the next rise is a new specimen
+		SaveSystem.save_game(_save)
 	if not _endless:
 		_save["rubble"] = Num.i(_save.get("rubble", 0)) + Num.i(result["rubble"])
 		_save["runs"] = Num.i(_save.get("runs", 0)) + 1

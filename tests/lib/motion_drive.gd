@@ -1,6 +1,6 @@
 extends RefCounted
 ## Drives the croc titan at one growth step along one route with the real sim and its ClipGait at
-## 60 Hz, the way Rampage._update_kaiju does (the sim's stomps reach the body too), and measures
+## 60 Hz, the way RampageAbility.place does (the sim's stomps reach the body too), and measures
 ## how it moves (the motion suite's bars, director D-177 "Motion first"):
 ##   slide      fastest a planted foot moves over the ground (world units/s)
 ##   catch      catch steps (ClipStomp.restep) a second
