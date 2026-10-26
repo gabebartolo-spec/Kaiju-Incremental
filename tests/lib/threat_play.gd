@@ -89,7 +89,7 @@ func _hud_checks() -> void:
 	)
 	var strip := hud.news.ticker
 	check.call(
-		strip != null and strip.unit_width() >= strip.visible_width(),
+		strip != null and strip.unit_width() >= strip.visible_width() + strip.headlines_width(),
 		"one line never shows twice on the strip at once"
 	)
 	sim.chunks_destroyed = chunks_at(sim, 1.0)

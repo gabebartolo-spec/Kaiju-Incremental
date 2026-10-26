@@ -96,6 +96,7 @@ func showing() -> bool:
 func _slide_in(line: String) -> void:
 	shown.append(line)
 	ticker = NewsTicker.new(PackedStringArray([line]))
+	ticker.once = true
 	ticker.size = Vector2(size.x, NewsTicker.HEIGHT)
 	ticker.position = Vector2(0.0, NewsTicker.HEIGHT)
 	add_child(ticker)

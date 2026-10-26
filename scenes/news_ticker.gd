@@ -17,6 +17,9 @@ const REPEAT := 2
 
 ## The strip behind the text (read by the flow suite's contrast check).
 var strip: ColorRect
+## A one-pass strip (RampageNews): the next cycle waits a whole strip behind the headline, so the
+## line crosses once with nothing following it on screen.
+var once := false
 var _crawl: Label
 var _unit := ""
 var _headlines := ""
@@ -76,6 +79,8 @@ func _fit_cycle() -> void:
 		. x
 	)
 	var short := visible_width() - unit_width()
+	if once:
+		short += headlines_width()
 	if short > 0.0 and space > 0.0:
 		_unit += " ".repeat(ceili(short / space))
 	_crawl.text = _unit.repeat(REPEAT)
