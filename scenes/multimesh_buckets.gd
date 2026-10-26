@@ -18,12 +18,15 @@ const COLOR_FLOATS := 4
 var counts := PackedInt32Array()
 ## Each bucket's buffer (empty while unbuffered).
 var bufs: Array[PackedFloat32Array] = []
+## Microseconds spent between begin() and commit(), summed over frames (benchmarking).
+var usec := 0
 var _mms: Array[MultiMesh] = []
 var _slots := PackedInt32Array()  # instances each buffer holds
 var _buffered: bool
 var _colored: bool
 var _stride: int
 var _min_slots: int
+var _began := 0
 
 
 ## min_slots: the fewest instances a buffered bucket keeps (instance_count is set to it).
@@ -47,6 +50,7 @@ func _init(mms: Array[MultiMesh], buffered: bool, min_slots: int, colored: bool 
 
 func begin() -> void:
 	counts.fill(0)
+	_began = Time.get_ticks_usec()
 
 
 ## The next instance of bucket b stands at t (and shows colour c, when the buckets are coloured).
@@ -101,6 +105,7 @@ func commit() -> void:
 				mm.instance_count = slots
 			mm.buffer = buf
 		mm.visible_instance_count = counts[b]
+	usec += Time.get_ticks_usec() - _began
 
 
 ## Gives every MultiMesh a fixed culling box (the engine otherwise rebuilds one from every
