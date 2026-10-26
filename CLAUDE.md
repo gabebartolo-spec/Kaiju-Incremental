@@ -36,7 +36,7 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
   `~/.claude/focus-pause` (his pause) stops every Godot start until it is gone.
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`; remove
-  when the PR merges; `tools/lint/worktrees.sh` caps the total (D-053). Revert `.import` churn.
+  when the PR merges; `tools/lint/worktrees.sh` flags merged and idle ones (D-053). Revert `.import` churn.
 - Only the lead edits `docs/DECISIONS.md` and `docs/DESIGN.md`; `docs/STATUS.md` is generated (`python tools/status.py`,
   never by hand) after merges. Other PRs state their
   board and log changes in the body.
