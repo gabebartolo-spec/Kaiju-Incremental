@@ -1668,9 +1668,9 @@
 {
 "n": 240,
 "t": "The kaiju dies in a Special K overload: stagger, stone, shatter; Death Blast nodes",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 241,
@@ -1920,9 +1920,9 @@
 {
 "n": 276,
 "t": "Adult croc: r11 skin and the approved Cascadeur roar, rise and death stagger (debt 21)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-26"
 },
 {
 "n": 277,
@@ -2000,5 +2000,26 @@
 "s": "MERGED",
 "c": "2026-10-26",
 "m": "2026-10-26"
+},
+{
+"n": 288,
+"t": "scenes: the first blow changes only the facade near the cut (D-289)",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
+},
+{
+"n": 289,
+"t": "docs: DESIGN.md brought up to the D-221..D-303 rulings",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 290,
+"t": "docs: every unlanded branch has an owner, date and next step",
+"s": "OPEN",
+"c": "2026-10-26",
+"m": ""
 }
 ]

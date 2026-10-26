@@ -450,7 +450,8 @@
             273,
             275,
             280,
-            287
+            287,
+            289
           ]
         },
         {
@@ -769,10 +770,18 @@
           ]
         },
         {
-          "text": "The adult croc is remade sleek and athletic, on the approved r10 rig with retargeted clips (D-219, D-221, D-252)",
+          "text": "The adult croc is remade sleek and athletic, on the approved r10 rig with retargeted clips (D-219, D-221, D-252); the r11 skin and the approved Cascadeur roar, rise and death stagger (debt row 21)",
           "status": "done",
           "prs": [
-            219
+            219,
+            276
+          ]
+        },
+        {
+          "text": "The kaiju dies in a Special K overload: he staggers, turns to stone and shatters, his stone shards land first and then the blast clears the rest; three Death Blast upgrades Overload, Meltdown, Supernova (D-288, D-294)",
+          "status": "done",
+          "prs": [
+            240
           ]
         }
       ],
