@@ -35,6 +35,7 @@ GPU working less (D-093's reason for Medium); no render-scale rise. Closes rende
 Q (06:2x): items 10 (native collider rebuild, no freeze on big stomps) and 11 (no stutter when a tower starts to fall),
 parked until after the demo by D-094, build them tonight? A: "Yes, last in the plan (Recommended)". So: both go in
 after every other render-plan item, each proved by a D-299 speed check. Reverses D-094's "after demo exe 2" for these two.
+Correction (lead, 06:18, director away): not built. The question described both wrongly: the code they speed up (carve physics) runs only in a capture tool, never in the shipped game (checked on main b0fe3687; the baseline measured 0 ms there), so neither changes what the player sees. Back to him at the next interview (D-094 option A, full-game destruction, would bring them back).
 
 ## 2026-10-27 · D-310 · Director · Parked work starts tonight, after the debt fixes
 Q (06:1x): work parked until the render plan is done (D-276: roads, play area, camera bubble, rubble, stomp rework,
