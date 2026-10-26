@@ -5,7 +5,8 @@ extends Control
 ## filled in the clock's white, the current one fills by progress toward the next level (at partial
 ## alpha), the rest are a thin outline. From tuning "ui" threat_bar alert_from the filled segments
 ## turn alert red, the only colour. A rise pops the newly filled segment. The level reads by the
-## count of filled segments alone. Reads RunNews (level, progress) through `show`; presentation only.
+## count of filled segments alone. Reads RunNews (level, progress) through `show_level`;
+## presentation only.
 
 var level := 0
 var progress := 0.0

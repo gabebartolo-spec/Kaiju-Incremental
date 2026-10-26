@@ -86,7 +86,7 @@ func _layout(hud: RampageHud) -> void:
 	var bars := hud.find_children("*", "ProgressBar", true, false)
 	check.call(
 		bars.is_empty(),
-		"no ProgressBar on the HUD (no city meter or health bar; the threat bar is drawn): %d" % bars.size()
+		"no ProgressBar on the HUD (no city meter, no health bar): %d" % bars.size()
 	)
 	var at := hud.biomass.get_global_rect().get_center()
 	var boxed := false
@@ -202,7 +202,10 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 	var meter: ThreatBar = hud.clock.threat
 	check.call(
 		meter.size.y >= 4.0 and meter.size.y <= 8.0 and meter.get_parent() == hud.clock,
-		"the bar under the clock is a thin strip (%s) and the threat meter, not a city meter" % meter.size
+		(
+			"the bar under the clock is a thin strip (%s) and the threat meter, not a city meter"
+			% meter.size
+		)
 	)
 	var peak := 0.0
 	sim.hp = sim.max_hp * 0.2

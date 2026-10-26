@@ -1,8 +1,8 @@
 extends RefCounted
 ## The threat suite's on-screen checks (tests/run_threat_tests.gd): the bar under a centred
-## clock as the threat meter, by filled segments; the crawl sliding up for each big moment in turn and hiding for
-## the end beat; then by real input through Main: a threat rise, a landmark fall and a death, and
-## the lab card before the next rise.
+## clock as the threat meter, by filled segments; the crawl sliding up for each big moment in turn
+## and hiding for the end beat; then by real input through Main: a threat rise, a landmark fall
+## and a death, and the lab card before the next rise.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const CreationWalk := preload("res://tests/lib/creation_walk.gd")
@@ -143,7 +143,11 @@ func _layout(hud: RampageHud) -> void:
 		-UiKit.safe_margin().x, -UiKit.safe_margin().y, -UiKit.safe_margin().x, 0.0
 	)
 	check.call(
-		absf(bar.get_center().x - clock.get_center().x) <= 1.0 and bar.position.y >= clock.end.y - 8.0 and safe.encloses(bar),
+		(
+			absf(bar.get_center().x - clock.get_center().x) <= 1.0
+			and bar.position.y >= clock.end.y - 8.0
+			and safe.encloses(bar)
+		),
 		"the threat bar sits centred under the clock inside the safe area: %s" % bar
 	)
 	var meter_size: Array = UiKit.ui()["hud"]["meter_size"]
@@ -152,8 +156,10 @@ func _layout(hud: RampageHud) -> void:
 		"the bar keeps the old meter's width and a thin height: %s" % bar.size
 	)
 	check.call(
-		hud.find_children("*", "ThreatBadge", true, false).is_empty()
-		and hud.find_children("*", "ProgressBar", true, false).is_empty(),
+		(
+			hud.find_children("*", "ThreatBadge", true, false).is_empty()
+			and hud.find_children("*", "ProgressBar", true, false).is_empty()
+		),
 		"the HUD has no threat badge and no city-destroyed meter"
 	)
 
@@ -180,7 +186,10 @@ func _progress(hud: RampageHud, sim: RampageSim) -> void:
 	var bar := hud.clock.threat
 	check.call(
 		bar.level == 2 and absf(bar.partial() - want) < 0.001 and want > 0.2 and want < 0.8,
-		"the current segment fills by progress to the next level: %.3f vs %.3f" % [bar.partial(), want]
+		(
+			"the current segment fills by progress to the next level: %.3f vs %.3f"
+			% [bar.partial(), want]
+		)
 	)
 
 
@@ -253,15 +262,22 @@ func _centred(card: SpecimenCard) -> void:
 	var mid := panel.get_global_rect().get_center().x
 	for label: Label in [card.title, card.headline]:
 		var font := label.get_theme_font("font")
-		var w := font.get_string_size(
-			label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")
-		).x
+		var w := (
+			font
+			. get_string_size(
+				label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")
+			)
+			. x
+		)
 		var left := label.global_position.x
 		if label.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER:
 			left += (label.size.x - w) / 2.0
 		check.call(
 			absf(left + w / 2.0 - mid) <= 2.0,
-			"'%s' is centred in the card: text at %.1f, card at %.1f" % [label.text, left + w / 2.0, mid]
+			(
+				"'%s' is centred in the card: text at %.1f, card at %.1f"
+				% [label.text, left + w / 2.0, mid]
+			)
 		)
 
 
