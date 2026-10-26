@@ -1570,7 +1570,7 @@
 		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7}
 	},
 	"death": {
-		"_note": "The kaiju's death (director 2026-10-26, every kaiju; replaces D-267's belly-down slump): Special K overload. A death (reasons, SaveFile.DEATHS) plays the agonised stagger clip for stagger_s (clip death_stagger, frames 20-60 of the approved stagger at 24 fps), the stone creeps over him for stone_s, then he shatters (DeathOverload): shards of his own body (cell world units each at body scale 1, picked from his body discs) are thrown throw_min..throw_max (x body scale) and land after flight_s, each a blow of shard_damage within shard_radius on the top shard_floors floors of what it lands on. A Death Blast node (stat death_blast, 1 per node) adds a front of blast_damage that runs out from the body to death_blast x block world units (a street block) in blast_s, every floor. The run ends settle_s after the last shard and the front. Look: violet = Special K (creation.lab.colors.special_k); stone grey with per-block variation; placeholders, flagged for tuning.",
+		"_note": "The kaiju's death (director 2026-10-26, every kaiju; replaces D-267's belly-down slump): Special K overload. A death (reasons, SaveFile.DEATHS) plays the agonised stagger clip for stagger_s (clip death_stagger, frames 20-60 of the approved stagger at 24 fps), the stone creeps over him for stone_s, then he shatters (DeathOverload): shards of his own body (cell world units each at body scale 1, picked from his body discs) are thrown throw_min..throw_max (x body scale) and land after flight_s, each a blow of shard_damage within shard_radius on the top shard_floors floors of what it lands on. A Death Blast node (stat death_blast, 1 per node) adds a front of blast_damage that runs out to a ring round his body: his body's edge plus death_blast x per_node world units (director 2026-10-26 \"Smaller: a ring round his body\"; 5 / 10 / 15, node 3 about one street block), in blast_s, every floor. The run ends settle_s after the last shard and the front. Look: violet = Special K (creation.lab.colors.special_k); stone grey with per-block variation; placeholders, flagged for tuning.",
 		"reasons": ["defeated", "time", "ended"],
 		"stagger_s": 1.71,
 		"stagger_clip": "death_stagger",
@@ -1586,7 +1586,7 @@
 		"shard_damage": 40.0,
 		"shard_floors": 3,
 		"fallback_disc": [0.0, 1.5, 0.0, 6.0],
-		"block": 15.0,
+		"per_node": 5.0,
 		"blast_s": 0.6,
 		"blast_damage": 600.0,
 		"blast_floors": 64,

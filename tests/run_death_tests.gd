@@ -27,7 +27,7 @@ func run_checks() -> void:
 
 
 ## A carpet of low 2x2 blocks round the centre (where the shards come down) and rings of taller
-## ones out to 50 (where the blast reaches, a ring per street block).
+## ones at 12, 17 and 22 (where the blast's ring reaches) and 42 (past it).
 func _layout() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for gx: int in range(-5, 6):
@@ -35,7 +35,7 @@ func _layout() -> Array[Dictionary]:
 			var p := Vector2(gx, gz) * 2.2
 			if p.length() > 4.0 and p.length() <= 10.0:
 				out.append({"x": p.x, "z": p.y, "w": 2, "d": 2, "h": 4, "tier": 1, "style": 0})
-	for ring: float in [12.0, 27.0, 42.0, 50.0]:
+	for ring: float in [12.0, 17.0, 22.0, 42.0]:
 		for k: int in 12:
 			var p := Vector2.from_angle(TAU * k / 12.0) * ring
 			out.append({"x": p.x, "z": p.y, "w": 3, "d": 3, "h": 8, "tier": 1, "style": 0})
@@ -82,6 +82,13 @@ func _check_pure() -> void:
 	var src := FileAccess.get_file_as_string("res://sim/death_overload.gd")
 	for word: String in BANNED:
 		check(not src.contains(word), "death_overload.gd has no %s" % word)
+	# The deaths the overload plays for are the deaths the save counts (SaveFile.DEATHS, D-263).
+	var reasons: Array = Content.section("death")["reasons"]
+	var deaths: Array = SaveFile.DEATHS.duplicate()
+	reasons = reasons.duplicate()
+	reasons.sort()
+	deaths.sort()
+	check(reasons == deaths, "death.reasons %s match SaveFile.DEATHS %s" % [reasons, deaths])
 
 
 ## Stagger, stone, shatter at the data's times, in that order; the run ends only after the last
@@ -159,31 +166,41 @@ func _check_shards_smash() -> void:
 	check(sim.death.blast_chunks == 0, "no node, no blast")
 
 
-## 0, 1, 2, 3 Death Blast nodes: each step out wrecks more and pays more biomass (the same seed;
-## the blast goes through hit_area, so it pays as any blow does), out to about 1, 2, 3 blocks.
+## 0, 1, 2, 3 Death Blast nodes: a ring round his body, his edge plus 5 / 10 / 15 (director
+## 2026-10-26, "Smaller: a ring round his body"); every building inside it is wiped, nothing past
+## it or his shards is touched, and each step out breaks more and pays more biomass (the same seed;
+## the blast goes through hit_area, so it pays as any blow does).
 func _check_blast_steps() -> void:
-	var block := Num.f(Content.section("death")["block"])
+	var cfg: Dictionary = Content.section("death")
 	var chunks: Array[int] = []
 	var pay: Array[float] = []
+	var control: Array[int] = []  # what stands after a death with no node (the shards alone)
 	for nodes: int in 4:
 		var sim := _sim(nodes)
 		var rubble := sim.rubble
 		_die(sim)
 		chunks.append(sim.death.shard_chunks + sim.death.blast_chunks)
 		pay.append(sim.rubble - rubble)
+		var want := sim.death.body_edge() + nodes * Num.f(cfg["per_node"]) if nodes > 0 else 0.0
 		check(
-			is_equal_approx(sim.death.blast_radius, block * nodes),
-			"%d nodes: the blast reaches %d blocks (%.1f)" % [nodes, nodes, sim.death.blast_radius]
+			is_equal_approx(sim.death.blast_radius, want),
+			"%d nodes: the ring reaches %.1f (got %.1f)" % [nodes, want, sim.death.blast_radius]
 		)
-		var ring_hit := 0
-		for b: RampageSim.Building in sim.buildings:
-			var d := Vector2(b.x, b.z).length()
-			if d > 11.0 and b.frame.alive_count == 0:
-				ring_hit = maxi(ring_hit, roundi(d))
-		check(
-			ring_hit <= block * nodes + 3.0 and (nodes == 0 or ring_hit >= block * nodes - 10.0),
-			"%d nodes: the farthest ring flattened is in reach: %d" % [nodes, ring_hit]
-		)
+		var standing_inside := 0
+		var touched_past := 0
+		for i: int in sim.buildings.size():
+			var b := sim.buildings[i]
+			if nodes == 0:
+				control.append(b.frame.alive_count)
+				continue
+			var centre := Vector2(b.x, b.z).length()
+			var half := Vector2(b.w, b.d).length() * 0.5
+			if centre + half <= want and b.frame.alive_count > 0:
+				standing_inside += 1
+			if centre - half > want + 1.0 and b.frame.alive_count != control[i]:
+				touched_past += 1
+		check(standing_inside == 0, "%d nodes: inside the ring nothing stands" % nodes)
+		check(touched_past == 0, "%d nodes: past the ring nothing is touched" % nodes)
 	for n: int in range(1, 4):
 		check(chunks[n] > chunks[n - 1], "%d nodes break more than %d: %s" % [n, n - 1, chunks])
 		check(pay[n] > pay[n - 1], "%d nodes pay more biomass than %d: %s" % [n, n - 1, pay])
@@ -231,7 +248,7 @@ func _check_replay() -> void:
 	check(a.rubble == b.rubble and a.chunks_destroyed == b.chunks_destroyed, "and pay the same")
 
 
-## Bought nodes ride the save: three bought, saved, loaded: a blast of three blocks.
+## Bought nodes ride the save: three bought, saved, loaded: the node 3 ring.
 func _check_nodes_saved() -> void:
 	var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
 	for id: String in ["claws", "hide", "rage", "evolve1", "sig_power", "sig_recharge"]:
@@ -247,9 +264,9 @@ func _check_nodes_saved() -> void:
 	check(Num.i(back.get("death_blast3", 0)) == 1, "the save keeps them: %s" % back)
 	var sim := _sim(0, back)
 	_die(sim)
-	var block := Num.f(Content.section("death")["block"])
+	var want := sim.death.body_edge() + 3.0 * Num.f(Content.section("death")["per_node"])
 	check(
-		is_equal_approx(sim.death.blast_radius, block * 3.0),
-		"a loaded save blasts three blocks: %.1f" % sim.death.blast_radius
+		is_equal_approx(sim.death.blast_radius, want),
+		"a loaded save blasts the node 3 ring: %.1f" % sim.death.blast_radius
 	)
 	SaveFile.delete_save(SAVE_SLOT)

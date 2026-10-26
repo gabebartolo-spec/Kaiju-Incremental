@@ -6,9 +6,11 @@ extends RefCounted
 ## stone, then shatters. The shards are cells of his own body (BodyContact's discs) thrown out on
 ## seeded arcs; each smashes what it lands on through RampageSim.hit_area, the normal destruction
 ## path (it pays biomass as any blow does). The Death Blast nodes (stat death_blast) add a front
-## that runs out from the body and wrecks every floor in death_blast x block, also through
-## hit_area. The run ends (RampageSim.end) settle_s after the last shard and the front, so the
-## results wait for the burst. Part of RampageSim; pure: one derived stream, no clock.
+## that runs out from the body and wrecks every floor in a ring round his body: death_blast x
+## per_node beyond the body's edge (director 2026-10-26, "Smaller: a ring round his body"; node 3
+## about one street block), also through hit_area. The run ends (RampageSim.end) settle_s after
+## the last shard and the front, so the results wait for the burst. Part of RampageSim; pure: one
+## derived stream, no clock.
 ## Events: death_begin {reason}, death_stone, death_shatter {shards, centre, blast}, death_shard
 ## {id, x, z}, then run_over.
 
@@ -112,9 +114,21 @@ func cell_size() -> float:
 	return Num.f(cfg["cell"]) * sim.body_scale()
 
 
-## The blast's full radius for `nodes` Death Blast levels (world units; 0 without one).
+## The blast's full radius for `nodes` Death Blast levels (world units from his centre; 0
+## without one): his body's edge plus nodes x per_node.
 func radius_for(nodes: float) -> float:
-	return maxf(0.0, nodes) * Num.f(cfg["block"])
+	if nodes <= 0.0:
+		return 0.0
+	return body_edge() + nodes * Num.f(cfg["per_node"])
+
+
+## How far his body reaches from where he stands (world units; BodyVolume.reach's rule).
+func body_edge() -> float:
+	var discs: Array = sim.body.discs() if sim.body.active() else [cfg["fallback_disc"]]
+	var reach := 0.0
+	for d: Array in discs:
+		reach = maxf(reach, absf(Num.f(d[0])) + Num.f(d[1]))
+	return reach * sim.body_scale()
 
 
 func _shatter() -> void:

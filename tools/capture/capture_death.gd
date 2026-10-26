@@ -68,7 +68,6 @@ func _run() -> void:
 	root.add_child(rampage)
 	await physics_frame
 	var sim := rampage.sim
-	sim.time_left = 1.0e9
 	while sim.emerge.active:
 		sim.hp = sim.max_hp
 		await physics_frame
