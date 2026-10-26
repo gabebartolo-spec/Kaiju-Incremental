@@ -226,7 +226,7 @@ rampaging in it, and the skyline was on fire"): a far silhouette kaiju stomping 
 dropping, fire glow and smoke columns on the horizon, distant booms; presentation only, cheap (impostors). A labelled
 capture for his yes before it is built in full.
 Rooftop mortars · mecha kaiju boss · jets (#58, #61) · species motion (#11) and the other species · six languages ·
-music (Suno, needs his spend yes) · greenery (#55) · look-options -> main (#3) once the slice ships.
+music (Suno, needs his spend yes) · greenery (#55) (look-options -> main: done 2026-10-27, main is the base).
 Sound (research): a pooled SFX manager with voice caps per category from data, hero voices reserved, quietest or
 farthest stolen (R 8.2) · a rubble stream (2-3 loops whose level follows debris landings) instead of a voice per
 chunk (R 8.4) · crowd panic bed from civilian counts in four quadrants (R 8.6) · footsteps longer and lower each
