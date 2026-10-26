@@ -1,12 +1,12 @@
 extends RefCounted
 ## The stadium is a reward for growing, not free biomass at the start (build 2 note 21: "the
 ## stadium is free biomass, it needs to be placed as far away from our spawn spot as possible";
-## director 2026-10-20 picked "past the edge"): in the stage-1 city it stands wholly outside
-## the baby's walk (real, in the band past the edge: the baby at the edge can still bite into
-## it, as with every band block) and at least FAR m from the river rise; from the stage that
-## opens its district (stage 2 or later: CitySpread spreads sites ring by ring, D-254, lead call
-## 2026-10-26) it is real and inside the play area. The wheel also stands past the baby's edge
-## and never overlaps the stadium; no block's lot overlaps a landmark's plaza.
+## director 2026-10-20 picked "past the edge"): until the stage that opens its district (stage 2
+## or later: CitySpread spreads sites ring by ring, D-254, lead call 2026-10-26) it stands wholly
+## outside the baby's walk (real, in the band past the edge: the baby at the edge can still bite
+## into it, as with every band block) and at least FAR m from the sea-bay rise; from that stage
+## it is real and inside the play area. The wheel also stands past the edge until its own
+## district opens, and never overlaps the stadium; no block's lot overlaps a landmark's plaza.
 
 const FAR := 100.0
 
@@ -40,22 +40,27 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		CityBand.near_edge(rect) > here and far >= FAR,
 		(
 			(
-				"stage 1, map_seed %d: the stadium stands %.0f m from the rise (>= %.0f), its near"
+				"stage %d, map_seed %d: the stadium stands %.0f m from the rise (>= %.0f), its near"
 				+ " side %.1f m past the baby's edge %.1f"
 			)
-			% [map_seed, far, FAR, CityBand.near_edge(rect) - here, here]
+			% [tier, map_seed, far, FAR, CityBand.near_edge(rect) - here, here]
 		)
 	)
 	check_fn.call(
-		CityBand.near_edge(wheel_rect) > here and not wheel_rect.intersects(rect),
-		(
-			(
-				"stage 1, map_seed %d: the wheel stands past the baby's edge (near side %.1f, edge"
-				+ " %.1f) clear of the stadium"
-			)
-			% [map_seed, CityBand.near_edge(wheel_rect), here]
-		)
+		not wheel_rect.intersects(rect),
+		"stage %d, map_seed %d: the wheel stands clear of the stadium" % [tier, map_seed]
 	)
+	if tier < CitySpread.opens_at(Num.i(wheel["district"])):
+		check_fn.call(
+			CityBand.near_edge(wheel_rect) > here,
+			(
+				(
+					"stage %d, map_seed %d: the wheel stands past the baby's edge (near side %.1f,"
+					+ " edge %.1f)"
+				)
+				% [tier, map_seed, CityBand.near_edge(wheel_rect), here]
+			)
+		)
 
 
 ## The one site with this id (a missing or doubled site fails by name).

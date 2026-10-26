@@ -151,6 +151,20 @@ static func holds(plan: Dictionary, p: Vector2) -> bool:
 	return u * u + v * v <= 1.0
 
 
+## The southernmost z the bay's water (the true curve, slivers between the bands too) reaches
+## between x0 and x1; -INF where its width misses that span, or without a bay.
+static func south_edge(plan: Dictionary, x0: float, x1: float) -> float:
+	if not plan.has("harbour"):
+		return -INF
+	var b: Dictionary = plan["harbour"]
+	var cx := Num.f(b["cx"])
+	var u := absf(clampf(cx, x0, x1) - cx) / Num.f(b["half"])  # the span's x nearest the centre
+	if u > 1.0:
+		return -INF
+	var from := Num.f(b["curve_from"])
+	return from + (Num.f(b["apex"]) - from) * sqrt(1.0 - u * u)
+
+
 ## The crescent's curve, the beach's waterline-to-street edge, as points from its west end to
 ## its east end (city "harbour" "arc_points" of them).
 static func arc(plan: Dictionary, cfg: Dictionary) -> PackedVector2Array:
@@ -245,12 +259,16 @@ static func reaches(xs: Array[float], rail: float, cfg: Dictionary) -> Array[Rec
 	return out
 
 
-## Where the kaiju rises in this city's bay before the blocks are laid (CitySpread keeps the
-## landmarks off it): on the bay's centre line, off the foot of its beach. INF without a bay.
-static func rise_estimate(xs: Array[float], rail: float, cfg: Dictionary) -> Vector2:
+## Where the kaiju rises in this city's bay at each stage (one per district ring of city
+## "districts", before the blocks are laid: CitySpread keeps the landmarks off every one, so a
+## site never moves between stages): on the bay's centre line, off the foot of its beach.
+## Empty without a bay.
+static func rise_estimates(xs: Array[float], rail: float, cfg: Dictionary) -> Array[Vector2]:
+	var out: Array[Vector2] = []
 	if not cfg.has("harbour"):
-		return Vector2(INF, INF)
+		return out
 	var h: Dictionary = cfg["harbour"]
-	var edge := CityGen.half_extent(cfg) + Num.f(cfg["arena_margin"])
-	var apex := -edge + Num.f(h["reach_in"])
-	return Vector2(centre(xs, rail), apex - Num.f(h["beach"]) - Num.f(h["nose_gap"]))
+	for ring: float in CityGen.districts(cfg):
+		var apex := -(ring + Num.f(cfg["arena_margin"])) + Num.f(h["reach_in"])
+		out.append(Vector2(centre(xs, rail), apex - Num.f(h["beach"]) - Num.f(h["nose_gap"])))
+	return out

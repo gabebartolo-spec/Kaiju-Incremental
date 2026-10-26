@@ -12,6 +12,9 @@ const SPECIES := "reptilian"
 const MAX_M := 0.5
 const MAX_DEG := 0.5
 const SETTLE_FRAMES := 240
+## The run's opening (the rise from the sea bay, RunIntro) holds the sim back and has its own
+## shot; "at rest" starts when it is over. The cap is far above the longest opening.
+const RISE_CAP_FRAMES := 3000
 ## Camera numbers a tool must take from CameraTuning instead.
 const STALE := ["Vector3(0, 27, 19)", "fov = 55"]
 
@@ -44,6 +47,14 @@ func _compare(levels: Dictionary, tier: int, label: String) -> void:
 	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
+	var waited := 0
+	while rampage.sim.emerge.active and waited < RISE_CAP_FRAMES:
+		await physics_frame
+		waited += 1
+	check(
+		not rampage.sim.emerge.active,
+		"%s: the rise is over before the cameras are compared" % label
+	)
 	for _i: int in SETTLE_FRAMES:
 		await process_frame
 	var motion := PlayerSettings.camera_motion

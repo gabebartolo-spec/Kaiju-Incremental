@@ -29,9 +29,8 @@ func _init(sim: RampageSim) -> void:
 			avenue.append(road)
 	var diagonal := {"nodes": plan["nodes"], "streets": avenue}
 	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
-	var bay := CityHarbour.bands(plan, sim.city)
 	for block: Dictionary in plan["blocks"]:
-		var ring := _ring(block, sim.city, half, bay)
+		var ring := _ring(block, sim.city, half, plan)
 		if not ring.has_area():
 			continue  # past the edge, the river, or no room left beside the bay
 		var size := ring.size * 0.5
@@ -68,17 +67,17 @@ func _init(sim: RampageSim) -> void:
 
 ## A block's pavement line, the same distance in from the kerb as round every other block; an
 ## empty Rect2 past the edge, on the river or in the sea bay (no one walks on the water). A ring
-## that would cross the sea bay (CityHarbour.bands) starts south of it instead, and a block the
-## bay leaves no room in has none (it would sit in the street past the block).
-static func _ring(block: Dictionary, city: Dictionary, half: float, bay: Array[Rect2]) -> Rect2:
+## that would cross the sea bay (its true curve, CityHarbour.south_edge) starts south of it
+## instead, and a block the bay leaves no room in has none (it would sit in the street past the
+## block).
+static func _ring(block: Dictionary, city: Dictionary, half: float, plan: Dictionary) -> Rect2:
 	var rect: Rect2 = block["rect"]
 	if str(block["use"]) in NO_WALK or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
 		return Rect2()
 	var ring := CityGen.pavement(block, city).grow(PAVEMENT - Num.f(city["sidewalk"]))
-	var top := ring.position.y
-	for basin: Rect2 in bay:
-		if basin.intersects(ring):
-			top = maxf(top, basin.end.y + PAVEMENT)
+	var top := maxf(
+		ring.position.y, CityHarbour.south_edge(plan, ring.position.x, ring.end.x) + PAVEMENT
+	)
 	if ring.end.y - top < PAVEMENT:
 		return Rect2()
 	return Rect2(ring.position.x, top, ring.size.x, ring.end.y - top)

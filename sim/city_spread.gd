@@ -13,8 +13,9 @@ extends RefCounted
 ## Spacing (city "spread", lead call 2026-10-26): sites a stage newly opens keep apart by a share
 ## of that stage's width; a pair with a site of an inner district keeps the share of the INNER
 ## stage's width. Landmarks also keep spawn_clear x width (or their own "rise_clear" m, the
-## stadium: b2-21) from the kaiju's rise, plus rise_slack for the rise's exact spot, which the
-## sea bay fixes only once the blocks are laid; and never on the sea bay at any stage
+## stadium: b2-21) from the kaiju's rise at EVERY stage (it moves north as the city grows, so a
+## site stays put), plus rise_slack for the rise's exact spot, which the sea bay fixes only once
+## the blocks are laid; and never on the sea bay at any stage
 ## (CityHarbour.reaches, D-270: "South, past the river": the rise is on the north edge, so the
 ## rise clearance sends the stadium south).
 
@@ -34,9 +35,10 @@ static func width(rings: Array[float], ring: int) -> float:
 ## The landmark sites: the pool (city "landmarks") in seeded order, each into a seeded district
 ## from its "min_ring" on with room left (spread "landmarks_per_ring"), at the first seeded cell
 ## of that district where it fits and keeps its distances. A landmark no district can take is
-## left out. A spec's "max_ring" is the last district it may stand in (the stadium: district 1,
-## so it is real and inside the stage-2 play area, director 2026-10-20 / D-270). A spec with an
-## "anchor" [x, z] stands there instead (no spread).
+## left out. A spec's "max_ring" is the last district it may stand in (the stadium: districts 1
+## and 2, past the baby's edge in the young city and real and inside the play area from the stage
+## that opens its district, director 2026-10-20 / D-270). A spec with an "anchor" [x, z] stands
+## there instead (no spread).
 static func landmarks(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
@@ -58,7 +60,7 @@ static func landmarks(
 	var taken: Array[int] = []
 	for k: int in rings.size():
 		taken.append(0)
-	var rise := rise_estimate(plan, cfg)
+	var rises := rise_estimates(plan, cfg)
 	var out: Array[Dictionary] = []
 	for spec: Dictionary in pool:
 		var shape: Dictionary = shapes[str(spec["id"])]
@@ -77,7 +79,7 @@ static func landmarks(
 				choices.append(k)
 		_shuffle(choices, rng)
 		for k: int in choices:
-			var site := _place(plan, spec, shape, k, axes, out, rise, rng)
+			var site := _place(plan, spec, shape, k, axes, out, rises, rng)
 			if not site.is_empty():
 				out.append(site)
 				taken[k] += 1
@@ -85,11 +87,11 @@ static func landmarks(
 	return out
 
 
-## Roughly where the kaiju rises (CityHarbour.mark fixes it once the blocks are laid): in the
-## sea bay, off its beach. INF without a bay.
-static func rise_estimate(plan: Dictionary, cfg: Dictionary) -> Vector2:
+## Roughly where the kaiju rises at each stage (CityHarbour.mark fixes it once the blocks are
+## laid): in the sea bay, off its beach. Empty without a bay.
+static func rise_estimates(plan: Dictionary, cfg: Dictionary) -> Array[Vector2]:
 	var xs: Array[float] = plan["xs"]
-	return CityHarbour.rise_estimate(xs, Num.f(plan.get("rail_x", 0.0)), cfg)
+	return CityHarbour.rise_estimates(xs, Num.f(plan.get("rail_x", 0.0)), cfg)
 
 
 static func _place(
@@ -99,7 +101,7 @@ static func _place(
 	k: int,
 	axes: Array,
 	placed: Array[Dictionary],
-	rise: Vector2,
+	rises: Array[Vector2],
 	rng: RandomNumberGenerator
 ) -> Dictionary:
 	var along_x: Dictionary = axes[0]
@@ -131,7 +133,7 @@ static func _place(
 		var bay: Array = along_x.get("bay", [])
 		if bay.any(func(b: Rect2) -> bool: return b.intersects(outer)):
 			continue  # never on the sea bay, at any stage
-		if _landmark_ok(site, k, placed, rise, rings, spread):
+		if _landmark_ok(site, k, placed, rises, rings, spread):
 			return site
 	return {}
 
@@ -140,7 +142,7 @@ static func _landmark_ok(
 	site: Dictionary,
 	k: int,
 	placed: Array[Dictionary],
-	rise: Vector2,
+	rises: Array[Vector2],
 	rings: Array[float],
 	spread: Dictionary
 ) -> bool:
@@ -151,8 +153,9 @@ static func _landmark_ok(
 	var clear := maxf(
 		Num.f(spread["spawn_clear"]) * width(rings, k), Num.f(spec.get("rise_clear", 0.0))
 	)
-	if rise.x != INF and at.distance_to(rise) < clear + Num.f(spread["rise_slack"]):
-		return false
+	for rise: Vector2 in rises:
+		if at.distance_to(rise) < clear + Num.f(spread["rise_slack"]):
+			return false
 	for other: Dictionary in placed:
 		var other_outer: Rect2 = other["outer"]
 		if outer.grow(-0.01).intersects(other_outer.grow(-0.01)):
