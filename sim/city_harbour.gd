@@ -23,8 +23,7 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 	var half := maxf(Num.f(h["width_share"]) * edge, Num.f(h.get("fit_width", 0.0)) * 0.5)
 	var apex := -edge + Num.f(h["reach_in"])
 	var curve := half * Num.f(h["crescent_share"])
-	var rail: float = plan["rail_x"] if plan.has("rail_x") else Rail.avenue_of(plan, cfg)
-	plan["rail_x"] = rail  # the railway's avenue, found before the bay takes its streets
+	var rail := Num.f(plan.get("rail_x", 0.0))  # the railway's avenue (CitySites.find)
 	var xs: Array[float] = plan["xs"]
 	var cx := centre(xs, rail)
 	plan["harbour"] = {
@@ -38,7 +37,12 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 	plan["rise_spawn"] = Vector2(cx, spawn_z)
 	plan["rise_bank"] = Vector2(cx, apex + Num.f(h["bank_inset"]))
 	var water := bands(plan, cfg)
-	var side := Num.f(cfg["sidewalk"])
+	_drop_streets(plan, water, Num.f(cfg["sidewalk"]))
+	_mark_blocks(plan, water)
+
+
+## Removes every street of `plan` that runs into the bay's `water` (side: the sidewalk's width).
+static func _drop_streets(plan: Dictionary, water: Array[Rect2], side: float) -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var kept: Array[Dictionary] = []
 	for street: Dictionary in plan["streets"]:
@@ -49,6 +53,11 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 		if not water.any(func(w: Rect2) -> bool: return w.intersects(road)):
 			kept.append(street)
 	plan["streets"] = kept
+
+
+## Turns every block of `plan` wholly in the bay's `water` into sea ("harbour"); one the bay
+## partly covers keeps its largest dry part (its lots fill it: no bare remainder).
+static func _mark_blocks(plan: Dictionary, water: Array[Rect2]) -> void:
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		var corners := [rect.position, rect.end, Vector2(rect.position.x, rect.end.y)]
@@ -234,3 +243,14 @@ static func reaches(xs: Array[float], rail: float, cfg: Dictionary) -> Array[Rec
 		var apex := -edge + Num.f(h["reach_in"])
 		out.append(Rect2(cx - half, -far, half * 2.0, apex + far))
 	return out
+
+
+## Where the kaiju rises in this city's bay before the blocks are laid (CitySpread keeps the
+## landmarks off it): on the bay's centre line, off the foot of its beach. INF without a bay.
+static func rise_estimate(xs: Array[float], rail: float, cfg: Dictionary) -> Vector2:
+	if not cfg.has("harbour"):
+		return Vector2(INF, INF)
+	var h: Dictionary = cfg["harbour"]
+	var edge := CityGen.half_extent(cfg) + Num.f(cfg["arena_margin"])
+	var apex := -edge + Num.f(h["reach_in"])
+	return Vector2(centre(xs, rail), apex - Num.f(h["beach"]) - Num.f(h["nose_gap"]))

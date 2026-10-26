@@ -85,31 +85,14 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	_next = Num.f(cfg["first_s"])
 
 
-## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan
-## (as CityHarbour.mark found it before the sea bay took the streets in its water).
+## The x of the north-south avenue nearest the city's middle (not the ring): plan["rail_x"]
+## (CityHarbour.rail_line).
 static func avenue_x(city: Dictionary) -> float:
 	var key := "%s:%s" % [city["map_seed"], city["half"]]
 	if _x_cache.has(key):
 		return Num.f(_x_cache[key])
-	var plan := CityGen.map(city)
-	var best: float = plan["rail_x"] if plan.has("rail_x") else avenue_of(plan, city)
-	_x_cache[key] = best
-	return best
-
-
-## The x of the north-south avenue nearest the middle of `plan` (CityGen.map's), 0 without one.
-static func avenue_of(plan: Dictionary, city: Dictionary) -> float:
-	var half := CityGen.half_extent(city)
-	var nodes: Array = plan["nodes"]
-	var best := INF
-	for street: Dictionary in plan["streets"]:
-		var a: Vector2 = nodes[Num.i(street["from"])]
-		var b: Vector2 = nodes[Num.i(street["to"])]
-		if str(street["kind"]) != CityGen.AVENUE or absf(a.x - b.x) > 0.01:
-			continue
-		if absf(a.x) < half - 1.0 and absf(a.x) < absf(best):
-			best = a.x
-	return 0.0 if best == INF else best
+	_x_cache[key] = Num.f(CityGen.map(city).get("rail_x", 0.0))
+	return Num.f(_x_cache[key])
 
 
 ## The x of the track a train running `dir` uses.

@@ -199,7 +199,13 @@ func _sites() -> void:
 				if other != e and _footprint(other).intersects(foot):
 					touching += 1
 		ids.sort()
-		var want: Array[String] = ["stadium", "wheel"]
+		# Every landmark the spread placed (CitySpread, D-254) in the districts this stage's city
+		# holds: its own and the next (the real band past its edge).
+		var want: Array[String] = []
+		for site: Dictionary in plan["sites"]:
+			if Num.i(site["district"]) <= tier:
+				want.append(str(site["id"]))
+		want.sort()
 		(
 			_check
 			. call(

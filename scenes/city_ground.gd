@@ -95,10 +95,14 @@ func _block(block: Dictionary, asphalt: Color, pavement: Color) -> void:
 				kerb + Vector2(0.02, 0.0),
 				Look.color("outskirts")
 			)
-		"plaza", "landmark":  # a landmark stands on its own plaza, a pavement round it
-			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
+		"plaza", "landmark":  # a landmark stands on its own plaza, a pavement round it (and
+			# round a bridge's inlet)
+			var inlets := CityRiver.inlets(plan)
+			for piece: Rect2 in GroundKit.cut([walk], inlets):
+				_of(GroundKit.K_PAVEMENT, piece, kerb, pavement)
 			var rise := kerb + Vector2(PLAZA_RISE, 0.0)
-			_of(GroundKit.K_PAVEMENT, plaza(walk, cfg), rise, pavement.lightened(0.12))
+			for piece: Rect2 in GroundKit.cut([plaza(walk, cfg)], inlets):
+				_of(GroundKit.K_PAVEMENT, piece, rise, pavement.lightened(0.12))
 		"parking":
 			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
 			var bay := rect.grow(-0.6)
@@ -275,8 +279,14 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
 			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
 		]
+		# No wall where a bridge's inlet opens off the river (or the river into the inlet).
+		var open: Array[Rect2] = []
+		open.assign(bridges)
+		for other: Rect2 in channels:
+			if other != channel:
+				open.append(other.grow(RIVER_QUAY))
 		var diagonal := DiagonalPaving.band(plan, cfg, 0.0)
-		for side: Rect2 in GroundKit.cut(banks, bridges):
+		for side: Rect2 in GroundKit.cut(banks, open):
 			if DiagonalPaving.pieces(side, diagonal).size() == 1 and _whole(side, diagonal):
 				_face(side, wall, stone, -depth)
 			else:
