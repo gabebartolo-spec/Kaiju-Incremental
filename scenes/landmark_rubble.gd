@@ -22,9 +22,14 @@ const PALE := Color("c4bfb3")
 static func heap(
 	voxels: LandmarkVoxels, from: Vector3, to: Vector3, width: float
 ) -> MultiMeshInstance3D:
-	return Ruin.rubbled(
-		pile(voxels, from, to, width).build({}, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
-	)
+	return Ruin.make(heap_plan(voxels, from, to, width))
+
+
+## heap()'s cubes as plain data (Ruin.plan; safe on a worker thread).
+static func heap_plan(
+	voxels: LandmarkVoxels, from: Vector3, to: Vector3, width: float
+) -> Dictionary:
+	return Ruin.plan(pile(voxels, from, to, width), {}, 1.0, Vector3.ZERO)
 
 
 ## The heap's voxels (cells in world voxel units, colours DIRECT); heap() builds them.

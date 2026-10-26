@@ -45,10 +45,14 @@ var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
 var _shell: MeshInstance3D
 var _cells_mat: ShaderMaterial
+## The landmark ground's mesh arrays until _dress makes its mesh.
+var _ground: Array = []
 
 
-## party: side (BuildingVoxels.SIDES) -> floors a neighbour covers there. The voxels and meshes are
-## built here, so a whole city can be built across worker threads before entering the tree.
+## party: side (BuildingVoxels.SIDES) -> floors a neighbour covers there. The voxels and mesh data
+## are built here, so a whole city can be built across worker threads before entering the tree;
+## its textures, materials and meshes are made on the main thread (_dress: at once when built
+## there, else as it enters the tree), never on a worker (ThreadCheck).
 func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {}) -> void:
 	b = p_building
 	_base = base
@@ -72,6 +76,23 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 		mesher = kept[1]
 	_alive = Image.create(maxi(1, b.w * b.d * b.height), 1, false, Image.FORMAT_R8)
 	_alive.fill(Color(1, 1, 1))
+	if b.landmark != "" and not (voxels as LandmarkVoxels).ground.cells.is_empty():
+		var ground := (voxels as LandmarkVoxels).ground
+		_ground = ground.bake_arrays({}, BuildingVoxels.VOXEL, voxels.origin())
+	if OS.get_thread_caller_id() == OS.get_main_thread_id():
+		_dress()
+
+
+func _ready() -> void:
+	_dress()
+
+
+## Makes what is drawn (the alive texture, the materials, the shell, slab and ground meshes) from
+## the data _init built. Main thread; once.
+func _dress() -> void:
+	if _shell != null:
+		return
+	ThreadCheck.main_only("BuildingView._dress")
 	_alive_tex = ImageTexture.create_from_image(_alive)
 	_shell_mat = _material(_alive_tex)
 	_slab_mat = _material(_alive_tex)
@@ -80,11 +101,11 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	_slabs = _instance(mesher.slabs, _slab_mat)
 	_slabs.visible = false
 	add_child(_slabs)
-	if b.landmark != "" and not (voxels as LandmarkVoxels).ground.cells.is_empty():
-		var ground := (voxels as LandmarkVoxels).ground
+	if not _ground.is_empty():
 		var mi := MeshInstance3D.new()
-		mi.mesh = ground.bake({}, BuildingVoxels.VOXEL, voxels.origin(), 0.0)
+		mi.mesh = VoxelBuilder.baked(_ground, 0.0)
 		add_child(mi)
+		_ground = []
 
 
 func _make_voxels() -> BuildingVoxels:
@@ -138,6 +159,7 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 
 ## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
 func set_opacity(value: float) -> void:
+	_dress()
 	_shell_mat.set_shader_parameter("opacity", value)
 	_slab_mat.set_shader_parameter("opacity", value)
 	if cells_view != null:
@@ -150,6 +172,7 @@ func set_opacity(value: float) -> void:
 func promote(grid: CellGrid) -> CellView:
 	if cells_view != null:
 		return cells_view
+	_dress()
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
 	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
@@ -162,6 +185,7 @@ func promote(grid: CellGrid) -> CellView:
 
 
 func _material(tex: Texture2D) -> ShaderMaterial:
+	ThreadCheck.main_only("BuildingView._material")
 	var mat := ShaderMaterial.new()
 	mat.shader = SHADER
 	mat.set_shader_parameter("alive", tex)
@@ -200,6 +224,7 @@ func _parts(cells: Array[Vector3i]) -> Array[Dictionary]:
 
 ## Hides these chunks; returns world positions and colours to throw as debris.
 func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
+	_dress()
 	_slabs.visible = true
 	var out := _parts(cells)
 	for c: Vector3i in cells:
@@ -213,6 +238,7 @@ func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 ## the sim's chunks are unchanged. Not for a landmark: its smooth walls would read as speckled
 ## noise; its arcs (Arcs) come down whole instead.
 func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictionary]:
+	_dress()
 	_slabs.visible = true
 	if b.landmark != "":
 		return []
@@ -254,8 +280,8 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 	return piece
 
 
-## Every building's view, its voxels and meshes built across worker threads (thousands of
-## voxels each); colors: each building's wall colour.
+## Every building's view, its voxels and mesh data built across worker threads (thousands of
+## voxels each; each is dressed as it enters the tree); colors: each building's wall colour.
 static func build_all(
 	buildings: Array[RampageSim.Building], colors: Array[Color]
 ) -> Array[BuildingView]:
