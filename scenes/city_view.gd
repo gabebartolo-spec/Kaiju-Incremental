@@ -49,6 +49,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator, with_decor: bool = tru
 func _ready() -> void:
 	if stages.on:
 		process_mode = Node.PROCESS_MODE_DISABLED  # street life and traffic wait for the finished city
+	SmokeSoft.apply()  # smoke and dust melt into what they meet (render plan item 13)
 	CityEnvironment.attach(self, sim)
 	_build_ground()
 	if not await stages.next(self):

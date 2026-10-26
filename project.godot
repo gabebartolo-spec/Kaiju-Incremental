@@ -44,6 +44,10 @@ smoke_focus={
 "type": "float",
 "value": 0.0
 }
+smoke_soft_m={
+"type": "float",
+"value": 0.0
+}
 
 [gui]
 

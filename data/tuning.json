@@ -1657,6 +1657,8 @@
 	"render_opt": {
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
-		"kaiju_bounds_slack": 1.05
+		"kaiju_bounds_slack": 1.05,
+		"soft_smoke": true,
+		"soft_smoke_m": 1.5
 	}
 }
