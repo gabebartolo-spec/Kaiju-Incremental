@@ -68,6 +68,8 @@ func _check_schema() -> void:
 			if not def.has("ring") or not def.has("kind"):
 				bad.append("%s has no ring or kind" % id)
 				continue
+			if str(def.get("source", "")) == "":
+				bad.append("%s names no source (his words, or agent-added)" % id)
 			if tree.ring(id) < 1 or tree.ring(id) > tree.rings.size():
 				bad.append("%s in ring %d" % [id, tree.ring(id)])
 			if not kinds.has(tree.kind(id)) or (tree.kind(id) == "stage") != effects.has("size"):
