@@ -13,6 +13,8 @@ var _seconds := 12.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"species": _species, "seconds": _seconds})
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])
