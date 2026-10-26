@@ -22,6 +22,10 @@ const OUTER_CORES: Array = [
 ]
 const OUTER_HALF := 360
 const DIAGONAL_THROUGH: Array = [-6, 4]
+## The landmarks where they stood before CitySpread (id: [anchor x, z], margin); no bridge.
+## One park a district, as before D-254 (CityParks: at least one, and none more at this size).
+const PARK_EVERY := 1000000000
+const LANDMARKS := {"stadium": [[-24, -57], 0], "wheel": [[30, -56], 2]}
 
 
 ## `base` (a copy of the tuning) with the pre-D-135 rings: four districts, the first two stages.
@@ -35,6 +39,16 @@ static func apply(base: Dictionary) -> void:
 	city["outer_cores"] = OUTER_CORES.duplicate(true)
 	city["outer_half"] = OUTER_HALF
 	city["diagonal_through"] = DIAGONAL_THROUGH.duplicate()
+	var pinned: Array = []
+	for spec: Dictionary in city["landmarks"]:
+		if LANDMARKS.has(spec["id"]):
+			var keep: Dictionary = spec.duplicate(true)
+			var at: Array = LANDMARKS[spec["id"]]
+			keep["anchor"] = at[0]
+			keep["margin"] = at[1]
+			pinned.append(keep)
+	city["landmarks"] = pinned
+	city["park_every"] = PARK_EVERY
 	var stages: Array = base["growth"]["stages"]
 	for k: int in 2:
 		var over: Dictionary = stages[k]["city"]

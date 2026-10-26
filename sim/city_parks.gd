@@ -60,7 +60,9 @@ static func _pick_ring(
 				return qa
 			var ra: Rect2 = blocks[a]["rect"]
 			var rb: Rect2 = blocks[b]["rect"]
-			return ra.get_area() > rb.get_area()
+			if ra.get_area() != rb.get_area():
+				return ra.get_area() > rb.get_area()
+			return a < b  # a tie: the first block in the plan, so the sort is the same every run
 	)
 	var mine: Array[Vector2] = []
 	var out: Array[int] = []

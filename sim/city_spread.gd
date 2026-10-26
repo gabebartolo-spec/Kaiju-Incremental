@@ -32,7 +32,7 @@ static func width(rings: Array[float], ring: int) -> float:
 ## The landmark sites: the pool (city "landmarks") in seeded order, each into a seeded district
 ## from its "min_ring" on with room left (spread "landmarks_per_ring"), at the first seeded cell
 ## of that district where it fits and keeps its distances. A landmark no district can take is
-## left out.
+## left out. A spec with an "anchor" [x, z] stands there instead (no spread).
 static func landmarks(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
@@ -57,6 +57,12 @@ static func landmarks(
 	var out: Array[Dictionary] = []
 	for spec: Dictionary in pool:
 		var shape: Dictionary = shapes[str(spec["id"])]
+		if spec.has("anchor"):  # pinned where the spec says (a test fixture's own plan)
+			var at: Array = spec["anchor"]
+			var pinned := CitySites.site_at(plan, spec, shape, Vector2(Num.f(at[0]), Num.f(at[1])), axes)
+			if not pinned.is_empty():
+				out.append(pinned)
+			continue
 		var choices: Array = []
 		for k: int in range(Num.i(spec.get("min_ring", 0)), rings.size()):
 			if taken[k] < per_ring:
