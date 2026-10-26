@@ -198,13 +198,10 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 	sim.chunks_total = 100
 	sim.chunks_destroyed = 35
 	hud.refresh()
-	var meter: ProgressBar = hud.city_meter
+	var meter: ThreatBar = hud.clock.threat
 	check.call(
-		absf(meter.value - 35.0) < 0.5 and meter.size.y >= 4.0 and meter.size.y <= 8.0,
-		(
-			"the city meter is a thin strip (%s) that reads 35%% when 35%% is destroyed (%.1f)"
-			% [meter.size, meter.value]
-		)
+		meter.size.y >= 4.0 and meter.size.y <= 8.0 and meter.get_parent() == hud.clock,
+		"the bar under the clock is a thin strip (%s) and the threat meter, not a city meter" % meter.size
 	)
 	var peak := 0.0
 	sim.hp = sim.max_hp * 0.2
