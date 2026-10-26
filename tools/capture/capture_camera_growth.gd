@@ -66,6 +66,8 @@ var _trace := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--candidate="):
 			_candidate = arg.substr(12)

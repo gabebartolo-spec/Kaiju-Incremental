@@ -41,6 +41,8 @@ var _young := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args(
 		{"out": _out, "species": "", "signature-only": false, "side": false, "young": false}
 	)
