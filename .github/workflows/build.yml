@@ -51,8 +51,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
-          lfs: true
           submodules: true # native/godot-cpp
+      # The fonts, sounds, kaiju skins and baked models go into the pack (tools/pck_check.py proves they are real).
+      - uses: ./.github/actions/lfs-files
 
       # tools/pck_check.py reads the zstd-compressed resources with compression.zstd (3.14+).
       - uses: actions/setup-python@v5
