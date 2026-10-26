@@ -35,10 +35,12 @@ static func width(rings: Array[float], ring: int) -> float:
 ## The landmark sites: the pool (city "landmarks") in seeded order, each into a seeded district
 ## from its "min_ring" on with room left (spread "landmarks_per_ring"), at the first seeded cell
 ## of that district where it fits and keeps its distances. A landmark no district can take is
-## left out. A spec's "max_ring" is the last district it may stand in (the stadium: districts 1
-## and 2, past the baby's edge in the young city and real and inside the play area from the stage
-## that opens its district, director 2026-10-20 / D-270). A spec with an "anchor" [x, z] stands
-## there instead (no spread).
+## left out. A spec's "max_ring" is the last district it may stand in (the stadium: district 1,
+## so it is real and inside the stage-2 play area, director 2026-10-20 / D-270, D-271). A spec
+## with "farthest" takes, of the district's sites that keep their distances, the one farthest
+## from the nearest stage's rise instead of the first seeded (the stadium, b2-21: "placed as
+## far away from our spawn spot as possible"). A spec with an "anchor" [x, z] stands there
+## instead (no spread).
 static func landmarks(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
@@ -121,6 +123,9 @@ static func _place(
 	_shuffle(anchors, rng)
 	var bridge := str(spec.get("kind", "")) == "bridge"
 	var rows := Num.i(spread.get("bridge_rows", 1))
+	var farthest: bool = spec.get("farthest", false)
+	var best: Dictionary = {}
+	var best_far := -INF
 	for at: Vector2 in anchors:
 		var site := (
 			CitySites.bridge_at(plan, spec, shape, at.x, axes, rows)
@@ -134,8 +139,22 @@ static func _place(
 		if bay.any(func(b: Rect2) -> bool: return b.intersects(outer)):
 			continue  # never on the sea bay, at any stage
 		if _landmark_ok(site, k, placed, rises, rings, spread):
-			return site
-	return {}
+			if not farthest:
+				return site
+			var far := rise_far(site, rises)
+			if far > best_far:
+				best = site
+				best_far = far
+	return best
+
+
+## How far a site's centre stands from the nearest stage's rise (INF without a bay).
+static func rise_far(site: Dictionary, rises: Array[Vector2]) -> float:
+	var rect: Rect2 = site["rect"]
+	var out := INF
+	for rise: Vector2 in rises:
+		out = minf(out, rect.get_center().distance_to(rise))
+	return out
 
 
 static func _landmark_ok(

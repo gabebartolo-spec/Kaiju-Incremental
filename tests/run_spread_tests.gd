@@ -4,7 +4,7 @@ extends "res://tests/lib/runner.gd"
 ## pairs with an inner district's site at the inner stage's share: lead call 2026-10-26). Over
 ## SEEDS street plans (city.map_seed) and every growth stage: the play-area half-widths, landmark
 ## spacing and rise clearance, the red barrels (CityHazards, as tuned) all in play and none at
-## the rise, the stadium as far from the rise as before (b2-21), the bridge's
+## the rise, the stadium far from the rise (b2-21, D-271) at the farthest site, the bridge's
 ## inlet (at least 3x the river's width, joined to the river, the bridge on land at both ends,
 ## #12), no skyline core over a play area, and the same plan from the same seed.
 ## Seeded by design: city.map_seed per plan, the shipped tuning.
@@ -16,9 +16,14 @@ const SHIPPED := 7301
 const SEED_STEP := 977
 ## The play area's half-widths per stage (D-254).
 const HALVES: Array[float] = [75.0, 120.0, 225.0]
-## The stadium's distance from the rise before D-254 (125 m: 2.50 / 1.56 / 0.83 x the old
-## half-widths); it must stay at least this share of each stage's half-width (b2-21).
-const STADIUM_SHARE: Array[float] = [2.5, 1.5625, 0.8333]
+## The least the stadium stands from the stage-1 rise, in metres (lead call 2026-10-27, D-271
+## "the stage-2 stadium bar stands"). The sea bay (D-270) puts the rise on the north edge, so
+## district 1 offers 155-169 m on the probe seeds; the stadium takes the farthest site
+## ("farthest", b2-21: "placed as far away from our spawn spot as possible"). D-254's own
+## scaling of the old 125 m (x1.5 = 187.5 m) was ours, not the director's.
+const STADIUM_FLOOR := 150.0
+## The plans _check_stadium_farthest brute-forces (about a minute each).
+const FARTHEST_SEEDS: Array[int] = [7301, 98765]
 ## How much wider than the river's channel a bridge's water must be (D-254: "at least 3x").
 const BRIDGE_WATER := 3.0
 
@@ -30,6 +35,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_halves")
 	await _t("_check_landmarks")
+	await _t("_check_stadium_farthest")
 	await _t("_check_hazards")
 	await _t("_check_bridge")
 	await _t("_check_outer_cores")
@@ -85,12 +91,8 @@ func _check_landmarks() -> void:
 				bad.append(
 					"%d %s %.0f m from the rise" % [map_seed, site["id"], at.distance_to(rise)]
 				)
-			if str(site["id"]) == "stadium":
-				for s: int in rings.size():
-					if at.distance_to(rise) < STADIUM_SHARE[s] * rings[s] - 0.5:
-						bad.append(
-							"%d stadium %.0f m from the rise" % [map_seed, at.distance_to(rise)]
-						)
+			if str(site["id"]) == "stadium" and at.distance_to(rise) < STADIUM_FLOOR:
+				bad.append("%d stadium %.0f m from the rise" % [map_seed, at.distance_to(rise)])
 			for b: int in range(a + 1, sites.size()):
 				var other: Dictionary = sites[b]
 				var inner := mini(k, Num.i(other["district"]))
@@ -235,6 +237,88 @@ func _digest(plan: Dictionary) -> String:
 	for site: Dictionary in plan["sites"]:
 		parts.append("%s%s" % [site["id"], site["rect"]])
 	return ",".join(parts)
+
+
+## b2-21 "placed as far away from our spawn spot as possible" (D-271): of the sites district 1
+## offers the stadium, the shipped plan takes the farthest from the rise. Brute force: pin the
+## stadium at every district-1 cell (spec "anchor") and rank the sites that keep off the bay,
+## the rise floor and the plan's other landmarks.
+func _check_stadium_farthest() -> void:
+	var spread: Dictionary = Content.section("city")["spread"]
+	var rings := _rings()
+	for map_seed: int in FARTHEST_SEEDS:
+		var cfg := _cfg(map_seed, 1)
+		var plan := CityGen.map(cfg)
+		var rises := CitySpread.rise_estimates(plan, cfg)
+		var xs: Array[float] = plan["xs"]
+		var zs: Array[float] = plan["zs"]
+		var bay := CityHarbour.reaches(xs, Num.f(plan.get("rail_x", 0.0)), cfg)
+		var spec := {}
+		for s: Dictionary in cfg["landmarks"]:
+			if str(s["id"]) == "stadium":
+				spec = s
+		var picked := {}
+		var others: Array[Dictionary] = []
+		for site: Dictionary in plan["sites"]:
+			if str(site["id"]) == "stadium":
+				picked = site
+			else:
+				others.append(site)
+		var floor_m := (
+			maxf(
+				Num.f(spread["spawn_clear"]) * CitySpread.width(rings, 1), Num.f(spec["rise_clear"])
+			)
+			+ Num.f(spread["rise_slack"])
+		)
+		var best := 0.0
+		var tried := 0
+		for i: int in xs.size() - 1:
+			for j: int in zs.size() - 1:
+				var cell := Vector2((xs[i] + xs[i + 1]) * 0.5, (zs[j] + zs[j + 1]) * 0.5)
+				var reach := maxf(absf(cell.x), absf(cell.y))
+				if reach <= rings[0] or reach >= rings[1]:
+					continue
+				var pinned_spec: Dictionary = spec.duplicate(true)
+				pinned_spec["anchor"] = [cell.x, cell.y]
+				var pinned: Dictionary = cfg.duplicate(true)
+				pinned["landmarks"] = [pinned_spec]
+				var sites: Array = CityGen.map(pinned)["sites"]
+				if sites.size() != 1 or Num.i(sites[0]["district"]) != 1:
+					continue
+				var site: Dictionary = sites[0]
+				var far := CitySpread.rise_far(site, rises)
+				if far >= floor_m and _keeps_off(site, bay, others):
+					tried += 1
+					best = maxf(best, far)
+		var got := CitySpread.rise_far(picked, rises) if not picked.is_empty() else 0.0
+		check(
+			tried > 0 and got >= best - 0.01,
+			(
+				(
+					"%d: the stadium stands %.1f m from the nearest rise, the farthest of %d district-1"
+					+ " sites (best %.1f)"
+				)
+				% [map_seed, got, tried, best]
+			)
+		)
+
+
+## Whether a candidate stadium site keeps off the bay and clear of the plan's other landmarks.
+func _keeps_off(site: Dictionary, bay: Array[Rect2], others: Array[Dictionary]) -> bool:
+	var spread: Dictionary = Content.section("city")["spread"]
+	var rings := _rings()
+	var outer: Rect2 = site["outer"]
+	if bay.any(func(b: Rect2) -> bool: return b.intersects(outer)):
+		return false
+	for other: Dictionary in others:
+		var other_outer: Rect2 = other["outer"]
+		if outer.grow(-0.01).intersects(other_outer.grow(-0.01)):
+			return false
+		var ring := mini(Num.i(site["district"]), Num.i(other["district"]))
+		var gap := Num.f(spread["landmark_gap"]) * CitySpread.width(rings, ring)
+		if _at(site).distance_to(_at(other)) < gap:
+			return false
+	return true
 
 
 ## A landmark site's centre (its plaza's; CitySpread spaces sites by it).
