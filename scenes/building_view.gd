@@ -231,6 +231,13 @@ func _parts(cells: Array[Vector3i]) -> Array[Dictionary]:
 	return out
 
 
+## Sends the `alive` images to the shader (the floors' own too, once a blow made them).
+func _upload() -> void:
+	_alive_tex.update(_alive)
+	if _slab_tex != null:
+		_slab_tex.update(_slab_alive)
+
+
 ## Hides these chunks; returns world positions and colours to throw as debris.
 func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 	_slabs.visible = true
@@ -259,9 +266,7 @@ func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictiona
 			if _get_state(n) > BITTEN + 0.01 and rng.randf() < BITE_CHANCE:
 				_put_state(n, BITTEN)
 				bitten.append(n)
-	_alive_tex.update(_alive)
-	if _slab_tex != null:
-		_slab_tex.update(_slab_alive)
+	_upload()
 	var out := _parts(bitten)
 	return out.slice(0, floori(out.size() / 3.0))
 
