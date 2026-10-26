@@ -51,7 +51,7 @@ static func hidden(voxels: BuildingVoxels, baked: BuildingMesher) -> int:
 			var o := cell + d
 			if drawn.has(key(voxels, cell, d)):
 				continue
-			var covered := o.y < 0 or baked._inside(o) or (cells.has(o) and cells[o] != "slab")
+			var covered: bool = o.y < 0 or baked._inside(o) or (cells.has(o) and cells[o] != "slab")
 			if not covered:
 				n += 1
 	return n
