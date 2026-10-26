@@ -225,8 +225,7 @@ jobs:
         with:
           name: native-linux
           path: native/bin
-      - name: The checker catches an error, a warning and a leak, and passes a clean log
-        run: bash tools/lint/log_smoke.sh --selftest
+      # (The checker's own self-test, tools/lint/selftest_log_smoke.sh, runs in lint.yml with the other lints.)
       - name: Play the seeded rampages and read the engine log
         env:
           KAIJU_NATIVE_REQUIRED: "1"

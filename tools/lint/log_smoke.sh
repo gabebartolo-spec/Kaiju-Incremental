@@ -13,6 +13,7 @@
 #   GODOT=/path/to/godot tools/lint/log_smoke.sh [script args for log_smoke.gd, e.g. --species=insectoid --seconds=20]
 #   LOGS=<dir> keeps the raw logs there (default: a temp dir, removed).
 #   ONLY=demo|rampage runs just one of the two.
+#   BEFORE_ENGINE='<command>' runs before every engine start and must succeed (a shared PC: `bash C:/kt/wait_window.sh`).
 #   tools/lint/log_smoke.sh --selftest   plants an error, a warning and leaks, expects each to be caught.
 set -u
 cd "$(dirname "$0")/../.." || exit 1
@@ -24,6 +25,10 @@ SMOKE_TIMEOUT="${SMOKE_TIMEOUT:-1200}"
 # line; the leak reports at exit (ObjectDB instances, RID allocations, resources, paged allocators) are
 # ERROR / WARNING lines too and are named again so a run that prints them without the prefix still fails.
 PATTERN='^(ERROR|WARNING|SCRIPT ERROR|USER ERROR|USER WARNING|SHADER ERROR):|^(Parse|Compile) Error|ObjectDB instances were leaked|RID allocations of type|Leaked instance|still in use at exit|Pages in use'
+
+before_engine() {  # the caller's gate before each engine start (a speed run may own the PC)
+	[ -z "${BEFORE_ENGINE:-}" ] || bash -c "$BEFORE_ENGINE" || { echo "log_smoke: the engine start was refused"; exit 1; }
+}
 
 native_path() {  # the engine on Windows needs a Windows path in APPDATA
 	if command -v cygpath > /dev/null 2>&1; then cygpath -w "$1"; else echo "$1"; fi
@@ -70,6 +75,7 @@ logs="${LOGS:-$run_data}"
 mkdir -p "$logs"
 export XDG_DATA_HOME="$run_data/data" XDG_CONFIG_HOME="$run_data/config" XDG_CACHE_HOME="$run_data/cache"
 if [ ! -d .godot/imported ]; then  # a fresh checkout: the class_name cache comes from one import
+	before_engine
 	APPDATA="$(native_path "$run_data")" timeout "${IMPORT_TIMEOUT:-600}" "$GODOT" --headless --path . --editor --import \
 		> "$run_data/import.log" 2>&1 || { echo "log_smoke: FAIL the import failed"; tail -20 "$run_data/import.log"; exit 1; }
 fi
@@ -81,6 +87,7 @@ run_one() {
 	shift 2
 	log="$logs/$name.log"
 	echo "== $name ($script)"
+	before_engine
 	APPDATA="$(native_path "$run_data")" timeout "$SMOKE_TIMEOUT" "$GODOT" --headless --fixed-fps 60 --path . \
 		--script "$script" -- "$@" > "$log" 2>&1
 	code=$?
