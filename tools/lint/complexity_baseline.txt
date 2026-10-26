@@ -38,8 +38,7 @@ scenes/stadium_match.gd::_play 32 13
 scenes/stadium_match.gd::_ready 45 7
 scenes/traffic.gd::_drive 40 13
 scenes/traffic_island.gd::spots 48 18
-scenes/upgrade_node.gd::show_state 45 21
-scenes/upgrade_screen.gd::_ready 41 3
+scenes/upgrade_node.gd::show_state 37 18
 scenes/voxel_skin.gd::_setup 90 6
 sim/building_layout.gd::_brick 11 17
 sim/building_layout.gd::_roof 30 15

@@ -2,11 +2,14 @@ extends "res://tests/lib/runner.gd"
 ## Tree suite (ROADMAP E, b2-28, R 16.1, R 1.1, R 1.4): the upgrade tree grows outward in rings,
 ## each node a kind; the data obeys its schema (tuning "tree": rings, kinds, geometric costs);
 ## only the open rings can be bought, the next shows as shapes, evolutions always show; an old
-## save keeps every level it bought; and the pacing bot's shopping over the data's income
+## save keeps every level it bought; the map (D-275, layout A) keeps each node inside its stage's
+## ring with no two touching, and its camera zooms between the default and the whole tree and
+## pans without losing the tree; and the pacing bot's shopping over the data's income
 ## stand-in meets the cadence bars over the first hour. No rampage is played: the pacing check is
 ## a pure replay of TreePacing (the real bot is tools/pacing.gd), so it is the same every run.
 ##   godot --headless --path . --script tests/run_tree_tests.gd
 
+const TreeMap := preload("res://tests/lib/tree_map.gd")
 const CROC := "reptilian"
 ## Levels a played croc held before rings existed (the old tree let scales be bought young):
 ## every id and level must come back unchanged.
@@ -37,6 +40,7 @@ func run_checks() -> void:
 	await _t("_check_old_save")
 	await _t("_check_bars_catch")
 	await _t("_check_pacing")
+	await _h("TreeMap", func() -> void: TreeMap.new(check).run())
 
 
 func _croc(levels: Dictionary = {}) -> UpgradeTree:

@@ -44,7 +44,7 @@
 			"cost": [136, 146, 157, 168], "source": "agent-added before the audit (D-037 era species power); no decision found", "requires": ["r_tail"], "effects": {"momentum": 0.5}},
 		{"id": "r_shear", "species": "reptilian", "name": "Shearing Tail", "desc": "A longer tail that cuts higher: whole towers lose their upper floors.", "pos": [3, 5], "max_level": 3, "ring": 2, "kind": "verb",
 			"cost": [4560, 4880, 5222], "source": "agent-added before the audit (b2-2 tail node era); no decision found", "requires": ["r_momentum", "evolve1"], "effects": {"tail_damage": 8, "tail_reach": 2.0, "tail_floors": 2}},
-		{"id": "r_beam", "species": "reptilian", "name": "ULTIMATE: {beam}", "desc": "Press E: a long beam from your maw, steered as you turn, that sets everything it crosses burning.", "pos": [7, 5], "max_level": 3, "ring": 4, "kind": "verb",
+		{"id": "r_beam", "species": "reptilian", "name": "ULTIMATE: {beam}", "desc": "Press E: a long beam from your maw, steered as you turn, that sets everything it crosses burning.", "pos": [7, 5], "ultimate": true, "max_level": 3, "ring": 4, "kind": "verb",
 			"cost": [24600, 26322, 28165], "source": "D-037 \"part of the upgrade tree\"; D-040 \"Own button\"; D-203 \"Croc beam\"", "requires": ["r_shear", "evolve2"], "effects": {"beam_dps": 40}},
 		{"id": "r_ablaze", "species": "reptilian", "name": "City Ablaze", "desc": "Your breath and beam set buildings alight, and fire spreads from building to building on its own. A burnt-out building collapses and pays biomass.", "pos": [2, 4], "max_level": 1, "ring": 2, "kind": "verb",
 			"cost": [823], "source": "D-126 \"Disaster headlines\": City Ablaze", "requires": ["r_tail"], "effects": {"fire_spread": 1}},
@@ -124,7 +124,7 @@
 			"cost": [127, 1105, 2921], "requires": ["i_scuttle"], "effects": {"glide_seconds": 1.2}},
 		{"id": "i_climb", "species": "insectoid", "name": "Climber", "desc": "Climb any building and fight from its roof; your weight breaks the top floors so towers fall from the top.", "pos": [3, 5], "max_level": 3,
 			"cost": [4318, 11176, 27940], "requires": ["i_glide", "evolve1"], "effects": {"climb": 1}},
-		{"id": "i_brood", "species": "insectoid", "name": "ULTIMATE: Brood", "desc": "Press E: lay eggs that hatch into elephant-sized young who eat the streets and fight the army.", "pos": [7, 5], "max_level": 3,
+		{"id": "i_brood", "species": "insectoid", "name": "ULTIMATE: Brood", "desc": "Press E: lay eggs that hatch into elephant-sized young who eat the streets and fight the army.", "pos": [7, 5], "ultimate": true, "max_level": 3,
 			"cost": [480060, 800100, 1257300], "requires": ["i_climb", "evolve2"], "effects": {"brood_count": 3}},
 		{"id": "c_hydra", "species": "cephalopod", "name": "Hydra Limbs", "desc": "Each level frees a tentacle that strikes on its own at whatever is near, in every direction.", "pos": [1, 5], "max_level": 4,
 			"cost": [51, 444, 1181, 3302], "requires": ["claws"], "effects": {"limbs": 1}},
@@ -132,7 +132,7 @@
 			"cost": [127, 1524], "requires": ["c_hydra"], "effects": {"squeeze": 0.4}},
 		{"id": "c_grab", "species": "cephalopod", "name": "Grab and Throw", "desc": "A limb seizes a tank, helicopter or car and hurls it where you face; a thrown tank goes off like a grenade.", "pos": [3, 5], "max_level": 3,
 			"cost": [4318, 11176, 27940], "requires": ["c_squeeze", "evolve1"], "effects": {"throw_damage": 30}},
-		{"id": "c_ink", "species": "cephalopod", "name": "ULTIMATE: Corrosive Ink", "desc": "Press E: spray ink all around; coated buildings dissolve and coated attackers die.", "pos": [7, 5], "max_level": 3,
+		{"id": "c_ink", "species": "cephalopod", "name": "ULTIMATE: Corrosive Ink", "desc": "Press E: spray ink all around; coated buildings dissolve and coated attackers die.", "pos": [7, 5], "ultimate": true, "max_level": 3,
 			"cost": [266700, 444500, 698500], "requires": ["c_grab", "evolve2"], "effects": {"ink_dps": 12}}
 	]
 }
