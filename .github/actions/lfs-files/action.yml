@@ -1,0 +1,36 @@
+name: Fetch the Git LFS files
+description: >
+  Checks out the real LFS files (fonts, sounds, kaiju voxel skins, baked voxel models) after a plain
+  checkout (lfs: false). The objects are kept in the Actions cache keyed on the set of LFS object ids, so a
+  run on a tree whose LFS files did not change downloads nothing; GitHub's free LFS bandwidth is 1 GiB a
+  month and the objects are about 50 MB (debt row 8, D-295). A changed object restores the nearest older
+  cache and downloads only what is new.
+runs:
+  using: composite
+  steps:
+    - name: List the LFS objects of this commit
+      shell: bash
+      run: |
+        git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+        echo "LFS objects in this commit: $(wc -l < .lfs-assets-id)"
+
+    - name: Restore the LFS objects
+      id: lfs-cache
+      uses: actions/cache@v4
+      with:
+        path: .git/lfs
+        key: lfs-${{ hashFiles('.lfs-assets-id') }}
+        restore-keys: lfs-
+
+    - name: Download what the cache lacks, check out the files
+      shell: bash
+      run: |
+        total=$(wc -l < .lfs-assets-id)
+        have=$(find .git/lfs/objects -type f 2>/dev/null | wc -l)
+        echo "LFS: cache-hit=${{ steps.lfs-cache.outputs.cache-hit }}, $have object(s) restored from the cache, $total needed"
+        git lfs pull
+        # Drop objects an older cache held that this commit no longer uses (keeps the cache small).
+        git lfs prune --no-verify-remote > /dev/null 2>&1 || true
+        after=$(find .git/lfs/objects -type f 2>/dev/null | wc -l)
+        echo "LFS: downloaded about $((total - have)) object(s); $after in .git/lfs ($(du -sh .git/lfs 2>/dev/null | cut -f1)); working tree files are real:"
+        git lfs ls-files | awk '{print $2}' | sort | uniq -c

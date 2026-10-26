@@ -148,13 +148,10 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
-          # and button draws nothing and the flow suite's font check fails.
-          lfs: true
-      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio.
-      - name: Fetch the sound files
-        run: git lfs pull --include="assets/sfx/*"
+      # The LFS files: the Kaiju Claw fonts (without them every heading and button draws nothing and the flow
+      # suite's font check fails), the sounds, and the kaiju voxel skins and baked models the game reads at
+      # run time. Cached by object id: an unchanged tree downloads nothing (debt row 8).
+      - uses: ./.github/actions/lfs-files
       - uses: ./.github/actions/setup-godot
       - name: Fetch the native library
         uses: actions/download-artifact@v4
@@ -185,13 +182,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
-          # and button draws nothing and the flow suite's font check fails.
-          lfs: true
-      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio.
-      - name: Fetch the sound files
-        run: git lfs pull --include="assets/sfx/*"
+      # The LFS files: the Kaiju Claw fonts (without them every heading and button draws nothing and the flow
+      # suite's font check fails), the sounds, and the kaiju voxel skins and baked models the game reads at
+      # run time. Cached by object id: an unchanged tree downloads nothing (debt row 8).
+      - uses: ./.github/actions/lfs-files
       - uses: ./.github/actions/setup-godot
 
       - name: Run the harness self-test
@@ -215,13 +209,10 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
-          # and button draws nothing and the flow suite's font check fails.
-          lfs: true
-      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio.
-      - name: Fetch the sound files
-        run: git lfs pull --include="assets/sfx/*"
+      # The LFS files: the Kaiju Claw fonts (without them every heading and button draws nothing and the flow
+      # suite's font check fails), the sounds, and the kaiju voxel skins and baked models the game reads at
+      # run time. Cached by object id: an unchanged tree downloads nothing (debt row 8).
+      - uses: ./.github/actions/lfs-files
       - uses: ./.github/actions/setup-godot
 
       - name: Run the slow suites
