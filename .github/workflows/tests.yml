@@ -120,6 +120,13 @@ jobs:
         run: |
           python3 tools/lint/tuning_keys.py
           python3 tools/lint/complexity_ratchet.py
+      # Every data/*.json against its schema in data/schemas (hard rule 4); the self-test plants a wrong
+      # type and an unknown key in each file and fails unless both are caught. jsonschema is MIT.
+      - name: Data schemas
+        run: |
+          python3 -m pip install --quiet --user "jsonschema>=4.18,<5"
+          python3 tools/lint/data_schemas.py --self-test
+          python3 tools/lint/data_schemas.py
       - uses: ./.github/actions/setup-godot
       - name: Import the project (compiles the scripts it loads)
         run: |
