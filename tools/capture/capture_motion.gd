@@ -183,13 +183,14 @@ func _run() -> void:
 		_focus = kaiju.focus()
 		_place(
 			cam,
+			kaiju,
 			_focus if _cam in ["game", "side"] else at,
 			Vector3(facing.x, 0, facing.y),
 			body_scale
 		)
 		if _cam == "game":
 			_dip_shown = _dip  # at once, as Rampage drops its camera (PR #54: eased, it was 1 px)
-			cam.position.y -= _dip_shown * (0.75 + 0.4 * body_scale)
+			cam.position.y -= _dip_shown * CameraTuning.zoom(body_scale)
 		_trace_feet(kaiju, t, feet)
 		if _pose_trace != "":
 			poses.append(_poser.row(kaiju, t, _event_at(t)))
@@ -248,7 +249,7 @@ func _run() -> void:
 	quit()
 
 
-func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void:
+func _place(cam: Camera3D, kaiju: KaijuModel, at: Vector3, fwd: Vector3, body_scale: float) -> void:
 	var right := fwd.cross(Vector3.UP).normalized()
 	if _cam == "front34":  # ahead and to one side, at head height: the roar's hinge and gape
 		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 8.5, 0)) * body_scale
