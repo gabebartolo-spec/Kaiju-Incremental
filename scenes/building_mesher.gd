@@ -84,7 +84,6 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool, all: Dictionary) -> Ar
 	var colors := PackedColorArray()
 	var uv2 := PackedVector2Array()
 	var index := PackedInt32Array()
-	var all: Dictionary = _v.vox.cells
 	var voxel := BuildingVoxels.VOXEL
 	var half := voxel * 0.5
 	var origin := _v.origin() + Vector3(0, half, 0)
