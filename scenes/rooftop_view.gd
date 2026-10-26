@@ -2,30 +2,31 @@ class_name RooftopView
 extends Node3D
 ## Rooftop defenders (D-063), presentation only: the sim's rooftop squads drawn as armed citizens
 ## and soldiers standing on their roofs, turned to the kaiju, rifles up. Each sim volley flashes
-## at every muzzle of the squad, a frame apart, sends a short tracer flying at the kaiju's hide
-## and sparks where it strikes (drawn over the body, which would hide it). Flashes, tracers and
-## sparks are unshaded and additive and ignore the fog, so a volley reads at the game camera
-## from across the city. Everything is a MultiMesh pool, so a volley
-## creates no nodes. At most army.rooftop.max_drawn figures are drawn (street life already costs
-## milliseconds a frame); they stand FIGURE_SCALE times a street person, to read as a group.
+## at every muzzle of the squad, a frame apart, and sends a short tracer flying at the kaiju's
+## hide. Where a round arrives it lands the same on-surface hit as a tank shell or a helicopter's
+## gun (HideHit, D-245: a toned-down flash lying on the hide, depth-tested, no glow, a tiny red
+## blood mist), never a spark drawn over the body. Flashes and tracers are unshaded and additive
+## and ignore the fog, so a volley reads at the game camera from across the city. Figures,
+## flashes and tracers are MultiMesh pools, so a volley creates no nodes of its own (a landed hit
+## makes HideHit's short-lived ones). At most army.rooftop.max_drawn figures are drawn (street
+## life already costs milliseconds a frame); they stand FIGURE_SCALE times a street person, to
+## read as a group.
 
 const MAX_FLASHES := 48
-const MAX_SPARKS := 48
+const MAX_IMPACTS := 48
 const MAX_TRACERS := 48
-## Flashes and sparks are counted in physics frames (60 a second), so the stagger is exact.
+## Flashes and the wait for a round to arrive are counted in physics frames (60 a second), so the
+## stagger is exact.
 const FLASH_FRAMES := 3
 const FLASH_SIZE := 0.5  # world units (about 15 px at the Behemoth's game camera), a star
 const FLASH_AHEAD := 0.45  # the star burns this far out along the aim, clear of the shooter
 const RAGGED_FRAMES := 14  # each rifle after the first fires up to this late, seeded (no unison)
-## A spark on the hide is drawn over everything (the body would hide it) for this long.
-const SPARK_FRAMES := 6
-const SPARK_SIZE := 1.35  # about 38 px at the Behemoth's game camera
 const POINT_BLANK_FRAMES := 3  # a round arriving sooner than this draws no tracer...
 const SHORT_PIXELS := 60.0  # ...nor does one whose path on screen is shorter than this
 const STAR_PIXELS := 32
 const GLOW := Color(1.0, 0.82, 0.45)
 ## Over-range brightness per instance, past the city's glow threshold (1.1, AgX tonemap), so
-## flashes, tracers and sparks bloom instead of reading as tan sticks.
+## flashes and tracers bloom instead of reading as tan sticks.
 const HOT := Color(4.0, 4.0, 4.0)
 const TRACER_SPEED := 60.0  # world units a second, muzzle to hide
 const TRACER_LENGTH := 1.75  # a tracer is a short streak this long, flying the whole way
@@ -51,7 +52,10 @@ var last_squad := -1
 var lit := Vector2i.ZERO
 ## The worst time one volley's hit search took, in microseconds (the gate tool reads it).
 var worst_aim_usec := 0
-## Every spark drawn: {"at": world point, "frame": physics frame} (the capture tool measures them).
+## The worst time landing one round on the hide took, in microseconds (the gate tool reads it).
+var worst_land_usec := 0
+## Every hit landed on the hide: {"at": world point, "frame": physics frame} (the capture tool
+## measures them).
 var spark_log: Array[Dictionary] = []
 var sim: RampageSim
 ## The drawn kaiju: rounds strike the part of its rigged body nearest each shooter.
@@ -64,8 +68,8 @@ var _voxel: float
 var _figures: Array[MultiMesh] = []
 var _counts := PackedInt32Array()
 var _flash_mm: MultiMesh
-var _spark_mm: MultiMesh
-var _sparks: Array[Dictionary] = []
+## Rounds on their way to the hide: {"hit": strike, "from": muzzle, "wait": frames till it lands}.
+var _impacts: Array[Dictionary] = []
 var _frame := 0
 var _tracer_mm: MultiMesh
 var _flashes: Array[Dictionary] = []
@@ -88,14 +92,13 @@ func _ready() -> void:
 		var mm := _pool(VoxelPerson.rifleman(outfit, _voxel), Num.i(_cfg["max_drawn"]))
 		_figures.append(mm)
 	_counts.resize(_figures.size())
-	_flash_mm = _pool(_star(false), MAX_FLASHES, true)
-	_spark_mm = _pool(_star(true), MAX_SPARKS, true)
+	_flash_mm = _pool(_star(), MAX_FLASHES, true)
 	_tracer_mm = _pool(_glow_box(), MAX_TRACERS * TRAIL.size(), true)
 
 
 ## A unit quad that always faces the camera, painted with a soft four-point star: additive,
-## unshaded, fog-free, tinted per instance; on_top: drawn over everything (sparks on the hide).
-func _star(on_top: bool) -> QuadMesh:
+## unshaded, fog-free, tinted per instance, depth-tested (a roof or the body in front hides it).
+func _star() -> QuadMesh:
 	var img := Image.create(STAR_PIXELS, STAR_PIXELS, false, Image.FORMAT_RGBA8)
 	var half := (STAR_PIXELS - 1) * 0.5
 	for y: int in STAR_PIXELS:
@@ -116,7 +119,6 @@ func _star(on_top: bool) -> QuadMesh:
 	mat.albedo_texture = ImageTexture.create_from_image(img)
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	mat.billboard_keep_scale = true
-	mat.no_depth_test = on_top
 	var quad := QuadMesh.new()
 	quad.material = mat
 	return quad
@@ -211,7 +213,7 @@ func _physics_process(delta: float) -> void:
 	_frame += 1
 	_draw_flashes()
 	_draw_tracers(delta)
-	_draw_sparks()
+	_land_impacts()
 	lit = Vector2i(_flash_mm.visible_instance_count, _tracer_mm.visible_instance_count)
 
 
@@ -227,7 +229,7 @@ func _nearest_first() -> Array[Army.Squad]:
 
 
 ## Whether a figure at `t` looms: on a roof so near the camera that it stands taller than
-## MAX_SCREEN_SHARE of the screen (D-076). It is not drawn; its volleys show only the spark.
+## MAX_SCREEN_SHARE of the screen (D-076). It is not drawn; its volleys show only the hit.
 func _looms(t: Transform3D, camera: Camera3D) -> bool:
 	if camera == null or camera.is_position_behind(t.origin):
 		return false
@@ -270,7 +272,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 	for squad: Army.Squad in sim.army_units.squads:
 		if squad.id != squad_id:
 			continue
-		var seen := _shown.has(squad_id)  # undrawn (looming, past max_drawn): only the hide spark
+		var seen := _shown.has(squad_id)  # undrawn (looming, past max_drawn): only the hit
 		shots += 1
 		last_squad = squad_id
 		var t0 := Time.get_ticks_usec()
@@ -288,7 +290,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			var flight := muzzle.distance_to(to) / TRACER_SPEED
 			var frames := roundi(flight * Engine.physics_ticks_per_second)
 			if not seen or frames < POINT_BLANK_FRAMES or _on_screen(muzzle, to) < SHORT_PIXELS:
-				_spark(hit, wait + frames)  # flash and spark only: a stub of a tracer reads as noise
+				_impact(hit, muzzle, wait + frames)  # no tracer: a stub of one reads as noise
 			elif _tracers.size() < MAX_TRACERS:
 				_tracers.append(
 					{"from": muzzle, "hit": hit, "t": 0.0, "flight": flight, "wait": wait}
@@ -309,21 +311,37 @@ func _draw_flashes() -> void:
 	_flash_mm.visible_instance_count = _draw_stars(_flashes, _flash_mm, FLASH_SIZE)
 
 
-func _draw_sparks() -> void:
-	_spark_mm.visible_instance_count = _draw_stars(_sparks, _spark_mm, SPARK_SIZE)
+## A round from `from` (its muzzle) that reaches strike `hit` on the hide after `wait` frames.
+func _impact(hit: Dictionary, from: Vector3, wait: int) -> void:
+	if _impacts.size() < MAX_IMPACTS:
+		_impacts.append({"hit": hit, "from": from, "wait": wait})
 
 
-## A spark at strike `hit` on the hide, after `wait` frames; it rides the body while it burns.
-func _spark(hit: Dictionary, wait: int) -> void:
-	if _sparks.size() < MAX_SPARKS:
-		_sparks.append({"hit": hit, "wait": wait, "left": SPARK_FRAMES})
+## Lands each round whose wait is over on the hide, where it meets the real cube along its line
+## (HideHit: on the surface, depth-tested, no glow, a tiny blood mist; a wound the hide keeps).
+func _land_impacts() -> void:
+	for round_in: Dictionary in _impacts.duplicate():
+		if Num.i(round_in["wait"]) > 0:  # the round has not arrived yet
+			round_in["wait"] = Num.i(round_in["wait"]) - 1
+			continue
+		_impacts.erase(round_in)
+		var struck: Dictionary = round_in["hit"]
+		var aim := RooftopAim.at(struck)
+		if aim == Vector3.INF or body == null:  # the bone it struck is gone (a stage change)
+			continue
+		var from: Vector3 = round_in["from"]
+		var t0 := Time.get_ticks_usec()
+		var landed := HideHit.land(_city.fx, body, from, aim)
+		worst_land_usec = maxi(worst_land_usec, Time.get_ticks_usec() - t0)
+		var where: Vector3 = landed["point"]
+		spark_log.append({"at": where, "frame": _frame})
 
 
-## Draws each star whose wait is over, for its frames left; returns how many it drew.
+## Draws each flash whose wait is over, for its frames left; returns how many it drew.
 func _draw_stars(stars: Array[Dictionary], mm: MultiMesh, size: float) -> int:
 	var shown := 0
 	for f: Dictionary in stars.duplicate():
-		if Num.i(f["wait"]) > 0:  # this rifle has not fired yet (or the round not arrived)
+		if Num.i(f["wait"]) > 0:  # this rifle has not fired yet
 			f["wait"] = Num.i(f["wait"]) - 1
 			continue
 		if Num.i(f["left"]) <= 0:
@@ -331,13 +349,10 @@ func _draw_stars(stars: Array[Dictionary], mm: MultiMesh, size: float) -> int:
 			continue
 		var struck: Dictionary = f["hit"]
 		var at := RooftopAim.at(struck)
-		if at == Vector3.INF:  # the bone it struck is gone (a stage change)
+		if at == Vector3.INF:
 			stars.erase(f)
 			continue
-		if mm == _spark_mm and Num.i(f["left"]) == SPARK_FRAMES:
-			spark_log.append({"at": at, "frame": _frame})
-		var total := float(SPARK_FRAMES if mm == _spark_mm else FLASH_FRAMES)
-		var fade := Num.f(f["left"]) / total  # full on the first frame, fading out
+		var fade := Num.f(f["left"]) / float(FLASH_FRAMES)  # full on the first frame, fading out
 		f["left"] = Num.i(f["left"]) - 1
 		mm.set_instance_transform(shown, Transform3D(Basis().scaled(Vector3.ONE * size), at))
 		mm.set_instance_color(shown, HOT * fade)
@@ -346,7 +361,7 @@ func _draw_stars(stars: Array[Dictionary], mm: MultiMesh, size: float) -> int:
 
 
 ## Each tracer is a short glowing streak flying muzzle to hide; on arrival it is gone and the
-## hide sparks exactly at its tip.
+## round lands on the hide exactly where it was headed.
 func _draw_tracers(delta: float) -> void:
 	var shown := 0
 	for tr: Dictionary in _tracers.duplicate():
@@ -358,12 +373,12 @@ func _draw_tracers(delta: float) -> void:
 		var t := Num.f(tr["t"])
 		var hit: Dictionary = tr["hit"]
 		var to := RooftopAim.at(hit)
+		var from: Vector3 = tr["from"]
 		if t >= 1.0 or to == Vector3.INF:
 			if to != Vector3.INF:
-				_spark(hit, 0)
+				_impact(hit, from, 0)
 			_tracers.erase(tr)
 			continue
-		var from: Vector3 = tr["from"]
 		var head := from.lerp(to, t)
 		var z := (to - from).normalized()
 		var tail := head - z * minf(TRACER_LENGTH, head.distance_to(from))

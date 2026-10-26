@@ -59,6 +59,8 @@ var _blasts: BlastFx
 var _fade: VehicleFade
 var _cues: PowerCues
 var _hud: RampageHud
+## Slow motion when a landmark falls, and the sim's pace through it (LandmarkSlowmo).
+var _slowmo: LandmarkSlowmo
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
 var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
@@ -196,6 +198,8 @@ func _add_overlays() -> void:
 	rumble = PadRumble.new(sim)
 	_kaiju.foot_planted.connect(rumble.footfall)
 	add_child(_hud)
+	_slowmo = LandmarkSlowmo.new(sim, _hud)
+	add_child(_slowmo)
 
 
 func _physics_process(delta: float) -> void:
@@ -321,6 +325,7 @@ func _on_event(event: Dictionary) -> void:
 		"building_regrown":
 			_city.regrow(Num.i(event["building"]))
 		"run_over":
+			_slowmo.stop()  # the end beat runs at normal speed (D-259)
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
