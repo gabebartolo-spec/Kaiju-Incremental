@@ -30,6 +30,7 @@ const CARVE_AT: Array[Vector3] = [
 const CARVE_R: Array[float] = [5.0, 7.0, 6.0, 4.0, 3.0]
 
 const CellFaces := preload("res://tests/lib/cell_faces.gd")
+const BalconyFaces := preload("res://tests/lib/balcony_faces.gd")
 
 var _native := false
 
@@ -42,6 +43,8 @@ func run_checks() -> void:
 	_native = ClassDB.class_exists("KaijuMesher")
 	await _t("_check_native_loaded")
 	await _t("_check_matches_baked_view")
+	await _t("_check_no_face_hidden_by_a_hidden_slab")
+	await _t("_check_balcony_rail_takes_the_sill_tone")
 	await _t("_check_closed_surface_after_carves")
 	await _t("_check_only_touched_regions")
 	await _t("_check_incremental_equals_fresh")
@@ -103,6 +106,8 @@ func _check_native_loaded() -> void:
 
 ## Uncarved, the grid's mesh holds every face of the baked view (shell and slabs) in the same
 ## colour, and its only extra faces are wall and roof faces looking into the building's hollow.
+## The one face the baked view draws that the grid's mesh does not is a wall face behind a balcony
+## slab (the baked view hides that slab, so the wall must show; the grid draws the slab itself).
 func _check_matches_baked_view() -> void:
 	for f: Array in FIXTURES:
 		var b := _building(f)
@@ -143,11 +148,12 @@ func _check_matches_baked_view() -> void:
 			var inside := local.x >= 1 and local.x <= w - 2 and local.z >= 1 and local.z <= d - 2
 			if not (inside and local.y >= 0 and local.y < h - 1):
 				stray += 1
+		var behind := BalconyFaces.behind(voxels, baked)
 		check(
-			missing == 0 and recoloured == 0,
+			missing == behind.size() and recoloured == 0,
 			(
-				"%s: every baked face is drawn in its colour (%d missing, %d recoloured of %d)"
-				% [f[0], missing, recoloured, old.size()]
+				"%s: every baked face is drawn in its colour, bar %d balcony walls (%d, %d of %d)"
+				% [f[0], behind.size(), missing, recoloured, old.size()]
 			)
 		)
 		check(
@@ -157,6 +163,54 @@ func _check_matches_baked_view() -> void:
 				% [f[0], extra, stray]
 			)
 		)
+
+
+## The director's "flickering horizontal black bars across the windows" (2026-10-27): a wall cell
+## behind a balcony slab (brick facades, every other floor) had no face drawn, because the slab
+## that touches it is in the hidden mesh: a see-through strip with dark back faces behind it.
+## Every face of a shell cell is drawn unless a drawn cell, the hollow or the ground covers it;
+## the brick fixtures have such balconies (not blind).
+func _check_no_face_hidden_by_a_hidden_slab() -> void:
+	var balcony_fixtures := 0
+	for f: Array in FIXTURES:
+		var voxels := BuildingVoxels.new(_building(f), Color("8a7f72"), _party(f))
+		var baked := BuildingMesher.new(voxels)
+		var hidden := BalconyFaces.hidden(voxels, baked)
+		var behind := BalconyFaces.behind(voxels, baked).size()
+		balcony_fixtures += 1 if behind > 0 else 0
+		check(
+			hidden == 0,
+			(
+				"%s: no shell face is hidden by a slab outside the hollow (%d hidden, %d balcony faces)"
+				% [f[0], hidden, behind]
+			)
+		)
+	check(balcony_fixtures >= 2, "the brick fixtures have balconies (%d)" % balcony_fixtures)
+
+
+## D-303 (the director's "Lighten to sill tone"): a balcony railing is drawn in the window-sill
+## colour, so at night it reads as a railing and not as a black gap under the lit window.
+func _check_balcony_rail_takes_the_sill_tone() -> void:
+	var f := _fixture("brick")
+	var base := Color("8a7f72")
+	var voxels := BuildingVoxels.new(_building(f), base, _party(f))
+	var rails := 0
+	for cell: Vector3i in voxels.vox.cells:
+		rails += 1 if voxels.vox.cells[cell] == "rail" else 0
+	check(rails > 0, "the brick fixture has balcony rails (%d voxels)" % rails)
+	var rail: Color = voxels.palette["rail"]
+	var sill: Color = voxels.palette["sill"]
+	check(
+		rail == sill,
+		"the rail takes the sill colour (%s, sill %s)" % [rail.to_html(), sill.to_html()]
+	)
+	check(
+		rail.get_luminance() > base.get_luminance(),
+		(
+			"the rail is lighter than the wall (%.3f vs %.3f)"
+			% [rail.get_luminance(), base.get_luminance()]
+		)
+	)
 
 
 ## After the carve sequence every solid cell meets air through exactly one face per side:
