@@ -4,7 +4,8 @@ extends RefCounted
 ## per frame, each game bone's turn from its rest pose, the pelvis offset, both toe tips and which
 ## feet are planted, in game axes (positions in cm). Data only; ClipGait plays it.
 ## Layout: "KCLP", u32 version, u32 header length, the header (JSON: bones in rig.json order, the
-## skin bones each gathers, rest heads in metres, fps, stride per walk cycle, the clip table), then
+## skin bones each gathers, rest heads in metres, fps, stride per walk cycle, the clip table; a clip
+## may name its widest-jaw frame "jaw_peak" and say "tail_slam": false), then
 ## FRAME_BYTES per frame: int16[4] quaternion per bone, int16[3] pelvis offset, int16[6] left and
 ## right toe tips, int16 root yaw (centidegrees), int16[2] root travel (dm; unused), u8 planted
 ## bits, u8 pad.
@@ -35,6 +36,8 @@ var rig_scale := 1.0
 var rig_origin := Vector3.ZERO
 var _clips: Dictionary = {}  # name -> Vector3i(first frame, frames, loops 0/1)
 var _cycles: Dictionary = {}  # name -> walk cycles the clip holds (1 unless the file says)
+var _jaw_peaks: Dictionary = {}  # name -> frame with the jaw at its widest, when the file says
+var _no_slam: Dictionary = {}  # clips keyed without a tail slam ("tail_slam": false)
 var _rest_heads: Array[Vector3] = []
 var _raw := PackedByteArray()
 var _data_at := 0
@@ -83,6 +86,10 @@ func _load(header: Dictionary, raw: PackedByteArray, data_at: int) -> bool:
 		_clips[str(c["name"])] = Vector3i(first, frames, 1 if c.get("loop", false) else 0)
 		var cycles: float = c.get("cycles", 1.0)
 		_cycles[str(c["name"])] = maxi(1, roundi(cycles))
+		if c.has("jaw_peak"):
+			_jaw_peaks[str(c["name"])] = Num.f(c["jaw_peak"])
+		if not c.get("tail_slam", true):
+			_no_slam[str(c["name"])] = true
 		total = maxi(total, first + frames)
 	_raw = raw
 	_data_at = data_at
@@ -111,6 +118,17 @@ func cycles_of(clip: String) -> int:
 func loops(clip: String) -> bool:
 	var c: Vector3i = _clips[clip]
 	return c.z == 1
+
+
+## The clip's frame with the jaw at its widest when the file names one (the Cascadeur roar),
+## else `fallback` (the Blender clips' known frame).
+func jaw_peak(clip: String, fallback: float) -> float:
+	return Num.f(_jaw_peaks.get(clip, fallback))
+
+
+## False for a clip keyed without a tail slam (the Cascadeur roar arches its tail up).
+func slams(clip: String) -> bool:
+	return not _no_slam.has(clip)
 
 
 ## Checks the clips were baked for this rig (same bones, same order, same rest shape) and fits
