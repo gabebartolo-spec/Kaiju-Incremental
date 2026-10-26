@@ -7,7 +7,8 @@ name: tests
 #   - A push to main whose tree is the tree a green PR run already tested skips its re-test
 #     (tools/ci_reuse_pr_run.sh).
 #   - The shards come from measured times (tools/ci_timings.txt, tools/plan_ci_shards.sh):
-#     no suite or shard list is kept by hand. A PR run targets 10-12 minutes; it is about 4.
+#     no suite or shard list is kept by hand. A PR run targets 10-12 minutes (debt row 4, D-295).
+#     Each shard runs `lanes` suites at once on its 4 vCPUs (tools/run_tests.sh LANES).
 #   - Slow, noisy suites ("pr_skip" in tools/ci_timings.txt; none yet) run on pushes to main
 #     only, reported and never blocking.
 #   - Every test function must have run and made a check (tests/lib/functions_ran.gd); there is
@@ -167,7 +168,7 @@ jobs:
           KAIJU_NATIVE_REQUIRED: "1"
           SUITES: ${{ matrix.suites }}
           LANES: ${{ matrix.lanes }}
-        run: nproc; VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
+        run: VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
 
       - name: Upload test logs
         if: failure()

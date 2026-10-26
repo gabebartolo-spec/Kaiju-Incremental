@@ -2,16 +2,17 @@
 # Splits the Godot suites across CI shards from measured times, so no list of suites or
 # shards is kept by hand (director 2026-10-19, github-hygiene §4). Suites are found by
 # filename (tests/run_<suite>_tests.gd). tools/ci_timings.txt holds "<suite> <seconds>"
-# lines from a recent run, one "shards <n>" line and one "lanes <n>" line (suites a shard runs at once); a suite with no timing yet counts as
-# DEFAULT_SECS. Longest suite first, each into the lightest shard. Aim for a PR run of
-# about 10-12 minutes: raise "shards" when the heaviest shard passes about 8 minutes.
+# lines from real CI runs, one "shards <n>" line and one "lanes <n>" line (suites a shard runs
+# at once); a suite with no timing yet counts as DEFAULT_SECS. Longest suite first, each into the
+# lightest bin. Aim for a PR run of about 10-12 minutes: raise "shards" when the heaviest shard
+# passes about 8 minutes.
 #
 #   tools/plan_ci_shards.sh            # print the plan
 #   tools/plan_ci_shards.sh --matrix   # the GitHub matrix as JSON (tests.yml plan job)
 #   tools/plan_ci_shards.sh --slow     # the "pr_skip" suites: pushes to main only
 #
-# Re-measure at least weekly and after adding a slow suite:
-#   TIMINGS_FILE=tools/ci_timings.txt tools/run_tests.sh
+# Re-measure at least weekly and after adding a slow suite, from the shard logs of real CI runs:
+#   python tools/ci_retime.py
 set -u
 mode="${1:-}"
 cd "$(dirname "$0")/.." || exit 1
@@ -40,8 +41,9 @@ shards=$(awk '$1 == "shards" {print $2}' "$TIMINGS" 2> /dev/null | head -1)
 lanes=$(awk '$1 == "lanes" {print $2}' "$TIMINGS" 2> /dev/null | head -1)
 
 # Each shard runs `lanes` suites at once (tools/run_tests.sh LANES), so the suites are packed into
-# shards x lanes bins, longest first into the lightest bin; a shard owns `lanes` neighbouring bins
-# and its pool starts the longest suite first, so no shard waits on a long suite started last.
+# shards x lanes bins, longest first into the lightest bin; bin k belongs to shard ((k-1) mod shards)+1,
+# which puts the longest suites in different shards, and a shard's pool starts its longest suite first,
+# so no shard waits on a long suite started last.
 printf '%s' "$rows" | sort -k2,2nr -k1,1 | awk -v n="${shards:-1}" -v lanes="${lanes:-1}" -v mode="$mode" '
 	{ name[NR] = $1; secs[NR] = $2 }
 	END {
@@ -53,11 +55,11 @@ printf '%s' "$rows" | sort -k2,2nr -k1,1 | awk -v n="${shards:-1}" -v lanes="${l
 			best = 1
 			for (j = 2; j <= bins; j++) if (load[j] < load[best]) best = j
 			load[best] += secs[i]
-			sh = int((best - 1) / lanes) + 1
+			sh = (best - 1) % n + 1
 			list[sh] = list[sh] (list[sh] == "" ? "" : " ") name[i]
 		}
 		for (j = 1; j <= bins; j++) {
-			sh = int((j - 1) / lanes) + 1
+			sh = (j - 1) % n + 1
 			if (load[j] > longest[sh]) longest[sh] = load[j]
 		}
 		if (mode == "--matrix") {
