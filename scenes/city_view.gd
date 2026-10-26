@@ -156,7 +156,7 @@ func _build_ground() -> void:
 	add_child(_streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
-		add_child(CitySkyline.new(_streets, Seeds.make("skyline", 0)))
+		SkylineRampage.attach(self, CitySkyline.new(_streets, Seeds.make("skyline", 0)), _rng)
 
 
 func _base_color(b: RampageSim.Building) -> Color:
