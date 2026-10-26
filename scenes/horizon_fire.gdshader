@@ -6,6 +6,8 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabl
 // x = flicker seed, y = when it lights (s), z = kind (0 flame, 1 wash), w = strength.
 // Lights burn through the haze more than walls do, as the far facades' windows.
 
+#include "res://scenes/surface_detail.gdshaderinc"
+
 uniform float now = 0.0;
 uniform float haze = 0.004;
 uniform float haze_start = 120.0;
@@ -48,6 +50,8 @@ void fragment() {
 		float sway = 0.12 * sin(up * 7.0 + now * 8.0 + v_seed * 11.0) * up;
 		shape = exp(-pow((p.x - sway) / mix(0.55, 0.2, up), 2.0) - pow((up - 0.3) / 0.35, 2.0));
 	}
+	// Flames lick and the wash mottles: the city's one noise (surface_detail), drifting upward.
+	shape *= 0.8 + 0.4 * sd_fbm(UV * vec2(5.0, 9.0) + vec2(v_seed * 13.0, now * 0.9 * (1.0 - step(0.5, v_kind))), 1.0);
 	vec3 hot = mix(COLOR.rgb, vec3(1.0, 0.92, 0.7), exp(-r * r * 8.0) * 0.3);
 	ALBEDO = hot * shape * v_power;
 }

@@ -6,6 +6,8 @@ render_mode blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_di
 // puff's place in its column (0..1), y = when the column starts (s), z = kind (0 smoke column,
 // 1 collapse dust), w = seed. Hazes like the far skyline (facade.gdshaderinc FAR_HAZE).
 
+#include "res://scenes/surface_detail.gdshaderinc"
+
 uniform float now = 0.0;
 uniform float rise_s = 14.0;  // a smoke puff's trip up the column
 uniform float height = 140.0;
@@ -25,40 +27,28 @@ varying float v_haze;
 varying float v_kind;
 varying float v_seed;
 
-float hash(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float noise(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	f = f * f * (3.0 - 2.0 * f);
-	return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-		mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-}
-
 void vertex() {
 	vec3 base = MODEL_MATRIX[3].xyz;
 	float size = length(MODEL_MATRIX[0].xyz);
 	float since = now - INSTANCE_CUSTOM.y;
 	float slot = INSTANCE_CUSTOM.x;
-	float seed = INSTANCE_CUSTOM.w;
+	float puff = INSTANCE_CUSTOM.w;
 	v_kind = INSTANCE_CUSTOM.z;
-	v_seed = seed;
+	v_seed = puff;
 	vec3 centre;
 	if (v_kind < 0.5) {
 		// A puff rises the column and comes round again; the column grows from its base.
 		float trip = since / rise_s;
 		v_age = fract(trip + slot);
 		float grown = step(v_age, trip);
-		centre = base + vec3(drift * height * v_age * v_age + sin(seed * 40.0 + v_age * 6.0) * size * 0.3,
+		centre = base + vec3(drift * height * v_age * v_age + sin(puff * 40.0 + v_age * 6.0) * size * 0.3,
 			height * v_age, 0.0);
 		size *= 1.0 + 3.0 * v_age;
 		v_alpha = grown * sin(3.14159 * sqrt(v_age)) * smoothstep(0.0, 2.0, since);
 	} else {
 		// Dust rolls out from a falling tower's foot and settles.
 		v_age = clamp(since / dust_s, 0.0, 1.0);
-		float a = seed * 6.2832;
+		float a = puff * 6.2832;
 		float spread = size * (0.6 + 2.2 * sqrt(v_age)) * (0.5 + slot);
 		centre = base + vec3(cos(a) * spread, size * (0.3 + 1.2 * v_age) * (0.4 + slot), sin(a) * spread * 0.4);
 		size *= 1.0 + 1.5 * v_age;
@@ -73,7 +63,7 @@ void vertex() {
 
 void fragment() {
 	vec2 p = UV * 2.0 - 1.0;
-	float n = noise(UV * 4.0 + v_seed * 17.0) * 0.6 + noise(UV * 9.0 + v_seed * 5.0) * 0.4;
+	float n = sd_fbm(UV * 4.0 + v_seed * 17.0, 1.0);
 	float mask = 1.0 - smoothstep(0.25, 1.0, length(p) + (n - 0.5) * 0.6);
 	vec3 col = v_kind < 0.5 ? smoke_color : dust_color;
 	col *= 0.8 + 0.35 * n;
