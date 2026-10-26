@@ -32,11 +32,14 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 		"its own, lower rotor is playing"
 	)
 	# Headless draws nothing and reads back no voxel colours: there the check is that the leader
-	# has its own recoloured copy, not the gunships' shared one; the colours are judged in the clip.
+	# wears its own model (vip_heli, lit from within on its own copy), not the gunships' shared
+	# one, with its gun hidden; the colours are judged in the clip.
 	var plain := HelicopterModel.new()
 	var own := _first_multimesh(view._model) != _first_multimesh(plain)
+	var gunless := not view._model._gun.visible and plain._gun.visible
 	plain.free()
-	check.call(own, "the leader wears its own recoloured voxels, the gunships' stay tan")
+	check.call(own, "the leader wears its own model's voxels, the gunships' stay theirs")
+	check.call(gunless, "the leader carries no gun, a gunship does")
 	if DisplayServer.get_name() != "headless":
 		var paint := _body_colour(view._model)
 		check.call(

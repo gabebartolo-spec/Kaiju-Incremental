@@ -41,7 +41,7 @@ func front(part: String) -> float:
 
 ## A part's voxels with every cell offset by `origin` (minus the hinge puts the hinge at 0).
 func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
-	var key := "%s|%s|%f|%d|%v" % [_dir, part, voxel, salt, origin]
+	var key := "%s|%s|%f|%d|%v" % [_read_path(part), part, voxel, salt, origin]
 	if not _mesh_cache.has(key):
 		var vox: VoxelBuilder = _read(part).frames[0]
 		vox.salt = salt
@@ -73,9 +73,13 @@ static func set_opacity(root: Node, opacity: float) -> void:
 			mat.set_shader_parameter("opacity", opacity)
 
 
-func _read(part: String) -> Kvox:
+func _read_path(part: String) -> String:
 	var entry: Dictionary = _parts[part]
-	var path := _dir.path_join(str(entry["kvox"]))
+	return _dir.path_join(str(entry["kvox"]))
+
+
+func _read(part: String) -> Kvox:
+	var path := _read_path(part)
 	if not _kvox_cache.has(path):
 		_kvox_cache[path] = Kvox.read(path)
 	return _kvox_cache[path]

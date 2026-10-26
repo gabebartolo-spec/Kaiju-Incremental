@@ -37,6 +37,7 @@ func run_checks() -> void:
 	await _t("_check_voxel_skin")
 	await _t("_check_tank")
 	await _t("_check_heli")
+	await _t("_check_vehicle_parts")
 	await _t("_check_vehicle_fade")
 	await _t("_check_crease_pass")
 
@@ -328,6 +329,26 @@ func _check_heli() -> void:
 		"the chin gun aims at a target below and ahead; muzzle at %s" % muzzle
 	)
 	heli.free()
+
+
+## Each vehicle model (the tank, the gunship, the leader's helicopter) lists every part its class
+## builds, and each part has voxels: a renamed or missing part in a .parts.json fails here by name.
+func _check_vehicle_parts() -> void:
+	var wanted := {
+		TankModel.BASE: ["hull", "turret", "barrel"],
+		HelicopterModel.BASE: ["body", "main_rotor", "tail_rotor", "gun"],
+		HelicopterModel.VIP_BASE: ["body", "main_rotor", "tail_rotor", "gun"],
+	}
+	var height := Num.f(Content.section("vehicles")["heli_height"])
+	for base: String in wanted:
+		var parts := VehicleParts.new(base, height)
+		var names: Array = wanted[base]
+		for part: String in names:
+			var listed := parts._parts.has(part)
+			check(listed, "%s lists the part %s" % [base, part])
+			if listed:
+				var cells: int = parts._read(part).frames[0].cells.size()
+				check(cells > 0, "%s part %s has voxels (%d)" % [base, part, cells])
 
 
 ## A helicopter between the camera and the kaiju fades to the screen door and one off to the side

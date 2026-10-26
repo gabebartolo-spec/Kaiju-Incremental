@@ -1,13 +1,13 @@
 class_name TankModel
 extends Node3D
-## The main battle tank (D-042): modelled in Blender (assets/source/vehicles/build_tank.py) and
-## voxelized per part (tools/blender/voxelize_parts.py) at 2x real size, desert tan, facing -Z,
-## the node's origin under the hull's centre. The turret turns and the gun elevates about their
+## The main battle tank (D-297, D-309): a Tripo model cut into hull, turret and gun
+## (assets/vehicles/tank*), voxelized per part with the texture's own colours, facing -Z, the
+## node's origin under the hull's centre. The turret turns and the gun elevates about their
 ## real hinges (tank.parts.json); fire() kicks the gun back. Presentation only.
 
 const BASE := "res://assets/vehicles/tank"
-## Hull tan, for wreck debris.
-const TAN := Color("b89c6a")
+## Hull tan (the model's mean colour), for wreck debris.
+const TAN := Color("786244")
 
 var _turret: Node3D
 var _barrel: Node3D
