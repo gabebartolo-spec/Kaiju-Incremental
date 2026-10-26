@@ -11,7 +11,8 @@ extends SceneTree
 ## (Kit.window_ok).
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_window_bars.gd -- --out=<dir> [--variants=base,noshadow]
-##     [--style=-1] [--frames=24] [--step=0.06] [--time=night] [--gfx=medium] [--size=3840x2160]
+##     [--style=-1] [--full] [--frames=24] [--step=0.06] [--time=night] [--gfx=medium]
+##     [--size=3840x2160]  (--full saves whole frames full<NNN>.png, for a clip)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SPECIES := "reptilian"
@@ -48,6 +49,7 @@ func _initialize() -> void:
 				"gfx": "medium",
 				"size": "3840x2160",
 				"pick": 0,
+				"full": false,
 			}
 		)
 	)
@@ -309,7 +311,10 @@ func _building(n: int, scale: float, variant: String) -> void:
 				)
 			)
 			shot.save_png(dir.path_join("full0.png"))
-		shot.get_region(rect).save_png(dir.path_join("f%03d.png" % f))
+		if _opt["full"]:  # the whole 4K frame, for a clip
+			shot.save_png(dir.path_join("full%03d.png" % f))
+		else:
+			shot.get_region(rect).save_png(dir.path_join("f%03d.png" % f))
 	undo.call()
 
 
