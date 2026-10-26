@@ -60,6 +60,7 @@ gd=$(echo "$changed" | grep -E '\.gd$' | grep -v -E '^(\.godot|\.claude|tests/fi
 
 step "2 tuning keys and complexity"
 python tools/lint/tuning_keys.py || fail "tuning keys"
+python tools/lint/licence_register.py || fail "licence register (docs/LICENSING_REGISTER.md covers every assets/ file)"
 python tools/lint/complexity_ratchet.py || fail "complexity ratchet"
 
 step "3 lint on $(echo "$gd" | grep -c . ) changed .gd files"
