@@ -7,13 +7,17 @@
 #   GODOT        the Godot console exe (default: the desktop 4.7.2 console build)
 #   MODE         timing = no other Godot at all and no League of Legends (p95 benches); guard (default) = no bench_/ablate
 #                Godot and more than 6 GB free RAM
-#   BENCH_ROLE   your role name, for your bench-window file (default: drive)
+#   BENCH_ROLE   your role name, for your bench-window file (default: drive). If you already hold
+#                $KT_DIR/BENCH_WINDOW_<owner>, set BENCH_ROLE=<owner>: only that flag is refreshed while the run waits;
+#                a flag under another name counts as another role's and is waited on, never refreshed
 #   KT_DIR       the folder holding the window files (default: C:/kt)
 #   DRY_RUN=1    do the waiting and the window protocol, print what would launch, launch nothing
 # Window protocol (machine rules D-292, D-299): a windowed launch waits while any $KT_DIR/BENCH_WINDOW* that is not yours
 # was touched in the last 20 min (older flags are stale), and while the director's ~/.claude/focus-pause exists.
-# MODE=timing takes $KT_DIR/BENCH_WINDOW_<role> itself, only when none is live, for this ONE run (it keeps touching it),
-# and removes it on exit, also on a signal.
+# MODE=timing takes $KT_DIR/BENCH_WINDOW_<role> itself, only when none is live, for this ONE run (it touches it on every
+# pass of the wait loop and every 5 s of the run, so a long wait never lets it go stale and open the PC to tests),
+# and removes it on exit, also on a signal. Another role's flag is never touched: its owner keeps it fresh, and a dead
+# owner's flag must be able to go stale.
 # Headless Godot runs may go beside a bench (D-292). Needs the bench scripts of PR #259 (tools/capture/bench_frames.gd).
 # Kills the run (its own process tree only) if the log passes 5 MB (FLOOD) or 25 min pass (TIMEOUT).
 set -u
