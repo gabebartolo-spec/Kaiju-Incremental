@@ -4775,9 +4775,37 @@
       "properties": {
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
-        "kaiju_bounds_slack": {"$ref": "#/$defs/num"}
+        "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "fx_pool": {
+          "type": "object",
+          "properties": {
+            "enabled": {"$ref": "#/$defs/bool"},
+            "provisional_sizes": {"$ref": "#/$defs/bool"},
+            "slots": {
+              "type": "object",
+              "properties": {
+                "dust": {"$ref": "#/$defs/int"},
+                "puff": {"$ref": "#/$defs/int"},
+                "step": {"$ref": "#/$defs/int"},
+                "slam": {"$ref": "#/$defs/int"},
+                "tree": {"$ref": "#/$defs/int"},
+                "spark": {"$ref": "#/$defs/int"},
+                "burst": {"$ref": "#/$defs/int"},
+                "flames": {"$ref": "#/$defs/int"},
+                "embers": {"$ref": "#/$defs/int"},
+                "smoke": {"$ref": "#/$defs/int"}
+              },
+              "required": ["dust", "puff", "step", "slam", "tree", "spark", "burst", "flames", "embers", "smoke"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": ["enabled", "provisional_sizes", "slots"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack"],
+      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "fx_pool"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     }
