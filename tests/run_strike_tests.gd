@@ -315,17 +315,17 @@ func _check_standing_stomp() -> void:
 	)
 
 
-## The dash is instant: he is already on his way on the press step.
+## The dash button's leap (D-259, which replaced the charge) is not a strike: it starts on the
+## press step, with no delay.
 func _check_dash() -> void:
 	var sim := _croc({}, [], Vector2.ZERO)
 	sim.body.use_species("reptilian")
-	var from := sim.kaiju_pos
 	var seen := _watch(sim, DT, NORTH, DASH_FLAG)
 	check(
-		_at(seen, "dash") == 0.0 and sim.kaiju_pos.distance_to(from) > 1.0,
+		_at(seen, "leap") == 0.0 and sim.body.dash.on(),
 		(
-			"the dash starts on the press step and has covered %.1f units"
-			% sim.kaiju_pos.distance_to(from)
+			"the leap starts on the press step (leap at %.2f, in the air %s)"
+			% [_at(seen, "leap"), sim.body.dash.on()]
 		)
 	)
 
