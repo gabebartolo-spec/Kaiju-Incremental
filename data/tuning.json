@@ -1659,6 +1659,7 @@
 		"night_clip_max": 0.08,
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
-		"kaiju_bounds_slack": 1.05
+		"kaiju_bounds_slack": 1.05,
+		"kaiju_three_faces": true
 	}
 }
