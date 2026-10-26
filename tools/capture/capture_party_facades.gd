@@ -27,6 +27,8 @@ var _city: CityView
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "tier": _tier, "at": "", "pairs": _pairs})
 	_out = str(a["out"])
 	_tier = Num.i(a["tier"])
