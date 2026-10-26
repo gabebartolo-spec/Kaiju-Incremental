@@ -214,7 +214,7 @@ func retire(n: int) -> void:
 ## the street never needs waking. Returns how many woke.
 func wake(box: AABB) -> int:
 	var woke := 0
-	var floor_y := Num.f(_cfg["ground_y"]) + Num.f(_cfg["ground_t.slop"]) * 2.0
+	var floor_y := Num.f(_cfg["ground_y"]) + Num.f(_cfg["ground_slop"]) * 2.0
 	var r := _rubble
 	var k := r.count() - 1
 	while k >= 0:
