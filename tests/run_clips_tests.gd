@@ -113,7 +113,8 @@ func _check_adult_keyed() -> void:
 		clips.pose_at("death_stagger", last), clips.pose_at("death_stagger", last + 120.0)
 	)
 	check(
-		still.x < 0.01 and still.y < 0.1 and held.x == 0.0 and held.y == 0.0,
+		# held: the same frame, so only float noise (angle_to of a turn with itself reads ~0.001 rad)
+		still.x < 0.01 and still.y < 0.1 and held.x < 0.002 and held.y < 0.001,
 		(
 			"the death stagger ends in the held stone pose (last %d frames %.4f rad, %.3f m; held %.4f)"
 			% [STONE_FRAMES, still.x, still.y, held.x]
