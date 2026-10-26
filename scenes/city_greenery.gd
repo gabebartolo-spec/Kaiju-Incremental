@@ -263,7 +263,7 @@ func _yards() -> void:
 	for block: Dictionary in _plan["blocks"]:
 		if str(block["use"]) == "built":
 			rects.append(block["rect"])
-	for b: RampageSim.Building in _sim.buildings:
+	for b: RampageSim.Building in _sim.lot_buildings():
 		var box := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
 		for rect: Rect2 in rects:
 			if not rect.has_point(box.get_center()):

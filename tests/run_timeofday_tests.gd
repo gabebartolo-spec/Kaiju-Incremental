@@ -181,7 +181,7 @@ func _check_through_main() -> void:
 		root.add_child(main)
 		await process_frame
 		await process_frame
-		main.call("_continue")  # a save with no rampage yet starts one
+		main.call("_continue_slot", 1)  # slot 1: a save with no rampage yet starts one
 		seen.append(str(SaveFile.load_game().get("last_time", "")))
 		var table := Content.time_table()
 		var expected := str(Look.color("sky_top").to_html(false))

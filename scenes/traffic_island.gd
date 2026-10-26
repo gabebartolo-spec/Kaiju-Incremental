@@ -37,7 +37,7 @@ static func spots(decor: CityDecor) -> Array[Vector2]:
 	var size := Num.f(city["coverage_cell"])
 	var half := CityGen.half_extent(city)
 	var full := {}
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():
 		_mark_rect(sim, Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d), full)
 	for r: Rect2 in decor.cars:
 		_mark_rect(sim, r, full)

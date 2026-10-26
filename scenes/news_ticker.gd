@@ -17,6 +17,9 @@ const REPEAT := 2
 
 ## The strip behind the text (read by the flow suite's contrast check).
 var strip: ColorRect
+## A one-pass strip (RampageNews): the next cycle waits a whole strip behind the headline, so the
+## line crosses once with nothing following it on screen.
+var once := false
 var _crawl: Label
 var _unit := ""
 var _headlines := ""
@@ -52,6 +55,11 @@ func _init(lines: PackedStringArray) -> void:
 	tag_box.add_child(_tag)
 
 
+## A strip sized before it entered the tree never heard its own resize: pad the cycle now.
+func _ready() -> void:
+	_fit_cycle()
+
+
 func _process(delta: float) -> void:
 	var loop := _crawl.get_minimum_size().x / REPEAT
 	_crawl.position.x -= SPEED * delta
@@ -71,6 +79,8 @@ func _fit_cycle() -> void:
 		. x
 	)
 	var short := visible_width() - unit_width()
+	if once:  # the next cycle stays a whole strip behind the line's end
+		short += headlines_width() + visible_width()
 	if short > 0.0 and space > 0.0:
 		_unit += " ".repeat(ceili(short / space))
 	_crawl.text = _unit.repeat(REPEAT)
@@ -81,6 +91,12 @@ func _fit_cycle() -> void:
 func unit_width() -> float:
 	var font := _crawl.get_theme_font("font")
 	return font.get_string_size(_unit, HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_BODY).x
+
+
+## The width of the headlines once, without the padding (px).
+func headlines_width() -> float:
+	var font := _crawl.get_theme_font("font")
+	return font.get_string_size(_headlines, HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_BODY).x
 
 
 ## The width of strip the text crawls across (px).

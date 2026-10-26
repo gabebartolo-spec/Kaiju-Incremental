@@ -217,7 +217,7 @@ func _check_through_main() -> void:
 		root.add_child(main)
 		await process_frame
 		await process_frame
-		main.call("_continue")  # a save with no rampage yet starts one
+		main.call("_continue_slot", 1)  # slot 1: a save with no rampage yet starts one
 		seen.append(str(SaveFile.load_game().get("last_weather", "")))
 		check(
 			Content.weathers().has(seen[-1]) and Content.weather_id() == seen[-1],

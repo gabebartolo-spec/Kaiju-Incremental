@@ -102,6 +102,7 @@ func _walk_end() -> void:
 	root.add_child(_main)
 	await _frames(12)
 	_press(_screen(), "CONTINUE")
+	_press(_screen(), "SLOT 1")
 	await _frames(12)
 	var tree := _screen()
 	_check("Continue lands on the tree", tree is UpgradeScreen, str(tree))
@@ -144,6 +145,7 @@ func _walk_end() -> void:
 	root.add_child(_main)
 	await _frames(12)
 	_press(_screen(), "CONTINUE")
+	_press(_screen(), "SLOT 1")
 	await _frames(30)
 	_check(
 		"Continue lands on the tree with ENDLESS MODE",

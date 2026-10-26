@@ -1,6 +1,7 @@
 extends RefCounted
 ## The flow suite's save checks (tests/lib/flow_screens.gd calls them): an old save migrates, a
-## newer one is refused, and a v1 file on disk loads as the current version.
+## newer one is refused, and a v1 file from before save slots loads from slot 1 as the current
+## version (tests/run_slots_tests.gd holds the slot checks).
 
 
 ## A version 1 save comes up as the current version with its best destruction kept; newer is
@@ -28,10 +29,11 @@ static func migration(check: Callable) -> void:
 		SaveFile.migrate({"version": SaveFile.VERSION + 1}).is_empty(),
 		"a save from a newer version is refused"
 	)
-	var file := FileAccess.open(SaveFile.PATH, FileAccess.WRITE)
+	SaveFile.wipe()  # the pre-slots file moves into the first empty slot
+	var file := FileAccess.open(SaveFile.LEGACY_PATH, FileAccess.WRITE)
 	file.store_string(JSON.stringify(v1))
 	file.close()
-	var loaded := SaveFile.load_game()
+	var loaded := SaveFile.load_game(1)
 	check.call(
 		(
 			Num.i(loaded.get("version", 0)) == SaveFile.VERSION

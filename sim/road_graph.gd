@@ -107,6 +107,8 @@ func _index() -> void:
 		_file(_roads, Rect2(a.min(b), a.max(b) - a.min(b)).grow(cell), e)
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
+		if b.is_rail():  # traffic runs on under the viaduct
+			continue
 		var half := Vector2(b.w, b.d) * 0.5
 		_file(_lots, Rect2(Vector2(b.x, b.z) - half, half * 2.0), i)
 

@@ -13,6 +13,8 @@ var sim: RampageSim
 var cfg: Dictionary
 ## Seconds the sweep in hand covers (a building that dwarfs the kaiju is chewed at bite_dps x it).
 var step_s := 0.0
+## How far the body is lifted off where it stands (world units): a leap's flight (Dash.height).
+var lift := 0.0
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
@@ -53,8 +55,8 @@ func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) 
 		var r := Num.f(d[1]) * s - skin
 		if r <= 0.0:
 			continue
-		var y_lo := sim.stand_y + Num.f(d[2]) * s + skin
-		var y_hi := sim.stand_y + Num.f(d[3]) * s - skin
+		var y_lo := sim.stand_y + lift + Num.f(d[2]) * s + skin
+		var y_hi := sim.stand_y + lift + Num.f(d[3]) * s - skin
 		for i: int in near:
 			var b := sim.buildings[i]
 			if absf(b.x - centre.x) > b.w * 0.5 + r or absf(b.z - centre.y) > b.d * 0.5 + r:
