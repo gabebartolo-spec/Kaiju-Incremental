@@ -61,20 +61,27 @@ func active() -> bool:
 	return phase != Phase.NONE
 
 
-## He dies of `why`: the stagger starts now.
-func begin(why: String) -> void:
+## He dies of `why`: the stagger starts now. False (nothing happens) for a reason that is no death.
+func begin(why: String) -> bool:
+	if not is_death(why):
+		return false
 	if active():
-		return
+		return true
 	reason = why
 	phase = Phase.STAGGER
 	t = 0.0
 	sim.events.append({"type": "death_begin", "reason": why})
+	return true
 
 
-## One step while he dies (RampageSim.step runs it in place of his own): the sequence, and the
-## world going on without him (falls, blasts, the army, the sky, the trains); no input, no clock.
-## Always true (RampageSim.step's early return).
-func step_world(dt: float) -> bool:
+## True when the kaiju takes no step of his own: the run is over, or he is dying and this runs the
+## sequence in place of his step: the world going on without him (falls, blasts, the army, the
+## sky, the trains); no input, no clock (RampageSim.step's early return).
+func holds(dt: float) -> bool:
+	if sim.over:
+		return true
+	if not active():
+		return false
 	step(dt)
 	sim.collapse.step(dt)
 	sim.explosives.step(dt)

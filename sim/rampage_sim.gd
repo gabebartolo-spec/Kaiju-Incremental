@@ -110,18 +110,15 @@ var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
-## The leader's escape helicopter (D-149), its own part beside the air wing.
-var vip: VipHeli
+var vip: VipHeli  # the leader's escape helicopter (D-149), beside the air wing
 var brood: Brood
 var stomp: RampageStomp
-## The reptilian's big attacks that land a beat after the press (Strikes, D-166).
-var strikes: Strikes
+var strikes: Strikes  # the reptilian's big attacks, a beat after the press (D-166)
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
-var death: DeathOverload  # how he dies: stagger, stone, shatter (director 2026-10-26)
+var death: DeathOverload  # how he dies: stagger, stone, shatter
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
-## The big moments (threat level, felled landmarks, tower totals) as events for the HUD.
-var news: RunNews
+var news: RunNews  # the big moments (threat level, landmarks, tower totals) as HUD events
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -240,8 +237,7 @@ func result() -> Dictionary:
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
-	# No step of his own when over, dying (the world steps on, DeathOverload) or rising (D-083).
-	if over or death.active() and death.step_world(dt) or emerge.step(self, dt):
+	if death.holds(dt) or emerge.step(self, dt):
 		return _events
 	time_left -= dt
 	elapsed += dt
@@ -270,8 +266,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	explosives.step(dt)
 	army_units.step(dt)
-	air.step(dt)  # the gunships, then the leader's escape (D-149)
-	vip.step(dt)
+	_step_sky(dt)
 	rail.step(dt)
 	Endless.step(self, dt)
 	news.step(_events)
@@ -282,9 +277,8 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 
 
 ## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
-## freed: Godot never frees objects that count each other, and every rampage kept its city in
-## memory (about 240 MB a rampage in tools/pacing.gd). Call it when the rampage is over for good,
-## after result() is read: the parts no longer reach the sim, so it cannot be stepped again.
+## freed: Godot never frees objects that count each other (a rampage kept 240 MB, tools/pacing.gd).
+## Call it when the rampage is over for good, after result() is read; it cannot be stepped again.
 func dispose() -> void:
 	SimTeardown.cut(self)
 
@@ -292,8 +286,7 @@ func dispose() -> void:
 ## Ends the rampage for `reason` (also the pause menu's End Rampage, "ended"); earnings are kept.
 ## A death plays his overload first (DeathOverload ends it with now = true); `now` ends it at once.
 func end(reason: String, now := false) -> void:
-	if not now and death.is_death(reason):
-		death.begin(reason)
+	if not now and death.begin(reason):
 		return
 	over = true
 	end_reason = reason
@@ -303,6 +296,12 @@ func end(reason: String, now := false) -> void:
 
 func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
+
+
+## The helicopters: the air wing's gunships, then the leader's escape (D-149).
+func _step_sky(dt: float) -> void:
+	air.step(dt)
+	vip.step(dt)
 
 
 ## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a

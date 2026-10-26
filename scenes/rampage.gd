@@ -157,7 +157,6 @@ func _ready() -> void:
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
-	add_child(DeathView.new(sim, _city, _kaiju, add_trauma))  # his overload as he dies
 	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
@@ -190,6 +189,7 @@ func _add_camera() -> void:
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
+	add_child(DeathView.new(sim, _city, _kaiju, add_trauma))  # his overload as he dies
 	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)

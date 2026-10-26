@@ -21,6 +21,8 @@ const PUPIL := Color("15130f")
 const EYE_KEEP_OFF := 3
 
 var species_id: String
+## His death (DeathOverload, DeathView): the stagger clip, the overload on his hide, the burst.
+var death := DeathPose.new()
 var _colors: Dictionary = {}
 var _vox := VoxelBuilder.new()
 ## Walk-cycle flipbook poses of a voxelized model (empty for code-built bodies).
@@ -30,7 +32,6 @@ var _rig: KaijuRig
 var _skin: VoxelSkin
 var _walk_phase := 0.0
 var _squash := 0.0
-var _death: DeathPose  # set when he dies: the stagger clip, then its last frame held
 
 
 ## stage: "baby", "adolescent" or "adult" (D-014); a missing stage falls back to the next one up.
@@ -50,11 +51,13 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
 		if _rig != null:
 			_skin = VoxelSkin.attach(_rig, base)  # D-041; null when debugging rigid voxels
+			death.bind(_rig, _skin)
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
 			return
 	if species_id == "cephalopod":  # no sculpt yet: a code-built octopus on the radial rig
 		_rig = CephalopodStandIn.build(colors, MODEL_HEIGHT, _glow())
+		death.bind(_rig, null)
 		_body.add_child(_rig)
 		return
 	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
@@ -101,8 +104,8 @@ func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 	_squash = maxf(0.0, _squash - delta * 5.0)
 	if _skin != null:
 		_skin.hits.age(delta, Num.f(Content.section("fx")["hide_hit"]["wound_seconds"]))
-	if _death != null:  # dying: the stagger clip, never the gait (DeathPose)
-		_death.update(delta)
+	if death.dying:  # the stagger clip, never the gait (DeathPose)
+		death.update(delta)
 		VoxelSkin.sync_if(_skin)
 		return
 	if _rig != null:
@@ -242,26 +245,6 @@ func stomped_side() -> String:
 func roar() -> void:
 	if _rig != null:
 		_rig.roar()
-
-
-## He dies (DeathOverload): the gait stops and `clip` plays once and holds (DeathPose).
-func die(clip: String) -> DeathPose:
-	if _death == null:
-		_death = DeathPose.new(_rig, clip)
-	return _death
-
-
-## The Special K overload on his hide: charge 0..1 the violet crackle, stone 0..1 how far the
-## stone has crept up from his feet (VoxelSkin.overload; no-op for a body without a skin).
-func overload(charge: float, stone: float) -> void:
-	if _skin != null:
-		_skin.overload(charge, stone)
-
-
-## Up to `most` of his voxels where they are drawn now (world) with their colours, evenly picked:
-## what the burst throws. Empty for a body without a skin.
-func body_points(most: int) -> Array[Dictionary]:
-	return _skin.world_points(most) if _skin != null else [] as Array[Dictionary]
 
 
 ## The leap's pose hook (Dash phases "crouch", "flight", "settle", "recover"; t 0..1 through it):

@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 	if _light == null:
 		_begin()
 	if d.phase != DeathOverload.Phase.SHATTER:
-		kaiju.overload(charge, stone)
+		kaiju.death.overload(charge, stone)
 		var flicker := 0.6 + 0.4 * _rng.randf()
 		_light.light_energy = Num.f(_look["light_energy"]) * charge * flicker
 		_light.global_position = kaiju.focus() + Vector3(0, kaiju.hip_height(), 0)
@@ -69,7 +69,7 @@ func _process(delta: float) -> void:
 
 ## He starts to die: the stagger clip (DeathPose) and the violet light.
 func _begin() -> void:
-	kaiju.die(str(_cfg["stagger_clip"]))
+	kaiju.death.start(str(_cfg["stagger_clip"]))
 	_light = OmniLight3D.new()
 	_light.light_color = _violet
 	_light.omni_range = Num.f(_look["light_range"]) * sim.body_scale()
@@ -80,7 +80,7 @@ func _begin() -> void:
 ## The shatter: his voxels burst out as stone, the sim's shards take flight, the flash and ring.
 func _burst(d: DeathOverload) -> void:
 	burst = true
-	var points := kaiju.body_points(Num.i(_look["debris_max"]))
+	var points := kaiju.death.body_points(Num.i(_look["debris_max"]))
 	kaiju.visible = false
 	var centre := Vector3(d.centre.x, 0.0, d.centre.y)
 	_flash = 1.0
