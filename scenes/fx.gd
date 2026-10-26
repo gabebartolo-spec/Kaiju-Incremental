@@ -114,7 +114,11 @@ func _ready() -> void:
 	kept.append_array([claws, LandmarkBurst.chunk_material()])
 	for mat: Material in kept:
 		keep.hold(str(mat.get_instance_id()), mat)
-	# Prewarm: one of each, out of sight, so the first real one does not stall a frame.
+	_prewarm()
+
+
+## Prewarm: one of each, out of sight, so the first real one does not stall a frame.
+func _prewarm() -> void:
 	dust(Vector3(0, -50, 0), 0.5)
 	footfall(Vector3(0, -50, 0), 0.5)
 	sparks(Vector3(0, -50, 0))
@@ -201,10 +205,10 @@ func dust_line(from: Vector3, to: Vector3, width: float, tint := Color(0, 0, 0, 
 
 
 ## A shot landing on the kaiju's hide (HideHit): `normal` is the surface's, `unit` one voxel of the
-## hide in the world. A glance (armour) throws its sparks along `away`. Use HideHit.land to find the
-## real hit point first.
-func hide_hit(at: Vector3, normal: Vector3, unit: float, glance := false, away := Vector3.ZERO) -> void:
-	_hide_hit.play(at, normal, unit, glance, away)
+## hide in the world. A glance (armour) passes `away`, along which its sparks go. Use HideHit.land
+## to find the real hit point first.
+func hide_hit(at: Vector3, normal: Vector3, unit: float, away := HideHit.NO_GLANCE) -> void:
+	_hide_hit.play(at, normal, unit, away)
 
 
 func sparks(at: Vector3) -> void:

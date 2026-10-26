@@ -23,7 +23,9 @@ static func fire_shell(host: Rampage, node: TankModel, target: Vector3, miss := 
 		)
 		tween.tween_callback(func() -> void: host.sfx.play("deflect"))
 	else:
-		tween.tween_callback(func() -> void: HideHit.land(host._city.fx, host._kaiju, muzzle, target))
+		tween.tween_callback(
+			func() -> void: HideHit.land(host._city.fx, host._kaiju, muzzle, target)
+		)
 		tween.tween_callback(func() -> void: host.sfx.play_at("shell_hit", target))
 	tween.tween_callback(shell.queue_free)
 

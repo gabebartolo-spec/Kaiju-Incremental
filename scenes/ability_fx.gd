@@ -252,7 +252,7 @@ func deflect(at: Vector3, away: Vector3, kaiju: Node3D = null, from := Vector3.Z
 	if kaiju != null:
 		HideHit.land(_city.fx, kaiju, from, at, true, away)
 	else:
-		_city.fx.hide_hit(at, away.normalized(), 0.12 * _scale, true, away)
+		_city.fx.hide_hit(at, away.normalized(), 0.12 * _scale, away)
 
 
 ## Fraction of `span` from `from` at which the line first meets a standing chunk (1: none).

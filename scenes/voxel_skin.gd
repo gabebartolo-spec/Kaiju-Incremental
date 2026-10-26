@@ -23,6 +23,8 @@ static var show_rigid_voxels := "--kaiju-rigid" in OS.get_cmdline_user_args()
 ## The bone matrices sent to the shaders last frame, and whether the mouth's inside showed.
 var pose: Array[Projection] = []
 var mouth_open := false
+## Where shots meet this skin, and the wounds they leave (SkinHits).
+var hits := SkinHits.new()
 var _rig: KaijuRig
 var _nodes: Array[Node3D] = []
 var _binds: Array[Transform3D] = []
@@ -30,8 +32,6 @@ var _cubes: ShaderMaterial
 var _cube_node: MultiMeshInstance3D
 var _fill: ShaderMaterial
 var _hid_rig_voxels := 0
-## Where shots meet this skin, and the wounds they leave (SkinHits).
-var hits := SkinHits.new()
 
 
 ## Puts the skin on a rig built from <base> (KaijuModel does this); null when show_rigid_voxels is
@@ -129,6 +129,18 @@ static func baked_stamp(base: String) -> PackedByteArray:
 	return raw.slice(8, 16) if raw.size() >= 26 else PackedByteArray()
 
 
+func _cube_material(voxel: float, tune: Dictionary) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = CUBE_SHADER
+	mat.set_shader_parameter("voxel", voxel)
+	mat.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
+	mat.set_shader_parameter("wound_radius", voxel * Num.f(tune["wound_radius_voxels"]))
+	mat.set_shader_parameter("wound_tint", Color(str(tune["wound_tint"])).srgb_to_linear())
+	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
+	mat.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
+	return mat
+
+
 func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	_rig = rig
 	name = "VoxelSkin"
@@ -160,14 +172,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
 		hits.add_cell(raw[at + 10], cell, base)
 		at += 15
-	_cubes = ShaderMaterial.new()
-	_cubes.shader = CUBE_SHADER
-	_cubes.set_shader_parameter("voxel", voxel)
-	_cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
-	_cubes.set_shader_parameter("wound_radius", voxel * Num.f(tune["wound_radius_voxels"]))
-	_cubes.set_shader_parameter("wound_tint", Color(str(tune["wound_tint"])).srgb_to_linear())
-	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
-	_cubes.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
+	_cubes = _cube_material(voxel, tune)
 	var cubes := MultiMeshInstance3D.new()
 	_cube_node = cubes
 	cubes.multimesh = mm

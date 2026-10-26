@@ -1,12 +1,14 @@
 extends SceneTree
-## Shot impacts on the kaiju's hide (director 2026-10-25), stills only. In a real rampage a tank is set
-## on the camera's side of the standing kaiju and fires one real shell (TankFx.fire_shell) at its chest
-## height: stills at the hit frame and +0.05, +0.2, +0.4, +0.6 s, each with a 2x crop on the hit; then
-## the same shot from the far side (the hit must be hidden by his body), and, with armour, a glance.
-## --worn: a 3-minute rampage with the real army, then a still and a 2x crop of the battle-worn hide.
-## Prints the measured numbers (flash px, lifetimes, wounds). --before runs on code without HideHit.
+## Shot impacts on the kaiju's hide (director 2026-10-25), stills only. In a real rampage a tank is
+## set on the camera's side of the standing kaiju and fires one real shell (TankFx.fire_shell) at
+## its chest height: stills at the hit frame and +0.05, +0.2, +0.4, +0.6 s, each with a 2x crop on
+## the hit; then the same shot from the far side (the hit must be hidden by his body), and, with
+## armour, a glance. --worn: a 3-minute rampage with the real army, then a still and a 2x crop of
+## the battle-worn hide. Prints the measured numbers (flash px, lifetimes, wounds). --before runs on
+## code without HideHit.
 ##
-##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 --script tools/capture/capture_hide_hit.gd \
+##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 \
+##     --script tools/capture/capture_hide_hit.gd \
 ##     -- --stage=1 --tod=night --out=<dir> [--worn] [--before]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
@@ -30,7 +32,14 @@ var _hold := false
 
 func _initialize() -> void:
 	var a := Kit.args(
-		{"out": _out, "stage": _stage, "tod": _tod, "worn": _worn, "before": _before, "species": _species}
+		{
+			"out": _out,
+			"stage": _stage,
+			"tod": _tod,
+			"worn": _worn,
+			"before": _before,
+			"species": _species
+		}
 	)
 	_out = str(a["out"])
 	_stage = Num.i(a["stage"])
@@ -143,10 +152,7 @@ func _run_worn(rampage: Rampage) -> void:
 		await physics_frame
 		_frame = i
 		if i % 1800 == 0:
-			print(
-				"WORN t=%ds hp %.1f wounds %d"
-				% [i / 60, rampage.sim.hp, _wounds(rampage)]
-			)
+			print("WORN t=%ds hp %.1f wounds %d" % [i / 60, rampage.sim.hp, _wounds(rampage)])
 		if rampage.sim.over:
 			break
 	_hold = true
@@ -157,18 +163,20 @@ func _run_worn(rampage: Rampage) -> void:
 	var shot := root.get_texture().get_image()
 	var size := Vector2(shot.get_size())
 	var chest := kaiju_at + Vector3(0, 4.0 * rampage.sim.body_scale(), 0)
-	Kit.crop_2x(shot, Kit.image_point(self, cam, chest, size), Vector2i(900, 900), path.replace(".png", "_2x.png"))
-	print(
-		"WORN done size %s wounds %d shots %d"
-		% [size, _wounds(rampage), shots]
+	Kit.crop_2x(
+		shot,
+		Kit.image_point(self, cam, chest, size),
+		Vector2i(900, 900),
+		path.replace(".png", "_2x.png")
 	)
+	print("WORN done size %s wounds %d shots %d" % [size, _wounds(rampage), shots])
 
 
 func _wounds(rampage: Rampage) -> int:
 	var kaiju: Node = rampage._kaiju
-	if not kaiju.has_method("wounds_live"):
+	if not kaiju.has_method("hide_hits"):
 		return -1
-	var n: int = kaiju.call("wounds_live")
+	var n: int = kaiju.call("hide_hits").live()
 	return n
 
 
@@ -215,6 +223,12 @@ func _measure_flash(rampage: Rampage, cam: Camera3D, size: Vector2) -> void:
 	var tint := Color(str(tune["flash_tint"])).srgb_to_linear()
 	var peak := Num.f(tune["flash_alpha"])
 	print(
-		"FLASH_LUMA max linear channel %.3f (threshold 0.9) life %.3f s = %d frames"
-		% [maxf(tint.r, maxf(tint.g, tint.b)) * peak, Num.f(tune["flash_seconds"]), ceili(Num.f(tune["flash_seconds"]) * 60.0)]
+		(
+			"FLASH_LUMA max linear channel %.3f (threshold 0.9) life %.3f s = %d frames"
+			% [
+				maxf(tint.r, maxf(tint.g, tint.b)) * peak,
+				Num.f(tune["flash_seconds"]),
+				ceili(Num.f(tune["flash_seconds"]) * 60.0)
+			]
+		)
 	)

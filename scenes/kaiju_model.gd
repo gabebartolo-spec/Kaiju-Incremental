@@ -114,30 +114,26 @@ func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 			_poses[i].visible = i == shown
 
 
-## Where a shot along from -> to first meets the hide (world; SkinHits.cast): {} when it misses or the
-## body has no skin. A hit on his eyes carries "eye": true, which never takes a wound.
+## Where a shot along from -> to first meets the hide (world; SkinHits.cast): {} when it misses
+## or the body has no skin. A hit on his eyes carries "eye": true, which never takes a wound.
 func hide_cast(from: Vector3, to: Vector3) -> Dictionary:
 	if _skin == null:
 		return {}
 	var hit := _skin.hits.cast(_skin.pose, _rig.global_transform, from, to)
 	if not hit.is_empty():
 		var eye: Color = _colors.get("eye", Color.BLACK)
-		var is_eye := func(c: Color) -> bool: return _near(c, eye) or _near(c, IVORY) or _near(c, PUPIL)
+		var is_eye := func(c: Color) -> bool:
+			return _near(c, eye) or _near(c, IVORY) or _near(c, PUPIL)
 		var bone: int = hit["bone"]
 		var cell: Vector3i = hit["cell"]
 		hit["eye"] = _skin.hits.any_near(bone, cell, EYE_KEEP_OFF, is_eye)
 	return hit
 
 
-## Leaves a faint wound at a rest-space point of the hide (from hide_cast).
-func add_wound(rest: Vector3) -> void:
-	if _skin != null:
-		_skin.hits.add_wound(rest, 1.0)
-
-
-## How many wounds still show on the hide.
-func wounds_live() -> int:
-	return _skin.hits.live() if _skin != null else 0
+## The hide's wounds (add_wound at a rest-space point from hide_cast, live to count them); null
+## when the body has no skin.
+func hide_hits() -> SkinHits:
+	return _skin.hits if _skin != null else null
 
 
 ## One voxel's size in the world (the hide's cubes), for effects sized in scales.
