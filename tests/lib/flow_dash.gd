@@ -13,6 +13,7 @@ static func run(t: SceneTree, check: Callable, rampage: Rampage) -> void:
 	var sim := rampage.sim
 	while sim.emerge.active:  # the river rise holds the sim back (D-083)
 		await t.physics_frame
+	sim.facing = _open_way(sim)  # the plan decides what stands by the bank; the dash needs room
 	var from := sim.kaiju_pos
 	var facing := sim.facing
 	var landed := []
@@ -54,3 +55,26 @@ static func _check_roars(rampage: Rampage, check: Callable) -> void:
 	check.call(
 		roars.roars == 2, "an ultimate roars once the cooldown has passed (%d)" % roars.roars
 	)
+
+
+## The facing nearest the current one with 1.5 body lengths clear of walls ahead (the dash's reach).
+static func _open_way(sim: RampageSim) -> Vector2:
+	var best := sim.facing
+	var least := INF
+	var reach := ceili(sim.body.length() * 2.0)
+	for n: int in 16:
+		var way := Vector2.from_angle(n * TAU / 16.0)
+		var clear := true
+		for step: int in range(1, reach + 1):
+			var spot := sim.kaiju_pos + way * step
+			clear = (
+				clear
+				and sim.clamp_to_arena(spot) == spot
+				and not sim.powers.blocked(spot, sim.powers.block_radius())
+				and sim.body.inside(spot, way).is_empty()
+			)
+		var turn := absf(sim.facing.angle_to(way))
+		if clear and turn < least:
+			best = way
+			least = turn
+	return best
