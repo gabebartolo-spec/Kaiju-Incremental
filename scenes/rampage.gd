@@ -233,7 +233,6 @@ func _physics_process(delta: float) -> void:
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
-		_blasts.on_event(event, _kaiju_at)
 		_note_cost(str(event["type"]), t1)
 	_kaiju_at = _ability.place(delta, 0.0 if sim.body.dash.on() else move.length(), _kaiju_at)
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
@@ -291,6 +290,7 @@ func _to_world(p: Vector2) -> Vector3:
 
 
 func _on_event(event: Dictionary) -> void:
+	_blasts.on_event(event, _kaiju_at)
 	rumble.on_event(event)
 	match str(event["type"]):
 		"stomp":
