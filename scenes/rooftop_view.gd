@@ -96,7 +96,7 @@ func _ready() -> void:
 	_spark_out = _out(_pool(_star(true), MAX_SPARKS, true), MAX_SPARKS)
 	var tracers := MAX_TRACERS * TRAIL.size()
 	_tracer_out = _out(_pool(_glow_box(), tracers, true), tracers)
-	if _buffers:  # figures stand on roofs: cull by the city's footprint, not a rebuilt box
+	if _people.native != null:  # figures stand on roofs: cull by the city's footprint
 		var corners := PackedVector2Array()
 		var top := 0.0
 		for b: RampageSim.Building in sim.buildings:

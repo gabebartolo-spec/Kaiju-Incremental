@@ -4775,9 +4775,14 @@
       "properties": {
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
-        "kaiju_bounds_slack": {"$ref": "#/$defs/num"}
+        "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "people_buffers": {"$ref": "#/$defs/bool"},
+        "people_aabb_margin_m": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack"],
+      "required": [
+        "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
+        "people_aabb_margin_m"
+      ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     }

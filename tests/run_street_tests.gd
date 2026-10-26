@@ -28,9 +28,22 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_draw_counts")
 	await _t("_check_replay_pinned")
+	await _t("_check_native_loaded")
 	await _t("_check_buffers_byte_equal")
 	await _t("_check_buckets_resize")
 	await _t("_check_people_bounds")
+
+
+## The buffer checks run the native buckets (KaijuBuckets, item 7): without the library they skip,
+## unless KAIJU_NATIVE_REQUIRED=1 (CI), where a missing library fails.
+func _check_native_loaded() -> void:
+	if StreetDraw.available():
+		check(true, "the KaijuBuckets class is registered by the extension")
+	elif OS.get_environment("KAIJU_NATIVE_REQUIRED") == "1":
+		check(false, "KAIJU_NATIVE_REQUIRED=1 but KaijuBuckets is not registered")
+	else:
+		print("SKIP: KaijuBuckets is not registered; build native/ to run the buffer checks")
+		check(true, "native library not built: buffer checks skipped on purpose")
 
 
 ## Every frame, every person is in the MultiMesh of its outfit and pose, at the next free slot in
@@ -143,6 +156,9 @@ func _expected(street: StreetLife) -> Array[PackedFloat32Array]:
 ## people. Headless Godot keeps no instance data to read back, so the reference is the setters'
 ## layout written out above.
 func _check_buffers_byte_equal() -> void:
+	if not StreetDraw.available():
+		check(true, "skipped: no native library")
+		return
 	var on := Replay.new(self, 1, "high", true)
 	var off := Replay.new(self, 1, "high", false)
 	var wrong := 0
@@ -153,7 +169,7 @@ func _check_buffers_byte_equal() -> void:
 		var want := _expected(on.street)
 		for b: int in want.size():
 			var mm := on.street._mms[b]
-			var got := on.street._buckets.bufs[b]
+			var got := on.street._draw.buckets.buffer(b)
 			var n := want[b].size()
 			var same := got.size() == mm.instance_count * STRIDE
 			same = same and mm.visible_instance_count * STRIDE == n
@@ -165,9 +181,7 @@ func _check_buffers_byte_equal() -> void:
 	var full := true
 	for mm: MultiMesh in off.street._mms:
 		full = full and mm.instance_count == off.street._capacity
-	check(
-		off.street._buckets.bufs.is_empty() and full, "flag off: no buffers, full-size MultiMeshes"
-	)
+	check(off.street._draw == null and full, "flag off: no buffers, full-size MultiMeshes")
 	check(
 		on.digest() == off.digest() and on.street.killed > 0,
 		"the people's state is the same with buffers on and off (and the run crushed some)"
@@ -180,6 +194,9 @@ func _check_buffers_byte_equal() -> void:
 ## full, keeps buffer length = instance_count * stride, and a coloured one keeps each colour after
 ## its transform (the rooftop's flashes and tracers).
 func _check_buckets_resize() -> void:
+	if not StreetDraw.available():
+		check(true, "skipped: no native library")
+		return
 	for colored: bool in [false, true]:
 		var stride := STRIDE + (4 if colored else 0)
 		var mm := MultiMesh.new()
@@ -199,7 +216,7 @@ func _check_buckets_resize() -> void:
 				if colored:
 					want.append_array(PackedFloat32Array([c.r, c.g, c.b, c.a]))
 			buckets.commit()
-			var got := buckets.bufs[0]
+			var got := buckets.buffer(0)
 			var sized := got.size() == mm.instance_count * stride
 			check(
 				sized and mm.visible_instance_count == count,
@@ -216,6 +233,9 @@ func _check_buckets_resize() -> void:
 ## The fixed culling box holds every person, feet and head, so culling never hides one: the
 ## pavements' bounds plus the margin, on every MultiMesh, every frame.
 func _check_people_bounds() -> void:
+	if not StreetDraw.available():
+		check(true, "skipped: no native library")
+		return
 	var replay := Replay.new(self, 1, "high", true)
 	var outside := 0
 	for mm: MultiMesh in replay.street._mms:
