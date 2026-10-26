@@ -36,8 +36,8 @@ godot_run() {  # label, script, args...
   local label="$1" script="$2"
   if [ -n "${ONLY:-}" ] && ! echo " $ONLY " | grep -q " $label "; then return 0; fi
   shift 2
-  wait_free
   bash "$ENGINE_SLOT" || return 3
+  wait_free
   echo "=== $label start $(date +%T); other Godot processes:"; others | cut -c1-220
   APPDATA="$OUT/appdata_$label" timeout 1500 "$GODOT" --path . --resolution 3840x2160 --windowed \
     --fixed-fps 60 --disable-vsync --script "$script" -- "$@" 2>&1 | tee "$OUT/$label.log" \
