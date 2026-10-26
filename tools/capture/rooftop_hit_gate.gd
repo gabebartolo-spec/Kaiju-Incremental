@@ -84,14 +84,18 @@ func _run() -> void:
 	quit(0 if misses.is_empty() and on_screen > 0 else 1)
 
 
-## The rig standing on the sim's kaiju: the HUD keeps a portrait rig of its own in a SubViewport, far
-## off, that the first find would pick.
+## The rig standing on the sim's kaiju: the HUD keeps a portrait rig of its own in a SubViewport,
+## far off, that the first find would pick.
 func _player_rig(rampage: Rampage) -> KaijuRig:
 	var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
 	var best: KaijuRig = null
 	for node: Node in rampage.find_children("*", "KaijuRig", true, false):
 		var rig := node as KaijuRig
-		if best == null or rig.global_position.distance_to(at) < best.global_position.distance_to(at):
+		var nearer := best == null
+		nearer = (
+			nearer or rig.global_position.distance_to(at) < best.global_position.distance_to(at)
+		)
+		if nearer:
 			best = rig
 	return best
 

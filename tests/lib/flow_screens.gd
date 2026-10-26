@@ -115,7 +115,7 @@ func _check_new_game() -> void:
 	)
 	check.call(
 		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale == 1.0,
-		"the end beat slams its headline on at normal speed, no slow motion (%s)" % Engine.time_scale
+		"the end beat's headline lands at normal speed, no slow motion (%s)" % Engine.time_scale
 	)
 	await GuiInput.key(t, KEY_ENTER)
 	check.call(hud.beat_running(), "a confirm in the first frames does not skip the end beat")

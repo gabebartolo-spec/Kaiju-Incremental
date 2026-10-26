@@ -134,7 +134,10 @@ func _slows_and_restores() -> void:
 		frames += 1
 	check.call(
 		is_equal_approx(Engine.time_scale, Num.f(cfg["scale"])),
-		"a landmark fall slows the world to the tuned %s (it is %.3f)" % [cfg["scale"], Engine.time_scale]
+		(
+			"a landmark fall slows the world to the tuned %s (it is %.3f)"
+			% [cfg["scale"], Engine.time_scale]
+		)
 	)
 	var total := Num.f(cfg["hold_s"]) + Num.f(cfg["ease_s"])
 	var ticks := 0

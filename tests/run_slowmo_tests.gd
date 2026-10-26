@@ -141,7 +141,10 @@ func _check_fall_slows_and_restores() -> void:
 		ticks += 1
 	check(
 		Engine.time_scale == 1.0 and absf(ticks * DT - total) < 4.0 * DT,
-		"and restores 1.0 once the tuned %.2f s are up (%d ticks, %.2f s)" % [total, ticks, ticks * DT]
+		(
+			"and restores 1.0 once the tuned %.2f s are up (%d ticks, %.2f s)"
+			% [total, ticks, ticks * DT]
+		)
 	)
 	check(not node.active(), "the node is idle again")
 	node.queue_free()

@@ -31,7 +31,7 @@ var _read: Array[Dictionary] = []
 var _age := -1.0
 ## Sim time the slowed clock owes the sim, not yet stepped (s).
 var _owed := 0.0
-## Presses made on a tick the sim sat out, kept for its next step (the window the river's latch has).
+## Presses made on a tick the sim sat out, kept for its next step (as the river's latch does).
 var _waited := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 
 
