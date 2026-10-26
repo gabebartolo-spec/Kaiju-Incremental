@@ -18,7 +18,7 @@ static func main_only(what: String) -> void:
 		return
 	_lock.lock()
 	var first := not hits.has(what)
-	hits[what] = int(hits.get(what, 0)) + 1
+	hits[what] = Num.i(hits.get(what, 0)) + 1
 	_lock.unlock()
 	if first:
 		push_error("ThreadCheck: %s made off the main thread" % what)
@@ -30,6 +30,6 @@ static func report() -> String:
 	_lock.lock()
 	var parts: Array[String] = []
 	for what: String in hits:
-		parts.append("%s=%d" % [what, int(hits[what])])
+		parts.append("%s=%d" % [what, Num.i(hits[what])])
 	_lock.unlock()
 	return "ThreadCheck hits %d: %s" % [parts.size(), ", ".join(parts)]
