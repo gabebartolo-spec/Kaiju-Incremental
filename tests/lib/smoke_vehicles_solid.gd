@@ -56,7 +56,9 @@ static func check(check: Callable, root: Node) -> void:
 		sim.stomp._timer = 9.0
 		await tree.physics_frame
 		waited += 1
-	check.call(not sim.tanks.is_empty(), "the army sends a tank in the seeded rampage (%d frames)" % waited)
+	check.call(
+		not sim.tanks.is_empty(), "the army sends a tank in the seeded rampage (%d frames)" % waited
+	)
 	var tank: RampageSim.Tank = sim.tanks[0]
 	var seen := Seen.new()
 	for i: int in FRAMES:
@@ -80,13 +82,29 @@ static func check(check: Callable, root: Node) -> void:
 	var count := _vehicles(rampage).size()
 	check.call(
 		count >= 3 and seen.on_line >= FRAMES * 3 / 4,
-		"a gunship, the governor's helicopter and a tank sit on the camera-to-kaiju line (%d vehicles, %d of %d frames, within %.1f m: %s)"
-		% [count, seen.on_line, FRAMES, NEAR + Num.f(Content.section("powers")["body_radius"]) * sim.body_scale(), seen.gaps]
+		(
+			(
+				"a gunship, the governor's helicopter and a tank sit on the camera-to-kaiju line"
+				+ " (%d vehicles, %d of %d frames, within %.1f m: %s)"
+			)
+			% [
+				count,
+				seen.on_line,
+				FRAMES,
+				NEAR + Num.f(Content.section("powers")["body_radius"]) * sim.body_scale(),
+				seen.gaps
+			]
+		)
 	)
-	check.call(
-		seen.parts > 0 and seen.bad.is_empty() and seen.worst == 1.0,
-		"every vehicle part on that line draws solid on every frame (%d parts, least opacity %.2f, %s)"
-		% [seen.parts, seen.worst, seen.bad.slice(0, 3)]
+	(
+		check
+		. call(
+			seen.parts > 0 and seen.bad.is_empty() and seen.worst == 1.0,
+			(
+				"every vehicle part on that line draws solid on every frame (%d parts, least opacity %.2f, %s)"
+				% [seen.parts, seen.worst, seen.bad.slice(0, 3)]
+			)
+		)
 	)
 	rampage.queue_free()
 	await tree.process_frame
@@ -112,7 +130,9 @@ static func _on_line(eye: Vector3, body: Vector3, y: float) -> Vector2:
 
 ## Distance from `p` to the segment eye-body.
 static func _line_gap(p: Vector3, eye: Vector3, body: Vector3) -> float:
-	var t := clampf((p - eye).dot(body - eye) / maxf((body - eye).length_squared(), 0.001), 0.0, 1.0)
+	var t := clampf(
+		(p - eye).dot(body - eye) / maxf((body - eye).length_squared(), 0.001), 0.0, 1.0
+	)
 	return p.distance_to(eye.lerp(body, t))
 
 
