@@ -1,29 +1,10 @@
-extends "res://tests/lib/runner.gd"
+extends "res://tests/lib/slots_base.gd"
 ## Save slots suite (director 2026-10-26, "Three slots (Recommended)"): the v4 save migrates to v5
 ## with its specimen number; the one save from before slots moves into slot 1 with nothing lost
 ## (and never when it cannot be read); the specimen goes up only when the kaiju dies; and the
 ## title's slot list makes, loads and deletes slots by real clicks through Main.
 ## Seeded by design: no rampage is played to an outcome; the lab walk uses pinned city streams.
 ##   godot --headless --path . --script tests/run_slots_tests.gd
-
-const GuiInput := preload("res://tests/lib/gui_input.gd")
-const CreationWalk := preload("res://tests/lib/creation_walk.gd")
-const MAIN_SCENE := "res://scenes/main.tscn"
-## A save as v4 (the last single-save version) wrote it: every key a played kaiju holds.
-const V4 := {
-	"version": 4,
-	"species": "reptilian",
-	"rubble": 1234,
-	"levels": {"claws": 2, "hide": 1, "evolve1": 1},
-	"runs": 7,
-	"best": {"rubble": 900.0, "destruction": 0.42, "toppled": 5.0},
-	"city_seconds": 61.5,
-	"demo": true,
-	"demo_done": false,
-	"totals": {"rubble": 4000.0},
-	"last_time": "night",
-	"last_weather": "rain",
-}
 
 
 func suite_name() -> String:
@@ -45,49 +26,6 @@ func run_checks() -> void:
 	await _t("_check_unreadable_slots")
 	SaveFile.wipe()
 	SaveFile.slot = 1
-
-
-func _frames(n: int) -> void:
-	for _i: int in n:
-		await process_frame
-
-
-func _screen(main: Node) -> Node:
-	return main.call("screen")
-
-
-func _main() -> Node:
-	var main: Node = (load(MAIN_SCENE) as PackedScene).instantiate()
-	root.add_child(main)
-	await _frames(3)
-	return main
-
-
-func _close(main: Node) -> void:
-	main.queue_free()
-	await _frames(2)
-
-
-## Deep equality with numbers compared by value (JSON reads every number back as a float).
-func _same(a: Variant, b: Variant) -> bool:
-	if (a is int or a is float) and (b is int or b is float):
-		return Num.f(a) == Num.f(b)
-	if a is Dictionary and b is Dictionary:
-		var da: Dictionary = a
-		var db: Dictionary = b
-		if da.size() != db.size():
-			return false
-		for key: Variant in da:
-			if not db.has(key) or not _same(da[key], db[key]):
-				return false
-		return true
-	return typeof(a) == typeof(b) and a == b
-
-
-func _write_legacy(data: Dictionary) -> void:
-	var file := FileAccess.open(SaveFile.LEGACY_PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(data))
-	file.close()
 
 
 ## A v4 save comes up as v5 with specimen K-01 and every other key as it was.

@@ -9,6 +9,9 @@
 #   3. snake_case names, gdlint and gdformat --check on the changed .gd files (lint.yml);
 #   4. headless import + every script parsed and compiled (tests.yml preflight), then the repo lints
 #      (tools/lint/run_all.sh, also lint.yml: every script has its committed .uid, ...);
+#   4c. the local native DLL's md5 against main's CI build (tools/native_dll.sh): a stale or
+#      missing DLL silently runs the slow GDScript mesher in every bench and capture (a mismatch
+#      fails; a branch that changes native/ is not compared, its DLL is its own build);
 #   5. the touched suites: tools/lint/prepush_picks.py picks every suite whose runner, or code its
 #      runner or tests/lib helpers reference (a changed sim/ or scenes/ script by class_name or
 #      res:// path, a changed data/tuning.json section), changed; plus SUITES. No cap on how many.
@@ -81,6 +84,8 @@ run_data="$(mktemp -d)"
 trap 'rm -rf "$run_data"' EXIT
 native_path() { if command -v cygpath > /dev/null 2>&1; then cygpath -w "$1"; else echo "$1"; fi; }
 code=0
+. tools/speed_gate.sh  # D-299: no Godot while a speed run holds the PC; also gated in check_scripts.sh and run_tests.sh
+wait_speed_gate
 APPDATA="$(native_path "$run_data")" XDG_DATA_HOME="$run_data/data" XDG_CONFIG_HOME="$run_data/config" \
 	timeout 600 "$GODOT" --headless --path . --editor --import > "$run_data/import.log" 2>&1 || code=$?
 if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$run_data/import.log"; then
@@ -91,6 +96,9 @@ GODOT="$GODOT" tools/check_scripts.sh || fail "script compile"
 
 step "4b repo lints (tools/lint/run_all.sh: .uid files, ...)"
 bash tools/lint/run_all.sh || fail "repo lints"
+
+step "4c native DLL against main's CI build"
+REF="$BASE" bash tools/native_dll.sh check || fail "native DLL (bash tools/native_dll.sh fetch)"
 
 step "5 touched suites"
 BASE_REF="$BASE" picks "$changed" | tee "$run_data/picks.txt" | sed 's/^/  /'
