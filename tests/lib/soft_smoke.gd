@@ -6,7 +6,7 @@ extends RefCounted
 ##  - project.godot declares that global (0 = no fade, so a scene that never sets it is as before);
 ##  - data/tuning.json render_opt holds the flag (ON by default) and the width in metres;
 ##  - SmokeSoft (scenes/smoke_soft.gd) turns the data into the uniform: 0 with the flag off;
-##  - CityView applies it when a city is built.
+##  - CityView applies it when a city view is made.
 
 const SHADER := "res://scenes/smoke.gdshader"
 const CLASS_FILE := "res://scenes/smoke_soft.gd"
@@ -108,5 +108,5 @@ func _class() -> void:
 func _wired() -> void:
 	_check.call(
 		_code(CITY_VIEW).contains("SmokeSoft.apply()"),
-		"CityView applies the soft smoke width when it builds"
+		"CityView applies the soft smoke width when it is made"
 	)

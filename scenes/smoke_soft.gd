@@ -25,7 +25,7 @@ static func soft_m() -> float:
 	return soft_m_from(Content.section("render_opt"))
 
 
-## Hands the width to every smoke material; a city view does this once when it is built.
+## Hands the width to every smoke material; a city view does this once when it is made.
 static func apply() -> void:
 	applied = soft_m()
 	RenderingServer.global_shader_parameter_set(GLOBAL, applied)
