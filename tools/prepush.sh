@@ -7,7 +7,8 @@
 #   1. branch is not behind origin/main (a stale branch merges main first);
 #   2. tuning keys + complexity ratchet (tests.yml preflight);
 #   3. snake_case names, gdlint and gdformat --check on the changed .gd files (lint.yml);
-#   4. headless import + every script parsed and compiled (tests.yml preflight);
+#   4. headless import + every script parsed and compiled (tests.yml preflight), then the repo lints
+#      (tools/lint/run_all.sh, also lint.yml: every script has its committed .uid, ...);
 #   5. the touched suites: tools/lint/prepush_picks.py picks every suite whose runner, or code its
 #      runner or tests/lib helpers reference (a changed sim/ or scenes/ script by class_name or
 #      res:// path, a changed data/tuning.json section), changed; plus SUITES. No cap on how many.
@@ -60,7 +61,10 @@ gd=$(echo "$changed" | grep -E '\.gd$' | grep -v -E '^(\.godot|\.claude|tests/fi
 
 step "2 tuning keys and complexity"
 python tools/lint/tuning_keys.py || fail "tuning keys"
+python tools/lint/licence_register.py || fail "licence register (docs/LICENSING_REGISTER.md covers every assets/ file)"
 python tools/lint/complexity_ratchet.py || fail "complexity ratchet"
+# every data/*.json against its schema in data/schemas (the tests.yml preflight runs it too)
+python tools/lint/data_schemas.py || fail "data schemas (data/schemas/README.md)"
 
 step "3 lint on $(echo "$gd" | grep -c . ) changed .gd files"
 if [ -n "$gd" ]; then
@@ -82,6 +86,9 @@ if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$run_d
 	fail "import (exit $code)"
 fi
 GODOT="$GODOT" tools/check_scripts.sh || fail "script compile"
+
+step "4b repo lints (tools/lint/run_all.sh: .uid files, ...)"
+bash tools/lint/run_all.sh || fail "repo lints"
 
 step "5 touched suites"
 BASE_REF="$BASE" picks "$changed" | tee "$run_data/picks.txt" | sed 's/^/  /'

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "data/upgrades.json",
+  "description": "Structure and types of this data file (CLAUDE.md hard rule 4); see data/schemas/README.md.",
+  "type": "object",
+  "properties": {
+    "upgrades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"$ref": "#/$defs/str"},
+          "name": {"$ref": "#/$defs/str"},
+          "desc": {"$ref": "#/$defs/str"},
+          "species_desc": {
+            "type": "object",
+            "properties": {"insectoid": {"$ref": "#/$defs/str"}, "cephalopod": {"$ref": "#/$defs/str"}},
+            "required": ["insectoid", "cephalopod"],
+            "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+            "additionalProperties": false
+          },
+          "pos": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+          "max_level": {"$ref": "#/$defs/int"},
+          "cost": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+          "requires": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+          "effects": {
+            "type": "object",
+            "properties": {
+              "swipe_damage": {"$ref": "#/$defs/num"},
+              "swipe_width": {"$ref": "#/$defs/num"},
+              "hp": {"$ref": "#/$defs/num"},
+              "speed": {"$ref": "#/$defs/num"},
+              "stomp_radius": {"$ref": "#/$defs/num"},
+              "run_seconds": {"$ref": "#/$defs/num"},
+              "armor": {"$ref": "#/$defs/num"},
+              "rubble_mult": {"$ref": "#/$defs/num"},
+              "stomp_interval": {"$ref": "#/$defs/num"},
+              "size": {"$ref": "#/$defs/num"},
+              "stomp_damage": {"$ref": "#/$defs/num"},
+              "ability_damage": {"$ref": "#/$defs/num"},
+              "regen": {"$ref": "#/$defs/num"},
+              "ability_cooldown": {"$ref": "#/$defs/num"},
+              "ability_range": {"$ref": "#/$defs/num"},
+              "tail_damage": {"$ref": "#/$defs/num"},
+              "momentum": {"$ref": "#/$defs/num"},
+              "tail_reach": {"$ref": "#/$defs/num"},
+              "tail_floors": {"$ref": "#/$defs/num"},
+              "beam_dps": {"$ref": "#/$defs/num"},
+              "fire_spread": {"$ref": "#/$defs/num"},
+              "fire_rate": {"$ref": "#/$defs/num"},
+              "fire_wind": {"$ref": "#/$defs/num"},
+              "fire_embers": {"$ref": "#/$defs/num"},
+              "firestorm": {"$ref": "#/$defs/num"},
+              "glide_seconds": {"$ref": "#/$defs/num"},
+              "climb": {"$ref": "#/$defs/num"},
+              "brood_count": {"$ref": "#/$defs/int"},
+              "limbs": {"$ref": "#/$defs/num"},
+              "squeeze": {"$ref": "#/$defs/num"},
+              "throw_damage": {"$ref": "#/$defs/num"},
+              "ink_dps": {"$ref": "#/$defs/num"}
+            },
+            "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+            "additionalProperties": false
+          },
+          "species_effects": {
+            "type": "object",
+            "properties": {
+              "insectoid": {
+                "type": "object",
+                "properties": {"stomp_damage": {"$ref": "#/$defs/num"}},
+                "required": ["stomp_damage"],
+                "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                "additionalProperties": false
+              },
+              "cephalopod": {
+                "type": "object",
+                "properties": {"stomp_damage": {"$ref": "#/$defs/num"}},
+                "required": ["stomp_damage"],
+                "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                "additionalProperties": false
+              }
+            },
+            "required": ["insectoid", "cephalopod"],
+            "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+            "additionalProperties": false
+          },
+          "species": {"$ref": "#/$defs/str"}
+        },
+        "required": ["id", "name", "desc", "pos", "max_level", "cost", "requires", "effects"],
+        "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["upgrades"],
+  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+  "additionalProperties": false,
+  "$defs": {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"}
+  }
+}
