@@ -12,7 +12,10 @@ Status), turns each Path cell's back-quoted paths into patterns and fails on any
 Patterns: `*` any characters except `/`, `**` any characters, `?` one, `{a,b}` alternatives. A `.import`
 file follows its source file; `.gdignore` is engine metadata. Status words: CLEARED covers, DEV ONLY covers
 for development builds (director D-261: Cascadeur trial animations), anything else (PENDING, BLOCKED)
-covers nothing. A CLEARED row needs a Source and a Licence. Exit 0 when all pass, 1 otherwise.
+covers nothing. A file matched by a DEV ONLY row is DEV ONLY even when a CLEARED row's glob also matches
+it (D-261, D-301: Cascadeur trial clips ship nothing until the director buys the licence), so a broad CLEARED
+glob such as assets/kaiju/*.kclip can never make a trial clip shippable. A CLEARED row needs a Source and a
+Licence. Exit 0 when all pass, 1 otherwise.
 """
 import os
 import re
@@ -91,11 +94,9 @@ def check(files: list[str], rows: list[Row]) -> tuple[list[str], list[str], list
             uncovered.append(f"{f} (its source file {base} is not in the tree)")
             continue
         hits = [r for r in rows if r.covers(base)]
-        if any(r.kind == "cleared" for r in hits):
-            continue
-        if any(r.kind == "dev" for r in hits):
+        if any(r.kind == "dev" for r in hits):  # DEV ONLY wins over any CLEARED match (D-261, D-301)
             dev_only.append(f)
-        else:
+        elif not any(r.kind == "cleared" for r in hits):
             uncovered.append(f)
     stale = [
         t
@@ -123,6 +124,8 @@ def self_test() -> int:
         "| Fonts | `assets/fonts/kaiju_*.ttf` | drawn by us in tools/fonts | Ours | CLEARED |\n"
         "| Sfx | `assets/sfx/{a,b}.ogg` | generated, paid plan | paid terms | CLEARED |\n"
         "| Trial | `assets/trial/*.kclip` | Cascadeur Pro trial | trial, no commercial use | DEV ONLY |\n"
+        "| Clips | `assets/clips/*.kclip` | our own keyed clips | Ours | CLEARED |\n"
+        "| Trial clips | `assets/clips/trial_*.kclip` | Cascadeur Pro trial | trial, no commercial use | DEV ONLY |\n"
         "| Music | `assets/music/**` | not yet | n/a | PENDING |\n"
     )
     rows, problems = parse_register(table)
@@ -134,9 +137,11 @@ def self_test() -> int:
     ok &= check(["assets/music/track.ogg"], rows)[0] == ["assets/music/track.ogg"]  # PENDING covers nothing
     dev = check(["assets/trial/x.kclip"], rows)
     ok &= dev[0] == [] and dev[1] == ["assets/trial/x.kclip"]
+    both = check(["assets/clips/a.kclip", "assets/clips/trial_roar.kclip"], rows)  # DEV ONLY beats a CLEARED glob
+    ok &= both[0] == [] and both[1] == ["assets/clips/trial_roar.kclip"]
     ok &= check(["assets/fonts/orphan.ttf.import"], rows)[0] != []  # an import file with no source
     ok &= bool(parse_register("| A | `assets/x` | s | l |\n")[1])  # a short row is reported
-    print("ok: a planted uncovered file, a PENDING row, a DEV ONLY file and an orphan .import are all handled" if ok else "FAIL: the register check is blind")
+    print("ok: a planted uncovered file, a PENDING row, a DEV ONLY file (also under a CLEARED glob) and an orphan .import are all handled" if ok else "FAIL: the register check is blind")
     return 0 if ok else 1
 
 

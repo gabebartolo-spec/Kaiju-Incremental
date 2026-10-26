@@ -5,7 +5,8 @@ Nothing enters `assets/` or `tools/` unless it is listed here as CLEARED (CLAUDE
 Enforced: `tools/lint/licence_register.py` (lint.yml, `tools/prepush.sh`) fails when a file under `assets/`
 is matched by no CLEARED or DEV ONLY row below. A row's Path column holds back-quoted paths or globs
 (`*` any characters except `/`, `**` any, `{a,b}` alternatives); a `.import` file follows its source file.
-Status: CLEARED (ships), DEV ONLY (development builds only; `licence_register.py --release` lists these files),
+Status: CLEARED (ships), DEV ONLY (development builds only; `licence_register.py --release` lists these files;
+a file under a DEV ONLY row stays DEV ONLY even when a broader CLEARED glob also matches it, D-261, D-301),
 PENDING or BLOCKED (covers nothing). Backfilled 2026-10-27 (D-295) from `docs/provenance/*`, `docs/DECISIONS.md`
 and the build tools; anything the repo could not prove is listed in that PR, not guessed here.
 
