@@ -12,6 +12,7 @@ const GROUP := "graphics_preset"
 const KEYS := {
 	"scale": "float",  # Viewport.scaling_3d_scale, per axis
 	"scaler": "scaler",  # Viewport.scaling_3d_mode
+	"fsr_sharpness": "float",  # Viewport.fsr_sharpness: 0.0 sharpest, 0.2 the engine default
 	"msaa": "int",  # Viewport.MSAA: 0 off, 1 = 2x, 2 = 4x
 	"screen_aa": "screen_aa",  # Viewport.screen_space_aa
 	"shadow_size": "int",  # directional shadow atlas, px
@@ -118,8 +119,10 @@ static func _fits(kind: String, value: Variant) -> bool:
 static func apply(row: Dictionary, view: Viewport) -> void:
 	view.scaling_3d_scale = Num.f(row["scale"])
 	view.scaling_3d_mode = _enum("scaler", row) as Viewport.Scaling3DMode
+	view.fsr_sharpness = Num.f(row["fsr_sharpness"])
 	view.msaa_3d = Num.i(row["msaa"]) as Viewport.MSAA
 	view.screen_space_aa = _enum("screen_aa", row) as Viewport.ScreenSpaceAA
+	apply_look(view)
 	RenderingServer.directional_shadow_atlas_set_size(Num.i(row["shadow_size"]), true)
 	RenderingServer.directional_soft_shadow_filter_set_quality(
 		_enum("shadow_filter", row) as RenderingServer.ShadowQuality
@@ -127,6 +130,12 @@ static func apply(row: Dictionary, view: Viewport) -> void:
 	if view.is_inside_tree():
 		for node: Node in view.get_tree().get_nodes_in_group(GROUP):
 			apply_to(row, node)
+
+
+## The look's own switch on a viewport: debanding (looks.json "deband", off in the look as shipped;
+## the dither sits just before the 8-bit write, so it needs the viewport, not the Environment).
+static func apply_look(view: Viewport) -> void:
+	view.use_debanding = Content.look().get("deband", false) == true
 
 
 ## Puts a row's sun and environment keys on one node (a DirectionalLight3D or WorldEnvironment;

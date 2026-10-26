@@ -66,13 +66,14 @@ func origin() -> Vector3:
 func _make_palette(base: Color) -> void:
 	var lit := Look.color("window_lit_color")
 	lit.a = WindowPalette.TAG if Look.value("window_glow") > 0.0 else 1.0
+	var sill := base.lightened(0.28)
 	var shop_lit := Color("ffd9a0")
 	shop_lit.a = lit.a
 	palette = {
 		"wall": base,
 		"pillar": base.darkened(0.1),
 		"trim": base.lightened(0.16),
-		"sill": base.lightened(0.28),
+		"sill": sill,
 		"window": Look.color("window"),
 		"frame": base.darkened(0.3),
 		"lit": lit,
@@ -84,7 +85,7 @@ func _make_palette(base: Color) -> void:
 		"shop_lit": shop_lit,
 		"awning": AWNINGS[posmod(roundi(b.x + b.z * 3.0), AWNINGS.size())],
 		"band": SIGN_BANDS[posmod(roundi(b.x * 7.0 + b.z), SIGN_BANDS.size())],
-		"rail": Color("2a2c2e"),
+		"rail": sill,  # D-303: balcony railings take the sill tone
 		"slab": Color("8a8780"),
 		"roof": Look.color("roof"),
 		"gear": Color("a9aaa4"),

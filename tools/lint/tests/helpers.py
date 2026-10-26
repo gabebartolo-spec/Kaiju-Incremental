@@ -6,6 +6,7 @@ history of this repo: the tools run on the scratch tree.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -26,17 +27,38 @@ def write(root, rel, text):
     return path
 
 
-def run(script, args=(), cwd=None, stdin=None, env=None):
-    """Runs a python tool; returns (exit code, stdout + stderr)."""
+def run(script, args=(), cwd=None, stdin=None, env=None, isolated=True):
+    """Runs a python tool; returns (exit code, stdout + stderr). isolated=False lets it import installed packages."""
     full_env = dict(os.environ)
     full_env.update(env or {})
     done = subprocess.run(
-        [sys.executable, "-I", script, *args],
+        [sys.executable, *(["-I"] if isolated else []), script, *args],
         cwd=cwd,
         input=stdin,
         capture_output=True,
         text=True,
         env=full_env,
+    )
+    return done.returncode, done.stdout + done.stderr
+
+
+def copy_tool(root, *parts):
+    """Copies a tool of this repo into root at the same relative path (LF endings); returns the new path.
+
+    Some tools find their project root from their own location, so a scratch project needs its own copy.
+    """
+    dest = Path(root).joinpath(*parts)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(REPO.joinpath(*parts).read_bytes().replace(b"\r\n", b"\n"))
+    return dest
+
+
+def run_bash(script, args=(), cwd=None, env=None):
+    """Runs a bash script (a path relative to cwd); returns (exit code, stdout + stderr). Needs bash on PATH."""
+    full_env = dict(os.environ)
+    full_env.update(env or {})
+    done = subprocess.run(
+        [shutil.which("bash"), script, *args], cwd=cwd, capture_output=True, text=True, env=full_env
     )
     return done.returncode, done.stdout + done.stderr
 

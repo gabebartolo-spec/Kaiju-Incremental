@@ -231,7 +231,10 @@
           "water": {"$ref": "#/$defs/str"},
           "river": {"$ref": "#/$defs/str"},
           "ambient_color": {"$ref": "#/$defs/hex6"},
-          "lamp_energy": {"$ref": "#/$defs/num"}
+          "lamp_energy": {"$ref": "#/$defs/num"},
+          "agx_contrast": {"$ref": "#/$defs/num"},
+          "post_contrast": {"$ref": "#/$defs/num"},
+          "deband": {"$ref": "#/$defs/bool"}
         },
         "required": [
           "id", "label", "name", "sky_top", "sky_horizon", "ambient", "sun_color", "sun_energy",
