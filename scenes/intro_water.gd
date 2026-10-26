@@ -32,7 +32,7 @@ func _ready() -> void:
 	_break = _sim.emerge.break_at(_sim)
 	var s := _sim.body_scale()
 	var ahead := _sim.facing * _ahead
-	var water := -Num.f(_sim.city.get("river_depth", 0.0))
+	var water := _sim.emerge.water_y()
 	position = Vector3(_sim.kaiju_pos.x + ahead.x, water + 0.05, _sim.kaiju_pos.y + ahead.y)
 	_fount = _spray(Num.i(_cfg["fount_amount"]), Num.f(_cfg["fount_speed"]) * s, false)
 	_burst = _spray(Num.i(_cfg["burst_amount"]), Num.f(_cfg["burst_speed"]) * s, true)

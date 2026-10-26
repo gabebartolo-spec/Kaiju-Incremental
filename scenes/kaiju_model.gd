@@ -234,12 +234,9 @@ func stomped_side() -> String:
 	return ""
 
 
-## A roar; open_seconds > 0 holds the jaw open that long at once (a clip's jaw peaks late).
-func roar(open_seconds := 0.0) -> void:
+func roar() -> void:
 	if _rig != null:
 		_rig.roar()
-		if open_seconds > 0.0 and _rig.gait is BipedGait:
-			(_rig.gait as BipedGait).head.hold_open(open_seconds)
 
 
 ## The leap's pose hook (Dash phases "crouch", "flight", "settle", "recover"; t 0..1 through it):

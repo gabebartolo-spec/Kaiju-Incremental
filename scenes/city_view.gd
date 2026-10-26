@@ -152,7 +152,7 @@ func falling_pieces() -> Array[Node3D]:
 ## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
 func _build_ground() -> void:
 	add_child(GroundKit.floor_body())
-	_streets = CityGround.new(sim.city, sim.emerge)  # with the decks the rise bursts through
+	_streets = CityGround.new(sim.city)
 	add_child(_streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
@@ -162,12 +162,6 @@ func _build_ground() -> void:
 func _base_color(b: RampageSim.Building) -> Color:
 	var styles := Look.styles()
 	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
-
-
-## The kaiju burst up through the bay's deck (the sim's "deck_burst"): its pieces break away.
-func deck_burst() -> void:
-	if _streets.deck_burst:
-		_streets.deck_burst.burst(_debris, fx, _rng)
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.

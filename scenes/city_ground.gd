@@ -2,9 +2,9 @@ class_name CityGround
 extends Node3D
 ## The ground of the street plan (CityGen.map): asphalt streets, raised pavement blocks, the
 ## park lawn, the plaza, parking lots with painted bays, the diagonal avenue laid across the
-## blocks, quiet road paint, the river the kaiju rises from (CityRiver; its cross streets are
-## the bridges), and the bay with its quay to the north. Flat boxes in a
-## few MultiMeshes; presentation only.
+## blocks, quiet road paint, the river (CityRiver; its cross streets are the bridges), the sea
+## with its quay to the north, and the sea bay the kaiju rises from (CityHarbour, HarbourView).
+## Flat boxes in a few MultiMeshes; presentation only.
 
 const PAVE_TOP := 0.1  # blocks stand a kerb above the street
 const DIAG_TOP := 0.003  # the diagonal avenue, at street level (DiagonalPaving kerbs it)
@@ -31,21 +31,13 @@ var cut_walls: Array[Rect2] = []
 ## where they cross, RoadJunctions.crossings lays the street's asphalt over both.
 var street_pieces: Array[Dictionary] = []
 var diagonal_pieces: Array[PackedVector2Array] = []
-## The holes the kaiju's rise breaks in the bay's decks (Emergence.burst; set before it is added).
-var holes: Array[Rect2] = []
-var holes_ns: Array[Rect2] = []  # the same in the north-south decks (Emergence.burst_ns)
-var deck_burst: DeckBurst  # the pieces over the holes, broken on the sim's "deck_burst"
 var _slabs: Array[Dictionary] = []
 var _paint: Array[Transform3D] = []
-var _basin: Array[Rect2] = []  # the river's bay the kaiju rises in (CityRiver.bay): no pavement
+var _basin: Array[Rect2] = []  # the sea bay's water (CityHarbour.bands): no land or pavement
 
 
-## rise: the run's Emergence, whose holes (burst, burst_ns) the bay's decks are drawn with.
-func _init(p_cfg: Dictionary, rise: Emergence = null) -> void:
+func _init(p_cfg: Dictionary) -> void:
 	cfg = p_cfg
-	if rise != null:
-		holes = rise.burst
-		holes_ns = rise.burst_ns
 	plan = CityGen.map(cfg)
 	coast = Num.f(cfg["coast_z"])
 
@@ -56,15 +48,17 @@ func _ready() -> void:
 	var outer := Num.f(cfg["outer_half"])
 	# Land: asphalt under everything south of the quay, darker beyond the drawn streets, open
 	# where the river runs.
-	var channels := CityRiver.water(plan, cfg)
-	_basin = CityRiver.bay(plan, cfg)
+	var channels := CityRiver.channels(plan, cfg)
+	_basin = CityHarbour.bands(plan, cfg)
 	for land: Rect2 in GroundKit.cut([Rect2(-FAR, coast, FAR * 2.0, FAR)], channels):
 		_of(GroundKit.K_ASPHALT, land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
 	for land: Rect2 in GroundKit.cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
 		_of(GroundKit.K_ASPHALT, land, Vector2(0.001, 0.4), asphalt)
 	for block: Dictionary in plan["blocks"]:
 		_block(block, asphalt, pavement)
-	_roads(channels, asphalt)
+	var wet := channels.duplicate()
+	wet.append_array(_basin)
+	_roads(wet, asphalt)
 	_river(channels, asphalt, pavement.lightened(0.12))
 	_diagonal(asphalt)
 	_markings()
@@ -77,6 +71,7 @@ func _ready() -> void:
 	add_child(_build_slabs(mat))
 	add_child(_build_paint())
 	add_child(_water())
+	_harbour(pavement)
 
 
 ## One block's pavement, and what stands on it (lawn, plaza, parking bays).
@@ -109,8 +104,8 @@ func _block(block: Dictionary, asphalt: Color, pavement: Color) -> void:
 			var bay := rect.grow(-0.6)
 			_of(GroundKit.K_ASPHALT, bay, kerb + Vector2(0.01, 0.0), asphalt.lightened(0.06))
 			_parking_bays(bay)
-		"river":
-			pass  # its water and quays: _river
+		"river", "harbour":
+			pass  # its water and quays: _river, _harbour
 		_:
 			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
 
@@ -120,7 +115,7 @@ func _face(rect: Rect2, y: Vector2, color: Color, water_y: float) -> void:
 	_slab(rect, y, color, GroundKit.kind(GroundKit.K_CONCRETE, water_y))
 
 
-## A slab of a surface kind (GroundKit.K_*), with the river's bay cut out of it.
+## A slab of a surface kind (GroundKit.K_*), with the sea bay cut out of it.
 func _of(kind: int, rect: Rect2, y: Vector2, color: Color) -> void:
 	for dry: Rect2 in GroundKit.cut([rect], _basin):
 		_slab(dry, y, color, GroundKit.kind(kind))
@@ -219,18 +214,23 @@ func _parking_bays(rect: Rect2) -> void:
 
 ## The quay: a concrete edge where the city meets the bay.
 func _quay(pavement: Color) -> void:
-	_slab(
-		Rect2(-FAR, coast, FAR * 2.0, 3.0),
-		Vector2(PAVE_TOP + 0.3, 1.6),
-		pavement.darkened(0.15),
-		GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
-	)
-	_slab(
-		Rect2(-FAR, coast - 0.4, FAR * 2.0, 0.4),
-		Vector2(PAVE_TOP + 0.7, 1.0),
-		pavement.darkened(0.3),
-		GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
-	)
+	var wet := GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
+	for edge: Rect2 in GroundKit.cut([Rect2(-FAR, coast, FAR * 2.0, 3.0)], _basin):
+		_slab(edge, Vector2(PAVE_TOP + 0.3, 1.6), pavement.darkened(0.15), wet)
+	for lip: Rect2 in GroundKit.cut([Rect2(-FAR, coast - 0.4, FAR * 2.0, 0.4)], _basin):
+		_slab(lip, Vector2(PAVE_TOP + 0.7, 1.0), pavement.darkened(0.3), wet)
+
+
+## The sea bay (CityHarbour): its water and sand beach (HarbourView), and a quay wall down each
+## straight flank, as the coast's quay; the beach end has none.
+func _harbour(pavement: Color) -> void:
+	if not plan.has("harbour"):
+		return
+	var sea := CityHarbour.sea(cfg)
+	for wall: Rect2 in HarbourView.quays(plan):
+		_face(wall, Vector2(PAVE_TOP + 0.3, 1.6), pavement.darkened(0.15), sea)
+	add_child(HarbourView.water(plan, cfg, Look.color("water")))
+	add_child(HarbourView.beach(plan, cfg, Look.color("sand")))
 
 
 ## The ground's material, its river level set.
@@ -273,52 +273,45 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 		var z0 := channel.position.y
 		var banks: Array[Rect2] = [
 			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
-			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY),
-			Rect2(x0, z0, RIVER_QUAY, channel.size.y),
-			Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y)
+			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
 		]
-		# A wall that runs inside other water (where the bay opens off the channel) is not drawn.
-		var others: Array[Rect2] = channels.filter(func(o: Rect2) -> bool: return o != channel)
 		var diagonal := DiagonalPaving.band(plan, cfg, 0.0)
-		for side: Rect2 in GroundKit.cut(GroundKit.cut(banks, bridges), others):
+		for side: Rect2 in GroundKit.cut(banks, bridges):
 			if DiagonalPaving.pieces(side, diagonal).size() == 1 and _whole(side, diagonal):
 				_face(side, wall, stone, -depth)
 			else:
 				cut_walls.append(side)
-	CityShore.draw(self, plan, cfg, depth)
+		_face(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone, -depth)
+		_face(
+			Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y), wall, stone, -depth
+		)
 	var over := CityRiver.diagonal_deck(plan, cfg)
 	if not over.is_empty():
 		_diagonal_deck(over, channels[0], [asphalt, stone])
-	var inside := CityRiver.bay_bridges_ns(plan, cfg)  # the bay's own north-south decks
-	var along := bridges.filter(func(d: Rect2) -> bool: return not d in inside)
-	along.append_array(CityRiver.decks_after_ns(plan, cfg, holes_ns))
-	for deck: Rect2 in along:
-		_bridge(deck, channels, [asphalt, stone], false)
-	for deck: Rect2 in CityRiver.decks_after(plan, cfg, holes):  # east-west decks over the bay
-		_bridge(deck, [], [asphalt, stone], true)
-	if not (holes.is_empty() and holes_ns.is_empty()):
-		deck_burst = DeckBurst.new(holes, holes_ns, asphalt, stone)
-		add_child(deck_burst)
+	for deck: Rect2 in bridges:
+		_bridge(deck, channels, asphalt, stone)
 
 
-## A street's bridge: its deck at street level, a parapet along each side, the bank walls
-## carried on under it. colors: [asphalt, stone]; across: an east-west deck (over the bay), its
-## parapets along x.
-func _bridge(deck: Rect2, channels: Array[Rect2], colors: Array[Color], across: bool) -> void:
-	var asphalt := colors[0]
-	var stone := colors[1]
+## A cross street's bridge: its deck at street level, a parapet along each side, the bank walls
+## carried on under it.
+func _bridge(deck: Rect2, channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 	var depth := Num.f(cfg.get("river_depth", 0.0))
 	_abutments(deck, channels, depth, stone)
-	var axis := GroundKit.ALONG_X if across else GroundKit.ALONG_Z
-	var mid := deck.get_center().y if across else deck.get_center().x
-	var half := (deck.size.y if across else deck.size.x) * 0.5
-	var top := GroundKit.road_kind(GroundKit.K_DECK, axis, mid, half)
-	_slab(deck, Vector2(0.001, depth - 0.2), asphalt, top)
-	var rail := Vector2(deck.size.x, PARAPET.y) if across else Vector2(PARAPET.y, deck.size.y)
-	var step := deck.size - rail
-	for edge: float in [0.0, 1.0]:
-		var at := Rect2(deck.position + step * edge, rail)
-		_face(at, Vector2(PARAPET.x, 1.0), stone, GroundKit.NO_WATER)
+	_slab(
+		deck,
+		Vector2(0.001, depth - 0.2),
+		asphalt,
+		GroundKit.road_kind(
+			GroundKit.K_DECK, GroundKit.ALONG_Z, deck.get_center().x, deck.size.x * 0.5
+		)
+	)
+	for x: float in [deck.position.x, deck.end.x - PARAPET.y]:
+		_face(
+			Rect2(x, deck.position.y, PARAPET.y, deck.size.y),
+			Vector2(PARAPET.x, 1.0),
+			stone,
+			GroundKit.NO_WATER
+		)
 
 
 ## The bank walls carried on under a bridge deck, from its underside down to the channel floor, so

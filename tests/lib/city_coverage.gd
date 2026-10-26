@@ -6,6 +6,8 @@ extends RefCounted
 ## car, a prop, a person); in the band past it, where the kaiju never walks, a skyline
 ## stand-in building or a parked car will do (dense city, never bare asphalt).
 
+const EPS := 0.01  # metres: a point or a centre this close to an edge counts as on it
+
 
 ## {"cells", "empty": [cell centres], "arena_empty", "band_empty", "map": ('#' full,
 ## 'o' empty in the arena, '.' empty in the band, ' ' no street)}. decor, street and skyline
@@ -23,7 +25,9 @@ static func measure(
 	var mark := func(p: Vector2, into: Dictionary) -> void:
 		var c := Vector2i(floori((p.x - origin) / size), floori((p.y - origin) / size))
 		if c.x >= 0 and c.y >= 0 and c.x < n and c.y < n:
-			into[c] = true
+			var held: Array = into.get(c, [])
+			held.append(p)
+			into[c] = held
 	var plan := CityGen.map(cfg)
 	var nodes: Array[Vector2] = plan["nodes"]
 	for s: Dictionary in plan["streets"]:
@@ -55,7 +59,7 @@ static func measure(
 		cover.call(Rect2(at.x - sz.x * 0.5, at.z - sz.z * 0.5, sz.x, sz.z), dressed)
 	var coast := Num.f(cfg["coast_z"])
 	var river: Vector2 = plan.get("river", Vector2(INF, -INF))  # water, like the bay (D-083)
-	var basin := CityRiver.bay(plan, cfg)  # the river's bay, sized to the biggest body
+	var basin := CityHarbour.bands(plan, cfg)  # the sea bay the kaiju rises in
 	var empty: Array[Vector2] = []
 	var lines: PackedStringArray = []
 	var checked := 0
@@ -65,7 +69,9 @@ static func measure(
 		for i: int in n:
 			var c := Vector2i(i, j)
 			var centre := Vector2(origin + (i + 0.5) * size, origin + (j + 0.5) * size)
-			var wet := _wet(basin, centre, size)
+			var wet := CityHarbour.holds(plan, centre)
+			var cell := Rect2(centre - Vector2.ONE * size * 0.5, Vector2.ONE * size)
+			var dry := GroundKit.cut([cell], basin)  # the cell less the bay (all of it: no bay)
 			if (
 				not road.has(c)
 				or centre.y < coast
@@ -76,7 +82,9 @@ static func measure(
 				continue
 			checked += 1
 			var in_arena := maxf(absf(centre.x), absf(centre.y)) <= sim.arena_half
-			if full.has(c) or (not in_arena and dressed.has(c)):
+			var here: Array = full.get(c, [])
+			var band: Array = dressed.get(c, [])
+			if _covered(here, dry) or (not in_arena and _covered(band, dry)):
 				line += "#"
 			else:
 				line += "o" if in_arena else "."
@@ -108,13 +116,11 @@ static func off_bank(empty: Variant, sim: RampageSim) -> Array:
 	return kept
 
 
-## Whether the bay holds the cell's centre or covers at least half of the cell (one centred on
-## its edge is half water).
-static func _wet(basin: Array[Rect2], centre: Vector2, size: float) -> bool:
-	if basin.any(func(b: Rect2) -> bool: return b.has_point(centre)):
-		return true
-	var cell := Rect2(centre - Vector2.ONE * size * 0.5, Vector2.ONE * size)
-	var dry := 0.0
-	for piece: Rect2 in GroundKit.cut([cell], basin):
-		dry += piece.get_area()
-	return dry <= cell.get_area() * 0.5
+## Whether every dry remainder of a cell (dry: GroundKit.cut of it by the bay) holds one of the
+## points marked in it (within EPS); a cell the bay never reaches is its own one remainder.
+static func _covered(points: Array, dry: Array[Rect2]) -> bool:
+	for piece: Rect2 in dry:
+		var held := piece.grow(EPS)
+		if not points.any(func(p: Vector2) -> bool: return held.has_point(p)):
+			return false
+	return not dry.is_empty()

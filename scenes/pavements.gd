@@ -3,6 +3,7 @@ extends RefCounted
 ## The pavement graph StreetLife's people walk (split out of StreetLife for gdlint's 400-line
 ## file cap): corner nodes and the links between them.
 
+const NO_WALK: Array[String] = ["outer", "river", "harbour"]  # block uses no one walks round
 const CORNERS: Array[Vector2] = [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]
 const PAVEMENT := 0.45  # pavement line, out from the block's edge (its buildings' walls)
 const CROSSWALK := 9.5  # longest crossing to the corner of the block across the street
@@ -28,7 +29,7 @@ func _init(sim: RampageSim) -> void:
 			avenue.append(road)
 	var diagonal := {"nodes": plan["nodes"], "streets": avenue}
 	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
-	var bay := CityRiver.bay(plan, sim.city)
+	var bay := CityHarbour.bands(plan, sim.city)
 	for block: Dictionary in plan["blocks"]:
 		var ring := _ring(block, sim.city, half, bay)
 		if not ring.has_area():
@@ -66,12 +67,12 @@ func _init(sim: RampageSim) -> void:
 
 
 ## A block's pavement line, the same distance in from the kerb as round every other block; an
-## empty Rect2 past the edge or on the river (CityRiver: no one walks on the water). A ring that
-## would cross the river's bay (CityRiver.bay) starts south of it instead, and a block the bay
-## leaves no room in has none (it would sit in the street past the block).
+## empty Rect2 past the edge, on the river or in the sea bay (no one walks on the water). A ring
+## that would cross the sea bay (CityHarbour.bands) starts south of it instead, and a block the
+## bay leaves no room in has none (it would sit in the street past the block).
 static func _ring(block: Dictionary, city: Dictionary, half: float, bay: Array[Rect2]) -> Rect2:
 	var rect: Rect2 = block["rect"]
-	if str(block["use"]) in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
+	if str(block["use"]) in NO_WALK or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
 		return Rect2()
 	var ring := CityGen.pavement(block, city).grow(PAVEMENT - Num.f(city["sidewalk"]))
 	var top := ring.position.y

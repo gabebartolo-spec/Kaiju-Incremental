@@ -10,7 +10,7 @@ const Green := preload("res://tests/lib/city_green.gd")
 const RiverBody := preload("res://tests/lib/city_river_body.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
 const TreeApart := preload("res://tests/lib/city_tree_apart.gd")
-const RiverBay := preload("res://tests/lib/city_river_bay.gd")
+const Harbour := preload("res://tests/lib/city_harbour.gd")
 const StadiumFar := preload("res://tests/lib/city_stadium_far.gd")
 const Kerb := preload("res://tests/lib/city_kerb.gd")
 const BreathTrees := preload("res://tests/lib/city_breath_trees.gd")
@@ -21,9 +21,11 @@ const EdgeMark := preload("res://tests/lib/city_arena_edge.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
 const BridgeLand := preload("res://tests/lib/city_bridge_land.gd")
+const RoadAudit := preload("res://tools/audit/road_audit.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
+const CITY_AUDIT_SEEDS := 6  # the city audit suite's road seeds (run_city_audit_tests ROAD_SEEDS)
 
 
 func suite_name() -> String:
@@ -45,7 +47,9 @@ func run_checks() -> void:
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
 	await _t("_check_bridges_meet_land")
-	await _t("_check_rise_bursts_decks")
+	await _t("_check_rise_in_water")
+	await _t("_check_rise_clear_of_rail")
+	await _t("_check_bay_width")
 	await _t("_check_rise_fits_intro")
 	await _h(
 		"city_light_pool",
@@ -201,8 +205,8 @@ func _check_no_empty_ground() -> void:
 			RiverBody.check(tier, map_seed, sim, check)
 			RiverStart.check(tier, map_seed, sim, check)
 			RiverStart.check_look(tier, map_seed, sim, decor, check)
-			RiverBay.check(tier, map_seed, sim, decor, check)
-			RiverBay.check_walkers(tier, map_seed, sim, street, check)
+			Harbour.check(tier, map_seed, sim, decor, check)
+			Harbour.check_walkers(tier, map_seed, sim, street, check)
 			EdgeMark.check(tier, map_seed, sim, decor, check)
 			SpawnView.check(tier, map_seed, sim, skyline, check)
 			Green.check_city(tier, map_seed, sim, decor, check)
@@ -238,12 +242,31 @@ func _check_bridges_meet_land() -> void:
 	BridgeLand.check(COVERAGE_SEEDS, check)
 
 
-## The kaiju of each stage 1-3 bursts up through the bay's decks: none left inside its body
-## (tests/lib/city_river_bay.gd check_burst; director 2026-10-21, "burst through").
-func _check_rise_bursts_decks() -> void:
+## The biggest kaiju of each stage 1-3 rises over the sea floor wholly in the bay's water
+## (tests/lib/city_harbour.gd check_rise; director 2026-10-26, "Sea bay, real beach").
+func _check_rise_in_water() -> void:
 	for tier: int in [1, 2, 3]:
 		for map_seed: int in COVERAGE_SEEDS:
-			RiverBay.check_burst(tier, map_seed, check)
+			Harbour.check_rise(tier, map_seed, check)
+
+
+## The railway's viaduct keeps clear of the rise at stages 1-3, on the coverage seeds and the
+## city audit's road seeds (tests/lib/city_harbour.gd check_rail_clear; sim review #245).
+func _check_rise_clear_of_rail() -> void:
+	var seeds: Array[int] = COVERAGE_SEEDS.duplicate()
+	for map_seed: int in RoadAudit.seeds(CITY_AUDIT_SEEDS):
+		if not map_seed in seeds:
+			seeds.append(map_seed)
+	for tier: int in [1, 2, 3]:
+		for map_seed: int in seeds:
+			Harbour.check_rail_clear(tier, map_seed, check)
+
+
+## The bay's beach is at least two blocks wide at stage 1 and grows with the arena
+## (tests/lib/city_harbour.gd check_width; lead, option A).
+func _check_bay_width() -> void:
+	for map_seed: int in COVERAGE_SEEDS:
+		Harbour.check_width(map_seed, check)
 
 
 ## The whole start fits the 3 s run intro at stages 1-3, base and biggest body

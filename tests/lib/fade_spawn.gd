@@ -1,7 +1,7 @@
 extends RefCounted
-## The rise from the river in sight (R 19.4, comment #27 "Kaiju spawn seems to be blocked by
+## The rise from the sea bay in sight (R 19.4, comment #27 "Kaiju spawn seems to be blocked by
 ## buildings in the foreground"): for each stage (capture_growth's upgrades, the city and army a
-## real first run gets), the kaiju rises from the river, wades in and stands SECONDS, while the
+## real first run gets), the kaiju rises from the sea bay, wades in and stands SECONDS, while the
 ## camera follows it the way Rampage does (the run intro's shot, RunIntro, over CameraFollow from
 ## its first frame, the body eased in at the model's 12/s) and BuildingFade, fed the eye and
 ## CityView's sight points, fades what it decides. The kaiju is seen on a frame when the eye is
@@ -11,7 +11,7 @@ extends RefCounted
 ## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
-const RiverSight := preload("res://tests/lib/river_sight.gd")
+const BaySight := preload("res://tests/lib/bay_sight.gd")
 const SECONDS := 4.0
 const SEEN_SHARE := 0.95
 ## A building still hides what is behind it while more of its screen door than this is drawn.
@@ -26,8 +26,8 @@ const BODY_FOLLOW := 12.0
 const DT := 1.0 / 60.0
 ## The roar shot (the intro's water shot, to the pull-out): in the SHOT_WHOLE seconds up to
 ## SHOT_END (the roar, where it reads) the head, neck and shoulders above the water are in sight
-## past the river's stonework (RiverSight) on every frame. (Before it, the neck is still under the
-## deck it bursts through, hidden from any side.)
+## past the bay's ground and quays (BaySight) on every frame. (Before it, the neck is still under
+## the water.)
 const SHOT_END := 1.6
 const SHOT_WHOLE := 0.15
 
@@ -52,7 +52,7 @@ func _stage(stage: int) -> void:
 	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
 	sim.body.use_species("reptilian")  # first, as Rampage.setup: the body places the rise
 	sim.emerge.start(sim)
-	var water := -Num.f(sim.city.get("river_depth", 0.0))
+	var water := sim.emerge.water_y()
 	var body := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 	var zoom := CameraTuning.zoom(sim.body_scale())
 	var follow := CameraFollow.new(body, CameraTuning.offset())
@@ -62,7 +62,7 @@ func _stage(stage: int) -> void:
 	var above := 0
 	var feet_seen := 0
 	var standing := 0
-	var stone := RiverSight.new(sim)
+	var stone := BaySight.new(sim)
 	var parts_seen := 0
 	var parts_all := 0
 	var left := int(SECONDS / DT)
@@ -86,7 +86,7 @@ func _stage(stage: int) -> void:
 		var inside := _blocked(eye, eye, hiding)
 		var seconds := sim.emerge.progress() * sim.emerge.total()
 		if sim.emerge.surfaced and seconds <= SHOT_END and seconds >= SHOT_END - SHOT_WHOLE:
-			for part: Vector3 in RiverSight.parts(sim):
+			for part: Vector3 in BaySight.parts(sim):
 				parts_all += 1
 				parts_seen += 0 if stone.hides(eye, part, true) else 1
 		var top := sim.stand_y + sim.reach_height() * TOP

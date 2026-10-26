@@ -11,10 +11,12 @@ extends SceneTree
 ##     --script tools/capture/capture_creation.gd -- --out=<dir> --clip
 ## --after=<frames> holds the run that long after it is built (default AFTER); the log names the
 ## drawn frames (Engine.get_frames_drawn, the movie's frame index) where the run was built and where
-## the river intro handed over to the play camera.
+## the run intro handed over to the play camera.
 ## --titan=<id> captures that genome's sequence instead of the croc's (the director 2026-10-25:
 ## "ensure the clip is functional for all 3"). A locked genome is unlocked for the capture only,
 ## and one with no kaiju to play yet plays the croc's (reptilian) run after the black.
+## --time=<id> sets the time of day the run opens in (data/looks.json "times" "order": dusk,
+## night, morning, noon), as the options menu's setting would.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -26,7 +28,7 @@ const DISH_HOLD := 25
 ## the injector's trip to the vial (the needle down in it).
 const TAKEOVER_SHOT := 0.4
 const DRAW_SHOT := 0.42
-## Frames of the run shown after the lab: 3 s, so the clip shows the river rise opening the run.
+## Frames of the run shown after the lab: 3 s, so the clip shows the rise opening the run.
 const AFTER := 180
 const CAP := 60 * 30
 
@@ -34,6 +36,7 @@ var _out := "user://creation"
 var _clip := false
 var _titan := "croc"
 var _after := AFTER
+var _time := ""
 var _main: Node
 
 
@@ -47,6 +50,8 @@ func _initialize() -> void:
 			_after = arg.substr(8).to_int()
 		elif arg.begins_with("--titan="):
 			_titan = arg.substr(8)
+		elif arg.begins_with("--time="):
+			_time = arg.substr(7)
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -57,6 +62,8 @@ func _run() -> void:
 		quit(1)
 		return
 	SaveFile.delete_save()
+	if not _time.is_empty():
+		PlayerSettings.time_of_day = _time
 	var down := _open_titan()
 	_main = (load(MAIN_SCENE) as PackedScene).instantiate()
 	root.add_child(_main)
