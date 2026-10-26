@@ -204,6 +204,41 @@ jobs:
           name: test-logs-extras
           path: ${{ runner.temp }}/test-logs
 
+  # The engine log of a seeded rampage must be clean (D-295, debt rows 1-2): tools/lint/log_smoke.sh
+  # plays every species' rampage headless, kills the kaiju and frees it all, then fails on ANY engine
+  # ERROR / WARNING line or leak report in the log. A message is fixed at its cause, never filtered.
+  log_smoke:
+    name: engine log smoke
+    needs: [plan, preflight, native]
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Fetch the sound files
+        run: git lfs pull --include="assets/sfx/*"
+      - uses: ./.github/actions/setup-godot
+      - name: Fetch the native library
+        uses: actions/download-artifact@v4
+        with:
+          name: native-linux
+          path: native/bin
+      - name: The checker catches an error, a warning and a leak, and passes a clean log
+        run: bash tools/lint/log_smoke.sh --selftest
+      - name: Play the seeded rampages and read the engine log
+        env:
+          KAIJU_NATIVE_REQUIRED: "1"
+          LOG: ${{ runner.temp }}/log_smoke.log
+        run: GODOT="$HOME/godot/godot" tools/lint/log_smoke.sh
+      - name: Upload the engine log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-smoke
+          path: ${{ runner.temp }}/log_smoke.log
+
   # Slow suites (pr_skip; none yet): pushes to main only. CI runners vary in speed, so a red run is a
   # prompt to look, never a stop.
   slow:
@@ -231,7 +266,7 @@ jobs:
 
   # The required check. Its name stays "test" so branch protection never changes.
   test:
-    needs: [plan, preflight, native, shard, extras]
+    needs: [plan, preflight, native, shard, extras, log_smoke]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -245,8 +280,9 @@ jobs:
           NATIVE: ${{ needs.native.result }}
           SHARDS: ${{ needs.shard.result }}
           EXTRAS: ${{ needs.extras.result }}
+          LOG_SMOKE: ${{ needs.log_smoke.result }}
         run: |
-          echo "plan=$PLAN code=$CODE preflight=$PREFLIGHT shards=$SHARDS extras=$EXTRAS"
+          echo "plan=$PLAN code=$CODE preflight=$PREFLIGHT shards=$SHARDS extras=$EXTRAS log_smoke=$LOG_SMOKE"
           if [ "$PLAN" != success ]; then
             echo "::error::the plan job failed: the checkout or tools/plan_ci_shards.sh broke"
             exit 1
@@ -266,6 +302,10 @@ jobs:
             fi
             if [ "$EXTRAS" != success ]; then
               echo "::error::the harness self-test job did not pass (extras: $EXTRAS); its log names what failed"
+              exit 1
+            fi
+            if [ "$LOG_SMOKE" != success ]; then
+              echo "::error::the engine log smoke found an ERROR, WARNING or leak line (log_smoke: $LOG_SMOKE); its log names each and where it came from"
               exit 1
             fi
           else

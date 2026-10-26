@@ -45,7 +45,9 @@ func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
 	if not _mesh_cache.has(key):
 		var vox: VoxelBuilder = _read(part).frames[0]
 		vox.salt = salt
-		_mesh_cache[key] = vox.build({}, voxel, 0.0, origin).multimesh
+		var holder := vox.build({}, voxel, 0.0, origin)  # only its MultiMesh is shared
+		_mesh_cache[key] = holder.multimesh
+		holder.free()  # a node never added to the tree is not freed by anything else
 	var mm: MultiMesh = _mesh_cache[key]
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
