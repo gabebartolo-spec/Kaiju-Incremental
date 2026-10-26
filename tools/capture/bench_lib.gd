@@ -61,8 +61,13 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 	if DisplayServer.get_name() != "headless":  # a bordered window is clamped under the taskbar
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
 		DisplayServer.window_set_size(Vector2i(3840, 2160))
+		DisplayServer.window_set_position(Vector2i(0, 0))  # on screen: the director watches the runs
 		await tree.process_frame
 		await tree.process_frame
+		print("BENCH window rect %s viewport %s" % [Rect2i(DisplayServer.window_get_position(), DisplayServer.window_get_size()), tree.root.size])
+		if tree.root.size != Vector2i(3840, 2160):
+			printerr("BENCH viewport is not 3840x2160: refusing to measure")
+			return false
 	for pair: String in str(a["tune"]).split(",", false):
 		var tv := pair.split("=")  # section.key=value
 		var path := tv[0].split(".")
