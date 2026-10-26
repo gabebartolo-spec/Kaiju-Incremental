@@ -4,6 +4,76 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
+Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
+copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
+file name (never overwrite his file), then restart Cascadeur and reopen the copy. Narrows the never-restart rule.
+
+## 2026-10-27 · D-317 · Director · Tonight: keep the 6 GB memory floor, drop the 85% CPU cap
+Q: the PC rule (nothing new under 6 GB free RAM or above 85% CPU), tonight? A: "Keep memory floor, drop CPU cap
+(Recommended)". So: the RAM floor (freeze guard) stays; the CPU cap is off for the night shift.
+
+## 2026-10-27 · D-316 · Director · Export a playable build at the end of the shift
+Q: export a build at the end of the shift? A: "Yes, in the usual build folder (Recommended)". So: a demo .exe from
+main in the fixed build folder before he wakes, with a short note of what merged overnight.
+
+## 2026-10-27 · D-315 · Director · No usage cap tonight
+Q: weekly limit 17% used; how much may tonight use? A: "Whatever the work needs (Recommended)". No usage stop tonight.
+
+## 2026-10-27 · D-314 · Director · Opus at high effort for the hardest builds tonight
+Q: Opus high for the hardest builds (new engine code, kaiju posing, tail and toe skeleton)? A: "Yes, hardest builds
+only (Recommended)". So: Opus high only for P2a, P3a, P3c, P4c and the r21 rig work; everything else stays as is.
+
+## 2026-10-27 · D-313 · Director · Speed runs keep the PC to themselves tonight
+Q: keep D-299's ~3 min sole-PC turns tonight? A: "Keep it (Recommended)". D-299 stands through the night shift.
+
+## 2026-10-27 · D-312 · Director · Item 15: the speed savings buy a quieter, cooler PC
+Q: what should the headroom buy at Medium? A: "A quieter, cooler PC (Recommended)". So: same look at 60 fps with the
+GPU working less (D-093's reason for Medium); no render-scale rise. Closes render plan item 15.
+
+## 2026-10-27 · D-311 · Director · Render plan items 10 and 11 build tonight, last in the plan
+Q (06:2x): items 10 (native collider rebuild, no freeze on big stomps) and 11 (no stutter when a tower starts to fall),
+parked until after the demo by D-094, build them tonight? A: "Yes, last in the plan (Recommended)". So: both go in
+after every other render-plan item, each proved by a D-299 speed check. Reverses D-094's "after demo exe 2" for these two.
+Correction (lead, 06:18, director away): not built. The question described both wrongly: the code they speed up (carve physics) runs only in a capture tool, never in the shipped game (checked on main b0fe3687; the baseline measured 0 ms there), so neither changes what the player sees. Back to him at the next interview (D-094 option A, full-game destruction, would bring them back).
+
+## 2026-10-27 · D-310 · Director · Parked work starts tonight, after the debt fixes
+Q (06:1x): work parked until the render plan is done (D-276: roads, play area, camera bubble, rubble, stomp rework,
+Tripo buildings), start it tonight? A: "yes, but not before the debt fixes". So: parked items start tonight once every
+D-295 debt row is done (merged), in the set order (roads #243, then play area #241, then intro #245, then the rest).
+Refines D-276.
+
+## 2026-10-27 · D-309 · Director · Up to 1,000 more Tripo credits tonight, any task
+Q (06:1x): Tripo credits tonight? A: "Up to 1,000 more, any task". So: on top of D-297's vehicle budget (600, 260 used
+at 05:3x), up to 1,000 more credits may be spent tonight on any outstanding Tripo task (vehicles, buildings,
+beachfront). Every task id, credits and verdict logged in the provenance file; Private on every generation.
+
+## 2026-10-27 · D-308 · Director · Night shift: visual changes go into the game; he judges them next morning
+His words (06:1x, before sleeping): "any visual work is fine but after the first iteration save it and show me in
+interview tomorrow". Q: should visual changes made tonight go into the game before he has seen them? A: "In the game,
+you judge tomorrow (Recommended)". So: tonight's visual PRs merge on by default after one iteration; each keeps a saved
+1080p clip or 4K still in C:/kt/interview_2026-10-27/ for the morning interview; anything he rejects is reverted. No
+second visual rounds without him. Overrides, for this night only, the director look gate on merges.
+
+## 2026-10-27 · D-307 · Director · The croc skeleton may gain bones to match the Dracorex
+Q (05:3x): may the croc gain bones (more tail or neck joints)? A: "Yes, add bones if needed (Recommended)".
+So: bones are added where the study shows the croc lacks them; the croc is re-skinned and the approved roar, idle and
+turns move to the new skeleton, each shown to him again in a clip before it replaces the old one.
+
+## 2026-10-27 · D-306 · Director · Recreate the Dracorex walk with its methods and our own keys
+Q (05:3x, his request "look at every single frame of the dracorex walk loop and apply those learnings to our models
+skeletons / take of the settings and techniques used in that dracorex file and try to recreate it with our model"):
+same methods with our own keys, or copy its motion? A: "Same methods, our own keys (Recommended)".
+So: every frame of the sample walk is studied and its settings and techniques (controller layout, key grid, curve
+types, tail and neck set-up, timing) are copied; the croc walk is keyed fresh. No key, curve or pose from the sample
+(licence not cleared) enters our files. Refines D-302.
+
+## 2026-10-27 · D-305 · Director · Our animator works inside his open Cascadeur
+Q (05:3x, after "casc is open"): use his open copy, or he closes his? A: "Use my open copy (Recommended)".
+So: the Cascadeur builder runs its script server inside his running Cascadeur and opens its own tabs beside his
+Dracorex file. It never closes, edits or saves his file, and never takes his keyboard or mouse (no window activation,
+no clicks). Owner: croc moves builder (row 21).
+
 ## 2026-10-27 · D-304 · Director · Clips render at 1080p; stills stay 4K
 Q (05:0x, after he asked "why do we need to capture things in 4k? surely that takes much longer and uses more gpu?"):
 switch clips to 1080p? A: "Clips 1080p, stills 4K (Recommended)".
@@ -327,71 +397,3 @@ Shown the teen Komodo walk (v11, physics tail, 60-frame cycle): "his head wobble
 ## 2026-10-24 · D-221 · Director · Sleek adult croc ridge kept; blue Komodo skin dropped
 
 Shown the remade adult croc (D-219, adult3 a3174b0f): its medium ridge of pale plates and dark spikes, "Keep it". The Blue Monitor skin failed two rounds of Tripo text texturing (D-220): "Drop it"; the Komodo ships with Melanistic Black and Bone White. Haze and shadow boards did not show a difference he could see ("today and half haze look identical, bad screenshots", "no screenshots for me to compare"): both stay as today, no change.
-
-## 2026-10-24 · D-220 · Director · Komodo skins: Melanistic Black and Bone White, plus Blue by a new method
-
-Shown the four skins that passed (A Wild Olive, B Young Banded, C Melanistic Black, D Bone White) after he called eight rounds on the other two "what a waste": picks "C Melanistic Black, D Bone White". The two that never passed: "pursue only the blue one". Sand Monitor is dropped. Blue Monitor gets a new method, Tripo's own texturing from a text prompt (the CC BY-SA photo stays a critic reference only, never an input), not more recolour rounds; two failed rounds of it go back to him. The lead broke D-188 here (tweak rounds after two failures); the method change is now forced at round two.
-
-## 2026-10-24 · D-219 · Director · The adult croc is remade sleek and athletic
-
-Shown the adult croc's back-plate options, his words: "I REALLY hate our croc, why is he so fat and bulky, hes meant to be sleek and athletic>?". DESIGN agrees (the croc is "the athletic fighter", the Komodo the bulky brawler); the Tripo re-run adult (10148dd5) came out heavy (chest 0.43 of its length vs 0.27 before, the teen 0.24) and critics checked defects, not the build. Answer: "Teen's build, grown up": a new adult from a fresh turnaround, the teen's lean long-legged frame scaled up with a heavier jaw, thicker tail and the back plates, measured as slim as the teen before any critic (Tripo spend inside D-204/D-213). The plates choice (A tall / B medium / C flat tiles) is re-asked on the new body. Every critic brief for a titan model now checks the build against DESIGN's archetype words.
-
-## 2026-10-24 · D-218 · Director · Serpent size stays; fix the hood seen from above
-
-Shown the serpent at the game camera (A today, B thicker, C closer camera): "A Today". Then: "gotta fix the frill on the snakes neck though, looks terrible from above". The serpent keeps today's girth and the shared camera; its hood is reworked to read as a cobra hood from the game camera above.
-
-## 2026-10-24 · D-217 · Director · Mecha chimera look: lab-white prototype
-
-Shown four concept looks for the D-211 final boss (A military steel, B lab-white prototype, C battle-worn steel, D obsidian with a DNA core): "B Lab-white prototype". The 3D model is made from B (Tripo, inside D-204/D-213); full game only (D-212).
-
-## 2026-10-24 · D-216 · Director · Cascadeur stays the animation tool
-
-Offered animating the Komodo teen and baby in Blender (no per-model Quick Rig setup, Blender output ships free, unlike the Pro trial's under D-194). His words: "what about the bridge?", then "but the animations look so much better in Casc". Cascadeur stays the animation tool for every titan; Blender layering only for what Cascadeur cannot do (blend-shape breathing, the tongue). A new character's Quick Rig is first copied from the adult's through the script bridge; if that fails, the session maps it by driving Cascadeur's window with computer use ("You drive it on my screen"). The trial-licence limit (D-194) is unchanged: keepers need the paid licence before release ("Later").
-
-## 2026-10-24 · D-215 · Director · Tripo sessions may use Claude in Chrome
-
-Asked whether the serpent's Tripo session may use his Chrome (Claude in Chrome) to upload reference images, since the built-in browser cannot upload local files and the cobra hood and rattle had failed six rounds of word-only prompts. His answer: "Yes, for all Tripo work". Every Tripo session may use Claude in Chrome whenever it needs to (uploads included), in a new tab, never touching his other tabs; sign-ins stay his; Private on every generation. Amends the rulebook's built-in-browser default for Tripo work only.
-
-## 2026-10-24 · D-214 · Director · A Cascadeur animation session
-
-His words: "create another session to make animations in casc". Answer to what it animates first (all four, in this order): the Komodo idle redo (the dragon's D-210 idle: heavy steady breathing, tongue darting, drool, snorting steam) and sharper predator turns and steering (D-208); the Komodo baby and teen (rig, walk, idle, turn); Komodo attacks (the moves DESIGN.md names; any new move is asked first); the new croc stages as their models land. Still the Pro trial, test only (D-194): keepers are remade under a paid licence, and buying Indie stays "Later". Clips reach him only after the lead's motion critic passes them.
-
-## 2026-10-24 · D-213 · Director · Spend: Tripo budget extended by another 5000 credits
-
-His words: "can have another 5k if you need it". Extends D-204's 5000 to 10,000 credits in total for the reptilian models goal (D-209). Drawn only once the first 5000 is spent; the per-session caps set by the lead still apply inside it. Credits already sit on the paid plan, so this is permission to spend, not a purchase.
-
-## 2026-10-24 · D-212 · Director · Scope: demo, full game, expansion
-
-His words: "my vision for the game: demo: full croc gameplay minus the mecha boss fight / full game: all 3 reptilians and mecha boss / if the game is doing well and if i can be bothered we would do an expansion with a mammal, an avian, an aquatic". Answers: the mantis and the octopus stay stretch goals ("keep as stretch goals, this is all ideas for later"); building your own kaiju from preset configurations moves to the expansion ("Expansion"). Consistent with the demo scope (D-050, D-145, D-156: the croc, all three cities); the mecha chimera (D-211) is full game only.
-
-## 2026-10-24 · D-211 · Director · Final boss: the mecha chimera
-
-His words: "get working on a strange chimera hybrid of all three, in a mecha form as the final boss / it should posess battle abilities of all 3 reptiles, im thinking snake head, croc body and athleticism, dragon massive size and power and it shoots a tribeam of corrosive acid, lightning and poison out of its mouth". Answers: a full machine, a giant robot ("A full machine"); built by the military from DNA harvested from your rampages, the ultimate weapon made to kill you ("Built from your DNA"); faced in the "last city after 100% unlocking every upgrade for all reptilians" (not in the demo); concept art starts now as free image edits, no 3D credits until he picks a look ("Yes, concepts now"). Stretch goal, same day: "after you unlock 100% of the achievements you unlock a secret: you can play as the mecha kaiju". The game has no achievement list yet; it gets designed with him later.
-
-## 2026-10-24 · D-210 · Director · The reptilians' idle states
-
-His words: "idle states: snake curls up into a defensive position, tongue flicking dangerously / croc hunches guardedly, prepared to leap at anything nearby / the dragon breathes heavily and steadily, tongue darting, drool dripping, snorting steamy gusts from its nostrils". The Komodo's Cascadeur idle is redone to match; the serpent's stop settles into the defensive coil (slither builder); the croc's comes with its new model. His sound ideas the same day (roadmap) pair with these: the croc's clicking growl, the dragon's nostril snorts and tongue flicks, the serpent's hiss.
-
-## 2026-10-24 · D-209 · Director · Goal: all nine reptilian models and their skin mockups, soon
-
-His words: "ok bring me models to look at / i want to see all models soon: croc baby, croc teen, croc adult, dragon baby, dragon teen, dragon adult, serpent baby, serpent teen, serpent adult / and i want to see skin mockups for all of them / get working, set a plan in motion to complete that". Answers: a concept that passes its critic goes straight to 3D without his pick ("Straight to 3D"; amends D-204's pick-first rule; a disliked model wastes about 130 credits of the 5000); a second Tripo session runs so the croc and the serpent are built at the same time ("Yes, two in parallel"; amends the one-asset-session rule for this goal). Plan: tripo-komodo finishes the Komodo baby and makes the three new croc stages; tripo-serpent makes the three serpent stages (D-206); the lead recolours every textured model in Blender into about six palettes per titan, the same palette across baby, teen and adult (D-205), critic first, then boards to him. Tracked on the "Reptilian models" page and the ROADMAP.
-
-## 2026-10-24 · D-208 · Director · Exceptional turning and predator feel; carving stays; contact always damages; the serpent's climb button
-
-His words: "with our beautiful new models and animation abilities, i expect the sideways motion and predator feel to be exceptional / and our carve destruction must still work / any contact a kaiju has with a building will damage it, only the serpent can hold down a button which instead lets you climb freely up buildings". Asked what sideways motion means: "Turning and steering" (how each titan swings its body round when you change direction: weight shifting, tail counter-swinging, no spinning on the spot). While the climb button is held the building takes no damage ("None"); letting go leaves the serpent coiled where it is ("It stays coiled where it is"). Every new model and animation keeps the carve destruction working.
-
-## 2026-10-24 · D-207 · Director · Kaiju Creation: the new-game opening, in the demo
-
-His words: "Kaiju Creation (aka NEW GAME) / laboratory setting, zoomed in petrie dish / you select which reptile genome to place in the dish / then you inject the KAIJU juice into the dish and a brief animation vfx moment shows the kaiju genome taking over the reptilian genome / camera rapidly zooms in into a black screen (the sound of an egg cracking is heard) / the first baby run begins". Answers: the rack shows the croc genome with the Komodo and serpent genomes greyed and locked, and the scene replays to create each new titan when it unlocks ("Croc, others locked"); after the black screen the baby rises from the river as now ("Rises from the river"); built for the demo ("In the demo").
-
-## 2026-10-24 · D-206 · Director · The serpent is a hybrid: spitting cobra, then rattle, then constrictor
-
-His words: "i want the snake to be a hybrid. starts off as a viper but can develop constrictor python traits in its skill tree". Asked what the starting snake looks like: "i meant cobra, but new idea just struck me: starts as a spitting cobra, as the skill tree develops and it grows into adolescence you unlock the rattle, which gives off a discombobulating vibration which bursts people who hear it and causes rumble damage to nearby buildings, when it reaches adulthood it grows more powerful and gains constrictor powers. all these are gated by the unlock tree and evolution". The body visibly morphs as it gains the traits ("Yes, it morphs"). Python traits: constricting and crushing buildings, and the tail that grabs helicopters ("Constrict and crush buildings, Tail grabs helicopters"); climbing is not one of them. Mixing: "yes, viper, python and cobra gated through the tree". The adult, told to the Tripo session: "final stage is python body, venom spitting cobra head, viper rattle vibrating grabby tail". Replaces D-197's "Python from baby" and ends the python-versus-cobra concept pick.
-
-## 2026-10-24 · D-205 · Director · Skins: three colour palettes for each reptilian titan
-
-His words: "we also want skins for each reptilian, 3 different colour palletes to begin with for each titan". Answers: earned by playing ("Earned by playing": goals such as finishing a city with that titan, set by him later); look only, no stat change ("Look only"); the lead drafts about six palettes per titan from real animals as free image edits and he picks three ("I draft, you pick 3"); a skin carries through every growth stage, baby to Apex ("Yes, baby to Apex"). Komodo first (its model is approved); croc and serpent once he has picked their concepts.
-
-## 2026-10-24 · D-204 · Director · Spend: Tripo budget extended to 5000 credits
-
-His words: "budget is extended 5000", replacing D-196's 1000-credit cap (about 330 spent so far, balance 16,575). Read as 5000 in total for the Tripo session's approved work (Komodo young stages, the new croc, the serpent); each new 3D model still waits for his pick of the concept. Asked whether it is 5000 total or 5000 more and what it covers; he moved on without choosing, so the smaller reading holds until he says otherwise.

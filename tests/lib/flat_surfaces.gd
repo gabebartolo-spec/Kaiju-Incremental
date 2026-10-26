@@ -15,6 +15,8 @@ extends RefCounted
 ## the nearest scripted ancestor's class name and what is flat about it.
 
 const DETAIL_INCLUDE := "surface_detail.gdshaderinc"
+## Physics frames his death may take to reach the burst (about 3.2 s in data at 60 fps, with room).
+const DEATH_FRAMES := 600
 ## Nodes in this group are visual effects, exempt from the rule.
 const EXEMPT_GROUP := "vfx_exempt"
 
@@ -176,9 +178,9 @@ static func _add_ruins(rampage: Rampage) -> void:
 	var view: BuildingView = stream.view.call(0)
 	var voxels := view.voxels
 	var yard: RuinYard = city.ruins()
-	yard._attach(Ruin.build(voxels, Seeds.make("ruin", 0)))
-	yard._attach(Ruin.strip(voxels, Vector3(0, 0, 0), Vector3(6, 0, 0), 3.0))
-	yard._attach(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
+	yard._attach(Ruin.build_plan(voxels, Seeds.make("ruin", 0)))
+	yard._attach(Ruin.strip_plan(voxels, Vector3(0, 0, 0), Vector3(6, 0, 0), 3.0))
+	yard._add(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
 
 
 ## The check: build the real city, scan it, fail every flat type not on KNOWN_FLAT, and fail a
@@ -218,5 +220,32 @@ static func run(tree: SceneTree, check_fn: Callable) -> void:
 	print("FLAT types found: %d" % found.size())
 	for type: String in found:
 		print("FLAT %s x%d %s" % [type, found[type]["count"], found[type]["node"]])
+	await _death(tree, rampage, check_fn)
 	rampage.queue_free()
 	await tree.process_frame
+
+
+## His death too (director 2026-10-27, "i dont like the pale blocks that come out of the
+## explosion": the burst's stone debris and shards were plain untextured boxes): ends the run, plays
+## the overload to the burst (DeathView, DeathOverload) and scans what is flying. Same rule: no
+## flat type that is not on KNOWN_FLAT.
+static func _death(tree: SceneTree, rampage: Rampage, check_fn: Callable) -> void:
+	rampage.sim.end("ended")
+	var view: DeathView = rampage.find_child("DeathView", false, false)
+	for i: int in DEATH_FRAMES:
+		if view.burst:
+			break
+		await tree.physics_frame
+	check_fn.call(view.burst, "his death reaches the burst (debris and shards are in the scan)")
+	var found := scan(view)  # what his death adds: the stone debris and the shards
+	var fresh: Array[String] = []
+	for type: String in found:
+		if not KNOWN_FLAT.has(type):
+			fresh.append("%s x%d (%s)" % [type, found[type]["count"], found[type]["node"]])
+	var pieces := _walk(view).filter(func(n: Node) -> bool: return n is GeometryInstance3D)
+	check_fn.call(
+		pieces.size() >= 2, "the debris and the shards are in the scan: %d" % pieces.size()
+	)
+	check_fn.call(fresh.is_empty(), "no flat-colour surface in his death: %s" % [fresh])
+	for type: String in found:
+		print("FLAT death %s x%d %s" % [type, found[type]["count"], found[type]["node"]])
