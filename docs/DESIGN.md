@@ -32,7 +32,7 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
   shaped" (D-108): croc snout, pale flat bone scutes, charcoal spines, short reptilian arms, long low tail, ~20-30
   deg lean, graceful like a JP T-rex (D-031, D-046, D-048). Kit: claw swipe raking ahead every 2 s that undermines
   towers (D-095, D-096), kept in front of him, its trail and sparks reading from the camera behind (D-190);
-  tail as an autonomous extra limb that shears buildings (a tree node, b2-2); momentum
+  a tail whip from a tree node (b2-2; the autonomous tail limb is the snake's, D-202); momentum
   (straight lines hit harder, turning bleeds it); dash (bursts through every building in its path, landmarks too, a kick per wall, #34). Signature: a breath of **hot forked white-hot lightning**,
   never "atomic" (D-108); its ultimate is a long sustained beam swept by steering.
 - **Insectoid, the mantis: fast, and the brood mother.** Its identity: it **lays eggs that hatch elephant-sized

@@ -63,7 +63,9 @@ func _init(city: CityView, sim: RampageSim) -> void:
 func downed(node: Node3D, event: Dictionary) -> void:
 	node.set_meta("opacity", 1.0)  # a screen-door fade never carries on to the wreck
 	VehicleParts.set_opacity(node, 1.0)
-	var at := Vector3(Num.f(event["x"]), _sim.air.altitude(), Num.f(event["z"]))
+	var at := Vector3(
+		Num.f(event["x"]), Num.f(event.get("y", _sim.air.altitude())), Num.f(event["z"])
+	)
 	match str(event.get("fate", "burst")):
 		"grabbed":
 			node.queue_free()

@@ -160,6 +160,7 @@ func _check_beam() -> void:
 	var swept := _sim("reptilian", {"r_beam": 1}, [_b(0, -8, Vector3i(3, 3, 4))], Vector2(0, 0))
 	swept.facing = Vector2(-1, 0)
 	_run(swept, 0.1, Vector2.ZERO, ULT)
+	_run(swept, _strike_wait(), Vector2.ZERO)  # the stream starts at the strike (D-166)
 	_run(swept, 0.5, Vector2(1, -1).normalized())
 	var grazed := swept.chunks_destroyed
 	_run(swept, 4.0, Vector2.ZERO)
@@ -172,6 +173,7 @@ func _check_beam() -> void:
 	)
 	var steer := _sim("reptilian", {"r_beam": 1}, line, Vector2(0, 0))
 	_run(steer, 0.1, Vector2.ZERO, ULT)
+	_run(steer, _strike_wait(), Vector2.ZERO)
 	_run(steer, 0.3, EAST)
 	var turned := absf(NORTH.angle_to(steer.facing))
 	check(

@@ -195,7 +195,7 @@ func _pitch_camera(rampage: Rampage) -> void:
 			pitch = Vector3(b.x, Num.f(Content.sports()["pitch"]["top"]), b.z)
 	var zoom := 0.75 + 0.4 * game.sim.body_scale()
 	var camera := Camera3D.new()
-	camera.fov = 55.0
+	camera.fov = CameraTuning.fov()
 	rampage.add_child(camera)
 	camera.position = pitch + CameraTuning.offset() * zoom
 	camera.look_at(pitch)

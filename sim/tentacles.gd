@@ -35,7 +35,8 @@ func _bs() -> float:
 
 func step(dt: float) -> void:
 	_limbs(dt)
-	_grab(dt)
+	if not _grab_vip():
+		_grab(dt)
 	_thrown(dt)
 
 
@@ -145,6 +146,24 @@ func _grab(dt: float) -> void:
 		from = best_tank.pos
 		best_tank.hp = 0.0
 		sim.army_units.clear_dead()
+	_throw(kind, from)
+
+
+## The leader's helicopter (D-149), low and in reach, is the prize: the first free limb takes it.
+func _grab_vip() -> bool:
+	if sim.stat("throw_damage") <= 0.0 or _grab_cd > 0.0:
+		return false
+	var at := sim.vip.grab_pos(Num.f(cfg["grab_reach"]) * _bs())
+	if at.x == INF:
+		return false
+	_grab_cd = Num.f(cfg["grab_cooldown"])
+	sim.vip.down(true, "grab")
+	_throw("heli", at)
+	return true
+
+
+## Hurls what a limb holds (`kind` from `from`) where the kaiju faces.
+func _throw(kind: String, from: Vector2) -> void:
 	var throw := Thrown.new()
 	throw.kind = kind
 	throw.from = from

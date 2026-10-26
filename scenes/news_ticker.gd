@@ -24,10 +24,13 @@ var _crawl: Label
 var _unit := ""
 var _headlines := ""
 var _tag: Label
+## False: one headline held still after the tag, not crawled (a live bulletin, VipView).
+var _scroll := true
 
 
 ## lines: the headlines, read left to right and repeated.
-func _init(lines: PackedStringArray) -> void:
+func _init(lines: PackedStringArray, scroll := true) -> void:
+	_scroll = scroll
 	custom_minimum_size = Vector2(0, HEIGHT)
 	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -35,10 +38,11 @@ func _init(lines: PackedStringArray) -> void:
 	strip.color = UiKit.CRAWL_RED
 	UiKit.full_rect(strip)
 	add_child(strip)
-	_headlines = SEPARATOR.join(lines) + SEPARATOR
+	_headlines = SEPARATOR.join(lines) + SEPARATOR if scroll else "  " + "  ".join(lines)
 	_unit = _headlines
-	_crawl = UiKit.label(_unit.repeat(REPEAT), UiKit.SIZE_BODY, Color.WHITE)
-	resized.connect(_fit_cycle)
+	_crawl = UiKit.label(_unit.repeat(REPEAT if scroll else 1), UiKit.SIZE_BODY, Color.WHITE)
+	if scroll:
+		resized.connect(_fit_cycle)
 	# The strip's full height with the text centred in it (the font is only known in the tree).
 	_crawl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_crawl.position = Vector2(TAG_WIDTH, 0.0)
@@ -61,6 +65,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not _scroll:
+		return
 	var loop := _crawl.get_minimum_size().x / REPEAT
 	_crawl.position.x -= SPEED * delta
 	if _crawl.position.x < TAG_WIDTH - loop:
