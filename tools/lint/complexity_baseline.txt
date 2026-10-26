@@ -13,7 +13,6 @@ scenes/city_greenery.gd::_yards 45 11
 scenes/city_greenery.gd::kerb_spots 73 22
 scenes/city_skyline.gd::_far_shore 47 6
 scenes/city_view.gd::_ready 43 11
-scenes/diagonal_parking.gd::park 40 14
 scenes/evolution_reveal.gd::_ready 42 2
 scenes/fx.gd::_ready 51 2
 scenes/gait_biped.gd::_step_feet 98 48
@@ -46,7 +45,6 @@ sim/building_layout.gd::_roof 30 15
 sim/building_layout.gd::_sign 28 20
 sim/building_layout.gd::_stone 12 14
 sim/city_gen.gd::map 70 16
-sim/city_river.gd::sheds 49 10
 sim/city_sites.gd::_span 22 13
 sim/claw_swipe.gd::_undermine 43 18
 sim/collapse.gd::_crush_strip 31 13

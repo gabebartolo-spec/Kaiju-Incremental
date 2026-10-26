@@ -28,21 +28,22 @@ const MIN_LOT_M := 2.0  # CityLots' narrowest lot side: no block is cut thinner
 ## Blocks fill district by district, innermost first, so a district's lots draw the same
 ## numbers whichever stage is in play (only the stage's height caps change them). The river's
 ## blocks (CityRiver) still draw their lots and drop them, so every other building stays put;
-## its quay sheds come last, from their own numbers.
+## its quay sheds come last, from their own numbers, in place of the lots by the bank.
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
-	var bare: Array[Dictionary] = []  # the first district's built blocks too thin for a lot
+	var quay: Array[Dictionary] = []  # the first district's built blocks by the bank (CityRiver)
 	for ring: int in districts(cfg).size() + 1:  # + 1: the real blocks past the last district
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
 				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
 				if str(block["use"]) == "built":
+					if ring == 0 and CityRiver.on_quay(plan, block, cfg):
+						quay.append(block)
+						lots = CityRiver.off_quay(plan, lots, cfg)
 					out.append_array(lots)
-					if lots.is_empty() and ring == 0:
-						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
-	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, bare, cfg))  # + red barrels (#19)
+	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, quay, out, cfg))  # + red barrels (#19)
 	return out
 
 

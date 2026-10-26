@@ -201,3 +201,31 @@ func _check_layout_assets_held() -> void:
 		var result: Dictionary = await AssetAudit.stage(root, Content.tuning(), tier, opts)
 		var short := AssetAudit.short_of_bar(result, ASSET_SEEDS, false)
 		check(short.is_empty(), "stage %d: every layout asset meets its bar (%s)" % [tier, short])
+
+
+## Every landmark's plaza stays clear of every street (tools/audit/landmark_clear_audit.gd; on
+## main before the road geometry fix 7 of 20 stage-1 cities had a plaza over an avenue's stub
+## end), 20 map seeds x 3 stages; and a plaza planted across the middle avenue is caught.
+func _check_landmarks_clear() -> void:
+	var base := Content.tuning()
+	for tier: int in STAGES:
+		var bad: Array[String] = []
+		for map_seed: int in Roads.seeds(LANDMARK_SEEDS):
+			for v: String in LandmarkClear.violations(Roads.city(base, tier, map_seed)):
+				bad.append("seed %d: %s" % [map_seed, v])
+		check(
+			bad.is_empty(),
+			(
+				"stage %d: every landmark plaza clear of the streets (%d: %s)"
+				% [tier, bad.size(), bad.slice(0, 3)]
+			)
+		)
+	var city := Roads.city(base, 3, Roads.SHIPPED_SEED)
+	var plan := CityGen.map(city)
+	var x := Rail.avenue_x(city)  # the north-south avenue nearest the middle
+	plan["sites"] = [{"id": "planted", "rect": Rect2(x - 6.0, -20.0, 12.0, 8.0)}]
+	var got := LandmarkClear.of_plan(plan)
+	check(
+		got.any(func(v: String) -> bool: return v.contains("on the avenue")),
+		"a plaza planted across the middle avenue is caught (%s)" % [got.slice(0, 2)]
+	)
