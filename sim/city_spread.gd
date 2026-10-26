@@ -34,7 +34,9 @@ static func width(rings: Array[float], ring: int) -> float:
 ## The landmark sites: the pool (city "landmarks") in seeded order, each into a seeded district
 ## from its "min_ring" on with room left (spread "landmarks_per_ring"), at the first seeded cell
 ## of that district where it fits and keeps its distances. A landmark no district can take is
-## left out. A spec with an "anchor" [x, z] stands there instead (no spread).
+## left out. A spec's "max_ring" is the last district it may stand in (the stadium: district 1,
+## so it is real and inside the stage-2 play area, director 2026-10-20 / D-270). A spec with an
+## "anchor" [x, z] stands there instead (no spread).
 static func landmarks(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
@@ -69,7 +71,8 @@ static func landmarks(
 				out.append(pinned)
 			continue
 		var choices: Array = []
-		for k: int in range(Num.i(spec.get("min_ring", 0)), rings.size()):
+		var last := mini(Num.i(spec.get("max_ring", rings.size() - 1)), rings.size() - 1)
+		for k: int in range(Num.i(spec.get("min_ring", 0)), last + 1):
 			if taken[k] < per_ring:
 				choices.append(k)
 		_shuffle(choices, rng)
