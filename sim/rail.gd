@@ -77,22 +77,29 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	_sim = sim
 	cfg = tuning["rail"]
 	_rng = rng
-	var half := CityGen.half_extent(sim.city)
-	var span: Array = cfg["span"]
-	_z0 = half * Num.f(span[0])
-	length = half * Num.f(span[1]) - _z0
+	var line := RailLayout.ends(sim.city, cfg)
+	_z0 = line.x
+	length = line.y - line.x
 	deck_y = Num.f(cfg["deck_y"])
 	_x = avenue_x(sim.city)
 	_next = Num.f(cfg["first_s"])
 
 
-## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan.
+## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan
+## (as CityHarbour.mark found it before the sea bay took the streets in its water).
 static func avenue_x(city: Dictionary) -> float:
 	var key := "%s:%s" % [city["map_seed"], city["half"]]
 	if _x_cache.has(key):
 		return Num.f(_x_cache[key])
-	var half := CityGen.half_extent(city)
 	var plan := CityGen.map(city)
+	var best: float = plan["rail_x"] if plan.has("rail_x") else avenue_of(plan, city)
+	_x_cache[key] = best
+	return best
+
+
+## The x of the north-south avenue nearest the middle of `plan` (CityGen.map's), 0 without one.
+static func avenue_of(plan: Dictionary, city: Dictionary) -> float:
+	var half := CityGen.half_extent(city)
 	var nodes: Array = plan["nodes"]
 	var best := INF
 	for street: Dictionary in plan["streets"]:
@@ -102,10 +109,7 @@ static func avenue_x(city: Dictionary) -> float:
 			continue
 		if absf(a.x) < half - 1.0 and absf(a.x) < absf(best):
 			best = a.x
-	if best == INF:
-		best = 0.0
-	_x_cache[key] = best
-	return best
+	return 0.0 if best == INF else best
 
 
 ## The x of the track a train running `dir` uses.

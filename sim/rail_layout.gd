@@ -14,13 +14,45 @@ extends RefCounted
 ## Laid pieces by key: [cells (Vector3i -> material name), chunk layers].
 static var _cache: Dictionary = {}
 static var _lock := Mutex.new()
+## The line's ends by city (map_seed, half, span, its bay's tuning): each needs the street plan.
+static var _ends: Dictionary = {}
 
 
-## The line's north and south ends (world z).
+## The line's north and south ends (world z). Where its avenue meets the sea bay (CityHarbour),
+## the line ends city "harbour" "rail_clear" south of the beach's apex, on a whole piece, so the
+## viaduct never stands in the bay nor in the kaiju's way up the beach.
 static func ends(city: Dictionary, cfg: Dictionary) -> Vector2:
 	var half := CityGen.half_extent(city)
 	var span: Array = cfg["span"]
-	return Vector2(half * Num.f(span[0]), half * Num.f(span[1]))
+	var line := Vector2(half * Num.f(span[0]), half * Num.f(span[1]))
+	var bay_cfg: Dictionary = city.get("harbour", {})
+	var key := "%s:%s:%s:%d" % [city["map_seed"], city["half"], line, bay_cfg.hash()]
+	_lock.lock()
+	var known: Vector2 = _ends.get(key, Vector2.INF)
+	_lock.unlock()
+	if known != Vector2.INF:
+		return known
+	var plan := CityGen.map(city)
+	if plan.has("harbour"):
+		line = _clear_of_bay(city, cfg, plan, line)
+	_lock.lock()
+	_ends[key] = line
+	_lock.unlock()
+	return line
+
+
+## `line` (z from, z to), its north end pulled back clear of the sea bay where the avenue meets it.
+static func _clear_of_bay(
+	city: Dictionary, cfg: Dictionary, plan: Dictionary, line: Vector2
+) -> Vector2:
+	var bay: Dictionary = plan["harbour"]
+	var reach := Num.f(bay["half"]) + Num.f(cfg["deck_width"])
+	if absf(Rail.avenue_x(city) - Num.f(bay["cx"])) > reach:
+		return line
+	var long := Num.f(cfg["bay_length"]) * Num.i(cfg["piece_bays"])
+	var clear := Num.f(bay["apex"]) + Num.f(city["harbour"]["rail_clear"])
+	line.x = maxf(line.x, ceilf(clear / long) * long)
+	return line
 
 
 ## The station's platforms along the line (world z): a train's length and a little, round the

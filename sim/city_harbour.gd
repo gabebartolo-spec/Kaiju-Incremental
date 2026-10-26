@@ -23,7 +23,9 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 	var half := maxf(Num.f(h["width_share"]) * edge, Num.f(h.get("fit_width", 0.0)) * 0.5)
 	var apex := -edge + Num.f(h["reach_in"])
 	var curve := half * Num.f(h["crescent_share"])
-	var cx := _centre(plan)
+	var rail := Rail.avenue_of(plan, cfg)
+	plan["rail_x"] = rail  # the railway's avenue, found before the bay takes its streets
+	var cx := _centre(plan, rail)
 	plan["harbour"] = {
 		"cx": cx,
 		"half": half,
@@ -50,19 +52,47 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 		var rect: Rect2 = block["rect"]
 		var corners := [rect.position, rect.end, Vector2(rect.position.x, rect.end.y)]
 		corners.append(Vector2(rect.end.x, rect.position.y))
-		if corners.all(func(c: Vector2) -> bool: return holds(plan, c)):  # the bay is convex
-			if not block.has("was"):
+		var dry := _dry_part(rect, water)
+		if corners.all(func(c: Vector2) -> bool: return holds(plan, c)) or not dry.has_area():
+			if not block.has("was"):  # the bay is convex: all four corners in, all of it in
 				block["was"] = block["use"]
 			block["use"] = "harbour"
+		elif dry != rect:
+			block["rect"] = dry  # its lots fill what the bay leaves (no bare remainder)
 
 
-## The north-south street line nearest the city's centre line (x 0): the bay's centre.
-static func _centre(plan: Dictionary) -> float:
+## The largest part of `rect` clear of the bay's `water` (bands): south of it, or beside it to the
+## east or west; rect itself when the bay misses it, an empty Rect2 when no part is left.
+static func _dry_part(rect: Rect2, water: Array[Rect2]) -> Rect2:
+	var hit := water.filter(func(w: Rect2) -> bool: return w.intersects(rect))
+	if hit.is_empty():
+		return rect
+	var south := rect.position.y
+	var east := rect.position.x
+	var west := rect.end.x
+	for w: Rect2 in hit:
+		south = maxf(south, w.end.y)
+		east = maxf(east, w.end.x)
+		west = minf(west, w.position.x)
+	var best := Rect2()
+	for part: Rect2 in [
+		Rect2(rect.position.x, south, rect.size.x, rect.end.y - south),
+		Rect2(east, rect.position.y, rect.end.x - east, rect.size.y),
+		Rect2(rect.position.x, rect.position.y, west - rect.position.x, rect.size.y),
+	]:
+		if part.size.x > 0.0 and part.size.y > 0.0 and part.get_area() > best.get_area():
+			best = part
+	return best
+
+
+## The north-south street line nearest the city's centre line (x 0), never the railway's avenue
+## (`rail`): the bay's centre, so the viaduct never runs up the kaiju's way out of the water.
+static func _centre(plan: Dictionary, rail: float) -> float:
 	var xs: Array[float] = plan["xs"]
 	var best := 0.0
 	var gap := INF
 	for x: float in xs:
-		if absf(x) < gap:
+		if absf(x) < gap and not is_equal_approx(x, rail):
 			gap = absf(x)
 			best = x
 	return best

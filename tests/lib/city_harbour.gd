@@ -2,18 +2,19 @@ extends RefCounted
 ## The kaiju rises from the sea bay and walks up its beach into the city (director 2026-10-26:
 ## "move it to the bay where a shoreline makes more natural sense", "Sea bay, real beach"; lead:
 ## a crescent bay cut from the coast into the city's north edge, its city end one continuous sand
-## beach at least 2 blocks wide at stage 1, growing with the arena; earlier, 2026-10-21 #17:
-## "have him emerging facing the city so he can walk straight in"): the run's start (Emergence)
-## rises in open water over the sea floor, facing the city, never turning or sliding sideways
-## through the rise, the wade up the beach and its first second of walking ahead; the beach slopes
-## from the sea floor to sand just under the street; nothing (street, building, prop, walker)
-## stands in the bay; the railway keeps clear of the rise.
+## beach about half the arena's north edge at stage 1 (D-270), growing with the arena; earlier,
+## 2026-10-21 #17: "have him emerging facing the city so he can walk straight in"): the run's
+## start (Emergence) rises in open water over the sea floor, facing the city, never turning or
+## sliding sideways through the rise, the wade up the beach and its first second of walking
+## ahead; the beach slopes from the sea floor to sand just under the street; nothing (street,
+## building, prop, walker) stands in the bay; the railway keeps clear of the rise.
 
 const DT := 1.0 / 30.0
 const WALK := 1.0  # seconds of walking ahead once out
 const SLIDE := 0.02  # metres sideways, and radians of turn, that still count as none
 const WADE_SAMPLES := 64  # points along the wade line checked against the viaduct
-const BLOCKS_WIDE := 2  # the beach at stage 1 spans at least this many blocks (lead, option A)
+const HALF_EDGE := 0.5  # the beach at stage 1: this share of the arena's north edge (D-270)
+const HALF_SLACK := 0.05  # how far from it still counts as about half
 const ON_BANK := 1.0  # metres from the bank point the wade may end
 const SAND_UNDER := 0.25  # metres: the sand's top lies within this under the street
 
@@ -72,7 +73,7 @@ static func _check_walk_in(tier: int, map_seed: int, sim: RampageSim, check_fn: 
 ## The biggest kaiju that can emerge at this stage (size tier = stage, as Main starts a run; the
 ## most growth it can own there, EmergeReach: director 2026-10-21, "Fit the biggest possible")
 ## rises in open water: its rise point is in the bay over the sea floor (CityHarbour.seabed), and
-## through the rise no part of its body's discs is outside the bay's water.
+## through the rise no part of its body's discs is outside the water (the bay or the sea past it).
 static func check_rise(tier: int, map_seed: int, check_fn: Callable) -> void:
 	var grown := EmergeReach.max_growth(Content.upgrades(), "reptilian", tier)
 	var sim := _fresh(tier, map_seed, tier, grown)
@@ -144,36 +145,32 @@ static func check_rail_clear(tier: int, map_seed: int, check_fn: Callable) -> vo
 	)
 
 
-## The beach at stage 1 spans at least BLOCKS_WIDE of the city's widest blocks, and the bay grows
-## with the arena: wider at each stage than the last.
+## The beach at stage 1 is about half the arena's north edge (D-270: "About half the edge", ~50
+## m of ~105), and the bay grows with the arena: wider at each stage than the last.
 static func check_width(map_seed: int, check_fn: Callable) -> void:
 	var widths: Array[float] = []
-	var block := 0.0
+	var edge := 0.0
 	for tier: int in [1, 2, 3]:
 		var sim := _fresh(tier, map_seed)
 		var plan := CityGen.map(sim.city)
 		widths.append(Num.f(plan["harbour"]["half"]) * 2.0 if plan.has("harbour") else 0.0)
 		if tier == 1:
-			for b: Dictionary in plan["blocks"]:
-				var rect: Rect2 = b["rect"]
-				block = maxf(block, rect.size.x)
-	(
-		check_fn
-		. call(
-			widths[0] >= block * BLOCKS_WIDE and widths[1] > widths[0] and widths[2] > widths[1],
+			edge = (CityGen.half_extent(sim.city) + Num.f(sim.city["arena_margin"])) * 2.0
+	var share := widths[0] / edge
+	check_fn.call(
+		absf(share - HALF_EDGE) <= HALF_SLACK and widths[1] > widths[0] and widths[2] > widths[1],
+		(
 			(
-				(
-					"map_seed %d: the bay's beach is %.1f m wide at stage 1 (>= %d blocks of %.1f m) and"
-					+ " grows with the arena: %s"
-				)
-				% [map_seed, widths[0], BLOCKS_WIDE, block, widths]
+				"map_seed %d: the bay's beach is %.1f m wide at stage 1, %.2f of the %.1f m north"
+				+ " edge (about %.1f), and grows with the arena: %s"
 			)
+			% [map_seed, widths[0], share, edge, HALF_EDGE, widths]
 		)
 	)
 
 
 ## How many sample points of the body's discs (centre, and eight round the rim) lie outside the
-## bay's water.
+## water: the bay's, or the open sea past its mouth (a big body's tail reaches out of the bay).
 static func _on_ground(sim: RampageSim, plan: Dictionary) -> int:
 	var s := sim.body_scale()
 	var out := 0
@@ -182,7 +179,8 @@ static func _on_ground(sim: RampageSim, plan: Dictionary) -> int:
 		var r := Num.f(d[1]) * s
 		for k: int in 9:
 			var p := c if k == 8 else c + Vector2.from_angle(k * PI / 4.0) * r
-			if not CityHarbour.holds(plan, p):
+			var sea := p.y < Num.f(plan["harbour"]["mouth"])
+			if not (sea or CityHarbour.holds(plan, p)):
 				out += 1
 	return out
 

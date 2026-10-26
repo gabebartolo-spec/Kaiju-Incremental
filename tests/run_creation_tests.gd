@@ -283,7 +283,8 @@ func _check_crack_pause_roar() -> void:
 		at.append(Num.f(c["at_s"]))
 		ends.append(Num.f(c["at_s"]) + Num.f(c["len_s"]))
 	var roar := black + _surface_s()
-	var ok := cracks.size() == CRACKS and ends.max() <= black
+	var last: float = ends.max() if not ends.is_empty() else INF
+	var ok := cracks.size() == CRACKS and last <= black
 	ok = ok and at[1] - ends[0] >= PAUSE_S and at[2] - at[1] < PAUSE_S
 	ok = ok and roar - ends[2] >= PAUSE_S
 	check(

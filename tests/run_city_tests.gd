@@ -262,7 +262,7 @@ func _check_rise_clear_of_rail() -> void:
 			Harbour.check_rail_clear(tier, map_seed, check)
 
 
-## The bay's beach is at least two blocks wide at stage 1 and grows with the arena
+## The bay's beach is about half the north edge at stage 1 and grows with the arena
 ## (tests/lib/city_harbour.gd check_width; lead, option A).
 func _check_bay_width() -> void:
 	for map_seed: int in COVERAGE_SEEDS:

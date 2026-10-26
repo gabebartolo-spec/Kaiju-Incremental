@@ -3,8 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## the gait fix): a hand-over from the rise with the body about 90 deg off the way it faces (the
 ## rise now ends facing the city, director 2026-10-21 #17, so the test turns the body off itself
 ## at the hand-over: HAND_OVER_OFF) catches its heading up about the middle and does not swing
-## the body about the feet; and a leap (the dash button), which holds its own axis, is not slid sideways
-## by a stick a little off it.
+## the body about the feet; and a leap (the dash button), which holds its own axis, is not slid
+## sideways by a stick a little off it.
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
 const DT := 1.0 / 60.0
