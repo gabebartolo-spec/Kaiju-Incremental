@@ -6,15 +6,16 @@ extends Node3D
 ## no layer and builds nothing. Rain (and the thunderstorm, which is rain plus its own later
 ## darkness) gives:
 ##  - falling streaks (rain.gdshader, three depth layers: near, mid, far) and ground splashes
-##    (rain_splash.gdshader): world-space GPUParticles3D in volumes that follow the camera, leaning
-##    with the run's wind (Fire.WIND), counts x the graphics preset's particles ratio, thinned round
-##    the camera, the screen centre and in front of the kaiju like smoke (D-018, view_clear.gdshaderinc);
+##    (rain_splash.gdshader): world-space GPUParticles3D in volumes that follow the camera,
+##    leaning with the run's wind (Fire.WIND), counts x the graphics preset's particles ratio,
+##    thinned round the camera, the screen centre and in front of the kaiju like smoke (D-018,
+##    view_clear.gdshaderinc);
 ##  - wet streets: the ground slabs' `wet` uniform and the sky they mirror (ground_slab.gdshader),
 ##    and a stretched glowing smear under each streetlight (rain_smear.gdshader) for the lamp
 ##    reflections (no screen-space reflections);
-##  - a duller sky and a heavier veil: the look's ambient, sun and fog multiplied down and the sky and
-##    fog colours pulled toward their own grey, over whatever the time of day is, so a later layer can
-##    sit on it.
+##  - a duller sky and a heavier veil: the look's ambient, sun and fog multiplied down and the
+##    sky and fog colours pulled toward their own grey, over whatever the time of day is, so a
+##    later layer can sit on it.
 ## Presentation only. Numbers: data/looks.json weather.layers, data/tuning.json rain.
 
 const RAIN_SHADER := preload("res://scenes/rain.gdshader")
@@ -296,8 +297,9 @@ func _place_smears(from: Vector3) -> void:
 	var mm := smears.multimesh
 	var y := Num.f(_cfg["splash_y"]) + 0.02
 	var reach := Num.f(smear["reach"])
-	var count := _place_lamps(mm, from, y, reach, smear)
-	count = _place_windows(mm, from, y, count, smear)
+	var origin := Vector3(from.x, y, from.z)
+	var count := _place_lamps(mm, origin, reach, smear)
+	count = _place_windows(mm, origin, count, smear)
 	for i: int in range(count, mm.instance_count):  # the rest sit far below the world, unseen
 		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, Vector3(0.0, -1000.0, 0.0)))
 		mm.set_instance_color(i, Color(0.0, 0.0, 0.0, 0.0))
@@ -305,7 +307,7 @@ func _place_smears(from: Vector3) -> void:
 
 
 ## One smear under every lit streetlight in reach; returns how many instances are used.
-func _place_lamps(mm: MultiMesh, from: Vector3, y: float, reach: float, smear: Dictionary) -> int:
+func _place_lamps(mm: MultiMesh, origin: Vector3, reach: float, smear: Dictionary) -> int:
 	var lamp_fade := Num.f(Content.section("lights")["lamp"]["fade_begin"])
 	var full := Num.f(smear["lamp_energy_full"])
 	var count := 0
@@ -316,9 +318,9 @@ func _place_lamps(mm: MultiMesh, from: Vector3, y: float, reach: float, smear: D
 		if lamp.energy <= 0.0 or count >= Num.i(smear["lamp_max"]):
 			continue
 		var at := lamp.global_position
-		if Vector2(at.x - from.x, at.z - from.z).length() > reach:
+		if Vector2(at.x - origin.x, at.z - origin.z).length() > reach:
 			continue
-		mm.set_instance_transform(count, Transform3D(Basis.IDENTITY, Vector3(at.x, y, at.z)))
+		mm.set_instance_transform(count, Transform3D(Basis.IDENTITY, Vector3(at.x, origin.y, at.z)))
 		var c := lamp.light_color
 		mm.set_instance_color(count, Color(c.r, c.g, c.b, clampf(lamp.energy / full, 0.0, 1.0)))
 		mm.set_instance_custom_data(
@@ -330,7 +332,7 @@ func _place_lamps(mm: MultiMesh, from: Vector3, y: float, reach: float, smear: D
 
 ## A long soft smear in front of each lit building (its windows' reflection in the wet street, the
 ## nearest few to the camera), as long as the lit share and the height say; returns the count.
-func _place_windows(mm: MultiMesh, from: Vector3, y: float, start: int, smear: Dictionary) -> int:
+func _place_windows(mm: MultiMesh, origin: Vector3, start: int, smear: Dictionary) -> int:
 	var lit := Look.value("window_lit")
 	var parent := get_parent()
 	if lit <= 0.02 or not "sim" in parent:
@@ -340,7 +342,7 @@ func _place_windows(mm: MultiMesh, from: Vector3, y: float, start: int, smear: D
 	var near: Array[Vector2] = []  # (distance, building index)
 	for i: int in sim.buildings.size():
 		var b: RampageSim.Building = sim.buildings[i]
-		var d := Vector2(b.x - from.x, b.z - from.z).length()
+		var d := Vector2(b.x - origin.x, b.z - origin.z).length()
 		if d <= reach and b.height > 0:
 			near.append(Vector2(d, i))
 	near.sort_custom(func(p: Vector2, q: Vector2) -> bool: return p.x < q.x)
@@ -356,7 +358,7 @@ func _place_windows(mm: MultiMesh, from: Vector3, y: float, start: int, smear: D
 			Num.f(smear["window_length_max"])
 		)
 		mm.set_instance_transform(
-			count, Transform3D(Basis.IDENTITY, Vector3(b.x, y, b.z + b.d * 0.5))
+			count, Transform3D(Basis.IDENTITY, Vector3(b.x, origin.y, b.z + b.d * 0.5))
 		)
 		mm.set_instance_color(
 			count,

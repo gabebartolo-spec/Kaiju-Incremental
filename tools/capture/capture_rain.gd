@@ -1,17 +1,20 @@
 extends SceneTree
 ## One mid-rampage frame at the game camera in a chosen time of day and weather (autoplay, city seed
-## 0, the run that plays that time of day, PLAY_FRAMES physics ticks, then paused) for the rain check: <out>/<name>.png, a 2x crop
-## round the kaiju (<name>_2x.png), a RAIN_FRAME line (kaiju pixel, GPU and CPU render ms over
-## TIME_FRAMES frames). The pause freezes the rain too: the still shows the streaks and splashes in place.
-## --nokaiju also saves <name>_nokaiju.png (the kaiju hidden, same frame) for the contrast measure;
-## --play=N sets the ticks played before the frame.
+## 0, the run that plays that time of day, PLAY_FRAMES physics ticks, then paused) for the rain
+## check: <out>/<name>.png, a 2x crop round the kaiju (<name>_2x.png), a RAIN_FRAME line (kaiju
+## pixel, GPU and CPU render ms over TIME_FRAMES frames). The pause freezes the rain too: the still
+## shows the streaks and splashes in place. --nokaiju also saves <name>_nokaiju.png (the kaiju
+## hidden, same frame) for the contrast measure; --play=N sets the ticks played before the frame.
 ## --clip does not pause: it plays CLIP_FRAMES more frames for `--write-movie` (game speed, 60 fps).
 ## Run it once per shot, clear and rain, so the frame is the same seeded one:
 ##
-## --nostreaks / --nosplash hide the streaks / the splashes (the rest of the frame, the grade and the sheen, stays).
+## --nostreaks / --nosplash / --nosmear hide the streaks / the splashes / the lamp smears (the
+## rest of the frame, the grade and
+## the sheen, stays).
 ##
 ##   godot --path . --windowed --fixed-fps 60 --resolution 3840x2160 \
-##     --script tools/capture/capture_rain.gd -- --time=night --weather=rain --name=night_rain --out=<dir>
+##     --script tools/capture/capture_rain.gd -- --time=night --weather=rain \
+##     --name=night_rain --out=<dir>
 ##
 ## Needs the off-screen no_focus override.cfg (Kit.window_ok).
 
@@ -74,7 +77,8 @@ func _run(a: Dictionary) -> void:
 		await Kit.frames(self, CLIP_FRAMES)  # the movie writer records these
 		quit()
 		return
-	if a["nostreaks"] == true or a["nosplash"] == true or a["nosmear"] == true:  # the same frame without the streaks or splashes, for the density measure
+	# The same frame without the streaks, splashes or smears, for the density measure.
+	if a["nostreaks"] == true or a["nosplash"] == true or a["nosmear"] == true:
 		for view: Node in rampage.find_children("*", "WeatherView", true, false):
 			var weather := view as WeatherView
 			for particles: GPUParticles3D in weather.layers:
