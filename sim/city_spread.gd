@@ -58,6 +58,7 @@ static func landmarks(
 		if shapes.has(str(spec["id"])):
 			pool.append(spec)
 	_shuffle(pool, rng)
+	pool = _farthest_first(pool)
 	var per_ring := Num.i(spread.get("landmarks_per_ring", 0))
 	var taken: Array[int] = []
 	for k: int in rings.size():
@@ -87,6 +88,20 @@ static func landmarks(
 				taken[k] += 1
 				break
 	return out
+
+
+## The pool with the "farthest" landmarks (the stadium) first, the seeded order otherwise: its
+## far corner of district 1 is nearly the only land that keeps the rise clearance, so the others
+## are laid round it, not it round them (seed 98765: the bridge and wheel took that corner).
+static func _farthest_first(pool: Array) -> Array:
+	var first: Array = []
+	var rest: Array = []
+	for spec: Dictionary in pool:
+		if spec.get("farthest", false):
+			first.append(spec)
+		else:
+			rest.append(spec)
+	return first + rest
 
 
 ## Roughly where the kaiju rises at each stage (CityHarbour.mark fixes it once the blocks are

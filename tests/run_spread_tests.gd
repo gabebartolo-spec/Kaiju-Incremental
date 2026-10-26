@@ -22,6 +22,8 @@ const HALVES: Array[float] = [75.0, 120.0, 225.0]
 ## ("farthest", b2-21: "placed as far away from our spawn spot as possible"). D-254's own
 ## scaling of the old 125 m (x1.5 = 187.5 m) was ours, not the director's.
 const STADIUM_FLOOR := 150.0
+## The seeds the lead probed (the stadium must find a site in each: 2026-10-27).
+const PROBE_SEEDS: Array[int] = [7301, 1234, 98765, 8278, 42, 5150]
 ## The plans _check_stadium_farthest brute-forces (about a minute each).
 const FARTHEST_SEEDS: Array[int] = [7301, 98765]
 ## How much wider than the river's channel a bridge's water must be (D-254: "at least 3x").
@@ -77,11 +79,18 @@ func _check_landmarks() -> void:
 	var rings := _rings()
 	var bad: Array[String] = []
 	var placed := 0
-	for map_seed: int in _seeds():
+	var seeds := _seeds()
+	for probe: int in PROBE_SEEDS:
+		if not seeds.has(probe):
+			seeds.append(probe)
+	var no_stadium: Array[int] = []
+	for map_seed: int in seeds:
 		var plan := CityGen.map(_cfg(map_seed, 1))
 		var rise: Vector2 = plan["rise_spawn"]
 		var sites: Array = plan["sites"]
 		placed += sites.size()
+		if not sites.any(func(s: Dictionary) -> bool: return str(s["id"]) == "stadium"):
+			no_stadium.append(map_seed)
 		for a: int in sites.size():
 			var site: Dictionary = sites[a]
 			var k := Num.i(site["district"])
@@ -105,6 +114,10 @@ func _check_landmarks() -> void:
 						)
 					)
 	check(placed >= SEEDS * 2, "most landmarks find a site (%d over %d plans)" % [placed, SEEDS])
+	check(
+		no_stadium.is_empty(),
+		"the stadium finds a site in every plan, the probe seeds too: none in %s" % [no_stadium]
+	)
 	check(bad.is_empty(), "landmarks spread and clear of the rise in every plan: %s" % [bad])
 
 
