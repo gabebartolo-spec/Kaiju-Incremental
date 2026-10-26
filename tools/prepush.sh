@@ -5,7 +5,7 @@
 # Runs what CI's first gates run, so a push never goes red on something a minute of local work
 # catches, then the suites the change touches:
 #   1. branch is not behind origin/main (a stale branch merges main first);
-#   2. tuning keys + complexity ratchet (tests.yml preflight), every workflow job has a timeout (lint.yml);
+#   2. tuning keys + complexity ratchet (tests.yml preflight);
 #   3. snake_case names, gdlint and gdformat --check on the changed .gd files (lint.yml);
 #   4. headless import + every script parsed and compiled (tests.yml preflight);
 #   5. the touched suites: tools/lint/prepush_picks.py picks every suite whose runner, or code its
@@ -59,9 +59,10 @@ changed=$(git diff --name-only --diff-filter=ACMR "$BASE...HEAD")
 gd=$(echo "$changed" | grep -E '\.gd$' | grep -v -E '^(\.godot|\.claude|tests/fixtures/lint)/' || true)
 
 step "2 tuning keys and complexity"
+# every workflow job names a timeout-minutes (lint.yml runs it too)
+python tools/lint/workflow_timeouts.py || fail "a workflow job has no timeout-minutes"
 python tools/lint/tuning_keys.py || fail "tuning keys"
 python tools/lint/complexity_ratchet.py || fail "complexity ratchet"
-python tools/lint/workflow_timeouts.py || fail "a workflow job has no timeout-minutes"
 
 step "3 lint on $(echo "$gd" | grep -c . ) changed .gd files"
 if [ -n "$gd" ]; then
