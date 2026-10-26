@@ -1,6 +1,6 @@
 extends RefCounted
-## The threat suite's on-screen checks (tests/run_threat_tests.gd): the badge beside a centred
-## clock, by number and lit bars; the crawl sliding up for each big moment in turn and hiding for
+## The threat suite's on-screen checks (tests/run_threat_tests.gd): the bar under a centred
+## clock as the threat meter, by filled segments; the crawl sliding up for each big moment in turn and hiding for
 ## the end beat; then by real input through Main: a threat rise, a landmark fall and a death, and
 ## the lab card before the next rise.
 
@@ -72,16 +72,17 @@ func _hud_checks() -> void:
 	t.root.add_child(hud)
 	await _frames(3)
 	_layout(hud)
-	_levels_read_without_colour(hud.clock.badge)
-	hud.clock.badge.show_level(1, false)
+	_levels_read_without_colour(hud.clock.threat)
+	hud.clock.threat.show_level(1, 0.0, false)
 	sim.chunks_destroyed = chunks_at(sim, 0.25)
 	await _step(hud, sim)
-	var badge := hud.clock.badge
+	var badge := hud.clock.threat
 	check.call(
-		badge.level == 2 and badge.digit.text == "2" and badge.meter.lit == 2,
-		"a rise shows level 2 by number and two lit bars: %s" % badge.digit.text
+		badge.level == 2 and badge.filled() == 1,
+		"a rise to level 2 fills one segment: %d" % badge.filled()
 	)
-	check.call(badge.scale.x > 1.01, "the rise pops the badge (scale %.2f)" % badge.scale.x)
+	check.call(badge.pop > 1.0, "the rise pops the new segment (%.2f)" % badge.pop)
+	await _progress(hud, sim)
 	var line := RampageNews.line_for({"type": "threat_up", "level": 2})
 	check.call(
 		hud.news.showing() and hud.news.shown == PackedStringArray([line]),
@@ -128,40 +129,58 @@ func _step(hud: RampageHud, sim: RampageSim) -> void:
 	await _frames(2)
 
 
-## The clock stays dead centre; the badge sits right of it in the title-safe area, its text 24 px
-## or more.
+## The clock stays dead centre with the threat bar centred under it in the title-safe area; the
+## HUD has no separate badge and no city-destroyed meter.
 func _layout(hud: RampageHud) -> void:
 	var view := t.root.get_visible_rect()
 	var clock := hud.clock_label().get_global_rect()
-	var badge := hud.clock.badge.get_global_rect()
+	var bar := hud.clock.threat.get_global_rect()
 	check.call(
 		absf(clock.get_center().x - view.get_center().x) <= 1.0,
-		"the clock stays centred beside the badge: %.1f" % clock.get_center().x
+		"the clock stays centred over the bar: %.1f" % clock.get_center().x
 	)
 	var safe := view.grow_individual(
 		-UiKit.safe_margin().x, -UiKit.safe_margin().y, -UiKit.safe_margin().x, 0.0
 	)
 	check.call(
-		badge.position.x >= clock.end.x and safe.encloses(badge),
-		"the badge sits right of the clock inside the safe area: %s" % badge
+		absf(bar.get_center().x - clock.get_center().x) <= 1.0 and bar.position.y >= clock.end.y - 8.0 and safe.encloses(bar),
+		"the threat bar sits centred under the clock inside the safe area: %s" % bar
 	)
-	var small: Array[String] = []
-	for label: Label in hud.clock.badge.find_children("*", "Label", true, false):
-		var px := label.get_theme_font_size("font_size")
-		if px < MIN_TEXT:
-			small.append("%s %d" % [label.text, px])
-	check.call(small.is_empty(), "badge text is %d px or more: %s" % [MIN_TEXT, small])
-
-
-## Each level shows its own number and its own count of lit bars (colour-blind safe).
-func _levels_read_without_colour(badge: ThreatBadge) -> void:
-	var seen: Array[String] = []
-	for n: int in [1, 2, 3, 4, 5]:
-		badge.show_level(n, false)
-		seen.append("%s/%d" % [badge.digit.text, badge.meter.lit])
+	var meter_size: Array = UiKit.ui()["hud"]["meter_size"]
 	check.call(
-		seen == ["1/1", "2/2", "3/3", "4/4", "5/5"],
-		"levels read by number and lit bars: %s" % [seen]
+		absf(bar.size.x - Num.f(meter_size[0])) <= 1.0 and bar.size.y <= 8.0,
+		"the bar keeps the old meter's width and a thin height: %s" % bar.size
+	)
+	check.call(
+		hud.find_children("*", "ThreatBadge", true, false).is_empty()
+		and hud.find_children("*", "ProgressBar", true, false).is_empty(),
+		"the HUD has no threat badge and no city-destroyed meter"
+	)
+
+
+## Each level fills its own count of segments (colour-blind safe); level 5 fills all.
+func _levels_read_without_colour(bar: ThreatBar) -> void:
+	var seen: Array[int] = []
+	for n: int in [1, 2, 3, 4, 5]:
+		bar.show_level(n, 0.5, false)
+		seen.append(bar.filled())
+	check.call(seen == [0, 1, 2, 3, 5], "levels read by filled segments: %s" % [seen])
+	check.call(
+		bar.partial() == 0.0 and bar.filled() == bar.segments(),
+		"level 5 shows every segment full and no partial one"
+	)
+
+
+## At a seeded moment the current segment's fill equals the army's progress toward the next level.
+func _progress(hud: RampageHud, sim: RampageSim) -> void:
+	var at: Array = Content.section("threat")["level_at"]
+	sim.chunks_destroyed = chunks_at(sim, 0.375)
+	await _step(hud, sim)
+	var want := RunNews.progress_for(RunNews.army_share(sim), at)
+	var bar := hud.clock.threat
+	check.call(
+		bar.level == 2 and absf(bar.partial() - want) < 0.001 and want > 0.2 and want < 0.8,
+		"the current segment fills by progress to the next level: %.3f vs %.3f" % [bar.partial(), want]
 	)
 
 
@@ -191,7 +210,7 @@ func _by_input() -> void:
 	_fell_landmark(sim)
 	await _frames(30)
 	var news := hud.news.shown + hud.news.waiting()
-	check.call(hud.clock.badge.level >= 2, "in play the badge rises (%d)" % hud.clock.badge.level)
+	check.call(hud.clock.threat.level >= 2, "in play the bar rises (%d)" % hud.clock.threat.level)
 	check.call(
 		(
 			news.has(RampageNews.line_for({"type": "threat_up", "level": 2}))
