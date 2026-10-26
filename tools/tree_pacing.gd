@@ -41,18 +41,10 @@ func visit(tree: UpgradeTree, seconds: float, income: int) -> Array[String]:
 		if tree.level(pick) == 1:
 			first_bought[pick] = (clock + _tree_seconds) / 3600.0
 	clock += _tree_seconds
-	(
-		visits
-		. append(
-			{
-				"run": visits.size() + 1,
-				"stage": tree.stage(),
-				"income": income,
-				"end_hours": clock / 3600.0,
-				"bought": bought,
-			}
-		)
-	)
+	var entry := {"run": visits.size() + 1, "stage": tree.stage(), "income": income}
+	entry["end_hours"] = clock / 3600.0
+	entry["bought"] = bought
+	visits.append(entry)
 	return bought
 
 
