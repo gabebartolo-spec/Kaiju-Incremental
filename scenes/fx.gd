@@ -231,17 +231,11 @@ func shockwave(at: Vector3, radius: float, tail := false, foot := false) -> void
 			_slam_puff(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * SLAM_SIZE * 0.8)
 		return
 	var cfg: Dictionary = Content.section("fx")["shockwave"]
-	_ring(at, radius, Num.f(cfg["foot_start"]) if foot else 0.0, _dust_tone())
+	ring_of(at, radius, Num.f(cfg["foot_start"]) if foot else 0.0, _dust_tone())
 
 
-## A shockwave's ring in `tint` instead of the street's dust: a ring on water (the run intro's
-## ripples and splashes, IntroWater and RiverView).
-func water_ring(at: Vector3, radius: float, tint: Color) -> void:
-	_ring(at, radius, 0.0, tint)
-
-
-## The ring: from `start` of its radius out, `tint`; tuning "fx" "shockwave" sizes and times it.
-func _ring(at: Vector3, radius: float, start: float, tint: Color) -> void:
+## shockwave's ring from `start` of its radius out in `tint` (on water: the intro's foam rings).
+func ring_of(at: Vector3, radius: float, start: float, tint: Color) -> void:
 	var cfg: Dictionary = Content.section("fx")["shockwave"]
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
@@ -257,12 +251,8 @@ func _ring(at: Vector3, radius: float, start: float, tint: Color) -> void:
 	quad.position = at + Vector3(0, 0.15, 0)
 	add_child(quad)
 	var tween := quad.create_tween()
-	tween.tween_method(
-		func(v: float) -> void: mat.set_shader_parameter("progress", v),
-		start,
-		1.0,
-		Num.f(cfg["seconds"]) * (1.0 - start)
-	)
+	var set_progress := func(v: float) -> void: mat.set_shader_parameter("progress", v)
+	tween.tween_method(set_progress, start, 1.0, Num.f(cfg["seconds"]) * (1.0 - start))
 	tween.tween_callback(quad.queue_free)
 
 

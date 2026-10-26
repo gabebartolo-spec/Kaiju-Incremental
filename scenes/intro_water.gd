@@ -50,7 +50,7 @@ func _process(_delta: float) -> void:
 		_rings += 1  # one ring a frame at most, so a fast-forward never stacks them
 		var grow := 1.0 + Num.f(_cfg["ripple_grow"]) * t
 		var radius := Num.f(_cfg["ripple_radius"]) * _sim.body_scale() * grow
-		_fx.water_ring(global_position, radius, foam(_cfg))
+		_fx.ring_of(global_position, radius, 0.0, foam(_cfg))
 	# It builds to its peak as the head breaks and plays on while the head clears the water.
 	var from := Num.f(_cfg["fount_from_seconds"])
 	var due := emerge.active and t >= from and t < _break + Num.f(_cfg["fount_after_seconds"])

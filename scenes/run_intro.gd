@@ -72,7 +72,7 @@ func on_input(event: InputEvent) -> void:
 ## "body", the drawn body's position; "eye", "aim", "fov", the gameplay camera this frame
 ## (Rampage's CameraFollow, already stepped, with its head-room tilt), which the shot ends on
 ## exactly, so the hand-over has no pop; "head", where the head's crown stands: x ahead of the
-## hips, y over the feet (world units, KaijuModel.head_at); "head_box" (optional), the drawn
+## hips, y over the feet (world units, RampageRise.head_at); "head_box" (optional), the drawn
 ## head's box now (HeadFrame.head_box): the shot aims at its middle, so the roar sits whole in
 ## the frame at any stage. `frac`: the share of a tick drawn
 ## past the last one.

@@ -124,7 +124,7 @@ func _stage(stage: int) -> void:
 	)
 
 
-## The head's crown with no model (KaijuModel.head_at's fallback): the data's share.
+## The head's crown with no model (RampageRise.head_at's fallback): the data's share.
 static func _crown(sim: RampageSim) -> Vector2:
 	var cfg: Dictionary = Content.section("intro")
 	var at := Vector2(
