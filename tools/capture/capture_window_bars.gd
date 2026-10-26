@@ -6,8 +6,9 @@ extends SceneTree
 ## the way it follows a walking kaiju. For each variant (one suspect switched off, see _apply) it
 ## renders `--frames` frames through a 4K SubViewport on the player's graphics row (medium: FSR1 at
 ## 0.75, MSAA 2x, SSAO and SSIL, soft shadows, the far blur on the camera) and saves the building's
-## rectangle of each frame as <out>/<variant>/b<N>_a<arch>/f<NNN>.png. tools/capture/window_bars_count.py
-## counts the bars in them. Needs a window and the no-focus override.cfg (Kit.window_ok).
+## rectangle of each frame as <out>/<variant>/b<N>_a<arch>/f<NNN>.png; window_bars_count.py in
+## this folder counts the bars in them. Needs a window and the no-focus override.cfg
+## (Kit.window_ok).
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_window_bars.gd -- --out=<dir> [--variants=base,noshadow]
 ##     [--style=-1] [--frames=24] [--step=0.06] [--time=night] [--gfx=medium] [--size=3840x2160]
@@ -31,21 +32,24 @@ var _env: Environment
 
 
 func _initialize() -> void:
-	_opt = Kit.args(
-		{
-			"out": "user://window_bars",
-			"variants": "base",
-			"style": -1,
-			"floors": 8,
-			"gap": 5.0,
-			"stage": 2,
-			"frames": 24,
-			"step": 0.06,
-			"time": "night",
-			"gfx": "medium",
-			"size": "3840x2160",
-			"pick": 0,
-		}
+	_opt = (
+		Kit
+		. args(
+			{
+				"out": "user://window_bars",
+				"variants": "base",
+				"style": -1,
+				"floors": 8,
+				"gap": 5.0,
+				"stage": 2,
+				"frames": 24,
+				"step": 0.06,
+				"time": "night",
+				"gfx": "medium",
+				"size": "3840x2160",
+				"pick": 0,
+			}
+		)
 	)
 	if not Kit.window_ok():
 		quit(1)
@@ -234,7 +238,9 @@ func _without_balcony_walls(view: BuildingView) -> ArrayMesh:
 			var inside := o.x >= 1 and o.x <= w - 2 and o.z >= 1 and o.z <= d - 2
 			inside = inside and o.y >= 0 and o.y < h - 1
 			if cells.get(o, "") == "slab" and not inside:
-				var at := voxels.origin() + Vector3(0, half, 0) + Vector3(cell) * BuildingVoxels.VOXEL
+				var at := (
+					voxels.origin() + Vector3(0, half, 0) + Vector3(cell) * BuildingVoxels.VOXEL
+				)
 				skip[Vector3i(((at + Vector3(dir) * half) * 1024.0).round())] = true
 	var src := view.mesher.shell.surface_get_arrays(0)
 	var verts: PackedVector3Array = src[Mesh.ARRAY_VERTEX]
@@ -291,14 +297,16 @@ func _building(n: int, scale: float, variant: String) -> void:
 		_eye.fov = _cam.fov
 		_eye.global_transform = _cam.global_transform
 		_far.follow(_kaiju.position)
-		for _i: int in (SETTLE_FRAMES if f == 0 else 1):
+		for _i: int in SETTLE_FRAMES if f == 0 else 1:
 			await process_frame
 		var shot := _port.get_texture().get_image()
 		if f == 0:
 			rect = _rect(b)
 			print(
-				"%s %s: %dx%dx%d style %d at (%.1f, %.1f), rect %s"
-				% [variant, tag, b.w, b.d, b.height, b.style, b.x, b.z, rect]
+				(
+					"%s %s: %dx%dx%d style %d at (%.1f, %.1f), rect %s"
+					% [variant, tag, b.w, b.d, b.height, b.style, b.x, b.z, rect]
+				)
 			)
 			shot.save_png(dir.path_join("full0.png"))
 		shot.get_region(rect).save_png(dir.path_join("f%03d.png" % f))
@@ -322,6 +330,7 @@ func _rect(b: RampageSim.Building) -> Rect2i:
 		lo = lo.min(p)
 		hi = hi.max(p)
 	var pad := Vector2(120.0, 40.0)
-	return Rect2i(Vector2i((lo - pad).floor()), Vector2i((hi - lo + pad * 2.0).ceil())).intersection(
-		Rect2i(Vector2i.ZERO, _size)
+	return (
+		Rect2i(Vector2i((lo - pad).floor()), Vector2i((hi - lo + pad * 2.0).ceil()))
+		. intersection(Rect2i(Vector2i.ZERO, _size))
 	)
