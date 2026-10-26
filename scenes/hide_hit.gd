@@ -212,7 +212,7 @@ func _particles(
 	mat: ParticleProcessMaterial, mesh: Mesh, count: int, life: float
 ) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
-	p.amount_ratio = 1.0
+	p.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
 	p.process_material = mat
 	p.draw_pass_1 = mesh
 	p.amount = maxi(1, count)
