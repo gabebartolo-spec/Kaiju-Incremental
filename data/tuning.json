@@ -1655,6 +1655,8 @@
 		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
 	},
 	"render_opt": {
-		"debris_cache": true
+		"debris_cache": true,
+		"kaiju_tight_bounds": true,
+		"kaiju_bounds_slack": 1.05
 	}
 }
