@@ -20,20 +20,25 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		if str(block["use"]) == "river":
 			var rect: Rect2 = block["rect"]
 			rivers.append(rect)
+	# The river's blocks and the bay it rises in (CityRiver.bay).
+	var wet: Array[Rect2] = rivers.duplicate()
+	wet.append_array(CityRiver.bay(plan, sim.city))
 	var built := 0
 	for b: RampageSim.Building in sim.lot_buildings():
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		for rect: Rect2 in rivers:
+		for rect: Rect2 in wet:
 			if rect.intersects(foot):
 				built += 1
 	var in_river := false
-	for rect: Rect2 in rivers:
+	for rect: Rect2 in wet:
 		in_river = in_river or rect.has_point(spawn)
 	var stage_one: Dictionary = CityGrowth.tuning_for(_with_seed(map_seed), 1)["city"]
 	var same: bool = CityGen.map(stage_one).get("river", Vector2.ZERO) == plan.get("river")
 	var clock := sim.time_left
 	sim.emerge.start(sim)
-	var started := sim.kaiju_pos == spawn and sim.stand_y < 0.0
+	var started := false  # under the water, in the river or its bay
+	for rect: Rect2 in CityRiver.water(plan, sim.city):
+		started = started or (rect.has_point(sim.kaiju_pos) and sim.stand_y < 0.0)
 	var waited := 0.0
 	var emerged := 0
 	var clock_held := true
@@ -45,7 +50,7 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		waited += DT
 		clock_held = clock_held and (emerged > 0 or sim.time_left == clock)
 	var landed := sim.clamp_to_arena(sim.kaiju_pos) == sim.kaiju_pos and sim.stand_y == 0.0
-	for rect: Rect2 in rivers:
+	for rect: Rect2 in wet:
 		landed = landed and not rect.has_point(sim.kaiju_pos)
 	check_fn.call(
 		(

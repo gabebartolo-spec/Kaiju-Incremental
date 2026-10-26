@@ -2,14 +2,16 @@ extends RefCounted
 ## The rise from the river in sight (R 19.4, comment #27 "Kaiju spawn seems to be blocked by
 ## buildings in the foreground"): for each stage (capture_growth's upgrades, the city and army a
 ## real first run gets), the kaiju rises from the river, wades in and stands SECONDS, while the
-## camera follows it the way Rampage does (CameraFollow from its first frame, the body eased in
-## at the model's 12/s) and BuildingFade, fed the eye and CityView's sight points, fades what it
-## decides. The kaiju is seen on a frame when the eye is not in a standing chunk of a building
+## camera follows it the way Rampage does (the run intro's shot, RunIntro, over CameraFollow from
+## its first frame, the body eased in at the model's 12/s) and BuildingFade, fed the eye and
+## CityView's sight points, fades what it decides. The kaiju is seen on a frame when the eye is
+## not in a standing chunk of a building
 ## that still hides (opacity above HIDES) and the line to the middle of its body above the water
 ## is clear of them; it must be seen on SEEN_SHARE of the frames it is above the water, and its
 ## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const RiverSight := preload("res://tests/lib/river_sight.gd")
 const SECONDS := 4.0
 const SEEN_SHARE := 0.95
 ## A building still hides what is behind it while more of its screen door than this is drawn.
@@ -22,6 +24,12 @@ const FEET_SIGHT := 0.5
 const SIGHT_STEP := 0.5
 const BODY_FOLLOW := 12.0
 const DT := 1.0 / 60.0
+## The roar shot (the intro's water shot, to the pull-out): in the SHOT_WHOLE seconds up to
+## SHOT_END (the roar, where it reads) the head, neck and shoulders above the water are in sight
+## past the river's stonework (RiverSight) on every frame. (Before it, the neck is still under the
+## deck it bursts through, hidden from any side.)
+const SHOT_END := 1.6
+const SHOT_WHOLE := 0.15
 
 var _check: Callable
 
@@ -42,6 +50,7 @@ func _stage(stage: int) -> void:
 	var tier := Num.i(stats["size"])
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
+	sim.body.use_species("reptilian")  # first, as Rampage.setup: the body places the rise
 	sim.emerge.start(sim)
 	var water := -Num.f(sim.city.get("river_depth", 0.0))
 	var body := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
@@ -53,6 +62,9 @@ func _stage(stage: int) -> void:
 	var above := 0
 	var feet_seen := 0
 	var standing := 0
+	var stone := RiverSight.new(sim)
+	var parts_seen := 0
+	var parts_all := 0
 	var left := int(SECONDS / DT)
 	while left > 0:
 		var rising := sim.emerge.active
@@ -60,14 +72,23 @@ func _stage(stage: int) -> void:
 		var at := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		body = body.lerp(at, minf(1.0, DT * BODY_FOLLOW))
 		follow.step(body, CameraTuning.offset() * zoom, DT)
-		follow.step_lead(body, sim.body_scale(), false, DT)
+		follow.step_lead(body, sim.body_scale(), sim.emerge.active, DT)
 		var eye := follow.eye()
+		if sim.emerge.active:  # the run intro's shot, as Rampage._place_camera takes it
+			var view := {"body": body, "eye": eye, "fov": CameraTuning.fov(), "head": _crown(sim)}
+			view["aim"] = follow.look_at(sim.body_scale())
+			eye = RunIntro.shot(sim, view, 0.0)["eye"]
 		fade.update(eye, BuildingFade.sight_of(sim, eye), DT)
 		var hiding: Array[RampageSim.Building] = []
 		for n: int in sim.buildings.size():
 			if fade.opacity(n) > HIDES:
 				hiding.append(sim.buildings[n])
 		var inside := _blocked(eye, eye, hiding)
+		var seconds := sim.emerge.progress() * sim.emerge.total()
+		if sim.emerge.surfaced and seconds <= SHOT_END and seconds >= SHOT_END - SHOT_WHOLE:
+			for part: Vector3 in RiverSight.parts(sim):
+				parts_all += 1
+				parts_seen += 0 if stone.hides(eye, part, true) else 1
 		var top := sim.stand_y + sim.reach_height() * TOP
 		if top > water:
 			above += 1
@@ -78,6 +99,19 @@ func _stage(stage: int) -> void:
 			standing += 1
 			var feet := at + Vector3(0, FEET_SIGHT, 0)
 			feet_seen += 0 if inside or _blocked(eye, feet, hiding) else 1
+	(
+		_check
+		. call(
+			parts_all > 0 and parts_seen == parts_all,
+			(
+				(
+					"stage %d: past the quay walls, decks and shore the head, neck and shoulders are in sight"
+					+ " on %d of %d samples in the roar (%.1f to %.1f s)"
+				)
+				% [stage, parts_seen, parts_all, SHOT_END - SHOT_WHOLE, SHOT_END]
+			)
+		)
+	)
 	_check.call(
 		shown >= SEEN_SHARE * above and feet_seen >= SEEN_SHARE * standing,
 		(
@@ -88,6 +122,15 @@ func _stage(stage: int) -> void:
 			% [stage, shown, above, feet_seen, standing, roundi(SEEN_SHARE * 100.0)]
 		)
 	)
+
+
+## The head's crown with no model (KaijuModel.head_at's fallback): the data's share.
+static func _crown(sim: RampageSim) -> Vector2:
+	var cfg: Dictionary = Content.section("intro")
+	var at := Vector2(
+		Num.f(cfg["aim_ahead"]), Num.f(cfg["aim_head"]) * Num.f(sim.city["kaiju_height"])
+	)
+	return at * sim.body_scale()
 
 
 ## Whether a standing chunk of one of `buildings` lies on the segment eye -> to (or at `eye`

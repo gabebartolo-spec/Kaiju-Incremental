@@ -117,6 +117,18 @@ func foot_drift() -> float:
 
 ## Where the body is drawn now (world): its root bone, which can lag or lead the node (an insect's
 ## hold and dart, an octopus's surge); cameras follow this. The node's position when unrigged.
+## Where its head's crown (the "head1" bone, the first of it to break the water as it rises)
+## stands: x how far ahead of its hips along its facing, y how high over its feet, in model
+## units (x body scale for the world); `fallback` for a body without that bone. The run intro
+## founts the water over it and frames it.
+func head_at(fallback: Vector2) -> Vector2:
+	if _rig == null or not _rig.has_bone("head1") or not _rig.has_bone(_rig.bone_names()[0]):
+		return fallback
+	var head := to_local(_rig.bone("head1").global_position)
+	var hips := to_local(_rig.bone(_rig.bone_names()[0]).global_position)
+	return Vector2(hips.z - head.z, head.y)  # the model faces -z; to_local undoes its scale
+
+
 func focus() -> Vector3:
 	if _rig == null:
 		return global_position
@@ -198,9 +210,12 @@ func stomped_side() -> String:
 	return ""
 
 
-func roar() -> void:
+## A roar; open_seconds > 0 holds the jaw open that long at once (a clip's jaw peaks late).
+func roar(open_seconds := 0.0) -> void:
 	if _rig != null:
 		_rig.roar()
+		if open_seconds > 0.0 and _rig.gait is BipedGait:
+			(_rig.gait as BipedGait).head.hold_open(open_seconds)
 
 
 ## The leap's pose hook (Dash phases "crouch", "flight", "settle", "recover"; t 0..1 through it):

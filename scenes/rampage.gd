@@ -18,9 +18,6 @@ const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
-## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
-const AUTOPLAY_GLIDE_CYCLE := 90
-const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
 ## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
@@ -52,6 +49,8 @@ var camera_fov := CameraTuning.fov()
 var shake := CameraShake.new()
 ## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
 var rumble: PadRumble
+## Main: the whole intro (the first run, the first after an evolution) or its short cut (RunIntro).
+var full_intro := true
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
@@ -71,8 +70,6 @@ var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _rail: RailView
 var _fx_rng: RandomNumberGenerator
-var _autoplay := false
-var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 var _stomp_radius := 0.0
@@ -80,9 +77,8 @@ var _stomp_radius := 0.0
 var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
-## Presses made while the rise from the river holds the sim back, kept for its first live tick.
-var _held := HeldButton.new()  # the held move: hold or toggle (D-259)
-var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
+var _reader := RunInput.new()  # this frame's presses (held move D-259, the rise's latch)
+var _rise: RampageRise  # the run's opening: the rise from the river and the intro
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
@@ -96,9 +92,9 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.body.use_species(str(species["id"]))  # first: the rise is placed by the body's length
 	sim.army_units.taskforce.carried = city_seconds  # rampage time in this city so far (D-160)
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
-	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
 	_cues = PowerCues.new(sim, sfx)
@@ -113,7 +109,7 @@ func wait_loaded() -> void:
 
 ## Test hook: the kaiju walks toward the nearest building it can topple on its own.
 func set_autoplay(on: bool) -> void:
-	_autoplay = on
+	_reader.autoplay = on
 
 
 ## Leaving the tree (Main._swap frees the rampage next): the sim's parts point back at it, so a
@@ -155,7 +151,7 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
-	add_child(RiverView.new(sim, _city.fx))
+	_rise = RampageRise.new(self, _city.fx, _kaiju, full_intro)
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
@@ -170,8 +166,8 @@ func _ready() -> void:
 	_ability.bind(self, _city, _kaiju)
 	_add_camera()
 	_start_sound()
-	_place_camera(1.0)
 	_add_overlays()
+	_place_camera(1.0)  # after the HUD: the intro hides it
 	if stages.overlay != null:
 		stages.overlay.queue_free()
 	is_loaded = true
@@ -201,44 +197,38 @@ func _add_overlays() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var signature := Input.is_action_just_pressed("signature")
-	var held := _held.read(Input.is_action_pressed("signature"), signature)
-	var ultimate := Input.is_action_just_pressed("ultimate")
-	var dash := Input.is_action_just_pressed("dash")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
-		var input: Dictionary = scripted.call(sim)
-		dash = input.get("dash", false)
-		move = input.get("move", Vector2.ZERO)
-		signature = input.get("signature", false)
-		held = input.get("held", false)
-		ultimate = input.get("ultimate", false)
-	elif _autoplay:
-		move = _walk.move(sim, _steps)
-		signature = autoplay_signature and sim.ability_ready_in <= 0.0
-		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		ultimate = autoplay_signature
-	# The sim ignores input while it rises from the river: a tap before the handover is kept.
-	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
-	now = _latch.through(sim.emerge.active, now, delta)
-	signature = now["signature"]
-	ultimate = now["ultimate"]
-	dash = now["dash"]
+	var now := _reader.read(self, _steps, delta)
+	var move: Vector2 = now["move"]
 	_steps += 1
+	var buttons := (Dash.BUTTON if now["dash"] else 0) | (RampageSim.HELD if now["held"] else 0)
+	buttons |= RampageSim.ULTIMATE if now["ultimate"] else 0
+	var wading := sim.emerge.risen() >= 1.0 and sim.emerge.active
+	var ticks := _rise.intro.ticks()  # the intro's short cut and skip run the rise's ticks faster
+	for k: int in ticks:
+		if k > 0 and not sim.emerge.active:
+			break  # the first live tick takes this frame's presses, once
+		_step_sim(delta, move, now["signature"], buttons)
+	var moving := 1.0 if wading else (0.0 if sim.body.dash.on() else move.length())
+	_kaiju_at = _ability.place(delta * ticks, moving, _kaiju_at)  # the legs keep going
+	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
+	_powers.update(delta, _kaiju_at)
+	_tanks.update(delta, _kaiju_at, _steps)
+	_hud.refresh()
+
+
+func _step_sim(delta: float, move: Vector2, signature: bool, buttons: int) -> void:
 	var t0 := Time.get_ticks_usec()
-	var buttons := Dash.BUTTON if dash else 0
-	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
 	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_kaiju_at = _ability.place(delta, 0.0 if sim.body.dash.on() else move.length(), _kaiju_at)
-	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
-	_powers.update(delta, _kaiju_at)
-	_tanks.update(delta, _kaiju_at, _steps)
-	_hud.refresh()
+
+
+func _input(event: InputEvent) -> void:
+	if _rise != null:
+		_rise.intro.on_input(event)
 
 
 func _process(delta: float) -> void:
@@ -294,14 +284,7 @@ func _on_event(event: Dictionary) -> void:
 	rumble.on_event(event)
 	match str(event["type"]):
 		"stomp":
-			_land.lift(_kaiju, str(event.get("side", "")))
-			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
-			# delivers the stomp (_on_footfall), so they land where and when a foot does.
-			_stomp_radius = Num.f(event["radius"])
-			stomp_sim_at.append(event["at"])
-			_stomp_side = str(event["side"]) if event["on_foot"] else ""
-			_stomp_wait = STOMP_WAIT
-			add_trauma(shake.source("stomp"))
+			_on_stomp(event)
 		"ability":
 			_kaiju.roar()
 			_ability.play(event, _kaiju_at, _power("ability_damage"))
@@ -323,9 +306,21 @@ func _on_event(event: Dictionary) -> void:
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
+			if _rise.on_event(event, _city, _kaiju, _hud):
+				return
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
 			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
+
+
+## A sim stomp: its ring, cracks and crush wait for the foot that delivers it (_on_footfall).
+func _on_stomp(event: Dictionary) -> void:
+	_land.lift(_kaiju, str(event.get("side", "")))
+	_stomp_radius = Num.f(event["radius"])
+	stomp_sim_at.append(event["at"])
+	_stomp_side = str(event["side"]) if event["on_foot"] else ""
+	_stomp_wait = STOMP_WAIT
+	add_trauma(shake.source("stomp"))
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -390,11 +385,16 @@ func _place_camera(delta: float) -> void:
 	_follow.step(
 		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
 	)
-	var hold := sim.body.dash.on() or _ability.leaping()
+	var hold := sim.body.dash.on() or _ability.leaping() or sim.emerge.active  # rise: no lead
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
-	_camera.position = _follow.eye()
 	var nod := shake.turn(sim.body_scale(), motion).y
 	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
-	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
+	var view := {"body": _kaiju_at, "eye": _follow.eye(), "aim": aim, "fov": camera_fov}
+	if sim.emerge.active:  # the run intro's shot, ending exactly on this camera (RunIntro)
+		view = _rise.shot(view, _follow)
+		_hud.visible = get_tree().paused  # no HUD over the intro (the pause menu shows)
+	_camera.fov = Num.f(view["fov"])
+	_camera.position = view["eye"]
+	_camera.look_at(view["aim"] + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
 	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

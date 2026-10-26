@@ -26,13 +26,14 @@ scenes/island_body.gd::_split 48 6
 scenes/kaiju_code_body.gd::_insectoid 41 8
 scenes/kaiju_code_body.gd::_reptile_details 36 14
 scenes/kaiju_rig.gd::_build 54 13
-scenes/pavements.gd::_init 46 26
+scenes/pavements.gd::_init 44 25
 scenes/pitch_props.gd::mesh 45 16
 scenes/police.gd::_start_blockade 46 16
 scenes/powers_view.gd::on_event 76 26
 scenes/powers_view.gd::update 52 17
 scenes/rampage.gd::_physics_process 41 11
 scenes/rampage.gd::_ready 54 8
+scenes/results_screen.gd::_ready 48 2
 scenes/settings_menu.gd::_ready 55 1
 scenes/sfx.gd::play 43 12
 scenes/stadium_match.gd::_play 32 13
