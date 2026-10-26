@@ -18,7 +18,8 @@ const SeedAudit := preload("res://tools/audit/seed_audit.gd")
 const AssetAudit := preload("res://tools/audit/asset_audit.gd")
 const LandmarkClear := preload("res://tools/audit/landmark_clear_audit.gd")
 const STAGES: Array[int] = [1, 2, 3]
-const ROAD_SEEDS := 6
+const ROAD_SEEDS := 20
+const FIT_SEEDS := 50
 const ASSET_SEEDS := 8
 const LANDMARK_SEEDS := 20
 ## Road rules that hold at every stage and seed of the full run (2026-10-26; road geometry
@@ -42,6 +43,7 @@ func run_checks() -> void:
 	await _t("_check_same_index_same_city")
 	await _t("_check_road_rules_held")
 	await _t("_check_diagonal_fits")
+	await _t("_check_lines_fit_clean")
 	await _t("_check_landmarks_clear")
 	await _t("_check_layout_assets_held")
 
@@ -232,3 +234,28 @@ func _check_landmarks_clear() -> void:
 		got.any(func(v: String) -> bool: return v.contains("on the avenue")),
 		"a plaza planted across the middle avenue is caught (%s)" % [got.slice(0, 2)]
 	)
+
+
+## No plan falls back on CityLineFit's fewest-breaks run (CityLines.fit_breaks 0) at any stage,
+## 50 map seeds (Roads.seeds); and the shipped seed under the pre-fix diagonal ((-6, 4) at 27
+## deg, which no run fits) is caught breaking rules.
+func _check_lines_fit_clean() -> void:
+	var base := Content.tuning()
+	for tier: int in STAGES:
+		var bad: Array[String] = []
+		for map_seed: int in Roads.seeds(FIT_SEEDS):
+			var breaks := CityLines.fit_breaks(Roads.city(base, tier, map_seed))
+			if breaks > 0:
+				bad.append("seed %d: %d" % [map_seed, breaks])
+		check(
+			bad.is_empty(),
+			(
+				"stage %d: every street run of %d seeds fits clean, no fewest-breaks fallback (%s)"
+				% [tier, FIT_SEEDS, bad.slice(0, 4)]
+			)
+		)
+	var planted := Roads.city(base, 1, Roads.SHIPPED_SEED)
+	planted["diagonal_through"] = [-6, 4]
+	planted["diagonal_deg"] = 27
+	var got := CityLines.fit_breaks(planted)
+	check(got > 0, "a plan that cannot fit (pre-fix diagonal) is caught: %d rules broken" % got)

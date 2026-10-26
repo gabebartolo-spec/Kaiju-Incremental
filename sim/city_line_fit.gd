@@ -22,9 +22,12 @@ const STEP := 1.0  # lines sit on whole metres; a z-line needs a window this wid
 
 ## The lines after `start` up to `end` (included), or for rule["open"] up to the first one
 ## at or past `end`. gaps: [lo, hi] drawn; a fitted gap may run to max(hi, 2 lo - 1), the widest
-## gap that cannot hold two blocks. Where no run meets every rule, the one that breaks the
-## fewest is taken (each line in a barred place or gap counts one). With rule["avenue"] the run
-## also leaves at least one line an avenue fits on (avenue_fits_x), for CityGen's inner avenue.
+## gap that cannot hold two blocks; where no run fits clean within that, up to lo more (an
+## outskirts x-line pair can leave the diagonal's crossings too far apart for short blocks to
+## thread). Where no run meets every rule, the one that breaks the fewest is taken (each line in
+## a barred place or gap counts one). With rule["avenue"] the run also leaves at least one line
+## an avenue fits on (avenue_fits_x), for CityGen's inner avenue.
+## With rule["report"] (a Dictionary) the rules the run breaks are added to its "breaks".
 static func run(
 	rng: RandomNumberGenerator, start: int, end: int, gaps: Array[int], rule: Dictionary
 ) -> Array[int]:
@@ -35,6 +38,14 @@ static func run(
 	var length: int = run_at[2]
 	var states := 3 if rule.get("avenue", false) else 1
 	var cost := _costs(run_at, [lo, cap], rule, states)
+	if cost[0] > 0:  # no clean run: let one gap stretch a block further before breaking a rule
+		var wide := _costs(run_at, [lo, cap + lo], rule, states)
+		if wide[0] < cost[0]:
+			cap += lo
+			cost = wide
+	if rule.has("report"):  # the fewest-breaks fallback taken (CityLines.draw: plan "fit_breaks")
+		var report: Dictionary = rule["report"]
+		report["breaks"] = Num.i(report["breaks"]) + (cost[0] if cost[0] < BIG else 1)
 	var out: Array[int] = []
 	var d := 0
 	var st := 0

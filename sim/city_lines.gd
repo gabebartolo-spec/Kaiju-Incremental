@@ -62,8 +62,9 @@ static func extend(
 
 
 ## The street lines' gap bounds [lo, hi], m: long blocks one way, short the other (Manhattan):
-## x-lines far apart, z-lines close; the outskirts' ("far_") vary far more, so they are no even
-## grid, but none is cut thinner than a lot between two avenues.
+## x-lines far apart, z-lines close; the outskirts' ("far_": city "block_far", m added to each
+## bound) vary far more, so they are no even grid, but none is cut thinner than a lot between two
+## avenues.
 static func gaps(cfg: Dictionary) -> Dictionary:
 	var long: Array = cfg["block_long"]
 	var short: Array = cfg["block_short"]
@@ -74,8 +75,17 @@ static func gaps(cfg: Dictionary) -> Dictionary:
 		"long": [Num.i(long[0]), Num.i(long[1])] as Array[int],
 		"short": [Num.i(short[0]), Num.i(short[1])] as Array[int],
 	}
-	out["far_long"] = [maxi(Num.i(long[0]) - 6, thin), Num.i(long[1]) + 14] as Array[int]
-	out["far_short"] = [maxi(Num.i(short[0]) - 2, thin), Num.i(short[1]) + 12] as Array[int]
+	var far: Dictionary = cfg["block_far"]
+	var far_long: Array = far["long"]
+	var far_short: Array = far["short"]
+	out["far_long"] = (
+		[maxi(Num.i(long[0]) + Num.i(far_long[0]), thin), Num.i(long[1]) + Num.i(far_long[1])]
+		as Array[int]
+	)
+	out["far_short"] = (
+		[maxi(Num.i(short[0]) + Num.i(far_short[0]), thin), Num.i(short[1]) + Num.i(far_short[1])]
+		as Array[int]
+	)
 	return out
 
 
@@ -111,7 +121,9 @@ static func avenues(
 	return out
 
 
-## Every street line of the plan and its avenues: {xs, zs, avenues_x, avenues_z} (line indices).
+## Every street line of the plan and its avenues: {xs, zs, avenues_x, avenues_z} (line indices),
+## and "breaks": the rules the fitted runs break (CityLineFit's fewest-breaks fallback; 0 when
+## every run fits clean).
 ## rng: the plan's own stream (the first district's lines and the avenue picks); later districts
 ## and the outskirts draw from their own (map_seed + 2, + 1).
 static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) -> Dictionary:
@@ -119,10 +131,6 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 	var outer := Num.f(cfg["outer_half"])
 	var x_rule := CityLineFit.x_rule(cfg, diag, rings)
 	var gaps := gaps(cfg)
-	var long_gaps: Array[int] = gaps["long"]
-	var short_gaps: Array[int] = gaps["short"]
-	var far_long: Array[int] = gaps["far_long"]
-	var far_short: Array[int] = gaps["far_short"]
 	# Each later district's streets, out to its own ring avenue, draw from their own stream; the
 	# outskirts from theirs, so tuning them never reshuffles the city. The x-lines come first: the
 	# z-lines then sit between the diagonal's crossings with them (CityLineFit).
@@ -130,25 +138,57 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 	grow.seed = Num.i(cfg["map_seed"]) + 2
 	var far := RandomNumberGenerator.new()
 	far.seed = Num.i(cfg["map_seed"]) + 1
+	var streams: Array[RandomNumberGenerator] = [rng, grow, far]
+	var report := {"breaks": 0}
+	x_rule["report"] = report
 	var inner_rule := x_rule.duplicate()
 	inner_rule["avenue"] = true  # room for the inner avenue (CityLineFit)
-	var xs := across(rng, rings[0], long_gaps[0], long_gaps[1], inner_rule)
-	for k: int in range(1, rings.size()):
-		ring(grow, xs, [rings[k - 1], rings[k]] as Array[float], long_gaps, x_rule)
-	extend(far, xs, outer, far_long, x_rule)
+	var xs := _lay(streams, rings, outer, [gaps["long"], gaps["far_long"]], x_rule, inner_rule)
 	var x_fits := func(i: int) -> bool: return CityLineFit.avenue_fits_x(x_rule, xs, i)
 	var avenues_x := avenues(rng, xs, rings, x_fits, cfg)
 	var avenue_at: Array[float] = []
 	for i: int in avenues_x:
 		avenue_at.append(xs[i])
 	var z_rule := CityLineFit.z_rule(cfg, diag, xs, rings, avenue_at)
-	var zs := across(rng, rings[0], short_gaps[0], short_gaps[1], z_rule)
-	for k: int in range(1, rings.size()):
-		ring(grow, zs, [rings[k - 1], rings[k]] as Array[float], short_gaps, z_rule)
-	extend(far, zs, outer, far_short, z_rule)
+	z_rule["report"] = report
+	var zs := _lay(streams, rings, outer, [gaps["short"], gaps["far_short"]], z_rule, z_rule)
 	var need := (
 		CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + CityGen.width_of(CityGen.AVENUE, cfg) * 0.5
 	)
 	var z_fits := func(j: int) -> bool: return CityLineFit.clearance(diag, "z", zs[j], xs) >= need
 	var avenues_z := avenues(rng, zs, rings, z_fits, cfg)
-	return {"xs": xs, "zs": zs, "avenues_x": avenues_x, "avenues_z": avenues_z}
+	return {
+		"xs": xs,
+		"zs": zs,
+		"avenues_x": avenues_x,
+		"avenues_z": avenues_z,
+		"breaks": Num.i(report["breaks"]),
+	}
+
+
+## One axis's lines: across the first district from streams[0] (with `first`, its rule), out
+## through each later district from streams[1] and on through the outskirts to +-`outer` from
+## streams[2] (with `rule`). bounds: [gaps, far gaps] (gaps).
+static func _lay(
+	streams: Array[RandomNumberGenerator],
+	rings: Array[float],
+	outer: float,
+	bounds: Array,
+	rule: Dictionary,
+	first: Dictionary
+) -> Array[float]:
+	var near: Array[int] = bounds[0]
+	var far: Array[int] = bounds[1]
+	var out := across(streams[0], rings[0], near[0], near[1], first)
+	for k: int in range(1, rings.size()):
+		ring(streams[1], out, [rings[k - 1], rings[k]] as Array[float], near, rule)
+	extend(streams[2], out, outer, far, rule)
+	return out
+
+
+## The rules the plan of `cfg` breaks to fit its street lines (draw's "breaks"; CityLineFit's
+## fewest-breaks fallback): 0 when the diagonal and the rings let every run fit clean.
+static func fit_breaks(cfg: Dictionary) -> int:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = Num.i(cfg["map_seed"])  # CityGen.map's own stream
+	return Num.i(draw(rng, cfg, CityGen.diagonal_of(cfg))["breaks"])

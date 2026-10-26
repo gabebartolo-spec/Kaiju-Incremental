@@ -634,6 +634,7 @@
 		"tree_puff_alpha": 0.6,
 		"block_long": [18, 26],
 		"block_short": [10, 13],
+		"block_far": {"_note": "The outskirts' block gaps (CityLines.gaps): m added to block_long / block_short's [lo, hi] past the last district, so they are no even grid (lo never under a lot between avenues).", "long": [-6, 14], "short": [-2, 12]},
 		"avenues": 1,
 		"avenue_width": 6,
 		"street_width": 4,
