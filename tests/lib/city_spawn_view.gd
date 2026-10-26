@@ -6,7 +6,7 @@ extends RefCounted
 ## the camera), no skyline stand-in stands, and every building there is a real one a stomp
 ## breaks, and there is at least one (lead check 2026-10-19: his first steps out of the water
 ## hit something; CityRiver's quay sheds). Distances run from the nearer of the rise point (in
-## the river, D-083) and the bank point it wades to, where the run starts and the camera
+## the sea bay, CityHarbour) and the bank point it wades to, where the run starts and the camera
 ## settles.
 
 const MARGIN := 4.0  # past the camera's ground point: the bottom of the screen
@@ -23,8 +23,8 @@ const WALK_LIMIT := 1000.0  # stops a walk that never finishes
 static func check(
 	tier: int, map_seed: int, sim: RampageSim, skyline: CitySkyline, check_fn: Callable
 ) -> void:
-	var spawn: Vector2 = CityGen.map(sim.city).get("river_spawn", sim.kaiju_pos)
-	var bank: Vector2 = CityGen.map(sim.city).get("river_bank", spawn)
+	var spawn: Vector2 = CityGen.map(sim.city).get("rise_spawn", sim.kaiju_pos)
+	var bank: Vector2 = CityGen.map(sim.city).get("rise_bank", spawn)
 	var land := sim.clamp_to_arena(bank)
 	var reach := (CameraTuning.offset().z + MARGIN) * sim.body_scale()
 	var stand_ins := 0
@@ -86,8 +86,8 @@ static func _near_buildings(
 	var out: Array[RampageSim.Building] = []
 	for b: RampageSim.Building in sim.lot_buildings():  # the viaduct stands over a street
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		# Only what the kaiju can reach: the young city's arena ends at the river, and its bay
-		# (CityRiver.bay) brings the rise point nearer the far bank's buildings past that edge.
+		# Only what the kaiju can reach: the bay (CityHarbour) cuts into the arena's north edge,
+		# its rise point nearer the arena's edge than the buildings past it.
 		if _gap(foot, spawn, land) < NEAR and b.in_arena:
 			out.append(b)
 	return out

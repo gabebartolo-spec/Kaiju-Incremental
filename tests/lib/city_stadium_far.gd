@@ -33,7 +33,7 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 			)
 		)
 		return
-	var spawn: Vector2 = plan.get("river_spawn", Vector2.ZERO)
+	var spawn: Vector2 = plan.get("rise_spawn", Vector2.ZERO)
 	var far := spawn.distance_to(rect.get_center())
 	check_fn.call(
 		CityBand.near_edge(rect) > here and far >= FAR,

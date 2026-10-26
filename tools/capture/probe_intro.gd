@@ -1,12 +1,12 @@
 extends SceneTree
 ## Probe for the run intro's shot (RunIntro.shot), headless and sim-only: per stage, where he
-## rises, the water, shore and bank, and at key seconds the shot's eye and aim, how high the eye
-## sits over the ground under it, whether the river's stonework hides the head, neck and shoulders
-## (RiverSight), and how much of the frame's height the body above the water fills.
+## rises, the water, bay and bank, and at key seconds the shot's eye and aim, how high the eye
+## sits over the ground under it, whether the bay's ground and quays hide the head, neck and
+## shoulders (BaySight), and how much of the frame's height the body above the water fills.
 ##   godot --headless --fixed-fps 60 --path . --script tools/capture/probe_intro.gd
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
-const RiverSight := preload("res://tests/lib/river_sight.gd")
+const BaySight := preload("res://tests/lib/bay_sight.gd")
 const DT := 1.0 / 60.0
 const AT: Array[float] = [0.0, 0.5, 0.8, 1.0, 1.2, 1.4, 1.6, 2.0, 2.4, 2.7]
 
@@ -32,12 +32,12 @@ func _stage(stage: int) -> void:
 	sim.body.use_species("reptilian")
 	sim.emerge.start(sim)
 	var plan := CityGen.map(sim.city)
-	var water := -Num.f(sim.city.get("river_depth", 0.0))
+	var water := sim.emerge.water_y()
 	var s := sim.body_scale()
 	print(
 		(
 			(
-				"stage %d tier %d scale %.2f reach %.1f water %.1f rise %s facing %s bank %s shore %s"
+				"stage %d tier %d scale %.2f reach %.1f water %.1f rise %s facing %s bank %s bay %s"
 				+ " break %.2f total %.2f"
 			)
 			% [
@@ -48,14 +48,14 @@ func _stage(stage: int) -> void:
 				water,
 				sim.kaiju_pos,
 				sim.facing,
-				plan.get("river_bank"),
-				CityRiver.shore(plan, sim.city),
+				plan.get("rise_bank"),
+				plan.get("harbour"),
 				sim.emerge.break_at(sim),
 				sim.emerge.total()
 			]
 		)
 	)
-	var stone := RiverSight.new(sim)
+	var stone := BaySight.new(sim)
 	var fov := CameraTuning.fov()
 	var zoom := CameraTuning.zoom(s)
 	var t := 0.0
@@ -75,9 +75,9 @@ func _stage(stage: int) -> void:
 			var shot := RunIntro.shot(sim, view, 0.0)
 			var eye: Vector3 = shot["eye"]
 			var aim: Vector3 = shot["aim"]
-			var ground := CityRiver.floor_at(plan, sim.city, Vector2(eye.x, eye.z))
+			var ground := CityHarbour.floor_at(plan, sim.city, Vector2(eye.x, eye.z))
 			var hidden := 0
-			var parts := RiverSight.parts(sim)
+			var parts := BaySight.parts(sim)
 			for p: Vector3 in parts:
 				hidden += 1 if stone.hides(eye, p, true) else 0
 			var top := sim.stand_y + sim.reach_height()

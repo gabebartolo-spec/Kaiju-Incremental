@@ -33,7 +33,7 @@ func _process(_delta: float) -> void:
 
 func _splash(size: float) -> void:
 	_beat += 1
-	var water := -Num.f(_sim.city.get("river_depth", 0.0))
+	var water := _sim.emerge.water_y()
 	var p := _sim.kaiju_pos + (_sim.facing * _ahead if _beat < 3 else Vector2.ZERO)
 	var at := Vector3(p.x, maxf(_sim.stand_y, water) + 0.02, p.y)
 	# A foam ring on the water, never the street's dust puffs (they popped in at the break).

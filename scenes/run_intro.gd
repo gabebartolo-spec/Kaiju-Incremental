@@ -90,7 +90,7 @@ static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
 	var total := emerge.total()
 	var t := minf(total, emerge.progress() * total + frac / Engine.physics_ticks_per_second)
 	var s := sim.body_scale()
-	var water := -Num.f(sim.city.get("river_depth", 0.0))
+	var water := sim.emerge.water_y()
 	var pull_from := Num.f(cfg["pull_from_seconds"])
 	var x := clampf((t - pull_from) / maxf(0.001, total - pull_from), 0.0, 1.0)
 	var w := x * x * x * (x * (x * 6.0 - 15.0) + 10.0)  # smootherstep: still at both ends
@@ -133,7 +133,7 @@ static func _head_aim(sim: RampageSim, view: Dictionary, head_at: Vector2, water
 ## point, so the eye never steps as it swings over a quay edge (a 1.6 m step jolted it).
 static func _low_eye(sim: RampageSim, cfg: Dictionary, ahead: float, front: float) -> float:
 	var s := sim.body_scale()
-	var water := -Num.f(sim.city.get("river_depth", 0.0))
+	var water := sim.emerge.water_y()
 	var head := sim.emerge.rise_at + sim.facing * ahead
 	var out := Vector2(cos(front), sin(front)) * Num.f(cfg["distance"]) * s
 	var under := water

@@ -28,12 +28,9 @@ func _init(run: Rampage, fx: Fx, kaiju: KaijuModel, full: bool) -> void:
 	intro = RunIntro.new(sim, full)
 
 
-## The rise's events (Emergence) on the run's city, kaiju and HUD; false for any other event.
-func on_event(event: Dictionary, city: CityView, kaiju: KaijuModel, hud: RampageHud) -> bool:
+## The rise's events (Emergence) on the run's kaiju and HUD; false for any other event.
+func on_event(event: Dictionary, kaiju: KaijuModel, hud: RampageHud) -> bool:
 	match str(event["type"]):
-		"deck_burst":
-			city.deck_burst()
-			_run.add_trauma(_run.shake.source("drop"))
 		"surface_break":  # the head breaks the water: he roars with rage (#11, R 20.3)
 			kaiju.roar()  # the roar clip (REPLACE: the Cascadeur roar is queued)
 			Sfx.roar(_run)

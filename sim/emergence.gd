@@ -1,9 +1,10 @@
 class_name Emergence
 extends RefCounted
-## The start of a run (D-083, director 2026-10-19: "a city caught unaware - have our reptilian
-## emerge from a river to start each run"): the kaiju waits submerged in the city's river
-## (CityRiver) for "emerge" "hold_seconds" (the water ripples and founts over it), rises out of
-## it over "rise_seconds", wades onto the city's bank (inside the arena) over "wade_seconds", and
+## The start of a run (D-083, director 2026-10-19: "a city caught unaware"; 2026-10-26: "deploy
+## the kaiju from the bay rather than the river", "Sea bay, real beach"): the kaiju waits
+## submerged in the city's sea bay (CityHarbour) for "emerge" "hold_seconds" (the water ripples
+## and founts over it), rises onto the sea floor over "rise_seconds", wades up the beach onto the
+## promenade (inside the arena) over "wade_seconds", and
 ## then the run begins: the sim emits "kaiju_emerged" (the army's alert ramp starts from it).
 ## Until then nothing else happens: no clock, no stomps, no army. The whole start fits the run
 ## intro's 3 s (director 2026-10-20 #11: "the entire scene should run for no longer than 3
@@ -13,18 +14,11 @@ extends RefCounted
 ## cannot finish) can stall a run before it begins.
 
 var active := false
-## The holes (x, z) the rise breaks in the bay's decks (CityRiver.bay_bridges): over the body's
-## footprint, grown by city "river_bay" "burst_margin", each the deck's full depth. Set by
-## start(); the first rise step emits them as "deck_burst" (director 2026-10-21: "burst
-## through": he rises up through the bridge deck and breaks it; the street grid stays whole).
-var burst: Array[Rect2] = []
-var burst_ns: Array[Rect2] = []  # the same over the north-south decks (bay_bridges_ns)
 ## Where it rose (x, z), once start() has placed it; the run intro's shot is set about it.
 var rise_at := Vector2.ZERO
 ## Whether its head has broken the water's surface yet (the "surface_break" event; the intro
 ## roars on it, R 20.3).
 var surfaced := false
-var _broke := false
 var _t := 0.0
 var _hold: float
 var _rise: float
@@ -33,10 +27,10 @@ var _wade: float
 var _start_y := 0.0
 var _wade_from := Vector2.INF  # where the wade began (the rise point), once it has
 var _cap: float
-var _bed: float  # how far the river's water lies below the street (city "river_depth")
+var _sea: float  # the sea's surface (CityHarbour.sea)
 var _spawn: Vector2
 var _bank: Vector2
-var _plan: Dictionary  # the city's street plan (CityGen.map): its river, bay and shore
+var _plan: Dictionary  # the city's street plan (CityGen.map): its sea bay and beach
 var _city: Dictionary
 
 
@@ -47,15 +41,15 @@ func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_depth = Num.f(cfg["depth"])
 	_wade = Num.f(cfg["wade_seconds"])
 	_cap = Num.f(cfg["max_seconds"])
-	_bed = Num.f(city.get("river_depth", 0.0))
+	_sea = CityHarbour.sea(city)
 	_city = city
 	_plan = CityGen.map(city)
-	_spawn = _plan.get("river_spawn", Vector2(INF, INF))
-	_bank = _plan.get("river_bank", _spawn)
+	_spawn = _plan.get("rise_spawn", Vector2(INF, INF))
+	_bank = _plan.get("rise_bank", _spawn)
 
 
-## Puts the kaiju under the river's surface; the run waits until it has risen. A city without
-## a river starts on land at once.
+## Puts the kaiju under the sea bay's surface; the run waits until it has risen. A city without
+## a bay starts on land at once.
 func start(sim: RampageSim) -> void:
 	if _spawn.x == INF:
 		return
@@ -67,20 +61,16 @@ func start(sim: RampageSim) -> void:
 	rise_at = sim.kaiju_pos
 	# Wholly under the water at first, its top "depth" (per body scale) below the surface, so the
 	# water ripples and founts before anything shows (#11).
-	_start_y = -_bed - sim.reach_height() - _depth * sim.body_scale()
+	_start_y = _sea - sim.reach_height() - _depth * sim.body_scale()
 	sim.stand_y = _start_y
 	# It rises already facing the city, the way it will walk out (director 2026-10-21 #17: "have
-	# him emerging facing the city so he can walk straight in"), in the river's bay, wide enough
-	# for its whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
+	# him emerging facing the city so he can walk straight in"), in the bay, wide enough for its
+	# whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
 	sim.facing = _ahead()
 	sim.body.heading = sim.facing
-	var foot := _footprint(sim)
-	burst = _holes(foot, CityRiver.bay_bridges(_plan, _city), true)
-	burst_ns = _holes(foot, CityRiver.bay_bridges_ns(_plan, _city), false)
-	_broke = false
 
 
-## How far through its rise the kaiju is, 0 (under, still holding) to 1 (wading in the river).
+## How far through its rise the kaiju is, 0 (under, still holding) to 1 (on the sea floor).
 func risen() -> float:
 	return clampf((_t - _hold) / _rise, 0.0, 1.0) if active else 1.0
 
@@ -95,15 +85,21 @@ func total() -> float:
 	return _hold + _rise + _wade
 
 
-## How high the ground stands at p (CityRiver.floor_at: the street, the shore's slope, the
-## river's floor); the run intro keeps its low camera over it.
+## How high the ground stands at p (CityHarbour.floor_at: the street, the beach's slope, the sea
+## floor); the run intro keeps its low camera over it.
 func ground_at(p: Vector2) -> float:
-	return CityRiver.floor_at(_plan, _city, p)
+	return CityHarbour.floor_at(_plan, _city, p)
+
+
+## The sea's surface (world y) the kaiju rises through.
+func water_y() -> float:
+	return _sea
 
 
 ## Seconds into the start the head breaks the surface (the intro's short cut starts near it).
 func break_at(sim: RampageSim) -> float:
-	var up := (-_bed - sim.reach_height() - _start_y) / maxf(0.001, -_bed - _start_y)
+	var floor_y := ground_at(rise_at)
+	var up := (_sea - sim.reach_height() - _start_y) / maxf(0.001, floor_y - _start_y)
 	# smoothstep's inverse, by bisection (the rise eases in and out)
 	var lo := 0.0
 	var hi := 1.0
@@ -136,7 +132,7 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 		return true  # still under: the water ripples over it
 	if _t < _hold + _rise:
 		var up := smoothstep(0.0, 1.0, (_t - _hold) / _rise)
-		sim.stand_y = lerpf(_start_y, -_bed, up)  # up to wading depth
+		sim.stand_y = lerpf(_start_y, ground_at(rise_at), up)  # up onto the sea floor
 		_surface(sim)
 		return true
 	_surface(sim)
@@ -149,9 +145,9 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 	var left := maxf(1.0, roundf((total() - _t) / dt) + 1.0)
 	var u := clampf((_t - _hold - _rise) / maxf(0.001, _wade), 0.0, 1.0)
 	var stride := sim.kaiju_pos.distance_to(_wade_from.lerp(bank, smoothstep(0.0, 1.0, u)))
-	var floor_y := CityRiver.floor_at(_plan, _city, sim.kaiju_pos)
+	var floor_y := ground_at(sim.kaiju_pos)
 	var climb := maxf(stride, absf(floor_y - sim.stand_y) / left)
-	sim.stand_y = move_toward(sim.stand_y, floor_y, climb)  # climbs the shore
+	sim.stand_y = move_toward(sim.stand_y, floor_y, climb)  # climbs the beach
 	if sim.kaiju_pos.distance_to(bank) > stride or sim.stand_y < 0.0:
 		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)  # straight ahead: it never turns
 		return true
@@ -159,17 +155,12 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 	return true
 
 
-## The tick its top clears the water: "surface_break"; the tick it reaches the street (a deck's
-## top) he breaks up through any deck over him ("deck_burst"; its fragments fly from the deck,
-## so they wait for the head to get there rather than pop in while it is still below).
+## The tick its top clears the water: "surface_break" (the intro roars on it).
 func _surface(sim: RampageSim) -> void:
 	var top := sim.stand_y + sim.reach_height()
-	if not surfaced and top >= -_bed:
+	if not surfaced and top >= _sea:
 		surfaced = true
 		sim.events.append({"type": "surface_break"})
-	if surfaced and not _broke and top >= 0.0 and not (burst.is_empty() and burst_ns.is_empty()):
-		_broke = true
-		sim.events.append({"type": "deck_burst", "holes": burst, "holes_ns": burst_ns})
 
 
 func _land(sim: RampageSim, bank: Vector2) -> void:
@@ -178,23 +169,23 @@ func _land(sim: RampageSim, bank: Vector2) -> void:
 	sim.events.append({"type": "kaiju_emerged"})
 
 
-## Where it rises: in the bay, its nose just short of the foot of the shore (so the whole body is
-## in open water), on the line to the bank point; the plan's rise point without a shore.
+## Where it rises: in the bay on its centre line, its nose city "harbour" "nose_gap" short of the
+## foot of the beach (so the whole body is in open water over the sea floor); the plan's rise
+## point for a bare sim with no body yet.
 func _rise_point(sim: RampageSim) -> Vector2:
-	var sand := CityRiver.shore(_plan, _city)
-	if not sand.has_area():
-		return _spawn
 	var nose := 0.0
 	for d: Array in sim.body.discs():
 		nose = maxf(nose, Num.f(d[0]) + Num.f(d[1]))
-	if nose <= 0.0:
-		return _spawn  # no body yet (a bare sim): the bay's middle
-	var gap := Num.f(_city["river_bay"]["nose_gap"])
-	return Vector2(_spawn.x, sand.end.y + nose * sim.body_scale() + gap)
+	if nose <= 0.0 or not _plan.has("harbour"):
+		return _spawn
+	var h: Dictionary = _city["harbour"]
+	var foot := Num.f(_plan["harbour"]["apex"]) - Num.f(h["beach"])
+	return Vector2(_spawn.x, foot - nose * sim.body_scale() - Num.f(h["nose_gap"]))
 
 
-## The body's footprint at the rise: its discs' bounds, grown by the burst margin.
-func _footprint(sim: RampageSim) -> Rect2:
+## The body's footprint now: its discs' bounds, grown by city "harbour" "fit_margin" (tests: the
+## rise stays clear of the railway).
+func footprint(sim: RampageSim) -> Rect2:
 	var s := sim.body_scale()
 	var foot := Rect2()
 	for d: Array in sim.body.discs():
@@ -204,25 +195,8 @@ func _footprint(sim: RampageSim) -> Rect2:
 		foot = disc if not foot.has_area() else foot.merge(disc)
 	if not foot.has_area():
 		return foot
-	var bay: Dictionary = _city.get("river_bay", {})
-	return foot.grow(Num.f(bay.get("burst_margin", 0.0)))
-
-
-## The footprint cut across each deck it covers, the deck's full width (so no sliver of deck is
-## left inside it): across x for an east-west deck (along_x), across z for a north-south one.
-func _holes(foot: Rect2, decks: Array[Rect2], along_x: bool) -> Array[Rect2]:
-	var out: Array[Rect2] = []
-	if not foot.has_area():
-		return out
-	for deck: Rect2 in decks:
-		if not deck.intersects(foot):
-			continue
-		var cut := deck.intersection(foot)
-		if along_x:
-			out.append(Rect2(cut.position.x, deck.position.y, cut.size.x, deck.size.y))
-		else:
-			out.append(Rect2(deck.position.x, cut.position.y, deck.size.x, cut.size.y))
-	return out
+	var bay: Dictionary = _city.get("harbour", {})
+	return foot.grow(Num.f(bay.get("fit_margin", 0.0)))
 
 
 ## From the rise point to the bank point it wades to: into the city.

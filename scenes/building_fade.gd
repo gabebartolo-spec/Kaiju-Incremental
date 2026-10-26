@@ -59,7 +59,7 @@ static func sight_of(sim: RampageSim, eye := Vector3.INF) -> PackedVector3Array:
 	var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 	var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
 	var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
-	var surface := -Num.f(sim.city.get("river_depth", 0.0))
+	var surface := sim.emerge.water_y()
 	var out := targets(feet, sim.reach_height(), ahead, surface)
 	if eye == Vector3.INF:
 		return out

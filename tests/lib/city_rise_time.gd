@@ -6,7 +6,7 @@ extends RefCounted
 ## ("kaiju_emerged") within MAX_TICKS ticks at 60 a second, on its own, before the stall cap.
 ## Seeded by design: the rise uses no RNG; the map seeds are pinned.
 
-const RiverBay := preload("res://tests/lib/city_river_bay.gd")
+const Harbour := preload("res://tests/lib/city_harbour.gd")
 const MAX_TICKS := 180
 const DT := 1.0 / 60.0
 
@@ -15,7 +15,7 @@ const DT := 1.0 / 60.0
 static func check(tier: int, map_seed: int, emerge: Dictionary, check_fn: Callable) -> void:
 	var grown := EmergeReach.max_growth(Content.upgrades(), "reptilian", tier)
 	for growth: int in [0, grown]:
-		var sim: RampageSim = RiverBay._fresh(tier, map_seed, tier, growth)
+		var sim: RampageSim = Harbour._fresh(tier, map_seed, tier, growth)
 		var tuning: Dictionary = Content.tuning().duplicate(true)
 		var cfg: Dictionary = tuning["emerge"]
 		cfg.merge(emerge, true)

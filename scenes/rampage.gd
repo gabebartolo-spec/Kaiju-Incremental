@@ -306,7 +306,7 @@ func _on_event(event: Dictionary) -> void:
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
-			if _rise.on_event(event, _city, _kaiju, _hud):
+			if _rise.on_event(event, _kaiju, _hud):
 				return
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
