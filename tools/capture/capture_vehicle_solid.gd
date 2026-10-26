@@ -6,10 +6,11 @@ extends SceneTree
 ## its dash (the sim's own _dash) started on a line that crosses the camera-to-kaiju line at the
 ## helicopter's cruise height, at the speed of its lap. The kaiju stands (it holds its stomps) and
 ## its health is topped up: the one thing set by hand besides that start. Prints
-## "CLIP from frame F for N frames" (cut the movie there) and the helicopter's screen point
-## and share of the kaiju's body it covers, at 4K. Needs a window and the no-focus override.cfg.
+## "CLIP from frame F for N frames" (cut the movie there) and, every fifth of a second, the
+## helicopter's and the kaiju's screen points. Needs a window and the no-focus override.cfg;
+## a clip is 1080p (D-304).
 ##
-##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 --write-movie <dir>/vip.avi \
+##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/vip.avi \
 ##     --script tools/capture/capture_vehicle_solid.gd -- --run=1 --tier=2
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
@@ -30,6 +31,8 @@ var _out := "user://vehicle_solid"
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "run": 1, "tier": 2})
 	_out = str(a["out"])
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -110,7 +113,7 @@ func _run(run: int, tier: int) -> void:
 	quit()
 
 
-## Prints the helicopter's screen point (4K) and the kaiju's, every fifth of a second.
+## Prints the helicopter's screen point and the kaiju's, every fifth of a second.
 func _log(rampage: Rampage, i: int, sim: RampageSim) -> void:
 	var size := Vector2(root.get_viewport().get_visible_rect().size)
 	var cam := root.get_viewport().get_camera_3d()
