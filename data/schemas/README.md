@@ -11,13 +11,15 @@ allowed. Numbers are `num` (an int or a float); a count that must be whole is `i
 `hex6`. The checker also fails on a key repeated in one object and on a broken cross-reference (an upgrade
 that requires an unknown upgrade or species, a repeated id).
 
-## You added or renamed a key
+## You added, renamed or removed a key
 
-The failure names the file, the path and the line to paste:
+Run `python tools/lint/data_schemas.py --update`, read `git diff data/schemas`, commit it with your data
+change. It allows each key the data now has (typed from its value; in a list of objects it is optional) and
+drops each key the data lost. It never touches a wrong type or a bad reference: those are mistakes in the data.
+Without the tool, the failure names the file, the path and the line to paste:
 
     ERROR: tuning.json: city.stream_chunks: unknown key 'stream_extra'; to allow it add to
     data/schemas/tuning.schema.json under that object's properties:  "stream_extra": {"$ref": "#/$defs/num"}
 
-Paste that line into the object's `properties` and, if the key must always be there, add its name to the
-object's `required` list. Removing a key: remove it from `properties` and `required`. A new data file needs
-a schema of the same name in the same PR. Ranges are not in the schemas (they are balance, in the data).
+(`--suggest` prints a large key's whole schema.) A new data file needs a schema of the same name in the
+same PR (`--update` writes a first one). Ranges are not in the schemas (they are balance, in the data).

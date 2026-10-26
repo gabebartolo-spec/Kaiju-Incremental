@@ -10,6 +10,8 @@ object (JSON keeps the last one without a word) and on a broken cross-reference 
 
     python tools/lint/data_schemas.py              # check data/*.json (CI preflight, tools/prepush.sh)
     python tools/lint/data_schemas.py --self-test  # plant a wrong type and an unknown key in each file
+    python tools/lint/data_schemas.py --suggest    # as the check, with each missing key's whole schema to paste
+    python tools/lint/data_schemas.py --update     # allow the keys the data now has, drop the ones it lost (then review the diff)
 
 Adding a key to a data file: add it to the file's schema in the same PR; the failure message prints the
 line to paste (data/schemas/README.md). Exit 0 when everything passes, 1 on any failure.
@@ -18,6 +20,7 @@ import copy
 import glob
 import json
 import os
+import re
 import sys
 
 try:
@@ -28,6 +31,7 @@ except ImportError:  # the one dependency: pip install "jsonschema>=4.18,<5" (MI
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 MAX_ERRORS = 25  # per file; the rest is a count
+FULL = False  # --suggest: print each suggested schema whole, indented
 
 
 def load(path: str):
@@ -46,17 +50,102 @@ def load(path: str):
         return json.load(f, object_pairs_hook=pairs), repeats
 
 
-def suggest(value) -> str:
-    """The schema line for a key a data file has and its schema lacks."""
+HEX6 = re.compile(r"^[0-9a-fA-F]{6}$")
+COLOUR_KEY = re.compile(
+    r"colou?r|^(body|belly|accent|eye|line|ball|shirt|pants|hair|strip|glass|roof|rail|seam|white|window|under)$"
+)
+INT_KEY = re.compile(r"^(id|max_level|per_side)$|_count$|^count$")
+
+
+DEFS = {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"},
+}
+
+
+def ref(name: str) -> dict:
+    return {"$ref": "#/$defs/" + name}
+
+
+def infer(value, key: str = "") -> dict:
+    """The schema a value would get: the type of every leaf, every key required and no other key allowed.
+
+    This is how the schemas in data/schemas were first written, and what a failure message offers for a
+    key the schema lacks. Whole numbers are `num` (an int or a float) unless the key is an id or a count;
+    a six-digit hex string under a colour-like key is `hex6`; `_`-prefixed keys are documentation.
+    """
     if isinstance(value, bool):
-        return '{"$ref": "#/$defs/bool"}'
-    if isinstance(value, (int, float)):
-        return '{"$ref": "#/$defs/num"}'
+        return ref("bool")
+    if isinstance(value, int):
+        return ref("int") if INT_KEY.search(key) else ref("num")
+    if isinstance(value, float):
+        return ref("num")
     if isinstance(value, str):
-        return '{"$ref": "#/$defs/str"}'
+        return ref("hex6") if HEX6.match(value) and COLOUR_KEY.search(key) else ref("str")
     if isinstance(value, list):
-        return '{"type": "array"}'
-    return '{"type": "object"}'
+        if not value:
+            return {"type": "array"}
+        item = infer(value[0], key)
+        for x in value[1:]:
+            item = merge(item, infer(x, key))
+        return {"type": "array", "items": item}
+    if isinstance(value, dict):
+        props = {k: infer(v, k) for k, v in value.items() if not k.startswith("_")}
+        if not props:
+            return {"type": "object"}
+        return {
+            "type": "object",
+            "properties": props,
+            "required": list(props),
+            "patternProperties": {"^_": ref("str")},
+            "additionalProperties": False,
+        }
+    return {"type": "null"}
+
+
+def merge(a: dict, b: dict) -> dict:
+    """One schema for two values that sit in the same list (a key is required only if both have it)."""
+    if a == b:
+        return a
+    pair = {a.get("$ref"), b.get("$ref")}
+    if pair == {"#/$defs/int", "#/$defs/num"}:
+        return ref("num")
+    if pair == {"#/$defs/hex6", "#/$defs/str"}:
+        return ref("str")
+    if a.get("type") == "object" and b.get("type") == "object":
+        if "properties" not in a or "properties" not in b:  # an empty one has none of the keys
+            full = b if "properties" in b else a
+            return {k: v for k, v in full.items() if k != "required"}
+        props = {k: merge(a["properties"][k], b["properties"][k]) if k in a["properties"] and k in b["properties"]
+                 else a["properties"].get(k) or b["properties"][k] for k in [*a["properties"], *b["properties"]]}
+        return {
+            "type": "object",
+            "properties": props,
+            "required": [k for k in props if k in a.get("required", []) and k in b.get("required", [])],
+            "patternProperties": {"^_": ref("str")},
+            "additionalProperties": False,
+        }
+    if a.get("type") == "array" and b.get("type") == "array":
+        out: dict = {"type": "array"}
+        if "items" in a and "items" in b:
+            out["items"] = merge(a["items"], b["items"])
+        elif "items" in a or "items" in b:
+            out["items"] = a.get("items") or b["items"]
+        return out
+    options = [*(a.get("anyOf") or [a]), *(b.get("anyOf") or [b])]
+    unique = [x for i, x in enumerate(options) if x not in options[:i]]
+    return unique[0] if len(unique) == 1 else {"anyOf": unique}
+
+
+def suggest(value, key: str = "") -> str:
+    """The schema text to paste for a key a data file has and its schema lacks."""
+    if FULL:
+        return json.dumps(infer(value, key), ensure_ascii=False, indent=2)
+    text = json.dumps(infer(value, key), ensure_ascii=False)
+    return text if len(text) <= 600 else text[:600] + " ... (the key is large: python tools/lint/data_schemas.py --suggest)"
 
 
 def where(error) -> str:
@@ -72,7 +161,7 @@ def describe(error, name: str) -> list[str]:
         for k in extra:
             lines.append(
                 f"{name}: {where(error)}: unknown key '{k}'; to allow it add to data/schemas/"
-                f"{name[:-5]}.schema.json under that object's properties:  \"{k}\": {suggest(error.instance[k])}"
+                f"{name[:-5]}.schema.json under that object's properties:  \"{k}\": {suggest(error.instance[k], k)}"
             )
         return lines or [f"{name}: {where(error)}: {error.message}"]
     return [f"{name}: {where(error)}: {error.message[:200]}"]
@@ -154,6 +243,83 @@ def run_checks(root: str) -> tuple[list[str], int]:
     return problems, len(files)
 
 
+def dump_schema(node, depth: int = 0) -> str:
+    """The schemas' own layout: small nodes on one line, keys of larger objects one per line."""
+    flat = json.dumps(node, ensure_ascii=False)
+    if len(flat) <= 96 or not isinstance(node, (dict, list)):
+        return flat
+    pad, end = "  " * (depth + 1), "  " * depth
+    if isinstance(node, dict):
+        rows = [f"{pad}{json.dumps(k, ensure_ascii=False)}: {dump_schema(v, depth + 1)}" for k, v in node.items()]
+        return "{\n" + ",\n".join(rows) + "\n" + end + "}"
+    if all(isinstance(x, str) for x in node):  # a wrapped list of strings
+        lines, cur = [], ""
+        for x in node:
+            piece = json.dumps(x, ensure_ascii=False) + ", "
+            if cur and len(pad + cur + piece) > 100:
+                lines.append(cur.rstrip())
+                cur = ""
+            cur += piece
+        lines.append(cur.rstrip().rstrip(","))
+        return "[\n" + "\n".join(pad + line for line in lines) + "\n" + end + "]"
+    return "[\n" + ",\n".join(pad + dump_schema(x, depth + 1) for x in node) + "\n" + end + "]"
+
+
+def apply_fixes(data, schema) -> list[str]:
+    """Brings a schema in line with its data file: allows each unknown key, drops each key the data no longer has.
+
+    Only those two edits. A wrong type or a bad reference is a mistake in the data and stays an error.
+    """
+    done: list[str] = []
+    for _ in range(4):  # a pass can expose the next layer of errors
+        errors = list(Draft202012Validator(schema).iter_errors(data))
+        if not any(e.validator in ("additionalProperties", "required") for e in errors):
+            break
+        for e in errors:
+            in_list = any(isinstance(p, int) for p in e.absolute_path)  # items of a list may differ from one another
+            if e.validator == "additionalProperties":
+                props = e.schema.setdefault("properties", {})
+                for k in e.instance:
+                    if k not in props and not str(k).startswith("_"):
+                        props[k] = infer(e.instance[k], k)
+                        if not in_list:
+                            e.schema.setdefault("required", []).append(k)
+                        done.append(f"{where(e)}: allowed '{k}'")
+            elif e.validator == "required":
+                for k in [x for x in e.validator_value if x not in e.instance]:
+                    if k in e.schema.get("required", []):
+                        e.schema["required"].remove(k)
+                    if not in_list:  # a key the one object lost is gone; a list item may just lack an optional key
+                        e.schema.get("properties", {}).pop(k, None)
+                    done.append(f"{where(e)}: {'dropped' if not in_list else 'made optional'} '{k}'")
+    return done
+
+
+def update(root: str) -> int:
+    """--update: rewrite each schema so it allows what its data file holds now (review the diff, commit it)."""
+    total = 0
+    for path in sorted(glob.glob(os.path.join(root, "data", "*.json"))):
+        name = os.path.basename(path)
+        spath = os.path.join(root, "data", "schemas", name[:-5] + ".schema.json")
+        data, _ = load(path)
+        if os.path.exists(spath):
+            with open(spath, encoding="utf-8") as f:
+                schema = json.load(f)
+        else:
+            schema = {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": f"data/{name}", **infer(data)}
+            schema["$defs"] = DEFS
+        done = apply_fixes(data, schema)
+        if done or not os.path.exists(spath):
+            with open(spath, "w", encoding="utf-8", newline="\n") as f:
+                f.write(dump_schema(schema) + "\n")
+            print(f"{name}: schema updated ({len(done) or 'new file'})")
+            for line in done[:40]:
+                print(f"  {line}")
+            total += 1
+    print("schemas up to date" if not total else f"{total} schema files rewritten: review `git diff data/schemas` and commit")
+    return 0
+
+
 def leaves(node, path=()):
     """Every scalar leaf of a parsed JSON value as (path, value)."""
     if isinstance(node, dict):
@@ -184,6 +350,9 @@ def self_test(root: str) -> int:
             print(f"FAIL: the real {name} does not pass its own schema")
             bad = 1
             continue
+        if not Draft202012Validator({**infer(data), "$defs": DEFS}).is_valid(data):  # what a failure suggests must itself hold
+            print(f"FAIL: the schema inferred from {name} does not validate {name}")
+            bad = 1
         plants: list[tuple[str, object]] = []
         unknown = copy.deepcopy(data)
         unknown["zz_planted_key"] = 1  # at the top level
@@ -222,14 +391,23 @@ def self_test(root: str) -> int:
             else:
                 print(f"FAIL: {name}: {what} passed its schema")
                 bad = 1
+        grown = copy.deepcopy(schema)  # --update must let the file with the planted unknown key pass
+        apply_fixes(plants[0][1], grown)
+        if check_file(name, plants[0][1], grown):
+            print(f"FAIL: {name}: --update did not allow a new top-level key")
+            bad = 1
     if bad == 0:
         print("ok: the schemas catch a planted wrong type and a planted unknown key in every data file")
     return bad
 
 
 def main(argv: list[str]) -> int:
+    global FULL
     if "--self-test" in argv:
         return self_test(ROOT)
+    if "--update" in argv:
+        return update(ROOT)
+    FULL = "--suggest" in argv
     problems, n_files = run_checks(ROOT)
     for line in problems:
         print(f"::error::{line}" if os.environ.get("GITHUB_ACTIONS") else f"ERROR: {line}")
