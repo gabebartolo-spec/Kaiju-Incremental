@@ -10,8 +10,8 @@ extends Node3D
 const SKYLINE_SALT := 16  # the far rampage's stream, drawn from the run's fx seed
 const FIRE_SHADER := preload("res://scenes/horizon_fire.gdshader")
 const SMOKE_SHADER := preload("res://scenes/horizon_smoke.gdshader")
-const BOOM := preload("res://assets/sfx/collapse.ogg")
-const THUD := preload("res://assets/sfx/stomp_0.ogg")
+const BOOM := "res://assets/sfx/collapse.ogg"  # loaded when heard: a fresh import has no .ogg yet
+const THUD := "res://assets/sfx/stomp_0.ogg"
 const PLAN_S := 900.0  # tower falls are planned this far ahead (longer than any rampage)
 const PLAN_STEP := 0.1
 const MIN_TALL := 12.0  # lower boxes never fall on their own
@@ -333,7 +333,7 @@ func _ear() -> Vector3:
 
 
 func _footfall(_side: String, _strength: float, at: Vector3) -> void:
-	_send(THUD, at, _ear(), _f("step_db"))
+	_send(load(THUD) as AudioStream, at, _ear(), _f("step_db"))
 
 
 ## A tower in its fall: it sinks into its own footprint, leaning away from the blow.
@@ -375,7 +375,7 @@ func _hear() -> void:
 	var ear := _ear()
 	while _next_fall < _falls.size() and Num.f(_falls[_next_fall]["at"]) <= elapsed:
 		var at: Vector3 = _boxes[Num.i(_falls[_next_fall]["index"])]["at"]
-		_send(BOOM, at, ear, _f("boom_db"))
+		_send(load(BOOM) as AudioStream, at, ear, _f("boom_db"))
 		if _falls[_next_fall]["smash"]:
 			_beast.stomp()
 		_next_fall += 1
