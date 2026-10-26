@@ -274,10 +274,10 @@ func run_over(reason: String) -> void:
 	get_node("/root/EventBus").emit_signal("run_ended", result())
 
 
-## The pause menu's End Rampage: the sim ends the run now (earnings kept), then the end beat.
+## The pause menu's End Rampage: he dies (D-265): his overload plays out (DeathOverload), and the
+## sim's run_over brings the end beat once the shards are down. Earnings are kept.
 func _end_now() -> void:
 	sim.end("ended")
-	run_over("ended")
 
 
 ## The end beat: the reason the rampage ended slams onto the screen while the city keeps
@@ -336,7 +336,7 @@ func beat_running() -> bool:
 
 ## Opens the pause menu and stops the world (the menu runs while paused).
 func pause() -> void:
-	if sim.over or get_tree().paused:
+	if sim.over or sim.death.active() or get_tree().paused:
 		return
 	var menu := PauseMenu.new(sim, str(species["id"]), photo)
 	menu.end_pressed.connect(_end_now)

@@ -54,6 +54,7 @@ rises every stage and stays at or under about 35% (R 19.1).
 dramatic camera shot, zoomed in on the water which begins to ripple and fount before our kaiju emerges, roaring with rage
 before the camera zooms out into the play angle and the run begins. the entire scene should run for no longer than 3
 seconds"), with R 20.1-20.4 from Phase D, ahead of the rest of D; it ends on today's play angle until the camera growth pick.
+Run intro follow-ups, parked by D-310 behind PR #245 (OPEN; it carries the intro): claude/intro-bay (tip 4af591e3: crescent sea bay, beach and quays, D-270; the keyed rise_bay Cascadeur clip is still to make, D-199) and backup/intro-cinematic-2 (10f3629c: the intro's real water, D-244). Owner: lead. Date: parked 2026-10-27. Next: #245 merges, then rebase, tests green, PR; the water ports onto #245's intro or closes as superseded.
 **Now, in parallel (director 2026-10-21: "id also like to bump the UI design up the priority list, its annoying me to
 look at our current design every day"; picked: start now, HUD and menus first, keep Emergency Broadcast D-061):** Phase F's
 HUD (b2-10..13, R 15.1-15.8) and every menu (title, pause, settings, results, species select b2-11, loading) with bespoke
@@ -61,7 +62,8 @@ original assets (b2-14), fonts and copy; the upgrade-tree screen waits for E's b
 
 **A. Close what is in flight; fix what no later choice changes.**
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this
-chapter) · repo CLAUDE.md + kaiju-handoff skill to the 300k/500k context rule · b2-6 every building in the play area
+chapter) · the kaiju-handoff skill states the context rule (every session auto-compacts at 260k and keeps its handoff
+current; rulebook "Context and handoff"; the repo CLAUDE.md names no limit; done 2026-10-27) · b2-6 every building in the play area
 destroyable, any that cannot be is removed from it · b2-21 stadium placed as far from the spawn as the map allows ·
 b2-26 atomic breath hurts trees · a destroyed building stays rubble, never a burning shell (comments #14, #111) · the kaiju rises out of the river water, never the asphalt (comments 2026-10-20 #10) · b2-2 first half: find out why the tail swipe does not fire, fix that bug only ·
 p1-9 confirm in play that the south-of-spawn buildings are gone (#88) ·
@@ -219,6 +221,7 @@ and GPU type; quality NEVER drops on its own: "We have to optimise our game well
 allow flexibility" (D-136) (R 18.5) · Potato =
 gl_compatibility behind a restart, last (R 18.6) · the shader baker on for exports, presets applied only from menus
 or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
+Render plan status (D-276, D-300): P2b (item 7, crowds and rooftop squads in one buffer) missed its bar (crowd cost +24.6% slower in the interleaved micro bench; the bar was 30% faster): claude/perf-p2b is a backup, no PR; the re-plan is a native buffer fill on claude/perf-p2b-native (not pushed; its DLL build waits on PR #262). P4c (item 14, kaiju posed once per frame on the GPU): the spike (claude/perf-p4c, 05ae1e47, backup, no PR) measured no saving (4.91 vs 4.67 ms), so item 14 as planned is dropped; spike 2 (cut kaiju geometry, bar: kaiju cube cost down 30%) is running. Owner: the perf builders; the lead decides. Date: 2026-10-27.
 
 **H. Content after the slice (already decided, unchanged order).**
 Background city rampage (director 2026-10-21, comments #16: "would be cool if our distant background city had a kaiju
@@ -226,7 +229,7 @@ rampaging in it, and the skyline was on fire"): a far silhouette kaiju stomping 
 dropping, fire glow and smoke columns on the horizon, distant booms; presentation only, cheap (impostors). A labelled
 capture for his yes before it is built in full.
 Rooftop mortars · mecha kaiju boss · jets (#58, #61) · species motion (#11) and the other species · six languages ·
-music (Suno, needs his spend yes) · greenery (#55) · look-options -> main (#3) once the slice ships.
+music (Suno, needs his spend yes) · greenery (#55) (look-options -> main: done 2026-10-27, main is the base).
 Sound (research): a pooled SFX manager with voice caps per category from data, hero voices reserved, quietest or
 farthest stolen (R 8.2) · a rubble stream (2-3 loops whose level follows debris landings) instead of a voice per
 chunk (R 8.4) · crowd panic bed from civilian counts in four quadrants (R 8.6) · footsteps longer and lower each
@@ -394,6 +397,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
 - Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
   ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.
+- Thunder Beam lightning look (D-136, VFX_STYLE, b2-18): the r7 look is 16 commits on claude/thunder-beam-2 (bolt shaders and rig, three thunder_beam sounds; replaces beam.gdshader and the old breath curtain), not on main. Owner: thunder-land builder (Opus), the lead merges. Date: 2026-10-27, tonight. Status: landing as claude/thunder-land (main merged in, not pushed, no PR yet), ON by default (D-308); its 1080p clip goes to C:/kt/interview_2026-10-27/ for the morning. Next: prepush, push, PR.
 
 ## Interview answers (director 2026-10-23, afternoon; D-163 to D-170)
 - One look from blocks (D-163): props, ground, fire and blasts into the city's look; far blur on the kaiju; cool
@@ -463,13 +467,15 @@ state. No director clips or per-change approvals in between; clips only where mo
   board of 2-3 building-fire treatments beside real fire photos, critics screen defects, he picks); the fall draws
   an arc between the sim's death and crash points; "kill not caused" waits for the new claw rake, and every claimed
   fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187. Fire board: "Smooth
-  flames" (D-190), rolling out to every fire on claude/fire-smooth, the helicopter fall round on top; claw swipe
+  flames" (D-190) MERGED in #236 (2026-10-26 01:06Z, with the red barrels); the helicopter fall round on top is not
+  landed (backup/heli-fall, no PR; VFX lead); claw swipe
   "Keep it straight ahead" (D-190): hit back on the snout line, stronger trail and sparks.
 - "interview me": D-189. M1's atmosphere starts now in a third session ("start them now, create a third session",
   "Atmosphere"); builder cap "6 in total"; music "Low and creeping"; helicopters "Never block your view". Owners:
   atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
   becomes the camera-to-kaiju corridor). Status: in progress. Atmosphere rulings A1-A16: D-191 (order: escalation,
   weather, sky and sea life; #167 drew no weather yet).
+- Escalation + far-city floating fix (D-154, D-189, D-191; the fix asked for twice): claude/atm-escalation-2, 12 commits at round 4 (tip 62fd50a5), not on main. Owner: lead. Date: parked 2026-10-27 (D-310). Next: after every D-295 debt row merges (order #243, #241, #245, then the rest): sync with main, horizon seam, wide noon and dusk renders, fog cost, clip straight to the director, PR (the audit suggests the far-city fix alone could land first).
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
@@ -488,7 +494,11 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Balance run on GitHub (D-179): a manual workflow runs tools/pacing.gd. Owner: lead's builder. Status: not started.
 - "helicopters are hovering way too close to our kaiju ... twitchy ... like an orbiting fly, they should move logically,
   strategically, gracefully": stand-off gunships (D-183). Owner: lead's builder (sim/air_wing.gd), VFX lead for banking
-  and rotor look. Status: queued after the volley rework.
+  and rotor look. Status: core MERGED #210 (2026-10-25 14:47Z: ring, strafe passes, night lights). Phase 3 ("helicopters
+  never block your view", D-189: a pass never runs between camera and kaiju, hull tint, rotor disc, lamps; commit 353434c7 on
+  claude/heli-standoff-2, untested) is not on main. Owner: lead (sim), VFX lead (lamps, tint). Date: 2026-10-27. Next: the
+  heli-phase3 builder starts after the Tripo vehicle swap merges (D-297, same helicopter files): sync, heliflight and smoke
+  suites, 4K night capture, PR.
 - "these songs are too staccato, too endlessly building with very little relief or payoff": theme takes now ask for a
   legato melody with tension and release (D-182). Owner: lead. Status: done; D-184 ships the Godzilla set: his
   remaster of G2 (song 798f3c13) on the menu over the city sound and as the source of the three city Covers.
@@ -548,11 +558,13 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Scope (D-212, director 2026-10-24): "demo: full croc gameplay minus the mecha boss fight / full game: all 3
   reptilians and mecha boss / ... an expansion with a mammal, an avian, an aquatic" (plus build-your-own kaiju);
   mantis and octopus stay stretch goals. Owner: lead (milestones follow this). Status: recorded.
+- Komodo in the game (D-251 "walk is good. ship it", lands OFF by default while dragon work is paused, D-252): claude/komodo-land (tip 06c88b38, 38 commits, 80 files; includes claude/komodo-clips), not on main. Owner: lead (+ casc-anim). Date: parked 2026-10-27 (D-310). Next: the lead rules on the motion, gait and clip reds in the komodo-land handoff, then PR. Komodo mouth tooling (D-245): claude/komodo-mouth-49564a, Blender tooling only, no game asset, same parking; next: a watertight mouth shell, bake and import, or land only the croc mouth script.
 
 ## Interviews 2026-10-26 (D-257 to D-260)
 Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interviews.md`.
 Unlanded work, every branch not on main with owner and next step (2026-10-27): `docs/roadmap/2026-10-27-unlanded-audit.md`.
 Director comments of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
+- Army defeat about 1 run in 8 at each growth stage (D-259): claude/army-balance (army range measured to the croc's body line, tanks always have a firing post, per-stage army escalation and damage rows in data/tuning.json, the pacing bot carries the Taskforce clock), not on main. Owner: the army builder; the lead reviews the sim. Date: 2026-10-27. Status: two GitHub balance runs started 2026-10-26 18:54Z (pacing-run/army-b run 40381871503, army-replay/a run 40381900832). Next: the PR with the defeat table and the sim-review packet; the two scratch branches are deleted then.
 
 ## Interview audit (D-272, 2026-10-26)
 Every interview answer and director message since 2026-10-16 (782 items) checked against the docs: `docs/roadmap/2026-10-26-interview-audit.md`.
