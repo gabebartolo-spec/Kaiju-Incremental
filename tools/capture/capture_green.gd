@@ -17,8 +17,6 @@ extends SceneTree
 const PropLog := preload("res://tools/capture/prop_log.gd")
 const SETTLE := 12
 const SPECIES := "reptilian"
-## Rampage.CAMERA_OFFSET: the game camera's direction, scaled down for the close-ups.
-const GAME_CAMERA := Vector3(0, 27, 19)
 const PARK_ZOOM := 0.6
 const PLAYGROUND_ZOOM := 0.25
 const AVENUE_ZOOM := 0.45
@@ -134,7 +132,7 @@ func _stills() -> void:
 	var city := CityView.new(sim, Seeds.make("fx", 0))
 	stage.add_child(city)
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	cam.far = 4000.0
 	stage.add_child(cam)
 	root.add_child(stage)
@@ -158,7 +156,8 @@ func _stills() -> void:
 
 
 func _shot(cam: Camera3D, at: Vector3, zoom: float, shot_name: String) -> void:
-	cam.position = at + GAME_CAMERA * zoom
+	# The game camera's direction, closer for the close-ups.
+	cam.position = at + CameraTuning.offset() * zoom
 	cam.look_at(at)
 	for _i: int in SETTLE:
 		await process_frame
@@ -271,7 +270,7 @@ func _park_count(decor: CityDecor, park: Rect2) -> String:
 ## A still of the park from PARK_VIEW (the rampage's own camera is put back after).
 func _park_view(rampage: Rampage, park: Rect2, shot_name: String) -> void:
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	rampage.add_child(cam)
 	var c := park.get_center()
 	cam.position = Vector3(c.x, 0, c.y) + PARK_VIEW

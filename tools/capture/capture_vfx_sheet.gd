@@ -209,7 +209,7 @@ func _press(button: String, shot_name: String, at: Array) -> void:
 func _side_still(shot_name: String) -> void:
 	var game_cam := root.get_viewport().get_camera_3d()
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	cam.far = 4000.0
 	_rampage.add_child(cam)
 	var bs := _rampage.sim.body_scale()

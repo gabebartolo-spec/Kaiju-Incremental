@@ -110,8 +110,12 @@ var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
+## The leader's escape helicopter (D-149), its own part beside the air wing.
+var vip: VipHeli
 var brood: Brood
 var stomp: RampageStomp
+## The reptilian's big attacks that land a beat after the press (Strikes, D-166).
+var strikes: Strikes
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 var death: DeathOverload  # how he dies: stagger, stone, shatter (director 2026-10-26)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
@@ -165,6 +169,8 @@ func _init(
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
+	var vip_cfg: Dictionary = tuning["vip"]
+	vip = VipHeli.new(self, vip_cfg, Seeds.derive(rng, 0x71B))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
@@ -174,6 +180,8 @@ func _init(
 		rail.add_piece(n)
 	news = RunNews.new(self, tuning)
 	death = DeathOverload.new(self, tuning, Seeds.derive(rng, 0xDEAD))
+	var strike_cfg: Dictionary = tuning["strike"]
+	strikes = Strikes.new(self, strike_cfg)
 
 
 ## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
@@ -223,14 +231,17 @@ func destruction() -> float:
 
 ## What the rampage did, for the results screen and the save's bests (RunTally.result).
 func result() -> Dictionary:
-	return RunTally.result(self)
+	var out := RunTally.result(self)
+	out.merge(vip.summary())
+	return out
 
 
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
-	if _held_back(dt):
+	# No step of his own when over, dying (the world steps on, DeathOverload) or rising (D-083).
+	if over or death.active() and death.step_world(dt) or emerge.step(self, dt):
 		return _events
 	time_left -= dt
 	elapsed += dt
@@ -244,6 +255,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
+	strikes.step(dt)
 	stomp.step(dt)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
@@ -258,7 +270,8 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	explosives.step(dt)
 	army_units.step(dt)
-	air.step(dt)
+	air.step(dt)  # the gunships, then the leader's escape (D-149)
+	vip.step(dt)
 	rail.step(dt)
 	Endless.step(self, dt)
 	news.step(_events)
@@ -266,12 +279,6 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	if why != "":
 		end(why)
 	return _events
-
-
-## True when the kaiju takes no step of his own: the run is over, he is dying (the world steps
-## on without him, DeathOverload.step_world) or he is still rising from the river.
-func _held_back(dt: float) -> bool:
-	return over or death.active() and death.step_world(dt) or emerge.step(self, dt)
 
 
 ## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
@@ -282,9 +289,8 @@ func dispose() -> void:
 	SimTeardown.cut(self)
 
 
-## Ends the rampage for `reason` (also the pause menu's End Rampage, "ended"); earnings are
-## kept. A death plays his overload first (DeathOverload, which ends it with now = true once the
-## shards are down); the city's fall, or `now`, ends it at once.
+## Ends the rampage for `reason` (also the pause menu's End Rampage, "ended"); earnings are kept.
+## A death plays his overload first (DeathOverload ends it with now = true); `now` ends it at once.
 func end(reason: String, now := false) -> void:
 	if not now and death.is_death(reason):
 		death.begin(reason)
@@ -312,7 +318,7 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			BreathCone.breathe(self, reach, damage)
+			strikes.breath()  # the cone burns at the strike, where he faces then (D-166)
 		"leap":
 			var from := kaiju_pos
 			kaiju_pos = clamp_to_arena(
@@ -350,6 +356,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
 	rail.hit(force, damage)
+	vip.hit(force, damage)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.

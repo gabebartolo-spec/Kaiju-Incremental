@@ -9,7 +9,7 @@ extends SceneTree
 ## Headless (no movie) prints the measurements; slide also in cm (a world unit = a 3.5 m storey).
 
 const FPS := 60.0
-const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const CM_PER_UNIT := 350.0
 ## The side clip's kaiju turns side-on to the camera when it stops (s), so the roar is in profile.
@@ -19,6 +19,7 @@ const SIDE_PIVOT := 9.2
 var plants := PackedStringArray()
 var _species := "reptilian"
 var _stage := "adult"
+var _model: KaijuModel
 var _cam := "game"
 var _seconds := 15.0
 var _roar_at := 10.0  # s; capture_clips.gd moves it
@@ -111,6 +112,7 @@ func _run() -> void:
 	var interval := Num.f(stats["stomp_interval"])
 	var colors: Dictionary = def["colors"]
 	var kaiju := KaijuModel.new(_species, colors, _stage)
+	_model = kaiju
 	var body_scale: float = SCALES.get(_stage, 1.0)
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
@@ -137,7 +139,7 @@ func _run() -> void:
 	plants.append("t,foot,x,y,z,strength,camera_dip_units,camera_dip_px_at_1080p")
 	var last_pelvis := Vector3.ZERO
 	var cam := Camera3D.new()
-	cam.fov = 55.0 if _cam == "game" else 40.0
+	cam.fov = CameraTuning.fov() if _cam == "game" else 40.0
 	stage.add_child(cam)
 	root.add_child(stage)
 	var pos := Vector2.ZERO
@@ -189,7 +191,7 @@ func _run() -> void:
 		)
 		if _cam == "game":
 			_dip_shown = _dip  # at once, as Rampage drops its camera (PR #54: eased, it was 1 px)
-			cam.position.y -= _dip_shown * (0.75 + 0.4 * body_scale)
+			cam.position.y -= _dip_shown * CameraTuning.zoom(body_scale)
 		_trace_feet(kaiju, t, feet)
 		if _pose_trace != "":
 			poses.append(_poser.row(kaiju, t, _event_at(t)))
@@ -267,9 +269,7 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 		cam.look_at(Vector3(0, 2.5 * body_scale, -9.0))
 		return
 	if _cam == "game":
-		var zoom := 0.75 + 0.4 * body_scale
-		cam.position = at + CAMERA_OFFSET * zoom
-		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
+		Kit.place_game_camera(cam, _model, body_scale)
 		return
 	if _species == "cephalopod":  # a wide body needs a wider shot
 		cam.position = at + Vector3(16.0 * 1.4, 4.0 * 1.4, 0) * body_scale
@@ -344,9 +344,9 @@ func _level_line(kaiju: KaijuModel, cam: Camera3D) -> void:
 
 ## How many pixels a camera dip moves the picture at 1080p for the gameplay camera.
 func _dip_px(dip: float, body_scale: float) -> float:
-	var zoom := 0.75 + 0.4 * body_scale
-	var dist := CAMERA_OFFSET.length() * zoom
-	return dip * zoom / (2.0 * dist * tan(deg_to_rad(55.0) * 0.5)) * 1080.0
+	var zoom := CameraTuning.zoom(body_scale)
+	var dist := CameraTuning.offset().length() * zoom
+	return dip * zoom / (2.0 * dist * tan(deg_to_rad(CameraTuning.fov()) * 0.5)) * 1080.0
 
 
 ## --tint: each bone's voxels in one flat colour (arm roots red, forearms yellow, hands magenta,
