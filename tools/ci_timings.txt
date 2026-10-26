@@ -2,12 +2,16 @@
 # Nobody edits this per PR: a new suite counts as DEFAULT_SECS until the next re-measure (at least weekly).
 # tools/plan_ci_shards.sh packs the suites into shards x lanes bins; each shard runs its lanes at once (tools/run_tests.sh LANES).
 shards 4
-lanes 2
-streamview 494
-flow 418
+lanes 3
+split streamview 2
+split flow 2
+streamview@2/2 300
+flow@1/2 235
 growth 229
 taskforce 217
 heliflight 206
+streamview@1/2 205
+flow@2/2 205
 load 181
 military 178
 sim 166
