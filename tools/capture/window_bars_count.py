@@ -1,12 +1,16 @@
-"""Counts dark horizontal bands across lit windows in the frames capture_window_bars.gd saves.
+"""Counts dark horizontal bars at lit windows in the frames capture_window_bars.gd saves.
 
-A lit window is a bright warm patch on a dark facade. A band is a run of dark pixels, at most
---max-band rows tall, with lit pixels directly above and below it in the same column, at least
---min-width columns wide side by side. Per frame: the bands, their pixels, and the lit pixels. Reads
-<dir>/f*.png (one building's rectangle per frame) and prints one line per frame and a total.
+A lit window is a bright warm patch on a dark facade. Two counts per frame, from
+<dir>/f*.png (one building's rectangle per frame):
+  between : a run of dark pixels, at most --max-band rows tall, with lit pixels directly above and
+            below it in the same column, --min-width columns wide side by side (a bar cutting a
+            lit window in two).
+  strips  : a connected patch of black pixels (every channel <= --black on 0..255) at least --min-strip
+            wide and at most --max-strip tall, wider than twice its height (a horizontal strip),
+            and strips_lit of those within --near px of a lit window (a bar at a window).
+Prints one line per directory (totals, frames with any, per-frame counts).
 
-  python tools/capture/window_bars_count.py <frames dir>... [--max-band 5] [--min-width 4]
-      [--lit 0.55] [--save-overlay <png of the worst frame>]
+  python tools/capture/window_bars_count.py <frames dir>... [--black 3] [--save-overlay x.png]
 """
 
 import argparse
@@ -30,9 +34,8 @@ def lit_mask(rgb: np.ndarray, ref: float, share: float) -> np.ndarray:
     return (y > ref * share) & warm
 
 
-def bands(lit: np.ndarray, max_band: int, min_width: int) -> tuple[np.ndarray, int]:
+def between(lit: np.ndarray, max_band: int, min_width: int) -> tuple[np.ndarray, int]:
     """(mask of band pixels, number of bands): dark runs of <= max_band rows between lit pixels."""
-    h, w = lit.shape
     down = np.diff(lit.astype(np.int8), axis=0)  # -1: lit then dark, +1: dark then lit
     s_y, s_x = np.nonzero(down == -1)
     e_y, e_x = np.nonzero(down == 1)
@@ -49,13 +52,22 @@ def bands(lit: np.ndarray, max_band: int, min_width: int) -> tuple[np.ndarray, i
             top, bottom = ev_y[i] + 1, ev_y[i + 1]  # dark rows top..bottom inclusive
             if bottom - top + 1 <= max_band:
                 mask[top : bottom + 1, ev_x[i]] = True
-    labels, n = ndimage.label(mask, structure=np.ones((3, 3)))
+    return components(mask, min_width, 1.0e9, 0.0)
+
+
+def components(
+    mask: np.ndarray, min_width: int, max_height: float, min_aspect: float
+) -> tuple[np.ndarray, int]:
+    """The 8-connected patches of `mask` at least min_width wide, at most max_height tall and
+    min_aspect times wider than tall: (their pixels, how many)."""
+    labels, _ = ndimage.label(mask, structure=np.ones((3, 3)))
     keep = np.zeros_like(mask)
     count = 0
     for k, sl in enumerate(ndimage.find_objects(labels), start=1):
         width = sl[1].stop - sl[1].start
-        if width >= min_width:
-            keep[labels == k] = True
+        height = sl[0].stop - sl[0].start
+        if width >= min_width and height <= max_height and width >= min_aspect * height:
+            keep[sl][labels[sl] == k] = True
             count += 1
     return keep, count
 
@@ -66,6 +78,10 @@ def main() -> int:
     ap.add_argument("--max-band", type=int, default=5)
     ap.add_argument("--min-width", type=int, default=4)
     ap.add_argument("--lit", type=float, default=0.55)
+    ap.add_argument("--black", type=float, default=2.0)
+    ap.add_argument("--min-strip", type=int, default=8)
+    ap.add_argument("--max-strip", type=int, default=16)
+    ap.add_argument("--near", type=int, default=3)
     ap.add_argument("--save-overlay", default="")
     a = ap.parse_args()
     for d in a.dirs:
@@ -73,32 +89,41 @@ def main() -> int:
         if not files:
             print(f"{d}: no frames", file=sys.stderr)
             continue
-        counts = []
-        worst = (-1, None, None)
+        rows = []
+        worst = (-1, None)
         ref = None
         for path in files:
             rgb = np.asarray(Image.open(path).convert("RGB"), dtype=np.float32)
             if ref is None:  # the lit level of the first frame: its 99.7th luma percentile
                 ref = float(np.percentile(luma(rgb), 99.7))
             lit = lit_mask(rgb, ref, a.lit)
-            mask, n = bands(lit, a.max_band, a.min_width)
-            counts.append((n, int(mask.sum()), int(lit.sum())))
-            if n > worst[0]:
-                worst = (n, path, (rgb, lit, mask))
-        total = sum(c[0] for c in counts)
-        frames_with = sum(1 for c in counts if c[0] > 0)
-        per = " ".join(str(c[0]) for c in counts)
+            gap_mask, gaps = between(lit, a.max_band, a.min_width)
+            strips_mask, strips = components(rgb.max(axis=-1) <= a.black, a.min_strip, a.max_strip, 2.0)
+            near = ndimage.binary_dilation(lit, iterations=a.near)
+            labels, n = ndimage.label(strips_mask, structure=np.ones((3, 3)))
+            touching = 0
+            if n:
+                touching = int(
+                    sum(1 for k in np.unique(labels[near & strips_mask]) if k > 0)
+                )
+            rows.append((gaps, strips, touching, int(strips_mask.sum()), int(lit.sum())))
+            if strips > worst[0]:
+                out = rgb.copy()
+                out[strips_mask] = [255, 0, 255]
+                out[gap_mask] = [0, 255, 255]
+                worst = (strips, out)
+        total = [sum(r[i] for r in rows) for i in range(5)]
         print(
-            f"{d}: frames {len(counts)} lit_ref {ref:.0f} bands total {total} "
-            f"frames_with_bands {frames_with} max {max(c[0] for c in counts)} "
-            f"band_px {sum(c[1] for c in counts)} lit_px {sum(c[2] for c in counts)}"
+            f"{d}: frames {len(rows)} lit_ref {ref:.0f} between {total[0]} "
+            f"(frames with {sum(1 for r in rows if r[0])}) strips {total[1]} "
+            f"(frames with {sum(1 for r in rows if r[1])}, max {max(r[1] for r in rows)}) "
+            f"strips_at_lit {total[2]} (frames with {sum(1 for r in rows if r[2])}) "
+            f"strip_px {total[3]}"
         )
-        print(f"  per frame: {per}")
-        if a.save_overlay and worst[2] is not None:
-            rgb, lit, mask = worst[2]
-            out = rgb.copy()
-            out[mask] = [255, 0, 255]
-            Image.fromarray(out.astype(np.uint8)).save(a.save_overlay)
+        print("  strips per frame:", " ".join(str(r[1]) for r in rows))
+        print("  strips_at_lit per frame:", " ".join(str(r[2]) for r in rows))
+        if a.save_overlay and worst[1] is not None:
+            Image.fromarray(worst[1].astype(np.uint8)).save(a.save_overlay)
     return 0
 
 
