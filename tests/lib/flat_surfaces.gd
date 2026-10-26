@@ -176,9 +176,9 @@ static func _add_ruins(rampage: Rampage) -> void:
 	var view: BuildingView = stream.view.call(0)
 	var voxels := view.voxels
 	var yard: RuinYard = city.ruins()
-	yard._attach(Ruin.build(voxels, Seeds.make("ruin", 0)))
-	yard._attach(Ruin.strip(voxels, Vector3(0, 0, 0), Vector3(6, 0, 0), 3.0))
-	yard._attach(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
+	yard._attach(Ruin.build_plan(voxels, Seeds.make("ruin", 0)))
+	yard._attach(Ruin.strip_plan(voxels, Vector3(0, 0, 0), Vector3(6, 0, 0), 3.0))
+	yard._add(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
 
 
 ## The check: build the real city, scan it, fail every flat type not on KNOWN_FLAT, and fail a
