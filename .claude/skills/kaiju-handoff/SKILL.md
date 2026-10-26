@@ -21,7 +21,7 @@ never on a branch and never stale on main (director 2026-10-25, after a regen le
 Cap 120 lines, **edited when state changes, never appended as a log and not rewritten from scratch every turn**.
 Write it with Write/Edit; never commit it. Finished or stale roles move to `archive/` in that folder. The
 SessionStart hook lists the live ones, and from any folder (even a "No folder" session) it names the lead's file.
-The skeleton is `agent-handoffs/README.md` in the repo (the only file left there).
+The skeleton is `references/handoff-skeleton.md` beside this file; no handoff or brief lives in the repo.
 
 ## What it says
 
