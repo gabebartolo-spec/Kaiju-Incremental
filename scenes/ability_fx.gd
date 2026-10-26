@@ -38,6 +38,7 @@ var _body: Node3D
 var _overlay_on := false
 var _healing := false
 var _beam: BreathBeam
+var _was_ready := true  # Signature Recharge: the ability was ready last step
 var _warming := false  # the prewarm's emitters' materials are kept compiled (ShaderKeep)
 
 
@@ -80,6 +81,20 @@ func _ready() -> void:
 ## The kaiju whose voxels take the body glows (ready flash, regeneration shimmer).
 func attach_body(body: Node3D) -> void:
 	_body = body
+
+
+## Signature Recharge's ready pulse and Regeneration's motes, once a step; `at` is the kaiju.
+func update_powers(sim: RampageSim, sfx: Sfx, at: Vector3) -> void:
+	var charged := sim.ability_ready_in <= 0.0
+	if charged and not _was_ready:
+		var facing := Vector3(sim.facing.x, 0.0, sim.facing.y)
+		var head := at + Vector3(0, 6.0, 0) * sim.body_scale()
+		ready_pulse(at, head + facing * sim.body_scale())
+		sfx.play("ready")
+	_was_ready = charged
+	var healing := sim.stat("regen") > 0.0 and sim.hp < sim.max_hp
+	regen(at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
+	sfx.regen(healing)
 
 
 func _process(_delta: float) -> void:

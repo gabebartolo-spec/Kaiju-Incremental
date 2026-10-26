@@ -168,7 +168,7 @@ func _set_progress(v: float) -> void:
 	var struck := clampf((v - 0.04) / _fade_in, 0.0, 1.0)  # as the front reaches what it hits
 	_flare_fade(_muzzle, grow * (1.0 - smoothstep(0.1, 0.35, v)))
 	_flare_fade(_strike, struck * (1.0 - v))
-	_light.light_energy = LIGHT_ENERGY * power * struck * (1.0 - v)
+	_light.light_energy = LIGHT_ENERGY * power * struck * (1.0 - v) * PlayerSettings.flash_scale()
 
 
 func _hide() -> void:
@@ -186,7 +186,9 @@ func _flare_quad(tint: Color) -> QuadMesh:
 
 
 static func _flare_fade(flare: MeshInstance3D, fade: float) -> void:
-	((flare.mesh as QuadMesh).material as ShaderMaterial).set_shader_parameter("fade", fade)
+	((flare.mesh as QuadMesh).material as ShaderMaterial).set_shader_parameter(
+		"fade", fade * PlayerSettings.flash_scale()
+	)  # Reduce flashing (D-259)
 
 
 func _material(shader: Shader, tint: Color, tune: Dictionary) -> ShaderMaterial:

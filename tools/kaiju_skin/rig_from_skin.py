@@ -11,7 +11,10 @@ corner. A sealed Tripo mouth is one skin, so the line splits it: every head voxe
 gape and under the line is jaw, every one above it skull (a straight cut: letting the nearest
 welded position decide near the line combed the lips, and teeth are below voxel size). The jaw is
 a rigid hinge.
-Croc titan (blender-reptile 3ea955d, motion_test KNOWN["C"] mouth re-origined on the pelvis):
+Adult croc (adult3 r10, tools/blender/croc_adult3_export.py; its jaw comes from the skin weights, no mouth line):
+    python tools/kaiju_skin/rig_from_skin.py assets/kaiju/reptilian_adult.kvox \\
+        assets/kaiju/test/croc_adult3.skin.json
+The old croc titan adult (blender-reptile 3ea955d, motion_test KNOWN["C"] mouth re-origined on the pelvis):
     python tools/kaiju_skin/rig_from_skin.py assets/kaiju/reptilian_adult.kvox \\
         assets/kaiju/test/croctitan.skin.json -90.5,82.5,-58,87
 """

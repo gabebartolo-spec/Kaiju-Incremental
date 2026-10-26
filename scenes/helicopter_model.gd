@@ -18,6 +18,8 @@ var _tail_rotor: Node3D
 var _gun: Node3D
 var _cfg: Dictionary
 var _muzzle := Vector3.ZERO  # in the gun's space
+var _strobe: Node3D  # the white anti-collision flash
+var _clock := 0.0
 
 
 func _init() -> void:
@@ -30,11 +32,56 @@ func _init() -> void:
 	_tail_rotor = parts.hinge("tail_rotor", self, centre, 5)
 	_gun = parts.hinge("gun", self, centre, 5)
 	_muzzle = Vector3(0, 0, parts.front("gun") - parts.pivot("gun").z)
+	_clock = float(get_instance_id() % 997) * 0.37  # each helicopter flashes on its own beat
+	_add_lights((_body as MultiMeshInstance3D).get_aabb())
+	for part: Node in find_children("*", "MultiMeshInstance3D", true, false):
+		var mat := (part as MultiMeshInstance3D).material_override as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("self_light", Num.f(_cfg["heli_lights"]["self_light"]))
 
 
 func _process(delta: float) -> void:
+	_clock += delta
+	var lights: Dictionary = _cfg["heli_lights"]
+	_strobe.visible = fposmod(_clock, Num.f(lights["strobe_period"])) < Num.f(lights["strobe_on"])
 	_main_rotor.rotation.y += delta * Num.f(_cfg["main_rotor_spin"])
 	_tail_rotor.rotation.x += delta * Num.f(_cfg["tail_rotor_spin"])
+
+
+## Night flying lights: a red lamp on the left and a green on the right, a white strobe on the tail
+## and a faint pale lamp under the belly, so the silhouette reads against the lit windows. Emissive
+## spheres only (the city's real lights are pooled for gl_compatibility), `body` is the hull's box.
+func _add_lights(body: AABB) -> void:
+	var lights: Dictionary = _cfg["heli_lights"]
+	var top := body.position.y + body.size.y * Num.f(lights["mast"])
+	var side := body.size.x * 0.5 * Num.f(lights["wing"])
+	var mid := body.get_center()
+	_lamp(Vector3(-side, top, mid.z), Color(str(lights["red"])), Num.f(lights["nav_energy"]))
+	_lamp(Vector3(side, top, mid.z), Color(str(lights["green"])), Num.f(lights["nav_energy"]))
+	_strobe = _lamp(
+		Vector3(mid.x, top, body.end.z), Color(str(lights["white"])), Num.f(lights["strobe_energy"])
+	)
+	_lamp(
+		Vector3(mid.x, body.position.y, mid.z),
+		Color(str(lights["belly"])),
+		Num.f(lights["belly_energy"]),
+		Num.f(lights["belly_size"])
+	)
+
+
+## One emissive lamp ball at `at` (bloom does the glow), `size` 0 for the nav lamp size.
+func _lamp(at: Vector3, color: Color, energy: float, size := 0.0) -> Node3D:
+	var lights: Dictionary = _cfg["heli_lights"]
+	var ball := SphereMesh.new()
+	ball.radius = size if size > 0.0 else Num.f(lights["size"])
+	ball.height = ball.radius * 2.0
+	ball.material = CityView.glow(color, energy)
+	var bulb := MeshInstance3D.new()
+	bulb.mesh = ball
+	bulb.position = at
+	bulb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(bulb)
+	return bulb
 
 
 ## Points the chin gun at `target` (world space).

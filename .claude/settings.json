@@ -44,8 +44,6 @@
       "Bash(git push * -f *)",
       "Bash(git push * +*)",
       "Bash(git reset --hard*)",
-      "Bash(git branch -D *)",
-      "Bash(git branch --delete --force *)",
       "Bash(gh pr merge * --admin*)",
       "Bash(gh pr merge --admin*)",
       "Bash(gh pr merge * --auto*)",

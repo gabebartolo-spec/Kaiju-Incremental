@@ -58,7 +58,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
 	for channel: Rect2 in CityRiver.channels(plan, sim.city):
 		_water.append(channel.grow(0.5 + CAR_HALF.y))  # a car at a bridge end clears the wall
-	for b: RampageSim.Building in sim.buildings:
+	for b: RampageSim.Building in sim.lot_buildings():  # the street runs on under the viaduct
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
 
 
@@ -91,17 +91,16 @@ func _ready() -> void:
 	for i: int in paints.size():
 		palette["car%d" % i] = paints[i]
 	palette.merge(CityGreenery.PALETTE)
-	var island: Dictionary = sim.city["traffic_island"]["colors"]
-	for key: String in island:
-		palette[key] = Color(str(island[key]))
-	var quay: Dictionary = sim.city["river_quay"]["colors"]
-	for key: String in quay:
-		palette[key] = Color(str(quay[key]))
+	for part: String in ["traffic_island", "river_quay"]:
+		var colors: Dictionary = sim.city[part]["colors"]
+		for key: String in colors:
+			palette[key] = Color(str(colors[key]))
 	add_child(_props.build(palette, 31, 3.0))
 	_props.configure(sim.city)
 	add_child(_fx)
 	add_child(_props.leaf_field)
 	add_child(_props.bark_field)
+	add_child(LampPools.new(_lamp_spots))  # the lamps' pools on the ground, at night
 
 
 ## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so

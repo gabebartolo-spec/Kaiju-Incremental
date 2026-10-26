@@ -18,10 +18,22 @@ class Building:
 	## A landmark's id (data/landmarks.json) or ""; rubble_bonus multiplies what its chunks pay.
 	var landmark := ""
 	var rubble_bonus := 1.0
+	var hazard := ""  # an explosive site's kind (CityHazards), or ""
 	## False past the arena's edge (CityBand): it breaks and pays, but never counts to the fall.
 	var in_arena := true
 	## What its chunks pay, as a share of a smash: a burnt-out building's (FireSpread) is less.
 	var pay_share := 1.0
+	## A piece of the railway's viaduct or station (RailLayout: {"piece", "station"}), else empty.
+	var rail: Dictionary = {}
+	## Chunks it stood with when the rampage began (RunTally reads a landmark's against it).
+	var start_chunks := 0
+
+	func is_rail() -> bool:
+		return not rail.is_empty()
+
+	## Kept meshed wherever the kaiju is (BuildingStream): a landmark, or the railway.
+	func is_held() -> bool:
+		return landmark != "" or is_rail()
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -75,6 +87,8 @@ var hp: float
 var max_hp: float
 var time_left: float
 var rubble: float = 0.0
+## The elevated railway and its trains (Rail).
+var rail: Rail
 var chunks_destroyed := 0
 var chunks_total := 0
 var falls: Array[Fall] = []
@@ -90,8 +104,9 @@ var next_fall_id := 0
 var collapse: Collapse
 ## The fine destruction grid (Carving): buildings carved cell by cell once first hit.
 var carving: Carving
-## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
+## The tanks' behaviour (Army); the tanks themselves are in `tanks`. Explosives: the red barrels.
 var army_units: Army
+var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
@@ -100,6 +115,8 @@ var stomp: RampageStomp
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
+## The big moments (threat level, felled landmarks, tower totals) as events for the HUD.
+var news: RunNews
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -134,12 +151,16 @@ func _init(
 	for entry: Dictionary in layout:
 		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
 		b.in_arena = CityBand.touches(b.x, b.z, Vector2(b.w, b.d), arena_half)
+		b.start_chunks = b.frame.alive_count
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
+	var rail_cfg: Dictionary = tuning["rail"]
+	var rail_from := RailLayout.add_pieces(buildings, city, rail_cfg)
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
+	explosives = Explosives.new(self, tuning, Seeds.derive(rng, 0xE7))
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
@@ -147,6 +168,15 @@ func _init(
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
+	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
+	for n: int in range(rail_from, buildings.size()):
+		rail.add_piece(n)
+	news = RunNews.new(self, tuning)
+
+
+## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
+func lot_buildings() -> Array[Building]:
+	return buildings.filter(func(b: Building) -> bool: return not b.is_rail())
 
 
 func stat(stat_name: String) -> float:
@@ -189,21 +219,9 @@ func destruction() -> float:
 	return Num.f(chunks_destroyed) / maxf(1.0, Num.f(chunks_total))
 
 
+## What the rampage did, for the results screen and the save's bests (RunTally.result).
 func result() -> Dictionary:
-	return {
-		"rubble": Num.i(floor(rubble)),
-		"destruction": destruction(),
-		"buildings": collapse.destroyed_buildings(),
-		"seconds": elapsed,
-		"tanks": tanks_destroyed,
-		"helis": air.destroyed,
-		"rooftops": army_units.rooftops_destroyed,
-		"agents": army_units.taskforce.kills,
-		"city_seconds": army_units.taskforce.city_seconds(),
-		"toppled": collapse.toppled,
-		"tallest_topple": collapse.tallest_topple,
-		"reason": end_reason,
-	}
+	return RunTally.result(self)
 
 
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
@@ -216,7 +234,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	elapsed += dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
 	var old_facing := facing
-	var moving := move.length() > 0.05
+	var moving := move.length() > 0.05 and not body.dash.on()  # a leap takes no stick
 	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
 	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
 		var speed := stat("speed") * powers.speed_mult() * stride
@@ -236,9 +254,12 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	powers.step(dt, signature_held)
 	brood.step(dt)
 	collapse.step(dt)
+	explosives.step(dt)
 	army_units.step(dt)
 	air.step(dt)
+	rail.step(dt)
 	Endless.step(self, dt)
+	news.step(_events)
 	var why := Endless.over_reason(self)
 	if why != "":
 		end(why)
@@ -315,24 +336,12 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
+	rail.hit(force, damage)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.
 func nearest_standing(from: Vector2) -> Vector2:
-	var best := Vector2(INF, INF)
-	var best_d := INF
-	for b: Building in buildings:
-		if b.frame.alive_count == 0 or not b.in_arena:
-			continue
-		for x: int in b.w:
-			for z: int in b.d:
-				if b.frame.alive(Vector3i(x, 0, z)):
-					var p := b.chunk_world(Vector3i(x, 0, z))
-					var d := from.distance_squared_to(Vector2(p.x, p.z))
-					if d < best_d:
-						best_d = d
-						best = Vector2(p.x, p.z)
-	return best
+	return StandingChunks.nearest(self, from)
 
 
 ## Damages chunks of one building by the same amount each.
@@ -347,6 +356,8 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 ## takes less of each blow (Growth.dwarf_mult, D-091). Broken chunks pay rubble; then whatever
 ## lost support starts to fall. Returns chunks broken. A carved building goes to Carving.
 func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
+	if not cells.is_empty():
+		explosives.damaged(index)  # a red barrel lights its fuse at any blow
 	if carving.takes(index):
 		return carving.apply(index, cells, amounts)
 	var b := buildings[index]

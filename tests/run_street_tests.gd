@@ -12,8 +12,10 @@ const FRAMES := 600
 ## StreetLife drew every MultiMesh buffer bit for bit as the Person objects it replaced, over
 ## 600 frames at the then-biggest stage on Medium, High and Max (to-kaiju/014). A deliberate
 ## change to street life, its tuning or the city plan re-pins it (3ce3931c7b6a5cdc ->
-## 1532d9c3297b48fe, D-135: the cities are wider, so the plan and the people on it changed).
-const PINNED := "1532d9c3297b48fe"
+## 1532d9c3297b48fe, D-135: the cities are wider, so the plan and the people on it changed;
+## -> e6dc7d4d2660f21f, road network: no alleys on the river banks, so the plan's streets, and the
+## pavements the people walk, differ at stage 1).
+const PINNED := "e6dc7d4d2660f21f"
 
 
 func suite_name() -> String:

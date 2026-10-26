@@ -7,19 +7,30 @@ extends Node3D
 ## few MultiMeshes; presentation only.
 
 const PAVE_TOP := 0.1  # blocks stand a kerb above the street
-const DIAG_TOP := 0.11  # the diagonal avenue is laid over the blocks it crosses
+const DIAG_TOP := 0.003  # the diagonal avenue, at street level (DiagonalPaving kerbs it)
+const PLAZA_RISE := 0.01  # a plaza's paving over the pavement round it
 const PAINT := 0.02
 const WATER_Y := -0.8
 const RIVER_QUAY := 0.6  # the stone quay wall along each bank, its top a narrow walk
 const PARAPET := Vector2(0.9, 0.3)  # a bridge parapet's height over the deck, and its width
 const FAR := 1400.0
-const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
+const WET_GROUP := "wet_ground"  # the slabs WeatherView wets (ground_slab.gdshader `wet`)
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
+const ROAD_TOP := 0.005  # a street's slab and a junction box, over the land and the diagonal
+const CROSSING_TOP := 0.006  # where the diagonal crosses a street, the street's asphalt over both
 
 var plan: Dictionary
 var cfg: Dictionary
 ## Where the land ends and the bay begins (z of the quay); north of it is water.
 var coast: float
+## The blocks the diagonal crosses, and the river's bank walls under its bridge (DiagonalPaving
+## paves them).
+var cut_blocks: Array[Dictionary] = []
+var cut_walls: Array[Rect2] = []
+## The streets' carriageways ({rect, data: kind data}), and the diagonal's pieces as drawn:
+## where they cross, RoadJunctions.crossings lays the street's asphalt over both.
+var street_pieces: Array[Dictionary] = []
+var diagonal_pieces: Array[PackedVector2Array] = []
 var _slabs: Array[Dictionary] = []
 var _paint: Array[Transform3D] = []
 
@@ -37,58 +48,115 @@ func _ready() -> void:
 	# Land: asphalt under everything south of the quay, darker beyond the drawn streets, open
 	# where the river runs.
 	var channels := CityRiver.channels(plan, cfg)
-	for land: Rect2 in _cut([Rect2(-FAR, coast, FAR * 2.0, FAR)], channels):
-		_slab(land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
-	for land: Rect2 in _cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
-		_slab(land, Vector2(0.001, 0.4), asphalt)
+	for land: Rect2 in GroundKit.cut([Rect2(-FAR, coast, FAR * 2.0, FAR)], channels):
+		_of(GroundKit.K_ASPHALT, land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
+	for land: Rect2 in GroundKit.cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
+		_of(GroundKit.K_ASPHALT, land, Vector2(0.001, 0.4), asphalt)
 	for block: Dictionary in plan["blocks"]:
-		var rect: Rect2 = block["rect"]
-		if rect.position.y < coast:
-			continue
-		if str(block["use"]) == "outer" and minf(rect.size.x, rect.size.y) < MIN_BUILDABLE:
-			continue  # a sliver too thin to build on stays road, not a pale strip
-		# The block's pavement reaches out over its sidewalks (and meets across an alley).
-		var walk := CityGen.pavement(block, cfg)
-		match str(block["use"]):
-			"park":
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
-				_slab(rect.grow(-0.5), Vector2(PAVE_TOP + 0.02, 0.3), Look.color("outskirts"))
-			"plaza", "landmark":  # a landmark stands on its own plaza
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
-			"parking":
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
-				_slab(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
-				_parking_bays(rect.grow(-0.6))
-			"river":
-				pass  # its water and quays: _river
-			_:
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
+		_block(block, asphalt, pavement)
+	_roads(channels, asphalt)
 	_river(channels, asphalt, pavement.lightened(0.12))
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)
-	add_child(_build_slabs())
+	var mat := _slab_material()
+	var colors := {"pavement": pavement, "asphalt": asphalt, "stone": pavement.lightened(0.12)}
+	for mmi: MultiMeshInstance3D in DiagonalPaving.meshes(self, colors, mat):
+		mmi.add_to_group(WET_GROUP)
+		add_child(mmi)
+	add_child(_build_slabs(mat))
 	add_child(_build_paint())
 	add_child(_water())
 
 
-## A flat box covering rect (x, z); y: (top, thickness); turned by angle about the vertical.
-func _slab(rect: Rect2, y: Vector2, color: Color, angle: float = 0.0) -> void:
+## One block's pavement, and what stands on it (lawn, plaza, parking bays).
+func _block(block: Dictionary, asphalt: Color, pavement: Color) -> void:
+	var rect: Rect2 = block["rect"]
+	if rect.position.y < coast:
+		return
+	# The block's pavement reaches out over its sidewalks (and meets across an alley); a sliver
+	# too thin to build on is a kerbed pavement island, never open asphalt (roads suite R4).
+	var walk := CityGen.pavement(block, cfg)
+	if str(block["use"]) != "river" and DiagonalPaving.cuts(plan, block, cfg):
+		cut_blocks.append(block)
+		return
+	var kerb := Vector2(PAVE_TOP, 0.3)
+	match str(block["use"]):
+		"park":
+			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
+			_of(
+				GroundKit.K_LAWN,
+				rect.grow(-0.5),
+				kerb + Vector2(0.02, 0.0),
+				Look.color("outskirts")
+			)
+		"plaza", "landmark":  # a landmark stands on its own plaza, a pavement round it
+			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
+			var rise := kerb + Vector2(PLAZA_RISE, 0.0)
+			_of(GroundKit.K_PAVEMENT, plaza(walk, cfg), rise, pavement.lightened(0.12))
+		"parking":
+			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
+			var bay := rect.grow(-0.6)
+			_of(GroundKit.K_ASPHALT, bay, kerb + Vector2(0.01, 0.0), asphalt.lightened(0.06))
+			_parking_bays(bay)
+		"river":
+			pass  # its water and quays: _river
+		_:
+			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
+
+
+## A concrete face; water_y is its water line.
+func _face(rect: Rect2, y: Vector2, color: Color, water_y: float) -> void:
+	_slab(rect, y, color, GroundKit.kind(GroundKit.K_CONCRETE, water_y))
+
+
+## A slab of a surface kind (GroundKit.K_*).
+func _of(kind: int, rect: Rect2, y: Vector2, color: Color) -> void:
+	_slab(rect, y, color, GroundKit.kind(kind))
+
+
+## The streets as slabs of their own over the land (so the lanes, tracks and kerbs of
+## ground_slab.gdshader know where each street runs), cut where the river is, meeting at plain
+## junction boxes (RoadJunctions: one surface where two roads meet, roads suite R6).
+func _roads(channels: Array[Rect2], asphalt: Color) -> void:
+	var junctions := RoadJunctions.boxes(plan, coast)
+	var y := Vector2(ROAD_TOP, 0.3)
+	for street: Dictionary in RoadJunctions.streets(plan, coast, junctions):
+		var axis := GroundKit.ALONG_X if Num.i(street["axis"]) == 0 else GroundKit.ALONG_Z
+		var half := Num.f(street["half"])
+		var data := GroundKit.road_kind(GroundKit.K_ROAD, axis, Num.f(street["centre"]), half)
+		var rect: Rect2 = street["rect"]
+		for piece: Rect2 in GroundKit.cut([rect], channels):
+			_slab(piece, y, asphalt, data)
+			street_pieces.append({"rect": piece, "data": data})
+	for n: int in junctions:
+		var half: Vector2 = junctions[n]
+		var box := RoadJunctions.box_rect(plan, n, half)
+		for piece: Rect2 in GroundKit.cut([box], channels):
+			_of(GroundKit.K_JUNCTION, piece, y, asphalt)
+
+
+## A flat box covering rect (x, z); y: (top, thickness).
+func _slab(rect: Rect2, y: Vector2, color: Color, kind: Color) -> void:
+	_put(rect, y, 0.0, [color, kind])
+
+
+## The same turned by angle about the vertical; paint is [colour, kind data].
+func _put(rect: Rect2, y: Vector2, angle: float, paint: Array) -> void:
 	var top := y.x
 	var thick := y.y
 	var centre := rect.get_center()
 	var basis := (
 		Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(rect.size.x, thick, rect.size.y))
 	)
-	(
-		_slabs
-		. append(
-			{
-				"t": Transform3D(basis, Vector3(centre.x, top - thick * 0.5, centre.y)),
-				"c": color,
-			}
-		)
-	)
+	var t := Transform3D(basis, Vector3(centre.x, top - thick * 0.5, centre.y))
+	_slabs.append({"t": t, "c": paint[0], "d": paint[1]})
+
+
+## A plaza's paving: its pavement less a sidewalk's width all round, so a road's asphalt meets a
+## kerbed pavement, never the plaza (roads suite R4).
+static func plaza(walk: Rect2, p_cfg: Dictionary) -> Rect2:
+	return walk.grow(-Num.f(p_cfg["sidewalk"]))
 
 
 func _diagonal(asphalt: Color) -> void:
@@ -105,105 +173,25 @@ func _diagonal(asphalt: Color) -> void:
 		var length := a.distance_to(b) + width  # overlap the next piece at the crossings
 		var angle := -(b - a).angle()
 		var span := Vector2(length, width)
-		_slab(Rect2(mid - span * 0.5, span), Vector2(DIAG_TOP, 0.3), asphalt, angle)
+		var data := GroundKit.road_kind(GroundKit.K_ROAD, GroundKit.TURNED, 0.0, width * 0.5)
+		_put(Rect2(mid - span * 0.5, span), Vector2(DIAG_TOP, 0.3), angle, [asphalt, data])
+		var dir := (b - a).normalized() * length * 0.5
+		var side := Vector2(-dir.y, dir.x).normalized() * width * 0.5
+		diagonal_pieces.append(
+			PackedVector2Array(
+				[mid - dir - side, mid + dir - side, mid + dir + side, mid - dir + side]
+			)
+		)
 
 
-## Quiet road paint, readable from the kaiju's height: a dashed centre line on the avenues and
-## the diagonal, and zebra crossings (one per arm) only at the few junctions where two avenues
-## cross nearest the city centre (city.zebra_junctions). Nothing else gets crossings.
+## Quiet road paint (RoadPaint): dashes and the central junction's zebras.
 func _markings() -> void:
-	var nodes: Array[Vector2] = plan["nodes"]
-	var reach := Num.f(cfg["half"]) + Num.f(cfg["markings_beyond"])
-	var zebras := zebra_junctions()
-	for street: Dictionary in plan["streets"]:
-		var kind := str(street["kind"])
-		if kind == CityGen.ALLEY:
-			continue
-		var ends: Array[int] = [Num.i(street["from"]), Num.i(street["to"])]
-		var a := nodes[ends[0]]
-		var b := nodes[ends[1]]
-		if maxf(maxf(absf(a.x), absf(a.y)), maxf(absf(b.x), absf(b.y))) > reach:
-			continue
-		if minf(a.y, b.y) < coast:
-			continue
-		var dir := (b - a).normalized()
-		var width := Num.f(street["width"])
-		var length := a.distance_to(b)
-		if kind != CityGen.STREET:
-			var lift := DIAG_TOP + PAINT if kind == CityGen.DIAGONAL else PAINT
-			_dashes(a, dir * length, width, lift)
-		if kind == CityGen.DIAGONAL:
-			continue
-		for i: int in 2:
-			if zebras.has(ends[i]):
-				var toward := dir if i == 0 else -dir
-				_zebra(nodes[ends[i]] + toward * (width * 0.5 + 0.9), toward, width)
+	_paint.append_array(RoadPaint.new(plan, cfg, coast).marks())
 
 
-## The junctions that get zebra crossings: where an avenue along x meets one along z, nearest
-## the centre first, at most city.zebra_junctions of them.
+## The junctions that get zebra crossings (RoadPaint.zebra_junctions).
 func zebra_junctions() -> Dictionary:
-	var nodes: Array[Vector2] = plan["nodes"]
-	var along_x := {}
-	var along_z := {}
-	for street: Dictionary in plan["streets"]:
-		if str(street["kind"]) != CityGen.AVENUE:
-			continue
-		var ends: Array[int] = [Num.i(street["from"]), Num.i(street["to"])]
-		var flat := is_equal_approx(nodes[ends[0]].y, nodes[ends[1]].y)
-		for end: int in ends:
-			if flat:
-				along_x[end] = true
-			else:
-				along_z[end] = true
-	var both: Array[int] = []
-	for n: int in along_x:
-		if along_z.has(n) and nodes[n].y >= coast:
-			both.append(n)
-	both.sort_custom(
-		func(p: int, q: int) -> bool:
-			var dp := nodes[p].length()
-			var dq := nodes[q].length()
-			if not is_equal_approx(dp, dq):
-				return dp < dq
-			return nodes[p] < nodes[q]
-	)
-	var out := {}
-	for k: int in mini(Num.i(cfg["zebra_junctions"]), both.size()):
-		out[both[k]] = true
-	return out
-
-
-## Dashes down the centre line from a along `span` (direction times length), at height y.
-func _dashes(a: Vector2, span: Vector2, width: float, y: float) -> void:
-	var dir := span.normalized()
-	var length := span.length()
-	var angle := -dir.angle() + PI * 0.5
-	var gap := width * 0.5 + 2.5  # none in or near the crossings
-	var t := gap
-	while t < length - gap:
-		var p := a + dir * t
-		_paint.append(
-			Transform3D(
-				Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(0.12, 0.04, 0.9)),
-				Vector3(p.x, y, p.y)
-			)
-		)
-		t += 3.0
-
-
-func _zebra(at: Vector2, along: Vector2, width: float) -> void:
-	var across := Vector2(-along.y, along.x)
-	var angle := -along.angle() + PI * 0.5
-	var n := floori(width / 0.6)
-	for i: int in n:
-		var p := at + across * ((i + 0.5) * 0.6 - width * 0.5)
-		_paint.append(
-			Transform3D(
-				Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(0.3, 0.04, 1.2)),
-				Vector3(p.x, PAINT, p.y)
-			)
-		)
+	return RoadPaint.new(plan, cfg, coast).zebra_junctions()
 
 
 func _parking_bays(rect: Rect2) -> void:
@@ -220,52 +208,38 @@ func _parking_bays(rect: Rect2) -> void:
 
 ## The quay: a concrete edge where the city meets the bay.
 func _quay(pavement: Color) -> void:
-	_slab(Rect2(-FAR, coast, FAR * 2.0, 3.0), Vector2(PAVE_TOP + 0.3, 1.6), pavement.darkened(0.15))
+	_slab(
+		Rect2(-FAR, coast, FAR * 2.0, 3.0),
+		Vector2(PAVE_TOP + 0.3, 1.6),
+		pavement.darkened(0.15),
+		GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
+	)
 	_slab(
 		Rect2(-FAR, coast - 0.4, FAR * 2.0, 0.4),
 		Vector2(PAVE_TOP + 0.7, 1.0),
-		pavement.darkened(0.3)
+		pavement.darkened(0.3),
+		GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
 	)
 
 
-func _build_slabs() -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	var box := BoxMesh.new()
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.vertex_color_is_srgb = true
-	mat.roughness = 1.0
-	box.material = mat
-	mm.mesh = box
-	mm.instance_count = _slabs.size()
-	for i: int in _slabs.size():
-		var t: Transform3D = _slabs[i]["t"]
-		var c: Color = _slabs[i]["c"]
-		mm.set_instance_transform(i, t)
-		mm.set_instance_color(i, c)
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+## The ground's material, its river level set.
+func _slab_material() -> ShaderMaterial:
+	var mat := GroundKit.material(Num.i(cfg["map_seed"]))
+	mat.set_shader_parameter("river_y", -Num.f(cfg.get("river_depth", 0.0)))
+	return mat
+
+
+func _build_slabs(mat: ShaderMaterial) -> MultiMeshInstance3D:
+	var mmi := GroundKit.slab_instances(_slabs, mat)
+	mmi.add_to_group(WET_GROUP)
 	return mmi
 
 
 func _build_paint() -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	var box := BoxMesh.new()
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = PAINT_COLOR
-	box.material = mat
-	mm.mesh = box
-	mm.instance_count = _paint.size()
-	for i: int in _paint.size():
-		mm.set_instance_transform(i, _paint[i])
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mmi
+	var mat := GroundKit.material(Num.i(cfg["map_seed"]))
+	mat.set_shader_parameter("tint", PAINT_COLOR)
+	mat.set_shader_parameter("force_kind", float(GroundKit.K_PAINT))
+	return GroundKit.paint_instances(_paint, mat)
 
 
 ## The bay: dark, glossy water reaching to the horizon north of the quay.
@@ -290,33 +264,98 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
 			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
 		]
-		for side: Rect2 in _cut(banks, bridges):
-			_slab(side, wall, stone)
-		_slab(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone)
-		_slab(Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y), wall, stone)
+		var diagonal := DiagonalPaving.band(plan, cfg, 0.0)
+		for side: Rect2 in GroundKit.cut(banks, bridges):
+			if DiagonalPaving.pieces(side, diagonal).size() == 1 and _whole(side, diagonal):
+				_face(side, wall, stone, -depth)
+			else:
+				cut_walls.append(side)
+		_face(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone, -depth)
+		_face(
+			Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y), wall, stone, -depth
+		)
+	var over := CityRiver.diagonal_deck(plan, cfg)
+	if not over.is_empty():
+		_diagonal_deck(over, channels[0], [asphalt, stone])
 	for deck: Rect2 in bridges:
-		_slab(deck, Vector2(0.001, 0.5), asphalt)
-		for x: float in [deck.position.x, deck.end.x - PARAPET.y]:
-			_slab(Rect2(x, deck.position.y, PARAPET.y, deck.size.y), Vector2(PARAPET.x, 1.0), stone)
+		_bridge(deck, channels, asphalt, stone)
 
 
-## rects with every hole cut out of them, as the rects left over.
-static func _cut(rects: Array[Rect2], holes: Array[Rect2]) -> Array[Rect2]:
-	var out: Array[Rect2] = rects.duplicate()
-	for hole: Rect2 in holes:
-		var left: Array[Rect2] = []
-		for r: Rect2 in out:
-			var common := r.intersection(hole)
-			if not r.intersects(hole) or common.get_area() <= 0.0:
-				left.append(r)
-				continue
-			left.append(Rect2(r.position, Vector2(r.size.x, common.position.y - r.position.y)))
-			left.append(Rect2(r.position.x, common.end.y, r.size.x, r.end.y - common.end.y))
-			var mid := Rect2(r.position.x, common.position.y, 0.0, common.size.y)
-			left.append(Rect2(mid.position, Vector2(common.position.x - r.position.x, mid.size.y)))
-			left.append(Rect2(common.end.x, mid.position.y, r.end.x - common.end.x, mid.size.y))
-		out.assign(left.filter(func(q: Rect2) -> bool: return q.size.x > 0.0 and q.size.y > 0.0))
-	return out
+## A cross street's bridge: its deck at street level, a parapet along each side, the bank walls
+## carried on under it.
+func _bridge(deck: Rect2, channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
+	var depth := Num.f(cfg.get("river_depth", 0.0))
+	_abutments(deck, channels, depth, stone)
+	_slab(
+		deck,
+		Vector2(0.001, depth - 0.2),
+		asphalt,
+		GroundKit.road_kind(
+			GroundKit.K_DECK, GroundKit.ALONG_Z, deck.get_center().x, deck.size.x * 0.5
+		)
+	)
+	for x: float in [deck.position.x, deck.end.x - PARAPET.y]:
+		_face(
+			Rect2(x, deck.position.y, PARAPET.y, deck.size.y),
+			Vector2(PARAPET.x, 1.0),
+			stone,
+			GroundKit.NO_WATER
+		)
+
+
+## The bank walls carried on under a bridge deck, from its underside down to the channel floor, so
+## nothing under it shows the clear colour behind (a pale slit at the deck's sides).
+func _abutments(deck: Rect2, channels: Array[Rect2], depth: float, stone: Color) -> void:
+	for channel: Rect2 in channels:
+		if not channel.intersects(deck):
+			continue
+		for z: float in [channel.position.y, channel.end.y - RIVER_QUAY]:
+			_face(
+				Rect2(deck.position.x, z, deck.size.x, RIVER_QUAY),
+				Vector2(-0.4, depth),
+				stone,
+				-depth
+			)
+
+
+## The diagonal's bridge (CityRiver.diagonal_deck): its deck at the avenue's level with a parapet
+## along each side, each running only over the channel (`water`, quays included), so neither
+## crosses a street along the bank. colors: [asphalt, stone].
+func _diagonal_deck(over: Dictionary, water: Rect2, colors: Array[Color]) -> void:
+	var asphalt := colors[0]
+	var stone := colors[1]
+	var a: Vector2 = over["from"]
+	var b: Vector2 = over["to"]
+	var width := Num.f(over["width"])
+	var angle := -(b - a).angle()
+	var dir := (b - a).normalized()
+	var length := a.distance_to(b)
+	var mid := (a + b) * 0.5
+	var deck := Vector2(length, width)
+	var top := GroundKit.road_kind(GroundKit.K_DECK, GroundKit.TURNED, 0.0, width * 0.5)
+	_put(Rect2(mid - deck * 0.5, deck), Vector2(DIAG_TOP, 0.5), angle, [asphalt, top])
+	var face := GroundKit.kind(GroundKit.K_CONCRETE, GroundKit.NO_WATER)
+	for side: float in [-1.0, 1.0]:
+		var line := mid + Vector2(-dir.y, dir.x) * side * (width - PARAPET.y) * 0.5
+		# Where this parapet's line crosses the channel's two banks (z), as distances along dir.
+		var t0 := (water.position.y - line.y) / dir.y
+		var t1 := (water.end.y - line.y) / dir.y
+		var at := line + dir * (t0 + t1) * 0.5
+		var rail := Vector2(absf(t1 - t0), PARAPET.y)
+		_put(Rect2(at - rail * 0.5, rail), Vector2(PARAPET.x, 1.0), angle, [stone, face])
+
+
+## True when polygon `cut` leaves all of rect (they do not overlap).
+static func _whole(rect: Rect2, cut: PackedVector2Array) -> bool:
+	var left := DiagonalPaving.pieces(rect, cut)
+	return absf(_area(left[0]) - rect.get_area()) < 0.001
+
+
+static func _area(poly: PackedVector2Array) -> float:
+	var out := 0.0
+	for k: int in poly.size():
+		out += poly[k].cross(poly[(k + 1) % poly.size()])
+	return absf(out) * 0.5
 
 
 ## Glossy water of `color` over rect (x, z) at height y.

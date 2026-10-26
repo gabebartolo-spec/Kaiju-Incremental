@@ -279,7 +279,7 @@ func _check_seeded() -> void:
 	for blow_share: float in [0.2, 1.0]:  # a spin draws from the fall stream, a burst does not
 		var sim := _scene({})
 		_down(sim, Num.f(sim.air.cfg["hp"]) * blow_share)
-		angles.append(sim.air.spawn().angle)
+		angles.append(sim.air.spawn().slot)
 	check(
 		is_equal_approx(angles[0], angles[1]),
 		"a falling wreck leaves the next spawn where it would be: %s" % [angles]

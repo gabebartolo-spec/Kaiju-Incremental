@@ -21,6 +21,7 @@ const KEYS := {
 	"sun_angular": "float",  # the sun's angular size, degrees (above 0 = soft PCSS shadows)
 	"ssao": "bool",
 	"ssil": "bool",
+	"far_blur": "far_blur",  # the far-only blur's quality (FarDepth); "off" drops it
 	# Counts (R 18.3), frozen at each rampage start (start_run) so nothing pops mid-run:
 	"debris_pool": "int",  # flying debris pieces (CityView's DebrisField)
 	"max_fires": "int",  # fires burning at once (CityView)
@@ -62,6 +63,14 @@ const ENUMS := {
 		"soft_medium": RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM,
 		"soft_high": RenderingServer.SHADOW_QUALITY_SOFT_HIGH,
 		"soft_ultra": RenderingServer.SHADOW_QUALITY_SOFT_ULTRA,
+	},
+	"far_blur":
+	{
+		"off": -1,
+		"very_low": RenderingServer.DOF_BLUR_QUALITY_VERY_LOW,
+		"low": RenderingServer.DOF_BLUR_QUALITY_LOW,
+		"medium": RenderingServer.DOF_BLUR_QUALITY_MEDIUM,
+		"high": RenderingServer.DOF_BLUR_QUALITY_HIGH,
 	},
 	"sun_splits":
 	{
@@ -148,6 +157,11 @@ static func cap(key: String) -> float:
 	if _run_caps.has(key):
 		return Num.f(_run_caps[key])
 	return Num.f(PlayerSettings.graphics_row()[key])
+
+
+## The far blur's DOF quality for a row (RenderingServer.DOFBlurQuality), -1 when it is off.
+static func far_blur(row: Dictionary) -> int:
+	return _enum("far_blur", row)
 
 
 static func _enum(key: String, row: Dictionary) -> int:
