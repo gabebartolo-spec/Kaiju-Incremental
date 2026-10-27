@@ -29,3 +29,11 @@ The day's earlier rulings are in DECISIONS (D-301 to D-330); the night before is
 | 22:0x | "why are there so many trees on top of buildings is that a bug?" then "Yes, find and fix (Recommended)" | trees placed on roofs | rooftop-trees (Sonnet): find the cause, move them to streets and parks, still to him | D-345, doing |
 | 22:0x | "having 2 godot open is cooking the GPU / you gotta do a better jop managing it" | two builders' clips rendered at once | lead: one Godot window at a time PC-wide (C:/kt/gpu_slot.sh, hook-enforced), rulebook + CLAUDE.md | D-340, done |
 | 22:2x | GPU slot scope: "Godot only (Recommended)" | Blender renders and bakes keep sharing the card by VRAM; only Godot windows take turns | lead: rule already reads so (rulebook GPU line), no change | D-346, done |
+| 22:3x | "claw looks soooo much better" | the keyed claw rake opened in his Cascadeur | croc-claw: #332 lands after its smoke fix | #332, in progress |
+| 22:3x | "ask me a lot of questions" | more questions through the question tool | lead: five asked that turn | done |
+| 22:3x | Roof tanks: "Wooden water towers (Recommended)" | the brown roof balls are water tanks | rooftop-trees: water towers, stills to him | D-348, in progress |
+| 22:3x | Next key: "Young croc walk" | the keyer's order after the walk-start | croc-claw: walk-start, then young croc walk | D-349, queued |
+| 22:3x | Clip scope: "Keyed moves only (Recommended)" | keyed moves come as the .casc, game behaviour as a clip | lead: rulebook animation line, builder_common | D-347, done |
+| 22:3x | Dot fade: "Bring the bubble forward" | #238 resumes now | camera-bubble (Opus) | D-350, in progress |
+| 22:4x | "how long will the spped runs need?", "cant we do them on github? or two at a time?", "is there a solution online for this bottleneck?", "is there no other solution?"; picked "Count on GitHub (Recommended)"; start "[No preference]" | speed runs need the PC alone (D-299) | bench-counts (Opus): countable bars to GitHub checks; night runs 01:00 | D-351, in progress |
+| 22:4x | "give me an ordered list of tasks for the next 2 hours, whats already in progress and whats to come" | status | lead: ordered list sent | done |
