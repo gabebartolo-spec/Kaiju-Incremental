@@ -130,3 +130,12 @@ static func worst_collider_ms(phys: CarvePhysics) -> float:
 			var collider: CarveCollider = child
 			worst = maxi(worst, collider.worst_usec)
 	return worst / 1000.0
+
+
+## The slow frames of `wall` (ms per frame): over 16.7 and over 33.4 ms, of all.
+static func print_slow(wall: Array) -> void:
+	var over := [0, 0]
+	for ms: float in wall:
+		over[0] += 1 if ms > 16.7 else 0
+		over[1] += 1 if ms > 33.4 else 0
+	print("  SLOW frames over 16.7 ms %d, over 33.4 ms %d, of %d" % [over[0], over[1], wall.size()])

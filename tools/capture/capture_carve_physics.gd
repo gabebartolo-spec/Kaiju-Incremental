@@ -8,6 +8,7 @@ extends SceneTree
 ##   --scene=swipe   two swipes across a facade: carved-cell debris, nothing falls
 ##   --scene=block   six towers cut at the base at once (drops and topples), the city-wide cap
 ##   --seconds=N  --out=<dir>  --markers (show the blow sphere; off by default)
+##   --no-shots (a speed run)  --off=island_merged,native_colliders (render_opt flags off: the A/B)
 ## CI: tools/capture/ci_capture.sh --movie capture_carve_physics.gd -- --scene=tower --out=<dir>
 @warning_ignore_start("integer_division")
 
@@ -25,6 +26,7 @@ var _scene := "tower"
 var _out := "user://carve_physics"
 var _seconds := 0.0
 var _markers := false  # --markers: show the blow sphere (a test overlay, off by default)
+var _shots := true  # --no-shots: no stills (a speed run: a 4K save is a slow frame)
 var _phys: CarvePhysics
 var _grids: Array[VoxelFrame] = []
 var _views: Array[VIEW_STUB] = []
@@ -67,6 +69,11 @@ func _initialize() -> void:
 			_markers = true
 		elif arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()
+		elif arg == "--no-shots":
+			_shots = false
+		elif arg.begins_with("--off="):
+			for key: String in arg.substr(6).split(","):
+				Content.section("render_opt")[key] = false
 	if _seconds <= 0.0:
 		_seconds = {"tower": 9.0, "swipe": 6.0, "block": 10.0}.get(_scene, 9.0)
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -157,7 +164,7 @@ func _on_frame() -> void:
 	var sim_ms := (Time.get_ticks_usec() - t0) / 1000.0
 	_record(sim_ms)
 	var headless := DisplayServer.get_name() == "headless"
-	if not headless and (_frame % SHOT_EVERY == 0 or not _queue.is_empty()):
+	if _shots and not headless and (_frame % SHOT_EVERY == 0 or not _queue.is_empty()):
 		await RenderingServer.frame_post_draw
 		_shoot(t)
 	if t >= _seconds:
@@ -374,3 +381,5 @@ func _report() -> void:
 	)
 	STAGE.print_holds(_holds)
 	STAGE.print_stats(_stats)
+	var wall: Array = _stats["wall"]
+	STAGE.print_slow(wall)
