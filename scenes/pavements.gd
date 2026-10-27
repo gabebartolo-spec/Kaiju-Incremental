@@ -76,6 +76,19 @@ func ring_nodes() -> PackedVector2Array:
 	return out
 
 
+## Where a walker placed at block `lot`'s `corner` starts: the first corner from there on
+## (round the block, then the next block) with a pavement line round its block (StreetLife).
+func line_start(lot: int, corner: int) -> int:
+	var blocks := nodes.size() >> 2
+	for _try: int in blocks * 4:
+		var from := (lot % blocks) * 4 + corner
+		if links[from].has((from & ~3) + ((from + 1) & 3)):
+			break
+		corner = (corner + 1) % 4
+		lot += 1 if corner == 0 else 0
+	return (lot % blocks) * 4 + corner
+
+
 ## The corner a walker at `here` (come from `from`) heads for next: never straight back unless
 ## it must; fleeing, the one furthest from the kaiju; else round its block or, by CROSS_CHANCE,
 ## across the street (StreetLife's walkers; draws from rng in that order).
