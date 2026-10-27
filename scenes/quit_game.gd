@@ -43,3 +43,14 @@ static func settle_audio(tree: SceneTree) -> void:
 		last = now
 	await tree.process_frame  # the main loop's update frees what the mixes released
 	await tree.process_frame
+
+
+## For a scripted run that is not the game (a test suite, a capture, a bench): as the process quits,
+## cuts the rings of every RampageSim it built and dropped without dispose() (SimTeardown.cut_all),
+## so the exit prints no "ObjectDB instances were leaked" for them (debt row 2). The runner of
+## every suite (tests/lib/runner.gd) and NativeGuard.ok (every capture and bench) call it, so a new
+## test or capture needs nothing. Safe to call twice.
+static func release_sims_at_exit(tree: SceneTree) -> void:
+	var exiting := tree.root.tree_exiting
+	if not exiting.is_connected(SimTeardown.cut_all):
+		exiting.connect(SimTeardown.cut_all, CONNECT_ONE_SHOT)

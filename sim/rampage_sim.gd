@@ -141,6 +141,7 @@ var _events: Array[Dictionary] = []
 func _init(
 	p_stats: Dictionary, tuning: Dictionary, layout: Array[Dictionary], rng: RandomNumberGenerator
 ) -> void:
+	SimTeardown.note(self)  # a run that drops it without dispose() is cut at the exit
 	stats = Growth.stage_stats(p_stats, tuning)
 	army = tuning["army"]
 	city = tuning["city"]

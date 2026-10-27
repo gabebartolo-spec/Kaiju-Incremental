@@ -61,8 +61,12 @@ static func lacking(table: Dictionary = {}) -> Array[String]:
 
 
 ## True when the run may go on. Otherwise prints why, quits with EXIT_CODE and returns false:
-## the caller returns at once.
+## the caller returns at once. It also arranges the exit teardown of the tool's sims
+## (QuitGame.release_sims_at_exit).
 static func ok(tree: SceneTree) -> bool:
+	# Every tool passes through here, so this is also where a tool's sims are cut at its exit: a
+	# RampageSim a capture drops without dispose() would leak at the quit (debt row 2).
+	QuitGame.release_sims_at_exit(tree)
 	if OS.get_environment(OPTIONAL_ENV) == "1":
 		return true
 	var gone := lacking()
