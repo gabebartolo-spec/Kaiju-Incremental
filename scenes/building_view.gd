@@ -30,11 +30,14 @@ var b: RampageSim.Building
 var voxels: BuildingVoxels:
 	get:
 		if _voxels == null:
-			_voxels = _make_voxels()
+			_voxels = voxels_of(b, _base, _party)
 		return _voxels
 var mesher: BuildingMesher
-## The fine-grid view once the building is carved (promote); null while it is on its chunks.
+## The fine-grid view once the building is carved (promote, attach_cells); null while it is on
+## its chunks.
 var cells_view: CellView
+## Whether the fine-grid view draws the building now (show_cells): the baked meshes stay hidden.
+var fine := false
 var _voxels: BuildingVoxels
 var _base: Color
 var _party: Dictionary
@@ -51,7 +54,6 @@ var _slabs: MeshInstance3D
 var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
 var _shell: MeshInstance3D
-var _cells_mat: ShaderMaterial
 ## The landmark ground's mesh arrays until _dress makes its mesh.
 var _ground: Array = []
 
@@ -72,7 +74,7 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 		kept[2] = _generation
 	_baked_lock.unlock()
 	if kept.is_empty():
-		var made := _make_voxels()
+		var made := voxels_of(b, _base, _party)
 		mesher = BuildingMesher.new(made)
 		if b.landmark != "":
 			_voxels = made  # a landmark is few and its ground mesh is drawn below
@@ -115,14 +117,32 @@ func _dress() -> void:
 		_ground = []
 
 
-func _make_voxels() -> BuildingVoxels:
-	if b.is_rail():
-		return RailVoxels.new(b, _base)
-	if b.landmark != "":
-		return LandmarkVoxels.new(b, _base)
-	if b.hazard != "":
-		return HazardVoxels.new(b, _base)  # a red barrel (comments #19)
-	return BuildingVoxels.new(b, _base, _party)
+## A building's fine voxels (pure data: safe on a worker thread).
+static func voxels_of(at: RampageSim.Building, base: Color, party: Dictionary) -> BuildingVoxels:
+	if at.is_rail():
+		return RailVoxels.new(at, base)
+	if at.landmark != "":
+		return LandmarkVoxels.new(at, base)
+	if at.hazard != "":
+		return HazardVoxels.new(at, base)  # a red barrel (comments #19)
+	return BuildingVoxels.new(at, base, party)
+
+
+## Builds this building's voxels anew when called, holding no reference to the view (a worker
+## may call it while the view is streamed out); adopt_voxels hands them back.
+func voxel_maker() -> Callable:
+	return voxels_of.bind(b, _base, _party)
+
+
+## The voxels voxel_maker built (the same data the getter would build): kept, not built again.
+func adopt_voxels(made: BuildingVoxels) -> void:
+	if _voxels == null:
+		_voxels = made
+
+
+## Whether the voxels are built already (the getter would not build them).
+func has_voxels() -> bool:
+	return _voxels != null
 
 
 ## A new city's build starts (BuildingStream): what it uses is marked as its own.
@@ -175,20 +195,42 @@ func set_opacity(value: float) -> void:
 
 ## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
 ## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
-## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6).
+## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6). At once,
+## on the main thread (tests, captures); play goes through CityCarve (attach_cells, show_cells).
 func promote(grid: CellGrid) -> CellView:
 	if cells_view != null:
 		return cells_view
+	attach_cells(CellView.new(CellMesher.new(voxels, grid), grid.cells, cells_material()))
+	show_cells()
+	return cells_view
+
+
+## A material for a fine-grid mesh of this building: the baked shader with every face standing,
+## at the building's fade now. The CellView's, and each falling piece's own (FallFade fades one).
+func cells_material() -> ShaderMaterial:
 	_dress()
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
-	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
-	_cells_mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
-	cells_view = CellView.new(CellMesher.new(voxels, grid), grid.cells, _cells_mat)
-	add_child(cells_view)
+	var mat := _material(ImageTexture.create_from_image(whole))  # every face in chunk 0
+	mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
+	return mat
+
+
+## Adds the fine-grid view, hidden: the baked meshes draw on until show_cells.
+func attach_cells(view: CellView) -> void:
+	_dress()
+	cells_view = view
+	view.visible = false
+	add_child(view)
+
+
+## The fine-grid view draws the building from now on; the baked meshes are hidden (the same
+## frame, so nothing blinks).
+func show_cells() -> void:
+	cells_view.visible = true
 	_shell.visible = false
 	_slabs.visible = false
-	return cells_view
+	fine = true
 
 
 func _material(tex: Texture2D) -> ShaderMaterial:
@@ -266,7 +308,7 @@ func _upload() -> void:
 ## Hides these chunks; returns world positions and colours to throw as debris.
 func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 	_dress()
-	_slabs.visible = true
+	_slabs.visible = not fine
 	var out := _parts(cells)
 	for c: Vector3i in cells:
 		_put_state(c, 0.0)
@@ -281,7 +323,7 @@ func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 ## noise; its arcs (Arcs) come down whole instead.
 func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictionary]:
 	_dress()
-	_slabs.visible = true
+	_slabs.visible = not fine
 	if b.landmark != "":
 		return []
 	var bitten: Array[Vector3i] = []

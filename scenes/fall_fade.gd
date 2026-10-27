@@ -51,6 +51,9 @@ func update(pieces: Array[Node3D], eye: Vector3, sight: PackedVector3Array, delt
 
 static func _apply(piece: Node3D, value: float) -> void:
 	for child: Node in piece.get_children():
+		if child is CellView:
+			(child as CellView).set_opacity(value)  # a fine-grid piece (CityCarve)
+			continue
 		var mi := child as MeshInstance3D
 		if mi != null and mi.material_override is ShaderMaterial:
 			(mi.material_override as ShaderMaterial).set_shader_parameter("opacity", value)

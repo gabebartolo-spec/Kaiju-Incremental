@@ -309,8 +309,8 @@ func _on_event(event: Dictionary) -> void:
 		"chunks_broken":
 			var cells: Array[Vector3i] = event["cells"]
 			_on_chunks_broken(Num.i(event["building"]), cells, Num.f(event.get("pay", 1.0)))
-		"fall_start":
-			_city.fall_start(event)
+		"fall_start", "cells_promoted", "cells_carved":
+			_city.on_cells(event)
 		"fall_land":
 			_city.fall_land(event)
 			sfx.collapse(str(event["kind"]) == "topple")

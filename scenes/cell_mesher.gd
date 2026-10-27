@@ -27,6 +27,8 @@ var salt: int
 var noise: float
 ## Per cell, the palette index it draws with: its material id, or LIT/SHOP_LIT.
 var looks: PackedByteArray
+## Grid indices of the cells the view never draws (drawn()): a balcony floor proud of the walls.
+var hidden := PackedInt32Array()
 ## Look id -> colour (sRGB; alpha 0 = glows), 256 entries.
 var palette: PackedColorArray
 ## The native mesher when the extension is loaded (null: the GDScript path).
@@ -52,14 +54,18 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 	palette[LIT] = voxels.palette["lit"]
 	palette[SHOP_LIT] = voxels.palette["shop_lit"]
 	looks = cells.cells.duplicate()
+	var foot := Rect2i(Vector2i.ZERO, Vector2i(voxels.b.w, voxels.b.d) * BuildingVoxels.RES)
 	for i: int in looks.size():
 		if looks[i] == 0:
 			continue
-		var key := voxels.vox.key_at(_local(i))
+		var local := _local(i)
+		var key := voxels.vox.key_at(local)
 		if key == "lit":
 			looks[i] = LIT
 		elif key == "shop_lit":
 			looks[i] = SHOP_LIT
+		elif key == "slab" and not foot.has_point(Vector2i(local.x, local.z)):
+			hidden.append(i)
 	var half := voxel * 0.5
 	for d: Vector3i in NEIGHBOURS:
 		var nf := Vector3(d)
@@ -71,6 +77,19 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 	if use_native and ClassDB.class_exists("KaijuMesher"):
 		native = ClassDB.instantiate("KaijuMesher")
 		native.call("setup", dims, offset, origin, voxel, salt, noise, looks, palette)
+
+
+## The grid as the view draws it: `cells` with the hidden cells as air. A slab proud of the walls
+## (a balcony floor) is in neither of the baked view's meshes (D-289), so promotion must not pop
+## it in; the sim still holds it, and the wall behind it draws its own face, as the baked shell's
+## does.
+func drawn(cells: PackedByteArray) -> PackedByteArray:
+	if hidden.is_empty():
+		return cells
+	var out := cells.duplicate()
+	for i: int in hidden:
+		out[i] = 0
+	return out
 
 
 ## Regions along each axis.

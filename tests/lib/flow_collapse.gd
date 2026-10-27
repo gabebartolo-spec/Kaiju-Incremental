@@ -1,6 +1,6 @@
 extends RefCounted
 ## The flow suite's mass-collapse checks (rooftops #63 CI run 39109733215, a Behemoth city: 133
-## "axis must be normalized" errors from CityView._animate_falls and 171 collapse sounds in two
+## "axis must be normalized" errors from CityFalls.animate and 171 collapse sounds in two
 ## frames). A topple whose direction came out zero (the sim rounds a tiny overhang to none) still
 ## turns over, and a burst of landings plays at most tuning "sfx" "collapse_per_frame" collapse
 ## sounds a frame. A dropped part that lands crumbles into the street over "topple_fx"
@@ -52,7 +52,7 @@ static func _check_still_topple(check: Callable, rampage: Rampage) -> void:
 	)
 	var fall: Dictionary = city._falling[ID]
 	var piece: Node3D = fall["node"]
-	city._animate_falls(0.5)
+	city._falls.animate(0.5)
 	var turned := piece.basis.get_rotation_quaternion().get_angle()
 	check.call(
 		turned > 0.1 and piece.basis.is_conformal(),
@@ -92,7 +92,7 @@ static func _check_drop_crumbles(check: Callable, rampage: Rampage) -> void:
 	}
 	city.fall_start(start)
 	var piece: Node3D = city._falling[ID + 1]["node"]
-	city._animate_falls(0.2)
+	city._falls.animate(0.2)
 	city.fall_land({"id": ID + 1, "kind": "drop", "building": index})
 	var landed := is_instance_valid(piece) and not piece.is_queued_for_deletion()
 	var span := Num.f(Content.section("topple_fx")["drop_crumble_s"])

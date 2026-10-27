@@ -10,7 +10,6 @@ scenes/city_environment.gd::attach 47 2
 scenes/city_greenery.gd::_park_garden 43 12
 scenes/city_greenery.gd::_yards 45 11
 scenes/city_greenery.gd::kerb_spots 73 22
-scenes/city_view.gd::_ready 43 11
 scenes/diagonal_parking.gd::park 40 14
 scenes/evolution_reveal.gd::_ready 42 2
 scenes/fx.gd::_ready 51 2
