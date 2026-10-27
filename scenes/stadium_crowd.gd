@@ -110,28 +110,10 @@ func _init(p_sim: RampageSim, index: int, kits: Array, rng: RandomNumberGenerato
 	_half = Vector2(b.w, b.d) * 0.5
 	_corner = _centre - _half
 	_reach = _half.length()
-	var v := BuildingVoxels.VOXEL
-	var origin := Vector3(_corner.x + v * 0.5, 0.0, _corner.y + v * 0.5)
 	var neutral: Array = _cfg["neutral"]
 	var outfits := CrowdBuild.outfits(kits, neutral)
-	var share := Num.f(_cfg["team_share"])
-	var skins := StadiumMatch.SKINS.size()
-	for cell: Vector3i in CrowdBuild.seats(LandmarkVoxels.voxels(b.landmark), _cfg, _rng):
-		var fan := Fan.new()
-		fan.pos = origin + Vector3(cell.x, cell.y + 1, cell.z) * v
-		var shirt := (
-			_rng.randi_range(0, kits.size() - 1)
-			if _rng.randf() < share
-			else _rng.randi_range(kits.size(), kits.size() + neutral.size() - 1)
-		)
-		fan.outfit = shirt * skins + _rng.randi_range(0, skins - 1)
-		fans.append(fan)
-		var c := _chunk(fan.pos)
-		if b.frame.inside(c):
-			var at := b.frame.index(c)
-			var seated: Array = _hosts.get(at, [])
-			seated.append(fan)
-			_hosts[at] = seated
+	fans = CrowdBuild.sit(b, kits, _cfg, _rng)
+	_hosts = CrowdBuild.hosts(fans, b.frame, _corner)
 	_built = b.frame.standing().duplicate()
 	_whole = b.frame.alive_count
 	_left = fans.size()
@@ -159,18 +141,7 @@ func panic(_kaiju: Vector2) -> void:
 	_since = 0.0
 	for o: int in _static.size():
 		_static[o].mesh = _standing[o]
-	var speed := Num.f(_cfg["flee_speed"])
-	var delay := Num.f(_cfg["flee_delay"])
-	var exit_r := Num.f(_cfg["exit_r"])
-	var sink := Num.f(_cfg["sink"])
-	for fan: Fan in fans:
-		if fan.state != State.SEATED:
-			continue
-		fan.state = State.UP
-		fan.leaves = fmod(fan.slot * GOLDEN, 1.0) * delay
-		fan.run = _run_out(fan, exit_r)
-		fan.out_at = fan.leaves + (fan.run + sink) / speed
-		_queue.append(fan)
+	_queue.append_array(CrowdBuild.rise(fans, _cfg, _centre, _half))
 	_by_leave = _queue.duplicate()
 	_by_leave.sort_custom(func(a: Fan, b: Fan) -> bool: return a.leaves < b.leaves)
 	_queue.sort_custom(func(a: Fan, b: Fan) -> bool: return a.out_at < b.out_at)
@@ -282,15 +253,7 @@ func _sweep(frame: Structure) -> void:
 
 ## A fan's stand has gone from under it at `at`: it falls to what stands below, or the ground.
 func _down(frame: Structure, hp: PackedFloat32Array, fan: Fan, at: Vector3) -> void:
-	var c := _chunk(at)
-	var land := 0
-	if frame.inside(c):
-		var plan := frame.w * frame.d
-		var col := c.x + c.z * frame.w
-		for y: int in range(mini(c.y, frame.h) - 1, -1, -1):
-			if hp[col + y * plan] > 0.0:
-				land = y + 1
-				break
+	var land := CrowdBuild.land(frame, hp, _chunk(at))
 	_die(fan, at, minf(float(land), at.y))
 	fallen += 1
 
@@ -337,21 +300,8 @@ func _gone(fan: Fan) -> void:
 	_left -= 1
 
 
-## How far a fan runs, straight out from the middle, to normalised radius exit_r (as the
-## shader does): the root of |q + d m| = exit_r, q its seat and d its direction over the half size.
-func _run_out(fan: Fan, exit_r: float) -> float:
-	var at := Vector2(fan.pos.x, fan.pos.z) - _centre
-	var q := at / _half
-	var d := at.normalized() / _half
-	var a := d.dot(d)
-	var b := q.dot(d)
-	var c := q.dot(q) - exit_r * exit_r
-	return maxf(0.0, (-b + sqrt(maxf(0.0, b * b - a * c))) / a)
-
-
 func _chunk(at: Vector3) -> Vector3i:
-	var v := BuildingVoxels.VOXEL
-	return Vector3i(floori(at.x - _corner.x), floori(at.y - v * 0.5), floori(at.z - _corner.y))
+	return CrowdBuild.chunk(at, _corner)
 
 
 ## One static MultiMesh per outfit, every fan's seat written once, and its standing mesh for
@@ -362,34 +312,10 @@ func _build(outfits: Array[Dictionary]) -> void:
 	for fan: Fan in fans:
 		fan.slot = per[fan.outfit].size()
 		per[fan.outfit].append(fan)
+	_mat = CrowdBuild.material(_cfg, _sim.city, _centre, _half)
 	var voxel := Num.f(Content.section("street")["person_voxel"])
-	_mat = ShaderMaterial.new()
-	_mat.shader = SHADER
-	_mat.set_shader_parameter("bob", Num.f(_cfg["bob"]))
-	var hz: Array = _cfg["bob_hz"]
-	_mat.set_shader_parameter("bob_hz", Vector2(Num.f(hz[0]), Num.f(hz[1])))
-	_mat.set_shader_parameter("centre", _centre)
-	_mat.set_shader_parameter("half_size", _half)
-	_mat.set_shader_parameter("exit_r", Num.f(_cfg["exit_r"]))
-	_mat.set_shader_parameter("speed", Num.f(_cfg["flee_speed"]))
-	_mat.set_shader_parameter("slope", Num.f(_cfg["flee_slope"]))
-	_mat.set_shader_parameter("delay", Num.f(_cfg["flee_delay"]))
-	_mat.set_shader_parameter("sink", Num.f(_cfg["sink"]))
-	_mat.set_shader_parameter("fall_g", Num.f(_sim.city["fall_gravity"]))
-	_mat.set_shader_parameter("shrink", Num.f(_cfg["shrink"]))
-	_mat.set_shader_parameter("topple", TOPPLE)
 	for o: int in outfits.size():
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.use_custom_data = true
-		mm.mesh = VoxelPerson.seated(outfits[o], voxel)
-		mm.instance_count = maxi(1, per[o].size())
-		mm.buffer = CrowdBuild.transforms(per[o], mm.instance_count, _centre)
-		mm.visible_instance_count = per[o].size()
-		_static.append(mm)
+		var holder := CrowdBuild.holder(outfits[o], per[o], _mat, _centre)
+		_static.append(holder.multimesh)
 		_standing.append(VoxelPerson.dressed(outfits[o], VoxelPerson.Pose.RUN_A, voxel))
-		var mmi := MultiMeshInstance3D.new()
-		mmi.multimesh = mm
-		mmi.material_override = _mat
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # a third of their cost
-		add_child(mmi)
+		add_child(holder)

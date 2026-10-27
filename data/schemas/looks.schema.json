@@ -232,6 +232,12 @@
           "river": {"$ref": "#/$defs/str"},
           "ambient_color": {"$ref": "#/$defs/hex6"},
           "lamp_energy": {"$ref": "#/$defs/num"},
+          "voxel_ao_on": {"$ref": "#/$defs/bool"},
+          "voxel_ao_strength": {"$ref": "#/$defs/num"},
+          "voxel_ao_light_affect": {"$ref": "#/$defs/num"},
+          "finish_on": {"$ref": "#/$defs/bool"},
+          "finish_roughness": {"$ref": "#/$defs/finish"},
+          "finish_specular": {"$ref": "#/$defs/finish"},
           "agx_contrast": {"$ref": "#/$defs/num"},
           "post_contrast": {"$ref": "#/$defs/num"},
           "deband": {"$ref": "#/$defs/bool"},
@@ -251,7 +257,9 @@
           "ground_damp", "ground_streak", "ground_soil", "ground_paving", "ground_band_h",
           "ground_night_floor", "ground_lamp_pool", "styles", "roof", "window", "window_lit_color",
           "window_palette_on", "window_lit_palette", "window_lit_gain",
-          "outskirts", "asphalt", "lot", "water", "river", "ambient_color", "lamp_energy"
+          "outskirts", "asphalt", "lot", "water", "river", "ambient_color", "lamp_energy",
+          "voxel_ao_on", "voxel_ao_strength", "voxel_ao_light_affect", "finish_on",
+          "finish_roughness", "finish_specular"
         ],
         "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
         "additionalProperties": false
@@ -266,6 +274,12 @@
     "int": {"type": "integer"},
     "num": {"type": "number"},
     "str": {"type": "string"},
-    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"}
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"},
+    "finish": {
+      "type": "object",
+      "properties": {"rough": {"$ref": "#/$defs/num"}, "glass": {"$ref": "#/$defs/num"}, "metal": {"$ref": "#/$defs/num"}},
+      "required": ["rough", "glass", "metal"],
+      "additionalProperties": false
+    }
   }
 }

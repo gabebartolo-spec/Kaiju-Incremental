@@ -44,6 +44,10 @@ func _initialize() -> void:
 			_show_kaiju = true
 		elif arg.begins_with("--turn="):
 			_turn = arg.substr(7).to_float()
+		elif arg.begins_with("--remesh_high_priority="):
+			# Render plan item 9 A/B: tuning render_opt.remesh_high_priority for this run.
+			var on := arg.substr(23) == "true"
+			Content.section("render_opt")["remesh_high_priority"] = on
 	_run.call_deferred()
 
 

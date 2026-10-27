@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 ## save. Seeded by design: hand-placed buildings, Seeds "army" 0, the kaiju parked at the centre.
 ##   godot --headless --path . --script tests/run_death_tests.gd
 
+const ChunkCheck := preload("res://tests/lib/chunk_check.gd")
 const DT := 1.0 / 15.0
 const BANNED: Array[String] = ["Time.", "OS.", "randomize", "Node", "await"]
 const SAVE_SLOT := 3
@@ -25,6 +26,7 @@ func run_checks() -> void:
 	await _t("_check_deaths_and_falls")
 	await _t("_check_replay")
 	await _t("_check_nodes_saved")
+	await _t("_check_chunks_jagged")
 
 
 ## A carpet of low 2x2 blocks round the centre (where the shards come down) and rings of taller
@@ -316,3 +318,28 @@ func _check_nodes_saved() -> void:
 		"a loaded save blasts the node 3 ring: %.1f" % sim.death.blast_radius
 	)
 	SaveFile.delete_save(SAVE_SLOT)
+
+
+## He breaks into jagged stone chunks, never cubes (director 2026-10-27, D-323): the cube test
+## catches each planted box, and every chunk mesh the death loads (tuning death.look.chunks) passes
+## it: 8 or more faces, under half its area square to its axes or to any three square directions,
+## its longest side 1 (the game sizes it). Sizes in a real death: ChunkCheck.check_view (onelook).
+func _check_chunks_jagged() -> void:
+	var planted := ChunkCheck.planted()
+	for label: String in planted:
+		var box: Mesh = planted[label]
+		var why := ChunkCheck.boxy(box)
+		check(
+			why.contains(label), "the cube test catches a planted box by its %s: %s" % [label, why]
+		)
+	var paths: Array = Content.section("death")["look"]["chunks"]
+	check(paths.size() >= 5, "a set of chunk meshes: %d" % paths.size())
+	for path: String in paths:
+		var mesh: Mesh = load(path)
+		var why := "missing" if mesh == null else ChunkCheck.boxy(mesh)
+		check(
+			why == "" and not mesh is BoxMesh, "%s is a jagged chunk, not a box: %s" % [path, why]
+		)
+		if mesh != null:
+			var side := mesh.get_aabb().get_longest_axis_size()
+			check(absf(side - 1.0) < 0.02, "%s: longest side 1: %.3f" % [path, side])

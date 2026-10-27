@@ -13,9 +13,10 @@
           "name": {"$ref": "#/$defs/str"},
           "strength": {"$ref": "#/$defs/num"},
           "debris": {"$ref": "#/$defs/str"},
-          "fixture": {"$ref": "#/$defs/bool"}
+          "fixture": {"$ref": "#/$defs/bool"},
+          "finish": {"enum": ["rough", "glass", "metal"]}
         },
-        "required": ["id", "name", "strength", "debris", "fixture"],
+        "required": ["id", "name", "strength", "debris", "fixture", "finish"],
         "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
         "additionalProperties": false
       }
