@@ -103,30 +103,13 @@ func _run_city(leap: bool) -> Dictionary:
 		more += 1
 	sim.step(DT, north, false, BUTTON if leap else 0)
 	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
-	var d := sim.body.dash
-	var dbg: Array = [d.from, d.to, d.target, d.arc.top, d.arc.carve, d.shoulder_y()]
-	dbg.append(d.arc._overlaps(d.from, d.dir).keys())
-	for n: int in roundi(FIXTURE_WATCH_S / DT):
-		var flying := d.phase() == "flight"
+	for _n: int in roundi(FIXTURE_WATCH_S / DT):
+		var flying := sim.body.dash.phase() == "flight"
 		var was := sim.body.broken
-		var alive: Array[int] = []
-		for bb: RampageSim.Building in sim.buildings:
-			alive.append(bb.frame.alive_count)
 		sim.step(DT, north, false, 0)
-		if flying and d.phase() == "flight":
+		if flying and sim.body.dash.phase() == "flight":
 			in_flight += sim.body.broken - was
-			var ins := sim.body.inside(sim.kaiju_pos, sim.body.heading)
-			in_flight += ins.size()
-			var hit: Array = []
-			for i: int in sim.buildings.size():
-				if sim.buildings[i].frame.alive_count < alive[i]:
-					hit.append([i, alive[i] - sim.buildings[i].frame.alive_count])
-			if not hit.is_empty() or ins.size() > 0:
-				dbg.append([n, snappedf(d.height(), 0.01), sim.kaiju_pos, hit, ins.keys()])
-	for i: int in [157, 160, 164]:
-		var bb := sim.buildings[i]
-		dbg.append([i, bb.x, bb.z, bb.w, bb.d, bb.height, bb.frame.alive_count])
-	print("LEAPDBG ", dbg)
+			in_flight += sim.body.inside(sim.kaiju_pos, sim.body.heading).size()
 	return {
 		"in_flight": in_flight,
 		"roof": sim.body.dash.arc.land_y,
@@ -136,7 +119,6 @@ func _run_city(leap: bool) -> Dictionary:
 		"rubble": snappedf(sim.rubble, 0.001),
 		"at": sim.kaiju_pos.snapped(Vector2(0.001, 0.001)),
 		"walked_on": more,
-		"dbg": dbg,
 	}
 
 
@@ -163,11 +145,21 @@ func _watch_leap(sim: RampageSim, b: RampageSim.Building) -> Dictionary:
 
 
 ## True when a roof the croc can land on (D-361: at its shoulder or lower) is ahead along `dir`
-## and its body overlaps no standing building (a leap from among them carves them, D-268).
+## and no standing building lies within its body's discs: LeapArc skips those at take-off (it
+## stands among them) and the flight carves them (D-268), so a leap there is not a clear arc.
 func _clear_roof_ahead(sim: RampageSim, dir: Vector2) -> bool:
 	if Num.f(sim.body.dash.aim_at(sim.kaiju_pos, dir)["roof"]) <= 0.0:
 		return false
-	return sim.body.inside(sim.kaiju_pos, sim.body.heading).is_empty()
+	var s := sim.body_scale()
+	for d: Array in sim.body.discs():
+		var c := sim.kaiju_pos + dir * Num.f(d[0]) * s
+		for b: RampageSim.Building in sim.buildings:
+			var gap := Vector2(
+				maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
+			)
+			if b.frame.alive_count > 0 and gap.length() < Num.f(d[1]) * s:
+				return false
+	return true
 
 
 ## The drawn model's shoulder as a share of its height at the sim's growth stage: the shoulder
