@@ -277,10 +277,11 @@ func _read_deck() -> void:
 				break_track(at)
 
 
-## Building n is a piece of the line (RampageSim builds them from RailLayout).
-func add_piece(n: int) -> void:
-	pieces.append(n)
-	_alive_seen[n] = _sim.buildings[n].frame.alive_count
+## The buildings from `first` on are pieces of the line (RampageSim builds them from RailLayout).
+func add_pieces(first: int) -> void:
+	for n: int in range(first, _sim.buildings.size()):
+		pieces.append(n)
+		_alive_seen[n] = _sim.buildings[n].frame.alive_count
 
 
 ## The viaduct's x centre (the deck and the station are built round it).

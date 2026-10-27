@@ -175,8 +175,7 @@ func _init(
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
 	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
-	for n: int in range(rail_from, buildings.size()):
-		rail.add_piece(n)
+	rail.add_pieces(rail_from)
 	news = RunNews.new(self, tuning)
 	death = DeathOverload.new(self, tuning, Seeds.derive(rng, 0xDEAD))
 	var strike_cfg: Dictionary = tuning["strike"]
