@@ -13,7 +13,8 @@ extends RefCounted
 ##  - topple(): Structure._topple_check per grounded part: the lowest level whose load (the
 ##    part's cells at or above it) has its centre of mass outside the box of the structural
 ##    cells there standing on a structural cell below (fixtures weigh but hold nothing).
-## Centres of mass are compared in integers (sums of 2x + 1), so the outcome is exact.
+## Centres of mass are compared in integers (sums of 2x + 1), so the outcome is exact (the rule
+## itself is VoxelTopple's).
 
 ## The native flood (native/src/kaiju_settle.cpp, KaijuSettle) does the whole-grid passes of this
 ## class when the extension is loaded, and gives what the GDScript below gives, which stays the
@@ -28,6 +29,7 @@ var count := 0
 var _f: VoxelFrame
 var _cells: PackedByteArray
 var _fix: PackedByteArray
+var _solid := PackedByteArray()  # per material id: 1 when structural (not empty, not a fixture)
 var _plan: int
 
 
@@ -43,6 +45,9 @@ func _init(frame: VoxelFrame) -> void:
 		count = got[1]
 		return
 	labels.resize(_cells.size())
+	_solid.resize(256)
+	for m: int in range(1, 256):
+		_solid[m] = 1 if _fix[m] == 0 else 0
 	var stack := PackedInt32Array()
 	stack.resize(_cells.size())
 	for start: int in _plan:
@@ -70,53 +75,59 @@ func _dims() -> Vector3i:
 
 
 ## Floods `label` over every structural unlabelled cell joined to stack[0] (iterative, packed stack;
-## the six neighbours written out: an array per cell costs the flood about a third more).
+## the neighbours written out: an array per cell costs the flood about a third more).
 func _flood(stack: PackedInt32Array, label: int) -> void:
-	var w := _f.w
-	var d := _f.d
-	var h := _f.h
-	var plan := _plan
 	var top := 1
 	while top > 0:
 		top -= 1
 		var i := stack[top]
-		var x := i % w
-		var z := (i / w) % d
-		var y := i / plan
-		if x > 0 and labels[i - 1] == 0 and _cells[i - 1] != 0 and _fix[_cells[i - 1]] == 0:
-			labels[i - 1] = label
-			stack[top] = i - 1
-			top += 1
-		if x < w - 1 and labels[i + 1] == 0 and _cells[i + 1] != 0 and _fix[_cells[i + 1]] == 0:
-			labels[i + 1] = label
-			stack[top] = i + 1
-			top += 1
-		if z > 0 and labels[i - w] == 0 and _cells[i - w] != 0 and _fix[_cells[i - w]] == 0:
-			labels[i - w] = label
-			stack[top] = i - w
-			top += 1
-		if z < d - 1 and labels[i + w] == 0 and _cells[i + w] != 0 and _fix[_cells[i + w]] == 0:
-			labels[i + w] = label
-			stack[top] = i + w
-			top += 1
-		if (
-			y > 0
-			and labels[i - plan] == 0
-			and _cells[i - plan] != 0
-			and _fix[_cells[i - plan]] == 0
-		):
-			labels[i - plan] = label
-			stack[top] = i - plan
-			top += 1
-		if (
-			y < h - 1
-			and labels[i + plan] == 0
-			and _cells[i + plan] != 0
-			and _fix[_cells[i + plan]] == 0
-		):
-			labels[i + plan] = label
-			stack[top] = i + plan
-			top += 1
+		top = _spread_x(stack, top, i, label)
+		top = _spread_z(stack, top, i, label)
+		top = _spread_y(stack, top, i, label)
+
+
+## Labels and pushes the structural unlabelled neighbours of cell `i` along x (x - 1, x + 1);
+## returns the new top of the stack.
+func _spread_x(stack: PackedInt32Array, top: int, i: int, label: int) -> int:
+	var x := i % _f.w
+	if x > 0 and labels[i - 1] == 0 and _solid[_cells[i - 1]] != 0:
+		labels[i - 1] = label
+		stack[top] = i - 1
+		top += 1
+	if x < _f.w - 1 and labels[i + 1] == 0 and _solid[_cells[i + 1]] != 0:
+		labels[i + 1] = label
+		stack[top] = i + 1
+		top += 1
+	return top
+
+
+## As _spread_x, along z (z - 1, z + 1).
+func _spread_z(stack: PackedInt32Array, top: int, i: int, label: int) -> int:
+	var w := _f.w
+	var z := (i / w) % _f.d
+	if z > 0 and labels[i - w] == 0 and _solid[_cells[i - w]] != 0:
+		labels[i - w] = label
+		stack[top] = i - w
+		top += 1
+	if z < _f.d - 1 and labels[i + w] == 0 and _solid[_cells[i + w]] != 0:
+		labels[i + w] = label
+		stack[top] = i + w
+		top += 1
+	return top
+
+
+## As _spread_x, along y (y - 1, y + 1).
+func _spread_y(stack: PackedInt32Array, top: int, i: int, label: int) -> int:
+	var y := i / _plan
+	if y > 0 and labels[i - _plan] == 0 and _solid[_cells[i - _plan]] != 0:
+		labels[i - _plan] = label
+		stack[top] = i - _plan
+		top += 1
+	if y < _f.h - 1 and labels[i + _plan] == 0 and _solid[_cells[i + _plan]] != 0:
+		labels[i + _plan] = label
+		stack[top] = i + _plan
+		top += 1
+	return top
 
 
 ## Joins each fixture to a grounded part: scan order, a fixture touching a labelled cell takes
@@ -127,12 +138,7 @@ func _attach_fixtures(stack: PackedInt32Array) -> void:
 		var m := _cells[start]
 		if m == VoxelFrame.EMPTY or _fix[m] == 0 or labels[start] != 0:
 			continue
-		var label := 0
-		var ring := _ring(start)
-		for r: int in range(0, ring.size(), 2):
-			if labels[ring[r]] > 0:
-				label = labels[ring[r]]
-				break
+		var label := _fixture_label(start)
 		if label == 0:
 			# Lead rule (#97): a fixture on grid layer 0 is grounded though it touches nothing else
 			# (a ground-floor shopfront rests on the street).
@@ -141,17 +147,31 @@ func _attach_fixtures(stack: PackedInt32Array) -> void:
 			count += 1
 			label = count
 		labels[start] = label
-		stack[0] = start
-		var top := 1
-		while top > 0:
-			top -= 1
-			var around := _ring(stack[top])
-			for r: int in range(0, around.size(), 2):
-				var n := around[r]
-				if labels[n] == 0 and _cells[n] != VoxelFrame.EMPTY and _fix[_cells[n]] != 0:
-					labels[n] = label
-					stack[top] = n
-					top += 1
+		_flood_fixtures(stack, start, label)
+
+
+## The label of the first labelled cell round fixture `start` (ring order), or 0 when none.
+func _fixture_label(start: int) -> int:
+	var ring := _ring(start)
+	for r: int in range(0, ring.size(), 2):
+		if labels[ring[r]] > 0:
+			return labels[ring[r]]
+	return 0
+
+
+## Floods `label` from fixture `start` over the unlabelled fixtures it touches (26 neighbours).
+func _flood_fixtures(stack: PackedInt32Array, start: int, label: int) -> void:
+	stack[0] = start
+	var top := 1
+	while top > 0:
+		top -= 1
+		var around := _ring(stack[top])
+		for r: int in range(0, around.size(), 2):
+			var n := around[r]
+			if labels[n] == 0 and _cells[n] != VoxelFrame.EMPTY and _fix[_cells[n]] != 0:
+				labels[n] = label
+				stack[top] = n
+				top += 1
 
 
 ## The 26 neighbours of cell `i` inside the grid, as pairs [index, 1 if it shares a face].
@@ -181,37 +201,44 @@ func islands() -> Array[PackedInt32Array]:
 		var got: Array = nat.call("islands", labels, _cells, _fix, _dims(), _f.has_fixtures)
 		out.assign(got)
 		return out
-	var w := _f.w
-	var d := _f.d
-	var h := _f.h
 	for start: int in _cells.size():
-		if _cells[start] == VoxelFrame.EMPTY or labels[start] != 0:
-			continue
-		var part := PackedInt32Array([start])
-		labels[start] = -1
-		var k := 0
-		while k < part.size():
-			var i := part[k]
-			k += 1
-			if _f.has_fixtures:
-				_join(i, part)
-				continue
-			var x := i % w
-			var z := (i / w) % d
-			var y := i / _plan
-			for n: int in [
-				i - 1 if x > 0 else -1,
-				i + 1 if x < w - 1 else -1,
-				i - w if z > 0 else -1,
-				i + w if z < d - 1 else -1,
-				i - _plan if y > 0 else -1,
-				i + _plan if y < h - 1 else -1,
-			]:
-				if n >= 0 and labels[n] == 0 and _cells[n] != VoxelFrame.EMPTY:
-					labels[n] = -1
-					part.append(n)
-		out.append(part)
+		if _cells[start] != VoxelFrame.EMPTY and labels[start] == 0:
+			out.append(_grow(start))
 	return out
+
+
+## The island holding cell `start`, its cells in flood order, marked -1.
+func _grow(start: int) -> PackedInt32Array:
+	var part := PackedInt32Array([start])
+	labels[start] = -1
+	var k := 0
+	while k < part.size():
+		var i := part[k]
+		k += 1
+		if _f.has_fixtures:
+			_join(i, part)
+		else:
+			_join_faces(i, part)
+	return part
+
+
+## Adds to `part` the unclaimed cells sharing a face with `i` (a grid with no fixtures).
+func _join_faces(i: int, part: PackedInt32Array) -> void:
+	var w := _f.w
+	var x := i % w
+	var z := (i / w) % _f.d
+	var y := i / _plan
+	for n: int in [
+		i - 1 if x > 0 else -1,
+		i + 1 if x < w - 1 else -1,
+		i - w if z > 0 else -1,
+		i + w if z < _f.d - 1 else -1,
+		i - _plan if y > 0 else -1,
+		i + _plan if y < _f.h - 1 else -1,
+	]:
+		if n >= 0 and labels[n] == 0 and _cells[n] != VoxelFrame.EMPTY:
+			labels[n] = -1
+			part.append(n)
 
 
 ## Adds to `part` the unclaimed neighbours of `i` it is joined to: a face, or any touch when
@@ -232,15 +259,7 @@ func _join(i: int, part: PackedInt32Array) -> void:
 func landing(part: PackedInt32Array) -> Dictionary:
 	var nat := VoxelSupport.native()
 	if nat != null:
-		var r: PackedInt64Array = nat.call("land", part, _f.cells, _dims())
-		var at := _tip(
-			PackedInt64Array([r[0], r[1], r[2]]), Rect2i(r[3], r[4], r[5] - r[3], r[6] - r[4]), r[7]
-		)
-		return (
-			at
-			if not at.is_empty()
-			else {"kind": "drop", "pivot": Vector3.ZERO, "dir": Vector2i.ZERO}
-		)
+		return _land_native(nat, part)
 	var low: Dictionary = {}
 	var sums := PackedInt64Array([0, 0, part.size()])
 	for i: int in part:
@@ -267,9 +286,20 @@ func landing(part: PackedInt32Array) -> Dictionary:
 			box = at if box.size == Vector2i.ZERO else box.merge(at)
 			lands = mini(lands, bottom - least)
 	var tip := _tip(sums, box, lands)
-	if tip.is_empty():
-		return {"kind": "drop", "pivot": Vector3.ZERO, "dir": Vector2i.ZERO}
-	return tip
+	return tip if not tip.is_empty() else _plain_drop()
+
+
+## KaijuSettle's landing of `part` (its lowest cells per column), read as landing() reads its own.
+func _land_native(nat: Object, part: PackedInt32Array) -> Dictionary:
+	var r: PackedInt64Array = nat.call("land", part, _f.cells, _dims())
+	var at := _tip(
+		PackedInt64Array([r[0], r[1], r[2]]), Rect2i(r[3], r[4], r[5] - r[3], r[6] - r[4]), r[7]
+	)
+	return at if not at.is_empty() else _plain_drop()
+
+
+static func _plain_drop() -> Dictionary:
+	return {"kind": "drop", "pivot": Vector3.ZERO, "dir": Vector2i.ZERO}
 
 
 ## The lowest toppling level of each grounded part, as {kind, pivot, dir, label, level}.
@@ -282,119 +312,18 @@ func topple() -> Array[Dictionary]:
 	var sx: PackedInt64Array = floors["sx"]
 	var sz: PackedInt64Array = floors["sz"]
 	var box: PackedInt32Array = floors["box"]
-	return scan_levels(mass, sx, sz, box, count, _f.h, _f.offset, _f.res)
+	return VoxelTopple.scan_levels(mass, sx, sz, box, count, _f.h, _f.offset, _f.res)
 
 
-## The topple rule over per-part, per-level loads (the layout _floors documents), for `parts`
-## grounded parts in a grid `h` cells tall whose cell 0 is building-local `offset` at `res`
-## cells a unit.
-static func scan_levels(
-	mass: PackedInt64Array,
-	sx: PackedInt64Array,
-	sz: PackedInt64Array,
-	box: PackedInt32Array,
-	parts: int,
-	h: int,
-	offset: Vector3i,
-	res: int
-) -> Array[Dictionary]:
-	var out: Array[Dictionary] = []
-	for k: int in parts:
-		for level: int in range(1, h):
-			var at := k * (h + 1) + level
-			if mass[at] == 0:
-				break
-			var b := (k * h + level) * 4
-			if box[b + 2] < 0:
-				continue  # nothing stands on a cell below at this level
-			var rect := Rect2i(box[b], box[b + 1], box[b + 2] - box[b], box[b + 3] - box[b + 1])
-			var tip := tip_of(
-				PackedInt64Array([sx[at], sz[at], mass[at]]), rect, level, offset, res
-			)
-			if not tip.is_empty():
-				tip["label"] = k + 1
-				tip["level"] = level
-				out.append(tip)
-				break
-	return out
-
-
-## Per grounded part and level: the load at or above it (mass, sums of 2x + 1 and 2z + 1, at
-## k * (h + 1) + y) and the box [x0, z0, x1, z1) of its cells standing on a cell below (at
-## (k * h + y) * 4; x1 < 0 when there are none).
+## Per grounded part and level, the loads and support boxes (VoxelTopple.floors documents the
+## layout): from the native pass, or the GDScript reference.
 func _floors() -> Dictionary:
 	var nat := VoxelSupport.native()
 	if nat != null:
 		return nat.call("floors", labels, _cells, _fix, _dims(), count)
-	var w := _f.w
-	var d := _f.d
-	var h := _f.h
-	var mass := PackedInt64Array()
-	mass.resize(count * (h + 1))
-	var sx := mass.duplicate()
-	var sz := mass.duplicate()
-	var box := PackedInt32Array()
-	box.resize(count * h * 4)
-	box.fill(-1)
-	for i: int in _cells.size():
-		var k := labels[i] - 1
-		if k < 0 or _cells[i] == VoxelFrame.EMPTY:
-			continue
-		var x := i % w
-		var z := (i / w) % d
-		var y := i / _plan
-		var at := k * (h + 1) + y
-		mass[at] += 1
-		sx[at] += 2 * x + 1
-		sz[at] += 2 * z + 1
-		var below := _cells[i - _plan] if y > 0 else VoxelFrame.EMPTY
-		if below != VoxelFrame.EMPTY and _fix[below] == 0 and _fix[_cells[i]] == 0:
-			var b := (k * h + y) * 4
-			var fresh := box[b + 2] < 0
-			box[b] = x if fresh else mini(box[b], x)
-			box[b + 1] = z if fresh else mini(box[b + 1], z)
-			box[b + 2] = x + 1 if fresh else maxi(box[b + 2], x + 1)
-			box[b + 3] = z + 1 if fresh else maxi(box[b + 3], z + 1)
-	for k: int in count:
-		for y: int in range(h - 1, -1, -1):
-			var at := k * (h + 1) + y
-			mass[at] += mass[at + 1]
-			sx[at] += sx[at + 1]
-			sz[at] += sz[at + 1]
-	return {"mass": mass, "sx": sx, "sz": sz, "box": box}
+	return VoxelTopple.floors(_cells, _fix, labels, _dims(), count)
 
 
-## Structure's tip test: a load (sums [2x + 1, 2z + 1, mass]) whose centre lies outside `box`
-## (cells) tips over the box edge it passes furthest, at height `y` (cells). {} if inside.
+## Structure's tip test (VoxelTopple.tip_of) for a load over `box` (cells) at height `y` (cells).
 func _tip(sums: PackedInt64Array, box: Rect2i, y: int) -> Dictionary:
-	return tip_of(sums, box, y, _f.offset, _f.res)
-
-
-static func tip_of(
-	sums: PackedInt64Array, box: Rect2i, y: int, offset: Vector3i, res: int
-) -> Dictionary:
-	var over_x := _over(sums[0], sums[2], box.position.x, box.end.x)
-	var over_z := _over(sums[1], sums[2], box.position.y, box.end.y)
-	if over_x == 0 and over_z == 0:
-		return {}
-	var dir := Vector2i(signi(over_x), 0)
-	if absi(over_z) > absi(over_x):
-		dir = Vector2i(0, signi(over_z))
-	var com := Vector2(sums[0], sums[1]) / (2.0 * sums[2])
-	var px := com.x
-	if dir.x != 0:
-		px = box.end.x if dir.x > 0 else box.position.x
-	var pz := com.y
-	if dir.y != 0:
-		pz = box.end.y if dir.y > 0 else box.position.y
-	var pivot := (Vector3(px, y, pz) + Vector3(offset)) / res
-	return {"kind": "topple", "pivot": pivot, "dir": dir}
-
-
-## How far (in 1 / (2 mass) cells) a centre with sum `s` lies past [lo, hi); 0 if inside.
-static func _over(s: int, mass: int, lo: int, hi: int) -> int:
-	if s > 2 * hi * mass:
-		return s - 2 * hi * mass
-	if s < 2 * lo * mass:
-		return s - 2 * lo * mass
-	return 0
+	return VoxelTopple.tip_of(sums, box, y, _f.offset, _f.res)
