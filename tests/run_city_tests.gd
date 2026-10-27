@@ -11,7 +11,7 @@ const RiverBody := preload("res://tests/lib/city_river_body.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
 const TreeApart := preload("res://tests/lib/city_tree_apart.gd")
 const TreeGround := preload("res://tests/lib/city_tree_ground.gd")
-const TankShape := preload("res://tests/lib/city_tank_shape.gd")
+const RoofTanks := preload("res://tests/lib/city_roof_tanks.gd")
 const StadiumFar := preload("res://tests/lib/city_stadium_far.gd")
 const Kerb := preload("res://tests/lib/city_kerb.gd")
 const BreathTrees := preload("res://tests/lib/city_breath_trees.gd")
@@ -37,6 +37,7 @@ func run_checks() -> void:
 	await _t("_check_calm_streets")
 	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
 	await _t("_check_no_empty_ground")
+	await _t("_check_rooftop_tanks")
 	await _h(
 		"city_diag_fill",
 		func() -> void: preload("res://tests/lib/city_diag_fill.gd").new(check, root).run()
@@ -204,7 +205,6 @@ func _check_no_empty_ground() -> void:
 			Green.check_city(tier, map_seed, sim, decor, check)
 			TreeApart.check(tier, map_seed, sim, decor, check)
 			TreeGround.check(tier, map_seed, sim, decor, skyline, check)
-			TankShape.check(tier, map_seed, sim, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			StadiumFar.check(tier, map_seed, sim, check)
 			Kerb.check(tier, map_seed, sim, decor, check)
@@ -212,6 +212,12 @@ func _check_no_empty_ground() -> void:
 			BreathTrees.check(tier, map_seed, sim, decor, check)
 			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()
+
+
+## The rooftop tanks are a mix of white solar heaters and short wooden towers, stages 1-3
+## (tests/lib/city_roof_tanks.gd; director 2026-10-27, D-348, D-352).
+func _check_rooftop_tanks() -> void:
+	RoofTanks.check([1, 2, 3] as Array[int], COVERAGE_SEEDS, check)
 
 
 ## Every block the kaiju can reach is real, destroyable buildings at every stage
