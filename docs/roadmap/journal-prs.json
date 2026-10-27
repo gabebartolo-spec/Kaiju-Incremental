@@ -1815,9 +1815,9 @@
 {
 "n": 261,
 "t": "ci: shards run suites in lanes, timings re-measured, every job has a timeout (debt row 4)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-27"
 },
 {
 "n": 262,
