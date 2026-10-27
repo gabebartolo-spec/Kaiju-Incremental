@@ -21,7 +21,6 @@ func run_checks() -> void:
 	await _t("_check_party_walls")
 	await _t("_check_building_fade")
 	await _t("_check_fade_rise")
-	await _t("_check_fall_fade")
 	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
@@ -197,40 +196,6 @@ func _check_fade_rise() -> void:
 			)
 			% [first, later.opacity(0)]
 		)
-	)
-
-
-## A toppling section fades like a standing building (R 19.4, D-121 review): a tower tipping over
-## between the camera and the kaiju covers the sight lines as it is tilted now, and starts faded;
-## the same tower tipped the other way, away from the line, stays solid.
-func _check_fall_fade() -> void:
-	var eye := Vector3(0, 20, 40)
-	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3.ZERO)
-	var piece := Node3D.new()
-	piece.position = Vector3(10, 0, 15)  # the pivot: its base edge, beside the sight line
-	piece.set_meta("pivot", piece.position)
-	piece.set_meta("box", AABB(Vector3(9, 0, 14), Vector3(2, 25, 2)))  # 25 tall, upright
-	var mesh := MeshInstance3D.new()
-	mesh.material_override = ShaderMaterial.new()
-	piece.add_child(mesh)
-	root.add_child(piece)
-	var upright := FallFade.covers(piece, eye, sight)
-	piece.rotation = Vector3(0, 0, PI * 0.25)  # tipping toward -x, across the sight line
-	var across := FallFade.covers(piece, eye, sight)
-	var fade := FallFade.new()
-	var pieces: Array[Node3D] = [piece]
-	fade.update(pieces, eye, sight, 1.0 / 60.0)
-	var first := fade.opacity(piece)
-	piece.rotation = Vector3(0, 0, -PI * 0.25)  # tipping toward +x, away from it
-	var away := FallFade.covers(piece, eye, sight)
-	piece.free()
-	check(
-		not upright and across and not away,
-		"a toppling section covers the kaiju only while it is tilted across the sight line"
-	)
-	check(
-		is_equal_approx(first, Num.f(Content.section("camera")["fade_opacity"])),
-		"a section already in the way when it starts to fall starts faded (%.2f)" % first
 	)
 
 

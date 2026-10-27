@@ -40,6 +40,7 @@ func _run() -> void:
 		if _only == "" or _only == id:
 			await _rampage(id)
 	await Kit.frames(self, DRAIN_FRAMES)
+	await QuitGame.settle_audio(self)  # a sound alive at exit leaks its stream and playbacks
 	print("LOG_SMOKE done")
 	quit()
 
