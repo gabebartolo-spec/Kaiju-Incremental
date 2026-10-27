@@ -26,7 +26,7 @@
 		}
 	},
 	"times": {
-		"_note": "Director 2026-10-20: all four times of day, in this order (Content.time_for_run is the fixed order captures and tests use). D-145 (2026-10-22): the game picks one at random each run, never the one just played (TimeOfDay.pick), unless the options menu fixes one; labels are what that menu shows. Each entry overrides the look's keys; dusk is the look as written.",
+		"_note": "Director 2026-10-20: all four times of day, in this order (Content.time_for_run is the fixed order captures and tests use). D-145 (2026-10-22): the game picks one at random each run, never the one just played (TimeOfDay.pick), unless the options menu fixes one; labels are what that menu shows. Each entry overrides the look's keys; dusk is the look as written. D-359 (director, 'dusk only' for the demo): \"play\" lists the times a rampage may roll (TimeOfDay.pick, settings, clean); the options time button is hidden while it has one entry; \"order\" stays whole so --time= flags in captures, benches and tests keep working. Restoring D-145 = putting all four in \"play\".",
 		"labels": {"dusk": "Dusk", "night": "Night", "morning": "Morning", "noon": "Noon"},
 		"random_label": "Random each rampage",
 		"order": [
@@ -34,6 +34,9 @@
 			"night",
 			"morning",
 			"noon"
+		],
+		"play": [
+			"dusk"
 		],
 		"dusk": {},
 		"night": {
@@ -106,11 +109,17 @@
 			"crease_fade_near": 60.0,
 			"crease_fade_far": 180.0,
 			"kaiju_roughness": 0.85,
+			"voxel_ao_on": true,
+			"voxel_ao_strength": 0.6,
+			"voxel_ao_light_affect": 0.25,
+			"finish_on": true,
+			"finish_roughness": {"rough": 0.9, "glass": 0.12, "metal": 0.45},
+			"finish_specular": {"rough": 0.5, "glass": 0.5, "metal": 0.75},
 			"window_lit": 0.28,
 			"window_glow": 1.3,
 			"accent_glow": 0.0,
 			"kaiju_lift": 0.0,
-			"far_blur_amount": 0.06,
+			"far_blur_amount": 0.0,
 			"far_blur_start": 2.2,
 			"far_blur_ramp": 1.5,
 			"ground_block": 0.125,
@@ -145,6 +154,10 @@
 			"roof": "6e6c66",
 			"window": "2c3a44",
 			"window_lit_color": "e8d9b0",
+			"_window_palette_note": "Render plan item 6, lived-in windows (D-242: windows carry the night, restrained): each lit window (as the layout lights it, a bay by a floor) takes one colour, picked by these shares, and a brightness in window_lit_gain: warm tungsten rooms (2700-3000 K), some cooler offices, a rare blue TV or bare bulb (looks.md R4 start values; the director judges them). window_palette_on 0 draws every lit window in window_lit_color. Shares sum to 1 (the cell mesh suite checks).",
+			"window_palette_on": 1,
+			"window_lit_palette": [["ffb46b", 0.5], ["ffc58f", 0.25], ["ffdbba", 0.12], ["c8d8ff", 0.08], ["e8ffe0", 0.05]],
+			"window_lit_gain": [0.5, 1.5],
 			"outskirts": "4f5e4a",
 			"asphalt": "363d42",
 			"lot": "6e7478",

@@ -77,7 +77,7 @@ func _initialize() -> void:
 					_sets[kv[0]] = kv[1] == "true"
 				else:
 					_sets[kv[0]] = float(kv[1]) if kv[1].is_valid_float() else kv[1]
-		elif arg.begins_with("--tune="):  # --tune=camera.fade_opacity=1 (a tuning.json number)
+		elif arg.begins_with("--tune="):  # --tune=camera.bubble_radius=12 (a tuning.json number)
 			var tv := arg.substr(7).split("=")
 			var path := tv[0].split(".")  # any depth: display.graphics.medium.fsr_sharpness=0.1
 			var table: Dictionary = Content.section(path[0])
@@ -275,7 +275,7 @@ func _scripted(sim: RampageSim) -> Dictionary:
 		if _target.x != INF and to.length() >= sim.stomp_radius() * 0.5:
 			move = to.normalized()
 		var sig := sim.ability_ready_in <= 0.0
-		var held := _steps % Rampage.AUTOPLAY_GLIDE_CYCLE < Rampage.AUTOPLAY_GLIDE_HELD
+		var held := _steps % RunInput.AUTOPLAY_GLIDE_CYCLE < RunInput.AUTOPLAY_GLIDE_HELD
 		input = {"move": move, "signature": sig, "held": held, "ultimate": true}
 		_route.append([move.x, move.y, 1.0 if sig else 0.0, 1.0 if held else 0.0, 1.0])
 	_steps += 1

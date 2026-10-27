@@ -18,14 +18,10 @@ const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
-## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
-const AUTOPLAY_GLIDE_CYCLE := 90
-const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
-## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
-## LoadingOverlay, and nothing runs until it is done, so starting a run never freezes the screen
-## (b2-30). false (tests, captures): _ready builds it all at once, as before.
+## true (the game's own flow): _ready builds the scene in stages, a frame each, behind a
+## LoadingOverlay, and nothing runs until it is done (b2-30). false (tests, captures): all at once.
 var staged := false
 ## Rampage seconds in the adolescent city or later, from the save; set before setup (D-160).
 var city_seconds := 0.0
@@ -52,13 +48,15 @@ var camera_fov := CameraTuning.fov()
 var shake := CameraShake.new()
 ## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
 var rumble: PadRumble
+var run_index := 0  # the run number (setup's p_run): it seeds each bolt
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
 var _blasts: BlastFx
-var _fade: VehicleFade
 var _cues: PowerCues
 var _hud: RampageHud
+## Slow motion when a landmark falls, and the sim's pace through it (LandmarkSlowmo).
+var _slowmo: LandmarkSlowmo
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
 var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
@@ -71,8 +69,6 @@ var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _rail: RailView
 var _fx_rng: RandomNumberGenerator
-var _autoplay := false
-var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 var _stomp_radius := 0.0
@@ -80,32 +76,30 @@ var _stomp_radius := 0.0
 var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
-## Presses made while the rise from the river holds the sim back, kept for its first live tick.
-var _held := HeldButton.new()  # the held move: hold or toggle (D-259)
-var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
+var _reader := RunInput.new()  # this frame's presses (held move D-259, the rise's latch)
+## How far the stick pushed on the last sim step (the walk cycle's pace between steps).
+var _move_len := 0.0
 
 
-## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
+## stats: final run stats; layout: CityGrowth.layout for stats.size; p_run seeds the army and
 ## picks the time of day.
-func setup(
-	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
-) -> void:
+func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], p_run: int) -> void:
 	species = p_species
+	run_index = p_run
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
-	Content.set_time(Content.time_for_run(run_index))
+	Content.set_time(Content.time_for_run(p_run))
 	var ability: Dictionary = species["ability"]
-	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
+	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", p_run))
 	sim.ability_type = str(ability["type"])
 	sim.army_units.taskforce.carried = city_seconds  # rampage time in this city so far (D-160)
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
 	sim.body.use_species(str(species["id"]))
-	_fx_rng = Seeds.make("fx", run_index)
-	sfx = Sfx.new(Seeds.make("sfx", run_index))
+	_fx_rng = Seeds.make("fx", p_run)
+	sfx = Sfx.new(Seeds.make("sfx", p_run))
 	_cues = PowerCues.new(sim, sfx)
 
 
-## Returns once the scene is built (at once when it is; flow suites and captures that start a run
-## through Main wait here, as the staged build takes a number of frames).
+## Returns once the scene is built (flow suites and captures started through Main wait here).
 func wait_loaded() -> void:
 	while not is_loaded and is_inside_tree():
 		await get_tree().process_frame
@@ -113,7 +107,7 @@ func wait_loaded() -> void:
 
 ## Test hook: the kaiju walks toward the nearest building it can topple on its own.
 func set_autoplay(on: bool) -> void:
-	_autoplay = on
+	_reader.autoplay = on
 
 
 ## Leaving the tree (Main._swap frees the rampage next): the sim's parts point back at it, so a
@@ -122,6 +116,12 @@ func set_autoplay(on: bool) -> void:
 func _exit_tree() -> void:
 	if sim != null:
 		sim.dispose()
+
+
+## setup() builds sfx, _ready() adds it later: freed in between, nothing frees it (debt row 2).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(sfx) and sfx.get_parent() == null:
+		sfx.free()
 
 
 func _ready() -> void:
@@ -158,7 +158,6 @@ func _ready() -> void:
 	add_child(RiverView.new(sim, _city.fx))
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	_add_vehicles()
-	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
 	_follow.focus = _kaiju_at
@@ -197,48 +196,45 @@ func _add_overlays() -> void:
 	rumble = PadRumble.new(sim)
 	_kaiju.foot_planted.connect(rumble.footfall)
 	add_child(_hud)
+	_slowmo = LandmarkSlowmo.new(sim, _hud)  # the world slows when a landmark falls
+	add_child(_slowmo)
 
 
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var signature := Input.is_action_just_pressed("signature")
-	var held := _held.read(Input.is_action_pressed("signature"), signature)
-	var ultimate := Input.is_action_just_pressed("ultimate")
-	var dash := Input.is_action_just_pressed("dash")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
-		var input: Dictionary = scripted.call(sim)
-		dash = input.get("dash", false)
-		move = input.get("move", Vector2.ZERO)
-		signature = input.get("signature", false)
-		held = input.get("held", false)
-		ultimate = input.get("ultimate", false)
-	elif _autoplay:
-		move = _walk.move(sim, _steps)
-		signature = autoplay_signature and sim.ability_ready_in <= 0.0
-		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		ultimate = autoplay_signature
-	# The sim ignores input while it rises from the river: a tap before the handover is kept.
-	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
-	now = _latch.through(sim.emerge.active, now, delta)
-	signature = now["signature"]
-	ultimate = now["ultimate"]
-	dash = now["dash"]
+	# Slow motion (LandmarkSlowmo, D-259) steps the sim by whole ticks, on fewer of them: a tick it
+	# sits out only draws (steps -1: the tanks' every-tenth-step crush must not repeat).
+	var dt := _slowmo.sim_dt(delta)
+	if dt > 0.0:
+		_step(dt)
+	else:
+		_slowmo.sit_out(delta)
+	_present(delta, _steps if dt > 0.0 else -1)
+
+
+## One sim step of `dt` with this tick's presses (and any kept from ticks the slow motion sat out).
+func _step(dt: float) -> void:
+	var now := _slowmo.merge(_reader.read(self, _steps, dt), dt)
+	var move: Vector2 = now["move"]
+	var signature: bool = now["signature"]
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
-	var buttons := Dash.BUTTON if dash else 0
-	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
-	var events := sim.step(delta, move, signature, buttons)
+	var events := sim.step(dt, move, signature, RunInput.buttons(now))
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_kaiju_at = _ability.place(delta, 0.0 if sim.body.dash.on() else move.length(), _kaiju_at)
+	_move_len = 0.0 if sim.body.dash.on() else move.length()
+
+
+## One tick's drawing, stepped or not (`delta` is the tick's own, slowed by the time scale).
+func _present(delta: float, steps: int) -> void:
+	_kaiju_at = _ability.place(delta, _move_len, _kaiju_at)
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
-	_tanks.update(delta, _kaiju_at, _steps)
+	_tanks.update(delta, _kaiju_at, steps)
 	_hud.refresh()
 
 
@@ -247,7 +243,6 @@ func _process(delta: float) -> void:
 		return
 	_place_camera(delta)
 	_far_depth.follow(_kaiju_at)
-	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	shake.update(delta)
 	if _stomp_wait > 0.0:
 		_stomp_wait -= delta
@@ -256,11 +251,9 @@ func _process(delta: float) -> void:
 
 
 ## The pause menu's photo mode (PhotoMode, D-259): the gameplay camera flies free round the frozen
-## kaiju; the breath's aim and the floating numbers hide while it is up.
+## kaiju; the breath's aim hides while it is up.
 func photo_mode() -> PhotoMode:
 	var hide: Array[Node3D] = [_aim]
-	for node: Node in get_tree().get_nodes_in_group(CityView.FLOAT_TEXT):
-		hide.append(node as Node3D)
 	var rest := (camera_rest * CameraTuning.zoom(sim.body_scale())).length()
 	return PhotoMode.new(_camera, _kaiju_at, rest, hide)
 
@@ -277,10 +270,10 @@ func _note_cost(what: String, since: int) -> void:
 
 
 ## The army's tanks (their voxels built once now, so the first spawn reuses them), the
-## helicopters' voxels, and the railway.
+## helicopters' voxels (the gunships' and the leader's own), and the railway.
 func _add_vehicles() -> void:
 	TankModel.new().free()
-	HelicopterModel.new().free()
+	HelicopterModel.warm()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
 	_rail = RailView.new(self, sim, _city)
 	add_child(_rail)
@@ -322,6 +315,7 @@ func _on_event(event: Dictionary) -> void:
 		"building_regrown":
 			_city.regrow(Num.i(event["building"]))
 		"run_over":
+			_slowmo.stop()  # the end beat runs at normal speed (D-259)
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
@@ -329,14 +323,9 @@ func _on_event(event: Dictionary) -> void:
 			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
 
 
-func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
+## No number floats up for the biomass (D-284: "Remove them entirely"); the HUD counts it.
+func _on_chunks_broken(index: int, cells: Array[Vector3i], _pay: float) -> void:
 	_city.chunks_broken(index, cells, _kaiju_at)
-	var b := sim.buildings[index]
-	var per := b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult") * pay
-	var gained := cells.size() * per
-	if gained >= 1.0:
-		var at := b.chunk_world(cells[0]) + Vector3(0, 2.0, 0)
-		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
 
 
 ## How far an upgraded stat is above the species' own value (1 = not upgraded).
@@ -396,5 +385,4 @@ func _place_camera(delta: float) -> void:
 	var nod := shake.turn(sim.body_scale(), motion).y
 	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
 	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
-	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

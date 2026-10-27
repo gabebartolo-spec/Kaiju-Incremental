@@ -2,8 +2,9 @@ extends SceneTree
 ## A real autoplayed rampage (hatchling, night by default) that dismisses the first-run controls
 ## card with a real key event, as a player would, and logs one line a frame to --out: the frame,
 ## whether the kaiju is still rising from the river, how many buildings and standing cells the
-## camera bubble hides (cells of the sim's building frames nearer the camera than the bubble
-## radius), the radius, and whether the kaiju's chest is on screen. Used to pick a clip window
+## camera bubble cuts away (cells of the buildings it cuts nearer the camera than their share of
+## its radius), the radius, whether the kaiju's chest is on screen, the street lamps in view and
+## the frames drawn so far (the movie's frame). Used to pick a clip window
 ## where a tower is cut away; the same run under --write-movie is the clip (it is deterministic
 ## at a fixed frame rate), and --frame prints the camera's numbers there.
 ##   godot --path . --resolution 3840x2160 --fixed-fps 30 [--write-movie <out.avi>] \
@@ -81,9 +82,10 @@ func _run() -> void:
 		if not dismissed and not rampage.sim.emerge.active:
 			dismissed = _dismiss(rampage)
 		var eye := cam.global_position
-		var bubble: Object = rampage.get("_bubble")  # null on a build without the bubble
+		var city: Object = rampage.get("_city")
+		var bubble: Object = city.get("_bubble") if city != null else null  # null without one
 		var radius: float = bubble.call("radius") if bubble != null else 0.0
-		var tally := _hidden(rampage.sim, eye, radius)
+		var tally := _hidden(rampage.sim, eye, radius, bubble)
 		var chest := _chest(rampage)
 		var on_screen := (
 			not cam.is_position_behind(chest)
@@ -91,7 +93,7 @@ func _run() -> void:
 		)
 		log.store_line(
 			(
-				"%d %d %d %d %.2f %d %d"
+				"%d %d %d %d %.2f %d %d %d"
 				% [
 					f,
 					1 if rampage.sim.emerge.active else 0,
@@ -99,7 +101,8 @@ func _run() -> void:
 					tally.y,
 					radius,
 					1 if on_screen else 0,
-					_lamps_in_view(cam, rampage, lamps)
+					_lamps_in_view(cam, rampage, lamps),
+					Engine.get_frames_drawn()
 				]
 			)
 		)
@@ -156,23 +159,25 @@ func _chest(rampage: Rampage) -> Vector3:
 	return at + Vector3(0.0, CHEST * rampage.sim.body_scale(), 0.0)
 
 
-## [buildings, cells] of standing building cells inside the bubble of `radius` round `eye`.
-func _hidden(sim: RampageSim, eye: Vector3, radius: float) -> Vector2i:
+## [buildings, cells] of standing building cells the bubble of `radius` round `eye` cuts away.
+func _hidden(sim: RampageSim, eye: Vector3, radius: float, bubble: Object) -> Vector2i:
 	var towers := 0
 	var cells := 0
-	for b: RampageSim.Building in sim.buildings:
-		if b.frame == null:
+	for n: int in sim.buildings.size():
+		var b := sim.buildings[n]
+		var cut: float = bubble.call("cut", n) if bubble != null else 0.0
+		if b.frame == null or cut <= 0.0:
 			continue
 		var lo := Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5)
 		var box := AABB(lo, Vector3(b.w, b.height, b.d))
-		if eye.clamp(box.position, box.end).distance_to(eye) >= radius:
+		if eye.clamp(box.position, box.end).distance_to(eye) >= radius * cut:
 			continue
 		var here := 0
 		for z: int in b.frame.d:
 			for y: int in b.frame.h:
 				for x: int in b.frame.w:
 					var centre := lo + Vector3(x + 0.5, y + 0.5, z + 0.5)
-					if b.frame.alive(Vector3i(x, y, z)) and centre.distance_to(eye) < radius:
+					if b.frame.alive(Vector3i(x, y, z)) and centre.distance_to(eye) < radius * cut:
 						here += 1
 		cells += here
 		towers += 1 if here > 0 else 0

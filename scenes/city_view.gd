@@ -2,11 +2,10 @@ class_name CityView
 extends Node3D
 ## The voxel city and its effects: sky and light, ground, buildings (BuildingView: voxels by
 ## structural chunk), falling sections, physics debris, fires, dust and sparks (Fx), rings,
-## flames and floating text. Draws only; RampageSim decides what breaks and what falls.
+## flames. Draws only; RampageSim decides what breaks and what falls.
 
 const DEBRIS_PER_CHUNK := 8
 const DEBRIS_PER_LANDING := 160
-const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
 ## Staged (stages.on): _ready builds in stages, one per frame, while the owner draws its loading
@@ -19,15 +18,11 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
-## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the fade keeps
-## them in sight beside the sim's own points (R 19.4: a tower over the drawn head or chest fades).
-var drawn_sight := PackedVector3Array()
 ## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
 var blast_break: BlastBreak
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
-var _fade: BuildingFade
-var _fall_fade := FallFade.new()
+var _bubble: CameraBubble
 var _falling: Dictionary = {}
 var _ruins: RuinYard
 var _topple: ToppleFx
@@ -60,7 +55,7 @@ func _ready() -> void:
 	_stream = BuildingStream.new(sim, colors)
 	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
 	add_child(_stream)
-	_fade = BuildingFade.new(sim.buildings, _stream.built)
+	_bubble = CameraBubble.new(sim.buildings, _stream.built)
 	fx = Fx.new()
 	add_child(fx)
 	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
@@ -131,17 +126,18 @@ func _process(delta: float) -> void:
 		return
 	_animate_falls(delta)
 	var camera := get_viewport().get_camera_3d()
-	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
+	if camera != null:
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var sight := BuildingFade.sight_of(sim, camera.global_position) + drawn_sight
-		_fade.update(camera.global_position, sight, delta)
-		_fall_fade.update(falling_pieces(), camera.global_position, sight, delta)  # toppling too
+		# Only what the camera itself runs into is cut away, never the destruction (D-283, D-326).
+		var frame := FrameShare.of(camera, get_viewport().get_visible_rect().size)
+		_bubble.update(frame, feet, CameraBubble.field(sim), delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
 
 
-## The sections falling now (FallFade; the capture tools read them).
+## The sections falling now (the capture tools and tests read them). They are never faded or
+## cut (D-326).
 func falling_pieces() -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	for f: Dictionary in _falling.values():
@@ -380,21 +376,3 @@ func ring(centre: Vector3, radius: float, color: Color, seconds: float) -> void:
 	tween.tween_property(mi, "scale", Vector3(radius, 0.3, radius), seconds)
 	tween.tween_property(mat, "albedo_color:a", 0.0, seconds)
 	tween.chain().tween_callback(mi.queue_free)
-
-
-func float_text(text: String, pos: Vector3, color: Color) -> void:
-	var l := Label3D.new()
-	l.text = text
-	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.font_size = 96
-	l.outline_size = 24
-	l.modulate = color
-	l.no_depth_test = true
-	l.add_to_group(FLOAT_TEXT)
-	l.position = pos
-	add_child(l)
-	var tween := l.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(l, "position", pos + Vector3(0, 3, 0), 1.0)
-	tween.tween_property(l, "modulate:a", 0.0, 1.0).set_delay(0.4)
-	tween.chain().tween_callback(l.queue_free)

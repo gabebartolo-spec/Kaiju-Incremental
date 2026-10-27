@@ -1,10 +1,11 @@
 class_name PostFx
 extends CanvasLayer
 ## The two post effects of a rampage (D-142, tuning "post_fx"), on every graphics preset: a subtle
-## vignette (dark screen edges, red and pulsing at low health) and a split-second colour fringe on
-## the top-tier impacts. Two full-screen rects over the 3D view and under the HUD, so the HUD stays
-## clean. The vignette is alpha only; the fringe reads the screen, so its rect is shown only while
-## a burst runs. PostFxState holds the numbers; this node only draws them.
+## vignette (dark screen edges, never red: low health is the HUD's heartbeat vignette) and a
+## split-second colour fringe on the top-tier impacts. Two full-screen rects over the 3D view and
+## under the HUD, so the HUD stays clean. The vignette is alpha only; the fringe reads the screen,
+## so its rect is shown only while a burst runs. PostFxState holds the numbers; this node only
+## draws them.
 
 const VIGNETTE := preload("res://scenes/vignette.gdshader")
 const FRINGE := preload("res://scenes/fringe.gdshader")
@@ -30,8 +31,6 @@ func _init(p_rampage: Rampage = null) -> void:
 	_vignette_mat.shader = VIGNETTE
 	_vignette_mat.set_shader_parameter("inner", Num.f(cfg["inner"]))
 	_vignette_mat.set_shader_parameter("outer", Num.f(cfg["outer"]))
-	var low: Dictionary = Content.section("post_fx")["low_health"]
-	_vignette_mat.set_shader_parameter("red_depth", Num.f(low["depth_px"]))
 	_fringe_mat.shader = FRINGE
 	_vignette = _rect(_vignette_mat)
 	_fringe = _rect(_fringe_mat)
@@ -83,8 +82,6 @@ func update(delta: float, hp_share: float, motion: float) -> void:
 	_vignette.visible = true
 	_vignette_mat.set_shader_parameter("tint", state.vignette_color)
 	_vignette_mat.set_shader_parameter("strength", state.vignette_alpha)
-	_vignette_mat.set_shader_parameter("red_tint", state.red_color)
-	_vignette_mat.set_shader_parameter("red_alpha", state.red_alpha)
 	_fringe.visible = state.fringe_px > 0.0 and PlayerSettings.fringe_on()  # Reduce flashing
 	if _fringe.visible:
 		_fringe_mat.set_shader_parameter("amount_px", state.fringe_px)

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # log_smoke.sh: seeded headless runs whose engine logs must be clean (D-295, debt rows 1-2).
 #
-# Two runs, each on a fixed 60 fps frame clock:
+# Four kinds of run, each on a fixed 60 fps frame clock:
 #   1. tools/release/demo_smoke.gd: the title, NEW KAIJU, Kaiju Creation, a rampage, the thanks screen,
 #      Endless mode and a relaunch, through the game's own screens;
-#   2. tools/lint/log_smoke.gd: every species' autoplayed rampage to a death, everything freed.
+#   2. tools/lint/log_smoke.gd: every species' autoplayed rampage to a death, everything freed;
+#   3. tools/lint/log_smoke_street.gd: the seeded street replay the people bench drives
+#      (tests/lib/street_replay.gd), built, stepped, finished and freed as the bench frees it;
+#   4. tools/lint/log_smoke_audio.gd, AUDIO_RUNS times (default 8): a sound is playing at the quit and
+#      QuitGame.settle_audio releases it first. A sound alive at exit leaks its stream and playbacks on some
+#      runs and not others, so one run proves nothing: several are the check (CI run 40443431942).
 # A run fails on ANY engine ERROR / WARNING / SCRIPT ERROR line or leak report in its log (a vector that is
 # not finite, a normalise of zero, a resource still alive at exit), or when its own checks fail. The lines
 # are never filtered or muted: fix the cause. Exit 0 = both logs clean, 1 = lines found (counted, with the
@@ -12,10 +17,32 @@
 #
 #   GODOT=/path/to/godot tools/lint/log_smoke.sh [script args for log_smoke.gd, e.g. --species=insectoid --seconds=20]
 #   LOGS=<dir> keeps the raw logs there (default: a temp dir, removed).
-#   ONLY=demo|rampage runs just one of the two.
+#   ONLY=demo|rampage|street|audio runs just one kind. AUDIO_ARGS='--settle=0' quits the audio runs
+#   without settling (the known-bad input: the checker must go red).
 #   BEFORE_ENGINE='<command>' runs before every engine start and must succeed (a shared PC: `bash C:/kt/wait_window.sh`).
 #   tools/lint/log_smoke.sh --selftest   plants an error, a warning and leaks, expects each to be caught.
+#   tools/lint/log_smoke.sh --leaks <log>...   reads logs that something else wrote (every suite of
+#                                              tools/run_tests.sh, every capture of capture.yml): exit 1 and
+#                                              one line per log when it holds an exit leak report.
 set -u
+
+# The exit leak reports alone ("N ObjectDB instances were leaked at exit", "N resources still in use at
+# exit"): the lines a suite or a capture must never print (debt row 2). Older engines drop the "were".
+LEAK_PATTERN='ObjectDB instances (were )?leaked|still in use at exit'
+
+if [ "${1:-}" = "--leaks" ]; then  # before the cd: the logs are named relative to the caller
+	shift
+	leaky=0
+	for leak_log in "$@"; do
+		hits="$(sed 's/\x1b\[[0-9;]*[A-Za-z]//g; s/\r$//' "$leak_log" 2> /dev/null | grep -E "$LEAK_PATTERN" | tr '\n' '|')"
+		if [ -n "$hits" ]; then
+			echo "$(basename "$leak_log"): the exit leaked: ${hits%|}"
+			leaky=1
+		fi
+	done
+	exit "$leaky"
+fi
+
 cd "$(dirname "$0")/../.." || exit 1
 GODOT="${GODOT:-godot}"
 SMOKE_TIMEOUT="${SMOKE_TIMEOUT:-1200}"
@@ -64,6 +91,16 @@ if [ "${1:-}" = "--selftest" ]; then
 		printf 'Engine v4.7.2\n%s\nLOG_SMOKE done\n' "$bad" > "$tmp/bad.log"
 		check_log "$tmp/bad.log" > /dev/null && { echo "FAIL: not caught: $bad"; exit 1; }
 	done
+	# --leaks (suites, captures): fails on each wording of the exit leak report, ignores any other line.
+	bash "$0" --leaks "$tmp/clean.log" > /dev/null || { echo "FAIL: --leaks rejected a clean log"; exit 1; }
+	printf 'Engine v4.7.2\nERROR: Condition "!v.is_finite()" is true.\nWARNING: Vector3 cannot be normalized\n' > "$tmp/other.log"
+	bash "$0" --leaks "$tmp/other.log" > /dev/null || { echo "FAIL: --leaks failed a log with no leak line"; exit 1; }
+	for bad in 'WARNING: 3 ObjectDB instances were leaked at exit (run with --verbose for details).' \
+		'WARNING: ObjectDB instances leaked at exit (run with --verbose for details).' \
+		'ERROR: 4 resources still in use at exit.'; do
+		printf 'Engine v4.7.2\n\033[31m%s\033[0m\r\nFlow tests: 9 of 9 functions\n' "$bad" > "$tmp/bad.log"
+		bash "$0" --leaks "$tmp/clean.log" "$tmp/bad.log" > /dev/null && { echo "FAIL: --leaks missed: $bad"; exit 1; }
+	done
 	rm -rf "$tmp"
 	echo "log_smoke selftest: PASS"
 	exit 0
@@ -97,6 +134,14 @@ run_one() {
 	if [ "$name" = rampage ] && ! grep -q "^LOG_SMOKE done" "$log"; then
 		echo "log_smoke: FAIL the rampage run never finished"; tail -20 "$log"; failed=1; return
 	fi
+	if [ "$name" = street ] && ! grep -q "^LOG_SMOKE street done" "$log"; then
+		echo "log_smoke: FAIL the street run never finished"; tail -20 "$log"; failed=1; return
+	fi
+	case "$name" in audio*)
+		if ! grep -q "^LOG_SMOKE audio done" "$log"; then
+			echo "log_smoke: FAIL the $name run never finished"; tail -20 "$log"; failed=1; return
+		fi;;
+	esac
 	if [ "$name" = rampage ]; then  # every species' run ended in the death this run staged (not on its own clock)
 		local runs deaths
 		runs=$(grep -c "^log_smoke: .* skyline beasts" "$log")
@@ -108,10 +153,18 @@ run_one() {
 	if ! check_log "$log"; then failed=1; fi
 }
 
-[ "${ONLY:-}" = rampage ] || run_one demo tools/release/demo_smoke.gd
-[ "${ONLY:-}" = demo ] || run_one rampage tools/lint/log_smoke.gd "$@"
+want() { [ -z "${ONLY:-}" ] || [ "$ONLY" = "$1" ]; }
+want demo && run_one demo tools/release/demo_smoke.gd
+want rampage && run_one rampage tools/lint/log_smoke.gd "$@"
+want street && run_one street tools/lint/log_smoke_street.gd
+if want audio; then
+	for i in $(seq 1 "${AUDIO_RUNS:-8}"); do
+		# shellcheck disable=SC2086
+		run_one "audio$i" tools/lint/log_smoke_audio.gd ${AUDIO_ARGS:-}
+	done
+fi
 if [ "$failed" = 0 ]; then
-	echo "log_smoke: PASS (no ERROR, WARNING or leak line in either log)"
+	echo "log_smoke: PASS (no ERROR, WARNING or leak line in any log)"
 	exit 0
 fi
 echo "log_smoke: FAIL"

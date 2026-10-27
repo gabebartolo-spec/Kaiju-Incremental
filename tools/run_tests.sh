@@ -2,8 +2,9 @@
 # Runs every Godot check CI runs (.github/workflows/tests.yml), locally or in Actions:
 #   1. import the project (a script that fails to compile during import fails the run);
 #   2. every test suite in tests/, each with a time limit so a hang fails fast instead of
-#      eating the runner; a suite whose log shows a script error fails even if every
-#      check it reached passed;
+#      eating the runner; a suite whose log shows a script error, or the engine's exit leak
+#      report ("N ObjectDB instances were leaked", "N resources still in use at exit",
+#      tools/lint/log_smoke.sh --leaks), fails even if every check it reached passed;
 #   3. the harness self-test (tools/test_run_tests.sh), when no suites are named.
 #
 # A green suite must mean every test ran:
@@ -24,7 +25,8 @@
 # share a save, a setting or an editor cache (CLAUDE.md "Machine rules").
 #
 # While a speed run holds the PC (D-299) it starts no Godot: it waits on the gate (tools/speed_gate.sh,
-# C:/kt/wait_window.sh) before the import and before each suite. No gate file, no effect.
+# C:/kt/wait_window.sh) before the import and before each suite, and until 6144 MB of RAM is free (D-317, MIN_FREE_MB,
+# polled every RAM_POLL_SECS = 5 s); the waits are totalled on the last line. No gate file, no effect.
 #
 #   GODOT=/path/to/godot tools/run_tests.sh          # everything
 #   SUITE_TIMEOUT=300 tools/run_tests.sh data smoke   # just some suites
@@ -143,7 +145,7 @@ run_suite() {  # suite, or suite@K/N for part K of a suite that CI runs in N par
 	local log="$LOG_DIR/$key.log"
 	local sdata="$RUN_DATA/suite_$key"
 	mkdir -p "$sdata"
-	local start code secs result status detail ran ran_k ran_m skipped short
+	local start code secs result status detail ran ran_k ran_m skipped short leaks
 	wait_speed_gate  # before the clock starts: a wait is not the suite's time (TIMINGS_FILE)
 	start=$(date +%s)
 	APPDATA="$(native_path "$sdata")" XDG_DATA_HOME="$sdata/data" XDG_CONFIG_HOME="$sdata/config" \
@@ -167,6 +169,15 @@ run_suite() {  # suite, or suite@K/N for part K of a suite that CI runs in N par
 	else
 		status="pass"
 		detail="$result"
+		# The engine's exit report (debt row 2): "N ObjectDB instances were leaked" or "N resources still
+		# in use at exit" means the suite left something alive; fix the cause (a sim is cut at the quit by
+		# tests/lib/runner.gd, anything else a test builds it frees), never filter the line.
+		if leaks=$(bash tools/lint/log_smoke.sh --leaks "$log"); then
+			leaks=""
+		else
+			status="FAIL"
+			detail="$result, but ${leaks#*: }"
+		fi
 	fi
 	# Every test function must have run: "K of M functions" with K = M.
 	ran=$(echo "$result" | grep -oE "[0-9]+ of [0-9]+ functions" | head -1)
@@ -312,4 +323,6 @@ if [ "$failed" = 0 ]; then
 else
 	echo "Some checks FAILED ($n_suites suites run). Logs: $LOG_DIR"
 fi
+# Time spent waiting on the speed-run gate and the memory floor (tools/speed_gate.sh): in no suite's time above.
+if [ "${SPEED_GATE_WAITED:-0}" -gt 0 ]; then echo "Waited ${SPEED_GATE_WAITED}s for the speed-run gate and the memory floor."; fi
 exit "$failed"

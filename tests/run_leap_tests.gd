@@ -209,8 +209,9 @@ func _check_ring_and_fling() -> void:
 	var centre := Vector2(0.0, 30.0 - sim.body.feet_ahead() - reach)
 	var near := _tank(sim, 901, centre + Vector2(ring * 0.5, 0.0))
 	var far := _tank(sim, 902, centre + Vector2(-ring * 2.5, 0.0))
+	var held: Array[RampageSim.Tank] = [near, far]  # on their spots through the crouch and flight
 	sim.step(DT, Vector2.ZERO, false, BUTTON)
-	var events := _finish(sim)
+	var events := _finish_held(sim, held)
 	var land := _first(events, "leap_land")
 	var flung := {}
 	for event: Dictionary in events:

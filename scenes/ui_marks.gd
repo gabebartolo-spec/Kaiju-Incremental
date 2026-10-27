@@ -3,6 +3,8 @@ extends RefCounted
 ## The broadcast look's drawn marks (UI look A, D-061): tape, meter ticks, the alert tag and
 ## scanlines. Original and drawn in code, so no image asset to license. UiKit places them.
 
+static var _arrow: ImageTexture
+
 
 ## Hazard tape filling the control.
 class Tape:
@@ -71,3 +73,21 @@ class Cells:
 			else:
 				draw_rect(r, Color(0, 0, 0, 0.75))
 				draw_rect(r, UiKit.MUTED, false, 2.0)
+
+
+## A right arrow, drawn here because neither the body font nor Kaiju Claw has U+2192 and the web
+## build has no system font to fall back on (UiKit.arrow). White, cached.
+static func arrow() -> Texture2D:
+	if _arrow == null:
+		var w := 30
+		var half := 10  # half the height; the head is a right triangle this deep
+		var img := Image.create(w, half * 2, false, Image.FORMAT_RGBA8)
+		for y: int in half * 2:
+			var off := absi(y - half)
+			for x: int in w:
+				var shaft := x < w - half and off <= 2
+				var head := x >= w - half - 2 and x - (w - half - 2) <= half - off
+				if shaft or head:
+					img.set_pixel(x, y, Color.WHITE)
+		_arrow = ImageTexture.create_from_image(img)
+	return _arrow

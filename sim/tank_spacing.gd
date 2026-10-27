@@ -23,38 +23,60 @@ func _init(p_convoy: Convoy) -> void:
 ## clash (out of one only by opening up), never closer than `follow` behind one going its way
 ## in its lane.
 func blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.Tank:
-	var hull := _half("hull")
-	var follow := Num.f(cfg["follow"])
 	var gun: Array = cfg["gun"]
-	var reach := hull.length() + Num.f(gun[0]) + follow
-	var mine: ConvoyRoute = convoy.routes[tank.id]
-	var own := mine.front if mine.front != Vector2.ZERO else dir
+	var reach := _half("hull").length() + Num.f(gun[0]) + Num.f(cfg["follow"])
 	for other: RampageSim.Tank in sim.tanks:
-		var then := next.distance_to(other.pos)
-		if other.id == tank.id or then > reach:
+		if other.id == tank.id or next.distance_to(other.pos) > reach:
 			continue
-		var now := tank.pos.distance_to(other.pos)
-		var o: ConvoyRoute = convoy.routes.get(other.id)
-		var facing := o.front if o != null and o.front != Vector2.ZERO else dir
-		if next.distance_to(tank.pos) < 0.0001:  # a pivot in place: only its hull swings
-			# Never into a new clash; and from inside one (it parked within `clear` of a
-			# neighbour) never to where the drawn parts themselves touch (0 m margin).
-			if (
-				(
-					hull_clash(next, dir, other.pos, facing)
-					and not hull_clash(next, own, other.pos, facing)
-				)
-				or hull_touch(next, dir, other.pos, facing)
-			):
-				return other
-		elif clash(next, dir, other.pos, facing):
-			if then <= now or not clash(tank.pos, own, other.pos, facing):
-				return other
-		var ahead := other.pos - tank.pos
-		var lane := dir.dot(ahead) > 0.0 and absf(dir.cross(ahead)) < hull.y * 2.0
-		if then < now and lane and then < follow and facing.dot(dir) > 0.7:
+		if _in_the_way(tank, other, next, dir):
 			return other
 	return null
+
+
+## Whether `other` stops `tank` moving to `next` with its hull along `dir`.
+func _in_the_way(
+	tank: RampageSim.Tank, other: RampageSim.Tank, next: Vector2, dir: Vector2
+) -> bool:
+	var then := next.distance_to(other.pos)
+	var now := tank.pos.distance_to(other.pos)
+	var facing := _hull_of(other, dir)
+	if next.distance_to(tank.pos) < 0.0001:  # a pivot in place: only its hull swings
+		if _pivot_clash(tank, other, next, dir):
+			return true
+	elif clash(next, dir, other.pos, facing):
+		if then <= now or not clash(tank.pos, _hull_of(tank, dir), other.pos, facing):
+			return true
+	return (
+		then < now
+		and _in_lane(tank, other, dir)
+		and then < Num.f(cfg["follow"])
+		and facing.dot(dir) > 0.7
+	)
+
+
+## The way a tank's hull lies now (`fallback` while it has no heading yet).
+func _hull_of(tank: RampageSim.Tank, fallback: Vector2) -> Vector2:
+	var r: ConvoyRoute = convoy.routes.get(tank.id)
+	return r.front if r != null and r.front != Vector2.ZERO else fallback
+
+
+## `tank` pivoting at p to hull `dir` against `other`. Never into a new clash; and from inside one
+## (it parked within `clear` of a neighbour) never to where the drawn parts themselves touch
+## (0 m margin).
+func _pivot_clash(tank: RampageSim.Tank, other: RampageSim.Tank, p: Vector2, dir: Vector2) -> bool:
+	var own := _hull_of(tank, dir)
+	var facing := _hull_of(other, dir)
+	var q := other.pos
+	return (
+		(hull_clash(p, dir, q, facing) and not hull_clash(p, own, q, facing))
+		or hull_touch(p, dir, q, facing)
+	)
+
+
+## Whether `other` is ahead of `tank` along `dir`, within two hull half-widths of its line.
+func _in_lane(tank: RampageSim.Tank, other: RampageSim.Tank, dir: Vector2) -> bool:
+	var ahead := other.pos - tank.pos
+	return dir.dot(ahead) > 0.0 and absf(dir.cross(ahead)) < _half("hull").y * 2.0
 
 
 ## A standing tank whose gun has swung over an older one's (the kaiju moved) steps along its own

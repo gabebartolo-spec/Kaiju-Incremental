@@ -33,9 +33,6 @@ func search(start: Dictionary, skip: Dictionary, centre: Vector2, disc: float) -
 	for n: int in start.keys():
 		cost[n] = Num.f(start[n])
 		_push(heap, Vector2(cost[n], n))
-	var penalty := Num.f(cfg["danger_cost"])
-	var held_cost := Num.f(cfg["held_cost"])
-	var oncoming_cost := Num.f(cfg["oncoming_cost"])
 	while not heap.is_empty():
 		var top := _pop(heap)
 		var n := int(top.y)
@@ -47,20 +44,26 @@ func search(start: Dictionary, skip: Dictionary, centre: Vector2, disc: float) -
 			var to := graph.edge_b[e] if graph.edge_a[e] == n else graph.edge_a[e]
 			if graph.nodes[to].distance_squared_to(centre) > disc * disc:
 				continue
-			var c := top.x + graph.edge_cost[e]
-			if near_kaiju.has(e):
-				c += penalty
-			if held.has(e):
-				c += held_cost
-			if graph.edge_lane[e] == 0.0 and driven.has(e):
-				var way: Vector2 = driven[e]
-				if way.dot(graph.nodes[to] - graph.nodes[n]) < 0.0:
-					c += oncoming_cost
+			var c := _surcharged(top.x + graph.edge_cost[e], e, n, to)
 			if c < cost[to]:
 				cost[to] = c
 				prev[to] = e
 				_push(heap, Vector2(c, to))
 	return {"cost": cost, "prev": prev}
+
+
+## `c`, the cost of taking road e from node n to node `to`, plus its penalties: the kaiju is
+## by it, a tank holds its post on it, or a column is coming the other way down its one lane.
+func _surcharged(c: float, e: int, n: int, to: int) -> float:
+	if near_kaiju.has(e):
+		c += Num.f(cfg["danger_cost"])
+	if held.has(e):
+		c += Num.f(cfg["held_cost"])
+	if graph.edge_lane[e] == 0.0 and driven.has(e):
+		var way: Vector2 = driven[e]
+		if way.dot(graph.nodes[to] - graph.nodes[n]) < 0.0:
+			c += Num.f(cfg["oncoming_cost"])
+	return c
 
 
 ## The roads from a start node to `head` (in driving order) and that start node: [chain, node].
@@ -109,3 +112,25 @@ static func _pop(heap: Array[Vector2]) -> Vector2:
 		heap[i] = tmp
 		i = m
 	return top
+
+
+## Where a tank at `p` sets off from: {edge (the road under it), via (its point on that road's
+## line), from: {node: cost}}, both ends of that road, or only the end behind it when it was held
+## up on this road going the other way.
+func origin(p: Vector2, r: ConvoyRoute) -> Dictionary:
+	var e := graph.road_under(p, r.edge)
+	var na := graph.nodes[graph.edge_a[e]]
+	var nb := graph.nodes[graph.edge_b[e]]
+	var via := Geometry2D.get_closest_point_to_segment(p, na, nb)
+	var off := via.distance_to(p)
+	var from := {
+		graph.edge_a[e]: off + via.distance_to(na), graph.edge_b[e]: off + via.distance_to(nb)
+	}
+	if r.skip.has(e) and not r.path.is_empty():  # only the end behind it
+		var ahead_b := nb.distance_to(r.path[0]) < na.distance_to(r.path[0])
+		from.erase(graph.edge_b[e] if ahead_b else graph.edge_a[e])
+	elif not r.path.is_empty() and r.heading != Vector2.ZERO:  # turning back costs more
+		var behind_b := (nb - p).dot(r.heading) < 0.0
+		var back := graph.edge_b[e] if behind_b else graph.edge_a[e]
+		from[back] = Num.f(from[back]) + Num.f(cfg["uturn_cost"])
+	return {"edge": e, "via": via, "from": from}
