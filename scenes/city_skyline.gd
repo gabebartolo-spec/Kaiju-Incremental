@@ -15,7 +15,6 @@ const DETAIL_REACH := 200.0  # roof clutter and lamp heads only this close to th
 const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the expressway
 const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
-const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
 const LATTICE_HEIGHT := 130.0
 const SUPERTALL := 1.8  # a far tower that is a supertall stands this many times taller
 ## A capped far shore (cfg far_tower_cap, the title's): towers under this share of the cap stand as
@@ -75,6 +74,12 @@ func far_boxes() -> Array[Dictionary]:
 	return _far
 
 
+## The plain boxes as drawn (roof gear, tanks, the lattice tower, concrete): {"t": Transform3D,
+## "c": Color, "hazy": bool, "concrete": bool}.
+func plain_drawn() -> Array[Dictionary]:
+	return _plain
+
+
 ## Every painted stand-in building (near and far), as {"size": Vector3, "at": Vector3 centre}.
 func stand_ins() -> Array[Dictionary]:
 	return _near + _far
@@ -117,7 +122,8 @@ func _outer_blocks() -> void:
 				_roof_clutter(top, Vector2(Num.f(lot["w"]), Num.f(lot["d"])))
 
 
-## Rooftop stair huts, plant boxes and water tanks, so the stand-ins' roofs are not bare.
+## Rooftop stair huts, plant boxes and water tanks (SkylineRoofTank: white heaters and wooden
+## towers, as on the playable brick buildings), so the stand-ins' roofs are not bare.
 func _roof_clutter(top: Vector3, size: Vector2) -> void:
 	var gear := Look.color("roof").lightened(0.15)
 	for n: int in _rng.randi_range(0, 2):
@@ -129,7 +135,14 @@ func _roof_clutter(top: Vector3, size: Vector2) -> void:
 			s.y * 0.5,
 			_rng.randf_range(-0.5, 0.5) * maxf(0.0, size.y - s.z - 0.6)
 		)
-		_box(Basis(), AABB(top + off, s), gear if n == 0 else TANK)
+		if n == 0:
+			_box(Basis(), AABB(top + off, s), gear)
+			continue
+		for part: Dictionary in SkylineRoofTank.boxes(top + Vector3(off.x, 0, off.z), gear):
+			var at: Vector3 = part["at"]
+			var extent: Vector3 = part["size"]
+			var color: Color = part["color"]
+			_box(Basis(), AABB(at, extent), color)
 
 
 func _lit() -> float:

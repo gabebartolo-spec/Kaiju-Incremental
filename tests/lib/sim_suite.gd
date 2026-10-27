@@ -54,14 +54,19 @@ func _sim_seeded(
 
 
 ## Scripted player: walk to the nearest standing building, use the signature when ready; it picks
-## its target afresh every `retarget_steps` steps.
+## its target afresh every `retarget_steps` steps. With `hold_target` it keeps walking to its
+## target until that chunk is down, as a player holds a heading: a heavy turn (D-187) otherwise
+## flips between two near chunks every pick and never finishes a turn.
 func _autoplay(
-	sim: RampageSim, max_steps: int = MAX_STEPS, retarget_steps: int = RETARGET_STEPS
+	sim: RampageSim,
+	max_steps: int = MAX_STEPS,
+	retarget_steps: int = RETARGET_STEPS,
+	hold_target := false
 ) -> Dictionary:
 	var steps := 0
 	var target := Vector2(INF, INF)
 	while not sim.over and steps < max_steps:
-		if steps % retarget_steps == 0:
+		if steps % retarget_steps == 0 and not (hold_target and _still_standing(sim, target)):
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
 		if target.x < INF and not sim.body.stomp_reaches(target):
@@ -69,3 +74,8 @@ func _autoplay(
 		sim.step(DT, move, sim.ability_ready_in <= 0.0)
 		steps += 1
 	return sim.result()
+
+
+## Whether the chunk at `target` still stands (the nearest standing chunk to it is itself).
+func _still_standing(sim: RampageSim, target: Vector2) -> bool:
+	return target.x < INF and sim.nearest_standing(target).distance_to(target) < 0.01

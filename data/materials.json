@@ -55,6 +55,9 @@
 		{"id": 52, "name": "hz_green", "strength": 1.0, "debris": "band", "fixture": false, "finish": "rough"},
 		{"id": 53, "name": "hz_white", "strength": 1.0, "debris": "wall", "fixture": false, "finish": "rough"},
 		{"id": 54, "name": "hz_glow", "strength": 1.0, "debris": "glass", "fixture": false, "finish": "rough"},
-		{"id": 55, "name": "hz_drum", "strength": 1.0, "debris": "pipe", "fixture": false, "finish": "metal"}
+		{"id": 55, "name": "hz_drum", "strength": 1.0, "debris": "pipe", "fixture": false, "finish": "metal"},
+		{"id": 56, "name": "heater", "strength": 1.0, "debris": "heater", "fixture": false, "finish": "metal"},
+		{"id": 57, "name": "heater_hi", "strength": 1.0, "debris": "heater_hi", "fixture": false, "finish": "metal"},
+		{"id": 58, "name": "solar", "strength": 1.0, "debris": "solar", "fixture": false, "finish": "glass"}
 	]
 }
