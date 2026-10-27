@@ -6,6 +6,8 @@ extends RefCounted
 ## carries the rest of the depth. The look's numbers: far_blur_amount (0 = off), far_blur_start
 ## (blur begins at this many times the camera-to-kaiju distance), far_blur_ramp (and is full this
 ## many times that distance later). A preset may turn it off ("far_blur").
+## D-360 (2026-10-28, replaces D-163's depth-blur clause): the look ships far_blur_amount 0, so no
+## camera carries the pass and follow() returns at once; the option stays for a look that sets it.
 
 var _camera: Camera3D
 var _attrs: CameraAttributesPractical

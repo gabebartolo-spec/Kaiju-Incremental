@@ -40,6 +40,7 @@ class Fall:
 	var seconds: float
 	var t := 0.0
 	var yaw := 0.0
+	var paint: Array[Color] = HelicopterModel.GUNSHIP_PAINT  # its chunks' paints
 
 
 ## A crew member under a canopy, drifting from `from` to `to`.
@@ -59,26 +60,29 @@ func _init(city: CityView, sim: RampageSim) -> void:
 	add_child(_debris)
 
 
-## The sim downed helicopter `node` (its model, already off the circle) with `event`.
-func downed(node: Node3D, event: Dictionary) -> void:
-	node.set_meta("opacity", 1.0)  # a screen-door fade never carries on to the wreck
-	VehicleParts.set_opacity(node, 1.0)
-	var at := Vector3(Num.f(event["x"]), _sim.air.altitude(), Num.f(event["z"]))
+## The sim downed helicopter `node` (its model, already off the circle) with `event`; its wreck's
+## chunks wear `paint` (the model's own, HelicopterModel.debris_paint).
+func downed(node: Node3D, event: Dictionary, paint: Array[Color]) -> void:
+	var at := Vector3(
+		Num.f(event["x"]), Num.f(event.get("y", _sim.air.altitude())), Num.f(event["z"])
+	)
 	match str(event.get("fate", "burst")):
 		"grabbed":
 			node.queue_free()
 		"spin":
-			_spin(node, at, event)
+			_spin(node, at, event, paint)
 		_:
-			_burst(node, at)
+			_burst(node, at, paint)
 
 
 ## A spinning wreck reached the street at the sim's crash point.
 func crashed(event: Dictionary) -> void:
 	var id := Num.i(event["heli"])
 	var ground := Vector3(Num.f(event["x"]), 0.0, Num.f(event["z"]))
+	var paint := HelicopterModel.GUNSHIP_PAINT
 	if _falling.has(id):
 		var fall: Fall = _falling[id]
+		paint = fall.paint
 		_end_fall(fall)
 		_break_up(fall.node, 0.6, false)
 		_falling.erase(id)
@@ -95,7 +99,9 @@ func crashed(event: Dictionary) -> void:
 	_city.fire(ground, Num.f(_cfg["crash_fire"]))
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
 	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
-	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
+	_debris.shards(
+		ground + Vector3(0, 0.8, 0), Vector2i(Num.i(_cfg["crash_shards"]), 2), paint, 0.7
+	)
 	if sfx != null:
 		sfx.play_at("heli_crash", ground)
 
@@ -147,7 +153,7 @@ func _end_fall(fall: Fall) -> void:
 
 ## Blown apart in the air: the flash, the ball of flame, the smoke, and the helicopter's own parts
 ## and a rain of chunks thrown out (see the header).
-func _burst(node: Node3D, at: Vector3) -> void:
+func _burst(node: Node3D, at: Vector3, paint: Array[Color]) -> void:
 	HeliFx.flare(_city, at, Num.f(_cfg["flare_size"]), Num.f(_cfg["flare_seconds"]))
 	_city.flash(at, BLAST, Num.f(_cfg["burst_light"]), Num.f(_cfg["burst_light_seconds"]))
 	HeliFx.fireball(_city, at, _cfg)
@@ -157,7 +163,7 @@ func _burst(node: Node3D, at: Vector3) -> void:
 	fire.global_position = at
 	get_tree().create_timer(Num.f(_cfg["burst_seconds"])).timeout.connect(fire.go_out)
 	_break_up(node, 1.0, true)
-	_debris.shards(at, Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"]))
+	_debris.shards(at, Vector2i(Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"])), paint)
 	if sfx != null:
 		sfx.play_at("heli_crash", at)
 
@@ -197,12 +203,12 @@ func _break_up(node: Node3D, reach: float, in_air: bool) -> void:
 	node.queue_free()
 
 
-func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
+func _spin(node: Node3D, at: Vector3, event: Dictionary, paint: Array[Color]) -> void:
 	if not node.is_inside_tree():
 		add_child(node)  # a model the view never drew still carries the fire down
-	VehicleParts.set_opacity(node, 1.0)  # no longer fading for the camera: a solid wreck
 	var fall := Fall.new()
 	fall.node = node
+	fall.paint = paint
 	fall.from = at
 	fall.drift = Vector3(Num.f(event["dx"]), 0.0, Num.f(event["dz"]))
 	fall.seconds = Num.f(event["seconds"])

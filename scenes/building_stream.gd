@@ -251,10 +251,10 @@ func _process(delta: float) -> void:
 	worst_usec = maxi(worst_usec, Time.get_ticks_usec() - t0)
 
 
-## One frame's work (_process calls it; a test that owns the clock turns _process off).
-func step(delta: float) -> void:
+## One frame's work. A test that owns the clock turns _process off; settle: wait for workers first.
+func step(delta: float, settle := false) -> void:
 	for n: int in _tasks.keys():
-		if WorkerThreadPool.is_task_completed(Num.i(_tasks[n])):
+		if settle or WorkerThreadPool.is_task_completed(Num.i(_tasks[n])):
 			WorkerThreadPool.wait_for_task_completion(Num.i(_tasks[n]))
 			_tasks.erase(n)
 	for pair: Array in _take_ready():

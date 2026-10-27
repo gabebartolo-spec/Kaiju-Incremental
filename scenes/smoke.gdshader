@@ -22,6 +22,11 @@ uniform float focus_full = 1.0;
 // blue): `self_lit` 1 moves the colour from albedo to emission and rounds the puff to a radial
 // falloff that is gone at the quad's border. 0 (every other smoke) is unchanged.
 uniform float self_lit = 0.0;
+// Soft contact (render plan item 13): a puff fades out over the last `smoke_soft_m` metres before
+// the roof, wall or street behind it, so smoke and dust melt into them and show no hard line where
+// the flat quad meets them. A global (tuning render_opt.soft_smoke_m through SmokeSoft); 0 = off.
+uniform sampler2D depth_tex : hint_depth_texture, repeat_disable, filter_nearest;
+global uniform float smoke_soft_m;
 #include "res://scenes/view_clear.gdshaderinc"
 
 float hash(vec2 p) {
@@ -57,5 +62,11 @@ void fragment() {
 	round_mask *= mix(1.0, 1.0 - smoothstep(0.55, 1.0, length(p)), self_lit);
 	float clear = view_clear(-VERTEX.z, SCREEN_UV, VIEWPORT_SIZE, near_clear, near_full,
 		centre_keep, centre_radius, focus_clear, focus_full);
-	ALPHA = COLOR.a * round_mask * clear;
+	float soft = 1.0;
+	if (smoke_soft_m > 0.0) {
+		vec4 behind = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0,
+			textureLod(depth_tex, SCREEN_UV, 0.0).x, 1.0);
+		soft = smoothstep(0.0, smoke_soft_m, -(behind.z / behind.w) + VERTEX.z);  // metres in front
+	}
+	ALPHA = COLOR.a * round_mask * clear * soft;
 }

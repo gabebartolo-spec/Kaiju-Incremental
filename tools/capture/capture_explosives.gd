@@ -32,6 +32,8 @@ var _side := Vector2.ZERO  # the side of the kaiju the chain is on (unit, ground
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--view="):
 			_view = arg.substr(7)
@@ -186,7 +188,7 @@ func _model_still(rampage: Rampage, i: int) -> void:
 	var away := (
 		Vector3(b.x - rampage.sim.kaiju_pos.x, 0.0, b.z - rampage.sim.kaiju_pos.y).normalized()
 	)
-	# From the side, so the line to the kaiju never crosses the site (BuildingFade would thin it).
+	# From the side, so the line to the kaiju never crosses the site (the bubble would cut it).
 	cam.position = at + (away.cross(Vector3.UP) * 1.5 + away * 0.3 + Vector3(0, 1.9, 0)) * span
 	for node: Node in rampage.get_children():
 		if node is KaijuModel or node is BreathAim:

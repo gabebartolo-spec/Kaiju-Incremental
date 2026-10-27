@@ -60,7 +60,7 @@ func speed_mult() -> float:
 
 
 func _ground_mult() -> float:
-	if beam_left > 0.0:
+	if beam_left > 0.0 or sim.strikes.winding(Strikes.BEAM):  # slowed from the press (D-166)
 		return Num.f(cfg["beam_move_mult"])
 	if sim.airborne:
 		return Num.f(cfg["glide_speed_mult"])
@@ -241,19 +241,24 @@ func has_ultimate() -> bool:
 func ultimate() -> void:
 	sim.events.append({"type": "ultimate"})  # the view roars (D-145)
 	if sim.stat("beam_dps") > 0.0:
-		beam_left = Num.f(cfg["beam_seconds"])
-		sim.events.append({"type": "beam_start", "seconds": beam_left})
+		sim.strikes.beam()  # the stream starts at the strike, the jaws open (D-166)
 	elif sim.stat("brood_count") > 0.0:
 		sim.brood.lay(Num.i(sim.stat("brood_count")))
 	elif sim.stat("ink_dps") > 0.0:
 		_ink()
 
 
+## The jaws open: the Thunder Beam's stream starts (Strikes, after the wind-up).
+func start_beam() -> void:
+	beam_left = Num.f(cfg["beam_seconds"])
+	sim.events.append({"type": "beam_start", "seconds": beam_left})
+
+
 func step(dt: float, held: bool) -> void:
 	_glide(dt, held)
 	_beam(dt)
 	tentacles.step(dt)
-	_coats(dt)
+	CoatWear.step(sim, coats, dt)
 	fire.step(dt)
 
 
@@ -350,30 +355,3 @@ func coat(index: int, cells: Array[Vector3i]) -> void:
 		)
 	if str(sim.hit_coat["kind"]) == "burn":
 		fire.ignite(index)
-
-
-func _coats(dt: float) -> void:
-	if coats.is_empty():
-		return
-	var by_building: Dictionary = {}
-	var done: Array[int] = []
-	for key: int in coats:
-		var entry: Dictionary = coats[key]
-		var b := sim.buildings[Num.i(entry["b"])]
-		var c: Vector3i = entry["c"]
-		entry["t"] = Num.f(entry["t"]) - dt
-		if Num.f(entry["t"]) <= 0.0 or not b.frame.alive(c):
-			done.append(key)
-			continue
-		var list: Array = by_building.get(entry["b"], [])
-		list.append(entry)
-		by_building[entry["b"]] = list
-	for key: int in done:
-		coats.erase(key)
-	for index: int in by_building:
-		var cells: Array[Vector3i] = []
-		var amounts := PackedFloat32Array()
-		for entry: Dictionary in by_building[index]:
-			cells.append(entry["c"])
-			amounts.append(Num.f(entry["dps"]) * dt)
-		sim.damage_cells(index, cells, amounts)

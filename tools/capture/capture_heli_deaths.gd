@@ -37,6 +37,8 @@ var _block := -1  # the building the wreck is dropped beside
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "run": 1, "clip": false})
 	_out = str(a["out"])
 	_clip = a["clip"] == true
@@ -131,8 +133,6 @@ func _spawn(toward: Array[Vector2]) -> Array[AirWing.Heli]:
 			heli.pos = at
 			heli.heading = (at - sim.kaiju_pos).angle()
 		await physics_frame
-	for node: Node3D in _rampage._powers.helis():
-		print("parked helicopter opacity %.2f" % Num.f(node.get_meta("opacity", 1.0)))
 	return helis
 
 

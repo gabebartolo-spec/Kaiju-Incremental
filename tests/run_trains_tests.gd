@@ -7,6 +7,7 @@ extends "res://tests/lib/powers_base.gd"
 ## the same seeded run with the kaiju stomping on the passing train against it standing away.
 ##   godot --headless --path . --script tests/run_trains_tests.gd
 
+const RailProbe := preload("res://tests/lib/rail_probe.gd")
 const AWAY := Vector2(-30, -30)
 
 
@@ -151,26 +152,6 @@ func _stand_at(at: Vector2, seconds: float) -> RampageSim:
 	return sim
 
 
-## The piece of the line at world z (its index in the sim's buildings), or -1.
-func _piece_at(sim: RampageSim, z: float) -> int:
-	for n: int in sim.rail.pieces:
-		var b := sim.buildings[n]
-		if absf(z - b.z) < b.d * 0.5:
-			return n
-	return -1
-
-
-## The cells the carve took from building n over `events` (cells_carved), as grid indices.
-static func _carved(events: Array[Dictionary], n: int) -> Dictionary:
-	var out := {}
-	for event: Dictionary in events:
-		if str(event["type"]) == "cells_carved" and Num.i(event["building"]) == n:
-			var index: PackedInt32Array = event["index"]
-			for i: int in index:
-				out[i] = true
-	return out
-
-
 ## D-247, the director 2026-10-25 "it needs to be destroyed with the same logic as all other
 ## buildings": every piece of the viaduct and the station is a building the shared carve takes,
 ## and stands on its own until something breaks it.
@@ -209,7 +190,7 @@ func _check_pieces_are_buildings() -> void:
 ## outside].
 func _contact_side_by_side() -> Array:
 	var probe := _scene()
-	var n := _piece_at(probe, probe.rail.point(probe.rail.length * 0.75, 1).y)
+	var n := RailProbe.piece_at(probe, probe.rail.point(probe.rail.length * 0.75, 1).y)
 	var p := probe.buildings[n]
 	var twin := _b(p.x - 30.0, p.z, Vector3i(p.w, p.d, p.height))
 	var out := []
@@ -224,7 +205,7 @@ func _contact_side_by_side() -> Array:
 		var touched: Dictionary = sim.body.inside(sim.kaiju_pos, sim.body.heading).get(m, {})
 		var events := sim.step(DT, Vector2.ZERO, false, 0)
 		var g: Carving.Grid = sim.carving.grids[m]
-		var took := _carved(events, m)
+		var took := RailProbe.carved(events, m)
 		var full := 0
 		var inside := 0
 		for ci: int in g.full.size():
@@ -316,7 +297,7 @@ func _check_walk_through_carves() -> void:
 func _check_cut_span_falls() -> void:
 	var sim := _scene()
 	var rail := sim.rail
-	var n := _piece_at(sim, rail.point(rail.length * 0.75, 1).y)
+	var n := RailProbe.piece_at(sim, rail.point(rail.length * 0.75, 1).y)
 	var b := sim.buildings[n]
 	var cut: Array[Vector3i] = []
 	for z: int in [1, roundi(Num.f(rail.cfg["bay_length"])) - 1]:
@@ -353,7 +334,7 @@ func _check_falling_building_damages_track() -> void:
 	var sim := _scene()
 	var rail := sim.rail
 	var mid := rail.point(rail.length * 0.75, 1).y
-	var n := _piece_at(sim, mid)
+	var n := RailProbe.piece_at(sim, mid)
 	var x := rail.centre_x()
 	sim.collapse._crush_strip(Vector2(x - 8.0, mid), Vector2(x + 8.0, mid), 1.5, -1)
 	sim.step(DT, Vector2.ZERO, false, 0)
@@ -372,7 +353,7 @@ func _check_break_under_train_derails() -> void:
 		check(false, "a train runs")
 		return
 	var at := train.cars[2].pos
-	var n := _piece_at(sim, at.y)
+	var n := RailProbe.piece_at(sim, at.y)
 	var b := sim.buildings[n]
 	var cz := floori(at.y - (b.z - b.d * 0.5))
 	sim.damage_chunks(

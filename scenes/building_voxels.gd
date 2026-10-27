@@ -5,7 +5,7 @@ extends RefCounted
 ## Facades have depth: windows sit one cell back in their reveals behind proud sills and
 ## lintels; piers, spandrels, mullions and transoms frame them. Four archetypes: office
 ## (ribbon windows over spandrel bands, AC plant), brick residential (punched windows, balconies
-## with railings, water tank), glass tower (flush curtain wall, mast with beacon), stone classic
+## with railings, water tower), glass tower (flush curtain wall, mast with beacon), stone classic
 ## (pilasters, cornices and string courses, stepped roof). Ground floors are shopfronts under a
 ## sign band and an awning. A side shared with a neighbour carries the same facade (build 2 note
 ## 22), so it shows when the neighbour falls; some shops hang a vertical neon sign off a street face
@@ -65,14 +65,15 @@ func origin() -> Vector3:
 
 func _make_palette(base: Color) -> void:
 	var lit := Look.color("window_lit_color")
-	lit.a = 0.0 if Look.value("window_glow") > 0.0 else 1.0
+	lit.a = WindowPalette.TAG if Look.value("window_glow") > 0.0 else 1.0
+	var sill := base.lightened(0.28)
 	var shop_lit := Color("ffd9a0")
 	shop_lit.a = lit.a
 	palette = {
 		"wall": base,
 		"pillar": base.darkened(0.1),
 		"trim": base.lightened(0.16),
-		"sill": base.lightened(0.28),
+		"sill": sill,
 		"window": Look.color("window"),
 		"frame": base.darkened(0.3),
 		"lit": lit,
@@ -84,13 +85,16 @@ func _make_palette(base: Color) -> void:
 		"shop_lit": shop_lit,
 		"awning": AWNINGS[posmod(roundi(b.x + b.z * 3.0), AWNINGS.size())],
 		"band": SIGN_BANDS[posmod(roundi(b.x * 7.0 + b.z), SIGN_BANDS.size())],
-		"rail": Color("2a2c2e"),
+		"rail": sill,  # D-303: balcony railings take the sill tone
 		"slab": Color("8a8780"),
 		"roof": Look.color("roof"),
 		"gear": Color("a9aaa4"),
 		"vent": Color("3a3c3e"),
 		"pipe": Color("6b6f72"),
 		"tank": Color("6a5040"),
+		"heater": Color("e6e8e4"),  # D-352: the white solar water heater
+		"heater_hi": Color("f8faf6"),
+		"solar": Color("1b2538"),
 		"beacon": Color(1.0, 0.25, 0.2, 0.0),
 		"sign_frame": Color("1c1e22"),
 	}

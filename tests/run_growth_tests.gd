@@ -7,6 +7,8 @@ extends "res://tests/lib/runner.gd"
 
 const DT := 1.0 / 15.0
 ## Upgrades owned at the start of each stage (enough body to be that stage's kaiju).
+## How much more of the city (a share, 0..1) the young city loses than the grown one.
+const GROWTH_MARGIN := 0.2
 const COLOSSUS := {
 	"claws": 5,
 	"hide": 5,
@@ -187,9 +189,10 @@ func _check_defences() -> void:
 ## on the current tier's nodes harden the tanks and helicopters; an evolution resets that count.
 ## Player-effect fixture: a fully bought Behemoth in its own city with the escalation on loses
 ## more health to the army than with it off, so the clock is not the only thing that ends a run.
-## Player-effect fixture: a Colossus in the young city flattens it before the clock runs out;
-## in its own grown city the same rampage runs to the clock, earns more and leaves city
-## standing: growth on vs off changes the city and the outcome.
+## Player-effect fixture: a Colossus in the young city flattens it; in its own grown city the same
+## rampage does not (with the breath's 1.4 s wind-up it ends on the clock or is defeated), destroys
+## at least GROWTH_MARGIN (a share of the city) less, earns more and leaves city standing: growth on
+## vs off changes the city and the outcome. Seeded by design: army seed 1.
 func _check_growth_matters() -> void:
 	var off := _play(Content.tuning(), _layout(1), COLOSSUS, FIXTURE_CLOCK)
 	var on := _play(_tuning(3), _layout(3), COLOSSUS)
@@ -201,10 +204,21 @@ func _check_growth_matters() -> void:
 		)
 	)
 	check(
-		str(off["reason"]) == "city_fallen" and str(on["reason"]) == "time",
+		str(off["reason"]) == "city_fallen" and str(on["reason"]) != "city_fallen",
 		(
-			"growth off the Colossus flattens the city; on, it rampages to the clock (%s vs %s)"
+			"growth off the Colossus flattens the city; on, it does not (%s vs %s)"
 			% [off["reason"], on["reason"]]
+		)
+	)
+	check(
+		Num.f(off["destruction"]) >= Num.f(on["destruction"]) + GROWTH_MARGIN,
+		(
+			"growth off destroys at least %.0f points more of the city (%.0f%% vs %.0f%%)"
+			% [
+				GROWTH_MARGIN * 100.0,
+				Num.f(off["destruction"]) * 100.0,
+				Num.f(on["destruction"]) * 100.0
+			]
 		)
 	)
 	check(

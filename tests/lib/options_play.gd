@@ -71,9 +71,13 @@ func _rebound_key() -> void:
 		)
 	)
 	check.call(
-		rampage._held.read(false, false),
+		rampage._reader.held_button.read(false, false),
 		"held moves on TOGGLE: after R is let go the held move stays on"
 	)
+	var waited := 0
+	while not sent.has(_row(Content.section("rumble")["breath"])) and waited < 240:
+		await t.physics_frame  # the breath lands after its wind-up (Strikes), then it buzzes
+		waited += 1
 	check.call(
 		sent.has(_row(Content.section("rumble")["breath"])),
 		"the breath buzzes the pad (%d rumbles)" % sent.size()

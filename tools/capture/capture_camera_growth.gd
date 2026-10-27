@@ -66,6 +66,8 @@ var _trace := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--candidate="):
 			_candidate = arg.substr(12)
@@ -278,26 +280,9 @@ func _check_frame(height: int) -> void:
 			break
 	if _blocked(eye, feet + Vector3(0, FEET_SIGHT, 0), opaque):
 		_hidden += 1
-	var city: CityView = _rampage.get("_city")
-	var falls: FallFade = city.get("_fall_fade")  # null before FallFade is wired in: every piece solid
-	var sight := BuildingFade.sight_of(_rampage.sim, eye)
-	var over := false
-	var solid_over := false
-	for piece: Node3D in city.falling_pieces():
-		if FallFade.covers(piece, eye, sight):
-			over = true  # a falling section over the body (today's game drew every one solid)
-			solid_over = solid_over or falls == null or falls.opacity(piece) >= 1.0
-	_fall_over += 1 if over else 0
-	_fall_hidden += 1 if solid_over else 0
 	if head_rig != null and head_rig.bone_names().has("head1"):
 		var heads := PackedVector3Array([skull, head_rig.bone("head1").global_position])
 		var solid_head := _blocked(eye, heads[0], opaque) or _blocked(eye, heads[1], opaque)
-		for piece: Node3D in city.falling_pieces():
-			if (
-				FallFade.covers(piece, eye, heads)
-				and (falls == null or falls.opacity(piece) >= 1.0)
-			):
-				solid_head = true
 		_head_hidden += 1 if solid_head else 0  # the drawn head behind something drawn solid
 
 
@@ -313,14 +298,11 @@ func _drawn_top(kaiju: KaijuModel) -> float:
 	return top
 
 
-## The buildings drawn solid this frame (BuildingFade's opacity 1): a faded one hides nothing.
+## The buildings drawn solid this frame: all of them (the camera bubble cuts only the near ones).
 func _opaque() -> Array[RampageSim.Building]:
-	var city: CityView = _rampage.get("_city")
-	var fade: BuildingFade = city.get("_fade")
 	var out: Array[RampageSim.Building] = []
 	for n: int in _rampage.sim.buildings.size():
-		if fade == null or fade.opacity(n) >= 1.0:
-			out.append(_rampage.sim.buildings[n])
+		out.append(_rampage.sim.buildings[n])
 	return out
 
 

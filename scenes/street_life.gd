@@ -32,6 +32,7 @@ var fleeing := PackedByteArray()
 ## frozen under a falling tower (nobody outruns one).
 var pinned_until := PackedFloat64Array()
 var cop := PackedByteArray()
+var officers: Array[Police.Officer] = []  # null for a civilian
 ## A match on each stadium's pitch (D-078).
 var matches: Array[StadiumMatch] = []
 ## Running totals (tests and the capture tool read them).
@@ -44,7 +45,8 @@ var worst_usec := 0
 var total_usec := 0
 var frames := 0
 var toll := ArmyToll.new()  # what the army's own stray shells killed (not the kaiju's)
-var _officers: Array[Police.Officer] = []  # null for a civilian
+## render_opt.people_buffers: with the native extension, StreetDraw places the people.
+var people_buffers: bool = Num.i(Content.section("render_opt")["people_buffers"]) != 0
 var _cfg: Dictionary
 var _fx: Fx
 var _rng: RandomNumberGenerator
@@ -53,6 +55,8 @@ var _pavements: Pavements
 var _nodes := PackedVector2Array()
 var _mms: Array[MultiMesh] = []
 var _counts := PackedInt32Array()
+var _draw: StreetDraw = null  # people_buffers and the extension
+var _walker: StreetWalk = null  # the same, with the extension's walk
 var _capacity := 0
 var _clock := 0.0
 var _sport_rng: RandomNumberGenerator
@@ -85,18 +89,12 @@ func _ready() -> void:
 		_spawn_civilian(n % maxi(1, blocks))
 	_capacity = pos.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	_capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
-	for dress: int in VoxelPerson.OUTFITS.size():
-		for pose: int in VoxelPerson.POSES:
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = VoxelPerson.mesh(dress, pose, _voxel)
-			mm.instance_count = _capacity
-			mm.visible_instance_count = 0
-			var mmi := MultiMeshInstance3D.new()
-			mmi.multimesh = mm
-			add_child(mmi)
-			_mms.append(mm)
+	var native := people_buffers and StreetDraw.available()
+	_mms = StreetDraw.pools(self, _voxel, 0 if native else _capacity)
 	_counts.resize(_mms.size())
+	if native:
+		_draw = StreetDraw.new(self, _mms, _nodes, _capacity)
+		_walker = StreetWalk.new(self, _pavements) if StreetWalk.available() else null
 	police = Police.new(self, Seeds.make("police", 0))
 	add_child(police)
 	var stadium := str(Content.sports()["pitch"]["landmark"])
@@ -124,22 +122,13 @@ func add_person() -> int:
 	fleeing.append(0)
 	pinned_until.append(-1.0)
 	cop.append(0)
-	_officers.append(null)
+	officers.append(null)
 	return pos.size() - 1
 
 
 func _spawn_civilian(lot: int) -> void:
-	var corner := _rng.randi_range(0, 3)
-	var blocks := _nodes.size() >> 2
-	# Along the pavement line where there is one: the next corner round, then the next block.
-	for _try: int in blocks * 4:
-		var from := (lot % blocks) * 4 + corner
-		if _pavements.links[from].has((from & ~3) + ((from + 1) & 3)):
-			break
-		corner = (corner + 1) % 4
-		lot += 1 if corner == 0 else 0
 	var i := add_person()
-	from_node[i] = (lot % blocks) * 4 + corner
+	from_node[i] = _pavements.line_start(lot, _rng.randi_range(0, 3))
 	to_node[i] = (from_node[i] & ~3) + ((from_node[i] + 1) & 3)
 	pos[i] = _nodes[from_node[i]].lerp(_nodes[to_node[i]], _rng.randf())
 	heading[i] = (_nodes[to_node[i]] - _nodes[from_node[i]]).normalized()
@@ -157,7 +146,7 @@ func add_cop(officer: Police.Officer) -> void:
 	outfit[i] = VoxelPerson.COP
 	phase[i] = officer.phase
 	cop[i] = 1
-	_officers[i] = officer
+	officers[i] = officer
 
 
 func civilians() -> int:
@@ -229,32 +218,15 @@ func crush_all(spots: Array[Vector3], by_tank: bool = false) -> void:
 			if puffs[k] < MAX_PUFFS_PER_CRUSH:
 				puffs[k] += 1
 				_fx.puff(Vector3(at.x, 0.15, at.y))
-			_remove(i)
+			remove(i)
 			killed += 1
 			run_over += 1 if by_tank else 0
 			break
 
 
-## The people under a section that starts to fall (a fall_start event) freeze there; its landing
-## (CityView) crushes the same reach: a topple's strip, or a drop's walls plus drop_reach.
-func brace_fall(event: Dictionary, drop_reach: float) -> void:
-	var b := sim.buildings[Num.i(event["building"])]
-	var cells: Array = event["cells"]
-	if cells.is_empty():  # a carved scrap smashes nothing
-		return
-	var seconds := Num.f(event["duration"])
-	var spill := tune("fall_spill")
-	if str(event["kind"]) == "topple" and event.has("to"):
-		var pivot: Vector3 = event["pivot"]
-		var to: Vector2 = event["to"]
-		var from := Vector2(pivot.x, pivot.z)
-		brace(from, to, Num.f(event["width"]) * 0.6 + spill, seconds)
-	elif b.landmark == "":
-		var at := Vector2(b.x, b.z)
-		brace(at, at, maxf(b.w, b.d) * 0.5 + drop_reach + spill, seconds)
-
-
-## A section falls along from..to within `radius` in `seconds`: civilians under it freeze there.
+## A falling section will land along from..to (a point for a drop) within `radius` in
+## `seconds`: the civilians under it freeze there (they cannot outrun a falling tower), so its
+## landing crushes them (CityView crushes the same strip).
 func brace(from: Vector2, to: Vector2, radius: float, seconds: float) -> void:
 	for i: int in pos.size():
 		if cop[i] == 1:
@@ -264,8 +236,9 @@ func brace(from: Vector2, to: Vector2, radius: float, seconds: float) -> void:
 			pinned_until[i] = _clock + seconds + 0.5
 
 
-func _remove(i: int) -> void:
-	var officer := _officers[i]
+## Person i leaves the street (crushed, or an officer far enough away): the last one moves in.
+func remove(i: int) -> void:
+	var officer := officers[i]
 	if officer != null and officer.state < 2 and officer.blockade != null:
 		officer.blockade.holding -= 1
 	var last := pos.size() - 1
@@ -280,7 +253,7 @@ func _remove(i: int) -> void:
 	fleeing[i] = fleeing[last]
 	pinned_until[i] = pinned_until[last]
 	cop[i] = cop[last]
-	_officers[i] = _officers[last]
+	officers[i] = officers[last]
 	pos.resize(last)
 	heading.resize(last)
 	outfit.resize(last)
@@ -292,7 +265,7 @@ func _remove(i: int) -> void:
 	fleeing.resize(last)
 	pinned_until.resize(last)
 	cop.resize(last)
-	_officers.resize(last)
+	officers.resize(last)
 
 
 func _process(delta: float) -> void:
@@ -303,7 +276,7 @@ func _process(delta: float) -> void:
 	_lod.update(get_viewport().get_camera_3d())
 	police.update(delta, kaiju)
 	_walk(delta, kaiju)
-	_lod.draw(self, _mms, _counts, _capacity)
+	_draw_people()
 	var spent := Time.get_ticks_usec() - t0
 	worst_usec = maxi(worst_usec, spent)
 	total_usec += spent
@@ -315,7 +288,13 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 	var panic := _panic_radius()
 	var calm := panic * Num.f(_cfg["calm_radius"]) / Num.f(_cfg["panic_radius"])
 	var gawk := Num.f(_cfg["panic_gawk"])
-	var speeds := PackedFloat64Array([Num.f(_cfg["walk_speed"]), Num.f(_cfg["run_speed"])])
+	var run := Num.f(_cfg["run_speed"])
+	var walk := Num.f(_cfg["walk_speed"])
+	if _walker != null:  # render plan item 7: every civilian's step in one native call
+		_walker.frame(delta, kaiju, PackedFloat64Array([_clock, panic, calm, gawk, run, walk]))
+		return
+	# Without the extension, far people step every few frames (StreetLod, D-254).
+	var speeds := PackedFloat64Array([walk, run])
 	var far2 := _lod.far2  # past this from the kaiju and the camera: a step every few frames
 	var cam := _lod.cam
 	for i: int in range(pos.size() - 1, -1, -1):
@@ -350,9 +329,9 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 
 ## Officer i takes its police step (Police.update_cop), or leaves when its job is done.
 func _walk_cop(i: int, delta: float, kaiju: Vector2) -> void:
-	var officer := _officers[i]
+	var officer := officers[i]
 	if police.update_cop(officer, delta, kaiju):
-		_remove(i)
+		remove(i)
 	else:
 		pos[i] = officer.pos
 		heading[i] = officer.heading
@@ -379,7 +358,7 @@ func _panic_radius() -> float:
 ## A person's pose: standing (gawking or frozen), aiming (an officer holding), else a stride.
 func pose(i: int) -> int:
 	if cop[i] == 1:
-		var state := _officers[i].state
+		var state := officers[i].state
 		if state == 1:
 			return VoxelPerson.Pose.AIM
 		var stride := int(_clock * RUN_HZ + phase[i] * 2.0) % 2
@@ -389,3 +368,10 @@ func pose(i: int) -> int:
 	if fleeing[i] == 1:
 		return VoxelPerson.Pose.RUN_A + int(_clock * RUN_HZ + phase[i] * 2.0) % 2
 	return VoxelPerson.Pose.WALK_A + int(_clock * WALK_HZ + phase[i] * 2.0) % 2
+
+
+func _draw_people() -> void:
+	if _draw != null:  # render plan item 7: every civilian in one native call
+		_draw.frame(_clock)
+		return
+	_lod.draw(self, _mms, _counts, _capacity)  # without the extension: those in view (D-254)

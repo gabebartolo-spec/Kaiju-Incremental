@@ -7,7 +7,8 @@ name: tests
 #   - A push to main whose tree is the tree a green PR run already tested skips its re-test
 #     (tools/ci_reuse_pr_run.sh).
 #   - The shards come from measured times (tools/ci_timings.txt, tools/plan_ci_shards.sh):
-#     no suite or shard list is kept by hand. A PR run targets 10-12 minutes; it is about 4.
+#     no suite or shard list is kept by hand. A PR run targets 10-12 minutes (debt row 4, D-295).
+#     Each shard runs `lanes` suites at once on its 4 vCPUs (tools/run_tests.sh LANES).
 #   - Slow, noisy suites ("pr_skip" in tools/ci_timings.txt; none yet) run on pushes to main
 #     only, reported and never blocking.
 #   - Every test function must have run and made a check (tests/lib/functions_ran.gd); there is
@@ -48,13 +49,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # the PR merge commit and its parents; main's previous commit
+          # A pull request needs only its merge commit and the two parents (full history took 6 s to 51 s
+          # to clone, and every job waits on this one); a push to main reads main's previous commit and
+          # a pull request ref (tools/ci_reuse_pr_run.sh).
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
 
       # Anything outside docs/ and *.md files counts as code.
       - name: Check for code changes
         id: changes
         env:
           IS_DRAFT: ${{ github.event.pull_request.draft }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           code=true
@@ -66,12 +71,25 @@ jobs:
             elif ! git diff --name-only HEAD^1 HEAD | grep -qvE '^docs/|\.md$'; then
               code=false
               reason="documentation only"
+            else
+              reused=$(bash tools/ci_reuse_dispatch_run.sh HEAD "$PR_HEAD" || true)
+              if [ -n "$reused" ]; then
+                code=false
+                reason="branch run ${reused#reuse } already tested this exact tree green (D-319)"
+              fi
             fi
           elif [ "${{ github.event_name }}" = "push" ]; then
             reused=$(bash tools/ci_reuse_pr_run.sh || true)
             if [ -n "$reused" ]; then
               code=false
               reason="the tree on main is the tree pull request ${reused#reuse } already tested green"
+            else
+              pr_head=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].head.sha // empty' 2> /dev/null || true)
+              reused=$(bash tools/ci_reuse_dispatch_run.sh "$GITHUB_SHA" "$pr_head" || true)
+              if [ -n "$reused" ]; then
+                code=false
+                reason="branch run ${reused#reuse } already tested this exact tree green (D-319)"
+              fi
             fi
           fi
           if [ "$code" = false ]; then echo "Skipping the Godot checks ($reason)."; fi
@@ -114,17 +132,37 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The display fonts are LFS: as bare pointer files the import hung once on kaiju_claw.ttf
+          # (run 40364468498: 10 minutes, then red). The shards check out the real files and never hung.
+          lfs: true
       # Two seconds of Python, before Godot: a tuning key read in code exists in data/tuning.json
       # (audit 2026-10-21 #5), and no function newly breaks the 40-line / complexity-12 limits (#25).
       - name: Tuning keys and complexity ratchet
         run: |
           python3 tools/lint/tuning_keys.py
           python3 tools/lint/complexity_ratchet.py
+      # Every data/*.json against its schema in data/schemas (hard rule 4); the self-test plants a wrong
+      # type and an unknown key in each file and fails unless both are caught. jsonschema is MIT.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Data schemas
+        run: |
+          python -m pip install --quiet "jsonschema>=4.18,<5"
+          python tools/lint/data_schemas.py --self-test
+          python tools/lint/data_schemas.py
       - uses: ./.github/actions/setup-godot
       - name: Import the project (compiles the scripts it loads)
         run: |
+          # The import takes about 20 s. A hung one (exit 124) is tried once more after 4 minutes, not 10.
           code=0
-          timeout 600 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+          for attempt in 1 2; do
+            code=0
+            timeout 240 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+            [ "$code" != 124 ] && break
+            echo "::warning::the import hung (attempt $attempt)"
+          done
           if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log"; then
             grep -E -A3 "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log" | head -40
             tail -5 "$RUNNER_TEMP/import.log"
@@ -137,9 +175,11 @@ jobs:
       - name: Parse and compile every GDScript file
         run: GODOT="$HOME/godot/godot" tools/check_scripts.sh
 
+  # The shards start beside the preflight, not after it (about 0.5 minute off every run): a project that
+  # fails to import fails its shards in seconds (tools/run_tests.sh), and `test` still needs the preflight.
   shard:
     name: shard ${{ matrix.shard }}
-    needs: [plan, preflight, native]
+    needs: [plan, native]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -148,13 +188,10 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
-          # and button draws nothing and the flow suite's font check fails.
-          lfs: true
-      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio.
-      - name: Fetch the sound files
-        run: git lfs pull --include="assets/sfx/*"
+      # The LFS files: the Kaiju Claw fonts (without them every heading and button draws nothing and the flow
+      # suite's font check fails), the sounds, and the kaiju voxel skins and baked models the game reads at
+      # run time. Cached by object id: an unchanged tree downloads nothing (debt row 8).
+      - uses: ./.github/actions/lfs-files
       - uses: ./.github/actions/setup-godot
       - name: Fetch the native library
         uses: actions/download-artifact@v4
@@ -166,6 +203,7 @@ jobs:
         env:
           KAIJU_NATIVE_REQUIRED: "1"
           SUITES: ${{ matrix.suites }}
+          LANES: ${{ matrix.lanes }}
         run: VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
 
       - name: Upload test logs
@@ -179,19 +217,16 @@ jobs:
   # check-less test function fails, an untyped declaration does not compile).
   extras:
     name: harness self-test
-    needs: [plan, preflight, native]
+    needs: [plan]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
-          # and button draws nothing and the flow suite's font check fails.
-          lfs: true
-      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio.
-      - name: Fetch the sound files
-        run: git lfs pull --include="assets/sfx/*"
+      # The LFS files: the Kaiju Claw fonts (without them every heading and button draws nothing and the flow
+      # suite's font check fails), the sounds, and the kaiju voxel skins and baked models the game reads at
+      # run time. Cached by object id: an unchanged tree downloads nothing (debt row 8).
+      - uses: ./.github/actions/lfs-files
       - uses: ./.github/actions/setup-godot
 
       - name: Run the harness self-test
@@ -204,6 +239,41 @@ jobs:
           name: test-logs-extras
           path: ${{ runner.temp }}/test-logs
 
+  # The engine log of a seeded rampage must be clean (D-295, debt rows 1-2): tools/lint/log_smoke.sh
+  # plays every species' rampage headless, kills the kaiju and frees it all, then runs the people
+  # bench's street replay and frees that, and fails on ANY engine ERROR / WARNING line or leak report
+  # in either log. A message is fixed at its cause, never filtered.
+  log_smoke:
+    name: engine log smoke
+    needs: [plan, preflight, native]
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Fetch the sound files
+        run: git lfs pull --include="assets/sfx/*"
+      - uses: ./.github/actions/setup-godot
+      - name: Fetch the native library
+        uses: actions/download-artifact@v4
+        with:
+          name: native-linux
+          path: native/bin
+      # (The checker's own self-test, tools/lint/selftest_log_smoke.sh, runs in lint.yml with the other lints.)
+      - name: Play the seeded rampages and read the engine log
+        env:
+          KAIJU_NATIVE_REQUIRED: "1"
+          LOGS: ${{ runner.temp }}/log-smoke
+        run: GODOT="$HOME/godot/godot" tools/lint/log_smoke.sh
+      - name: Upload the engine log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-smoke
+          path: ${{ runner.temp }}/log-smoke
+
   # Slow suites (pr_skip; none yet): pushes to main only. CI runners vary in speed, so a red run is a
   # prompt to look, never a stop.
   slow:
@@ -215,13 +285,10 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
-          # and button draws nothing and the flow suite's font check fails.
-          lfs: true
-      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio.
-      - name: Fetch the sound files
-        run: git lfs pull --include="assets/sfx/*"
+      # The LFS files: the Kaiju Claw fonts (without them every heading and button draws nothing and the flow
+      # suite's font check fails), the sounds, and the kaiju voxel skins and baked models the game reads at
+      # run time. Cached by object id: an unchanged tree downloads nothing (debt row 8).
+      - uses: ./.github/actions/lfs-files
       - uses: ./.github/actions/setup-godot
 
       - name: Run the slow suites
@@ -231,7 +298,7 @@ jobs:
 
   # The required check. Its name stays "test" so branch protection never changes.
   test:
-    needs: [plan, preflight, native, shard, extras]
+    needs: [plan, preflight, native, shard, extras, log_smoke]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -245,8 +312,9 @@ jobs:
           NATIVE: ${{ needs.native.result }}
           SHARDS: ${{ needs.shard.result }}
           EXTRAS: ${{ needs.extras.result }}
+          LOG_SMOKE: ${{ needs.log_smoke.result }}
         run: |
-          echo "plan=$PLAN code=$CODE preflight=$PREFLIGHT shards=$SHARDS extras=$EXTRAS"
+          echo "plan=$PLAN code=$CODE preflight=$PREFLIGHT shards=$SHARDS extras=$EXTRAS log_smoke=$LOG_SMOKE"
           if [ "$PLAN" != success ]; then
             echo "::error::the plan job failed: the checkout or tools/plan_ci_shards.sh broke"
             exit 1
@@ -266,6 +334,10 @@ jobs:
             fi
             if [ "$EXTRAS" != success ]; then
               echo "::error::the harness self-test job did not pass (extras: $EXTRAS); its log names what failed"
+              exit 1
+            fi
+            if [ "$LOG_SMOKE" != success ]; then
+              echo "::error::the engine log smoke found an ERROR, WARNING or leak line (log_smoke: $LOG_SMOKE); its log names each and where it came from"
               exit 1
             fi
           else

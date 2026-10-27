@@ -7,6 +7,8 @@ extends "res://tests/lib/powers_base.gd"
 
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")
 const TurnWeight := preload("res://tests/lib/powers_turn_weight.gd")
+const Bolt := preload("res://tests/lib/powers_bolt.gd")
+const Lightning := preload("res://tests/lib/powers_lightning.gd")
 
 
 func suite_name() -> String:
@@ -18,6 +20,8 @@ func run_checks() -> void:
 	await _t("_check_tail")
 	await _h("TailCity", func() -> void: TailCity.check(check))
 	await _h("TurnWeight", func() -> void: TurnWeight.check(check, _sim))
+	await _h("Bolt", func() -> void: Bolt.check(check))
+	await _h("Lightning", func() -> void: await Lightning.new(self, check).run())
 	await _t("_check_momentum")
 	await _t("_check_shear")
 	await _t("_check_beam")
@@ -160,6 +164,7 @@ func _check_beam() -> void:
 	var swept := _sim("reptilian", {"r_beam": 1}, [_b(0, -8, Vector3i(3, 3, 4))], Vector2(0, 0))
 	swept.facing = Vector2(-1, 0)
 	_run(swept, 0.1, Vector2.ZERO, ULT)
+	_run(swept, _strike_wait(), Vector2.ZERO)  # the stream starts at the strike (D-166)
 	_run(swept, 0.5, Vector2(1, -1).normalized())
 	var grazed := swept.chunks_destroyed
 	_run(swept, 4.0, Vector2.ZERO)
@@ -172,6 +177,7 @@ func _check_beam() -> void:
 	)
 	var steer := _sim("reptilian", {"r_beam": 1}, line, Vector2(0, 0))
 	_run(steer, 0.1, Vector2.ZERO, ULT)
+	_run(steer, _strike_wait(), Vector2.ZERO)
 	_run(steer, 0.3, EAST)
 	var turned := absf(NORTH.angle_to(steer.facing))
 	check(

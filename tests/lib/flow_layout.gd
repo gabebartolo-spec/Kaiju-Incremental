@@ -3,8 +3,6 @@ extends RefCounted
 ## stay on the director's 4K TV at every UI scale, and the evolution reveal fits and measures
 ## against the new stage's city.
 
-const GuiInput := preload("res://tests/lib/gui_input.gd")
-
 ## The director's TV (D-027). Headless windows are 64x64 (a tall square canvas), so each check
 ## sizes the window to this first.
 const TV_SIZE := Vector2i(3840, 2160)
@@ -243,18 +241,13 @@ func fonts_ours() -> void:
 	foreign.clear()
 
 
-## A world hint that pops during the end beat: how many still show two frames later (0 wanted:
-## nothing behind the headline).
-static func late_hints(runner: SceneTree, rampage: Rampage) -> int:
-	var city: CityView = GuiInput.find_script(rampage, CityView)
-	var at := rampage.sim.kaiju_pos
-	city.float_text("LATE HINT", Vector3(at.x, 4.0, at.y), Color.WHITE)
-	await runner.process_frame
-	await runner.process_frame
-	var hints := city.find_children("*", "Label3D", true, false).filter(
+## How many pieces of text float in the rampage's world now (0 wanted: the +biomass numbers are
+## gone, D-284, director 2026-10-26: "i dont want to see the numbers. i want to see kaiju").
+static func world_text(rampage: Rampage) -> int:
+	var shown := rampage.find_children("*", "Label3D", true, false).filter(
 		func(n: Node) -> bool: return (n as Label3D).visible and (n as Label3D).text != ""
 	)
-	return hints.size()
+	return shown.size()
 
 
 ## The news crawl reads: white on its strip at body-text contrast, and one cycle of headlines is

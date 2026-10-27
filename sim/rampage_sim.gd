@@ -112,13 +112,15 @@ var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
+var vip: VipHeli  # the leader's escape helicopter (D-149), beside the air wing
 var brood: Brood
 var stomp: RampageStomp
+var strikes: Strikes  # the reptilian's big attacks, a beat after the press (D-166)
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
+var death: DeathOverload  # how he dies: stagger, stone, shatter
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
-## The big moments (threat level, felled landmarks, tower totals) as events for the HUD.
-var news: RunNews
+var news: RunNews  # the big moments (threat level, landmarks, tower totals) as HUD events
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -141,6 +143,7 @@ var _events: Array[Dictionary] = []
 func _init(
 	p_stats: Dictionary, tuning: Dictionary, layout: Array[Dictionary], rng: RandomNumberGenerator
 ) -> void:
+	SimTeardown.note(self)  # a run that drops it without dispose() is cut at the exit
 	stats = Growth.stage_stats(p_stats, tuning)
 	army = tuning["army"]
 	city = tuning["city"]
@@ -167,6 +170,8 @@ func _init(
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
+	var vip_cfg: Dictionary = tuning["vip"]
+	vip = VipHeli.new(self, vip_cfg, Seeds.derive(rng, 0x71B))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
@@ -175,6 +180,9 @@ func _init(
 	for n: int in range(rail_from, buildings.size()):
 		rail.add_piece(n)
 	news = RunNews.new(self, tuning)
+	death = DeathOverload.new(self, tuning, Seeds.derive(rng, 0xDEAD))
+	var strike_cfg: Dictionary = tuning["strike"]
+	strikes = Strikes.new(self, strike_cfg)
 
 
 ## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
@@ -224,14 +232,16 @@ func destruction() -> float:
 
 ## What the rampage did, for the results screen and the save's bests (RunTally.result).
 func result() -> Dictionary:
-	return RunTally.result(self)
+	var out := RunTally.result(self)
+	out.merge(vip.summary())
+	return out
 
 
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
-	if over or emerge.step(self, dt):
+	if death.holds(dt) or emerge.step(self, dt):
 		return _events
 	time_left -= dt
 	elapsed += dt
@@ -245,11 +255,12 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
+	strikes.step(dt)
 	stomp.step(dt)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
-		_signature()
+		SignatureStrike.fire(self)
 	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
 	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
 		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
@@ -259,7 +270,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	explosives.step(dt)
 	army_units.step(dt)
-	air.step(dt)
+	_step_sky(dt)
 	rail.step(dt)
 	Endless.step(self, dt)
 	news.step(_events)
@@ -270,15 +281,17 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 
 
 ## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
-## freed: Godot never frees objects that count each other, and every rampage kept its city in
-## memory (about 240 MB a rampage in tools/pacing.gd). Call it when the rampage is over for good,
-## after result() is read: the parts no longer reach the sim, so it cannot be stepped again.
+## freed: Godot never frees objects that count each other (a rampage kept 240 MB, tools/pacing.gd).
+## Call it when the rampage is over for good, after result() is read; it cannot be stepped again.
 func dispose() -> void:
 	SimTeardown.cut(self)
 
 
-## Ends the rampage (also the pause menu's End Rampage, reason "ended"); earnings are kept.
-func end(reason: String) -> void:
+## Ends the rampage for `reason` (also the pause menu's End Rampage, "ended"); earnings are kept.
+## A death plays his overload first (DeathOverload ends it with now = true); `now` ends it at once.
+func end(reason: String, now := false) -> void:
+	if not now and death.begin(reason):
+		return
 	over = true
 	end_reason = reason
 	hp = maxf(0.0, hp)
@@ -289,40 +302,18 @@ func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
 
 
+## The helicopters: the air wing's gunships, then the leader's escape (D-149).
+func _step_sky(dt: float) -> void:
+	air.step(dt)
+	vip.step(dt)
+
+
 ## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a
 ## wider crater, because more of the fading edge still beats what a chunk can take.
 static func falloff(distance: float, radius: float) -> float:
 	if distance <= radius:
 		return 1.0
 	return clampf(1.0 - (distance - radius) / radius, 0.0, 1.0)
-
-
-func _signature() -> void:
-	var reach := ability_reach()
-	var damage := stat("ability_damage")
-	match ability_type:
-		"cone":
-			BreathCone.breathe(self, reach, damage)
-		"leap":
-			var from := kaiju_pos
-			kaiju_pos = clamp_to_arena(
-				kaiju_pos + facing * Num.f(city["leap_distance"]) * body_scale()
-			)
-			var land := kaiju_pos
-			_events.append({"type": "ability", "kind": "leap", "reach": reach, "from": from})
-			hit_area(
-				func(p: Vector2, r: float) -> float: return falloff(p.distance_to(land) - r, reach),
-				damage
-			)
-			powers.leap_landed()
-		_:
-			var centre := kaiju_pos
-			_events.append({"type": "ability", "kind": "ring", "reach": reach})
-			hit_area(
-				func(p: Vector2, r: float) -> float:
-					return falloff(p.distance_to(centre) - r, reach),
-				damage
-			)
 
 
 ## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach), every
@@ -340,6 +331,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
 	rail.hit(force, damage)
+	vip.hit(force, damage)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.

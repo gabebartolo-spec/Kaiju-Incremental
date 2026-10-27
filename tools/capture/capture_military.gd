@@ -53,6 +53,8 @@ var _trail: Array[Vector2] = []  # its positions, one per physics frame
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
