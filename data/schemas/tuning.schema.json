@@ -4799,10 +4799,15 @@
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
         "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "people_buffers": {"$ref": "#/$defs/bool"},
+        "people_aabb_margin_m": {"$ref": "#/$defs/num"},
         "kaiju_three_faces": {"$ref": "#/$defs/bool"},
         "night_clip_max": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "kaiju_three_faces", "night_clip_max"],
+      "required": [
+        "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
+        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max"
+      ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },

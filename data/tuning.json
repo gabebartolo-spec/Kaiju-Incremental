@@ -1659,6 +1659,8 @@
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
 		"kaiju_bounds_slack": 1.05,
+		"people_buffers": true,
+		"people_aabb_margin_m": 8.0,
 		"kaiju_three_faces": true
 	},
 	"death": {
