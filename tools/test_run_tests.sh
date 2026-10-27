@@ -21,8 +21,9 @@ bad=0
 . tools/speed_gate.sh
 
 # The runner's seconds column ('%4ss' in run_tests.sh) as 'Ns', so two outputs compare on everything but the clock.
-# The runner's 'Waited Ns ...' line (D-317) is dropped too: only the run that waited prints it.
-strip_secs() { sed -E 's/ +[0-9]+s  / Ns  /' "$1" | grep -v '^Waited '; }
+# The lines a wait prints ('speed_gate: waited Ns ...' per launch, 'Waited Ns ...' at the end; D-299, D-317) are
+# dropped too: only the run that waited prints them.
+strip_secs() { sed -E 's/ +[0-9]+s  / Ns  /' "$1" | grep -vE '^(speed_gate: waited|Waited) '; }
 
 # D-299 (director 2026-10-27, "PC to itself"): the runner asks the speed-run gate before EVERY Godot
 # launch (the version query, the import, each suite), so a run of 7-20 suites stops between suites
