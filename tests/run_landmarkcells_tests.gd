@@ -15,6 +15,10 @@ const PINNED := {
 const PINNED_CLASSES: Array = [61528, 24066, 7864, 2035]
 ## The stadium section a foot hit brings down: [cells, digest of its cells].
 const PINNED_SECTION: Array = [1820, "2a1f5d63b106c629"]
+## LandmarkCells compiles before RampageSim (a const resolves first). Reached the other way, through
+## Landmarks.building() and RampageSim.Building, the engine never frees the two scripts' cycle and
+## the exit leaks 31 scripts (debt row 2): loading the grid script first keeps the exit clean.
+const _CELLS := preload("res://sim/landmark_cells.gd")
 const L := preload("res://tests/lib/landmark_cells_lib.gd")
 const MODULES: Array[String] = [
 	"res://sim/cell_grid.gd", "res://sim/landmark_cells.gd", "res://sim/cell_promoter.gd"
