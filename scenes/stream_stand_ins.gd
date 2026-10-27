@@ -60,15 +60,15 @@ func alpha(n: int) -> float:
 	return _alpha[n] if n < _alpha.size() else 0.0
 
 
-## Building n's box drawn at opacity `alpha` (a dither, see facade.gdshaderinc), a hair smaller
+## Building n's box drawn at `opacity` (a dither, see facade.gdshaderinc), a hair smaller
 ## than the building so the meshed walls in front of it stay solid while it dissolves.
-func fade(n: int, alpha: float) -> void:
+func fade(n: int, opacity: float) -> void:
 	var b := _buildings[n]
 	if _multi == null or b.is_rail():
 		return
-	_alpha[n] = alpha
+	_alpha[n] = opacity
 	var color := _colors[n]
-	color.a = alpha
+	color.a = opacity
 	_multi.set_instance_color(n, color)
 	var size := Vector3(b.w - 2.0 * INSET, b.height - INSET, b.d - 2.0 * INSET)
 	_multi.set_instance_transform(

@@ -4,13 +4,13 @@ extends Node3D
 ## memory: before the rampage starts only the buildings nearest the kaiju are meshed, up to
 ## city.load_chunks structural chunks; the rest stand as plain facade boxes while worker threads
 ## mesh them, landmarks first (a stadium never stands as a box: lead 9, 2026-10-21), then nearest
-## first, each swapping in as it is ready. A building the rampage touches before its turn is
-## built on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at
-## most city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that
-## stand near, and every building the rampage has touched): as the kaiju walks, the nearest
-## unbuilt buildings stream in and the untouched ones far behind him go back to boxes. Presentation
-## only. Nearest is judged from the camera as well as the kaiju (StreamRank). A landmark is held
-## meshed whenever its wedge, the margin band or city.stream_view.landmark_keep_m reaches it.
+## first, each swapping in as it is ready. A building the rampage touches before its turn is built
+## on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at most
+## city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that stand near,
+## and every building the rampage has touched): as the kaiju walks, the nearest unbuilt buildings
+## stream in and the untouched ones far behind him go back to boxes. Presentation only. Nearest is
+## judged from the camera as well as the kaiju (StreamRank). A landmark is held meshed whenever its
+## wedge, the margin band or city.stream_view.landmark_keep_m reaches it.
 
 ## Workers meshing at once (each holds a raw voxel set until baked).
 const IN_FLIGHT := 4
@@ -58,8 +58,7 @@ var _queue_at := 0
 var _planned_at := Vector2(INF, INF)
 var _since_plan := 0.0
 var _evict: Array[int] = []
-## What a building ranks by: its distance from the camera and the kaiju, and whether the camera
-## can see it (StreamRank).
+## What a building ranks by: its distance from the camera and kaiju, and camera visibility.
 var _rank: StreamRank
 var _cutoff := INF  # the last plan's rank of the first building left out
 var _held := 0  # chunks of the buildings the last plan holds meshed
@@ -258,7 +257,8 @@ func step(delta: float, settle := false) -> void:
 			WorkerThreadPool.wait_for_task_completion(Num.i(_tasks[n]))
 			_tasks.erase(n)
 	for pair: Array in _take_ready():
-		_place(Num.i(pair[0]), pair[1] as BuildingView)
+		var done: BuildingView = pair[1]
+		_place(Num.i(pair[0]), done)
 	_stand_ins.step(delta)
 	_since_plan += delta
 	if _since_plan >= PLAN_EVERY and _replan_wanted():
@@ -293,8 +293,7 @@ func _take_ready() -> Array[Array]:
 	return out
 
 
-## Building n's view, built now if it is still waiting, or taken the moment a worker is done.
-## Asking for a view means the rampage touches the building, so it is never freed again.
+## Building n's view, built now if still waiting. Asking means the rampage touches it: never freed.
 func view(n: int) -> BuildingView:
 	_pinned[n] = 1
 	if _views[n] != null:
@@ -396,5 +395,6 @@ func _exit_tree() -> void:
 		WorkerThreadPool.wait_for_task_completion(Num.i(id))
 	_tasks.clear()
 	for pair: Array in _take_ready():  # finished after the last frame: never entered the tree
-		(pair[1] as BuildingView).free()
+		var orphan: BuildingView = pair[1]
+		orphan.free()
 	BuildingView.end_city()  # streaming is done: keep only this city's buildings
