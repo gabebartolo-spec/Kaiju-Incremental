@@ -13,6 +13,8 @@ var _carves := 60
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--carves="):
 			_carves = arg.substr(9).to_int()

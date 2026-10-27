@@ -51,6 +51,8 @@ var _side_fit := Vector3.INF  # the side camera's fit: (box middle ahead, its he
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--stage="):
 			_stage = arg.substr(8)

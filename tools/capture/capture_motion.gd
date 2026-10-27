@@ -12,11 +12,9 @@ const FPS := 60.0
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const CM_PER_UNIT := 350.0
-## The side clip's kaiju turns side-on to the camera when it stops (s), so the roar is in profile.
-const SIDE_PIVOT := 9.2
+const SIDE_PIVOT := 9.2  # s: the side clip's kaiju turns side-on when it stops (roar in profile)
 
-## Every footfall: time, which foot, where (world), strength (written next to the trace).
-var plants := PackedStringArray()
+var plants := PackedStringArray()  # every footfall: time, foot, world position, strength
 var _species := "reptilian"
 var _stage := "adult"
 var _model: KaijuModel
@@ -44,6 +42,8 @@ var _height := 0.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--species="):
 			_species = arg.substr(10)
