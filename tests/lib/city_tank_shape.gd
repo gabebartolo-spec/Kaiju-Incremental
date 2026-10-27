@@ -31,30 +31,16 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check: Callable) ->
 		worst["tip"] = maxi(Num.i(worst["tip"]), Num.i(got["tip"]))
 		if not is_barrel_tower(got):
 			bad.append("%dx%d" % [b.w, b.d])
-	check.call(
-		not sample.is_empty() and bad.is_empty(),
-		(
-			(
-				"stage %d, map_seed %d: the rooftop water tower of %d BRICK lots is a barrel with a cone"
-				+ " roof (worst: %d straight layers of >= %d, %d roof layers of >= %d, %.2f tall"
-				+ " for its width of >= %.1f, tip %d cells of <= %d wide)"
-			)
-			% [
-				tier,
-				map_seed,
-				sample.size(),
-				Num.i(worst["straight"]),
-				MIN_STRAIGHT,
-				Num.i(worst["roof"]),
-				MIN_ROOF,
-				Num.f(worst["aspect"]),
-				MIN_ASPECT,
-				Num.i(worst["tip"]),
-				TIP_MAX
-			]
-		)
-		+ (" (not one on %s)" % [bad] if not bad.is_empty() else "")
-	)
+	var spec := "stage %d, map_seed %d: the rooftop water tower of %d BRICK lots is a barrel with"
+	spec += " a cone roof (worst: %d straight layers of >= %d, %d roof layers of >= %d, %.2f tall"
+	spec += " for its width of >= %.1f, tip %d cells of <= %d wide)"
+	var vals: Array = [tier, map_seed, sample.size()]
+	vals.append_array([Num.i(worst["straight"]), MIN_STRAIGHT, Num.i(worst["roof"]), MIN_ROOF])
+	vals.append_array([Num.f(worst["aspect"]), MIN_ASPECT, Num.i(worst["tip"]), TIP_MAX])
+	var line := spec % vals
+	if not bad.is_empty():
+		line += " (not one on %s)" % [bad]
+	check.call(not sample.is_empty() and bad.is_empty(), line)
 
 
 static func _smaller(p: RampageSim.Building, q: RampageSim.Building) -> bool:
@@ -96,7 +82,8 @@ static func measure(cells: Dictionary) -> Dictionary:
 			tidy = false  # a layer narrower than the one above it: a bulge, not a cone
 	return {
 		"layers": widths.size(),
-		"contiguous": widths.size() == 0 or Num.i(layers[-1]) - Num.i(layers[0]) + 1 == widths.size(),
+		"contiguous":
+		widths.size() == 0 or Num.i(layers[-1]) - Num.i(layers[0]) + 1 == widths.size(),
 		"widest": widest,
 		"straight": straight,
 		"roof": roof if tidy else 0,

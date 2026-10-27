@@ -5,7 +5,12 @@ extends RefCounted
 
 
 static func check(
-	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, skyline: CitySkyline, check: Callable
+	tier: int,
+	map_seed: int,
+	sim: RampageSim,
+	decor: CityDecor,
+	skyline: CitySkyline,
+	check: Callable
 ) -> void:
 	var trees: Array[Vector2] = decor._props.felled()
 	var on_roof := 0
@@ -15,14 +20,11 @@ static func check(
 		if under:
 			on_roof += 1
 			at = t
-	check.call(
-		trees.size() > 0 and on_roof == 0,
-		(
-			"stage %d, map_seed %d: none of the city's %d trees stands inside a building footprint"
-			% [tier, map_seed, trees.size()]
-		)
-		+ " (%d do, the last at %s)" % [on_roof, at]
+	var line := "stage %d, map_seed %d: none of the city's %d trees stands inside a building"
+	line = (
+		line % [tier, map_seed, trees.size()] + " footprint (%d do, the last at %s)" % [on_roof, at]
 	)
+	check.call(trees.size() > 0 and on_roof == 0, line)
 
 
 ## True when `p` (x, z) is inside a lot building's footprint or a skyline stand-in's.

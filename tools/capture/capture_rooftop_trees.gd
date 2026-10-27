@@ -121,6 +121,10 @@ func _by_tower(sim: RampageSim, plan: Dictionary) -> Vector2:
 		if node.distance_to(want) < nearest:
 			nearest = node.distance_to(want)
 			best = node
-	print("capture_rooftop_trees: tower lot %dx%d, %d floors at (%.0f, %.0f), kaiju at %s" % [
-		pick.w, pick.d, pick.height, pick.x, pick.z, best])
+	print(
+		(
+			"capture_rooftop_trees: tower lot %dx%d, %d floors at (%.0f, %.0f), kaiju at %s"
+			% [pick.w, pick.d, pick.height, pick.x, pick.z, best]
+		)
+	)
 	return best
