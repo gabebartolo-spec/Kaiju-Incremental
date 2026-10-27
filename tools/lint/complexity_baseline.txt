@@ -3,12 +3,7 @@
 scenes/gait_biped.gd::_step_feet 98 48
 scenes/gait_clip.gd::_choose 33 18
 scenes/kaiju_rig.gd::_build 54 13
-scenes/pavements.gd::_init 46 26
-scenes/powers_view.gd::on_event 71 24
-scenes/powers_view.gd::update 49 16
 scenes/rampage.gd::_ready 53 8
-scenes/stadium_match.gd::_play 32 13
-scenes/stadium_match.gd::_ready 45 7
 scenes/traffic_island.gd::spots 48 18
 sim/city_gen.gd::map 84 17
 sim/city_river.gd::sheds 49 10
