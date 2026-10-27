@@ -8,6 +8,8 @@ extends RefCounted
 const DIRECT := "#"
 ## Floats per instance in pack()'s MultiMesh buffer: a 3x4 transform, then the colour.
 const STRIDE := 16
+## pack()'s stride with `detail` on: the colour is followed by the cell's grid index (custom data).
+const DETAIL_STRIDE := 20
 const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
 ]
@@ -29,6 +31,9 @@ var built_cells: Array[Vector3i] = []
 var inset := 1.0
 ## Whether build() adds the look's per-cell colour noise (off for a smooth painted surface).
 var noise := true
+## Whether build() draws the cells in the city's surface family (Look.voxel_detail_mesh), each
+## instance carrying its cell's grid index in its custom data so the detail rides with the model.
+var detail := false
 
 
 func put(cell: Vector3i, key: String) -> void:
@@ -125,11 +130,12 @@ func repaint(fn: Callable) -> void:
 ## Cubes are drawn at `inset` of their size (below 1: a filler layer that hides inside a skin).
 ## Main thread only: a worker calls pack() and hands the buffer to instance() on the main thread.
 func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> MultiMeshInstance3D:
-	return instance(pack(palette, voxel, origin), voxel, glow)
+	return instance(pack(palette, voxel, origin), voxel, glow, detail)
 
 
 ## build()'s instances as plain data: the MultiMesh buffer (STRIDE floats each: the 3x4
-## transform row by row, then the colour), cells bottom-up; fills sorted_y and built_cells.
+## transform row by row, then the colour; DETAIL_STRIDE with `detail`, then the cell index),
+## cells bottom-up; fills sorted_y and built_cells.
 ## Makes no resource, so it is safe on a worker thread.
 func pack(palette: Dictionary, voxel: float, origin: Vector3) -> PackedFloat32Array:
 	var shown: Array[Vector3i] = []
@@ -140,8 +146,9 @@ func pack(palette: Dictionary, voxel: float, origin: Vector3) -> PackedFloat32Ar
 	sorted_y = PackedInt32Array()
 	sorted_y.resize(shown.size())
 	built_cells = shown
+	var stride := DETAIL_STRIDE if detail else STRIDE
 	var buf := PackedFloat32Array()
-	buf.resize(shown.size() * STRIDE)  # zeroed: the transform's off-diagonal stays 0
+	buf.resize(shown.size() * stride)  # zeroed: the transform's off-diagonal stays 0
 	var lift := Vector3(0, voxel * 0.5, 0)
 	for i: int in shown.size():
 		var cell := shown[i]
@@ -150,7 +157,7 @@ func pack(palette: Dictionary, voxel: float, origin: Vector3) -> PackedFloat32Ar
 		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
 		var at := origin + Vector3(cell) * voxel + lift
 		var c: Color = Look.jitter(base, cell, salt) if noise else base
-		var k := i * STRIDE
+		var k := i * stride
 		buf[k] = inset
 		buf[k + 3] = at.x
 		buf[k + 5] = inset
@@ -161,17 +168,26 @@ func pack(palette: Dictionary, voxel: float, origin: Vector3) -> PackedFloat32Ar
 		buf[k + 13] = c.g
 		buf[k + 14] = c.b
 		buf[k + 15] = c.a
+		if detail:
+			buf[k + 16] = cell.x
+			buf[k + 17] = cell.y
+			buf[k + 18] = cell.z
 	return buf
 
 
 ## The drawn cubes (`voxel` wide, glowing at `glow`) of a pack()ed buffer. Main thread only.
-static func instance(buf: PackedFloat32Array, voxel: float, glow: float) -> MultiMeshInstance3D:
+## detail: the buffer was packed with `detail` on (DETAIL_STRIDE); the cells draw in the
+## city's surface family.
+static func instance(
+	buf: PackedFloat32Array, voxel: float, glow: float, detail := false
+) -> MultiMeshInstance3D:
 	ThreadCheck.main_only("VoxelBuilder.instance")
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
-	mm.mesh = Look.voxel_mesh(voxel, glow)
-	mm.instance_count = floori(buf.size() / float(STRIDE))
+	mm.use_custom_data = detail
+	mm.mesh = Look.voxel_detail_mesh(voxel, glow) if detail else Look.voxel_mesh(voxel, glow)
+	mm.instance_count = floori(buf.size() / float(DETAIL_STRIDE if detail else STRIDE))
 	if mm.instance_count > 0:
 		mm.buffer = buf
 	var mmi := MultiMeshInstance3D.new()
