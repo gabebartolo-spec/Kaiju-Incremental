@@ -95,6 +95,16 @@ func _disc(at: Vector3i, key: String, outer2: int, inner2 := -1) -> void:
 func _heater(top: int) -> void:
 	var x0 := clampi(roundi(_w * 0.65) - 4, 1, maxi(1, _w - HEATER_W - 1))
 	var z0 := clampi(roundi(_d * 0.4) - 4, 1, maxi(1, _d - HEATER_D - 1))
+	_heater_panels(top, x0, z0)
+	for hx: int in range(1, HEATER_W - 1):
+		var cap := hx == 1 or hx == HEATER_W - 2
+		for hz: int in range(HEATER_ROWS - 1, HEATER_D):
+			_put(Vector3i(x0 + hx, top + 4, z0 + hz), "gear" if cap else "heater")
+			_put(Vector3i(x0 + hx, top + 5, z0 + hz), "gear" if cap else "heater_hi")
+
+
+## The heater's two stepped panels with their rails, seams, cross-members and legs.
+func _heater_panels(top: int, x0: int, z0: int) -> void:
 	for hx: int in HEATER_W:
 		var rail := hx % 4 == 0
 		for hz: int in HEATER_ROWS:
@@ -106,11 +116,6 @@ func _heater(top: int) -> void:
 		if rail:  # the legs under the top edge
 			for y: int in 3:
 				_put(Vector3i(x0 + hx, top + y, z0 + HEATER_ROWS - 1), "gear")
-	for hx: int in range(1, HEATER_W - 1):
-		var cap := hx == 1 or hx == HEATER_W - 2
-		for hz: int in range(HEATER_ROWS - 1, HEATER_D):
-			_put(Vector3i(x0 + hx, top + 4, z0 + hz), "gear" if cap else "heater")
-			_put(Vector3i(x0 + hx, top + 5, z0 + hz), "gear" if cap else "heater_hi")
 
 
 func _put(cell: Vector3i, key: String) -> void:
