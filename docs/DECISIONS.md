@@ -4,6 +4,16 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-337 · Director · The croc's run is momentum: he crashes through small buildings, slams into big ones
+His words (19:4x), on hearing the croc has no run yet: "running wont have a sprint button, it should be momentum based,
+at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones". Asked:
+momentum "Always on" (from the first rampage, walking straight builds him into a run and turning bleeds it; tree nodes
+make it build faster and hit harder, and the old unlock node becomes a boost); a big building "Slam and stop" (a loud
+impact, a deep dent caved in at the contact, the building shudders, the camera shakes, his momentum is spent); small
+vs big "Relative to his size" (shorter than about his shoulder crashes, so each stage crashes through more); when
+"Now, one more builder" (ahead of D-310's order; it touches no debt or render file). Per D-335 the run and the slam
+stop are keyed in Cascadeur.
+
 ## 2026-10-27 · D-336 · Director · One Cascadeur keyer and one rigger; no second Cascadeur copy
 His words (19:3x), on hearing that Cascadeur runs one copy at a time: "if only 1 builder can use casc at a time then
 we only need 1 casc builder otherwise the others are just twiddling their thumbs". Asked, he picked "1 keyer + 1
@@ -388,11 +398,3 @@ Districts (comment #78): red-light district, Chinatown, docklands, a bar and res
 ## 2026-10-26 · D-252 · Director · Croc focus to the Itch demo; dragon paused; subagent team; model per task; merge everything
 
 "can we pause all dragon work for now though", "I want to focus on getting croc shipped" (finish line: Itch demo, M4); croc stomp first ("Croc standing stomp", then "Croc stomp next"). Team: subagents, 3 builders + 1 reader; "i need you to determine whether a task demands opus or sonnet". Branches: "I want the branches fully cleaned up and stale ones removed / i want all mergable good work merged"; "why isnt it merged? ive been asking you to merge everything" (PR cap 8 until the backlog lands); branch force-delete unblocked in settings ("Remove the block"). Skeletons: "optimised for natural, smooth animation", "only interested in our reptilian skeletons".
-
-## 2026-10-26 · D-251 · Director · Komodo w29 walk approved; Komodo lands off
-
-"walk is good. ship it"; Komodo motion bars "His own, from w29"; Komodo work lands off by default while paused ("Land it too").
-
-## 2026-10-26 · D-250 · Director · Straight to him: every visual goes to the director, judged by no agent
-
-"just show me the clip, i will immediately know what is wrong and can describe the fix, you then workout how to do that fix"; every visual, every project. Replaces D-249's lead-looks-first route.
