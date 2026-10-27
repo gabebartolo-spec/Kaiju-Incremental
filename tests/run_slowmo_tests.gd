@@ -176,7 +176,8 @@ func _check_second_fall_restarts() -> void:
 		Engine.time_scale == low,
 		"and it restarted the clock: %.2f s after the first fall it still holds" % (hold * 1.6)
 	)
-	node.advance(Num.f(cfg["hold_s"]) * 0.4 + Num.f(cfg["ease_s"]) * 0.5)
+	# The restarted clock is at 0.8 of hold: on to the end of hold, then halfway up the ease.
+	node.advance(hold * 0.2 + Num.f(cfg["ease_s"]) * 0.5)
 	check(Engine.time_scale > low and Engine.time_scale < 1.0, "then it eases back once")
 	node.advance(Num.f(cfg["ease_s"]))
 	check(Engine.time_scale == 1.0 and not node.active(), "and ends at 1.0")

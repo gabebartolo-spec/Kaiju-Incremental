@@ -18,6 +18,9 @@ extends Node
 const FLOOR := 0.05
 ## A tick's owed time within this of a whole tick counts as a whole tick (float slack).
 const OWED_SLACK := 1.0e-9
+## The slowed clock within this of its end has ended: 120 ticks of 1/60 s add up a hair short of
+## 2.0 s, and the ease reads exactly 1.0 there, so the node would sit active one tick at full speed.
+const CLOCK_SLACK := 1.0e-9
 
 var sim: RampageSim
 ## The end beat's HUD: no slow motion starts while its beat runs, and one in play is cut short.
@@ -79,7 +82,7 @@ func advance(real: float) -> void:
 		stop()
 		return
 	_age += real
-	if _age >= Num.f(_cfg["hold_s"]) + Num.f(_cfg["ease_s"]):
+	if _age + CLOCK_SLACK >= Num.f(_cfg["hold_s"]) + Num.f(_cfg["ease_s"]):
 		stop()
 		return
 	_apply()
