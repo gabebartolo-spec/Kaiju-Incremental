@@ -1,7 +1,8 @@
 class_name BuildingView
 extends Node3D
 ## One building, drawn from two baked meshes (BuildingMesher): its shell, and its floor slabs,
-## which stay hidden until it is first broken open. The sim's structural chunks (one sim unit,
+## which stay hidden until it is first broken open, and then show only next to a break (the rest
+## of the building looks as it did, D-289). The sim's structural chunks (one sim unit,
 ## one floor) live in a small `alive` texture the shader reads: a broken chunk is switched off
 ## there, a bitten one loses a share of its voxels, so nothing is rebuilt mid-rampage. A falling
 ## part is the same meshes with its own texture (only its chunks on), lifted out to topple over
@@ -40,6 +41,12 @@ var _party: Dictionary
 var _key_of := ""
 var _alive: Image
 var _alive_tex: ImageTexture
+## The floors' own `alive` texture, made at the first blow: a floor shows only in a chunk that has
+## broken or sits next to one (_exposed), so what the unbroken facade shows through its gaps stays
+## what it was (D-289).
+var _slab_alive: Image
+var _slab_tex: ImageTexture
+var _exposed := PackedByteArray()
 var _slabs: MeshInstance3D
 var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
@@ -213,7 +220,33 @@ func _get_state(c: Vector3i) -> float:
 
 
 func _put_state(c: Vector3i, value: float) -> void:
-	_alive.set_pixel(_index(c), 0, Color(value, 0, 0))
+	var i := _index(c)
+	_alive.set_pixel(i, 0, Color(value, 0, 0))
+	if _slab_alive != null and _exposed[i] == 1:
+		_slab_alive.set_pixel(i, 0, Color(value, 0, 0))
+
+
+## The floors inside show in these chunks and the ones next to them (the first blow makes the
+## floors' own texture, all hidden, so the rest of the building looks as it did standing).
+func _expose(cells: Array[Vector3i]) -> void:
+	if _slab_alive == null:
+		_slab_alive = Image.create(_alive.get_width(), 1, false, Image.FORMAT_R8)
+		_slab_alive.fill(Color(0, 0, 0))
+		_slab_tex = ImageTexture.create_from_image(_slab_alive)
+		_slab_mat.set_shader_parameter("alive", _slab_tex)
+		_exposed.resize(_alive.get_width())
+	var around: Array[Vector3i] = [Vector3i.ZERO]
+	around.append_array(BuildingMesher.NEIGHBOURS)
+	for c: Vector3i in cells:
+		for d: Vector3i in around:
+			var n := c + d
+			if n.x < 0 or n.z < 0 or n.y < 0 or n.x >= b.w or n.z >= b.d or n.y >= b.height:
+				continue
+			var i := _index(n)
+			if _exposed[i] == 0:
+				_exposed[i] = 1
+				_slab_alive.set_pixel(i, 0, Color(_alive.get_pixel(i, 0).r, 0, 0))
+	_slab_tex.update(_slab_alive)
 
 
 ## Debris sources (world positions and colours) for these chunks.
@@ -224,6 +257,13 @@ func _parts(cells: Array[Vector3i]) -> Array[Dictionary]:
 	return out
 
 
+## Sends the `alive` images to the shader (the floors' own too, once a blow made them).
+func _upload() -> void:
+	_alive_tex.update(_alive)
+	if _slab_tex != null:
+		_slab_tex.update(_slab_alive)
+
+
 ## Hides these chunks; returns world positions and colours to throw as debris.
 func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 	_dress()
@@ -231,6 +271,7 @@ func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 	var out := _parts(cells)
 	for c: Vector3i in cells:
 		_put_state(c, 0.0)
+	_expose(cells)
 	_alive_tex.update(_alive)
 	return out
 
@@ -253,7 +294,7 @@ func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictiona
 			if _get_state(n) > BITTEN + 0.01 and rng.randf() < BITE_CHANCE:
 				_put_state(n, BITTEN)
 				bitten.append(n)
-	_alive_tex.update(_alive)
+	_upload()
 	var out := _parts(bitten)
 	return out.slice(0, floori(out.size() / 3.0))
 
