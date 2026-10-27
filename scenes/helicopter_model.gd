@@ -164,7 +164,6 @@ func _copy(from: MultiMesh) -> MultiMesh:
 ## Takes the body, both rotors and the gun off the helicopter into `into` (world transforms kept)
 ## and returns them: a wreck's pieces to throw. The helicopter is left empty.
 func break_up(into: Node3D) -> Array[Node3D]:
-	VehicleParts.set_opacity(self, 1.0)  # it was fading as a screen door: pieces are solid
 	var out: Array[Node3D] = []
 	for part: Node3D in [_body, _main_rotor, _tail_rotor, _gun]:
 		var at := part.global_transform
