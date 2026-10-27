@@ -22,7 +22,6 @@ scenes/pavements.gd::_init 46 26
 scenes/powers_view.gd::on_event 71 24
 scenes/powers_view.gd::update 49 16
 scenes/rampage.gd::_ready 53 8
-scenes/sfx.gd::play 43 12
 scenes/stadium_match.gd::_play 32 13
 scenes/stadium_match.gd::_ready 45 7
 scenes/traffic_island.gd::spots 48 18
@@ -32,8 +31,5 @@ sim/city_sites.gd::_span 22 13
 sim/claw_swipe.gd::_undermine 43 18
 sim/collapse.gd::_crush_strip 31 13
 sim/collapse.gd::settle 75 19
-sim/convoy.gd::_drive 62 33
-sim/convoy.gd::_settle 21 13
-sim/convoy.gd::step 28 17
 sim/glass_frame.gd::cells 18 14
 sim/structure.gd::_grounded 28 14
