@@ -20,20 +20,18 @@ const DEATH_FRAMES := 600
 ## Nodes in this group are visual effects, exempt from the rule.
 const EXEMPT_GROUP := "vfx_exempt"
 
-## Types still flat, by phase. P1 water; P2 rooftops (flat black stripe, window panels); P3 trees,
+## Types still flat, by phase. P2 rooftops (flat black stripe, window panels); P3 trees,
 ## lamps, cars, people, gondolas; the sky belongs to the atmosphere lead. Delete lines as they are
 ## fixed; never add one. One row per entry (surface, owner, phase, next step) in docs/ROADMAP.md,
 ## "Flat surfaces programme".
 ## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
 ## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
-const KNOWN_FLAT_MAX := 21
+const KNOWN_FLAT_MAX := 20
 const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
 	"CitySkyline:std": "P3 lamp heads (glow)",
 	"CitySkyline:shader:facade.gdshader": "P2 far towers and roof gear, P3 lattice tower",
 	"CitySkyline:shader:facade_far.gdshader": "P2 far towers, P3 lattice tower",
-	# P1 water
-	"CityGround:std": "P1 water (river and bay sheets)",
 	# P2 rooftops and building faces
 	"BuildingStream:shader:facade.gdshader": "P2 building faces",
 	"BuildingView:shader:voxel.gdshader": "P2 building faces",

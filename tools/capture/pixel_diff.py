@@ -1,17 +1,20 @@
 """Pixel diff of two stills (render plan Phase 0, for the zero-pixel items).
 
     py -3 -I tools/capture/pixel_diff.py before.png after.png [--out diff.png] [--tolerance 0]
+        [--mask mask.png [--grow 16]]
 
 Prints "pixel_diff: N of M pixels differ (P%), max channel delta D, mean delta X" and exits 0
 when no pixel differs by more than --tolerance (per channel, 0..255), 1 otherwise, 2 on a size
 mismatch. --out writes the difference, amplified 8x, for looking at where it lands.
+--mask leaves out the mask's white pixels (capture_river.gd --mask: the water), grown by --grow
+px so the glow and blur at the water's edge are left out too; the counts are then of the rest.
 Needs Pillow.
 """
 
 import argparse
 import sys
 
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageFilter
 
 
 def main() -> int:
@@ -20,6 +23,8 @@ def main() -> int:
     ap.add_argument("after")
     ap.add_argument("--out", default="")
     ap.add_argument("--tolerance", type=int, default=0)
+    ap.add_argument("--mask", default="")
+    ap.add_argument("--grow", type=int, default=16)
     args = ap.parse_args()
     a = Image.open(args.before).convert("RGB")
     b = Image.open(args.after).convert("RGB")
@@ -31,7 +36,14 @@ def main() -> int:
     # Per-channel max of each pixel, then count the pixels above the tolerance.
     r, g, bl = diff.split()
     peak = ImageChops.lighter(ImageChops.lighter(r, g), bl)
-    hist = peak.histogram()
+    keep = None
+    if args.mask:
+        m = Image.open(args.mask).convert("L").point(lambda v: 255 if v >= 128 else 0)
+        for _ in range(args.grow // 2):  # MaxFilter(5) grows by two pixels each pass
+            m = m.filter(ImageFilter.MaxFilter(5))
+        keep = ImageChops.invert(m)
+        total = keep.histogram()[255]
+    hist = peak.histogram(mask=keep)
     over = sum(hist[args.tolerance + 1 :])
     worst = max((i for i, n in enumerate(hist) if n), default=0)
     mean = sum(i * n for i, n in enumerate(hist)) / total

@@ -242,10 +242,13 @@ func _build_paint() -> MultiMeshInstance3D:
 	return GroundKit.paint_instances(_paint, mat)
 
 
-## The bay: dark, glossy water reaching to the horizon north of the quay.
+## The bay: dark water reaching to the horizon north of the quay, with a gentle swell.
 func _water() -> MeshInstance3D:
 	return _sheet(
-		Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0), WATER_Y, Look.color("water")
+		Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0),
+		WATER_Y,
+		Look.color("water"),
+		true
 	)
 
 
@@ -358,18 +361,6 @@ static func _area(poly: PackedVector2Array) -> float:
 	return absf(out) * 0.5
 
 
-## Glossy water of `color` over rect (x, z) at height y.
-func _sheet(rect: Rect2, y: float, color: Color) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = rect.size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.12
-	mat.metallic_specular = 0.8
-	plane.material = mat
-	mi.mesh = plane
-	var mid := rect.get_center()
-	mi.position = Vector3(mid.x, y, mid.y)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mi
+## Water (WaterSurface) over rect (x, z) at height y, `color` where it is deep; bay: the open water.
+func _sheet(rect: Rect2, y: float, color: Color, bay := false) -> MeshInstance3D:
+	return WaterSurface.sheet(rect, y, color, bay, Num.i(cfg["map_seed"]))

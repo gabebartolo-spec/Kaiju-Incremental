@@ -615,7 +615,21 @@
 		"debris_colors": {"fuel_silo": ["d9d7cf", "f2c21b", "222224"], "fireworks_factory": ["7a3b2e", "c8312a", "2f62c9", "f2c21b"], "chem_lab": ["e6e9e3", "6bd85f", "2d5ca3"]},
 		"sound": {"speed": 98.0, "boom_from": 25.0, "boom_max_delay": 1.2, "small_db": -3.0, "tail_db": -4.0, "crack_db": 4.0}
 	},
-	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
+	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "wade_depth": 0.6, "max_seconds": 8.0, "input_latch_seconds": 0.2},
+	"water": {
+		"_note": "D-325 step 1, the surface (D-244, D-245: looks only): the river and the bay as deep water (WaterSurface, scenes/water.gdshader): depth colour by real depth (absorb per metre of view path; murk m under the surface past which nothing shows), a foam line where anything meets the surface (foam_depth m), wind waves and fine ripples (lengths m, slopes), Fresnel, the sky's reflection kept (specular, roughness near and far); the river's current (flow m/s along the channel), the bay's swell (swell_length m; 0 = none). on false draws the glossy sheet it replaced.",
+		"on": true,
+		"absorb": 3.0,
+		"murk": 0.4,
+		"foam_depth": 0.2,
+		"foam": 0.8,
+		"rough_near": 0.06,
+		"rough_far": 0.22,
+		"specular": 0.8,
+		"crest_light": 0.2,
+		"river": {"wave_length": 4.0, "wave_slope": 0.08, "ripple_length": 0.8, "ripple_slope": 0.1, "flow": 0.6, "swell_length": 0.0, "swell_slope": 0.0},
+		"bay": {"wave_length": 9.0, "wave_slope": 0.1, "ripple_length": 1.1, "ripple_slope": 0.1, "flow": 0.0, "swell_length": 38.0, "swell_slope": 0.035}
+	},
 	"city": {
 		"map_seed": 7301,
 		"hazards": {"kinds": ["fuel_silo", "fireworks_factory", "chem_lab"], "count": [2, 3, 4, 5], "min_spacing": 12.0, "spawn_clear": 16.0, "edge_share": 0.45, "max_height": 10},

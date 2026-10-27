@@ -9,6 +9,9 @@ extends RefCounted
 ## a RampageSim built on its own starts on land, as before. The whole start never takes longer
 ## than "emerge" "max_seconds": past it the kaiju steps onto the bank point at once, so nothing
 ## (a bank point in the water, a wade that cannot finish) can stall a run before it begins.
+## It wades knee-deep (lead 2026-10-27, D-325 step 1: the waterline shows on his body): "emerge"
+## "wade_depth" x its body scale under the river's surface, and climbs out over the quay in the
+## time it took from the surface before (D-131's shore bar stays).
 
 var active := false
 var _t := 0.0
@@ -17,6 +20,7 @@ var _depth: float
 var _wade: float
 var _cap: float
 var _bed: float  # how far the river's water lies below the street (city "river_depth")
+var _knee: float  # how far under the surface its feet wade, per unit of body scale
 var _spawn: Vector2
 var _bank: Vector2
 var _water: Array[Rect2]  # the river's channels (CityRiver.channels)
@@ -29,6 +33,7 @@ func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_wade = Num.f(cfg["wade_speed"])
 	_cap = Num.f(cfg["max_seconds"])
 	_bed = Num.f(city.get("river_depth", 0.0))
+	_knee = Num.f(cfg["wade_depth"])
 	var plan := CityGen.map(city)
 	_water = CityRiver.channels(plan, city)
 	_spawn = plan.get("river_spawn", Vector2(INF, INF))
@@ -74,21 +79,32 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 		return true
 	if _t < _rise:
 		var up := smoothstep(0.0, 1.0, _t / _rise)
-		sim.stand_y = lerpf(-_depth * sim.body_scale(), -_bed, up)  # up to wading depth
+		sim.stand_y = lerpf(-_depth * sim.body_scale(), wading_y(sim), up)  # up to wading depth
 		return true
 	var bank := sim.clamp_to_arena(_bank)
 	var stride := sim.stat("speed") * _wade * dt
 	var floor_y := 0.0
 	for water: Rect2 in _water:
 		if water.has_point(sim.kaiju_pos):
-			floor_y = -_bed
-	sim.stand_y = move_toward(sim.stand_y, floor_y, stride)  # climbs out over the quay
+			floor_y = wading_y(sim)
+	sim.stand_y = move_toward(sim.stand_y, floor_y, stride * _climb(sim))  # climbs out over the quay
 	if sim.kaiju_pos.distance_to(bank) > stride or sim.stand_y < 0.0:
 		sim.facing = sim.kaiju_pos.direction_to(bank) if sim.kaiju_pos != bank else sim.facing
 		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)
 		return true
 	_land(sim, bank)
 	return true
+
+
+## Where its feet stand while it wades: knee-deep under the river's surface.
+func wading_y(sim: RampageSim) -> float:
+	return -_bed - _knee * sim.body_scale()
+
+
+## How much faster than its stride it climbs out, so the knee-deep wade takes no longer to
+## leave than the water's surface did (the climb covers _bed in the same time either way).
+func _climb(sim: RampageSim) -> float:
+	return (_bed + _knee * sim.body_scale()) / _bed if _bed > 0.0 else 1.0
 
 
 func _land(sim: RampageSim, bank: Vector2) -> void:
