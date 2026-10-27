@@ -11,4 +11,6 @@ check "a runner picks itself" "$(printf 'tests/run_gait_tests.gd\n' | python too
 got="$(printf 'scenes/city_decor.gd\n' | python tools/lint/prepush_picks.py | names)"
 case "$got" in *empty_space*) echo "ok: scene script picks the suite that loads it" ;; *) echo "FAIL: city_decor picks '$got'"; fail=1 ;; esac
 check "a uid file follows its script" "$(printf 'tests/run_gait_tests.gd.uid\n' | python tools/lint/prepush_picks.py | names)" "gait "
+check "a new capture script picks native (no runner loads it)" "$(printf 'tools/capture/zz_new_capture.gd\n' | python tools/lint/prepush_picks.py | names)" "native "
+check "a bench script and its uid pick native" "$(printf 'tools/bench/zz_new_bench.gd.uid\ntools/bench/zz_new_bench.gd\n' | python tools/lint/prepush_picks.py | names)" "native "
 exit $fail

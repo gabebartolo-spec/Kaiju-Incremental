@@ -68,7 +68,7 @@ def scratch():
 
     class _Scratch:
         def __enter__(self):
-            self._dir = tempfile.TemporaryDirectory()
+            self._dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)  # a killed process may hold a lock on Windows
             return Path(self._dir.name)
 
         def __exit__(self, *exc):

@@ -8,6 +8,11 @@ scenes/ and autoload/ code those use. A suite is picked when anything it can rea
 its own runner changed. Conservative on purpose: a name match anywhere in code counts, so an
 unsure case includes the suite (a missed suite is a red CI run, a spare one costs minutes).
 
+One rule is not a reference: a new or changed .gd under tools/capture or tools/bench picks the
+'native' suite (TOOL_DIR_SUITES), which scans those folders to check that every bench and capture
+tool starts with the NativeGuard. No runner loads those scripts, so the graph never reached it
+(#279 printed PASS locally and failed that check on GitHub, run 40419798629).
+
 Usage: prepush_picks.py [--root DIR] [--timings FILE] <changed file>...   (or names on stdin)
        BASE_REF=origin/main is used to read old data/tuning.json values and find changed sections.
 Prints "suite<TAB>reason" per picked suite, then "# expected: N suites, ~S s" with --timings.
@@ -28,6 +33,9 @@ CLASS = re.compile(r"^\s*class_name\s+([A-Za-z_]\w*)", re.M)
 # Content or CityGen that nearly every suite touches, which would pick them all).
 DEPTH = int(os.environ.get("PREPUSH_DEPTH", "1"))
 IDENT = re.compile(r"[A-Za-z_]\w*")
+# Tool folders no runner loads, whose scripts a suite audits by scanning the folder: a .gd added or
+# changed under one picks that suite (when its runner exists).
+TOOL_DIR_SUITES = {"tools/capture/": "native", "tools/bench/": "native"}
 
 
 def strip_comments(text):
@@ -161,10 +169,14 @@ def main(argv):
     files = load(root)
     edges = build(root, files)
     hits = {}
+    forced = {}
     for c in changed:
         c = c.replace("\\", "/")
         if c.endswith((".uid", ".import")):
             c = c[: c.rfind(".")]
+        for folder, suite in TOOL_DIR_SUITES.items():
+            if c.startswith(folder) and c.endswith(".gd") and f"tests/run_{suite}_tests.gd" in files:
+                forced.setdefault(suite, f"{c} [every bench and capture tool starts with the guard]")
         if c in files:
             hits[c] = c
         if c.startswith("data/") and c.endswith(".json"):
@@ -200,6 +212,9 @@ def main(argv):
         if hits[found] != found:
             why += f" [{hits[found]}]"
         picked.append((suite, why))
+    done = {s for s, _ in picked}
+    picked += [(s, w) for s, w in sorted(forced.items()) if s not in done]
+    picked.sort()
     for s, w in picked:
         print(f"{s}\t{w}")
     if timings and os.path.exists(timings):
