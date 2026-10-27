@@ -4,6 +4,67 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-351 · Director · Countable speed-run bars move to GitHub checks
+Speed runs need his PC to themselves (D-299), so tonight's queue is about 3.5 h. Asked how to clear that bottleneck:
+"Count on GitHub (Recommended)". Bars that can be counted on a pinned seed (draw calls, pieces, nodes) become GitHub
+checks that run any time and in parallel; only millisecond bars stay on his PC (builder bench-counts). Not picked: the
+card's own timer, renting cloud GPUs (no spend), a spare bench PC. Start time "[No preference]": runs start 01:00.
+
+## 2026-10-27 · D-350 · Director · The camera bubble comes forward
+Asked about the dot fade still on main: "Bring the bubble forward". #238 resumes now, ahead of D-283's "after the
+render plan" timing and its place in D-310's order. Which buildings (22:50, replaces D-283's agent wording "between
+camera and kaiju"): "its the ones that the camera itself phases through ... foreground buildings which are nowhere near
+the field of destruction"; never "inside buildings adjacent to the kaiju". A sphere around the camera only; zero cuts in
+the kaiju's destruction field; pieces, rubble and vehicles never (D-326); shadows kept. Removes the biomass numbers (D-284).
+
+## 2026-10-27 · D-349 · Director · After the walk-start, the keyer keys the young croc walk
+Asked what the one keyer keys after the walk-start (D-343): "Young croc walk", ahead of the grown croc's run. Order:
+walk-start, young croc walk, run, slam-stop, turn-skate B.
+
+## 2026-10-27 · D-348 · Director · Rooftop water tanks become wooden water towers
+The brown roof "trees" (D-345) are the rooftop water tanks. Picked "Wooden water towers (Recommended)": same spots and
+count, a barrel tower on legs with a cone roof.
+
+## 2026-10-27 · D-347 · Director · Keyed Cascadeur moves come as the .casc, not a clip
+"rather than taking a clip of an animation itd be easier to just show me the casc file so i can inspect it"; scope
+"Keyed moves only (Recommended)". A keyed move reaches him as its .casc opened in a new tab of his Cascadeur
+(C:/kt/casc_view_template.py: never saved, no other tab touched). How a move plays in the game still comes as one
+~6 s game-camera clip.
+
+## 2026-10-27 · D-346 · Director · The one-window GPU slot covers Godot only
+Asked whether Blender renders and bakes should also wait for the one GPU slot (D-340): "Godot only (Recommended)".
+Godot windows (clips, stills, captures, speed runs) take turns; Blender and other GPU jobs keep sharing the card by
+VRAM budget, so asset work keeps its pace.
+
+## 2026-10-27 · D-345 · Director · Trees on rooftops are a bug: they go to streets and parks
+He asked about the far-city noon still: "why are there so many trees on top of buildings is that a bug?" (trees stand
+on low roofs, one on a tall roof among the antennas). No decision asks for rooftop trees. He picked "Yes, find and fix
+(Recommended)": find why trees are placed there, move them to streets and parks, and send him a still.
+
+## 2026-10-27 · D-344 · Director · Far-city reflection look approved (D-324)
+On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog + reflection"): "Looks right, merge
+(Recommended)". The branch claude/far-city-reflect opens READY after #330 and merges on green.
+
+## 2026-10-27 · D-343 · Director · The croc's first step from standing gets a keyed walk-start
+Asked how the young croc should start walking from a stand: "Key a walk-start (Recommended)": a Cascadeur
+stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before turn-skate B.
+
+## 2026-10-27 · D-342 · Director · Slow motion: the slowdown is too brief
+On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
+the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
+to him.
+
+## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
+On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
+(Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
+
+## 2026-10-27 · D-340 · Director · One Godot window on the GPU at a time
+His words (22:0x): "having 2 godot open is cooking the GPU, you gotta do a better jop managing it". Cause: the rules
+allowed up to 3 captures at once and up to 2 Godot processes per agent, and nothing counted windows PC-wide, so two
+builders' clips rendered together. Rule: every windowed Godot run (capture, clip, still, speed run) takes the one
+PC-wide slot, `bash C:/kt/gpu_slot.sh <command>`, which waits its turn; the focus-guard hook refuses a windowed run
+outside it. Headless runs (tests, imports) take no slot. Replaces the capture counts in the rulebook and CLAUDE.md.
+
 ## 2026-10-27 · D-339 · Director · 1080p is the baseline, not 4K
 His words (19:5x): "you know we dont need to work as 4k as the baseline just because i am using a 4k tv. most players
 probably wont be running it at this resolution". Asked, he picked: "1080p first" (text, readability and the look are
@@ -335,63 +396,3 @@ On 2026-10-25 at 07:55 the sound session reported its sound-generation subscript
 ## 2026-10-26 · D-272 · Director · Godot paused, Cascadeur/Blender/code open; interview audit with 4 temporary readers
 
 "so you can use Casc and blender now but no godot"; "and you can do coding tasks, im sure theres plenty of nodes for hte upgrade trees you need to implement". On node ideas: "ill be mad if you havent been adding my ndoe comments to the roadmap / ive been saying node ideas throughout our interviews"; "there must be record of my interviews, find them, read them, then make sure EVERYTHING from the interviews is reflected in the roadmap". Audit slots: "4 temporary readers" (close when done). Every interview answer and director message from all Kaiju transcripts (2026-10-16 to 10-26) is checked against the roadmap; missing items go into ROADMAP or a chapter.
-
-## 2026-10-26 · D-271 · Director · Beachfront models fixed in Blender; landmark placement is per map seed
-
-Beachfront Tripo board (19 models + pier retry, 1,300 credits spent): "Fix in Blender": all 20 kept; builders cut the shed fused to the pier span (P02/P02r), trim B02's ragged balconies, fill B05's blank facade from a good one, and model the missing parts (V02 string lights, S03 boat doors, S04 changing block) as simple pieces; V03's pole canopy and loose sign and B07's bridged twin towers are fixed or trimmed the same way. No new spend. Stadium and wheel "south, past the river" (D-270) is a seeded placement rule, not a fixed spot: "havent we already agreed that this is random map seed reliant?" (D-133, D-261). The stage-2 stadium bar stands; #245 only keeps landmarks off the sea bay; the full per-run shuffle goes with the random-city work.
-
-## 2026-10-26 · D-270 · Director · Evening interview: rain kept, sea bay shape, keyed rise, stadium south, beach half the edge, bubble target
-
-Back from afk ("im back, interview me", "pause godot work": every Godot run stopped and held until he resumes; picked "Stay paused"). Rain round 1 (adult, dusk, rain clip): "Good, keep it". Sea bay: "Crescent bay" (cut from the coast into the city's north edge, ending inside the play area; a sand beach at its city end, quays on its flanks; by rule on every city), over moving the whole coast in. Rise: "Keyed rise" (Cascadeur clip rise_bay: head first, shoulders, legs push last, then the roar; never a pose lifted in code). Stadium and Ferris wheel leave the north edge: "South, past the river". Beach length at stage 1: "About half the edge" (~50 m of ~105 m, grows each stage). Camera bubble: the OFF/ON clip showed no building near the camera ("man, theres already no buildings. both the clips are identical"); on the rain clip's tower filling the right of frame: "this in the rain clip is a perfect example of why i dont like the buildings coming into the camera". The next bubble clip uses that run and moment, OFF vs ON.
-
-## 2026-10-26 · D-269 · Director · Beachfront district buildings from Tripo, up to 1,300 credits
-
-"so beachfront is officially our new district, we need bespoke buildings for it, get started on a tripo session". Picked "Up to 1300" credits (about 20 HD models at 65; D-256's district budget had 670 left) and the set "Towers and hotels, Promenade venues, Beach structures, A pier". 19 prompts (7 towers and hotels, 6 promenade venues, 4 beach structures, a pier head and a repeatable pier span), HD Model H3.1 as D-256 ("Keep HD"), Private on each, six-view checked, voxelised into carvable cells like the district set, one board for the district to him.
-
-## 2026-10-26 · D-268 · Director · Every leap carves through what it hits in flight and lands with a smash
-
-Asked (the leap at a tower: the arc was blocked by the tower in its path): "he should carve right through what he hits in mid air and land with a smash"; then "Every leap", not only at towers. Replaces D-262's "nothing is hit in flight": the body breaks every building it passes through on the arc, then the landing smash hits as before. Owner: lead (sim + leap tests: "nothing hit in flight" becomes "carves what it hits").
-
-## 2026-10-26 · D-267 · Director · Morning interview of the overnight calls: stomp lands, 1 in 8 per stage, real-strength badge, belly-down death, shrunk wide towers, density per built block, props recoloured
-
-Asked one at a time on his return (D-265 afk calls). Stomp: "Yes, merge it" (PR #223 at 0.80x, D-264). Death rate: "Every stage": about 1 run in 8 (8-17%) at each growth stage, not pooled (D-259). Threat badge: "The army's real strength": its level follows the army's actual arrival rate, scaled per stage. Defeat: "Flat on his belly": he slumps straight down, chin on the street, after the rig fix (rig r11). Wide Tripo towers: "Keep them shrunk" to their lot. Density: "Same feel per street": buildings per m2 of built blocks only (parks, plazas, river, roads, rail left out), kept the same on the wider play area. Props: "Recolour in Blender": the 16 near-grey Tripo props tinted from real-world colours, Tripo's texture detail kept, originals untouched; he votes on the recoloured page.
-
-## 2026-10-26 · D-264 · Director · The stomp plays 20% slower; a tree node brings it back to 10% slower
-
-After the stomp-button clip (PR #223): "i think the stomp needs to be slowed down maybe 10-15%, maybe even slow it down 20% then a node on the upgrade tree can increase its speed to eventually 10% slower than i see in that clip"; "it looks too fast, it makes it looks weightless rather than titanic". He held #223 until it is slowed. Lead's fix: the stomp motion plays at 0.80x at every stage, and the stomp interval stretches with it (0.7 s to 0.875 s); the croc's Frenzy node ("Stomp more often", 4 levels) becomes that speed-up, his pick "Frenzy becomes your speed-up": each level lifts the speed 0.80 -> 0.825 -> 0.85 -> 0.875 -> 0.90x, never faster, the interval always the clip's length (other species keep Frenzy as it was).
-
-## 2026-10-26 · D-265 · Director · Overnight shift; End rampage is a death
-
-Going to sleep: "keep working": prepare animation prototypes to assess tomorrow (picked "Croc kit moves" and "Croc idle/walk/turn/roar redo": leap, charged stomp, snap bite, defeat collapse, and the everyday clips re-keyed in Cascadeur); "voxelise all our new buildings and implement them into the games city generation" (picked "Yes, on by default": he culls from boards and in-game shots tomorrow); "start building the districts, landmarks and explosive sites and codify the logic which generates their appearance in a seed" (picked "Play area, then districts"); audits: road layouts natural and realistic in all seeds, seeds meaningfully different, every asset appears often and none never; "keep working on things that dont require my eye, coding tasks, first drafts of visual items are also fine". Team: "+2 builders tonight" (five builders until he returns). Pause "End rampage" kills the kaiju ("Yes, he dies"): every run ends in a death unless the city falls. Note: D-263's red-light answer replaced D-257's "Suggestive signage"; the question did not quote the older ruling.
-
-## 2026-10-26 · D-266 · Director · Tripo street-life props, up to 1,500 credits
-
-"if you somehow run out of things to do, please start generating some streetlife props in Tripo"; picked "Up to 1,500 credits" (about 20 props, the most common street things first, every model Private). Balance before: about 9,855. Props go through the same six-view inspection and straight to him.
-
-## 2026-10-26 · D-263 · Director · Interview of 9: charged stomp, bite, combo, time's up, results, city seeds, red-light
-
-Asked ahead of the croc kit, shell and city queue ("ask me questions about jobs next in your queue too"). Charged stomp "Rooted while charging" (he plants and crouches until release). Snap bite "No, snaps mid-stride" (eating never slows him). Combo "Any kill or building break" keeps the ~3 s window going. Time's up: offered a retreat, he answered "wait no i want him to die": at zero the "Army's final strike" (one overwhelming jet run or railgun volley) kills him, he collapses in the street as on defeat, and "Yes, every death counts" (the specimen number goes up on every death). Results: "Headline per ending" (city falls / killed by the final strike / lost to the army). City order "Different per save" (each save slot's own seed plus the run index; replays and tests still reproduce). Red-light district "Neon and signs only" (nothing suggestive, original names).
-
-## 2026-10-26 · D-262 · Director · The croc's leap arcs high and lands on the target's roof
-
-The leap (D-259, replaces the dash) first flew a realistic low arc (about half to one hip height), lower than most buildings, so the body would plough through whatever stood between the croc and its target. Asked how the leap meets "a leap that lands on a building and crushes it with a shockwave", he picked "High arc, lands on roof": the croc springs high over the street and comes down on top of the target building, crushing it with the shockwave; nothing in between is hit. The reader's realistic apex bar (L5) no longer applies to the sim's flight path; every other leap bar stands. Player copy says "Leap", not "Dash".
-
-## 2026-10-26 · D-261 · Director · Cities from shuffled building blocks; railgun warning fits the leap; more slots; trial clips in dev builds
-
-City: today every run in a stage is the same city (fixed map_seed, building stream index 0), short of D-133's per-run landmarks. Ruling: "our city mostly randomised but with pre-determined blocks of buildings" (authored blocks built from the Tripo heroes and fillers, district by district, shuffled onto the street grid each run with the landmarks and explosive sites); streets "Shuffle within a few street plans" (2-3 tested plans per growth stage). "we can also create more districts if that helps". Railgun vs leap (D-178): the lock warning grows to fit the leap's crouch, "Longer warning, scaled by size" (about 0.6 / 0.75 / 1.0 s), so a leap at the lock still dodges the volley. Team: an extra builder slot "for the Shell work", and "open another slot temporarily for the road agent" ("dont leave work half finished"). Cascadeur: "we still have more time on the trial ... continue": trial animations may be used in development builds (register: DEV ONLY); the paid licence (Indie covers every feature we use) and a re-run of each kept animation come before any release; no more asking until then.
-
-## 2026-10-26 · D-260 · Director · Interview of 20: biomass flow, tree rules, stomp charge, power grid, civilians, defeat, specimens
-
-Asked 20 more (checked against the archive first). Biomass "Automatic, shown flowing to him" (a mote stream into the croc); "No refunds"; evolution "At once, with the reveal"; after results "The tree, with 'Rampage' one press away". Stomp "Tap to stomp, hold to charge" (about 1 s charge, bigger shockwave, a crouch and crackle tell); breath stays on its cooldown; the breath "surges the grid" (power lines and substations spark down the street, blow transformers, black out the block). River: no preference (lead's call: he can wade, no rule; healing stays the D-259 tree node). Civilians: "Small blood smear, no chunks" (replaces the archived "bloodless puff"; the gore toggle turns it to dust); they evacuate toward the edges over a run, with jammed exits. Army-wrecked buildings pay "full pay" (jet strikes stay unpaid). Defeat: "He collapses in the street". "+N" pops "Only for big payouts". Navigation: landmarks "Visible on the skyline, nothing else". Time of day stays random per run (D-258's "Night only" was the street-life answer, not the run's time). Specimens: the kaiju is "SPECIMEN K-01" and each death makes the next ("i meant 'dies'"), shown as a 2 s "Lab card + a short headline" (K-01 LOST · K-02 RELEASED) before the rise. No difficulty setting; the Taskforce commander mini-boss "After the demo"; pause has "End rampage" only (pays as on defeat).
-
-## 2026-10-26 · D-259 · Director · Interview of 30: run length, combo, croc kit, defeat, districts, camera, options, demo shell
-
-Asked 30 questions ("study all the features ... 30 pertinent questions"). Loop: rampage timer "60 s up to 3 min" (data rows, timer nodes); on defeat "Keep it all"; combo "a small, quick combo" (about 3 s window, cap about x2, pop on the biomass figure); throw nodes "Ricochet" and "Domino" (no wrecking ball). Croc kit: the leap that replaces the dash ships "in the demo"; claw rake "Stays automatic"; tail whip "Automatic, from a tree node"; healing "A tree node unlocks it" (eating heals once bought); an "automatic snap" bite eats people, cars and helicopters near the snout. Army: defeat "Rarely, about 1 run in 8" (replaces D-069a's softer target); "A small threat icon" (a 1-5 level badge near the timer, the one HUD addition); mortars "After the demo"; the city "falls" at 85% destroyed (the run ends on a win beat). City: "one signature hazard or prey" per district; a "Fresh city each run" (no scars). Shell: "Three slots"; camera "Limited swing, auto-returns" (about 60 deg, eases back); slow motion "Only when a landmark falls" (narrows the archived "rare split-second slow motion on the biggest moments"; the VIP stays without, D-243); rumble "scaled by size, with a toggle"; a simple photo mode in the demo; accessibility: rebinding, reduce flashing, hold or toggle, colour-blind safe cues; gore "On by default, with a toggle" (D-242 unchanged); languages "All six + Chinese at the demo"; results screen: biomass and best combo, destruction tally, body count, personal bests (extends D-152's stats); no demo-end tease; news crawl "On big events"; run stats "Opt-in, attached to feedback" (no background sending; D-152's no-network feedback file gains a tick box); Steam page "Not yet"; a 60 s trailer from game captures; if M4 slips, "Hold M4 until all of it is in". He noted some questions repeated earlier interviews: the lead now greps the archive and roadmap chapters before asking.
-
-## 2026-10-26 · D-258 · Director · Street life, Taskforce and demo rulings
-
-Street life: civilians "Mixed panic"; hydrants "Puts out fires"; traffic "Yes, jams and pile-ups"; time of day "Night only". Taskforce: grapple "Buildings only"; swatting agents out of the air "Yes, with a bonus"; an agent hit is a "Gore splatter"; jetpack "Hover and fire". Demo: the automatic stomp is replaced by the stomp button ("Button replaces it"); scope "Baby to adult croc"; controls "Keyboard+mouse and gamepad".
-
-## 2026-10-26 · D-257 · Director · District buildings: review, scale, colour, signs, rewards; new bridge; stomp button
-
-Asked a batch ("ask me a lot of questions"). Tripo buildings: reviewed as "One board per district"; tallest skyscrapers "About 2x the croc" (adult); "District palettes" applied at voxelising (Chinatown reds/greens, docklands brick, neon strip dark with bright signs); Chinatown signs in "Real Chinese characters" (authentic shop words, meaning checked, no real brands). Red-light district: "Suggestive signage" (cheeky silhouette neon, XXX-style signs; nothing explicit beyond signage). Hero landmarks (bank, town hall, courthouse...): "Yes, a big bonus" (biomass burst + callout). Landmark bridge: "Make a new one" (Golden Gate / Harbour Bridge style suspension span over the wider water, Tripo HD, inside the D-256 4700 cap). Croc stomp: "Its own button" (stomp where you stand, shockwave flattens nearby streets and props). Also: "Swap in the new adult" (adult3 replaces croctitan in game; old clips retargeted until re-keyed in Cascadeur); keep HD over Smart Mesh for buildings ("Keep HD").
