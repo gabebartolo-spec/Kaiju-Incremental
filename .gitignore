@@ -18,6 +18,8 @@ override.cfg
 native/bin/
 native/.sconsign*
 *.obj
+# ...but his death's chunk meshes are game assets (tools/blender/death_chunks.py, D-323)
+!assets/death/*.obj
 *.o
 *.lib
 *.exp
