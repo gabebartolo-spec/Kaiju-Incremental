@@ -5,7 +5,9 @@ extends RefCounted
 ## same order, before and after every share of a staged break. (b) IslandMesh draws exactly the
 ## faces a fresh mesh of the cells left has: after each drop (the merged mesh less the hidden
 ## bricks' vertex ranges, plus the patch), after a remesh with a drop while it ran, and its ranges
-## are each brick's own faces. Seeded by design (SEED); no clock.
+## are each brick's own faces; after a last remesh its shades are a fresh mesh's too (between a drop
+## and the remesh a face next to the hole may keep its old corner shade: the share is printed).
+## Seeded by design (SEED); no clock.
 
 const SEED := 20261027
 const BRICKS := Vector3i(10, 6, 5)  # 300 bricks of RES cells a side
@@ -130,11 +132,14 @@ func _faces() -> void:
 		order[j] = swap
 	var off: Array[int] = []
 	var rounds := 0
+	var stale := 0.0  # the largest share of faces drawn with an old shade
 	while order.size() > 6:
 		rounds += 1
 		_drop(order, rng.randi_range(1, 3), [src, bricks, offset], view)
-		if not _same(view, shown, ctx):
+		var d := _diff(view, shown, ctx)
+		if d.x != 0:
 			off.append(rounds)
+		stale = maxf(stale, float(d.y) / maxi(1, d.z))
 		if rounds == 3:  # a remesh, a drop while it runs, then its swap
 			view.remesh(src, bricks, offset)
 			var now: PackedByteArray = src[2]
@@ -143,14 +148,24 @@ func _faces() -> void:
 			_drop(order, 2, [src, bricks, offset], view)
 			view.finish()
 			shown = copied
-			if not _same(view, shown, ctx):
+			if _diff(view, shown, ctx).x != 0:
 				off.append(-rounds)
 	_check.call(
 		rounds > 5 and off.is_empty(),
 		(
-			"after each of %d drops and a remesh the drawn faces are a fresh mesh's (off: %s)"
-			% [rounds, off]
+			(
+				"after each of %d drops and a remesh the drawn faces are a fresh mesh's (off: %s;"
+				+ " an old corner shade on at most %.1f%% of faces until the remesh)"
+			)
+			% [rounds, off, stale * 100.0]
 		)
+	)
+	view.remesh(src, bricks, offset)
+	view.finish()
+	var last := _diff(view, IslandMesh.build(site, src, bricks, frame), ctx)
+	_check.call(
+		last == Vector3i(0, 0, last.z) and last.z > 0,
+		"after the last remesh every face and shade is a fresh mesh's (%d faces)" % last.z
 	)
 	view.free()
 
@@ -174,9 +189,9 @@ func _drop(order: Array, n: int, state: Array, view: IslandMesh) -> void:
 	view.dropped(lists, src, bricks, offset)
 
 
-## Whether `view` draws (`shown`'s faces in its ranges, plus its patch) exactly a fresh mesh's
-## faces; `ctx` is [site, src, bricks, frame].
-func _same(view: IslandMesh, shown: Array, ctx: Array) -> bool:
+## What `view` draws (`shown`'s faces in its ranges, plus its patch) against a fresh mesh, `ctx`
+## [site, src, bricks, frame]: Vector3i(faces placed differently, faces shaded differently, faces).
+func _diff(view: IslandMesh, shown: Array, ctx: Array) -> Vector3i:
 	var site: CarveSite = ctx[0]
 	var src: Array = ctx[1]
 	var bricks: Dictionary = ctx[2]
@@ -193,18 +208,31 @@ func _same(view: IslandMesh, shown: Array, ctx: Array) -> bool:
 	var want := {}
 	var all: CarveMesh.Faces = fresh[0]
 	_count(all, Vector2i(0, all.verts.size()), site.res, want)
-	return drawn == want
+	var placed := 0
+	var shaded := 0
+	for key: Array in want:
+		var a: Array = want[key]
+		var b: Array = drawn.get(key, [])
+		if a.size() != b.size():
+			placed += 1
+		elif a != b:
+			shaded += 1
+	for key: Array in drawn:
+		placed += 0 if want.has(key) else 1
+	return Vector3i(placed, shaded, want.size())
 
 
-## Counts the faces (6 vertices each) of `span` (first vertex, count) of `faces` into `out`, keyed
-## by [lowest corner in half-cells, normal].
+## Lists the faces (6 vertices each) of `span` (first vertex, count) of `faces` into `out`, keyed
+## by [lowest corner in half-cells, normal]: each face's 6 vertex colours.
 func _count(faces: CarveMesh.Faces, span: Vector2i, res: int, out: Dictionary) -> void:
 	for v: int in range(span.x, span.x + span.y, 6):
 		var lo := faces.verts[v]
 		for j: int in range(1, 6):
 			lo = lo.min(faces.verts[v + j])
 		var key := [Vector3i((lo * res * 2.0).round()), Vector3i(faces.normals[v].round())]
-		out[key] = int(out.get(key, 0)) + 1
+		var list: Array = out.get(key, [])
+		list.append(faces.colors.slice(v, v + 6))
+		out[key] = list
 
 
 ## Whether each brick's range in `built` holds exactly that brick's faces, meshed alone.
