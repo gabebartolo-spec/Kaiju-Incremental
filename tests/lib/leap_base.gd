@@ -120,6 +120,46 @@ func _run_city(leap: bool) -> Dictionary:
 	}
 
 
+## The drawn model's shoulder as a share of its height at the sim's growth stage: the shoulder
+## joint (arm_l0's head) in assets/kaiju/reptilian_<stage>.rig.json over the model's height (D-361).
+func _rig_shoulder(sim: RampageSim) -> float:
+	var models: Array[String] = ["baby", "adolescent", "adult"]
+	var model := models[clampi(sim.size_tier() - 1, 0, models.size() - 1)]
+	var path := "res://assets/kaiju/reptilian_%s.rig.json" % model
+	var rig: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+	for bone: Dictionary in rig["bones"]:
+		if str(bone["name"]) == "arm_l0":
+			return Num.f(bone["head"][1]) / Num.f(rig["height"])
+	return 0.0
+
+
+## How high the drawn shoulder stands above the street, world units (the model is drawn
+## kaiju_height x body scale tall).
+func _shoulder_y(sim: RampageSim) -> float:
+	return _rig_shoulder(sim) * sim.reach_height()
+
+
+## How far `p` lies outside building `b`'s footprint (0 on or inside it), and whether it is inside.
+func _gap(b: RampageSim.Building, p: Vector2) -> float:
+	return (
+		Vector2(maxf(absf(p.x - b.x) - b.w * 0.5, 0.0), maxf(absf(p.y - b.z) - b.d * 0.5, 0.0))
+		. length()
+	)
+
+
+func _inside(b: RampageSim.Building, p: Vector2) -> bool:
+	return absf(p.x - b.x) < b.w * 0.5 - 0.001 and absf(p.y - b.z) < b.d * 0.5 - 0.001
+
+
+## Standing cells in building `b`'s top row (its roof).
+func _roof_cells(b: RampageSim.Building) -> int:
+	var out := 0
+	for x: int in b.w:
+		for z: int in b.d:
+			out += 1 if b.frame.alive(Vector3i(x, b.height - 1, z)) else 0
+	return out
+
+
 func _stage(sim: RampageSim) -> Dictionary:
 	var stages: Array = sim.body.dash.cfg["stages"]["reptilian"]
 	return stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]

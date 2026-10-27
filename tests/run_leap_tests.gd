@@ -17,6 +17,9 @@ func run_checks() -> void:
 	await _t("_check_aims_ahead")
 	await _t("_check_open_ground")
 	await _t("_check_tower_wall")
+	await _t("_check_shoulder_measured")
+	await _t("_check_low_roof")
+	await _t("_check_tall_side")
 	await _t("_check_nowhere_to_land")
 	await _t("_check_phases")
 	await _t("_check_ring_and_fling")
@@ -106,6 +109,109 @@ func _check_tower_wall() -> void:
 		sim.step(DT, Vector2.ZERO, false, 0)  # standing at the wall: its stomps chew on (D-091)
 	var left := b.frame.alive_count
 	check(left < before, "the tower is chewed, slowly (%d of %d chunks left)" % [left, before])
+
+
+## D-361: at every growth stage the data's shoulder (the roof height a leap may land on, as a share
+## of the body's drawn height) is the drawn model's: its shoulder joint over its height.
+func _check_shoulder_measured() -> void:
+	for stage: String in STAGES:
+		var sim := _croc(STAGES[stage], [])
+		var got := Num.f(_stage(sim).get("shoulder", 0.0))
+		var want := _rig_shoulder(sim)
+		check(
+			want > 0.0 and absf(got - want) <= 0.005,
+			"%s: the leap's shoulder is the model's (data %.3f, rig %.3f)" % [stage, got, want]
+		)
+
+
+## D-361: at every growth stage a roof at his shoulder or lower is still landed on, feet on it.
+func _check_low_roof() -> void:
+	for stage: String in STAGES:
+		var probe := _croc(STAGES[stage], [])
+		var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
+		var ahead := _ahead(probe, reach * 0.6)
+		var low := _block(ahead, 4, maxi(2, floori(_shoulder_y(probe))))
+		var sim := _croc(STAGES[stage], [low])
+		var leap := _first(sim.step(DT, Vector2.ZERO, false, BUTTON), "leap")
+		_finish(sim)
+		var feet := sim.kaiju_pos + sim.facing * sim.body.feet_ahead()
+		check(
+			(
+				Num.i(leap.get("building", -2)) == 0
+				and Num.f(leap.get("roof", 0.0)) == Num.f(low["h"])
+				and sim.body.dash.arc.land_y == Num.f(low["h"])
+				and feet.distance_to(ahead) < 0.05
+			),
+			(
+				"%s: a %d-high roof (shoulder %.2f) is landed on, feet %.2f off its centre: %s"
+				% [stage, Num.i(low["h"]), _shoulder_y(probe), feet.distance_to(ahead), leap]
+			)
+		)
+
+
+## D-361 ("Tall ones: hit the side"): at every growth stage a target taller than his shoulder
+## takes the leap in its side: the arc never rises over it or comes down on its roof, the body
+## carves into its side in flight (its roof stands), and the feet come
+## down on the street at its foot, where the landing's smash and ring hit it.
+func _check_tall_side() -> void:
+	for stage: String in STAGES:
+		var probe := _croc(STAGES[stage], [])
+		var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
+		var tall := _block(_ahead(probe, reach * 0.6), 6, ceili(_shoulder_y(probe) * 2.0))
+		var sim := _croc(STAGES[stage], [tall])
+		var b := sim.buildings[0]
+		var roof := _roof_cells(b)
+		var before := b.frame.alive_count
+		var leap := _first(sim.step(DT, Vector2.ZERO, false, BUTTON), "leap")
+		var apex := 0.0
+		var flown := 0  # chunks of it broken while the body is still in the air
+		var roof_left := 0
+		var land := {}
+		for _n: int in roundi(5.0 / DT):
+			if not sim.body.dash.on():
+				break
+			var was := b.frame.alive_count
+			var events := sim.step(DT, Vector2.ZERO, false, 0)
+			apex = maxf(apex, sim.body.dash.height())
+			if land.is_empty() and sim.body.dash.phase() == "flight":
+				flown += was - b.frame.alive_count
+				roof_left = _roof_cells(b)
+			land = _first(events, "leap_land") if land.is_empty() else land
+		var at: Vector2 = land.get("at", Vector2.INF)
+		var step := Num.f(sim.body.dash.cfg["landing_step"])
+		check(
+			(
+				Num.i(leap.get("building", -2)) == 0
+				and Num.f(leap.get("roof", -1.0)) == 0.0
+				and sim.body.dash.arc.land_y == 0.0
+				and apex < float(b.height)
+			),
+			(
+				"%s: a %d-high tower (shoulder %.2f) is never landed on: roof %.1f, apex %.2f"
+				% [stage, b.height, _shoulder_y(probe), Num.f(leap.get("roof", -1.0)), apex]
+			)
+		)
+		check(
+			flown > 0 and roof_left == roof,
+			(
+				"%s: the body carves its side in flight (%d chunks), its roof stands (%d of %d)"
+				% [stage, flown, roof_left, roof]
+			)
+		)
+		check(
+			not _inside(b, at) and _gap(b, at) <= step + 0.01 and sim.body.dash.height() == 0.0,
+			(
+				"%s: the feet land on the street at its foot (%.2f from its wall)"
+				% [stage, _gap(b, at)]
+			)
+		)
+		check(
+			b.frame.alive_count < before - flown,
+			(
+				"%s: the landing's smash breaks more of it (%d of %d left)"
+				% [stage, b.frame.alive_count, before]
+			)
+		)
 
 
 ## A press with nowhere to land but where it stands starts no leap (no cooldown, no count): facing
