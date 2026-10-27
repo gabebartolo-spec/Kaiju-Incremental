@@ -62,6 +62,24 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 	salt = voxels.b.style
 	noise = Look.value("color_noise")
 	origin = voxels.origin() + Vector3(0, voxel * 0.5, 0) + Vector3(offset) * voxel
+	_fill_palette(voxels)
+	_read_looks(voxels, cells)
+	var half := voxel * 0.5
+	for d: Vector3i in NEIGHBOURS:
+		var nf := Vector3(d)
+		var a := Vector3.UP if d.y == 0 else Vector3.RIGHT
+		var u := a.cross(nf) * half
+		var v := nf.cross(u.normalized()) * half
+		var c := nf * half
+		_corners.append(PackedVector3Array([c - u - v, c + u - v, c + u + v, c - u + v]))
+		_rings.append(VoxelAO.ring_of(d))
+	finish = VoxelAO.finish_by_look(LIT, SHOP_LIT)
+	if use_native and ClassDB.class_exists("KaijuMesher"):
+		_start_native()
+
+
+## Look id -> colour: each material's from the building's palette, and the two lit looks.
+func _fill_palette(voxels: BuildingVoxels) -> void:
 	palette = PackedColorArray()
 	palette.resize(256)
 	palette.fill(Color.MAGENTA)
@@ -69,6 +87,11 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 		palette[Num.i(m["id"])] = voxels.palette.get(str(m["name"]), Color.MAGENTA)
 	palette[LIT] = voxels.palette["lit"]
 	palette[SHOP_LIT] = voxels.palette["shop_lit"]
+
+
+## Each cell's look (its material, or a lit window's), and the balcony floors proud of the walls
+## the view never draws (hidden).
+func _read_looks(voxels: BuildingVoxels, cells: CellGrid) -> void:
 	looks = cells.cells.duplicate()
 	var foot := Rect2i(Vector2i.ZERO, Vector2i(voxels.b.w, voxels.b.d) * BuildingVoxels.RES)
 	for i: int in looks.size():
@@ -82,22 +105,15 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 			looks[i] = SHOP_LIT
 		elif key == "slab" and not foot.has_point(Vector2i(local.x, local.z)):
 			hidden.append(i)
-	var half := voxel * 0.5
-	for d: Vector3i in NEIGHBOURS:
-		var nf := Vector3(d)
-		var a := Vector3.UP if d.y == 0 else Vector3.RIGHT
-		var u := a.cross(nf) * half
-		var v := nf.cross(u.normalized()) * half
-		var c := nf * half
-		_corners.append(PackedVector3Array([c - u - v, c + u - v, c + u + v, c - u + v]))
-		_rings.append(VoxelAO.ring_of(d))
-	finish = VoxelAO.finish_by_look(LIT, SHOP_LIT)
-	if use_native and ClassDB.class_exists("KaijuMesher"):
-		native = ClassDB.instantiate("KaijuMesher")
-		native.call("setup", dims, offset, origin, voxel, salt, noise, looks, palette)
-		# A library older than item 12 has no AO: the oracle draws instead.
-		if not native.has_method("set_finish") or not native.call("set_finish", finish):
-			native = null
+
+
+## The native mesher, set up as this one; a library older than item 12 has no AO, so the oracle
+## draws instead (native stays null).
+func _start_native() -> void:
+	native = ClassDB.instantiate("KaijuMesher")
+	native.call("setup", dims, offset, origin, voxel, salt, noise, looks, palette)
+	if not native.has_method("set_finish") or not native.call("set_finish", finish):
+		native = null
 
 
 ## The grid as the view draws it: `cells` with the hidden cells as air. A slab proud of the walls
