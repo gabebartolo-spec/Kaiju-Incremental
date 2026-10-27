@@ -8,7 +8,7 @@
 # Before EVERY run it waits for no other Godot (headless included), no League of Legends and >= 6 GB free RAM, at two
 # checks 20 s apart; a run that saw another Godot while it ran is VOID and is run again (up to 4 tries).
 #
-#   GODOT=<console exe> OUT=<dir> [ROUNDS=3] [OWNER=perf-p3b] [MODES="windowed headless"] [CARVES=60] \
+#   GODOT=<console exe> OUT=<dir> [ROUNDS=3] [OWNER=perf-p3b] [MODES="windowed headless"] [CARVES=60] [AB=worker] \
 #     bash C:/kt/wait_window.sh && bash tools/capture/bench_cell_runs.sh        (cwd = the worktree)
 #
 # Output: <OUT>/COST.txt (DLL path and date, every run's lines, VALID or VOID), <OUT>/run_<mode>_<queue>_r<n>.log.
@@ -19,6 +19,10 @@ ROUNDS="${ROUNDS:-3}"
 OWNER="${OWNER:-perf-p3b}"
 MODES="${MODES:-windowed headless}"
 CARVES="${CARVES:-60}"
+# What a round A/Bs: priority = --priority=low|high (item 9); worker = --worker=off|on (item 9c, meshes made on the
+# worker under a real renderer; the queue stays at the tuning's).
+AB="${AB:-priority}"
+if [ "$AB" = worker ]; then VARIANTS="off on"; else VARIANTS="low high"; fi
 TAG="bench_cell_$OWNER"
 WINDOW="C:/kt/BENCH_WINDOW_$OWNER"
 NEED_KB=6291456
@@ -54,11 +58,11 @@ if [ ! -e override.cfg ]; then # the windowed run must never take focus
 	MADE_CFG=1
 fi
 {
-	echo "== bench_cell_runs $(date '+%F %H:%M:%S') sha $(git rev-parse --short HEAD) owner $OWNER rounds $ROUNDS modes $MODES carves $CARVES"
+	echo "== bench_cell_runs $(date '+%F %H:%M:%S') sha $(git rev-parse --short HEAD) owner $OWNER rounds $ROUNDS modes $MODES carves $CARVES ab $AB"
 	for dll in native/bin/*.dll; do [ -e "$dll" ] && echo "   DLL $(pwd)/$dll $(date -r "$dll" '+%F %H:%M')"; done
 } | tee -a "$LOG"
 
-run_one() { # $1 = mode, $2 = queue (low|high), $3 = run id; 0 = VALID, 1 = VOID
+run_one() { # $1 = mode, $2 = variant (low|high, or off|on with AB=worker), $3 = run id; 0 = VALID, 1 = VOID
 	local mode="$1" queue="$2" run="$3" rl="$OUT/run_$3.log" maxo=0 o flags
 	while true; do # wait for silence, twice 20 s apart
 		touch "$WINDOW"
@@ -70,10 +74,10 @@ run_one() { # $1 = mode, $2 = queue (low|high), $3 = run id; 0 = VALID, 1 = VOID
 		sleep 15
 	done
 	if [ "$mode" = windowed ]; then flags="--windowed --resolution 1280x720"; else flags="--headless"; fi
-	echo "== $run $(date +%H:%M:%S) mode $mode queue $queue" | tee -a "$LOG"
+	echo "== $run $(date +%H:%M:%S) mode $mode $AB $queue" | tee -a "$LOG"
 	# shellcheck disable=SC2086  # flags are word-split on purpose
 	APPDATA="$OUT/appdata_$run" timeout 900 "$GODOT" --path . $flags --script tools/capture/bench_cell_mesh.gd -- \
-		--carves="$CARVES" --priority="$queue" --tag="$TAG" > "$rl" 2>&1 &
+		--carves="$CARVES" --"$AB"="$queue" --tag="$TAG" > "$rl" 2>&1 &
 	local pid=$!
 	while kill -0 "$pid" 2> /dev/null; do
 		touch "$WINDOW"
@@ -96,7 +100,7 @@ run_one() { # $1 = mode, $2 = queue (low|high), $3 = run id; 0 = VALID, 1 = VOID
 
 for round in $(seq 1 "$ROUNDS"); do
 	for mode in $MODES; do
-		for queue in low high; do
+		for queue in $VARIANTS; do
 			for try in 1 2 3 4; do
 				run_one "$mode" "$queue" "${mode}_${queue}_r${round}t${try}" && break
 			done

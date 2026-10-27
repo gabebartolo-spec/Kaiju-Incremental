@@ -1,18 +1,24 @@
 class_name ThunderBeam
 extends Node3D
 ## The Thunder Beam (D-112, VFX_STYLE family 6): the Lightning Breath's bolt held for the beam's
-## seconds. Its main channel runs from the jaw along the kaiju's facing into the first standing
-## facade the beam meets (about 6 m up it; the sim's full range in the open) and is re-struck on
-## the stroke schedule while the head steers; at each stroke its branches crawl up the wall from
-## the impact, never down to the street. It replaces the solid emissive box. Reads the sim's state
-## and decides nothing; the burning is the sim's existing coat (D-129).
+## seconds. Its purple main channel runs from deep in the throat (D-357) along the kaiju's facing
+## into the first standing facade the beam meets (about 6 m up it; the sim's full range in the
+## open) and is re-struck on the stroke schedule while the head steers; at each stroke its
+## branches crawl up the wall from the impact, never down to the street. It replaces the solid
+## emissive box. It also runs the charge-up (SpineCharge) of both lightning powers between the
+## press and the strike, with the beam's crackle under it. Reads the sim's state and events and
+## decides nothing; the burning is the sim's existing coat (D-129).
 
 var rig: BoltRig
+## The charge-up arcs up the spines between a press and its strike (the breath's and the beam's).
+var charge: SpineCharge
 var _sim: RampageSim
 var _kaiju: Node3D
 var _jaw: Node3D
+var _sound: SfxBeam
 var _run: int
 var _bolts := 0
+var _charges := 0
 var _bs: float
 var _end := Vector3.ZERO
 var _latched := Vector2.ZERO  # the facing the target was picked at
@@ -33,26 +39,62 @@ func _init(sim: RampageSim, kaiju: Node3D, eye: Color, run: int) -> void:
 	rig = BoltRig.new("thunder", eye, _bs, _cfg)
 	rig.ends = _lash_targets
 	add_child(rig)
+	charge = SpineCharge.new(kaiju, eye, _bs, _cfg)
+	charge.finished.connect(_charged)
+	add_child(charge)
 
 
 ## Draws a throwaway beam out of sight for a few frames, so its shaders compile now (and stay).
 func prewarm(keep: ShaderKeep) -> void:
 	rig.aim(Vector3(0, -50, 0), Vector3(0, -50, 4))
 	rig.play(Num.f(_cfg["prewarm_seconds"]), Seeds.make("thunder_prewarm"))
-	for mat: ShaderMaterial in rig.materials():
+	var mats := rig.materials()
+	mats.append_array(charge.materials())
+	for mat: ShaderMaterial in mats:
 		keep.hold("thunder_%d" % mat.get_instance_id(), mat)
 
 
-## Wires the beam into `rampage`: the city's sparks, the shader prewarm, and a camera kick on
-## every stroke of this bolt and of the breath's (seeded by the run, like this one).
+## Wires the beam into `rampage`: the city's sparks, the shader prewarm, the crackle, and a camera
+## kick on every stroke of this bolt and of the breath's (seeded by the run, like this one).
 func wire(rampage: Rampage, fx: Fx) -> void:
 	prewarm(fx.keep)
+	_sound = SfxBeam.new(rampage.sfx)
+	add_child(_sound)
 	rig.fx = fx
 	var kick := func(_n: int, at: Vector3) -> void:
 		rampage.add_trauma(rampage.shake.source("bolt_stroke"), at)
 	rig.stroked.connect(kick)
 	rampage.ability_fx.seed_index = rampage.run_index
 	rampage.ability_fx.breath_stroke.connect(kick)
+
+
+## The sim's lightning events: the press of the breath or the beam (strike_windup: the charge-up
+## and its crackle), the beam's start and end (the jaw, the bolt, its sound). True when it was one.
+func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
+	match str(event["type"]):
+		"strike_windup":
+			var kind := str(event["kind"])
+			if kind != Strikes.BREATH and kind != Strikes.BEAM:
+				return false
+			_charges += 1
+			var strike_in := Num.f(event["strike_in"])
+			var seed_index := _run * BoltRig.SEEDS_PER_RUN + _charges
+			charge.start(kind, strike_in, Seeds.make("bolt_charge", seed_index))
+			if _sound != null:
+				_sound.charge(strike_in)
+		"beam_start":  # the Thunder Beam: the breath's bolt, held
+			_jaw_open(true)
+			start(Num.f(event["seconds"]), kaiju_at)
+			if _sound != null:
+				_sound.start()
+		"beam_end":
+			_jaw_open(false)
+			stop()
+			if _sound != null:
+				_sound.stop()
+		_:
+			return false
+	return true
 
 
 ## The beam begins (the sim's beam_start): lit for `seconds`, or until stop().
@@ -75,11 +117,22 @@ func update(kaiju_at: Vector3) -> void:
 		_aim(kaiju_at)
 
 
+## The charge-up's last arc ended: the breath's crackle goes out (the beam's carries on under it).
+func _charged(kind: String) -> void:
+	if kind == Strikes.BREATH and _sound != null:
+		_sound.charge_end()
+
+
+func _jaw_open(open: bool) -> void:
+	if _kaiju.has_method("jaw_open"):
+		_kaiju.call("jaw_open", open)
+
+
 func _aim(kaiju_at: Vector3) -> void:
 	var facing := Vector3(_sim.facing.x, 0.0, _sim.facing.y)
 	var mouth := kaiju_at + Vector3(0, 5.0 * _bs, 0) + facing * _bs
 	if is_instance_valid(_jaw):
-		mouth = BreathBeam.along_jaw(_jaw)
+		mouth = BreathBeam.throat_of(_jaw)
 	if _latched == Vector2.ZERO or _sim.facing.angle_to(_latched) > Num.f(_row["turn_hold"]):
 		_latched = _sim.facing  # the beam stays on one point of the facade until the player turns
 		_end = _facade_end(kaiju_at, facing)
