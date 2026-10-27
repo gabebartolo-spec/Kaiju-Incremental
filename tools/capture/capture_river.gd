@@ -181,15 +181,22 @@ func _save_mask(rampage: Rampage, path: String) -> void:
 	for _i: int in 4:
 		await process_frame
 	root.get_viewport().get_texture().get_image().save_png(path)
-	for geo: GeometryInstance3D in kept:
-		geo.material_override = kept[geo][0]
-		geo.visible = kept[geo][1]
-	for layer: CanvasLayer in layers:
-		layer.visible = layers[layer]
-	for we: WorldEnvironment in worlds:
-		we.environment = worlds[we][0]
-		we.camera_attributes = worlds[we][1]
-	if cam:
+	# A node the rampage freed during the wait (a spent effect) is skipped, not restored.
+	for key: Variant in kept:
+		if is_instance_valid(key):
+			var geo: GeometryInstance3D = key
+			geo.material_override = kept[key][0]
+			geo.visible = kept[key][1]
+	for key: Variant in layers:
+		if is_instance_valid(key):
+			var layer: CanvasLayer = key
+			layer.visible = layers[key]
+	for key: Variant in worlds:
+		if is_instance_valid(key):
+			var we: WorldEnvironment = key
+			we.environment = worlds[key][0]
+			we.camera_attributes = worlds[key][1]
+	if is_instance_valid(cam):
 		cam.attributes = attrs
 	for _i: int in 2:
 		await process_frame
