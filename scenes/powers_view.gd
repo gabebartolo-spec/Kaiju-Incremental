@@ -367,23 +367,6 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 
 
 func _young_node(egg: bool) -> Node3D:
-	var node := Node3D.new()
-	if egg:
-		node.set_meta("egg", true)
-		var shell := _box(Vector3(0.8, 1.0, 0.8), EGG, false)
-		shell.position.y = 0.5
-		node.add_child(shell)
-	else:
-		# Elephant-sized: a low body, a head and six legs, in the insectoid's dark brown.
-		var body := _box(Vector3(1.4, 1.0, 2.4), YOUNG, false)
-		body.position.y = 1.2
-		node.add_child(body)
-		var head := _box(Vector3(1.0, 0.8, 0.8), YOUNG.lightened(0.15), false)
-		head.position = Vector3(0, 1.4, -1.5)
-		node.add_child(head)
-		for n: int in 6:
-			var leg := _box(Vector3(0.25, 1.2, 0.25), YOUNG.darkened(0.3), false)
-			leg.position = Vector3(0.8 if n % 2 == 0 else -0.8, 0.5, -0.8 + (n / 2) * 0.8)
-			node.add_child(leg)
+	var node := BroodModel.make(egg, _box)
 	add_child(node)
 	return node
