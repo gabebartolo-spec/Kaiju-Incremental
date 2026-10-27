@@ -46,7 +46,7 @@ var _ready_views: Array[BuildingView] = []
 var _ready_index: Array[int] = []
 var _mutex := Mutex.new()
 var _rest: Array[int] = []
-var _stand_ins: StreamStandIns
+var _stand_ins: StreamDissolve
 var _now: Array[int] = []
 var _pre: Array[BuildingView] = []
 var _initial := -1  # the initial group task while it is out, else -1
@@ -139,7 +139,7 @@ func finish_initial() -> void:
 		WorkerThreadPool.wait_for_group_task_completion(_initial)
 		_initial = -1
 	_pending = false
-	_stand_ins = StreamStandIns.new(_sim.buildings)
+	_stand_ins = StreamDissolve.new(_sim.buildings, _sim.city)
 	add_child(_stand_ins.build(_colors))
 	for k: int in _now.size():
 		var n := _now[k]
@@ -258,8 +258,8 @@ func step(delta: float, settle := false) -> void:
 			WorkerThreadPool.wait_for_task_completion(Num.i(_tasks[n]))
 			_tasks.erase(n)
 	for pair: Array in _take_ready():
-		var done: BuildingView = pair[1]
-		_place(Num.i(pair[0]), done)
+		_place(Num.i(pair[0]), pair[1] as BuildingView)
+	_stand_ins.step(delta)
 	_since_plan += delta
 	if _since_plan >= PLAN_EVERY and _replan_wanted():
 		var t0 := Time.get_ticks_usec()
@@ -298,6 +298,7 @@ func _take_ready() -> Array[Array]:
 func view(n: int) -> BuildingView:
 	_pinned[n] = 1
 	if _views[n] != null:
+		_stand_ins.touch(n)
 		return _views[n]
 	finish_initial()  # n may be one of the nearest buildings, still on its worker
 	if _views[n] != null:
@@ -359,7 +360,7 @@ func _place(n: int, built: BuildingView) -> void:
 	_mutex.unlock()
 	_views[n] = built
 	add_child(built)
-	_stand_ins.hide(n)
+	_stand_ins.dissolve(n, _pinned[n] == 0)
 
 
 ## Building n regrew (Endless mode): its view goes, pinned or not, and is rebuilt.
@@ -395,6 +396,5 @@ func _exit_tree() -> void:
 		WorkerThreadPool.wait_for_task_completion(Num.i(id))
 	_tasks.clear()
 	for pair: Array in _take_ready():  # finished after the last frame: never entered the tree
-		var orphan: BuildingView = pair[1]
-		orphan.free()
+		(pair[1] as BuildingView).free()
 	BuildingView.end_city()  # streaming is done: keep only this city's buildings

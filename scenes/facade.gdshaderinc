@@ -40,6 +40,11 @@ float hash3(vec3 p) {
 	return fract((p.x + p.y) * p.z);
 }
 
+// Interleaved gradient noise: a cheap screen-space dither in [0, 1).
+float dither(vec2 at) {
+	return fract(52.9829189 * fract(dot(at, vec2(0.06711056, 0.00583715))));
+}
+
 void vertex() {
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	v_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
@@ -48,6 +53,10 @@ void vertex() {
 }
 
 void fragment() {
+	// A box dissolving out as its mesh arrives (StreamDissolve): instance alpha is its opacity.
+	if (COLOR.a < 0.999 && dither(FRAGCOORD.xy) > COLOR.a) {
+		discard;
+	}
 	vec3 wall = srgb_to_linear(COLOR.rgb);
 	vec3 albedo = wall;
 	vec3 emit = vec3(0.0);
