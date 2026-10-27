@@ -10,6 +10,11 @@ extends Node3D
 ## Render plan item 9 (tuning render_opt.remesh_high_priority): the meshing task is queued on the
 ## pool's high-priority side, where Jolt's own jobs run, so a bite is not left waiting behind them
 ## (the low-priority side keeps only 30% of the threads); the swap-in time of each batch is timed.
+## Render plan item 9c (tuning render_opt.remesh_worker_mesh): under a real renderer each block's
+## mesh is made on its worker too (CellMesher.packed_mesh: the native packed surface, uploaded
+## on that thread), so the swap-in only attaches them; every block of a batch still swaps in on
+## the same frame. Headless (the dummy renderer), the GDScript mesher or the flag off: the meshes
+## are made on the main thread, in _finish, as before.
 
 ## Meshes in their own world space (CellMesher.origin is world), as BuildingView's are.
 var mesher: CellMesher
@@ -24,6 +29,8 @@ var keep_arrays := false
 var arrays: Dictionary = {}
 ## Whether the meshing task goes on the pool's high-priority queue (tuning, set at _init).
 var high_priority := true
+## Whether each block's mesh is made on its worker (tuning, the renderer and the mesher; at _init).
+var worker_mesh := false
 ## Microseconds the last _finish took on the main thread (block meshes made and swapped in), and,
 ## when keep_timings is on (tests, the bench), one entry per batch.
 var last_finish_us := 0
@@ -35,13 +42,21 @@ var _dirty: Dictionary = {}
 var _task := -1
 var _batch: Array[Vector3i] = []
 var _results: Array = []
+## Per block, its mesh made on the worker (worker_mesh; else empty).
+var _meshes: Array = []
 
 
 ## cells: the building's grid now (its bytes are copied on write, so the sim may carve on).
 func _init(p_mesher: CellMesher, cells: PackedByteArray, p_material: Material) -> void:
 	mesher = p_mesher
 	material = p_material
-	high_priority = Content.section("render_opt").get("remesh_high_priority", true) == true
+	var opt := Content.section("render_opt")
+	high_priority = opt.get("remesh_high_priority", true) == true
+	worker_mesh = (
+		opt.get("remesh_worker_mesh", true) == true
+		and DisplayServer.get_name() != "headless"
+		and mesher.can_pack()
+	)
 	_cells = cells
 	for r: Vector3i in mesher.all_regions():
 		_dirty[r] = true
@@ -89,8 +104,11 @@ func _start() -> void:
 	_dirty.clear()
 	_results.clear()
 	_results.resize(_batch.size())
+	_meshes.clear()
+	if worker_mesh:
+		_meshes.resize(_batch.size())
 	_task = WorkerThreadPool.add_group_task(
-		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results),
+		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results, _meshes),
 		_batch.size(),
 		-1,
 		high_priority,
@@ -98,22 +116,31 @@ func _start() -> void:
 	)
 
 
-## One worker task: block batch[i] of `cells`, its arrays into results[i]. The mesh resource is
-## made on the main thread (_finish): a mesh RID made on a worker raced the dummy renderer's
-## allocator in the headless bench ("Initializing already initialized RID").
+## One worker task: block batch[i] of `cells`, its arrays into results[i] and, when meshes is
+## sized (worker_mesh), its mesh into meshes[i]. Otherwise the mesh is made on the main thread
+## (_finish): a mesh RID made on a worker raced the dummy renderer's allocator in the headless
+## bench ("Initializing already initialized RID"), so headless never makes one here.
 static func _mesh_one(
-	i: int, m: CellMesher, cells: PackedByteArray, batch: Array[Vector3i], results: Array
+	i: int,
+	m: CellMesher,
+	cells: PackedByteArray,
+	batch: Array[Vector3i],
+	results: Array,
+	meshes: Array
 ) -> void:
 	results[i] = m.mesh_region(cells, batch[i])
+	if not meshes.is_empty():
+		meshes[i] = m.packed_mesh(results[i])
 
 
 func _finish() -> void:
 	var t0 := Time.get_ticks_usec()
 	_task = -1
+	var built := not _meshes.is_empty()
 	for i: int in _batch.size():
 		var r := _batch[i]
 		var done: Array = _results[i]
-		var mesh := CellMesher.to_mesh(done)
+		var mesh: ArrayMesh = _meshes[i] if built else CellMesher.to_mesh(done)
 		if keep_arrays:
 			arrays[r] = done
 		var part: MeshInstance3D = parts.get(r, null)
@@ -132,6 +159,7 @@ func _finish() -> void:
 	remeshed += _batch.size()
 	last_batch = _batch.duplicate()
 	_results.clear()
+	_meshes.clear()
 	last_finish_us = Time.get_ticks_usec() - t0
 	if keep_timings:
 		finish_us.append(last_finish_us)

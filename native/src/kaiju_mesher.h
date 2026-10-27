@@ -10,6 +10,7 @@
 // read-only: safe to call from several WorkerThreadPool tasks at once.
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/vector3.hpp>
@@ -47,6 +48,10 @@ public:
 	// finish: look id (a cell's palette index) -> finish class, 256 entries.
 	bool set_finish(const PackedByteArray &p_finish);
 	Array mesh_region(const PackedByteArray &p_cells, const Vector3i &p_region) const;
+	// Render plan item 9c (kaiju_surface.cpp): mesh_region's arrays packed as the surface
+	// dictionary ArrayMesh._set_surfaces takes, the bytes RenderingServer packs for
+	// CellMesher.to_mesh. Pure (no server call): safe on a worker. {} when it has no face.
+	Dictionary pack_surface(const Array &p_arrays) const;
 };
 
 } // namespace godot
