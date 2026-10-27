@@ -2,6 +2,51 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-291 · Director · Audit what agents built from loose readings of his rulings
+His words, on the vehicle fade agents had stretched from D-025: "im certain id never have agreed to that if id understood what you were proposing". Asked: "Yes, audit now": a Sonnet reader lists every behaviour the player meets that an agent built beyond the words of a ruling, or with none, each with a still from the real game (C:/kt/rule_audit.md), for him to keep or cut item by item. Every question to him says what he will see on screen in plain words, with a picture or clip of the real effect when it is visual. Not chosen: not now.
+
+## 2026-10-27 · D-290 · Director · Vehicles never go see-through
+His words, seeing the governor's heli ghost over a tower: "the governers heli sometimes blends into the buildings, as if it is translucent"; told the screen-door fade on tanks and helis was an agent's extension of D-025 (smoke) with no decision of his: "why would any vehicle ever go see through?". Asked: "Remove it": VehicleFade goes; every tank and helicopter, the governor's included, always draws solid. Smoke keeps clearing over the kaiju (D-025). Building fades are D-283's bubble rework. Not chosen: keep it for regular vehicles.
+
+## 2026-10-27 · D-289 · Director · The facade jump on the first carve is fixed in the next free slot
+His words (watching runs): "when a building gets carved anywhere, its whole facade changes texture, so even if you carve the bottom of a tower, the top of the tower is changing appearance too". Asked: "Next free slot": a Sonnet builder (briefs/brief-facade-carve.md) takes the next builder slot that frees, ahead of the remaining render-plan items; pass bar: the untouched part of a carved building does not change (upper-half pixel diff mean <= 1/255, p99 <= 4/255), a headless check that fails on main first, one clip to him. Not chosen: a 7th builder now; after the render plan.
+
+## 2026-10-27 · D-288 · Director · Death Blast upgrades: Overload, Meltdown, Supernova at 2,540 / 8,128 / 17,780
+Asked (PR #240, agent-added values): "Keep them" for the names Overload / Meltdown / Supernova and their card text ("Go out with a bang: when you fall, you take the street with you" / "A bigger bang: your last breath flattens the block" / "The biggest bang: nothing near you outlives you"); "Keep" for costs 2,540 / 8,128 / 17,780 biomass (the steps of Signature Recharge levels 1 and 3 and Crushing Weight's top level). Not chosen: his own names; costs x2 or x0.5. The death look waits for the clip.
+
+## 2026-10-27 · D-287 · Director · Six builders tonight: P2b and P2c start now
+His words: "speed up our work, make sure our pc is able to manage the workload". Shown: 17 of 31 GB RAM free, CPU 34% of 16 threads, GPU idle. Asked: "Yes, 6 builders": render plan P2b (crowds, item 7) and P2c (pooled effects, item 8) start as builders 5 and 6 beside death overload and army balance; back to 4 on any PC freeze (replaces D-278's 4). Timing benches still run with no other Godot, in bench windows (C:/kt/BENCH_WINDOW* flag files builders respect). Not chosen: keep 4.
+
+## 2026-10-27 · D-286 · Director · The freeze fix merges at its speed check; the soak checks it after
+His words: "i dont want to wait til 7am if possbile". Asked: "Merge at speed check": PR #254 merges once its p95 speed check passes (fix within 5% of main) and CI is green, instead of after the D-282 soak. The soak keeps running (fix runs 1-10 run 40331611227, 11-20 run 40342907172 on soak/fix-b; main run 40331600221 until one freeze); any fix run that freezes means #254 is reverted at once. D-282's pass bar (main >=1 freeze, fix 20/20 clean) is unchanged, only the merge comes first. Not chosen: wait for the soak (~04:20 at the earliest).
+
+## 2026-10-27 · D-285 · Director · New colour grading and both clean-ups ship (render items 3 and 4)
+Shown 20 labelled 4K stills of the real game (item 4: night, dusk, morning and noon, current vs new; item 3: night fog, night lamps and dusk sky, each off/deband/sharp/both). Asked: "should the new colour grading ship?" -> "New grading" (AgX 1.6, post contrast 1.0, night tone split; night pure-black area 9.9% -> 0.2%, mid-tones within ~1%). "which clean-up should ship?" -> "Both" (debanding + FSR sharpening). All on by default in #257 with D-279's night fog. Not chosen: keep current; deband only; sharpen only; off.
+
+## 2026-10-27 · D-284 · Director · No floating biomass numbers
+
+"the biomass numbers also visible THROUGH te buildings and kaiju isnt great"; then, on a screenshot of +numbers sprinkled over the croc's tail (docs/captures/2026-10-26-clips/numbers_over_kaiju.webp): "i dont want to see the numbers. i want to see kaiju". Always-on-top numbers were agent-added at the greybox kickoff (8d02a024), no decision. First pick "Hidden behind it", then asked again: "Remove them entirely". Every floating +biomass number goes (callers in rampage.gd, rooftop_view.gd, rail_view.gd, tank_fx.gd); the biomass counter and its tick-up are the only readout. When: "With the bubble" (D-283), after the render plan.
+
+## 2026-10-27 · D-283 · Director · Camera bubble after the render plan
+
+"see why we need the bubble", "the bubble would solve unsightly views like the above" (screenshots: a building wall filling the frame; the screen-door fade over the croc at night, wall: docs/captures/2026-10-26-clips/bubble_why_wall.webp; the screen-door one was not saved to disk). Asked when to build it; picked "After the render plan". Rework #238 (solid by default, cut away only the 0-3 buildings between camera and kaiju, shadows kept); his two screenshots are the pass bar (no wall fills the frame, no screen-door over the kaiju); the clip goes straight to him. Re-asked 00:58 while League blocked the speed benches (start it now in the gap?): "Keep it after the plan".
+
+## 2026-10-27 · D-282 · Director · The freeze fix's 20-run test runs on GitHub first
+
+His question: "is it possible to do this on github instead?". Asked: "Yes, GitHub first": 20 runs on main and 20 on the fix on GitHub (software rendering, free on the public repo); main must freeze at least once there to prove GitHub catches it; then 20/20 clean on the fix passes. If main never freezes there, the test returns to the local GPU. Speed benches and stills stay on the local GPU (no GPU on GitHub). Not chosen: keep local, both.
+
+## 2026-10-27 · D-281 · Director · The charged stomp becomes the dragon's attack
+
+His words: "stomp fits the dragon more than the croc". Asked: "Yes, dragon's kit": the tap/hold charged stomp (D-260, D-263), its 0.80x speed and Frenzy speed-up (D-264) move to the dragon's design for when dragon work resumes (paused, D-25x); the dragon gets its own Cascadeur clip.
+
+## 2026-10-27 · D-280 · Director · Croc: the stomp turns automatic and weak; a tail lash takes its button
+
+His words: "we should probably revisit the stomp attack and replace it with something else, make stomp damage weaker and automatic / a stationary stomp goes against the croc's power fantasy as an athletic kaiju". Asked: auto stomp "Every footfall crushes" (damage under his feet as he walks and runs, never stops to stomp); power "Street-level only" (people, cars, trees, props underfoot; buildings only chip); the button "Tail lash" (mid-stride tail whip flattening a ring beside him, never breaking his run; Cascadeur clip); timing "After the render plan". Replaces D-260 "Button replaces it" and D-263 "Rooted while charging" for the croc. Not chosen: rhythm stomps, chipping buildings, death roll, lunge bite.
+
+## 2026-10-26 · D-279 · Director · Night sky: fog matched to the sky (B)
+
+Asked with 4 labelled 4K stills (docs/captures/2026-10-26-clips/night_sky_A-D.png) after his "too much white in the blue ... the lighting or the fog": "Which night look should ship?" Answer: "B: fog matched to sky". Night fog_color 1e2a46 -> 0c1428 (= sky_top); ambient stays 1.4. Measured sky luma 9.5 -> 1.9, facades 39.5 -> 38.3. Not chosen: D both, C dimmer buildings, A keep.
+
 ## 2026-10-26 · D-278 · Director · Builder cap 4 for tonight's render plan
 
 Asked: "Can I run 4 builders tonight instead of 3, so the night-shadow, clarity and night-sky batch starts now?" after he said "wow, thats so slow, anyway we can speed it up?". Answer: "4 builders tonight (Recommended)". Kaiju cap is 4 builders + 1 Sonnet reader for tonight; drops back to 3 if anything freezes. Not chosen: 5 builders, keep 3.

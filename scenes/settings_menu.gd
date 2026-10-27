@@ -107,7 +107,8 @@ func _add_choices(col: Control) -> void:
 	_button_row(col, "Graphics and FPS", [_graphics, _fps])
 	# The time-of-day and weather buttons each span the sliders' column, edge to edge (D-145, D-155).
 	_time = _choice(func() -> void: PlayerSettings.next_time_of_day())
-	_button_row(col, "Time of day", [_time])
+	# Hidden while only one time may be played (D-359); restoring D-145 is editing data "play".
+	_button_row(col, "Time of day", [_time]).visible = TimeOfDay.has_choice()
 	_weather = _choice(func() -> void: PlayerSettings.next_weather())
 	_button_row(col, "Weather", [_weather])
 
@@ -125,7 +126,7 @@ func _choice(on_press: Callable) -> Button:
 
 
 ## A row of `buttons` under a name: they split the sliders' span in equal parts.
-func _button_row(col: Control, text: String, buttons: Array[Button]) -> void:
+func _button_row(col: Control, text: String, buttons: Array[Button]) -> Control:
 	var row := _row(null, text)
 	var span := HBoxContainer.new()
 	span.custom_minimum_size = Vector2(SPAN, 0)
@@ -133,7 +134,9 @@ func _button_row(col: Control, text: String, buttons: Array[Button]) -> void:
 	for button: Button in buttons:
 		span.add_child(button)
 	row.add_child(span)
-	col.add_child(_gap(row, ROW_GAP))
+	var wrapped := _gap(row, ROW_GAP)
+	col.add_child(wrapped)
+	return wrapped
 
 
 ## `node` with `top` px of space above it.

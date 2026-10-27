@@ -229,9 +229,11 @@ func _check_upgrade_effects() -> void:
 	)
 	# A heavy turn (D-187) needs a bot that holds a heading as a player does: retarget every 60 steps.
 	var evolved := _autoplay(
-		_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}), MAX_STEPS, 60
+		_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}), MAX_STEPS, 60, true
 	)
-	var unevolved := _autoplay(_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3}), MAX_STEPS, 60)
+	var unevolved := _autoplay(
+		_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3}), MAX_STEPS, 60, true
+	)
 	check(
 		Num.f(evolved["destruction"]) > Num.f(unevolved["destruction"]),
 		(

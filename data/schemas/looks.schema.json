@@ -75,6 +75,7 @@
         },
         "random_label": {"$ref": "#/$defs/str"},
         "order": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+        "play": {"type": "array", "items": {"$ref": "#/$defs/str"}},
         "dusk": {"type": "object"},
         "night": {
           "type": "object",
