@@ -1,8 +1,9 @@
 // KaijuSettle.cells (b2-3 part 4): BuildingLayout's generation (sim/building_layout.gd, packed by
 // BuildingCells, with GlassFrame's columns), which costs a big building 100-170 ms in GDScript.
 // Every face, slab, roof and sign mark below is the GDScript's, in the same order, so the last
-// write wins the same way; the layout rolls hash the same Vector4i through the engine's Variant hash, and the water tank's
-// ellipsoid is tested in real_t as the GDScript's Vector3 is. The GDScript stays the reference:
+// write wins the same way; the layout rolls hash the same Vector4i through the engine's Variant
+// hash, and the water tower's rings are whole-cell squared distances, exact in both. The GDScript
+// stays the reference:
 // tests/run_cells_tests.gd (_check_native_cells) holds the two to the same bytes. Marks go into a
 // flat grid with a margin round the shell; the result is cropped to the box BuildingCells._pack
 // gives. A mark outside the margin returns an empty Array and the caller uses the GDScript.
@@ -49,6 +50,16 @@ enum Key {
 };
 
 enum Arch { OFFICE = 0, BRICK = 1, GLASS = 2, STONE = 3 };
+
+// BuildingLayout's TOWER_* (the wooden water tower on a BRICK roof), in cells.
+const int TOWER_LEGS = 6;
+const int TOWER_PLATFORM_R2 = 38;
+const int TOWER_BARREL = 12;
+const int TOWER_BARREL_R2 = 27;
+const int TOWER_HOOPS[3] = { 1, 5, 9 };
+const int TOWER_ROOF = 7;
+const double TOWER_EAVE_R = 5.6;
+const int TOWER_REACH = 6;
 
 const int SIDE_X[4] = { -1, 1, 0, 0 };
 const int SIDE_Z[4] = { 0, 0, -1, 1 };
@@ -97,20 +108,6 @@ struct Gen {
 		for (int x = std::min(ax, cx); x <= std::max(ax, cx); x++)
 			for (int y = std::min(ay, cy); y <= std::max(ay, cy); y++)
 				for (int z = std::min(az, cz); z <= std::max(az, cz); z++) mark(x, y, z, key);
-	}
-
-	// BuildingLayout._blob, in real_t like the GDScript's Vector3.
-	void blob(const Vector3 &centre, const Vector3 &radii, int key) {
-		const Vector3 a = (centre - radii).floor();
-		const Vector3 b = (centre + radii).ceil();
-		const Vector3i l((int32_t)a.x, (int32_t)a.y, (int32_t)a.z);
-		const Vector3i u((int32_t)b.x, (int32_t)b.y, (int32_t)b.z);
-		for (int x = l.x; x <= u.x; x++)
-			for (int y = l.y; y <= u.y; y++)
-				for (int z = l.z; z <= u.z; z++) {
-					const Vector3 v = (Vector3((real_t)x, (real_t)y, (real_t)z) - centre) / radii;
-					if ((double)v.length_squared() <= 1.0) mark(x, y, z, key);
-				}
 	}
 
 	int64_t roll(int x, int y, int z, int64_t mod) const {
@@ -255,16 +252,32 @@ struct Gen {
 		}
 	}
 
-	void water_tank(int top) {
-		const Vector3 c((real_t)(w * 0.65), (real_t)(top + 11.0), (real_t)(d * 0.4));
-		const int cx = (int)std::round((double)c.x);
-		const int cz = (int)std::round((double)c.z);
-		const int cy = (int)std::round((double)c.y);
+	// BuildingLayout._disc: layer y's cells round (ax, az) whose squared distance from it is over
+	// inner2 and at most outer2, kept inside the footprint (outer2 0 is the one cell under it).
+	void disc(int ax, int az, int y, int outer2, int key, int inner2 = -1) {
+		for (int dx = -TOWER_REACH; dx <= TOWER_REACH; dx++)
+			for (int dz = -TOWER_REACH; dz <= TOWER_REACH; dz++) {
+				const int d2 = dx * dx + dz * dz;
+				const int x = ax + dx, z = az + dz;
+				if (d2 > inner2 && d2 <= outer2 && x >= 0 && x < w && z >= 0 && z < d) mark(x, y, z, key);
+			}
+	}
+
+	// BuildingLayout._water_tower: legs, platform, barrel, hoops, cone roof, laid in that order.
+	void water_tower(int top) {
+		const int cx = (int)std::round(w * 0.65);
+		const int cz = (int)std::round(d * 0.4);
 		const int legs[4][2] = { { -4, -4 }, { 4, -4 }, { -4, 4 }, { 4, 4 } };
-		for (const auto &leg : legs) box(cx + leg[0], top, cz + leg[1], cx + leg[0], top + 6, cz + leg[1], GEAR);
-		box(cx, top, cz, cx, top + 5, cz, PIPE);
-		blob(c, Vector3((real_t)5.2, (real_t)5.6, (real_t)5.2), TANK);
-		box(cx, cy + 6, cz, cx, cy + 7, cz, TANK);
+		for (const auto &leg : legs)
+			for (int y = top; y < top + TOWER_LEGS; y++) disc(cx + leg[0], cz + leg[1], y, 0, GEAR);
+		disc(cx, cz, top + TOWER_LEGS, TOWER_PLATFORM_R2, GEAR);
+		const int base = top + TOWER_LEGS + 1;
+		for (int y = base; y < base + TOWER_BARREL; y++) disc(cx, cz, y, TOWER_BARREL_R2, TANK);
+		for (const int hoop : TOWER_HOOPS) disc(cx, cz, base + hoop, TOWER_PLATFORM_R2, VENT, TOWER_BARREL_R2);
+		for (int k = 0; k < TOWER_ROOF; k++) {
+			const double r = TOWER_EAVE_R * (1.0 - k / (double)TOWER_ROOF);
+			disc(cx, cz, base + TOWER_BARREL + k, (int)std::floor(r * r), TANK);
+		}
 	}
 
 	void mast(int top) {
@@ -295,7 +308,7 @@ struct Gen {
 				ac_units(top);
 				break;
 			case BRICK:
-				water_tank(top);
+				water_tower(top);
 				break;
 			case GLASS:
 				mast(top);

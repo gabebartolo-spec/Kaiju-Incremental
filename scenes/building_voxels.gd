@@ -5,7 +5,7 @@ extends RefCounted
 ## Facades have depth: windows sit one cell back in their reveals behind proud sills and
 ## lintels; piers, spandrels, mullions and transoms frame them. Four archetypes: office
 ## (ribbon windows over spandrel bands, AC plant), brick residential (punched windows, balconies
-## with railings, water tank), glass tower (flush curtain wall, mast with beacon), stone classic
+## with railings, water tower), glass tower (flush curtain wall, mast with beacon), stone classic
 ## (pilasters, cornices and string courses, stepped roof). Ground floors are shopfronts under a
 ## sign band and an awning. A side shared with a neighbour carries the same facade (build 2 note
 ## 22), so it shows when the neighbour falls; some shops hang a vertical neon sign off a street face
