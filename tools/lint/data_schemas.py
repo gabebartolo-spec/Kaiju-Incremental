@@ -213,6 +213,9 @@ def cross_checks(datas: dict) -> list[str]:
     for t in times.get("order", []):
         if t not in times:
             out.append(f"looks.json: times.order lists '{t}', which has no entry in times")
+    for t in times.get("play", []):
+        if t not in times.get("order", []):
+            out.append(f"looks.json: times.play lists '{t}', which is not in times.order")
     return out
 
 
