@@ -105,7 +105,9 @@ func _check_native_loaded() -> void:
 
 
 ## Uncarved, the grid's mesh holds every face of the baked view (shell and slabs) in the same
-## colour, and its only extra faces are wall and roof faces looking into the building's hollow.
+## colour, and its only extra faces are wall and roof faces looking into the building's hollow,
+## plus a balcony slab's faces: the baked view never draws a slab proud of the walls (D-289; the
+## live game does not draw the grid yet, so reconcile the two when it does).
 ## The one face the baked view draws that the grid's mesh does not is a wall face behind a balcony
 ## slab (the baked view hides that slab, so the wall must show; the grid draws the slab itself).
 func _check_matches_baked_view() -> void:
@@ -128,6 +130,7 @@ func _check_matches_baked_view() -> void:
 				recoloured += 1
 		var extra := 0
 		var stray := 0
+		var balcony := 0
 		var w := b.w * BuildingVoxels.RES
 		var d := b.d * BuildingVoxels.RES
 		var h := b.height * BuildingVoxels.RES
@@ -147,7 +150,13 @@ func _check_matches_baked_view() -> void:
 			)
 			var inside := local.x >= 1 and local.x <= w - 2 and local.z >= 1 and local.z <= d - 2
 			if not (inside and local.y >= 0 and local.y < h - 1):
-				stray += 1
+				# The baked view never draws a balcony slab (D-289); the grid's mesh still does.
+				var solid := local - normal
+				var is_balcony: bool = voxels.vox.cells.get(solid, "") == "slab"
+				if is_balcony and (solid.x < 0 or solid.x >= w or solid.z < 0 or solid.z >= d):
+					balcony += 1
+				else:
+					stray += 1
 		var behind := BalconyFaces.behind(voxels, baked)
 		check(
 			missing == behind.size() and recoloured == 0,
@@ -159,8 +168,8 @@ func _check_matches_baked_view() -> void:
 		check(
 			stray == 0 and extra > 0,
 			(
-				"%s: the only extra faces look into the hollow (%d extra, %d stray)"
-				% [f[0], extra, stray]
+				"%s: the only extra faces look into the hollow or are balcony slabs (%d, %d, %d stray)"
+				% [f[0], extra, balcony, stray]
 			)
 		)
 
