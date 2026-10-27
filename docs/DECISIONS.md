@@ -4,13 +4,21 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-329 · Director · Tail whip: the automatic whip stays until the button lash is built
+Q: D-328 removes the automatic tail whip and moves its tree nodes to the button tail lash (D-280), but the lash is
+timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
+So: the automatic whip and its nodes (r_tail, r_shear) stay as they are until the D-280 lash is built after the
+render plan; then the whip goes and its nodes upgrade the lash. Changes D-328's tail line on timing only.
+
 ## 2026-10-27 · D-328 · Director · Interview: tail, night, lab, skins, crowds, turn, ElevenLabs, night calls
 Tail (asked whether the button tail lash, D-280, is the same move as the automatic tail whip from a tree node, D-259):
 "remove the automatic whip, repurpose the nodes to improve our button whip". Night (D-106/D-145 "lighter" vs D-242 "dark
 and moody"): "Tonight's look" (D-285 stands; the older wording is retired on this point). Kaiju Creation lab scene:
 "Both" (a new save and each new species). Skins earned by playing: "Both" (each form reached, and rampage records).
 Crowds speed-up (render plan item 7): "Keep trying (Recommended)" if the second method misses. Heavier turn (D-187,
-Behemoth seed 1234 takes 11.9 s to flatten the buildings by its rise): "Keep it heavy"; the test bar is fitted to it.
+Behemoth seed 1234 takes 11.9 s to flatten the buildings by its rise): "Keep it heavy"; the turn stays heavy (D-187,
+D-192 A: short steps, turn_slow 0.1) and the 10 s bar of D-131/D-192 stays, met without changing the turn (lead's
+correction: the question wrongly offered to fit his bar).
 ElevenLabs: "I'll sign in" (the lead reads the four train sounds' generation ids for the licence register). Night calls
 (night_calls.md): "All fine". Not asked, lead's call from D-326: rooftop soldiers near the camera stay undrawn.
 
