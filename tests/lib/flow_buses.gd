@@ -11,6 +11,7 @@ static func run(root: Node, check: Callable) -> void:
 	var cfg := Content.section("audio")
 	_layout(cfg, check)
 	_ducks(cfg, check)
+	_duck_reach(cfg, check)
 	_sounds(cfg, check)
 	_players(root, check)
 
@@ -82,6 +83,35 @@ static func _ducks(cfg: Dictionary, check: Callable) -> void:
 	)
 
 
+## Which sounds duck the mix: those on Hero (or a bus that sends into it). The roar, a toppled tower,
+## the barrel blasts and the sonic boom do; stomps and footsteps do not (director 2026-10-27,
+## "Keep, not stomps": the war does not pump with every footstep).
+static func _duck_reach(cfg: Dictionary, check: Callable) -> void:
+	var sends := {}
+	for def: Dictionary in cfg.get("buses", []):
+		sends[str(def["name"])] = str(def["send"])
+	var listened: Array[String] = []
+	for duck: Dictionary in cfg.get("ducks", {}).values():
+		listened.append(str(duck["sidechain"]))
+	var sounds: Dictionary = cfg.get("sounds", {})
+	var ducking: Array[String] = []
+	for sound: String in sounds:
+		var bus := str(sounds[sound])
+		while bus != "" and not listened.has(bus):
+			bus = str(sends.get(bus, ""))
+		if bus != "":
+			ducking.append(sound)
+	ducking.sort()
+	var big: Array[String] = ["roar", "collapse", "blast_crack", "blast_body", "blast_rumble"]
+	big.append("sonic_boom")
+	var missing := big.filter(func(s: String) -> bool: return not ducking.has(s))
+	check.call(missing.is_empty(), "the roar, big collapses and barrel blasts duck the mix: %s" % [ducking])
+	var steps := ducking.filter(
+		func(s: String) -> bool: return s.begins_with("stomp") or s.begins_with("footstep")
+	)
+	check.call(steps.is_empty(), "no stomp or footstep ducks the Bed or Music: %s" % [steps])
+
+
 ## Each sound file in assets/sfx has a bus in tuning, and every tuned bus is a real one.
 static func _sounds(cfg: Dictionary, check: Callable) -> void:
 	var sounds: Dictionary = cfg.get("sounds", {})
@@ -100,7 +130,8 @@ static func _sounds(cfg: Dictionary, check: Callable) -> void:
 
 
 ## The players the game makes: every pool voice, loop and menu or roar player sits on a known
-## bus, and a played roar, stomp and toppled tower go to Hero while a dropped part goes to Debris.
+## bus, and a played roar and toppled tower go to Hero (a stomp does not: it ducks nothing) while a
+## dropped part goes to Debris.
 static func _players(root: Node, check: Callable) -> void:
 	var sfx := Sfx.new(Seeds.make("sfx", 0))
 	root.add_child(sfx)
@@ -118,14 +149,14 @@ static func _players(root: Node, check: Callable) -> void:
 	check.call(
 		(
 			heard["roar"] == &"Hero"
-			and heard["stomp_1"] == &"Hero"
+			and heard["stomp_1"] == &"SFX"
 			and heard["topple"] == &"Hero"
 			and heard["drop"] == &"Debris"
 			and heard["tank_fire"] == &"Military"
 			and heard["rifle_far"] == &"Military"
 			and heard["footstep"] == &"SFX"
 		),
-		"roar, stomp and a toppled tower play on Hero, a dropped part on Debris: %s" % [heard]
+		"roar and a toppled tower play on Hero, a stomp on SFX, a dropped part on Debris: %s" % [heard]
 	)
 	check.call(
 		sfx._crowd.bus == &"Crowd" and sfx._rotor.bus == &"Military" and sfx._regen.bus == &"SFX",
