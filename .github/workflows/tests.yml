@@ -59,6 +59,7 @@ jobs:
         id: changes
         env:
           IS_DRAFT: ${{ github.event.pull_request.draft }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           code=true
@@ -70,12 +71,25 @@ jobs:
             elif ! git diff --name-only HEAD^1 HEAD | grep -qvE '^docs/|\.md$'; then
               code=false
               reason="documentation only"
+            else
+              reused=$(bash tools/ci_reuse_dispatch_run.sh HEAD "$PR_HEAD" || true)
+              if [ -n "$reused" ]; then
+                code=false
+                reason="branch run ${reused#reuse } already tested this exact tree green (D-319)"
+              fi
             fi
           elif [ "${{ github.event_name }}" = "push" ]; then
             reused=$(bash tools/ci_reuse_pr_run.sh || true)
             if [ -n "$reused" ]; then
               code=false
               reason="the tree on main is the tree pull request ${reused#reuse } already tested green"
+            else
+              pr_head=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].head.sha // empty' 2> /dev/null || true)
+              reused=$(bash tools/ci_reuse_dispatch_run.sh "$GITHUB_SHA" "$pr_head" || true)
+              if [ -n "$reused" ]; then
+                code=false
+                reason="branch run ${reused#reuse } already tested this exact tree green (D-319)"
+              fi
             fi
           fi
           if [ "$code" = false ]; then echo "Skipping the Godot checks ($reason)."; fi
@@ -226,8 +240,9 @@ jobs:
           path: ${{ runner.temp }}/test-logs
 
   # The engine log of a seeded rampage must be clean (D-295, debt rows 1-2): tools/lint/log_smoke.sh
-  # plays every species' rampage headless, kills the kaiju and frees it all, then fails on ANY engine
-  # ERROR / WARNING line or leak report in the log. A message is fixed at its cause, never filtered.
+  # plays every species' rampage headless, kills the kaiju and frees it all, then runs the people
+  # bench's street replay and frees that, and fails on ANY engine ERROR / WARNING line or leak report
+  # in either log. A message is fixed at its cause, never filtered.
   log_smoke:
     name: engine log smoke
     needs: [plan, preflight, native]
