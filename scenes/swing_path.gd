@@ -16,11 +16,11 @@ extends RefCounted
 ## held back too, however near its path: the Colossus's long stride (D-302, ~15 m) left a turn's
 ## lift within GAP_STRAIGHT of it, and its toe, the walk's slow peel off the street played at the
 ## turn's quick cadence, skimmed the ground (smoke turn check 2026-10-27: 3.2 foot-frames a second).
-## A stepping turner's foot (D-187's stepped yaw; not the young croc's smooth turn, D-131) aims as it
-## comes down at where its clip spot will be when it lands: the body carries that spot round, and a
-## foot that followed it skimmed the street in its last frames aloft (smoke turn check 2026-10-28:
-## 1.7 foot-frames a second; one frame ahead only, 1.2). The aim runs the spot's own motion on for
-## the clip frames left aloft, faded in with the swing (`aim`).
+## A stepping turner's foot (D-187's stepped yaw; not the young croc's smooth turn, D-131) aims
+## as it comes down at where its clip spot will be when it lands: the body carries that spot
+## round, and a foot that followed it skimmed the street in its last frames aloft (smoke turn
+## check 2026-10-28: 1.7 foot-frames a second; one frame ahead only, 1.2). The aim runs the
+## spot's own motion on for the clip frames left aloft, faded in with the swing (`aim`).
 
 const LAG_SECONDS := 0.25
 const LAG_SWING := 0.85
@@ -75,7 +75,9 @@ func target(gait: ClipGait, i: int, dt: float, clip_toe: Vector3) -> Vector3:
 ## How far foot i's clip spot moves on before the foot lands (world): its motion this frame run on
 ## for the clip frames it has left aloft. Zero for a smooth turner (D-131) or a foot not walking.
 func _aim(gait: ClipGait, i: int, clip_toe: Vector3) -> Vector3:
-	var moved := clip_toe - _last_clip[i] if _last_clip[i].is_finite() else Vector3.ZERO  # aloft from the start
+	var moved := Vector3.ZERO  # a foot aloft from the start has no last spot
+	if _last_clip[i].is_finite():
+		moved = clip_toe - _last_clip[i]
 	var played := gait.walk_frames - _last_frames[i]
 	_last_clip[i] = clip_toe
 	_last_frames[i] = gait.walk_frames
