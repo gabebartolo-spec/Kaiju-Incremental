@@ -10,8 +10,10 @@ const FadeSpawn := preload("res://tests/lib/fade_spawn.gd")
 const LoadOffMain := preload("res://tests/lib/load_off_main.gd")
 const FadeFrame := preload("res://tests/lib/fade_frame.gd")
 
-## Real time to wait for the stream to finish (headless frames are not real seconds).
-const STREAM_WAIT_MS := 120000
+## One frame of the stream's clock (the suite runs at --fixed-fps 60). The stream checks own that
+## clock: _process is off and a wait steps the stream by hand with its workers settled (_drain),
+## so no wall clock decides a result and a slow worker only makes a wait take longer.
+const FRAME := 1.0 / 60.0
 
 
 func suite_name() -> String:
@@ -214,6 +216,7 @@ func _check_stream() -> void:
 		colors.append(Color.GRAY)
 	var stream := BuildingStream.new(sim, colors)
 	root.add_child(stream)
+	stream.set_process(false)
 	var at_load := stream.built_at_load()
 	check(
 		at_load > 0 and at_load < sim.buildings.size(),
@@ -251,9 +254,7 @@ func _check_stream() -> void:
 		stream.view(far) != null,
 		"a building the rampage touches before its turn is built on the spot"
 	)
-	var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
-	while not stream.complete() and Time.get_ticks_msec() < deadline:
-		await process_frame
+	await _drain(stream, sim, stream.complete)
 	var missing := 0
 	for n: int in sim.buildings.size():
 		missing += 1 if stream.built(n) == null else 0
@@ -275,11 +276,10 @@ func _check_stream_budget() -> void:
 		colors.append(Color.GRAY)
 	var stream := BuildingStream.new(sim, colors)
 	root.add_child(stream)
+	stream.set_process(false)
 	var spot := sim.kaiju_pos
 	var near := _nearest_plain(sim, spot)
-	var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
-	while not stream.complete() and Time.get_ticks_msec() < deadline:
-		await process_frame
+	await _drain(stream, sim, stream.complete)
 	var cap := 30000 + _ring_slack(sim)
 	check(
 		stream.resident_chunks() <= cap and stream.resident_chunks() > 3000,
@@ -301,19 +301,16 @@ func _check_stream_budget() -> void:
 	var arrived := _nearest_plain(sim, far)
 	var other := _nearest_plain(sim, spot, near)
 	var digest := _digest(stream.built(other))
-	while (
-		(stream.built(arrived) == null or stream.built(other) != null)
-		and Time.get_ticks_msec() < deadline
-	):
-		await process_frame
+	var walked := func() -> bool:
+		return stream.built(arrived) != null and stream.built(other) == null
+	await _drain(stream, sim, walked)
 	check(stream.built(arrived) != null, "the building the kaiju walks up to is meshed")
 	check(stream.built(other) == null, "an untouched building far behind him goes back to a box")
 	check(
 		stream.built(near) == touched and touched.is_inside_tree(),
 		"a building the rampage touched is never freed"
 	)
-	while not stream.complete() and Time.get_ticks_msec() < deadline:
-		await process_frame
+	await _drain(stream, sim, stream.complete)
 	check(
 		(
 			stream.resident_chunks()
@@ -323,8 +320,8 @@ func _check_stream_budget() -> void:
 	)
 	# He walks back: the freed building meshes again, identical to before.
 	sim.kaiju_pos = spot
-	while stream.built(other) == null and Time.get_ticks_msec() < deadline:
-		await process_frame
+	var met := func() -> bool: return stream.built(other) != null
+	await _drain(stream, sim, met)
 	check(
 		stream.built(other) != null and _digest(stream.built(other)) == digest,
 		"a building freed and met again meshes identically"
@@ -336,6 +333,20 @@ func _check_stream_budget() -> void:
 	)
 	stream.queue_free()
 	await process_frame
+
+
+## Steps the stream until `done` holds. A settled step lands every building in flight, so each step
+## with work left builds one at least and the bound counts steps, never seconds: a stream not done
+## within it is stuck, and fails here the same way on every machine.
+func _drain(stream: BuildingStream, sim: RampageSim, done: Callable) -> void:
+	var bound := sim.buildings.size() * 2 + 120
+	for _i: int in bound:
+		if done.call():
+			return
+		stream.step(FRAME, true)
+		await process_frame
+	if not done.call():
+		check(false, "the stream settles within %d steps" % bound)
 
 
 ## The nearest ordinary building to `at`, other than `skip`.
