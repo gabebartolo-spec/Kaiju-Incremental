@@ -7,7 +7,10 @@ extends "res://tests/lib/runner.gd"
 ## Seeded by design: no randomness; the pose is the rig's rest pose, time stepped by hand.
 ##   godot --headless --path . --script tests/run_camera_frame_tests.gd
 
+const BubbleReplay := preload("res://tests/lib/bubble_replay.gd")
+
 const FRAME := 1.0 / 60.0
+const ASPECT := 16.0 / 9.0
 
 
 func suite_name() -> String:
@@ -20,6 +23,8 @@ func run_checks() -> void:
 	await _t("_check_damped")
 	await _t("_check_bubble")
 	await _t("_check_bubble_picks")
+	await _t("_check_frame_share")
+	await _h("BubbleReplay", func() -> void: BubbleReplay.new(check).run())
 	await _t("_check_no_screen_door")
 
 
@@ -151,41 +156,85 @@ func _check_bubble() -> void:
 	check(all_sides, "a point 0.9 radius from the camera is cut away and 1.1 stays, on every side")
 
 
-## What it cuts: the standing buildings the sphere reaches, the nearest first, at most
-## camera.bubble_max; never one in the kaiju's destruction field (even with the camera against
-## it), never a damaged one. A cut starts open on the run's first frame, then opens and closes
-## over camera.bubble_seconds; damage closes it at once.
+## What it cuts: the standing buildings the sphere reaches, at most camera.bubble_max, those that
+## cover the most of the view first (the camera inside one is all of it; the nearest first between
+## equals); never one in the kaiju's destruction field (even with the camera against it), never a
+## damaged one. A cut starts open on the run's first frame, then opens and closes over
+## camera.bubble_seconds; damage closes it at once.
 func _check_bubble_picks() -> void:
 	var field := 10.0
 	var eye := Vector3(0, 10, 200)
 	var r := CameraBubble.radius_for(eye, Vector3.ZERO, field)
 	var city: Array[RampageSim.Building] = [_box(0, 200, 6), _box(0, 196.0 - r, 4)]
 	city.append(_box(0, 100, 200))  # 2: from his feet to the camera, so in the field
+	city.append(_box(0, 188, 10))  # 3: a wall 7 m ahead, most of the view
 	for k: int in range(1, 5):
-		city.append(_box(r * 0.2 * k + 0.5, 200, 1))  # 3..6: reached, k * 0.2 radius away
+		city.append(_box(r * 0.2 * k + 0.5, 200, 1))  # 4..7: beside the camera, k * 0.2 radius
 	var bubble := CameraBubble.new(city, func(_n: int) -> BuildingView: return null)
 	var most := Num.i(Content.section("camera")["bubble_max"])
-	var picked := bubble.picked(eye, Vector3.ZERO, field, r)
+	var picked := bubble.picked(_frame_at(eye), Vector3.ZERO, field, r)
 	check(
 		picked == PackedInt32Array([0, 3, 4]) and most == 3,
 		(
-			"it picks the %d nearest it reaches, not the one 2 m past it nor the field's (%s)"
+			(
+				"it picks the %d covering the most of the view (the wall before the nearer slim"
+				+ " ones), not the one 2 m past it nor the field's (%s)"
+			)
 			% [most, str(picked)]
 		)
 	)
-	bubble.update(eye, Vector3.ZERO, field, FRAME)
-	check(bubble.cut(0) == 1.0 and bubble.cut(4) == 1.0, "the first frame's cuts start open")
+	bubble.update(_frame_at(eye), Vector3.ZERO, field, FRAME)
+	check(bubble.cut(0) == 1.0 and bubble.cut(3) == 1.0, "the first frame's cuts start open")
 	check(bubble.cut(2) == 0.0, "the building in the field is whole with the camera against it")
 	city[0].frame.remove(Vector3i.ZERO)
-	bubble.update(eye, Vector3.ZERO, field, FRAME)
+	bubble.update(_frame_at(eye), Vector3.ZERO, field, FRAME)
 	var step := FRAME / Num.f(Content.section("camera")["bubble_seconds"])
 	check(bubble.cut(0) == 0.0, "a building that loses a chunk is whole at once")
 	check(is_equal_approx(bubble.cut(5), step), "the next one in eases open (%.3f)" % bubble.cut(5))
-	bubble.update(Vector3(0, 10, 400), Vector3.ZERO, field, FRAME)
+	var away := _frame_at(Vector3(0, 10, 400))
+	bubble.update(away, Vector3.ZERO, field, FRAME)
 	check(is_equal_approx(bubble.cut(3), 1.0 - step), "one the sphere leaves eases closed")
 	for _i: int in ceili(1.0 / step):
-		bubble.update(Vector3(0, 10, 400), Vector3.ZERO, field, FRAME)
+		bubble.update(away, Vector3.ZERO, field, FRAME)
 	check(bubble.cut(3) == 0.0 and bubble.cut(5) == 0.0, "and is whole once closed")
+
+
+## The game camera's frame from `eye` looking at the kaiju at the origin.
+func _frame_at(eye: Vector3) -> FrameShare:
+	return FrameShare.looking(eye, Vector3.ZERO, CameraTuning.fov(), ASPECT)
+
+
+## FrameShare, the share of the screen a box covers, on boxes worked out by hand.
+func _check_frame_share() -> void:
+	var eye := Vector3(0, 10, 40)
+	var frame := FrameShare.looking(eye, Vector3(0, 10, 0), 40.0, ASPECT)
+	# 4 m cube 20 m ahead: 4 / (2 * 20 * tan 20) tall, and that over the aspect wide: about 4%.
+	var small := frame.share_of(AABB(Vector3(-2, 8, 18), Vector3(4, 4, 4)))
+	# A wall wider and taller than the whole view, 20 m ahead.
+	var wall := frame.share_of(AABB(Vector3(-200, -100, 19), Vector3(400, 300, 2)))
+	var inside := frame.share_of(AABB(Vector3(-5, 0, 35), Vector3(10, 30, 10)))
+	var behind := frame.share_of(AABB(Vector3(-5, 0, 50), Vector3(10, 30, 10)))
+	# Wide, from one metre over the eye's height up, from 10 m ahead (the near edge crosses the
+	# camera's plane): the screen above the box's far lower edge, (1 - 0.5 / (10 tan 20)) / 2.
+	var low := frame.share_of(AABB(Vector3(-50, 10.5, 30), Vector3(100, 50, 20)))
+	var edge := (1.0 - 0.5 / (10.0 * tan(deg_to_rad(20.0)))) * 0.5
+	check(
+		small > 0.02 and small < 0.08 and wall > 0.99 and inside == 1.0 and behind == 0.0,
+		(
+			(
+				"FrameShare: a 4 m cube 20 m ahead covers %.1f%%, a wall past the view %.1f%%, the"
+				+ " eye inside a box 100%%, a box behind the camera %.1f%%"
+			)
+			% [small * 100.0, wall * 100.0, behind * 100.0]
+		)
+	)
+	check(
+		absf(low - edge) < 0.02,
+		(
+			"FrameShare: a box across the camera's near plane covers %.1f%% (worked out %.1f%%)"
+			% [low * 100.0, edge * 100.0]
+		)
+	)
 
 
 ## A standing w x w building of the given height at (x, z), its frame whole.
@@ -232,7 +281,8 @@ func _check_no_screen_door() -> void:
 	piece.free()
 	view.free()
 	var cam := Content.section("camera")
-	var gone := ["fade_opacity", "fade_width", "fade_frame_share", "bubble_share", "bubble_width"]
+	var gone := ["fade_opacity", "fade_seconds", "fade_width", "fade_frame_share", "bubble_share"]
+	gone.append("bubble_width")
 	var left := gone.filter(func(k: String) -> bool: return cam.has(k))
 	check(left.is_empty(), "the old camera fade and share keys are gone (%s)" % str(left))
 	check(

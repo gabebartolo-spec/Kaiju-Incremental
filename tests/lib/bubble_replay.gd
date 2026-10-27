@@ -24,6 +24,7 @@ const GRID := Vector2i(16, 9)
 const FILL := 0.5
 const STEP := 0.5  # ray march step (metres)
 const EPS := 0.001
+const ASPECT := 16.0 / 9.0
 
 var _check: Callable
 var _runs: Array[Vector2i] = [Vector2i(0, 0)]  # (stage, seed): the new save's street rampage
@@ -75,11 +76,12 @@ func _run(stage: int, seed: int) -> void:
 		follow.step(body, CameraTuning.offset() * zoom, DT)
 		follow.step_lead(body, sim.body_scale(), false, DT)
 		var eye := follow.eye()
+		var look := follow.look_at(sim.body_scale())
 		var field := CameraBubble.field(sim)
-		bubble.update(eye, feet, field, DT)
+		bubble.update(FrameShare.looking(eye, look, CameraTuning.fov(), ASPECT), feet, field, DT)
 		_frame(m, sim, bubble, eye, feet, field)
 		if steps % SAMPLE == 0:
-			_sample(m, sim, bubble, eye, follow.look_at(sim.body_scale()), feet, field)
+			_sample(m, sim, bubble, eye, look, feet, field)
 	_report(m, stage, seed)
 
 
@@ -145,7 +147,7 @@ static func first_hits(
 	var right := forward.cross(Vector3.UP).normalized()
 	var up := right.cross(forward)
 	var tan_v := tan(deg_to_rad(CameraTuning.fov()) * 0.5)
-	var tan_h := tan_v * 16.0 / 9.0
+	var tan_h := tan_v * ASPECT
 	var ends := PackedVector3Array()
 	var lo := Vector2(eye.x, eye.z)
 	var hi := lo

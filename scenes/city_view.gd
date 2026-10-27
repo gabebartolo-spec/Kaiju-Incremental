@@ -128,7 +128,8 @@ func _process(delta: float) -> void:
 	if camera != null:
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		# Only what the camera itself runs into is cut away, never the destruction (D-283, D-326).
-		_bubble.update(camera.global_position, feet, CameraBubble.field(sim), delta)
+		var frame := FrameShare.of(camera, get_viewport().get_visible_rect().size)
+		_bubble.update(frame, feet, CameraBubble.field(sim), delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)

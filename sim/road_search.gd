@@ -33,9 +33,6 @@ func search(start: Dictionary, skip: Dictionary, centre: Vector2, disc: float) -
 	for n: int in start.keys():
 		cost[n] = Num.f(start[n])
 		_push(heap, Vector2(cost[n], n))
-	var penalty := Num.f(cfg["danger_cost"])
-	var held_cost := Num.f(cfg["held_cost"])
-	var oncoming_cost := Num.f(cfg["oncoming_cost"])
 	while not heap.is_empty():
 		var top := _pop(heap)
 		var n := int(top.y)
@@ -47,20 +44,26 @@ func search(start: Dictionary, skip: Dictionary, centre: Vector2, disc: float) -
 			var to := graph.edge_b[e] if graph.edge_a[e] == n else graph.edge_a[e]
 			if graph.nodes[to].distance_squared_to(centre) > disc * disc:
 				continue
-			var c := top.x + graph.edge_cost[e]
-			if near_kaiju.has(e):
-				c += penalty
-			if held.has(e):
-				c += held_cost
-			if graph.edge_lane[e] == 0.0 and driven.has(e):
-				var way: Vector2 = driven[e]
-				if way.dot(graph.nodes[to] - graph.nodes[n]) < 0.0:
-					c += oncoming_cost
+			var c := _surcharged(top.x + graph.edge_cost[e], e, n, to)
 			if c < cost[to]:
 				cost[to] = c
 				prev[to] = e
 				_push(heap, Vector2(c, to))
 	return {"cost": cost, "prev": prev}
+
+
+## `c`, the cost of taking road e from node n to node `to`, plus its penalties: the kaiju is
+## by it, a tank holds its post on it, or a column is coming the other way down its one lane.
+func _surcharged(c: float, e: int, n: int, to: int) -> float:
+	if near_kaiju.has(e):
+		c += Num.f(cfg["danger_cost"])
+	if held.has(e):
+		c += Num.f(cfg["held_cost"])
+	if graph.edge_lane[e] == 0.0 and driven.has(e):
+		var way: Vector2 = driven[e]
+		if way.dot(graph.nodes[to] - graph.nodes[n]) < 0.0:
+			c += Num.f(cfg["oncoming_cost"])
+	return c
 
 
 ## The roads from a start node to `head` (in driving order) and that start node: [chain, node].

@@ -2,8 +2,9 @@ class_name CameraBubble
 extends RefCounted
 ## The camera bubble (D-283, D-326; director 2026-10-27: "its the ones that the camera itself
 ## phases through"): buildings stay solid. A sphere of camera.bubble_radius round the CAMERA cuts
-## away, with a hard edge, the standing buildings it reaches (at most camera.bubble_max, the
-## nearest the camera first), their shadows kept (building_baked.gdshader). Never cut: a building
+## away, with a hard edge, the standing buildings it reaches (at most camera.bubble_max, those
+## covering the most of the view first: FrameShare; D-283's bar, "no wall fills the frame"), their
+## shadows kept (building_baked.gdshader). Never cut: a building
 ## in the kaiju's destruction field (in_field: his longest reach plus the building's half-width),
 ## a damaged one (a chunk lost), and all that is not a standing building: falling, toppling and
 ## broken pieces, rubble, vehicles and the kaiju draw whole and may hide him ("its ok to obscure
@@ -65,10 +66,15 @@ static func damaged(b: RampageSim.Building) -> bool:
 	return b.frame != null and b.frame.alive_count < b.start_chunks
 
 
+## Building b's box, standing whole.
+static func box(b: RampageSim.Building) -> AABB:
+	return AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, b.height, b.d))
+
+
 ## How far building b's box is from `eye` (0 inside it).
 static func reach(eye: Vector3, b: RampageSim.Building) -> float:
-	var box := AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, b.height, b.d))
-	return eye.distance_to(eye.clamp(box.position, box.end))
+	var whole := box(b)
+	return eye.distance_to(eye.clamp(whole.position, whole.end))
 
 
 ## Whether a point of a building cut `share` of the way is cut away by a bubble of `radius` round
@@ -87,15 +93,15 @@ func cut(n: int) -> float:
 	return Num.f(_open.get(n, 0.0))
 
 
-## One frame: sizes the sphere for the camera at `eye` and the kaiju standing at `kaiju` with
-## destruction `p_field`, picks the buildings it reaches and eases each one's cut.
-func update(eye: Vector3, kaiju: Vector3, p_field: float, delta: float) -> void:
+## One frame: sizes the sphere for the camera drawing `frame` and the kaiju standing at `kaiju`
+## with destruction `p_field`, picks the buildings it reaches and eases each one's cut.
+func update(frame: FrameShare, kaiju: Vector3, p_field: float, delta: float) -> void:
 	var first := _radius < 0.0
-	_radius = radius_for(eye, kaiju, p_field)
+	_radius = radius_for(frame.eye(), kaiju, p_field)
 	RenderingServer.global_shader_parameter_set("bubble_radius", _radius)
 	var step := delta / Num.f(_cfg["bubble_seconds"])
 	var on := {}
-	for n: int in picked(eye, kaiju, p_field, _radius):
+	for n: int in picked(frame, kaiju, p_field, _radius):
 		on[n] = true
 		if not _open.has(n):
 			_open[n] = 1.0 if first else 0.0
@@ -113,21 +119,23 @@ func update(eye: Vector3, kaiju: Vector3, p_field: float, delta: float) -> void:
 			_open[n] = next
 
 
-## The standing buildings a sphere of `p_radius` round `eye` reaches, the nearest first, at most
-## camera.bubble_max of them; none in the field of a kaiju at `kaiju`, none damaged.
-func picked(eye: Vector3, kaiju: Vector3, p_field: float, p_radius: float) -> PackedInt32Array:
-	var found: Array[Vector2] = []  # (distance from the eye, building index)
+## The standing buildings a sphere of `p_radius` round the camera drawing `frame` reaches, at
+## most camera.bubble_max of them: those covering the most of its view first (the nearest first
+## between equals); none in the field of a kaiju at `kaiju`, none damaged.
+func picked(frame: FrameShare, kaiju: Vector3, p_field: float, p_radius: float) -> PackedInt32Array:
+	var found: Array[Vector3] = []  # (minus the share of the view, distance from the eye, index)
 	if p_radius <= 0.0:
 		return PackedInt32Array()
+	var eye := frame.eye()
 	for n: int in _near(eye, p_radius):
 		var b := _buildings[n]
 		var gap := reach(eye, b)
 		if gap < p_radius and not damaged(b) and not in_field(b, kaiju, p_field):
-			found.append(Vector2(gap, n))
+			found.append(Vector3(-frame.share_of(box(b)), gap, n))
 	found.sort()
 	var out := PackedInt32Array()
-	for f: Vector2 in found.slice(0, Num.i(_cfg["bubble_max"])):
-		out.append(int(f.y))
+	for f: Vector3 in found.slice(0, Num.i(_cfg["bubble_max"])):
+		out.append(int(f.z))
 	return out
 
 
