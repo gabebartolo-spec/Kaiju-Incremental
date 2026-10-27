@@ -5,8 +5,9 @@ extends Node
 ## from Kenney CC0 layers and in-house synthesis; loudness lives in data/tuning.json "sfx".
 ## A pool of players (SfxVoices: caps per category, hero voices never stolen) lets sounds
 ## overlap; Regeneration is one looping player. Each sound
-## plays on its mix bus (AudioBuses.of): the roar, stomps and toppling towers are Hero, which
-## ducks the Bed. Steps and stomps land on the feet: a foot plant plays a footstep, and a sim
+## plays on its mix bus (AudioBuses.of): the roar, toppling towers and barrel blasts are Hero, which
+## ducks the Bed and Music; stomps and footsteps play on SFX and duck nothing (director 2026-10-27,
+## "Keep, not stomps"). Steps and stomps land on the feet: a foot plant plays a footstep, and a sim
 ## stomp waits for the next plant to play its heavy thump there (or alone if no foot lands soon).
 
 const STOMPS := 3
