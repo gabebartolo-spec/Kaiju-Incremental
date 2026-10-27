@@ -164,7 +164,7 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 	)
 
 
-## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
+## Screen-door share (1 = solid): a wall that fills the frame at the camera (BuildingFade, D-326).
 func set_opacity(value: float) -> void:
 	_dress()
 	_shell_mat.set_shader_parameter("opacity", value)

@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 const LoadLandmark := preload("res://tests/lib/load_landmark.gd")
 const FadeSpawn := preload("res://tests/lib/fade_spawn.gd")
 const LoadOffMain := preload("res://tests/lib/load_off_main.gd")
+const FadeFrame := preload("res://tests/lib/fade_frame.gd")
 
 ## One frame of the stream's clock (the suite runs at --fixed-fps 60). The stream checks own that
 ## clock: _process is off and a wait steps the stream by hand with its workers settled (_drain),
@@ -23,6 +24,7 @@ func run_checks() -> void:
 	await _t("_check_party_walls")
 	await _t("_check_building_fade")
 	await _t("_check_fade_rise")
+	await _h("FadeFrame", func() -> void: FadeFrame.check(check))
 	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
@@ -181,13 +183,16 @@ func _check_fade_rise() -> void:
 		"under water the sight points cover the body above the surface, so a low block in front fades"
 	)
 	var buildings: Array[RampageSim.Building] = [low]
-	var fade := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
-	fade.update(eye, wet, 1.0 / 60.0)
+	# Share 0: this is the easing, so every building a sight line crosses fades (the frame-fill
+	# rule is checked by FadeFrame).
+	var frame := FrameShare.looking(eye, feet, CameraTuning.fov(), 16.0 / 9.0)
+	var fade := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null, 0.0)
+	fade.update(frame, wet, 1.0 / 60.0)
 	var first := fade.opacity(0)
-	fade.update(eye, wet, 1.0 / 60.0)
-	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
-	later.update(eye, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
-	later.update(eye, wet, 1.0 / 60.0)
+	fade.update(frame, wet, 1.0 / 60.0)
+	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null, 0.0)
+	later.update(frame, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
+	later.update(frame, wet, 1.0 / 60.0)
 	var floor_opacity := Num.f(Content.section("camera")["fade_opacity"])
 	check(
 		is_equal_approx(first, floor_opacity) and later.opacity(0) > floor_opacity,
