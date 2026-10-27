@@ -51,8 +51,15 @@ static func check(check: Callable, root: Node) -> void:
 		await tree.physics_frame
 	sim.time_left = 600.0
 	var size := root.get_viewport().get_visible_rect().size
-	var index := _stand_behind(rampage, size.x / size.y)
-	check.call(index >= 0, "the kaiju can stand behind a small building (building %d)" % index)
+	var passed := {}
+	var index := _stand_behind(rampage, size.x / size.y, passed)
+	check.call(
+		index >= 0,
+		(
+			"the kaiju can stand behind a small building (building %d; passed over %s)"
+			% [index, passed]
+		)
+	)
 	if index < 0:
 		rampage.queue_free()
 		await tree.process_frame
@@ -96,41 +103,43 @@ static func check(check: Callable, root: Node) -> void:
 
 
 ## Puts the kaiju just behind the first small, built building (on the camera's side of it) the
-## camera's line to the kaiju crosses; the building's index, or -1.
-static func _stand_behind(rampage: Rampage, aspect: float) -> int:
+## camera's line to the kaiju crosses; the building's index, or -1. `passed` counts the buildings
+## ruled out and why.
+static func _stand_behind(rampage: Rampage, aspect: float, passed: Dictionary) -> int:
 	var sim := rampage.sim
 	var rest := CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
 	for n: int in sim.buildings.size():
 		var b := sim.buildings[n]
 		if b.landmark != "" or b.w < 4 or b.d < 4 or b.height < MIN_FLOORS:
+			passed["unfit"] = Num.i(passed.get("unfit", 0)) + 1
 			continue
 		if rampage._city._stream.built(n) == null:
+			passed["unbuilt"] = Num.i(passed.get("unbuilt", 0)) + 1
 			continue
 		var spot := Vector2(b.x, b.z - b.d * 0.5 - BEHIND)
-		if sim.clamp_to_arena(spot) != spot or _crowded(sim, spot, n):
+		if sim.clamp_to_arena(spot) != spot or _inside_another(sim, spot, n):
+			passed["no_room"] = Num.i(passed.get("no_room", 0)) + 1
 			continue
 		sim.kaiju_pos = spot
 		var at := Vector3(spot.x, sim.stand_y, spot.y)
 		var eye := at + rest
 		var sight := BuildingFade.sight_of(sim, eye)
 		if not BuildingFade.blocks(eye, sight, b):
+			passed["no_line"] = Num.i(passed.get("no_line", 0)) + 1
 			continue
 		var look := at + Vector3(0, sim.reach_height() * 0.5, 0)
 		var frame := FrameShare.looking(eye, look, CameraTuning.fov(), aspect)
 		if frame.share_of(_standing_box(b)) < SMALL:
 			return n
+		passed["big"] = Num.i(passed.get("big", 0)) + 1
 	return -1
 
 
-## Whether another building stands within the kaiju's reach of `spot`.
-static func _crowded(sim: RampageSim, spot: Vector2, except: int) -> bool:
+## Whether a building other than `except` stands on `spot` (the kaiju must stand in the street).
+static func _inside_another(sim: RampageSim, spot: Vector2, except: int) -> bool:
 	for n: int in sim.buildings.size():
 		var b := sim.buildings[n]
-		if (
-			n != except
-			and absf(b.x - spot.x) < b.w * 0.5 + 6.0
-			and absf(b.z - spot.y) < b.d * 0.5 + 6.0
-		):
+		if n != except and absf(b.x - spot.x) < b.w * 0.5 and absf(b.z - spot.y) < b.d * 0.5:
 			return true
 	return false
 

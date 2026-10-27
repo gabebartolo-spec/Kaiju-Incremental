@@ -10,7 +10,7 @@ extends RefCounted
 ## that outline's convex hull inside the screen, over the screen's area. The eye inside the box is
 ## a whole screen.
 
-const SCREEN := PackedVector2Array([Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)])
+const SCREEN := [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]
 const SCREEN_AREA := 4.0
 ## A corner a hair past the near plane projects far off the screen: kept within this many screens
 ## of the middle so the clipper's integer maths stays in range.
@@ -79,7 +79,7 @@ func share_of(box: AABB) -> float:
 	if hull.size() > 1 and hull[0] == hull[hull.size() - 1]:
 		hull.remove_at(hull.size() - 1)  # the hull comes back closed
 	var area := 0.0
-	for poly: PackedVector2Array in Geometry2D.intersect_polygons(hull, SCREEN):
+	for poly: PackedVector2Array in Geometry2D.intersect_polygons(hull, PackedVector2Array(SCREEN)):
 		area += _area(poly)
 	return clampf(area / SCREEN_AREA, 0.0, 1.0)
 
