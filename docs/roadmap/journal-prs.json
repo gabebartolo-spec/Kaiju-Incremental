@@ -2060,13 +2060,27 @@
 {
 "n": 296,
 "t": "Trains draw in the city's surface family, and the flat-surface scan waits for a running train (debt row 25)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 297,
+"t": "Crowds placed in one native call a frame (render plan item 7): whole crowd -51 to -54%",
 "s": "OPEN",
 "c": "2026-10-27",
 "m": ""
 },
 {
-"n": 297,
-"t": "Crowds placed in one native call a frame (render plan item 7): whole crowd -51 to -54%",
+"n": 298,
+"t": "docs: DECISIONS rolled to 300 lines; DESIGN carries D-312; debt rows current",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 299,
+"t": "Engine errors and leaks: every ERROR/WARNING fixed at its cause, a CI log guard (debt rows 1, 2)",
 "s": "OPEN",
 "c": "2026-10-27",
 "m": ""
