@@ -12,6 +12,9 @@ extends Node3D
 ## drawn, so a section never blinks out before its piece shows). It draws CellMesher.drawn() of
 ## the grid (a balcony floor stays undrawn, as in the baked view). Presentation only: it reads
 ## the grid the sim carves and decides nothing.
+## Render plan item 9 (tuning render_opt.remesh_high_priority): the meshing task is queued on the
+## pool's high-priority side, where Jolt's own jobs run, so a bite is not left waiting behind them
+## (the low-priority side keeps only 30% of the threads); each batch's main-thread time is timed.
 
 ## The first build is on screen (once).
 signal drawn
@@ -46,6 +49,13 @@ var drawn_carves := 0
 ## gate.call(upto) -> bool: whether a finished batch that draws carves up to `upto` may go on
 ## screen now (unset: always). flush() ignores it.
 var gate: Callable
+## Whether the meshing task goes on the pool's high-priority queue (tuning, set at _init).
+var high_priority := true
+## Main-thread microseconds the last batch took (its block meshes made, over one frame or more,
+## and swapped in), and, when keep_timings is on (tests, the bench), one entry per batch.
+var last_finish_us := 0
+var keep_timings := false
+var finish_us := PackedInt64Array()
 
 ## Whether the grids handed in are CellMesher.drawn already (CityCarve's).
 var _fed := false
@@ -61,6 +71,8 @@ var _made: Array = []
 var _fresh: Array = []
 ## The next finished block to make a mesh of (-1: no finished batch on hand).
 var _next := -1
+## Main-thread microseconds the batch on hand has spent so far (last_finish_us).
+var _batch_usec := 0
 
 
 ## cells: the building's grid now (its bytes are copied on write, so the sim may carve on).
@@ -72,6 +84,7 @@ func _init(
 ) -> void:
 	mesher = p_mesher
 	material = p_material
+	high_priority = Content.section("render_opt").get("remesh_high_priority", true) == true
 	_fed = not regions.is_empty()
 	_cells = cells if _fed else mesher.drawn(cells)
 	if not _fed:
@@ -148,7 +161,11 @@ func _start() -> void:
 	_results.clear()
 	_results.resize(_batch.size())
 	_task = WorkerThreadPool.add_group_task(
-		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results), _batch.size()
+		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results),
+		_batch.size(),
+		-1,
+		high_priority,
+		"CellView remesh"
 	)
 
 
@@ -168,6 +185,7 @@ func _take_batch(wait: bool) -> void:
 	WorkerThreadPool.wait_for_group_task_completion(_task)
 	_task = -1
 	_next = 0
+	_batch_usec = 0
 	_made.clear()
 	_made.resize(_batch.size())
 	_fresh.clear()
@@ -187,12 +205,18 @@ func _upload(budget: int, force: bool) -> void:
 		var t0 := Time.get_ticks_usec()
 		_make(_next)
 		_next += 1
-		spend(Time.get_ticks_usec() - t0)
+		var dt := Time.get_ticks_usec() - t0
+		_batch_usec += dt
+		spend(dt)
 	if not force and gate.is_valid() and not gate.call(_batch_carves):
 		return
 	var t1 := Time.get_ticks_usec()
 	_swap()
-	spend(Time.get_ticks_usec() - t1)
+	var ds := Time.get_ticks_usec() - t1
+	spend(ds)
+	last_finish_us = _batch_usec + ds
+	if keep_timings:
+		finish_us.append(last_finish_us)
 	if not is_drawn:
 		is_drawn = true
 		drawn.emit()
@@ -202,8 +226,8 @@ func _upload(budget: int, force: bool) -> void:
 
 ## Block k's mesh, and a hidden part for it when it has none yet (made now so the swap is cheap).
 func _make(k: int) -> void:
-	var arrays: Array = _results[k]
-	var mesh := CellMesher.to_mesh(arrays)
+	var block: Array = _results[k]
+	var mesh := CellMesher.to_mesh(block)
 	_made[k] = mesh
 	if mesh != null and not parts.has(_batch[k]):
 		var part := MeshInstance3D.new()

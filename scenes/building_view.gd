@@ -206,7 +206,7 @@ func promote(grid: CellGrid) -> CellView:
 
 
 ## A material for a fine-grid mesh of this building: the baked shader with every face standing,
-## at the building's fade now. The CellView's, and each falling piece's own (FallFade fades one).
+## at the building's fade now. The CellView's, and each falling piece's own (never faded, D-326).
 func cells_material() -> ShaderMaterial:
 	_dress()
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
@@ -242,6 +242,7 @@ func _material(tex: Texture2D) -> ShaderMaterial:
 	var shape: Dictionary = Content.landmarks().get(b.landmark, {})
 	mat.set_shader_parameter("inside", Num.f(shape.get("inside", 0.12)))  # cut faces' shade
 	WindowPalette.apply(mat, b)
+	VoxelAO.apply(mat)  # baked AO and material finish (render plan item 12)
 	return mat
 
 
@@ -356,7 +357,7 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 		piece.add_child(mi)
 	piece.set_meta("parts", parts)
 	piece.set_meta("pivot", pivot)
-	if not cells.is_empty():  # its chunks at rest, world space (FallFade)
+	if not cells.is_empty():  # its chunks at rest, world space (tests read it)
 		var box := AABB(b.chunk_world(cells[0]) - Vector3.ONE * 0.5, Vector3.ONE)
 		for c: Vector3i in cells:
 			box = box.merge(AABB(b.chunk_world(c) - Vector3.ONE * 0.5, Vector3.ONE))

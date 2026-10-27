@@ -27,7 +27,6 @@ var carve: CityCarve
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _fade: BuildingFade
-var _fall_fade := FallFade.new()
 var _falls: CityFalls
 var _falling: Dictionary = {}  # _falls.falling (tests and tools read it)
 var _ruins: RuinYard
@@ -132,13 +131,12 @@ func _process(delta: float) -> void:
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		var sight := BuildingFade.sight_of(sim, camera.global_position) + drawn_sight
 		_fade.update(camera.global_position, sight, delta)
-		_fall_fade.update(falling_pieces(), camera.global_position, sight, delta)  # toppling too
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
 
 
-## The sections falling now (FallFade; the capture tools read them).
+## The sections falling now (the capture tools and tests read them). They are never faded.
 func falling_pieces() -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	for f: Dictionary in _falling.values():

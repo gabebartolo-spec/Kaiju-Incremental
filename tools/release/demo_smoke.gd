@@ -68,6 +68,9 @@ func _run() -> void:
 		_check("city geometry present", meshes.size() > 50, "%d meshes" % meshes.size())
 	await _walk_end()
 	print("DEMO_SMOKE %s (%d failures)" % ["PASS" if _fails == 0 else "FAIL", _fails])
+	_main.queue_free()
+	await _frames(2)
+	await QuitGame.settle_audio(self)  # a sound alive at exit leaks its stream and playbacks
 	quit(0 if _fails == 0 else 1)
 
 

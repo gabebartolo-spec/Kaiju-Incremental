@@ -1,5 +1,5 @@
 class_name Traffic
-extends Node3D
+extends TrafficNet
 ## Moving cars on the street plan (CityGen.map). Side streets are one-way (the parked rows
 ## leave one lane down the middle), alternating direction street by street; avenues and the
 ## diagonal carry a lane each way. Cars turn at crossings, queue behind the car ahead, and when
@@ -7,7 +7,6 @@ extends Node3D
 ## they must). Police cruisers drive in and park across a street for a blockade. Crushed cars
 ## flatten like parked ones. Presentation only.
 
-const TWO_WAY_LANE := 1.0  # avenues: each lane's middle this far from the centre line
 const ACCEL := 6.0
 const BRAKE := 12.0
 const BACK_SPEED := 0.6  # backing away, as a share of flee speed
@@ -16,7 +15,6 @@ const LANE_HALF := 0.6  # how far sideways another car still counts as in my lan
 const ARRIVE_SECONDS := 1.4
 const FLASH_HZ := 4.0
 const CRUSHED := Vector3(1.1, 0.25, 1.1)
-const LIGHT_GLOW := 2.5  # police light bars
 
 
 class Car:
@@ -49,13 +47,6 @@ var cars: Array[Car] = []
 var fled := 0
 var _cfg: Dictionary
 var _rng: RandomNumberGenerator
-var _half: float
-var _nodes: Array[Vector2] = []
-## Per crossing: the lanes out of it, {"to": node, "lane": offset}, and the crossings every
-## street it touches leads to (a fleeing car may drive any of them).
-var _lanes: Array[Array] = []
-var _links: Array[Array] = []
-var _ends: Array[Vector2i] = []  # every lane as (from, to), for spawning
 var _meshes: Array[ArrayMesh] = []
 var _police_meshes: Array[ArrayMesh] = []
 var _clock := 0.0
@@ -71,116 +62,14 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 
 
 func _ready() -> void:
-	var palette := _car_palette()
-	for i: int in CityDecor.car_colors().size():
-		var v := VoxelBuilder.new()
-		v.salt = 40 + i
-		CityDecor.car(v, "car%d" % i, false)
-		_meshes.append(_bake(v, palette))
-	for lit: int in 2:  # light bar: red lit, then blue lit
-		var v := VoxelBuilder.new()
-		v.salt = 50
-		CityDecor.car(v, "police", false)
-		v.repaint(
-			func(cell: Vector3i, key: String) -> String:
-				return "police_low" if key == "police" and cell.y == 0 else key
-		)
-		v.put(Vector3i(-1, 3, 0), "red_lit" if lit == 0 else "red")
-		v.put(Vector3i(0, 3, 0), "bar")
-		v.put(Vector3i(1, 3, 0), "blue" if lit == 0 else "blue_lit")
-		_police_meshes.append(_bake(v, palette))
+	var palette := TrafficMeshes.palette()
+	_meshes = TrafficMeshes.cars(palette)
+	_police_meshes = TrafficMeshes.police(palette)
 	var tries := 0
 	while cars.size() < Num.i(_cfg["cars"]) and tries < 500:
 		tries += 1
 		_spawn_random()
 	DiagonalParking.park(self, sim)
-
-
-func _car_palette() -> Dictionary:
-	var palette := {
-		"glass": Color("2b3640"),
-		"wheel": Color("1a1a1a"),
-		"ivory": Color("b8b2a0"),
-		"tail": Color("6a1a1a"),
-		"police": Color("d8d8d2"),
-		"police_low": Color("1c1e22"),
-		"bar": Color("2a2a2a"),
-		"red": Color("4a1414"),
-		"blue": Color("14204a"),
-		"red_lit": Color(1.0, 0.12, 0.08, 0.0),
-		"blue_lit": Color(0.15, 0.3, 1.0, 0.0),
-	}
-	var paints := CityDecor.car_colors()
-	for i: int in paints.size():
-		palette["car%d" % i] = paints[i]
-	return palette
-
-
-func _bake(v: VoxelBuilder, palette: Dictionary) -> ArrayMesh:
-	# Car cells span z -3..2: shift half a cell so the car's middle sits on its position.
-	var voxel := CityDecor.PROP_VOXEL
-	return v.bake(palette, voxel, Vector3(0, 0, voxel * 0.5), LIGHT_GLOW)
-
-
-## The drivable network inside the playable city: alleys carry no cars.
-func _build_lanes(plan: Dictionary) -> void:
-	_nodes = plan["nodes"]
-	for n: int in _nodes.size():
-		_lanes.append([])
-		_links.append([])
-	var xs: Array[float] = plan["xs"]
-	var zs: Array[float] = plan["zs"]
-	for street: Dictionary in plan["streets"]:
-		var kind := str(street["kind"])
-		var a := Num.i(street["from"])
-		var b := Num.i(street["to"])
-		if kind == CityGen.ALLEY or not (_inside(_nodes[a]) and _inside(_nodes[b])):
-			continue
-		_links[a].append(b)
-		_links[b].append(a)
-		if kind != CityGen.STREET:
-			_add_lane(a, b, TWO_WAY_LANE)
-			_add_lane(b, a, TWO_WAY_LANE)
-			continue
-		# One-way, alternating with the street's index along its axis.
-		var d := _nodes[b] - _nodes[a]
-		var vertical := absf(d.y) > absf(d.x)
-		var index := xs.find(_nodes[a].x) if vertical else zs.find(_nodes[a].y)
-		var forward := (d.y if vertical else d.x) > 0.0
-		if (posmod(index, 2) == 0) == forward:
-			_add_lane(a, b, 0.0)
-		else:
-			_add_lane(b, a, 0.0)
-
-
-func _add_lane(a: int, b: int, lane: float) -> void:
-	_lanes[a].append({"to": b, "lane": lane})
-	_ends.append(Vector2i(a, b))
-
-
-func _inside(p: Vector2) -> bool:
-	return maxf(absf(p.x), absf(p.y)) <= _half + 0.5
-
-
-func crossing(n: int) -> Vector2:
-	return _nodes[n]
-
-
-## Crossings inside the city that cars can reach (the police pick blockade spots from these).
-func crossings() -> Array[int]:
-	var out: Array[int] = []
-	for n: int in _nodes.size():
-		if not _links[n].is_empty():
-			out.append(n)
-	return out
-
-
-## Unit directions of the streets leaving crossing n.
-func street_dirs(n: int) -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	for other: int in _links[n]:
-		out.append((_nodes[other] - _nodes[n]).normalized())
-	return out
 
 
 func _spawn_random() -> void:
@@ -295,15 +184,20 @@ func _arrive(car: Car, delta: float) -> void:
 		car.parked = true
 
 
-func _drive(car: Car, delta: float, kaiju: Vector2) -> void:
+## A car's flight starts when the kaiju comes within panic_radius and ends past calm_radius.
+func _scare(car: Car, kaiju: Vector2) -> void:
 	var d := car.pos.distance_to(kaiju)
-	var dir := car.dir
 	if not car.fleeing and d < Num.f(_cfg["panic_radius"]):
 		car.fleeing = true
 		fled += 1
-		car.braking = dir.dot(kaiju - car.pos) > 0.0  # heading at it: stop, then back away
+		car.braking = car.dir.dot(kaiju - car.pos) > 0.0  # heading at it: stop, then back away
 	elif car.fleeing and d > Num.f(_cfg["calm_radius"]):
 		car.fleeing = false
+
+
+func _drive(car: Car, delta: float, kaiju: Vector2) -> void:
+	var dir := car.dir
+	_scare(car, kaiju)
 	var target := Num.f(_cfg["flee_speed"]) if car.fleeing else Num.f(_cfg["drive_speed"])
 	if car.backing:
 		target *= BACK_SPEED

@@ -223,7 +223,7 @@ func _take(site: Site, job: CarveJob) -> void:
 
 
 ## A piece's own view under its node (meshes in world space, the node at the pivot), its debris
-## samples and its box at rest (FallFade).
+## samples and its box at rest (tests read it).
 func _dress_piece(site: Site, node: Node3D, made: Dictionary) -> CellView:
 	var parts: Array = node.get_meta("parts")
 	var samples: Array = made["parts"]
