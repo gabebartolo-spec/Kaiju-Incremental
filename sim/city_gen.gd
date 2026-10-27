@@ -35,7 +35,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 	for ring: int in districts(cfg).size() + 1:  # + 1: the real blocks past the last district
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
-				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
+				var lots := CityLots.fill_block(rng, plan, _lot_block(block), cfg, 1.0)
 				if str(block["use"]) == "built":
 					out.append_array(lots)
 					if lots.is_empty() and ring == 0:
@@ -45,6 +45,17 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 	var sheds := CityHarbour.dry(plan, cfg, CityRiver.sheds(plan, bare, cfg))
 	CityHazards.tag(out, plan, cfg, sheds)  # + red barrels (#19)
 	return out
+
+
+## The block whose lots are drawn: a block the sea bay cut draws its whole rect (CityHarbour), so
+## the numbers every later lot draws, and the lots on the dry part, are those of the city without
+## the bay (the stage the bay has not reached).
+static func _lot_block(block: Dictionary) -> Dictionary:
+	if not block.has("whole"):
+		return block
+	var whole := block.duplicate()
+	whole["rect"] = block["whole"]
+	return whole
 
 
 ## Half-extents of the nested districts, smallest first (just [half] for a one-district city).

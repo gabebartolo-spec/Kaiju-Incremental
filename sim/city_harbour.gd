@@ -56,7 +56,9 @@ static func _drop_streets(plan: Dictionary, water: Array[Rect2], side: float) ->
 
 
 ## Turns every block of `plan` wholly in the bay's `water` into sea ("harbour"); one the bay
-## partly covers keeps its largest dry part (its lots fill it: no bare remainder).
+## partly covers keeps its largest dry part as its rect and its whole rect as "whole": CityGen
+## draws the lots of the whole rect, so every other lot of the city stays where it stands at
+## every stage (D-039), and the bay drops those that stand in the water (dry).
 static func _mark_blocks(plan: Dictionary, water: Array[Rect2]) -> void:
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
@@ -68,7 +70,9 @@ static func _mark_blocks(plan: Dictionary, water: Array[Rect2]) -> void:
 				block["was"] = block["use"]
 			block["use"] = "harbour"
 		elif dry != rect:
-			block["rect"] = dry  # its lots fill what the bay leaves (no bare remainder)
+			if not block.has("whole"):
+				block["whole"] = rect
+			block["rect"] = dry
 
 
 ## The largest part of `rect` clear of the bay's `water` (bands): south of it, or beside it to the
