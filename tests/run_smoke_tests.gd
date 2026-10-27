@@ -10,6 +10,7 @@ const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
 const VehiclesSolid := preload("res://tests/lib/smoke_vehicles_solid.gd")
 const BuildingsSolid := preload("res://tests/lib/smoke_buildings_solid.gd")
+const SmokeMantle := preload("res://tests/lib/smoke_mantle.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -158,7 +159,7 @@ func _check_voxel_skin() -> void:
 					broken.append(species)
 					break
 			if species == "cephalopod":
-				mantle_ok = _mantle_follows(kaiju, skin)
+				mantle_ok = SmokeMantle.follows(kaiju, skin)
 		kaiju.queue_free()
 		await process_frame
 	check(
@@ -179,19 +180,6 @@ func _check_voxel_skin() -> void:
 	check(none, "the debug flag draws the rigid voxels instead (no skin)")
 	rigid.free()
 	VoxelSkin.show_rigid_voxels = false
-
-
-## The mantle voxels' node (which gait_radial scales to breathe) sizes the skin's mantle0 bone.
-func _mantle_follows(kaiju: KaijuModel, skin: VoxelSkin) -> bool:
-	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
-	var held: Variant = rig.skins.get("mantle0", null)
-	if not is_instance_valid(held):
-		return false
-	var mantle: Node3D = held
-	mantle.scale = Vector3.ONE * 1.2  # a roar puff
-	skin.sync()
-	var m := skin.pose[rig.bone_names().find("mantle0")]
-	return absf(Vector3(m.x.x, m.x.y, m.x.z).length() - 1.2) < 0.001
 
 
 ## The mouth's inside shows on the skin as BipedHead shows it: hidden while a closed jaw rests,
