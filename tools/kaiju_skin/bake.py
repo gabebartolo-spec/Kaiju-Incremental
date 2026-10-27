@@ -34,9 +34,10 @@ MIXED = 0.98  # a voxel whose main bone has less than this share is in a joint: 
 FILL_INSET = 0.3  # voxels: the filler sits this far inside the cubes
 MOUTH_RED = 1.35  # BipedHead.MOUTH_RED: the sculpt's pink mouth inside
 MOUTH_BONES = ("head1", "jaw")
-# Hinged parts that move as one rigid piece against their parent (a jaw, a mantis mandible): they
-# never blend with it, so an open mouth keeps its mass and its teeth (lead review, PR #15).
-HINGES = ("jaw", "mandible_l", "mandible_r")
+# Hinged parts that move as one rigid piece against their parent (a jaw, a mantis mandible, a croc's lower-lid flap:
+# tools/kaiju_skin/lid_flaps.py): they never blend with it, so an open mouth keeps its mass and its teeth (lead review,
+# PR #15) and a lid closes whole.
+HINGES = ("jaw", "mandible_l", "mandible_r", "lid_lo_l", "lid_lo_r")
 SKIN_NEAREST = 4  # a voxel blends the weights of this many nearest Blender skin positions
 DIRS = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)])
 
