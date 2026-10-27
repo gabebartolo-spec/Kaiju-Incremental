@@ -14,6 +14,7 @@ extends RefCounted
 ## has to be textured (or include surface_detail.gdshaderinc) to land. A type is "<owner>:<kind>":
 ## the nearest scripted ancestor's class name and what is flat about it.
 
+const ChunkCheck := preload("res://tests/lib/chunk_check.gd")
 const DETAIL_INCLUDE := "surface_detail.gdshaderinc"
 ## Physics frames his death may take to reach the burst (about 3.2 s in data at 60 fps, with room).
 const DEATH_FRAMES := 600
@@ -269,5 +270,6 @@ static func _death(tree: SceneTree, rampage: Rampage, check_fn: Callable) -> voi
 		pieces.size() >= 2, "the debris and the shards are in the scan: %d" % pieces.size()
 	)
 	check_fn.call(fresh.is_empty(), "no flat-colour surface in his death: %s" % [fresh])
+	ChunkCheck.check_view(view, check_fn)  # D-323: jagged chunks of many sizes, never a box
 	for type: String in found:
 		print("FLAT death %s x%d %s" % [type, found[type]["count"], found[type]["node"]])
