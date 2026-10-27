@@ -7,6 +7,9 @@ extends Node3D
 ## batch is still meshing waits for it, then the blocks it touched are meshed again from the
 ## newest grid, so the view never shows an older grid after a newer one. Presentation only:
 ## it reads the grid the sim carves and decides nothing.
+## Render plan item 9 (tuning render_opt.remesh_high_priority): the meshing task is queued on the
+## pool's high-priority side, where Jolt's own jobs run, so a bite is not left waiting behind them
+## (the low-priority side keeps only 30% of the threads); the swap-in time of each batch is timed.
 
 ## Meshes in their own world space (CellMesher.origin is world), as BuildingView's are.
 var mesher: CellMesher
@@ -19,6 +22,13 @@ var last_batch: Array[Vector3i] = []
 ## When on (tests), region -> the arrays its mesh was built from (CellMesher.mesh_region).
 var keep_arrays := false
 var arrays: Dictionary = {}
+## Whether the meshing task goes on the pool's high-priority queue (tuning, set at _init).
+var high_priority := true
+## Microseconds the last _finish took on the main thread (block meshes made and swapped in), and,
+## when keep_timings is on (tests, the bench), one entry per batch.
+var last_finish_us := 0
+var keep_timings := false
+var finish_us := PackedInt64Array()
 
 var _cells: PackedByteArray
 var _dirty: Dictionary = {}
@@ -31,6 +41,7 @@ var _results: Array = []
 func _init(p_mesher: CellMesher, cells: PackedByteArray, p_material: Material) -> void:
 	mesher = p_mesher
 	material = p_material
+	high_priority = Content.section("render_opt").get("remesh_high_priority", true) == true
 	_cells = cells
 	for r: Vector3i in mesher.all_regions():
 		_dirty[r] = true
@@ -79,7 +90,11 @@ func _start() -> void:
 	_results.clear()
 	_results.resize(_batch.size())
 	_task = WorkerThreadPool.add_group_task(
-		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results), _batch.size()
+		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results),
+		_batch.size(),
+		-1,
+		high_priority,
+		"CellView remesh"
 	)
 
 
@@ -93,6 +108,7 @@ static func _mesh_one(
 
 
 func _finish() -> void:
+	var t0 := Time.get_ticks_usec()
 	_task = -1
 	for i: int in _batch.size():
 		var r := _batch[i]
@@ -116,4 +132,7 @@ func _finish() -> void:
 	remeshed += _batch.size()
 	last_batch = _batch.duplicate()
 	_results.clear()
+	last_finish_us = Time.get_ticks_usec() - t0
+	if keep_timings:
+		finish_us.append(last_finish_us)
 	_start()

@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 const AUTOLOADS: Array[String] = ["Debug", "EventBus", "GameData", "Rng", "SaveSystem", "Settings"]
 const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
+const VehiclesSolid := preload("res://tests/lib/smoke_vehicles_solid.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -37,7 +38,8 @@ func run_checks() -> void:
 	await _t("_check_voxel_skin")
 	await _t("_check_tank")
 	await _t("_check_heli")
-	await _t("_check_vehicle_bubble")
+	await _t("_check_air_clear_side")
+	await _h("VehiclesSolid", func() -> void: await VehiclesSolid.check(check, root))
 	await _t("_check_crease_pass")
 
 
@@ -330,23 +332,9 @@ func _check_heli() -> void:
 	heli.free()
 
 
-## A helicopter's parts are cut away by the camera bubble (not a screen door); the sim keeps
-## helicopters off the side the game camera actually views from.
-func _check_vehicle_bubble() -> void:
-	var front := HelicopterModel.new()
-	var side := HelicopterModel.new()
-	root.add_child(front)
-	root.add_child(side)
-	var parts := front.find_children("*", "MultiMeshInstance3D", true, false)
-	var all_on := not parts.is_empty()
-	for node: Node in parts:
-		var mat := (node as MultiMeshInstance3D).material_override as ShaderMaterial
-		all_on = all_on and mat != null and Num.f(mat.get_shader_parameter("bubble_on")) == 1.0
-	check(all_on, "every helicopter part is cut by the camera bubble (%d parts)" % parts.size())
-	check(
-		front.find_children("*", "MultiMeshInstance3D", true, false).size() == parts.size(),
-		"no part is added without the bubble"
-	)
+## The sim keeps helicopters off the side the game camera actually views from. (That no vehicle
+## ever draws see-through is guarded by tests/lib/smoke_vehicles_solid.gd, D-290.)
+func _check_air_clear_side() -> void:
 	var bearing := rad_to_deg(atan2(CameraTuning.offset().z, CameraTuning.offset().x))
 	var air := Num.f(Content.section("air")["camera_bearing"])
 	check(
@@ -356,8 +344,6 @@ func _check_vehicle_bubble() -> void:
 			% [air, bearing]
 		)
 	)
-	front.free()
-	side.free()
 
 
 ## The crease pass (crease.gdshader) is built from the look, switched off by it, and does no

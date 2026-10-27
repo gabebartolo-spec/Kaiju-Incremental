@@ -17,8 +17,10 @@
 # Engine sprite sheets and review images stay plain git: CI checks out without LFS
 # (LFS pointers get read as PNGs otherwise). Move a PNG to LFS only if it is huge.
 
-# Baked voxel data the game reads with FileAccess: binary, never text-normalised.
-*.kvox binary
-*.vskin binary
+# Baked voxel data the game reads with FileAccess: binary, never text-normalised. The big ones are LFS
+# (debt row 8, D-295: the kaiju skins are 1-11 MB each); a checkout needs `git lfs pull` (CI: the
+# .github/actions/lfs-files action, which caches the objects). The small test bakes stay plain.
+*.kvox filter=lfs diff=lfs merge=lfs -text
+*.vskin filter=lfs diff=lfs merge=lfs -text
 *.skinw binary
 *.skinf binary

@@ -5,6 +5,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_load_tests.gd
 
 const LoadLandmark := preload("res://tests/lib/load_landmark.gd")
+const LoadOffMain := preload("res://tests/lib/load_off_main.gd")
 
 ## Real time to wait for the stream to finish (headless frames are not real seconds).
 const STREAM_WAIT_MS := 120000
@@ -18,6 +19,7 @@ func run_checks() -> void:
 	await _t("_check_party_walls")
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
+	await _h("LoadOffMain", func() -> void: LoadOffMain.new(check, _sim_at(1), root).run())
 	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
 	await _t("_check_stream")
 	await _t("_check_stream_budget")

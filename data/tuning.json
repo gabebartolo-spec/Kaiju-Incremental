@@ -42,8 +42,8 @@
 		"tooltip_width": 330,
 		"species_spin_rate": 0.6,
 		"loading_news": ["CITY BRACES FOR IMPACT", "BRIDGES CLOSED UNTIL FURTHER NOTICE", "PETS SENSE SOMETHING"],
-		"_note_threat_badge": "The threat badge right of the clock (ThreatBadge, D-259): border and pad [x, y] of its box (px at 1080p), gap between word, digit and meter, digit_size (font px), the five meter bars' bar_heights, bar_width and bar_gap; from level alert_from it turns alert red; a rise pops it to pop_scale over pop_s; clock_gap between clock and badge.",
-		"threat_badge": {"border": 2.0, "pad": [10, 2], "gap": 10, "digit_size": 36, "bar_heights": [8, 13, 18, 23, 28], "bar_width": 6, "bar_gap": 3, "alert_from": 4, "pop_scale": 1.35, "pop_s": 0.35, "clock_gap": 18},
+		"_note_threat_bar": "The bar under the clock is the threat meter (ThreatBar, D-259): segments, gap (px), the empty segment outline alpha, the partial fill alpha, from level alert_from the filled segments turn alert red; a rise swells the new segment to pop_scale and back over pop_s. Same width and place as the old city meter (hud meter_size).",
+		"threat_bar": {"segments": 5, "gap": 3, "empty_alpha": 0.55, "partial_alpha": 0.6, "alert_from": 4, "pop_scale": 1.1, "pop_s": 0.2},
 		"_note_news_live": "The crawl during a rampage (RampageNews): slides up over slide_s, stays while the headline crosses behind the tag plus read_s (never under min_s), then slides away; at most queue lines wait.",
 		"news_live": {"slide_s": 0.25, "read_s": 0.5, "min_s": 3.0, "queue": 3},
 		"_note_specimen_card": "The lab card before a new specimen rises (SpecimenCard, D-260 'a 2 s Lab card'): seconds on screen, gap between title and headline.",
@@ -54,11 +54,11 @@
 		"fps_default": 120,
 		"menu_fps": 60,
 		"graphics": {
-			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1},
-			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2},
-			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "low", "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2},
-			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "medium", "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3},
-			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "high", "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4}
+			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1, "fsr_sharpness": 0.2},
+			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "far_blur": "off", "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2, "fsr_sharpness": 0.1},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "low", "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2, "fsr_sharpness": 0.1},
+			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "medium", "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3, "fsr_sharpness": 0.2},
+			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "far_blur": "high", "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4, "fsr_sharpness": 0.2}
 		},
 		"graphics_renamed": {"balanced": "medium"},
 		"graphics_default": {"min_height": 2160, "large": "medium", "large_fps": 60, "small": "high"}
@@ -77,6 +77,7 @@
 		"size": {"hidden": true},
 		"regen": {"line": "Heals while rampaging", "fmt": "%.1f", "unit": " a second"},
 		"rubble_mult": {"line": "Devours more biomass", "fmt": "x%.2f"},
+		"death_blast": {"line": "Your death takes more of the city with you", "fmt": "%d"},
 		"swipe_damage": {"line": "Claw swipes hit harder", "fmt": "%.0f"},
 		"swipe_width": {"line": "Claw swipes rake wider", "fmt": "%.1f"},
 		"tail_damage": {"line": "Tail hits harder", "fmt": "%.0f"},
@@ -109,6 +110,8 @@
 			{"stat": "tallest_topple", "min": 10, "line": "{n}-FLOOR TOWER COMES DOWN - SKYLINE CHANGED FOREVER"},
 			{"stat": "toppled", "min": 1, "line": "INSURERS REFUSE CLAIMS: 'ACT OF MONSTER'"},
 			{"stat": "civilians", "min": 1, "line": "MASS EVACUATION ORDERED"},
+			{"stat": "vip_killed", "min": 1, "line": "THE LEADER'S HELICOPTER IS DOWN - ELECTIONS EARLY"},
+			{"stat": "vip_escaped", "min": 1, "line": "THE LEADER GOT AWAY - AND IS NOT HAPPY"},
 			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"},
 			{"stat": "landmarks", "min": 1, "line": "TOURISTS TOLD: 'THE LANDMARKS ARE CLOSED'"},
 			{"stat": "agents", "min": 1, "line": "TASKFORCE RECRUITING - NO EXPERIENCE NEEDED"}
@@ -123,7 +126,7 @@
 		"specimen": {"title": "SPECIMEN K-{next}", "headline": ["K-{lost} LOST", "K-{next} RELEASED"]}
 	},
 	"threat": {
-		"_note": "The threat badge by the clock (D-259 'A small threat icon', 1-5; RunNews). Agent-added mapping, no decision: the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
+		"_note": "The threat meter, the bar under the clock (D-259 'A small threat icon', D-267 'The army's real strength'; 1-5; RunNews). Decided mapping (per-stage escalation comes from the army-balance branch): the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
 		"level_at": [0.25, 0.5, 0.75, 1.0],
 		"tower_counts": [10, 25, 50, 100]
 	},
@@ -216,7 +219,8 @@
 		"fire_rate": 0,
 		"fire_wind": 0,
 		"fire_embers": 0,
-		"firestorm": 0
+		"firestorm": 0,
+		"death_blast": 0
 	},
 	"powers": {
 		"fire": {
@@ -242,7 +246,7 @@
 			"conflag_max": 1.15,
 			"conflag_decay": 0.05,
 			"flammability": [1.0, 0.8, 0.6, 0.5],
-			"spread_landmarks": false,
+			"spread_landmarks": true,
 			"firestorm_grow": 0.5,
 			"grid": 16.0,
 			"spread_tick": 0.1,
@@ -391,6 +395,12 @@
 		"trail_alpha": 1.8,
 		"smoke_centre_keep": 0.85
 	},
+	"strike": {
+		"_note": "Damage lands on impact (D-166, D-175; Strikes): the reptilian's big attacks wreck when the jaws or the foot land, a beat after the press, not on it. breath = seconds from the press to the strike by size tier (young, Behemoth, Colossus); the cone is read at the strike, from where he faces then. beam = seconds from the press to the Thunder Beam stream (the walk slow, powers.beam_move_mult, starts at the press). stomp_standing = seconds from a stomp tick to its damage when he stands still (a walking stomp lands on its tick; the view syncs it to the footfall). Cooldowns count from the press. Nothing lands if the rampage ends or the size tier changes first. The dash is instant (the crouch is view-only, D-165). The events carry the time: strike_windup (kind, strike_in) at the press for the breath and the beam, strike_in on the stomp event.",
+		"breath": [0.8, 1.1, 1.4],
+		"beam": 1.4,
+		"stomp_standing": 0.45
+	},
 	"air": {
 		"_note_deaths": "How a helicopter dies (D-140, D-141, D-145; AirWing): a killing blow of at least blow_apart x its hp blows it apart in the air; a lighter one sends it spinning down for fall_seconds, drifting fall_drift units, crew bailing out with chance bailout_chance (1..bailout_max of them); the wreck smashes crash_floors floors within crash_radius for crash_damage and sets the building it hits burning (City Ablaze). Placeholders, flagged for tuning.",
 		"blow_apart": 0.6,
@@ -441,6 +451,42 @@
 		"clear_arc": 60.0,
 		"clear_lead_deg": 40.0
 	},
+	"vip": {
+		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds, then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). hp = the air wing's hp x hp_mult; radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
+		"window": [0.12, 0.5],
+		"ranks": ["MAYOR", "GOVERNOR", "PRESIDENT"],
+		"payout": [38.0, 40.0, 40.0],
+		"hp_mult": 1.0,
+		"radius": 1.2,
+		"altitude": 9.0,
+		"pad_height": [3, 8],
+		"pad_range": [14.0, 40.0],
+		"liftoff_seconds": 3.0,
+		"climb_seconds": 8.0,
+		"circle_radius": 12.0,
+		"circle_seconds": 6.0,
+		"window_seconds": 15.0,
+		"escape_cap": 2.0,
+		"exit_margin": 6.0,
+		"exit_spread_deg": 50.0,
+		"turn_limit": 2.0,
+		"accel": 14.0,
+		"throw_pass": 2.5,
+		"throw_ceiling": 7.0,
+		"rotor_pitch": 0.75,
+		"rotor_db": 4.0,
+		"headline_seconds": 8.0,
+		"killed_seconds": 3.0,
+		"slide_seconds": 0.4,
+		"headlines": {
+			"liftoff": "COWARD {rank} FLEES CITY BY CHOPPER",
+			"killed": "{rank} SWATTED FROM THE SKY",
+			"escaped": "COWARD {rank} ESCAPES THE CITY"
+		},
+		"rotor_unit": 30.0,
+		"beacon": {"size": 0.6, "energy": 14.0, "light": 4.0, "range": 18.0, "height": 3.3, "period": 0.9, "on": 0.55},
+		"look": {"white": "f2efe6", "gold": "d8a53a", "bank": 0.35, "pitch": 0.008, "turn": 3.0}
+	},
 	"taskforce": {
 		"_note": "The Anti Kaiju Taskforce, agents only (Taskforce, TaskforceFrost, TaskforceVolley; D-137, D-139, D-141, D-143, D-145). PLACEHOLDER NUMBERS (tune) except the director's: railgun.share 0.08 of max health (D-143), railgun.aim_seconds 2.0 (D-139), railgun.cooldown 12 s per agent, frost.slow_mult 0.5 for frost.seconds 4 s, a kill pays a tank's worth (rubble_share 1.0 of army.tank_rubble) (D-152), squads of 3-4 and max 12 alive (D-139), none in the young city (D-137, D-152). max_by_tier = most alive at once per size tier (young, adolescent, ...). The Taskforce joins every rampage once first_arrival.city_seconds of rampage time are carried in from earlier rampages in the adolescent city or later (D-160, the save keeps the counter), its first squad first_arrival.run_delay seconds in, then every start_interval seconds less escalation_per_chunk x chunks destroyed (never under min_interval): faster the more of the city falls (D-145). Agents jetpack in from a ring edge_inset past the arena at jet_speed (units a second) and cruise jet_height up, then perch on the highest standing chunk of a column of a building at least perch_min_height tall, perch_range [near, far] from the kaiju, trying perch_tries chunks (with no building in the band, one of the perch_fallback nearest to it); a perched agent hops on after perch_seconds [min, max] (hop speed = jet_speed x hop_speed_share, arcing hop_arc up). rubble_share = biomass per kill as a share of this city's tank_rubble (x the kaiju's rubble_mult). hover_seconds = how long an agent with no roof to go to hovers before looking again, min_flight_s = the shortest flight. first_charge = the share of a cooldown a fresh agent has already waited. railgun: armour (stat armor) is taken off a hit as for a tank shell, never below army.min_damage; the line tracks the kaiju for aim_seconds - lock_seconds, then locks and lands on the lock; lock_seconds per growth stage (lock_seconds_by_stage, baby/adolescent/adult; director 2026-10-26 \"Longer warning, scaled by size\": a leap pressed at the lock, crouch included, clears the whole volley; was 0.4); it hits for share x max health only if the kaiju is within hit_radius of the lock (a late step dodges it); cooldown, range, hop_after (seconds before it hops on), squad_gap (D-166, D-178 Lock together, fire in turn: a squad's ready gunners put their lines up together and the lines lock at the same moment on one point, aim_seconds - lock_seconds after; the shots then land that many seconds apart, the first aim_seconds after the lines go up; over 0.5 so one squad never lands more than 2 hits in a second, and one leap at the lock leaves the kaiju clear of the whole volley; 0.6 is the pick inside about 2 hits' worth in a second). frost: cooldown per agent, range, flight_s grenade flight, radius (1.5) it must land within (the kaiju's feet: walking dodges, standing still is caught, D-161), seconds of slow, slow_mult speed multiplier; refreshes, never stacks, the dash shatters it. swat: radius of an agent hit by a claw swipe in the air; wall_range how far it looks for the wall it spins into.",
 		"max_by_tier": [0, 12, 12, 12],
@@ -483,6 +529,8 @@
 			"reserve": 1.5,
 			"danger": 0.55,
 			"edge_gap": 8.0,
+			"_band_depth": "How far past the body's keep-away (body_radius + edge_gap + the hull's half diagonal) the tanks' firing band always reaches, in units: their reach is at least (keep-away + band_depth) / band[1], so a small kaiju (the young croc) is never out of every firing post (Convoy.reach).",
+			"band_depth": 4.0,
 			"retreat_speed": 3.5,
 			"lookahead": 3.0,
 			"danger_cost": 200.0,
@@ -550,12 +598,11 @@
 		"chem_lab": {"radius": 3.0, "damage": 45.0, "height": 10, "cloud_radius": 7.0, "cloud_seconds": 8.0, "cloud_tank_dps": 6.0, "cloud_squad_seconds": 1.5}
 	},
 	"blast_fx": {
-		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake.trauma: how hard each kind of blast kicks the camera (times 1 - distance/reach from the kaiju); kick = ONE kick of units x that, thrown up and away from the blast and easing out (squared) over kick.seconds, never a shake back and forth (clip critic round 6); screen_flash = a white sheet over the screen at alpha (small blasts at small_share of it) gone in seconds; no hit-stop and no screen-bending ripple any more. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay; every blast cracks once, crack_db over the mix with no distance fade (round 7: the third blast's crack barely cleared the bed), body and rumble sit tail_db under it. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; fireball.top_scale x reach_scale = how far the ball reaches (round 2, 7), speed_scale = start speed in radii/s (round 6: 2-3x the footprint), build_seconds = it spawns over that long (a few frames, not one), fireball = a sudden tall burst of Fire's own flames (Fire.FLAME_CUBE voxels at Fire.FLAME_SCALE, its ember shader at its own heat, its colours and ramp: a bigger blast is more flames, never bigger cubes): amount of them at blast radius 5, spawned over burst_seconds, living seconds, up on a spread (degrees) with gravity lift up like Fire's, speed_scale radii a second, damped to stop top_scale site heights up; fire = the real Fire left at the site afterwards (size x radius/5; seconds 0: it stays burning like any other until the fire cap puts the oldest out) which brings the game's own smoke (D-151, VFX lead 2026-10-23); shock.ring = the game's dust shockwave out to the blast's reach plus puffs Fx.dust round its rim; cloud = the chem gas as the game's soft smoke tinted shades, puff = its size range, shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
+		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake.trauma: how hard each kind of blast kicks the camera (times 1 - distance/reach from the kaiju); kick = ONE kick of units x that, thrown up and away from the blast and easing out (squared) over kick.seconds, never a shake back and forth (clip critic round 6); no screen flash (director 2026-10-27: cut), no hit-stop and no screen-bending ripple any more. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay; every blast cracks once, crack_db over the mix with no distance fade (round 7: the third blast's crack barely cleared the bed), body and rumble sit tail_db under it. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; fireball.top_scale x reach_scale = how far the ball reaches (round 2, 7), speed_scale = start speed in radii/s (round 6: 2-3x the footprint), build_seconds = it spawns over that long (a few frames, not one), fireball = a sudden tall burst of Fire's own flames (Fire.FLAME_CUBE voxels at Fire.FLAME_SCALE, its ember shader at its own heat, its colours and ramp: a bigger blast is more flames, never bigger cubes): amount of them at blast radius 5, spawned over burst_seconds, living seconds, up on a spread (degrees) with gravity lift up like Fire's, speed_scale radii a second, damped to stop top_scale site heights up; fire = the real Fire left at the site afterwards (size x radius/5; seconds 0: it stays burning like any other until the fire cap puts the oldest out) which brings the game's own smoke (D-151, VFX lead 2026-10-23); shock.ring = the game's dust shockwave out to the blast's reach plus puffs Fx.dust round its rim; cloud = the chem gas as the game's soft smoke tinted shades, puff = its size range, shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
 		"shake": {"trauma": {"fuel_silo": 0.9, "fireworks_factory": 0.6, "chem_lab": 0.6}, "reach": 70.0},
 		"flash": {"energy": 14.0, "seconds": 0.3, "max_live": 3, "color": "ffb468", "chem_color": "b4ff8a"},
 		"core": {"amount": 50, "seconds": 0.15, "throw": 0.5, "size": 0.22, "full_radius": 5.0},
 		"kick": {"units": 1.6, "seconds": 0.15},
-		"screen_flash": {"alpha": 0.3, "seconds": 0.05, "full_radius": 5.0, "small_share": 0.75, "layer": -1},
 		"site_rubble": 2.0,
 		"fireball": {"seconds": 2.0, "amount": 1100, "spread": 15.0, "burst_seconds": 0.3, "top_scale": 3.5, "speed_scale": 13.0, "lift": 2.5},
 		"fire": {"size": 2.0, "seconds": 0.0},
@@ -582,6 +629,7 @@
 		"coast_z": -120,
 		"bay_width": 190,
 		"far_haze": 0.004,
+		"far_fog": {"_note": "Director comment #37 (2026-10-25, asked twice: 'something funky going on with the distant city'): the far city floated crisp above the haze, its own gentler haze (far_haze) and no engine fog, so it was clearer than the bay in front of it. on: the far skyline (towers, quay, lattice tower, the far rampage's beast and smoke) takes the engine's depth fog as the bay does (FarHaze); own_haze: the share of its own built haze kept on top (0 = the same air as the bay); base: height fog, this much more haze at the foot of the far city fading over base_height metres up, so it shows no hard base line (0.5: its foot within 2% of the bay's luma at night and noon, tools/capture/far_city_bars.py); start: metres from the camera where its own haze and the height fog begin. Off = the look it was built with. Presentation only.", "on": true, "own_haze": 0.0, "base": 0.5, "base_height": 30.0, "start": 120.0},
 		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
@@ -700,6 +748,8 @@
 				"blast_body": "explosion",
 				"blast_rumble": "explosion",
 				"sonic_boom": "explosion",
+				"thunder_beam": "hero",
+				"thunder_beam_end": "hero",
 				"stomp_0": "stomp",
 				"stomp_1": "stomp",
 				"stomp_2": "stomp",
@@ -778,7 +828,10 @@
 			"lash": -3.0,
 			"ready": -8.0,
 			"deflect": -10.0,
-			"regen_loop": -20.0
+			"regen_loop": -20.0,
+			"thunder_beam": -1.0,
+			"thunder_beam_loop": -4.0,
+			"thunder_beam_end": -2.0
 		}
 	},
 	"city_sound": {
@@ -1094,10 +1147,10 @@
 		},
 		"sounds": {
 			"roar": "Hero",
-			"stomp_0": "Hero",
-			"stomp_1": "Hero",
-			"stomp_2": "Hero",
-			"stomp_crack": "Hero",
+			"stomp_0": "SFX",
+			"stomp_1": "SFX",
+			"stomp_2": "SFX",
+			"stomp_crack": "SFX",
 			"collapse": "Hero",
 			"collapse_drop": "Debris",
 			"train_rumble": "Ambience",
@@ -1126,6 +1179,9 @@
 			"deflect": "SFX",
 			"regen_loop": "SFX",
 			"siren_far": "Ambience",
+			"thunder_beam": "Hero",
+			"thunder_beam_loop": "Hero",
+			"thunder_beam_end": "Hero",
 			"footstep": "SFX",
 			"footstep_1": "SFX",
 			"footstep_2": "SFX",
@@ -1185,7 +1241,13 @@
 		"dip": 0.05, "dip_attack": 0.04, "dip_s": 0.2,
 		"kick_deg": 0.8, "crack_fade_s": 0.12
 	},
-	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "bubble_share": 0.6, "fade_seconds": 0.25, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "bubble_share": 0.6, "bubble_max": 3, "bubble_seconds": 0.25, "bubble_width": 1.0, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0},
+	"slowmo": {
+		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The director tunes these at playtest.",
+		"scale": 0.35,
+		"hold_s": 0.5,
+		"ease_s": 0.25
+	},
 	"camera_shake": {
 		"_note": "CameraShake (R 19.2): hits add trauma 0..1 (sources), it fades at decay_per_s; the camera turns by trauma squared on smooth noise (noise_hz noise units a second; 1.6 keeps a 60 fps frame under 5 px at 1080p at the 2 deg cap, motion critic 2026-10-21), yaw and pitch only, full trauma = deg_per_root_scale x sqrt(body scale) degrees, at most max_deg. A hit away from the focus fades from near_per_scale to far_per_scale body scales. default_motion: the camera-motion setting's default (0..1).",
 		"decay_per_s": 1.2,
@@ -1199,7 +1261,7 @@
 		"near_per_scale": 20.0,
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
-		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
+		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7, "bolt_stroke": 0.25}
 	},
 	"accessibility": {
 		"_note": "Settings > ACCESSIBILITY (D-259). flash_scale: while Reduce flashing is on, every flash of light (explosion, muzzle and breath lights, flares, the end beat's screen flash, the lab's lightning white) is drawn at this share of its brightness, and the colour fringe never shows.",
@@ -1230,9 +1292,8 @@
 		"breath": {"weak": 0.35, "strong": 0.05, "seconds": 0.9}
 	},
 	"post_fx": {
-		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color; below low_health.below of max health a red edge band (colour, alpha at the very edge, depth_px deep at 1080 lines, fading to nothing inside) beats on top of it pulse_hz times a second, sharpened by pulse_sharp, back to nothing between beats; the HUD sits above it. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
+		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color, always the same dark edge: low health is the HUD's heartbeat vignette alone (ui.hurt; director 2026-10-27: vignette only), with no red band here. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
 		"vignette": {"color": "#05070a", "strength": 0.42, "inner": 0.5, "outer": 1.0},
-		"low_health": {"below": 0.25, "full_at": 0.1, "color": "#c0100c", "alpha": 0.28, "depth_px": 110.0, "pulse_hz": 1.3, "pulse_sharp": 2.0, "fade_per_s": 2.5},
 		"fringe": {"seconds": 0.2, "attack": 0.2, "peak_px": 6.0, "cooldown_s": 4.0, "stomp_min_radius": 4.4, "collapse_min_length": 28.0, "hit_hp_fraction": 0.12}
 	},
 	"topple_fx": {
@@ -1264,6 +1325,36 @@
 		"rubble_tint_mix": 0.55,
 		"rubble_block": [8, 3, 6],
 		"rubble_lump": 0.5
+	},
+	"skyline_rampage": {
+		"_note": "Director 2026-10-25 'yes bring it back': a far insectoid rampaging through the skyline across the bay, on by default. Presentation only (SkylineRampage).",
+		"on": true,
+		"height": 34.0,
+		"path_depth": 32.0,
+		"centre_x": 0.0,
+		"swing": 200.0,
+		"speed": 3.0,
+		"stride": 14.0,
+		"start_s": 30.0,
+		"reach": 20.0,
+		"corridor": 16.0,
+		"fall_s": 4.5,
+		"extra_falls": 4,
+		"standing_fires": 7,
+		"puffs": 20,
+		"smoke_height": 110.0,
+		"species": "insectoid",
+		"picture_px": 512,
+		"shade": 0.75,
+		"rim_energy": 3.0,
+		"rim_fill": 0.5,
+		"rim_edge": 0.9,
+		"fire": "ff7a2a",
+		"smoke": "2e2a28",
+		"boom_db": -12.0,
+		"step_db": -22.0,
+		"boom_pitch": 0.55,
+		"sound_speed": 343.0
 	},
 	"arena_edge": {"out": 1.0, "spacing": 1.3, "size": [0.35, 1.1], "color": "e07a28", "glow": 0.5, "tree_clear": 0.6},
 	"body": {"speed_mult": 1.0, "hp_mult": 1.0},
@@ -1328,15 +1419,16 @@
 			{
 				"city": {"half": 50, "coast_z": -120, "max_height": 26},
 				"air": {"max": 0},
-				"army": {"range": 11.0, "tank_damage": 14, "fire_interval": 0.7, "spawn_radius": 64},
+				"army": {"range": 11.0, "tank_damage": 9.4, "fire_interval": 0.7, "spawn_radius": 64,
+					"escalation_per_chunk": 0.0008},
 				"per_level": {},
 				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
 			},
 			{
 				"city": {"half": 80, "coast_z": -150, "max_height": 32, "tower_chance": 0.6,
 					"fog_scale": 0.6, "far_haze": 0.0024},
-				"army": {"range": 14.5, "spawn_radius": 52, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6.7, "tank_rubble": 6,
-					"escalation_per_chunk": 0.001, "threat_per_chunk": 0.0002},
+				"army": {"range": 14.5, "spawn_radius": 52, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6.9, "tank_rubble": 6,
+					"escalation_per_chunk": 0.00011, "threat_per_chunk": 0.0002},
 				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12},
 				"per_level": {
 					"army": {"tank_hp": 0.02, "tank_damage": 0.02, "start_interval": -0.01},
@@ -1346,10 +1438,14 @@
 			{
 				"city": {"half": 150, "coast_z": -220, "max_height": 40, "tower_chance": 0.65,
 					"fog_scale": 0.34, "far_haze": 0.0014},
-				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 10.5,
-					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.0004, "threat_per_chunk": 0.00008},
-				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 6,
-					"rubble": 30}
+				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 7.3,
+					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.00002, "threat_per_chunk": 0.00008},
+				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 5.4,
+					"rubble": 30},
+				"per_level": {
+					"army": {"tank_hp": 0.03, "tank_damage": 0.02, "start_interval": -0.01},
+					"air": {"hp": 0.03, "damage": 0.03}
+				}
 			}
 		]
 	},
@@ -1360,18 +1456,99 @@
 		"shockwave": {"radius_scale": 1.2, "seconds": 0.55, "alpha": 0.55, "soft": 0.4, "foot_start": 0.18},
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
-		"breath_fade_in": 0.12,
-		"breath_curtain_alpha": 0.7,
-		"breath_curtain_height": 7.0,
+		"bolt": {
+			"_note": "BoltRig/BoltView/bolt.gdshader (VFX_STYLE family 6, research 17): the Lightning Breath and the Thunder Beam. halo_mode picks the fringe colours round the white-hot axis (R 17.6 is the director's open question: amber / eye = the species' eye tint / violet = white with a violet fringe); the glow itself is the engine's bloom on the HDR axis (boost_core, fringe_boost). The Thunder Beam core is 1.8x the breath's. Strokes come at least stroke_gap apart (never more than 3 full flashes a second); between strokes the main channel holds at hold_level with a shallow wobble. All shapes are dimensionless (a share of the bolt's length) and seeded per breath (Seeds breath_bolt / thunder_bolt). Widths are metres at body scale 1.",
+			"halo_mode": "amber",
+			"halo_modes": {
+				"amber": {"inner": "ffb55a", "fringe": "ff7a1e"},
+				"eye": {"inner": "eye", "fringe": "eye", "inner_white": 0.6},
+				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5}
+			},
+			"boost_core": 3.0,
+			"fringe_boost": 1.6,
+			"white_to": 0.7,
+			"tint_to": 0.82,
+			"core_min_px": 12.0,
+			"arc_min_px": 3.0,
+			"arc_alpha": 0.45,
+			"main_tip": 1.3,
+			"mouth_share": 0.4,
+			"bolt_soft": 1.5,
+			"arc_every": 0.07,
+			"arc_level": 0.25,
+			"light_follow": 40.0,
+			"strike_decay": 0.07,
+			"muzzle_up": 0.5,
+			"rebuild_move": 0.1,
+			"wobble": 0.15,
+			"wobble_hz": 22.0,
+			"depth": 3,
+			"branch_depth": 3,
+			"first_at": 0.0667,
+			"feeler_level": 0.3,
+			"feeler_step": 0.0167,
+			"feeler_reach": [0.1, 1.0],
+			"stroke_gap": 0.45,
+			"attack": 0.06,
+			"gap_jitter": 0.1,
+			"end_margin": 0.04,
+			"tail": 0.2,
+			"hold_level": 0.6,
+			"stroke_decay": 0.09,
+			"branch_peak": 1.0,
+			"branch_hold": 0.5,
+			"branch_decay": 0.14,
+			"light_decay": 0.12,
+			"light": {"hold_share": 0.2, "falloff": 1.5, "mouth": [8.0, 16.0], "impact": [34.0, 28.0]},
+			"muzzle_flare": 0.8,
+			"flare_edge": 0.3,
+			"flare_soft": 3.0,
+			"strike_flare": 14.0,
+			"strike_lift": 1.5,
+			"impact_sparks": 3,
+			"branch_tip": 0.65,
+			"branch_sparks": 2,
+			"power_share": 0.25,
+			"prewarm_seconds": 0.05,
+			"breath": {
+				"core": 0.6, "sway": 0.1, "branches": [4, 6],
+				"bow": 0.6, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0, "ring_puffs": 8,
+				"arcs": 4, "arc_reach": 8.0, "arc_width": 0.17,
+				"branch_from": [0.3, 0.8], "branch_width": 1.0, "branch_sway": 0.15,
+				"anchor_near": false, "anchor_back": 0.0, "dust": 3.5,
+				"fan_spread": 0.8, "fan_near": 0.55, "clear": 1.5
+			},
+			"thunder": {
+				"core": 1.08, "sway": 0.22, "branches": [4, 6],
+				"bow": 0.25, "sub_forks": 0, "strike_scale": 0.8, "ring": 6.0, "ring_puffs": 6,
+				"arcs": 0, "arc_reach": 6.0, "arc_width": 0.35, "facade_min": [4, 6],
+				"branch_from": [0.1, 0.99], "branch_width": 0.55, "branch_sway": 0.1,
+				"anchor_near": true, "anchor_back": 0.06, "dust": 2.0,
+				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 1.5, "lash_climb": [2.0, 12.0], "lash_side": 1.0, "turn_hold": 0.12
+			}
+		},
+		"orbit_degrees": 25.0,
+		"orbit_rise": 3.0,
+		"orbit_in_seconds": 0.3,
+		"orbit_out_seconds": 0.5,
 		"scorch_seconds": 5.0,
 		"scorch_soot_in": 0.4,
 		"scorch_glow_in": 0.12,
+		"scorch_glow_mult": 0.35,
 		"crater_seconds": 6.0,
 		"crack_seconds": 2.5,
 		"sweep_seconds": 0.5,
 		"leap_trail_seconds": 0.4,
 		"regen_tint": "8cffb0",
-		"deflect_tint": "cfe6ff"
+		"deflect_tint": "cfe6ff",
+		"hide_hit": {
+			"flash_voxels": 5.0, "flash_seconds": 0.08, "flash_tint": "d9702a", "flash_alpha": 0.85,
+			"glance_tint": "c8d2dc", "glance_seconds": 0.06,
+			"mist_voxels": 10.0, "mist_seconds": 0.5, "mist_tint": "7a0a0e", "mist_alpha": 0.6, "mist_count": 4,
+			"spark_count": 5, "glance_sparks": 8, "spark_voxels": 1.2, "spark_tint": "d9702a",
+			"max_wounds": 48, "wound_radius_voxels": 6.0, "wound_seconds": 360.0, "wound_tint": "1a0306",
+			"ray_extra": 8.0, "aim_rings": 0.8
+		}
 	},
 	"landmark_burst": {
 		"chunks": 360,
@@ -1425,6 +1602,7 @@
 		"ground_y": 0.0,
 		"ground_slop": 0.02,
 		"fade_seconds": 0.4,
+		"debris_aabb_margin_m": 40.0,
 		"indoor_seconds": 1.0,
 		"indoor_margin": 0.5,
 		"dust_interval": 0.25,
@@ -1506,7 +1684,10 @@
 			"mast": 0.8,
 			"strobe_period": 1.3,
 			"strobe_on": 0.12
-		}
+		},
+		"vip_dark": 0.25,
+		"vip_glow": 1.0,
+		"vip_band": [0.3, 0.42]
 	},
 	"destruction": {
 		"res": 8,
@@ -1537,30 +1718,67 @@
 		}
 	},
 	"rain": {
-		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks fall as camera-facing quads in a world-space volume that follows the camera; counts are x the graphics preset's particles ratio. Lengths and widths in metres, speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold).",
-		"streaks": 16000,
-		"volume": [150.0, 70.0, 150.0],
-		"ahead": 28.0,
+		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks are screen-facing quads at one screen angle (the fall direction as the camera sees it), in three depth layers, each its own world-space volume that follows the camera; counts are x the graphics preset's particles ratio. len and width are shares of the viewport height (so a streak is as long and as thick on a 1080p and a 4K screen), speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold). min_streak_share and min_streak_alpha are the floors the weather suite holds the look above (a rain you can see).",
+		"layers": [
+			{"name": "near", "streaks": 9000, "volume": [80.0, 50.0, 80.0], "ahead": 26.0, "speed_mul": 1.25, "len": 0.03, "width": 0.0008, "alpha": 0.3, "near_clear": 12.0, "near_full": 22.0, "far_begin": 40.0, "far_end": 62.0},
+			{"name": "mid", "streaks": 28000, "volume": [140.0, 60.0, 140.0], "ahead": 36.0, "speed_mul": 1.0, "len": 0.02, "width": 0.0006, "alpha": 0.24, "near_clear": 30.0, "near_full": 46.0, "far_begin": 80.0, "far_end": 105.0},
+			{"name": "far", "streaks": 34000, "volume": [220.0, 70.0, 220.0], "ahead": 60.0, "speed_mul": 0.85, "len": 0.013, "width": 0.0005, "alpha": 0.18, "near_clear": 70.0, "near_full": 95.0, "far_begin": 140.0, "far_end": 190.0}
+		],
+		"min_streak_share": 0.02,
+		"min_streak_alpha": 0.15,
 		"fall_speed": 30.0,
 		"speed_jitter": 0.08,
 		"wind_gain": 2.2,
-		"length": 1.5,
-		"width": 0.03,
-		"min_px": 1.1,
-		"alpha": 0.42,
 		"fade_in": 0.07,
 		"fade_out": 0.1,
-		"far_begin": 70.0,
-		"far_end": 125.0,
-		"tint_white": 0.55,
+		"tint_white": 0.7,
 		"max_channel": 0.82,
-		"clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
-		"splashes": 2600,
+		"clear": {"centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
+		"ahead": 28.0,
+		"splashes": 10000,
 		"splash_volume": [90.0, 90.0],
-		"splash_seconds": 0.35,
-		"splash_size": 0.5,
-		"splash_alpha": 0.5,
+		"splash_seconds": 0.5,
+		"splash_lifetime_spread": 0.5,
+		"splash_size": 0.8,
+		"splash_alpha": 0.2,
 		"splash_y": 0.11,
-		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7}
+		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7},
+		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
+	},
+	"render_opt": {
+		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). remesh_high_priority: a carved building's meshing task (CellView) is queued high-priority, as Jolt's jobs are (item 9). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
+		"night_clip_max": 0.08,
+		"debris_cache": true,
+		"kaiju_tight_bounds": true,
+		"kaiju_bounds_slack": 1.05,
+		"people_buffers": true,
+		"people_aabb_margin_m": 8.0,
+		"kaiju_three_faces": true,
+		"fx_pool": {"enabled": true, "provisional_sizes": true, "slots": {"dust": 24, "puff": 8, "step": 8, "slam": 8, "tree": 8, "spark": 8, "burst": 16, "flames": 12, "embers": 12, "smoke": 12}},
+		"remesh_high_priority": true
+	},
+	"death": {
+		"_note": "The kaiju's death (director 2026-10-26, every kaiju; replaces D-267's belly-down slump): Special K overload. A death (reasons, SaveFile.DEATHS) plays the agonised stagger clip for stagger_s (clip death_stagger, frames 20-60 of the approved stagger at 24 fps), the stone creeps over him for stone_s, then he shatters (DeathOverload): shards of his own body (cell world units each at body scale 1, picked from his body discs) are thrown throw_min..throw_max (x body scale) and land after flight_s, each a blow of shard_damage within shard_radius on the top shard_floors floors of what it lands on. A Death Blast node (stat death_blast, 1 per node) adds a front of blast_damage that runs out to a ring round his body: his body's edge plus death_blast x per_node world units (director 2026-10-26 \"Smaller: a ring round his body\"; 5 / 10 / 15, node 3 about one street block), in blast_s, every floor, and it starts blast_after_s after the last shard lands (director 2026-10-27, D-294 \"Shards first\": his falling stone body smashes buildings, then the blast clears the rest). The run ends settle_s after the front (or the last shard with no node). Look: violet = Special K (creation.lab.colors.special_k); stone grey with per-block variation. He breaks into jagged stone chunks, never cubes (director 2026-10-27, D-323 \"Jagged stone chunks\": irregular broken rock in his hide's texture, many sizes, tumbling with dust): look.chunks are the broken rock meshes baked by tools/blender/death_chunks.py (longest side 1); his voxels fly as small chunks of debris_size x his voxel and the sim's shards as big ones of shard_size x cell (most near the small end, size_skew), tumbling at debris_spin rad/s, each shard trailing dust (trail). Placeholders, flagged for tuning.",
+		"reasons": ["defeated", "time", "ended"],
+		"stagger_s": 1.71,
+		"stagger_clip": "death_stagger",
+		"stone_s": 1.4,
+		"settle_s": 1.2,
+		"cell": 1.0,
+		"shards": 40,
+		"throw_min": 3.0,
+		"throw_max": 11.0,
+		"throw_jitter_deg": 35.0,
+		"flight_s": [0.8, 1.6],
+		"shard_radius": 1.2,
+		"shard_damage": 40.0,
+		"shard_floors": 3,
+		"fallback_disc": [0.0, 1.5, 0.0, 6.0],
+		"per_node": 5.0,
+		"blast_after_s": 0.2,
+		"blast_s": 0.6,
+		"blast_damage": 600.0,
+		"blast_floors": 64,
+		"look": {"crackle": 2.2, "crackle_share": 0.18, "crackle_hz": 14.0, "stone": "8a8780", "stone_vary": 0.18, "stone_keep": 0.25, "light_energy": 6.0, "light_range": 18.0, "burst_light": 40.0, "burst_s": 0.5, "debris_max": 3000, "chunks": ["res://assets/death/chunk_0.obj", "res://assets/death/chunk_1.obj", "res://assets/death/chunk_2.obj", "res://assets/death/chunk_3.obj", "res://assets/death/chunk_4.obj", "res://assets/death/chunk_5.obj", "res://assets/death/chunk_6.obj", "res://assets/death/chunk_7.obj"], "debris_size": [0.8, 4.8], "shard_size": [0.6, 1.5], "size_skew": 2.0, "debris_spin": [2.0, 9.0], "trail": {"amount": 24, "life": 1.2, "size": 1.4, "rise": 0.6, "alpha": 0.35}, "debris_speed": [6.0, 18.0], "debris_up": [4.0, 14.0], "gravity": 30.0, "debris_s": 2.5, "shard_arc": 6.0, "crush_radius": 1.6, "burst_trauma": 0.8, "shard_trauma": 0.12}
 	}
 }

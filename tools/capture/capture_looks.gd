@@ -18,7 +18,7 @@ const SETTLE := 12
 const DEBRIS_FRAMES := 9
 const FALL_FRAMES := 240
 const STAGE_AT := Vector2(5.0, -8.0)  # a crossing at the edge of the midtown towers
-const CAMERA_OFFSET := Vector3(0, 27, 19)
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const LINEUP_SPACING := 13.0
 const EDGE_AT := Vector2(5.0, -40.0)  # on the north ring avenue, looking out over the edge
 const SKYLINE_CAMERA := Vector3(-30, 34, 30)
@@ -41,6 +41,8 @@ var _resize := false
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
@@ -95,11 +97,10 @@ func _city_shot(id: String, levels: Dictionary, stage_at: Vector2 = STAGE_AT) ->
 	kaiju.rotation.y = 0.5
 	stage.add_child(kaiju)
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	stage.add_child(cam)
-	cam.position = at + CAMERA_OFFSET * (0.75 + 0.4 * sim.body_scale())
 	root.add_child(stage)
-	cam.look_at(at + Vector3(0, 3.5 * sim.body_scale(), 0))
+	Kit.place_game_camera(cam, kaiju, sim.body_scale())
 	cam.current = true
 	await _frames(SETTLE)
 	var nearest := _nearest(sim, 4)
@@ -162,7 +163,7 @@ func _skyline_shot(id: String, from: Vector3, look_at: Vector3) -> void:
 	var stage := Node3D.new()
 	stage.add_child(CityView.new(sim, Seeds.make("fx", 0)))
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	stage.add_child(cam)
 	cam.position = from
 	root.add_child(stage)

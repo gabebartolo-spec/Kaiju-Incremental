@@ -25,6 +25,10 @@ const CAP_KNEE := 0.6
 
 var cfg: Dictionary
 var ground: CityGround
+## The far skyline's boxes as drawn (instance i is _far[i]), for SkylineRampage to topple.
+var far_view: MultiMeshInstance3D
+## The far skyline's haze (FarHaze): its towers, quay and lattice tower, and the far rampage's.
+var far_haze: FarHaze
 var _rng: RandomNumberGenerator
 var _near: Array[Dictionary] = []  # boxes: size, centre, colour, custom
 var _far: Array[Dictionary] = []
@@ -39,6 +43,8 @@ func _init(p_ground: CityGround, rng: RandomNumberGenerator) -> void:
 	ground = p_ground
 	cfg = ground.cfg
 	_rng = rng
+	var far_fog: Dictionary = cfg["far_fog"]
+	far_haze = FarHaze.new(far_fog)
 
 
 func _ready() -> void:
@@ -47,21 +53,34 @@ func _ready() -> void:
 	for path: PackedVector2Array in _freeways:
 		_freeway(path)
 	_far_shore()
-	_outer_lamps()
+	SkylineLamps.outer_streets(ground, _lamps)
 	add_child(_facades(_near, 0.0))
 	var far := _facades(_far, Num.f(cfg["far_haze"]))
 	var far_mesh: BoxMesh = far.multimesh.mesh
 	var far_mat: ShaderMaterial = far_mesh.material
 	far_mat.set_shader_parameter("grain", FAR_GRAIN)
+	far_haze.track([far_mat])
 	add_child(far)
+	far_view = far
 	add_child(_plain_boxes())
-	add_child(_lamp_heads())
+	add_child(SkylineLamps.heads(_lamps))
 	add_child(Aircraft.new(_rng))
+	far_haze.apply_default()  # the far city in the same air as the bay (director comment #37)
+
+
+## The far skyline's boxes, in far_view's instance order; a supertall's crown has "crown_of".
+func far_boxes() -> Array[Dictionary]:
+	return _far
 
 
 ## Every painted stand-in building (near and far), as {"size": Vector3, "at": Vector3 centre}.
 func stand_ins() -> Array[Dictionary]:
 	return _near + _far
+
+
+## The far skyline's one haze entry point (a rampage's escalation): FarHaze.set_haze.
+func set_far_haze(color: Color, amount: float, base := 0.0, start := -1.0) -> void:
+	far_haze.set_haze(color, amount, base, start)
 
 
 ## Stand-ins on every outer block: the same lots as the playable city, a little lower, with a
@@ -84,17 +103,13 @@ func _outer_blocks() -> void:
 			var h := Num.f(lot["h"])
 			var at := Vector3(Num.f(lot["x"]), h * 0.5, Num.f(lot["z"]))
 			var style := Num.i(lot["style"])
-			(
-				_near
-				. append(
-					{
-						"size": Vector3(Num.f(lot["w"]), h, Num.f(lot["d"])),
-						"at": at,
-						"color": styles[posmod(style + roundi(at.x * 3.0 + at.z), styles.size())],
-						"custom": Color(style % 4, _lit(), 1.0 if h > 18.0 else 0.0, _rng.randf()),
-					}
-				)
-			)
+			var tower := {
+				"size": Vector3(Num.f(lot["w"]), h, Num.f(lot["d"])),
+				"at": at,
+				"color": styles[posmod(style + roundi(at.x * 3.0 + at.z), styles.size())],
+				"custom": Color(style % 4, _lit(), 1.0 if h > 18.0 else 0.0, _rng.randf()),
+			}
+			_near.append(tower)
 			if Vector2(at.x, at.z).length() < DETAIL_REACH:  # past it the fog hides roofs
 				var top := at + Vector3(0, h * 0.5, 0)
 				_roof_clutter(top, Vector2(Num.f(lot["w"]), Num.f(lot["d"])))
@@ -182,6 +197,30 @@ func _capped(tall: float) -> float:
 	return knee + (cap - knee) * tanh((tall - knee) / (cap - knee))
 
 
+## One far-shore tower's height: taller downtown, now and then a supertall, under the title cap.
+func _far_height(downtown: float) -> float:
+	var tall := lerpf(8.0, 70.0, pow(downtown, 1.5)) * _rng.randf_range(0.5, 1.4)
+	tall = maxf(tall, 6.0)
+	tall *= SUPERTALL if _rng.randf() < downtown * 0.15 else 1.0
+	return _capped(tall)
+
+
+## The stepped crown of the last far tower: 60% as wide, 12% as tall, on top.
+func _crown(color: Color, custom: Color) -> Dictionary:
+	var tower: Dictionary = _far.back()
+	var size: Vector3 = tower["size"]
+	var at: Vector3 = tower["at"]
+	var crown_size := Vector3(size.x * 0.6, size.y * 0.12, size.z * 0.6)
+	var crown_at := at + Vector3(0, size.y * 0.56, 0)
+	return {
+		"size": crown_size,
+		"at": crown_at,
+		"color": color,
+		"custom": custom,
+		"crown_of": _far.size() - 1
+	}
+
+
 ## The skyline across the bay: a waterfront of towers, a lattice tower, hazy and lit.
 func _far_shore() -> void:
 	var shore := ground.coast - Num.f(cfg["bay_width"])
@@ -196,38 +235,18 @@ func _far_shore() -> void:
 		for r: int in rows:
 			var w := _rng.randf_range(8.0, 22.0)
 			var d := _rng.randf_range(8.0, 20.0)
-			var tall := lerpf(8.0, 70.0, pow(downtown, 1.5)) * _rng.randf_range(0.5, 1.4)
-			tall = maxf(tall, 6.0)
-			tall *= SUPERTALL if _rng.randf() < downtown * 0.15 else 1.0
-			tall = _capped(tall)
+			var tall := _far_height(downtown)
 			var at := Vector3(
 				x + _rng.randf_range(-4.0, 4.0), tall * 0.5, shore - 12.0 - r * 26.0 - d * 0.5
 			)
 			var style := _rng.randi_range(0, 3)
-			(
-				_far
-				. append(
-					{
-						"size": Vector3(w, tall, d),
-						"at": at,
-						"color": styles[style % styles.size()].darkened(0.15),
-						"custom":
-						Color(style, _lit() * 0.7, 1.0 if tall > 60.0 else 0.0, _rng.randf()),
-					}
-				)
+			var tint: Color = styles[style % styles.size()]
+			var lit := Color(style, _lit() * 0.7, 1.0 if tall > 60.0 else 0.0, _rng.randf())
+			_far.append(
+				{"size": Vector3(w, tall, d), "at": at, "color": tint.darkened(0.15), "custom": lit}
 			)
 			if tall > 90.0:  # a stepped crown on the supertalls, New York style
-				(
-					_far
-					. append(
-						{
-							"size": Vector3(w * 0.6, tall * 0.12, d * 0.6),
-							"at": at + Vector3(0, tall * 0.56, 0),
-							"color": styles[style % styles.size()],
-							"custom": Color(style, _lit(), 1.0, _rng.randf()),
-						}
-					)
-				)
+				_far.append(_crown(tint, Color(style, _lit(), 1.0, _rng.randf())))
 		x += _rng.randf_range(14.0, 26.0)
 	_lattice_tower(Vector3(-160.0, 0.0, shore - 70.0))
 
@@ -249,49 +268,18 @@ func _lattice_tower(base: Vector3) -> void:
 			var post := Vector3(0.9, height / levels + 0.2, 0.9)
 			_box(basis, AABB(base + leg + Vector3(0, y, 0), post), color, true)
 			var brace := basis * Vector3(0, 0, half_w)
-			_box(
-				basis,
-				AABB(base + brace + Vector3(0, y, 0), Vector3(half_w * 2.0, 0.5, 0.5)),
-				color,
-				true
-			)
+			var rail := AABB(base + brace + Vector3(0, y, 0), Vector3(half_w * 2.0, 0.5, 0.5))
+			_box(basis, rail, color, true)
 		if i == 9 or i == 17:  # observation decks
 			var deck := Vector3(half_w * 2.4, 3.0, half_w * 2.4)
 			_box(Basis(), AABB(base + Vector3(0, y, 0), deck), white, true)
-	(
-		_far
-		. append(
-			{
-				"size": Vector3(1.0, 2.0, 1.0),
-				"at": base + Vector3(0, height + 1.0, 0),
-				"color": red,
-				"custom": Color(0, 0, 1.0, 0.3),
-			}
-		)
-	)
-
-
-## Glowing lamp heads down the outer streets (no real lights: they only need to twinkle).
-func _outer_lamps() -> void:
-	var nodes: Array[Vector2] = ground.plan["nodes"]
-	var half := Num.f(cfg["half"])
-	for street: Dictionary in ground.plan["streets"]:
-		if str(street["kind"]) == CityGen.ALLEY:
-			continue
-		var a := nodes[Num.i(street["from"])]
-		var b := nodes[Num.i(street["to"])]
-		if maxf(absf(a.x), absf(a.y)) <= half + 1.0 and maxf(absf(b.x), absf(b.y)) <= half + 1.0:
-			continue  # inside the playable city the decor puts real streetlights
-		if minf(a.y, b.y) < ground.coast:
-			continue
-		var dir := (b - a).normalized()
-		var side := Vector2(-dir.y, dir.x) * (Num.f(street["width"]) * 0.5 + 0.5)
-		var t := 3.0
-		while t < a.distance_to(b):
-			var p := a + dir * t + side
-			if p.length() < DETAIL_REACH:
-				_lamps.append(Vector3(p.x, 2.6, p.y))
-			t += 9.0
+	var tip := {
+		"size": Vector3(1.0, 2.0, 1.0),
+		"at": base + Vector3(0, height + 1.0, 0),
+		"color": red,
+		"custom": Color(0, 0, 1.0, 0.3),
+	}
+	_far.append(tip)
 
 
 ## A plain box; box.position is its centre (not a corner), turned by `turn` about the vertical.
@@ -340,7 +328,7 @@ static func facade_material(haze: float) -> ShaderMaterial:
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
 	mat.set_shader_parameter("haze_color", Look.color("fog_color"))
 	mat.set_shader_parameter("haze", haze)
-	return mat
+	return WindowPalette.apply_common(mat)
 
 
 ## The plain boxes: roof gear and the lattice tower in the instance colour; the concrete
@@ -364,6 +352,8 @@ func _plain_boxes() -> Node3D:
 		)
 		if not concrete:
 			mat.set_shader_parameter("plain", true)
+		if hazy:
+			far_haze.track([mat])
 		mesh.material = mat
 		mm.mesh = mesh
 		var picked: Array[Dictionary] = []
@@ -382,19 +372,3 @@ func _plain_boxes() -> Node3D:
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(mmi)
 	return holder
-
-
-func _lamp_heads() -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.35, 0.2, 0.35)
-	mesh.material = CityView.glow(Color("ffd59a"), 4.0)
-	mm.mesh = mesh
-	mm.instance_count = _lamps.size()
-	for i: int in _lamps.size():
-		mm.set_instance_transform(i, Transform3D(Basis(), _lamps[i]))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mmi

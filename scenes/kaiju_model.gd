@@ -17,8 +17,12 @@ const RIM_LAYER := 2
 const BODY_LAYER := 4
 const IVORY := Color("e8e0c8")
 const PUPIL := Color("15130f")
+## A wound stays this many cubes clear of an eye.
+const EYE_KEEP_OFF := 3
 
 var species_id: String
+## His death (DeathOverload, DeathView): the stagger clip, the overload on his hide, the burst.
+var death := DeathPose.new()
 var _colors: Dictionary = {}
 var _vox := VoxelBuilder.new()
 ## Walk-cycle flipbook poses of a voxelized model (empty for code-built bodies).
@@ -47,11 +51,13 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
 		if _rig != null:
 			_skin = VoxelSkin.attach(_rig, base)  # D-041; null when debugging rigid voxels
+			death.bind(_rig, _skin)
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
 			return
 	if species_id == "cephalopod":  # no sculpt yet: a code-built octopus on the radial rig
 		_rig = CephalopodStandIn.build(colors, MODEL_HEIGHT, _glow())
+		death.bind(_rig, null)
 		_body.add_child(_rig)
 		return
 	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
@@ -96,6 +102,12 @@ func follow_steps(step_phase: float, step_ratio: float) -> void:
 func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)
 	_squash = maxf(0.0, _squash - delta * 5.0)
+	if _skin != null:
+		_skin.hits.age(delta, Num.f(Content.section("fx")["hide_hit"]["wound_seconds"]))
+	if death.dying:  # the stagger clip, never the gait (DeathPose)
+		death.update(delta)
+		VoxelSkin.sync_if(_skin)
+		return
 	if _rig != null:
 		_rig.gait.turn_ahead = turn_ahead
 		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
@@ -108,6 +120,38 @@ func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 		var shown := posmod(floori(_walk_phase / PI * _poses.size() * 0.5), _poses.size())
 		for i: int in _poses.size():
 			_poses[i].visible = i == shown
+
+
+## Where a shot along from -> to first meets the hide (world; SkinHits.cast): {} when it misses
+## or the body has no skin. A hit on his eyes carries "eye": true, which never takes a wound.
+func hide_cast(from: Vector3, to: Vector3) -> Dictionary:
+	if _skin == null:
+		return {}
+	var hit := _skin.hits.cast(_skin.pose, _rig.global_transform, from, to)
+	if not hit.is_empty():
+		var eye: Color = _colors.get("eye", Color.BLACK)
+		var is_eye := func(c: Color) -> bool:
+			return _near(c, eye) or _near(c, IVORY) or _near(c, PUPIL)
+		var bone: int = hit["bone"]
+		var cell: Vector3i = hit["cell"]
+		hit["eye"] = _skin.hits.any_near(bone, cell, EYE_KEEP_OFF, is_eye)
+	return hit
+
+
+## The hide's wounds (add_wound at a rest-space point from hide_cast, live to count them); null
+## when the body has no skin.
+func hide_hits() -> SkinHits:
+	return _skin.hits if _skin != null else null
+
+
+## One voxel's size in the world (the hide's cubes), for effects sized in scales.
+func voxel_world() -> float:
+	var v := _skin.hits.voxel if _skin != null else VOXEL
+	return v * absf(scale.x)
+
+
+static func _near(a: Color, b: Color) -> bool:
+	return absf(a.r - b.r) + absf(a.g - b.g) + absf(a.b - b.b) < 0.18
 
 
 ## Worst drift of a planted foot so far (world units; 0 unrigged), for captures and tests.

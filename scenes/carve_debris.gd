@@ -1,5 +1,5 @@
 class_name CarveDebris
-extends Node3D
+extends CarveDebrisBase
 ## One building's loose pieces: carved cells thrown out and island bricks broken off. Each live
 ## piece is a bare Jolt body (PhysicsServer3D, no node) drawn by ONE MultiMesh for the building;
 ## a piece that comes to rest is frozen in place into a second, static rubble MultiMesh and its
@@ -11,32 +11,25 @@ extends Node3D
 
 const SHRINK_MIN := 0.01  # a fading piece's last scale
 
-var raised := 0  # live pieces lifted out of the road so far (captures)
-var max_raise := 0.0  # the deepest of them
-
-var skid_max := 0.0  # how far a settled piece slid along the road from first touch, in its widths
-var culled := 0  # pieces faded out because they lay indoors (captures)
 ## The building and its grid (the sim's, after the last carve): what counts as indoors.
 var site: CarveSite
 var grid := PackedByteArray()
-var skid_sum := 0.0
-var skid_over := 0  # settled pieces that slid more than 5 of their widths
-var skid_n := 0
+
+## Render plan item 1 (tuning render_opt.debris_cache): one state read per piece per tick, a draw
+## only after a tick, bounds set by hand on both MultiMeshes, rubble removed by swap. Off: the old
+## per-frame reads and walks (a test drives both and compares the buffers). Set before add_child.
+var opt := true
+## Physics-server state reads made here so far (a test bounds them per live piece per tick).
+var state_reads: int:
+	get:
+		return _poses.reads
 
 var _cfg: Dictionary
 var _space: RID
 var _shapes: Dictionary = {}  # snapped size -> BoxShape3D (kept alive for its RID)
-var _live_mm: MultiMesh
-var _rubble: CarveRubble
-# Live pieces, parallel arrays.
-var _rids: Array[RID] = []
-var _sizes := PackedVector3Array()
-var _colors := PackedColorArray()
-var _still := PackedFloat32Array()
-var _age := PackedFloat32Array()
-var _fade := PackedFloat32Array()  # < 0: not fading; else seconds since it began to fade
-var _touch := PackedVector3Array()  # where it first met the road (y = NAN until it does)
-var _fading := 0  # live pieces fading out
+var _t := CarveDebrisTune.new()
+var _view: CarveLiveView
+var _lifted := -1  # opt: the piece _raise last lifted this tick
 
 
 func _init() -> void:
@@ -45,8 +38,24 @@ func _init() -> void:
 
 func _ready() -> void:
 	_space = get_world_3d().space
-	_live_mm = CarveRubble.multimesh(self)
+	if opt:
+		opt = Content.section("render_opt").get("debris_cache", true) == true
+	_poses.cached = opt
+	_t = CarveDebrisTune.read(_cfg)
+	var box := _start_bound()
+	_view = CarveLiveView.new(CarveRubble.multimesh(self), opt, box)
 	_rubble = CarveRubble.new(CarveRubble.multimesh(self), _cfg)
+	_rubble.opt = opt
+	if opt:
+		_rubble.set_bounds(box)
+
+
+## The building's box grown by the furthest fling seen (tuning debris_aabb_margin_m).
+func _start_bound() -> AABB:
+	var box := AABB()
+	if site != null:
+		box = AABB(site.origin, Vector3(site.size) / float(site.res))
+	return box.grow(Num.f(_cfg["debris_aabb_margin_m"]))
 
 
 func _exit_tree() -> void:
@@ -54,33 +63,6 @@ func _exit_tree() -> void:
 		PhysicsServer3D.free_rid(rid)
 	_rids.clear()
 	_rubble.free_bodies()
-
-
-## Live pieces still counted against the cap (fading ones excluded: they are on their way out).
-func live() -> int:
-	return _rids.size() - _fading
-
-
-func bodies() -> int:
-	return _rids.size()
-
-
-func rubble() -> int:
-	return _rubble.count()
-
-
-## Rubble pieces dropped past rubble_cap so far.
-func dropped() -> int:
-	return _rubble.dropped
-
-
-## Pieces that left the screen at over half size in one frame (captures; 0).
-func vanished() -> int:
-	return _rubble.vanished
-
-
-func static_bodies() -> int:
-	return _rubble.statics
 
 
 ## A new live piece at `xf`, `size` (world); motion is [velocity, spin, gravity scale, mass].
@@ -118,54 +100,8 @@ func _adopt(rid: RID, size: Vector3, color: Color) -> void:
 	_age.append(0.0)
 	_fade.append(-1.0)
 	_touch.append(Vector3(0, NAN, 0))
-
-
-## The lowest point of any piece, live or rubble (the capture's through-the-ground check).
-func lowest_point() -> float:
-	var low := INF
-	for k: int in _rids.size():
-		low = minf(low, _low(k))
-	return minf(low, _rubble.lowest())
-
-
-## How many live pieces reach below `y` (a capture's sunk-into-the-road count).
-func sunk(y: float) -> int:
-	var n := 0
-	for k: int in _rids.size():
-		if _low(k) < y:
-			n += 1
-	return n
-
-
-## Live and rubble pieces whose centre lies inside `box` (captures: debris inside a building).
-func inside(box: AABB) -> int:
-	var n := 0
-	for k: int in _rids.size():
-		var xf: Transform3D = PhysicsServer3D.body_get_state(
-			_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
-		)
-		n += 1 if box.has_point(xf.origin) else 0
-	return n + _rubble.inside(box)
-
-
-## The fastest live piece's speed (captures).
-func fastest() -> float:
-	var top := 0.0
-	for k: int in _rids.size():
-		var v: Vector3 = PhysicsServer3D.body_get_state(
-			_rids[k], PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY
-		)
-		top = maxf(top, v.length())
-	return top
-
-
-## Live piece k's lowest point.
-func _low(k: int) -> float:
-	var xf: Transform3D = PhysicsServer3D.body_get_state(
-		_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
-	)
-	var b := xf.basis.scaled_local(_sizes[k])
-	return xf.origin.y - 0.5 * (absf(b.x.y) + absf(b.y.y) + absf(b.z.y))
+	_poses.add()
+	_view.dirty = true
 
 
 ## Starts the oldest `n` live pieces fading (the cap is full): they shrink away, then go.
@@ -179,9 +115,6 @@ func retire(n: int) -> void:
 			n -= 1
 
 
-## Rubble inside `box` and off the ground loses its rest (what held it up was carved or fell):
-## a piece with a collider turns live again where it lies; one without shrinks away. Rubble on
-## the street never needs waking. Returns how many woke.
 ## Rubble inside `box` and off the ground loses its rest (what held it up was carved or fell):
 ## a piece with a collider turns live again where it lies; one without shrinks away. Rubble on
 ## the street never needs waking. Returns how many woke.
@@ -221,49 +154,55 @@ func trim_static(keep: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var rest_v := Num.f(_cfg["settle_speed"])
-	var rest_w := Num.f(_cfg["settle_spin"])
-	var rest_t := Num.f(_cfg["settle_seconds"])
-	var fade_t := Num.f(_cfg["fade_seconds"])
-	var ground := Num.f(_cfg["ground_y"])
-	var floor_y := ground - Num.f(_cfg["ground_slop"])
-	var indoor_t := Num.f(_cfg["indoor_seconds"])
+	if opt:
+		_poses.sync(_rids)
 	var k := _rids.size() - 1
 	while k >= 0:
-		var rid := _rids[k]
-		_age[k] += delta
-		var aged := _age[k] >= indoor_t and _age[k] - delta < indoor_t
-		if _fade[k] < 0.0 and aged and _indoors(k):
-			_cull(k)
-		if _fade[k] >= 0.0:
-			_fade[k] += delta
-			if _fade[k] >= fade_t:
-				_forget(k)
-		else:
-			var v: Vector3 = PhysicsServer3D.body_get_state(
-				rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY
-			)
-			var w: Vector3 = PhysicsServer3D.body_get_state(
-				rid, PhysicsServer3D.BODY_STATE_ANGULAR_VELOCITY
-			)
-			var low := _low(k)
-			if low < floor_y:
-				_raise(rid, ground - low, v)
-				low = ground
-			_note_touch(k, low)
-			if low <= ground + Num.f(_cfg["ground_slop"]) * 3.0:
-				_drag(rid, v, w, delta)
-			_still[k] = _still[k] + delta if v.length() < rest_v and w.length() < rest_w else 0.0
-			if _still[k] >= rest_t:
-				if _indoors(k):
-					_cull(k)
-				else:
-					_freeze(k)
+		_step(k, delta)
 		k -= 1
+	if opt:
+		_lifted = -1
+		_poses.stale()  # the step that follows moves every body
+		_view.dirty = true
+
+
+## One live piece's tick: ageing, fading out, and otherwise lifting, dragging and settling.
+func _step(k: int, delta: float) -> void:
+	_age[k] += delta
+	var aged := _age[k] >= _t.indoor_t and _age[k] - delta < _t.indoor_t
+	if _fade[k] < 0.0 and aged and _indoors(k):
+		_cull(k)
+	if _fade[k] < 0.0:
+		_settle(k, delta)
+		return
+	_fade[k] += delta
+	if _fade[k] >= _t.fade_t:
+		_forget(k)
+
+
+func _settle(k: int, delta: float) -> void:
+	var rid := _rids[k]
+	var v := _poses.vel(rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY)
+	var w := _poses.vel(rid, PhysicsServer3D.BODY_STATE_ANGULAR_VELOCITY)
+	var low := _low(k)
+	if low < _t.ground - _t.slop:
+		_raise(k, _t.ground - low, v)
+		low = _t.ground
+		if opt:
+			v.y = maxf(v.y, 0.0)  # what the old draw-time lift left for this tick to read
+	_note_touch(k, low)
+	if low <= _t.ground + _t.slop * 3.0:
+		_drag(rid, v, w, delta)
+	_still[k] = _still[k] + delta if v.length() < _t.rest_v and w.length() < _t.rest_w else 0.0
+	if _still[k] >= _t.rest_t:
+		if _indoors(k):
+			_cull(k)
+		else:
+			_freeze(k)
 
 
 func _process(delta: float) -> void:
-	_draw_live()
+	_view.draw(self)
 	_rubble.update(delta)
 
 
@@ -271,10 +210,7 @@ func _process(delta: float) -> void:
 func _indoors(k: int) -> bool:
 	if site == null or grid.is_empty():
 		return false
-	var xf: Transform3D = PhysicsServer3D.body_get_state(
-		_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
-	)
-	return site.indoors(grid, xf.origin, Num.f(_cfg["indoor_margin"]))
+	return site.indoors(grid, _xf_at(k).origin, _t.indoor_m)
 
 
 ## Live piece k begins to shrink away because it lies indoors.
@@ -284,44 +220,11 @@ func _cull(k: int) -> void:
 	culled += 1
 
 
-func _draw_live() -> void:
-	var n := _rids.size()
-	CarveRubble.fit(_live_mm, n)
-	var buf := PackedFloat32Array()
-	buf.resize(_live_mm.instance_count * CarveRubble.FLOATS)
-	var fade_t := Num.f(_cfg["fade_seconds"])
-	var ground := Num.f(_cfg["ground_y"])
-	var floor_y := ground - Num.f(_cfg["ground_slop"])
-	for k: int in n:
-		var xf: Transform3D = PhysicsServer3D.body_get_state(
-			_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
-		)
-		var low := _low(k)
-		if low < floor_y:
-			# The physics steps since the last fix can press a piece in again: never draw it so.
-			var v: Vector3 = PhysicsServer3D.body_get_state(
-				_rids[k], PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY
-			)
-			_raise(_rids[k], ground - low, v)
-			xf.origin.y += ground - low
-		var scale := _sizes[k]
-		if _fade[k] >= 0.0:
-			scale *= maxf(SHRINK_MIN, 1.0 - _fade[k] / fade_t)
-		CarveRubble.pack(
-			buf,
-			k * CarveRubble.FLOATS,
-			Transform3D(xf.basis.scaled_local(scale), xf.origin),
-			_colors[k]
-		)
-	_live_mm.buffer = buf
-	_live_mm.visible_instance_count = n
-
-
 ## A piece on the road loses ground_drag of its sideways speed and spin a second: a cube that
 ## lands rolls and skids a little, not across the street (the road's friction alone leaves it
 ## tumbling for seconds).
 func _drag(rid: RID, v: Vector3, w: Vector3, delta: float) -> void:
-	var keep := maxf(0.0, 1.0 - Num.f(_cfg["ground_drag"]) * delta)
+	var keep := maxf(0.0, 1.0 - _t.drag * delta)
 	PhysicsServer3D.body_set_state(
 		rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY, Vector3(v.x * keep, v.y, v.z * keep)
 	)
@@ -330,20 +233,22 @@ func _drag(rid: RID, v: Vector3, w: Vector3, delta: float) -> void:
 
 ## Remembers where piece k first met the road, for the skid figure.
 func _note_touch(k: int, low: float) -> void:
-	if is_nan(_touch[k].y) and low <= Num.f(_cfg["ground_y"]) + Num.f(_cfg["ground_slop"]) * 2.0:
-		var xf: Transform3D = PhysicsServer3D.body_get_state(
-			_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
-		)
-		_touch[k] = Vector3(xf.origin.x, 0.0, xf.origin.z)
+	if is_nan(_touch[k].y) and low <= _t.ground + _t.slop * 2.0:
+		var origin := _xf_at(k).origin
+		_touch[k] = Vector3(origin.x, 0.0, origin.z)
 
 
 ## A live piece pressed into the road (a small box under a pile: Jolt's position correction is
 ## soft, so it can sit up to a box deep in the ground) is lifted `by` onto it and stops sinking.
 ## The view is cosmetic, so a positional fix-up is honest; `raised` counts them for captures.
-func _raise(rid: RID, by: float, v: Vector3) -> void:
-	var xf: Transform3D = PhysicsServer3D.body_get_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM)
+func _raise(k: int, by: float, v: Vector3) -> void:
+	var rid := _rids[k]
+	var xf := _xf_at(k)
 	xf.origin.y += by
 	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM, xf)
+	if opt:
+		_poses.store(k, xf)
+		_lifted = k
 	if v.y < 0.0:
 		v.y = 0.0
 		PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY, v)
@@ -355,7 +260,9 @@ func _raise(rid: RID, by: float, v: Vector3) -> void:
 ## rubble MultiMesh.
 func _freeze(k: int) -> void:
 	var rid := _rids[k]
-	var xf: Transform3D = PhysicsServer3D.body_get_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM)
+	var xf := _xf_at(k)
+	if opt and _lifted == k:
+		xf = _poses.tf(rid)  # lifted this tick: the rubble takes the pose the server now holds
 	PhysicsServer3D.body_set_mode(rid, PhysicsServer3D.BODY_MODE_STATIC)
 	if not is_nan(_touch[k].y):
 		var slid := Vector2(xf.origin.x - _touch[k].x, xf.origin.z - _touch[k].z).length()
@@ -370,7 +277,7 @@ func _freeze(k: int) -> void:
 
 ## A faded piece is gone.
 func _forget(k: int) -> void:
-	_rubble.gone(maxf(SHRINK_MIN, 1.0 - _fade[k] / Num.f(_cfg["fade_seconds"])))
+	_rubble.gone(maxf(SHRINK_MIN, 1.0 - _fade[k] / _t.fade_t))
 	PhysicsServer3D.free_rid(_rids[k])
 	_fading -= 1
 	_drop(k)
@@ -384,6 +291,8 @@ func _drop(k: int) -> void:
 	_age.remove_at(k)
 	_fade.remove_at(k)
 	_touch.remove_at(k)
+	_poses.drop(k)
+	_view.dirty = true
 
 
 func _shape(size: Vector3) -> BoxShape3D:

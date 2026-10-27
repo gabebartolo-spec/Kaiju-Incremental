@@ -15,9 +15,19 @@ var buf := PackedFloat32Array()  # FLOATS per piece
 var fade := PackedFloat32Array()  # < 0: not fading; else seconds since it began
 var statics := 0  # pieces that still have a (static) body
 var mm: MultiMesh
+## Render plan item 1 (render_opt.debris_cache), set by the owner before the first piece: remove
+## swaps with the last piece, age order lives in a queue, the MultiMesh has hand-set bounds.
+var opt := true
+var removes := 0  # pieces removed so far (a test compares buffers strictly until the first)
 var _cfg: Dictionary
 var _fading := 0
 var _dirty := false
+var _seq := PackedInt32Array()  # opt: each piece's add number
+var _pos: Dictionary = {}  # opt: add number -> index
+var _queue := PackedInt32Array()  # opt: add numbers, oldest first (some gone)
+var _head := 0
+var _next := 0
+var _bound := AABB()
 
 
 func _init(p_mm: MultiMesh, cfg: Dictionary) -> void:
@@ -34,20 +44,72 @@ func add(rid: RID, xf: Transform3D, color: Color) -> void:
 	var o := buf.size()
 	buf.resize(o + FLOATS)
 	pack(buf, o, xf, color)
+	if opt:
+		_seq.append(_next)
+		_pos[_next] = rids.size()
+		_queue.append(_next)
+		_next += 1
+		var reach := xf.basis.x.length() + xf.basis.y.length() + xf.basis.z.length()
+		var seen := AABB(xf.origin, Vector3.ZERO).grow(reach)
+		if not _bound.encloses(seen):
+			set_bounds(_bound.merge(seen))
 	rids.append(rid)
 	fade.append(-1.0)
 	statics += 1
 	_dirty = true
 
 
+## The MultiMesh's own bounds (the owner's building box and margin): Godot would otherwise walk
+## every instance to rebuild them whenever the buffer is assigned.
+func set_bounds(box: AABB) -> void:
+	_bound = box
+	mm.custom_aabb = box
+
+
 func remove(k: int) -> void:
-	rids.remove_at(k)
-	fade.remove_at(k)
-	var o := k * FLOATS
-	var tail := buf.slice(o + FLOATS)
-	buf.resize(o)
-	buf.append_array(tail)
+	removes += 1
 	_dirty = true
+	if not opt:
+		rids.remove_at(k)
+		fade.remove_at(k)
+		var o := k * FLOATS
+		var tail := buf.slice(o + FLOATS)
+		buf.resize(o)
+		buf.append_array(tail)
+		return
+	var last := rids.size() - 1
+	_pos.erase(_seq[k])
+	if k != last:
+		rids[k] = rids[last]
+		fade[k] = fade[last]
+		_seq[k] = _seq[last]
+		_pos[_seq[k]] = k
+		for c: int in FLOATS:
+			buf[k * FLOATS + c] = buf[last * FLOATS + c]
+	rids.resize(last)
+	fade.resize(last)
+	_seq.resize(last)
+	buf.resize(last * FLOATS)
+
+
+## Piece indices, oldest first.
+func _by_age() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	if not opt:
+		out.resize(rids.size())
+		for k: int in out.size():
+			out[k] = k
+		return out
+	while _head < _queue.size() and not _pos.has(_queue[_head]):
+		_head += 1
+	if _head > 256 and _head * 2 > _queue.size():
+		_queue = _queue.slice(_head)
+		_head = 0
+	for q: int in range(_head, _queue.size()):
+		var at: int = _pos.get(_queue[q], -1)
+		if at >= 0:
+			out.append(at)
+	return out
 
 
 func free_bodies() -> void:
@@ -74,7 +136,7 @@ func inside(box: AABB) -> int:
 
 ## Drops colliders from the oldest rubble until at most `keep` static bodies remain.
 func trim_static(keep: int) -> void:
-	for k: int in rids.size():
+	for k: int in _by_age():
 		if statics <= keep:
 			return
 		_drop_collider(k)
@@ -85,19 +147,23 @@ func trim_static(keep: int) -> void:
 ## MultiMesh is rewritten when anything changed.
 func update(delta: float) -> void:
 	var over := rids.size() - _fading - Num.i(_cfg["rubble_cap"])
-	var k := 0
-	while over > 0 and k < rids.size():
-		if fade[k] < 0.0:
-			fade[k] = 0.0
-			_fading += 1
-			over -= 1
-			dropped += 1
-			_drop_collider(k)
-		k += 1
+	if over > 0:
+		for k: int in _by_age():
+			if over <= 0:
+				break
+			if fade[k] < 0.0:
+				fade[k] = 0.0
+				_fading += 1
+				over -= 1
+				dropped += 1
+				_drop_collider(k)
 	_fade(delta)
 	if _dirty:
 		_dirty = false
 		var n := rids.size()
+		if opt and n == 0:
+			mm.visible_instance_count = 0
+			return
 		fit(mm, n)
 		var out := buf.duplicate()
 		out.resize(mm.instance_count * FLOATS)

@@ -17,12 +17,15 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_look_keys")
 	await _t("_check_presets")
+	await _t("_check_clarity_knobs")
 	await _t("_check_far_depth")
 	await _t("_check_ground_numbers")
 	await _t("_check_ground_seeded")
 	await _t("_check_ground_kinds")
 	await _t("_check_wet_is_last")
+	await _t("_check_train_detail")
 	await _h("FlatSurfaces", func() -> void: await FlatSurfaces.run(self, check))
+	await _h("NightClip", func() -> void: await NightClip.run(self, check))
 
 
 func _check_look_keys() -> void:
@@ -60,6 +63,43 @@ func _check_presets() -> void:
 	check(camera.attributes == null, "on Potato the camera has no blur")
 	PlayerSettings.graphics = saved
 	camera.free()
+
+
+## 4K clarity (render plan item 3): a viewport takes its FSR sharpness from the preset row and its
+## debanding from the look (looks.json deband). A sub-viewport stands in for the root.
+func _check_clarity_knobs() -> void:
+	Content.set_time("dusk")
+	var table: Dictionary = Content.section("display")["graphics"]
+	var look := Content.look()
+	var saved: Variant = look.get("deband")
+	var view := SubViewport.new()
+	root.add_child(view)
+	var bad: Array[String] = []
+	for name: String in table:
+		var row: Dictionary = table[name]
+		for deband: bool in [false, true]:
+			look["deband"] = deband
+			GraphicsPresets.apply(row, view)
+			if not is_equal_approx(view.fsr_sharpness, Num.f(row["fsr_sharpness"])):
+				bad.append("%s sharpness %.2f" % [name, view.fsr_sharpness])
+			if view.use_debanding != deband:
+				bad.append("%s deband %s" % [name, view.use_debanding])
+	check(
+		bad.is_empty(), "a viewport takes the preset's sharpness and the look's deband: %s" % [bad]
+	)
+	var medium: Dictionary = table["medium"]
+	var soft := medium.duplicate()
+	soft["fsr_sharpness"] = 0.35
+	GraphicsPresets.apply(soft, view)
+	check(is_equal_approx(view.fsr_sharpness, 0.35), "a row's sharpness reaches the viewport")
+	look["deband"] = saved
+	# D-285 (director picked "Both" from the 20 stills): debanding on, Medium and Low sharpen to 0.1.
+	var on: bool = look.get("deband", false)
+	check(on, "the look ships with debanding on")
+	var low: Dictionary = table["low"]
+	var shipped: Array[float] = [Num.f(medium["fsr_sharpness"]), Num.f(low["fsr_sharpness"])]
+	check(shipped == [0.1, 0.1], "Medium and Low ship FSR sharpness 0.1: %s" % [shipped])
+	view.queue_free()
 
 
 func _check_far_depth() -> void:
@@ -209,10 +249,34 @@ func _check_wet_is_last() -> void:
 	)
 	check(
 		(
-			code.contains("const float WET_DARKEN = 0.5;")
+			code.contains("const float WET_DARKEN = 0.62;")
 			and code.contains("const float WET_ROUGHNESS = 0.18;")
 			and code.contains("const float WET_SPECULAR = 0.9;")
 			and code.contains("render_mode diffuse_burley;")
 		),
 		"wet keeps its darken, roughness and specular, and the burley diffuse"
 	)
+
+
+## A train car draws in the city's surface family with the detail fixed to the car (debt row 25):
+## the detail shader, reading each cube's cell from its custom data, which the car's MultiMesh
+## carries (without it every cube reads the same block and the car is one flat colour again,
+## though the material scan passes). The per-cube values are not read back here: the headless
+## renderer keeps no MultiMesh instance data (every get_instance_* returns the default).
+func _check_train_detail() -> void:
+	var car := TrainModel.car(true, Num.f(Content.section("rail")["car_length"]))
+	var mm := car.multimesh
+	var mat := mm.mesh.surface_get_material(0) as ShaderMaterial
+	check(
+		mat != null and mat.shader == Look.VOXEL_DETAIL_SHADER,
+		"a train car draws on voxel_detail.gdshader"
+	)
+	check(
+		Look.VOXEL_DETAIL_SHADER.code.contains("INSTANCE_CUSTOM.xyz"),
+		"the detail shader places its grain from each cube's cell (INSTANCE_CUSTOM)"
+	)
+	check(
+		mm.use_custom_data and mm.instance_count > 100,
+		"a train car's %d cubes carry custom data" % mm.instance_count
+	)
+	car.free()

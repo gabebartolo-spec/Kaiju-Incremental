@@ -1,11 +1,11 @@
 ---
 name: kaiju-handoff
-description: Writing and starting from a Kaiju Incremental agent handoff - the file ~/.claude/handoffs/kaiju/ROLE.md outside git that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when a lead's context nears 500k, before the director restarts or clears a session, and at the start of any new session.
+description: Writing and starting from a Kaiju Incremental agent handoff - the file ~/.claude/handoffs/kaiju/ROLE.md outside git that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when a session's context nears its 200k auto-compact, before the director restarts or clears a session, and at the start of any new session.
 ---
 
 # Handoffs
 
-Fresh session at every task boundary for a lead; a lead hands off at about 500k (hard stop 600k).
+Fresh session at every task boundary for a lead; every session auto-compacts at 200k and keeps its handoff and commits current at each milestone (rulebook "Context and handoff").
 Write the handoff first, then start the new session from it.
 A helper (builder, subagent) never stops or hands off for context size: it auto-compacts and keeps its
 handoff and commits current at each milestone. The lead respawns one with the same name from its handoff only if
@@ -21,7 +21,7 @@ never on a branch and never stale on main (director 2026-10-25, after a regen le
 Cap 120 lines, **edited when state changes, never appended as a log and not rewritten from scratch every turn**.
 Write it with Write/Edit; never commit it. Finished or stale roles move to `archive/` in that folder. The
 SessionStart hook lists the live ones, and from any folder (even a "No folder" session) it names the lead's file.
-The skeleton is `agent-handoffs/README.md` in the repo (the only file left there).
+The skeleton is `references/handoff-skeleton.md` beside this file; no handoff or brief lives in the repo.
 
 ## What it says
 

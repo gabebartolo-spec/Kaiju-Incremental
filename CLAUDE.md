@@ -25,13 +25,24 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
 8. **Change method after two failed fixes.**
 
 ## Machine and repo (project detail on the rulebook)
-- Captures and clips render on the local GPU (RTX 4070 SUPER) always, even while he games, in an off-screen no_focus
-  override.cfg window (`blender -b`), up to 2 Godot processes per agent, until he says pause (2026-10-21, comment #41).
+- Captures and clips render on the local GPU (RTX 4070 SUPER) always, even while he games, in a no_focus
+  override.cfg window (it may show on his screen so he can watch, 2026-10-26; it never steals focus; `blender -b`), ONE
+  Godot window at a time PC-wide via `bash C:/kt/gpu_slot.sh <command>` (D-340, hook-enforced; headless runs need no
+  slot), until he says pause (2026-10-21, comment #41).
   CI captures (`tools/capture/ci_capture.sh`, xvfb, software: ~25-35 min a clip) only for gl_compatibility checks or
-  while paused. Generation jobs (ComfyUI, local models) one at a time on the GPU.
+  while paused. GPU jobs share the card by VRAM budget (rulebook: Machine and screen).
+- No speed runs in the day (D-331): while `C:/kt/SPEED_DAY_HOLD` exists the tool-gate hook refuses them; the lead
+  deletes it when the director says he is done for the day, 01:00 at the latest, then runs `C:/kt/NIGHT_QUEUE.txt` one
+  line at a time (D-333). Builders, Cascadeur, suites, captures and builds run freely in the day.
+- Speed runs get the PC to themselves (D-299): while a `C:/kt/BENCH_WINDOW_<owner>` under 20 min old exists, start no
+  Godot (headless included); run it behind `bash C:/kt/wait_window.sh && <command>`. The tool-gate hook refuses
+  otherwise; a run that saw another Godot (`others>0`) is void, and so is one taken while League is in a game.
+  `~/.claude/focus-pause` (his pause) stops every Godot start until it is gone.
+- Resolution (D-339, Kaiju only): 1080p is the baseline. Text, look and the 60 fps Medium bar are judged at 1080p;
+  stills and clips for him are 1080p; 4K is checked at each playtest build. Replaces the rulebook's 4K-first check.
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`; remove
-  when the PR merges; `tools/lint/worktrees.sh` caps the total (D-053). Revert `.import` churn.
+  when the PR merges; `tools/lint/worktrees.sh` flags merged and idle ones (D-053). Revert `.import` churn.
 - Only the lead edits `docs/DECISIONS.md` and `docs/DESIGN.md`; `docs/STATUS.md` is generated (`python tools/status.py`,
   never by hand) after merges. Other PRs state their
   board and log changes in the body.

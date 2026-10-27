@@ -46,6 +46,8 @@ var _front: Array[float] = []  # fracture-front height spreads of every staged b
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--scene="):
 			_scene = arg.substr(8)
@@ -123,7 +125,7 @@ func _setup() -> void:
 		_views.append(view)
 		_spheres.append(STAGE.sphere(_world, Num.f(b["radius"])))
 	var cam := Camera3D.new()
-	cam.fov = 55.0
+	cam.fov = CameraTuning.fov()
 	_world.add_child(cam)
 	match _scene:
 		"swipe":

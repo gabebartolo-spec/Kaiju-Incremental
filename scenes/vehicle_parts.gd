@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Parsed .kvox per path and built voxels per part, shared by every vehicle of a type, so a tank
 ## or helicopter spawning mid-rampage reuses them instead of re-reading and re-filling (35-45 ms a
-## spawn before). Each vehicle still gets its own material, so one fades without the others.
+## spawn before). Each vehicle still gets its own material (the governor's is recoloured alone).
 static var _kvox_cache: Dictionary = {}
 static var _mesh_cache: Dictionary = {}
 
@@ -22,6 +22,12 @@ func _init(base: String, height: float) -> void:
 	_dir = base.get_base_dir()
 	_parts = meta.get("parts", {})
 	voxel = height / maxf(1.0, Num.f(meta.get("height", 2)) - 1.0)
+
+
+## Empties the shared caches (tests that need the first build to run again).
+static func clear_cache() -> void:
+	_kvox_cache.clear()
+	_mesh_cache.clear()
 
 
 ## A part's hinge in the model's space (world units).
@@ -45,14 +51,23 @@ func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
 	if not _mesh_cache.has(key):
 		var vox: VoxelBuilder = _read(part).frames[0]
 		vox.salt = salt
-		_mesh_cache[key] = vox.build({}, voxel, 0.0, origin).multimesh
+		var holder := vox.build({}, voxel, 0.0, origin)  # only its MultiMesh is shared
+		_mesh_cache[key] = holder.multimesh
+		holder.free()  # a node never added to the tree is not freed by anything else
 	var mm: MultiMesh = _mesh_cache[key]
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
-	var mat: ShaderMaterial = (mm.mesh as PrimitiveMesh).material.duplicate()
-	mat.set_shader_parameter("bubble_on", 1.0)  # a vehicle is cut away by the camera bubble
-	mmi.material_override = mat
+	mmi.material_override = (mm.mesh as PrimitiveMesh).material.duplicate()
 	return mmi
+
+
+## A part's voxels as the buffer build() draws (VoxelBuilder.STRIDE floats a voxel), made afresh and
+## not drawn: a model that paints its own copy starts from it, never from a MultiMesh read back (the
+## readback stalls on the GPU, and a headless one reads nothing).
+func packed(part: String, origin: Vector3, salt: int) -> PackedFloat32Array:
+	var vox: VoxelBuilder = _read(part).frames[0]
+	vox.salt = salt
+	return vox.pack({}, voxel, origin)
 
 
 ## A node on `parent` at the part's hinge (less `centre`), holding the part's voxels.

@@ -9,16 +9,15 @@ extends SceneTree
 ## Headless (no movie) prints the measurements; slide also in cm (a world unit = a 3.5 m storey).
 
 const FPS := 60.0
-const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
+const Rig := preload("res://tools/capture/motion_rig.gd")
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const CM_PER_UNIT := 350.0
-## The side clip's kaiju turns side-on to the camera when it stops (s), so the roar is in profile.
-const SIDE_PIVOT := 9.2
+const SIDE_PIVOT := 9.2  # s: the side clip's kaiju turns side-on when it stops (roar in profile)
 
-## Every footfall: time, which foot, where (world), strength (written next to the trace).
-var plants := PackedStringArray()
+var plants := PackedStringArray()  # every footfall: time, foot, world position, strength
 var _species := "reptilian"
 var _stage := "adult"
+var _shot: Rig.Shot
 var _cam := "game"
 var _seconds := 15.0
 var _roar_at := 10.0  # s; capture_clips.gd moves it
@@ -34,15 +33,12 @@ var _label: Label
 var _time := 0.0
 var _tint := false
 var _plumb: Line2D
-## Straight walk (2.0-4.5 s): shoulder-centre lateral offset, tilt and yaw (deg), each min/max.
-var _sh_lo := INF
-var _sh_hi := -INF
-var _sh_tilt := Vector2(INF, -INF)  # min, max (deg)
-var _sh_yaw := Vector2(INF, -INF)
-var _height := 0.0
+var _shoulders := Rig.Shoulders.new()  # straight walk (2.0-4.5 s): the shoulder line
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--species="):
 			_species = arg.substr(10)
@@ -111,11 +107,12 @@ func _run() -> void:
 	var interval := Num.f(stats["stomp_interval"])
 	var colors: Dictionary = def["colors"]
 	var kaiju := KaijuModel.new(_species, colors, _stage)
+	_shot = Rig.Shot.new(_cam, _species, kaiju)
 	var body_scale: float = SCALES.get(_stage, 1.0)
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
 	if _tint:
-		_tint_bones.call_deferred(kaiju)
+		Rig.tint_bones.call_deferred(kaiju)
 	# Footfalls as in the rampage (Rampage._on_footfall): dust, a pale ring, a camera dip.
 	kaiju.foot_planted.connect(
 		func(side: String, strength: float, at: Vector3) -> void:
@@ -137,7 +134,7 @@ func _run() -> void:
 	plants.append("t,foot,x,y,z,strength,camera_dip_units,camera_dip_px_at_1080p")
 	var last_pelvis := Vector3.ZERO
 	var cam := Camera3D.new()
-	cam.fov = 55.0 if _cam == "game" else 40.0
+	cam.fov = CameraTuning.fov() if _cam == "game" else 40.0
 	stage.add_child(cam)
 	root.add_child(stage)
 	var pos := Vector2.ZERO
@@ -181,7 +178,7 @@ func _run() -> void:
 		_dip = move_toward(_dip, 0.0, dt * Rampage.DIP_RECOVER * _dip + dt * 0.05)
 		# Cameras lock to the body as drawn (KaijuModel.focus), from the first frame (PR #54).
 		_focus = kaiju.focus()
-		_place(
+		_shot.place(
 			cam,
 			_focus if _cam in ["game", "side"] else at,
 			Vector3(facing.x, 0, facing.y),
@@ -189,16 +186,16 @@ func _run() -> void:
 		)
 		if _cam == "game":
 			_dip_shown = _dip  # at once, as Rampage drops its camera (PR #54: eased, it was 1 px)
-			cam.position.y -= _dip_shown * (0.75 + 0.4 * body_scale)
-		_trace_feet(kaiju, t, feet)
+			cam.position.y -= _dip_shown * CameraTuning.zoom(body_scale)
+		Rig.trace_feet(kaiju, t, feet)
 		if _pose_trace != "":
 			poses.append(_poser.row(kaiju, t, _event_at(t)))
 		if _cam == "rear":
 			_level_line(kaiju, cam)
 			_plumb_line(kaiju, cam)
 		if t >= 2.0 and t < 4.5:
-			_measure_shoulders(kaiju, Vector3(facing.x, 0, facing.y))
-		var pelvis := _pelvis_of(kaiju)
+			_shoulders.measure(kaiju, Vector3(facing.x, 0, facing.y))
+		var pelvis := Rig.pelvis_of(kaiju)
 		if frames > 0:
 			var fwd := Vector3(facing.x, 0, facing.y)
 			rows.append("%.4f,%.4f,%.4f" % [t, pelvis.y, (pelvis - last_pelvis).dot(fwd) / dt])
@@ -219,15 +216,8 @@ func _run() -> void:
 		var pf := FileAccess.open(_pose_trace, FileAccess.WRITE)
 		pf.store_string(String.chr(10).join(poses))
 		pf.close()
-	if _sh_hi > _sh_lo:
-		var p2p := _sh_hi - _sh_lo
-		var line := "SHOULDERS %s %s straight walk 2.0-4.5 s: lateral drift %.3f (%.2f%% of height %.2f)"
-		line += "; tilt %.2f..%.2f deg (swing %.2f); yaw %.2f..%.2f deg (swing %.2f)"
-		var tilt := _sh_tilt
-		var yaw := _sh_yaw
-		var vals := [_species, _stage, p2p, 100.0 * p2p / maxf(0.001, _height), _height]
-		vals += [tilt.x, tilt.y, tilt.y - tilt.x, yaw.x, yaw.y, yaw.y - yaw.x]
-		print(line % vals)
+	if _shoulders.seen():
+		print(_shoulders.report(_species, _stage))
 	var drift := kaiju.foot_drift()
 	var hip := kaiju.hip_height()
 	print(
@@ -246,37 +236,6 @@ func _run() -> void:
 		)
 	)
 	quit()
-
-
-func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void:
-	var right := fwd.cross(Vector3.UP).normalized()
-	if _cam == "front34":  # ahead and to one side, at head height: the roar's hinge and gape
-		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 8.5, 0)) * body_scale
-		cam.look_at(at + Vector3(0, 7.5, 0) * body_scale)
-		return
-	if _cam == "front34w":  # the same angle, wider and lower: the whole body, arms included
-		cam.position = at + (fwd * 19.0 + right * 12.0 + Vector3(0, 6.0, 0)) * body_scale
-		cam.look_at(at + Vector3(0, 4.8, 0) * body_scale)
-		return
-	if _cam == "rear":  # straight behind at shoulder height: the shoulder line against level
-		cam.position = at + (-fwd * 17.0 + Vector3(0, 7.0, 0)) * body_scale
-		cam.look_at(at + Vector3(0, 6.5, 0) * body_scale)
-		return
-	if _cam == "fixed":
-		cam.position = Vector3(34.0, 3.0 * body_scale + 3.0, -9.0)
-		cam.look_at(Vector3(0, 2.5 * body_scale, -9.0))
-		return
-	if _cam == "game":
-		var zoom := 0.75 + 0.4 * body_scale
-		cam.position = at + CAMERA_OFFSET * zoom
-		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
-		return
-	if _species == "cephalopod":  # a wide body needs a wider shot
-		cam.position = at + Vector3(16.0 * 1.4, 4.0 * 1.4, 0) * body_scale
-		cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
-		return
-	cam.position = at + Vector3(22.0, 5.0, 0) * body_scale  # side: the whole body in frame
-	cam.look_at(at + Vector3(0, 4.8, 0) * body_scale)
 
 
 ## What the script is doing at time t, shown on the clip.
@@ -303,27 +262,6 @@ func _event_at(t: float) -> String:
 	return "REVERSE + WALK"
 
 
-## World position of the pelvis bone (the root of the trunk), or the model origin.
-func _pelvis_of(kaiju: KaijuModel) -> Vector3:
-	for node: Node in kaiju.find_children("spine0", "Node3D", true, false):
-		return (node as Node3D).global_position
-	return kaiju.global_position
-
-
-## Every foot's world position and whether it is planted, each frame (the slide trace).
-func _trace_feet(kaiju: KaijuModel, t: float, into: PackedStringArray) -> void:
-	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
-		var rig := node as KaijuRig
-		if rig.gait is BipedGait:
-			for leg: BipedGait.Leg in (rig.gait as BipedGait).legs:
-				var p := rig.tail_world(leg.names[2])
-				into.append("%.4f,%s,%d,%.4f,%.4f" % [t, leg.names[0], int(leg.planted), p.x, p.z])
-		elif rig.gait is HexapodGait:
-			for leg: HexapodGait.Leg in (rig.gait as HexapodGait).legs:
-				var p := rig.tail_world(leg.names[2])
-				into.append("%.4f,%s,%d,%.4f,%.4f" % [t, leg.id, int(leg.planted), p.x, p.z])
-
-
 ## The shoulder line (red, through the two arm roots) over a level guide (white), with its tilt.
 func _level_line(kaiju: KaijuModel, cam: Camera3D) -> void:
 	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
@@ -344,57 +282,13 @@ func _level_line(kaiju: KaijuModel, cam: Camera3D) -> void:
 
 ## How many pixels a camera dip moves the picture at 1080p for the gameplay camera.
 func _dip_px(dip: float, body_scale: float) -> float:
-	var zoom := 0.75 + 0.4 * body_scale
-	var dist := CAMERA_OFFSET.length() * zoom
-	return dip * zoom / (2.0 * dist * tan(deg_to_rad(55.0) * 0.5)) * 1080.0
-
-
-## --tint: each bone's voxels in one flat colour (arm roots red, forearms yellow, hands magenta,
-## head cyan, chest white), to see which bone carries a stray piece in motion.
-func _tint_bones(kaiju: KaijuModel) -> void:
-	var hues := {
-		"arm_l0": Color.RED,
-		"arm_r0": Color.RED,
-		"arm_l1": Color.YELLOW,
-		"arm_r1": Color.YELLOW,
-		"arm_l2": Color.MAGENTA,
-		"arm_r2": Color.MAGENTA,
-		"head0": Color.CYAN,
-		"spine2": Color.WHITE
-	}
-	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
-		var rig := node as KaijuRig
-		for b: String in rig.bone_names():
-			var mat := StandardMaterial3D.new()
-			mat.albedo_color = hues.get(b, Color(0.25, 0.4, 0.25))
-			for m: Node in rig.bone(b).get_children():
-				if m is GeometryInstance3D:
-					(m as GeometryInstance3D).material_override = mat
-
-
-## The shoulder centre against the line of travel: lateral offset (world units), tilt and yaw.
-func _measure_shoulders(kaiju: KaijuModel, fwd: Vector3) -> void:
-	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
-		var rig := node as KaijuRig
-		if not rig.has_bone("arm_l0") or not rig.has_bone("arm_r0"):
-			return
-		var a := rig.bone("arm_l0").global_position
-		var b := rig.bone("arm_r0").global_position
-		var right := fwd.cross(Vector3.UP).normalized()
-		var side := ((a + b) * 0.5 - kaiju.global_position).dot(right)
-		_sh_lo = minf(_sh_lo, side)
-		_sh_hi = maxf(_sh_hi, side)
-		var flat := Vector3(b.x - a.x, 0, b.z - a.z)
-		var tilt := rad_to_deg(atan2(b.y - a.y, flat.length()))
-		_sh_tilt = Vector2(minf(_sh_tilt.x, tilt), maxf(_sh_tilt.y, tilt))
-		var yaw := rad_to_deg(asin(clampf(flat.normalized().dot(fwd), -1.0, 1.0)))
-		_sh_yaw = Vector2(minf(_sh_yaw.x, yaw), maxf(_sh_yaw.y, yaw))
-		if rig.has_bone("head1"):
-			_height = maxf(_height, rig.bone("head1").global_position.y - kaiju.global_position.y)
+	var zoom := CameraTuning.zoom(body_scale)
+	var dist := CameraTuning.offset().length() * zoom
+	return dip * zoom / (2.0 * dist * tan(deg_to_rad(CameraTuning.fov()) * 0.5)) * 1080.0
 
 
 ## A fixed plumb line straight up from the line of travel (where the spine should stay).
 func _plumb_line(kaiju: KaijuModel, cam: Camera3D) -> void:
 	var foot := kaiju.global_position
-	var top := foot + Vector3.UP * maxf(1.0, _height * 1.1)
+	var top := foot + Vector3.UP * maxf(1.0, _shoulders.height * 1.1)
 	_plumb.points = PackedVector2Array([cam.unproject_position(foot), cam.unproject_position(top)])

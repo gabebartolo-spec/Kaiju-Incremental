@@ -57,6 +57,7 @@ func headline_text() -> String:
 ## Both halves as one line in hazard yellow.
 func _headline(left: String, right: String) -> Control:
 	headline = UiKit.label(left + DOT + right, UiKit.SIZE_HEAD, UiKit.ACCENT)
+	headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return headline
 
 

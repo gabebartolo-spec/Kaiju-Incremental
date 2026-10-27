@@ -28,7 +28,6 @@ const NEAR := 5.0  # a squad nearer than this to the stand spot does not count (
 const VIEW := Rect2(-24.0, -30.0, 48.0, 36.0)
 const CLEAR := 5.0  # an open spot has no building footprint this close to the kaiju
 const MIN_SEEN := 5  # a --typical spot shows at least this many squads
-const CAMERA := Vector3(0, 27, 19)  # Rampage.CAMERA_OFFSET (before its size zoom)
 const SIGHT_STEPS := 24  # points tested along the camera's line of sight to the body
 
 var _out := "user://rooftops"
@@ -42,6 +41,8 @@ var _in_reach: Array[int] = []  # squads with the kaiju in reach, sampled once a
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
@@ -194,7 +195,7 @@ func _stand(sim: RampageSim, typical := false) -> Vector2:
 ## sight from behind and above to the kaiju's middle there: the whole body shows, not a strip.
 func _open(sim: RampageSim, at: Vector2) -> bool:
 	var scale := sim.body_scale()
-	var eye := Vector3(at.x, 0, at.y) + CAMERA * (0.75 + 0.4 * scale)  # Rampage._place_camera
+	var eye := Vector3(at.x, 0, at.y) + CameraTuning.offset() * CameraTuning.zoom(scale)
 	var middle := Vector3(at.x, 3.0 * scale, at.y)
 	for b: RampageSim.Building in sim.buildings:
 		var rect := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)

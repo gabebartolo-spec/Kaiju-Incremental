@@ -1,7 +1,7 @@
 class_name RampageHud
 extends CanvasLayer
 ## The rampage HUD, as little as it can be so the kaiju and the city's fall fill the screen
-## (director 2026-10-21): clock, threat badge (D-259) and city-destroyed strip on top, biomass
+## (director 2026-10-21): clock and the threat bar (D-259, the bar is the threat) on top, biomass
 ## bottom right, the breath, dash and ultimate as three rings bottom left, health as a red edge
 ## vignette, the controls on a card at the first rampage's start only; all inside the TV
 ## title-safe area, no text under 24 px. The news crawl slides up on big moments (RampageNews).
@@ -22,8 +22,6 @@ const BEAT_MIN_FRAMES := 40
 const BEAT_SIZE := 128
 ## The headline starts this far from the top: in the top third, the kaiju stays in view (px).
 const BEAT_TOP := 64
-## The world runs at this speed during the end beat.
-const END_SLOWMO := 0.3
 ## The biomass figure snaps to the true value once this close.
 const ROLL_SNAP := 0.5
 ## The first-run card ignores keys for this long, so the key that started the run is not "any key".
@@ -43,8 +41,7 @@ var ultimate_ring: HudRing
 var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
-var city_meter: ProgressBar
-## The clock, threat badge and city meter (hidden while the end beat's headline is up).
+## The clock and threat bar (hidden while the end beat's headline is up).
 var clock: HudClock
 ## The news crawl's big moments (RampageNews).
 var news: RampageNews
@@ -89,7 +86,6 @@ func _ready() -> void:
 	news = RampageNews.new(sim)
 	_widgets.add_child(news)
 	clock = HudClock.new(sim, _hud)
-	city_meter = clock.city_meter
 	safe.add_child(clock)
 	safe.add_child(_lifted(_build_biomass(), true))
 	safe.add_child(_lifted(_build_rings(), false))
@@ -277,15 +273,16 @@ func run_over(reason: String) -> void:
 	get_node("/root/EventBus").emit_signal("run_ended", result())
 
 
-## The pause menu's End Rampage: the sim ends the run now (earnings kept), then the end beat.
+## The pause menu's End Rampage: he dies (D-265): his overload plays out (DeathOverload), and the
+## sim's run_over brings the end beat once the shards are down. Earnings are kept.
 func _end_now() -> void:
 	sim.end("ended")
-	run_over("ended")
 
 
-## The end beat: the reason the rampage ended slams onto the screen while the city keeps
-## falling in slow motion. After BEAT_FRAMES (or a confirm once BEAT_MIN_FRAMES have shown, so
-## a held attack button cannot skip it by accident) it reports `beat_done`.
+## The end beat: the reason the rampage ended slams onto the screen while the city keeps falling
+## at normal speed (D-259: slow motion only when a landmark falls, LandmarkSlowmo; time stays 1.0
+## here). After BEAT_FRAMES (or a confirm once BEAT_MIN_FRAMES have shown, so a held attack button
+## cannot skip it by accident) it reports `beat_done`.
 func show_end_beat(reason: String) -> void:
 	if _beat_frame >= 0:
 		return
@@ -293,7 +290,6 @@ func show_end_beat(reason: String) -> void:
 	clock.visible = false
 	news.muted = true
 	news.visible = false
-	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.55, 0.25, 0.45 * PlayerSettings.flash_scale())  # Reduce flashing
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -339,7 +335,7 @@ func beat_running() -> bool:
 
 ## Opens the pause menu and stops the world (the menu runs while paused).
 func pause() -> void:
-	if sim.over or get_tree().paused:
+	if sim.over or sim.death.active() or get_tree().paused:
 		return
 	var menu := PauseMenu.new(sim, str(species["id"]), photo)
 	menu.end_pressed.connect(_end_now)
@@ -358,7 +354,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		finish_beat()
 
 
-## Leaving mid-beat or mid-pause (quit to title) must not leave the world slowed or paused.
+## Leaving mid-pause (quit to title) must not leave the world slowed or paused.
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
 	get_tree().paused = false
@@ -368,7 +364,6 @@ func _exit_tree() -> void:
 func finish_beat() -> void:
 	if not beat_running():
 		return
-	Engine.time_scale = 1.0
 	_beat_done = true
 	visible = false  # the report takes over the screen; the city stays behind it
 	beat_done.emit(result())

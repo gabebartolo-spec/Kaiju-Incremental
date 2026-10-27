@@ -31,6 +31,8 @@ var _kaiju_at := Vector3.ZERO
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_out = str(Kit.args({"out": _out})["out"])
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
@@ -75,7 +77,7 @@ func _stage(tier: int) -> void:
 		# the towers south of the plaza (faded in a rampage) do not hide it.
 		var centre := Vector3(b.x, b.height * 0.3, b.z)
 		var reach := maxf(maxf(b.w, b.d), b.height) * FRAME
-		cam.position = centre + Kit.GAME_CAMERA.normalized() * reach
+		cam.position = centre + CameraTuning.offset().normalized() * reach
 		cam.look_at(centre)
 		await _frames(SETTLE)
 		var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS

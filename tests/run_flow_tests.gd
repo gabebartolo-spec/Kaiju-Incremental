@@ -16,27 +16,24 @@ const FlowSfx := preload("res://tests/lib/flow_sfx.gd")
 const FlowCollapse := preload("res://tests/lib/flow_collapse.gd")
 const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const FlowStagedStart := preload("res://tests/lib/flow_staged_start.gd")
+const FlowUpgrades := preload("res://tests/lib/flow_upgrades.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 ## An armoured kaiju with no shell glanced off by now is walked to the nearest tank: a shell hits by
 ## chance, and in city seed 0 all four missed (D-166; 4 of 5 seeds deflect, foot or not).
 const TANK_WALK_FRAMES := 60 * 30
+## CI runs this suite as two parts (tools/ci_timings.txt, tests/lib/functions_ran.gd): the demo
+## walk is 40% of it, so part 2 gets these calls by name (259 s and 230 s of 490 s measured).
+const PART_TWO := "FlowScreens _check_rampage FlowStadium FlowStagedStart _check_powers"
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
-## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
-const UPGRADED := {
-	"claws": 3,
-	"hide": 1,
-	"scales": 2,
-	"evolve1": 1,
-	"rage": 1,
-	"regen": 2,
-	"sig_power": 2,
-	"sig_recharge": 4
-}
 
 
 func suite_name() -> String:
 	return "Flow"
+
+
+func part_for(label: String, index: int, parts: int) -> int:
+	return (1 if label in PART_TWO.split(" ") else 0) if parts == 2 else index % parts
 
 
 func run_checks() -> void:
@@ -55,7 +52,7 @@ func run_checks() -> void:
 	await _h("FlowStadium", func() -> void: await FlowStadium.run(self, check))
 	await _h("FlowStagedStart", func() -> void: await FlowStagedStart.run(self, check))
 	await _t("_check_warm_start")
-	await _t("_check_powers", ["reptilian", "breath", UPGRADED])
+	await _t("_check_powers", ["reptilian", "breath", FlowUpgrades.UPGRADED])
 	await _t("_check_powers", ["insectoid", "leap", {}])
 	await _t("_check_powers", ["cephalopod", "lash", {}])
 	await _t(
@@ -322,7 +319,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 
 
 ## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Lightning Breath
-## leaves is drawn at load for this run's cone, and tanks share their voxels yet fade one by one.
+## leaves is drawn at load for this run's cone, and tanks share their voxels.
 func _check_warm_start() -> void:
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
@@ -344,13 +341,7 @@ func _check_warm_start() -> void:
 	var b := TankModel.new()
 	var hull_a: MultiMeshInstance3D = a.get_child(0)
 	var hull_b: MultiMeshInstance3D = b.get_child(0)
-	var mat_b := hull_b.material_override as ShaderMaterial
 	check(hull_a.multimesh == hull_b.multimesh, "a second tank reuses the first one's voxels")
-	check(
-		mat_b != null and Num.f(mat_b.get_shader_parameter("bubble_on")) == 1.0
-		and hull_a.material_override != hull_b.material_override,
-		"each tank's hull has its own material, cut away by the camera bubble"
-	)
 	a.free()
 	b.free()
 

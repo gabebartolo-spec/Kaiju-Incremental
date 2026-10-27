@@ -32,9 +32,11 @@ var _city: CityView
 var _kaiju: Node3D
 var _tint: Color
 var _helis: Dictionary = {}
+var _vip: VipView  # the leader's escape helicopter (D-149)
 var _wrecks: HeliWreck
 var _young: Dictionary = {}
-var _beam: MeshInstance3D
+var _thunder: ThunderBeam
+var _beam_sound: SfxBeam
 var _dust_t := 0.0
 var _climbing := false
 var _glow_mats: Dictionary = {}
@@ -52,6 +54,13 @@ func _ready() -> void:
 	rooftops = RooftopView.new(sim, _city, rampage.sfx, Seeds.make("rooftop_fx"))
 	rooftops.body = _kaiju
 	add_child(rooftops)
+	_vip = VipView.new(sim, _city, rampage.sfx)
+	add_child(_vip)
+	_thunder = ThunderBeam.new(sim, _kaiju, _tint, rampage.run_index)
+	add_child(_thunder)
+	_beam_sound = SfxBeam.new(rampage.sfx)
+	add_child(_beam_sound)
+	_thunder.wire(rampage, _city.fx)
 
 
 func _hook(method: String, args: Array) -> void:
@@ -100,6 +109,7 @@ func _streak(a: Vector3, b: Vector3, color: Color, seconds: float) -> void:
 ## Returns true when the event was a power's.
 func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	roar.on_event(event, sim.time_left, self, _kaiju)
+	_vip.on_event(event)  # the leader's helicopter and its headlines (vip_*, its wreck)
 	var bs := sim.body_scale()
 	match str(event["type"]):
 		"tail_sweep":
@@ -112,15 +122,14 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
 		"swipe":
 			_swiped(event, kaiju_at)
-		"beam_start":
+		"beam_start":  # the Thunder Beam: the breath's bolt, held
 			_hook("jaw_open", [true])
-			_beam = _box(Vector3.ONE, _tint.lightened(0.5))
-			add_child(_beam)
+			_thunder.start(Num.f(event["seconds"]), kaiju_at)
+			_beam_sound.start()
 		"beam_end":
 			_hook("jaw_open", [false])
-			if _beam != null:
-				_beam.queue_free()
-				_beam = null
+			_thunder.stop()
+			_beam_sound.stop()
 		"coated", "fire_burning":
 			_lit(event)
 		"glide_start":
@@ -157,9 +166,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"ink":
 			_city.ring(kaiju_at, Num.f(event["reach"]), INK, 0.8)
 		"heli_spawned":
-			var heli := HelicopterModel.new()
-			add_child(heli)
-			_helis[Num.i(event["heli"])] = heli
+			_helis[Num.i(event["heli"])] = HelicopterModel.added_to(self)
 		"heli_fired":
 			_heli_fired(Num.i(event["heli"]), kaiju_at)
 		"heli_destroyed", "heli_crashed":
@@ -283,13 +290,15 @@ func _heli_fired(id: int, kaiju_at: Vector3) -> void:
 	var muzzle := heli.fire()
 	_streak(muzzle, target, TRACER, 0.12)
 	_city.flash(muzzle, TRACER, 3.0, 0.1)
-	_city.fx.sparks(target)
+	HideHit.land(_city.fx, _kaiju, muzzle, target)
 	if sfx != null:
 		sfx.play_at("heli_gun", muzzle)
 
 
 ## A helicopter shot down, or its wreck landing: HeliWreck draws how it goes (the sim's fate).
 func _heli_down(event: Dictionary) -> void:
+	if Num.i(event["heli"]) == VipHeli.ID:
+		return  # the leader's wreck is VipView's
 	if str(event["type"]) == "heli_crashed":
 		_wreck().crashed(event)
 		return
@@ -312,6 +321,8 @@ func _wreck() -> HeliWreck:
 func helis() -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	for node: Node3D in _helis.values():
+		out.append(node)
+	for node: Node3D in _vip.nodes():
 		out.append(node)
 	return out
 
@@ -352,13 +363,7 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 			var gone: Node3D = _young[id]
 			gone.queue_free()
 			_young.erase(id)
-	if _beam != null:
-		var length := Num.f(sim.powers_cfg["beam_range"]) * bs
-		var mouth := kaiju_at + Vector3(0, 5.0 * bs, 0) + _w(sim.facing) * bs
-		var end := kaiju_at + _w(sim.facing) * length + Vector3(0, 0.8, 0)
-		_beam.scale = Vector3(1.4 * bs, 1.4 * bs, mouth.distance_to(end))
-		_beam.look_at_from_position((mouth + end) * 0.5, end, Vector3.UP)
-		_city.fx.sparks(end)
+	_thunder.update(kaiju_at)
 	var climbing := sim.stand_y > 0.5
 	if climbing != _climbing:
 		_climbing = climbing

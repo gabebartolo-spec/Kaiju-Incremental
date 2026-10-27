@@ -54,7 +54,6 @@ const DISPLAY_FONT_PATH := "res://assets/fonts/kaiju_claw.ttf"
 const DISPLAY_MIN_SIZE := SIZE_HEAD
 
 static var _display_font: Font
-static var _arrow: ImageTexture
 static var _grabbers: Dictionary = {}
 
 ## The display font for headings at or above DISPLAY_MIN_SIZE, else null (Kaiju Block, the
@@ -225,65 +224,11 @@ static func header(text: String, size: int = SIZE_TITLE) -> PanelContainer:
 
 ## A button with hazard tape down both edges. Focus (and hover) lights a dark button up in
 ## hazard yellow; focus adds a dark ring inside its edge, so the pad always shows where you are.
+## UiButton builds it.
 static func button(
 	text: String, size: int = SIZE_BODY, fill: Color = ACCENT, taped := true
 ) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.add_theme_font_size_override("font_size", size)
-	_apply_font(b, size)
-	var lit := ACCENT if fill.get_luminance() < 0.3 else fill
-	var taped_band := HazardBox.Band.SIDES if taped else HazardBox.Band.NONE
-	var normal := hazard(fill, fill.lightened(0.15), 2.0, taped_band)
-	var hover := hazard(lit, lit, 2.0, taped_band)
-	var focus := hazard(lit, lit, 2.0, taped_band)
-	focus.ring = true
-	focus.ring_color = ink(lit)
-	var pressed := hazard(lit.darkened(0.25), lit, 2.0, taped_band)
-	pressed.ring = true
-	pressed.ring_color = ink(lit.darkened(0.25))
-	var off := hazard(PANEL, LOCKED, 2.0, taped_band)
-	off.dashed = true
-	off.tape_on = LOCKED
-	focus.chevron = taped
-	hover.chevron = taped
-	hover.ring_color = ink(lit)
-	# Worn industrial plates (director #97): every button of every menu shares the look.
-	for plate: HazardBox in [normal, hover, focus, pressed, off]:
-		plate.plated = true
-	pressed.press = 1.0
-	b.material = HazardBox.text_material()
-	# Every state keeps room inside the right tape for the focus pointer, so focus never shifts the
-	# text; the left matches it, so the label sits in the middle.
-	var room := BUTTON_BAND + HazardBox.CHEVRON_GAP + HazardBox.CHEVRON_WIDTH + 6.0
-	if not taped:
-		room = 10.0
-	# The plate's face stands PLATE_SHADOW short of its rect on the right and bottom: that much more
-	# room there centres the label on the face (director 2026-10-25: "centre the text").
-	for state: HazardBox in [normal, hover, focus, pressed, off]:
-		state.content_margin_left = room
-		state.content_margin_right = room + HazardBox.PLATE_SHADOW.x
-		state.content_margin_bottom = state.content_margin_top + HazardBox.PLATE_SHADOW.y
-	b.add_theme_stylebox_override("normal", normal)
-	b.add_theme_stylebox_override("hover", hover)
-	b.add_theme_stylebox_override("focus", focus)
-	b.add_theme_stylebox_override("pressed", pressed)
-	b.add_theme_stylebox_override("disabled", off)
-	b.add_theme_color_override("font_color", ink(fill))
-	b.add_theme_color_override("font_hover_color", ink(lit))
-	b.add_theme_color_override("font_focus_color", ink(lit))
-	b.add_theme_color_override("font_hover_pressed_color", ink(lit))
-	b.add_theme_color_override("font_pressed_color", ink(lit.darkened(0.25)))
-	b.add_theme_color_override("font_disabled_color", LOCKED.lightened(0.3))
-	b.pressed.connect(func() -> void: Sfx.ui("ui_click"))
-	# The mouse and the keyboard share one highlight: hovering moves the focus, so two buttons are
-	# never lit at once (director 2026-10-22: CONTINUE focused and SETTINGS hovered, both yellow).
-	b.mouse_entered.connect(
-		func() -> void:
-			if not b.disabled:
-				b.grab_focus()
-	)
-	return b
+	return UiButton.build(text, size, fill, taped)
 
 
 ## A meter: square, white-edged on black. `taped` fills it with hazard tape in `fill`.
@@ -380,16 +325,4 @@ static func rich(size: int = SIZE_BODY, color: Color = TEXT) -> RichTextLabel:
 ## A right arrow, drawn here because neither the body font nor Kaiju Claw has U+2192 and the
 ## web build has no system font to fall back on. White; tint it with add_image's color.
 static func arrow() -> Texture2D:
-	if _arrow == null:
-		var w := 30
-		var half := 10  # half the height; the head is a right triangle this deep
-		var img := Image.create(w, half * 2, false, Image.FORMAT_RGBA8)
-		for y: int in half * 2:
-			var off := absi(y - half)
-			for x: int in w:
-				var shaft := x < w - half and off <= 2
-				var head := x >= w - half - 2 and x - (w - half - 2) <= half - off
-				if shaft or head:
-					img.set_pixel(x, y, Color.WHITE)
-		_arrow = ImageTexture.create_from_image(img)
-	return _arrow
+	return UiMarks.arrow()

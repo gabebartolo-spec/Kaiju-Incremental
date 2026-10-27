@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Exports the Windows build on this PC and proves the pack holds the real assets, so a
 # branch can be checked before it reaches main (build.yml runs on pushes to main only):
+#   0. the licence register covers every assets/ file; with --release (a build for players, e.g.
+#      itch.io) it also fails while any DEV ONLY file (Cascadeur trial clips, D-301) is in the tree;
 #   1. git lfs pull (the display fonts are LFS);
 #   2. import the project headless (a script error fails the run);
 #   3. export the "Windows Desktop" preset to out/windows/KaijuEvolution.exe (pck embedded;
@@ -12,11 +14,22 @@
 # Windows release templates are copied in from the real install
 # (%APPDATA%/Godot/export_templates/<version>, or TEMPLATES=<dir>).
 #
-#   GODOT=/path/to/godot_console.exe tools/export_windows.sh
+#   GODOT=/path/to/godot_console.exe tools/export_windows.sh             # development build
+#   GODOT=/path/to/godot_console.exe tools/export_windows.sh --release   # a build players get
 #
 # Exits nonzero if any step fails.
 set -euo pipefail
 cd "$(dirname "$0")/.." || exit 1
+
+release=()
+for arg in "$@"; do
+  case "$arg" in
+    --release) release=(--release) ;;
+    *) echo "FAIL: unknown argument $arg (only --release)" >&2; exit 2 ;;
+  esac
+done
+echo "== licence register${release[*]:+ (release: no DEV ONLY files)}"
+python tools/lint/licence_register.py "${release[@]}" || { echo "FAIL: licence register" >&2; exit 1; }
 
 GODOT="${GODOT:-godot}"
 EXE="out/windows/KaijuEvolution.exe"

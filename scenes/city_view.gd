@@ -19,10 +19,14 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
+## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the camera bubble
+## takes them beside the sim's own points (R 19.4: a tower over the drawn head or chest).
+var drawn_sight := PackedVector3Array()
 ## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
 var blast_break: BlastBreak
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
+var _bubble: CameraBubble
 var _falling: Dictionary = {}
 var _ruins: RuinYard
 var _topple: ToppleFx
@@ -54,6 +58,7 @@ func _ready() -> void:
 	_stream = BuildingStream.new(sim, colors)
 	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
 	add_child(_stream)
+	_bubble = CameraBubble.new(sim.buildings, _stream.built)
 	fx = Fx.new()
 	add_child(fx)
 	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
@@ -126,12 +131,17 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+		# Only a wall at the camera, on the line to the kaiju, is cut away (D-283, D-326).
+		var eye := camera.global_position
+		var focus := feet + Vector3.UP * sim.reach_height() * CameraBubble.HEIGHTS[1]
+		_bubble.update(eye, focus, CameraBubble.sight_of(sim, eye) + drawn_sight, delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
 
 
-## The sections falling now (the capture tools read them).
+## The sections falling now (the capture tools and tests read them). They are never faded or
+## cut (D-326).
 func falling_pieces() -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	for f: Dictionary in _falling.values():
@@ -153,7 +163,7 @@ func _build_ground() -> void:
 	add_child(streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
-		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
+		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
 
 
 func _base_color(b: RampageSim.Building) -> Color:

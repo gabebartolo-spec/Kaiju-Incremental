@@ -12,6 +12,7 @@ const FlowSave := preload("res://tests/lib/flow_save.gd")
 const FlowStats := preload("res://tests/lib/flow_stats.gd")
 const FlowFps := preload("res://tests/lib/flow_fps.gd")
 const FlowSettingsRows := preload("res://tests/lib/flow_settings_rows.gd")
+const DeathWait := preload("res://tests/lib/death_wait.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -60,7 +61,7 @@ func _screen(main: Node) -> Node:
 
 ## No save: the title offers New Kaiju (no Continue); a click goes to Kaiju Creation, where the
 ## croc genome and the injection start a rampage; Esc pauses it, End Rampage ends it, the end
-## beat plays in slow motion and gives way to the results over the city; EVOLVE opens the tree;
+## beat plays at normal speed and gives way to the results over the city; EVOLVE opens the tree;
 ## the run is on disk.
 func _check_new_game() -> void:
 	var main := await _main()
@@ -107,13 +108,14 @@ func _check_new_game() -> void:
 	check.call(not rampage.sim.over, "End Rampage asks first (Are you sure?) and the run goes on")
 	await GuiInput.click(t, GuiInput.button(menu, "YES"))
 	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	await DeathWait.end_rampage_dies(t, check, rampage, hud)
 	check.call(
 		rampage.sim.over and rampage.sim.end_reason == "ended" and not t.paused,
 		"End Rampage ends the run (reason %s)" % rampage.sim.end_reason
 	)
 	check.call(
-		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale < 1.0,
-		"the end beat slams its headline on in slow motion (%s)" % Engine.time_scale
+		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale == 1.0,
+		"the end beat's headline lands at normal speed, no slow motion (%s)" % Engine.time_scale
 	)
 	await GuiInput.key(t, KEY_ENTER)
 	check.call(hud.beat_running(), "a confirm in the first frames does not skip the end beat")
@@ -122,8 +124,7 @@ func _check_new_game() -> void:
 	await _frames(2)
 	var results := GuiInput.find_script(rampage, ResultsScreen) as ResultsScreen
 	check.call(
-		results != null and Engine.time_scale == 1.0,
-		"after the beat the results show over the city at normal speed"
+		results != null and Engine.time_scale == 1.0, "results at normal speed after the beat"
 	)
 	check.call(
 		not (GuiInput.find_script(rampage, RampageHud) as RampageHud).visible,

@@ -12,7 +12,7 @@ extends SceneTree
 ##     tools/capture/capture_carve_view.gd -- --out=<dir> [--bench]
 
 const SPECIES := "reptilian"
-const GAME_CAMERA := Vector3(0, 27, 19)  # Rampage.CAMERA_OFFSET
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const LEVELS := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}
 const STAGE := 2
 const SETTLE_FRAMES := 8
@@ -31,6 +31,8 @@ var _cam: Camera3D
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
@@ -42,6 +44,10 @@ func _initialize() -> void:
 			_show_kaiju = true
 		elif arg.begins_with("--turn="):
 			_turn = arg.substr(7).to_float()
+		elif arg.begins_with("--remesh_high_priority="):
+			# Render plan item 9 A/B: tuning render_opt.remesh_high_priority for this run.
+			var on := arg.substr(23) == "true"
+			Content.section("render_opt")["remesh_high_priority"] = on
 	_run.call_deferred()
 
 
@@ -63,7 +69,7 @@ func _run() -> void:
 	kaiju.scale = Vector3.ONE * scale
 	stage.add_child(kaiju)
 	_cam = Camera3D.new()
-	_cam.fov = 55.0
+	_cam.fov = CameraTuning.fov()
 	stage.add_child(_cam)
 	root.add_child(stage)
 	_cam.current = true
@@ -81,8 +87,7 @@ func _run() -> void:
 	kaiju.rotation.y = PI * _turn
 	kaiju.animate(0.0, 0.0)
 	kaiju.visible = _show_kaiju  # off by default: at this scale its body covers the tower
-	_cam.position = at + GAME_CAMERA * (0.75 + 0.4 * scale)
-	_cam.look_at(at + Vector3(0, 3.5 * scale, 0))
+	Kit.place_game_camera(_cam, kaiju, scale)
 	var stream: BuildingStream = _city._stream
 	var view := stream.view(n)
 	# One load state for a and b: let the stream finish, then freeze the city (traffic, people)
