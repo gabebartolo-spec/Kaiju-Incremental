@@ -5,11 +5,11 @@ extends RefCounted
 ## (RES cells per sim unit, local to the footprint) to its key, in the order the parts are laid.
 ## Facades have depth: windows sit one cell back in their reveals behind proud sills and
 ## lintels; piers, spandrels, mullions and transoms frame them. Four archetypes: office (ribbon
-## windows over spandrel bands, AC plant), brick (punched windows, balconies, wooden water
-## tower), glass (flush curtain wall on a structural frame, mast with beacon), stone (pilasters,
-## cornices and string courses, stepped roof). Ground floors are shopfronts under a sign band
-## and an awning; some shops hang a vertical neon sign off a street face. Hollow shell plus a
-## slab per floor.
+## windows over spandrel bands, AC plant), brick (punched windows, balconies, a solar water
+## heater or a wooden water tower: RoofTank), glass (flush curtain wall on a structural frame,
+## mast with beacon), stone (pilasters, cornices and string courses, stepped roof). Ground floors
+## are shopfronts under a sign band and an awning; some shops hang a vertical neon sign off a
+## street face. Hollow shell plus a slab per floor.
 ## Keys are materials (data/materials.json) except the lit windows the view asks for: with
 ## lit_chance 0 (the sim) no "lit" or "shop_lit" key is laid. Layout rolls hash the cell with the
 ## building's position: no RNG stream, no clock. The bay patterns are drawn for an 8-cell bay.
@@ -20,18 +20,6 @@ const GLASS := 2
 const STONE := 3
 const NEON_COUNT := 4
 const SIGN_CHANCE := 0.3
-## The wooden water tower on a BRICK roof, in cells: steel legs, a platform, a barrel of straight
-## staves (squared radius 27: 11 cells across) with hoops at these layers above its foot, a cone
-## roof of TOWER_ROOF layers from its eave radius to a point. Taller than wide, so it reads as a
-## tank and not a tree crown from the far city.
-const TOWER_LEGS := 6
-const TOWER_PLATFORM_R2 := 38
-const TOWER_BARREL := 12
-const TOWER_BARREL_R2 := 27
-const TOWER_HOOPS: Array[int] = [1, 5, 9]
-const TOWER_ROOF := 7
-const TOWER_EAVE_R := 5.6
-const TOWER_REACH := 6
 ## Sides, as the outward step in cells: -x, +x, -z, +z.
 const SIDES: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
 
@@ -82,7 +70,12 @@ func _box(a: Vector3i, c: Vector3i, key: String) -> void:
 
 
 func _roll(cell: Vector3i, mod: int) -> int:
-	return absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(b.x * 13.0 + b.z)))) % mod
+	return roll_for(b, cell, mod)
+
+
+## The roll for building `of` at `cell`: a hash of the cell and the building's position.
+static func roll_for(of: RampageSim.Building, cell: Vector3i, mod: int) -> int:
+	return absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(of.x * 13.0 + of.z)))) % mod
 
 
 ## The cell `layer` cells in from the face (0 = the wall plane, -1 proud, 1 recessed) at
@@ -240,7 +233,7 @@ func _roof() -> void:
 		OFFICE:
 			_ac_units(top)
 		BRICK:
-			_water_tower(top)
+			RoofTank.new(cells, _w, _d).lay(b, top)
 		GLASS:
 			_mast(top)
 		_:  # stepped stone roof
@@ -272,39 +265,6 @@ func _ac_units(top: int) -> void:
 		_box(at, at + Vector3i(4, 3, 3), "gear")
 		_box(at + Vector3i(1, 4, 1), at + Vector3i(3, 4, 2), "vent")
 		_box(at + Vector3i(5, 1, 1), at + Vector3i(8, 1, 1), "pipe")
-
-
-## A wooden water tower (director 2026-10-27, D-348; the old brown ball on legs read as a tree
-## crown from the far city): a barrel of straight staves on four steel legs and a platform, three
-## iron hoops round it, a cone roof overhanging it to a point. Round in plan, on the spot the
-## ball stood (one a roof); cells past the footprint are not laid.
-func _water_tower(top: int) -> void:
-	var at := Vector3i(roundi(_w * 0.65), top, roundi(_d * 0.4))
-	for lz: int in [-4, 4]:
-		for lx: int in [-4, 4]:
-			for y: int in TOWER_LEGS:
-				_disc(at + Vector3i(lx, y, lz), "gear", 0)
-	_disc(at + Vector3i(0, TOWER_LEGS, 0), "gear", TOWER_PLATFORM_R2)
-	var base := at + Vector3i(0, TOWER_LEGS + 1, 0)
-	for y: int in TOWER_BARREL:
-		_disc(base + Vector3i(0, y, 0), "tank", TOWER_BARREL_R2)
-	for y: int in TOWER_HOOPS:  # proud of the staves, joined to them edge to edge
-		_disc(base + Vector3i(0, y, 0), "vent", TOWER_PLATFORM_R2, TOWER_BARREL_R2)
-	for k: int in TOWER_ROOF:  # the eave first, then ever narrower to the tip
-		var r := TOWER_EAVE_R * (1.0 - k / float(TOWER_ROOF))
-		_disc(base + Vector3i(0, TOWER_BARREL + k, 0), "tank", floori(r * r))
-
-
-## The cells of layer `at.y` round `at` (x, z) whose squared distance from it is over `inner2` and
-## at most `outer2`, kept inside the footprint (`outer2` 0 is the one cell under `at`).
-func _disc(at: Vector3i, key: String, outer2: int, inner2 := -1) -> void:
-	for dx: int in range(-TOWER_REACH, TOWER_REACH + 1):
-		for dz: int in range(-TOWER_REACH, TOWER_REACH + 1):
-			var d2 := dx * dx + dz * dz
-			var x := at.x + dx
-			var z := at.z + dz
-			if d2 > inner2 and d2 <= outer2 and x >= 0 and x < _w and z >= 0 and z < _d:
-				cells[Vector3i(x, at.y, z)] = key
 
 
 ## A mast with a red beacon on the tall towers.
