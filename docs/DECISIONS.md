@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-338 · Director · Momentum differs by titan: croc quickest, Komodo lumbering but hardest, serpent agile
+His words (19:5x): "i want the turning bleed to be light for the croc, he should be the most mobile and gather momentum
+the quickest / our komodo is lumbering / our serpent will be agile but not particularly fast or slow". Asked: the Komodo
+"Slow start, hardest hit" (slowest to build, turning bleeds him most, but rolling he crashes and slams hardest) and his
+run "Always on, like the croc" (replaces D-245's top-tier run unlock). The serpent, in his words: "snake will crash
+through buildings around his height, but being that he is the shortest kaiju, that wont be many buildings. Snake can
+however clumb the buildings bigger than him and constrict-crush them"; asked, a bigger building at speed "Flows into a
+climb" (no slam) and constrict "Keep it at adulthood" (D-206 stands). Serpent work still waits on D-246.
+
 ## 2026-10-27 · D-337 · Director · The croc's run is momentum: he crashes through small buildings, slams into big ones
 His words (19:4x), on hearing the croc has no run yet: "running wont have a sprint button, it should be momentum based,
 at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones". Asked:
@@ -386,15 +395,3 @@ Asked a batch ("ask me a lot of questions"). Tripo buildings: reviewed as "One b
 ## 2026-10-26 · D-255 · Director · Districts grow by stage; street life; human clips may be premade; agents swing and jet
 
 Districts (comment #78): red-light district, Chinatown, docklands, a bar and restaurant street, a business district, neon commercial streets and a giant billboard intersection; picked "Grow by stage" (baby: bar strip + neon street; teen adds Chinatown, red-light, docklands; adult adds business district + billboard intersection). Street life (#77): traffic lights, power lines, manholes, bins, graffiti, street lights, phone booths, food trucks, plus "Add a few more" (hydrants, bus stops, benches, newsstands, bikes). Taskforce (#76): "spiderman" grapple swings then jetpacks, "Mix by situation"; "if the premade clips are better, then we use them" (humans only; kaiju stay Cascadeur); agents get "New voxel poses".
-
-## 2026-10-26 · D-254 · Director · Play area 1.5x wider; landmarks and explosive sites spread; the landmark bridge
-
-"id like to expand the play area for all 3 stages": "1.5x wider" (half-widths 75/120/225 m). "space out our landmarks (of which one is a bridge, so we can also put an expanded water area there) and explosive sites across the new expanded area"; the bridge is the D-133 suspension bridge tower Tripo model, "like a sydney harbor bay bridge/golden gate bridge style".
-
-## 2026-10-26 · D-253 · Director · Carving is universal for every building and structure
-
-"carve is a universal feature for all buildings" (standing rule). Every building and structure, railway included, breaks only through the one voxel carve and collapse path; a CI test fails any structure type that removes geometry another way (landmarks and river bridges are named known gaps until converted). PR #209 rail: "FIX. he doesnt carve it at all? he hits it once and it disappears".
-
-## 2026-10-26 · D-252 · Director · Croc focus to the Itch demo; dragon paused; subagent team; model per task; merge everything
-
-"can we pause all dragon work for now though", "I want to focus on getting croc shipped" (finish line: Itch demo, M4); croc stomp first ("Croc standing stomp", then "Croc stomp next"). Team: subagents, 3 builders + 1 reader; "i need you to determine whether a task demands opus or sonnet". Branches: "I want the branches fully cleaned up and stale ones removed / i want all mergable good work merged"; "why isnt it merged? ive been asking you to merge everything" (PR cap 8 until the backlog lands); branch force-delete unblocked in settings ("Remove the block"). Skeletons: "optimised for natural, smooth animation", "only interested in our reptilian skeletons".
