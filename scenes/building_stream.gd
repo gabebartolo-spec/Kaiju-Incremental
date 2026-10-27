@@ -13,7 +13,7 @@ extends Node3D
 ## meshed whenever its wedge, the margin band or city.stream_view.landmark_keep_m reaches it.
 
 ## Workers meshing at once (each holds a raw voxel set until baked).
-const IN_FLIGHT := 4
+const IN_FLIGHT := 8
 ## A replan when the kaiju or the camera moved this far, at most every PLAN_EVERY s.
 const PLAN_MOVE := 4.0
 const PLAN_EVERY := 0.25
