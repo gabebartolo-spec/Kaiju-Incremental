@@ -9,11 +9,11 @@ extends Node3D
 ## shockwave and
 ## puffs along the street (BlastShock), the site blowing apart top first, its pieces thrown out and
 ## up (BlastBreak), a flash of real light, and then the game's own Fire left burning at the site
-## with its light and smoke. The screen flashes white for a few frames (BlastFlash) and the camera
-## takes one kick, away from the blast and decaying over a few frames (jitter), no shaking back and
-## forth and no hit-stop (clip critic round 6); the blast is heard as one crack (at any distance)
-## with a body and rumble under it, and the sonic boom arriving later the further the camera is
-## (speed of sound scaled to the map).
+## with its light and smoke. The screen never flashes white (director 2026-10-27, "Cut") and the
+## camera takes one kick, away from the blast and decaying over a few frames (jitter), no shaking
+## back and forth and no hit-stop (clip critic round 6); the blast is heard as one crack (at any
+## distance) with a body and rumble under it, and the sonic boom arriving later the further the
+## camera is (speed of sound scaled to the map).
 ## firework_burst: a coloured shell bursting over the point it hits. toxic_cloud: a billow of
 ## the game's soft smoke tinted green, then a thin haze for as long as the sim keeps the
 ## cloud. Looks and timings: data/tuning.json "blast_fx" (motion critic fix round 2026-10-21).
@@ -190,7 +190,6 @@ func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	_city.fire(Vector3(at.x, 0.0, at.z), Num.f(burn["size"]) * radius / 5.0, Num.f(burn["seconds"]))
 	var tint := Color(str(_c("flash")["chem_color" if kind == "chem_lab" else "color"]))
 	_flash(high, tint, Num.f(_c("flash")["energy"]) * radius / 5.0)
-	BlastFlash.screen(self, radius, _c("screen_flash"))
 	_throw(kind, high, half)
 	var trauma: Dictionary = _c("shake")["trauma"]
 	_add_kick(Num.f(trauma[kind]), at, focus)
