@@ -2,6 +2,30 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-299 · Director · Each speed run gets the PC to itself
+D-292's check failed: the same freeze-fix build measured 59.47 ms (95th-percentile frame, High) alone and 72.54 ms with 11 headless test runs beside it (+22%; two clean main runs differ 0.1%). Asked "Should each speed run get the PC to itself for its 3 minutes?"; picked "Yes, PC to itself": while a speed run holds C:/kt/BENCH_WINDOW_<owner>, no other Godot starts, headless included (2 min 49 s per run, measured). Enforced by the tool-gate hook (refuses Kaiju Godot launches without C:/kt/wait_window.sh) and by drive_timing.sh (waits for zero Godot, records others=N; a run with others>0 does not count). Replaces D-292's headless-beside rule. Not chosen: keep tests beside; try top CPU priority first.
+
+## 2026-10-27 · D-298 · Director · Priority order: render plan, then debt, then everything else
+His words: "priorities are 1. render plan 2. debt fixes 3. everythin else". Where work competes (speed-check turns, merge order, builder slots, the lead's attention) the render plan (D-276) goes first, the tech-debt list (D-295) second, all other work third. Parked work stays parked ("Render plan first").
+
+## 2026-10-27 · D-297 · Director · Tanks and helicopters remade in Tripo, up to 600 credits
+His words: "i think our helis and tanks look untextured too, they look procedurally drawn rather than proper models". Asked how to remake them; picked "Tripo, up to 600 credits": the tank, the gunship and the governor's helicopter are generated in Tripo Studio (HD model, Private every generation, balance checked before and after), split into the parts the game moves (turret, barrel; main and tail rotor, gun), shown to him from six views, then voxelised into assets/vehicles. This is his written yes for up to 600 Tripo credits on vehicles. Debt row 24.
+
+## 2026-10-27 · D-296 · Director · No builder count: as many as the PC and tests allow
+Asked "so what are these slots? is it a guardrail hallucination?" (the "at most 3 builders" rule had no quote of his behind it; his 10-21 words were "use as many sub agents as you want, up to 8"). Answer: "idc how many, use 100 if its not going to ruin the tests / use as many as is feasible". The machine gates stay (nothing new under 6 GB free RAM or above 85% CPU, one speed check at a time); on a PC freeze find the cause before cutting builders. Rulebook "Kaiju team" line replaced. Replaces D-278 and D-287.
+
+## 2026-10-27 · D-295 · Director · Every tech-debt item is actioned
+Asked "does our project have a proper tech stack and good codebase hygiene", then: "I want the FULL list of debt items, i want them all actioned". Picked "After facade+vehicles" for the hygiene builder. List: docs/roadmap/2026-10-27-tech-debt.md (from C:/kt/debt/debt_list.md), every row owned and closed by a PR.
+
+## 2026-10-27 · D-294 · Director · Death: his stone shards land first, then the blast
+Asked (02:5x, on the death clip with all 3 Death Blast nodes): "Shards first": his falling stone body smashes buildings, then the blast clears the rest; both visibly destroy things. Not chosen: blast first (as built, shards hit only rubble). Same look: "i dont like the pale blocks that come out of the explosion" (plain untextured cubes; fix in the same PR #240).
+
+## 2026-10-27 · D-293 · Director · The rule audit covers workflow rules too
+Asked: "Yes, add workflow rules": the D-291 audit also lists every workflow rule we follow (RULEBOOK, CLAUDE.md files, briefs) with its source, his quote and date or "agent-made", for him to keep or cut each agent-made one. Not chosen: game behaviours only.
+
+## 2026-10-27 · D-292 · Director · Background tests run beside speed checks
+His words: "sometimes a hallucinated guardrail will handcuff our progress even though i never would have wanted to use that guardrail". The lead's own rule "timing benches run with no other Godot" (CLAUDE.md, #255) held four builders idle 01:50-02:24 for ~15 min of benching. Asked: "Yes, let them run": headless Godot runs (tests, imports; no window, no graphics) go ahead while a speed check runs; only windowed/GPU Godot waits for it. Check once: if a speed check's whole-route p95 moves more than 1% with a headless suite beside it, the lead brings it back to him (two clean main High runs differed 0.1%: 55.29 vs 55.23). Not chosen: keep the full stop.
+
 ## 2026-10-27 · D-291 · Director · Audit what agents built from loose readings of his rulings
 His words, on the vehicle fade agents had stretched from D-025: "im certain id never have agreed to that if id understood what you were proposing". Asked: "Yes, audit now": a Sonnet reader lists every behaviour the player meets that an agent built beyond the words of a ruling, or with none, each with a still from the real game (C:/kt/rule_audit.md), for him to keep or cut item by item. Every question to him says what he will see on screen in plain words, with a picture or clip of the real effect when it is visual. Not chosen: not now.
 
