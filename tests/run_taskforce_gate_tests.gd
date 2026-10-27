@@ -382,7 +382,6 @@ func _diag_old() -> Dictionary:
 	return base
 
 
-## The 4 nearest standing buildings to p: "index tag height gap".
 func _diag_near(sim: RampageSim, p: Vector2) -> String:
 	var rows: Array = []
 	for i: int in sim.buildings.size():
