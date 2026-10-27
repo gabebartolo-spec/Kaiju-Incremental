@@ -65,6 +65,15 @@ func step() -> void:
 	_frame += 1
 
 
+## From the next frame the kaiju walks on from where it stands toward `point`, at the same pace (a
+## check steering it into a blockade so the officers there break and run).
+func aim(point: Vector2) -> void:
+	var here := sim.kaiju_pos
+	_dir = (point - here).normalized()
+	_start = here - _dir * WALK * DT * (_frame - 1)
+	sim.facing = _dir
+
+
 ## Everyone's state in order, the three random streams and the totals, as one SHA-256 (hex).
 func digest() -> String:
 	var ctx := HashingContext.new()
