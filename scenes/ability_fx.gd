@@ -275,14 +275,7 @@ func deflect(at: Vector3, away: Vector3, kaiju: Node3D = null, from := Vector3.Z
 ## Fraction of `span` from `from` at which the line first meets a standing chunk (1: none).
 func _first_hit(from: Vector3, span: Vector3) -> float:
 	var steps := maxi(4, ceili(span.length() / 0.5))
-	var to := from + span
-	var near: Array[RampageSim.Building] = []  # b2-3: every building at every step was 20 ms
-	for b: RampageSim.Building in _city.sim.buildings:
-		var x0 := b.x - b.w * 0.5
-		var z0 := b.z - b.d * 0.5
-		if x0 <= maxf(from.x, to.x) and x0 + b.w >= minf(from.x, to.x):
-			if z0 <= maxf(from.z, to.z) and z0 + b.d >= minf(from.z, to.z):
-				near.append(b)
+	var near := _near_line(from, from + span)  # b2-3: every building at every step was 20 ms
 	for i: int in range(1, steps + 1):
 		var t := float(i) / steps
 		var p := from + span * t
@@ -294,6 +287,18 @@ func _first_hit(from: Vector3, span: Vector3) -> float:
 			if b.frame.top_below(floori(lx), floori(lz), b.height) + 1 > p.y:
 				return t
 	return 1.0
+
+
+## The buildings whose footprint overlaps the box from `from` to `to` (ground plane).
+func _near_line(from: Vector3, to: Vector3) -> Array[RampageSim.Building]:
+	var near: Array[RampageSim.Building] = []
+	for b: RampageSim.Building in _city.sim.buildings:
+		var x0 := b.x - b.w * 0.5
+		var z0 := b.z - b.d * 0.5
+		if x0 <= maxf(from.x, to.x) and x0 + b.w >= minf(from.x, to.x):
+			if z0 <= maxf(from.z, to.z) and z0 + b.d >= minf(from.z, to.z):
+				near.append(b)
+	return near
 
 
 func _flare(at: Vector3, size: float, tint: Color, seconds: float) -> ShaderMaterial:
