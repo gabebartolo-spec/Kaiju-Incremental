@@ -73,11 +73,12 @@ EOF
 		cat "$log" "$tmp/gate_out.txt" 2> /dev/null
 		bad=1
 	fi
-	# 2. no gate file (CI, Linux): nothing changes - same result, same launches, no wait
+	# 2. no gate file (CI, Linux): nothing changes - same result, same launches, no wait. VERBOSE=0 because CI exports
+	# VERBOSE=1, which adds each suite's whole seconds (differ between runs: red on #305, run 40452642194) and a Logs: line
 	rm -f "$log" "$runs" "$RAM_COUNT"
 	GATE_LOG="$log" GATE_COUNT="$runs" SPEED_GATE="$tmp/no_such_gate.sh" GODOT="$tmp/fake_godot.sh" \
 		FREE_RAM_CMD="bash $tmp/free_ram.sh" RAM_LOW_READS=3 RAM_POLL_SECS=1 \
-		SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out_none.txt" 2>&1
+		VERBOSE=0 SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out_none.txt" 2>&1
 	code=$?
 	launches=$(grep -c '^godot' "$log" 2> /dev/null)
 	# no gate call, no memory read (the stand-in reader would say 1000 MB, below the floor, for 3 reads), one plain line
