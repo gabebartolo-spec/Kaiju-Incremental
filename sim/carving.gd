@@ -208,38 +208,11 @@ func settle(n: int) -> Array[Dictionary]:
 	var g: Grid = grids[n]
 	var f := g.frame
 	var out: Array[Dictionary] = []
-	var parts := f.settle()
-	for part: Dictionary in parts:
+	for part: Dictionary in f.settle():
 		var index: PackedInt32Array = part["index"]
 		var info := CarvingCells.fallen(g, index)  # g.live loses its cells
-		var lo: Vector3i = info[0]
-		var hi: Vector3i = info[1]
-		var base: Rect2i = info[2]
-		var under: bool = info[3]
 		cells_fallen += index.size()
-		var dir: Vector2i = part["dir"]
-		var span := hi - lo + Vector3i.ONE
-		var dl := _deaths(n, g)
-		var event := {
-			"cells": dl,
-			"kind": part["kind"],
-			"pivot": part["pivot"],
-			"dir": dir,
-			"index": index,
-			"mats": part["mats"],
-			"low": float(lo.y) / f.res,
-			"height": ceilf(float(span.y) / f.res),
-			"width": float(span.z if dir.x != 0 else span.x) / f.res,
-		}
-		var foot := Rect2(
-			Vector2(base.position + Vector2i(f.offset.x, f.offset.z)) / f.res,
-			Vector2(base.size) / f.res
-		)
-		event["base"] = foot
-		event["gutted"] = not under and span.y > mini(base.size.x, base.size.y)
-		if str(part["kind"]) != "topple":
-			event["drop"] = CarvingCells.drop(f, index)
-		out.append(event)
+		out.append(CarvingCells.part_event(f, part, info, _deaths(n, g)))
 	return out
 
 

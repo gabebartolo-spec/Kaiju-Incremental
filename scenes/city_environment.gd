@@ -5,16 +5,29 @@ extends RefCounted
 
 
 static func attach(city: Node3D, sim: RampageSim) -> void:
+	var world_env := WorldEnvironment.new()
+	world_env.environment = _environment(sim)
+	world_env.add_to_group(GraphicsPresets.GROUP)
+	GraphicsPresets.apply_to(PlayerSettings.graphics_row(), world_env)
+	city.add_child(world_env)
+	GraphicsPresets.apply_look(city.get_viewport())  # debanding follows this run's look
+	CreasePass.attach(city)  # creases darkened in screen space; off when the look says 0
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
+	sun.light_energy = Look.value("sun_energy")
+	sun.light_color = Look.color("sun_color")
+	sun.shadow_enabled = true
+	sun.shadow_blur = 1.5
+	sun.add_to_group(GraphicsPresets.GROUP)
+	GraphicsPresets.apply_to(PlayerSettings.graphics_row(), sun)
+	city.add_child(sun)
+
+
+## The Environment: procedural sky, ambient light, SSAO, fog, glow and the grade.
+static func _environment(sim: RampageSim) -> Environment:
 	var env := Environment.new()
-	var sky := Sky.new()
-	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Look.color("sky_top")
-	sky_mat.sky_horizon_color = Look.color("sky_horizon")
-	sky_mat.ground_horizon_color = Look.color("sky_horizon")
-	sky_mat.ground_bottom_color = Look.color("sky_horizon")
-	sky.sky_material = sky_mat
 	env.background_mode = Environment.BG_SKY
-	env.sky = sky
+	env.sky = _sky()
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	if Content.look().has("ambient_color"):
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -34,22 +47,18 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 	# shadow reach, splits and softness come from the graphics preset (GraphicsPresets).
 	env.adjustment_saturation = Look.value("saturation")
 	grade(env)
-	var world_env := WorldEnvironment.new()
-	world_env.environment = env
-	world_env.add_to_group(GraphicsPresets.GROUP)
-	GraphicsPresets.apply_to(PlayerSettings.graphics_row(), world_env)
-	city.add_child(world_env)
-	GraphicsPresets.apply_look(city.get_viewport())  # debanding follows this run's look
-	CreasePass.attach(city)  # creases darkened in screen space; off when the look says 0
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
-	sun.light_energy = Look.value("sun_energy")
-	sun.light_color = Look.color("sun_color")
-	sun.shadow_enabled = true
-	sun.shadow_blur = 1.5
-	sun.add_to_group(GraphicsPresets.GROUP)
-	GraphicsPresets.apply_to(PlayerSettings.graphics_row(), sun)
-	city.add_child(sun)
+	return env
+
+
+static func _sky() -> Sky:
+	var sky := Sky.new()
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Look.color("sky_top")
+	sky_mat.sky_horizon_color = Look.color("sky_horizon")
+	sky_mat.ground_horizon_color = Look.color("sky_horizon")
+	sky_mat.ground_bottom_color = Look.color("sky_horizon")
+	sky.sky_material = sky_mat
+	return sky
 
 
 ## The tone map and the grade after it (render plan item 4, D-104): AgX with its own toe contrast

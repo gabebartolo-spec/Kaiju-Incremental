@@ -21,7 +21,28 @@
 #   without settling (the known-bad input: the checker must go red).
 #   BEFORE_ENGINE='<command>' runs before every engine start and must succeed (a shared PC: `bash C:/kt/wait_window.sh`).
 #   tools/lint/log_smoke.sh --selftest   plants an error, a warning and leaks, expects each to be caught.
+#   tools/lint/log_smoke.sh --leaks <log>...   reads logs that something else wrote (every suite of
+#                                              tools/run_tests.sh, every capture of capture.yml): exit 1 and
+#                                              one line per log when it holds an exit leak report.
 set -u
+
+# The exit leak reports alone ("N ObjectDB instances were leaked at exit", "N resources still in use at
+# exit"): the lines a suite or a capture must never print (debt row 2). Older engines drop the "were".
+LEAK_PATTERN='ObjectDB instances (were )?leaked|still in use at exit'
+
+if [ "${1:-}" = "--leaks" ]; then  # before the cd: the logs are named relative to the caller
+	shift
+	leaky=0
+	for leak_log in "$@"; do
+		hits="$(sed 's/\x1b\[[0-9;]*[A-Za-z]//g; s/\r$//' "$leak_log" 2> /dev/null | grep -E "$LEAK_PATTERN" | tr '\n' '|')"
+		if [ -n "$hits" ]; then
+			echo "$(basename "$leak_log"): the exit leaked: ${hits%|}"
+			leaky=1
+		fi
+	done
+	exit "$leaky"
+fi
+
 cd "$(dirname "$0")/../.." || exit 1
 GODOT="${GODOT:-godot}"
 SMOKE_TIMEOUT="${SMOKE_TIMEOUT:-1200}"
@@ -69,6 +90,16 @@ if [ "${1:-}" = "--selftest" ]; then
 		'ERROR: 4 resources still in use at exit.' 'SCRIPT ERROR: Parse Error: x' 'Leaked instance dependency: x'; do
 		printf 'Engine v4.7.2\n%s\nLOG_SMOKE done\n' "$bad" > "$tmp/bad.log"
 		check_log "$tmp/bad.log" > /dev/null && { echo "FAIL: not caught: $bad"; exit 1; }
+	done
+	# --leaks (suites, captures): fails on each wording of the exit leak report, ignores any other line.
+	bash "$0" --leaks "$tmp/clean.log" > /dev/null || { echo "FAIL: --leaks rejected a clean log"; exit 1; }
+	printf 'Engine v4.7.2\nERROR: Condition "!v.is_finite()" is true.\nWARNING: Vector3 cannot be normalized\n' > "$tmp/other.log"
+	bash "$0" --leaks "$tmp/other.log" > /dev/null || { echo "FAIL: --leaks failed a log with no leak line"; exit 1; }
+	for bad in 'WARNING: 3 ObjectDB instances were leaked at exit (run with --verbose for details).' \
+		'WARNING: ObjectDB instances leaked at exit (run with --verbose for details).' \
+		'ERROR: 4 resources still in use at exit.'; do
+		printf 'Engine v4.7.2\n\033[31m%s\033[0m\r\nFlow tests: 9 of 9 functions\n' "$bad" > "$tmp/bad.log"
+		bash "$0" --leaks "$tmp/clean.log" "$tmp/bad.log" > /dev/null && { echo "FAIL: --leaks missed: $bad"; exit 1; }
 	done
 	rm -rf "$tmp"
 	echo "log_smoke selftest: PASS"

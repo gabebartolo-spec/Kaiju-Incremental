@@ -50,7 +50,6 @@ var _rotor: AudioStreamPlayer
 var _rng: RandomNumberGenerator
 var _tune: Dictionary
 ## Size-tier pitch (baby high, Behemoth low), from set_size_tier.
-var _size_pitch := 1.0
 ## The heavy stomp waiting for the next foot plant ("" when none), and how long it has waited.
 var _pending := ""
 var _pending_crack := false
@@ -59,7 +58,7 @@ var _pending_age := 0.0
 var _since_step := INF
 var _since_crack := INF
 ## Seconds since each gap-limited sound last played (tuning "sfx" "min_interval").
-var _since_sound: Dictionary = {}
+var _shade: SfxShade
 ## How many footsteps have played (picks the next of STEPS).
 var _step := 0
 ## Building parts landed this frame, in dB: the loudest few ("collapse_per_frame") play at its end.
@@ -70,6 +69,7 @@ var _landings: Array[float] = []
 func _init(rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	_tune = Content.section("sfx")
+	_shade = SfxShade.new(rng, _tune)
 
 
 func _ready() -> void:
@@ -116,8 +116,7 @@ func _process(delta: float) -> void:
 	_since_step += delta
 	_since_crack += delta
 	_since_breath += delta
-	for sound: String in _since_sound:
-		_since_sound[sound] = Num.f(_since_sound[sound]) + delta
+	_shade.advance(delta)
 	_fade_regen(delta)
 	if is_instance_valid(_street) and _crowd_mix.update(_street, _since_breath, delta):
 		played.append("crowd_panic")
@@ -131,8 +130,7 @@ func _process(delta: float) -> void:
 ## The kaiju's size tier (RampageSim.size_tier): steps and stomps are pitched by it, so a
 ## baby patters and a Behemoth booms whatever model it wears.
 func set_size_tier(tier: int) -> void:
-	var pitches: Array = _tune["size_pitch"]
-	_size_pitch = Num.f(pitches[clampi(tier - 1, 0, pitches.size() - 1)])
+	_shade.set_size_tier(tier)
 
 
 ## A menu sound (ui_click, ui_confirm, ui_deny) on one shared player under the tree's root,
@@ -307,32 +305,16 @@ func _fade_regen(delta: float) -> void:
 func play(sound: String, extra_db := 0.0, pitch := 1.0, bus := &"") -> void:
 	var kind := _as if _as != "" else voices.category_of(sound)
 	_as = ""
-	if not live:
+	if not live or _shade.too_soon(sound):
 		return
-	var gaps: Dictionary = _tune.get("min_interval", {})
-	if gaps.has(sound):
-		var gap := Num.f(gaps[sound])
-		if Num.f(_since_sound.get(sound, INF)) < gap:
-			return
-		var stretches: Dictionary = _tune.get("interval_jitter", {})
-		var stretch := Num.f(stretches.get(sound, 0.0))
-		_since_sound[sound] = -gap * stretch * _rng.randf()
 	if sound == "breath":
 		_since_breath = 0.0
 	var stream: AudioStream = _streams.get(sound)
 	if stream == null:
 		played.append(sound)
 		return
-	var jitters: Dictionary = _tune.get("pitch_jitter_by", {})
-	var jitter := Num.f(jitters.get(sound, _tune["pitch_jitter"]))
-	var pitches: Dictionary = _tune.get("pitch_by", {})
-	pitch *= Num.f(pitches.get(sound, 1.0))
-	var swings: Dictionary = _tune.get("gain_jitter_db", {})  # e.g. rifles: no two cracks alike
-	var swing := Num.f(swings.get(sound, 0.0))
-	var db := _volume(sound) + extra_db + _rng.randf_range(-swing, swing)
-	if sound.begins_with("footstep") or sound.begins_with("stomp"):
-		pitch *= _size_pitch
-	pitch *= 1.0 + _rng.randf_range(-jitter, jitter)
+	var db := _volume(sound) + extra_db + _shade.swing(sound)
+	pitch = _shade.pitched(sound, pitch)
 	var starts: Dictionary = _tune.get("start_s", {})  # skips a sample's silent lead-in
 	var start := Num.f(starts.get(sound, 0.0))
 	var player := voices.take(sound, kind, db, (stream.get_length() - start) / pitch)

@@ -1,36 +1,38 @@
 extends RefCounted
-## D-326 (director 2026-10-27, on the toppling clip: "building doesnt look solid to me"; "its ok to
-## obscure the kaiju, its not ok to block the camera, please stop making buildings fade out";
-## "it may hide the kaiju. Only a wall that fills the frame at the camera is handled"): a standing
-## building on the line from the camera to the kaiju draws fully solid unless it covers half the
-## screen or more (tuning camera fade_frame_share). A seeded rampage (city seed 0, run 1) has the
-## kaiju stand just behind a small building on the camera's side; every frame, every building a
-## sight line crosses that covers less than the share is read off the shader the game drew it with
-## (the opacity of its BuildingView), and must be 1. A section toppling off a building that is faded
-## snaps it solid (the fall is destruction, never see-through).
+## The camera bubble in the real game (D-326, D-350; director 2026-10-27: "as long as the bubble
+## isnt going to be inside buildings adjacent to the kaiju ... its the ones that the camera itself
+## phases through"): a seeded rampage (city seed 0, run 1) has the kaiju stand just behind a small
+## building on the camera's side, so inside his destruction field. Every frame, every built
+## building whose footprint lies in the field (CameraBubble.in_field) is read off the shader the
+## game draws it with (bubble_cut on its BuildingView's materials) and must be 0, drawn whole; the
+## sphere's far edge stays the field short of him. A cut forced open on that building is whole the
+## next frame (the field is never cut, not even while a cut closes), and one forced open on a
+## building the sphere does not reach eases closed on its view over camera.bubble_seconds.
 ## Seeded by design: city seed 0, run 1; the kaiju is put by hand and no check reads a clock.
 
 ## Physics frames the kaiju and the camera get to arrive after the kaiju is put behind the building.
 const SETTLE := 120
-## Frames read, and the seconds handed to each city _process (the old fade took 0.25 s to go down,
-## so three frames would have shown it).
+## Physics frames the stream gets to build the chosen building's view (the pick reads the layout
+## only, so how far the stream has got never changes which building it is).
+const BUILD_WAIT := 1200
+## Frames read, and the seconds handed to each city _process (half of camera.bubble_seconds, so a
+## cut opening would show on two frames).
 const FRAMES := 40
-const STEP := 0.1
-## How far behind the building's wall the kaiju stands (m), the least floors the building has, and
-## the most of the screen it may cover for the check to count (well under the fade's share).
+const STEP := 0.05
+## How far behind the building's wall the kaiju stands (m), and the least floors the building has.
 const BEHIND := 6.0
 const MIN_FLOORS := 4
-const SMALL := 0.3
-const ID := 900101  # a fall id the sim never hands out in a flow run
+## How much farther than the sphere a building must be to count as out of its reach (m).
+const CLEAR := 5.0
 
 
 ## What the frames showed.
 class Seen:
 	extends RefCounted
-	var on_line := 0  # frames a small building was on a sight line
-	var worst := 1.0  # the least opacity any of them was drawn at
+	var in_field := 0  # frames the building he stands behind was in his field
+	var most := 0.0  # the most any building in the field was cut
 	var bad: Array[String] = []
-	var biggest := 0.0  # the most of the screen any of them covered
+	var edge := INF  # the least gap from the sphere's far edge to the field (m)
 
 
 static func check(check: Callable, root: Node) -> void:
@@ -46,13 +48,11 @@ static func check(check: Callable, root: Node) -> void:
 	root.add_child(rampage)
 	await rampage.wait_loaded()
 	var sim := rampage.sim
-	var city := rampage._city
 	while sim.emerge.active:
 		await tree.physics_frame
 	sim.time_left = 600.0
-	var size := root.get_viewport().get_visible_rect().size
 	var passed := {}
-	var index := _stand_behind(rampage, size.x / size.y, passed)
+	var index := _stand_behind(rampage, passed)
 	check.call(
 		index >= 0,
 		(
@@ -60,7 +60,14 @@ static func check(check: Callable, root: Node) -> void:
 			% [index, passed]
 		)
 	)
-	if index < 0:
+	var waited := 0
+	while index >= 0 and rampage._city._stream.built(index) == null and waited < BUILD_WAIT:
+		sim.stomp._timer = 9.0
+		await tree.physics_frame
+		waited += 1
+	var built := index >= 0 and rampage._city._stream.built(index) != null
+	check.call(built, "its view is built (%d frames)" % waited)
+	if not built:
 		rampage.queue_free()
 		await tree.process_frame
 		return
@@ -71,41 +78,29 @@ static func check(check: Callable, root: Node) -> void:
 	for i: int in FRAMES:
 		sim.stomp._timer = 9.0
 		await tree.physics_frame
-		city._process(STEP)
-		_scan(rampage, size, seen)
-	var share := Num.f(Content.section("camera")["fade_frame_share"])
-	(
-		check
-		. call(
-			seen.on_line >= FRAMES * 3 / 4 and seen.biggest < share,
-			(
-				(
-					"a building under %.0f%% of the screen stands on the camera-to-kaiju line (%d of %d frames,"
-					+ " the most it covered %.1f%%)"
-				)
-				% [share * 100.0, seen.on_line, FRAMES, seen.biggest * 100.0]
-			)
-		)
+		rampage._city._process(STEP)
+		_scan(rampage, index, seen)
+	check.call(
+		seen.in_field == FRAMES,
+		"the building he stands behind is in his field (%d of %d frames)" % [seen.in_field, FRAMES]
 	)
 	check.call(
-		seen.worst == 1.0 and seen.bad.is_empty(),
+		seen.most == 0.0 and seen.bad.is_empty(),
 		(
-			(
-				"every building on that line that covers under the share draws solid on every frame"
-				+ " (least opacity %.2f, %s)"
-			)
-			% [seen.worst, seen.bad.slice(0, 3)]
+			"every building in his field draws whole on every frame (most cut %.2f, %s)"
+			% [seen.most, seen.bad.slice(0, 3)]
 		)
 	)
-	_check_fall_snaps(check, rampage, index)
+	check.call(seen.edge >= -0.01, "the sphere stays the field short of him (%.2f m)" % seen.edge)
+	_check_forced(check, rampage, index)
 	rampage.queue_free()
 	await tree.process_frame
 
 
-## Puts the kaiju just behind the first small, built building (on the camera's side of it) the
-## camera's line to the kaiju crosses; the building's index, or -1. `passed` counts the buildings
-## ruled out and why.
-static func _stand_behind(rampage: Rampage, aspect: float, passed: Dictionary) -> int:
+## Puts the kaiju just behind the first small building (on the camera's side of it) that stands on
+## the camera's line to his feet, chest or head; the building's index, or -1. `passed` counts the
+## buildings ruled out and why. Reads the layout only, never the stream.
+static func _stand_behind(rampage: Rampage, passed: Dictionary) -> int:
 	var sim := rampage.sim
 	var rest := CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
 	for n: int in sim.buildings.size():
@@ -113,26 +108,26 @@ static func _stand_behind(rampage: Rampage, aspect: float, passed: Dictionary) -
 		if b.landmark != "" or b.w < 4 or b.d < 4 or b.height < MIN_FLOORS:
 			passed["unfit"] = Num.i(passed.get("unfit", 0)) + 1
 			continue
-		if rampage._city._stream.built(n) == null:
-			passed["unbuilt"] = Num.i(passed.get("unbuilt", 0)) + 1
-			continue
 		var spot := Vector2(b.x, b.z - b.d * 0.5 - BEHIND)
 		if sim.clamp_to_arena(spot) != spot or _inside_another(sim, spot, n):
 			passed["no_room"] = Num.i(passed.get("no_room", 0)) + 1
 			continue
 		sim.kaiju_pos = spot
 		var at := Vector3(spot.x, sim.stand_y, spot.y)
-		var eye := at + rest
-		var sight := BuildingFade.sight_of(sim, eye)
-		if not BuildingFade.blocks(eye, sight, b):
+		if not _on_line(_box(b), at + rest, at, sim.reach_height()):
 			passed["no_line"] = Num.i(passed.get("no_line", 0)) + 1
 			continue
-		var look := at + Vector3(0, sim.reach_height() * 0.5, 0)
-		var frame := FrameShare.looking(eye, look, CameraTuning.fov(), aspect)
-		if frame.share_of(_standing_box(b)) < SMALL:
-			return n
-		passed["big"] = Num.i(passed.get("big", 0)) + 1
+		return n
 	return -1
+
+
+## Whether `box` stands on the line from `eye` to the feet, chest or head of a kaiju standing at
+## `at`, `tall` metres high.
+static func _on_line(box: AABB, eye: Vector3, at: Vector3, tall: float) -> bool:
+	for share: float in [0.05, 0.5, 1.0]:
+		if box.intersects_segment(eye, at + Vector3(0, tall * share, 0)) != null:
+			return true
+	return false
 
 
 ## Whether a building other than `except` stands on `spot` (the kaiju must stand in the street).
@@ -144,88 +139,87 @@ static func _inside_another(sim: RampageSim, spot: Vector2, except: int) -> bool
 	return false
 
 
-static func _standing_box(b: RampageSim.Building) -> AABB:
-	var top := BuildingFade.standing_top(b)
-	return AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, top, b.d))
+static func _box(b: RampageSim.Building) -> AABB:
+	return AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, b.height, b.d))
 
 
-## Reads this frame: each building a sight line crosses that covers under the fade's share, and the
-## opacity its view is drawn with.
-static func _scan(rampage: Rampage, size: Vector2, seen: Seen) -> void:
+## Reads this frame: the cut each building in the field is drawn with, and the sphere's far edge.
+static func _scan(rampage: Rampage, index: int, seen: Seen) -> void:
 	var sim := rampage.sim
 	var city := rampage._city
-	var camera := rampage._camera
-	var eye := camera.global_position
-	var sight := BuildingFade.sight_of(sim, eye) + city.drawn_sight
-	var frame := FrameShare.of(camera, size)
-	var share := Num.f(Content.section("camera")["fade_frame_share"])
-	var any := false
+	var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+	var field := CameraBubble.field(sim)
+	var eye := rampage._camera.global_position
+	if city._bubble.radius() > 0.0:
+		var flat := Vector2(eye.x, eye.z).distance_to(Vector2(feet.x, feet.z))
+		seen.edge = minf(seen.edge, flat - city._bubble.radius() - field)
+	seen.in_field += 1 if CameraBubble.in_field(sim.buildings[index], feet, field) else 0
+	for n: int in sim.buildings.size():
+		if not CameraBubble.in_field(sim.buildings[n], feet, field):
+			continue
+		var drawn := _drawn(city._stream.built(n))
+		seen.most = maxf(seen.most, drawn)
+		if drawn > 0.0:
+			seen.bad.append("building %d cut %.2f" % [n, drawn])
+
+
+## The cut a building's view is drawn with now, the most of its materials (0 when not built).
+static func _drawn(view: BuildingView) -> float:
+	var most := 0.0
+	if view == null:
+		return most
+	for mat: ShaderMaterial in [view._shell_mat, view._slab_mat, view._cells_mat]:
+		if mat != null:
+			var cut: Variant = mat.get_shader_parameter("bubble_cut")
+			most = maxf(most, 0.0 if cut == null else Num.f(cut))
+	return most
+
+
+## A cut forced open on the building next to him is whole the next frame; one forced open on a
+## built building out of the sphere's reach eases closed on its view, a step of
+## STEP / camera.bubble_seconds.
+static func _check_forced(check: Callable, rampage: Rampage, index: int) -> void:
+	var city := rampage._city
+	var bubble := city._bubble
+	bubble._open[index] = 1.0
+	city._process(STEP)
+	var next := bubble.cut(index)
+	var drawn := _drawn(city._stream.built(index))
+	check.call(
+		next == 0.0 and drawn == 0.0,
+		"a cut forced open in his field is whole the next frame (%.2f, drawn %.2f)" % [next, drawn]
+	)
+	var far := _out_of_reach(rampage)
+	if far < 0:
+		check.call(false, "a built, whole building out of the sphere's reach exists")
+		return
+	bubble._open[far] = 1.0
+	city._process(STEP)
+	var want := 1.0 - STEP / Num.f(Content.section("camera")["bubble_seconds"])
+	var eased := bubble.cut(far)
+	var shown := _drawn(city._stream.built(far))
+	check.call(
+		is_equal_approx(eased, want) and is_equal_approx(shown, want),
+		(
+			"one the sphere does not reach eases closed on its view (%.2f, drawn %.2f, want %.2f)"
+			% [eased, shown, want]
+		)
+	)
+
+
+## A built, undamaged building outside his field and CLEAR beyond the sphere, or -1.
+static func _out_of_reach(rampage: Rampage) -> int:
+	var sim := rampage.sim
+	var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+	var field := CameraBubble.field(sim)
+	var eye := rampage._camera.global_position
+	var radius := rampage._city._bubble.radius()
 	for n: int in sim.buildings.size():
 		var b := sim.buildings[n]
-		if not BuildingFade.blocks(eye, sight, b):
+		if rampage._city._stream.built(n) == null or b.landmark != "":
 			continue
-		var covers := frame.share_of(_standing_box(b))
-		if covers >= share:
+		if CameraBubble.damaged(b) or CameraBubble.in_field(b, feet, field):
 			continue
-		any = true
-		seen.biggest = maxf(seen.biggest, covers)
-		var drawn := _drawn(city._stream.built(n))
-		seen.worst = minf(seen.worst, drawn)
-		if drawn < 1.0:
-			seen.bad.append("building %d covers %.1f%% opacity %.2f" % [n, covers * 100.0, drawn])
-	seen.on_line += 1 if any else 0
-
-
-## The opacity a building's view is drawn with now (1 when it was never faded or is not built).
-static func _drawn(view: BuildingView) -> float:
-	if view == null or view._shell_mat == null:
-		return 1.0
-	var share: Variant = view._shell_mat.get_shader_parameter("opacity")
-	return 1.0 if share == null else Num.f(share)
-
-
-## A section toppling off a building that is faded snaps it solid for the fall: the fade is forced
-## to its floor, a frame passes (the building is no wall that fills the frame, so it eases back),
-## a fall starts, and one frame later the building is drawn at 1.
-static func _check_fall_snaps(check: Callable, rampage: Rampage, index: int) -> void:
-	var city := rampage._city
-	var building := rampage.sim.buildings[index]
-	city._fade._faded[index] = 1.0
-	city._process(STEP)
-	var before := city._fade.opacity(index)
-	var cells: Array[Vector3i] = []
-	for y: int in range(1, building.frame.h):
-		for x: int in building.frame.w:
-			for z: int in building.frame.d:
-				cells.append(Vector3i(x, y, z))
-	(
-		city
-		. fall_start(
-			{
-				"id": ID,
-				"building": index,
-				"cells": cells,
-				"kind": "topple",
-				"pivot": building.local_to_world(Vector3(0, 1, 0)),
-				"dir": Vector2.RIGHT,
-				"drop": 1.0,
-				"duration": 100.0,
-			}
-		)
-	)
-	city._process(STEP)
-	var after := city._fade.opacity(index)
-	var drawn := _drawn(city._stream.built(index))
-	(
-		check
-		. call(
-			before < 1.0 and after == 1.0 and drawn == 1.0,
-			(
-				(
-					"a faded building a section topples off snaps to opacity 1 for the fall (before %.2f,"
-					+ " after %.2f, drawn %.2f)"
-				)
-				% [before, after, drawn]
-			)
-		)
-	)
+		if CameraBubble.reach(eye, b) > radius + CLEAR:
+			return n
+	return -1
