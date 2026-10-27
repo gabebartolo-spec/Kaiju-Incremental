@@ -164,7 +164,7 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 	)
 
 
-## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
+## Screen-door share (1 = solid): a wall that fills the frame at the camera (BuildingFade, D-326).
 func set_opacity(value: float) -> void:
 	_dress()
 	_shell_mat.set_shader_parameter("opacity", value)
@@ -200,6 +200,7 @@ func _material(tex: Texture2D) -> ShaderMaterial:
 	var shape: Dictionary = Content.landmarks().get(b.landmark, {})
 	mat.set_shader_parameter("inside", Num.f(shape.get("inside", 0.12)))  # cut faces' shade
 	WindowPalette.apply(mat, b)
+	VoxelAO.apply(mat)  # baked AO and material finish (render plan item 12)
 	return mat
 
 
