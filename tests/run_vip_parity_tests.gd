@@ -143,7 +143,7 @@ func _check_vip_kill_leaves_gunship_falls() -> void:
 	check(
 		on.fates == off.fates,
 		(
-			"same gunship fates and drifts with the leader killed (first apart at %d: %s | %s; chunks %d vs %d)"
+			"same gunship fates and drifts with the leader killed (apart at %d: %s | %s; chunks %d/%d)"
 			% [
 				apart,
 				on.fates[apart] if apart < on.fates.size() else "-",

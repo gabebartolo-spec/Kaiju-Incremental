@@ -172,30 +172,40 @@ func _skitter(dt: float, hip_w: float, moving: bool) -> void:
 			holding = false
 			_dart_time = 0.0
 	else:
-		_dart_time += dt
-		var rate := DART_RATE * maxf(speed, STAND_SPEED * hip_w * 4.0)
-		_lag = _lag.move_toward(Vector3.ZERO, rate * dt)
-		var facing := absf(wrapf(model_yaw - body_yaw, -PI, PI)) < FACING
-		var down := true
-		for leg: Leg in legs:
-			down = down and leg.planted
-		if moving and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
-			holding = true
-			_held_yaw = body_yaw
-			_anchor = frame.origin - _lag  # where the body is drawn now, not the sim
-			var span := LONG_HOLD if rng.randf() < LONG_HOLD_CHANCE else HOLD
-			_hold_left = rng.randf_range(span.x, span.y)
+		_dart(dt, hip_w, moving, frame)
 	rig.position = frame.basis.inverse() * -_lag
 	if not holding:
-		# The legs move first; then the body swings round after them at a constant, snappy rate.
-		var airborne := false
-		for leg: Leg in legs:
-			airborne = airborne or not leg.planted
-		var big := absf(wrapf(model_yaw - _held_yaw, -PI, PI)) > BIG_TURN
-		if _dart_time >= LEG_LEAD and (airborne or not big):
-			_held_yaw = rotate_toward(_held_yaw, model_yaw, TURN_RATE / sqrt(maxf(s, 0.01)) * dt)
-		body_yaw = _held_yaw
-		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
+		_swing_round(dt)
+
+
+## Darting: the body catches up with the sim; a hold starts once every foot is down and it
+## faces the sim's heading.
+func _dart(dt: float, hip_w: float, moving: bool, frame: Transform3D) -> void:
+	_dart_time += dt
+	var rate := DART_RATE * maxf(speed, STAND_SPEED * hip_w * 4.0)
+	_lag = _lag.move_toward(Vector3.ZERO, rate * dt)
+	var facing := absf(wrapf(model_yaw - body_yaw, -PI, PI)) < FACING
+	var down := true
+	for leg: Leg in legs:
+		down = down and leg.planted
+	if moving and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
+		holding = true
+		_held_yaw = body_yaw
+		_anchor = frame.origin - _lag  # where the body is drawn now, not the sim
+		var span := LONG_HOLD if rng.randf() < LONG_HOLD_CHANCE else HOLD
+		_hold_left = rng.randf_range(span.x, span.y)
+
+
+## The legs move first; then the body swings round after them at a constant, snappy rate.
+func _swing_round(dt: float) -> void:
+	var airborne := false
+	for leg: Leg in legs:
+		airborne = airborne or not leg.planted
+	var big := absf(wrapf(model_yaw - _held_yaw, -PI, PI)) > BIG_TURN
+	if _dart_time >= LEG_LEAD and (airborne or not big):
+		_held_yaw = rotate_toward(_held_yaw, model_yaw, TURN_RATE / sqrt(maxf(s, 0.01)) * dt)
+	body_yaw = _held_yaw
+	rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 
 
 ## Feet in diagonal pairs: a pair steps when it is out of place (it lands where the body is
