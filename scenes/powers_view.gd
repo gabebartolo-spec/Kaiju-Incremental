@@ -305,7 +305,7 @@ func _heli_down(event: Dictionary) -> void:
 	var id := Num.i(event["heli"])
 	var node: Node3D = _helis[id] if _helis.has(id) else Node3D.new()
 	_helis.erase(id)
-	_wreck().downed(node, event)
+	_wreck().downed(node, event, HelicopterModel.paint_of(node))
 
 
 ## The wrecks' view, made on first use (so it has the rampage's sounds).

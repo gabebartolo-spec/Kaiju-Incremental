@@ -35,8 +35,10 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 	# the colours the model kept as it painted (HelicopterModel.painted), not from the GPU.
 	var plain := HelicopterModel.new()
 	var own := _first_multimesh(view._model) != _first_multimesh(plain)
+	var gunless := not view._model._gun.visible and plain._gun.visible
 	plain.free()
-	check.call(own, "the leader wears its own recoloured voxels, the gunships' stay tan")
+	check.call(own, "the leader wears its own recoloured voxels, the gunships' stay theirs")
+	check.call(gunless, "the leader carries no gun, a gunship does")
 	_check_paint(view._model, check)
 	if DisplayServer.get_name() != "headless":
 		var paint := _body_colour(view._model)
@@ -98,7 +100,7 @@ static func _check_paint(model: HelicopterModel, check: Callable) -> void:
 	var mean := sum / maxf(1.0, whites)
 	check.call(
 		whites > 0 and mean.get_luminance() > 0.8 and mean.r >= mean.b,
-		"...a warm white (mean %s), not the gunships' tan" % [mean]
+		"...a warm white (mean %s), not the gunships' olive" % [mean]
 	)
 	var rotor_voxels := 0
 	var gold_voxels := 0

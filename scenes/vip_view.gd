@@ -93,7 +93,7 @@ func _process(delta: float) -> void:
 
 
 func _spawn() -> void:
-	_model = HelicopterModel.new()
+	_model = HelicopterModel.new(HelicopterModel.VIP_BASE)
 	add_child(_model)
 	var look: Dictionary = _cfg["look"]
 	_model.vip_look(Color(str(look["white"])), Color(str(look["gold"])))
@@ -145,7 +145,7 @@ func _down(event: Dictionary) -> void:
 	_rotor.stop()
 	_beacon.queue_free()
 	_beacon = null
-	_wreck.downed(_model, event)
+	_wreck.downed(_model, event, _model.debris_paint())
 	_model = null
 
 
