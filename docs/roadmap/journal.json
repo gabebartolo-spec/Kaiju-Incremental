@@ -118,6 +118,30 @@
       "title": "After the demo",
       "text": "A day of rulings, D-147 to D-190. The demo now ends when the whole upgrade tree is unlocked, about two hours in, then Endless mode. Motion and destruction come first, behind a motion gate. The music ships: an original theme in the style of the 1954 Godzilla score, re-arranged per city and opening low and creeping. Taskforce squads fire in turn; helicopters fight as stand-off gunships. The big forms turn heavier and slower, and fire becomes smooth, realistic flames. A third lead session took on the atmosphere. This journal was started.",
       "captures": []
+    },
+    {
+      "date": "2026-10-24",
+      "title": "Three reptilians and a new way to animate",
+      "text": "The Komodo dragon arrived as a full Tripo model, upright. Shown it walking in the game on a Cascadeur clip, he said 'Yes, adopt it' (D-199), and every kaiju now gets its clips from Cascadeur. The reptilian family took shape: Komodo (heavy), croc (medium) and serpent (light), picked from the baby stage, each with its own tree, croc first, then dragon, then snake (D-197, D-202). The serpent became a hybrid that starts as a spitting cobra, gains a rattle and ends as a constrictor (D-206). The final boss became a mecha chimera of all three (D-211), the scope was written down as demo, full game, expansion (D-212), and New Game was ruled to become Kaiju Creation, a lab with a petri dish and an egg cracking (D-207). He called the fat adult croc out and had it remade sleek and athletic (D-219). Tripo credits for the reptilian models rose to 10,000 in two steps (D-204, D-213). Twenty-nine rulings, D-196 to D-224. Merged: a cheaper Thunder Beam so the last unlock lands near 2.25 hours, the per-run memory leak closed, and the animation clips shipped in exported builds.",
+      "captures": []
+    },
+    {
+      "date": "2026-10-25",
+      "title": "Kaiju Creation ships; the critics go",
+      "text": "New Game now opens in a dark secret lab built from Tripo props: he picks a genome, the injector does the work, Special K goes in, an egg cracks (D-235, D-236, D-241: 'Ship it'). Nimbalyst joined as a developer; its first task was Kaiju Creation, then the trains (D-232, D-240). The Komodo walks with his forearms up and forward, claws reaching ahead (D-234), and the drool is not negotiable (D-239). He asked for real water, with a wake and waves (D-244), set out the vision the critics judge by (D-242: elegant and restrained effects, true to reference, wide framing, gore and drool celebrated) and then dropped the critics altogether (D-249). When the far insectoid was found missing from the game, an audit of finished work not in the game was written (#201). Handoffs moved to one folder outside git (D-248). Merged: Kaiju Creation, a solid aim wedge behind the kaiju, a title without the yellow bar, a stomp that hurts what is under the foot, the motion gate tightened per growth step. Twenty-five rulings, D-225 to D-249.",
+      "captures": []
+    },
+    {
+      "date": "2026-10-26",
+      "title": "The leap, the interviews and the render plan",
+      "text": "Every visual now goes straight to him, judged by no agent (D-250). Croc work came first for the Itch demo, the dragon was paused (D-252), carving became universal for every building and structure, the railway included (D-253), and he ruled the play area 1.5x wider (D-254). Districts grow by stage (D-255) from Tripo buildings, hero pieces and 40 fillers (D-256). Three interviews (D-259, D-260, D-263) settled run length, the combo, the croc kit, defeat and the demo shell: the croc leaps instead of dashing, high onto a roof, and carves what it hits on the way (D-262, D-268); the stomp plays 20% slower (D-264). Beachfront became a new district (D-269). From 23:00 the render plan took every builder slot (D-276) and the night sky took its fog from the sky (D-279). Merged: trains on an elevated railway, clean roads, gunships that hold a ring, the far insectoid back on the skyline, the adult croc remade, three save slots, the leap, a results screen, rebindable controls, photo mode, a threat meter, red barrels that explode and chain, rain round 1 and the leader's escape helicopter. Thirty rulings, D-250 to D-279.",
+      "captures": []
+    },
+    {
+      "date": "2026-10-27",
+      "title": "Night shift: debt first",
+      "text": "He went to sleep with the work running and the rule that visual changes go into the game and wait for his morning interview (D-308). He ruled the stomp off the croc: its footfalls hurt street-level things on their own, a tail lash takes the button, and the charged stomp becomes the dragon's attack (D-280, D-281). He ruled out floating biomass numbers ('i want to see kaiju', D-284) and any vehicle going see-through (D-290), and chose the new colour grading and both clean-ups (D-285). He asked for every tech-debt item to be actioned (D-295), then put debt ahead of the render plan (D-300); builders are limited only by what the PC and the tests can carry (D-296), and each speed run gets the PC to itself (D-299). Cascadeur is bought just before release (D-301). The croc walk is being reworked from the Dracorex study in his open Cascadeur (D-302, D-305 to D-307). Merged overnight: the freeze fix, the first render-plan savings, the baseline speed bench, and the debt rows (committed .uid files, Git LFS, data schemas, an enforced licence register, a faster pre-push check, tool tests, 61 dead scripts deleted, stale handoffs removed). This day's merge counter reads zero: GitHub dates a merge in UTC, and these landed in the small hours here. Thirty-nine rulings so far, D-280 to D-318.",
+      "captures": []
     }
   ],
   "phases": [
@@ -171,6 +195,57 @@
           "prs": [
             146,
             151
+          ]
+        },
+        {
+          "text": "Local gate before any push: tools/prepush.sh, then it runs only the suites a change reaches (Engineering upkeep, D-159; unlanded-work audit row)",
+          "status": "done",
+          "prs": [
+            242,
+            258
+          ]
+        },
+        {
+          "text": "Tech-debt rows closed (D-295, D-300): every script and shader has its .uid and a lint keeps it so (row 7), 61 unused capture scripts deleted (11), kaiju skins and baked models in Git LFS (8), smoke tests for the Python gates (12), lead scripts inside the repo (13), stale in-repo handoffs and briefs deleted (10), a worktree check with no fixed total (D-053)",
+          "status": "done",
+          "prs": [
+            260,
+            262,
+            263,
+            264,
+            265,
+            267,
+            268,
+            269,
+            270,
+            283,
+            286,
+            292,
+            293
+          ]
+        },
+        {
+          "text": "Data and licences enforced in CI (D-295 rows 5 and 6, hard rules 4 and 5): a JSON schema per data file, the licence register backfilled and read by CI, a dev-only row beating a cleared one (D-301)",
+          "status": "done",
+          "prs": [
+            271,
+            272,
+            278,
+            294
+          ]
+        },
+        {
+          "text": "Handoffs live in one folder outside git, listed by the start hook (D-248)",
+          "status": "done",
+          "prs": [
+            205
+          ]
+        },
+        {
+          "text": "Exported builds ship the animation clips, so the exe plays the same Cascadeur clips as the editor (D-199)",
+          "status": "done",
+          "prs": [
+            177
           ]
         }
       ],
@@ -347,7 +422,44 @@
             100,
             101,
             102,
-            157
+            157,
+            180,
+            181,
+            182,
+            183,
+            187,
+            188,
+            190,
+            191,
+            193,
+            195,
+            196,
+            197,
+            198,
+            199,
+            200,
+            204,
+            206,
+            207,
+            217,
+            218,
+            220,
+            224,
+            226,
+            235,
+            249,
+            250,
+            251,
+            255,
+            266,
+            273,
+            275,
+            280,
+            282,
+            285,
+            287,
+            289,
+            290
           ]
         },
         {
@@ -358,6 +470,24 @@
             61,
             85,
             107
+          ]
+        },
+        {
+          "text": "The working branch lands on main: everything built on claude/look-options since the voxel art direction (#3), D-155 to D-224 (his 2026-10-24 'get main merged', quoted in #178)",
+          "status": "done",
+          "prs": [
+            178
+          ]
+        },
+        {
+          "text": "Audits: finished work not in the game (10-25, again 10-27), the animation audit (machines stay code), the interview audit of 782 answers (D-272)",
+          "status": "done",
+          "prs": [
+            201,
+            202,
+            203,
+            248,
+            256
           ]
         }
       ],
@@ -534,6 +664,13 @@
           "prs": [
             159
           ]
+        },
+        {
+          "text": "Brick towers: no see-through strip behind balcony slabs, and the railings take the window-sill tone (his window-bars comment, D-303)",
+          "status": "done",
+          "prs": [
+            274
+          ]
         }
       ],
       "asks": [
@@ -559,7 +696,8 @@
           "status": "done",
           "prs": [
             104,
-            122
+            122,
+            179
           ]
         },
         {
@@ -603,6 +741,56 @@
             173,
             175
           ]
+        },
+        {
+          "text": "The big attacks land when they land: the breath burns where he faces as the jaws land, the beam starts after the press, a standing stomp lands after its tick (D-166, D-175)",
+          "status": "done",
+          "prs": [
+            212
+          ]
+        },
+        {
+          "text": "Motion gate bars live in data and tighten per growth step (D-177)",
+          "status": "done",
+          "prs": [
+            184
+          ]
+        },
+        {
+          "text": "Aim wedge: solid, steady, layered behind the kaiju, never over him (his 2026-10-25 words, quoted in #189)",
+          "status": "done",
+          "prs": [
+            189
+          ]
+        },
+        {
+          "text": "Hide hit: a wound on the hide where the kaiju is struck (unlanded-work audit; D-252 'merge everything')",
+          "status": "done",
+          "prs": [
+            216
+          ]
+        },
+        {
+          "text": "The croc leaps instead of dashing: springs high, lands on the target's roof and crushes it; every leap carves what it hits in the air (D-259, D-262, D-268)",
+          "status": "done",
+          "prs": [
+            225
+          ]
+        },
+        {
+          "text": "The adult croc is remade sleek and athletic, on the approved r10 rig with retargeted clips (D-219, D-221, D-252); the r11 skin and the approved Cascadeur roar, rise and death stagger (debt row 21)",
+          "status": "done",
+          "prs": [
+            219,
+            276
+          ]
+        },
+        {
+          "text": "The kaiju dies in a Special K overload: he staggers, turns to stone and shatters, his stone shards land first and then the blast clears the rest; three Death Blast upgrades Overload, Meltdown, Supernova (D-288, D-294)",
+          "status": "done",
+          "prs": [
+            240
+          ]
         }
       ],
       "asks": [
@@ -638,7 +826,8 @@
           "text": "One balance pass on the new tree; three growth steps, one per body (D-135)",
           "status": "in progress",
           "prs": [
-            164
+            164,
+            171
           ]
         },
         {
@@ -649,7 +838,9 @@
         {
           "text": "Explosive sites, the red barrel, with shockwave and sonic boom (comments 19, 20)",
           "status": "in progress",
-          "prs": []
+          "prs": [
+            236
+          ]
         }
       ],
       "asks": [
@@ -696,6 +887,56 @@
           "text": "Upgrade-tree screen skin, after E's bigger tree",
           "status": "queued",
           "prs": []
+        },
+        {
+          "text": "Title from his screenshot: no yellow bar along the top, a small New Kaiju plate, the gear in the corner (10-25 comments, title and loading fixes)",
+          "status": "done",
+          "prs": [
+            185
+          ]
+        },
+        {
+          "text": "Kaiju Creation: New Game opens in a dark lab, he picks a genome, the injector arm draws it, Inject Special K, the egg cracks, the baby run begins (D-207, D-235, D-236, D-237, D-241)",
+          "status": "done",
+          "prs": [
+            192
+          ]
+        },
+        {
+          "text": "Three save slots under CONTINUE GAME, each naming its specimen (D-260, D-261, D-263)",
+          "status": "done",
+          "prs": [
+            222
+          ]
+        },
+        {
+          "text": "Results screen: a news headline for how the rampage ended, the destruction tally, body count, NEW RECORD (D-259, D-263, D-265)",
+          "status": "done",
+          "prs": [
+            228
+          ]
+        },
+        {
+          "text": "Options: rebind keys and pad, accessibility, rumble (D-258, D-259)",
+          "status": "done",
+          "prs": [
+            229
+          ]
+        },
+        {
+          "text": "Photo mode from the pause menu: frozen world, free camera (D-259)",
+          "status": "done",
+          "prs": [
+            231
+          ]
+        },
+        {
+          "text": "Threat meter under the clock, five segments that follow the army's real strength, a BREAKING news crawl on big moments, the specimen lab card (D-259, D-260, D-267)",
+          "status": "done",
+          "prs": [
+            234,
+            237
+          ]
         }
       ],
       "asks": [
@@ -741,6 +982,40 @@
           "text": "Graphics preview: a live burning street corner in the options menu (comment 90)",
           "status": "queued",
           "prs": []
+        },
+        {
+          "text": "The per-run memory leak is closed: every dropped rampage is freed (it killed GitHub's balance run at run 80; D-179)",
+          "status": "done",
+          "prs": [
+            176
+          ]
+        },
+        {
+          "text": "Render plan (D-276, D-298): a measured 4K baseline bench and its tools (Phase 0), debris bookkeeping cached per tick (item 1), the kaiju's shadow drawn in a tight box (item 2), night fog, debanding and sharpen, and the new colour grading on by default (items 3 and 4, D-285)",
+          "status": "done",
+          "prs": [
+            259,
+            252,
+            253,
+            257,
+            284
+          ]
+        },
+        {
+          "text": "Bench freeze fixed: render resources made on the main thread only; merged at its speed check (D-282, D-286)",
+          "status": "done",
+          "prs": [
+            254,
+            281
+          ]
+        },
+        {
+          "text": "Speed runs get the PC to themselves (D-299, D-313): no Godot launch, test run or capture starts while a bench holds its window, so every speed number is clean",
+          "status": "done",
+          "prs": [
+            291,
+            295
+          ]
         }
       ],
       "asks": []
@@ -771,7 +1046,9 @@
           "text": "status.py generates the board; shared capture kit",
           "status": "done",
           "prs": [
-            142
+            142,
+            244,
+            247
           ]
         },
         {
@@ -794,7 +1071,15 @@
           "status": "done",
           "prs": [
             168,
-            174
+            174,
+            186
+          ]
+        },
+        {
+          "text": "City audits: roads natural in every seed, seeds meaningfully different, every asset appears (D-265)",
+          "status": "done",
+          "prs": [
+            232
           ]
         }
       ],
@@ -848,6 +1133,22 @@
           "text": "The game is called Kaiju Evolution everywhere players see it (comment 85)",
           "status": "queued",
           "prs": []
+        },
+        {
+          "text": "Stand-off gunships hold a ring beyond his reach, strafe along the view, wear night lights and fire every 2.8 s (D-183)",
+          "status": "done",
+          "prs": [
+            210,
+            230
+          ]
+        },
+        {
+          "text": "Flat surfaces programme P0: clean asphalt roads, textured river walls and quays, roads meeting in one surface, bridges named for what they cross into (his 2026-10-25 'flat textureless colour blocks need to go'; D-248)",
+          "status": "done",
+          "prs": [
+            208,
+            227
+          ]
         }
       ],
       "asks": [
@@ -879,7 +1180,9 @@
           "text": "Atmosphere and city life: clouds and weather, birds, a whale in the bay, dogs, trains, boats (comments 63 to 71)",
           "status": "in progress",
           "prs": [
-            167
+            167,
+            209,
+            239
           ]
         },
         {
@@ -905,6 +1208,20 @@
           "text": "Screen-space reflections on Max (D-142); look-options merged to main once the slice ships",
           "status": "queued",
           "prs": []
+        },
+        {
+          "text": "The far insectoid rampages through the distant skyline across the bay, on by default (D-120; his 2026-10-25 'yes bring it back')",
+          "status": "done",
+          "prs": [
+            213
+          ]
+        },
+        {
+          "text": "The leader's escape helicopter: the Mayor, Governor or President lifts off, flies a lap and runs for the edge; bring it down for a bonus (D-149)",
+          "status": "done",
+          "prs": [
+            246
+          ]
         }
       ],
       "asks": [
@@ -989,6 +1306,76 @@
       "date": "2026-10-23",
       "quote": "start them now, create a third session",
       "effect": "M1's atmosphere starts at once in a third lead session (D-189)."
+    },
+    {
+      "date": "2026-10-24",
+      "quote": "i think we should make it a choice from the baby stage",
+      "effect": "The reptilian family: Komodo (heavy), croc (medium) and serpent (light), picked from the baby stage (D-197)."
+    },
+    {
+      "date": "2026-10-24",
+      "quote": "Kaiju Creation (aka NEW GAME) / laboratory setting, zoomed in petrie dish / you select which reptile genome to place in the dish",
+      "effect": "New Game became a lab opening in the demo; it shipped the next day (D-207, D-241)."
+    },
+    {
+      "date": "2026-10-24",
+      "quote": "I REALLY hate our croc, why is he so fat and bulky, hes meant to be sleek and athletic>?",
+      "effect": "The adult croc was remade from the teen's lean build and kept (D-219, D-221)."
+    },
+    {
+      "date": "2026-10-25",
+      "quote": "the drool is a non-negotiable aspect of the Dragon's design",
+      "effect": "Drool stays on every Komodo model, clip and stage (D-239)."
+    },
+    {
+      "date": "2026-10-25",
+      "quote": "water also counts as a flat untextured surface. Not for the first time, Im asking you for real water",
+      "effect": "Real water with a full wake, built beside the ground texturing (D-244)."
+    },
+    {
+      "date": "2026-10-25",
+      "quote": "abandon our critics, all art passes through you who ACTUALLY LOOKS AT IT and then ASK ME, so the builders are never judging the art, only you and me",
+      "effect": "No critic agents on any project (D-249); the next day every visual went straight to him (D-250)."
+    },
+    {
+      "date": "2026-10-26",
+      "quote": "just show me the clip, i will immediately know what is wrong and can describe the fix, you then workout how to do that fix",
+      "effect": "Every visual goes to him with no agent verdict; he names the defect, the lead works out the fix (D-250)."
+    },
+    {
+      "date": "2026-10-26",
+      "quote": "carve is a universal feature for all buildings",
+      "effect": "Every building and structure, the railway included, breaks through the one carve path; a test fails any other way (D-253)."
+    },
+    {
+      "date": "2026-10-26",
+      "quote": "it looks too fast, it makes it looks weightless rather than titanic",
+      "effect": "The stomp plays 20% slower, and an upgrade node wins part of the speed back (D-264)."
+    },
+    {
+      "date": "2026-10-26",
+      "quote": "he should carve right through what he hits in mid air and land with a smash",
+      "effect": "Every leap carves through what it hits in flight, then lands with a smash (D-268)."
+    },
+    {
+      "date": "2026-10-27",
+      "quote": "a stationary stomp goes against the croc's power fantasy as an athletic kaiju",
+      "effect": "The croc's footfalls hurt on their own, a tail lash takes the button, and the charged stomp moves to the dragon (D-280, D-281)."
+    },
+    {
+      "date": "2026-10-27",
+      "quote": "i dont want to see the numbers. i want to see kaiju",
+      "effect": "Every floating biomass number is removed (D-284)."
+    },
+    {
+      "date": "2026-10-27",
+      "quote": "I want the FULL list of debt items, i want them all actioned",
+      "effect": "A tech-debt list with an owner and a PR on every row; debt fixes then went ahead of the render plan (D-295, D-300)."
+    },
+    {
+      "date": "2026-10-27",
+      "quote": "any visual work is fine but after the first iteration save it and show me in interview tomorrow",
+      "effect": "Night-shift visual changes go into the game after one iteration and wait for his morning verdict; what he rejects is reverted (D-308)."
     }
   ],
   "captures": {

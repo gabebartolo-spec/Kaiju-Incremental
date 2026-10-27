@@ -57,9 +57,10 @@ func _init(p_check: Callable, p_host: Node) -> void:
 	_host = p_host
 
 
-func run() -> void:
-	for stage: int in STAGES:
-		await _stage(stage)
+## One stage's whole check (the suite calls it once per stage in STAGES, so CI can run the stages as
+## two parts side by side: tests/lib/functions_ran.gd part()).
+func run(stage: int) -> void:
+	await _stage(stage)
 
 
 func _stage(stage: int) -> void:

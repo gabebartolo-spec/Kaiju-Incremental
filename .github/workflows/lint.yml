@@ -13,6 +13,7 @@ concurrency:
 jobs:
   doc-caps:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Enforce line caps
@@ -37,6 +38,7 @@ jobs:
 
   project-lints:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,9 +55,14 @@ jobs:
           else
             echo "tools/lint/run_all.sh not present yet; skipping"
           fi
+      - name: Every workflow job has a timeout
+        run: |
+          python tools/lint/workflow_timeouts.py --self-test
+          python tools/lint/workflow_timeouts.py
 
   gdlint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -87,21 +94,31 @@ jobs:
         run: xargs -a gd_files.txt gdformat --check
 
   # Secret scan: the default gitleaks rules plus the project's own in .gitleaks.toml
-  # (the fake-secret pattern the gate plants, and a generic sk- key rule).
+  # (the fake-secret pattern the gate plants, and a generic sk- key rule), over the PR's commits.
+  # The MIT gitleaks CLI, pinned and checksum-checked; not gitleaks-action, whose v2 is under a
+  # proprietary EULA (tech debt row 26).
   gitleaks:
     runs-on: ubuntu-latest
-    # gitleaks-action lists the PR's commits through the API; contents: read alone is a 403.
-    permissions:
-      contents: read
-      pull-requests: read
+    timeout-minutes: 5
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+      BASE: ${{ github.event.pull_request.base.sha }}
+      HEAD: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_CONFIG: ${{ github.workspace }}/.gitleaks.toml
+      - name: Install gitleaks
+        shell: bash
+        run: |
+          f="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$f" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/$f"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$f" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$f" -C "$RUNNER_TEMP" gitleaks
+      - name: Scan the PR's commits
+        shell: bash
+        run: '"$RUNNER_TEMP/gitleaks" git --no-banner --redact -v --config .gitleaks.toml --log-opts="$BASE..$HEAD" .'
 
   # CLAUDE.md hard rule 5: every file under assets/ is covered by a CLEARED row of
   # docs/LICENSING_REGISTER.md (debt row 6, D-295). Red when a file has no row.

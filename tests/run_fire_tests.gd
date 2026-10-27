@@ -7,6 +7,7 @@ extends "res://tests/lib/powers_base.gd"
 ##   godot --headless --path . --script tests/run_fire_tests.gd
 
 const FireStage := preload("res://tests/lib/fire_stage.gd")
+const CurveCheck := preload("res://tests/lib/fx_curve_check.gd")
 const ABLAZE := {"r_ablaze": 1}
 ## Two 3 x 3 x 4 blocks a 1 m street apart, the kaiju 15 m off (in reach of nothing).
 const KAIJU_AT := Vector2(-15, 0)
@@ -28,6 +29,7 @@ func run_checks() -> void:
 	await _t("_check_firestorm")
 	await _t("_check_lights")
 	await _h("FireStage", func() -> void: FireStage.new(check).run())
+	await _h("FxCurve", func() -> void: CurveCheck.check(check))
 
 
 func _pair(levels: Dictionary, gap: float = 1.0) -> RampageSim:

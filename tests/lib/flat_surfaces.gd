@@ -15,6 +15,8 @@ extends RefCounted
 ## the nearest scripted ancestor's class name and what is flat about it.
 
 const DETAIL_INCLUDE := "surface_detail.gdshaderinc"
+## Physics frames his death may take to reach the burst (about 3.2 s in data at 60 fps, with room).
+const DEATH_FRAMES := 600
 ## Nodes in this group are visual effects, exempt from the rule.
 const EXEMPT_GROUP := "vfx_exempt"
 
@@ -181,8 +183,29 @@ static func _add_ruins(rampage: Rampage) -> void:
 	yard._add(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
 
 
-## The check: build the real city, scan it, fail every flat type not on KNOWN_FLAT, and fail a
-## KNOWN_FLAT entry that no longer exists (so the list shrinks as types are fixed).
+## Runs the real sim until the first train is on the viaduct (rail.first_s after the kaiju's rise
+## from the river) and its cars are drawn, so the trains are in the scan (debt row 25: the cars
+## rendered flat and a scan 30 frames in never saw one). True when RailView holds a train's cars.
+static func _await_train(tree: SceneTree, rampage: Rampage) -> bool:
+	var rail: Rail = rampage.sim.rail
+	var rise := Num.f(Content.section("emerge")["max_seconds"])
+	var ticks := ceili((rise + Num.f(rail.cfg["first_s"]) + 2.0) * Engine.physics_ticks_per_second)
+	for i: int in ticks:
+		if not rail.trains.is_empty():
+			break
+		await tree.physics_frame
+	for i: int in 2:
+		await tree.process_frame
+	var view: RailView = rampage.get("_rail")
+	if view == null:
+		return false
+	var cars: Dictionary = view.get("_cars")
+	return not cars.is_empty()
+
+
+## The check: build the real city, run it until a train runs, scan it, fail every flat type not
+## on KNOWN_FLAT, and fail a KNOWN_FLAT entry that no longer exists (so the list shrinks as types
+## are fixed).
 static func run(tree: SceneTree, check_fn: Callable) -> void:
 	Content.set_time("noon")
 	var species := Content.species_def("reptilian")
@@ -195,6 +218,7 @@ static func run(tree: SceneTree, check_fn: Callable) -> void:
 	await rampage.wait_loaded()
 	for i: int in 30:
 		await tree.process_frame
+	check_fn.call(await _await_train(tree, rampage), "a train runs on the viaduct in the scan")
 	_add_ruins(rampage)
 	check_fn.call(
 		rampage._city.ruins().get_child_count() >= 3,
@@ -218,5 +242,32 @@ static func run(tree: SceneTree, check_fn: Callable) -> void:
 	print("FLAT types found: %d" % found.size())
 	for type: String in found:
 		print("FLAT %s x%d %s" % [type, found[type]["count"], found[type]["node"]])
+	await _death(tree, rampage, check_fn)
 	rampage.queue_free()
 	await tree.process_frame
+
+
+## His death too (director 2026-10-27, "i dont like the pale blocks that come out of the
+## explosion": the burst's stone debris and shards were plain untextured boxes): ends the run, plays
+## the overload to the burst (DeathView, DeathOverload) and scans what is flying. Same rule: no
+## flat type that is not on KNOWN_FLAT.
+static func _death(tree: SceneTree, rampage: Rampage, check_fn: Callable) -> void:
+	rampage.sim.end("ended")
+	var view: DeathView = rampage.find_child("DeathView", false, false)
+	for i: int in DEATH_FRAMES:
+		if view.burst:
+			break
+		await tree.physics_frame
+	check_fn.call(view.burst, "his death reaches the burst (debris and shards are in the scan)")
+	var found := scan(view)  # what his death adds: the stone debris and the shards
+	var fresh: Array[String] = []
+	for type: String in found:
+		if not KNOWN_FLAT.has(type):
+			fresh.append("%s x%d (%s)" % [type, found[type]["count"], found[type]["node"]])
+	var pieces := _walk(view).filter(func(n: Node) -> bool: return n is GeometryInstance3D)
+	check_fn.call(
+		pieces.size() >= 2, "the debris and the shards are in the scan: %d" % pieces.size()
+	)
+	check_fn.call(fresh.is_empty(), "no flat-colour surface in his death: %s" % [fresh])
+	for type: String in found:
+		print("FLAT death %s x%d %s" % [type, found[type]["count"], found[type]["node"]])

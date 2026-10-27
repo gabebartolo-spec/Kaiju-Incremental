@@ -8,155 +8,97 @@ only by the lead when the director rules; replace the old line, never append his
 Every visual effect passes three equal tests: **beauty** ("visual beauty is equally important"), **consistency** (one look
 per effect family: "consistency is absolutely key to avoid slop accusations") and **the power fantasy** ("all the visual
 effects must make you feel like the Apex Predator, King of Monsters, Godkiller, Planetbreaker"; "our enemies are many, but they ultimately are our prey"). Detail: `docs/VFX_STYLE.md`.
+**The look bar (D-242):** effects "Elegant, restrained" (only his attacks go big); true to real reference and to his
+design; drool, teeth, scars and gore are celebrated; wide city-scale framing; motion slowed for mass; night dark and moody.
 
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
 sees, decides or remembers is cut, not polished. **Motion and destruction come first** (D-177): "motion, alongside the destruction mechanics, is the most important element of our design. If we cant sell the fantasy of piloting a Kaiju then the game wont be fun"; every change to his body or movement passes the motion checks at all three growth steps. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
 
 ## The game
-- An **active action game** with incremental progression, the Nodebuster / Brotato shape. No idle, no AFK, no offline
-  gains, no clicker framing; progress only from playing. Authored pacing, **3-5 hours** to the end (D-002).
-- **Loop:** a short rampage (40 s to a few minutes; ends on the clock, the army or the city falling) -> devour
-  **biomass** from everything you flatten ("it devours what it flattens; evolving is growing", D-056; never "rubble"
-  as a currency) -> buy nodes on the evolution tree -> rampage again, bigger (D-003).
-- **Controls:** move; stomps fire on their own (0.7 s rhythm); one signature button; the ultimate on its own button
-  (E / pad Y, long cooldown); dash (Shift / B). Keyboard and controller, readable on a TV (D-004, D-040).
-- **Platform:** PC, a 4K 120 Hz TV (RTX 4070 SUPER), fullscreen from code in exports, UI a 1920x1080 canvas at 2x
-  (D-027). Godot 4.7.2.
+- An **active action game** with incremental progression, the Nodebuster / Brotato shape. No idle, no AFK, no offline gains, no clicker framing; progress only from playing. Authored pacing, **3-5 hours** to the end (D-002).
+- **Loop:** a rampage of 60 s, up to 3 min with timer nodes (D-259) -> devour **biomass** from everything you flatten ("it devours what it flattens; evolving is growing", D-056; never "rubble" as a currency), shown flowing into him as a stream of motes (D-260) -> results, then the evolution tree with "Rampage" one press away -> buy nodes -> rampage again, bigger (D-003). No refunds; an evolution happens at once, with the reveal (D-260). No difficulty setting.
+- **How a run ends:** the city "falls" at 85% destroyed, a win beat (D-259); otherwise he dies. Killed by the army (rare: about 1 run in 8 at each growth stage, D-259, D-267), or at time's up by the Army's final strike, one overwhelming jet run or railgun volley (D-263). Pause offers only "End rampage", which is a death too (D-265). On any death he keeps all he earned ("Keep it all", D-259) and collapses in the street, flat on his belly, chin on the street (D-260, D-267).
+- **Specimens (D-260, D-263):** he is SPECIMEN K-01; every death makes the next ("Yes, every death counts"), shown as a 2 s lab card and a short headline before the rise (K-01 LOST · K-02 RELEASED).
+- **Combo (D-259, D-263):** small and quick: any kill or building break keeps a ~3 s window going, cap about x2, a pop on the biomass figure.
+- **Results:** a headline per ending (the city falls / killed by the final strike / lost to the army); biomass and best combo, destruction tally, body count, personal bests (D-259, D-263).
+- **Controls:** move; stomps land on their own under every footfall (D-280); one signature button; the ultimate on its own button (E / pad Y, long cooldown); the leap (Shift / B; player copy says "Leap", D-262). Keyboard and controller, readable on a TV (D-004, D-040).
+- **Platform:** PC, a 4K 120 Hz TV (RTX 4070 SUPER), fullscreen from code in exports, UI a 1920x1080 canvas at 2x (D-027). Godot 4.7.2.
 - **Not:** a clicker, idle, infinite exponential numbers, a city builder, a Godzilla copy.
 
 ## The kaiju
-- Three species, picked at the start, one per save; each plays differently, not just looks different (D-006, D-035).
-- **The reptilian family (D-197, D-202, D-203, D-206):** three reptilians, each with its own tree, powers and progress ("Fully separate"). A new save starts with the **croc**, our first titan and the demo's kaiju; finishing the first city unlocks the **Komodo dragon**, the next city the **serpent**. **Croc (medium, the athletic fighter):** remade more horizontal, a T-rex/croc hybrid, athletic and aerodynamic with incredible power; a leap that lands on a building and crushes it with a shockwave (replaces the dash), lightning breath, tail whip; ultimate the long lightning beam. **Komodo dragon (heavy, the bulky brawler, the lumbering colossus):** a death roll (he clamps a building in his jaws and spins, wrenching it apart, venom spiralling from his mouth; units in reach caught), a poisonous saliva torrent swept by steering that leaves pools rotting buildings and hurting the army, a straight-line charge; ultimate an unending torrent leaving a spreading toxic swamp; moves only as fast as his animations show (D-201). **Serpent (light, a specialist), a hybrid that evolves (D-206):** it starts as a spitting cobra and its body visibly morphs as the tree and its growth unlock each trait. Cobra (from the start): slithers (D-198), caustic acid spat in arcing globs that melt buildings from the top down, climbs towers and spits acid from the top, a sidewinding dash. Rattle (unlocked as it grows into adolescence): a discombobulating vibration that bursts the people who hear it and does rumble damage to nearby buildings. Constrictor (unlocked at adulthood, when it grows more powerful; the adult is a python body with the venom-spitting cobra head and the rattle on a grabbing tail): spirals up towers and constricts them until they collapse inward, a tail that swats attackers on its own and snatches helicopters. Any contact a titan has with a building damages it (D-208); only the serpent can hold a button to climb freely instead, doing no damage while it climbs, and stays coiled where it is when the button is let go. Cobra, rattle and constrictor upgrades mix freely, all gated by the tree and evolution. Ultimate an acid rain that melts whole blocks. Idle states (D-210): the croc hunches guardedly, ready to leap at anything nearby; the dragon breathes heavily and steadily, tongue darting, drool dripping, snorting steamy gusts from its nostrils; the serpent curls into a defensive coil, tongue flicking. **Final boss, the mecha chimera (D-211):** a giant machine the military builds from DNA harvested from your rampages: a snake head, the croc's body and athleticism, the dragon's massive size and power, the battle abilities of all three, and a tribeam of corrosive acid, lightning and poison from its mouth; faced in the last city once every upgrade of all three reptilians is unlocked. Stretch goal: unlocking 100% of the achievements unlocks a secret, playing as the mecha kaiju (the achievement list is still to be designed). The insectoid and cephalopod become stretch goals; building your own kaiju moves to the expansion (D-212).
-- **Reptilian, the croc titan: strongest, a living battering ram.** "A crocodile in a t-rex body, not godzilla
-  shaped" (D-108): croc snout, pale flat bone scutes, charcoal spines, short reptilian arms, long low tail, ~20-30
-  deg lean, graceful like a JP T-rex (D-031, D-046, D-048). Kit: claw swipe raking ahead every 2 s that undermines
-  towers (D-095, D-096), kept in front of him, its trail and sparks reading from the camera behind (D-190);
-  a tail whip from a tree node (b2-2; the autonomous tail limb is the snake's, D-202); momentum
-  (straight lines hit harder, turning bleeds it); dash (bursts through every building in its path, landmarks too, a kick per wall, #34). Signature: a breath of **hot forked white-hot lightning**,
-  never "atomic" (D-108); its ultimate is a long sustained beam swept by steering.
-- **Insectoid, the mantis: fast, and the brood mother.** Its identity: it **lays eggs that hatch elephant-sized
-  young which run through the city on their own, destroying, devouring civilians and fighting the military**
-  (director 2026-10-21; seeded autonomous minions, capped count). Two raptorial arms plus four legs, dark chitin,
-  red eyes, rusty scythe tips (D-022, D-038). Movement kit: scuttle (fastest, sharp turns), leap with hold-to-glide,
-  climbs towers and tips them from the top (D-037).
-- **Cephalopod: the most cunning, a hydra of limbs.** Adult = 10+ barnacled tentacles (D-036). Kit: 360 deg limb
-  attacks, each limb picking its own target; grab and throw tanks, cars and helicopters (a thrown tank explodes like
-  a grenade); pulls itself along building edges, climbs, squeezes through gaps. Ultimate: corrosive ink that
-  dissolves coated buildings and units. Slides and grabs, never tip-toes (D-031). Swims fast in water and can dive to dodge the army, bursting out under buildings; one of the 3 cities is a water city (D-123).
-- **Growth:** baby (start, a toddler: slow, outscaled by the city) -> adolescent (EVOLVE 1, lanky, oversized feet,
-  half-grown feature) -> adult (EVOLVE 2+, massive). Each stage a new body plan like Simba's, never only bigger
-  (D-009, D-014, D-074). Body scale grows with every upgrade owned. No building is too strong for the baby; big ones
-  just take longer (D-091). The reveal is titled by the node bought (BEHEMOTH), with the roar (D-051, D-055).
-- **Motion:** terrifying monsters, not toys (D-013). Turns with weight, "lumbering and unstoppable" yet responsive:
-  bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
-  shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Physics on tails, limbs and
-  antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047). Standing still he
-  is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking; each
-  breath a slow, deep heave of neck, shoulders and flanks every 6-8 s (D-190). Strides
-  grow heavier with size; tail, throat and jowls swing on each footfall; a short crouch before the dash (D-165).
-  A big attack's damage lands when the jaws or foot land (D-166).
-- **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
-  breaks it (D-091, D-110, comments #24). A tower that falls on him breaks believably at the contact, large pieces
-  folding off him, "not turned instantly to dust" (#25). A fallen building breaks
-  against the ground into rubble, never disappears into it: each section shatters as it hits the ground, in
-  sequence, base to top; nothing slides away whole (#26, #30).
-- **Models:** Tripo designs, hand-rigged in Blender with welded weights, rendered as voxel cubes on a smooth skinned
-  lattice (D-041, D-045). The kaiju gets double voxels per axis, the city keeps today's size (D-107). Mantis and
-  octopus meshes kept; their game-ready plan is `docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md`,
-  plan only (D-060). One look built from blocks, close shots included: far blur on the kaiju, cool shadows with warm
-  fire, roads and lawns in the city's fine blocks (D-163). New heads are looks only at first (D-166).
+- **The reptilian family (D-197, D-202, D-203, D-206):** three reptilians, one per save in play, each with its own tree, powers and progress ("Fully separate"); each plays differently, not just looks different (D-006, D-035). A new save starts with the **croc**, our first titan and the demo's kaiju; finishing the first city unlocks the **Komodo dragon**, the next city the **serpent**. The insectoid and cephalopod are stretch goals; building your own kaiju moves to the expansion (D-212).
+- **Croc (medium, the athletic fighter): strongest, a living battering ram.** "A crocodile in a t-rex body, not godzilla shaped" (D-108), remade more horizontal, a T-rex/croc hybrid, athletic and aerodynamic with incredible power: croc snout, pale flat bone scutes, a medium ridge of pale plates and dark spikes (D-221), short reptilian arms, long low tail, ~20-30 deg lean, graceful like a JP T-rex (D-031, D-046, D-048). Kit:
+  - every footfall crushes what is under it, street level only (people, cars, trees, props; buildings only chip), and never stops him (D-280);
+  - the **tail lash** on the signature button: a mid-stride tail whip flattening a ring beside him, never breaking his run (D-280); an automatic tail whip also comes from a tree node (D-259);
+  - the **leap** (replaces the dash, in the demo): a high arc that lands on the target's roof, carving what it hits in flight and landing with a smash and a shockwave (D-259, D-262, D-268);
+  - the claw rake, automatic, every 2 s, raking ahead and undermining towers, kept in front of him (D-095, D-096, D-190, D-259), a faint short trail per claw tip (~0.25 s, D-243);
+  - an automatic snap bite that eats people, cars and helicopters near the snout, mid-stride, never slowing him (D-259, D-263); healing is a tree node (eating heals once bought, D-259);
+  - momentum: straight lines hit harder, turning bleeds it;
+  - the breath: **hot forked white-hot lightning**, never "atomic" (D-108); it "surges the grid": power lines and substations spark down the street, transformers blow, the block blacks out (D-260); its ultimate is a long sustained beam swept by steering.
+- **Komodo dragon (heavy, the bulky brawler, the lumbering colossus):** a death roll (he clamps a building in his jaws and spins, wrenching it apart, venom spiralling from his mouth; units in reach caught); a poisonous saliva torrent swept by steering that leaves pools rotting buildings and hurting the army; a straight-line charge, a Godzilla-style forward-pitched run ending in an airborne lunge (D-238); the tap-to-stomp, hold-to-charge stomp with Frenzy (moved from the croc, D-281); ultimate an unending torrent leaving a spreading toxic swamp. He walks with forearms up and forward, claws reaching ahead (D-233, D-234); moves only as fast as his animations show (D-201): size upgrades lengthen his stride, speed upgrades raise cadence up to ~1.25x, top tiers unlock a lumbering run (D-245).
+- **Serpent (light, a specialist):** being redesigned so it reads as a kaiju, not a giant snake: "Hood and frills" and "Armour and horns" (D-246); all serpent work waits for his pick of the final design. The kit stands as designed (D-206): a hybrid that evolves, its body morphing as the tree unlocks each trait. Cobra (from the start): slithers (D-198), caustic acid spat in arcing globs that melt buildings from the top down, climbs towers and spits from the top, a sidewinding dash. Rattle (adolescence): a discombobulating vibration that bursts the people who hear it and rumbles nearby buildings. Constrictor (adulthood): spirals up towers and constricts them until they collapse inward; a tail that swats attackers on its own and snatches helicopters. Only the serpent can hold a button to climb freely, doing no damage while it climbs, and stays coiled when it lets go; any other contact a titan has with a building damages it (D-208). Upgrades mix freely. Ultimate an acid rain that melts whole blocks.
+- **Idle states:** the croc hunches guardedly, ready to leap at anything nearby (D-210); the dragon is calm: slow breaths, one tongue flick a loop, a slow gentle tail sway, nothing else moving (D-225); the serpent curls into a defensive coil, tongue flicking (D-210).
+- **Final boss, the mecha (D-211, D-227, D-230):** a giant machine the military builds from DNA harvested from your rampages: "a human, with a reptilian tail and cobra head, but its a robot", lab-white armour with glowing blue lights, the battle abilities of all three, a tribeam of corrosive acid, lightning and poison from its mouth; faced in the last city once every upgrade of all three reptilians is unlocked. Stretch goal: 100% of the achievements unlocks playing as the mecha (the list is still to be designed).
+- **Skins (D-221, D-224, D-226), "Earned by playing":** croc olive and Pale Banded; serpent olive, Copper and Albino; Komodo Melanistic Black and Bone White.
+- **Growth:** baby (start, a toddler: slow, outscaled by the city) -> adolescent (EVOLVE 1, lanky, oversized feet, half-grown feature) -> adult (EVOLVE 2+, massive). Each stage a new body plan like Simba's, never only bigger (D-009, D-014, D-074). Body scale grows with every upgrade owned. No building is too strong for the baby; big ones just take longer (D-091). The reveal is titled by the node bought (BEHEMOTH), with the roar (D-051, D-055).
+- **Motion:** terrifying monsters, not toys (D-013). Turns with weight, "lumbering and unstoppable" yet responsive: bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy"; shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Tails are a living limb: balance swing, mood, attack wind-up, ground contact, physics on top, in every clip (D-223, D-015). Every creature and person clip is keyed in Cascadeur (tail, jaw and tongue may be keyed in Blender); machines stay code (D-228, D-247). The croc walks size-matched, ~1.4 s a step, head steady, spine in an S, tail trailing (D-302). The teen Komodo holds his head steady (D-222). Standing still he is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking; each breath a slow, deep heave of neck, shoulders and flanks every 6-8 s (D-190). Strides grow heavier with size; tail, throat and jowls swing on each footfall (D-165). A big attack's damage lands when the jaws or foot land (D-166).
+- **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower breaks it (D-091, D-110, comments #24). A tower that falls on him breaks believably at the contact, large pieces folding off him, "not turned instantly to dust" (#25). A fallen building breaks against the ground into rubble, never disappears into it: each section shatters as it hits the ground, in sequence, base to top; nothing slides away whole (#26, #30). Rubble is pancaked floors and debris, "Well below his knees"; his feet crunch it flatter (D-245).
+- **Models:** Tripo designs, rigged, rendered as voxel cubes on a smooth skinned lattice (D-041, D-045). The kaiju gets double voxels per axis, the city keeps today's size (D-107). Every kaiju has a real mouth: gums, rooted teeth, a wet lining, tongue and throat, croc first; the Komodo's drool is non-negotiable (D-239, D-245). One look built from blocks, close shots included: far blur on the kaiju, cool shadows with warm fire (D-163). New heads are looks only at first (D-166). Mantis and octopus meshes kept, plan only (D-060).
 
 ## The city
-- Voxel, Look C "Concrete Realism", real structures with recessed framed facades and rooftop clutter, matching the
-  kaiju's fidelity (D-005, D-008, D-028). Target look: `WATCH THIS.mp4` (repo root, untracked) 120-168 s and
-  590-680 s: chewed buildings with ragged holes, tiny-voxel debris streams, thick smoke, glowing embers, haze. Reads as a real city with believable edges, not a grid in a void (D-024).
-- **No vast empty spaces:** every cell the camera shows holds something to smash or kill (D-062). A believable amount
-  of greenery, all crushable; green lots 8% (D-065, D-075). Civilians and moving traffic (D-019). Zebra crossings only
-  at the central junction (D-054). Every building in the play area is destroyable (b2-6). A quiet row of bollards
-  marks the edge (#18).
-- **The city grows with each evolution:** more districts, taller towers, harder defences (D-039).
-- **Start:** the kaiju rises out of the river water facing the city, from a wider bay onto a small shoreline, and
-  walks straight in (#10, #17); where a bridge deck sits over the rise he bursts up through it and breaks it
-  (director 2026-10-21); the bay fits the stage's biggest possible body (director 2026-10-21). Bridges always meet the land (#12). Nothing in the foreground hides the rise (#27).
-- **Landmarks:** stadium, wheel, spire, megatower, in that order (D-071). The stadium plays one random sport per run
-  (AFL, NFL, soccer, cricket), full stands; players flee; the crowd is killable, thins over time and falls with a
-  broken stand, never vanishes or dangles (D-078, D-078a, b2-8, #17). It sits far from the spawn (b2-21); bonus 1.5x
-  (D-090), other landmarks 4x (D-081).
-- **Explosive sites, the "red barrel":** fuel silos, fireworks factories, chemical labs; any damage (the kaiju,
-  rubble, a stray army shell) arms them; blasts carve and chain. Really good SFX and VFX: a shockwave ring, air
-  distortion, a sonic boom delayed by distance (#19, #20).
-- **Fire:** a destroyed building stays rubble, never a burning shell (#14). Fire returns as gameplay: a tree node lets
-  fire spread building to building on its own, burn-outs pay biomass, fires light the city (#15; rules in research 26).
-  Flames are smooth, tall and tapering, realistic in shape: the one effect that is not blocky (D-190).
-- Real OSM cities (D-029) are tabled. A background kaiju rampaging in the far skyline is a prototype for his yes (#16).
+- Voxel, Look C "Concrete Realism", real structures with recessed framed facades and rooftop clutter, matching the kaiju's fidelity (D-005, D-008, D-028); buildings are Tripo models voxelised into carvable cells, hero pieces plus ~40 varied fillers (D-256, D-257); balcony railings take the window-sill tone (D-303). Target look: `WATCH THIS.mp4` (repo root, untracked) 120-168 s and 590-680 s: chewed buildings with ragged holes, tiny-voxel debris streams, thick smoke, glowing embers, haze. Reads as a real city with believable edges, not a grid in a void (D-024).
+- **A fresh city each run** (no scars), built from shuffled authored building blocks on 2-3 street plans per stage (D-259, D-261); the order differs per save (the slot's seed plus the run index; replays and tests reproduce, D-263). Play area 1.5x wider: half-widths 75 / 120 / 225 m by stage, landmarks and explosive sites spread across it (D-254).
+- **No vast empty spaces:** every cell the camera shows holds something to smash or kill (D-062); density is the same per street, counted on built blocks only (D-267). A believable amount of greenery, all crushable; green lots 8% (D-065, D-075). Roads clean dark asphalt, crisp paint, faint tyre lines (D-248). Zebra crossings only at the central junction (D-054). Every building in the play area is destroyable (b2-6). A quiet row of bollards marks the edge (#18).
+- **Districts grow by stage (D-255):** baby: a bar strip and a neon street; adolescent adds Chinatown (real Chinese words), a red-light district ("Neon and signs only", D-263) and docklands; adult adds a business district and a giant billboard intersection. Each has its palette and one signature hazard or prey (D-257, D-259). **Beachfront** is a district of its own: 19 bespoke Tripo buildings (towers and hotels, promenade venues, beach structures, a pier; D-269, D-274, D-277). Tallest towers about twice the adult croc (D-257).
+- **Street life (D-255, D-258):** traffic lights, power lines, street lights, manholes, bins, graffiti, phone booths, food trucks, hydrants (they put out fires), bus stops, benches, newsstands, bikes; moving traffic with jams and pile-ups. Civilians in mixed panic evacuate toward the edges over a run and jam the exits; a kill leaves a small blood smear, dust with the gore toggle (D-019, D-260).
+- **Railway (D-240, D-243, D-247):** an elevated viaduct; trains keep running as he nears, horn blaring; a derail pays a big bonus and survivors flee; pillars, deck and station break, and buildings fallen on the track damage it.
+- **Start:** the kaiju rises from a crescent sea bay cut into the city's north edge, a sand beach at its city end and quays on its flanks, on every city; the beach is about half the edge at stage 1 and grows each stage (D-270). The rise is keyed (head first, shoulders, legs push last, then the roar) and walks straight in (#10, #17, D-270, D-274); where a bridge deck sits over the rise he bursts up through it. Bridges always meet the land (#12); the landmark bridge is a suspension span over the wider water (D-254, D-257). Nothing in the foreground hides the rise (#27).
+- **Landmarks:** stadium, wheel, spire, megatower, in that order (D-071), placed per map seed (D-271); hero landmarks pay a big bonus with a callout (D-257) and burn when fire reaches them (D-247). The stadium plays one random sport per run (AFL, NFL, soccer, cricket), full stands; players flee; the crowd is killable, thins over time and falls with a broken stand, never vanishes or dangles (D-078, D-078a, b2-8, #17). It sits "as far away from our spawn spot as possible" (b2-21), south past the river with the Ferris wheel (D-270), reachable from stage 2 (D-271); bonus 1.5x (D-090), other landmarks 4x (D-081).
+- **Explosive sites, the "red barrel":** fuel silos, fireworks factories, chemical labs; any damage (the kaiju, rubble, a stray army shell) arms them; blasts carve and chain. Really good SFX and VFX: a shockwave ring, air distortion, a sonic boom delayed by distance (#19, #20).
+- **Fire:** a destroyed building stays rubble, never a burning shell (#14). Fire returns as gameplay: a tree node lets fire spread building to building on its own, burn-outs pay biomass, fires light the city (#15; rules in research 26). Flames are smooth, tall and tapering, realistic in shape: the one effect that is not blocky (D-190).
+- **Water (D-244, D-245):** real-looking water, looks only: swell, ripples, reflections, whitecaps, his full wake, floating debris, moss on quay walls; moored boats rock and capsize.
+- An insectoid rampages in the far city, on by default ("yes bring it back", D-247). Real OSM cities (D-029) are tabled.
 
 ## Destruction
-- **Real carving and physics, top priority:** Teardown-style fine sim voxels, islands fall, RFG-style support and
-  topple, a C++ core; Jolt for cosmetic debris only, never an outcome (D-094, D-097). "A building shouldnt have a
-  health bar, it should be a physical structure which obeys the laws of physics and simply must be dismantled",
-  effortless even for a baby (b2-4).
-- Towers fall toward the side that was cut, even onto the kaiju (D-099), with more varied directions (b2-5). Carved
-  slabs colour 8a8780 (D-101). Shared walls carry real facades (b2-22). Fallen slabs are destructible (D-110).
+- **Real carving and physics, top priority:** Teardown-style fine sim voxels, islands fall, RFG-style support and topple, a C++ core; Jolt for cosmetic debris only, never an outcome (D-094, D-097). "A building shouldnt have a health bar, it should be a physical structure which obeys the laws of physics and simply must be dismantled", effortless even for a baby (b2-4). Every building and structure, the railway too, breaks only through the one carve path (D-253).
+- Towers fall toward the side that was cut, even onto the kaiju (D-099), with more varied directions (b2-5). Carved slabs colour 8a8780 (D-101). Shared walls carry real facades (b2-22). Fallen slabs are destructible (D-110).
+- **His death:** his falling stone body lands first and smashes buildings, then the Death Blast clears the rest, both visibly destroying things (D-294). Death Blast nodes: Overload, Meltdown, Supernova at 2,540 / 8,128 / 17,780 biomass ("Go out with a bang: when you fall, you take the street with you", D-288).
 - Smoke never hides the view: clear near the camera, thinned over the kaiju (D-025, D-018).
 
 ## The army
-- A professional military, escalating gradually: "a city caught unaware" at the start, faster spawns the more you
-  destroy, scaling inside each stage so defeat stays possible (D-066, D-069, playtest 11).
+- A professional military, escalating gradually: "a city caught unaware" at the start, faster spawns the more you destroy, scaling inside each stage so defeat stays possible but rare (D-066, D-069, D-259, playtest 11).
 - **Clumsy, not perfect:** tanks miss, run over cars and sometimes blow up their own city (#9, #18).
-- Tanks and helicopters, 2x real size, desert tan (D-042); tanks get shoved and flung into buildings, people and
-  vehicles, never whittled like a health bar (b2-9). Rooftop squads of armed citizens fire raggedly, never in unison,
-  for chip damage (D-063, D-076, D-085). Four jet types; strikes wreck buildings but pay no biomass; the warning scales
-  with kaiju size (D-072, D-080). Later: rooftop mortars, then a mecha boss finale (ROADMAP H).
+- Tanks and helicopters, 2x real size, desert tan (D-042), remade as Tripo models with moving parts (D-297), always drawn solid, never see-through (D-290); tanks get shoved and flung into buildings, people and vehicles, never whittled like a health bar (b2-9). Rooftop squads of armed citizens fire raggedly, never in unison, for chip damage (D-063, D-076, D-085). Four jet types; jet strikes wreck buildings but pay no biomass, while buildings the rest of the army wrecks pay in full (D-260); the warning scales with kaiju size (D-072, D-080). The railgun's lock warning fits the leap's crouch: ~0.6 / 0.75 / 1.0 s by size (D-261).
+- **Taskforce agents (D-255, D-258):** grapple-swing between buildings, then jetpack, "Mix by situation"; they hover and fire; he can swat them from the air for a bonus; a hit is a gore splatter.
+- **The VIP governor (D-242, D-243, D-244):** flees by helicopter ("Same size, lit"); headlines COWARD GOVERNOR FLEES CITY BY CHOPPER / GOVERNOR SWATTED FROM THE SKY (3 s, no slow-mo) / COWARD {rank} ESCAPES THE CITY.
+- **Hits on him (D-245):** impacts sit on his surface, no glow, a tiny red blood mist; faint wounds build up over a run.
+- After the demo: rooftop mortars and the Taskforce commander mini-boss (D-259, D-260); the mecha boss is the finale.
 
 ## Progression
-- The tree is the spine: per species, grown to 2-3x today's nodes, an upgrade affordable after every rampage, steady
-  cadence (never 1 -> 8 -> 1 buys), first evolution at about 15 min (b2-28, D-087, D-098). Costs live in data.
+- The tree is the spine: per species, grown to 2-3x today's nodes, an upgrade affordable after every rampage, steady cadence (never 1 -> 8 -> 1 buys), first evolution at about 15 min (b2-28, D-087, D-098). Costs live in data. The croc tree is rings: baby nodes in the middle, each growth stage a wider ring, easy to zoom out and pan (D-275). Throw nodes are "Ricochet" and "Domino" (D-259).
 - The stats panel shows only what the selected node changes, in plain words (D-077).
-- **Copy rule for all player text:** short and playful, no mechanics explained, no internal names ("branch",
-  "capstone", "floors" as a unit); the player smashes, buys, smashes more (b2-15/16/17/24/27).
+- **Copy rule for all player text:** short and playful, no mechanics explained, no internal names ("branch", "capstone", "floors" as a unit); the player smashes, buys, smashes more (b2-15/16/17/24/27).
 - **Scope** (D-212): the demo is the full croc game without the mecha boss fight; the full game has all three reptilians and the mecha boss; an expansion, if the game does well, adds a mammal, an avian and an aquatic, plus building your own kaiju from preset configurations. The mantis and the octopus stay stretch goals, ideas for later.
-- **Demo** (D-050, D-145, D-156): the croc only, all three cities (baby, adolescent, adult) with the full Taskforce;
-  buying the final upgrade (about 2 hours) shows a thanks screen with rampage stats and a feedback link and unlocks
-  endless mode (the city regenerates slowly, enemies escalate); normal mode stays replayable with the maxed kaiju.
-- **Normal mode decides balance** (director 2026-10-23): "the game's balance will not be determined by endless mode.
-  the normal mode is still the main way to play and all balance questions ultimately will be decided on whether it
-  makes normal mode better". Endless mode has its own tuning rows and never changes a normal-mode number.
+- **Demo** (D-050, D-145, D-156): the croc only, all three cities (baby, adolescent, adult) with the full Taskforce; buying the final upgrade (about 2 hours) shows a thanks screen with rampage stats and a feedback link and unlocks endless mode (the city regenerates slowly, enemies escalate); normal mode stays replayable with the maxed kaiju. No demo-end tease (D-259).
+- **Normal mode decides balance** (director 2026-10-23): "the game's balance will not be determined by endless mode. the normal mode is still the main way to play and all balance questions ultimately will be decided on whether it makes normal mode better". Endless mode has its own tuning rows and never changes a normal-mode number.
+- **Kaiju Creation (D-235, D-236, D-241):** a dark high-tech lab: pick a genome, the injector drains its vial into a glass dish (INJECT SPECIAL K), lightning through the genome, a dive to black, the egg cracks; all three serums loaded, the two not yet earned locked.
 
 ## Look, camera, screen
-- **Shader Cinematic** (heavy AO, contrast 1.3, saturation 0.9, bloom on fire, no crease edges, D-104; replaces
-  D-057/D-068). Real light sources: lamps, lit windows, fires, muzzle flashes, explosion and breath light (D-010).
-  Time of day is random per run (dusk, night, morning, noon), never the same twice in a row, with an options toggle to fix one; morning less hazy, night lighter (D-106, D-145).
-  Weather, one per run (D-155, D-191): clear, overcast, low fog banks he towers above, heavy rain thinned round him,
-  a dark storm with distant croc-style lightning; wet streets in rain and storms. As the city falls, haze and sky
-  follow the share destroyed: smoky amber by day, orange at dusk and night, blackouts at dusk and night; late in a
-  rampage the ruin shows through any weather. Gulls over the water and pigeons off the roofs scatter at roars and
-  tower falls; boats flee and rock in his wake; the whale surfaces two or three times a run and dives at a roar.
-  Spectacle only: no game rule.
-- **Camera C**, low and cinematic, sees to the skyline (D-105); how it grows per stage is still his pick (R 19). Run
-  intro: a 3 s shot of the water rippling, the kaiju bursting out roaring, the camera pulling out (#11). Water reacts
-  to the kaiju (#12). Shake: smooth trauma, rotation only, one camera-motion setting.
-- **UI look A "Emergency Broadcast"** on every screen: hazard yellow, alert red, near-black, hazard tape, square edges,
-  news crawl; fonts Kaiju Claw (headings) and Kaiju Block (body), ours (D-061, D-021, D-058). Bespoke original UI
-  assets (b2-14).
-- **Minimal HUD:** the boxed timer at the top; biomass a boxless figure bottom right; breath cooldown an icon with a
-  circular fill; health bar removed or repurposed; controls shown once and in a controls menu; fixed tooltip width;
-  species select with the kaiju centred (b2-10..13, b2-23, b2-11). Text 24 px or more at 1080p.
-- **Graphics:** presets Potato / Low / Medium / High / Max; 4K default Medium at 60 fps (D-093, D-109). Looks
-  first, performance after the visuals are final (D-032, b2-25).
+- **Shader Cinematic** (heavy AO, bloom on fire, no crease edges, D-104) with the AgX grade (1.6, post contrast 1.0, a night tone split), debanding and FSR sharpening, all on (D-285). Real light sources: lamps, lit windows, fires, muzzle flashes, explosion and breath light (D-010). Time of day is random per run (dusk, night, morning, noon), never the same twice in a row, with an options toggle to fix one; morning less hazy (D-106, D-145, D-260); night fog matched to the night sky (D-279). Weather, one per run (D-155, D-191): clear, overcast, low fog banks he towers above, heavy rain thinned round him, a dark storm with distant croc-style lightning; wet streets in rain and storms. As the city falls the ruin shows through any weather: dark smoke plumes with fire at their base, orange only low on the horizon and behind the plumes, the city kept sharp; blackouts at dusk and night (D-247). Gulls over the water and pigeons off the roofs scatter at roars and tower falls; boats flee and rock in his wake; the whale surfaces two or three times a run and dives at a roar. Spectacle only: no game rule.
+- **Camera C**, low and cinematic, sees to the skyline (D-105); how it grows per stage is still his pick (R 19). A limited swing, about 60 deg, easing back on its own (D-259). **The camera bubble (D-283):** buildings stay solid; only the 0-3 between camera and kaiju cut away, shadows kept; no wall fills the frame, no screen-door over him. Slow motion only when a landmark falls (D-259). Run intro: the water rippling, the keyed rise and the roar (inhale, head up, a held gape, four throat pulses), skippable after 1 s (#11, D-242, D-274). Water reacts to the kaiju (#12). Shake: smooth trauma, rotation only, one camera-motion setting.
+- **UI look A "Emergency Broadcast"** on every screen: hazard yellow, alert red, near-black, hazard tape, square edges, a news crawl on big events; fonts Kaiju Claw (headings) and Kaiju Block (body), ours (D-061, D-021, D-058, D-259). Bespoke original UI assets (b2-14).
+- **Minimal HUD:** the boxed timer at the top with a 1-5 threat badge beside it that follows the army's real arrival rate (D-259, D-267); biomass a boxless figure bottom right, its tick-up the only readout, no floating numbers (D-284); breath cooldown an icon with a circular fill; health bar removed or repurposed; landmarks visible on the skyline and no other navigation (D-260); controls shown once and in a controls menu; fixed tooltip width; species select with the kaiju centred (b2-10..13, b2-23, b2-11). Text 24 px or more at 1080p.
+- **Shell and options (D-259):** three save slots; rumble scaled by size, with a toggle; a simple photo mode; rebinding, reduce flashing, hold or toggle, colour-blind safe cues; gore on by default, with a toggle; all six languages plus Chinese at the demo; run stats opt-in, attached to feedback (no background sending).
+- **Graphics:** presets Potato / Low / Medium / High / Max; 4K default Medium at 60 fps (D-093, D-109); render-plan speed savings buy a quieter, cooler PC, not a higher render scale (D-312). Looks first, performance after the visuals are final (D-032, b2-25).
 
 ## Audio
-- SFX from ElevenLabs Starter (owned) and CC0 / free libraries, synthesized in-house where better; every source CLEARED
-  in `docs/LICENSING_REGISTER.md` (D-030, D-092). Suno Pro music only after his written spend yes. The director
-  generates in his own browser; agents write prompts, ingest, QA and register.
-- Music: one theme (his remaster), a Cover per city, in layers that build with the ruin (D-125, D-184): a rampage
-  opens low and creeping, strings and bass only; drums at the first big collapses; brass and the full theme at
-  the peak; Endless plays the Colossus track; at a rampage's end the layers fade under the results (D-189). The
-  menu plays the theme over the city sound.
-- Explosions: layered crack and body, sub thump, delayed debris, a distance-delayed sonic boom (#20). Rooftop rifles
-  must not sound like a typewriter (playtest 1).
+- SFX from ElevenLabs Starter (owned) and CC0 / free libraries, synthesized in-house where better; every source CLEARED in `docs/LICENSING_REGISTER.md` (D-030, D-092). Suno Pro music only after his written spend yes. The director generates in his own browser; agents write prompts, ingest, QA and register.
+- Music: one theme (his remaster), a Cover per city, in layers that build with the ruin (D-125, D-184): a rampage opens low and creeping, strings and bass only; drums at the first big collapses; brass and the full theme at the peak; Endless plays the Colossus track; at a rampage's end the layers fade under the results (D-189). The menu plays the theme over the city sound.
+- Explosions: layered crack and body, sub thump, delayed debris, a distance-delayed sonic boom (#20). Rooftop rifles must not sound like a typewriter (playtest 1).
 
 ## Open for the director (ask at its phase, the ask-the-director way)
-walk: slower speed vs faster cadence (R 11.2) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · tree map layout (R 16.5) ·
-mecha concept (R 23.1, finale = mecha boss after 3 cities, D-113) · which original species follow the croc
-(research 02).
+walk: slower speed vs faster cadence (R 11.2) · lightning halo colour (R 17.6) · camera growth per stage (R 19) ·
+croc: is the tail-lash button (D-280) the same move as the automatic tail-whip node (D-259)? · night: "night lighter"
+(D-106, D-145) vs "dark and moody" (D-242) · the serpent's final design (D-246) · where Kaiju Creation sits in the
+flow (D-235..D-241) · skin unlock milestones (D-226).
