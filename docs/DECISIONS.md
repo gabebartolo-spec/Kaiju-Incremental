@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
+Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
+add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.
+
+## 2026-10-27 · D-319 · Director · A finished change runs its full test check on GitHub first
+Q (after "whats the point of having so many helpers if most of them are waiting half a day to work"): where should a
+finished change run its full test check before it goes up for merge? A: "On GitHub first (Recommended)". So: the
+local full prepush stops being the gate. A builder runs the cheap local gates (no Godot), pushes, and GitHub runs every
+shard on the branch (`C:/kt/gh_check.sh`, one lead watcher); the PR is ready only after that passes, so no red PR
+shows. Builders still run locally only the suites they iterate on. Replaces the local-prepush gate (D-186 stands).
+
 ## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
 Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
 copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
