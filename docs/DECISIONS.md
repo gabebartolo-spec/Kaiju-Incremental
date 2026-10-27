@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-334 · Director · Render item 12: look B (glass and metal sheen) merges
+Q (18:5x, PR #319: baked voxel AO and material finish, flags on): A: "Yes, merge B (Recommended)": #319 merges with
+look B on by default (render plan item 12).
+
 ## 2026-10-27 · D-333 · Director · The night's speed tests start when he says he is done for the day
 Q (18:1x): when do tonight's speed tests start? A: "When I say I'm done": the lead deletes `C:/kt/SPEED_DAY_HOLD` the
 moment he says he is done for the day, then runs `C:/kt/NIGHT_QUEUE.txt` one line at a time; if he says nothing, the
