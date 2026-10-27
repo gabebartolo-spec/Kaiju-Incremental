@@ -103,13 +103,24 @@ func _run_city(leap: bool) -> Dictionary:
 		more += 1
 	sim.step(DT, north, false, BUTTON if leap else 0)
 	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
-	for _n: int in roundi(FIXTURE_WATCH_S / DT):
+	var dbg: Array = [sim.kaiju_pos, sim.body.dash.to, sim.body.dash.target, sim.body.dash.arc.top]
+	for n: int in roundi(FIXTURE_WATCH_S / DT):
 		var flying := sim.body.dash.phase() == "flight"
 		var was := sim.body.broken
 		sim.step(DT, north, false, 0)
 		if flying and sim.body.dash.phase() == "flight":
 			in_flight += sim.body.broken - was
-			in_flight += sim.body.inside(sim.kaiju_pos, sim.body.heading).size()
+			var ins := sim.body.inside(sim.kaiju_pos, sim.body.heading)
+			in_flight += ins.size()
+			if (sim.body.broken - was > 0 or ins.size() > 0) and dbg.size() < 12:
+				dbg.append(
+					[n, snappedf(sim.body.dash.height(), 0.01), sim.body.broken - was, ins.keys()]
+				)
+	for i: int in sim.buildings.size():
+		var bb := sim.buildings[i]
+		if bb.x > -6.0 and bb.x < 10.0 and bb.z > 15.0 and bb.z < 35.0:
+			dbg.append([i, bb.x, bb.z, bb.w, bb.d, bb.height, bb.frame.alive_count])
+	print("LEAPDBG ", dbg)
 	return {
 		"in_flight": in_flight,
 		"roof": sim.body.dash.arc.land_y,
@@ -119,6 +130,7 @@ func _run_city(leap: bool) -> Dictionary:
 		"rubble": snappedf(sim.rubble, 0.001),
 		"at": sim.kaiju_pos.snapped(Vector2(0.001, 0.001)),
 		"walked_on": more,
+		"dbg": dbg,
 	}
 
 
