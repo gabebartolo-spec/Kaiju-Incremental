@@ -17,10 +17,13 @@ extends RefCounted
 ## lift within GAP_STRAIGHT of it, and its toe, the walk's slow peel off the street played at the
 ## turn's quick cadence, skimmed the ground (smoke turn check 2026-10-27: 3.2 foot-frames a second).
 ## A stepping turner's foot (D-187's stepped yaw; not the young croc's smooth turn, D-131) aims
-## as it comes down at where its clip spot will be when it lands: the body carries that spot
-## round, and a foot that followed it skimmed the street in its last frames aloft (smoke turn
-## check 2026-10-28: 1.7 foot-frames a second; one frame ahead only, 1.2). The aim runs the
-## spot's own motion on for the clip frames left aloft, faded in with the swing (`aim`).
+## as it comes down at where the body's turn will have carried its clip spot when it lands: the
+## spot swung round with the body, and a foot that followed it skimmed the street in its last
+## frames aloft (smoke turn check 2026-10-28: 1.7 foot-frames a second). The aim turns the spot
+## about the body by the yaw still to come (this frame's yaw run on for the clip frames left
+## aloft), faded in with the swing (`aim`). Only the yaw: the clip's own swing and the body's
+## travel already meet where a straight walk lands (run on too, they kicked the knees: motion
+## gate 2026-10-28, shin jerk p99 34.5 on the Colossus).
 
 const LAG_SECONDS := 0.25
 const LAG_SWING := 0.85
@@ -38,7 +41,7 @@ var _lift_frame: Array[float] = [0.0, 0.0]  # walk frames played when it lifted
 var _lift_toe: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # its clip spot when it lifted
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # where it stood (world)
 var _straight: Array[float] = [1.0, 1.0]  # 1 lifting into a full step, 0 into a turn's short one
-var _last_clip: Array[Vector3] = [Vector3.INF, Vector3.INF]  # its clip spot last frame (world)
+var _last_yaw: Array[float] = [INF, INF]  # the body's yaw last frame (rad)
 var _last_frames: Array[float] = [0.0, 0.0]  # walk frames played last frame
 
 
@@ -53,7 +56,7 @@ func lift(gait: ClipGait, i: int, clip_toe: Vector3, lock: Vector3) -> void:
 	_straight[i] = smoothstep(RATIO_TURN, 1.0, gait.step_ratio)
 	_lift_frame[i] = gait.walk_frames
 	_lift_toe[i] = clip_toe
-	_last_clip[i] = clip_toe
+	_last_yaw[i] = INF
 	_last_frames[i] = gait.walk_frames
 	_lock[i] = lock
 
@@ -72,16 +75,18 @@ func target(gait: ClipGait, i: int, dt: float, clip_toe: Vector3) -> Vector3:
 	return clip_toe + lag[i] + aim + Vector3.UP * lift_h * sin(PI * k)
 
 
-## How far foot i's clip spot moves on before the foot lands (world): its motion this frame run on
-## for the clip frames it has left aloft. Zero for a smooth turner (D-131) or a foot not walking.
+## How far the body's turn carries foot i's clip spot before the foot lands (world): this frame's
+## yaw run on for the clip frames it has left aloft, about the body. Zero for a smooth turner
+## (D-131), a foot not walking, or the first frame aloft.
 func _aim(gait: ClipGait, i: int, clip_toe: Vector3) -> Vector3:
-	var moved := Vector3.ZERO  # a foot aloft from the start has no last spot
-	if _last_clip[i].is_finite():
-		moved = clip_toe - _last_clip[i]
+	var body := gait.rig.global_transform
+	var yaw := atan2(body.basis.z.x, body.basis.z.z)
+	var turned := wrapf(yaw - _last_yaw[i], -PI, PI) if is_finite(_last_yaw[i]) else 0.0
 	var played := gait.walk_frames - _last_frames[i]
-	_last_clip[i] = clip_toe
+	_last_yaw[i] = yaw
 	_last_frames[i] = gait.walk_frames
 	if gait.step_phase == INF or gait.state != "walk" or played <= 0.0:
 		return Vector3.ZERO
 	var left := maxf(_swing_frames - (gait.walk_frames - _lift_frame[i]), 0.0)
-	return moved * maxf(left / played, 1.0)
+	var arm := clip_toe - body.origin
+	return arm.rotated(Vector3.UP, turned * maxf(left / played, 1.0)) - arm
