@@ -44,6 +44,13 @@ func show(n: int) -> void:
 	_multi.set_instance_transform(n, _box(n))
 
 
+## How much of building n's box is drawn: 0 when it is hidden (or a viaduct), else its opacity.
+func alpha(n: int) -> float:
+	if _multi == null or _multi.get_instance_transform(n).basis.get_scale().x < 0.001:
+		return 0.0
+	return _multi.get_instance_color(n).a
+
+
 func _box(n: int) -> Transform3D:
 	var b := _buildings[n]
 	if b.is_rail():  # a viaduct is no box: it stays meshed (BuildingStream holds it)
