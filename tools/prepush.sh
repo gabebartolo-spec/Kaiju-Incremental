@@ -18,7 +18,10 @@
 #      PREPUSH_DRY=1 prints the picked suites with reasons and exits (RANGE="a...b" picks for
 #      another diff, e.g. RANGE=origin/main...origin/claude/some-pr).
 # The last line is "prepush: PASS <sha>" or "prepush: FAIL <step>"; paste it in your report.
-# The lead arms a merge only for a head that printed PASS.
+# The lead arms a merge only for a head that printed PASS. PASS needs step 5's run_tests.sh to exit 0
+# AND end with "All checks passed (<n> suites)." for the n suites asked for: a run that was killed
+# (taskkill /F reads as exit 0 on Windows) or cut short prints "prepush: FAIL suites (...)".
+# tools/lint/tests/test_prepush_guard.py covers it.
 #
 #   GODOT=/path/to/godot_console.exe SUITES="sim city" tools/prepush.sh
 set -u
@@ -112,7 +115,20 @@ for s in $suites; do
 	[ -f "tests/run_${s}_tests.gd" ] || fail "no suite '$s' (tests/run_${s}_tests.gd)"
 done
 echo "suites: $suites"
+# PASS needs run_tests' own success line as its LAST line, with the number of suites asked for, as well
+# as exit 0: on Windows a run stopped with `taskkill /F` reports exit 0 to the bash waiting for it, and
+# once printed a false "prepush: PASS" (debt-ci-data, 2026-10-27 06:09). tee keeps the live output;
+# the exit code is the first pipe stage's.
+n_suites=$(echo "$suites" | wc -w | tr -d ' ')
+want="All checks passed ($n_suites suites)."
 # shellcheck disable=SC2086
-GODOT="$GODOT" tools/run_tests.sh --quick $suites || fail "suites ($suites)"
+GODOT="$GODOT" tools/run_tests.sh --quick $suites 2>&1 | tee "$run_data/suites.log"
+tests_code=${PIPESTATUS[0]}
+[ "$tests_code" = 0 ] || fail "suites ($suites)"
+got=$(tr -d '\r' < "$run_data/suites.log" | grep -v '^[[:space:]]*$' | tail -n 1)
+if [ "$got" != "$want" ]; then
+	echo "run_tests.sh exited 0 but its last line is not \"$want\" (killed or cut short?): ${got:-<no output>}"
+	fail "suites ($suites)"
+fi
 
 echo "prepush: PASS $(git rev-parse HEAD)"
