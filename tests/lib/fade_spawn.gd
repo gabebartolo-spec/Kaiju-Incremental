@@ -55,8 +55,8 @@ func _stage(stage: int) -> void:
 	var water := sim.emerge.water_y()
 	var body := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 	var zoom := CameraTuning.zoom(sim.body_scale())
-	var follow := CameraFollow.new(body, CameraTuning.offset())
-	follow.step(body, CameraTuning.offset() * zoom, 1.0)  # Rampage._ready's first placement
+	var follow := CameraFollow.new(body, _rest(sim, zoom))
+	follow.step(body, _rest(sim, zoom), 1.0)  # Rampage._ready's first placement
 	var fade := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null)
 	var shown := 0
 	var above := 0
@@ -71,7 +71,7 @@ func _stage(stage: int) -> void:
 		sim.step(DT, Vector2.ZERO, false, 0)
 		var at := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		body = body.lerp(at, minf(1.0, DT * BODY_FOLLOW))
-		follow.step(body, CameraTuning.offset() * zoom, DT)
+		follow.step(body, _rest(sim, zoom), DT)
 		follow.step_lead(body, sim.body_scale(), sim.emerge.active, DT)
 		var eye := follow.eye()
 		if sim.emerge.active:  # the run intro's shot, as Rampage._place_camera takes it
@@ -122,6 +122,11 @@ func _stage(stage: int) -> void:
 			% [stage, shown, above, feet_seen, standing, roundi(SEEN_SHARE * 100.0)]
 		)
 	)
+
+
+## The rest offset as Rampage places it: swung round to his back (CameraYaw, D-330), at the zoom.
+static func _rest(sim: RampageSim, zoom: float) -> Vector3:
+	return CameraTuning.turned(CameraTuning.offset(), sim.body.view.turn) * zoom
 
 
 ## The head's crown with no model (RampageRise.head_at's fallback): the data's share.
