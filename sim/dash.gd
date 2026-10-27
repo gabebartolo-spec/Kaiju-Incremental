@@ -142,7 +142,7 @@ func _start(aim: Dictionary) -> void:
 		Num.f(cfg["landing_step"]),
 		Num.f(cfg["arc_tries"])
 	)
-	var side := bool(aim["side"])
+	var side: bool = aim["side"]
 	arc.carve = target if side else -1
 	arc.plan(body.discs(), PackedVector2Array([from, to]), dir, numbers)
 	_phase = 0
