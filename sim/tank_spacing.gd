@@ -25,29 +25,26 @@ func _init(p_convoy: Convoy) -> void:
 func blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.Tank:
 	var gun: Array = cfg["gun"]
 	var reach := _half("hull").length() + Num.f(gun[0]) + Num.f(cfg["follow"])
-	var mine: ConvoyRoute = convoy.routes[tank.id]
-	var own := mine.front if mine.front != Vector2.ZERO else dir
 	for other: RampageSim.Tank in sim.tanks:
 		if other.id == tank.id or next.distance_to(other.pos) > reach:
 			continue
-		if _in_the_way(tank, other, next, dir, own):
+		if _in_the_way(tank, other, next, dir):
 			return other
 	return null
 
 
-## Whether `other` stops `tank` moving to `next` with its hull along `dir` (`own`: its hull now).
+## Whether `other` stops `tank` moving to `next` with its hull along `dir`.
 func _in_the_way(
-	tank: RampageSim.Tank, other: RampageSim.Tank, next: Vector2, dir: Vector2, own: Vector2
+	tank: RampageSim.Tank, other: RampageSim.Tank, next: Vector2, dir: Vector2
 ) -> bool:
 	var then := next.distance_to(other.pos)
 	var now := tank.pos.distance_to(other.pos)
-	var o: ConvoyRoute = convoy.routes.get(other.id)
-	var facing := o.front if o != null and o.front != Vector2.ZERO else dir
+	var facing := _hull_of(other, dir)
 	if next.distance_to(tank.pos) < 0.0001:  # a pivot in place: only its hull swings
-		if _pivot_clash(next, dir, own, other.pos, facing):
+		if _pivot_clash(tank, other, next, dir):
 			return true
 	elif clash(next, dir, other.pos, facing):
-		if then <= now or not clash(tank.pos, own, other.pos, facing):
+		if then <= now or not clash(tank.pos, _hull_of(tank, dir), other.pos, facing):
 			return true
 	return (
 		then < now
@@ -57,11 +54,23 @@ func _in_the_way(
 	)
 
 
-## A pivot at p (hull from `own` to `dir`) against the tank at q (hull along w). Never into a new
-## clash; and from inside one (it parked within `clear` of a neighbour) never to where the drawn
-## parts themselves touch (0 m margin).
-func _pivot_clash(p: Vector2, dir: Vector2, own: Vector2, q: Vector2, w: Vector2) -> bool:
-	return (hull_clash(p, dir, q, w) and not hull_clash(p, own, q, w)) or hull_touch(p, dir, q, w)
+## The way a tank's hull lies now (`fallback` while it has no heading yet).
+func _hull_of(tank: RampageSim.Tank, fallback: Vector2) -> Vector2:
+	var r: ConvoyRoute = convoy.routes.get(tank.id)
+	return r.front if r != null and r.front != Vector2.ZERO else fallback
+
+
+## `tank` pivoting at p to hull `dir` against `other`. Never into a new clash; and from inside one
+## (it parked within `clear` of a neighbour) never to where the drawn parts themselves touch
+## (0 m margin).
+func _pivot_clash(tank: RampageSim.Tank, other: RampageSim.Tank, p: Vector2, dir: Vector2) -> bool:
+	var own := _hull_of(tank, dir)
+	var facing := _hull_of(other, dir)
+	var q := other.pos
+	return (
+		(hull_clash(p, dir, q, facing) and not hull_clash(p, own, q, facing))
+		or hull_touch(p, dir, q, facing)
+	)
 
 
 ## Whether `other` is ahead of `tank` along `dir`, within two hull half-widths of its line.
