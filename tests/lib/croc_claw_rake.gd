@@ -40,11 +40,12 @@ func _check_claw_rake() -> void:
 			var gap: Array[float] = got["gap"]
 			var end: float = got["end"]
 			var keyed: bool = got["keyed"]
+			var before: float = got["before"]
 			var mine := 1 if side > 0.0 else 0
 			var other_bar := gap[mine] if keyed else 0.001 * hip  # the keyed body twists into it
 			_check.call(
-				float(got["before"]) < 0.0001 * hip,
-				"%s: before it, the arms match a calm kaiju's (%.5f)" % [tag, got["before"]]
+				before < 0.0001 * hip,
+				"%s: before it, the arms match a calm kaiju's (%.5f)" % [tag, before]
 			)
 			_check.call(
 				gap[mine] > 0.3 * hip and gap[1 - mine] < other_bar and end < 0.001 * hip,

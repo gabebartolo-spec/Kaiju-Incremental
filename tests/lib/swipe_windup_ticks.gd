@@ -29,7 +29,7 @@ func run() -> void:
 		var was := _play(size, old)
 		var rakes: Array = now["rakes"]
 		var was_rakes: Array = was["rakes"]
-		var same := now["rakes"] == was["rakes"] and now["damage"] == was["damage"]
+		var same: bool = now["rakes"] == was["rakes"] and now["damage"] == was["damage"]
 		var says := "claw windup %.2f s vs %.2f s, size %d:" % [windup, OLD_WINDUP, size + 1]
 		says += " the same %d rakes on the same ticks (%d)," % [rakes.size(), was_rakes.size()]
 		_check.call(

@@ -1231,7 +1231,7 @@
 		"streak_color": "ffd9a0",
 		"segments": 10,
 		"sweep_s": 0.05,
-		"trail_s": 0.07,
+		"trail_s": 0.25,
 		"fade_s": 0.07,
 		"puff": 1.6
 	},
