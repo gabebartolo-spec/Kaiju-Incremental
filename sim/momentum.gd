@@ -106,7 +106,7 @@ static func standing(b: RampageSim.Building, cells: Array[Vector3i]) -> int:
 func slam(hits: Dictionary) -> bool:
 	var was := _touching
 	_touching = hits
-	if not active() or not bool(titan["slams"]) or value < Num.f(titan["slam_min"]):
+	if not active() or titan["slams"] != true or value < Num.f(titan["slam_min"]):
 		return false
 	if sim.body.dash.on():
 		return false

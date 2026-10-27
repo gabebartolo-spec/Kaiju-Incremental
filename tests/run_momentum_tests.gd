@@ -119,11 +119,11 @@ func _walk(sim: RampageSim, seconds: float, stick: Vector2) -> void:
 func _check_entries() -> void:
 	var titans: Dictionary = Content.tuning()["powers"]["momentum"]["titans"]
 	var croc := _croc({}, [])
-	check(croc.powers.run.titan == titans["croc"], "the reptilian plays the croc's momentum entry")
+	var entry: Dictionary = titans["croc"]
+	check(croc.powers.run.titan == entry, "the reptilian plays the croc's momentum entry")
 	var bug := croc.powers.run
 	bug.use_species("insectoid")
 	check(not bug.active(), "a species with no titan entry has no momentum")
-	var entry: Dictionary = titans["croc"]
 	var serpent := entry.duplicate()
 	serpent["crash_height"] = "body"
 	croc.powers.run.titan = serpent
@@ -147,8 +147,9 @@ func _check_crash_through() -> void:
 	var off := _charge(_runner({}, row, false), ROW)
 	var lost: Array[int] = on["lost"]
 	var last_face := Num.f(row[ROW - 1]["z"]) - WIDTH * 0.5
+	var least: int = lost.min()
 	check(
-		lost.min() > 0 and Num.f(on["z"]) < last_face,
+		least > 0 and Num.f(on["z"]) < last_face,
 		(
 			"(a) he passes through the row, each building carved: %s (last face z %.1f)"
 			% [on, last_face]
@@ -240,13 +241,14 @@ func _check_below_threshold() -> void:
 			var same := (
 				sim.kaiju_pos == ref.kaiju_pos and sim.chunks_destroyed == ref.chunks_destroyed
 			)
-			out["same"] = bool(out["same"]) and same
+			out["same"] = out["same"] == true and same
 			out["stopped"] = Num.i(out["stopped"]) + int(sim.kaiju_pos == was)
 			out["steps"] = Num.i(out["steps"]) + 1
 		out["broken"] = sim.chunks_destroyed
 		out["momentum"] = snappedf(sim.powers.momentum, 0.01)
+		var same_walk: bool = out["same"]
 		check(
-			bool(out["same"]) and Num.i(out["slams"]) == 0 and Num.i(out["stopped"]) == 0,
+			same_walk and Num.i(out["slams"]) == 0 and Num.i(out["stopped"]) == 0,
 			(
 				"(c) under the threshold a %d-floor building is met as without the run: %s"
 				% [floors, out]
