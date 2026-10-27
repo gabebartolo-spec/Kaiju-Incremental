@@ -71,7 +71,7 @@ func _rebound_key() -> void:
 		)
 	)
 	check.call(
-		rampage._held.read(false, false),
+		rampage._reader.held_button.read(false, false),
 		"held moves on TOGGLE: after R is let go the held move stays on"
 	)
 	var waited := 0

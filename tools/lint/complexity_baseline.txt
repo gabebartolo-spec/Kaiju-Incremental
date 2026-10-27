@@ -3,7 +3,6 @@
 scenes/ability_fx.gd::_first_hit 21 13
 scenes/biped_body.gd::update 43 6
 scenes/biped_head.gd::update 56 9
-scenes/building_mesher.gd::_bake 59 15
 scenes/cephalopod_stand_in.gd::build 55 5
 scenes/city_decor.gd::_streets 68 26
 scenes/city_environment.gd::attach 47 2
@@ -25,7 +24,6 @@ scenes/pitch_props.gd::mesh 45 16
 scenes/police.gd::_start_blockade 46 16
 scenes/powers_view.gd::on_event 71 24
 scenes/powers_view.gd::update 49 16
-scenes/rampage.gd::_physics_process 41 11
 scenes/rampage.gd::_ready 53 8
 scenes/sfx.gd::play 43 12
 scenes/stadium_match.gd::_play 32 13

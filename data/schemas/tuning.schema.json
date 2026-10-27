@@ -1605,19 +1605,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "screen_flash": {
-          "type": "object",
-          "properties": {
-            "alpha": {"$ref": "#/$defs/num"},
-            "seconds": {"$ref": "#/$defs/num"},
-            "full_radius": {"$ref": "#/$defs/num"},
-            "small_share": {"$ref": "#/$defs/num"},
-            "layer": {"$ref": "#/$defs/num"}
-          },
-          "required": ["alpha", "seconds", "full_radius", "small_share", "layer"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "site_rubble": {"$ref": "#/$defs/num"},
         "fireball": {
           "type": "object",
@@ -1749,7 +1736,7 @@
         }
       },
       "required": [
-        "shake", "flash", "core", "kick", "screen_flash", "site_rubble", "fireball", "fire",
+        "shake", "flash", "core", "kick", "site_rubble", "fireball", "fire",
         "shock", "break", "fireworks", "cloud", "fuse", "debris", "debris_colors", "sound"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -3826,6 +3813,17 @@
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
+    "slowmo": {
+      "type": "object",
+      "properties": {
+        "scale": {"$ref": "#/$defs/num"},
+        "hold_s": {"$ref": "#/$defs/num"},
+        "ease_s": {"$ref": "#/$defs/num"}
+      },
+      "required": ["scale", "hold_s", "ease_s"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
     "camera_shake": {
       "type": "object",
       "properties": {
@@ -3961,22 +3959,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "low_health": {
-          "type": "object",
-          "properties": {
-            "below": {"$ref": "#/$defs/num"},
-            "full_at": {"$ref": "#/$defs/num"},
-            "color": {"$ref": "#/$defs/str"},
-            "alpha": {"$ref": "#/$defs/num"},
-            "depth_px": {"$ref": "#/$defs/num"},
-            "pulse_hz": {"$ref": "#/$defs/num"},
-            "pulse_sharp": {"$ref": "#/$defs/num"},
-            "fade_per_s": {"$ref": "#/$defs/num"}
-          },
-          "required": ["below", "full_at", "color", "alpha", "depth_px", "pulse_hz", "pulse_sharp", "fade_per_s"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "fringe": {
           "type": "object",
           "properties": {
@@ -3996,7 +3978,7 @@
           "additionalProperties": false
         }
       },
-      "required": ["vignette", "low_health", "fringe"],
+      "required": ["vignette", "fringe"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
@@ -5031,11 +5013,13 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "night_clip_max": {"$ref": "#/$defs/num"}
+        "night_clip_max": {"$ref": "#/$defs/num"},
+        "remesh_high_priority": {"$ref": "#/$defs/bool"}
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
-        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool"
+        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
+        "remesh_high_priority"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -5077,7 +5061,7 @@
             "burst_light": {"$ref": "#/$defs/num"},
             "burst_s": {"$ref": "#/$defs/num"},
             "debris_max": {"$ref": "#/$defs/num"},
-            "debris_size": {"$ref": "#/$defs/num"},
+            "debris_size": {"type": "array", "items": {"$ref": "#/$defs/num"}},
             "debris_speed": {"type": "array", "items": {"$ref": "#/$defs/num"}},
             "debris_up": {"type": "array", "items": {"$ref": "#/$defs/num"}},
             "gravity": {"$ref": "#/$defs/num"},
@@ -5085,13 +5069,31 @@
             "shard_arc": {"$ref": "#/$defs/num"},
             "crush_radius": {"$ref": "#/$defs/num"},
             "burst_trauma": {"$ref": "#/$defs/num"},
-            "shard_trauma": {"$ref": "#/$defs/num"}
+            "shard_trauma": {"$ref": "#/$defs/num"},
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shard_size": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "size_skew": {"$ref": "#/$defs/num"},
+            "debris_spin": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "trail": {
+              "type": "object",
+              "properties": {
+                "amount": {"$ref": "#/$defs/num"},
+                "life": {"$ref": "#/$defs/num"},
+                "size": {"$ref": "#/$defs/num"},
+                "rise": {"$ref": "#/$defs/num"},
+                "alpha": {"$ref": "#/$defs/num"}
+              },
+              "required": ["amount", "life", "size", "rise", "alpha"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
           },
           "required": [
             "crackle", "crackle_share", "crackle_hz", "stone", "stone_vary", "stone_keep",
             "light_energy", "light_range", "burst_light", "burst_s", "debris_max", "debris_size",
             "debris_speed", "debris_up", "gravity", "debris_s", "shard_arc", "crush_radius",
-            "burst_trauma", "shard_trauma"
+            "burst_trauma", "shard_trauma", "chunks", "shard_size", "size_skew", "debris_spin",
+            "trail"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -5111,7 +5113,7 @@
     "ui", "display", "stat_text", "names", "news", "threat", "results", "save", "demo", "pause",
     "feedback", "kaiju", "powers", "heli_wreck", "strike", "air", "vip", "taskforce", "army",
     "explosives", "blast_fx", "emerge", "city", "sfx", "city_sound", "music", "title", "rail",
-    "rail_look", "creation", "chain", "audio", "claw_fx", "clip_stomp", "camera", "camera_shake",
+    "rail_look", "creation", "chain", "audio", "claw_fx", "clip_stomp", "camera", "slowmo", "camera_shake",
     "accessibility", "photo_mode", "rumble", "post_fx", "topple_fx", "skyline_rampage",
     "arena_edge", "body", "contact", "growth", "fx", "landmark_burst", "carve_physics", "crowd",
     "street", "vehicles", "destruction", "lights", "rain", "render_opt", "death"
