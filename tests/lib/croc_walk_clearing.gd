@@ -27,15 +27,15 @@ func run() -> void:
 	var was := Num.f(before["chunks"]) / maxf(1.0, Num.f(before["m"]))
 	var is_now := Num.f(now["chunks"]) / maxf(1.0, Num.f(now["m"]))
 	var ratio := is_now / was if was > 0.0 else INF
-	_check.call(
-		absf(ratio - 1.0) <= CLEAR_TOL,
-		(
-			"adult walk (D-302): chunks cleared per metre within %d%% of the walk before (%.2f vs"
-			% [roundi(CLEAR_TOL * 100.0), is_now]
-			+ " %.2f, ratio %.3f; %d vs %d stomps over %.0f vs %.0f m)"
-			% [was, ratio, now["stomps"], before["stomps"], now["m"], before["m"]]
-		)
+	var head := (
+		"adult walk (D-302): chunks cleared per metre within %d%% of the walk before"
+		% [roundi(CLEAR_TOL * 100.0)]
 	)
+	var nums := (
+		" (%.2f vs %.2f, ratio %.3f; %d vs %d stomps over %.0f vs %.0f m)"
+		% [is_now, was, ratio, now["stomps"], before["stomps"], now["m"], before["m"]]
+	)
+	_check.call(absf(ratio - 1.0) <= CLEAR_TOL, head + nums)
 
 
 ## The sum over SEEDS of one straight walk each; step_len < 0 keeps the data's own step.

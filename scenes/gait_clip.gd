@@ -84,7 +84,7 @@ var _feet_primed := false
 var _slam_low := Vector3(0, INF, 0)
 var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
-var _spring_tail := 0  # tail bones the turns bend (the spring chain; the adult's r12 tip bones play clips only)
+var _spring_tail := 0  # tail bones the turns bend (spring chain; the r12 tip plays clips only)
 var _look := 0.0  # the head's look-ahead into the turn (rad)
 
 
@@ -108,10 +108,13 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_path = SwingPath.new(_steps.swing_frames)
 	var peak := clips.jaw_peak("roar", ROAR_PEAK_FRAME)
 	_jaw_peak = clips.pose_at("roar", peak).turns[clips.bones.find("jaw")]
+	var springs: Array[String] = []
+	for chain: KaijuRig.SpringChain in rig.chains:
+		springs.append_array(chain.names)
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
 			_tail_tip = bone_name
-			_spring_tail += 1 if rig.in_chain(bone_name) else 0
+			_spring_tail += 1 if springs.has(bone_name) else 0
 	_tail = ClipTail.new(_spring_tail)
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)

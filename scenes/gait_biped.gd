@@ -55,15 +55,13 @@ const SIDES := {-1.0: "left", 1.0: "right"}
 
 class Leg:
 	var names: Array[String] = []
-	var tip := ""  ## the bone whose tail is the toe tip: the toe (leg_x3) when the rig has one, else the foot
-	var foot_dir := Vector3.ZERO  ## rest vector from the ankle to the toe tip, rig space
+	var tip := ""  ## the bone whose tail is the toe tip: leg_x3 when the rig has one, else the foot
+	var foot_dir := Vector3.ZERO  ## rest vector from the ankle to the toe tip, rig space (the foot)
 	var side := 1.0  ## -1 left (-x), +1 right
 	var offset := 0.0  ## phase offset in the stride
 	var home := Vector3.ZERO  ## rig space, on the ground
 	var l1 := 0.0
 	var l2 := 0.0
-	var l3 := 0.0
-	var met_up := Vector3.UP  ## rest direction from foot to ankle, rig space
 	var foot := Vector3.ZERO  ## world
 	var planted := true
 	var lift_from := Vector3.ZERO
@@ -115,10 +113,8 @@ func _init(p_rig: KaijuRig) -> void:
 		leg.tip = "leg_%s3" % side if rig.has_bone("leg_%s3" % side) else leg.names[2]
 		var toe := rig.head_of(leg.tip) + rig.dir_of(leg.tip)
 		leg.foot_dir = toe - rig.head_of(leg.names[2])
-		leg.l3 = leg.foot_dir.length()
 		var hip := rig.head_of(leg.names[0])
 		leg.home = Vector3(toe.x * TRACK_NARROWING, 0.0, hip.z - 0.06 * hip.y)
-		leg.met_up = -leg.foot_dir.normalized()
 		hips += rig.head_of(leg.names[0]).y
 		legs.append(leg)
 	hip_height = hips / maxf(1.0, legs.size())
@@ -366,8 +362,8 @@ func speed_k() -> float:
 
 func _ankle(leg: Leg, root: Transform3D) -> Vector3:
 	var right := root.basis.x.normalized()
-	var up := (root.basis * leg.met_up).normalized()
-	return leg.foot + up.rotated(right, leg.tilt) * leg.l3 * s
+	var up := (root.basis * -leg.foot_dir).normalized()  # the foot, toe tip -> ankle
+	return leg.foot + up.rotated(right, leg.tilt) * leg.foot_dir.length() * s
 
 
 func _solve_legs(root: Transform3D) -> void:

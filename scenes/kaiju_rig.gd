@@ -378,14 +378,6 @@ func _rest_points(chain: SpringChain) -> PackedVector3Array:
 	return points
 
 
-## True for a bone of a spring chain (a physics bone).
-func in_chain(bone_name: String) -> bool:
-	for chain: SpringChain in chains:
-		if chain.names.has(bone_name):
-			return true
-	return false
-
-
 func chain_named(first_bone: String) -> SpringChain:
 	for chain: SpringChain in chains:
 		if chain.names[0] == first_bone:
