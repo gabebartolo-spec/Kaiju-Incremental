@@ -1,0 +1,11 @@
+# Director comments 2026-10-28
+
+Rulings of the night are in DECISIONS (D-356 to D-363); the evening before is in 2026-10-27-director-comments.md.
+
+| Time | His words | What it is | Owner, next step | Status |
+|---|---|---|---|---|
+| 04:4x | play build play-7dc2d49 (main 7dc2d49e, release export): "performance is really really poor / but oh well / we can fix it"; slow "All the time", "When buildings fall", "Hitches / freezes"; on "The 4K TV" | the shipped build runs poorly at 4K fullscreen, steady low frame rate plus drops on destruction plus hitches | lead: measure the release export at 4K with no other Godot running (frame time, GPU vs CPU, the hitch frames), then brief the perf builder per cause; agent window jobs ran alongside his play 04:22-04:36, so the first read is taken alone | measuring |
+| 04:4x | asked whether agent jobs pause while he plays: "im done playing" | no ruling; agent work keeps running as before | lead | no change |
+| 04:5x | "leap attack is broken because you can leap to the top of a sky scraper haha"; picked "Tall ones: hit the side" | changes D-262: roofs only up to about shoulder height; a taller building takes the leap in its side, he carves in and drops to the street at its foot | D-361; lead: leap-fix builder (sim + leap test) on the next free slot | queued |
+| 04:5x | "i died in every single run ... maybe i didnt actualyl getkilled? check that, but dont worry abot balance yet. lets get the game beautiful and working then we can balance it" | every run end plays the stone and blast by design (D-263, D-294); the summary headline follows the real reason (army kill: BROUGHT DOWN, clock: TIME UP); runs last 40 s base | lead: checked on main, headline code reads the reason correctly; no balance change (D-363) | checked |
+| 04:5x | afk: "do a first draft of all remaining casc animations, dont iterate on any first attempts ... use our reference models and clips that ive shown you"; 05:0x "really rapid fire get through all animations" | one Cascadeur draft per move, no second takes: croc at all three stages plus people (his 10-25 "Creatures + people"); insectoid and cephalopod wait (picked "Croc and people only") | keyer croc-claw (adult, then adolescent), rigger croc-young-casc (baby, then people); C:/kt/casc_drafts_1028/BRIEF.md and INDEX.md; #332 parked (D-362) | keying |
