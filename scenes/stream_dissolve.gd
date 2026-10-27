@@ -34,7 +34,7 @@ func dissolve(n: int, view: BuildingView, soft: bool) -> void:
 ## Building n's mesh is dropped: it dithers out over its box when `soft` (the kaiju walked
 ## away), else it goes now (the building regrew).
 func leave(n: int, view: BuildingView, soft: bool) -> void:
-	var seen := _seconds - float(_age.get(n, 0.0)) if _age.has(n) else 0.0
+	var seen := _seconds - Num.f(_age.get(n, 0.0)) if _age.has(n) else 0.0
 	_end(n)
 	if not soft or _seconds <= 0.0 or _buildings[n].is_rail():
 		_drop(view)
