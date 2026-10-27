@@ -96,7 +96,9 @@ func _run() -> void:
 			continue
 		var mats: Array = []
 		for p: Projection in skin.pose:
-			mats.append([p.x.x, p.x.y, p.x.z, p.y.x, p.y.y, p.y.z, p.z.x, p.z.y, p.z.z, p.w.x, p.w.y, p.w.z])
+			mats.append(
+				[p.x.x, p.x.y, p.x.z, p.y.x, p.y.y, p.y.z, p.z.x, p.z.y, p.z.z, p.w.x, p.w.y, p.w.z]
+			)
 		frames.append({"look": gait._look, "state": gait.state, "pose": mats})
 	if _dump:
 		var out := {
