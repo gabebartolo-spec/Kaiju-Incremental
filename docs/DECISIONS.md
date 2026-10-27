@@ -4,6 +4,22 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-333 · Director · The night's speed tests start when he says he is done for the day
+Q (18:1x): when do tonight's speed tests start? A: "When I say I'm done": the lead deletes `C:/kt/SPEED_DAY_HOLD` the
+moment he says he is done for the day, then runs `C:/kt/NIGHT_QUEUE.txt` one line at a time; if he says nothing, the
+hold ends at 01:00 (10-28).
+
+## 2026-10-27 · D-332 · Director · The lead restarts fresh at about 18:10
+Q (18:1x): when does the lead restart? A: "At ~18:10": a fresh lead session runs from its handoff; the old lead session
+hosts the builders it started until each one's step ends and reports them in `C:/kt/relay.md`; every role that ends is
+respawned fresh from its own handoff by the new lead, never while still hosted.
+
+## 2026-10-27 · D-331 · Director · One block of speed tests now, then none in the day
+Q (18:1x): speed tests during the day? A: "One block now, then none": the queued block (perf-p4b, perf-p2b-native,
+perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
+until D-333's start. Builders, Cascadeur, suites, captures and builds use the PC freely. D-299/D-313's window rules
+still govern every speed run that does start.
+
 ## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
 His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
 Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
