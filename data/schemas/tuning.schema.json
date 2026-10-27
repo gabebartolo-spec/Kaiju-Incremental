@@ -4791,9 +4791,13 @@
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
         "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
-        "night_clip_max": {"$ref": "#/$defs/num"}
+        "night_clip_max": {"$ref": "#/$defs/num"},
+        "facade_aa": {"$ref": "#/$defs/bool"},
+        "facade_aa_start": {"$ref": "#/$defs/num"},
+        "facade_aa_cells": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "night_clip_max"],
+      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "night_clip_max", "facade_aa",
+        "facade_aa_start", "facade_aa_cells"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },

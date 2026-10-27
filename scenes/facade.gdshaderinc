@@ -20,6 +20,15 @@ uniform float haze_start = 120.0;
 uniform float blackout = 0.0;  // share of window blocks dark (a power cut: whole floors at a time)
 uniform float grain = 4.0;  // facade cells per world unit (4 = the playable voxels)
 uniform bool plain = false;  // just the instance colour (concrete, hills)
+// Window filtering (tuning render_opt.facade_aa, director 10-27 "flashing/stuttering lit windows"):
+// once a pixel spans more than filter_start facade cells, a window is thinner than the pixel and
+// one point sample per pixel makes it pop as the camera moves. There the pixel takes every cell
+// under its footprint, each weighted by the share of the pixel it covers (an exact box filter: a
+// window keeps its brightness however it lands on the pixels), and the seam is box-filtered too;
+// nearer walls keep the one exact sample. The footprint is held to filter_cells cells each way.
+uniform bool filter_windows = false;
+uniform float filter_start = 0.25;
+uniform float filter_cells = 6.0;
 
 varying vec3 v_world;
 varying vec3 v_normal;
@@ -36,6 +45,74 @@ float hash3(vec3 p) {
 	return fract((p.x + p.y) * p.z);
 }
 
+// The wall at one point (`at` = along the wall, height; world units): albedo and the lit
+// window's emission. `top` is the box's roof height.
+void facade_wall(vec2 at, float top, vec3 wall, float seed, float share, int style, out vec3 albedo, out vec3 emit) {
+	albedo = wall;
+	emit = vec3(0.0);
+	float cell = floor(at.x * grain);
+	float y4 = floor(at.y * grain);
+	float row = mod(y4, 4.0);
+	float p = mod(cell + floor(seed * 13.0), 64.0);
+	bool window = false;
+	bool trim = false;
+	if (at.y * grain < 4.0) {
+		window = mod(p, 5.0) > 0.5 && row < 2.5;
+		trim = row > 2.5;
+	} else if (style == 0) {
+		trim = row < 0.5;
+		window = (row > 0.5 && row < 2.5) && mod(p, 4.0) > 0.5;
+	} else if (style == 1) {
+		window = (row > 0.5 && row < 2.5) && mod(p, 3.0) > 0.5;
+	} else if (style == 2) {
+		window = !(mod(p, 4.0) < 0.5 || row < 0.5);
+	} else {
+		trim = mod(y4, 20.0) < 0.5;
+		window = (row > 0.5 && row < 2.5) && (mod(p, 4.0) > 0.5 && mod(p, 4.0) < 2.5);
+	}
+	if ((top - at.y) * grain < 2.0) {
+		trim = true;
+		window = false;
+	}
+	float jitter = 0.92 + 0.16 * hash3(vec3(cell, y4, seed));
+	if (trim) {
+		albedo = wall * 1.25 * jitter;
+	} else if (window) {
+		vec3 pane = window_color;
+		if (style == 2) {
+			pane = mix(pane, wall, 0.3) * 1.1;
+		}
+		albedo = pane * jitter;
+		float lit = hash3(vec3(floor(cell / 2.0), floor(y4 / 4.0), seed * 31.0));
+		bool dark = hash3(vec3(floor(cell / 14.0), floor(y4 / 12.0), seed * 17.0 + 5.0)) < blackout;
+		if (lit < share && !dark) {
+			vec3 l = lit_color;
+			float gain = 1.0;
+			if (window_palette_on) {
+				uint h = window_mix(uint(int(seed * 65536.0)) ^ 40503u);
+				h = window_mix(h ^ uint(int(floor(cell / 2.0))));
+				vec4 w = window_pick(window_mix(h ^ uint(int(floor(y4 / 4.0)))));
+				l = w.rgb;
+				gain = w.a;
+			}
+			albedo = l;
+			emit = l * glow * gain;
+		}
+	} else {
+		albedo = wall * jitter;
+	}
+}
+
+// Share of a pixel `w` cells wide, centred at `x` cells, that lies on a seam line (the band
+// within 0.04 of a cell edge): the box-filtered seam.
+float seam_cover(float x, float w) {
+	float a = x - 0.5 * w;
+	float b = x + 0.5 * w;
+	float ia = floor(a) * 0.08 + min(fract(a), 0.04) + max(fract(a) - 0.96, 0.0);
+	float ib = floor(b) * 0.08 + min(fract(b), 0.04) + max(fract(b) - 0.96, 0.0);
+	return clamp((ib - ia) / w, 0.0, 1.0);
+}
+
 void vertex() {
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	v_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
@@ -48,6 +125,10 @@ void fragment() {
 	vec3 albedo = wall;
 	vec3 emit = vec3(0.0);
 	float seed = v_custom.w;
+	// The wall point (along the wall, height) and its change across the pixel, taken here in
+	// uniform control flow; foot = the pixel's footprint in facade cells (along, up).
+	vec2 at = vec2(abs(v_normal.x) > 0.5 ? v_world.z : v_world.x, v_world.y);
+	vec2 foot = max(fwidth(at) * grain, vec2(1e-5));
 	if (plain) {
 		albedo = wall * (v_normal.y > 0.5 ? 1.08 : 1.0);
 	} else if (v_normal.y > 0.5) {
@@ -62,63 +143,43 @@ void fragment() {
 			}
 		}
 	} else if (v_normal.y > -0.5) {
-		float along = abs(v_normal.x) > 0.5 ? v_world.z : v_world.x;
-		float cell = floor(along * grain);
-		float y4 = floor(v_world.y * grain);
-		float row = mod(y4, 4.0);
-		float p = mod(cell + floor(seed * 13.0), 64.0);
 		int style = int(v_custom.x + 0.5);
-		bool window = false;
-		bool trim = false;
-		if (v_world.y * grain < 4.0) {
-			window = mod(p, 5.0) > 0.5 && row < 2.5;
-			trim = row > 2.5;
-		} else if (style == 0) {
-			trim = row < 0.5;
-			window = (row > 0.5 && row < 2.5) && mod(p, 4.0) > 0.5;
-		} else if (style == 1) {
-			window = (row > 0.5 && row < 2.5) && mod(p, 3.0) > 0.5;
-		} else if (style == 2) {
-			window = !(mod(p, 4.0) < 0.5 || row < 0.5);
-		} else {
-			trim = mod(y4, 20.0) < 0.5;
-			window = (row > 0.5 && row < 2.5) && (mod(p, 4.0) > 0.5 && mod(p, 4.0) < 2.5);
-		}
-		if ((v_top - v_world.y) * grain < 2.0) {
-			trim = true;
-			window = false;
-		}
-		float jitter = 0.92 + 0.16 * hash3(vec3(cell, y4, seed));
-		if (trim) {
-			albedo = wall * 1.25 * jitter;
-		} else if (window) {
-			vec3 pane = window_color;
-			if (style == 2) {
-				pane = mix(pane, wall, 0.3) * 1.1;
-			}
-			albedo = pane * jitter;
-			float lit = hash3(vec3(floor(cell / 2.0), floor(y4 / 4.0), seed * 31.0));
-			bool dark = hash3(vec3(floor(cell / 14.0), floor(y4 / 12.0), seed * 17.0 + 5.0)) < blackout;
-			if (lit < v_custom.y && !dark) {
-				vec3 l = lit_color;
-				float gain = 1.0;
-				if (window_palette_on) {
-					uint h = window_mix(uint(int(seed * 65536.0)) ^ 40503u);
-					h = window_mix(h ^ uint(int(floor(cell / 2.0))));
-					vec4 w = window_pick(window_mix(h ^ uint(int(floor(y4 / 4.0)))));
-					l = w.rgb;
-					gain = w.a;
+		if (filter_windows && max(foot.x, foot.y) > filter_start) {
+			vec2 w = min(foot, vec2(filter_cells));
+			vec2 lo = at * grain - 0.5 * w;
+			vec2 hi = lo + w;
+			int nx = int(floor(hi.x) - floor(lo.x)) + 1;
+			int ny = int(floor(hi.y) - floor(lo.y)) + 1;
+			vec3 albedo_sum = vec3(0.0);
+			vec3 emit_sum = vec3(0.0);
+			for (int i = 0; i < nx; i++) {
+				float cx = floor(lo.x) + float(i);
+				float x0 = max(lo.x, cx);
+				float x1 = min(hi.x, cx + 1.0);
+				for (int j = 0; j < ny; j++) {
+					float cy = floor(lo.y) + float(j);
+					float y0 = max(lo.y, cy);
+					float y1 = min(hi.y, cy + 1.0);
+					// The cell, read at the middle of the part the pixel covers.
+					vec3 a;
+					vec3 e;
+					facade_wall(vec2(x0 + x1, y0 + y1) * (0.5 / grain), v_top, wall, seed, v_custom.y, style, a, e);
+					float k = max(x1 - x0, 0.0) * max(y1 - y0, 0.0);
+					albedo_sum += a * k;
+					emit_sum += e * k;
 				}
-				albedo = l;
-				emit = l * glow * gain;
 			}
+			albedo = albedo_sum / (w.x * w.y);
+			emit = emit_sum / (w.x * w.y);
+			vec2 c = vec2(seam_cover(lo.x + 0.5 * w.x, w.x), seam_cover(lo.y + 0.5 * w.y, w.y));
+			albedo *= 1.0 - 0.2 * (c.x + c.y - c.x * c.y);
 		} else {
-			albedo = wall * jitter;
-		}
-		// The thin dark seam between voxels, so the stand-ins share the voxel grain.
-		vec2 seam = fract(vec2(along, v_world.y) * grain);
-		if (min(min(seam.x, seam.y), min(1.0 - seam.x, 1.0 - seam.y)) < 0.04) {
-			albedo *= 0.8;
+			facade_wall(at, v_top, wall, seed, v_custom.y, style, albedo, emit);
+			// The thin dark seam between voxels, so the stand-ins share the voxel grain.
+			vec2 seam = fract(at * grain);
+			if (min(min(seam.x, seam.y), min(1.0 - seam.x, 1.0 - seam.y)) < 0.04) {
+				albedo *= 0.8;
+			}
 		}
 	}
 	ROUGHNESS = 0.9;

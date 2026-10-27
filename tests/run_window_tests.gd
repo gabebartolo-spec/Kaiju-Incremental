@@ -3,9 +3,12 @@ extends "res://tests/lib/runner.gd"
 ## palette is valid data; a lit window keeps its colour and brightness when its building is
 ## promoted to the cell grid (the shader's pick, redone on the CPU by WindowPalette, on the baked
 ## shell's window faces equals the pick on the cell meshes' faces of the same cells); the shader
-## holds the replica's hash.
+## holds the replica's hash; the stand-in and skyline facades box-filter their windows
+## (render_opt.facade_aa, tests/lib/facade_filter.gd).
 ## Seeded by design: fixed buildings, a fixed hash; no RNG.
 ##   godot --headless --path . --script tests/run_window_tests.gd
+
+const FacadeFilter := preload("res://tests/lib/facade_filter.gd")
 
 ## Each fixture: [name, x, z, w, d, floors, tier, style] (as the cell mesh suite's).
 const FIXTURES: Array = [
@@ -23,6 +26,7 @@ func run_checks() -> void:
 	await _t("_check_window_palette_data")
 	await _t("_check_window_colour_survives_promote")
 	await _t("_check_window_shader_is_the_replica")
+	await _t("_check_facade_windows_filtered")
 
 
 func _building(f: Array) -> RampageSim.Building:
@@ -171,3 +175,8 @@ func _check_window_shader_is_the_replica() -> void:
 		baked.contains("window_palette.gdshaderinc") and baked.contains("window_tagged(COLOR.a)"),
 		"the building shader includes the window palette and tests the window tag"
 	)
+
+
+## Window filtering on the stand-in and skyline facades (tests/lib/facade_filter.gd).
+func _check_facade_windows_filtered() -> void:
+	FacadeFilter.new(check).run()
