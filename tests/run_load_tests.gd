@@ -196,7 +196,7 @@ func _check_stand_in_fade() -> void:
 	var boxes: StreamStandIns = stream.get("_stand_ins")
 	var waiting: Array[int] = []
 	for n: int in sim.buildings.size():
-		if stream.built(n) == null:
+		if stream.built(n) == null and not sim.buildings[n].is_rail():  # a viaduct has no box
 			waiting.append(n)
 	var placed := -1
 	for _i: int in 600:

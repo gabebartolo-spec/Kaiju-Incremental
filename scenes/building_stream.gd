@@ -359,7 +359,7 @@ func _place(n: int, built: BuildingView) -> void:
 	_mutex.unlock()
 	_views[n] = built
 	add_child(built)
-	_stand_ins.dissolve(n, _pinned[n] == 0)
+	_stand_ins.dissolve(n, built, _pinned[n] == 0)
 
 
 ## Building n regrew (Endless mode): its view goes, pinned or not, and is rebuilt.
@@ -375,10 +375,7 @@ func _free_view(n: int, force := false) -> void:
 	_pinned[n] = 0
 	_views[n] = null
 	_state[n] = 0
-	remove_child(gone)
-	BuildingView.forget(gone)
-	gone.free()
-	_stand_ins.show(n)
+	_stand_ins.leave(n, gone, not force)
 
 
 func _exit_tree() -> void:

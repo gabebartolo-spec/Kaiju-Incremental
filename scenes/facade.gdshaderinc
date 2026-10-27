@@ -10,6 +10,7 @@
 // window here (an exact per-window match across the stream swap is impossible).
 
 #include "res://scenes/window_palette.gdshaderinc"
+#include "res://scenes/dither.gdshaderinc"
 
 uniform vec3 roof_color : source_color = vec3(0.43, 0.42, 0.40);
 uniform vec3 window_color : source_color = vec3(0.17, 0.23, 0.27);
@@ -38,11 +39,6 @@ float hash3(vec3 p) {
 	p = fract(p * vec3(0.1031, 0.1030, 0.0973));
 	p += dot(p, p.yxz + 33.33);
 	return fract((p.x + p.y) * p.z);
-}
-
-// Interleaved gradient noise: a cheap screen-space dither in [0, 1).
-float dither(vec2 at) {
-	return fract(52.9829189 * fract(dot(at, vec2(0.06711056, 0.00583715))));
 }
 
 void vertex() {
