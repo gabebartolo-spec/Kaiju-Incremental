@@ -2,8 +2,9 @@ class_name TrainModel
 extends RefCounted
 ## The trains' voxel models in the city's look (D-163): a metro car (a locomotive with a cab,
 ## windscreen and headlamps, or a carriage). Every surface carries detail: panel seams, a livery
-## stripe, framed windows, doors and roof gear; the look's colour noise on top. The viaduct and
-## station are city buildings (RailLayout, RailVoxels). Builders only (RailView owns the nodes).
+## stripe, framed windows, doors and roof gear; the look's colour noise and the city's surface grain
+## (voxel_detail.gdshader) on top. The viaduct and station are city buildings (RailLayout,
+## RailVoxels). Builders only (RailView owns the nodes).
 ## Sizes: tuning "rail"; colours: "rail_look".
 
 const CAR_VOXEL := 0.125
@@ -35,6 +36,7 @@ static func car(loco: bool, length: float) -> MultiMeshInstance3D:
 						_car_cell(x, y, z, nw, nh, nl, loco)
 					)
 	_bogies(vox, nw, nl)
+	vox.detail = true  # the city's surface family, riding with the car (debt row 25)
 	return vox.build({}, CAR_VOXEL, 1.3, Vector3.ZERO)
 
 
