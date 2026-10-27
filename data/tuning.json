@@ -1465,7 +1465,7 @@
 				"amber": {"inner": "ffb55a", "fringe": "ff7a1e"},
 				"eye": {"inner": "eye", "fringe": "eye", "inner_white": 0.6},
 				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5},
-				"purple": {"inner": "b366ff", "fringe": "7a2cff", "core": "e6ccff", "flare": "c99bff"}
+				"purple": {"inner": "b366ff", "fringe": "7a2cff", "core": "cc66ff", "flare": "c99bff"}
 			},
 			"boost_core": 3.0,
 			"fringe_boost": 1.6,
