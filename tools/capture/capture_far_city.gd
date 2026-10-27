@@ -15,10 +15,14 @@ extends SceneTree
 ##                                 height fog, as they are drawn)
 ##   <time>_<tag>_sweep_a<amount>_b<base>.png  with --sweep=amount:base,...: the far haze at each
 ##                                 (own haze share, height fog at the foot), for tuning city far_fog
+##   <time>_<tag>_sweep_r<strength>_e<energy>.png  with --reflect=strength:energy,...: the far
+##                                 city's window light on the water (FarWaterGlow) at each, for
+##                                 tuning city far_reflect (none when no window is lit)
 ## tools/capture/far_city_bars.py turns them into the PR's numbers. One time of day per process
 ## (BuildingView keeps its baked lit windows per time).
 ##   godot --path . --windowed --fixed-fps 60 --script tools/capture/capture_far_city.gd -- \
 ##     --out=<dir> --tag=after --time=night [--settle=600] [--walk=300] [--sweep=0:0,0:0.5]
+##     [--reflect=0.5:0.01]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SPECIES := "reptilian"
@@ -36,7 +40,15 @@ func _initialize() -> void:
 	if not NativeGuard.ok(self):
 		return
 	_a = Kit.args(
-		{"out": "", "tag": "before", "time": "night", "settle": 600, "walk": 300, "sweep": ""}
+		{
+			"out": "",
+			"tag": "before",
+			"time": "night",
+			"settle": 600,
+			"walk": 300,
+			"sweep": "",
+			"reflect": ""
+		}
 	)
 	if str(_a["out"]) == "" or not Kit.window_ok():
 		printerr("capture_far_city: needs --out and a window (no_focus override.cfg)")
@@ -67,6 +79,7 @@ func _run() -> void:
 	await _grab_hidden([_bay(skyline.ground)], stem + "_nobay")
 	_write_fog(rampage, skyline, stem)
 	await _sweep(skyline, stem)
+	await _reflect(skyline, stem)
 	print("capture_far_city: %s done" % stem)
 	quit()
 
@@ -104,6 +117,21 @@ func _sweep(skyline: CitySkyline, stem: String) -> void:
 		skyline.set_far_haze(skyline.far_haze.color, amount.to_float(), base.to_float())
 		await Kit.frames(self, FRAMES_BETWEEN)
 		Kit.still(self, str(_a["out"]), "%s_sweep_a%s_b%s" % [stem, amount, base])
+
+
+## --reflect: the window light on the far water at each strength:energy in turn (strength per share
+## of windows lit, as tuning city far_reflect has it), one still each.
+func _reflect(skyline: CitySkyline, stem: String) -> void:
+	var glow := FarWaterGlow.of(skyline.ground.bay)
+	if glow == null:
+		return
+	for pair: String in str(_a["reflect"]).split(",", false):
+		var strength := pair.get_slice(":", 0)
+		var energy := pair.get_slice(":", 1)
+		glow.set_shader_parameter("strength", strength.to_float() * Look.value("window_lit"))
+		glow.set_shader_parameter("energy", energy.to_float())
+		await Kit.frames(self, FRAMES_BETWEEN)
+		Kit.still(self, str(_a["out"]), "%s_sweep_r%s_e%s" % [stem, strength, energy])
 
 
 ## The far skyline as drawn: its towers, the hazy plain boxes (far quay, lattice tower) and the
