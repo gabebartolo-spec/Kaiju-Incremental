@@ -9,6 +9,7 @@ const AUTOLOADS: Array[String] = ["Debug", "EventBus", "GameData", "Rng", "SaveS
 const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
 const VehiclesSolid := preload("res://tests/lib/smoke_vehicles_solid.gd")
+const BuildingsSolid := preload("res://tests/lib/smoke_buildings_solid.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -40,6 +41,7 @@ func run_checks() -> void:
 	await _t("_check_heli")
 	await _t("_check_air_clear_side")
 	await _h("VehiclesSolid", func() -> void: await VehiclesSolid.check(check, root))
+	await _h("BuildingsSolid", func() -> void: await BuildingsSolid.check(check, root))
 	await _t("_check_crease_pass")
 
 
