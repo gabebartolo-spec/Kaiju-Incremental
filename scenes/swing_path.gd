@@ -16,9 +16,11 @@ extends RefCounted
 ## held back too, however near its path: the Colossus's long stride (D-302, ~15 m) left a turn's
 ## lift within GAP_STRAIGHT of it, and its toe, the walk's slow peel off the street played at the
 ## turn's quick cadence, skimmed the ground (smoke turn check 2026-10-27: 3.2 foot-frames a second).
-## A swinging foot runs one frame ahead of its clip spot as it comes down (lead): in a turn the body
-## (D-187's even yaw) carries that spot round, and a foot that met it only as it landed slid
-## the last frame's sweep over the street (smoke turn check 2026-10-28: 1.7 foot-frames a second).
+## A stepping turner's foot (D-187's stepped yaw; not the young croc's smooth turn, D-131) aims as it
+## comes down at where its clip spot will be when it lands: the body carries that spot round, and a
+## foot that followed it skimmed the street in its last frames aloft (smoke turn check 2026-10-28:
+## 1.7 foot-frames a second; one frame ahead only, 1.2). The aim runs the spot's own motion on for
+## the clip frames left aloft, faded in with the swing (`aim`).
 
 const LAG_SECONDS := 0.25
 const LAG_SWING := 0.85
@@ -37,6 +39,7 @@ var _lift_toe: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # its clip spot wh
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # where it stood (world)
 var _straight: Array[float] = [1.0, 1.0]  # 1 lifting into a full step, 0 into a turn's short one
 var _last_clip: Array[Vector3] = [Vector3.INF, Vector3.INF]  # its clip spot last frame (world)
+var _last_frames: Array[float] = [0.0, 0.0]  # walk frames played last frame
 
 
 func _init(swing_frames: float) -> void:
@@ -51,6 +54,7 @@ func lift(gait: ClipGait, i: int, clip_toe: Vector3, lock: Vector3) -> void:
 	_lift_frame[i] = gait.walk_frames
 	_lift_toe[i] = clip_toe
 	_last_clip[i] = clip_toe
+	_last_frames[i] = gait.walk_frames
 	_lock[i] = lock
 
 
@@ -64,6 +68,18 @@ func target(gait: ClipGait, i: int, dt: float, clip_toe: Vector3) -> Vector3:
 	var gap := _lock[i] - clip_toe + (clip_toe - _lift_toe[i]) * on_path  # from where it went
 	lag[i] = gap * (1.0 - smoothstep(0.0, 1.0, k))
 	var lift_h := minf(LAG_LIFT * gap.length(), LAG_LIFT_MAX * gait.hip_height * gait.s)
-	var lead := (clip_toe - _last_clip[i]) * smoothstep(0.0, 1.0, k)  # where the spot is next frame
+	var aim := _aim(gait, i, clip_toe) * smoothstep(0.0, 1.0, k)
+	return clip_toe + lag[i] + aim + Vector3.UP * lift_h * sin(PI * k)
+
+
+## How far foot i's clip spot moves on before the foot lands (world): its motion this frame run on
+## for the clip frames it has left aloft. Zero for a smooth turner (D-131) or a foot not walking.
+func _aim(gait: ClipGait, i: int, clip_toe: Vector3) -> Vector3:
+	var moved := clip_toe - _last_clip[i] if _last_clip[i].is_finite() else Vector3.ZERO  # aloft from the start
+	var played := gait.walk_frames - _last_frames[i]
 	_last_clip[i] = clip_toe
-	return clip_toe + lag[i] + lead + Vector3.UP * lift_h * sin(PI * k)
+	_last_frames[i] = gait.walk_frames
+	if gait.step_phase == INF or gait.state != "walk" or played <= 0.0:
+		return Vector3.ZERO
+	var left := maxf(_swing_frames - (gait.walk_frames - _lift_frame[i]), 0.0)
+	return moved * maxf(left / played, 1.0)
