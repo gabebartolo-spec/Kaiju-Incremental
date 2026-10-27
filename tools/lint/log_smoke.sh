@@ -118,7 +118,7 @@ want demo && run_one demo tools/release/demo_smoke.gd
 want rampage && run_one rampage tools/lint/log_smoke.gd "$@"
 want street && run_one street tools/lint/log_smoke_street.gd
 if [ "$failed" = 0 ]; then
-	echo "log_smoke: PASS (no ERROR, WARNING or leak line in either log)"
+	echo "log_smoke: PASS (no ERROR, WARNING or leak line in any log)"
 	exit 0
 fi
 echo "log_smoke: FAIL"
