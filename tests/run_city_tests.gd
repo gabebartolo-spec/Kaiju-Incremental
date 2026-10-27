@@ -12,6 +12,7 @@ const Trample := preload("res://tests/lib/city_trample.gd")
 const TreeApart := preload("res://tests/lib/city_tree_apart.gd")
 const TreeGround := preload("res://tests/lib/city_tree_ground.gd")
 const RoofTanks := preload("res://tests/lib/city_roof_tanks.gd")
+const SkyTanks := preload("res://tests/lib/city_skyline_tanks.gd")
 const StadiumFar := preload("res://tests/lib/city_stadium_far.gd")
 const Kerb := preload("res://tests/lib/city_kerb.gd")
 const BreathTrees := preload("res://tests/lib/city_breath_trees.gd")
@@ -153,6 +154,7 @@ func _check_calm_streets() -> void:
 ## and past its edge, as far as the game camera shows (city.view_beyond), a stand-in building,
 ## a parked car or a street tree: never bare asphalt.
 func _check_no_empty_ground() -> void:
+	var tanks := {}
 	for tier: int in [1, 2]:
 		for map_seed: int in COVERAGE_SEEDS:
 			var base: Dictionary = Content.tuning().duplicate(true)
@@ -207,6 +209,7 @@ func _check_no_empty_ground() -> void:
 			Green.check_city(tier, map_seed, sim, decor, check)
 			TreeApart.check(tier, map_seed, sim, decor, check)
 			TreeGround.check(tier, map_seed, sim, decor, skyline, check)
+			SkyTanks.add(skyline, "stage %d, map_seed %d" % [tier, map_seed], tanks)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			StadiumFar.check(tier, map_seed, sim, check)
 			Kerb.check(tier, map_seed, sim, decor, check)
@@ -214,6 +217,7 @@ func _check_no_empty_ground() -> void:
 			BreathTrees.check(tier, map_seed, sim, decor, check)
 			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()
+	SkyTanks.verdict(tanks, check)
 
 
 ## The rooftop tanks are a mix of white solar heaters and short wooden towers, stages 1-3
