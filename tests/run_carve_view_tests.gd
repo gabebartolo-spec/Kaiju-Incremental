@@ -163,6 +163,11 @@ func _tallies() -> Dictionary:
 	}
 
 
+## A tally as a number.
+func _n(w: Dictionary, key: String) -> int:
+	return Num.i(w[key])
+
+
 ## The tower's base on +x, cut through (the carving suite's topple), fed to the city.
 func _cut_base(city: CityView, w: Dictionary) -> void:
 	var cut: Array[Vector3i] = []
@@ -208,14 +213,14 @@ func _check_rampage_draws_the_grid() -> void:
 		w["frames"] += 1
 	check(_all_down(city), "the tower came down and the view caught up (%d frames)" % w["frames"])
 	check(
-		w["shell"] == 0 and w["early"] == 0,
+		_n(w, "shell") == 0 and _n(w, "early") == 0,
 		(
 			"the shell hid only once the fine view was drawn and up to date (%d, %d)"
 			% [w["shell"], w["early"]]
 		)
 	)
 	check(
-		w["ghost"] == 0 and w["gap"] == 0 and w["blank"] == 0,
+		_n(w, "ghost") == 0 and _n(w, "gap") == 0 and _n(w, "blank") == 0,
 		(
 			"every piece showed the frame its cells left the tower, drawn (%d ghost, %d gap, %d blank)"
 			% [w["ghost"], w["gap"], w["blank"]]
@@ -223,19 +228,20 @@ func _check_rampage_draws_the_grid() -> void:
 	)
 	var pieces: Array = w["pieces"]
 	check(
-		w["checked"] == pieces.size() and w["most"] > 1000 and w["piece_off"] == 0,
+		_n(w, "checked") == pieces.size() and _n(w, "most") > 1000 and _n(w, "piece_off") == 0,
 		(
 			"every falling piece held exactly its fall's cells (%d of %d, largest %d, %d off)"
 			% [w["checked"], pieces.size(), w["most"], w["piece_off"]]
 		)
 	)
-	_check_standing(city)
+	_expect_standing(city)
 	city.queue_free()
 	await process_frame
+	sim.dispose()  # the sim's rings (D-179), as Rampage lets go of them
 
 
 ## The standing view shows exactly the sim's grid now.
-func _check_standing(city: CityView) -> void:
+func _expect_standing(city: CityView) -> void:
 	var site: CityCarve.Site = city.carve._sites[0]
 	var m: CellMesher = site.mesher
 	var cv: CellView = site.cv
@@ -265,3 +271,4 @@ func _check_off_keeps_the_baked_view() -> void:
 	)
 	city.queue_free()
 	await process_frame
+	sim.dispose()  # the sim's rings (D-179), as Rampage lets go of them
