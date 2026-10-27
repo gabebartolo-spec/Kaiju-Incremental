@@ -221,20 +221,7 @@ func _max_lag(hip_w: float) -> float:
 
 ## The arms that walk: the LEAD_ARMS rooted nearest the heading (within LEAD_ARC of it).
 func _walkers(root: Transform3D, heading: Vector3) -> Array[Arm]:
-	var ranked: Array[Arm] = []
-	for arm: Arm in arms:
-		if _out(arm, root).dot(heading) > cos(LEAD_ARC):
-			ranked.append(arm)
-	ranked.sort_custom(
-		func(a: Arm, b: Arm) -> bool: return _out(a, root).dot(heading) > _out(b, root).dot(heading)
-	)
-	return ranked.slice(0, LEAD_ARMS)
-
-
-## Which way an arm points out from the body (world, flat).
-func _out(arm: Arm, root: Transform3D) -> Vector3:
-	var out := root.basis * Vector3(sin(arm.angle), 0, -cos(arm.angle))
-	return Vector3(out.x, 0, out.z).normalized()
+	return RadialWalkers.pick(arms, root, heading)
 
 
 func stomp() -> void:
