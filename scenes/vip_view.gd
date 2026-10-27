@@ -31,7 +31,7 @@ func _init(p_sim: RampageSim, city: CityView, p_sfx: Sfx) -> void:
 	add_child(_layer)
 
 
-## The leader's model (for the see-through fade when it is between the camera and the kaiju).
+## The leader's model, while it flies (PowersView.helis lists it with the gunships).
 func nodes() -> Array:
 	var out: Array = []
 	if _model != null:

@@ -1984,7 +1984,20 @@
         "kaiju_height": {"$ref": "#/$defs/num"},
         "impact_damage": {"$ref": "#/$defs/num"},
         "fall_gravity": {"$ref": "#/$defs/num"},
-        "topple_bonus": {"$ref": "#/$defs/num"}
+        "topple_bonus": {"$ref": "#/$defs/num"},
+        "far_fog": {
+          "type": "object",
+          "properties": {
+            "on": {"$ref": "#/$defs/bool"},
+            "own_haze": {"$ref": "#/$defs/num"},
+            "base": {"$ref": "#/$defs/num"},
+            "base_height": {"$ref": "#/$defs/num"},
+            "start": {"$ref": "#/$defs/num"}
+          },
+          "required": ["on", "own_haze", "base", "base_height", "start"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
       },
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
@@ -2006,7 +2019,7 @@
         "min_height", "max_height", "tier_height", "size_scale_per_tier", "young_scale",
         "growth_per_level", "leap_distance", "cone_half_angle_deg", "breath_snout_ahead",
         "chunk_hp", "dwarf_exp", "chunk_rubble", "kaiju_height", "impact_damage", "fall_gravity",
-        "topple_bonus"
+        "topple_bonus", "far_fog"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -4610,10 +4623,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "fade_opacity": {"$ref": "#/$defs/num"},
-        "fade_seconds": {"$ref": "#/$defs/num"},
-        "tank_clear": {"$ref": "#/$defs/num"},
-        "heli_clear": {"$ref": "#/$defs/num"},
         "vip_dark": {"$ref": "#/$defs/num"},
         "vip_glow": {"$ref": "#/$defs/num"},
         "vip_band": {"type": "array", "items": {"$ref": "#/$defs/num"}}
@@ -4621,8 +4630,7 @@
       "required": [
         "tank_height", "turret_turn", "gun_elevation", "recoil", "recoil_seconds", "hull_turn",
         "heli_height", "main_rotor_spin", "tail_rotor_spin", "heli_turn", "heli_lights",
-        "fade_opacity", "fade_seconds", "tank_clear", "heli_clear", "vip_dark", "vip_glow",
-        "vip_band"
+        "vip_dark", "vip_glow", "vip_band"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -4791,6 +4799,8 @@
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
         "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "people_buffers": {"$ref": "#/$defs/bool"},
+        "people_aabb_margin_m": {"$ref": "#/$defs/num"},
         "kaiju_three_faces": {"$ref": "#/$defs/bool"},
         "fx_pool": {
           "type": "object",
@@ -4822,7 +4832,10 @@
         },
         "night_clip_max": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "kaiju_three_faces", "night_clip_max", "fx_pool"],
+      "required": [
+        "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
+        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool"
+      ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
