@@ -140,17 +140,20 @@ static func _check_falls_solid(check: Callable, rampage: Rampage) -> void:
 	var kinds := {"topple": ID + 2, "drop": ID + 3}
 	for kind: String in kinds:
 		var id: int = kinds[kind]
-		city.fall_start(
-			{
-				"id": id,
-				"building": index,
-				"cells": cells,
-				"kind": kind,
-				"pivot": building.local_to_world(Vector3(0, 1, 0)),
-				"dir": Vector2.RIGHT,
-				"drop": 1.0,
-				"duration": 100.0,  # hangs: the fall barely moves in the frames below
-			}
+		(
+			city
+			. fall_start(
+				{
+					"id": id,
+					"building": index,
+					"cells": cells,
+					"kind": kind,
+					"pivot": building.local_to_world(Vector3(0, 1, 0)),
+					"dir": Vector2.RIGHT,
+					"drop": 1.0,
+					"duration": 100.0,  # hangs: the fall barely moves in the frames below
+				}
+			)
 		)
 		var piece: Node3D = city._falling[id]["node"]
 		var box: AABB = piece.get_meta("box")

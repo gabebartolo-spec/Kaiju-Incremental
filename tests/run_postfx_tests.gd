@@ -83,8 +83,10 @@ func _check_vignette_low_health() -> void:
 		"the post-effects state keeps no low-health red band"
 	)
 	check(
-		is_equal_approx(low.vignette_alpha, calm.vignette_alpha)
-		and low.vignette_color == calm.vignette_color,
+		(
+			is_equal_approx(low.vignette_alpha, calm.vignette_alpha)
+			and low.vignette_color == calm.vignette_color
+		),
 		"at 5%% health the dark vignette is the calm one (%.2f)" % low.vignette_alpha
 	)
 	var code := (preload("res://scenes/vignette.gdshader") as Shader).code
@@ -300,10 +302,12 @@ func _check_rampage() -> void:
 	check(
 		hurt.beating() and hurt.width > 0.0 and hurt.strength > 0.0 and not rects[1].visible,
 		(
-			"low health shows the HUD's heartbeat vignette (reach %.2f, strength %.2f) and the fringe"
-			+ " is long gone"
+			(
+				"low health shows the HUD's heartbeat vignette (reach %.2f, strength %.2f) and the fringe"
+				+ " is long gone"
+			)
+			% [hurt.width, hurt.strength]
 		)
-		% [hurt.width, hurt.strength]
 	)
 	check(
 		(rects[0].material as ShaderMaterial).get_shader_parameter("red_alpha") == null,
@@ -331,7 +335,12 @@ func _check_blast_no_flash() -> void:
 	var b := rampage.sim.buildings[site]
 	var layers := rampage.find_children("*", "CanvasLayer", true, false).size()
 	var event := {
-		"type": "explosion", "kind": "fuel_silo", "building": site, "x": b.x, "z": b.z, "radius": 5.0
+		"type": "explosion",
+		"kind": "fuel_silo",
+		"building": site,
+		"x": b.x,
+		"z": b.z,
+		"radius": 5.0
 	}
 	var taken := blasts.on_event(event, rampage._kaiju_at)
 	var now := rampage.find_children("*", "CanvasLayer", true, false).size()
@@ -344,8 +353,10 @@ func _check_blast_no_flash() -> void:
 	)
 	check(
 		now == layers and later == layers,
-		"the blast adds no screen flash layer (%d before, %d at once, %d after)"
-		% [layers, now, later]
+		(
+			"the blast adds no screen flash layer (%d before, %d at once, %d after)"
+			% [layers, now, later]
+		)
 	)
 	rampage.free()
 

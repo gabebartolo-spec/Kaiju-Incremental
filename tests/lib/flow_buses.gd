@@ -160,7 +160,10 @@ static func _players(root: Node, check: Callable) -> void:
 			and heard["rifle_far"] == &"Military"
 			and heard["footstep"] == &"SFX"
 		),
-		"roar and a toppled tower play on Hero, a stomp on SFX, a dropped part on Debris: %s" % [heard]
+		(
+			"roar and a toppled tower play on Hero, a stomp on SFX, a dropped part on Debris: %s"
+			% [heard]
+		)
 	)
 	check.call(
 		sfx._crowd.bus == &"Crowd" and sfx._rotor.bus == &"Military" and sfx._regen.bus == &"SFX",
