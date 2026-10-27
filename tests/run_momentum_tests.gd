@@ -4,18 +4,15 @@ extends "res://tests/lib/leap_base.gd"
 ## collide with a bang into bigger ones"), the croc's entry (powers.momentum.titans.croc): always
 ## on; at crash_min he crashes through what stands under his shoulder without slowing or spending
 ## it; at slam_min his first touch of anything at or over it is one slam (a dent, momentum 0, the
-## body stopped); below the thresholds nothing changes (D-280). The croc's bars (lead 2026-10-27):
-## full momentum from a standstill within 1.5 s walking straight, a 90 degree turn taken over 2 s at
-## full keeps at least 70% of it, and the turn's rate unchanged (D-328). Player-effect fixture
-## "croc.momentum": the same seeded charge with the run on and off. Seeded by design: every sim is
-## Seeds.make("army", 0) (leap_base._croc) on a hand-made layout; the claws are idle (ClawSwipe
-## rakes on its own clock), so each check measures the body.
+## body stopped); below the thresholds nothing changes (D-280); the croc's bars are the consts.
+## Player-effect fixture "croc.momentum": the same seeded charge with the run on and off. Seeded:
+## every sim is Seeds.make("army", 0) (leap_base._croc) on a hand-made layout; the claws are idle.
 
 const NORTH := Vector2(0.0, -1.0)
 const EAST := Vector2(1.0, 0.0)
 ## The charge: the croc at (0, 30) walks north CHARGE_S; the first building's near face stands
 ## LEAD beyond his snout (he meets it at full momentum), the rest of a row GAP apart.
-const CHARGE_S := 6.0
+const CHARGE_S := 10.0  # his walk (about 3.3 units a second) clears the row
 const LEAD := 9.0
 const GAP := 6.0
 const ROW := 4
@@ -23,7 +20,8 @@ const WIDTH := 3  # cells a side
 const SHORT := 2  # floors: under the young croc's shoulder (about 3.1)
 const TALL := 8  # floors: over it
 const BETWEEN := 5  # floors: over the young croc's shoulder, under the Behemoth's (about 6.5)
-## The croc's bars (lead 2026-10-27).
+const DWARFS := 2  # a building tier that dwarfs the young croc (Growth.dwarf_mult < 1)
+## The croc's bars (lead 2026-10-27): full from a standstill, a turn's keep, its rate (D-328).
 const FULL_BY_S := 1.5
 const TURN_S := 2.0
 const TURN_KEEPS := 0.7
@@ -42,8 +40,7 @@ func run_checks() -> void:
 	await _t("_check_slam")
 	await _t("_check_below_threshold")
 	await _t("_check_relative_to_size")
-	await _t("_check_build_time")
-	await _t("_check_gentle_turn")
+	await _t("_check_build_and_turn")
 	await _t("_check_turn_rate")
 	await _t("_check_replay")
 	await _t("_check_old_save")
@@ -78,13 +75,21 @@ func _snout(levels: Dictionary) -> float:
 	return front * probe.body_scale()
 
 
-## A row of ROW short buildings up the street from LEAD beyond the young croc's snout.
+## A row of ROW short buildings up the street from LEAD beyond the young croc's snout, of a
+## tier that dwarfs him (BodyVolume.sweep: without the run he is held, chewing each).
 func _row() -> Array[Dictionary]:
 	var first := _ahead_of_snout({}, LEAD)
 	var row: Array[Dictionary] = []
 	for n: int in ROW:
-		row.append(_block(Vector2(0.0, first - n * GAP), WIDTH, SHORT))
+		row.append(_tiered(Vector2(0.0, first - n * GAP), WIDTH, SHORT, DWARFS))
 	return row
+
+
+## A WIDTH-wide block of `floors` at `at`, of `tier`.
+func _tiered(at: Vector2, w: int, floors: int, tier: int) -> Dictionary:
+	var block := _block(at, w, floors)
+	block["tier"] = tier
+	return block
 
 
 ## Walks `sim` north CHARGE_S: where he ended (z), the least momentum on a step that broke
@@ -223,22 +228,20 @@ func _check_slam() -> void:
 
 
 ## (c) Below crash_min and slam_min nothing changes (D-280): from a standstill into a short and a
-## tall building just ahead, the walk goes step for step as it does with the thresholds out of
-## reach; no slam, the body breaks into it, and he is never stopped.
+## tall building just ahead, the walk goes step for step as it does with no run at all; no slam,
+## the body breaks into it, and he is never stopped. A short building of a tier that dwarfs him
+## holds him as it does with no run (he chews it).
 func _check_below_threshold() -> void:
 	var titan := _titan()
 	var under := minf(Num.f(titan["crash_min"]), Num.f(titan["slam_min"]))
 	var build := DT / Num.f(titan["build_seconds"])
-	for floors: int in [SHORT, TALL]:
+	for kind: Vector2i in [Vector2i(SHORT, 1), Vector2i(TALL, 1), Vector2i(SHORT, DWARFS)]:
+		var floors := kind.x
 		var layout: Array[Dictionary] = [
-			_block(Vector2(0.0, _ahead_of_snout({}, 1.0)), WIDTH, floors)
+			_tiered(Vector2(0.0, _ahead_of_snout({}, 1.0)), WIDTH, floors, kind.y)
 		]
 		var sim := _runner({}, layout)
-		var ref := _runner({}, layout)
-		var never := ref.powers.run.titan.duplicate()
-		never["crash_min"] = INF
-		never["slam_min"] = INF
-		ref.powers.run.titan = never
+		var ref := _runner({}, layout, false)
 		var out := {"steps": 0, "same": true, "stopped": 0, "slams": 0}
 		while sim.powers.momentum + build < under and Num.i(out["steps"]) < roundi(MAX_S / DT):
 			var was := sim.kaiju_pos
@@ -253,11 +256,12 @@ func _check_below_threshold() -> void:
 		out["broken"] = sim.chunks_destroyed
 		out["momentum"] = snappedf(sim.powers.momentum, 0.01)
 		var same_walk: bool = out["same"]
+		var held_ok := kind.y == DWARFS or Num.i(out["stopped"]) == 0  # a dwarfing one holds him
 		check(
-			same_walk and Num.i(out["slams"]) == 0 and Num.i(out["stopped"]) == 0,
+			same_walk and Num.i(out["slams"]) == 0 and held_ok,
 			(
-				"(c) under the threshold a %d-floor building is met as without the run: %s"
-				% [floors, out]
+				"(c) under the threshold a %d-floor tier-%d building is met as without the run: %s"
+				% [floors, kind.y, out]
 			)
 		)
 		check(Num.i(out["broken"]) > 0, "(c) the body breaks into it as today: %s" % [out])
@@ -286,8 +290,10 @@ func _check_relative_to_size() -> void:
 	)
 
 
-## The croc builds full momentum from a standstill within FULL_BY_S walking straight.
-func _check_build_time() -> void:
+## The croc builds full momentum from a standstill within FULL_BY_S walking straight; then a 90
+## degree turn taken over TURN_S (the stick swung north to east, then held until the body faces
+## it) keeps at least TURN_KEEPS of it at its lowest.
+func _check_build_and_turn() -> void:
 	var sim := _runner({}, [])
 	var steps := 0
 	while sim.powers.momentum < 1.0 and steps < roundi(MAX_S / DT):
@@ -297,13 +303,6 @@ func _check_build_time() -> void:
 		steps * DT <= FULL_BY_S,
 		"full momentum from a standstill in %.2f s (bar %.1f s)" % [steps * DT, FULL_BY_S]
 	)
-
-
-## A 90 degree turn taken over TURN_S at full momentum (the stick swung north to east, then held
-## until the body faces it) keeps at least TURN_KEEPS of it at its lowest.
-func _check_gentle_turn() -> void:
-	var sim := _runner({}, [])
-	_walk(sim, FULL_BY_S, NORTH)
 	var start := sim.powers.momentum
 	var low := start
 	var n := roundi(TURN_S / DT)
