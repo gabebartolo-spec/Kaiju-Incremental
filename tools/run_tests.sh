@@ -18,6 +18,8 @@
 #     (director 2026-10-19, github-hygiene §4);
 #   - a check a suite skips on purpose prints one "SKIP: <reason>" line, and the summary
 #     says how many were skipped.
+#   - a suite's "NOTICE: <text>" line (a number a passing check reports, such as the counts
+#     suite's FxPool peaks) becomes a notice annotation in Actions, readable without the logs.
 #
 # Every run gets its own user data, settings and editor caches: APPDATA (Windows) and
 # the XDG dirs (Linux) point at a temp dir for the whole run, so two agents' runs never
@@ -209,6 +211,11 @@ run_suite() {  # suite, or suite@K/N for part K of a suite that CI runs in N par
 					printf '::error::%s-check::%s\n' "$suite" "${l#FAIL: }"
 				done
 			fi
+		fi
+		if [ "$in_ci" = 1 ]; then
+			grep -E "^NOTICE: " "$log" | head -10 | while IFS= read -r l; do
+				printf '::notice::%s::%s\n' "$suite" "${l#NOTICE: }"
+			done
 		fi
 	} > "$LOG_DIR/$key.report"
 	echo "| $suite | $status | $detail (${secs}s) |" > "$LOG_DIR/$key.row"
