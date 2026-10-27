@@ -4162,11 +4162,12 @@
                       "ring": {"$ref": "#/$defs/num"},
                       "damage": {"$ref": "#/$defs/num"},
                       "fling": {"$ref": "#/$defs/num"},
-                      "cooldown": {"$ref": "#/$defs/num"}
+                      "cooldown": {"$ref": "#/$defs/num"},
+                      "shoulder": {"$ref": "#/$defs/num"}
                     },
                     "required": [
                       "reach", "min_reach", "crouch_s", "flight_s", "settle_s", "recover_s",
-                      "clear", "ring", "damage", "fling", "cooldown"
+                      "clear", "ring", "damage", "fling", "cooldown", "shoulder"
                     ],
                     "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                     "additionalProperties": false
