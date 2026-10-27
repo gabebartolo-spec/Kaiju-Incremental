@@ -1,10 +1,5 @@
 # Functions over 40 lines or complexity 12, as of the ratchet's start. May only shrink:
 # tools/lint/complexity_ratchet.py --shrink drops fixed rows and lowers numbers.
-scenes/ability_fx.gd::_first_hit 21 13
-scenes/biped_body.gd::update 43 6
-scenes/biped_head.gd::update 56 9
-scenes/cephalopod_stand_in.gd::build 55 5
-scenes/city_decor.gd::_streets 68 26
 scenes/city_view.gd::_ready 43 11
 scenes/evolution_reveal.gd::_ready 42 2
 scenes/fx.gd::_ready 51 2

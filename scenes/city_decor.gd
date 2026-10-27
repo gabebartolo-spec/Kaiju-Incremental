@@ -163,9 +163,11 @@ func _on_building(p: Vector2) -> bool:
 func _streets() -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var lit_nodes := {}
-	var chance := Num.f(sim.city["parked_chance"])
-	var chance_beyond := Num.f(sim.city["parked_chance_beyond"])
-	var lane_stop := Num.f(sim.city["lane_stop_chance"])
+	var odds := [
+		Num.f(sim.city["parked_chance"]),
+		Num.f(sim.city["parked_chance_beyond"]),
+		Num.f(sim.city["lane_stop_chance"]),
+	]
 	var gap: Array = sim.city["parked_gap"]
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
@@ -177,43 +179,11 @@ func _streets() -> void:
 		var width := Num.f(street["width"])
 		var dir := (b - a).normalized()
 		var side := Vector2(-dir.y, dir.x)
-		var length := a.distance_to(b)
 		if kind != CityGen.DIAGONAL:
-			var along_x := absf(dir.x) > 0.5
 			# Past the edge, where nothing drives, cars may stand where a street runs into the
 			# diagonal, and a short block still gets one mid-kerb (D-062: no bare asphalt).
 			for kerb: float in [-1.0, 1.0]:
-				var t := CROSSING_CLEAR + _rng.randf_range(0.0, 2.0)
-				if not playable and t >= length - CROSSING_CLEAR:
-					t = length * 0.5
-				while t < length - CROSSING_CLEAR or is_equal_approx(t, length * 0.5):
-					var lane := width * 0.5 - 0.6
-					if _rng.randf() < lane_stop:
-						lane = width * 0.25  # stopped in the traffic lane
-					var p := a + dir * t + side * kerb * lane
-					var color := "car%d" % _rng.randi_range(0, _paints - 1)
-					var on_diagonal := (
-						playable
-						and (
-							CityGen.diagonal_distance(plan, p)
-							< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
-						)
-					)
-					var seen := _inside(p, _view - _half) and not _on_building(p)
-					var half := Vector2(CAR_HALF.y, CAR_HALF.x) if along_x else CAR_HALF
-					var body := Rect2(p - half, half * 2.0)
-					if (
-						_rng.randf() < (chance if playable else chance_beyond)
-						and not on_diagonal
-						and seen
-						and _clear_of_trees(body)
-					):
-						_props.add(
-							Vector3(p.x, 0, p.y),
-							func(v: VoxelBuilder) -> void: car(v, color, along_x)
-						)
-						cars.append(body)
-					t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
+				_park_kerb(kerb, a, b, [width, playable, odds, gap])
 		if not playable:
 			continue  # past the edge: cars only (lamps only on the streets)
 		for end: int in [Num.i(street["from"]), Num.i(street["to"])]:
@@ -221,13 +191,63 @@ func _streets() -> void:
 				lit_nodes[end] = true
 				var corner := nodes[end] + (dir + side) * (width * 0.5 + 0.7)
 				_lamp(corner, -(dir + side))
-		var t2 := LAMP_EVERY
-		var flip := 1.0
-		while t2 < length - LAMP_EVERY * 0.6:
-			var p2 := a + dir * t2 + side * flip * (width * 0.5 + 0.6)
-			_lamp(p2, -side * flip)
-			flip = -flip
-			t2 += LAMP_EVERY
+		_kerb_lamps(a, b, width)
+
+
+## One kerb's (-1 or 1) parked and stopped cars along the street a..b. `street` is [width,
+## playable, odds [parked, parked beyond, lane stop], parked gap].
+func _park_kerb(kerb: float, a: Vector2, b: Vector2, street: Array) -> void:
+	var width: float = street[0]
+	var playable: bool = street[1]
+	var odds: Array = street[2]
+	var gap: Array = street[3]
+	var dir := (b - a).normalized()
+	var side := Vector2(-dir.y, dir.x)
+	var length := a.distance_to(b)
+	var along_x := absf(dir.x) > 0.5
+	var t := CROSSING_CLEAR + _rng.randf_range(0.0, 2.0)
+	if not playable and t >= length - CROSSING_CLEAR:
+		t = length * 0.5
+	while t < length - CROSSING_CLEAR or is_equal_approx(t, length * 0.5):
+		var lane := width * 0.5 - 0.6
+		if _rng.randf() < Num.f(odds[2]):
+			lane = width * 0.25  # stopped in the traffic lane
+		var p := a + dir * t + side * kerb * lane
+		_try_car(p, along_x, playable, Num.f(odds[0] if playable else odds[1]))
+		t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
+
+
+## A car at p in one of the paints, parked when the odds (`chance`) allow and it is off the
+## playable diagonal, in view, off the buildings and clear of the street trees.
+func _try_car(p: Vector2, along_x: bool, playable: bool, chance: float) -> void:
+	var color := "car%d" % _rng.randi_range(0, _paints - 1)
+	var on_diagonal := (
+		playable
+		and (
+			CityGen.diagonal_distance(plan, p)
+			< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
+		)
+	)
+	var seen := _inside(p, _view - _half) and not _on_building(p)
+	var half := Vector2(CAR_HALF.y, CAR_HALF.x) if along_x else CAR_HALF
+	var body := Rect2(p - half, half * 2.0)
+	if _rng.randf() < chance and not on_diagonal and seen and _clear_of_trees(body):
+		_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: car(v, color, along_x))
+		cars.append(body)
+
+
+## Lamps along the street a..b, every LAMP_EVERY, swapping kerbs.
+func _kerb_lamps(a: Vector2, b: Vector2, width: float) -> void:
+	var dir := (b - a).normalized()
+	var side := Vector2(-dir.y, dir.x)
+	var length := a.distance_to(b)
+	var t2 := LAMP_EVERY
+	var flip := 1.0
+	while t2 < length - LAMP_EVERY * 0.6:
+		var p2 := a + dir * t2 + side * flip * (width * 0.5 + 0.6)
+		_lamp(p2, -side * flip)
+		flip = -flip
+		t2 += LAMP_EVERY
 
 
 ## No street tree's trunk within city.street_tree_car_clear of a car body (the parking slot
