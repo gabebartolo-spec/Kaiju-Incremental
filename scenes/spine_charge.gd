@@ -11,6 +11,9 @@ extends Node3D
 ## The charge's last arc ended (the strike lands now): its kind ("breath", "beam").
 signal finished(kind: String)
 
+## No ridge cell found (_ridge_top).
+const NONE := Vector3(0.0, -INF, 0.0)
+
 ## Every hop of the charge so far, in order: {"from": ridge index, "start": s, "end": s} (a test
 ## reads it to prove the tail-to-head order and the timing).
 var hops: Array[Dictionary] = []
@@ -156,22 +159,27 @@ func _find_ridge() -> void:
 	_ridge.clear()
 	if rig == null:
 		return
-	var middle: Array = _cfg["middle"]
 	var lift := Num.f(_cfg["lift"]) * rig.voxel_size()
+	var middle: Array = _cfg["middle"]
 	for bone_name: String in _cfg["bones"]:
-		var cells := rig.voxels_of(bone_name) if rig.has_bone(bone_name) else null
-		if cells == null:
-			continue
-		var head := rig.head_of(bone_name)
-		var axis := rig.dir_of(bone_name)
-		var best := Vector3.ZERO
-		var top := -INF
-		for cell: Vector3i in cells.cells:
-			var p := (Vector3(cell) + Vector3(0, 0.5, 0)) * rig.voxel_size()
-			var along := (p - head).dot(axis) / maxf(axis.length_squared(), 0.0001)
-			if along >= Num.f(middle[0]) and along <= Num.f(middle[1]) and p.y > top:
-				top = p.y
-				best = p
-		if top > -INF:
+		var top := _ridge_top(rig, bone_name, middle) if rig.has_bone(bone_name) else NONE
+		if top != NONE:
 			_bones.append(bone_name)
-			_ridge.append(best - head + Vector3.UP * lift)
+			_ridge.append(top - rig.head_of(bone_name) + Vector3.UP * lift)
+
+
+## The highest cell of `bone_name`'s middle stretch (`middle`: shares of the way along it), in the
+## bone's rest space; NONE when it has no cell there.
+static func _ridge_top(rig: KaijuRig, bone_name: String, middle: Array) -> Vector3:
+	var cells := rig.voxels_of(bone_name)
+	if cells == null:
+		return NONE
+	var head := rig.head_of(bone_name)
+	var axis := rig.dir_of(bone_name)
+	var best := NONE
+	for cell: Vector3i in cells.cells:
+		var p := (Vector3(cell) + Vector3(0, 0.5, 0)) * rig.voxel_size()
+		var along := (p - head).dot(axis) / maxf(axis.length_squared(), 0.0001)
+		if along >= Num.f(middle[0]) and along <= Num.f(middle[1]) and p.y > best.y:
+			best = p
+	return best
