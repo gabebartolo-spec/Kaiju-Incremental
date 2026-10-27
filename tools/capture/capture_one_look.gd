@@ -203,11 +203,15 @@ func _bench_frames(rampage: Rampage, city: CityView) -> void:
 		await process_frame
 		frames += 1
 	var times: Array[float] = []
+	var gpu: Array[float] = []
+	var vp: RID = root.get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var last := Time.get_ticks_usec()
 	for i: int in _bench:
 		await process_frame
 		var now := Time.get_ticks_usec()
 		times.append(float(now - last) / 1000.0)
+		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
 		last = now
 		_maybe_fire(city, 99999)
 	times.sort()
@@ -225,6 +229,22 @@ func _bench_frames(rampage: Rampage, city: CityView) -> void:
 				times.size(),
 				_today,
 				_graphics
+			]
+		)
+	)
+	gpu.sort()
+	var gsum := 0.0
+	for g: float in gpu:
+		gsum += g
+	print(
+		(
+			"ONEL gpu ms mean %.3f median %.3f p95 %.3f max %.3f (n=%d)"
+			% [
+				gsum / gpu.size(),
+				gpu[gpu.size() / 2],
+				gpu[int(gpu.size() * 0.95)],
+				gpu[gpu.size() - 1],
+				gpu.size()
 			]
 		)
 	)
