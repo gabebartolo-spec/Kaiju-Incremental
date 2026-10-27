@@ -23,7 +23,6 @@ scenes/powers_view.gd::update 49 16
 scenes/rampage.gd::_ready 53 8
 scenes/stadium_match.gd::_play 32 13
 scenes/stadium_match.gd::_ready 45 7
-scenes/traffic_island.gd::spots 48 18
 sim/city_gen.gd::map 84 17
 sim/city_sites.gd::_span 22 13
 sim/claw_swipe.gd::_undermine 43 18
