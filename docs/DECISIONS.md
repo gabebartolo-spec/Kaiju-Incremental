@@ -4,6 +4,84 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
+His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
+Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
+(Recommended)": the camera stays at his back and turns slowly with him, as heavy as his turn; the intro pivots out
+behind him (D-325) and play starts right there, with no jump; the bay stays on the north edge (D-270). Lead's check
+of main the same day: the follow kept one fixed compass offset (tuning camera.offset, CameraFollow) and did not turn
+with him, so this is built, not restored. D-259's limited swing (about 60 deg) eases back to behind him. Every look
+approved from the fixed view gets one recheck capture.
+
+## 2026-10-27 · D-329 · Director · Tail whip: the automatic whip stays until the button lash is built
+Q: D-328 removes the automatic tail whip and moves its tree nodes to the button tail lash (D-280), but the lash is
+timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
+So: the automatic whip and its nodes (r_tail, r_shear) stay as they are until the D-280 lash is built after the
+render plan; then the whip goes and its nodes upgrade the lash. Changes D-328's tail line on timing only.
+
+## 2026-10-27 · D-328 · Director · Interview: tail, night, lab, skins, crowds, turn, ElevenLabs, night calls
+Tail (asked whether the button tail lash, D-280, is the same move as the automatic tail whip from a tree node, D-259):
+"remove the automatic whip, repurpose the nodes to improve our button whip". Night (D-106/D-145 "lighter" vs D-242 "dark
+and moody"): "Tonight's look" (D-285 stands; the older wording is retired on this point). Kaiju Creation lab scene:
+"Both" (a new save and each new species). Skins earned by playing: "Both" (each form reached, and rampage records).
+Crowds speed-up (render plan item 7): "Keep trying (Recommended)" if the second method misses. Heavier turn (D-187,
+Behemoth seed 1234 takes 11.9 s to flatten the buildings by its rise): "Keep it heavy"; the turn stays heavy (D-187,
+D-192 A: short steps, turn_slow 0.1) and the 10 s bar of D-131/D-192 stays, met without changing the turn (lead's
+correction: the question wrongly offered to fit his bar).
+ElevenLabs: "I'll sign in" (the lead reads the four train sounds' generation ids for the licence register). Night calls
+(night_calls.md): "All fine". Not asked, lead's call from D-326: rooftop soldiers near the camera stay undrawn.
+
+## 2026-10-27 · D-327 · Director · Physics destruction ships with the demo; render items 10 and 11 are built with it
+Q: real-physics destruction (D-094: carved buildings, loose pieces topple and fall) is planned after demo build 2;
+keep that timing or build it sooner? A: "WTF do you mean render items come with it, render is our number 1 priority,
+stop fucking with me. the destructions ship with the demo, the destruction is the game". So: D-094's "after demo exe 2"
+is reversed; real carving and falling pieces ship in the demo, and render plan items 10 and 11 (the physics speed-ups,
+D-311) are built now as render priority 1 work, not parked. Corrects D-311's correction note.
+
+## 2026-10-27 · D-326 · Director · Never fade out the destruction; audit cuts and keeps
+Q: falling chunks of a toppling building fade out when they pass between the camera and the kaiju; keep or cut? A:
+"Cut. ive said a thousand times, its ok to obscure the kaiju, its not ok to block the camera, please stop asking me
+questions about this, please stop making buildings fade out, the destruction IS THE GAME, NEVER FADE OUT THE
+DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-through; it may hide the kaiju. Only a
+wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
+"Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
+screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
+
+## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
+Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
+a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
+add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
+reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
+each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
+
+## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
+Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
+military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
+(#301 stays). Far city at night: "Fog + reflection" (both far-city PRs; the glow is re-measured with #301's window
+colours). Facade carve (#288): "impossible to tell from the clip, but ship and ill test in play".
+
+## 2026-10-27 · D-323 · Director · Kaiju death: jagged stone chunks replace the cubes; the 0.2 s wait stays
+On #240's clip: "you didnt change the blocks that i said i hated. you just changed their colour, but the bllocks are
+stupid and look bad". Q: what should fly out of his body? A: "Jagged stone chunks" (irregular broken rock in his
+hide's texture, many sizes, tumbling with dust; keeps D-294's shards first). Blast wait 0.2 s: "Keep 0.2 s".
+
+## 2026-10-27 · D-322 · Director · Interview batch 1: roar and solid vehicles kept; window flicker not solved
+Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be a question, no other choice makes any
+sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
+solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
+measure the flicker in motion first).
+
+## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
+Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
+add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.
+
+## 2026-10-27 · D-319 · Director · A finished change runs its full test check on GitHub first
+Q (after "whats the point of having so many helpers if most of them are waiting half a day to work"): where should a
+finished change run its full test check before it goes up for merge? A: "On GitHub first (Recommended)". So: the
+local full prepush stops being the gate. A builder runs the cheap local gates (no Godot), pushes, and GitHub runs every
+shard on the branch (`C:/kt/gh_check.sh`, one lead watcher); the PR is ready only after that passes, so no red PR
+shows. Builders still run locally only the suites they iterate on. Replaces the local-prepush gate (D-186 stands).
+
 ## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
 Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
 copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
@@ -297,103 +375,3 @@ Smoke and sky (extends D-154): of the rampage still, "i think we can both agree 
 ## 2026-10-25 · D-246 · Director · Serpent redesign: hood, frills, armour, horns; Tripo test models (200 credits); serpent work frozen
 
 "im concerned that our serpent kaiju just resembles a giant snake, roadmap: revisit the serpent concepts and possibly make new models"; "so dont do any serpent work until we decide on the final design". Asked: what makes it a kaiju is "Hood and frills" (a huge cobra hood with patterns, dorsal frills and spines) and "Armour and horns" (plated scales, horns, a crested head: a dragon-snake); explore with "Tripo test models", spend "Up to 200" Tripo credits (about 3-4 textured variants; no rigging or final model). All other serpent work (mouth, animation, powers art) waits for his pick. Also: "btw youre cooking the pc's ram too hard, ease up a bit": every lead now runs at most 2 heavy jobs, python pools at most 2 workers, nothing new under 6 GB free RAM.
-
-## 2026-10-25 · D-245 · Director · Water details, rubble, shot impacts, real mouths, Komodo pace
-
-Water (extends D-244, asked): "Looks only" (never changes damage or score); bay "Gentle swell, whitecaps in storms"; he reviews "After each step" (surface, ripples and wake, debris). Rubble ("i dont like the tangled mess of rectangular ruins clipping into one another"; asked): "Pancaked floors + debris", piles "Well below his knees", feet make it "Crunches flatter"; built "Right after ground". Shot impacts ("look a bit flat, like theyre pasted on top ... it glows too much ... a toned down impact indicator with a tiny red blood mist at the impact site"): on-surface, no glow, tiny blood mist; plus "faint wounds" that build up over a run. Komodo mouth: after three failed rounds on the closed-mouth Tripo head, "Model a real mouth" (asset session, no credits). All kaiju ("we should give all our models the same detailed, functional mouths with real anatomic features"; asked): "Croc first, then Komodo, then serpent"; gums, rooted teeth, wet lining, a moving tongue, throat and palate; each from "Its own real animal". Komodo walk: in game it played at about 2.17x its authored pace; "Slow him to the clip" (D-201: he moves only as fast as his animations show), roughly halving his walk speed. Asked how upgrades then work: "Size lengthens stride; speed unlocks a heavier gait" (size upgrades lengthen his stride at the same leg pace; speed upgrades raise cadence up to about 1.25x; the top speed tiers unlock a lumbering-run clip).
-
-## 2026-10-25 · D-244 · Director · Real water; VIP escape headline
-
-"water also counts as a flat untextured surface. Not for the first time, Im asking you for real water, it needs physics, and should react to things falling in it, it should have ripples, currents, reflections, whitecaps, moss, debris etc"; "larger bodies of water in the bay need waves too". Asked: build it in parallel with the ground texturing ("Run both at once"); the kaiju makes a "Full wake" (bow wave, trailing wake, tail-slam splash and rings to the banks); debris is his wreckage plus ambient litter plus small moored boats that rock and capsize; moss is a "Waterline on quay walls". VFX lead owns it; presentation only. Also asked: if the governor escapes, the headline is "COWARD {rank} ESCAPES THE CITY".
-
-## 2026-10-25 · D-243 · Director · Trains, roar gape, claw trail, VIP headline, walk bob, next playtest
-
-He asked to be asked more. Answers: trains "Keep running" as the kaiju nears (horn blares, no braking or fleeing); derailing pays a "Big one-off bonus" well above a car (a new tuning row he judges in playtest); the line is an "Elevated viaduct" on pillars so a derailed train falls into the street; after a derail survivors crawl out and flee (existing crowd people); Nimbalyst's API budget for trains is $60 on top of the ~$70 spent on 019-021 (stop at about $54; extends D-240). Komodo roar gape "35-40°" (clear air between the jaws). Claw rake "Faint, short trail" (thin streak per claw tip, fades in about 0.25 s). The VIP kill headline stays 3 s while play continues (no slow-mo). Young croc walk gets a "slight bob" on top of the small arm swing. The next playtest build comes "After the flat-surface pass" (P0-P2 textured), surveyed on the 4K TV only.
-
-## 2026-10-25 · D-242 · Director · The visual vision critics judge by
-
-He asked for a summary of what critics keep pushing or rejecting, then an interview "so we can align our visions". Answers: effects intensity "Elegant, restrained" (ambient effects support the scene and never compete with the kaiju; only his own attacks go big); reference vs style "True to reference" (match real animals and physics; stylise only where it does not read at all); visceral detail (drool, wet teeth, scars, gore) "Keep and celebrate" (never a defect; only checked for clean anchoring); framing "Wide: city scale" (as charge v10 at 36 m); timing at kaiju scale "Slowed for mass" (bigger is heavier and slower; small details such as the tongue and blinks stay near real speed); night "Dark and moody" (windows, lamps and fires carry the image; the kaiju reads by rim and fire light); critic vs his pick "You win, critic notes" (an approved trait is locked; critics flag defects only: pops, clipping, slits, stretch, flat surfaces, unreadable at 4K). Also asked: VIP headlines "COWARD GOVERNOR FLEES CITY BY CHOPPER" / "GOVERNOR SWATTED FROM THE SKY"; the governor's heli "Same size, lit"; young croc arms "Small swing" with the walk; intro skip "1 s".
-
-## 2026-10-25 · D-241 · Director · Kaiju Creation ships with the dark lab room and all three serums
-
-After the 020 clip: "looks great. change the black interior to a laboratory setting and its ready to ship"; "also load the serpent and dragon serum into the vials, and ensure the clip is functional for all 3". Asked: "Filled, still locked"; "Dark high-tech lab"; "3 clips, one per genome". On the dish: "make the dish metal a little less blocky, less speckled, more smooth"; "change the dish to be a more clear glass, less brown dirt". After the three 021 clips: "Ship it" (PR #192).
-
-## 2026-10-25 · D-240 · Director · Nimbalyst builds trains; spend for it
-
-Asked which medium task Nimbalyst takes next: "trains. he can have a fresh 1000 tripo credits, and he can make sounds on 11labs and he should research train locomotion and derailment physics". One rail line, a station and running trains that derail and smash (#63, #69 "Derail and smash"). Spend: up to 1000 Tripo credits (new, for the train set; board first), ElevenLabs train sounds (lead's cap 500 credits unless he says more), within the D-232 API cap. Brief: kaiju-mailbox to-nimbalyst/022-trains.md.
-
-## 2026-10-25 · D-239 · Director · The Komodo's drool is part of its design
-
-"the drool is a non-negotiable aspect of the Dragon's design". The lead had removed the drool threads from the idle and the game model on a critic's guess, reading his "disgusting" (meant: nearly 50 idle attempts) as being about the dragon; he asked "WHY ARE YOU REMOVING THE DROOL". The drool threads stay on every Komodo model, clip and stage; no session removes, hides or shortens them.
-
-## 2026-10-25 · D-238 · Director · The charge's direction: Komodo charge v8 (a Godzilla-style forward-pitched run)
-
-Shown the side-on charge v8 (lean 53-65° from vertical over near-standing hips, legs extended at push-off, arms from the shipped walk, a tail whip, an airborne lunge; matched to Godzilla x Kong 2024 side-on runs after v5 read upright and v6-v7 read as a low lizard scuttle): "dragon charge v8 is good, thats the right direction". Changes: v8's posture, lean and look are fixed; later rounds only fix defects (coil, held leap pose, no dead hold, framing).
-
-## 2026-10-25 · D-237 · Director · Kaiju Creation lab sounds: ten clinical SFX from ElevenLabs, up to 500 credits
-
-In Nimbalyst's session: "we need nice, clinical sfx for this scene, lab sounds and high-tech precision machinery whirring". Answers: the ten-sound list as drafted (room tone loop, screen chirps and heartbeat pulse, the injector boom's servo swing, the injector drawing liquid, injector servo whine and pneumatic hiss, needle click and electric snap, takeover crackle loop, overload surge to bang, dive whoosh, a real egg crack); source "ElevenLabs on your plan (Recommended)" (the D-138 route); spend cap "Up to 500 (Recommended)" credits. Picks via a loudness-matched shootout page; provenance in docs/provenance/sfx.md and LICENSING_REGISTER on claude/kaiju-creation.
-
-## 2026-10-25 · D-236 · Director · Kaiju Creation: the injector does the work, Special K, hazard stripes on lab props
-
-His sequence: "scene set - click genome (injector rotates to the croc vial, drains it, moves to dish and puts croc gene into dish - click kaiju juice (injector rotates to the kaiji vial and repeats above step) i do NOT want the vials magically flying over to the dish and pouring" (the flying, pouring vial was agent-added with no decision; removed). Injector: "Use image A whole" (the Tripo post, swinging boom and head; the rack sits within its reach). Special K: "Own canister on the bench", a hazard-marked glowing canister beside the rack (about 55 Tripo credits). Dish: "Glass dish in the cradle" (a low thin glass rim with agar in the approved cradle). Naming: "call Kaiju Juice 'Special K'"; the button reads INJECT SPECIAL K. Hazard stripes on the Tripo lab props: "Keep them (Recommended)", an exception to VFX_STYLE's "no UI colours in the world" for lab props only.
-
-## 2026-10-25 · D-235 · Director · Kaiju Creation is rebuilt as a dark secret lab from Tripo props, up to 500 Tripo credits
-
-Reviewing Nimbalyst's 019 captures: "you did a pretty bad job overall, why not use tripo?". What bothered him: "Props look cheap, Effect is weak, Whole thing too plain". Route for the lab props (dish, genome vials and rack, syringe or injector, bench and equipment): "Tripo Studio, browser" (existing Studio credits in the built-in browser, voxelised like the kaiju so the look stays one style, D-163). Spend: "Up to 500" Tripo credits for the lab props, a new cap not drawn from D-204 or D-213; stop and ask at 500 (330 used by the D-236 canister). Board first: "board first"; after a critic SHIP he picked "Build it (Recommended)": the dark secret-lab set, the croc's own white-hot lightning tearing through the genome in the dish, then the dive to black and the egg crack. Every Tripo task goes in docs/provenance/tripo.md on claude/kaiju-creation.
-
-## 2026-10-25 · D-234 · Director · Komodo walking arms: pose C, forearms up and forward, claws reaching ahead
-
-After w25 ("no looks like a clown. use video reference of bipedal kaiju arms") and w26 matched to the official Godzilla 2014 walk ("Still off": "Too stiff / frozen", "Pose itself wrong"), he picked "Raised and ready" (forearms at chest height in front, rocking with the body like a stalking predator), then from three still poses at the game camera picked C: "forearms up and forward, claws reaching ahead". Changes: refines D-233; the walk, idle and charge use pose C as the arm base, with the hands visibly moving every step. Method: a pose that misses twice is picked from labelled stills before any clip.
-
-## 2026-10-25 · D-233 · Director · Komodo arms reach forward, ready to swipe (replaces D-229's hanging arms)
-
-Shown walk w22 (arms hanging at his sides per D-229, critic SHIP): "arms lifeless like a zombie, i prefer his earlier pose of arms slightly outreached, prepared to swipe". Shown w21 (arms about 45 deg out to the sides, elbows bent, claws open): "no i want them facing more forward than that". Changes: the adult Komodo walk's arms reach forward ahead of the chest, slightly outreached, elbows a little bent, claws open and ready, symmetric, a small living swing; legs, torso, tail and footfall stay as w22.
-
-## 2026-10-25 · D-232 · Director · Nimbalyst joins as a developer, Opus 5.5 Medium on the Claude API, $100 cap
-
-His words: "I also have Nimbalyst connected to Claude API, you can use him as a developer"; "I will make him Opus 5.5 Medium". Asked how it gets work: a mailbox folder (`Documents/Nimbalyst Tutorial/kaiju-mailbox`, briefs in, results out). API spend: "100" (read as $100 in total until he says otherwise; it stops and reports at $90). First task: Kaiju Creation (D-207). Changes: one more builder outside the PC's engine cap count only while it runs Godot; the lead opens its PRs and merges.
-
-## 2026-10-25 · D-231 · Director · Rig first: every model passes a rig check before any animation
-
-After walk v18 (footfall jolt; "his torso sometimes contorts ... like he has no ribcage or internal mass at all"; "see how the width of his waist changes so dramatically ... as his leg moves forward"): "seems like we should be doing better skeletons and better rigging before we get to the animation". Asked; answer "Yes, rig first". Komodo animation pauses; its skeleton and skin are rebuilt (rigid ribcage, waist and flank on the pelvis, thigh influence only below the hip crease, shoulders hold volume) and a critic passes a standard grey-mesh pose sheet (spine bend and twist, leg and arm swings, neck, tail; waist width change at most 5%) before any clip. The same gate applies to the croc, serpent and mecha boss.
-
-## 2026-10-25 · D-230 · Director · Mecha boss approved: cobra robot R2b; rig it in Cascadeur
-
-Shown the seven-view board of the remade mecha boss (D-227; Tripo c8b72f25 multi-view Smart Mesh, tail root re-posed in Blender, file `cascadeur_bridge/mecha/remake/mecha_cobra_c8b72f25_tex_r2b.glb`/.fbx; 270 of 400 credits). Asked whether the tail showing between the legs from the front (like Godzilla's) is fine or should join higher up the back: "Yes, rig it". Next: rigged and animated in Cascadeur after the Komodo clips.
-
-## 2026-10-25 · D-229 · Director · Komodo arms hang at his sides; clips made whole in Cascadeur
-
-Arm pose, asked with the v15 and v16 walk frames: "Hang at his sides" (hands near the hips, a loose swing against the legs; not held out, not tucked). On v16: "idk these all look anatomically broken", so the arm rig is pose-tested on the grey mesh before any new clip. On the method: "last night you were nailing animations first try, today you failing 20x in a row", then "yeah, do it right". Every clip is made whole in Cascadeur (full body posed together, physics over the whole body); a fix re-poses the clip, never patches one part onto a finished clip. Critics judge the whole body at game speed first.
-
-## 2026-10-25 · D-228 · Director · Animate in Cascadeur; tail, jaw and tongue keyed in Blender
-
-He asked the animator: "didnt we already decide to do all animations in Casc?" (D-199, D-216; the Komodo idle had been keyed in Blender since idle v4), then "id like you to try to animate it all in Cascadeur". The Komodo rig has no Cascadeur points for the tail, jaw or tongue, so he chose: body in Cascadeur; tail, jaw and tongue in Blender. Blender also does the ID pass, renders and measurement.
-
-## 2026-10-25 · D-227 · Director · Mecha boss remade: humanoid robot, cobra head, reptile tail, white with blue lights; Tripo spend up to 400
-
-The director sent two of his own reference images for the mecha boss: "model it like this, a human, with a reptilian tail and cobra head, but its a robot". Answers: the images are his ("It's mine, upload it"); colour "White with blue lights" (lab-white armour, glowing blue hood slats; keeps look B, D-217); spend "Yes, up to 400" Tripo credits from the D-204/D-213 budget (reference, model tries, texture). Tripo makes the model only; rigging and every animation stay in Cascadeur, as for every titan. Replaces the D-217 look-B 3D model.
-
-## 2026-10-25 · D-226 · Director · Komodo walk arms, idle tail, skins earned, roar and attacks next
-
-Asked four questions with the adult Komodo walk clip (v10): walk: "the actual walking is fine, and the tail is fine. but his arms are jolting strangely in a robotic way" (only the arms are reworked); calm idle tail: "Slow gentle sway"; how players get the new skins (D-220/D-224): "Earned by playing" (as D-205; which milestone unlocks each is asked later); the animator's next work: "Komodo roar and attacks" (before the croc animations).
-
-## 2026-10-25 · D-225 · Director · The Komodo adult idle is calm: slow breathing, an occasional tongue flick
-
-Shown the adult Komodo idle (v26: breathing, head-up tasting with three tongue flicks, tail sway with a whip flick): "its so so so bad. why is his body convulsing like that. just have him breathing slowly with the occasional tongue flick". The idle is rebuilt calm: slow breaths, one tongue flick a loop, a slow gentle tail sway (D-223), nothing else moving. Critics judge the overall feel at game speed first.
-
-## 2026-10-24 · D-224 · Director · Croc and serpent skins: Pale Banded croc, Copper and Albino serpent
-
-Shown the croc and serpent skin palettes that passed two critic rounds (adult at game size; croc White and Black and serpent Black failed twice and were dropped): "All three new". The croc ships with today's olive plus Pale Banded; the serpent with today's olive plus Copper and Albino. Recoloured from CC-licensed photo regions (skins/*/SOURCES.txt); how a player gets a skin is not decided.
-
-## 2026-10-24 · D-223 · Director · Tails are a living limb: behaviours plus physics
-
-Asked "whats the plan for the tail": "all tails shouldnt be stiff, they are like an extra limb and should have their own behaviours as well as physics". Behaviours chosen (all four): a balance swing (side to side against the hips each step; leads into a turn, then drags and whips round after it); mood signals (lazy S-curls and tip flicks at rest, lifted and stiff when alert, lashing when angry before an attack or ultimate); attack wind-up (coils or cocks before a tail whip or swat, then snaps through with weight); ground contact (the heavy base drags and scrapes, the tip lifts, a small bounce off cars and buildings it passes over). Every titan's tail is an authored behaviour layer with physics follow-through on top, in every clip. Whether the tail's bumps damage what they touch is not decided (presentation only until asked).
-
-## 2026-10-24 · D-222 · Director · Teen Komodo: steady head, smaller feet
-
-Shown the teen Komodo walk (v11, physics tail, 60-frame cycle): "his head wobbles too much, makes him look like his neck is too floppy. I also think his feet are too large". The teen's head is held steady like a predator's (the neck absorbs the body bob) in every clip, and the teen's feet are scaled down (about 80%, lead's call) across its walk, idle and turn.
-
-## 2026-10-24 · D-221 · Director · Sleek adult croc ridge kept; blue Komodo skin dropped
-
-Shown the remade adult croc (D-219, adult3 a3174b0f): its medium ridge of pale plates and dark spikes, "Keep it". The Blue Monitor skin failed two rounds of Tripo text texturing (D-220): "Drop it"; the Komodo ships with Melanistic Black and Bone White. Haze and shadow boards did not show a difference he could see ("today and half haze look identical, bad screenshots", "no screenshots for me to compare"): both stay as today, no change.

@@ -7,6 +7,8 @@ extends SceneTree
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Frames Kaiju Creation's steps may take at most.
 const CREATION_CAP := 60 * 20
+## Frames a run's river rise may take at most.
+const EMERGE_CAP := 60 * 30
 
 var _main: Node
 var _fails := 0
@@ -66,6 +68,9 @@ func _run() -> void:
 		_check("city geometry present", meshes.size() > 50, "%d meshes" % meshes.size())
 	await _walk_end()
 	print("DEMO_SMOKE %s (%d failures)" % ["PASS" if _fails == 0 else "FAIL", _fails])
+	_main.queue_free()
+	await _frames(2)
+	await QuitGame.settle_audio(self)  # a sound alive at exit leaks its stream and playbacks
 	quit(0 if _fails == 0 else 1)
 
 
@@ -133,6 +138,10 @@ func _walk_end() -> void:
 	)
 	if endless != null:
 		await endless.wait_loaded()
+		for _i: int in EMERGE_CAP:  # the kaiju rises from the river first; the clock waits (D-083)
+			if not endless.sim.emerge.active:
+				break
+			await process_frame
 		await _frames(120)
 		_check(
 			"endless runs with no clock",

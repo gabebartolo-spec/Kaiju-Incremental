@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 const AUTOLOADS: Array[String] = ["Debug", "EventBus", "GameData", "Rng", "SaveSystem", "Settings"]
 const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
+const VehiclesSolid := preload("res://tests/lib/smoke_vehicles_solid.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -38,7 +39,8 @@ func run_checks() -> void:
 	await _t("_check_tank")
 	await _t("_check_heli")
 	await _h("VehicleParts", func() -> void: VehiclePartsCheck.check(check))
-	await _t("_check_vehicle_fade")
+	await _t("_check_air_clear_side")
+	await _h("VehiclesSolid", func() -> void: await VehiclesSolid.check(check, root))
 	await _t("_check_crease_pass")
 
 
@@ -331,27 +333,9 @@ func _check_heli() -> void:
 	heli.free()
 
 
-## A helicopter between the camera and the kaiju fades to the screen door and one off to the side
-## stays solid; the sim keeps helicopters off the side the game camera actually views from.
-func _check_vehicle_fade() -> void:
-	var front := HelicopterModel.new()
-	var side := HelicopterModel.new()
-	root.add_child(front)
-	root.add_child(side)
-	var eye := CameraTuning.offset()
-	front.position = eye * 0.5
-	side.position = Vector3(20, 9, 0)
-	var nodes: Array[Node3D] = [front, side]
-	var fade := VehicleFade.new(func() -> Array: return [], func() -> Array: return nodes)
-	for _i: int in 30:
-		fade.update(eye, Vector3.ZERO, 1.0, 1.0 / 30.0)
-	var low := Num.f(Content.section("vehicles")["fade_opacity"])
-	var a: float = front.get_meta("opacity", 1.0)
-	var b: float = side.get_meta("opacity", 1.0)
-	check(
-		is_equal_approx(a, low) and b == 1.0,
-		"a helicopter in front of the kaiju fades to %.2f, one at the side stays %.2f" % [a, b]
-	)
+## The sim keeps helicopters off the side the game camera actually views from. (That no vehicle
+## ever draws see-through is guarded by tests/lib/smoke_vehicles_solid.gd, D-290.)
+func _check_air_clear_side() -> void:
 	var bearing := rad_to_deg(atan2(CameraTuning.offset().z, CameraTuning.offset().x))
 	var air := Num.f(Content.section("air")["camera_bearing"])
 	check(
@@ -361,8 +345,6 @@ func _check_vehicle_fade() -> void:
 			% [air, bearing]
 		)
 	)
-	front.free()
-	side.free()
 
 
 ## The crease pass (crease.gdshader) is built from the look, switched off by it, and does no

@@ -169,6 +169,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	var cfg: Dictionary = Content.section("render_opt")
 	_tight = Num.i(cfg["kaiju_tight_bounds"]) != 0
 	_slack = maxf(1.0, Num.f(cfg["kaiju_bounds_slack"]))
+	var three := Num.i(cfg["kaiju_three_faces"]) != 0
 	var voxel := raw.decode_float(18)
 	var cells := raw.decode_u32(22)
 	var at := HEADER_BYTES
@@ -179,6 +180,8 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * voxel * Look.value("voxel_inset")
 	mm.mesh = box
+	if three:  # render plan item 14: three faces a cube, turned to each camera
+		mm.mesh = ThreeFaceCube.mesh(box.size)
 	mm.instance_count = cells
 	mm.custom_aabb = BOUNDS
 	var tune: Dictionary = Content.section("fx")["hide_hit"]
@@ -196,6 +199,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	var corner := HALF_DIAGONAL * voxel * Look.value("voxel_inset") * (1.0 + MAX_GROW)
 	_reach.measure_cubes(raw, cells, voxel, corner)
 	_cubes = _cube_material(voxel, tune)
+	_cubes.set_shader_parameter("three_faces", three)
 	var cubes := MultiMeshInstance3D.new()
 	_cube_node = cubes
 	cubes.multimesh = mm

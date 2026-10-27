@@ -6,7 +6,9 @@ extends SceneTree
 ## check() once per check. The base prints "<Suite> tests: K of M functions, N checks,
 ## F failures" (tests/lib/functions_ran.gd; tools/run_tests.sh reads that line) and quits
 ## non-zero when any check failed. A `_check_*` method never called, or a test that made no
-## check, is a failure by name; there is no floor file to keep (director 2026-10-19).
+## check, is a failure by name; there is no floor file to keep (director 2026-10-19). CI runs the
+## heaviest suites in parts, each a share of the `_t`/`_h` calls (`-- --part=K/N`, see
+## tests/lib/functions_ran.gd part()): make no check outside `_t` and `_h` in such a suite.
 ##   godot --headless --path . --script tests/run_<suite>_tests.gd
 
 const Ran := preload("res://tests/lib/functions_ran.gd")
@@ -32,6 +34,14 @@ func suite_name() -> String:
 	return "Unnamed"
 
 
+## Which part of a suite split in CI (tools/ci_timings.txt "split") runs a call: 0 to parts - 1.
+## The default deals the calls out in turn; a suite with a few long calls overrides it to balance
+## its parts, by the call's label (`_check_x`, or the `_h` label). Pure: the same answer in every
+## part.
+func part_for(_label: String, index: int, parts: int) -> int:
+	return index % parts
+
+
 ## Each suite overrides this: one `await _t("_check_x")` per test function.
 func run_checks() -> void:
 	await process_frame
@@ -51,6 +61,7 @@ func _h(label: String, run: Callable) -> void:
 ## "FAIL: <expectation>" so tools/run_tests.sh and CI can show it without the full log.
 func check(condition: bool, expectation: String) -> void:
 	_checks += 1
+	Ran.check_stray(self, expectation)
 	if not condition:
 		_failures.append(expectation)
 		printerr("FAIL: " + expectation)

@@ -27,6 +27,8 @@ var cfg: Dictionary
 var ground: CityGround
 ## The far skyline's boxes as drawn (instance i is _far[i]), for SkylineRampage to topple.
 var far_view: MultiMeshInstance3D
+## The far skyline's haze (FarHaze): its towers, quay and lattice tower, and the far rampage's.
+var far_haze: FarHaze
 var _rng: RandomNumberGenerator
 var _near: Array[Dictionary] = []  # boxes: size, centre, colour, custom
 var _far: Array[Dictionary] = []
@@ -41,6 +43,8 @@ func _init(p_ground: CityGround, rng: RandomNumberGenerator) -> void:
 	ground = p_ground
 	cfg = ground.cfg
 	_rng = rng
+	var far_fog: Dictionary = cfg["far_fog"]
+	far_haze = FarHaze.new(far_fog)
 
 
 func _ready() -> void:
@@ -49,17 +53,19 @@ func _ready() -> void:
 	for path: PackedVector2Array in _freeways:
 		_freeway(path)
 	_far_shore()
-	_outer_lamps()
+	SkylineLamps.outer_streets(ground, _lamps)
 	add_child(_facades(_near, 0.0))
 	var far := _facades(_far, Num.f(cfg["far_haze"]))
 	var far_mesh: BoxMesh = far.multimesh.mesh
 	var far_mat: ShaderMaterial = far_mesh.material
 	far_mat.set_shader_parameter("grain", FAR_GRAIN)
+	far_haze.track([far_mat])
 	add_child(far)
 	far_view = far
 	add_child(_plain_boxes())
-	add_child(_lamp_heads())
+	add_child(SkylineLamps.heads(_lamps))
 	add_child(Aircraft.new(_rng))
+	far_haze.apply_default()  # the far city in the same air as the bay (director comment #37)
 
 
 ## The far skyline's boxes, in far_view's instance order; a supertall's crown has "crown_of".
@@ -70,6 +76,11 @@ func far_boxes() -> Array[Dictionary]:
 ## Every painted stand-in building (near and far), as {"size": Vector3, "at": Vector3 centre}.
 func stand_ins() -> Array[Dictionary]:
 	return _near + _far
+
+
+## The far skyline's one haze entry point (a rampage's escalation): FarHaze.set_haze.
+func set_far_haze(color: Color, amount: float, base := 0.0, start := -1.0) -> void:
+	far_haze.set_haze(color, amount, base, start)
 
 
 ## Stand-ins on every outer block: the same lots as the playable city, a little lower, with a
@@ -271,29 +282,6 @@ func _lattice_tower(base: Vector3) -> void:
 	_far.append(tip)
 
 
-## Glowing lamp heads down the outer streets (no real lights: they only need to twinkle).
-func _outer_lamps() -> void:
-	var nodes: Array[Vector2] = ground.plan["nodes"]
-	var half := Num.f(cfg["half"])
-	for street: Dictionary in ground.plan["streets"]:
-		if str(street["kind"]) == CityGen.ALLEY:
-			continue
-		var a := nodes[Num.i(street["from"])]
-		var b := nodes[Num.i(street["to"])]
-		if maxf(absf(a.x), absf(a.y)) <= half + 1.0 and maxf(absf(b.x), absf(b.y)) <= half + 1.0:
-			continue  # inside the playable city the decor puts real streetlights
-		if minf(a.y, b.y) < ground.coast:
-			continue
-		var dir := (b - a).normalized()
-		var side := Vector2(-dir.y, dir.x) * (Num.f(street["width"]) * 0.5 + 0.5)
-		var t := 3.0
-		while t < a.distance_to(b):
-			var p := a + dir * t + side
-			if p.length() < DETAIL_REACH:
-				_lamps.append(Vector3(p.x, 2.6, p.y))
-			t += 9.0
-
-
 ## A plain box; box.position is its centre (not a corner), turned by `turn` about the vertical.
 func _box(turn: Basis, box: AABB, color: Color, hazy: bool = false) -> void:
 	var t := Transform3D(turn * Basis.from_scale(box.size), box.position)
@@ -340,7 +328,7 @@ static func facade_material(haze: float) -> ShaderMaterial:
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
 	mat.set_shader_parameter("haze_color", Look.color("fog_color"))
 	mat.set_shader_parameter("haze", haze)
-	return mat
+	return WindowPalette.apply_common(mat)
 
 
 ## The plain boxes: roof gear and the lattice tower in the instance colour; the concrete
@@ -364,6 +352,8 @@ func _plain_boxes() -> Node3D:
 		)
 		if not concrete:
 			mat.set_shader_parameter("plain", true)
+		if hazy:
+			far_haze.track([mat])
 		mesh.material = mat
 		mm.mesh = mesh
 		var picked: Array[Dictionary] = []
@@ -382,19 +372,3 @@ func _plain_boxes() -> Node3D:
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(mmi)
 	return holder
-
-
-func _lamp_heads() -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.35, 0.2, 0.35)
-	mesh.material = CityView.glow(Color("ffd59a"), 4.0)
-	mm.mesh = mesh
-	mm.instance_count = _lamps.size()
-	for i: int in _lamps.size():
-		mm.set_instance_transform(i, Transform3D(Basis(), _lamps[i]))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mmi

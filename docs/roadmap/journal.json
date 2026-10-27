@@ -186,7 +186,8 @@
             94,
             118,
             124,
-            145
+            145,
+            306
           ]
         },
         {
@@ -210,6 +211,8 @@
           "status": "done",
           "prs": [
             260,
+            261,
+            262,
             263,
             264,
             265,
@@ -217,7 +220,15 @@
             268,
             269,
             270,
-            283
+            283,
+            286,
+            292,
+            293,
+            296,
+            299,
+            300,
+            303,
+            304
           ]
         },
         {
@@ -226,7 +237,8 @@
           "prs": [
             271,
             272,
-            278
+            278,
+            294
           ]
         },
         {
@@ -450,8 +462,12 @@
             273,
             275,
             280,
+            282,
+            285,
             287,
-            289
+            289,
+            290,
+            298
           ]
         },
         {
@@ -662,6 +678,13 @@
           "status": "done",
           "prs": [
             274
+          ]
+        },
+        {
+          "text": "Never fade out the destruction (D-290, D-326): no tank, helicopter or falling piece ever draws see-through",
+          "status": "in progress",
+          "prs": [
+            279
           ]
         }
       ],
@@ -986,11 +1009,14 @@
           "text": "Render plan (D-276, D-298): a measured 4K baseline bench and its tools (Phase 0), debris bookkeeping cached per tick (item 1), the kaiju's shadow drawn in a tight box (item 2), night fog, debanding and sharpen, and the new colour grading on by default (items 3 and 4, D-285)",
           "status": "done",
           "prs": [
-            259,
             252,
             253,
             257,
-            284
+            259,
+            284,
+            288,
+            301,
+            302
           ]
         },
         {
@@ -999,6 +1025,14 @@
           "prs": [
             254,
             281
+          ]
+        },
+        {
+          "text": "Speed runs get the PC to themselves (D-299, D-313): no Godot launch, test run or capture starts while a bench holds its window, so every speed number is clean",
+          "status": "done",
+          "prs": [
+            291,
+            295
           ]
         }
       ],
@@ -1197,7 +1231,8 @@
           "text": "The far insectoid rampages through the distant skyline across the bay, on by default (D-120; his 2026-10-25 'yes bring it back')",
           "status": "done",
           "prs": [
-            213
+            213,
+            305
           ]
         },
         {

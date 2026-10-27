@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Parsed .kvox per path and built voxels per part, shared by every vehicle of a type, so a tank
 ## or helicopter spawning mid-rampage reuses them instead of re-reading and re-filling (35-45 ms a
-## spawn before). Each vehicle still gets its own material, so one fades without the others.
+## spawn before). Each vehicle still gets its own material (the governor's is recoloured alone).
 static var _kvox_cache: Dictionary = {}
 static var _mesh_cache: Dictionary = {}
 
@@ -22,6 +22,12 @@ func _init(base: String, height: float) -> void:
 	_dir = base.get_base_dir()
 	_parts = meta.get("parts", {})
 	voxel = height / maxf(1.0, Num.f(meta.get("height", 2)) - 1.0)
+
+
+## Empties the shared caches (tests that need the first build to run again).
+static func clear_cache() -> void:
+	_kvox_cache.clear()
+	_mesh_cache.clear()
 
 
 ## A part's hinge in the model's space (world units).
@@ -45,7 +51,9 @@ func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
 	if not _mesh_cache.has(key):
 		var vox: VoxelBuilder = _read(part).frames[0]
 		vox.salt = salt
-		_mesh_cache[key] = vox.build({}, voxel, 0.0, origin).multimesh
+		var holder := vox.build({}, voxel, 0.0, origin)  # only its MultiMesh is shared
+		_mesh_cache[key] = holder.multimesh
+		holder.free()  # a node never added to the tree is not freed by anything else
 	var mm: MultiMesh = _mesh_cache[key]
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
@@ -60,17 +68,6 @@ func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 	parent.add_child(node)
 	node.add_child(build(part, -pivot(part), salt))
 	return node
-
-
-## Fades every voxel part under `root` (1 = solid, lower drops a share of its pixels).
-static func set_opacity(root: Node, opacity: float) -> void:
-	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
-		var mmi := node as MultiMeshInstance3D
-		var mat := mmi.material_override as ShaderMaterial
-		if mat == null:
-			mat = (mmi.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
-		if mat != null:
-			mat.set_shader_parameter("opacity", opacity)
 
 
 func _read_path(part: String) -> String:
