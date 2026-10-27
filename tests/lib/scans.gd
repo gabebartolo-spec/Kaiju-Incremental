@@ -19,7 +19,9 @@ const LIGHT_STEP := 7  # every this-th lamp is a camera spot on the recorded lig
 static func fade(check: Callable) -> void:
 	var sim := _adult()
 	var cfg := Content.section("camera")
-	var fader := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null)
+	# Share 0: every building a sight line crosses fades, as the old update had it (the frame-fill
+	# rule of D-326 is tested in the load suite).
+	var fader := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null, 0.0)
 	var rest := CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
 	var step := DT / Num.f(cfg["fade_seconds"])
 	var ref_faded := {}
@@ -47,7 +49,7 @@ static func fade(check: Callable) -> void:
 		same_sets = same_sets and was == now
 		busy += 1 if not now.is_empty() else 0
 		# The whole update against the old update's easing, fed the old scan's set.
-		fader.update(eye, sight, DT)
+		fader.update(FrameShare.looking(eye, eye + Vector3.FORWARD, 40.0, 16.0 / 9.0), sight, DT)
 		var hit := {}
 		for n: int in was:
 			hit[n] = true

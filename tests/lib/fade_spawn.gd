@@ -3,11 +3,15 @@ extends RefCounted
 ## buildings in the foreground"): for each stage (capture_growth's upgrades, the city and army a
 ## real first run gets), the kaiju rises from the river, wades in and stands SECONDS, while the
 ## camera follows it the way Rampage does (CameraFollow from its first frame, the body eased in
-## at the model's 12/s) and BuildingFade, fed the eye and CityView's sight points, fades what it
-## decides. The kaiju is seen on a frame when the eye is not in a standing chunk of a building
-## that still hides (opacity above HIDES) and the line to the middle of its body above the water
-## is clear of them; it must be seen on SEEN_SHARE of the frames it is above the water, and its
-## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
+## at the model's 12/s) and BuildingFade, fed the camera's frame and CityView's sight points, fades
+## what it decides. D-326 (director 2026-10-27: "its ok to obscure the kaiju, its not ok to block
+## the camera"): a building may hide the kaiju, so the bar is no longer that the kaiju is seen;
+## it is that no wall fills the frame (D-283's pass bar): a building in a sight line that covers
+## camera.fade_frame_share of the screen, or holds the eye, is drawn above HIDES on no more than
+## 1 - SEEN_SHARE of the frames. How often the kaiju is in sight (the eye is not in a standing
+## chunk of a building above HIDES and the line to the middle of its body above the water, and to
+## its feet, is clear of them) is counted and printed, not judged. Headless and sim-only: no shake,
+## dip or breath move.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SECONDS := 4.0
@@ -22,6 +26,8 @@ const FEET_SIGHT := 0.5
 const SIGHT_STEP := 0.5
 const BODY_FOLLOW := 12.0
 const DT := 1.0 / 60.0
+## The screen the camera draws (width over height).
+const ASPECT := 16.0 / 9.0
 
 var _check: Callable
 
@@ -49,6 +55,9 @@ func _stage(stage: int) -> void:
 	var follow := CameraFollow.new(body, CameraTuning.offset())
 	follow.step(body, CameraTuning.offset() * zoom, 1.0)  # Rampage._ready's first placement
 	var fade := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null)
+	var fov := CameraTuning.fov()
+	var walled := 0
+	var frames := 0
 	var shown := 0
 	var above := 0
 	var feet_seen := 0
@@ -62,7 +71,14 @@ func _stage(stage: int) -> void:
 		follow.step(body, CameraTuning.offset() * zoom, DT)
 		follow.step_lead(body, sim.body_scale(), false, DT)
 		var eye := follow.eye()
-		fade.update(eye, BuildingFade.sight_of(sim, eye), DT)
+		var sight := BuildingFade.sight_of(sim, eye)
+		var frame := FrameShare.looking(eye, follow.look_at(sim.body_scale()), fov, ASPECT)
+		fade.update(frame, sight, DT)
+		frames += 1
+		for n: int in fade.blocking(eye, sight):
+			if fade.fills(frame, sim.buildings[n]) and fade.opacity(n) > HIDES:
+				walled += 1  # a wall that fills the frame, drawn solid, on this frame
+				break
 		var hiding: Array[RampageSim.Building] = []
 		for n: int in sim.buildings.size():
 			if fade.opacity(n) > HIDES:
@@ -78,14 +94,29 @@ func _stage(stage: int) -> void:
 			standing += 1
 			var feet := at + Vector3(0, FEET_SIGHT, 0)
 			feet_seen += 0 if inside or _blocked(eye, feet, hiding) else 1
-	_check.call(
-		shown >= SEEN_SHARE * above and feet_seen >= SEEN_SHARE * standing,
-		(
+	(
+		_check
+		. call(
+			walled <= (1.0 - SEEN_SHARE) * frames,
 			(
-				"stage %d: the kaiju is in sight on %d of %d frames above the water through the"
-				+ " rise and walk-in, and its feet on %d of %d standing frames (>= %d%% each)"
+				(
+					"stage %d: no wall fills the frame (a building in a sight line covering the share of"
+					+ " the screen, drawn above %.0f%%) on %d of %d frames through the rise and walk-in"
+					+ " (<= %d%%); the kaiju is in sight on %d of %d frames above the water, its feet"
+					+ " on %d of %d standing frames (counted, not judged: a building may hide it)"
+				)
+				% [
+					stage,
+					HIDES * 100.0,
+					walled,
+					frames,
+					roundi((1.0 - SEEN_SHARE) * 100.0),
+					shown,
+					above,
+					feet_seen,
+					standing
+				]
 			)
-			% [stage, shown, above, feet_seen, standing, roundi(SEEN_SHARE * 100.0)]
 		)
 	)
 
