@@ -16,6 +16,8 @@ const ISLAND_BACK := 12.0  # the kaiju stands this far down the road from the cr
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_run.call_deferred()
 
 
