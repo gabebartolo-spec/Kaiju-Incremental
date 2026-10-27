@@ -18,6 +18,7 @@ func run_checks() -> void:
 	await _t("_check_look_keys")
 	await _t("_check_presets")
 	await _t("_check_clarity_knobs")
+	await _t("_check_far_blur_off")
 	await _t("_check_far_depth")
 	await _t("_check_ground_numbers")
 	await _t("_check_ground_seeded")
@@ -102,10 +103,37 @@ func _check_clarity_knobs() -> void:
 	view.queue_free()
 
 
+## D-360 (director picked "no far blur", 2026-10-28; replaces D-163's depth-blur clause): the game
+## ships with the far blur off in every time of day and every preset, so no camera carries a
+## depth of field pass at all (nothing to render, and FarDepth.follow returns at once).
+func _check_far_blur_off() -> void:
+	var saved := PlayerSettings.graphics
+	var on: Array[String] = []
+	var table: Dictionary = Content.section("display")["graphics"]
+	for time: String in Content.times():
+		Content.set_time(time)
+		check(
+			Num.f(Content.look().get("far_blur_amount", -1.0)) == 0.0,
+			"%s ships far_blur_amount 0" % time
+		)
+		for name: String in table:
+			PlayerSettings.graphics = name
+			var camera := Camera3D.new()
+			FarDepth.new(camera)
+			if camera.attributes != null:
+				on.append("%s/%s" % [time, name])
+			camera.free()
+	check(on.is_empty(), "no time of day or preset puts a far blur on the camera: %s" % [on])
+	PlayerSettings.graphics = saved
+
+
 func _check_far_depth() -> void:
 	var saved := PlayerSettings.graphics
 	PlayerSettings.graphics = "medium"
 	Content.set_time("dusk")
+	var look := Content.look()
+	var saved_amount: Variant = look.get("far_blur_amount")
+	look["far_blur_amount"] = 0.06  # the option stays; the shipped look has it at 0 (D-360)
 	var camera := Camera3D.new()
 	root.add_child(camera)
 	var blur := FarDepth.new(camera)
@@ -136,6 +164,7 @@ func _check_far_depth() -> void:
 		"depth along the view"
 	)
 	camera.queue_free()
+	look["far_blur_amount"] = saved_amount
 	PlayerSettings.graphics = saved
 
 
