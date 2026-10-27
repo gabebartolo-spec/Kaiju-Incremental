@@ -80,7 +80,7 @@ func _run() -> void:
 	for miss: String in misses:
 		print("  MISS ", miss)
 	print("worst volley hit search: %d usec" % roofs.worst_aim_usec)
-	print("worst round landed on the hide: %d usec" % roofs.worst_land_usec)
+	print("worst round landed on the hide: %d usec" % roofs.landing.worst_usec)
 	quit(0 if misses.is_empty() and on_screen > 0 else 1)
 
 

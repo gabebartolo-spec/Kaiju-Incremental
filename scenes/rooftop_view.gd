@@ -13,7 +13,6 @@ extends Node3D
 ## read as a group.
 
 const MAX_FLASHES := 48
-const MAX_IMPACTS := 48
 const MAX_TRACERS := 48
 ## Flashes and the wait for a round to arrive are counted in physics frames (60 a second), so the
 ## stagger is exact.
@@ -52,8 +51,10 @@ var last_squad := -1
 var lit := Vector2i.ZERO
 ## The worst time one volley's hit search took, in microseconds (the gate tool reads it).
 var worst_aim_usec := 0
-## The worst time landing one round on the hide took, in microseconds (the gate tool reads it).
-var worst_land_usec := 0
+## Rounds on their way to the hide, landed there on arrival (the gate reads its worst time).
+var landing := RooftopImpacts.new()
+## The rooftop update's cost per physics frame, in microseconds: running total (benchmarking).
+var total_usec := 0
 ## Every hit landed on the hide: {"at": world point, "frame": physics frame} (the capture tool
 ## measures them).
 var spark_log: Array[Dictionary] = []
@@ -66,12 +67,12 @@ var _cfg: Dictionary
 var _rng: RandomNumberGenerator
 var _voxel: float
 var _figures: Array[MultiMesh] = []
-var _counts := PackedInt32Array()
-var _flash_mm: MultiMesh
-## Rounds on their way to the hide: {"hit": strike, "from": muzzle, "wait": frames till it lands}.
-var _impacts: Array[Dictionary] = []
+## Each pool's frame of instances (render_opt.people_buffers: one buffer a pool, not a call each).
+var _people: MultiMeshBuckets
+var _flash_out: MultiMeshBuckets
+var _tracer_out: MultiMeshBuckets
+var _buffers: bool = Num.i(Content.section("render_opt")["people_buffers"]) != 0
 var _frame := 0
-var _tracer_mm: MultiMesh
 var _flashes: Array[Dictionary] = []
 var _tracers: Array[Dictionary] = []
 var _shown := {}  # squad id -> true for the squads drawn this frame
@@ -91,9 +92,23 @@ func _ready() -> void:
 	for outfit: int in VoxelPerson.ROOFTOP_OUTFITS.size():
 		var mm := _pool(VoxelPerson.rifleman(outfit, _voxel), Num.i(_cfg["max_drawn"]))
 		_figures.append(mm)
-	_counts.resize(_figures.size())
-	_flash_mm = _pool(_star(), MAX_FLASHES, true)
-	_tracer_mm = _pool(_glow_box(), MAX_TRACERS * TRAIL.size(), true)
+	_people = MultiMeshBuckets.new(_figures, _buffers, Num.i(_cfg["max_drawn"]))
+	_flash_out = _out(_pool(_star(), MAX_FLASHES, true), MAX_FLASHES)
+	var tracers := MAX_TRACERS * TRAIL.size()
+	_tracer_out = _out(_pool(_glow_box(), tracers, true), tracers)
+	if _people.native != null:  # figures stand on roofs: cull by the city's footprint
+		var corners := PackedVector2Array()
+		var top := 0.0
+		for b: RampageSim.Building in sim.buildings:
+			corners.append(Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5))
+			corners.append(Vector2(b.x + b.w * 0.5, b.z + b.d * 0.5))
+			top = maxf(top, b.height)
+		MultiMeshBuckets.bound(_figures, corners, top)
+
+
+## One pool's coloured instances as a single bucket.
+func _out(mm: MultiMesh, count: int) -> MultiMeshBuckets:
+	return MultiMeshBuckets.new([mm] as Array[MultiMesh], _buffers, count, true)
 
 
 ## A unit quad that always faces the camera, painted with a soft four-point star: additive,
@@ -191,7 +206,8 @@ func _roof(squad: Army.Squad) -> Rect2:
 
 ## Runs after Rampage stepped the sim this frame (a descendant processes after it).
 func _physics_process(delta: float) -> void:
-	_counts.fill(0)
+	var started := Time.get_ticks_usec()
+	_people.begin()
 	drawn = 0
 	var cap := Num.i(_cfg["max_drawn"])
 	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
@@ -204,17 +220,16 @@ func _physics_process(delta: float) -> void:
 		_shown[squad.id] = true
 		for k: int in mini(Num.i(_cfg["squad_size"]), cap - drawn):
 			var outfit := (squad.id + k * 2) % _figures.size()
-			_figures[outfit].set_instance_transform(_counts[outfit], stance(squad, k))
-			_counts[outfit] += 1
+			_people.add(outfit, stance(squad, k))
 			drawn += 1
-	for i: int in _figures.size():
-		_figures[i].visible_instance_count = _counts[i]
+	_people.commit()
 	most_drawn = maxi(most_drawn, drawn)
 	_frame += 1
 	_draw_flashes()
 	_draw_tracers(delta)
-	_land_impacts()
-	lit = Vector2i(_flash_mm.visible_instance_count, _tracer_mm.visible_instance_count)
+	landing.land(_city.fx, body, _frame, spark_log)
+	lit = Vector2i(_flash_out.counts[0], _tracer_out.counts[0])
+	total_usec += Time.get_ticks_usec() - started
 
 
 ## The squads nearest the kaiju first: past max_drawn the far ones go undrawn (D-076).
@@ -290,7 +305,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			var flight := muzzle.distance_to(to) / TRACER_SPEED
 			var frames := roundi(flight * Engine.physics_ticks_per_second)
 			if not seen or frames < POINT_BLANK_FRAMES or _on_screen(muzzle, to) < SHORT_PIXELS:
-				_impact(hit, muzzle, wait + frames)  # no tracer: a stub of one reads as noise
+				landing.add(hit, muzzle, wait + frames)  # no tracer: a stub of one reads as noise
 			elif _tracers.size() < MAX_TRACERS:
 				_tracers.append(
 					{"from": muzzle, "hit": hit, "t": 0.0, "flight": flight, "wait": wait}
@@ -308,38 +323,12 @@ func _on_screen(a: Vector3, b: Vector3) -> float:
 
 
 func _draw_flashes() -> void:
-	_flash_mm.visible_instance_count = _draw_stars(_flashes, _flash_mm, FLASH_SIZE)
+	_draw_stars(_flashes, _flash_out, FLASH_SIZE)
 
 
-## A round from `from` (its muzzle) that reaches strike `hit` on the hide after `wait` frames.
-func _impact(hit: Dictionary, from: Vector3, wait: int) -> void:
-	if _impacts.size() < MAX_IMPACTS:
-		_impacts.append({"hit": hit, "from": from, "wait": wait})
-
-
-## Lands each round whose wait is over on the hide, where it meets the real cube along its line
-## (HideHit: on the surface, depth-tested, no glow, a tiny blood mist; a wound the hide keeps).
-func _land_impacts() -> void:
-	for round_in: Dictionary in _impacts.duplicate():
-		if Num.i(round_in["wait"]) > 0:  # the round has not arrived yet
-			round_in["wait"] = Num.i(round_in["wait"]) - 1
-			continue
-		_impacts.erase(round_in)
-		var struck: Dictionary = round_in["hit"]
-		var aim := RooftopAim.at(struck)
-		if aim == Vector3.INF or body == null:  # the bone it struck is gone (a stage change)
-			continue
-		var from: Vector3 = round_in["from"]
-		var t0 := Time.get_ticks_usec()
-		var landed := HideHit.land(_city.fx, body, from, aim)
-		worst_land_usec = maxi(worst_land_usec, Time.get_ticks_usec() - t0)
-		var where: Vector3 = landed["point"]
-		spark_log.append({"at": where, "frame": _frame})
-
-
-## Draws each flash whose wait is over, for its frames left; returns how many it drew.
-func _draw_stars(stars: Array[Dictionary], mm: MultiMesh, size: float) -> int:
-	var shown := 0
+## Draws each flash whose wait is over, for its frames left.
+func _draw_stars(stars: Array[Dictionary], out: MultiMeshBuckets, size: float) -> void:
+	out.begin()
 	for f: Dictionary in stars.duplicate():
 		if Num.i(f["wait"]) > 0:  # this rifle has not fired yet
 			f["wait"] = Num.i(f["wait"]) - 1
@@ -354,16 +343,14 @@ func _draw_stars(stars: Array[Dictionary], mm: MultiMesh, size: float) -> int:
 			continue
 		var fade := Num.f(f["left"]) / float(FLASH_FRAMES)  # full on the first frame, fading out
 		f["left"] = Num.i(f["left"]) - 1
-		mm.set_instance_transform(shown, Transform3D(Basis().scaled(Vector3.ONE * size), at))
-		mm.set_instance_color(shown, HOT * fade)
-		shown += 1
-	return shown
+		out.add(0, Transform3D(Basis().scaled(Vector3.ONE * size), at), HOT * fade)
+	out.commit()
 
 
 ## Each tracer is a short glowing streak flying muzzle to hide; on arrival it is gone and the
 ## round lands on the hide exactly where it was headed.
 func _draw_tracers(delta: float) -> void:
-	var shown := 0
+	_tracer_out.begin()
 	for tr: Dictionary in _tracers.duplicate():
 		if Num.i(tr["wait"]) > 0:  # fired with its rifle, a frame or two after the first
 			tr["wait"] = Num.i(tr["wait"]) - 1
@@ -376,7 +363,7 @@ func _draw_tracers(delta: float) -> void:
 		var from: Vector3 = tr["from"]
 		if t >= 1.0 or to == Vector3.INF:
 			if to != Vector3.INF:
-				_impact(hit, from, 0)
+				landing.add(hit, from, 0)
 			_tracers.erase(tr)
 			continue
 		var head := from.lerp(to, t)
@@ -390,7 +377,5 @@ func _draw_tracers(delta: float) -> void:
 		var basis := Basis(x * TRACER_WIDTH, z.cross(x) * TRACER_WIDTH, z * piece)
 		for i: int in TRAIL.size():  # head first, each piece behind the last and dimmer
 			var mid := head - z * piece * (i + 0.5)
-			_tracer_mm.set_instance_transform(shown, Transform3D(basis, mid))
-			_tracer_mm.set_instance_color(shown, TRACER_HOT * TRAIL[i])
-			shown += 1
-	_tracer_mm.visible_instance_count = shown
+			_tracer_out.add(0, Transform3D(basis, mid), TRACER_HOT * TRAIL[i])
+	_tracer_out.commit()
