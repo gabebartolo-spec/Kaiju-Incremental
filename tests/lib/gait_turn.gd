@@ -1,7 +1,7 @@
 extends RefCounted
 ## The big forms turn heavier and slower (D-187, director 2026-10-23: "Heavier, slower"; the VFX
 ## motion critic's bars): a U-turn while walking at full stick (the stick reversed) takes about
-## 2 s as the Behemoth and 3 s as the Colossus, its yaw spread evenly over the steps (no snap on
+## 1.94 s as the Behemoth and 3 s as the Colossus, its yaw spread evenly over the steps (no snap on
 ## planted feet), the body not thrown about, the feet still stepping in real alternating steps. The
 ## young croc keeps its smooth turn (D-131): its turns are pinned to the numbers the base gave.
 ## Seeded by design: the sim is the gait suite's own, on the seeded city 0, at 60 Hz.
@@ -12,8 +12,9 @@ const TURN_LIMIT_S := 8.0
 const NORTH := Vector2(0, -1)
 ## The U-turn is made when the body is within this many degrees of the new way (the critic's).
 const LAND_DEG := 5.0
-## The U-turn takes this long (s), within U_TURN_TOL of it (the director's picks, D-187).
-const U_TURN_S := {"Behemoth": 2.0, "Colossus": 3.0}
+## The U-turn takes this long (s), within U_TURN_TOL of it (D-187: the director's 2 s and 3 s; the
+## Behemoth's is 1.94: the motion gate's centre_max 0.5 needs under ~1.97, lead 2026-10-27).
+const U_TURN_S := {"Behemoth": 1.94, "Colossus": 3.0}
 const U_TURN_TOL := 0.1
 ## The yaw rate never runs above this many times the turn's mean rate: spread evenly, not snapped.
 const MAX_PEAK := 1.3
@@ -32,7 +33,7 @@ const MAX_STEP_YAW := 40.0
 ## the torso) moves at most this many times the walk speed in any frame; the model's origin, which
 ## on the croc is the tail root and swings round the planted feet, at most ORIGIN_MAX times it.
 ## The origin's swing cannot fall below pi x its distance to the feet over the turn (D-177's
-## pivot about the planted foot): 11 u/s at 2 s and 15 u/s at 3 s against a walk of 5.5 u/s.
+## pivot about the planted foot): 11.4 u/s at 1.94 s and 15 u/s at 3 s against a walk of 5.5 u/s.
 const CENTRE_MAX := 1.9
 const ORIGIN_MAX := 3.5
 ## The young croc's route: north, a U-turn south, a 90 deg turn west, a 60 deg turn back (stick, s).

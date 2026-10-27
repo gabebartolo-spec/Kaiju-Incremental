@@ -144,7 +144,7 @@ func _check_straight() -> void:
 		)
 
 
-## A U-turn while walking at full stick: about 2 s as the Behemoth, 3 s as the Colossus (D-187).
+## A U-turn while walking at full stick: 1.94 s as the Behemoth, 3 s as the Colossus (D-187).
 func _check_u_turn() -> void:
 	for stage: String in STAGES:
 		var levels: Dictionary = STAGES[stage]
