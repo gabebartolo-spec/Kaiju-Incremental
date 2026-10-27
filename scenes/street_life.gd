@@ -295,8 +295,6 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 		return
 	# Without the extension, far people step every few frames (StreetLod, D-254).
 	var speeds := PackedFloat64Array([walk, run])
-	var far2 := _lod.far2  # past this from the kaiju and the camera: a step every few frames
-	var cam := _lod.cam
 	for i: int in range(pos.size() - 1, -1, -1):
 		if cop[i] == 1:
 			_walk_cop(i, delta, kaiju)
@@ -304,11 +302,9 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 		if pinned_until[i] > _clock:
 			continue
 		var at := pos[i]
-		var dt := delta
-		if at.distance_squared_to(kaiju) > far2 and at.distance_squared_to(cam) > far2:
-			if (i + _lod.tick) % _lod.far_every != 0:
-				continue
-			dt = delta * _lod.far_every
+		var dt := _step_time(i, at, kaiju, delta)
+		if dt < 0.0:  # a far person's frame off
+			continue
 		var d := at.distance_to(kaiju)
 		if fleeing[i] == 0 and d < panic:
 			_startle(i, at, kaiju, gawk)
@@ -325,6 +321,17 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 		var next := _pavements.next_corner(to_node[i], from_node[i], kaiju, fleeing[i] == 1)
 		from_node[i] = to_node[i]
 		to_node[i] = next
+
+
+## Person i's step time this frame (StreetLod, D-254): far from the kaiju and the camera, one step
+## every far_every frames covering them all, -1 on the frames between.
+func _step_time(i: int, at: Vector2, kaiju: Vector2, delta: float) -> float:
+	var far2 := _lod.far2
+	if at.distance_squared_to(kaiju) <= far2 or at.distance_squared_to(_lod.cam) <= far2:
+		return delta
+	if (i + _lod.tick) % _lod.far_every != 0:
+		return -1.0
+	return delta * _lod.far_every
 
 
 ## Officer i takes its police step (Police.update_cop), or leaves when its job is done.
