@@ -217,7 +217,7 @@ func fall_start(event: Dictionary) -> void:
 	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
 	_broke(index, cells)
 	if street != null:  # the people under it freeze; its landing crushes the same reach
-		street.brace_fall(event, DROP_REACH)
+		StreetBrace.fall(street, event, DROP_REACH)
 
 
 ## Gravity drives it: the angle (topple) or the drop grows with the square of time.

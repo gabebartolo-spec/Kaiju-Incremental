@@ -18,7 +18,7 @@ func build(colors: Array[Color]) -> MultiMeshInstance3D:
 	_multi.use_colors = true
 	_multi.use_custom_data = true
 	var mesh := BoxMesh.new()
-	mesh.material = CitySkyline.facade_material(0.0)
+	mesh.material = SkylineMeshes.facade_material(0.0)
 	_multi.mesh = mesh
 	_multi.instance_count = _buildings.size()
 	for n: int in _buildings.size():

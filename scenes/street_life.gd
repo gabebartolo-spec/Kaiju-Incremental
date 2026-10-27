@@ -223,25 +223,6 @@ func crush_all(spots: Array[Vector3], by_tank: bool = false) -> void:
 			break
 
 
-## The people under a section that starts to fall (a fall_start event) freeze there; its landing
-## (CityView) crushes the same reach: a topple's strip, or a drop's walls plus drop_reach.
-func brace_fall(event: Dictionary, drop_reach: float) -> void:
-	var b := sim.buildings[Num.i(event["building"])]
-	var cells: Array = event["cells"]
-	if cells.is_empty():  # a carved scrap smashes nothing
-		return
-	var seconds := Num.f(event["duration"])
-	var spill := tune("fall_spill")
-	if str(event["kind"]) == "topple" and event.has("to"):
-		var pivot: Vector3 = event["pivot"]
-		var to: Vector2 = event["to"]
-		var from := Vector2(pivot.x, pivot.z)
-		brace(from, to, Num.f(event["width"]) * 0.6 + spill, seconds)
-	elif b.landmark == "":
-		var at := Vector2(b.x, b.z)
-		brace(at, at, maxf(b.w, b.d) * 0.5 + drop_reach + spill, seconds)
-
-
 ## A falling section will land along from..to (a point for a drop) within `radius` in
 ## `seconds`: the civilians under it freeze there (they cannot outrun a falling tower), so its
 ## landing crushes them (CityView crushes the same strip).
