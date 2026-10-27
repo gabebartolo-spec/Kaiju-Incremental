@@ -1662,6 +1662,7 @@
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
 		"kaiju_bounds_slack": 1.05,
+		"kaiju_three_faces": true,
 		"fx_pool": {"enabled": true, "provisional_sizes": true, "slots": {"dust": 24, "puff": 8, "step": 8, "slam": 8, "tree": 8, "spark": 8, "burst": 16, "flames": 12, "embers": 12, "smoke": 12}}
 	},
 	"death": {
