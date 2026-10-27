@@ -207,7 +207,7 @@ func _topple_check() -> Dictionary:
 			continue  # nothing touches across this floor: settle()'s drop handles it
 		var over := _overhang(com, held[0], held[1])
 		if over != Vector2.ZERO:
-			return _topple(level, com, held[0], held[1], over)
+			return _topple(level, com, held, over)
 	return {}
 
 
@@ -232,8 +232,8 @@ func _floor_loads() -> Dictionary:
 	return {"mass": floor_mass, "sum": floor_sum}
 
 
-## The plan box [low, high] of the chunks at `level` that stand on a standing chunk below, or [] when
-## none does.
+## The plan box [low, high] of the chunks at `level` that stand on a standing chunk below, or []
+## when none does.
 func _held_box(level: int) -> Array[Vector2]:
 	var plan := w * d
 	var lo := Vector2(INF, INF)
@@ -258,7 +258,9 @@ func _overhang(com: Vector2, lo: Vector2, hi: Vector2) -> Vector2:
 
 
 ## The part from `level` up, tipping over the box's edge on the side the centre hangs out of.
-func _topple(level: int, com: Vector2, lo: Vector2, hi: Vector2, over: Vector2) -> Dictionary:
+func _topple(level: int, com: Vector2, held: Array[Vector2], over: Vector2) -> Dictionary:
+	var lo := held[0]
+	var hi := held[1]
 	var dir := Vector2i(signi(roundi(over.x * 100.0)), 0)
 	if absf(over.y) > absf(over.x):
 		dir = Vector2i(0, signi(roundi(over.y * 100.0)))

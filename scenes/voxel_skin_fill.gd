@@ -7,8 +7,8 @@ const FILL_SHADER := preload("res://scenes/voxel_skin_fill.gdshader")
 
 
 ## The filler as a mesh instance for `raw`'s vertex block (raw[start] is its vertex count), its
-## ShaderMaterial as the material override; null when the block holds no triangles. `reach` takes the
-## filler's vertices on the way (VoxelSkinReach.measure_fill), triangles or not.
+## ShaderMaterial as the material override; null when the block holds no triangles. `reach` takes
+## the filler's vertices on the way (VoxelSkinReach.measure_fill), triangles or not.
 static func node(raw: PackedByteArray, start: int, reach: VoxelSkinReach) -> MeshInstance3D:
 	var at := start
 	var verts := raw.decode_u32(at)
