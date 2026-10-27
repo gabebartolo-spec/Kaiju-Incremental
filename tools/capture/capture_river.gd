@@ -77,7 +77,8 @@ func _run() -> void:
 	rampage.autoplay_signature = false
 	root.add_child(rampage)
 	rampage.set_physics_process(false)  # held until the city has streamed in
-	var stream: BuildingStream = (rampage.get("_city") as CityView).get("_stream")
+	var city: CityView = rampage.get("_city")
+	var stream: BuildingStream = city.get("_stream")
 	while not stream.complete():
 		await process_frame
 	for _i: int in 10:
@@ -98,13 +99,14 @@ func _run() -> void:
 	for at: float in _stills:
 		last = maxf(last, at)
 	var frames := roundi(last * Engine.physics_ticks_per_second)
-	var shots := _stills.duplicate()
+	var shots: Array[float] = _stills.duplicate()
 	shots.sort()
 	var emerged := -1
 	DirAccess.make_dir_recursive_absolute(_out)
 	for frame: int in frames + 1:
 		if not shots.is_empty() and frame >= roundi(shots[0] * Engine.physics_ticks_per_second):
-			await _still(rampage, shots.pop_front())
+			var at: float = shots.pop_front()
+			await _still(rampage, at)
 		if frame == frames:
 			break
 		await physics_frame
