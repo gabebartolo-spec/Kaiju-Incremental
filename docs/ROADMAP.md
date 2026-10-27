@@ -597,3 +597,6 @@ P0 (roads, quays and river walls, bridge decks, pavements, lawns, expressway, ru
 | KaijuRig:shader:voxel.gdshader | the kaiju's own skin pipeline | VFX lead | P3 | 2026-11-04 |
 | VoxelSkin:shader:voxel_skin.gdshader | the kaiju's skin | VFX lead | P3 | 2026-11-04 |
 | VoxelSkin:shader:voxel_skin_fill.gdshader | the kaiju's skin fill | VFX lead | P3 | 2026-11-04 |
+
+## Hatchlings (D-358, director 2026-10-28)
+- Every species, unlocked at Apex Titan: once a rampage's biomass passes a mark ("challenging but attainable"), a button lights up; when pressed, he spews ONE egg from his maw, crackling with purple energy (the kaiju-juice colour, D-357). It hatches his species' baby form (the young form the player starts as, at that size, with its keyed Cascadeur moves), which rampages the city on its own. Once per rampage. Owner: lead. Date: 2026-10-28. Status: recorded, queued behind the debt list and render plan (D-310). Next: when it is built, ask him the mark's size and judge the spew move from one clip; the sim needs a seeded autonomous baby (seek, attack, devour), its biomass rules asked then.
