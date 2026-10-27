@@ -50,14 +50,18 @@ func run() -> void:
 		return
 	_same_bytes(m, cells)
 	var headless := DisplayServer.get_name() == "headless"
+	var has_rd := RenderingServer.get_rendering_device() != null
 	var view := CellView.new(m, cells, StandardMaterial3D.new())
 	view.flush()
 	var says := "a view with the flag on meshes on its worker exactly when the renderer is real"
-	var on_worker := view.worker_mesh == (not headless)
+	var on_worker := view.worker_mesh == (not headless and has_rd)
 	_check.call(on_worker, "%s (%s: %s)" % [says, DisplayServer.get_name(), view.worker_mesh])
+	if not has_rd:
+		var no_rd := "with no RenderingDevice (headless, gl_compatibility) a view meshes on main"
+		_check.call(not view.worker_mesh, no_rd)
 	view.free()
 	if not headless:
-		_same_view(opt, was)
+		_same_view(opt, was, has_rd)
 
 
 ## Every block of the fixture after the carve sequence: to_mesh and packed_mesh give the same
@@ -97,7 +101,7 @@ func _same_bytes(m: CellMesher, cells: PackedByteArray) -> void:
 
 ## A windowed run: views with the flag on and off, carved the same, show the same digest in every
 ## block (the worker's meshes are the main thread's).
-func _same_view(opt: Dictionary, was: Variant) -> void:
+func _same_view(opt: Dictionary, was: Variant, has_rd: bool) -> void:
 	var shown := {}
 	for on: bool in [true, false]:
 		opt["remesh_worker_mesh"] = on
@@ -106,7 +110,8 @@ func _same_view(opt: Dictionary, was: Variant) -> void:
 		var cells: PackedByteArray = fx[1]
 		var view := CellView.new(m, cells, StandardMaterial3D.new())
 		_check.call(
-			view.worker_mesh == on, "a windowed view with the flag %s: worker_mesh %s" % [on, on]
+			view.worker_mesh == (on and has_rd),
+			"a windowed view with the flag %s: worker_mesh %s" % [on, on and has_rd]
 		)
 		view.flush()
 		for k: int in RemeshPriority.CARVE_AT.size():

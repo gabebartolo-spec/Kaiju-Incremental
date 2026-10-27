@@ -13,8 +13,9 @@ extends Node3D
 ## Render plan item 9c (tuning render_opt.remesh_worker_mesh): under a real renderer each block's
 ## mesh is made on its worker too (CellMesher.packed_mesh: the native packed surface, uploaded
 ## on that thread), so the swap-in only attaches them; every block of a batch still swaps in on
-## the same frame. Headless (the dummy renderer), the GDScript mesher or the flag off: the meshes
-## are made on the main thread, in _finish, as before.
+## the same frame. Headless (the dummy renderer), no RenderingDevice (gl_compatibility, where a
+## worker-made mesh is not safe), the GDScript mesher or the flag off: the meshes are made on the
+## main thread, in _finish, as before.
 
 ## Meshes in their own world space (CellMesher.origin is world), as BuildingView's are.
 var mesher: CellMesher
@@ -55,6 +56,7 @@ func _init(p_mesher: CellMesher, cells: PackedByteArray, p_material: Material) -
 	worker_mesh = (
 		opt.get("remesh_worker_mesh", true) == true
 		and DisplayServer.get_name() != "headless"
+		and RenderingServer.get_rendering_device() != null
 		and mesher.can_pack()
 	)
 	_cells = cells

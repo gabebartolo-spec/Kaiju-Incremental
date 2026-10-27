@@ -236,8 +236,9 @@ func packed_mesh(arrays: Array) -> ArrayMesh:
 	if surface.is_empty():
 		return null
 	# An ArrayMesh with no RID yet: _set_surfaces makes it with mesh_create_from_surfaces, which a
-	# Forward+ renderer builds on the calling thread by design (async resource creation); no material.
-	var mesh := ArrayMesh.new()  # thread-ok: mesh_create_from_surfaces is async-safe (above)
+	# RenderingDevice renderer builds on the calling thread by design (async resource creation); no
+	# material. CellView's worker_mesh gate (not headless, a RenderingDevice) keeps others on main.
+	var mesh := ArrayMesh.new()  # thread-ok: RenderingDevice only, gated in CellView (above)
 	mesh.call("_set_surfaces", [surface])
 	return mesh
 
