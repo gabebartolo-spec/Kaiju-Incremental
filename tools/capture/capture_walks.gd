@@ -31,6 +31,13 @@ const CM_PER_UNIT := 350.0
 ## camera is close to locked to the body).
 const CAM_EASE := 14.0
 const FOCUS_FOLLOW := 12.0  # 1/s: the game camera's focus ease (as Rampage._place_camera)
+## The side camera frames the whole body, snout to tail tip and soles to back, with this share of
+## the frame to spare on every edge (lead 2026-10-27: the snout was cut and the toes touched the
+## bottom edge); its fit is taken from the drawn body's box on its first frame.
+const FIT_MARGIN := 0.05
+## How far the side camera sits below the box's middle (hip heights per body unit away): the old
+## side view's look up, 0.3 hip heights over 20 body units, so the angle stays the same.
+const SIDE_LOOK_UP := 0.3 / 20.0
 
 var _stage := "adult"
 var _course := "straight"
@@ -40,6 +47,7 @@ var _label := ""
 var _show_label := true
 var _log := false  # --log: print the yaw-rate steps, the framing drift and the walk-off ramp
 var _focus := Vector3.INF  # the game camera's eased focus
+var _side_fit := Vector3.INF  # the side camera's fit: (box middle ahead, its height, distance)
 
 
 func _initialize() -> void:
@@ -136,7 +144,7 @@ func _run() -> void:
 			steps.append(sim.kaiju_pos.distance_to(last_at))
 			var gait: ClipGait = kaiju._rig.gait
 			for i: int in 2:
-				toes.append(kaiju._rig.tail_world(gait.legs[i].names[2]))
+				toes.append(kaiju._rig.tail_world(gait.legs[i].tip))
 			last_at = sim.kaiju_pos
 		var slid := _slide(kaiju, planted_at)
 		if t > 1.5:  # past the first steps off the stand
@@ -220,7 +228,7 @@ func _slide(kaiju: KaijuModel, planted_at: Array[Vector3]) -> float:
 	var worst := 0.0
 	for i: int in mini(2, gait.legs.size()):
 		var leg: BipedGait.Leg = gait.legs[i]
-		var at := kaiju._rig.tail_world(leg.names[2])  # the foot's ground end, as capture_motion
+		var at := kaiju._rig.tail_world(leg.tip)  # the toe tip the gait locks, as capture_motion
 		if not leg.planted:
 			planted_at[i] = Vector3.INF
 		elif planted_at[i] == Vector3.INF:
@@ -250,5 +258,44 @@ func _place(cam: Camera3D, kaiju: KaijuModel, way: Vector2, bs: float) -> void:
 		cam.position = at + (fwd * 10.0 + right * 30.0) * bs + Vector3(0, hip * 1.0, 0)
 		cam.look_at(at + Vector3(0, hip * 0.9, 0))
 		return
-	cam.position = at + right * 20.0 * bs + Vector3(0, hip * 0.6, 0)
-	cam.look_at(at + Vector3(0, hip * 0.9, 0))
+	if _side_fit == Vector3.INF:
+		_side_fit = _fit_side(cam, kaiju, fwd, right)
+	var mid := at + fwd * _side_fit.x + Vector3(0, _side_fit.y, 0)
+	cam.position = mid + right * _side_fit.z - Vector3(0, SIDE_LOOK_UP * _side_fit.z * hip / bs, 0)
+	cam.look_at(mid)
+
+
+## The side camera's fit: the middle of the drawn body's box (ahead of its node along the walk, and
+## its height) and the distance from it at which the box's length and height fill the frame less
+## FIT_MARGIN on every edge (vertical fov, the window's aspect; the box's near side counted).
+func _fit_side(cam: Camera3D, kaiju: KaijuModel, fwd: Vector3, right: Vector3) -> Vector3:
+	var box := AABB()
+	var first := true
+	for node: Node in kaiju.find_children("*", "VisualInstance3D", true, false):
+		var vis := node as VisualInstance3D
+		if not vis.is_visible_in_tree():
+			continue
+		var b := vis.global_transform * vis.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	var lo := INF
+	var hi := -INF
+	var near := 0.0
+	for i: int in 8:
+		var d := box.get_endpoint(i) - kaiju.position
+		lo = minf(lo, d.dot(fwd))
+		hi = maxf(hi, d.dot(fwd))
+		near = maxf(near, d.dot(right))
+	var bottom := minf(box.position.y, 0.0)
+	var top := box.end.y
+	var size := cam.get_viewport().get_visible_rect().size
+	var half_h := tan(deg_to_rad(cam.fov * 0.5)) * (1.0 - 2.0 * FIT_MARGIN)
+	var half_w := half_h * size.x / size.y
+	var dist := maxf(0.5 * (hi - lo) / half_w, 0.5 * (top - bottom) / half_h) + near
+	print(
+		(
+			"SIDE_FIT length %.2f height %.2f near %.2f distance %.2f"
+			% [hi - lo, top - bottom, near, dist]
+		)
+	)
+	return Vector3(0.5 * (lo + hi), 0.5 * (top + bottom), dist)

@@ -17,12 +17,15 @@ extends "res://tests/lib/runner.gd"
 ##     (planted reach at most stretch_max);
 ##   - a body that steps its turns (Behemoth, Colossus; D-131) never yaws with no foot down, the
 ##     sim's pivot is the drawn planted foot (pivot_max) and the body turns about it (centre_max);
-##   - the swing foot lifts within its stage's band of hip height (lift_min..lift_max).
+##   - the swing foot lifts within its stage's band of hip height (lift_min..lift_max);
+##   - the Colossus clears as much street per metre walked as before the D-302 walk's longer steps
+##     (tests/lib/croc_walk_clearing.gd).
 ## Bars are data/motion_gate.json (measured, each with its source in its _note).
 ## Deterministic: seeded sim, fixed step, no clock.
 ##   godot --headless --path . --script tests/run_motion_tests.gd
 
 const Drive := preload("res://tests/lib/motion_drive.gd")
+const CrocWalkClearing := preload("res://tests/lib/croc_walk_clearing.gd")
 const CLIP_STAGE := {"young": "baby", "Behemoth": "adolescent", "Colossus": "adult"}
 
 ## Every bar is data (data/motion_gate.json, its _note says where each number was measured).
@@ -44,6 +47,7 @@ func run_checks() -> void:
 	await _t("_check_turn_steps")
 	await _t("_check_turn_pivot")
 	await _t("_check_lift")
+	await _h("CrocWalkClearing", func() -> void: CrocWalkClearing.new(check).run())
 
 
 func _g(key: String) -> float:

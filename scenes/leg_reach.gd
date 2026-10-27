@@ -47,7 +47,7 @@ func lower_body(gait: BipedGait, toes: Array[Vector3], yaws: Array[float], dt: f
 	for i: int in toes.size():
 		var leg: BipedGait.Leg = gait.legs[i]
 		var foot := _rig.bone(leg.names[2])
-		var toe_off := _rig.tail_world(leg.names[2]) - foot.global_position
+		var toe_off := _rig.tail_world(leg.tip) - foot.global_position
 		var ankle := toes[i] - Basis(Vector3.UP, yaws[i]) * toe_off  # the foot turned as it will be
 		var hip := _rig.bone(leg.names[0]).global_position
 		var most := REACH_MAX * (leg.l1 + leg.l2) * s
@@ -70,7 +70,7 @@ func reach(gait: BipedGait, i: int, toe: Vector3, yaw_fix: float) -> void:
 	var foot := _rig.bone(leg.names[2])
 	var ankle_now := foot.global_position
 	var foot_basis := Basis(Vector3.UP, yaw_fix) * foot.global_transform.basis.orthonormalized()
-	var turned := Basis(Vector3.UP, yaw_fix) * (_rig.tail_world(leg.names[2]) - ankle_now)
+	var turned := Basis(Vector3.UP, yaw_fix) * (_rig.tail_world(leg.tip) - ankle_now)
 	var ankle := toe - turned  # the toe stays on `toe` as the foot turns about the ankle
 	if (ankle - ankle_now).length() < 0.0001 * s:
 		_rig.set_world_basis(leg.names[2], foot_basis)
