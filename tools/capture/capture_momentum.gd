@@ -12,12 +12,14 @@ extends SceneTree
 const Kit := preload("res://tools/capture/capture_kit.gd")
 ## Seconds he stands where he is set (the camera settles), then charges for CHARGE_S.
 const SETTLE_S := 1.5
-const CHARGE_S := 5.0
+const CHARGE_S := 6.0
 ## Open street before the first building (full momentum by then: about 1.8 s of his ~3.3 a second
-## walk against 1.2 s to build), the path beyond it, and the half-width his body sweeps.
+## walk against 1.2 s to build), the path beyond it he covers in the clip, the half-width his body
+## sweeps, and the half-width of the strip a crashed building must stand across (met squarely).
 const RUN_UP := 6.0
-const PATH := 24.0
+const PATH := 12.0
 const HALF := 2.5
+const CORE := 1.0
 const DIRS: Array[Vector2] = [Vector2(0, -1), Vector2(0, 1), Vector2(1, 0), Vector2(-1, 0)]
 
 var _case := "crash"
@@ -70,11 +72,20 @@ func _run() -> void:
 			)
 		if _placed >= 0 and (_frame - _placed) % 30 == 0:
 			print(
-				"t %.1f momentum %.2f at %s" % [_frame / 60.0, sim.powers.momentum, sim.kaiju_pos]
+				(
+					"t %.1f momentum %.2f at %s body broke %d"
+					% [_frame / 60.0, sim.powers.momentum, sim.kaiju_pos, sim.body.broken]
+				)
 			)
 		if sim.powers.run.slams != seen:
 			seen = sim.powers.run.slams
-			print("SLAM %d at frame %d (drawn %d)" % [seen, _frame, Engine.get_frames_drawn()])
+			var on: Array = sim.powers.run._touching.keys()
+			print(
+				(
+					"SLAM %d at frame %d (drawn %d) on %s"
+					% [seen, _frame, Engine.get_frames_drawn(), on]
+				)
+			)
 	print("broken %d by the body %d slams %d" % [sim.chunks_destroyed, sim.body.broken, seen])
 	quit()
 
@@ -124,8 +135,8 @@ func _pick(sim: RampageSim) -> bool:
 
 
 ## Whether the street from `tail` (behind his body where he stands) to building `first`'s near
-## `face` is clear, and what lies on: for a crash, at least two buildings, all under his crash
-## height; for a slam, `first` over it.
+## `face` is clear, and what lies on: for a crash, all under his crash height and at least two
+## standing squarely across his path; for a slam, `first` over it.
 func _fits(sim: RampageSim, first: RampageSim.Building, tail: Vector2, face: Vector2) -> bool:
 	var top := _shoulder(sim)
 	var dir := (face - tail).normalized()
@@ -135,6 +146,7 @@ func _fits(sim: RampageSim, first: RampageSim.Building, tail: Vector2, face: Vec
 		return false
 	var run_up := _corridor(tail, face, dir)
 	var path := _corridor(face, face + dir * PATH, dir)
+	var core := _corridor(face, face + dir * PATH, dir, CORE)
 	var on := 0
 	for b: RampageSim.Building in sim.buildings:
 		if b.frame.alive_count == 0:
@@ -145,12 +157,12 @@ func _fits(sim: RampageSim, first: RampageSim.Building, tail: Vector2, face: Vec
 		if _case == "crash" and r.intersects(path):
 			if b.height >= top:
 				return false
-			on += 1
+			on += int(r.intersects(core))
 	return _case == "slam" or on >= 2
 
 
-func _corridor(from: Vector2, to: Vector2, dir: Vector2) -> Rect2:
-	var side := dir.orthogonal() * HALF
+func _corridor(from: Vector2, to: Vector2, dir: Vector2, half := HALF) -> Rect2:
+	var side := dir.orthogonal() * half
 	return Rect2(from - side, Vector2.ZERO).expand(from + side).expand(to - side).expand(to + side)
 
 

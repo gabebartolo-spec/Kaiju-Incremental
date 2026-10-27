@@ -1,4 +1,4 @@
-extends "res://tests/lib/leap_base.gd"
+extends "res://tests/lib/momentum_base.gd"
 ## The titan's run (Momentum, D-337, director 2026-10-27: "running wont have a sprint button, it
 ## should be momentum based, at high momentum he can crash right through smaller buildings, and
 ## collide with a bang into bigger ones"), the croc's entry (powers.momentum.titans.croc): always
@@ -8,19 +8,6 @@ extends "res://tests/lib/leap_base.gd"
 ## Player-effect fixture "croc.momentum": the same seeded charge with the run on and off. Seeded:
 ## every sim is Seeds.make("army", 0) (leap_base._croc) on a hand-made layout; the claws are idle.
 
-const NORTH := Vector2(0.0, -1.0)
-const EAST := Vector2(1.0, 0.0)
-## The charge: the croc at (0, 30) walks north CHARGE_S; the first building's near face stands
-## LEAD beyond his snout (he meets it at full momentum), the rest of a row GAP apart.
-const CHARGE_S := 10.0  # his walk (about 3.3 units a second) clears the row
-const LEAD := 9.0
-const GAP := 6.0
-const ROW := 4
-const WIDTH := 3  # cells a side
-const SHORT := 2  # floors: under the young croc's shoulder (about 3.1)
-const TALL := 8  # floors: over it
-const BETWEEN := 5  # floors: over the young croc's shoulder, under the Behemoth's (about 6.5)
-const DWARFS := 2  # a building tier that dwarfs the young croc (Growth.dwarf_mult < 1)
 ## The croc's bars (lead 2026-10-27): full from a standstill, a turn's keep, its rate (D-328).
 const FULL_BY_S := 1.5
 const TURN_S := 2.0
@@ -28,6 +15,10 @@ const TURN_KEEPS := 0.7
 ## "Unchanged": the snapped turn made within one step of the same time with and without momentum.
 const SAME_TURN_S := 1.0 / 60.0
 const MAX_S := 5.0
+## Spent after a slam: seconds pushed on into a building DEEP x WIDE cells (he is still in it).
+const PUSH_S := 3.0
+const DEEP := 16
+const WIDE := 8
 
 
 func suite_name() -> String:
@@ -38,90 +29,13 @@ func run_checks() -> void:
 	await _t("_check_entries")
 	await _t("_check_crash_through")
 	await _t("_check_slam")
+	await _t("_check_spent_by_buildings")
 	await _t("_check_below_threshold")
 	await _t("_check_relative_to_size")
 	await _t("_check_build_and_turn")
 	await _t("_check_turn_rate")
 	await _t("_check_replay")
 	await _t("_check_old_save")
-
-
-## The croc at `levels` on `layout`, the claws idle, with the run on (his entry) or off (none).
-func _runner(levels: Dictionary, layout: Array[Dictionary], on: bool = true) -> RampageSim:
-	var sim := _croc(levels, layout)
-	sim.stats["swipe_damage"] = 0.0
-	if not on:
-		sim.powers.run.titan = {}
-	return sim
-
-
-## The croc's entry, as the reptilian plays it.
-func _titan() -> Dictionary:
-	return _croc({}, []).powers.run.titan
-
-
-## The z of a WIDTH-deep building's centre whose near face stands `lead` beyond the snout of the
-## croc at `levels` standing at (0, 30) facing north.
-func _ahead_of_snout(levels: Dictionary, lead: float) -> float:
-	return 30.0 - _snout(levels) - lead - WIDTH * 0.5
-
-
-## How far ahead of kaiju_pos the croc at `levels` reaches (world units): his snout.
-func _snout(levels: Dictionary) -> float:
-	var probe := _croc(levels, [])
-	var front := 0.0
-	for d: Array in probe.body.discs():
-		front = maxf(front, Num.f(d[0]) + Num.f(d[1]))
-	return front * probe.body_scale()
-
-
-## A row of ROW short buildings up the street from LEAD beyond the young croc's snout, of a
-## tier that dwarfs him (BodyVolume.sweep: without the run he is held, chewing each).
-func _row() -> Array[Dictionary]:
-	var first := _ahead_of_snout({}, LEAD)
-	var row: Array[Dictionary] = []
-	for n: int in ROW:
-		row.append(_tiered(Vector2(0.0, first - n * GAP), WIDTH, SHORT, DWARFS))
-	return row
-
-
-## A WIDTH-wide block of `floors` at `at`, of `tier`.
-func _tiered(at: Vector2, w: int, floors: int, tier: int) -> Dictionary:
-	var block := _block(at, w, floors)
-	block["tier"] = tier
-	return block
-
-
-## Walks `sim` north CHARGE_S: where he ended (z), the least momentum on a step that broke
-## something, the slams, and the chunks each of the first `count` buildings lost.
-func _charge(sim: RampageSim, count: int) -> Dictionary:
-	var full: Array[int] = []
-	for n: int in count:
-		full.append(sim.buildings[n].frame.alive_count)
-	var low := INF
-	var slams := 0
-	for _n: int in roundi(CHARGE_S / DT):
-		var before := sim.chunks_destroyed
-		slams += _count(sim.step(DT, NORTH, false, 0), "slam")
-		if sim.chunks_destroyed > before:
-			low = minf(low, sim.powers.momentum)
-	var lost: Array[int] = []
-	for n: int in count:
-		lost.append(full[n] - sim.buildings[n].frame.alive_count)
-	return {"z": snappedf(sim.kaiju_pos.y, 0.001), "low": low, "slams": slams, "lost": lost}
-
-
-func _count(events: Array[Dictionary], kind: String) -> int:
-	var n := 0
-	for event: Dictionary in events:
-		if str(event["type"]) == kind:
-			n += 1
-	return n
-
-
-func _walk(sim: RampageSim, seconds: float, stick: Vector2) -> void:
-	for _n: int in roundi(seconds / DT):
-		sim.step(DT, stick, false, 0)
 
 
 ## The reptilian plays the croc's entry; a species with no titan entry builds no momentum; a
@@ -225,6 +139,59 @@ func _check_slam() -> void:
 	)
 	var off := _charge(_runner({}, tall, false), 1)
 	check(Num.i(off["slams"]) == 0, "croc.momentum: without the run, no slam (%s)" % [off])
+
+
+## Slam and stop, momentum spent (lead 2026-10-27 on D-337): it never builds while his body touches
+## a building he is not crashing through. Charged into a deep tall building and pushed on into it
+## PUSH_S, he slams once, not again as he breaks on through it; pushing from a standstill against a
+## short building that dwarfs him builds none, and it holds him as it does with no run.
+func _check_spent_by_buildings() -> void:
+	var titan := _titan()
+	var deep := _tiered(Vector2(0.0, 30.0 - _snout({}) - LEAD - DEEP * 0.5), WIDE, TALL, 1)
+	deep["d"] = DEEP
+	var sim := _runner({}, [deep])
+	var out := {"slams": 0, "pushed": 0, "top": 0.0}
+	for _n: int in roundi((CHARGE_S + PUSH_S) / DT):
+		out["slams"] = Num.i(out["slams"]) + _count(sim.step(DT, NORTH, false, 0), "slam")
+		if Num.i(out["slams"]) > 0:
+			out["pushed"] = Num.i(out["pushed"]) + 1
+			out["top"] = maxf(Num.f(out["top"]), sim.powers.momentum)
+		if Num.i(out["pushed"]) >= roundi(PUSH_S / DT):
+			break
+	out["broken"] = sim.body.broken
+	check(
+		(
+			Num.i(out["slams"]) == 1
+			and Num.i(out["pushed"]) >= roundi(PUSH_S / DT)
+			and Num.f(out["top"]) < Num.f(titan["slam_min"])
+		),
+		(
+			"pushed on into the tall building %.0f s after the slam: one slam, momentum spent: %s"
+			% [PUSH_S, out]
+		)
+	)
+	var short: Array[Dictionary] = [
+		_tiered(Vector2(0.0, _ahead_of_snout({}, -0.25)), WIDTH, SHORT, DWARFS)
+	]
+	var pushed := _runner({}, short)
+	var ref := _runner({}, short, false)
+	var held := {"same": true, "top": 0.0}
+	for _n: int in roundi(PUSH_S / DT):
+		pushed.step(DT, NORTH, false, 0)
+		ref.step(DT, NORTH, false, 0)
+		var same := (
+			pushed.kaiju_pos == ref.kaiju_pos and pushed.chunks_destroyed == ref.chunks_destroyed
+		)
+		held["same"] = held["same"] == true and same
+		held["top"] = maxf(Num.f(held["top"]), pushed.powers.momentum)
+	var as_off: bool = held["same"]
+	check(
+		as_off and Num.f(held["top"]) < Num.f(titan["crash_min"]),
+		(
+			"pushing %.0f s against a building that holds him builds no run (held as with none): %s"
+			% [PUSH_S, held]
+		)
+	)
 
 
 ## (c) Below crash_min and slam_min nothing changes (D-280): from a standstill into a short and a
