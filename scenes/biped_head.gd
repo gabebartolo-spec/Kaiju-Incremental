@@ -76,27 +76,8 @@ func _lead() -> float:
 func update(dt: float, standing: bool) -> void:
 	if not g.rig.has_bone("head1"):
 		return
-	# Where to look: ahead of a turn while moving, glances around while standing.
-	_scan_in -= dt
-	if _scan_in <= 0.0:
-		_scan_in = g.rng.randf_range(SCAN_EVERY.x, SCAN_EVERY.y)
-		_scan = Vector2(
-			g.rng.randf_range(-SCAN_YAW, SCAN_YAW), g.rng.randf_range(-SCAN_PITCH, SCAN_PITCH * 0.5)
-		)
-	var glance := _scan if standing else Vector2.ZERO  # walking, it looks where it goes
-	var target_yaw := g.model_yaw + clampf(_lead(), -0.6, 0.6) + glance.x
-	var err := wrapf(target_yaw - _head_yaw, -PI, PI)
-	if not _head_started:
-		_head_yaw = target_yaw
-		err = 0.0
-	var y := KaijuGait.spring(0.0, _head_yaw_v, err, HEAD_OMEGA, HEAD_ZETA, dt)
-	_head_yaw = wrapf(_head_yaw + y.x, -PI, PI)
-	_head_yaw_v = y.y
-	var off := wrapf(_head_yaw - g.body_yaw, -PI, PI)
-	if absf(off) > HEAD_MAX_YAW:  # past the neck's limit: drawn back in, not snapped
-		var limit := signf(off) * HEAD_MAX_YAW
-		_head_yaw = wrapf(g.body_yaw + lerpf(off, limit, minf(1.0, dt * 12.0)), -PI, PI)
-		off = wrapf(_head_yaw - g.body_yaw, -PI, PI)
+	var glance := _glance(dt, standing)
+	var off := _turn_head(dt, glance.x)
 	# Tells: a snort (head flick) and a jaw click now and then.
 	_tell_in -= dt
 	if _tell_in <= 0.0 and standing:  # a snort or jaw click only while it stands
@@ -109,7 +90,43 @@ func update(dt: float, standing: bool) -> void:
 		_head_pitch.x, _head_pitch.y, glance.y + roar_pitch + NOSE_DOWN, 9.0, 0.7, dt
 	)
 	_head_pitch = hp
-	# The neck carries the head steady: rest the neck, low-pass where the skull sits, aim at it.
+	_carry_head(dt, off)
+	_pose_jaw(dt)
+
+
+## Where to look: ahead of a turn while moving, glances around while standing.
+func _glance(dt: float, standing: bool) -> Vector2:
+	_scan_in -= dt
+	if _scan_in <= 0.0:
+		_scan_in = g.rng.randf_range(SCAN_EVERY.x, SCAN_EVERY.y)
+		_scan = Vector2(
+			g.rng.randf_range(-SCAN_YAW, SCAN_YAW), g.rng.randf_range(-SCAN_PITCH, SCAN_PITCH * 0.5)
+		)
+	return _scan if standing else Vector2.ZERO  # walking, it looks where it goes
+
+
+## Turns the head toward the look (`glance_yaw` added), held within the neck's limit; returns
+## its yaw off the body.
+func _turn_head(dt: float, glance_yaw: float) -> float:
+	var target_yaw := g.model_yaw + clampf(_lead(), -0.6, 0.6) + glance_yaw
+	var err := wrapf(target_yaw - _head_yaw, -PI, PI)
+	if not _head_started:
+		_head_yaw = target_yaw
+		err = 0.0
+	var y := KaijuGait.spring(0.0, _head_yaw_v, err, HEAD_OMEGA, HEAD_ZETA, dt)
+	_head_yaw = wrapf(_head_yaw + y.x, -PI, PI)
+	_head_yaw_v = y.y
+	var off := wrapf(_head_yaw - g.body_yaw, -PI, PI)
+	if absf(off) > HEAD_MAX_YAW:  # past the neck's limit: drawn back in, not snapped
+		var limit := signf(off) * HEAD_MAX_YAW
+		_head_yaw = wrapf(g.body_yaw + lerpf(off, limit, minf(1.0, dt * 12.0)), -PI, PI)
+		off = wrapf(_head_yaw - g.body_yaw, -PI, PI)
+	return off
+
+
+## The neck carries the head steady: rest the neck, low-pass where the skull sits, aim at it
+## (turned `off` toward the look).
+func _carry_head(dt: float, off: float) -> void:
 	g.rig.pose("head0", Vector3.ZERO)
 	var neck := g.rig.bone("head0")
 	var skull := g.rig.bone("head1")
@@ -128,7 +145,6 @@ func update(dt: float, standing: bool) -> void:
 	g.rig.aim("head0", base, want)
 	var world := Basis(Vector3.UP, _head_yaw) * Basis(Vector3.RIGHT, _head_pitch.x)
 	g.rig.set_world_basis("head1", world)
-	_pose_jaw(dt)
 
 
 # --- roar ----------------------------------------------------------------------------------------
