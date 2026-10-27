@@ -66,11 +66,16 @@ func _titan() -> Dictionary:
 ## The z of a WIDTH-deep building's centre whose near face stands `lead` beyond the snout of the
 ## croc at `levels` standing at (0, 30) facing north.
 func _ahead_of_snout(levels: Dictionary, lead: float) -> float:
+	return 30.0 - _snout(levels) - lead - WIDTH * 0.5
+
+
+## How far ahead of kaiju_pos the croc at `levels` reaches (world units): his snout.
+func _snout(levels: Dictionary) -> float:
 	var probe := _croc(levels, [])
 	var front := 0.0
 	for d: Array in probe.body.discs():
 		front = maxf(front, Num.f(d[0]) + Num.f(d[1]))
-	return 30.0 - front * probe.body_scale() - lead - WIDTH * 0.5
+	return front * probe.body_scale()
 
 
 ## A row of ROW short buildings up the street from LEAD beyond the young croc's snout.
@@ -148,11 +153,12 @@ func _check_crash_through() -> void:
 	var lost: Array[int] = on["lost"]
 	var last_face := Num.f(row[ROW - 1]["z"]) - WIDTH * 0.5
 	var least: int = lost.min()
+	var snout := Num.f(on["z"]) - _snout({})
 	check(
-		least > 0 and Num.f(on["z"]) < last_face,
+		least > 0 and snout < last_face,
 		(
-			"(a) he passes through the row, each building carved: %s (last face z %.1f)"
-			% [on, last_face]
+			"(a) he passes through the row, each building carved: %s (snout z %.1f, last face z %.1f)"
+			% [on, snout, last_face]
 		)
 	)
 	var free := 30.0 - Num.f(open["z"])
