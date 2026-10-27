@@ -56,10 +56,12 @@ func _run() -> void:
 			return {"move": Vector2.ZERO}
 		if facing[0] == Vector2.ZERO:
 			facing[0] = sim.facing
-		var t := sim.elapsed - start[0]
+		var since: float = start[0]
+		var t := sim.elapsed - since
 		var deg := TURN_DEG if t < LEFT_S else -TURN_DEG
+		var ahead: Vector2 = facing[0]
 		# facing rotated +deg is to his left (KaijuModel.animate takes -turn_left as the look)
-		return {"move": facing[0].rotated(deg_to_rad(deg)) * TURN_PUSH}
+		return {"move": ahead.rotated(deg_to_rad(deg)) * TURN_PUSH}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
 	var aim: Node3D = rampage.find_child("BreathAim", false, false)
