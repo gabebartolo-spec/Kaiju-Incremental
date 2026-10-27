@@ -165,13 +165,13 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
 
 ### 9. Explosions: base = CityView.flash + debris + Fire (TankFx.wreck); blasts on claude/city-explosives-v2
 - **Canonical (director 2026-10-23: "Fire's tongues", "Same dust"):** the instant = family 5 (flare, real light,
-  optional screen flash); the fire = a sudden tall burst of family 1's own rising flames (same voxel size, shader,
+  no screen flash: director 2026-10-27, cut); the fire = a sudden tall burst of family 1's own rising flames (same voxel size, shader,
   heat and ramp), then a real Fire left burning with its smoke; debris = family 4; the ground shock = the same
   street dust as a stomp (family 3/7), never a special colour; fireworks = family 5 sparks in colours; gas =
   family 2. The same holds for Taskforce weapon hits.
 
 ### 10. Post effects (D-142, claude/post-fx, unmerged)
-- A CanvasLayer under the HUD: a subtle vignette (red pulse below 25% health) and a 0.2 s colour fringe on the
+- A CanvasLayer under the HUD: a subtle vignette (never red: low health is the HUD heartbeat vignette alone, 2026-10-27) and a 0.2 s colour fringe on the
   biggest hits and every railgun hit. No motion blur, film grain or lens dirt.
 
 ## Two looks today (flagged red on the sheet)

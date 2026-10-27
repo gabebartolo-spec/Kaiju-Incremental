@@ -3,10 +3,11 @@ extends RefCounted
 ## The mixer (R 8.1, docs/research/2026-10-21/08-soundscape.md), built at boot from tuning
 ## "audio" and "sfx" "dynamics" so no dB or ms lives in a hand-tuned .tres. Presentation only.
 ## Layout (a bus sends only to one on its left):
-##   Master (hard limiter) > SFX (the player's volume, gentle compressor) > Hero (roar, stomp,
-##   toppling tower) | Bed (ducked by Hero) > Debris, Crowd, Military, Ambience | UI;
+##   Master (hard limiter) > SFX (the player's volume, gentle compressor) > Hero (roar, toppling
+##   tower, barrel blasts) | Bed (ducked by Hero) > Debris, Crowd, Military, Ambience | UI;
 ##   Music beside SFX, ducked a little by Hero. Hero is the loudest thing in the mix, so the
-##   chaos under it dips while it sounds and swells back over the duck's release.
+##   chaos under it dips while it sounds and swells back over the duck's release. Stomps and
+##   footsteps play on SFX itself: they duck nothing (director 2026-10-27).
 
 
 ## Builds every bus in order, its send and its sidechain duck, and the limiter and compressor.
