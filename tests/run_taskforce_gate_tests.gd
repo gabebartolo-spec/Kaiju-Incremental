@@ -12,6 +12,7 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	await _t("_check_diag_rail")
 	await _t("_check_first_arrival")
 	await _t("_check_city_clock")
 	await _t("_check_armour")
@@ -293,3 +294,106 @@ func _worst_second(times: Array) -> int:
 			times.filter(func(t: float) -> bool: return t >= start and t <= start + 1.0).size()
 		)
 	return worst
+
+
+## TEMPORARY diagnostic (reverted after one CI run): the rail viaduct against the spawn and the
+## hand-built fixtures, old (pre-1.5x) vs new city; each line fails, for the annotations.
+func _check_diag_rail() -> void:
+	var old := _diag_old()
+	for label: String in ["old", "new"]:
+		var base := old if label == "old" else Content.tuning()
+		for stage: int in [1, 2, 3]:
+			var t := CityGrowth.tuning_for(base, stage)
+			var city: Dictionary = t["city"]
+			var half := CityGen.half_extent(city)
+			var ends := RailLayout.ends(city, t["rail"])
+			var ax := Rail.avenue_x(city)
+			check(
+				false,
+				(
+					"DIAG %s s%d: half %.0f, rail x %.1f z %.0f..%.0f"
+					% [label, stage, half, ax, ends.x, ends.y]
+				)
+			)
+		var sim := _sim("reptilian", {"evolve1": 1}, 0, CityGrowth.tuning_for(base, 2))
+		var spawn := sim.kaiju_pos
+		var near0 := _diag_near(sim, spawn)
+		_open(sim)
+		var way := _face_free_way(sim)
+		var from := sim.kaiju_pos
+		_run(sim, 1.5, "", way)
+		var walked := from.distance_to(sim.kaiju_pos)
+		check(
+			false,
+			(
+				"DIAG %s tf s2 spawn %s near [%s]; way %s walked %.1f in 1.5 s; end near [%s]"
+				% [label, spawn, near0, way, walked, _diag_near(sim, sim.kaiju_pos)]
+			)
+		)
+	var hand := {
+		"carving":
+		[[{"x": 0.0, "z": 0.0, "w": 3, "d": 3, "h": 14, "tier": 1, "style": 0}], Vector2(2.6, 0)],
+		"fire":
+		[[{"x": 0.0, "z": 0.0, "w": 3, "d": 3, "h": 6, "tier": 1, "style": 0}], Vector2(-15, 0)],
+		"vip":
+		[[{"x": 10.0, "z": 0.0, "w": 4, "d": 4, "h": 5, "tier": 1, "style": 0}], Vector2(-4, 0)],
+	}
+	for name: String in hand:
+		var row: Array = hand[name]
+		var layout: Array[Dictionary] = []
+		layout.assign(row[0])
+		var stats := UpgradeTree.run_stats(
+			Content.section("kaiju"),
+			Content.species_def("reptilian"),
+			UpgradeTree.new(Content.upgrades())
+		)
+		var hs := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+		var at: Vector2 = row[1]
+		check(
+			false,
+			(
+				"DIAG hand %s: rail x %.1f; kaiju %s near [%s]; origin near [%s]"
+				% [
+					name,
+					Rail.avenue_x(hs.city),
+					at,
+					_diag_near(hs, at),
+					_diag_near(hs, Vector2.ZERO)
+				]
+			)
+		)
+		hs.dispose()
+
+
+func _diag_old() -> Dictionary:
+	var base: Dictionary = Content.tuning().duplicate(true)
+	var f := FileAccess.open("res://tests/diag_old_city.json", FileAccess.READ)
+	var old: Dictionary = JSON.parse_string(f.get_as_text())
+	var city: Dictionary = base["city"]
+	var over: Dictionary = old["city"]
+	for k: String in over:
+		city[k] = over[k]
+	var stages: Array = base["growth"]["stages"]
+	var olds: Array = old["stages"]
+	for k: int in mini(stages.size(), olds.size()):
+		stages[k]["city"] = olds[k]
+	return base
+
+
+## The 4 nearest standing buildings to p: "index tag height gap".
+func _diag_near(sim: RampageSim, p: Vector2) -> String:
+	var rows: Array = []
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.frame.alive_count == 0:
+			continue
+		var gap := Vector2(
+			maxf(absf(p.x - b.x) - b.w * 0.5, 0.0), maxf(absf(p.y - b.z) - b.d * 0.5, 0.0)
+		)
+		var tag := "rail" if not b.rail.is_empty() else (b.landmark if b.landmark != "" else "lot")
+		rows.append([gap.length(), "%d %s h%d %.1f" % [i, tag, b.height, gap.length()]])
+	rows.sort_custom(func(a: Array, c: Array) -> bool: return float(a[0]) < float(c[0]))
+	var names: PackedStringArray = []
+	for r: Array in rows.slice(0, 4):
+		names.append(str(r[1]))
+	return ", ".join(names)
