@@ -13,7 +13,7 @@ const SimDispose := preload("res://tests/lib/sim_dispose.gd")
 
 const EVOLVED := {"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}
 const PLAIN := {"claws": 3, "hide": 3, "rage": 3}
-const BOT_CITY := Vector2i(2, 0)  # city seed 2, army seed 0
+const BOT_CITIES := 3  # city seeds 0 to 2, army seed 0
 
 
 func suite_name() -> String:
