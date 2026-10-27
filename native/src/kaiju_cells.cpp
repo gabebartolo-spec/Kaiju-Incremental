@@ -45,21 +45,30 @@ enum Key {
 	TANK,
 	BEACON,
 	SIGN_FRAME,
+	HEATER,
+	HEATER_HI,
+	SOLAR,
 	NEON0,
 	KEY_COUNT = NEON0 + 1, // neon0 .. neon<n-1> follow
 };
 
 enum Arch { OFFICE = 0, BRICK = 1, GLASS = 2, STONE = 3 };
 
-// BuildingLayout's TOWER_* (the wooden water tower on a BRICK roof), in cells.
-const int TOWER_LEGS = 6;
-const int TOWER_PLATFORM_R2 = 38;
-const int TOWER_BARREL = 12;
-const int TOWER_BARREL_R2 = 27;
-const int TOWER_HOOPS[3] = { 1, 5, 9 };
-const int TOWER_ROOF = 7;
-const double TOWER_EAVE_R = 5.6;
-const int TOWER_REACH = 6;
+// RoofTank's constants (sim/roof_tank.gd): the wooden water tower and the white solar heater on
+// a BRICK roof, in cells.
+const int WOODEN_ONE_IN = 4;
+const int TOWER_LEGS = 2;
+const int TOWER_LEG_AT = 2;
+const int TOWER_PLATFORM_R2 = 8;
+const int TOWER_BARREL = 6;
+const int TOWER_BARREL_R2 = 5;
+const int TOWER_HOOPS[2] = { 1, 4 };
+const int TOWER_HOOP_INNER_R2 = 2;
+const int TOWER_ROOF_R2[3] = { 10, 2, 0 };
+const int TOWER_REACH = 3;
+const int HEATER_W = 9;
+const int HEATER_D = 8;
+const int HEATER_ROWS = 7;
 
 const int SIDE_X[4] = { -1, 1, 0, 0 };
 const int SIDE_Z[4] = { 0, 0, -1, 1 };
@@ -252,31 +261,56 @@ struct Gen {
 		}
 	}
 
-	// BuildingLayout._disc: layer y's cells round (ax, az) whose squared distance from it is over
-	// inner2 and at most outer2, kept inside the footprint (outer2 0 is the one cell under it).
+	// RoofTank._put: a cell, only when it is inside the footprint.
+	void put(int x, int y, int z, int key) {
+		if (x >= 0 && x < w && z >= 0 && z < d) mark(x, y, z, key);
+	}
+
+	// RoofTank._disc: layer y's cells round (ax, az) whose squared distance from it is over inner2
+	// and at most outer2, kept inside the footprint (outer2 0 is the one cell under it).
 	void disc(int ax, int az, int y, int outer2, int key, int inner2 = -1) {
 		for (int dx = -TOWER_REACH; dx <= TOWER_REACH; dx++)
 			for (int dz = -TOWER_REACH; dz <= TOWER_REACH; dz++) {
 				const int d2 = dx * dx + dz * dz;
-				const int x = ax + dx, z = az + dz;
-				if (d2 > inner2 && d2 <= outer2 && x >= 0 && x < w && z >= 0 && z < d) mark(x, y, z, key);
+				if (d2 > inner2 && d2 <= outer2) put(ax + dx, y, az + dz, key);
 			}
 	}
 
-	// BuildingLayout._water_tower: legs, platform, barrel, hoops, cone roof, laid in that order.
-	void water_tower(int top) {
+	// RoofTank._tower: legs, platform, barrel, hoops, cone roof, laid in that order.
+	void tower(int top) {
 		const int cx = (int)std::round(w * 0.65);
 		const int cz = (int)std::round(d * 0.4);
-		const int legs[4][2] = { { -4, -4 }, { 4, -4 }, { -4, 4 }, { 4, 4 } };
-		for (const auto &leg : legs)
-			for (int y = top; y < top + TOWER_LEGS; y++) disc(cx + leg[0], cz + leg[1], y, 0, GEAR);
+		for (const int lz : { -TOWER_LEG_AT, TOWER_LEG_AT })
+			for (const int lx : { -TOWER_LEG_AT, TOWER_LEG_AT })
+				for (int y = top; y < top + TOWER_LEGS; y++) disc(cx + lx, cz + lz, y, 0, GEAR);
 		disc(cx, cz, top + TOWER_LEGS, TOWER_PLATFORM_R2, GEAR);
 		const int base = top + TOWER_LEGS + 1;
 		for (int y = base; y < base + TOWER_BARREL; y++) disc(cx, cz, y, TOWER_BARREL_R2, TANK);
-		for (const int hoop : TOWER_HOOPS) disc(cx, cz, base + hoop, TOWER_PLATFORM_R2, VENT, TOWER_BARREL_R2);
-		for (int k = 0; k < TOWER_ROOF; k++) {
-			const double r = TOWER_EAVE_R * (1.0 - k / (double)TOWER_ROOF);
-			disc(cx, cz, base + TOWER_BARREL + k, (int)std::floor(r * r), TANK);
+		for (const int hoop : TOWER_HOOPS) disc(cx, cz, base + hoop, TOWER_BARREL_R2, VENT, TOWER_HOOP_INNER_R2);
+		for (int k = 0; k < 3; k++) disc(cx, cz, base + TOWER_BARREL + k, TOWER_ROOF_R2[k], TANK);
+	}
+
+	// RoofTank._heater: the two stepped panels with their frame and legs, then the tank on its side.
+	void heater(int top) {
+		const int x0 = std::max(1, std::min((int)std::round(w * 0.65) - 4, std::max(1, w - HEATER_W - 1)));
+		const int z0 = std::max(1, std::min((int)std::round(d * 0.4) - 4, std::max(1, d - HEATER_D - 1)));
+		for (int hx = 0; hx < HEATER_W; hx++) {
+			const bool rail = hx % 4 == 0;
+			for (int hz = 0; hz < HEATER_ROWS; hz++) {
+				const int y = top + (hz >> 1);
+				const bool frame = rail || hz == 0 || hz == 3 || hz == HEATER_ROWS - 1;
+				put(x0 + hx, y, z0 + hz, frame ? GEAR : SOLAR);
+				if (hz > 0 && hz % 2 == 0) put(x0 + hx, y - 1, z0 + hz, GEAR);
+			}
+			if (rail)
+				for (int y = 0; y < 3; y++) put(x0 + hx, top + y, z0 + HEATER_ROWS - 1, GEAR);
+		}
+		for (int hx = 1; hx < HEATER_W - 1; hx++) {
+			const bool cap = hx == 1 || hx == HEATER_W - 2;
+			for (int hz = HEATER_ROWS - 1; hz < HEATER_D; hz++) {
+				put(x0 + hx, top + 4, z0 + hz, cap ? GEAR : HEATER);
+				put(x0 + hx, top + 5, z0 + hz, cap ? GEAR : HEATER_HI);
+			}
 		}
 	}
 
@@ -308,7 +342,8 @@ struct Gen {
 				ac_units(top);
 				break;
 			case BRICK:
-				water_tower(top);
+				if (roll(4, 6, 8, WOODEN_ONE_IN) == 0) tower(top);
+				else heater(top);
 				break;
 			case GLASS:
 				mast(top);
