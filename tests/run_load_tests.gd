@@ -210,13 +210,29 @@ func _check_stand_in_fade() -> void:
 			break
 	check(placed >= 0, "a streamed building is placed")
 	if placed >= 0:
+		var mesh := stream.built(placed)
 		var now := boxes.alpha(placed)
 		check(now > 0.9, "its box is still drawn the moment its mesh arrives (%.2f)" % now)
+		check(mesh.dissolve_share() < 0.1, "its mesh starts undrawn (%.2f)" % mesh.dissolve_share())
 		stream.step(fade * 0.5)
 		var half := boxes.alpha(placed)
 		check(half > 0.2 and half < 0.8, "its box is half dissolved at half the time (%.2f)" % half)
+		var half_mesh := mesh.dissolve_share()
+		check(half_mesh > 0.2 and half_mesh < 0.8, "its mesh is half drawn (%.2f)" % half_mesh)
 		stream.step(fade)
 		check(boxes.alpha(placed) == 0.0, "its box is gone once the fade is over")
+		check(mesh.dissolve_share() == 1.0, "its mesh is whole once the fade is over")
+		stream.call("_free_view", placed)  # the kaiju walked away: the box comes back
+		check(stream.built(placed) == null, "an untouched building goes back to its box")
+		check(is_instance_valid(mesh), "its mesh is still drawn while it dissolves out")
+		check(boxes.alpha(placed) < 0.1, "its box starts undrawn (%.2f)" % boxes.alpha(placed))
+		stream.step(fade * 0.5)
+		var out_mesh := mesh.dissolve_share() if is_instance_valid(mesh) else -1.0
+		check(out_mesh > 0.2 and out_mesh < 0.8, "its mesh is half dissolved out (%.2f)" % out_mesh)
+		check(boxes.alpha(placed) > 0.2 and boxes.alpha(placed) < 0.8, "its box is half drawn in")
+		stream.step(fade)
+		check(not is_instance_valid(mesh), "its mesh is gone once the fade is over")
+		check(boxes.alpha(placed) == 1.0, "its box is whole once the fade is over")
 	var far := -1
 	for n: int in waiting:
 		if stream.built(n) == null:
@@ -227,6 +243,10 @@ func _check_stand_in_fade() -> void:
 		check(
 			boxes.alpha(far) == 0.0, "a building the rampage touches loses its box at once, no fade"
 		)
+		var touched := stream.built(far)
+		stream.regrow(far)  # a destroyed building: no dissolve either way (D-326)
+		check(not is_instance_valid(touched), "a regrown building's mesh goes at once")
+		check(boxes.alpha(far) == 1.0, "a regrown building's box is back at once")
 	stream.queue_free()
 	await process_frame
 
