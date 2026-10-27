@@ -192,13 +192,18 @@ static func _in_the_way(piece: Node3D, eye: Vector3, sight: PackedVector3Array) 
 
 
 ## The lowest opacity any of the part's meshes draws at now (1 = solid; a mesh whose shader has no
-## opacity share is solid).
+## opacity share is solid; one the camera bubble cuts, bubble_cut above 0, counts as 0: D-326).
 static func _faintest(piece: Node3D) -> float:
 	var low := 1.0
 	for mi: Node in piece.find_children("*", "MeshInstance3D", true, false):
 		var mat := (mi as MeshInstance3D).material_override as ShaderMaterial
-		if mat != null and mat.get_shader_parameter("opacity") != null:
+		if mat == null:
+			continue
+		if mat.get_shader_parameter("opacity") != null:
 			low = minf(low, Num.f(mat.get_shader_parameter("opacity")))
+		var cut: Variant = mat.get_shader_parameter("bubble_cut")
+		if cut != null and Num.f(cut) > 0.0:
+			low = 0.0
 	return low
 
 

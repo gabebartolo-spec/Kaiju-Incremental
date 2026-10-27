@@ -6,23 +6,23 @@
    "pivot": [
     -0.5,
     0.0,
-    4.094
+    3.366
    ]
   },
   "turret": {
    "kvox": "tank_turret.kvox",
    "pivot": [
     -0.5,
-    6.598,
-    4.583
+    7.54,
+    4.191
    ]
   },
   "barrel": {
    "kvox": "tank_barrel.kvox",
    "pivot": [
     -0.5,
-    8.797,
-    -5.436
+    8.32,
+    -6.951
    ]
   }
  }

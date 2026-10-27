@@ -44,6 +44,21 @@ var _weather: Button
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	UiKit.full_rect(self)
+	var col := _card()
+	_add_sliders(col)
+	_add_choices(col)
+	_add_pages(col)
+
+	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
+	HazardBox.trim_height(back, BACK_MARGIN)
+	back.pressed.connect(close)
+	col.add_child(_gap(back, BLOCK_GAP))
+	_refresh()
+	_volume.grab_focus.call_deferred()
+
+
+## The dimmed backdrop and the centred card with its SETTINGS title; returns the card's column.
+func _card() -> VBoxContainer:
 	var dim := ColorRect.new()
 	dim.color = Color(UiKit.BG, 0.92)
 	UiKit.full_rect(dim)
@@ -60,7 +75,11 @@ func _ready() -> void:
 	var title := UiKit.label("SETTINGS", UiKit.SIZE_TITLE, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(title)
+	return col
 
+
+## The three 0-100% sliders: volume, sound effects, camera motion.
+func _add_sliders(col: Control) -> void:
 	_volume = _slider(col, "Volume", PlayerSettings.volume)
 	_volume.value_changed.connect(_on_volume)
 	_volume_text = _volume.get_parent().get_child(2)
@@ -75,6 +94,9 @@ func _ready() -> void:
 	)
 	_motion_text = motion.get_parent().get_child(2)
 
+
+## The "< value >" buttons, in the rows the TV's largest UI scale still fits.
+func _add_choices(col: Control) -> void:
 	_fullscreen = _choice(func() -> void: PlayerSettings.set_fullscreen(not _is_full()))
 	_scale = _choice(func() -> void: PlayerSettings.next_ui_scale())
 	# One row for both screen settings, so the time-of-day row fits the TV at the largest UI scale.
@@ -88,14 +110,6 @@ func _ready() -> void:
 	_button_row(col, "Time of day", [_time])
 	_weather = _choice(func() -> void: PlayerSettings.next_weather())
 	_button_row(col, "Weather", [_weather])
-	_add_pages(col)
-
-	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
-	HazardBox.trim_height(back, BACK_MARGIN)
-	back.pressed.connect(close)
-	col.add_child(_gap(back, BLOCK_GAP))
-	_refresh()
-	_volume.grab_focus.call_deferred()
 
 
 ## A settings button (its text, "< value >", is set by _refresh) that does `on_press`; it takes

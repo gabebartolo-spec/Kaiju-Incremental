@@ -120,12 +120,6 @@ func flush() -> void:
 		_upload(0, true)
 
 
-## Screen-door share (1 = solid), as BuildingView.set_opacity.
-func set_opacity(value: float) -> void:
-	if material is ShaderMaterial:
-		(material as ShaderMaterial).set_shader_parameter("opacity", value)
-
-
 ## Adds `usec` of main-thread fine-grid work to this frame's shared clock (CityCarve's own work
 ## counts too) and keeps worst_usec, the costliest frame so far.
 static func spend(usec: int) -> void:

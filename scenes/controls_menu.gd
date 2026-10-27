@@ -30,11 +30,13 @@ func _build(col: VBoxContainer) -> void:
 	for entry: Array in KeyBinds.actions():
 		var action := str(entry[0])
 		var keys := choice(_wait.bind(action, KeyBinds.KEYS))
-		var pad: Control = UiKit.label("Left stick", UiKit.SIZE_BODY, UiKit.MUTED)
+		var pad: Control
 		binds[action] = {KeyBinds.KEYS: keys}
 		if entry[2]:
 			pad = choice(_wait.bind(action, KeyBinds.PAD))
 			binds[action][KeyBinds.PAD] = pad
+		else:  # made only here: a label built and then replaced was never freed (debt row 2)
+			pad = UiKit.label("Left stick", UiKit.SIZE_BODY, UiKit.MUTED)
 		row(col, str(entry[1]), [keys, pad])
 	for entry: Array in PlayerSettings.CONTROLS:
 		if not FIXED.has(str(entry[0])):

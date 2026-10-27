@@ -12,6 +12,9 @@ extends RefCounted
 ## are all running by then.
 const STEPS := 450
 const FRAMES := 20
+## Steps played before the registry check drops its sim (the rings exist from construction, a few
+## steps add the parts a rampage makes as it goes).
+const REGISTRY_STEPS := 60
 
 var _runner: SceneTree
 var _check: Callable
@@ -31,6 +34,7 @@ func _init(runner: SceneTree, check: Callable, make: Callable, autoplay: Callabl
 func run() -> void:
 	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
 		_sim_is_freed(species_id)
+	_registry_frees_a_dropped_sim()
 	await _game_frees_its_rampage()
 
 
@@ -49,6 +53,25 @@ func _sim_is_freed(species_id: String) -> void:
 	kept.dispose()
 	kept = null
 	_check.call(ref.get_ref() == null, "%s: the sim is freed once dispose has run" % species_id)
+
+
+## Every RampageSim registers as it is built, so the run's exit can cut the rings of one nobody
+## disposed (SimTeardown.cut_all, QuitGame.release_sims_at_exit: a test or capture that drops a sim
+## no longer leaks it at the exit, debt row 2). The check cuts a registry of its own, never the
+## suite's, so no sim the suite still holds is touched.
+func _registry_frees_a_dropped_sim() -> void:
+	var before := SimTeardown.alive()
+	var sim: RampageSim = _make.call("reptilian", {}, 0)
+	_autoplay.call(sim, REGISTRY_STEPS)
+	_check.call(SimTeardown.alive() == before + 1, "a new RampageSim registers itself")
+	var mine: Array[WeakRef] = [weakref(sim)]
+	sim = null
+	_check.call(mine[0].get_ref() != null, "the dropped sim lives on (the registry holds no count)")
+	_check.call(SimTeardown.cut_built(mine) == 1, "the registry cuts the one sim still alive")
+	_check.call(mine.is_empty(), "the registry is empty once it is cut")
+	_check.call(
+		SimTeardown.alive() == before, "a sim cut from the registry is freed, so it is not alive"
+	)
 
 
 ## A Rampage as the game makes one (Main._start_rampage), played a few frames, then left.

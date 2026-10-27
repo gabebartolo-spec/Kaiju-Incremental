@@ -54,6 +54,10 @@ var _slabs: MeshInstance3D
 var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
 var _shell: MeshInstance3D
+## The standing fine-grid view's material (attach_cells), cut by the bubble as the shell is.
+var _cells_mat: ShaderMaterial
+## The camera bubble's cut on this building (set_near_camera): 0 whole .. 1 the whole radius.
+var _cut := 0.0
 ## The landmark ground's mesh arrays until _dress makes its mesh.
 var _ground: Array = []
 
@@ -184,19 +188,31 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 	)
 
 
-## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
-func set_opacity(value: float) -> void:
+## The camera bubble's seam (CameraBubble, D-283; render plan item 5 names it too): while `on`,
+## this standing building is cut away inside the bubble round the camera, `share` of its radius
+## (1 = all of it; less while the cut opens or closes); off, it draws whole. Only the standing
+## building takes it: a piece lifted off it makes its own materials, never cut (D-326).
+func set_near_camera(on: bool, share := 1.0) -> void:
+	var cut := clampf(share, 0.0, 1.0) if on else 0.0
+	if cut == _cut and _shell_mat != null:
+		return
 	_dress()
-	_shell_mat.set_shader_parameter("opacity", value)
-	_slab_mat.set_shader_parameter("opacity", value)
-	if cells_view != null:
-		cells_view.set_opacity(value)
+	_cut = cut
+	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
+		if mat != null:
+			mat.set_shader_parameter("bubble_cut", cut)
+
+
+## How much of the bubble cuts this building now (0 = whole; tests read it).
+func near_camera_cut() -> float:
+	return _cut
 
 
 ## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
 ## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
-## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6). At once,
-## on the main thread (tests, captures); play goes through CityCarve (attach_cells, show_cells).
+## The same shader draws both, so the bubble's cut and the glow carry over. Not for a landmark
+## (WP6). At once, on the main thread (tests, captures); play goes through CityCarve
+## (attach_cells, show_cells).
 func promote(grid: CellGrid) -> CellView:
 	if cells_view != null:
 		return cells_view
@@ -206,20 +222,24 @@ func promote(grid: CellGrid) -> CellView:
 
 
 ## A material for a fine-grid mesh of this building: the baked shader with every face standing,
-## at the building's fade now. The CellView's, and each falling piece's own (never faded, D-326).
+## uncut. The CellView's (attach_cells gives it the bubble's cut, as the shell has) and each
+## falling piece's own (a lifted piece is never cut, D-326).
 func cells_material() -> ShaderMaterial:
 	_dress()
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
-	var mat := _material(ImageTexture.create_from_image(whole))  # every face in chunk 0
-	mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
-	return mat
+	return _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
 
 
-## Adds the fine-grid view, hidden: the baked meshes draw on until show_cells.
+## Adds the fine-grid view, hidden: the baked meshes draw on until show_cells. From now on its
+## material takes the bubble's cut with the shell's (set_near_camera): the grid stands where the
+## shell did.
 func attach_cells(view: CellView) -> void:
 	_dress()
 	cells_view = view
+	_cells_mat = view.material as ShaderMaterial
+	if _cells_mat != null:
+		_cells_mat.set_shader_parameter("bubble_cut", _cut)
 	view.visible = false
 	add_child(view)
 

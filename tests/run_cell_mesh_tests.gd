@@ -50,7 +50,7 @@ func run_checks() -> void:
 	await _t("_check_only_touched_regions")
 	await _t("_check_incremental_equals_fresh")
 	await _t("_check_native_matches_oracle")
-	await _t("_check_promote_keeps_fade")
+	await _t("_check_promote_keeps_cut")
 	await _h("remesh priority", func() -> void: RemeshPriority.new(check, _native).run())
 
 
@@ -368,12 +368,13 @@ func _check_native_matches_oracle() -> void:
 	)
 
 
-## Promoted, a building draws from its grid with the baked shader, and BuildingFade's
-## set_opacity still reaches it.
-func _check_promote_keeps_fade() -> void:
+## Promoted, a building draws from its grid with the baked shader and keeps the camera bubble's
+## cut (set_near_camera before the promote).
+func _check_promote_keeps_cut() -> void:
 	var f := _fixture("brick")
 	var b := _building(f)
 	var view := BuildingView.new(b, Color("8a7f72"), _party(f))
+	view.set_near_camera(true, 0.5)
 	var cv := view.promote(BuildingCells.new(b, _party(f)))
 	cv.flush()
 	check(
@@ -385,12 +386,8 @@ func _check_promote_keeps_fade() -> void:
 		mat != null and mat.shader == BuildingView.SHADER,
 		"the region meshes use the baked building shader"
 	)
-	view.set_opacity(0.4)
-	var opacity: Variant = mat.get_shader_parameter("opacity")
-	check(
-		opacity is float and is_equal_approx(Num.f(opacity), 0.4),
-		"set_opacity (BuildingFade) reaches the cell view"
-	)
+	var cut := Num.f(mat.get_shader_parameter("bubble_cut")) if mat != null else 0.0
+	check(cut == 0.5, "the bubble's cut carries over to the region meshes (%.2f)" % cut)
 	var shown := 0
 	for child: Node in view.get_children():
 		if child is MeshInstance3D and (child as MeshInstance3D).visible:

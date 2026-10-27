@@ -1397,6 +1397,7 @@
             "reserve": {"$ref": "#/$defs/num"},
             "danger": {"$ref": "#/$defs/num"},
             "edge_gap": {"$ref": "#/$defs/num"},
+            "band_depth": {"$ref": "#/$defs/num"},
             "retreat_speed": {"$ref": "#/$defs/num"},
             "lookahead": {"$ref": "#/$defs/num"},
             "danger_cost": {"$ref": "#/$defs/num"},
@@ -1420,7 +1421,7 @@
           },
           "required": [
             "column", "hull", "turret", "gun", "clear", "two_lanes", "follow", "entry_depth",
-            "band", "standoff", "post_gap", "reserve", "danger", "edge_gap", "retreat_speed",
+            "band", "standoff", "post_gap", "reserve", "danger", "edge_gap", "band_depth", "retreat_speed",
             "lookahead", "danger_cost", "held_cost", "oncoming_cost", "uturn_cost", "commit",
             "spread_deg", "cover", "street_cost", "replan", "plans_per_step", "search_margin",
             "stuck", "yield_cap", "reverse", "grid", "hull_turn", "pivot_deg", "skew_deg"
@@ -1984,6 +1985,18 @@
           "required": ["on", "own_haze", "base", "base_height", "start"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "far_reflect": {
+          "type": "object",
+          "properties": {
+            "on": {"$ref": "#/$defs/bool"},
+            "strength": {"$ref": "#/$defs/num"},
+            "energy": {"$ref": "#/$defs/num"},
+            "reach": {"$ref": "#/$defs/num"}
+          },
+          "required": ["on", "strength", "energy", "reach"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2006,7 +2019,7 @@
         "min_height", "max_height", "tier_height", "size_scale_per_tier", "young_scale",
         "growth_per_level", "leap_distance", "cone_half_angle_deg", "breath_snout_ahead",
         "chunk_hp", "dwarf_exp", "chunk_rubble", "kaiju_height", "impact_damage", "fall_gravity",
-        "topple_bonus", "far_fog"
+        "topple_bonus", "far_fog", "far_reflect"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -3794,9 +3807,9 @@
         "lead_toward_camera": {"$ref": "#/$defs/num"},
         "lead_moving": {"$ref": "#/$defs/num"},
         "lead_depth_share": {"$ref": "#/$defs/num"},
-        "fade_opacity": {"$ref": "#/$defs/num"},
-        "fade_seconds": {"$ref": "#/$defs/num"},
-        "fade_width": {"$ref": "#/$defs/num"},
+        "bubble_radius": {"$ref": "#/$defs/num"},
+        "bubble_max": {"$ref": "#/$defs/int"},
+        "bubble_seconds": {"$ref": "#/$defs/num"},
         "safe_top": {"$ref": "#/$defs/num"},
         "safe_centre": {"$ref": "#/$defs/num"},
         "head_rise_s": {"$ref": "#/$defs/num"},
@@ -3806,8 +3819,8 @@
       },
       "required": [
         "offset", "fov", "zoom_base", "zoom_per_scale", "lead_base", "lead_per_scale", "lead_hold",
-        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "fade_opacity",
-        "fade_seconds", "fade_width", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
+        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_radius",
+        "bubble_max", "bubble_seconds", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
         "follow_s", "follow_accel"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -4099,16 +4112,12 @@
         "turn_accel": {"$ref": "#/$defs/num"},
         "step_len": {"$ref": "#/$defs/num"},
         "support_both": {"$ref": "#/$defs/num"},
-        "slice_from": {"$ref": "#/$defs/num"},
-        "slice_open": {"$ref": "#/$defs/num"},
-        "turn_cadence": {"$ref": "#/$defs/num"},
+        "turn_ramp": {"$ref": "#/$defs/num"},
+        "turn_land_deg": {"$ref": "#/$defs/num"},
         "step_ratio_min": {"$ref": "#/$defs/num"},
         "cadence_ease": {"$ref": "#/$defs/num"},
         "turn_min": {"$ref": "#/$defs/num"},
         "smooth_below": {"$ref": "#/$defs/num"},
-        "slice_accel": {"$ref": "#/$defs/num"},
-        "turn_ease_min": {"$ref": "#/$defs/num"},
-        "turn_ease_peak": {"$ref": "#/$defs/num"},
         "turn_slow": {"$ref": "#/$defs/num"},
         "stride_ease": {"$ref": "#/$defs/num"},
         "walk_off_s": {"$ref": "#/$defs/num"},
@@ -4170,7 +4179,10 @@
                   "pivot": {"type": "array", "items": {"$ref": "#/$defs/num"}},
                   "stomp_foot": {"type": "array", "items": {"$ref": "#/$defs/num"}},
                   "discs": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
-                  "step_len": {"$ref": "#/$defs/num"}
+                  "step_len": {"$ref": "#/$defs/num"},
+                  "uturn_s": {"$ref": "#/$defs/num"},
+                  "turn_steps": {"$ref": "#/$defs/num"},
+                  "turn_slow": {"$ref": "#/$defs/num"}
                 },
                 "required": ["snout", "pivot", "stomp_foot", "discs"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -4186,8 +4198,8 @@
       "required": [
         "skin", "sample", "turn_rate", "turn_rate_still", "turn_size_exp", "step_turn_rate",
         "step_turn_rate_still", "step_turn_size_exp", "turn_accel", "step_len", "support_both",
-        "slice_from", "slice_open", "turn_cadence", "step_ratio_min", "cadence_ease", "turn_min",
-        "smooth_below", "slice_accel", "turn_ease_min", "turn_ease_peak", "turn_slow",
+        "turn_ramp", "turn_land_deg", "step_ratio_min", "cadence_ease", "turn_min",
+        "smooth_below", "turn_slow",
         "stride_ease", "walk_off_s", "pay_mult", "bite_dps", "leap", "bodies"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
