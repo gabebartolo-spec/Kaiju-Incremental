@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The harness must not report green when it should not. Through tools/run_tests.sh:
-#   0. (a fake Godot) the speed-run gate (D-299): asked before every launch, waited on; no gate file, no change
+#   0. (a fake Godot) the speed-run gate (D-299) and the 6144 MB free-RAM floor (D-317, a stand-in reader): asked before
+#      every launch, waited on; no gate file, no change
 #   1. the quick smoke suite                                 -> must pass
 #   2. a fixture with a _check_ function nobody calls         -> must fail ("functions short")
 #   3. a fixture with a _check_ function that makes no check  -> must fail, by name
@@ -20,7 +21,9 @@ bad=0
 . tools/speed_gate.sh
 
 # The runner's seconds column ('%4ss' in run_tests.sh) as 'Ns', so two outputs compare on everything but the clock.
-strip_secs() { sed -E 's/ +[0-9]+s  / Ns  /' "$1"; }
+# The lines a wait prints ('speed_gate: waited Ns ...' per launch, 'Waited Ns ...' at the end; D-299, D-317) are
+# dropped too: only the run that waited prints them.
+strip_secs() { sed -E 's/ +[0-9]+s  / Ns  /' "$1" | grep -vE '^(speed_gate: waited|Waited) '; }
 
 # D-299 (director 2026-10-27, "PC to itself"): the runner asks the speed-run gate before EVERY Godot
 # launch (the version query, the import, each suite), so a run of 7-20 suites stops between suites
@@ -47,16 +50,29 @@ echo "$n" > "$GATE_COUNT"
 if [ "$n" -le 2 ]; then echo "gate wait $n" >> "$GATE_LOG"; exit 1; fi
 echo "gate ok $n" >> "$GATE_LOG"
 EOF
-	chmod +x "$tmp/fake_godot.sh" "$tmp/gate.sh"
+	# D-317: a stand-in free-RAM reader (MB), so the cases below never read this PC's real memory
+	cat > "$tmp/free_ram.sh" << 'EOF'
+#!/usr/bin/env bash
+n=$(cat "$RAM_COUNT" 2> /dev/null || echo 0)
+n=$((n + 1))
+echo "$n" > "$RAM_COUNT"
+mb=9999
+[ -n "${RAM_LOW_READS:-}" ] && [ "$n" -le "$RAM_LOW_READS" ] && mb=1000
+echo "ram $n $mb" >> "$GATE_LOG"
+echo "$mb"
+EOF
+	chmod +x "$tmp/fake_godot.sh" "$tmp/gate.sh" "$tmp/free_ram.sh"
+	export RAM_COUNT="$tmp/ram_runs"
 	# 1. a gate that fails twice, then passes: the runner waits, and asks again before every launch
-	rm -f "$log" "$runs"
-	GATE_LOG="$log" GATE_COUNT="$runs" SPEED_GATE="$tmp/gate.sh" GODOT="$tmp/fake_godot.sh" \
+	rm -f "$log" "$runs" "$RAM_COUNT"
+	GATE_LOG="$log" GATE_COUNT="$runs" SPEED_GATE="$tmp/gate.sh" GODOT="$tmp/fake_godot.sh" FREE_RAM_CMD="bash $tmp/free_ram.sh" \
 		LOG_DIR="$tmp/gate_logs" VERBOSE=1 SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out.txt" 2>&1
 	local code=$?
 	local before launches unguarded
 	before=$(awk '/^godot/ {exit} /^gate/ {n++} END {print n + 0}' "$log" 2> /dev/null)
 	launches=$(grep -c '^godot' "$log" 2> /dev/null)
-	unguarded=$(awk '/^godot/ && prev !~ /^gate ok/ {n++} {prev = $0} END {print n + 0}' "$log" 2> /dev/null)
+	# a "gate ok" since the previous launch, and no "gate wait" after it
+	unguarded=$(awk '/^gate ok/ {g = 1} /^gate wait/ {g = 0} /^godot/ {if (!g) n++; g = 0} END {print n + 0}' "$log" 2> /dev/null)
 	if [ "$code" = 0 ] && [ "${before:-0}" -ge 3 ] && [ "$launches" = 4 ] && [ "$unguarded" = 0 ]; then
 		echo "ok: the runner waits for the speed-run gate before every Godot launch ($before gate calls before the first)"
 	else
@@ -65,21 +81,46 @@ EOF
 		cat "$log" "$tmp/gate_out.txt" 2> /dev/null
 		bad=1
 	fi
-	# 2. no gate file (CI, Linux): nothing changes - same result, same launches, no wait. The runner prints each
-	# suite's whole seconds, so two runs that cross a second boundary differ there (red on #305, run 40452642194):
-	# this run is forced to take 2 s longer per suite (GATE_SLEEP) and the compare must still pass without the seconds.
-	# Both runs set VERBOSE=1 (as CI does) so every suite's line, seconds included, is in the output compared, and the
-	# same LOG_DIR (the "Logs:" line names it; CI exports one, a local run would get a fresh temp dir each time).
-	rm -f "$log" "$runs"
+	# 2. no gate file (CI, Linux): nothing changes - same result, same launches, no wait, no memory read. The runner
+	# prints each suite's whole seconds, so two runs that cross a second boundary differ there (red on #305, run
+	# 40452642194): this run is forced to take 2 s longer per suite (GATE_SLEEP) and the compare must still pass
+	# without the seconds. Both runs set VERBOSE=1 (as CI does) so every suite's line, seconds included, is in the
+	# output compared, and the same LOG_DIR (the "Logs:" line names it; CI exports one, a local run would get a
+	# fresh temp dir each time).
+	rm -f "$log" "$runs" "$RAM_COUNT"
 	GATE_LOG="$log" GATE_COUNT="$runs" GATE_SLEEP=2 SPEED_GATE="$tmp/no_such_gate.sh" GODOT="$tmp/fake_godot.sh" \
+		FREE_RAM_CMD="bash $tmp/free_ram.sh" RAM_LOW_READS=3 RAM_POLL_SECS=1 \
 		LOG_DIR="$tmp/gate_logs" VERBOSE=1 SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out_none.txt" 2>&1
 	code=$?
 	launches=$(grep -c '^godot' "$log" 2> /dev/null)
-	if [ "$code" = 0 ] && [ "$launches" = 4 ] && ! grep -q '^gate' "$log" && [ "$(strip_secs "$tmp/gate_out.txt")" = "$(strip_secs "$tmp/gate_out_none.txt")" ]; then
+	# no gate call, no memory read (the stand-in reader would say 1000 MB, below the floor, for 3 reads)
+	if [ "$code" = 0 ] && [ "$launches" = 4 ] && ! grep -qE '^(gate|ram)' "$log" \
+		&& [ "$(strip_secs "$tmp/gate_out.txt")" = "$(strip_secs "$tmp/gate_out_none.txt")" ]; then
 		echo "ok: a missing SPEED_GATE file changes nothing"
 	else
 		echo "FAIL: a missing SPEED_GATE file must change nothing (exit $code, $launches launches, want 4)"
 		cat "$log" "$tmp/gate_out_none.txt" 2> /dev/null
+		bad=1
+	fi
+	# 3. D-317 memory floor: the stand-in reader says 1000 MB twice (floor 6144), then 9999: before the first launch the
+	# runner polls (RAM_POLL_SECS), and it counts the wait in its output
+	rm -f "$log" "$runs" "$RAM_COUNT"
+	echo 99 > "$runs"  # the speed-run gate itself passes at once
+	GATE_LOG="$log" GATE_COUNT="$runs" SPEED_GATE="$tmp/gate.sh" GODOT="$tmp/fake_godot.sh" \
+		FREE_RAM_CMD="bash $tmp/free_ram.sh" RAM_LOW_READS=2 RAM_POLL_SECS=1 \
+		SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out_ram.txt" 2>&1
+	code=$?
+	before=$(awk '/^godot/ {exit} /^ram/ {n++} END {print n + 0}' "$log" 2> /dev/null)
+	launches=$(grep -c '^godot' "$log" 2> /dev/null)
+	unguarded=$(awk '/^ram/ {r = ($3 >= 6144)} /^godot/ {if (!r) n++; r = 0} END {print n + 0}' "$log" 2> /dev/null)
+	local waited
+	waited=$(grep -oE '^Waited [0-9]+s' "$tmp/gate_out_ram.txt" | grep -oE '[0-9]+')
+	if [ "$code" = 0 ] && [ "${before:-0}" -ge 3 ] && [ "$launches" = 4 ] && [ "$unguarded" = 0 ] && [ "${waited:-0}" -ge 2 ]; then
+		echo "ok: the runner waits for 6144 MB of free RAM before every Godot launch ($before reads before the first, waited ${waited}s)"
+	else
+		echo "FAIL: the runner must wait for 6144 MB free before every Godot launch (exit $code, $before reads before the" \
+			"first launch, want 3 or more; $launches launches, want 4; $unguarded without a passing read; waited ${waited:-none} s, want 2 or more)"
+		cat "$log" "$tmp/gate_out_ram.txt" 2> /dev/null
 		bad=1
 	fi
 }

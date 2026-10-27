@@ -30,9 +30,12 @@ on:
         required: false
         default: ""
 
+# One group per commit, never cancelled: every main push gets its own verdict and uploads
+# its native DLL. Grouping by branch with cancel-in-progress let each merge cancel the build
+# before it (10-27: four main builds in a row cancelled, no DLL for #297's native change).
 concurrency:
-  group: build-${{ inputs.ref || github.ref }}
-  cancel-in-progress: true
+  group: build-${{ inputs.ref || github.sha }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
