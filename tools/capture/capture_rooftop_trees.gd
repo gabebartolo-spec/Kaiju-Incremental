@@ -6,8 +6,9 @@ extends SceneTree
 ##                over the quay and the bay to the far skyline (capture_far_city.gd's view)
 ##                --shift=<m> moves it that far east along the ring avenue (a closer roof)
 ##   --view=play  at the city's centre block, on a street with street trees down both kerbs
-##   --view=skyline the camera 9 m from the nearest white solar heater on a far stand-in's roof
-##                (SkylineRoofTank), looking down at it from the city side
+##   --view=east  on the play area's east edge at the foot of an east-west street: the far
+##                stand-in blocks beyond it, with their rooftop tanks (SkylineRoofTank); --shift
+##                (default 0) shifts where it looks for a heater, along the ring avenue
 ##   --view=tower the street node `--dz` north and `--dx` east of the low brick building nearest
 ##                the centre (5-9 floors), so its roof and water tower fill the lower frame
 ## Writes <out>/rooftop_trees_<view>_<tag>.png (the window's size: 1080p with the off-screen
@@ -19,6 +20,8 @@ extends SceneTree
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SPECIES := "reptilian"
+const STAND_IN_REACH := 40.0  # how far past the play area's edge a heater is looked for
+const AHEAD := 30.0  # the heater this far in front of the kaiju
 const FRAMES_BETWEEN := 3  # frames after a change before a grab, so it is drawn
 
 var _a := {}
@@ -60,6 +63,8 @@ func _run() -> void:
 	match str(_a["view"]):
 		"far":
 			rampage.sim.kaiju_pos = _north_edge(plan, half) + Vector2(Num.f(_a["shift"]), 0.0)
+		"east":
+			rampage.sim.kaiju_pos = _east_edge(rampage, plan, half)
 		"tower":
 			rampage.sim.kaiju_pos = _by_tower(rampage.sim, plan)
 		_:
@@ -67,9 +72,6 @@ func _run() -> void:
 	await Kit.frames(self, Num.i(_a["walk"]))  # there, the camera at rest behind it
 	paused = true
 	await Kit.frames(self, FRAMES_BETWEEN)
-	if str(_a["view"]) == "skyline":
-		_look_at_heater(rampage)
-		await Kit.frames(self, FRAMES_BETWEEN)
 	var stem := "rooftop_trees_%s_%s" % [str(_a["view"]), str(_a["tag"])]
 	Kit.still(self, str(_a["out"]), stem)
 	if _a["nodecor"] == true:
@@ -82,25 +84,31 @@ func _run() -> void:
 	quit()
 
 
-## Puts the camera 9 m toward the city centre and 7 m up from the nearest white heater on a far
-## stand-in's roof (within CitySkyline's roof-detail reach), looking at it.
-func _look_at_heater(rampage: Node) -> void:
+## On the play area's east edge (`half` from the centre): the ring avenue node that puts the
+## nearest white heater on a far stand-in's roof (x within STAND_IN_REACH past the edge) about
+## AHEAD m in front of the kaiju, so the game camera behind shows it on the right of the frame.
+func _east_edge(rampage: Node, plan: Dictionary, half: float) -> Vector2:
 	var skyline: CitySkyline = rampage.find_children("*", "CitySkyline", true, false)[0]
-	var best := Vector3.ZERO
+	var heater := Vector3(half + 12.0, 0.0, 0.0)
 	var nearest := INF
 	for box: Dictionary in skyline.plain_drawn():
 		var c: Color = box["c"]
 		var t: Transform3D = box["t"]
-		var flat := Vector2(t.origin.x, t.origin.z)
-		if c.is_equal_approx(SkylineRoofTank.WHITE) and flat.length() > 60.0:
-			if flat.length() < nearest:
-				nearest = flat.length()
-				best = t.origin
-	var toward := Vector3(-best.x, 0.0, -best.z).normalized()
-	var cam := root.get_viewport().get_camera_3d()
-	cam.global_position = best + toward * 9.0 + Vector3(0.0, 7.0, 0.0)
-	cam.look_at(best, Vector3.UP)
-	print("capture_rooftop_trees: heater at %s, %.0f from the centre" % [best, nearest])
+		var out := t.origin.x - half
+		if c.is_equal_approx(SkylineRoofTank.WHITE) and out > 4.0 and out < STAND_IN_REACH:
+			var d := out + absf(t.origin.z - Num.f(_a["shift"])) * 0.1
+			if d < nearest:
+				nearest = d
+				heater = t.origin
+	var nodes: Array[Vector2] = plan["nodes"]
+	var best := Vector2(half, 0.0)
+	var gap := INF
+	for node: Vector2 in nodes:
+		if absf(node.x - half) < 1.0 and absf(node.y - (heater.z + AHEAD)) < gap:
+			gap = absf(node.y - (heater.z + AHEAD))
+			best = node
+	print("capture_rooftop_trees: heater at %s, kaiju at %s" % [heater, best])
+	return best
 
 
 ## On the play area's north edge (`half` from the centre): the ring avenue at the foot of the
