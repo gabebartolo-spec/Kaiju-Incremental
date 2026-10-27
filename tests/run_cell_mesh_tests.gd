@@ -32,6 +32,7 @@ const CARVE_R: Array[float] = [5.0, 7.0, 6.0, 4.0, 3.0]
 const CellFaces := preload("res://tests/lib/cell_faces.gd")
 const BalconyFaces := preload("res://tests/lib/balcony_faces.gd")
 const RemeshPriority := preload("res://tests/lib/remesh_priority.gd")
+const RemeshWorker := preload("res://tests/lib/remesh_worker.gd")
 
 var _native := false
 
@@ -52,6 +53,7 @@ func run_checks() -> void:
 	await _t("_check_native_matches_oracle")
 	await _t("_check_promote_keeps_cut")
 	await _h("remesh priority", func() -> void: RemeshPriority.new(check, _native).run())
+	await _h("remesh worker", func() -> void: RemeshWorker.new(check, _native).run())
 
 
 func _building(f: Array) -> RampageSim.Building:

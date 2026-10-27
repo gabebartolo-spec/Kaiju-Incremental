@@ -40,6 +40,7 @@ void KaijuMesher::_bind_methods() {
 			&KaijuMesher::setup);
 	ClassDB::bind_method(D_METHOD("set_finish", "finish"), &KaijuMesher::set_finish);
 	ClassDB::bind_method(D_METHOD("mesh_region", "cells", "region"), &KaijuMesher::mesh_region);
+	ClassDB::bind_method(D_METHOD("pack_surface", "arrays"), &KaijuMesher::pack_surface);
 }
 
 bool KaijuMesher::set_finish(const PackedByteArray &p_finish) {
