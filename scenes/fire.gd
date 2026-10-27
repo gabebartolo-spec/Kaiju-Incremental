@@ -168,9 +168,7 @@ func _flames(size: float) -> GPUParticles3D:
 	curve.add_point(Vector2(0.0, 0.55))
 	curve.add_point(Vector2(0.2, 1.0))
 	curve.add_point(Vector2(1.0, 0.8))
-	var tex := CurveTexture.new()
-	tex.curve = curve
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, curve)
 	_ramp(
 		mat,
 		PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)]),
@@ -258,9 +256,7 @@ func _scale(mat: ParticleProcessMaterial, span: Vector2, over_life: Vector2) -> 
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, over_life.x))
 	curve.add_point(Vector2(1, over_life.y))
-	var tex := CurveTexture.new()
-	tex.curve = curve
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, curve)
 
 
 func _ramp(
