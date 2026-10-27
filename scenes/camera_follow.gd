@@ -6,7 +6,7 @@ extends RefCounted
 ## (D-121, research 19.3): once the kaiju has moved for "lead_hold" s, the camera slides, its aim
 ## with it, toward where it is going (CameraTuning.lead units, more toward the camera), eased at
 ## "lead_ease"/s; no new lead during a dash or leap. Only "lead_depth_share" of it runs along
-## the view (the camera's z): a lead toward or away from the camera would change the kaiju's
+## the view (the camera's depth): a lead toward or away from the camera would change the kaiju's
 ## distance, so its size would bob and its head ride up the frame; for the same reason the aim
 ## keeps up with the body at once along the view. Across it (and up) the aim, and the lead, are
 ## critically damped (Damped: velocity continuous, camera.follow_s, acceleration capped at
@@ -43,13 +43,24 @@ func _init(p_focus: Vector3, p_offset: Vector3) -> void:
 ## view (the offset's ground direction) the aim keeps up with the body at once: a lag there would
 ## move the camera nearer or farther as the body walks toward or away from it (its size would bob).
 func step(target: Vector3, p_rest: Vector3, delta: float) -> void:
+	offset = _eased(p_rest, delta)
 	var view := Vector3(offset.x, 0.0, offset.z).normalized()
 	focus += view * (target - focus).dot(view)
 	_chase.value = focus
 	_chase.velocity -= view * _chase.velocity.dot(view)
 	var accel := Num.f(_cfg["follow_accel"]) * framed_scale
 	focus = _chase.step(target, Num.f(_cfg["follow_s"]), accel, delta)
-	offset = offset.lerp(p_rest, minf(1.0, delta * OFFSET_FOLLOW))
+
+
+## The offset one step nearer `p_rest`. Its ground direction is the rest's at once (the rest is
+## swung round to his back by the sim's own eased CameraYaw, D-330, so the camera's turn is that
+## one, never a second lag); only its length and height ease.
+func _eased(p_rest: Vector3, delta: float) -> Vector3:
+	var k := minf(1.0, delta * OFFSET_FOLLOW)
+	var flat := Vector2(p_rest.x, p_rest.z)
+	var length := lerpf(Vector2(offset.x, offset.z).length(), flat.length(), k)
+	var at := flat.normalized() * length if flat != Vector2.ZERO else Vector2.ZERO
+	return Vector3(at.x, lerpf(offset.y, p_rest.y, k), at.y)
 
 
 ## The look-ahead from the body's position `at` this frame, for a body of `body_scale`; `hold`:
@@ -66,9 +77,10 @@ func step_lead(at: Vector3, body_scale: float, hold: bool, delta: float) -> void
 			target = lead
 		elif _moving_for >= Num.f(_cfg["lead_hold"]):
 			var dir := v.normalized()
-			var toward := 1.0 + (Num.f(_cfg["lead_toward_camera"]) - 1.0) * maxf(0.0, dir.z)
+			var view := Vector3(offset.x, 0.0, offset.z).normalized()  # toward the camera
+			var toward := 1.0 + (Num.f(_cfg["lead_toward_camera"]) - 1.0) * maxf(0.0, dir.dot(view))
 			target = dir * CameraTuning.lead(body_scale) * toward
-			target.z *= Num.f(_cfg["lead_depth_share"])
+			target -= view * target.dot(view) * (1.0 - Num.f(_cfg["lead_depth_share"]))
 	_last = at
 	_lead_chase.value = lead
 	lead = _lead_chase.step(target, 1.0 / Num.f(_cfg["lead_ease"]), 0.0, delta)

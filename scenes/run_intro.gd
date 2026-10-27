@@ -58,6 +58,13 @@ func ticks() -> int:
 	return n
 
 
+## How many times faster than game speed the shot plays: the short cut's sim ticks a frame, 1 for
+## the whole intro (a skip speeds both up further and leaves this alone, so the shot never jumps).
+## The pivot is divided by it, so the camera turns no faster than the whole intro's.
+func pace() -> float:
+	return 1.0 if full else _rate
+
+
 ## Any key, button or click while the kaiju rises skips the rest (pause and releases do not).
 func on_input(event: InputEvent) -> void:
 	if not _sim.emerge.active or event.is_echo() or not event.is_pressed():
@@ -76,11 +83,15 @@ func on_input(event: InputEvent) -> void:
 ## head's box now (HeadFrame.head_box): the shot aims at its middle, so the roar sits whole in
 ## the frame at any stage. `frac`: the share of a tick drawn
 ## past the last one.
-## The shot (beat sheet A, research 20): low and close on the water in front of him, a quarter
-## off his line ("yaw_deg"), pushing in while the water ripples and founts; the head bursts out
-## roaring into a low-angle hero frame; from "pull_from_seconds" one eased pull-out swings round
-## him and rises onto the gameplay camera behind him, in cylinder coordinates about the body so
-## it never passes through him.
+## The shot (beat sheet A, research 20; D-325/D-330, the director: "the camera needs to pivot out
+## to be BEHIND our kaiju"): low and close on the water, "pivot_deg" round from his back, pushing
+## in while the water ripples and founts; the head bursts out roaring into a low-angle hero frame;
+## from "pull_from_seconds" one eased pull-out rises and backs off onto the gameplay camera, which
+## stands behind him (CameraYaw). The camera swings round him the whole intro, still at both ends,
+## so its turn is as slow as the pivot is short ("pivot_deg" is the most that keeps it under 30
+## degrees a second, a slow pivot for mass) and it lands exactly behind him; all in cylinder
+## coordinates about the body, so it never passes through him. `view` "pace" (optional, default 1):
+## the short cut's playback speed, which the pivot is divided by, so it turns just as slowly.
 static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
 	var body: Vector3 = view["body"]
 	var rest_eye: Vector3 = view["eye"]
@@ -102,16 +113,17 @@ static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
 	# A slow push in over the wait, ending at the break on the shot's distance.
 	var wait := 1.0 - smoothstep(0.0, emerge.break_at(sim), t)
 	var close := Num.f(cfg["distance"]) * s * (1.0 + Num.f(cfg["push_in"]) * wait)
-	var front := atan2(sim.facing.y, sim.facing.x) + deg_to_rad(Num.f(cfg["yaw_deg"]))
 	var back := rest_eye - Vector3(body.x, 0.0, body.z)
-	var back_yaw := atan2(back.z, back.x)
-	var yaw := front + wrapf(back_yaw - front, -PI, PI) * w
+	var back_yaw := atan2(back.z, back.x)  # the gameplay camera's side: behind him
+	var pivot_by := deg_to_rad(Num.f(cfg["pivot_deg"])) / maxf(1.0, Num.f(view.get("pace", 1.0)))
+	var start := back_yaw - pivot_by
+	var yaw := lerpf(start, back_yaw, smoothstep(0.0, 1.0, t / maxf(total, 0.001)))
 	var radius := lerpf(close, Vector2(back.x, back.z).length(), w)
 	var eye := Vector3(pivot.x + cos(yaw) * radius, 0.0, pivot.y + sin(yaw) * radius)
 	# The height leads the pull-out (done by two thirds of it): the eye is up before it swings.
 	var xh := minf(1.0, x * 1.5)
 	var up := xh * xh * xh * (xh * (xh * 6.0 - 15.0) + 10.0)
-	eye.y = lerpf(_low_eye(sim, cfg, crown.x, front), rest_eye.y, up)
+	eye.y = lerpf(_low_eye(sim, cfg, crown.x, start), rest_eye.y, up)
 	var head_aim := _head_aim(sim, view, head_at, water)
 	var fov := lerpf(Num.f(cfg["fov"]), Num.f(view["fov"]), w)
 	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}
@@ -131,11 +143,11 @@ static func _head_aim(sim: RampageSim, view: Dictionary, head_at: Vector2, water
 ## The water shot's eye height: "height" over the water, or "clearance" over the shore or street
 ## under it, wherever the push-in puts it. One height for the whole shot, read about the rise
 ## point, so the eye never steps as it swings over a quay edge (a 1.6 m step jolted it).
-static func _low_eye(sim: RampageSim, cfg: Dictionary, ahead: float, front: float) -> float:
+static func _low_eye(sim: RampageSim, cfg: Dictionary, ahead: float, yaw: float) -> float:
 	var s := sim.body_scale()
 	var water := sim.emerge.water_y()
 	var head := sim.emerge.rise_at + sim.facing * ahead
-	var out := Vector2(cos(front), sin(front)) * Num.f(cfg["distance"]) * s
+	var out := Vector2(cos(yaw), sin(yaw)) * Num.f(cfg["distance"]) * s
 	var under := water
 	for k: float in [1.0, 1.0 + Num.f(cfg["push_in"])]:
 		under = maxf(under, sim.emerge.ground_at(head + out * k))

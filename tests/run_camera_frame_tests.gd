@@ -10,6 +10,8 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_camera_frame_tests.gd
 
 const FRAME := 1.0 / 60.0
+## His turn rate at body scale 1 (rad/s, data contact.turn_rate): the camera's swing is a share.
+const TURN := 1.85
 
 
 func suite_name() -> String:
@@ -21,6 +23,10 @@ func run_checks() -> void:
 	await _t("_check_head_room")
 	await _t("_check_damped")
 	await _t("_check_drawn_sight")
+	await _t("_check_yaw_behind")
+	await _t("_check_yaw_heavy")
+	await _t("_check_follow_turned")
+	await _t("_check_stick_from_camera")
 
 
 ## A body walking 36 units/s straight at the camera: the eye stays one offset length from it every
@@ -148,3 +154,116 @@ func _check_drawn_sight() -> void:
 	var beside := BuildingFade.blocks(eye, points, tower)
 	check(front and not beside, "a tower over the drawn snout fades, one 20 units aside does not")
 	kaiju.free()
+
+
+## D-330 (the camera at his back): CameraYaw puts the camera straight behind whichever way he faces
+## (facing north, -z, is the rest side), at once on a snap.
+func _check_yaw_behind() -> void:
+	var cfg := Content.section("camera")
+	var yaw := CameraYaw.new(cfg, Vector2(0, -1))
+	check(absf(yaw.turn) < 0.0001, "facing north the camera is on its rest side: %.4f" % yaw.turn)
+	var worst := 0.0
+	for facing: Vector2 in [Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0), Vector2(0.6, -0.8)]:
+		yaw.snap(facing)
+		var turned := CameraTuning.turned(CameraTuning.offset(), yaw.turn)
+		var side := Vector2(turned.x, turned.z).normalized()
+		worst = maxf(worst, side.distance_to(-facing))
+		worst = maxf(worst, side.distance_to(Vector2.from_angle(yaw.bearing())))
+	check(worst < 0.0001, "snapped, the camera stands behind any facing (off by %.5f)" % worst)
+
+
+## The swing is heavy: a quarter turn of his facing swings the camera at no more than `yaw_share` of
+## his turn rate, gathering that speed over `yaw_ease_s` (its speed changes by no more than that),
+## never overshooting or backing up, landing straight behind him; a second run is the same swing.
+func _check_yaw_heavy() -> void:
+	var cfg := Content.section("camera")
+	var top := TURN * Num.f(cfg["yaw_share"])
+	var accel := top / Num.f(cfg["yaw_ease_s"])
+	var facing := Vector2(1, 0)  # a quarter turn from the rest side
+	var runs: Array[PackedFloat64Array] = []
+	for _n: int in 2:
+		var yaw := CameraYaw.new(cfg, Vector2(0, -1))
+		var path := PackedFloat64Array()
+		for _i: int in 600:
+			yaw.step(facing, TURN, FRAME)
+			path.append(yaw.turn)
+		runs.append(path)
+	var path := runs[0]
+	var goal := CameraYaw.new(cfg, facing).turn
+	var fastest := 0.0
+	var gather := 0.0
+	var backed := 0.0
+	var last := 0.0
+	var last_speed := 0.0
+	for turn: float in path:
+		var speed := (turn - last) / FRAME
+		fastest = maxf(fastest, absf(speed))
+		gather = maxf(gather, absf(speed - last_speed) / FRAME)
+		backed = maxf(backed, last - turn)
+		backed = maxf(backed, turn - goal)
+		last_speed = speed
+		last = turn
+	check(
+		fastest <= top + 0.001 and fastest > top * 0.9,
+		(
+			"the camera swings at %.3f rad/s, his turn %.2f x %.2f = %.3f"
+			% [fastest, TURN, top / TURN, top]
+		)
+	)
+	check(
+		gather <= accel + 0.01,
+		(
+			"it gathers speed at %.2f rad/s2 (at most %.2f: %.3f over %.1f s)"
+			% [gather, accel, top, Num.f(cfg["yaw_ease_s"])]
+		)
+	)
+	check(
+		backed < 0.000001 and absf(path[path.size() - 1] - goal) < 0.000001,
+		"it never backs up or overshoots and lands behind him (%.1f deg)" % rad_to_deg(goal)
+	)
+	check(runs[0] == runs[1], "the same facing gives the same swing every time")
+
+
+## The follow takes a rest offset swung round to any side: the camera is on it at once (only its
+## length eases), and walking along that view the eye still holds one offset from the body.
+func _check_follow_turned() -> void:
+	var rest := CameraTuning.turned(Vector3(0, 30, 56), 1.0)  # a camera a radian round
+	var follow := CameraFollow.new(Vector3.ZERO, Vector3(0, 30, 56))
+	follow.step(Vector3.ZERO, rest, FRAME)
+	var flat := Vector2(follow.offset.x, follow.offset.z).normalized()
+	var want := Vector2(rest.x, rest.z).normalized()
+	check(
+		flat.dot(want) > 0.99999, "the offset takes the rest's side at once: %.6f" % flat.dot(want)
+	)
+	var toward := Vector3(want.x, 0.0, want.y)  # walking at the camera
+	var body := Vector3.ZERO
+	var worst := 0.0
+	var spun := CameraFollow.new(Vector3.ZERO, rest)
+	for _i: int in 90:
+		body += toward * 36.0 * FRAME
+		spun.step(body, rest, FRAME)
+		worst = maxf(worst, absf(spun.eye().distance_to(body) - rest.length()))
+	check(worst < 0.001, "walking along a turned view the eye holds %.4f of its distance" % worst)
+	for _i: int in 120:
+		body += toward * 36.0 * FRAME
+		spun.step_lead(body, 1.0, false, FRAME)
+	check(
+		absf(spun.lead.dot(toward)) < 0.001,
+		"the look-ahead leaves the depth alone along a turned view (%.4f)" % spun.lead.dot(toward)
+	)
+
+
+## The stick is read from the camera's side: up walks away from the camera, whichever side of him
+## it stands on (on its rest side, north; a half turn round, south; a quarter, east).
+func _check_stick_from_camera() -> void:
+	Input.action_press("move_up", 1.0)
+	var rest := RunInput.stick(0.0)
+	var half := RunInput.stick(PI)
+	var quarter := RunInput.stick(PI * 0.5)
+	Input.action_release("move_up")
+	check(rest.distance_to(Vector2(0, -1)) < 0.0001, "up on the rest side walks north: %s" % rest)
+	check(half.distance_to(Vector2(0, 1)) < 0.0001, "up with the camera round the back: %s" % half)
+	check(
+		quarter.distance_to(Vector2(1, 0)) < 0.0001,
+		"up with the camera a quarter round walks east: %s" % quarter
+	)

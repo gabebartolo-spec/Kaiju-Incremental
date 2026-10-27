@@ -25,6 +25,14 @@ const JERK_AFTER := 30
 ## 2026-10-26: within 0.1 m and 0.5 degrees): eye (m), aim and field of view (degrees).
 const HAND_METRES := 0.1
 const HAND_DEGREES := 0.5
+## The director's camera bars (D-325, D-330): at the handover the camera looks where he faces (the
+## flat forwards agree to within 20 degrees: dot >= 0.94) from behind him; the step onto the game
+## camera is at most 2% of the camera's distance and 2 degrees of yaw in one frame; and the pivot,
+## slowed for mass, never turns faster than 30 degrees a second.
+const FACING_DOT := 0.94
+const STEP_SHARE := 0.02
+const STEP_DEGREES := 2.0
+const PIVOT_DEG_S := 30.0
 
 
 static func run(tree: SceneTree, check: Callable) -> void:
@@ -81,6 +89,8 @@ static func run(tree: SceneTree, check: Callable) -> void:
 				% [r["name"], r["pop"], POP_SHARE]
 			)
 		)
+	for r: Dictionary in [full, short]:
+		_check_bars(check, r)
 	for r: Dictionary in [full, skipped, short]:
 		var hand: Array = r["hand"]
 		check.call(
@@ -109,6 +119,43 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	)
 
 
+## The three camera bars for one run's numbers (see FACING_DOT).
+static func _check_bars(check: Callable, r: Dictionary) -> void:
+	(
+		check
+		. call(
+			Num.f(r["look_dot"]) >= FACING_DOT and Num.f(r["behind_dot"]) < 0.0,
+			(
+				(
+					"%s intro: at the handover the camera looks where he faces (flat dot %.3f, >= %.2f) from"
+					+ " behind him (camera-to-him against his facing %.3f, < 0)"
+				)
+				% [r["name"], r["look_dot"], FACING_DOT, r["behind_dot"]]
+			)
+		)
+	)
+	(
+		check
+		. call(
+			Num.f(r["step"]) <= STEP_SHARE and Num.f(r["step_yaw"]) <= STEP_DEGREES,
+			(
+				(
+					"%s intro: the frame onto the game camera moves it %.4f of its distance (<= %.2f) and"
+					+ " %.3f deg of yaw (<= %.0f)"
+				)
+				% [r["name"], r["step"], STEP_SHARE, r["step_yaw"], STEP_DEGREES]
+			)
+		)
+	)
+	check.call(
+		Num.f(r["rate"]) <= PIVOT_DEG_S and Num.i(r["rate_at"]) > 0,
+		(
+			"%s intro: the pivot turns the camera at most %.1f deg a second (<= %.0f; frame %d)"
+			% [r["name"], r["rate"], PIVOT_DEG_S, r["rate_at"]]
+		)
+	)
+
+
 static func _rampage(full: bool) -> Rampage:
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
@@ -125,14 +172,21 @@ static func _rampage(full: bool) -> Rampage:
 ## One run, walking into the city from the handover on; skip_at >= 0 presses Space on that frame.
 static func _play(tree: SceneTree, full: bool, skip_at: int) -> Dictionary:
 	var rampage := _rampage(full)
-	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {"move": Vector2(0.3, -1.0)}
+	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {"move": Vector2(0.3, 1.0)}
 	tree.root.add_child(rampage)
 	var sim := rampage.sim
 	var out := {"name": "whole" if full else "short", "handover": -1, "broke": -1, "pop": INF}
 	out["roared"] = false
 	out["jerk"] = 0.0
 	out["jerk_at"] = -1
+	out["rate"] = 0.0
+	out["rate_at"] = -1
+	out["step"] = INF
+	out["step_yaw"] = INF
+	out["look_dot"] = -1.0
+	out["behind_dot"] = 1.0
 	var path: Array[Vector3] = []
+	var before := Transform3D()
 	var frame := 0
 	var live := 0
 	while live < AFTER and frame < FRAME_CAP:
@@ -150,8 +204,12 @@ static func _play(tree: SceneTree, full: bool, skip_at: int) -> Dictionary:
 		if Num.i(out["handover"]) < 0 and not sim.emerge.active:
 			out["handover"] = frame
 			out["pop"] = _pop(rampage)
+			_behind(out, rampage)
 		if not sim.emerge.active:
 			live += 1
+		if frame >= 3 and skip_at < 0:
+			_swing(out, rampage, before, frame)
+		before = rampage._camera.global_transform
 		if Num.i(out["broke"]) >= 0 and live <= JERK_AFTER and skip_at < 0:
 			path.append(rampage._camera.global_position)
 			var n := Num.f(rampage._rise.intro.get("_rate")) if sim.emerge.active else 1.0
@@ -166,6 +224,32 @@ static func _play(tree: SceneTree, full: bool, skip_at: int) -> Dictionary:
 	rampage.queue_free()
 	await tree.process_frame
 	return out
+
+
+## The camera at the handover frame against his facing: where it looks and which side of him it
+## stands on (flat, both against the unit facing).
+static func _behind(out: Dictionary, rampage: Rampage) -> void:
+	var cam := rampage._camera.global_transform
+	var look := Vector2(-cam.basis.z.x, -cam.basis.z.z).normalized()
+	var apart := cam.origin - rampage._kaiju.position
+	var face := rampage.sim.facing
+	out["look_dot"] = look.dot(face)
+	out["behind_dot"] = Vector2(apart.x, apart.z).normalized().dot(face)
+
+
+## One frame's camera against the last (`before`): the pivot's worst turn rate while the rise holds
+## the sim (deg a second), and on the handover frame the step onto the game camera.
+static func _swing(out: Dictionary, rampage: Rampage, before: Transform3D, frame: int) -> void:
+	var cam := rampage._camera.global_transform
+	var then := Vector2(-before.basis.z.x, -before.basis.z.z)
+	var now := Vector2(-cam.basis.z.x, -cam.basis.z.z)
+	var turned := absf(rad_to_deg(then.angle_to(now)))
+	if rampage.sim.emerge.active and turned * FPS > Num.f(out["rate"]):
+		out["rate"] = turned * FPS
+		out["rate_at"] = frame
+	if frame == Num.i(out["handover"]):
+		out["step"] = cam.origin.distance_to(before.origin) / rampage._follow.offset.length()
+		out["step_yaw"] = turned
 
 
 ## Whether a roar is playing under the rampage (Sfx.roar's player).

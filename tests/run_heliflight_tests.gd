@@ -52,10 +52,11 @@ func _walk(sim: RampageSim, n: int, target: Vector2) -> Vector2:
 
 ## The numbers of `seconds` of `sim` with `HELIS` helicopters in the sky: the closest any got
 ## outside a pass, the closest in one, the fastest step, the sharpest turn, the nearest to the
-## camera's side (radians off it), the passes begun and the most flying one at a time.
+## camera's side (radians off it; the camera stands at his back, D-330, and swings with his walk),
+## the passes begun and the most flying one at a time.
 func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 	var air: Dictionary = Content.section("air")
-	var bearing := deg_to_rad(Num.f(air["camera_bearing"]))
+	var rest := deg_to_rad(Num.f(air["camera_bearing"]))
 	var slow := Num.f(air["nose_share"]) * Num.f(air["heli_speed"])  # slower than this it hovers
 	for _n: int in HELIS:
 		sim.air.spawn()
@@ -72,6 +73,7 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 		"marks": {},
 		"swung": {},
 		"bear": {},
+		"round": 0.0,
 		"sweep": 0.0
 	}
 	var last: Dictionary = {}  # id -> position last step
@@ -80,11 +82,13 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 	var target := Vector2(INF, INF)
 	for n: int in roundi(seconds / DT):
 		target = _walk(sim, n, target)
+		out["round"] = maxf(Num.f(out["round"]), absf(sim.body.view.turn))
 		var passing := 0
 		for heli: AirWing.Heli in sim.air.helis:
 			var away := heli.pos - sim.kaiju_pos
 			var key := "pass" if heli.passing else "hold"
 			out[key] = minf(Num.f(out[key]), away.length())
+			var bearing := rest + sim.body.view.turn  # the camera swings round to his back (D-330)
 			var toward := Vector2.from_angle(bearing)
 			var seen := heli.pos - sim.air.flight.anchor()  # the camera follows his smoothed position
 			if seen.dot(toward) > 0.0:  # a pass may cross the camera's side, never between it and him
@@ -206,6 +210,13 @@ func _check_flight(step: int) -> void:
 		(
 			"%s: their slots stay %.0f degrees off the camera's side (%.0f)"
 			% [label, rad_to_deg(arc), rad_to_deg(Num.f(flew["side"]))]
+		)
+	)
+	check(
+		Num.f(flew["round"]) > 0.5,
+		(
+			"%s: the camera swung round with his walk, so the slots were judged on its live side (%.0f deg)"
+			% [label, rad_to_deg(Num.f(flew["round"]))]
 		)
 	)
 	var lane := Num.f(air["pass_corridor"]) * bs

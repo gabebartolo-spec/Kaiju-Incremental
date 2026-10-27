@@ -379,9 +379,8 @@ func _place_camera(delta: float) -> void:
 	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
-	_follow.step(
-		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
-	)
+	var rest := CameraTuning.turned(camera_rest, sim.body.view.turn) * zoom  # at his back (D-330)
+	_follow.step(_kaiju.focus(), rest - Vector3(0, _step_dip * zoom * motion, 0), delta)
 	var hold := sim.body.dash.on() or _ability.leaping() or sim.emerge.active  # rise: no lead
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	var nod := shake.turn(sim.body_scale(), motion).y

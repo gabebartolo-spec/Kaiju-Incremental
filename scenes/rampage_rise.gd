@@ -46,6 +46,7 @@ func on_event(event: Dictionary, kaiju: KaijuModel, hud: RampageHud) -> bool:
 func shot(view: Dictionary, follow: CameraFollow) -> Dictionary:
 	view["head"] = head
 	view["head_box"] = follow.head.head_box()
+	view["pace"] = intro.pace()
 	play_view = view
 	shot_view = RunIntro.shot(_run.sim, view, Engine.get_physics_interpolation_fraction())
 	return shot_view

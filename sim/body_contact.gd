@@ -27,6 +27,8 @@ var longest_hold := 0.0
 var snout := 0.0
 ## The dash button's leap (Dash): the body crouches, flies and lands on what is ahead.
 var dash: Dash
+## Where the game camera stands round him: at his back, swinging with him (D-330).
+var view: CameraYaw
 ## Steps walked so far (0 at the first step; an integer is a footfall, even the left foot, odd the
 ## right): the sim's step clock, which the legs follow (ClipGait) and which opens the yaw slices.
 var phase := 0.0
@@ -73,6 +75,8 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	_last_heading = heading
 	_step_len = Num.f(cfg["step_len"])
 	dash = Dash.new(self, cfg)
+	var camera: Dictionary = tuning["camera"]
+	view = CameraYaw.new(camera, sim.facing)
 	_volume = BodyVolume.new(sim, cfg)
 
 
@@ -320,6 +324,7 @@ func walked(distance: float, dt: float) -> void:
 func step(dt: float, dash_pressed: bool = false) -> void:
 	dash.step(dt, dash_pressed)
 	_face(dt)
+	view.step(sim.facing, _rate("turn_rate"), dt)
 	_volume.lift = dash.height()  # a leap's flight breaks what its body passes through
 	if not active() or (sim.airborne and not dash.on()):
 		_last_pos = Vector2(INF, INF)

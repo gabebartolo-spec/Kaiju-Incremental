@@ -174,6 +174,7 @@ func _plan(heli: AirWing.Heli, helis: Array[AirWing.Heli], dt: float) -> void:
 		_plan_pass(heli, dt)
 		if heli.passing:
 			return
+	heli.slot = _clear(heli.slot)  # the camera swings round to his back (D-330): the slot keeps off it
 	heli.hold -= dt
 	var away := heli.pos - sim.kaiju_pos
 	if away.length() < Num.f(cfg["pull_back"]) * sim.body_scale():
@@ -286,9 +287,10 @@ func _arc() -> float:
 	return deg_to_rad(Num.f(cfg["clear_arc"]) + Num.f(cfg["clear_lead_deg"]))
 
 
-## The direction from the kaiju toward the game camera, on the ground plane.
+## The direction from the kaiju toward the game camera, on the ground plane: `camera_bearing` is
+## where it stands at rest, and it has swung round to his back since (CameraYaw, D-330).
 func _bearing() -> float:
-	return deg_to_rad(Num.f(cfg["camera_bearing"]))
+	return deg_to_rad(Num.f(cfg["camera_bearing"])) + sim.body.view.turn
 
 
 ## A seeded value in the data's [min, max] range `key`.

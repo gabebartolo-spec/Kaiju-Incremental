@@ -68,6 +68,7 @@ func start(sim: RampageSim) -> void:
 	# whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
 	sim.facing = _ahead()
 	sim.body.heading = sim.facing
+	sim.body.view.snap(sim.facing)  # the camera at his back, where the intro's shot ends
 
 
 ## How far through its rise the kaiju is, 0 (under, still holding) to 1 (on the sea floor).

@@ -10,6 +10,13 @@ static func offset() -> Vector3:
 	return Vector3(Num.f(o[0]), Num.f(o[1]), Num.f(o[2]))
 
 
+## `v` (an offset from the kaiju) swung round the kaiju by `turn` radians on the ground plane, the
+## way CameraYaw counts it: the rest offset at his back (D-330).
+static func turned(v: Vector3, turn: float) -> Vector3:
+	var flat := Vector2(v.x, v.z).rotated(turn)
+	return Vector3(flat.x, v.y, flat.y)
+
+
 static func fov() -> float:
 	return Num.f(Content.section("camera")["fov"])
 

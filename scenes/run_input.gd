@@ -21,7 +21,9 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 	var sim := run.sim
 	var scripted := run.scripted
 	var signature_on := run.autoplay_signature
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	# The player's stick is read from the camera's side; a capture's scripted move and autoplay's
+	# walk are world vectors (below).
+	var move := stick(sim.body.view.turn)
 	var signature := Input.is_action_just_pressed("signature")
 	var held := held_button.read(Input.is_action_pressed("signature"), signature)
 	var ultimate := Input.is_action_just_pressed("ultimate")
@@ -44,6 +46,12 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 	now["move"] = move
 	now["held"] = held
 	return now
+
+
+## The player's stick as a world direction, read from the camera's side (D-330: it stands at his
+## back and swings with him, `turn` radians from its rest side): up walks away from the camera.
+static func stick(turn: float) -> Vector2:
+	return Input.get_vector("move_left", "move_right", "move_up", "move_down").rotated(turn)
 
 
 ## The sim's button bits (Dash.BUTTON, RampageSim.HELD, RampageSim.ULTIMATE) for read's presses.
