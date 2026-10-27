@@ -116,9 +116,10 @@ func _run() -> void:
 		was[n] = 1 if stream.built(n) != null else 0
 	var waited := PackedInt32Array()  # frames a box stood in view (a facade this big)
 	waited.resize(sim.buildings.size())
-	var wanted := PackedInt32Array()  # ...of those, frames its depth was inside the stream cutoff
+	var wanted := PackedInt32Array()  # ...of those, frames its stream rank was inside the cutoff (wanted meshed)
 	wanted.resize(sim.buildings.size())
 	var cutoff: float = stream.get("_cutoff")
+	var rank: StreamRank = stream.get("_rank")
 	var look_csv := FileAccess.open(_out.path_join("swap_look.csv"), FileAccess.WRITE)
 	look_csv.store_line("frame,n,up,depth,px_h,luma_before,luma_after,lit_before,lit_after,diff")
 	var prev_shot: Image = null
@@ -167,7 +168,7 @@ func _run() -> void:
 				was[n] = up
 			if up == 0 and in_view and box.size.x >= MIN_PX and box.size.y >= MIN_PX:
 				waited[n] += 1
-				wanted[n] += 1 if near < cutoff else 0
+				wanted[n] += 1 if rank.rank(n, sim.kaiju_pos) < cutoff else 0
 			if in_view and box.size.x >= MIN_PX and box.size.y >= MIN_PX and near > 0.0:
 				var share_probe := _blur_share(near, start, full - start)
 				if near > start * 0.45 and near < full * 1.3:
