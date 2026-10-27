@@ -54,6 +54,7 @@ var _shell: MeshInstance3D
 var _cells_mat: ShaderMaterial
 ## The camera bubble's cut on this building (set_near_camera): 0 whole .. 1 the whole radius.
 var _cut := 0.0
+var _share := 1.0  # how much of the standing building is drawn (StreamDissolve)
 ## The landmark ground's mesh arrays until _dress makes its mesh.
 var _ground: Array = []
 
@@ -179,6 +180,20 @@ func set_near_camera(on: bool, share := 1.0) -> void:
 	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
 		if mat != null:
 			mat.set_shader_parameter("bubble_cut", cut)
+
+
+## The stream swap (StreamDissolve): `share` of this standing building is drawn, a dither (1 =
+## whole, 0 = none). Only the stream sets it; a carved, broken or falling piece is whole (D-326).
+func set_dissolve(share: float) -> void:
+	_share = share
+	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
+		if mat != null:
+			mat.set_shader_parameter("dissolve", share)
+
+
+## How much of this building the stream swap draws now (1 = whole; tests read it).
+func dissolve_share() -> float:
+	return _share
 
 
 ## How much of the bubble cuts this building now (0 = whole; tests read it).
