@@ -20,6 +20,10 @@ trap 'rm -rf "$tmp"' EXIT
 bad=0
 . tools/speed_gate.sh
 
+# The runner's seconds column ('%4ss' in run_tests.sh) as 'Ns', so two outputs compare on everything but the clock.
+# The runner's 'Waited Ns ...' line (D-317) is dropped too: only the run that waited prints it.
+strip_secs() { sed -E 's/ +[0-9]+s  / Ns  /' "$1" | grep -v '^Waited '; }
+
 # D-299 (director 2026-10-27, "PC to itself"): the runner asks the speed-run gate before EVERY Godot
 # launch (the version query, the import, each suite), so a run of 7-20 suites stops between suites
 # while a speed run holds the PC. No real Godot: a fake one logs each launch next to the gate's calls.
@@ -31,7 +35,10 @@ check_speed_gate() {
 echo "godot $*" >> "$GATE_LOG"
 case "$*" in
 *--version*) echo "4.7.2.fake" ;;
-*--script*) echo "Fake tests: 1 of 1 functions, 1 checks, 0 failures" ;;
+*--script*)
+	sleep "${GATE_SLEEP:-0}"
+	echo "Fake tests: 1 of 1 functions, 1 checks, 0 failures"
+	;;
 esac
 EOF
 	cat > "$tmp/gate.sh" << 'EOF'
@@ -58,7 +65,7 @@ EOF
 	# 1. a gate that fails twice, then passes: the runner waits, and asks again before every launch
 	rm -f "$log" "$runs" "$RAM_COUNT"
 	GATE_LOG="$log" GATE_COUNT="$runs" SPEED_GATE="$tmp/gate.sh" GODOT="$tmp/fake_godot.sh" FREE_RAM_CMD="bash $tmp/free_ram.sh" \
-		SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out.txt" 2>&1
+		LOG_DIR="$tmp/gate_logs" VERBOSE=1 SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out.txt" 2>&1
 	local code=$?
 	local before launches unguarded
 	before=$(awk '/^godot/ {exit} /^gate/ {n++} END {print n + 0}' "$log" 2> /dev/null)
@@ -73,17 +80,21 @@ EOF
 		cat "$log" "$tmp/gate_out.txt" 2> /dev/null
 		bad=1
 	fi
-	# 2. no gate file (CI, Linux): nothing changes - same result, same launches, no wait. VERBOSE=0 because CI exports
-	# VERBOSE=1, which adds each suite's whole seconds (differ between runs: red on #305, run 40452642194) and a Logs: line
+	# 2. no gate file (CI, Linux): nothing changes - same result, same launches, no wait, no memory read. The runner
+	# prints each suite's whole seconds, so two runs that cross a second boundary differ there (red on #305, run
+	# 40452642194): this run is forced to take 2 s longer per suite (GATE_SLEEP) and the compare must still pass
+	# without the seconds. Both runs set VERBOSE=1 (as CI does) so every suite's line, seconds included, is in the
+	# output compared, and the same LOG_DIR (the "Logs:" line names it; CI exports one, a local run would get a
+	# fresh temp dir each time).
 	rm -f "$log" "$runs" "$RAM_COUNT"
-	GATE_LOG="$log" GATE_COUNT="$runs" SPEED_GATE="$tmp/no_such_gate.sh" GODOT="$tmp/fake_godot.sh" \
+	GATE_LOG="$log" GATE_COUNT="$runs" GATE_SLEEP=2 SPEED_GATE="$tmp/no_such_gate.sh" GODOT="$tmp/fake_godot.sh" \
 		FREE_RAM_CMD="bash $tmp/free_ram.sh" RAM_LOW_READS=3 RAM_POLL_SECS=1 \
-		VERBOSE=0 SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out_none.txt" 2>&1
+		LOG_DIR="$tmp/gate_logs" VERBOSE=1 SUITES_ONLY=1 tools/run_tests.sh alpha beta > "$tmp/gate_out_none.txt" 2>&1
 	code=$?
 	launches=$(grep -c '^godot' "$log" 2> /dev/null)
-	# no gate call, no memory read (the stand-in reader would say 1000 MB, below the floor, for 3 reads), one plain line
+	# no gate call, no memory read (the stand-in reader would say 1000 MB, below the floor, for 3 reads)
 	if [ "$code" = 0 ] && [ "$launches" = 4 ] && ! grep -qE '^(gate|ram)' "$log" \
-		&& [ "$(cat "$tmp/gate_out_none.txt")" = "All checks passed (2 suites)." ]; then
+		&& [ "$(strip_secs "$tmp/gate_out.txt")" = "$(strip_secs "$tmp/gate_out_none.txt")" ]; then
 		echo "ok: a missing SPEED_GATE file changes nothing"
 	else
 		echo "FAIL: a missing SPEED_GATE file must change nothing (exit $code, $launches launches, want 4)"
