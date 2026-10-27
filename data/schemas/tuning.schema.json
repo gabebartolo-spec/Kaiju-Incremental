@@ -5002,11 +5002,39 @@
         "people_buffers": {"$ref": "#/$defs/bool"},
         "people_aabb_margin_m": {"$ref": "#/$defs/num"},
         "kaiju_three_faces": {"$ref": "#/$defs/bool"},
+        "fx_pool": {
+          "type": "object",
+          "properties": {
+            "enabled": {"$ref": "#/$defs/bool"},
+            "provisional_sizes": {"$ref": "#/$defs/bool"},
+            "slots": {
+              "type": "object",
+              "properties": {
+                "dust": {"$ref": "#/$defs/int"},
+                "puff": {"$ref": "#/$defs/int"},
+                "step": {"$ref": "#/$defs/int"},
+                "slam": {"$ref": "#/$defs/int"},
+                "tree": {"$ref": "#/$defs/int"},
+                "spark": {"$ref": "#/$defs/int"},
+                "burst": {"$ref": "#/$defs/int"},
+                "flames": {"$ref": "#/$defs/int"},
+                "embers": {"$ref": "#/$defs/int"},
+                "smoke": {"$ref": "#/$defs/int"}
+              },
+              "required": ["dust", "puff", "step", "slam", "tree", "spark", "burst", "flames", "embers", "smoke"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": ["enabled", "provisional_sizes", "slots"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "night_clip_max": {"$ref": "#/$defs/num"}
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
-        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max"
+        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
