@@ -123,7 +123,7 @@ func vip_look(white: Color, gold: Color) -> void:
 		var hinge: Node3D = hinges[part]
 		var mmi := hinge.get_child(0) as MultiMeshInstance3D  # hinge() holds the one voxel mesh
 		var voxels := _parts.packed(part, -_parts.pivot(part), SALT)
-		_repaint(mmi, part, _paint(voxels, HelicopterModel.TAN, HelicopterModel.TAN, 0.0))
+		_repaint(mmi, part, _paint(voxels, gold, gold, 0.0))
 	var body := _parts.packed("body", -_centre, SALT)
 	_repaint(
 		_body as MultiMeshInstance3D, "body", _paint(body, white, gold, Num.f(_cfg["vip_dark"]))
