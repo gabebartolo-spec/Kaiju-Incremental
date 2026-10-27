@@ -328,7 +328,7 @@ static func facade_material(haze: float) -> ShaderMaterial:
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
 	mat.set_shader_parameter("haze_color", Look.color("fog_color"))
 	mat.set_shader_parameter("haze", haze)
-	return mat
+	return WindowPalette.apply_common(mat)
 
 
 ## The plain boxes: roof gear and the lattice tower in the instance colour; the concrete

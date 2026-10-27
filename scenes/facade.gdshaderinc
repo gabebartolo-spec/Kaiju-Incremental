@@ -5,7 +5,11 @@
 // x = archetype (0..3), y = share of windows lit, z = beacon on the roof (1), w = seed.
 // facade.gdshader takes the engine's fog; facade_far.gdshader fades by its own gentler haze and
 // height fog (far_haze.gdshaderinc) and no engine fog; facade_far_fogged.gdshader takes both, the
-// far city in the same air as the bay (FarHaze, on by default).
+// far city in the same air as the bay (FarHaze, on by default). Lit windows take the playable
+// buildings' window palette (WindowPalette): the same colours and shares, picked per lit facade
+// window here (an exact per-window match across the stream swap is impossible).
+
+#include "res://scenes/window_palette.gdshaderinc"
 
 uniform vec3 roof_color : source_color = vec3(0.43, 0.42, 0.40);
 uniform vec3 window_color : source_color = vec3(0.17, 0.23, 0.27);
@@ -101,8 +105,16 @@ void fragment() {
 			bool dark = hash3(vec3(floor(cell / 14.0), floor(y4 / 12.0), seed * 17.0 + 5.0)) < blackout;
 			if (lit < v_custom.y && !dark) {
 				vec3 l = lit_color;
+				float gain = 1.0;
+				if (window_palette_on) {
+					uint h = window_mix(uint(int(seed * 65536.0)) ^ 40503u);
+					h = window_mix(h ^ uint(int(floor(cell / 2.0))));
+					vec4 w = window_pick(window_mix(h ^ uint(int(floor(y4 / 4.0)))));
+					l = w.rgb;
+					gain = w.a;
+				}
 				albedo = l;
-				emit = l * glow;
+				emit = l * glow * gain;
 			}
 		} else {
 			albedo = wall * jitter;
