@@ -112,8 +112,10 @@ static func _check_paint(model: HelicopterModel, check: Callable) -> void:
 		"...and both rotors gold: %d of %d voxels" % [gold_voxels, rotor_voxels]
 	)
 	print(
-		"VIP paint (headless-readable): body %d white + %d gold of %d, mean white %s; rotors %d/%d gold"
-		% [whites, golds, body.size(), mean, gold_voxels, rotor_voxels]
+		(
+			"VIP paint (headless-readable): body %d white + %d gold of %d, mean white %s; rotors %d/%d gold"
+			% [whites, golds, body.size(), mean, gold_voxels, rotor_voxels]
+		)
 	)
 
 
