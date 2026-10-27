@@ -199,11 +199,13 @@ func _sites() -> void:
 				if other != e and _footprint(other).intersects(foot):
 					touching += 1
 		ids.sort()
-		# Every landmark the spread placed (CitySpread, D-254) in the districts this stage's city
-		# holds: its own and the next (the real band past its edge).
+		# Every landmark the spread placed (CitySpread, D-254) whose block is in play at this stage:
+		# in the playable city or the real band past its edge (CityBand), not a far-district
+		# stand-in ("outer"), which the next evolution brings near.
 		var want: Array[String] = []
-		for site: Dictionary in plan["sites"]:
-			if Num.i(site["district"]) <= tier:
+		for block: Dictionary in plan["blocks"]:
+			if str(block["use"]) == "landmark":
+				var site: Dictionary = plan["sites"][Num.i(block["site"])]
 				want.append(str(site["id"]))
 		want.sort()
 		(

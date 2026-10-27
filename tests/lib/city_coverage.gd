@@ -116,11 +116,35 @@ static func off_bank(empty: Variant, sim: RampageSim) -> Array:
 	return kept
 
 
-## Whether every dry remainder of a cell (dry: GroundKit.cut of it by the bay) holds one of the
-## points marked in it (within EPS); a cell the bay never reaches is its own one remainder.
+## Whether every separate dry part of a cell (dry: GroundKit.cut of it by the bay, its touching
+## pieces taken as one part: see _regions) holds one of the points marked in it (within EPS); a
+## cell the bay never reaches is its own one part.
 static func _covered(points: Array, dry: Array[Rect2]) -> bool:
-	for piece: Rect2 in dry:
-		var held := piece.grow(EPS)
-		if not points.any(func(p: Vector2) -> bool: return held.has_point(p)):
+	for region: Array in _regions(dry):
+		var held := false
+		for piece: Rect2 in region:
+			var near := piece.grow(EPS)
+			if points.any(func(p: Vector2) -> bool: return near.has_point(p)):
+				held = true
+				break
+		if not held:
 			return false
 	return not dry.is_empty()
+
+
+## `dry`'s pieces grouped into the parts of ground they make: pieces that overlap or share an edge
+## are one part. The bay's water is stepped bands (CityHarbour.bands), so the ground beside it
+## is cut into strips a band high that are one stretch of shore, not separate places.
+static func _regions(dry: Array[Rect2]) -> Array:
+	var regions: Array = []
+	for piece: Rect2 in dry:
+		var joined: Array[Rect2] = [piece]
+		var apart: Array = []
+		for region: Array in regions:
+			if region.any(func(r: Rect2) -> bool: return r.grow(EPS).intersects(piece)):
+				joined.append_array(region)
+			else:
+				apart.append(region)
+		apart.append(joined)
+		regions = apart
+	return regions
