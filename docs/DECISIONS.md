@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-346 · Director · The one-window GPU slot covers Godot only
+Asked whether Blender renders and bakes should also wait for the one GPU slot (D-340): "Godot only (Recommended)".
+Godot windows (clips, stills, captures, speed runs) take turns; Blender and other GPU jobs keep sharing the card by
+VRAM budget, so asset work keeps its pace.
+
 ## 2026-10-27 · D-345 · Director · Trees on rooftops are a bug: they go to streets and parks
 He asked about the far-city noon still: "why are there so many trees on top of buildings is that a bug?" (trees stand
 on low roofs, one on a tall roof among the antennas). No decision asks for rooftop trees. He picked "Yes, find and fix
@@ -392,7 +397,3 @@ After the stomp-button clip (PR #223): "i think the stomp needs to be slowed dow
 ## 2026-10-26 · D-265 · Director · Overnight shift; End rampage is a death
 
 Going to sleep: "keep working": prepare animation prototypes to assess tomorrow (picked "Croc kit moves" and "Croc idle/walk/turn/roar redo": leap, charged stomp, snap bite, defeat collapse, and the everyday clips re-keyed in Cascadeur); "voxelise all our new buildings and implement them into the games city generation" (picked "Yes, on by default": he culls from boards and in-game shots tomorrow); "start building the districts, landmarks and explosive sites and codify the logic which generates their appearance in a seed" (picked "Play area, then districts"); audits: road layouts natural and realistic in all seeds, seeds meaningfully different, every asset appears often and none never; "keep working on things that dont require my eye, coding tasks, first drafts of visual items are also fine". Team: "+2 builders tonight" (five builders until he returns). Pause "End rampage" kills the kaiju ("Yes, he dies"): every run ends in a death unless the city falls. Note: D-263's red-light answer replaced D-257's "Suggestive signage"; the question did not quote the older ruling.
-
-## 2026-10-26 · D-266 · Director · Tripo street-life props, up to 1,500 credits
-
-"if you somehow run out of things to do, please start generating some streetlife props in Tripo"; picked "Up to 1,500 credits" (about 20 props, the most common street things first, every model Private). Balance before: about 9,855. Props go through the same six-view inspection and straight to him.

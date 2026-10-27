@@ -28,3 +28,4 @@ The day's earlier rulings are in DECISIONS (D-301 to D-330); the night before is
 | 21:5x | far-city reflection stills: "Looks right, merge (Recommended)" | the far skyline's glow in the bay (D-324) | far-city-fix opens READY after #330 | D-344, doing |
 | 22:0x | "why are there so many trees on top of buildings is that a bug?" then "Yes, find and fix (Recommended)" | trees placed on roofs | rooftop-trees (Sonnet): find the cause, move them to streets and parks, still to him | D-345, doing |
 | 22:0x | "having 2 godot open is cooking the GPU / you gotta do a better jop managing it" | two builders' clips rendered at once | lead: one Godot window at a time PC-wide (C:/kt/gpu_slot.sh, hook-enforced), rulebook + CLAUDE.md | D-340, done |
+| 22:2x | GPU slot scope: "Godot only (Recommended)" | Blender renders and bakes keep sharing the card by VRAM; only Godot windows take turns | lead: rule already reads so (rulebook GPU line), no change | D-346, done |
