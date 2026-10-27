@@ -104,8 +104,8 @@ func _check_clarity_knobs() -> void:
 
 
 ## D-360 (director picked "no far blur", 2026-10-28; replaces D-163's depth-blur clause): the game
-## ships with the far blur off in every time of day and every preset, so no camera carries a depth of
-## field pass at all (nothing to render, and FarDepth.follow returns at once).
+## ships with the far blur off in every time of day and every preset, so no camera carries a
+## depth of field pass at all (nothing to render, and FarDepth.follow returns at once).
 func _check_far_blur_off() -> void:
 	var saved := PlayerSettings.graphics
 	var on: Array[String] = []
