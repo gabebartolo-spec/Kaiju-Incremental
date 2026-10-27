@@ -298,14 +298,11 @@ func _drawn_top(kaiju: KaijuModel) -> float:
 	return top
 
 
-## The buildings drawn solid this frame (BuildingFade's opacity 1): a faded one hides nothing.
+## The buildings drawn solid this frame: all of them (the camera bubble cuts only the near ones).
 func _opaque() -> Array[RampageSim.Building]:
-	var city: CityView = _rampage.get("_city")
-	var fade: BuildingFade = city.get("_fade")
 	var out: Array[RampageSim.Building] = []
 	for n: int in _rampage.sim.buildings.size():
-		if fade == null or fade.opacity(n) >= 1.0:
-			out.append(_rampage.sim.buildings[n])
+		out.append(_rampage.sim.buildings[n])
 	return out
 
 
