@@ -23,9 +23,8 @@ const AUTOPLAY_GLIDE_CYCLE := 90
 const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
-## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
-## LoadingOverlay, and nothing runs until it is done, so starting a run never freezes the screen
-## (b2-30). false (tests, captures): _ready builds it all at once, as before.
+## true (the game's own flow): _ready builds the scene in stages, a frame each, behind a
+## LoadingOverlay, and nothing runs until it is done (b2-30). false (tests, captures): all at once.
 var staged := false
 ## Rampage seconds in the adolescent city or later, from the save; set before setup (D-160).
 var city_seconds := 0.0
@@ -103,8 +102,7 @@ func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], 
 	_cues = PowerCues.new(sim, sfx)
 
 
-## Returns once the scene is built (at once when it is; flow suites and captures that start a run
-## through Main wait here, as the staged build takes a number of frames).
+## Returns once the scene is built (flow suites and captures started through Main wait here).
 func wait_loaded() -> void:
 	while not is_loaded and is_inside_tree():
 		await get_tree().process_frame
@@ -121,6 +119,12 @@ func set_autoplay(on: bool) -> void:
 func _exit_tree() -> void:
 	if sim != null:
 		sim.dispose()
+
+
+## setup() builds sfx, _ready() adds it later: freed in between, nothing frees it (debt row 2).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(sfx) and sfx.get_parent() == null:
+		sfx.free()
 
 
 func _ready() -> void:
@@ -273,8 +277,7 @@ func _note_cost(what: String, since: int) -> void:
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), Time.get_ticks_usec() - since)
 
 
-## The army's tanks (their voxels built once now, so the first spawn reuses them), the
-## helicopters' voxels, and the railway.
+## Tanks and helicopters (voxels built once now, so the first spawn reuses them), and the railway.
 func _add_vehicles() -> void:
 	TankModel.new().free()
 	HelicopterModel.new().free()
