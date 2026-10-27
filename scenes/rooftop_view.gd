@@ -263,13 +263,9 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		return true
 	if str(event["type"]) != "rooftop_destroyed":
 		return false
-	# Gone with its roof or under a blow: a puff of dust there and its biomass.
+	# Gone with its roof or under a blow: a puff of dust there.
 	var at := Vector3(Num.f(event["x"]), Num.f(event["y"]), Num.f(event["z"]))
 	_city.fx.dust(at, 0.5)
-	var list: Array = _cfg["rooftop_rubble"]
-	var paid := Num.f(list[clampi(sim.size_tier() - 1, 0, list.size() - 1)])
-	var gained := paid * sim.stat("rubble_mult")
-	_city.float_text("+%d" % Num.i(gained), at + Vector3(0, 2, 0), UiKit.WARN)
 	return true
 
 

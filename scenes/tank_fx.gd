@@ -30,15 +30,14 @@ static func fire_shell(host: Rampage, node: TankModel, target: Vector3, miss := 
 	tween.tween_callback(shell.queue_free)
 
 
-## Debris, flash, fire and the rubble the wreck pays.
-static func wreck(city: CityView, pos: Vector3, gained: float) -> void:
+## Debris, flash and fire where a tank is wrecked.
+static func wreck(city: CityView, pos: Vector3) -> void:
 	for n: int in 8:
 		city.debris(
 			pos + Vector3(0, 0.5, 0), TankModel.PAINT if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
 		)
 	city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
 	city.fire(pos, 0.6)
-	city.float_text("+%d" % Num.i(gained), pos + Vector3(0, 2, 0), UiKit.WARN)
 
 
 ## A stray shell's impact (StrayShell): a flash, debris, a dust cloud and a small fire where it

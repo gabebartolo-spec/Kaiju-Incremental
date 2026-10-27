@@ -112,3 +112,25 @@ static func _pop(heap: Array[Vector2]) -> Vector2:
 		heap[i] = tmp
 		i = m
 	return top
+
+
+## Where a tank at `p` sets off from: {edge (the road under it), via (its point on that road's
+## line), from: {node: cost}}, both ends of that road, or only the end behind it when it was held
+## up on this road going the other way.
+func origin(p: Vector2, r: ConvoyRoute) -> Dictionary:
+	var e := graph.road_under(p, r.edge)
+	var na := graph.nodes[graph.edge_a[e]]
+	var nb := graph.nodes[graph.edge_b[e]]
+	var via := Geometry2D.get_closest_point_to_segment(p, na, nb)
+	var off := via.distance_to(p)
+	var from := {
+		graph.edge_a[e]: off + via.distance_to(na), graph.edge_b[e]: off + via.distance_to(nb)
+	}
+	if r.skip.has(e) and not r.path.is_empty():  # only the end behind it
+		var ahead_b := nb.distance_to(r.path[0]) < na.distance_to(r.path[0])
+		from.erase(graph.edge_b[e] if ahead_b else graph.edge_a[e])
+	elif not r.path.is_empty() and r.heading != Vector2.ZERO:  # turning back costs more
+		var behind_b := (nb - p).dot(r.heading) < 0.0
+		var back := graph.edge_b[e] if behind_b else graph.edge_a[e]
+		from[back] = Num.f(from[back]) + Num.f(cfg["uturn_cost"])
+	return {"edge": e, "via": via, "from": from}

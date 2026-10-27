@@ -12,14 +12,10 @@ shader_type spatial;
 uniform float glow = 0.0;
 uniform float roughness_value = 0.9;
 uniform float self_light = 0.0;
-// Below 1, the screen-door fade (voxel.gdshader's, D-025).
-uniform float opacity = 1.0;
 // The model's cell size (m): INSTANCE_CUSTOM.xyz counts cells.
 uniform float voxel = 0.125;
 // How far the 4 m tone drift moves the colour (sd_concrete's 0.3).
 uniform float tone_drift = 0.3;
-const float DITHER_PX = 2.0;
-const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
 varying vec3 local_pos;
 varying vec3 local_normal;
@@ -32,12 +28,6 @@ void vertex() {
 }
 
 void fragment() {
-	if (opacity < 1.0) {
-		ivec2 p = ivec2(mod(floor(FRAGCOORD.xy / DITHER_PX), 4.0));
-		if ((BAYER[p.y * 4 + p.x] + 0.5) / 16.0 >= opacity) {
-			discard;
-		}
-	}
 	vec3 base = sd_srgb(COLOR.rgb);
 	vec3 q = local_pos - local_normal * 0.001;
 	vec2 pc = sd_cell(sd_plane(q, local_normal));
