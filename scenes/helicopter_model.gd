@@ -11,9 +11,12 @@ const BASE := "res://assets/vehicles/heli"
 const VIP_BASE := "res://assets/vehicles/vip_heli"
 ## Body paint (the model's mean colour, military olive), for wreck debris.
 const PAINT := Color("748059")
+## The gunship's two chunk paints (a wreck's chunks take their helicopter's paint).
+const GUNSHIP_PAINT: Array[Color] = [PAINT, PAINT]
 ## Below this sine of the angle to straight down, look_at() has no stable up: keep the last aim.
 const MIN_TILT := 0.05
 
+var _base := BASE
 var _body: Node3D
 var _main_rotor: Node3D
 var _tail_rotor: Node3D
@@ -41,6 +44,7 @@ static func warm() -> void:
 ## `base` is the parts file's path without ".parts.json": BASE for a gunship, VIP_BASE for the
 ## leader.
 func _init(base := BASE) -> void:
+	_base = base
 	_cfg = Content.section("vehicles")
 	var parts := VehicleParts.new(base, Num.f(_cfg["heli_height"]))
 	var centre := parts.pivot("body") * Vector3(1, 0, 1)
@@ -100,6 +104,22 @@ func _lamp(at: Vector3, color: Color, energy: float, size := 0.0) -> Node3D:
 	bulb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(bulb)
 	return bulb
+
+
+## The two paints this helicopter's wreck chunks wear: the gunship's olive, the leader's white and
+## gold (tuning "vip" look).
+func debris_paint() -> Array[Color]:
+	if _base != VIP_BASE:
+		return GUNSHIP_PAINT
+	var look: Dictionary = Content.section("vip")["look"]
+	return [Color(str(look["white"])), Color(str(look["gold"]))]
+
+
+## `node`'s wreck paint: a helicopter's own, a stand-in's the gunship's.
+static func paint_of(node: Node3D) -> Array[Color]:
+	if node is HelicopterModel:
+		return (node as HelicopterModel).debris_paint()
+	return GUNSHIP_PAINT
 
 
 ## Points the chin gun at `target` (world space).

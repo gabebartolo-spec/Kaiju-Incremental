@@ -144,7 +144,7 @@ func _down(event: Dictionary) -> void:
 	_rotor.stop()
 	_beacon.queue_free()
 	_beacon = null
-	_wreck.downed(_model, event)
+	_wreck.downed(_model, event, _model.debris_paint())
 	_model = null
 
 

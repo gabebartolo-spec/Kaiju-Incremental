@@ -1,13 +1,13 @@
 class_name HeliDebris
 extends Node3D
 ## Pieces of a wrecked helicopter thrown through the air (HeliWreck): the model's own parts (rotors,
-## gun, body) and lit tan and charcoal chunks in the heli's colours, each tumbling on a visible
-## arc, a few trailing Fire, then bouncing once, lying on the street and fading away. Cosmetic:
+## gun, body) and chunks in the paint of the helicopter they came from (its two paints, passed in
+## at spawn) and charcoal, each tumbling on a visible arc, a few trailing Fire, then bouncing once,
+## lying on the street and fading away. Cosmetic:
 ## nothing here is a physics body or decides an outcome (D-094). Numbers: tuning "heli_wreck".
 
 const CHARCOAL := Color("3a3d40")
 const SCORCH := Color("5a4a36")
-const COLORS: Array[Color] = [HelicopterModel.PAINT, CHARCOAL, SCORCH, HelicopterModel.PAINT]
 ## A piece that lands faster than this (m/s down) bounces once.
 const BOUNCE_BELOW := -3.0
 const BOUNCE_KEEP := 0.3
@@ -52,9 +52,18 @@ func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0) -> Piece
 	return piece
 
 
-## `count` chunks from `at`, thrown out and up at the tuning's speeds; `burning` of them carry a
-## small Fire. Sizes run from a splinter to a block; the rotor blades are the model's own.
-func shards(at: Vector3, count: int, burning: int, reach := 1.0) -> void:
+## The chunk colours of a wreck: the helicopter's two `paint` tones round a charred pair.
+static func chunk_colours(paint: Array[Color]) -> Array[Color]:
+	return [paint[0], CHARCOAL, SCORCH, paint[1]]
+
+
+## `counts.x` chunks from `at` in the helicopter's `paint` (HelicopterModel.debris_paint), thrown
+## out and up at the tuning's speeds; `counts.y` of them carry a small Fire. Sizes run from a
+## splinter to a block; the rotor blades are the model's own.
+func shards(at: Vector3, counts: Vector2i, paint: Array[Color], reach := 1.0) -> void:
+	var count := counts.x
+	var burning := counts.y
+	var colours := chunk_colours(paint)
 	for n: int in count:
 		var side := TAU * (n + _rng.randf()) / maxf(1.0, count)
 		var out := (
@@ -66,7 +75,7 @@ func shards(at: Vector3, count: int, burning: int, reach := 1.0) -> void:
 			+ Vector3(0, _rng.randf_range(Num.f(_cfg["up_min"]), Num.f(_cfg["up_max"])) * reach, 0)
 		)
 		var size := Vector3.ONE * _rng.randf_range(0.25, 0.7)
-		var piece := _box(size, COLORS[n % COLORS.size()])
+		var piece := _box(size, colours[n % colours.size()])
 		add_child(piece)
 		piece.global_position = at + out.normalized() * 0.5
 		var fire_size := Num.f(_cfg["shard_fire"]) if n < burning else 0.0
