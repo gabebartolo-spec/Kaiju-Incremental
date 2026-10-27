@@ -94,3 +94,24 @@ static func front_spread(keys: Array[Vector3i], bricks: Dictionary, centre: Dict
 	for y: float in ys:
 		sq += (y - mean) * (y - mean)
 	return sqrt(sq / ys.size())
+
+
+## The velocity the body had just before a hard hit, or ZERO: the fastest recent velocity above
+## break_speed that the body has since lost more than break_jolt of. Looking back break_window
+## seconds, not one step, catches a slab that lands on a pile and slows over several steps.
+## `recent` holds (velocity, clock) over that window; this step's `v` at `clock` is added to it.
+static func hard_hit(recent: Array[Vector4], v: Vector3, clock: float, cfg: Dictionary) -> Vector3:
+	var speed := Num.f(cfg["break_speed"])
+	var window := Num.f(cfg["break_window"])
+	recent.append(Vector4(v.x, v.y, v.z, clock))
+	while recent[0].w < clock - window:
+		recent.pop_front()
+	var out := Vector3.ZERO
+	var worst := speed * Num.f(cfg["break_jolt"])
+	for r: Vector4 in recent:
+		var old := Vector3(r.x, r.y, r.z)
+		var lost := (old - v).length()
+		if old.length() > speed and lost > worst:
+			worst = lost
+			out = old
+	return out
