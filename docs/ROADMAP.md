@@ -397,7 +397,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
 - Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
   ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.
-- Thunder Beam lightning look (D-136, VFX_STYLE, b2-18): the r7 look is 16 commits on claude/thunder-beam-2 (bolt shaders and rig, three thunder_beam sounds; replaces beam.gdshader and the old breath curtain), not on main. Owner: thunder-land builder (Opus), the lead merges. Date: 2026-10-27, tonight. Status: landing as claude/thunder-land (main merged in, not pushed, no PR yet), ON by default (D-308); its 1080p clip goes to C:/kt/interview_2026-10-27/ for the morning. Next: prepush, push, PR.
+- Lightning look (D-136, D-308, D-357): the r7 forked bolt is on main (#309, 10-27). His verdict (D-357): purple (the kaiju-juice colour), starting deep in the throat, never above the head; before each breath and Thunder Beam, arcs jump spine to spine from tail tip to head inside the strike delay. Owner: lightning-purple builder (Opus), the lead merges. Date: 2026-10-28. Status: briefed. Next: one 6 s 1080p clip to him, then merge on by default. The power-grid surge (D-260) is still unbuilt.
 
 ## Interview answers (director 2026-10-23, afternoon; D-163 to D-170)
 - One look from blocks (D-163): props, ground, fire and blasts into the city's look; far blur on the kaiju; cool

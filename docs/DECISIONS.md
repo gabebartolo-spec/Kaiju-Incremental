@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-28 · D-357 · Director · The lightning is purple, from deep in the throat, with arcs up the spines first
+Shown the round 7 clip (#309, D-308): "currently it spawns above his head slightly in front, arcing from up to down /
+its light yellow/white / i want it to come from deep in his throat and be purple lightning / I want his spines to light
+up from tip of his [tail] to his head in sequence before he spews purple lightning from his maw"; "purple is our
+default 'kaiju colour', because of the kaiju juice that fuels their evolution". Told that plates lighting tail to head
+before a glowing breath is the Godzilla charge-up D-108 steered away from, he picked: "Arcs jump up the spines
+(Recommended)" (lightning crackles spine to spine, tail tip to head, never a steady glow); "Fit inside it
+(Recommended)" (the charge-up plays inside the D-166 strike delay, 0.8 / 1.1 / 1.4 s, the breath no slower); "Yes,
+both match (Recommended)" (the Thunder Beam turns purple with the same charge-up). Changes: D-108's white-hot colour
+and the open halo-colour question (R 17.6) are replaced by purple; the bolt starts inside the mouth, never above the head.
+
 ## 2026-10-28 · D-356 · Director · The Godot window is never left idle
 "godot has been empty like 90% of the time recently, make sure its always being used so we can be efficient". Asked
 whether tonight's speed runs may start at once instead of at 01:00 (D-331): picked "Start now (Recommended)"; the hold
@@ -385,15 +396,3 @@ Shown 20 labelled 4K stills of the real game (item 4: night, dusk, morning and n
 ## 2026-10-27 · D-283 · Director · Camera bubble after the render plan
 
 "see why we need the bubble", "the bubble would solve unsightly views like the above" (screenshots: a building wall filling the frame; the screen-door fade over the croc at night, wall: docs/captures/2026-10-26-clips/bubble_why_wall.webp; the screen-door one was not saved to disk). Asked when to build it; picked "After the render plan". Rework #238 (solid by default, cut away only the 0-3 buildings between camera and kaiju, shadows kept); his two screenshots are the pass bar (no wall fills the frame, no screen-door over the kaiju); the clip goes straight to him. Re-asked 00:58 while League blocked the speed benches (start it now in the gap?): "Keep it after the plan".
-
-## 2026-10-27 · D-282 · Director · The freeze fix's 20-run test runs on GitHub first
-
-His question: "is it possible to do this on github instead?". Asked: "Yes, GitHub first": 20 runs on main and 20 on the fix on GitHub (software rendering, free on the public repo); main must freeze at least once there to prove GitHub catches it; then 20/20 clean on the fix passes. If main never freezes there, the test returns to the local GPU. Speed benches and stills stay on the local GPU (no GPU on GitHub). Not chosen: keep local, both.
-
-## 2026-10-27 · D-281 · Director · The charged stomp becomes the dragon's attack
-
-His words: "stomp fits the dragon more than the croc". Asked: "Yes, dragon's kit": the tap/hold charged stomp (D-260, D-263), its 0.80x speed and Frenzy speed-up (D-264) move to the dragon's design for when dragon work resumes (paused, D-25x); the dragon gets its own Cascadeur clip.
-
-## 2026-10-27 · D-280 · Director · Croc: the stomp turns automatic and weak; a tail lash takes its button
-
-His words: "we should probably revisit the stomp attack and replace it with something else, make stomp damage weaker and automatic / a stationary stomp goes against the croc's power fantasy as an athletic kaiju". Asked: auto stomp "Every footfall crushes" (damage under his feet as he walks and runs, never stops to stomp); power "Street-level only" (people, cars, trees, props underfoot; buildings only chip); the button "Tail lash" (mid-stride tail whip flattening a ring beside him, never breaking his run; Cascadeur clip); timing "After the render plan". Replaces D-260 "Button replaces it" and D-263 "Rooted while charging" for the croc. Not chosen: rhythm stomps, chipping buildings, death roll, lunge bite.
