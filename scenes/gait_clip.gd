@@ -355,7 +355,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	else:
 		_stomp.forget(i)
 		if _was_planted[i]:
-			_path.lift(i, walk_frames, clip_toe, _lock[i])
+			_path.lift(self, i, clip_toe, _lock[i])
 		target = _path.target(self, i, dt, clip_toe)
 		_lag[i] = _path.lag[i]
 	leg.planted = planted
