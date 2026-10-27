@@ -6,8 +6,8 @@ extends Node3D
 ## real hinges (tank.parts.json); fire() kicks the gun back. Presentation only.
 
 const BASE := "res://assets/vehicles/tank"
-## Hull tan (the model's mean colour), for wreck debris.
-const TAN := Color("786244")
+## Hull paint (the model's mean colour, military olive), for wreck debris.
+const PAINT := Color("6d7854")
 
 var _turret: Node3D
 var _barrel: Node3D

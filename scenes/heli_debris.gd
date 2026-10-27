@@ -7,7 +7,7 @@ extends Node3D
 
 const CHARCOAL := Color("3a3d40")
 const SCORCH := Color("5a4a36")
-const COLORS: Array[Color] = [HelicopterModel.TAN, CHARCOAL, SCORCH, HelicopterModel.TAN]
+const COLORS: Array[Color] = [HelicopterModel.PAINT, CHARCOAL, SCORCH, HelicopterModel.PAINT]
 ## A piece that lands faster than this (m/s down) bounces once.
 const BOUNCE_BELOW := -3.0
 const BOUNCE_KEEP := 0.3

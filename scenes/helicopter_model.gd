@@ -9,8 +9,8 @@ extends Node3D
 const BASE := "res://assets/vehicles/heli"
 ## The leader's helicopter (D-149): its own Tripo model, white with gold trim.
 const VIP_BASE := "res://assets/vehicles/vip_heli"
-## Body tan (the model's mean colour), for wreck debris.
-const TAN := Color("816847")
+## Body paint (the model's mean colour, military olive), for wreck debris.
+const PAINT := Color("748059")
 ## Below this sine of the angle to straight down, look_at() has no stable up: keep the last aim.
 const MIN_TILT := 0.05
 
