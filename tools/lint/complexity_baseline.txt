@@ -34,7 +34,6 @@ scenes/settings_menu.gd::_ready 55 1
 scenes/sfx.gd::play 43 12
 scenes/stadium_match.gd::_play 32 13
 scenes/stadium_match.gd::_ready 45 7
-scenes/traffic.gd::_drive 40 13
 scenes/traffic_island.gd::spots 48 18
 scenes/upgrade_node.gd::show_state 45 21
 scenes/upgrade_screen.gd::_ready 41 3
@@ -54,14 +53,8 @@ sim/convoy.gd::_settle 21 13
 sim/convoy.gd::step 28 17
 sim/glass_frame.gd::cells 18 14
 sim/party_walls.gd::of 33 16
-sim/road_graph.gd::waypoints 40 13
 sim/road_search.gd::search 40 15
 sim/structure.gd::_grounded 28 14
 sim/structure.gd::_topple_check 52 23
 sim/structure.gd::settle 30 14
 sim/tank_spacing.gd::blocker 33 19
-sim/voxel_support.gd::_attach_fixtures 30 14
-sim/voxel_support.gd::_flood 46 26
-sim/voxel_support.gd::_floors 40 15
-sim/voxel_support.gd::islands 38 17
-sim/voxel_support.gd::landing 41 9

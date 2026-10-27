@@ -4,6 +4,84 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
+His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
+Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
+(Recommended)": the camera stays at his back and turns slowly with him, as heavy as his turn; the intro pivots out
+behind him (D-325) and play starts right there, with no jump; the bay stays on the north edge (D-270). Lead's check
+of main the same day: the follow kept one fixed compass offset (tuning camera.offset, CameraFollow) and did not turn
+with him, so this is built, not restored. D-259's limited swing (about 60 deg) eases back to behind him. Every look
+approved from the fixed view gets one recheck capture.
+
+## 2026-10-27 · D-329 · Director · Tail whip: the automatic whip stays until the button lash is built
+Q: D-328 removes the automatic tail whip and moves its tree nodes to the button tail lash (D-280), but the lash is
+timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
+So: the automatic whip and its nodes (r_tail, r_shear) stay as they are until the D-280 lash is built after the
+render plan; then the whip goes and its nodes upgrade the lash. Changes D-328's tail line on timing only.
+
+## 2026-10-27 · D-328 · Director · Interview: tail, night, lab, skins, crowds, turn, ElevenLabs, night calls
+Tail (asked whether the button tail lash, D-280, is the same move as the automatic tail whip from a tree node, D-259):
+"remove the automatic whip, repurpose the nodes to improve our button whip". Night (D-106/D-145 "lighter" vs D-242 "dark
+and moody"): "Tonight's look" (D-285 stands; the older wording is retired on this point). Kaiju Creation lab scene:
+"Both" (a new save and each new species). Skins earned by playing: "Both" (each form reached, and rampage records).
+Crowds speed-up (render plan item 7): "Keep trying (Recommended)" if the second method misses. Heavier turn (D-187,
+Behemoth seed 1234 takes 11.9 s to flatten the buildings by its rise): "Keep it heavy"; the turn stays heavy (D-187,
+D-192 A: short steps, turn_slow 0.1) and the 10 s bar of D-131/D-192 stays, met without changing the turn (lead's
+correction: the question wrongly offered to fit his bar).
+ElevenLabs: "I'll sign in" (the lead reads the four train sounds' generation ids for the licence register). Night calls
+(night_calls.md): "All fine". Not asked, lead's call from D-326: rooftop soldiers near the camera stay undrawn.
+
+## 2026-10-27 · D-327 · Director · Physics destruction ships with the demo; render items 10 and 11 are built with it
+Q: real-physics destruction (D-094: carved buildings, loose pieces topple and fall) is planned after demo build 2;
+keep that timing or build it sooner? A: "WTF do you mean render items come with it, render is our number 1 priority,
+stop fucking with me. the destructions ship with the demo, the destruction is the game". So: D-094's "after demo exe 2"
+is reversed; real carving and falling pieces ship in the demo, and render plan items 10 and 11 (the physics speed-ups,
+D-311) are built now as render priority 1 work, not parked. Corrects D-311's correction note.
+
+## 2026-10-27 · D-326 · Director · Never fade out the destruction; audit cuts and keeps
+Q: falling chunks of a toppling building fade out when they pass between the camera and the kaiju; keep or cut? A:
+"Cut. ive said a thousand times, its ok to obscure the kaiju, its not ok to block the camera, please stop asking me
+questions about this, please stop making buildings fade out, the destruction IS THE GAME, NEVER FADE OUT THE
+DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-through; it may hide the kaiju. Only a
+wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
+"Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
+screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
+
+## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
+Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
+a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
+add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
+reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
+each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
+
+## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
+Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
+military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
+(#301 stays). Far city at night: "Fog + reflection" (both far-city PRs; the glow is re-measured with #301's window
+colours). Facade carve (#288): "impossible to tell from the clip, but ship and ill test in play".
+
+## 2026-10-27 · D-323 · Director · Kaiju death: jagged stone chunks replace the cubes; the 0.2 s wait stays
+On #240's clip: "you didnt change the blocks that i said i hated. you just changed their colour, but the bllocks are
+stupid and look bad". Q: what should fly out of his body? A: "Jagged stone chunks" (irregular broken rock in his
+hide's texture, many sizes, tumbling with dust; keeps D-294's shards first). Blast wait 0.2 s: "Keep 0.2 s".
+
+## 2026-10-27 · D-322 · Director · Interview batch 1: roar and solid vehicles kept; window flicker not solved
+Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be a question, no other choice makes any
+sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
+solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
+measure the flicker in motion first).
+
+## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
+Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
+add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.
+
+## 2026-10-27 · D-319 · Director · A finished change runs its full test check on GitHub first
+Q (after "whats the point of having so many helpers if most of them are waiting half a day to work"): where should a
+finished change run its full test check before it goes up for merge? A: "On GitHub first (Recommended)". So: the
+local full prepush stops being the gate. A builder runs the cheap local gates (no Godot), pushes, and GitHub runs every
+shard on the branch (`C:/kt/gh_check.sh`, one lead watcher); the PR is ready only after that passes, so no red PR
+shows. Builders still run locally only the suites they iterate on. Replaces the local-prepush gate (D-186 stands).
+
 ## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
 Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
 copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
