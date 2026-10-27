@@ -240,8 +240,9 @@ jobs:
           path: ${{ runner.temp }}/test-logs
 
   # The engine log of a seeded rampage must be clean (D-295, debt rows 1-2): tools/lint/log_smoke.sh
-  # plays every species' rampage headless, kills the kaiju and frees it all, then fails on ANY engine
-  # ERROR / WARNING line or leak report in the log. A message is fixed at its cause, never filtered.
+  # plays every species' rampage headless, kills the kaiju and frees it all, then runs the people
+  # bench's street replay and frees that, and fails on ANY engine ERROR / WARNING line or leak report
+  # in either log. A message is fixed at its cause, never filtered.
   log_smoke:
     name: engine log smoke
     needs: [plan, preflight, native]

@@ -315,7 +315,7 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 		piece.add_child(mi)
 	piece.set_meta("parts", parts)
 	piece.set_meta("pivot", pivot)
-	if not cells.is_empty():  # its chunks at rest, world space (FallFade)
+	if not cells.is_empty():  # its chunks at rest, world space (tests read it)
 		var box := AABB(b.chunk_world(cells[0]) - Vector3.ONE * 0.5, Vector3.ONE)
 		for c: Vector3i in cells:
 			box = box.merge(AABB(b.chunk_world(c) - Vector3.ONE * 0.5, Vector3.ONE))
