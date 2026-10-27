@@ -34,7 +34,17 @@ var _frame := 0
 var _queue: Array[Dictionary] = []  # event shots waiting for the next drawn frame
 var _event_shots := 0
 var _stats := {
-	"live": [], "all": [], "wall": [], "phys": [], "proc": [], "sim": [], "gpu": [], "break": []
+	"live": [],
+	"all": [],
+	"wall": [],
+	"phys": [],
+	"proc": [],
+	"sim": [],
+	"gpu": [],
+	"break": [],
+	"draws": [],
+	"isl_draws": [],
+	"swap": []
 }
 var _last_us := 0
 var _last_live_t := 0.0  # the last time any live piece or island body was still moving
@@ -257,6 +267,7 @@ func _record(sim_ms: float) -> void:
 	_push("wall", (now - _last_us) / 1000.0 if _last_us > 0 else 0.0)
 	_last_us = now
 	_push("gpu", RenderingServer.viewport_get_measured_render_time_gpu(vp))
+	STAGE.record_render(_phys, _stats)
 	if _frame % 30 == 0:
 		_enclosed.append(_phys.enclosed(ENCLOSED))
 		print(
@@ -353,6 +364,7 @@ func _report() -> void:
 		)
 	)
 	print("  INSIDE buildings per second %s, culled indoors %d" % [_enclosed, _phys.culled()])
+	print("  COLLIDER worst rebuild %.2f ms" % STAGE.worst_collider_ms(_phys))
 	var live_speed := _phys.live_speed()
 	print(
 		(

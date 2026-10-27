@@ -98,3 +98,35 @@ static func print_stats(stats: Dictionary) -> void:
 				% [key, total / maxi(1, a.size()), sorted[int(sorted.size() * 0.95)], sorted[-1]]
 			)
 		)
+
+
+## Render plan items 10 and 11, into `stats`: the last frame's draw calls (every frame, and the
+## frames an island falls) and each island remesh's main-thread swap (IslandMesh.last_swap_us).
+static func record_render(phys: CarvePhysics, stats: Dictionary) -> void:
+	var draws := float(
+		RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+	)
+	var all: Array = stats["draws"]
+	all.append(draws)
+	var islands := phys.islands()
+	if not islands.is_empty():
+		var falling: Array = stats["isl_draws"]
+		falling.append(draws)
+	var swaps: Array = stats["swap"]
+	for island: IslandBody in islands:
+		for child: Node in island.get_children():
+			if child is IslandMesh:
+				var view: IslandMesh = child
+				if view.last_swap_us > 0:
+					swaps.append(view.last_swap_us / 1000.0)
+					view.last_swap_us = 0
+
+
+## The worst collider rebuild of any building so far, in ms (CarveCollider.worst_usec).
+static func worst_collider_ms(phys: CarvePhysics) -> float:
+	var worst := 0
+	for child: Node in phys.get_children():
+		if child is CarveCollider:
+			var collider: CarveCollider = child
+			worst = maxi(worst, collider.worst_usec)
+	return worst / 1000.0
