@@ -6,16 +6,19 @@ extends "res://tests/lib/runner.gd"
 const DT := 1.0 / 15.0
 const SEEDS: Array[int] = [0, 1, 2]
 const LEVELS := {1: {}, 2: {"evolve1": 1}, 3: {"evolve1": 1, "evolve2": 1}}
-## Half the tank hull's width and its length (assets/vehicles/tank, measured): the footprint and
-## spacing the checks hold the tanks to.
+## Half the tank hull's width and its length: the footprint and spacing the checks hold the tanks
+## to, about the sim's convoy footprint (data army.convoy hull 5.0 x 2.5). The drawn tank (Tripo,
+## assets/vehicles/tank: hull 3.96 x 1.98 m) sits inside it, so a pass here is conservative.
 const HULL_HALF_WIDTH := 1.2
 const HULL_LENGTH := 5.0
 ## How far a standing tank's hull may lie off its road's axis.
 const ALIGN_DEG := 15.0
 ## A driving tank's hull off its road's axis, at most (D-066 r4: it turns standing, then drives).
 const DRIVE_DEG := 10.0
-## The tank as drawn (assets/vehicles/tank, measured): turret 3.1 x 2.23 m and the gun's reach
-## from the turret ring (3.54 m, 0.74 m across), both turned to the kaiju.
+## The turret and gun boxes the checks hold the tanks to, both turned to the kaiju: about the sim's
+## convoy footprint (data army.convoy turret 3.0 x 2.3, gun 3.6 x 0.6), a little over the drawn
+## tank's (assets/vehicles/tank: turret 2.72 x 1.98 m; the gun reaches 3.0 m from the turret ring
+## and is 0.25 m across).
 const TURRET_HALF := Vector2(1.55, 1.12)
 const GUN_REACH := 3.54
 const GUN_HALF_WIDTH := 0.37

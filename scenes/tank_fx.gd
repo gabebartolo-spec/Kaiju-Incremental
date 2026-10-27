@@ -34,7 +34,7 @@ static func fire_shell(host: Rampage, node: TankModel, target: Vector3, miss := 
 static func wreck(city: CityView, pos: Vector3) -> void:
 	for n: int in 8:
 		city.debris(
-			pos + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
+			pos + Vector3(0, 0.5, 0), TankModel.PAINT if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
 		)
 	city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
 	city.fire(pos, 0.6)
@@ -45,7 +45,7 @@ static func wreck(city: CityView, pos: Vector3) -> void:
 static func stray(city: CityView, at: Vector3, radius: float) -> void:
 	for n: int in 8:
 		city.debris(
-			at + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.WARN, Vector3.UP
+			at + Vector3(0, 0.5, 0), TankModel.PAINT if n % 2 == 0 else UiKit.WARN, Vector3.UP
 		)
 	city.flash(at + Vector3(0, 1.0, 0), Color("ff8a3a"), 9.0, 0.45)
 	city.fx.dust(at + Vector3(0, 1.0, 0), 1.2)
