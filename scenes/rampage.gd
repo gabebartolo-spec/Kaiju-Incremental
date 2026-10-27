@@ -251,11 +251,9 @@ func _process(delta: float) -> void:
 
 
 ## The pause menu's photo mode (PhotoMode, D-259): the gameplay camera flies free round the frozen
-## kaiju; the breath's aim and the floating numbers hide while it is up.
+## kaiju; the breath's aim hides while it is up.
 func photo_mode() -> PhotoMode:
 	var hide: Array[Node3D] = [_aim]
-	for node: Node in get_tree().get_nodes_in_group(CityView.FLOAT_TEXT):
-		hide.append(node as Node3D)
 	var rest := (camera_rest * CameraTuning.zoom(sim.body_scale())).length()
 	return PhotoMode.new(_camera, _kaiju_at, rest, hide)
 
@@ -325,14 +323,9 @@ func _on_event(event: Dictionary) -> void:
 			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
 
 
-func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
+## No number floats up for the biomass (D-284: "Remove them entirely"); the HUD counts it.
+func _on_chunks_broken(index: int, cells: Array[Vector3i], _pay: float) -> void:
 	_city.chunks_broken(index, cells, _kaiju_at)
-	var b := sim.buildings[index]
-	var per := b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult") * pay
-	var gained := cells.size() * per
-	if gained >= 1.0:
-		var at := b.chunk_world(cells[0]) + Vector3(0, 2.0, 0)
-		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
 
 
 ## How far an upgraded stat is above the species' own value (1 = not upgraded).
@@ -392,5 +385,4 @@ func _place_camera(delta: float) -> void:
 	var nod := shake.turn(sim.body_scale(), motion).y
 	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
 	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
-	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)
