@@ -4430,6 +4430,18 @@
                   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                   "additionalProperties": false
                 },
+                "purple": {
+                  "type": "object",
+                  "properties": {
+                    "inner": {"$ref": "#/$defs/str"},
+                    "fringe": {"$ref": "#/$defs/str"},
+                    "core": {"$ref": "#/$defs/hex6"},
+                    "flare": {"$ref": "#/$defs/hex6"}
+                  },
+                  "required": ["inner", "fringe", "core", "flare"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
                 "violet": {
                   "type": "object",
                   "properties": {
@@ -4442,7 +4454,31 @@
                   "additionalProperties": false
                 }
               },
-              "required": ["amber", "eye", "violet"],
+              "required": ["amber", "eye", "violet", "purple"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "throat": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+            "charge": {
+              "type": "object",
+              "properties": {
+                "width": {"$ref": "#/$defs/num"},
+                "alpha": {"$ref": "#/$defs/num"},
+                "min_px": {"$ref": "#/$defs/num"},
+                "hop_life": {"$ref": "#/$defs/num"},
+                "lead_in": {"$ref": "#/$defs/num"},
+                "jaw_before": {"$ref": "#/$defs/num"},
+                "every": {"$ref": "#/$defs/num"},
+                "fork": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "push": {"$ref": "#/$defs/num"},
+                "rounds": {"$ref": "#/$defs/int"},
+                "forks": {"$ref": "#/$defs/int"},
+                "level": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "middle": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "lift": {"$ref": "#/$defs/num"},
+                "bones": {"type": "array", "items": {"$ref": "#/$defs/str"}, "minItems": 2}
+              },
+              "required": ["width", "alpha", "min_px", "hop_life", "lead_in", "jaw_before", "every", "fork", "push", "rounds", "forks", "level", "middle", "lift", "bones"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             },
@@ -4587,7 +4623,7 @@
             "tail", "hold_level", "stroke_decay", "branch_peak", "branch_hold", "branch_decay",
             "light_decay", "light", "muzzle_flare", "flare_edge", "flare_soft", "strike_flare",
             "strike_lift", "impact_sparks", "branch_tip", "branch_sparks", "power_share",
-            "prewarm_seconds", "breath", "thunder"
+            "prewarm_seconds", "breath", "thunder", "throat", "charge"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false

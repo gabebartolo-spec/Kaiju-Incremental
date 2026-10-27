@@ -36,7 +36,6 @@ var _vip: VipView  # the leader's escape helicopter (D-149)
 var _wrecks: HeliWreck
 var _young: Dictionary = {}
 var _thunder: ThunderBeam
-var _beam_sound: SfxBeam
 var _dust_t := 0.0
 var _climbing := false
 var _glow_mats: Dictionary = {}
@@ -58,8 +57,6 @@ func _ready() -> void:
 	add_child(_vip)
 	_thunder = ThunderBeam.new(sim, _kaiju, _tint, rampage.run_index)
 	add_child(_thunder)
-	_beam_sound = SfxBeam.new(rampage.sfx)
-	add_child(_beam_sound)
 	_thunder.wire(rampage, _city.fx)
 
 
@@ -122,14 +119,9 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
 		"swipe":
 			_swiped(event, kaiju_at)
-		"beam_start":  # the Thunder Beam: the breath's bolt, held
-			_hook("jaw_open", [true])
-			_thunder.start(Num.f(event["seconds"]), kaiju_at)
-			_beam_sound.start()
-		"beam_end":
-			_hook("jaw_open", [false])
-			_thunder.stop()
-			_beam_sound.stop()
+		"strike_windup", "beam_start", "beam_end":  # the lightning's charge-up, the Thunder Beam
+			if not _thunder.on_event(event, kaiju_at):
+				return false
 		"coated", "fire_burning":
 			_lit(event)
 		"glide_start":
