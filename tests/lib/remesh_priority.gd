@@ -89,6 +89,7 @@ func _carve_all(high: bool) -> Dictionary:
 	)
 	var digests := {}
 	for r: Vector3i in view.arrays:
-		digests[r] = CellMesher.digest(view.arrays[r])
+		var made: Array = view.arrays[r]
+		digests[r] = CellMesher.digest(made)
 	view.free()
 	return digests
