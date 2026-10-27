@@ -5,10 +5,11 @@ extends RefCounted
 ## feet are planted, in game axes (positions in cm). Data only; ClipGait plays it.
 ## Layout: "KCLP", u32 version, u32 header length, the header (JSON: bones in rig.json order, the
 ## skin bones each gathers, rest heads in metres, fps, stride per walk cycle, the clip table; a clip
-## may name its widest-jaw frame "jaw_peak" and say "tail_slam": false), then
-## FRAME_BYTES per frame: int16[4] quaternion per bone, int16[3] pelvis offset, int16[6] left and
-## right toe tips, int16 root yaw (centidegrees), int16[2] root travel (dm; unused), u8 planted
-## bits, u8 pad.
+## may name its widest-jaw frame "jaw_peak" and say "tail_slam": false; a "layer" clip, laid over
+## the others (ClipRake: the keyed claw rake), names its "hit" frame and its "trail" [first, last]
+## frames), then FRAME_BYTES per frame: int16[4] quaternion per bone, int16[3] pelvis offset,
+## int16[6] left and right toe tips, int16 root yaw (centidegrees), int16[2] root travel (dm;
+## unused), u8 planted bits, u8 pad.
 
 const MAGIC := "KCLP"
 const VERSION := 1
@@ -38,6 +39,7 @@ var _clips: Dictionary = {}  # name -> Vector3i(first frame, frames, loops 0/1)
 var _cycles: Dictionary = {}  # name -> walk cycles the clip holds (1 unless the file says)
 var _jaw_peaks: Dictionary = {}  # name -> frame with the jaw at its widest, when the file says
 var _no_slam: Dictionary = {}  # clips keyed without a tail slam ("tail_slam": false)
+var _layers: Dictionary = {}  # layer clip name -> Vector3(hit frame, trail first, trail last)
 var _rest_heads: Array[Vector3] = []
 var _raw := PackedByteArray()
 var _data_at := 0
@@ -90,6 +92,11 @@ func _load(header: Dictionary, raw: PackedByteArray, data_at: int) -> bool:
 			_jaw_peaks[str(c["name"])] = Num.f(c["jaw_peak"])
 		if not c.get("tail_slam", true):
 			_no_slam[str(c["name"])] = true
+		if c.get("layer", false):
+			var trail: Array = c.get("trail", [0.0, 0.0])
+			_layers[str(c["name"])] = Vector3(
+				Num.f(c.get("hit", 0.0)), Num.f(trail[0]), Num.f(trail[1])
+			)
 		total = maxi(total, first + frames)
 	_raw = raw
 	_data_at = data_at
@@ -129,6 +136,23 @@ func jaw_peak(clip: String, fallback: float) -> float:
 ## False for a clip keyed without a tail slam (the Cascadeur roar arches its tail up).
 func slams(clip: String) -> bool:
 	return not _no_slam.has(clip)
+
+
+## True for a clip laid over the others ("layer": the keyed claw rake, ClipRake).
+func is_layer(clip: String) -> bool:
+	return _layers.has(clip)
+
+
+## A layer clip's hit frame (the claws cross the snout line, where the sim's rake lands).
+func hit_frame(clip: String) -> float:
+	var marks: Vector3 = _layers[clip]
+	return marks.x
+
+
+## A layer clip's first and last frames of the claw's streak.
+func trail_span(clip: String) -> Vector2:
+	var marks: Vector3 = _layers[clip]
+	return Vector2(marks.y, marks.z)
 
 
 ## Checks the clips were baked for this rig (same bones, same order, same rest shape) and fits
