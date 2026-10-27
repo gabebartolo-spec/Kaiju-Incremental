@@ -24,6 +24,12 @@ func _init(base: String, height: float) -> void:
 	voxel = height / maxf(1.0, Num.f(meta.get("height", 2)) - 1.0)
 
 
+## Empties the shared caches (tests that need the first build to run again).
+static func clear_cache() -> void:
+	_kvox_cache.clear()
+	_mesh_cache.clear()
+
+
 ## A part's hinge in the model's space (world units).
 func pivot(part: String) -> Vector3:
 	var entry: Dictionary = _parts[part]
@@ -45,7 +51,9 @@ func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
 	if not _mesh_cache.has(key):
 		var vox: VoxelBuilder = _read(part).frames[0]
 		vox.salt = salt
-		_mesh_cache[key] = vox.build({}, voxel, 0.0, origin).multimesh
+		var holder := vox.build({}, voxel, 0.0, origin)  # only its MultiMesh is shared
+		_mesh_cache[key] = holder.multimesh
+		holder.free()  # a node never added to the tree is not freed by anything else
 	var mm: MultiMesh = _mesh_cache[key]
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
