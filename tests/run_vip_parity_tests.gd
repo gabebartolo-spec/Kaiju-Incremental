@@ -135,4 +135,17 @@ func _check_vip_kill_leaves_gunship_falls() -> void:
 	var off := _play(false, 10.0)
 	print("VIP_KILL_PARITY fates on %d, off %d" % [on.fates.size(), off.fates.size()])
 	check(on.fates.size() >= 3, "gunships fell after the leader (%d)" % on.fates.size())
-	check(on.fates == off.fates, "same gunship fates and drifts with the leader killed")
+	var apart := 0
+	while apart < mini(on.fates.size(), off.fates.size()) and on.fates[apart] == off.fates[apart]:
+		apart += 1
+	check(
+		on.fates == off.fates,
+		(
+			"same gunship fates and drifts with the leader killed (first apart at %d: %s | %s)"
+			% [
+				apart,
+				on.fates[apart] if apart < on.fates.size() else "-",
+				off.fates[apart] if apart < off.fates.size() else "-"
+			]
+		)
+	)
