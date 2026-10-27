@@ -578,7 +578,7 @@ P0 (roads, quays and river walls, bridge decks, pavements, lawns, expressway, ru
 |---|---|---|---|---|
 | CitySkyline:std | lamp heads (glow boxes on the far skyline) | VFX lead | P3 | 2026-11-04 |
 | CitySkyline:shader:facade.gdshader | far-city towers, roof gear, lattice tower | VFX lead | P2 towers and roof gear, P3 tower | 2026-10-31 (P2), 2026-11-04 (P3 tower) |
-| CitySkyline:shader:facade_far.gdshader | hazy far towers, lattice tower | VFX lead | P2, P3 tower | 2026-10-31 (P2), 2026-11-04 (P3 tower) |
+| CitySkyline:shader:facade_far_fogged.gdshader | hazy far towers, lattice tower (facade_far's fogged twin, FarHaze) | VFX lead | P2, P3 tower | 2026-10-31 (P2), 2026-11-04 (P3 tower) |
 | CityGround:std | river and bay water sheets | VFX lead | P1 | 2026-10-28 |
 | BuildingStream:shader:facade.gdshader | building faces (stream) | VFX lead | P2 | 2026-10-31 |
 | BuildingView:shader:voxel.gdshader | building faces (voxel) | VFX lead | P2 | 2026-10-31 |
