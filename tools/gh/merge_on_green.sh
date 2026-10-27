@@ -64,7 +64,7 @@ for _ in $(seq 1 "$looks"); do
   head=$(gh pr view "$pr" --json headRefOid --jq .headRefOid)
   [ -z "$head" ] && { sleep 60; continue; }
   [ "$head" != "$sha" ] && { echo "HEAD MOVED $head"; exit 2; }
-  s=$(gh pr view "$pr" --json statusCheckRollup --jq '[.statusCheckRollup[]|(if (.status // "COMPLETED") != "COMPLETED" then "PENDING" elif (.conclusion // "") == "" then (.state // "PENDING") else .conclusion end)]|map(ascii_upcase)|group_by(.)|map("\(.[0])=\(length)")|join(" ")')
+  s=$(gh pr view "$pr" --json statusCheckRollup --jq '[.statusCheckRollup|group_by((.workflowName // "")+"/"+(.name // .context // ""))|map(sort_by(.startedAt // .completedAt // "")|last)|.[]|(if (.status // "COMPLETED") != "COMPLETED" then "PENDING" elif (.conclusion // "") == "" then (.state // "PENDING") else .conclusion end)]|map(ascii_upcase)|group_by(.)|map("\(.[0])=\(length)")|join(" ")')
   if ! echo "$s" | grep -qE 'PENDING|QUEUED|IN_PROGRESS|^$'; then
     if echo "$s" | grep -qE 'FAILURE|CANCELLED|TIMED_OUT|ERROR'; then echo "RED: $s"; exit 1; fi
     fresh_merge_check || exit $?
