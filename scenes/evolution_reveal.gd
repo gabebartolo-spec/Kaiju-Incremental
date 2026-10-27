@@ -65,13 +65,7 @@ func setup(species: Dictionary, before: Dictionary, after: Dictionary, city: Dic
 
 func _ready() -> void:
 	UiKit.full_rect(self)
-	# The reveal holds focus (and keeps it), so a confirm skips it instead of reaching the tree
-	# underneath and buying the node again.
-	focus_mode = Control.FOCUS_ALL
-	for side: String in ["left", "top", "right", "bottom"]:
-		set("focus_neighbor_" + side, NodePath("."))
-	focus_next = NodePath(".")
-	focus_previous = NodePath(".")
+	_hold_focus()
 	add_child(UiKit.backdrop())
 	var col := VBoxContainer.new()
 	UiKit.full_rect(col)
@@ -105,6 +99,16 @@ func _ready() -> void:
 	add_child(_flash)
 	_place_kaiju(stage_before, scale_before)
 	grab_focus.call_deferred()
+
+
+## The reveal holds focus (and keeps it), so a confirm skips it instead of reaching the tree
+## underneath and buying the node again.
+func _hold_focus() -> void:
+	focus_mode = Control.FOCUS_ALL
+	for side: String in ["left", "top", "right", "bottom"]:
+		set("focus_neighbor_" + side, NodePath("."))
+	focus_next = NodePath(".")
+	focus_previous = NodePath(".")
 
 
 ## The 3D frame for a screen `owner`: one fixed size from the screen's height (capped at

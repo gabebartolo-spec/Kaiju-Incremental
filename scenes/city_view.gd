@@ -49,23 +49,11 @@ func _ready() -> void:
 	_build_ground()
 	if not await stages.next(self):
 		return
-	var colors: Array[Color] = []
-	for b: RampageSim.Building in sim.buildings:
-		colors.append(_base_color(b))
-	_stream = BuildingStream.new(sim, colors)
+	_stream = BuildingStream.new(sim, BuildingColors.of(sim))
 	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
 	add_child(_stream)
 	_bubble = CameraBubble.new(sim.buildings, _stream.built)
-	fx = Fx.new()
-	add_child(fx)
-	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
-	add_child(_debris)
-	_ruins = RuinYard.new(sim, _stream.view)
-	add_child(_ruins)
-	_topple = ToppleFx.new(self, _rng)
-	add_child(_topple)
-	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
-	Fire.prewarm(self)
+	_add_layers()
 	if not await stages.next(self):
 		return
 	if _with_decor:
@@ -85,6 +73,20 @@ func _ready() -> void:
 	_stream.finish_initial()
 	process_mode = Node.PROCESS_MODE_INHERIT
 	is_loaded = true
+
+
+## The effect layers: dust and sparks, debris, ruins, topples and the light pool.
+func _add_layers() -> void:
+	fx = Fx.new()
+	add_child(fx)
+	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
+	add_child(_debris)
+	_ruins = RuinYard.new(sim, _stream.view)
+	add_child(_ruins)
+	_topple = ToppleFx.new(self, _rng)
+	add_child(_topple)
+	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
+	Fire.prewarm(self)
 
 
 ## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one
@@ -160,11 +162,6 @@ func _build_ground() -> void:
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
 		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
-
-
-func _base_color(b: RampageSim.Building) -> Color:
-	var styles := Look.styles()
-	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
