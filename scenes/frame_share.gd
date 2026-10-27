@@ -58,6 +58,21 @@ func eye() -> Vector3:
 func share_of(box: AABB) -> float:
 	if box.has_point(_eye):
 		return 1.0
+	var seen := _outline(box)
+	if seen.size() < 3:
+		return 0.0
+	var hull := Geometry2D.convex_hull(seen)
+	if hull.size() > 1 and hull[0] == hull[hull.size() - 1]:
+		hull.remove_at(hull.size() - 1)  # the hull comes back closed
+	var area := 0.0
+	for poly: PackedVector2Array in Geometry2D.intersect_polygons(hull, PackedVector2Array(SCREEN)):
+		area += _area(poly)
+	return clampf(area / SCREEN_AREA, 0.0, 1.0)
+
+
+## Where the box shows on the screen: its corners in front of the camera and the points where its
+## edges cross the near plane.
+func _outline(box: AABB) -> PackedVector2Array:
 	var corner: Array[Vector3] = []
 	for i: int in 8:
 		corner.append(_to_camera * box.get_endpoint(i))
@@ -73,15 +88,7 @@ func share_of(box: AABB) -> float:
 			var b := corner[i | bit]
 			if _in_front(a) != _in_front(b):  # cut at the near plane
 				seen.append(_project(a.lerp(b, (-_near - a.z) / (b.z - a.z))))
-	if seen.size() < 3:
-		return 0.0
-	var hull := Geometry2D.convex_hull(seen)
-	if hull.size() > 1 and hull[0] == hull[hull.size() - 1]:
-		hull.remove_at(hull.size() - 1)  # the hull comes back closed
-	var area := 0.0
-	for poly: PackedVector2Array in Geometry2D.intersect_polygons(hull, PackedVector2Array(SCREEN)):
-		area += _area(poly)
-	return clampf(area / SCREEN_AREA, 0.0, 1.0)
+	return seen
 
 
 func _in_front(c: Vector3) -> bool:
