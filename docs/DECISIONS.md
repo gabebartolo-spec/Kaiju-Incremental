@@ -4,6 +4,33 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-339 · Director · 1080p is the baseline, not 4K
+His words (19:5x): "you know we dont need to work as 4k as the baseline just because i am using a 4k tv. most players
+probably wont be running it at this resolution". Asked, he picked: "1080p first" (text, readability and the look are
+judged at 1080p, the most common screen on Steam; 4K stays supported and is checked at each playtest build), the speed
+target "60 fps at 1080p Medium" (replaces D-093/D-109's 60 fps at 4K), and stills "Switch to 1080p" (replaces D-304's
+4K stills; clips stay 1080p). Scope, asked: "Kaiju only" (his other games keep the rulebook's
+4K-first check); the project CLAUDE.md carries the Kaiju rule.
+
+## 2026-10-27 · D-338 · Director · Momentum differs by titan: croc quickest, Komodo lumbering but hardest, serpent agile
+His words (19:5x): "i want the turning bleed to be light for the croc, he should be the most mobile and gather momentum
+the quickest / our komodo is lumbering / our serpent will be agile but not particularly fast or slow". Asked: the Komodo
+"Slow start, hardest hit" (slowest to build, turning bleeds him most, but rolling he crashes and slams hardest) and his
+run "Always on, like the croc" (replaces D-245's top-tier run unlock). The serpent, in his words: "snake will crash
+through buildings around his height, but being that he is the shortest kaiju, that wont be many buildings. Snake can
+however clumb the buildings bigger than him and constrict-crush them"; asked, a bigger building at speed "Flows into a
+climb" (no slam) and constrict "Keep it at adulthood" (D-206 stands). Serpent work still waits on D-246.
+
+## 2026-10-27 · D-337 · Director · The croc's run is momentum: he crashes through small buildings, slams into big ones
+His words (19:4x), on hearing the croc has no run yet: "running wont have a sprint button, it should be momentum based,
+at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones". Asked:
+momentum "Always on" (from the first rampage, walking straight builds him into a run and turning bleeds it; tree nodes
+make it build faster and hit harder, and the old unlock node becomes a boost); a big building "Slam and stop" (a loud
+impact, a deep dent caved in at the contact, the building shudders, the camera shakes, his momentum is spent); small
+vs big "Relative to his size" (shorter than about his shoulder crashes, so each stage crashes through more); when
+"Now, one more builder" (ahead of D-310's order; it touches no debt or render file). Per D-335 the run and the slam
+stop are keyed in Cascadeur.
+
 ## 2026-10-27 · D-336 · Director · One Cascadeur keyer and one rigger; no second Cascadeur copy
 His words (19:3x), on hearing that Cascadeur runs one copy at a time: "if only 1 builder can use casc at a time then
 we only need 1 casc builder otherwise the others are just twiddling their thumbs". Asked, he picked "1 keyer + 1
@@ -368,31 +395,3 @@ Street life: civilians "Mixed panic"; hydrants "Puts out fires"; traffic "Yes, j
 ## 2026-10-26 · D-257 · Director · District buildings: review, scale, colour, signs, rewards; new bridge; stomp button
 
 Asked a batch ("ask me a lot of questions"). Tripo buildings: reviewed as "One board per district"; tallest skyscrapers "About 2x the croc" (adult); "District palettes" applied at voxelising (Chinatown reds/greens, docklands brick, neon strip dark with bright signs); Chinatown signs in "Real Chinese characters" (authentic shop words, meaning checked, no real brands). Red-light district: "Suggestive signage" (cheeky silhouette neon, XXX-style signs; nothing explicit beyond signage). Hero landmarks (bank, town hall, courthouse...): "Yes, a big bonus" (biomass burst + callout). Landmark bridge: "Make a new one" (Golden Gate / Harbour Bridge style suspension span over the wider water, Tripo HD, inside the D-256 4700 cap). Croc stomp: "Its own button" (stomp where you stand, shockwave flattens nearby streets and props). Also: "Swap in the new adult" (adult3 replaces croctitan in game; old clips retargeted until re-keyed in Cascadeur); keep HD over Smart Mesh for buildings ("Keep HD").
-
-## 2026-10-26 · D-256 · Director · Tripo district buildings: hero pieces and 40 fillers, up to 4700 credits
-
-"can probably make the architecture as tripo models then voxelise it if that works?"; picked "Hero buildings, <=1500 credits", then "id be happy for you to make like 30-40 buildings in tripo to act as filler buildings" and picked "Go to 40 filler" (<=3200). Districts total <=4700 credits. Every model gets a six-view check and is voxelised into carvable cell grids (tools/landmarks/bake.py, D-253); filler is placed with variation (facings, mirror, floor stretch, palettes, roof clutter), no model above 5% of a view, no identical neighbours. "can you get started on the tripo": the lead generates through the built-in browser.
-
-## 2026-10-26 · D-255 · Director · Districts grow by stage; street life; human clips may be premade; agents swing and jet
-
-Districts (comment #78): red-light district, Chinatown, docklands, a bar and restaurant street, a business district, neon commercial streets and a giant billboard intersection; picked "Grow by stage" (baby: bar strip + neon street; teen adds Chinatown, red-light, docklands; adult adds business district + billboard intersection). Street life (#77): traffic lights, power lines, manholes, bins, graffiti, street lights, phone booths, food trucks, plus "Add a few more" (hydrants, bus stops, benches, newsstands, bikes). Taskforce (#76): "spiderman" grapple swings then jetpacks, "Mix by situation"; "if the premade clips are better, then we use them" (humans only; kaiju stay Cascadeur); agents get "New voxel poses".
-
-## 2026-10-26 · D-254 · Director · Play area 1.5x wider; landmarks and explosive sites spread; the landmark bridge
-
-"id like to expand the play area for all 3 stages": "1.5x wider" (half-widths 75/120/225 m). "space out our landmarks (of which one is a bridge, so we can also put an expanded water area there) and explosive sites across the new expanded area"; the bridge is the D-133 suspension bridge tower Tripo model, "like a sydney harbor bay bridge/golden gate bridge style".
-
-## 2026-10-26 · D-253 · Director · Carving is universal for every building and structure
-
-"carve is a universal feature for all buildings" (standing rule). Every building and structure, railway included, breaks only through the one voxel carve and collapse path; a CI test fails any structure type that removes geometry another way (landmarks and river bridges are named known gaps until converted). PR #209 rail: "FIX. he doesnt carve it at all? he hits it once and it disappears".
-
-## 2026-10-26 · D-252 · Director · Croc focus to the Itch demo; dragon paused; subagent team; model per task; merge everything
-
-"can we pause all dragon work for now though", "I want to focus on getting croc shipped" (finish line: Itch demo, M4); croc stomp first ("Croc standing stomp", then "Croc stomp next"). Team: subagents, 3 builders + 1 reader; "i need you to determine whether a task demands opus or sonnet". Branches: "I want the branches fully cleaned up and stale ones removed / i want all mergable good work merged"; "why isnt it merged? ive been asking you to merge everything" (PR cap 8 until the backlog lands); branch force-delete unblocked in settings ("Remove the block"). Skeletons: "optimised for natural, smooth animation", "only interested in our reptilian skeletons".
-
-## 2026-10-26 · D-251 · Director · Komodo w29 walk approved; Komodo lands off
-
-"walk is good. ship it"; Komodo motion bars "His own, from w29"; Komodo work lands off by default while paused ("Land it too").
-
-## 2026-10-26 · D-250 · Director · Straight to him: every visual goes to the director, judged by no agent
-
-"just show me the clip, i will immediately know what is wrong and can describe the fix, you then workout how to do that fix"; every visual, every project. Replaces D-249's lead-looks-first route.
