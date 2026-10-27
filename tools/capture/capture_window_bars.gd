@@ -17,6 +17,7 @@ extends SceneTree
 ##     --start=<m> begins that many metres along the drift, so a tower passes mid-clip)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const Probe := preload("res://tools/capture/window_bars_probe.gd")
 const SPECIES := "reptilian"
 const SETTLE_FRAMES := 6
 const FRAME_RATE := 60.0  # the --fixed-fps of a clip
@@ -214,10 +215,16 @@ func _apply(variant: String, view: BuildingView, index: int) -> Callable:
 			"backmagenta":
 				# Diagnostic: the baked shells' back faces glow magenta, to tell a back face from a hole.
 				undo.append(
-					_patch_baked("ALBEDO = albedo * inside;", "ALBEDO = vec3(0.0); EMISSION = vec3(4.0, 0.0, 4.0);")
+					Probe.patch_baked(
+						root,
+						"ALBEDO = albedo * inside;",
+						"ALBEDO = vec3(0.0); EMISSION = vec3(4.0, 0.0, 4.0);"
+					)
 				)
 			"cullback":
-				undo.append(_patch_baked("render_mode cull_disabled;", "render_mode cull_back;"))
+				undo.append(
+					Probe.patch_baked(root, "render_mode cull_disabled;", "render_mode cull_back;")
+				)
 			"bgred":
 				# Diagnostic: a solid red background, to tell a pixel no surface shaded from a dark one.
 				var mode := _env.background_mode
@@ -243,102 +250,16 @@ func _apply(variant: String, view: BuildingView, index: int) -> Callable:
 				# filter (render_opt.facade_aa) forced off or on.
 				var param := "plain" if part == "facadeplain" else "filter_windows"
 				var value := part != "aaoff"
-				for mat: ShaderMaterial in _facade_mats():
+				for mat: ShaderMaterial in Probe.facade_mats(root):
 					var was: Variant = mat.get_shader_parameter(param)
 					mat.set_shader_parameter(param, value)
 					undo.append(func() -> void: mat.set_shader_parameter(param, was))
-				print("  %s: %d facade materials" % [part, _facade_mats().size()])
-			"list":  # every drawn instance over the building's box, for a duplicate hunt
-				for gi: GeometryInstance3D in _over(view.b):
-					print("  over: %s %s vis %s under_view %s aabb %s" % [
-						gi.get_class(), gi.get_path(), gi.is_visible_in_tree(), view.is_ancestor_of(gi),
-						gi.global_transform * gi.get_aabb()])
-			"solo":  # only the view's own meshes over its box
-				for gi: GeometryInstance3D in _over(view.b):
-					if not view.is_ancestor_of(gi) and gi.visible:
-						gi.visible = false
-						undo.append(func() -> void: gi.visible = true)
-			_ when part.begins_with("hidegrp"):  # one parent's instances over the box hidden
-				var groups := {}
-				for gi: GeometryInstance3D in _over(view.b):
-					if not view.is_ancestor_of(gi):
-						groups[str(gi.get_parent().get_path())] = true
-				var keys: Array = groups.keys()
-				keys.sort()
-				var key: String = keys[int(part.trim_prefix("hidegrp"))]
-				for gi: GeometryInstance3D in _over(view.b):
-					if str(gi.get_parent().get_path()) == key and not view.is_ancestor_of(gi):
-						var mmi := gi as MultiMeshInstance3D
-						var what := mmi.multimesh.mesh.get_class() if mmi != null and mmi.multimesh != null else ""
-						print("  hiding %s %s" % [gi.get_path(), what])
-						gi.visible = false
-						undo.append(func() -> void: gi.visible = true)
+				print("  %s: %d facade materials" % [part, Probe.facade_mats(root).size()])
 			_:
 				printerr("unknown variant part ", part)
 	return func() -> void:
 		for u: Callable in undo:
 			u.call()
-
-
-## Every facade.gdshaderinc material in the world (stand-in boxes, skyline), once each.
-func _facade_mats() -> Array[ShaderMaterial]:
-	var out: Array[ShaderMaterial] = []
-	var stack: Array[Node] = [root]
-	while not stack.is_empty():
-		var node: Node = stack.pop_back()
-		stack.append_array(node.get_children())
-		var mesh: Mesh = null
-		if node is MultiMeshInstance3D and (node as MultiMeshInstance3D).multimesh != null:
-			mesh = (node as MultiMeshInstance3D).multimesh.mesh
-		elif node is MeshInstance3D:
-			mesh = (node as MeshInstance3D).mesh
-		if mesh == null:
-			continue
-		for k: int in mesh.get_surface_count():
-			var mat := mesh.surface_get_material(k) as ShaderMaterial
-			if mat == null and mesh is PrimitiveMesh:
-				mat = (mesh as PrimitiveMesh).material as ShaderMaterial
-			if mat != null and mat.shader != null and mat.shader.resource_path.contains("facade") and not out.has(mat):
-				out.append(mat)
-	return out
-
-
-## Every visible GeometryInstance3D whose world box meets building b's standing box.
-func _over(b: RampageSim.Building) -> Array[GeometryInstance3D]:
-	var box := AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, b.height, b.d))
-	box = box.grow(0.25)
-	var out: Array[GeometryInstance3D] = []
-	var stack: Array[Node] = [root]
-	while not stack.is_empty():
-		var node: Node = stack.pop_back()
-		stack.append_array(node.get_children())
-		var gi := node as GeometryInstance3D
-		if gi != null and gi.is_visible_in_tree() and box.intersects(gi.global_transform * gi.get_aabb()):
-			out.append(gi)
-	return out
-
-
-## Every building_baked.gdshader material in the scene switched to a copy of the shader with `from`
-## replaced by `to`; returns what puts the shader back.
-func _patch_baked(from: String, to: String) -> Callable:
-	var src: Shader = load("res://scenes/building_baked.gdshader")
-	assert(src.code.contains(from), "building_baked.gdshader has no '%s'" % from)
-	var patched := Shader.new()
-	patched.code = src.code.replace(from, to)
-	var mats: Array[ShaderMaterial] = []
-	var stack: Array[Node] = [root]
-	while not stack.is_empty():
-		var node: Node = stack.pop_back()
-		stack.append_array(node.get_children())
-		if node is GeometryInstance3D:
-			var mat := (node as GeometryInstance3D).material_override as ShaderMaterial
-			if mat != null and mat.shader == src:
-				mat.shader = patched
-				mats.append(mat)
-	print("  patched %d building materials" % mats.size())
-	return func() -> void:
-		for mat: ShaderMaterial in mats:
-			mat.shader = src
 
 
 ## The view's shell mesh without the wall faces that look at a balcony slab (a slab outside the

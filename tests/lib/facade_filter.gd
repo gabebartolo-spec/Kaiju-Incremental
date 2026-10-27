@@ -61,7 +61,9 @@ func run() -> void:
 	for line: String in SHADER_LINES:
 		if not src.contains(line):
 			missing.append(line)
-	_check.call(missing.is_empty(), "facade.gdshaderinc box-filters the windows (missing %s)" % [missing])
+	_check.call(
+		missing.is_empty(), "facade.gdshaderinc box-filters the windows (missing %s)" % [missing]
+	)
 	var point := 0
 	var filtered := 0
 	var worst := ""
@@ -75,8 +77,10 @@ func run() -> void:
 	_check.call(point > 0, "one point sample per pixel flashes in the model (%d)" % point)
 	_check.call(
 		filtered <= point * MAX_SHARE,
-		"filtered windows flash at most %d%% as often as point-sampled (%d vs %d;%s)" % [
-			roundi(MAX_SHARE * 100.0), filtered, point, worst]
+		(
+			"filtered windows flash at most %d%% as often as point-sampled (%d vs %d;%s)"
+			% [roundi(MAX_SHARE * 100.0), filtered, point, worst]
+		)
 	)
 
 
@@ -84,6 +88,7 @@ func run() -> void:
 ## with pixels `foot` cells wide; past `start` the pixel box-filters a footprint held to `cells`.
 func _flashes(foot: float, start: float, cells: float) -> int:
 	var count := 0
+	var box := minf(foot, cells) if foot > start else 0.0
 	for c: int in 6:
 		for r: int in 4:
 			# 2 x 2 cells, one lit window pair of a floor, each at its own offset to the pixels.
@@ -91,7 +96,7 @@ func _flashes(foot: float, start: float, cells: float) -> int:
 			var win := Rect2(lo, Vector2(2.0, 2.0))
 			var prev := -1.0
 			for t: int in FRAMES:
-				var e := _energy(win, foot, DRIFT * float(t) * foot, start, cells)
+				var e := _energy(win, foot, DRIFT * float(t) * foot, box)
 				if prev >= 0.0 and maxf(e, prev) > 0.0 and absf(e - prev) > JUMP * maxf(e, prev):
 					count += 1
 				prev = e
@@ -99,19 +104,18 @@ func _flashes(foot: float, start: float, cells: float) -> int:
 
 
 ## The window's brightness summed over the pixels (pixel k spans cells [k, k + 1) * foot + off):
-## the share of each pixel it covers, as the shader's filter takes it, or one point at the middle.
-func _energy(win: Rect2, foot: float, off: Vector2, start: float, cells: float) -> float:
-	var filter := foot > start
-	var w := minf(foot, cells)
-	var k0 := Vector2i(floori((win.position.x - off.x) / foot) - 1, floori((win.position.y - off.y) / foot) - 1)
-	var k1 := Vector2i(ceili((win.end.x - off.x) / foot) + 1, ceili((win.end.y - off.y) / foot) + 1)
+## the share of a `box`-wide square round each pixel's middle it covers, as the shader's filter
+## takes it, or (box 0) one point at the middle.
+func _energy(win: Rect2, foot: float, off: Vector2, box: float) -> float:
+	var k0 := Vector2i(((win.position - off) / foot).floor()) - Vector2i.ONE
+	var k1 := Vector2i(((win.end - off) / foot).ceil()) + Vector2i.ONE
 	var sum := 0.0
 	for kx: int in range(k0.x, k1.x + 1):
 		for ky: int in range(k0.y, k1.y + 1):
 			var mid := Vector2((kx + 0.5) * foot, (ky + 0.5) * foot) + off
-			if not filter:
+			if box <= 0.0:
 				sum += 1.0 if win.has_point(mid) else 0.0
 				continue
-			var box := Rect2(mid - Vector2(w, w) * 0.5, Vector2(w, w))
-			sum += box.intersection(win).get_area() / (w * w)
+			var square := Rect2(mid - Vector2(box, box) * 0.5, Vector2(box, box))
+			sum += square.intersection(win).get_area() / (box * box)
 	return sum
