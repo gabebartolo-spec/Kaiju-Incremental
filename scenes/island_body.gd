@@ -127,8 +127,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_cooldown = maxf(0.0, _cooldown - delta)
 	var v := linear_velocity
-	var speed := Num.f(_cfg["break_speed"])
-	var hit := _hit(v, speed)
+	var hit := IslandFracture.hard_hit(_recent, v, _clock, _cfg)
 	hit = _contact_hit if hit == Vector3.ZERO else hit  # the contact step, not once speed bleeds
 	_contact_hit = Vector3.ZERO
 	if _cooldown == 0.0 and hit.length() > 0.0:
@@ -142,25 +141,6 @@ func _physics_process(delta: float) -> void:
 			_settle()
 	else:
 		_still = 0.0
-
-
-## The velocity the body had just before a hard hit, or ZERO: the fastest recent velocity above
-## `speed` that the body has since lost more than break_jolt of. Looking back break_window
-## seconds, not one step, catches a slab that lands on a pile and slows over several steps.
-func _hit(v: Vector3, speed: float) -> Vector3:
-	var window := Num.f(_cfg["break_window"])
-	_recent.append(Vector4(v.x, v.y, v.z, _clock))
-	while _recent[0].w < _clock - window:
-		_recent.pop_front()
-	var out := Vector3.ZERO
-	var worst := speed * Num.f(_cfg["break_jolt"])
-	for r: Vector4 in _recent:
-		var old := Vector3(r.x, r.y, r.z)
-		var lost := (old - v).length()
-		if old.length() > speed and lost > worst:
-			worst = lost
-			out = old
-	return out
 
 
 ## The kinematic turn: the angle grows with the square of time, as FallMotion and the sim's
@@ -218,63 +198,23 @@ func _start_break(v: Vector3) -> void:
 	keys.sort_custom(
 		func(a: Vector3i, b: Vector3i) -> bool: return Num.f(centre[a]) < Num.f(centre[b])
 	)
-	if not whole:
-		_note_front(keys, centre)
+	if not whole:  # the height spread of the bricks left bordering the break (see front_spreads)
+		var spread := IslandFracture.front_spread(keys, _bricks, centre)
+		if spread >= 0.0:
+			front_spreads.append(spread)
 	_stage = {"keys": keys, "v": v, "done": 0, "t": 0.0}
 	_step_stage(0.0)
 
 
-## Splits the island along its bricks into chunks of about split_chunk bricks (each brick joins
-## the nearest of seeded seed bricks); a lone brick breaks into half-brick pieces. The chunks keep
-## piece_keep of the speed before the hit, spread from the centre at up to split_spread and spin
-## by up to split_spin: they tumble apart where the slab hit, then settle or break on their own.
+## Splits the island along its bricks into seeded chunks that tumble apart where the slab hit
+## (see IslandSplit); a lone brick breaks into half-brick pieces.
 func _split(v: Vector3) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash([_seed, cells.size(), _bricks.size()])
-	var groups := IslandFracture.group_bricks(_bricks.keys(), rng, Num.f(_cfg["split_chunk"]))
-	var xf := global_transform
-	var keep := v * Num.f(_cfg["piece_keep"])
-	var spread := Num.f(_cfg["split_spread"])
-	var spin := Num.f(_cfg["split_spin"])
-	var parts: Array[Dictionary] = []
-	var pieces: Array[Dictionary] = []
-	for group: Array in groups:
-		if group.size() == 1:
-			var lone: Vector3i = group[0]
-			_pieces_of(lone, xf, v, pieces)
-			continue
-		var own := PackedInt32Array()
-		var own_mats := PackedByteArray()
-		var com := Vector3.ZERO
-		for key: Vector3i in group:
-			var ks: PackedInt32Array = _bricks[key]
-			for k: int in ks:
-				own.append(cells[k])
-				own_mats.append(mats[k])
-				com += site.world(site.cell(cells[k]))
-		com /= own.size()
-		var at := xf * (com - _com)
-		var out := at - global_position
-		out.y = 0.0
-		out = out.normalized() * spread * rng.randf_range(0.5, 1.0)
-		var w := Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1))
-		(
-			parts
-			. append(
-				{
-					"cells": own,
-					"mats": own_mats,
-					"xf": Transform3D(xf.basis, at),
-					"v": keep + out + angular_velocity.cross(at - global_position),
-					"w": angular_velocity + w * spin,
-					"layers": [collision_layer, collision_mask],
-				}
-			)
-		)
+	var plan := IslandSplit.new(self, _bricks, _com)
+	plan.run(hash([_seed, cells.size(), _bricks.size()]), v, _cfg)
 	_settle_out()
-	split.emit(parts)
-	if not pieces.is_empty():
-		broke.emit(pieces, global_position)
+	split.emit(plan.parts)
+	if not plan.pieces.is_empty():
+		broke.emit(plan.pieces, global_position)
 	queue_free()
 
 
@@ -285,13 +225,6 @@ func _settle_out() -> void:
 	collision_layer = 0
 	collision_mask = 0
 	freeze = true
-
-
-## Records the height spread of the bricks that will border this break (see front_spreads).
-func _note_front(keys: Array[Vector3i], centre: Dictionary) -> void:
-	var spread := IslandFracture.front_spread(keys, _bricks, centre)
-	if spread >= 0.0:
-		front_spreads.append(spread)
 
 
 ## Lets go the next share of the staged bricks; the last share frees an emptied island.
