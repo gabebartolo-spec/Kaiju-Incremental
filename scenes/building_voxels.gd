@@ -92,6 +92,9 @@ func _make_palette(base: Color) -> void:
 		"vent": Color("3a3c3e"),
 		"pipe": Color("6b6f72"),
 		"tank": Color("6a5040"),
+		"heater": Color("e6e8e4"),  # D-352: the white solar water heater
+		"heater_hi": Color("f8faf6"),
+		"solar": Color("1b2538"),
 		"beacon": Color(1.0, 0.25, 0.2, 0.0),
 		"sign_frame": Color("1c1e22"),
 	}
