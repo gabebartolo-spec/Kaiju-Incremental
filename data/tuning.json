@@ -628,6 +628,7 @@
 		"coast_z": -120,
 		"bay_width": 190,
 		"far_haze": 0.004,
+		"far_fog": {"_note": "Director comment #37 (2026-10-25, asked twice: 'something funky going on with the distant city'): the far city floated crisp above the haze, its own gentler haze (far_haze) and no engine fog, so it was clearer than the bay in front of it. on: the far skyline (towers, quay, lattice tower, the far rampage's beast and smoke) takes the engine's depth fog as the bay does (FarHaze); own_haze: the share of its own built haze kept on top (0 = the same air as the bay); base: height fog, this much more haze at the foot of the far city fading over base_height metres up, so it shows no hard base line (0.5: its foot within 2% of the bay's luma at night and noon, tools/capture/far_city_bars.py); start: metres from the camera where its own haze and the height fog begin. Off = the look it was built with. Presentation only.", "on": true, "own_haze": 0.0, "base": 0.5, "base_height": 30.0, "start": 120.0},
 		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
