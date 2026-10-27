@@ -88,10 +88,12 @@ static func _ducks(cfg: Dictionary, check: Callable) -> void:
 ## "Keep, not stomps": the war does not pump with every footstep).
 static func _duck_reach(cfg: Dictionary, check: Callable) -> void:
 	var sends := {}
-	for def: Dictionary in cfg.get("buses", []):
+	var bus_defs: Array = cfg.get("buses", [])
+	for def: Dictionary in bus_defs:
 		sends[str(def["name"])] = str(def["send"])
 	var listened: Array[String] = []
-	for duck: Dictionary in cfg.get("ducks", {}).values():
+	var duck_defs: Dictionary = cfg.get("ducks", {})
+	for duck: Dictionary in duck_defs.values():
 		listened.append(str(duck["sidechain"]))
 	var sounds: Dictionary = cfg.get("sounds", {})
 	var ducking: Array[String] = []
