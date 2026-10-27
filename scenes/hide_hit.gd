@@ -189,9 +189,7 @@ func _mist(at: Vector3, n: Vector3, unit: float) -> void:
 	var grow := Curve.new()
 	grow.add_point(Vector2(0, 0.5))
 	grow.add_point(Vector2(1, 1.5))
-	var grow_tex := CurveTexture.new()
-	grow_tex.curve = grow
-	mat.scale_curve = grow_tex
+	FxCurve.set_scale(mat, grow)
 	mat.color_ramp = _mist_ramp()
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE * size

@@ -280,9 +280,7 @@ func _slam_puff_mat(step: ParticleProcessMaterial, alpha: float) -> ParticleProc
 	curve.add_point(Vector2(SLAM_GROW, 1.0))
 	curve.add_point(Vector2(SLAM_HOLD, 1.05))
 	curve.add_point(Vector2(1.0, 1.05))
-	var curve_tex := CurveTexture.new()
-	curve_tex.curve = curve
-	mat.scale_curve = curve_tex
+	FxCurve.set_scale(mat, curve)
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array([0.0, SLAM_PEAK, 1.0])
 	var c := _dust_light()
@@ -327,9 +325,7 @@ func _particle_mat(o: Dictionary) -> ParticleProcessMaterial:
 	var grow: bool = o["grow"]
 	curve.add_point(Vector2(0, 0.4 if grow else 1.0))
 	curve.add_point(Vector2(1, 1.6 if grow else 0.2))
-	var curve_tex := CurveTexture.new()
-	curve_tex.curve = curve
-	mat.scale_curve = curve_tex
+	FxCurve.set_scale(mat, curve)
 	var ramp := Gradient.new()
 	var colors: Array = o["colors"]
 	ramp.colors = PackedColorArray([colors[0], colors[1]])
@@ -353,9 +349,7 @@ static func _tree_puff_mat() -> ParticleProcessMaterial:
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 0.6))
 	curve.add_point(Vector2(1, 1.4))
-	var curve_tex := CurveTexture.new()
-	curve_tex.curve = curve
-	mat.scale_curve = curve_tex
+	FxCurve.set_scale(mat, curve)
 	return mat
 
 
