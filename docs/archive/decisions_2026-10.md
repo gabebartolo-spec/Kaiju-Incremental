@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-26 · D-279 · Director · Night sky: fog matched to the sky (B)
+
+Asked with 4 labelled 4K stills (docs/captures/2026-10-26-clips/night_sky_A-D.png) after his "too much white in the blue ... the lighting or the fog": "Which night look should ship?" Answer: "B: fog matched to sky". Night fog_color 1e2a46 -> 0c1428 (= sky_top); ambient stays 1.4. Measured sky luma 9.5 -> 1.9, facades 39.5 -> 38.3. Not chosen: D both, C dimmer buildings, A keep.
+
 ## 2026-10-26 · D-278 · Director · Builder cap 4 for tonight's render plan
 
 Asked: "Can I run 4 builders tonight instead of 3, so the night-shadow, clarity and night-sky batch starts now?" after he said "wow, thats so slow, anyway we can speed it up?". Answer: "4 builders tonight (Recommended)". Kaiju cap is 4 builders + 1 Sonnet reader for tonight; drops back to 3 if anything freezes. Not chosen: 5 builders, keep 3.

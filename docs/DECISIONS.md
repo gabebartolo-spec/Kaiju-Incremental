@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-28 · D-356 · Director · The Godot window is never left idle
+"godot has been empty like 90% of the time recently, make sure its always being used so we can be efficient". Asked
+whether tonight's speed runs may start at once instead of at 01:00 (D-331): picked "Start now (Recommended)"; the hold
+was lifted 00:30 and the night queue runs back to back, builders' captures queue behind it. Standing rule: a capture,
+clip or speed run always waits behind the one-window slot, so the window never sits empty while work is queued.
+
 ## 2026-10-27 · D-355 · Director · The grown croc eases into its walk over about 1.3 s
 For the keyed walk-start (D-343). Asked whether the croc may take about 1.3 s to reach full walking speed from standing
 (today about 0.13 s): picked "Ease in, ~1.3 s (Recommended)". The sim's set-off changes (walk_off_s and the step clock),
@@ -391,7 +397,3 @@ His words: "stomp fits the dragon more than the croc". Asked: "Yes, dragon's kit
 ## 2026-10-27 · D-280 · Director · Croc: the stomp turns automatic and weak; a tail lash takes its button
 
 His words: "we should probably revisit the stomp attack and replace it with something else, make stomp damage weaker and automatic / a stationary stomp goes against the croc's power fantasy as an athletic kaiju". Asked: auto stomp "Every footfall crushes" (damage under his feet as he walks and runs, never stops to stomp); power "Street-level only" (people, cars, trees, props underfoot; buildings only chip); the button "Tail lash" (mid-stride tail whip flattening a ring beside him, never breaking his run; Cascadeur clip); timing "After the render plan". Replaces D-260 "Button replaces it" and D-263 "Rooted while charging" for the croc. Not chosen: rhythm stomps, chipping buildings, death roll, lunge bite.
-
-## 2026-10-26 · D-279 · Director · Night sky: fog matched to the sky (B)
-
-Asked with 4 labelled 4K stills (docs/captures/2026-10-26-clips/night_sky_A-D.png) after his "too much white in the blue ... the lighting or the fog": "Which night look should ship?" Answer: "B: fog matched to sky". Night fog_color 1e2a46 -> 0c1428 (= sky_top); ambient stays 1.4. Measured sky luma 9.5 -> 1.9, facades 39.5 -> 38.3. Not chosen: D both, C dimmer buildings, A keep.
