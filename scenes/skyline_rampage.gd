@@ -80,6 +80,7 @@ func _ready() -> void:
 	_fires = plan.fires
 	_build_lights(haze)
 	_build_smoke(haze)
+	_skyline.far_haze.track([_beast.material(), _smoke_mat])  # same air
 	for _i: int in VOICES:
 		var player := AudioStreamPlayer.new()
 		player.bus = "SFX"
