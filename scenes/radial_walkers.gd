@@ -1,7 +1,25 @@
 class_name RadialWalkers
 extends RefCounted
-## Which of RadialGait's arms walk (split out of gait_radial.gd to keep files small): the
-## LEAD_ARMS rooted nearest the heading, within LEAD_ARC of it. Presentation only.
+## RadialGait's arms (split out of gait_radial.gd to keep files small): each built from its
+## spring chain, and which walk (the LEAD_ARMS rooted nearest the heading, within LEAD_ARC of
+## it). Presentation only.
+
+
+## An arm on a tentacle's spring chain: its feel, angle round the body, length and ripple phase
+## (one draw from `rng`).
+static func make_arm(
+	rig: KaijuRig, chain: KaijuRig.SpringChain, rng: RandomNumberGenerator
+) -> RadialGait.Arm:
+	var arm := RadialGait.Arm.new()
+	arm.chain = chain
+	chain.stiffness = RadialGait.ARM_STIFFNESS
+	chain.gravity_scale = RadialGait.ARM_GRAVITY
+	var tip := rig.head_of(chain.names[-1]) + rig.dir_of(chain.names[-1])
+	arm.angle = atan2(tip.x, -tip.z)
+	for n: String in chain.names:
+		arm.length += rig.dir_of(n).length()
+	arm.phase = rng.randf() * TAU
+	return arm
 
 
 static func pick(
