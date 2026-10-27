@@ -40,7 +40,14 @@ func _init(cells: Dictionary, w: int, d: int) -> void:
 
 ## Whether a BRICK roof carries the wooden tower (else the solar heater).
 static func wooden(of: RampageSim.Building) -> bool:
-	return BuildingLayout.roll_for(of, Vector3i(4, 6, 8), WOODEN_ONE_IN) == 0
+	return wooden_at(of.x, of.z)
+
+
+## The same roll for a roof centred at (x, z): the far skyline's stand-ins use it, so the whole city
+## shares one mix.
+static func wooden_at(x: float, z: float) -> bool:
+	var seed := roundi(x * 13.0 + z)
+	return absi(hash(Vector4i(4, 6, 8, seed))) % WOODEN_ONE_IN == 0
 
 
 ## The tank for building `of`, standing on a roof whose first free layer is `top`.
