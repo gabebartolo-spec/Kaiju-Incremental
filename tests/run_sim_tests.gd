@@ -232,18 +232,26 @@ func _check_upgrade_effects() -> void:
 		)
 	)
 	# A heavy turn (D-187) needs a bot that holds a heading as a player does: retarget every 60
-	# steps. City seed 2: in the bigger-block layout the bot's path on seed 0 ends with the evolved
-	# kaiju at 0.357 against 0.417 (a path artefact: seeds 1-5 give evolved/plain 0.512/0.368,
-	# 0.530/0.333, 0.354/0.344, 0.632/0.343, 0.385/0.339, CI run 40599146621).
-	var evolved := _autoplay(_sim_seeded("reptilian", EVOLVED, {}, BOT_CITY), MAX_STEPS, 60, true)
-	var plain := _autoplay(_sim_seeded("reptilian", PLAIN, {}, BOT_CITY), MAX_STEPS, 60, true)
+	# steps. The bar is the mean over city seeds 0-2: one path is not the rule (in the
+	# bigger-block layout seed 0 alone gives evolved 0.357 against plain 0.417, seeds 1-5 give
+	# 0.512/0.368, 0.530/0.333, 0.354/0.344, 0.632/0.343, 0.385/0.339; CI run 40599146621).
+	var evolved := 0.0
+	var plain := 0.0
+	for city_seed: int in BOT_CITIES:
+		var at := Vector2i(city_seed, 0)
+		evolved += _destroyed(_sim_seeded("reptilian", EVOLVED, {}, at))
+		plain += _destroyed(_sim_seeded("reptilian", PLAIN, {}, at))
+	evolved /= BOT_CITIES
+	plain /= BOT_CITIES
 	check(
-		Num.f(evolved["destruction"]) > Num.f(plain["destruction"]),
-		(
-			"evolving destroys more (%.3f vs %.3f)"
-			% [Num.f(evolved["destruction"]), Num.f(plain["destruction"])]
-		)
+		evolved > plain,
+		"evolving destroys more (mean over %d cities %.3f vs %.3f)" % [BOT_CITIES, evolved, plain]
 	)
+
+
+## What the held-heading bot destroys in `sim` (a share of the city).
+func _destroyed(sim: RampageSim) -> float:
+	return Num.f(_autoplay(sim, MAX_STEPS, 60, true)["destruction"])
 
 
 func _check_species_differ() -> void:
