@@ -55,9 +55,7 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 1.0))
 	curve.add_point(Vector2(1, 0.1))
-	var tex := CurveTexture.new()
-	tex.curve = curve
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, curve)
 	var ramp := Gradient.new()  # only the life fade: the colour is the flame shader's, by height
 	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)])
 	ramp.offsets = PackedFloat32Array([0.0, 0.06, 0.8, 1.0])
@@ -137,9 +135,7 @@ static func _smoke_mat(cfg: Dictionary) -> ParticleProcessMaterial:
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 0.5))
 	curve.add_point(Vector2(1, 1.7))
-	var tex := CurveTexture.new()
-	tex.curve = curve
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, curve)
 	var warm := Color(str(cfg["smoke_warm"]))
 	var mid := Color(str(cfg["smoke_mid"]))
 	var stops: Array[Color] = []  # Fire's charcoal ramp, young smoke glowing with the flames under it
