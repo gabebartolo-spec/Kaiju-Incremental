@@ -5,7 +5,6 @@ scenes/biped_body.gd::update 43 6
 scenes/biped_head.gd::update 56 9
 scenes/cephalopod_stand_in.gd::build 55 5
 scenes/city_decor.gd::_streets 68 26
-scenes/city_environment.gd::attach 47 2
 scenes/city_greenery.gd::_park_garden 43 12
 scenes/city_greenery.gd::_yards 45 11
 scenes/city_greenery.gd::kerb_spots 73 22
@@ -23,8 +22,6 @@ scenes/kaiju_code_body.gd::_insectoid 41 8
 scenes/kaiju_code_body.gd::_reptile_details 36 14
 scenes/kaiju_rig.gd::_build 54 13
 scenes/pavements.gd::_init 46 26
-scenes/pitch_props.gd::mesh 45 16
-scenes/police.gd::_start_blockade 46 16
 scenes/powers_view.gd::on_event 71 24
 scenes/powers_view.gd::update 49 16
 scenes/rampage.gd::_ready 53 8
@@ -35,7 +32,6 @@ scenes/stadium_match.gd::_ready 45 7
 scenes/traffic_island.gd::spots 48 18
 scenes/upgrade_node.gd::show_state 45 21
 scenes/upgrade_screen.gd::_ready 41 3
-scenes/voxel_skin.gd::_setup 90 6
 sim/building_layout.gd::_brick 11 17
 sim/building_layout.gd::_roof 30 15
 sim/building_layout.gd::_sign 28 20
@@ -53,6 +49,4 @@ sim/glass_frame.gd::cells 18 14
 sim/party_walls.gd::of 33 16
 sim/road_search.gd::search 40 15
 sim/structure.gd::_grounded 28 14
-sim/structure.gd::_topple_check 52 23
-sim/structure.gd::settle 30 14
 sim/tank_spacing.gd::blocker 33 19

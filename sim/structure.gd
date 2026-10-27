@@ -83,12 +83,27 @@ func top_below(x: int, z: int, below_y: int) -> int:
 ## {"cells": Array[Vector3i], "kind": "drop"|"topple", "pivot": Vector3 (local), "dir": Vector2i}.
 func settle() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	if arcs != null:
-		for part: Dictionary in arcs.shed(self):
-			var fallen: Array[Vector3i] = part["cells"]
-			for c: Vector3i in fallen:
-				remove(c)
-			out.append(part)
+	_shed_arcs(out)
+	_drop_loose(out)
+	var tipping := _topple_check()
+	if not tipping.is_empty():
+		_remove_all(tipping)
+		out.append(tipping)
+	return out
+
+
+## A ring landmark's arcs that lost a chunk come down first (Arcs.shed): removed, added to `out`.
+func _shed_arcs(out: Array[Dictionary]) -> void:
+	if arcs == null:
+		return
+	for part: Dictionary in arcs.shed(self):
+		_remove_all(part)
+		out.append(part)
+
+
+## Groups every standing chunk not joined to the ground into parts that drop and adds them to `out`;
+## then everything in `out` (the arcs' parts too) is removed.
+func _drop_loose(out: Array[Dictionary]) -> void:
 	var grounded := _grounded()
 	var loose := {}
 	for y: int in h:
@@ -101,16 +116,13 @@ func settle() -> Array[Dictionary]:
 						{"cells": part, "kind": "drop", "pivot": Vector3.ZERO, "dir": Vector2i.ZERO}
 					)
 	for part: Dictionary in out:
-		var cells: Array[Vector3i] = part["cells"]
-		for c: Vector3i in cells:
-			remove(c)
-	var tipping := _topple_check()
-	if not tipping.is_empty():
-		var cells: Array[Vector3i] = tipping["cells"]
-		for c: Vector3i in cells:
-			remove(c)
-		out.append(tipping)
-	return out
+		_remove_all(part)
+
+
+func _remove_all(part: Dictionary) -> void:
+	var cells: Array[Vector3i] = part["cells"]
+	for c: Vector3i in cells:
+		remove(c)
 
 
 ## Every standing chunk joined to the ground floor (1 per chunk index), flooded over the raw
@@ -182,6 +194,27 @@ func _component(start: Vector3i, seen: Dictionary) -> Array[Vector3i]:
 ## calls per settle, a frame stall at every hit (lead, 2026-10-19). The sums are of half-integers
 ## well under 2^23, exact in float, so the order of adding does not change the result.
 func _topple_check() -> Dictionary:
+	var loads := _floor_loads()
+	var floor_mass: PackedInt32Array = loads["mass"]
+	var floor_sum: PackedVector2Array = loads["sum"]
+	for level: int in range(1, h):
+		var mass := floor_mass[level]
+		if mass == 0:
+			return {}
+		var com := floor_sum[level] / mass
+		var held := _held_box(level)
+		if held.is_empty():
+			continue  # nothing touches across this floor: settle()'s drop handles it
+		var over := _overhang(com, held[0], held[1])
+		if over != Vector2.ZERO:
+			return _topple(level, com, held[0], held[1], over)
+	return {}
+
+
+## Per floor, the mass (chunks standing) and the sum of their plan centres, each a running total
+## of that floor and every one above it: {"mass": PackedInt32Array, "sum": PackedVector2Array},
+## h + 1 entries each (the last stays 0).
+func _floor_loads() -> Dictionary:
 	var floor_mass := PackedInt32Array()
 	floor_mass.resize(h + 1)
 	var floor_sum := PackedVector2Array()
@@ -196,40 +229,48 @@ func _topple_check() -> Dictionary:
 	for y: int in range(h - 1, -1, -1):
 		floor_mass[y] += floor_mass[y + 1]
 		floor_sum[y] += floor_sum[y + 1]
-	for level: int in range(1, h):
-		var mass := floor_mass[level]
-		if mass == 0:
-			return {}
-		var com := floor_sum[level] / mass
-		var lo := Vector2(INF, INF)
-		var hi := Vector2(-INF, -INF)
+	return {"mass": floor_mass, "sum": floor_sum}
+
+
+## The plan box [low, high] of the chunks at `level` that stand on a standing chunk below, or [] when
+## none does.
+func _held_box(level: int) -> Array[Vector2]:
+	var plan := w * d
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for x: int in w:
+		for z: int in d:
+			var k := x + z * w + level * plan
+			if _hp[k] > 0.0 and _hp[k - plan] > 0.0:
+				lo = Vector2(minf(lo.x, x), minf(lo.y, z))
+				hi = Vector2(maxf(hi.x, x + 1), maxf(hi.y, z + 1))
+	if lo.x == INF:
+		return []
+	return [lo, hi]
+
+
+## How far the centre of mass hangs past the box, per axis (0 inside it).
+func _overhang(com: Vector2, lo: Vector2, hi: Vector2) -> Vector2:
+	return Vector2(
+		com.x - hi.x if com.x > hi.x else (com.x - lo.x if com.x < lo.x else 0.0),
+		com.y - hi.y if com.y > hi.y else (com.y - lo.y if com.y < lo.y else 0.0)
+	)
+
+
+## The part from `level` up, tipping over the box's edge on the side the centre hangs out of.
+func _topple(level: int, com: Vector2, lo: Vector2, hi: Vector2, over: Vector2) -> Dictionary:
+	var dir := Vector2i(signi(roundi(over.x * 100.0)), 0)
+	if absf(over.y) > absf(over.x):
+		dir = Vector2i(0, signi(roundi(over.y * 100.0)))
+	var pivot := Vector3(
+		hi.x if dir.x > 0 else (lo.x if dir.x < 0 else com.x),
+		level,
+		hi.y if dir.y > 0 else (lo.y if dir.y < 0 else com.y)
+	)
+	var cells: Array[Vector3i] = []
+	for y: int in range(level, h):
 		for x: int in w:
 			for z: int in d:
-				var k := x + z * w + level * plan
-				if _hp[k] > 0.0 and _hp[k - plan] > 0.0:
-					lo = Vector2(minf(lo.x, x), minf(lo.y, z))
-					hi = Vector2(maxf(hi.x, x + 1), maxf(hi.y, z + 1))
-		if lo.x == INF:
-			continue  # nothing touches across this floor: settle()'s drop handles it
-		var over := Vector2(
-			com.x - hi.x if com.x > hi.x else (com.x - lo.x if com.x < lo.x else 0.0),
-			com.y - hi.y if com.y > hi.y else (com.y - lo.y if com.y < lo.y else 0.0)
-		)
-		if over == Vector2.ZERO:
-			continue
-		var dir := Vector2i(signi(roundi(over.x * 100.0)), 0)
-		if absf(over.y) > absf(over.x):
-			dir = Vector2i(0, signi(roundi(over.y * 100.0)))
-		var pivot := Vector3(
-			hi.x if dir.x > 0 else (lo.x if dir.x < 0 else com.x),
-			level,
-			hi.y if dir.y > 0 else (lo.y if dir.y < 0 else com.y)
-		)
-		var cells: Array[Vector3i] = []
-		for y: int in range(level, h):
-			for x: int in w:
-				for z: int in d:
-					if alive(Vector3i(x, y, z)):
-						cells.append(Vector3i(x, y, z))
-		return {"cells": cells, "kind": "topple", "pivot": pivot, "dir": dir}
-	return {}
+				if alive(Vector3i(x, y, z)):
+					cells.append(Vector3i(x, y, z))
+	return {"cells": cells, "kind": "topple", "pivot": pivot, "dir": dir}
