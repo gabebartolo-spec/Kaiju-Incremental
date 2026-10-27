@@ -13,9 +13,9 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 ## Seconds he stands where he is set (the camera settles), then charges for CHARGE_S.
 const SETTLE_S := 1.5
 const CHARGE_S := 5.0
-## Open street before the first building (full momentum by then), the path beyond it, and the
-## half-width of the corridor his body sweeps.
-const RUN_UP := 12.0
+## Open street before the first building (full momentum by then: about 1.8 s of his ~3.3 a second
+## walk against 1.2 s to build), the path beyond it, and the half-width his body sweeps.
+const RUN_UP := 6.0
 const PATH := 24.0
 const HALF := 2.5
 const DIRS: Array[Vector2] = [Vector2(0, -1), Vector2(0, 1), Vector2(1, 0), Vector2(-1, 0)]
