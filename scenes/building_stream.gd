@@ -325,11 +325,6 @@ func view(n: int) -> BuildingView:
 	return _views[n]
 
 
-## How much of building n's stand-in box is drawn (0: hidden; the tests read it).
-func stand_in_alpha(n: int) -> float:
-	return _stand_ins.alpha(n)
-
-
 ## Building n's view if it is built yet, else null (never builds it).
 func built(n: int) -> BuildingView:
 	return _views[n]

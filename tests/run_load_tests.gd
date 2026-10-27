@@ -193,6 +193,7 @@ func _check_stand_in_fade() -> void:
 	var stream := BuildingStream.new(sim, colors)
 	root.add_child(stream)
 	stream.set_process(false)
+	var boxes: StreamStandIns = stream.get("_stand_ins")
 	var waiting: Array[int] = []
 	for n: int in sim.buildings.size():
 		if stream.built(n) == null:
@@ -209,13 +210,13 @@ func _check_stand_in_fade() -> void:
 			break
 	check(placed >= 0, "a streamed building is placed")
 	if placed >= 0:
-		var now := stream.stand_in_alpha(placed)
+		var now := boxes.alpha(placed)
 		check(now > 0.9, "its box is still drawn the moment its mesh arrives (%.2f)" % now)
 		stream.step(fade * 0.5)
-		var half := stream.stand_in_alpha(placed)
+		var half := boxes.alpha(placed)
 		check(half > 0.2 and half < 0.8, "its box is half dissolved at half the time (%.2f)" % half)
 		stream.step(fade)
-		check(stream.stand_in_alpha(placed) == 0.0, "its box is gone once the fade is over")
+		check(boxes.alpha(placed) == 0.0, "its box is gone once the fade is over")
 	var far := -1
 	for n: int in waiting:
 		if stream.built(n) == null:
@@ -224,7 +225,7 @@ func _check_stand_in_fade() -> void:
 	if far >= 0:
 		stream.view(far)
 		check(
-			stream.stand_in_alpha(far) == 0.0,
+			boxes.alpha(far) == 0.0,
 			"a building the rampage touches loses its box at once, no fade"
 		)
 	stream.queue_free()

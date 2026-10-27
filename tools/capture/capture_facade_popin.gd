@@ -1,15 +1,15 @@
 extends SceneTree
-## Facade pop-in probe (director 2026-10-28: "pop-in textures on the building facades", "blurry turns
-## sharp"). A real rampage on the game camera (city seed 0, reptilian, dusk) walking a recorded route
-## (capture_one_look.gd --route=record), logging per frame what a facade goes through as the kaiju
-## nears it, so the cause is a number, not a look:
-##   frames.csv  one line a frame: frame, kaiju-to-camera depth D, the far blur's start (D * far_blur_start)
-##               and full-blur depth, the buildings meshed, the stream's last cutoff.
-##   swaps.csv   every stand-in <-> meshed building swap that is on screen: frame, building, up (1 = box
-##               became the real building), nearest-face depth, depth / blur start, blur share there
-##               (0 sharp .. 1 full), projected height in px, building height.
-##   sharp.csv   up to SHARP_MAX buildings on screen near the blur's start: frame, building, depth, blur
-##               share, meshed, sharpness (mean luma gradient of a SHARP_PX crop of the drawn frame).
+## Facade pop-in probe (director 2026-10-28: "pop-in textures on the building facades", "blurry
+## turns sharp"). A real rampage on the game camera (city seed 0, reptilian, dusk) walking a
+## recorded route (capture_one_look.gd --route=record), logging per frame what a facade goes
+## through as the kaiju nears it, so the cause is a number, not a look:
+##   frames.csv  one line a frame: frame, kaiju-to-camera depth D, the far blur's start
+##               (D * far_blur_start) and full-blur depth, the buildings meshed, the last cutoff.
+##   swaps.csv   every stand-in <-> meshed building swap that is on screen: frame, building,
+##               up (1 = box became the real building), nearest-face depth, depth / blur start,
+##               blur share there (0 sharp .. 1 full), projected height in px, building height.
+##   sharp.csv   up to SHARP_MAX buildings on screen near the blur's start: frame, building,
+##               depth, blur share, meshed, sharpness (mean luma gradient of a SHARP_PX crop).
 ## The same run with --set=far_blur_amount=0 is the "blur off" arm; the route and the seed are the
 ## same, so a building's two series line up frame for frame (analysis: facade_popin_stats.py).
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
@@ -116,7 +116,8 @@ func _run() -> void:
 		was[n] = 1 if stream.built(n) != null else 0
 	var waited := PackedInt32Array()  # frames a box stood in view (a facade this big)
 	waited.resize(sim.buildings.size())
-	var wanted := PackedInt32Array()  # ...of those, frames its stream rank was inside the cutoff (wanted meshed)
+	# ...of those, the frames its stream rank was inside the cutoff (wanted meshed)
+	var wanted := PackedInt32Array()
 	wanted.resize(sim.buildings.size())
 	var cutoff: float = stream.get("_cutoff")
 	var rank: StreamRank = stream.get("_rank")
@@ -138,7 +139,8 @@ func _run() -> void:
 		cutoff = stream.get("_cutoff")
 		var shot: Image = null
 		var pending: Array[Array] = []  # [n, up, depth, px height, box] of a swap this frame
-		var cands: Array[Array] = []  # [distance of the depth from the blur start, n, depth, blur, px rect]
+		# [distance of the depth from the blur start, n, depth, blur, px rect]
+		var cands: Array[Array] = []
 		for n: int in sim.buildings.size():
 			var b := sim.buildings[n]
 			if b.is_rail():
@@ -146,7 +148,7 @@ func _run() -> void:
 			var up := 1 if stream.built(n) != null else 0
 			meshed += up
 			var near := _near_depth(b, cam, fwd)
-			var box := _screen_box(b, cam, rect)
+			var box := _screen_box(b, cam)
 			var in_view := box.size.x > 1.0 and box.size.y > 1.0 and rect.intersects(box)
 			var blur := _blur_share(near, start, full - start) * (1.0 if blur_amount > 0.0 else 0.0)
 			if up != was[n]:
@@ -231,7 +233,7 @@ func _near_depth(b: RampageSim.Building, cam: Camera3D, fwd: Vector3) -> float:
 
 
 ## The building's box on screen (zero size when it is behind the camera).
-func _screen_box(b: RampageSim.Building, cam: Camera3D, rect: Rect2) -> Rect2:
+func _screen_box(b: RampageSim.Building, cam: Camera3D) -> Rect2:
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
 	for sx: float in [-0.5, 0.5]:
