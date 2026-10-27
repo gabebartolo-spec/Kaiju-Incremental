@@ -3,6 +3,7 @@
 #include "kaiju_carve.h"
 #include "kaiju_mesher.h"
 #include "kaiju_settle.h"
+#include "kaiju_walk.h"
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/godot.hpp>
 
@@ -14,6 +15,7 @@ void initialize_kaiju_carve(ModuleInitializationLevel level) {
 	GDREGISTER_CLASS(KaijuMesher);
 	GDREGISTER_CLASS(KaijuSettle);
 	GDREGISTER_CLASS(KaijuBuckets);
+	GDREGISTER_CLASS(KaijuWalk);
 }
 
 void uninitialize_kaiju_carve(ModuleInitializationLevel level) {

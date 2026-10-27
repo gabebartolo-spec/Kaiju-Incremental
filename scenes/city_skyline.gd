@@ -66,6 +66,8 @@ func _ready() -> void:
 	add_child(SkylineLamps.heads(_lamps))
 	add_child(Aircraft.new(_rng))
 	far_haze.apply_default()  # the far city in the same air as the bay (director comment #37)
+	var reflect: Dictionary = cfg["far_reflect"]  # its lit windows on the far water
+	FarWaterGlow.cover(ground.bay, reflect, ground.coast - Num.f(cfg["bay_width"]))
 
 
 ## The far skyline's boxes, in far_view's instance order; a supertall's crown has "crown_of".

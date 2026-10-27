@@ -6,7 +6,9 @@ extends "res://tests/lib/runner.gd"
 ## going on with the distant city"), on by default. Player-effect fixture "skyline.far_fog": with
 ## tuning city far_fog on every far material takes the engine's fog and height fog at its foot, and
 ## the fog never thins from the bay to the far city; off, the far city keeps its built look and is
-## clearer than the bay in front of it.
+## clearer than the bay in front of it. Player-effect fixture "skyline.far_reflect": with tuning
+## city far_reflect on the far city's lit windows glow faintly on the water by the far shore and
+## nowhere near the camera; none by day or with it off.
 ## Seeded by design: Seeds "city" 0 and the run's own seeded streams; the beast's path is a pure
 ## function of elapsed time, and no check reads the clock.
 ##   godot --headless --path . --script tests/run_skyline_tests.gd
@@ -19,6 +21,7 @@ const FRONT := 12.0  # CitySkyline._far_shore: the first far row stands this far
 const FOOT_Y := 1.0
 const CROWN_Y := 60.0  # a tall far tower's upper floors
 const FOOT_OVER_CROWN := 0.02  # the height fog: the far city's foot at least this much hazier
+const GLOW_SHADER := "bay_glow.gdshader"
 
 
 func suite_name() -> String:
@@ -31,6 +34,7 @@ func run_checks() -> void:
 	await _t("_check_nothing_when_off")
 	await _t("_check_far_city_in_the_bay_air")
 	await _t("_check_far_city_floats_when_off")
+	await _t("_check_far_water_glow")
 
 
 func _check_default_on() -> void:
@@ -121,7 +125,46 @@ func _check_far_city_floats_when_off() -> void:
 	cfg["on"] = true
 
 
-func _run(on: bool) -> Rampage:
+## On by default: the far city's lit windows glow faintly on the bay's water by the far shore (a
+## pass over its own material, FarWaterGlow) in the window palette's light, as strong as tuning city
+## far_reflect strength times the share of windows lit, and none from mid-bay to the camera; none at
+## noon (no window lit) and none with it off.
+func _check_far_water_glow() -> void:
+	var cfg: Dictionary = Content.section("city")["far_reflect"]
+	var on: Variant = cfg.get("on", false)
+	var enabled: bool = on is bool and on
+	check(enabled, "tuning city far_reflect.on defaults to true (in the game)")
+	var rampage := await _run(true)
+	var glow := FarWaterGlow.of(_skyline(rampage).ground.bay)
+	check(glow != null, "lit windows: the far water carries their light")
+	if glow != null:
+		var light: Color = glow.get_shader_parameter("glow_color")
+		var strength := Num.f(cfg["strength"]) * Look.value("window_lit")
+		var mid_bay := Num.f(Content.section("city")["bay_width"]) * 0.5
+		check(glow.shader.resource_path.get_file() == GLOW_SHADER, "the glow is %s" % GLOW_SHADER)
+		check(light.is_equal_approx(Look.color("window_lit_color")), "in the windows' light")
+		check(
+			is_equal_approx(FarWaterGlow.share_at(glow, 0.0), strength),
+			"at the far shore as strong as the share of windows lit"
+		)
+		check(
+			is_zero_approx(FarWaterGlow.share_at(glow, mid_bay)), "none from mid-bay to the camera"
+		)
+	rampage.queue_free()
+	await process_frame
+	rampage = await _run(true, Content.times().find("noon"))
+	check(FarWaterGlow.of(_skyline(rampage).ground.bay) == null, "noon, no window lit: no glow")
+	rampage.queue_free()
+	await process_frame
+	cfg["on"] = false
+	rampage = await _run(true)
+	check(FarWaterGlow.of(_skyline(rampage).ground.bay) == null, "off: no glow")
+	rampage.queue_free()
+	await process_frame
+	cfg["on"] = true
+
+
+func _run(on: bool, run_index := 0) -> Rampage:
 	Content.section("skyline_rampage")["on"] = on
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
@@ -129,7 +172,7 @@ func _run(on: bool) -> Rampage:
 	)
 	var layout := CityGrowth.layout(Content.tuning(), 1, Seeds.make("city", 0))
 	var rampage := Rampage.new()
-	rampage.setup(species, stats, layout, 0)
+	rampage.setup(species, stats, layout, run_index)
 	root.add_child(rampage)
 	for _i: int in 5:
 		await process_frame

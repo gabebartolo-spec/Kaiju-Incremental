@@ -635,6 +635,7 @@
 		"bay_width": 190,
 		"far_haze": 0.004,
 		"far_fog": {"_note": "Director comment #37 (2026-10-25, asked twice: 'something funky going on with the distant city'): the far city floated crisp above the haze, its own gentler haze (far_haze) and no engine fog, so it was clearer than the bay in front of it. on: the far skyline (towers, quay, lattice tower, the far rampage's beast and smoke) takes the engine's depth fog as the bay does (FarHaze); own_haze: the share of its own built haze kept on top (0 = the same air as the bay); base: height fog, this much more haze at the foot of the far city fading over base_height metres up, so it shows no hard base line (0.5: its foot within 2% of the bay's luma at night and noon, tools/capture/far_city_bars.py); start: metres from the camera where its own haze and the height fog begin. Off = the look it was built with. Presentation only.", "on": true, "own_haze": 0.0, "base": 0.5, "base_height": 30.0, "start": 120.0},
+		"far_reflect": {"_note": "Director comment #37 (the far city and the bay before it differ); lead 2026-10-27: real night bays show the city's lit windows reflected on the water near the far shore. on: a faint band of the window palette's light (looks window_lit_color) over the bay's water (FarWaterGlow, a pass over its own material, so the water colour is unchanged elsewhere): strength times the share of windows lit (looks window_lit, none by day) at the far shore, fading to none reach metres out, so nothing near the camera changes; energy: the light's brightness (strength 1.1, energy 0.042 by sweep: the far water by the far shore within 10% of the far city's foot per channel and in luma at night, tools/capture/far_city_bars.py). Off = no glow. Presentation only.", "on": true, "strength": 1.1, "energy": 0.042, "reach": 40.0},
 		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
@@ -1255,10 +1256,10 @@
 	},
 	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "fade_opacity": 0.35, "fade_seconds": 0.25, "fade_width": 1.0, "fade_frame_share": 0.5, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0},
 	"slowmo": {
-		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The director tunes these at playtest.",
+		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The scale is the director's (\"looks good\"); the length follows D-342 (director 2026-10-27 on the first clip, hold 0.5 s + ease 0.25 s: \"the slowdown is too brief\"), now 1.5 s held + 0.5 s eased. The director tunes these at playtest.",
 		"scale": 0.35,
-		"hold_s": 0.5,
-		"ease_s": 0.25
+		"hold_s": 1.5,
+		"ease_s": 0.5
 	},
 	"camera_shake": {
 		"_note": "CameraShake (R 19.2): hits add trauma 0..1 (sources), it fades at decay_per_s; the camera turns by trauma squared on smooth noise (noise_hz noise units a second; 1.6 keeps a 60 fps frame under 5 px at 1080p at the 2 deg cap, motion critic 2026-10-21), yaw and pitch only, full trauma = deg_per_root_scale x sqrt(body scale) degrees, at most max_deg. A hit away from the focus fades from near_per_scale to far_per_scale body scales. default_motion: the camera-motion setting's default (0..1).",
@@ -1383,16 +1384,17 @@
 		"turn_accel": 14.0,
 		"step_len": 2.33,
 		"support_both": 0.0,
-		"slice_from": 0.0,
-		"slice_open": 0.75,
-		"turn_cadence": 3.85,
+		"turn_ramp": 0.15,
+		"turn_land_deg": 5.0,
+		"_note_turn_ramp": "D-187: a stepped (Behemoth, Colossus) U-turn speeds its yaw up over this share of its uturn_s, runs even between, and slows over the same share at the end; so the peak yaw rate is 1 / (1 - turn_ramp) of the turn's mean rate (1.18 at 0.15; the bar is 1.3). A smaller share is a snappier start and stop, a larger one a gentler, peakier turn.",
+		"_note_turn_land_deg": "D-187: a U-turn counts as made when the body is within this many degrees of the new way (the motion critic's measure); the last degrees take a little longer.",
+		"_note_uturn_s": "D-187, per growth step in bodies.reptilian: seconds a stick-reversed U-turn takes while walking, until within turn_land_deg of the new way (Behemoth 1.94, Colossus 3.0; the young croc has none: it turns smoothly, D-131). The director's pick is Behemoth 2 s, Colossus 3 s (D-187); the Behemoth runs 1.94 by the lead's ruling 2026-10-27 (1.9, then 1.94 by the sweep below) because the motion gate's centre_max 0.5 (D-177, the body turns about its middle, not a planted foot) needs a peak yaw of at least ~99 deg/s. Sweep, 60 Hz motion drive, centre travel on turn90 / turn180 / stand_turn: uturn_s 2.0 0.506 / 0.340 / 0.472 (turn90 misses by 0.006); 1.94 0.481 / 0.340 / 0.459 (every motion bar met); 1.9 0.481 / 0.330 / 0.459; 1.8 0.450 / 0.314 / 0.420 (stand_turn pivot 0.087 over its 0.08 bar); 1.2 0.281 / 0.210 / 0.321 (stand_turn pivot 0.326 and aloft yaw 1.30 fail). The bots in the sim and city suites chase the nearest chunk and can circle it with a heavy turn, so their results jump with uturn_s: 1.94 is the value near 2 where the motion gate, the rise-point bar (every map seed down within 10 s: 2.8 / 4.0 / 8.9 s) and the sim suite (evolved 0.788 vs 0.520) all pass; 1.9 fails the rise bar on seed 1234 (23.5 s) and the sim check (0.058). Colossus at 3.0 passes unchanged. Any other angle turns at the same peak rate and ramps.",
+		"_note_turn_slow": "D-187, per growth step in bodies.reptilian, optional (else the contact turn_slow 0.5): the share of full stride the body keeps at an about-face. A stepped body turns on the spot nearly: while the stride runs on, the walk and the pivot about the planted foot cancel on one foot (it shuffles) and add on the other, and the rotation centre drifts off the feet.",
+		"_note_turn_steps": "D-187, per growth step in bodies.reptilian: footfalls a U-turn is made in, so a turn steps at turn_steps / uturn_s footfalls a second (Behemoth 2.84, Colossus 1.83, against the straight walk's 2.14 and 1.75), 33 degrees of yaw a step on average, 39 at the peak (the motion critic's bar is at most 40). Fewer would put more yaw in a step, more would shuffle the feet: a foot moves less than a third of its length in a step.",
 		"step_ratio_min": 0.2,
 		"cadence_ease": 12.0,
 		"turn_min": 0.05,
 		"smooth_below": 0.35,
-		"slice_accel": 50.0,
-		"turn_ease_min": 0.5,
-		"turn_ease_peak": 1.4,
 		"turn_slow": 0.5,
 		"stride_ease": 5.0,
 		"walk_off_s": 0.134,
@@ -1415,9 +1417,9 @@
 			"reptilian": [
 				{"snout": 10.5, "pivot": [0.0, 0.0], "stomp_foot": [4.72, 3.98], "discs": [[8.8, 2.0, 3.0, 10.0], [5.0, 3.6, 0.0, 10.0], [2.0, 3.0, 0.0, 8.0],
 					[-0.5, 1.8, 0.0, 5.0], [-3.0, 1.2, 0.0, 2.7], [-6.0, 0.9, 0.0, 1.9], [-9.0, 0.6, 0.0, 1.4]]},
-				{"snout": 10.3, "pivot": [7.0, 3.0], "step_len": 2.79, "stomp_foot": [5.21, 2.99], "discs": [[8.3, 2.4, 5.0, 10.0], [4.5, 2.9, 0.0, 9.5], [1.0, 1.4, 4.5, 7.5],
+				{"snout": 10.3, "pivot": [7.0, 3.0], "step_len": 2.79, "uturn_s": 1.94, "turn_steps": 5.5, "turn_slow": 0.1, "stomp_foot": [5.21, 2.99], "discs": [[8.3, 2.4, 5.0, 10.0], [4.5, 2.9, 0.0, 9.5], [1.0, 1.4, 4.5, 7.5],
 					[-2.5, 1.0, 4.8, 6.6], [-6.0, 0.6, 5.5, 6.8], [-9.0, 0.3, 6.0, 6.8]]},
-				{"snout": 13.3, "pivot": [4.2, 3.2], "step_len": 2.33, "stomp_foot": [2.8, 3.17], "discs": [[11.5, 1.5, 3.6, 9.7], [8.5, 2.0, 3.4, 10.0], [5.5, 2.0, 4.9, 9.8],
+				{"snout": 13.3, "pivot": [4.2, 3.2], "step_len": 2.33, "uturn_s": 3.0, "turn_steps": 5.5, "turn_slow": 0.1, "stomp_foot": [2.8, 3.17], "discs": [[11.5, 1.5, 3.6, 9.7], [8.5, 2.0, 3.4, 10.0], [5.5, 2.0, 4.9, 9.8],
 					[2.5, 4.6, 0.0, 9.6], [-0.5, 3.8, 0.0, 9.7], [-3.5, 0.9, 6.6, 10.0], [-6.5, 0.8, 7.7, 10.0], [-9.5, 0.6, 8.2, 10.0], [-12.5, 0.4, 8.9, 10.0]]}
 			]
 		}
