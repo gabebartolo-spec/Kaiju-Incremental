@@ -50,8 +50,19 @@ static func park(traffic: Traffic, sim: RampageSim) -> void:
 				_add(traffic, rng, p, facing)
 				full[cell_of(sim, p)] = true
 			t += rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
-	if not fill:
-		return
+	if fill:
+		_fill(traffic, rng, sim, [plan, full, fits])
+
+
+## The fill: a car at the first spot that fits in each cell with nothing to smash. `ctx` is
+## [plan, full (ground cell -> true), fits (Callable: spot, kerb direction)].
+static func _fill(
+	traffic: Traffic, rng: RandomNumberGenerator, sim: RampageSim, ctx: Array
+) -> void:
+	var plan: Dictionary = ctx[0]
+	var full: Dictionary = ctx[1]
+	var fits: Callable = ctx[2]
+	var cfg := sim.city
 	for kerb: Array in _kerbs(plan, cfg):
 		var facing: Vector2 = kerb[3]
 		var t := CROSSING_CLEAR
