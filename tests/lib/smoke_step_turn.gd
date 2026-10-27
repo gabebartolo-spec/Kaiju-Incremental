@@ -16,11 +16,13 @@ const WALK_S := 3.0
 ## SLOWEST_TURN_S.
 const SWINGS := [0.0, 0.25, 0.5, 0.75]
 const SWING_NEAR := 0.1
-const SLOWEST_TURN_S := 1.4
+const SLOWEST_TURN_S := 1.89
 const TURN_S := 3.0
-## The adult's 90 deg turn takes this long (s): lumbering, not a swivel, "but not TOO slow".
-const MIN_TURN_S := 1.0
-const MAX_TURN_S := 1.25
+## The adult's 90 deg turn takes this long (s): lumbering, not a swivel, "but not TOO slow". The
+## Colossus walks the Dracorex step (D-302, "a cycle of ~2.7 s (a step ~1.35 s, stride ~15 m)"), so
+## its turn spans at least one full step: the old 1.0-1.25 s band (and 1.4 s slowest) times 1.35.
+const MIN_TURN_S := 1.35
+const MAX_TURN_S := 1.69
 ## Distinct footfalls (alternating feet; a foot re-stepping after itself is a shuffle) in it.
 const MIN_STEPS := 3
 ## The baby's smooth 90 deg turn (D-131), measured 2026-10-21 at its pre-stepped rates (turn-weight

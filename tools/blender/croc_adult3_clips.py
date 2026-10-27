@@ -173,6 +173,12 @@ travel = V((0.0, 0.0, 0.0))
 if MODE == "walk":
     travel = sample(float(N))[0][1] - raw[1][1]
     travel.y = 0.0
+# Keys that walk forward from their frame 0 reach a later cycle whole strides down the path: that lead is taken out
+# too (along the travel only, so the pelvis keeps its sway and surge), so the clip's pelvis sits over the sim's.
+lead = V((0.0, 0.0, 0.0))
+if MODE == "walk" and travel.length > 1e-6:
+    d = travel.normalized()
+    lead = d * (sum((raw[i + 1][1] - travel * (i / M) - heads["spine0"]).dot(d) for i in range(M)) / M)
 frames, lows = [], []
 for i in range(M):
     world, pelvis, feet = raw[i + 1]
@@ -190,8 +196,8 @@ for i in range(M):
         par = first[g].parent
         pg = game_bone(par.name) if par is not None else None
         quats.append(((world[pg].inverted() @ world[g]) if pg else (inv @ world[g])).normalized())
-    off = inv @ (pelvis - root) - heads["spine0"]
-    toes = [inv @ (ft - root) for ft in feet]
+    off = inv @ (pelvis - root - lead) - heads["spine0"]
+    toes = [inv @ (ft - root - lead) for ft in feet]
     frames.append((quats, off, toes, planted, math.degrees(yaw), root))
     lows.append("".join("L" if planted[0] else "-") + ("R" if planted[1] else "-"))
 
