@@ -4,6 +4,113 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-335 · Director · Every croc stage is animated in Cascadeur; D-047's Blender clips are replaced
+His words (19:0x), on a plan to key the claw rake for the adult only while the baby and adolescent kept the code rake:
+"this is NOT correct, as ive said OVER AND OVER AGAIN, EVERY SINGLE ANIMATION MUST BE DONE IN CASC" (restates D-199,
+D-216 and D-247's "I want 100% of our animation done with Casc"). So: every move at every stage (baby, adolescent,
+adult) is keyed in Cascadeur (tail, jaw, tongue may be Blender, D-228); D-047's Blender-script clips and every code
+layer are defects to replace, never an exemption. Then "make sure their skeletons are ready for animation": the young
+skeletons get the adult's r12 treatment (D-307: same joint chains, bones added where missing, re-skinned, the r12
+Cascadeur rig) and pass chain, pivot, skin, rig and round-trip bars before any young clip is keyed.
+
+## 2026-10-27 · D-334 · Director · Render item 12: look B (glass and metal sheen) merges
+Q (18:5x, PR #319: baked voxel AO and material finish, flags on): A: "Yes, merge B (Recommended)": #319 merges with
+look B on by default (render plan item 12).
+
+## 2026-10-27 · D-333 · Director · The night's speed tests start when he says he is done for the day
+Q (18:1x): when do tonight's speed tests start? A: "When I say I'm done": the lead deletes `C:/kt/SPEED_DAY_HOLD` the
+moment he says he is done for the day, then runs `C:/kt/NIGHT_QUEUE.txt` one line at a time; if he says nothing, the
+hold ends at 01:00 (10-28).
+
+## 2026-10-27 · D-332 · Director · The lead restarts fresh at about 18:10
+Q (18:1x): when does the lead restart? A: "At ~18:10": a fresh lead session runs from its handoff; the old lead session
+hosts the builders it started until each one's step ends and reports them in `C:/kt/relay.md`; every role that ends is
+respawned fresh from its own handoff by the new lead, never while still hosted.
+
+## 2026-10-27 · D-331 · Director · One block of speed tests now, then none in the day
+Q (18:1x): speed tests during the day? A: "One block now, then none": the queued block (perf-p4b, perf-p2b-native,
+perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
+until D-333's start. Builders, Cascadeur, suites, captures and builds use the PC freely. D-299/D-313's window rules
+still govern every speed run that does start.
+
+## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
+His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
+Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
+(Recommended)": the camera stays at his back and turns slowly with him, as heavy as his turn; the intro pivots out
+behind him (D-325) and play starts right there, with no jump; the bay stays on the north edge (D-270). Lead's check
+of main the same day: the follow kept one fixed compass offset (tuning camera.offset, CameraFollow) and did not turn
+with him, so this is built, not restored. D-259's limited swing (about 60 deg) eases back to behind him. Every look
+approved from the fixed view gets one recheck capture.
+
+## 2026-10-27 · D-329 · Director · Tail whip: the automatic whip stays until the button lash is built
+Q: D-328 removes the automatic tail whip and moves its tree nodes to the button tail lash (D-280), but the lash is
+timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
+So: the automatic whip and its nodes (r_tail, r_shear) stay as they are until the D-280 lash is built after the
+render plan; then the whip goes and its nodes upgrade the lash. Changes D-328's tail line on timing only.
+
+## 2026-10-27 · D-328 · Director · Interview: tail, night, lab, skins, crowds, turn, ElevenLabs, night calls
+Tail (asked whether the button tail lash, D-280, is the same move as the automatic tail whip from a tree node, D-259):
+"remove the automatic whip, repurpose the nodes to improve our button whip". Night (D-106/D-145 "lighter" vs D-242 "dark
+and moody"): "Tonight's look" (D-285 stands; the older wording is retired on this point). Kaiju Creation lab scene:
+"Both" (a new save and each new species). Skins earned by playing: "Both" (each form reached, and rampage records).
+Crowds speed-up (render plan item 7): "Keep trying (Recommended)" if the second method misses. Heavier turn (D-187,
+Behemoth seed 1234 takes 11.9 s to flatten the buildings by its rise): "Keep it heavy"; the turn stays heavy (D-187,
+D-192 A: short steps, turn_slow 0.1) and the 10 s bar of D-131/D-192 stays, met without changing the turn (lead's
+correction: the question wrongly offered to fit his bar).
+ElevenLabs: "I'll sign in" (the lead reads the four train sounds' generation ids for the licence register). Night calls
+(night_calls.md): "All fine". Not asked, lead's call from D-326: rooftop soldiers near the camera stay undrawn.
+
+## 2026-10-27 · D-327 · Director · Physics destruction ships with the demo; render items 10 and 11 are built with it
+Q: real-physics destruction (D-094: carved buildings, loose pieces topple and fall) is planned after demo build 2;
+keep that timing or build it sooner? A: "WTF do you mean render items come with it, render is our number 1 priority,
+stop fucking with me. the destructions ship with the demo, the destruction is the game". So: D-094's "after demo exe 2"
+is reversed; real carving and falling pieces ship in the demo, and render plan items 10 and 11 (the physics speed-ups,
+D-311) are built now as render priority 1 work, not parked. Corrects D-311's correction note.
+
+## 2026-10-27 · D-326 · Director · Never fade out the destruction; audit cuts and keeps
+Q: falling chunks of a toppling building fade out when they pass between the camera and the kaiju; keep or cut? A:
+"Cut. ive said a thousand times, its ok to obscure the kaiju, its not ok to block the camera, please stop asking me
+questions about this, please stop making buildings fade out, the destruction IS THE GAME, NEVER FADE OUT THE
+DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-through; it may hide the kaiju. Only a
+wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
+"Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
+screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
+
+## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
+Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
+a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
+add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
+reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
+each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
+
+## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
+Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
+military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
+(#301 stays). Far city at night: "Fog + reflection" (both far-city PRs; the glow is re-measured with #301's window
+colours). Facade carve (#288): "impossible to tell from the clip, but ship and ill test in play".
+
+## 2026-10-27 · D-323 · Director · Kaiju death: jagged stone chunks replace the cubes; the 0.2 s wait stays
+On #240's clip: "you didnt change the blocks that i said i hated. you just changed their colour, but the bllocks are
+stupid and look bad". Q: what should fly out of his body? A: "Jagged stone chunks" (irregular broken rock in his
+hide's texture, many sizes, tumbling with dust; keeps D-294's shards first). Blast wait 0.2 s: "Keep 0.2 s".
+
+## 2026-10-27 · D-322 · Director · Interview batch 1: roar and solid vehicles kept; window flicker not solved
+Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be a question, no other choice makes any
+sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
+solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
+measure the flicker in motion first).
+
+## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
+Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
+add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.
+
+## 2026-10-27 · D-319 · Director · A finished change runs its full test check on GitHub first
+Q (after "whats the point of having so many helpers if most of them are waiting half a day to work"): where should a
+finished change run its full test check before it goes up for merge? A: "On GitHub first (Recommended)". So: the
+local full prepush stops being the gate. A builder runs the cheap local gates (no Godot), pushes, and GitHub runs every
+shard on the branch (`C:/kt/gh_check.sh`, one lead watcher); the PR is ready only after that passes, so no red PR
+shows. Builders still run locally only the suites they iterate on. Replaces the local-prepush gate (D-186 stands).
+
 ## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
 Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
 copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
@@ -289,11 +396,3 @@ Director: "abandon our critics, all art passes through you who ACTUALLY LOOKS AT
 ## 2026-10-25 · D-248 · Director · Team cap, handoff folder, start-up budget, mouth method, clean road
 
 Team: at most 2 helper sessions, and every session (the lead included) runs at most 1 subagent; tonight casc-anim and vfx-lead (his pick), the atmosphere lead, Komodo mouth, claw and tongue parked. Handoffs: one copy per role in ~/.claude/handoffs/kaiju/<role>.md outside git, listed by the start hook from any folder (#205), after a regenerated lead could not find its handoff among stale branch copies. Start-up context: measured 108.6k tokens before any work; duplicate plugins off, comfy-mcp denied here, rulebook capped at 18 KB, a Stop hook logs and flags every session's start (budget 100k, lowered once he switches the unused claude.ai plugins and connectors off on both accounts). Komodo mouth: built tooth by tooth and strand by strand from a measured 1 cm grid (#60). Road: clean asphalt, dark and even with fine grain, crisp paint and faint tyre lines only (#61). Eyes rule: the lead opens every image a helper reports before replying (#62).
-
-## 2026-10-25 · D-247 · Director · Smoke look confirmed; sound judged as a soundscape; Komodo keyed first; landmarks burn; rail carves; Nim 023
-
-Smoke and sky (extends D-154): of the rampage still, "i think we can both agree the effect here is a bit much"; shown a reference picture and asked if it is the look he wants for the rampage smoke and sky: "Yes, that look" (dark plume columns with fire at their base, orange only at the horizon and behind the plumes, the city kept sharp). So D-154's "orange sky" means a low horizon glow, never a wash over the whole sky; the atmosphere lead's round 4 builds to that picture. Sound: "leave the sound listens to the playtest, ill listen to it as a collective soundscape rather than individual sounds" and "if anything sounds off or annoying we can iterate later": no single sound is sent to him; sound is judged at playtest milestones (the survey has a sound section) and iterated after. Animation (D-199/D-216/D-228 stand): the teen croc's stomp is redone in Cascadeur ("for the millionth time. I want 100% of our animation done with Casc"); machines (cars, turrets, rotors, trains) stay code, the rule covers "Creatures + people"; the new stomp is keyed on the "Komodo first", then the croc stages; until the real mouth is modelled the Komodo's roar is "Komodo mouth first, closed until then" (jaws shut, drool stays, D-239). Fire: "Yes, landmarks burn" (the agent-added off-switch goes ON). Walk weight (#4): "Drop it" (walk-m2 is dropped). Railway: "Yes, all of it" (pillars, deck and station break when the kaiju walks through; "all buildings in the play area must be destructible"; buildings that fall on the track damage it). Insectoid in the distant city: "yes bring it back" (on by default). Nim 023 is the train sound loops; "he can use $20 of claude api" (the lead's earlier question read as about ElevenLabs, which he corrected: "we use credits"). Comments #41-59.
-
-## 2026-10-25 · D-246 · Director · Serpent redesign: hood, frills, armour, horns; Tripo test models (200 credits); serpent work frozen
-
-"im concerned that our serpent kaiju just resembles a giant snake, roadmap: revisit the serpent concepts and possibly make new models"; "so dont do any serpent work until we decide on the final design". Asked: what makes it a kaiju is "Hood and frills" (a huge cobra hood with patterns, dorsal frills and spines) and "Armour and horns" (plated scales, horns, a crested head: a dragon-snake); explore with "Tripo test models", spend "Up to 200" Tripo credits (about 3-4 textured variants; no rigging or final model). All other serpent work (mouth, animation, powers art) waits for his pick. Also: "btw youre cooking the pc's ram too hard, ease up a bit": every lead now runs at most 2 heavy jobs, python pools at most 2 workers, nothing new under 6 GB free RAM.
