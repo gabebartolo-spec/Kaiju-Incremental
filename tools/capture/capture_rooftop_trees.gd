@@ -6,6 +6,8 @@ extends SceneTree
 ##                over the quay and the bay to the far skyline (capture_far_city.gd's view)
 ##                --shift=<m> moves it that far east along the ring avenue (a closer roof)
 ##   --view=play  at the city's centre block, on a street with street trees down both kerbs
+##   --view=skyline the camera 9 m from the nearest white solar heater on a far stand-in's roof
+##                (SkylineRoofTank), looking down at it from the city side
 ##   --view=tower the street node `--dz` north and `--dx` east of the low brick building nearest
 ##                the centre (5-9 floors), so its roof and water tower fill the lower frame
 ## Writes <out>/rooftop_trees_<view>_<tag>.png (the window's size: 1080p with the off-screen
@@ -65,6 +67,9 @@ func _run() -> void:
 	await Kit.frames(self, Num.i(_a["walk"]))  # there, the camera at rest behind it
 	paused = true
 	await Kit.frames(self, FRAMES_BETWEEN)
+	if str(_a["view"]) == "skyline":
+		_look_at_heater(rampage)
+		await Kit.frames(self, FRAMES_BETWEEN)
 	var stem := "rooftop_trees_%s_%s" % [str(_a["view"]), str(_a["tag"])]
 	Kit.still(self, str(_a["out"]), stem)
 	if _a["nodecor"] == true:
@@ -75,6 +80,27 @@ func _run() -> void:
 		Kit.still(self, str(_a["out"]), stem + "_nodecor")
 	print("capture_rooftop_trees: %s done" % stem)
 	quit()
+
+
+## Puts the camera 9 m toward the city centre and 7 m up from the nearest white heater on a far
+## stand-in's roof (within CitySkyline's roof-detail reach), looking at it.
+func _look_at_heater(rampage: Node) -> void:
+	var skyline: CitySkyline = rampage.find_children("*", "CitySkyline", true, false)[0]
+	var best := Vector3.ZERO
+	var nearest := INF
+	for box: Dictionary in skyline.plain_drawn():
+		var c: Color = box["c"]
+		var t: Transform3D = box["t"]
+		var flat := Vector2(t.origin.x, t.origin.z)
+		if c.is_equal_approx(SkylineRoofTank.WHITE) and flat.length() > 60.0:
+			if flat.length() < nearest:
+				nearest = flat.length()
+				best = t.origin
+	var toward := Vector3(-best.x, 0.0, -best.z).normalized()
+	var cam := root.get_viewport().get_camera_3d()
+	cam.global_position = best + toward * 9.0 + Vector3(0.0, 7.0, 0.0)
+	cam.look_at(best, Vector3.UP)
+	print("capture_rooftop_trees: heater at %s, %.0f from the centre" % [best, nearest])
 
 
 ## On the play area's north edge (`half` from the centre): the ring avenue at the foot of the
