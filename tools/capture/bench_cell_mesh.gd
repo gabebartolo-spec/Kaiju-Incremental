@@ -8,7 +8,9 @@ extends SceneTree
 ## made and attached), p50/p95/max in microseconds. A headless run uses the dummy renderer, which
 ## uploads nothing, so its finish_us understates; run it windowed (a real renderer) for the real
 ## one. --priority=high|low overrides tuning render_opt.remesh_high_priority for the A/B (low is
-## the behaviour before render plan item 9). tools/capture/bench_cell_runs.sh holds the PC for it.
+## the behaviour before render plan item 9). --worker=on|off overrides render_opt.remesh_worker_mesh
+## (item 9c: off makes the meshes in _finish, as before; headless never makes them on the worker).
+## tools/capture/bench_cell_runs.sh holds the PC for it.
 ## Seeded by design: fixed buildings and a fixed carve walk.
 ##   godot --headless --path . --script tools/capture/bench_cell_mesh.gd -- [--carves=60]
 
@@ -16,6 +18,7 @@ const RADII: Array[float] = [6.0, 12.0]  # cells: a claw bite, a stomp (RES 8: 0
 
 var _carves := 60
 var _priority := ""
+var _worker := ""
 
 
 func _initialize() -> void:
@@ -26,6 +29,8 @@ func _initialize() -> void:
 			_carves = arg.substr(9).to_int()
 		elif arg.begins_with("--priority="):
 			_priority = arg.substr(11)
+		elif arg.begins_with("--worker="):
+			_worker = arg.substr(9)
 	_run.call_deferred()
 
 
@@ -33,6 +38,8 @@ func _run() -> void:
 	await process_frame
 	if _priority != "":
 		Content.section("render_opt")["remesh_high_priority"] = _priority == "high"
+	if _worker != "":
+		Content.section("render_opt")["remesh_worker_mesh"] = _worker == "on"
 	var native := ClassDB.class_exists("KaijuMesher")
 	var high: bool = Content.section("render_opt").get("remesh_high_priority", true) == true
 	print(
@@ -113,7 +120,8 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				"%s %s r%d: grid+voxels %.0f ms, looks %.0f ms, first build %.0f ms (%d blocks);"
 				+ " remesh per carve p50 %.2f p95 %.2f max %.2f ms, %.1f blocks a carve;"
 				+ " %d triangles after %d carves;"
-				+ " finish_us (first build %d) p50 %d p95 %d max %d over %d batches, high_priority %s"
+				+ " finish_us (first build %d) p50 %d p95 %d max %d over %d batches, high_priority %s,"
+				+ " worker_mesh %s"
 			)
 			% [
 				spec[0],
@@ -134,7 +142,8 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				fin[mini(floori(fin.size() * 0.95), fin.size() - 1)],
 				fin[-1],
 				fin.size(),
-				view.high_priority
+				view.high_priority,
+				view.worker_mesh
 			]
 		)
 	)

@@ -128,9 +128,10 @@ static func _mesh_one(
 	results: Array,
 	meshes: Array
 ) -> void:
-	results[i] = m.mesh_region(cells, batch[i])
+	var arrays := m.mesh_region(cells, batch[i])
+	results[i] = arrays
 	if not meshes.is_empty():
-		meshes[i] = m.packed_mesh(results[i])
+		meshes[i] = m.packed_mesh(arrays)
 
 
 func _finish() -> void:
