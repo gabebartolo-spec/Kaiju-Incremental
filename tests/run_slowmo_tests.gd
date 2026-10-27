@@ -298,3 +298,4 @@ func _check_press_waits() -> void:
 	var again: bool = node.merge(quiet, tick)["signature"]
 	check(first, "a press on a tick it sat out reaches the step")
 	check(not again, "and is given to one step only")
+	node.free()  # a node never added to the tree is no one's child (debt row 2)

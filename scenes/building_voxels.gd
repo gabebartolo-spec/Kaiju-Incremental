@@ -5,7 +5,7 @@ extends RefCounted
 ## Facades have depth: windows sit one cell back in their reveals behind proud sills and
 ## lintels; piers, spandrels, mullions and transoms frame them. Four archetypes: office
 ## (ribbon windows over spandrel bands, AC plant), brick residential (punched windows, balconies
-## with railings, water tank), glass tower (flush curtain wall, mast with beacon), stone classic
+## with railings, water tower), glass tower (flush curtain wall, mast with beacon), stone classic
 ## (pilasters, cornices and string courses, stepped roof). Ground floors are shopfronts under a
 ## sign band and an awning. A side shared with a neighbour carries the same facade (build 2 note
 ## 22), so it shows when the neighbour falls; some shops hang a vertical neon sign off a street face
@@ -92,6 +92,9 @@ func _make_palette(base: Color) -> void:
 		"vent": Color("3a3c3e"),
 		"pipe": Color("6b6f72"),
 		"tank": Color("6a5040"),
+		"heater": Color("e6e8e4"),  # D-352: the white solar water heater
+		"heater_hi": Color("f8faf6"),
+		"solar": Color("1b2538"),
 		"beacon": Color(1.0, 0.25, 0.2, 0.0),
 		"sign_frame": Color("1c1e22"),
 	}
