@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # log_smoke.sh: seeded headless runs whose engine logs must be clean (D-295, debt rows 1-2).
 #
-# Two runs, each on a fixed 60 fps frame clock:
+# Three runs, each on a fixed 60 fps frame clock:
 #   1. tools/release/demo_smoke.gd: the title, NEW KAIJU, Kaiju Creation, a rampage, the thanks screen,
 #      Endless mode and a relaunch, through the game's own screens;
-#   2. tools/lint/log_smoke.gd: every species' autoplayed rampage to a death, everything freed.
+#   2. tools/lint/log_smoke.gd: every species' autoplayed rampage to a death, everything freed;
+#   3. tools/lint/log_smoke_street.gd: the seeded street replay the people bench drives
+#      (tests/lib/street_replay.gd), built, stepped, finished and freed as the bench frees it.
 # A run fails on ANY engine ERROR / WARNING / SCRIPT ERROR line or leak report in its log (a vector that is
 # not finite, a normalise of zero, a resource still alive at exit), or when its own checks fail. The lines
 # are never filtered or muted: fix the cause. Exit 0 = both logs clean, 1 = lines found (counted, with the
@@ -12,7 +14,7 @@
 #
 #   GODOT=/path/to/godot tools/lint/log_smoke.sh [script args for log_smoke.gd, e.g. --species=insectoid --seconds=20]
 #   LOGS=<dir> keeps the raw logs there (default: a temp dir, removed).
-#   ONLY=demo|rampage runs just one of the two.
+#   ONLY=demo|rampage|street runs just one of the three.
 #   BEFORE_ENGINE='<command>' runs before every engine start and must succeed (a shared PC: `bash C:/kt/wait_window.sh`).
 #   tools/lint/log_smoke.sh --selftest   plants an error, a warning and leaks, expects each to be caught.
 set -u
@@ -97,6 +99,9 @@ run_one() {
 	if [ "$name" = rampage ] && ! grep -q "^LOG_SMOKE done" "$log"; then
 		echo "log_smoke: FAIL the rampage run never finished"; tail -20 "$log"; failed=1; return
 	fi
+	if [ "$name" = street ] && ! grep -q "^LOG_SMOKE street done" "$log"; then
+		echo "log_smoke: FAIL the street run never finished"; tail -20 "$log"; failed=1; return
+	fi
 	if [ "$name" = rampage ]; then  # every species' run ended in the death this run staged (not on its own clock)
 		local runs deaths
 		runs=$(grep -c "^log_smoke: .* skyline beasts" "$log")
@@ -108,8 +113,10 @@ run_one() {
 	if ! check_log "$log"; then failed=1; fi
 }
 
-[ "${ONLY:-}" = rampage ] || run_one demo tools/release/demo_smoke.gd
-[ "${ONLY:-}" = demo ] || run_one rampage tools/lint/log_smoke.gd "$@"
+want() { [ -z "${ONLY:-}" ] || [ "$ONLY" = "$1" ]; }
+want demo && run_one demo tools/release/demo_smoke.gd
+want rampage && run_one rampage tools/lint/log_smoke.gd "$@"
+want street && run_one street tools/lint/log_smoke_street.gd
 if [ "$failed" = 0 ]; then
 	echo "log_smoke: PASS (no ERROR, WARNING or leak line in either log)"
 	exit 0
