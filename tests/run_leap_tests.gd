@@ -115,7 +115,8 @@ func _check_tower_wall() -> void:
 ## of the body's drawn height) is the drawn model's: its shoulder joint over its height.
 func _check_shoulder_measured() -> void:
 	for stage: String in STAGES:
-		var sim := _croc(STAGES[stage], [])
+		var levels: Dictionary = STAGES[stage]
+		var sim := _croc(levels, [])
 		var got := Num.f(_stage(sim).get("shoulder", 0.0))
 		var want := _rig_shoulder(sim)
 		check(
@@ -127,11 +128,12 @@ func _check_shoulder_measured() -> void:
 ## D-361: at every growth stage a roof at his shoulder or lower is still landed on, feet on it.
 func _check_low_roof() -> void:
 	for stage: String in STAGES:
-		var probe := _croc(STAGES[stage], [])
+		var levels: Dictionary = STAGES[stage]
+		var probe := _croc(levels, [])
 		var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
 		var ahead := _ahead(probe, reach * 0.6)
 		var low := _block(ahead, 4, maxi(2, floori(_shoulder_y(probe))))
-		var sim := _croc(STAGES[stage], [low])
+		var sim := _croc(levels, [low])
 		var leap := _first(sim.step(DT, Vector2.ZERO, false, BUTTON), "leap")
 		_finish(sim)
 		var feet := sim.kaiju_pos + sim.facing * sim.body.feet_ahead()
@@ -155,10 +157,11 @@ func _check_low_roof() -> void:
 ## down on the street at its foot, where the landing's smash and ring hit it.
 func _check_tall_side() -> void:
 	for stage: String in STAGES:
-		var probe := _croc(STAGES[stage], [])
+		var levels: Dictionary = STAGES[stage]
+		var probe := _croc(levels, [])
 		var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
 		var tall := _block(_ahead(probe, reach * 0.6), 6, ceili(_shoulder_y(probe) * 2.0))
-		var sim := _croc(STAGES[stage], [tall])
+		var sim := _croc(levels, [tall])
 		var b := sim.buildings[0]
 		var roof := _roof_cells(b)
 		var before := b.frame.alive_count

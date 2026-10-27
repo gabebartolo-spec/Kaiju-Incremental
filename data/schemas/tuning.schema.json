@@ -5064,13 +5064,14 @@
         },
         "night_clip_max": {"$ref": "#/$defs/num"},
         "remesh_high_priority": {"$ref": "#/$defs/bool"},
+        "remesh_worker_mesh": {"$ref": "#/$defs/bool"},
         "soft_smoke": {"$ref": "#/$defs/bool"},
         "soft_smoke_m": {"$ref": "#/$defs/num"}
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
         "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
-        "remesh_high_priority", "soft_smoke", "soft_smoke_m"
+        "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
