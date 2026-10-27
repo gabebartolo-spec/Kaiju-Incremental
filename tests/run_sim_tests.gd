@@ -234,11 +234,36 @@ func _check_upgrade_effects() -> void:
 	var unevolved := _autoplay(
 		_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3}), MAX_STEPS, 60, true
 	)
+	var probe := ""
+	if Num.f(evolved["destruction"]) <= Num.f(unevolved["destruction"]):
+		for city_seed: int in [1, 2, 3, 4, 5]:
+			var ev := _autoplay(
+				_sim_seeded(
+					"reptilian",
+					{"claws": 3, "hide": 3, "rage": 3, "evolve1": 1},
+					{},
+					Vector2i(city_seed, 0)
+				),
+				MAX_STEPS,
+				60,
+				true
+			)
+			var un := _autoplay(
+				_sim_seeded(
+					"reptilian", {"claws": 3, "hide": 3, "rage": 3}, {}, Vector2i(city_seed, 0)
+				),
+				MAX_STEPS,
+				60,
+				true
+			)
+			probe += (
+				" s%d %.3f/%.3f" % [city_seed, Num.f(ev["destruction"]), Num.f(un["destruction"])]
+			)
 	check(
 		Num.f(evolved["destruction"]) > Num.f(unevolved["destruction"]),
 		(
-			"evolving destroys more (%.3f vs %.3f)"
-			% [Num.f(evolved["destruction"]), Num.f(unevolved["destruction"])]
+			"evolving destroys more (%.3f vs %.3f; probe%s)"
+			% [Num.f(evolved["destruction"]), Num.f(unevolved["destruction"]), probe]
 		)
 	)
 

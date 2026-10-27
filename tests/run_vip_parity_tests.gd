@@ -16,6 +16,7 @@ class Played:
 	var tanks := 0
 	var helis := 0
 	var vip := ""
+	var chunks := 0
 	var fates: Array[String] = []  # each forced gunship kill: id, fate, fall time, drift, crew
 
 
@@ -64,6 +65,7 @@ func _play(leader: bool, kill_at := -1.0) -> Played:
 	out.tanks = sim.tanks_destroyed
 	out.helis = sim.air.destroyed
 	out.vip = sim.vip.state
+	out.chunks = sim.chunks_destroyed
 	return out
 
 
@@ -141,11 +143,13 @@ func _check_vip_kill_leaves_gunship_falls() -> void:
 	check(
 		on.fates == off.fates,
 		(
-			"same gunship fates and drifts with the leader killed (first apart at %d: %s | %s)"
+			"same gunship fates and drifts with the leader killed (first apart at %d: %s | %s; chunks %d vs %d)"
 			% [
 				apart,
 				on.fates[apart] if apart < on.fates.size() else "-",
-				off.fates[apart] if apart < off.fates.size() else "-"
+				off.fates[apart] if apart < off.fates.size() else "-",
+				on.chunks,
+				off.chunks
 			]
 		)
 	)
