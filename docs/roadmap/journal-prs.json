@@ -1815,9 +1815,9 @@
 {
 "n": 261,
 "t": "ci: shards run suites in lanes, timings re-measured, every job has a timeout (debt row 4)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-27"
 },
 {
 "n": 262,
@@ -1941,9 +1941,9 @@
 {
 "n": 279,
 "t": "scenes: no tank or helicopter ever draws see-through; VehicleFade removed (D-290)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-27"
 },
 {
 "n": 280,
@@ -2004,9 +2004,9 @@
 {
 "n": 288,
 "t": "scenes: the first blow changes only the facade near the cut (D-289)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-27"
 },
 {
 "n": 289,
@@ -2060,13 +2060,97 @@
 {
 "n": 296,
 "t": "Trains draw in the city's surface family, and the flat-surface scan waits for a running train (debt row 25)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 297,
+"t": "Crowds placed in one native call a frame (render plan item 7): whole crowd -54%",
 "s": "OPEN",
 "c": "2026-10-27",
 "m": ""
 },
 {
-"n": 297,
-"t": "Crowds placed in one native call a frame (render plan item 7): whole crowd -51 to -54%",
+"n": 298,
+"t": "docs: DECISIONS rolled to 300 lines; DESIGN carries D-312; debt rows current",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 299,
+"t": "Engine errors and leaks: every ERROR/WARNING fixed at its cause, a CI log guard (debt rows 1, 2)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 300,
+"t": "tools: prepush steps need their success line; capture picks native",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 301,
+"t": "Render plan item 6: lived-in windows (a palette tone and brightness per lit room, on by default)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 302,
+"t": "render: the croc's cubes draw three faces each, not six (render plan item 14, flag ON)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 303,
+"t": "tools: lint fails when worker-thread code makes a render resource (debt row 3, D-295)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 304,
+"t": "tools: six files split at natural seams under 330 lines (debt row 15, lane A)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 305,
+"t": "scenes: the far city sits in the bay's air, not floating above it (comment #37)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 306,
+"t": "ci: a PR or main push skips tests a green branch run already ran on the same tree (D-319)",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 307,
+"t": "sim+data: army fights back at every stage, about 1 run in 8 (D-259)",
+"s": "OPEN",
+"c": "2026-10-27",
+"m": ""
+},
+{
+"n": 308,
+"t": "ui: slow motion only when a landmark falls; rooftop rifle hits land on the hide (D-259, D-245)",
+"s": "OPEN",
+"c": "2026-10-27",
+"m": ""
+},
+{
+"n": 309,
+"t": "scenes: breath and Thunder Beam strike as forked lightning (D-308)",
 "s": "OPEN",
 "c": "2026-10-27",
 "m": ""

@@ -23,7 +23,8 @@ var _reach: float
 var _frame := 0
 
 
-func _init(tree: SceneTree, tier: int, preset: String) -> void:
+## buffered: render_opt.people_buffers for this run (the default is the data's).
+func _init(tree: SceneTree, tier: int, preset: String, buffered: bool = true) -> void:
 	var table: Dictionary = Content.section("display")["graphics"]
 	var row: Dictionary = table[preset]
 	GraphicsPresets.start_run(row)
@@ -43,6 +44,7 @@ func _init(tree: SceneTree, tier: int, preset: String) -> void:
 	var fx := Fx.new()
 	_holder.add_child(fx)
 	street = StreetLife.new(sim, fx, Seeds.make("civilians", 0))
+	street.people_buffers = buffered
 	_holder.add_child(street)
 	street.set_process(false)  # step() runs its frames, at DT
 	_start = sim.kaiju_pos
@@ -95,7 +97,10 @@ func digest() -> String:
 	return ctx.finish().hex_encode()
 
 
-## Frees the city and puts the player's graphics counts back.
+## Frees the city and puts the player's graphics counts back. The sim and its parts count each
+## other, so a dropped sim is never freed (SimTeardown, D-179): the game's owners dispose it
+## (scenes/rampage.gd, title_backdrop.gd), and so does this one, or every replay leaks its city.
 func finish() -> void:
 	_holder.free()
+	sim.dispose()
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())

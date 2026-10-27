@@ -596,12 +596,11 @@
 		"chem_lab": {"radius": 3.0, "damage": 45.0, "height": 10, "cloud_radius": 7.0, "cloud_seconds": 8.0, "cloud_tank_dps": 6.0, "cloud_squad_seconds": 1.5}
 	},
 	"blast_fx": {
-		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake.trauma: how hard each kind of blast kicks the camera (times 1 - distance/reach from the kaiju); kick = ONE kick of units x that, thrown up and away from the blast and easing out (squared) over kick.seconds, never a shake back and forth (clip critic round 6); screen_flash = a white sheet over the screen at alpha (small blasts at small_share of it) gone in seconds; no hit-stop and no screen-bending ripple any more. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay; every blast cracks once, crack_db over the mix with no distance fade (round 7: the third blast's crack barely cleared the bed), body and rumble sit tail_db under it. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; fireball.top_scale x reach_scale = how far the ball reaches (round 2, 7), speed_scale = start speed in radii/s (round 6: 2-3x the footprint), build_seconds = it spawns over that long (a few frames, not one), fireball = a sudden tall burst of Fire's own flames (Fire.FLAME_CUBE voxels at Fire.FLAME_SCALE, its ember shader at its own heat, its colours and ramp: a bigger blast is more flames, never bigger cubes): amount of them at blast radius 5, spawned over burst_seconds, living seconds, up on a spread (degrees) with gravity lift up like Fire's, speed_scale radii a second, damped to stop top_scale site heights up; fire = the real Fire left at the site afterwards (size x radius/5; seconds 0: it stays burning like any other until the fire cap puts the oldest out) which brings the game's own smoke (D-151, VFX lead 2026-10-23); shock.ring = the game's dust shockwave out to the blast's reach plus puffs Fx.dust round its rim; cloud = the chem gas as the game's soft smoke tinted shades, puff = its size range, shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
+		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake.trauma: how hard each kind of blast kicks the camera (times 1 - distance/reach from the kaiju); kick = ONE kick of units x that, thrown up and away from the blast and easing out (squared) over kick.seconds, never a shake back and forth (clip critic round 6); no screen flash (director 2026-10-27: cut), no hit-stop and no screen-bending ripple any more. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay; every blast cracks once, crack_db over the mix with no distance fade (round 7: the third blast's crack barely cleared the bed), body and rumble sit tail_db under it. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; fireball.top_scale x reach_scale = how far the ball reaches (round 2, 7), speed_scale = start speed in radii/s (round 6: 2-3x the footprint), build_seconds = it spawns over that long (a few frames, not one), fireball = a sudden tall burst of Fire's own flames (Fire.FLAME_CUBE voxels at Fire.FLAME_SCALE, its ember shader at its own heat, its colours and ramp: a bigger blast is more flames, never bigger cubes): amount of them at blast radius 5, spawned over burst_seconds, living seconds, up on a spread (degrees) with gravity lift up like Fire's, speed_scale radii a second, damped to stop top_scale site heights up; fire = the real Fire left at the site afterwards (size x radius/5; seconds 0: it stays burning like any other until the fire cap puts the oldest out) which brings the game's own smoke (D-151, VFX lead 2026-10-23); shock.ring = the game's dust shockwave out to the blast's reach plus puffs Fx.dust round its rim; cloud = the chem gas as the game's soft smoke tinted shades, puff = its size range, shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
 		"shake": {"trauma": {"fuel_silo": 0.9, "fireworks_factory": 0.6, "chem_lab": 0.6}, "reach": 70.0},
 		"flash": {"energy": 14.0, "seconds": 0.3, "max_live": 3, "color": "ffb468", "chem_color": "b4ff8a"},
 		"core": {"amount": 50, "seconds": 0.15, "throw": 0.5, "size": 0.22, "full_radius": 5.0},
 		"kick": {"units": 1.6, "seconds": 0.15},
-		"screen_flash": {"alpha": 0.3, "seconds": 0.05, "full_radius": 5.0, "small_share": 0.75, "layer": -1},
 		"site_rubble": 2.0,
 		"fireball": {"seconds": 2.0, "amount": 1100, "spread": 15.0, "burst_seconds": 0.3, "top_scale": 3.5, "speed_scale": 13.0, "lift": 2.5},
 		"fire": {"size": 2.0, "seconds": 0.0},
@@ -628,6 +627,7 @@
 		"coast_z": -120,
 		"bay_width": 190,
 		"far_haze": 0.004,
+		"far_fog": {"_note": "Director comment #37 (2026-10-25, asked twice: 'something funky going on with the distant city'): the far city floated crisp above the haze, its own gentler haze (far_haze) and no engine fog, so it was clearer than the bay in front of it. on: the far skyline (towers, quay, lattice tower, the far rampage's beast and smoke) takes the engine's depth fog as the bay does (FarHaze); own_haze: the share of its own built haze kept on top (0 = the same air as the bay); base: height fog, this much more haze at the foot of the far city fading over base_height metres up, so it shows no hard base line (0.5: its foot within 2% of the bay's luma at night and noon, tools/capture/far_city_bars.py); start: metres from the camera where its own haze and the height fog begin. Off = the look it was built with. Presentation only.", "on": true, "own_haze": 0.0, "base": 0.5, "base_height": 30.0, "start": 120.0},
 		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
@@ -746,6 +746,8 @@
 				"blast_body": "explosion",
 				"blast_rumble": "explosion",
 				"sonic_boom": "explosion",
+				"thunder_beam": "hero",
+				"thunder_beam_end": "hero",
 				"stomp_0": "stomp",
 				"stomp_1": "stomp",
 				"stomp_2": "stomp",
@@ -824,7 +826,10 @@
 			"lash": -3.0,
 			"ready": -8.0,
 			"deflect": -10.0,
-			"regen_loop": -20.0
+			"regen_loop": -20.0,
+			"thunder_beam": -1.0,
+			"thunder_beam_loop": -4.0,
+			"thunder_beam_end": -2.0
 		}
 	},
 	"city_sound": {
@@ -1140,10 +1145,10 @@
 		},
 		"sounds": {
 			"roar": "Hero",
-			"stomp_0": "Hero",
-			"stomp_1": "Hero",
-			"stomp_2": "Hero",
-			"stomp_crack": "Hero",
+			"stomp_0": "SFX",
+			"stomp_1": "SFX",
+			"stomp_2": "SFX",
+			"stomp_crack": "SFX",
 			"collapse": "Hero",
 			"collapse_drop": "Debris",
 			"train_rumble": "Ambience",
@@ -1172,6 +1177,9 @@
 			"deflect": "SFX",
 			"regen_loop": "SFX",
 			"siren_far": "Ambience",
+			"thunder_beam": "Hero",
+			"thunder_beam_loop": "Hero",
+			"thunder_beam_end": "Hero",
 			"footstep": "SFX",
 			"footstep_1": "SFX",
 			"footstep_2": "SFX",
@@ -1232,6 +1240,12 @@
 		"kick_deg": 0.8, "crack_fade_s": 0.12
 	},
 	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "fade_opacity": 0.35, "fade_seconds": 0.25, "fade_width": 1.0, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0},
+	"slowmo": {
+		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The director tunes these at playtest.",
+		"scale": 0.35,
+		"hold_s": 0.5,
+		"ease_s": 0.25
+	},
 	"camera_shake": {
 		"_note": "CameraShake (R 19.2): hits add trauma 0..1 (sources), it fades at decay_per_s; the camera turns by trauma squared on smooth noise (noise_hz noise units a second; 1.6 keeps a 60 fps frame under 5 px at 1080p at the 2 deg cap, motion critic 2026-10-21), yaw and pitch only, full trauma = deg_per_root_scale x sqrt(body scale) degrees, at most max_deg. A hit away from the focus fades from near_per_scale to far_per_scale body scales. default_motion: the camera-motion setting's default (0..1).",
 		"decay_per_s": 1.2,
@@ -1245,7 +1259,7 @@
 		"near_per_scale": 20.0,
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
-		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
+		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7, "bolt_stroke": 0.25}
 	},
 	"accessibility": {
 		"_note": "Settings > ACCESSIBILITY (D-259). flash_scale: while Reduce flashing is on, every flash of light (explosion, muzzle and breath lights, flares, the end beat's screen flash, the lab's lightning white) is drawn at this share of its brightness, and the colour fringe never shows.",
@@ -1276,9 +1290,8 @@
 		"breath": {"weak": 0.35, "strong": 0.05, "seconds": 0.9}
 	},
 	"post_fx": {
-		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color; below low_health.below of max health a red edge band (colour, alpha at the very edge, depth_px deep at 1080 lines, fading to nothing inside) beats on top of it pulse_hz times a second, sharpened by pulse_sharp, back to nothing between beats; the HUD sits above it. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
+		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color, always the same dark edge: low health is the HUD's heartbeat vignette alone (ui.hurt; director 2026-10-27: vignette only), with no red band here. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
 		"vignette": {"color": "#05070a", "strength": 0.42, "inner": 0.5, "outer": 1.0},
-		"low_health": {"below": 0.25, "full_at": 0.1, "color": "#c0100c", "alpha": 0.28, "depth_px": 110.0, "pulse_hz": 1.3, "pulse_sharp": 2.0, "fade_per_s": 2.5},
 		"fringe": {"seconds": 0.2, "attack": 0.2, "peak_px": 6.0, "cooldown_s": 4.0, "stomp_min_radius": 4.4, "collapse_min_length": 28.0, "hit_hp_fraction": 0.12}
 	},
 	"topple_fx": {
@@ -1436,12 +1449,85 @@
 		"shockwave": {"radius_scale": 1.2, "seconds": 0.55, "alpha": 0.55, "soft": 0.4, "foot_start": 0.18},
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
-		"breath_fade_in": 0.12,
-		"breath_curtain_alpha": 0.7,
-		"breath_curtain_height": 7.0,
+		"bolt": {
+			"_note": "BoltRig/BoltView/bolt.gdshader (VFX_STYLE family 6, research 17): the Lightning Breath and the Thunder Beam. halo_mode picks the fringe colours round the white-hot axis (R 17.6 is the director's open question: amber / eye = the species' eye tint / violet = white with a violet fringe); the glow itself is the engine's bloom on the HDR axis (boost_core, fringe_boost). The Thunder Beam core is 1.8x the breath's. Strokes come at least stroke_gap apart (never more than 3 full flashes a second); between strokes the main channel holds at hold_level with a shallow wobble. All shapes are dimensionless (a share of the bolt's length) and seeded per breath (Seeds breath_bolt / thunder_bolt). Widths are metres at body scale 1.",
+			"halo_mode": "amber",
+			"halo_modes": {
+				"amber": {"inner": "ffb55a", "fringe": "ff7a1e"},
+				"eye": {"inner": "eye", "fringe": "eye", "inner_white": 0.6},
+				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5}
+			},
+			"boost_core": 3.0,
+			"fringe_boost": 1.6,
+			"white_to": 0.7,
+			"tint_to": 0.82,
+			"core_min_px": 12.0,
+			"arc_min_px": 3.0,
+			"arc_alpha": 0.45,
+			"main_tip": 1.3,
+			"mouth_share": 0.4,
+			"bolt_soft": 1.5,
+			"arc_every": 0.07,
+			"arc_level": 0.25,
+			"light_follow": 40.0,
+			"strike_decay": 0.07,
+			"muzzle_up": 0.5,
+			"rebuild_move": 0.1,
+			"wobble": 0.15,
+			"wobble_hz": 22.0,
+			"depth": 3,
+			"branch_depth": 3,
+			"first_at": 0.0667,
+			"feeler_level": 0.3,
+			"feeler_step": 0.0167,
+			"feeler_reach": [0.1, 1.0],
+			"stroke_gap": 0.45,
+			"attack": 0.06,
+			"gap_jitter": 0.1,
+			"end_margin": 0.04,
+			"tail": 0.2,
+			"hold_level": 0.6,
+			"stroke_decay": 0.09,
+			"branch_peak": 1.0,
+			"branch_hold": 0.5,
+			"branch_decay": 0.14,
+			"light_decay": 0.12,
+			"light": {"hold_share": 0.2, "falloff": 1.5, "mouth": [8.0, 16.0], "impact": [34.0, 28.0]},
+			"muzzle_flare": 0.8,
+			"flare_edge": 0.3,
+			"flare_soft": 3.0,
+			"strike_flare": 14.0,
+			"strike_lift": 1.5,
+			"impact_sparks": 3,
+			"branch_tip": 0.65,
+			"branch_sparks": 2,
+			"power_share": 0.25,
+			"prewarm_seconds": 0.05,
+			"breath": {
+				"core": 0.6, "sway": 0.1, "branches": [4, 6],
+				"bow": 0.6, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0, "ring_puffs": 8,
+				"arcs": 4, "arc_reach": 8.0, "arc_width": 0.17,
+				"branch_from": [0.3, 0.8], "branch_width": 1.0, "branch_sway": 0.15,
+				"anchor_near": false, "anchor_back": 0.0, "dust": 3.5,
+				"fan_spread": 0.8, "fan_near": 0.55, "clear": 1.5
+			},
+			"thunder": {
+				"core": 1.08, "sway": 0.22, "branches": [4, 6],
+				"bow": 0.25, "sub_forks": 0, "strike_scale": 0.8, "ring": 6.0, "ring_puffs": 6,
+				"arcs": 0, "arc_reach": 6.0, "arc_width": 0.35, "facade_min": [4, 6],
+				"branch_from": [0.1, 0.99], "branch_width": 0.55, "branch_sway": 0.1,
+				"anchor_near": true, "anchor_back": 0.06, "dust": 2.0,
+				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 1.5, "lash_climb": [2.0, 12.0], "lash_side": 1.0, "turn_hold": 0.12
+			}
+		},
+		"orbit_degrees": 25.0,
+		"orbit_rise": 3.0,
+		"orbit_in_seconds": 0.3,
+		"orbit_out_seconds": 0.5,
 		"scorch_seconds": 5.0,
 		"scorch_soot_in": 0.4,
 		"scorch_glow_in": 0.12,
+		"scorch_glow_mult": 0.35,
 		"crater_seconds": 6.0,
 		"crack_seconds": 2.5,
 		"sweep_seconds": 0.5,
@@ -1592,10 +1678,6 @@
 			"strobe_period": 1.3,
 			"strobe_on": 0.12
 		},
-		"fade_opacity": 0.35,
-		"fade_seconds": 0.25,
-		"tank_clear": 2.0,
-		"heli_clear": 5.0,
 		"vip_dark": 0.25,
 		"vip_glow": 1.0,
 		"vip_band": [0.3, 0.42]
@@ -1657,17 +1739,22 @@
 		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
 	},
 	"render_opt": {
-		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). facade_aa (window-flicker, director 10-27 \"flashing/stuttering lit windows\"): the stand-in and skyline facades box-filter their window pattern over the pixel (every facade cell under it, weighted by the share it covers, the footprint held to facade_aa_cells cells each way) once a pixel spans more than facade_aa_start cells, so windows thinner than a pixel stop popping in motion; nearer walls keep the one exact sample. Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
+		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). facade_aa (window-flicker, director 10-27 \"flashing/stuttering lit windows\"): the stand-in and skyline facades box-filter their window pattern over the pixel (every facade cell under it, weighted by the share it covers, the footprint held to facade_aa_cells cells each way) once a pixel spans more than facade_aa_start cells, so windows thinner than a pixel stop popping in motion; nearer walls keep the one exact sample. remesh_high_priority: a carved building's meshing task (CellView) is queued high-priority, as Jolt's jobs are (item 9). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
 		"night_clip_max": 0.08,
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
 		"kaiju_bounds_slack": 1.05,
+		"people_buffers": true,
+		"people_aabb_margin_m": 8.0,
+		"kaiju_three_faces": true,
+		"fx_pool": {"enabled": true, "provisional_sizes": true, "slots": {"dust": 24, "puff": 8, "step": 8, "slam": 8, "tree": 8, "spark": 8, "burst": 16, "flames": 12, "embers": 12, "smoke": 12}},
+		"remesh_high_priority": true,
 		"facade_aa": true,
 		"facade_aa_start": 0.25,
 		"facade_aa_cells": 6.0
 	},
 	"death": {
-		"_note": "The kaiju's death (director 2026-10-26, every kaiju; replaces D-267's belly-down slump): Special K overload. A death (reasons, SaveFile.DEATHS) plays the agonised stagger clip for stagger_s (clip death_stagger, frames 20-60 of the approved stagger at 24 fps), the stone creeps over him for stone_s, then he shatters (DeathOverload): shards of his own body (cell world units each at body scale 1, picked from his body discs) are thrown throw_min..throw_max (x body scale) and land after flight_s, each a blow of shard_damage within shard_radius on the top shard_floors floors of what it lands on. A Death Blast node (stat death_blast, 1 per node) adds a front of blast_damage that runs out to a ring round his body: his body's edge plus death_blast x per_node world units (director 2026-10-26 \"Smaller: a ring round his body\"; 5 / 10 / 15, node 3 about one street block), in blast_s, every floor, and it starts blast_after_s after the last shard lands (director 2026-10-27, D-294 \"Shards first\": his falling stone body smashes buildings, then the blast clears the rest). The run ends settle_s after the front (or the last shard with no node). Look: violet = Special K (creation.lab.colors.special_k); stone grey with per-block variation; placeholders, flagged for tuning.",
+		"_note": "The kaiju's death (director 2026-10-26, every kaiju; replaces D-267's belly-down slump): Special K overload. A death (reasons, SaveFile.DEATHS) plays the agonised stagger clip for stagger_s (clip death_stagger, frames 20-60 of the approved stagger at 24 fps), the stone creeps over him for stone_s, then he shatters (DeathOverload): shards of his own body (cell world units each at body scale 1, picked from his body discs) are thrown throw_min..throw_max (x body scale) and land after flight_s, each a blow of shard_damage within shard_radius on the top shard_floors floors of what it lands on. A Death Blast node (stat death_blast, 1 per node) adds a front of blast_damage that runs out to a ring round his body: his body's edge plus death_blast x per_node world units (director 2026-10-26 \"Smaller: a ring round his body\"; 5 / 10 / 15, node 3 about one street block), in blast_s, every floor, and it starts blast_after_s after the last shard lands (director 2026-10-27, D-294 \"Shards first\": his falling stone body smashes buildings, then the blast clears the rest). The run ends settle_s after the front (or the last shard with no node). Look: violet = Special K (creation.lab.colors.special_k); stone grey with per-block variation. He breaks into jagged stone chunks, never cubes (director 2026-10-27, D-323 \"Jagged stone chunks\": irregular broken rock in his hide's texture, many sizes, tumbling with dust): look.chunks are the broken rock meshes baked by tools/blender/death_chunks.py (longest side 1); his voxels fly as small chunks of debris_size x his voxel and the sim's shards as big ones of shard_size x cell (most near the small end, size_skew), tumbling at debris_spin rad/s, each shard trailing dust (trail). Placeholders, flagged for tuning.",
 		"reasons": ["defeated", "time", "ended"],
 		"stagger_s": 1.71,
 		"stagger_clip": "death_stagger",
@@ -1688,6 +1775,6 @@
 		"blast_s": 0.6,
 		"blast_damage": 600.0,
 		"blast_floors": 64,
-		"look": {"crackle": 2.2, "crackle_share": 0.18, "crackle_hz": 14.0, "stone": "8a8780", "stone_vary": 0.18, "stone_keep": 0.25, "light_energy": 6.0, "light_range": 18.0, "burst_light": 40.0, "burst_s": 0.5, "debris_max": 3000, "debris_size": 2.0, "debris_speed": [6.0, 18.0], "debris_up": [4.0, 14.0], "gravity": 30.0, "debris_s": 2.5, "shard_arc": 6.0, "crush_radius": 1.6, "burst_trauma": 0.8, "shard_trauma": 0.12}
+		"look": {"crackle": 2.2, "crackle_share": 0.18, "crackle_hz": 14.0, "stone": "8a8780", "stone_vary": 0.18, "stone_keep": 0.25, "light_energy": 6.0, "light_range": 18.0, "burst_light": 40.0, "burst_s": 0.5, "debris_max": 3000, "chunks": ["res://assets/death/chunk_0.obj", "res://assets/death/chunk_1.obj", "res://assets/death/chunk_2.obj", "res://assets/death/chunk_3.obj", "res://assets/death/chunk_4.obj", "res://assets/death/chunk_5.obj", "res://assets/death/chunk_6.obj", "res://assets/death/chunk_7.obj"], "debris_size": [0.8, 4.8], "shard_size": [0.6, 1.5], "size_skew": 2.0, "debris_spin": [2.0, 9.0], "trail": {"amount": 24, "life": 1.2, "size": 1.4, "rise": 0.6, "alpha": 0.35}, "debris_speed": [6.0, 18.0], "debris_up": [4.0, 14.0], "gravity": 30.0, "debris_s": 2.5, "shard_arc": 6.0, "crush_radius": 1.6, "burst_trauma": 0.8, "shard_trauma": 0.12}
 	}
 }
