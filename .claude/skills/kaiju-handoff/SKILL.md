@@ -1,11 +1,11 @@
 ---
 name: kaiju-handoff
-description: Writing and starting from a Kaiju Incremental agent handoff - the file ~/.claude/handoffs/kaiju/ROLE.md outside git that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when a session's context nears its 260k auto-compact, before the director restarts or clears a session, and at the start of any new session.
+description: Writing and starting from a Kaiju Incremental agent handoff - the file ~/.claude/handoffs/kaiju/ROLE.md outside git that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when a session's context nears its 200k auto-compact, before the director restarts or clears a session, and at the start of any new session.
 ---
 
 # Handoffs
 
-Fresh session at every task boundary for a lead; every session auto-compacts at 260k and keeps its handoff and commits current at each milestone (rulebook "Context and handoff").
+Fresh session at every task boundary for a lead; every session auto-compacts at 200k and keeps its handoff and commits current at each milestone (rulebook "Context and handoff").
 Write the handoff first, then start the new session from it.
 A helper (builder, subagent) never stops or hands off for context size: it auto-compacts and keeps its
 handoff and commits current at each milestone. The lead respawns one with the same name from its handoff only if
