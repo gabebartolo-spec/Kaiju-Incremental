@@ -219,6 +219,8 @@
             269,
             270,
             283,
+            286,
+            292,
             293
           ]
         },
@@ -1011,7 +1013,8 @@
           "text": "Speed runs get the PC to themselves (D-299, D-313): no Godot launch, test run or capture starts while a bench holds its window, so every speed number is clean",
           "status": "done",
           "prs": [
-            291
+            291,
+            295
           ]
         }
       ],

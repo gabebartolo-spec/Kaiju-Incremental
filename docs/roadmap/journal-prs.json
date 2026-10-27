@@ -1990,9 +1990,9 @@
 {
 "n": 286,
 "t": "tools: merge_on_green lints the PR merged with current main before merging",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-27"
 },
 {
 "n": 287,
@@ -2032,9 +2032,9 @@
 {
 "n": 292,
 "t": "tools: PASS needs the test run's own pass line (a killed run no longer prints PASS)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
-"m": ""
+"m": "2026-10-27"
 },
 {
 "n": 293,
@@ -2046,8 +2046,22 @@
 {
 "n": 294,
 "t": "ci: licence loose ends: MIT gitleaks CLI; export --release refuses DEV ONLY files",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-26",
+"m": "2026-10-26"
+},
+{
+"n": 295,
+"t": "tools: bench_driver.sh reads GPU ms under one held window, voids disturbed runs",
+"s": "MERGED",
+"c": "2026-10-26",
+"m": "2026-10-27"
+},
+{
+"n": 296,
+"t": "Trains draw in the city's surface family, and the flat-surface scan waits for a running train (debt row 25)",
+"s": "OPEN",
+"c": "2026-10-27",
 "m": ""
 }
 ]
