@@ -99,17 +99,8 @@ func _init(p_rig: KaijuRig) -> void:
 	for chain: KaijuRig.SpringChain in rig.chains:
 		if not chain.names[0].begins_with("tentacle"):
 			continue
-		var arm := Arm.new()
-		arm.chain = chain
-		chain.stiffness = ARM_STIFFNESS
-		chain.gravity_scale = ARM_GRAVITY
-		var tip := rig.head_of(chain.names[-1]) + rig.dir_of(chain.names[-1])
-		var root := rig.head_of(chain.names[0])
-		arm.angle = atan2(tip.x, -tip.z)
-		for n: String in chain.names:
-			arm.length += rig.dir_of(n).length()
-		arm.phase = rng.randf() * TAU
-		hip_height = maxf(hip_height, root.y)
+		var arm := RadialWalkers.make_arm(rig, chain, rng)
+		hip_height = maxf(hip_height, rig.head_of(chain.names[0]).y)
 		arms.append(arm)
 	for child: Node in rig.bone("mantle0").get_children():
 		if child is MultiMeshInstance3D:
@@ -129,14 +120,7 @@ func update(delta: float) -> void:
 	_moving = moving
 	_turning = turning
 	var heading := velocity.normalized() if speed > 0.05 else Vector3.ZERO
-	var reaching := 0
-	for arm: Arm in arms:
-		reaching += 1 if arm.reaching else 0
-	_since_grip += dt
-	var gap := REACH_GAP * sqrt(s) * (0.5 if turning else 1.0)
-	var behind := _lag.length() > _max_lag(hip_w) * 0.7  # falling far behind: grab now
-	var walkers := _walkers(root, heading)
-	var may_reach := reaching < MAX_REACHING and (_since_grip > gap or behind)
+	var plan := _reach_plan(dt, root, heading, hip_w)
 	var pick: Arm = null  # the free front arm that has waited longest reaches next
 	for arm: Arm in arms:
 		arm.chain.ground = ground + 0.1 * s
@@ -144,29 +128,54 @@ func update(delta: float) -> void:
 		if arm.holding:
 			_hold(arm, root, dt)
 			continue
-		if arm.gripping:
-			_maybe_release(arm, root, base)
-		var free := not arm.gripping and not arm.reaching
-		arm.idle = arm.idle + dt if free else 0.0
-		if free and moving and arm in walkers:
-			if pick == null or arm.idle > pick.idle:
-				pick = arm
-		elif free and not moving and may_reach and _wants_grip(arm, root):
-			_reach(arm, root, base)
-		if arm.reaching:
-			_advance_reach(arm, dt)
-		var want := 1.0
-		if arm.gripping:
-			arm.chain.pins = {arm.chain.names.size(): arm.grip}
-			want = clampf(
-				(arm.grip - base).length() / (arm.length * s * GRIP_SLACK), CONTRACT_MIN, 1.0
-			)
-		arm.chain.contract = lerpf(arm.chain.contract, want, minf(1.0, dt * 10.0))
-		_curl(arm, moving)
-	if pick != null and may_reach:
+		if _front_free(arm, dt, base, plan) and (pick == null or arm.idle > pick.idle):
+			pick = arm
+		_tend_arm(arm, dt, base)
+	if pick != null and plan[2]:
 		_reach(pick, root, pick.chain.pos[0] if pick.chain.pos.size() > 0 else root.origin)
 	_pose_mantle(dt, root, moving)
 	rig.simulate_chains(delta)
+
+
+## Who may reach this tick: [root, the walkers, whether a reach may start].
+func _reach_plan(dt: float, root: Transform3D, heading: Vector3, hip_w: float) -> Array:
+	var reaching := 0
+	for arm: Arm in arms:
+		reaching += 1 if arm.reaching else 0
+	_since_grip += dt
+	var gap := REACH_GAP * sqrt(s) * (0.5 if _turning else 1.0)
+	var behind := _lag.length() > _max_lag(hip_w) * 0.7  # falling far behind: grab now
+	var walkers := _walkers(root, heading)
+	var may_reach := reaching < MAX_REACHING and (_since_grip > gap or behind)
+	return [root, walkers, may_reach]
+
+
+## A free arm waits or, standing, reaches; true for a free walker that may reach next.
+func _front_free(arm: Arm, dt: float, base: Vector3, plan: Array) -> bool:
+	var root: Transform3D = plan[0]
+	var walkers: Array[Arm] = plan[1]
+	var may_reach: bool = plan[2]
+	if arm.gripping:
+		_maybe_release(arm, root, base)
+	var free := not arm.gripping and not arm.reaching
+	arm.idle = arm.idle + dt if free else 0.0
+	if free and _moving and arm in walkers:
+		return true
+	if free and not _moving and may_reach and _wants_grip(arm, root):
+		_reach(arm, root, base)
+	return false
+
+
+## A reaching arm arcs on, a gripping one pins and contracts with its stretch; every arm curls.
+func _tend_arm(arm: Arm, dt: float, base: Vector3) -> void:
+	if arm.reaching:
+		_advance_reach(arm, dt)
+	var want := 1.0
+	if arm.gripping:
+		arm.chain.pins = {arm.chain.names.size(): arm.grip}
+		want = clampf((arm.grip - base).length() / (arm.length * s * GRIP_SLACK), CONTRACT_MIN, 1.0)
+	arm.chain.contract = lerpf(arm.chain.contract, want, minf(1.0, dt * 10.0))
+	_curl(arm, _moving)
 
 
 ## Drag and surge: between grips the body lags behind the sim, sliding slower; after a grip
