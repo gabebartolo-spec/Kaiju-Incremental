@@ -4791,9 +4791,10 @@
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
         "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "kaiju_three_faces": {"$ref": "#/$defs/bool"},
         "night_clip_max": {"$ref": "#/$defs/num"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "night_clip_max"],
+      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "kaiju_three_faces", "night_clip_max"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
