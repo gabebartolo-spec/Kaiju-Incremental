@@ -73,7 +73,7 @@ func _init(p_sim: RampageSim, colors: Array[Color]) -> void:
 
 
 func _ready() -> void:
-	BuildingView.begin_city()
+	BuildingBakeCache.begin_city()
 	Content.look()  # merged on first use: read here, never raced by the workers
 	var count := _sim.buildings.size()
 	_views.resize(count)
@@ -376,7 +376,7 @@ func _free_view(n: int, force := false) -> void:
 	_views[n] = null
 	_state[n] = 0
 	remove_child(gone)
-	BuildingView.forget(gone)
+	BuildingBakeCache.forget(gone.bake_key())
 	gone.free()
 	_stand_ins.show(n)
 
@@ -397,4 +397,4 @@ func _exit_tree() -> void:
 	for pair: Array in _take_ready():  # finished after the last frame: never entered the tree
 		var orphan: BuildingView = pair[1]
 		orphan.free()
-	BuildingView.end_city()  # streaming is done: keep only this city's buildings
+	BuildingBakeCache.end_city()  # streaming is done: keep only this city's buildings

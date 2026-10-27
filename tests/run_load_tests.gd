@@ -69,16 +69,16 @@ func _check_bake_pruned() -> void:
 	for tier: int in [1, 2]:
 		var sim := _sim_at(tier)
 		var party := BuildingView.party_walls(sim.buildings)
-		BuildingView.begin_city()
+		BuildingBakeCache.begin_city()
 		for n: int in sim.buildings.size():
 			BuildingView.new(sim.buildings[n], Color.GRAY, party[n]).free()
-		BuildingView.end_city()
+		BuildingBakeCache.end_city()
 		counts.append(sim.buildings.size())
 	check(
-		BuildingView.cached() == counts[1],
+		BuildingBakeCache.cached() == counts[1],
 		(
 			"after two different cities only the second's buildings are kept: %d kept, %s built"
-			% [BuildingView.cached(), counts]
+			% [BuildingBakeCache.cached(), counts]
 		)
 	)
 

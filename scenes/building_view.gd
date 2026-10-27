@@ -14,14 +14,6 @@ const BITE_CHANCE := 0.5  # ...and this share of the chunks next to a hole are b
 
 ## Building pairs the last party_walls() call compared (tests check it grows about linearly).
 static var pair_checks := 0
-## A building's voxels and meshes never change in a rampage (damage is the alive texture), and
-## every run of a stage builds the same city, so they are kept for the next run (director's
-## playtest: "load times when you start a run could be quicker"). Key: _key().
-static var _baked: Dictionary = {}
-static var _baked_lock := Mutex.new()
-## The city being built (begin_city); an entry not used by it is dropped at end_city, so only
-## the current city's buildings stay in memory as the city grows between runs.
-static var _generation := 0
 
 var b: RampageSim.Building
 ## The building's fine voxels, rebuilt (the build is deterministic) the first time something needs
@@ -70,23 +62,14 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	b = p_building
 	_base = base
 	_party = party
-	var key := _key(b, base, party)
-	_key_of = key
-	_baked_lock.lock()
-	var kept: Array = _baked.get(key, [])
-	if not kept.is_empty():
-		kept[2] = _generation
-	_baked_lock.unlock()
-	if kept.is_empty():
+	_key_of = BuildingBakeCache.key(b, base, party)
+	mesher = BuildingBakeCache.take(_key_of)  # kept from an earlier run of this city
+	if mesher == null:
 		var made := voxels_of(b, _base, _party)
 		mesher = BuildingMesher.new(made)
 		if b.landmark != "":
 			_voxels = made  # a landmark is few and its ground mesh is drawn below
-		_baked_lock.lock()
-		_baked[key] = [null, mesher, _generation]
-		_baked_lock.unlock()
-	else:
-		mesher = kept[1]
+		BuildingBakeCache.keep(_key_of, mesher)
 	_alive = Image.create(maxi(1, b.w * b.d * b.height), 1, false, Image.FORMAT_R8)
 	_alive.fill(Color(1, 1, 1))
 	if b.landmark != "" and not (voxels as LandmarkVoxels).ground.cells.is_empty():
@@ -149,43 +132,9 @@ func has_voxels() -> bool:
 	return _voxels != null
 
 
-## A new city's build starts (BuildingStream): what it uses is marked as its own.
-static func begin_city() -> void:
-	_baked_lock.lock()
-	_generation += 1
-	_baked_lock.unlock()
-
-
-## The city is done with (its rampage leaves): every kept building it did not use is dropped.
-static func end_city() -> void:
-	_baked_lock.lock()
-	for key: String in _baked.keys():
-		var kept: Array = _baked[key]
-		if Num.i(kept[2]) != _generation:
-			_baked.erase(key)
-	_baked_lock.unlock()
-
-
-## A view leaves for good (BuildingStream sends a far, untouched building back to a box): its
-## kept meshes go too, so the memory is really returned.
-static func forget(view: BuildingView) -> void:
-	_baked_lock.lock()
-	_baked.erase(view._key_of)
-	_baked_lock.unlock()
-
-
-## Buildings whose voxels and meshes are kept (tests).
-static func cached() -> int:
-	return _baked.size()
-
-
-## What makes two buildings bake alike: place, size, floors, landmark, hazard, wall colour, party
-## walls.
-static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> String:
-	return (
-		"%s|%s|%d|%d|%d|%s|%s|%s|%s"
-		% [at.x, at.z, at.w, at.d, at.height, at.landmark, at.hazard, base.to_html(), str(party)]
-	)
+## Its BuildingBakeCache key (BuildingStream forgets the kept meshes of a view it frees).
+func bake_key() -> String:
+	return _key_of
 
 
 ## The camera bubble's seam (CameraBubble, D-283; render plan item 5 names it too): while `on`,
