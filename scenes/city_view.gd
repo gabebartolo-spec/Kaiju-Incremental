@@ -133,10 +133,11 @@ func _process(delta: float) -> void:
 		return
 	_animate_falls(delta)
 	var camera := get_viewport().get_camera_3d()
-	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
+	if camera != null:  # only a wall that fills the frame at the camera fades (D-326, D-283)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		var sight := BuildingFade.sight_of(sim, camera.global_position) + drawn_sight
-		_fade.update(camera.global_position, sight, delta)
+		var frame := FrameShare.of(camera, get_viewport().get_visible_rect().size)
+		_fade.update(frame, sight, delta, BuildingFade.held(_falling))
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
@@ -213,6 +214,7 @@ func fall_start(event: Dictionary) -> void:
 	add_child(piece)
 	_falling[Num.i(event["id"])] = {
 		"node": piece,
+		"building": index,
 		"kind": str(event["kind"]),
 		"dir": event["dir"],
 		"drop": Num.f(event["drop"]),

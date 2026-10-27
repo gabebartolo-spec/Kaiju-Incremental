@@ -66,7 +66,8 @@ func step(dt: float) -> void:
 			Num.f(cfg["min_interval"]),
 			Num.f(cfg["start_interval"]) - Num.f(cfg["escalation_per_chunk"]) * sim.escalation()
 		)
-	var reach := Num.f(cfg["range"]) + sim.stomp_radius()
+	var reach := convoy.reach()
+	var at_head := convoy.posts.head()
 	var coated := false
 	convoy.step(dt)
 	taskforce.step(dt)
@@ -75,17 +76,19 @@ func step(dt: float) -> void:
 			tank.coat_t -= dt
 			tank.hp -= tank.coat_dps * dt
 			coated = true
-		var dist := tank.pos.distance_to(sim.kaiju_pos)
 		tank.cooldown -= dt
 		if tank.cooldown > 0.0:
 			continue
+		# range is measured to the body line, as the tank's post is (FiringPosts.aim_point)
+		var aim := convoy.posts.aim_point(tank.pos, at_head)
+		var dist := tank.pos.distance_to(aim)
 		# A young of the brood nearer than the kaiju draws the fire instead.
 		var young := sim.brood.nearest_young(tank.pos, minf(dist, reach + 1.0))
 		if young != null and convoy.clear_line(tank.pos, young.pos):
 			tank.cooldown = Num.f(cfg["fire_interval"])
 			young.hp -= Num.f(cfg["tank_damage"]) * Num.f(cfg["young_damage_mult"])
 			sim.events.append({"type": "tank_fired", "tank": tank.id, "at": young.pos})
-		elif dist <= reach + 1.0 and convoy.clear_line(tank.pos, sim.kaiju_pos):
+		elif dist <= reach + 1.0 and convoy.clear_line(tank.pos, aim):
 			tank.cooldown = Num.f(cfg["fire_interval"])
 			shoot(tank, dist, reach)
 	if _step_squads(dt) or coated:
