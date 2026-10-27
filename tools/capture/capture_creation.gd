@@ -10,9 +10,11 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <dir>/clip.avi \
 ##     --script tools/capture/capture_creation.gd -- --out=<dir> --clip
 ## --run-still also saves the run's last held frame (06_run.png) after the lab's five, at the game
-## camera, in any mode. --after=<frames> holds the run that long after it is built (default AFTER);
-## the log names the drawn frames (Engine.get_frames_drawn, the movie's frame index) where the run
-## was built and where the run intro handed over to the play camera.
+## camera, in any mode; --run-still-at=<frames> saves one (07_run_at.png) that many drawn frames
+## after the run is built (the intro's own camera while it plays). --after=<frames> holds the run
+## that long after it is built (default AFTER); the log names the drawn frames
+## (Engine.get_frames_drawn, the movie's frame index) where the run was built and where the run
+## intro handed over to the play camera.
 ## --titan=<id> captures that genome's sequence instead of the croc's (the director 2026-10-25:
 ## "ensure the clip is functional for all 3"). A locked genome is unlocked for the capture only,
 ## and one with no kaiju to play yet plays the croc's (reptilian) run after the black.
@@ -36,6 +38,7 @@ const CAP := 60 * 30
 var _out := "user://creation"
 var _clip := false
 var _run_still := false
+var _still_at := -1
 var _titan := "croc"
 var _after := AFTER
 var _time := ""
@@ -52,6 +55,8 @@ func _initialize() -> void:
 			_clip = true
 		elif arg == "--run-still":
 			_run_still = true
+		elif arg.begins_with("--run-still-at="):
+			_still_at = arg.substr(15).to_int()
 		elif arg.begins_with("--after="):
 			_after = arg.substr(8).to_int()
 		elif arg.begins_with("--titan="):
@@ -107,6 +112,9 @@ func _run() -> void:
 	await _until(func() -> bool: return run.is_loaded)
 	var built := Engine.get_frames_drawn()
 	print("INTRO run built on drawn frame %d (full intro %s)" % [built, run.full_intro])
+	if _still_at >= 0:
+		await Kit.frames(self, _still_at)
+		print("still %s" % Kit.still(self, _out, "07_run_at"))
 	await _until(func() -> bool: return not run.sim.emerge.active)
 	var handover := Engine.get_frames_drawn()
 	print(
