@@ -25,8 +25,6 @@ const DT := 1.0 / 60.0
 ## The body the camera follows eases toward the sim's kaiju at this rate (RampageAbility.place).
 const BODY_FOLLOW := 12.0
 const LOOK_M := StreamFrustum.LOOK_M
-## Real time to wait for the stream to settle.
-const SETTLE_MS := 240000
 const STAGES: Array[int] = [2, 3]
 ## Walks out from the junction (name, heading, metres) and back: the landmarks leave the view and
 ## return to it. The north-east walk
@@ -38,6 +36,8 @@ const WALKS: Array[Array] = [
 const SPOTS: Array[Vector2] = [Vector2(0, 0), Vector2(26, -14), Vector2(-30, 18)]
 
 var worst_step := 0
+
+var _stuck := false  # a wait ran out its steps: reported once, not again every frame
 
 var _check: Callable
 var _marks: Array[int] = []
@@ -237,22 +237,27 @@ func _frame() -> void:
 
 ## The stream's frame of DT seconds, then its workers run to the end of what they were given: the
 ## test judges what the plan has meshed in camera time, never how fast this machine's workers are.
+## Each further step settles its workers (BuildingStream.step) and so lands at least one building,
+## so the wait is bounded by a count of steps, never by seconds: a stream still not done within the
+## bound is stuck, and fails the same way on every machine.
 func _advance() -> void:
 	var t0 := Time.get_ticks_usec()
 	_stream.step(DT)
 	_step_us = maxi(_step_us, Time.get_ticks_usec() - t0)
-	var deadline := Time.get_ticks_msec() + SETTLE_MS
-	while not _stream.complete() and Time.get_ticks_msec() < deadline:
-		OS.delay_usec(200)
-		_stream.step(0.0)
+	var bound := _sim.buildings.size() * 2 + 120
+	for _i: int in bound:
+		if _stuck or _stream.complete():
+			return
+		_stream.step(0.0, true)
+	if not _stream.complete():
+		_stuck = true
+		_check.call(false, "the stream settles within %d steps" % bound)
 
 
-## Waits until the stream has nothing left to mesh or free (the camera holds still).
+## Lets the camera hold still until the stream has nothing left to mesh or free: every frame
+## (_advance) runs the stream to completion, and it replans a quarter second after the camera moves.
 func _settle() -> void:
-	var deadline := Time.get_ticks_msec() + SETTLE_MS
-	for i: int in 45:  # the stream replans a quarter second after the camera moves
-		await _frame()
-	while not _stream.complete() and Time.get_ticks_msec() < deadline:
+	for i: int in 45:
 		await _frame()
 	for i: int in 30:
 		await _frame()

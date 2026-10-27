@@ -5,10 +5,11 @@ extends RefCounted
 ## (RES cells per sim unit, local to the footprint) to its key, in the order the parts are laid.
 ## Facades have depth: windows sit one cell back in their reveals behind proud sills and
 ## lintels; piers, spandrels, mullions and transoms frame them. Four archetypes: office (ribbon
-## windows over spandrel bands, AC plant), brick (punched windows, balconies, water tank), glass
-## (flush curtain wall on a structural frame, mast with beacon), stone (pilasters, cornices and
-## string courses, stepped roof). Ground floors are shopfronts under a sign band and an awning;
-## some shops hang a vertical neon sign off a street face. Hollow shell plus a slab per floor.
+## windows over spandrel bands, AC plant), brick (punched windows, balconies, a solar water
+## heater or a wooden water tower: RoofTank), glass (flush curtain wall on a structural frame,
+## mast with beacon), stone (pilasters, cornices and string courses, stepped roof). Ground floors
+## are shopfronts under a sign band and an awning; some shops hang a vertical neon sign off a
+## street face. Hollow shell plus a slab per floor.
 ## Keys are materials (data/materials.json) except the lit windows the view asks for: with
 ## lit_chance 0 (the sim) no "lit" or "shop_lit" key is laid. Layout rolls hash the cell with the
 ## building's position: no RNG stream, no clock. The bay patterns are drawn for an 8-cell bay.
@@ -68,24 +69,18 @@ func _box(a: Vector3i, c: Vector3i, key: String) -> void:
 				cells[Vector3i(x, y, z)] = key
 
 
-## Every cell inside the ellipsoid at `centre` with half-axes `radii` (VoxelBuilder.blob).
-func _blob(centre: Vector3, radii: Vector3, key: String) -> void:
-	var lo := Vector3i((centre - radii).floor())
-	var hi := Vector3i((centre + radii).ceil())
-	for x: int in range(lo.x, hi.x + 1):
-		for y: int in range(lo.y, hi.y + 1):
-			for z: int in range(lo.z, hi.z + 1):
-				if ((Vector3(x, y, z) - centre) / radii).length_squared() <= 1.0:
-					cells[Vector3i(x, y, z)] = key
-
-
 ## Whether v lies in lo..hi, both ends included.
 static func _in(v: int, lo: int, hi: int) -> bool:
 	return v >= lo and v <= hi
 
 
 func _roll(cell: Vector3i, mod: int) -> int:
-	return absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(b.x * 13.0 + b.z)))) % mod
+	return roll_for(b, cell, mod)
+
+
+## The roll for building `of` at `cell`: a hash of the cell and the building's position.
+static func roll_for(of: RampageSim.Building, cell: Vector3i, mod: int) -> int:
+	return absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(of.x * 13.0 + of.z)))) % mod
 
 
 ## The cell `layer` cells in from the face (0 = the wall plane, -1 proud, 1 recessed) at
@@ -241,7 +236,7 @@ func _roof() -> void:
 		OFFICE:
 			_ac_units(top)
 		BRICK:
-			_water_tank(top)
+			RoofTank.new(cells, _w, _d).lay(b, top)
 		GLASS:
 			_mast(top)
 		_:
@@ -287,25 +282,6 @@ func _ac_units(top: int) -> void:
 		_box(at, at + Vector3i(4, 3, 3), "gear")
 		_box(at + Vector3i(1, 4, 1), at + Vector3i(3, 4, 2), "vent")
 		_box(at + Vector3i(5, 1, 1), at + Vector3i(8, 1, 1), "pipe")
-
-
-## A water tank on legs, a riser pipe under its middle (the legs stand clear of the tank's
-## curve; the riser is what holds it to the roof).
-func _water_tank(top: int) -> void:
-	var c := Vector3(_w * 0.65, top + 11.0, _d * 0.4)
-	for leg: Vector3i in [
-		Vector3i(-4, 0, -4), Vector3i(4, 0, -4), Vector3i(-4, 0, 4), Vector3i(4, 0, 4)
-	]:
-		var foot := Vector3i(roundi(c.x), top, roundi(c.z)) + leg
-		_box(foot, foot + Vector3i(0, 6, 0), "gear")
-	var riser := Vector3i(roundi(c.x), top, roundi(c.z))
-	_box(riser, riser + Vector3i(0, 5, 0), "pipe")
-	_blob(c, Vector3(5.2, 5.6, 5.2), "tank")
-	_box(
-		Vector3i(roundi(c.x), roundi(c.y) + 6, roundi(c.z)),
-		Vector3i(roundi(c.x), roundi(c.y) + 7, roundi(c.z)),
-		"tank"
-	)
 
 
 ## A mast with a red beacon on the tall towers.
