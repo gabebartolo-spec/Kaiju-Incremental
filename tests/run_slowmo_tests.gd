@@ -78,14 +78,18 @@ func _frames(n: int) -> void:
 		await physics_frame
 
 
-## Tuned: a split second at a fraction of speed, then eased back; the curve follows the tuning.
+## Tuned: a beat at a fraction of speed, then eased back; the curve follows the tuning. The length
+## is longer than the 0.75 s the director found too brief (D-342) and still a beat, not a cutscene.
 func _check_speed_curve() -> void:
 	var cfg: Dictionary = Content.section("slowmo")
 	var low := Num.f(cfg["scale"])
 	var hold := Num.f(cfg["hold_s"])
 	var ease_s := Num.f(cfg["ease_s"])
 	check(low > 0.0 and low < 1.0, "the slow motion is slower than normal, not stopped (%s)" % low)
-	check(hold + ease_s <= 1.0, "and it is a split second (%s s)" % (hold + ease_s))
+	check(
+		hold + ease_s > 0.75 and hold + ease_s <= 3.0,
+		"and it lasts longer than the old 0.75 s but stays a beat (%s s, D-342)" % (hold + ease_s)
+	)
 	check(LandmarkSlowmo.speed_at(-1.0, cfg) == 1.0, "no fall: full speed")
 	check(LandmarkSlowmo.speed_at(0.0, cfg) == low, "a fall slows the world at once")
 	check(LandmarkSlowmo.speed_at(hold - 0.001, cfg) == low, "and holds it for the tuned time")
