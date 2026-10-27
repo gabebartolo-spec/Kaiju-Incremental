@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # GPU cost of the P1c knobs: ONE timing run per call (a bench window holds the machine for one run).
+# For a speed bar, prefer tools/capture/bench_driver.sh: it holds the window for every run, counts headless
+# Godot too, voids and repeats a disturbed run, and reads the GPU ms line (wall time is CPU-bound and noisy).
 #   GODOT=<console exe> OUT=<dir> tools/capture/p1c_gpu_cost.sh <run>
 #   <run>: off | both (item 3: bar +0.05 ms)   cur | new (item 4: bar 0 +-0.02 ms), each optionally
 #   with a _<n> suffix (off_1, new_2). The shipped look is the new grade, deband on, Medium sharpness
@@ -56,4 +58,4 @@ APPDATA="$OUT/appdata_$RUN" timeout 900 "$GODOT" --path . --resolution 3840x2160
   --fixed-fps 60 --disable-vsync --script tools/capture/capture_one_look.gd -- --stage=3 \
   --graphics=medium --time=night --calm --route=replay --route-file="$ROUTE" --frames=600 \
   --out="$OUT" --label="$RUN" --tag=bench_p1c ${EXTRA[@]+"${EXTRA[@]}"} 2>&1 \
-  | grep -E "ONEL frame|SCRIPT ERROR" | tee -a "$OUT/COST.txt"
+  | grep -E "ONEL frame|ONEL gpu|SCRIPT ERROR" | tee -a "$OUT/COST.txt"
