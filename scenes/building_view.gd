@@ -182,8 +182,8 @@ func set_near_camera(on: bool, share := 1.0) -> void:
 			mat.set_shader_parameter("bubble_cut", cut)
 
 
-## The stream swap (StreamDissolve): `share` of this standing building is drawn, a dither (1 = whole,
-## 0 = none). Only the stream sets it; a carved, broken or falling piece is always whole (D-326).
+## The stream swap (StreamDissolve): `share` of this standing building is drawn, a dither (1 =
+## whole, 0 = none). Only the stream sets it; a carved, broken or falling piece is whole (D-326).
 func set_dissolve(share: float) -> void:
 	_share = share
 	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
