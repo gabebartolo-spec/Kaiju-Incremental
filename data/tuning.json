@@ -1598,10 +1598,6 @@
 			"strobe_period": 1.3,
 			"strobe_on": 0.12
 		},
-		"fade_opacity": 0.35,
-		"fade_seconds": 0.25,
-		"tank_clear": 2.0,
-		"heli_clear": 5.0,
 		"vip_dark": 0.25,
 		"vip_glow": 1.0,
 		"vip_band": [0.3, 0.42]
@@ -1667,7 +1663,8 @@
 		"night_clip_max": 0.08,
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
-		"kaiju_bounds_slack": 1.05
+		"kaiju_bounds_slack": 1.05,
+		"kaiju_three_faces": true
 	},
 	"death": {
 		"_note": "The kaiju's death (director 2026-10-26, every kaiju; replaces D-267's belly-down slump): Special K overload. A death (reasons, SaveFile.DEATHS) plays the agonised stagger clip for stagger_s (clip death_stagger, frames 20-60 of the approved stagger at 24 fps), the stone creeps over him for stone_s, then he shatters (DeathOverload): shards of his own body (cell world units each at body scale 1, picked from his body discs) are thrown throw_min..throw_max (x body scale) and land after flight_s, each a blow of shard_damage within shard_radius on the top shard_floors floors of what it lands on. A Death Blast node (stat death_blast, 1 per node) adds a front of blast_damage that runs out to a ring round his body: his body's edge plus death_blast x per_node world units (director 2026-10-26 \"Smaller: a ring round his body\"; 5 / 10 / 15, node 3 about one street block), in blast_s, every floor, and it starts blast_after_s after the last shard lands (director 2026-10-27, D-294 \"Shards first\": his falling stone body smashes buildings, then the blast clears the rest). The run ends settle_s after the front (or the last shard with no node). Look: violet = Special K (creation.lab.colors.special_k); stone grey with per-block variation; placeholders, flagged for tuning.",
