@@ -1,9 +1,10 @@
 extends SceneTree
-## The audio exit smoke run (debt list row 2, D-295): a sound is playing when the script quits, the way the
-## demo run's last button press leaves one, and QuitGame.settle_audio lets the engine release it first.
-## tools/lint/log_smoke.sh starts this script several times (the `audio` runs) and fails on any ERROR /
-## WARNING / leak line in any log: an exit with a live sound leaks its stream and playbacks on some runs
-## and not others (CI run 40443431942), so one run proves nothing and a few runs are the check.
+## The audio exit smoke run (debt list row 2, D-295): a sound is playing when the script quits,
+## the way the demo run's last button press leaves one, and QuitGame.settle_audio lets the engine
+## release it first. tools/lint/log_smoke.sh starts this script several times (the `audio` runs)
+## and fails on any ERROR / WARNING / leak line in any log: an exit with a live sound leaks its
+## stream and playbacks on some runs and not others (CI run 40443431942), so one run proves
+## nothing and a few runs are the check.
 ##
 ##   godot --headless --fixed-fps 60 --path . --script tools/lint/log_smoke_audio.gd -- [--settle=0]
 ## --settle=0 quits without settling: the known-bad input that shows the checker red.

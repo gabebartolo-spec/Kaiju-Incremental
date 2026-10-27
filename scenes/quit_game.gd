@@ -18,16 +18,16 @@ static func now(tree: SceneTree) -> void:
 	tree.quit()
 
 
-## For a scripted exit whose engine log is read (the smoke runs): stops every sound and lets the audio
-## thread let go of it before the script quits. The engine frees a stopped playback in the audio thread's
-## next mix and the main loop's next update; a sound still alive when it quits is never freed, and the
-## exit prints "4 ObjectDB instances were leaked" and "2 resources still in use" naming the stream, its
-## packet sequence and their playbacks, on some runs and not others (CI run 40443431942); the
-## dummy audio driver mixes about every 90 ms (three mixes took 270 ms on the runner), so a quit soon
-## after a sound stops can beat the mix that would free it.
+## For a scripted exit whose engine log is read (the smoke runs): stops every sound and lets the
+## audio thread let go of it before the script quits. The engine frees a stopped playback in the
+## audio thread's next mix and the main loop's next update; a sound still alive when it quits is
+## never freed, and the exit prints "4 ObjectDB instances were leaked" and "2 resources still in
+## use" naming the stream, its packet sequence and their playbacks, on some runs and not others
+## (CI run 40443431942). The dummy audio driver mixes about every 90 ms (three mixes took 270 ms
+## on the runner), so a quit soon after a sound stops can beat the mix that would free it.
 ## The game's own quit (now) skips this: the process ends and nothing reads the log.
 static func settle_audio(tree: SceneTree) -> void:
-	await tree.process_frame  # a sound whose player is added or started by a deferred call starts first
+	await tree.process_frame  # a player added or started by a deferred call starts first
 	await tree.process_frame
 	for kind: String in ["AudioStreamPlayer", "AudioStreamPlayer2D", "AudioStreamPlayer3D"]:
 		for found: Node in tree.root.find_children("*", kind, true, false):
