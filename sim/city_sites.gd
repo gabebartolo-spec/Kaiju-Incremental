@@ -148,7 +148,10 @@ static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 	var rings: Array[float] = axis["rings"]
 	var avenues: Dictionary = axis["avenues"]
 	var cfg: Dictionary = axis["cfg"]
-	var a := _cell_of(lines, v)
+	var a := -1
+	for k: int in lines.size() - 1:
+		if v >= lines[k] and v < lines[k + 1]:
+			a = k
 	if a < 0:
 		return Vector2i(-1, -1)
 	var b := a
@@ -162,15 +165,6 @@ static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 		else:
 			b += 1
 	return Vector2i(a, b)
-
-
-## The grid cell k with lines[k] <= v < lines[k + 1] (the last such), or -1.
-static func _cell_of(lines: Array[float], v: float) -> int:
-	var a := -1
-	for k: int in lines.size() - 1:
-		if v >= lines[k] and v < lines[k + 1]:
-			a = k
-	return a
 
 
 static func _is_ring(line: float, rings: Array[float]) -> bool:
