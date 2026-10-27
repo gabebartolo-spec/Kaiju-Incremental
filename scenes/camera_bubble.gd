@@ -1,33 +1,29 @@
 class_name CameraBubble
 extends RefCounted
-## The camera bubble (D-283, D-326): buildings stay solid. Only the standing buildings between
-## the camera and the kaiju, at most camera.bubble_max of them (the nearest the camera first),
-## are cut away inside a sphere round the camera, with a hard edge, their shadows kept
-## (building_baked.gdshader). Nothing else is ever cut: a falling, toppling or broken piece, the
-## rubble, every vehicle and the kaiju always draw whole, and may hide him ("its ok to obscure
+## The camera bubble (D-283, D-326; director 2026-10-27: "its the ones that the camera itself
+## phases through"): buildings stay solid. A sphere of camera.bubble_radius round the CAMERA cuts
+## away, with a hard edge, the standing buildings it reaches (at most camera.bubble_max, the
+## nearest the camera first), their shadows kept (building_baked.gdshader). Never cut: a building
+## in the kaiju's destruction field (in_field: his longest reach plus the building's half-width),
+## a damaged one (a chunk lost), and all that is not a standing building: falling, toppling and
+## broken pieces, rubble, vehicles and the kaiju draw whole and may hide him ("its ok to obscure
 ## the kaiju, its not ok to block the camera", D-326; vehicles D-290). No screen door anywhere.
 ##
-## A building is on the line when it stands in a sight line from the camera to the kaiju's body
-## (sight_of: points up his height and ahead along his facing, at his body's width each side), or
-## the camera is inside it; a carved stump below every line is not. The sphere's radius is
-## camera.bubble_share of the camera-to-kaiju distance, so it scales with zoom and growth; it
-## eases over camera.bubble_seconds as that changes, and each building's cut opens from the camera
-## outward and closes back over the same time, so nothing pops (the run's first frame starts
-## open). The shaders read the global `bubble_radius`, each building its own `bubble_cut`.
-## Only the buildings whose footprint meets the rectangle the sight lines stay in are tested (a
-## grid of footprints, built once: the walls never move). Presentation only.
+## The sphere's far edge stays the field's radius short of the kaiju on the ground: while the
+## camera is nearer than bubble_radius plus that, the radius shrinks to fit. A building's cut opens
+## from the camera outward over camera.bubble_seconds and closes back when the sphere leaves it
+## (the run's first frame starts open); one the field reaches or the kaiju damages is whole at
+## once. The shaders read the global `bubble_radius`, each building its own `bubble_cut`. Only the
+## buildings whose footprint meets the square round the camera are tested (a grid of footprints,
+## built once: the walls never move). Presentation only.
 
-## Heights up the kaiju's body (shares of its height: the feet, the pelvis, the torso, the head)
-## and steps forward along its facing (in body radii) that are in the line (R 19.4).
-const HEIGHTS: Array[float] = [0.03, 0.3, 0.6, 0.9]
-const AHEAD: Array[float] = [0.0, 1.0, 2.0]
 ## Side of a grid cell of the footprint index (metres).
 const CELL := 32.0
 
 var _cfg: Dictionary = Content.section("camera")
 var _buildings: Array[RampageSim.Building]
 var _views: Callable
-var _radius := -1.0  # -1 until the first frame: it starts at its size, no ease from nothing
+var _radius := -1.0  # -1 until the first frame: the cuts in the way then start open
 var _open := {}  # building index -> its cut, 0 whole .. 1 the whole radius (only those above 0)
 var _grid := {}  # Vector2i cell -> PackedInt32Array of the buildings whose footprint meets it
 
@@ -39,15 +35,46 @@ func _init(buildings: Array[RampageSim.Building], views: Callable) -> void:
 	_index()
 
 
-## The radius for a camera `distance` from the kaiju.
-static func target(distance: float) -> float:
-	return distance * Num.f(Content.section("camera")["bubble_share"])
+## The kaiju's destruction field now: the longest reach of his attacks (stomp, signature, claw
+## swipe, tail sweep), in metres from where he stands.
+static func field(sim: RampageSim) -> float:
+	var cfg := sim.powers_cfg
+	var bs := sim.body_scale()
+	var tail := (Num.f(cfg["tail_reach"]) + sim.stat("tail_reach")) * bs
+	var swipe := Num.f(cfg["swipe_far"]) * bs
+	return maxf(maxf(sim.stomp_radius(), sim.ability_reach()), maxf(tail, swipe))
 
 
-## Whether a point of a cut building is cut away by a bubble of `radius` round `eye` (the
-## shaders' test, at a full cut).
-static func hides(point: Vector3, eye: Vector3, radius: float) -> bool:
-	return point.distance_to(eye) < radius
+## The sphere's radius for a camera at `eye` and a kaiju standing at `kaiju` with destruction
+## `field`: camera.bubble_radius, less while its far edge would come within the field on the ground.
+static func radius_for(eye: Vector3, kaiju: Vector3, p_field: float) -> float:
+	var flat := Vector2(eye.x, eye.z).distance_to(Vector2(kaiju.x, kaiju.z))
+	var size := Num.f(Content.section("camera")["bubble_radius"])
+	return clampf(flat - p_field, 0.0, size)
+
+
+## Whether building b's footprint lies within the destruction `field` of a kaiju at `kaiju`: its
+## centre within the field plus its half-width (never cut).
+static func in_field(b: RampageSim.Building, kaiju: Vector3, p_field: float) -> bool:
+	var at := Vector2(b.x, b.z).distance_to(Vector2(kaiju.x, kaiju.z))
+	return at <= p_field + maxf(b.w, b.d) * 0.5
+
+
+## Whether building b has lost a chunk (never cut once it has: the destruction stays in view).
+static func damaged(b: RampageSim.Building) -> bool:
+	return b.frame != null and b.frame.alive_count < b.start_chunks
+
+
+## How far building b's box is from `eye` (0 inside it).
+static func reach(eye: Vector3, b: RampageSim.Building) -> float:
+	var box := AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, b.height, b.d))
+	return eye.distance_to(eye.clamp(box.position, box.end))
+
+
+## Whether a point of a building cut `share` of the way is cut away by a bubble of `radius` round
+## `eye` (the shaders' test).
+static func hides(point: Vector3, eye: Vector3, radius: float, share := 1.0) -> bool:
+	return point.distance_to(eye) < radius * share
 
 
 ## The radius now (tests read it).
@@ -60,24 +87,23 @@ func cut(n: int) -> float:
 	return Num.f(_open.get(n, 0.0))
 
 
-## One frame: eases the radius toward its size for the camera at `eye` and the kaiju's `focus`,
-## picks the buildings on the line to the `sight` points and eases each one's cut.
-func update(eye: Vector3, focus: Vector3, sight: PackedVector3Array, delta: float) -> void:
-	var want := target(eye.distance_to(focus))
+## One frame: sizes the sphere for the camera at `eye` and the kaiju standing at `kaiju` with
+## destruction `p_field`, picks the buildings it reaches and eases each one's cut.
+func update(eye: Vector3, kaiju: Vector3, p_field: float, delta: float) -> void:
 	var first := _radius < 0.0
-	if first:
-		_radius = want
-	else:  # the whole radius in bubble_seconds at most
-		_radius = move_toward(_radius, want, delta / Num.f(_cfg["bubble_seconds"]) * want)
+	_radius = radius_for(eye, kaiju, p_field)
 	RenderingServer.global_shader_parameter_set("bubble_radius", _radius)
 	var step := delta / Num.f(_cfg["bubble_seconds"])
 	var on := {}
-	for n: int in picked(eye, sight):
+	for n: int in picked(eye, kaiju, p_field, _radius):
 		on[n] = true
 		if not _open.has(n):
 			_open[n] = 1.0 if first else 0.0
 	for n: int in _open.keys():
+		var b := _buildings[n]
 		var next := move_toward(Num.f(_open[n]), 1.0 if on.has(n) else 0.0, step)
+		if damaged(b) or in_field(b, kaiju, p_field):
+			next = 0.0  # the destruction is never cut, not even while a cut closes
 		var view: BuildingView = _views.call(n)
 		if view != null:  # every frame while it is cut: a view streamed in late gets it too
 			view.set_near_camera(next > 0.0, next)
@@ -87,15 +113,17 @@ func update(eye: Vector3, focus: Vector3, sight: PackedVector3Array, delta: floa
 			_open[n] = next
 
 
-## The buildings on the line from the eye to the sight points (see blocks), the nearest the eye
-## first, at most camera.bubble_max of them.
-func picked(eye: Vector3, sight: PackedVector3Array) -> PackedInt32Array:
+## The standing buildings a sphere of `p_radius` round `eye` reaches, the nearest first, at most
+## camera.bubble_max of them; none in the field of a kaiju at `kaiju`, none damaged.
+func picked(eye: Vector3, kaiju: Vector3, p_field: float, p_radius: float) -> PackedInt32Array:
 	var found: Array[Vector2] = []  # (distance from the eye, building index)
-	for n: int in _near(eye, sight):
+	if p_radius <= 0.0:
+		return PackedInt32Array()
+	for n: int in _near(eye, p_radius):
 		var b := _buildings[n]
-		if blocks(eye, sight, b):
-			var box := _box(b, standing_top(b))
-			found.append(Vector2(eye.distance_to(eye.clamp(box.position, box.end)), n))
+		var gap := reach(eye, b)
+		if gap < p_radius and not damaged(b) and not in_field(b, kaiju, p_field):
+			found.append(Vector2(gap, n))
 	found.sort()
 	var out := PackedInt32Array()
 	for f: Vector2 in found.slice(0, Num.i(_cfg["bubble_max"])):
@@ -103,108 +131,25 @@ func picked(eye: Vector3, sight: PackedVector3Array) -> PackedInt32Array:
 	return out
 
 
-## The points over a kaiju standing at `feet`, `height` tall, facing `ahead` (one body radius
-## long, ground plane). Under water (the rise from the river, comment #27) only the part above
-## `surface` counts, so the heights spread over that part.
-static func targets(
-	feet: Vector3, height: float, ahead: Vector3, surface := -INF
-) -> PackedVector3Array:
-	var top := feet.y + height
-	var base := clampf(surface, feet.y, top)
-	var out := PackedVector3Array()
-	for share: float in HEIGHTS:
-		for steps: float in AHEAD:
-			out.append(Vector3(feet.x, lerpf(base, top, share), feet.z) + ahead * steps)
-	return out
-
-
-## The sight points of the sim's kaiju now (CityView picks by them; the tests replay them).
-## With the `eye`, each point also gets one each side of it, across the line of sight, at
-## camera.bubble_width body radii, so a tower over his flank on screen is on the line too.
-static func sight_of(sim: RampageSim, eye := Vector3.INF) -> PackedVector3Array:
-	var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-	var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-	var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
-	var surface := -Num.f(sim.city.get("river_depth", 0.0))
-	var out := targets(feet, sim.reach_height(), ahead, surface)
-	if eye == Vector3.INF:
-		return out
-	var half := reach * Num.f(Content.section("camera")["bubble_width"])
-	var across := Vector3(feet.z - eye.z, 0.0, eye.x - feet.x).normalized() * half
-	for n: int in out.size():
-		out.append(out[n] + across)
-		out.append(out[n] - across)
-	return out
-
-
-## Whether building b stands in a sight line from the eye to any of the kaiju's points, or the
-## eye is inside it (a tower the camera sits in, never a frame-filling wall). The box is the
-## building as it stands now: a carved stump below every sight line is not on the line.
-static func blocks(eye: Vector3, sight: PackedVector3Array, b: RampageSim.Building) -> bool:
-	if not _cuts(eye, sight, b, b.height):
-		return false  # the cheap test on the whole box first
-	var top := standing_top(b)
-	return top > 0 and _cuts(eye, sight, b, top)
-
-
-## The building's standing height now (floors): one above its highest standing chunk, 0 when
-## razed; its full height when it has no chunk frame.
-static func standing_top(b: RampageSim.Building) -> int:
-	if b.frame == null:
-		return b.height
-	var top := -1
-	for z: int in b.frame.d:
-		for x: int in b.frame.w:
-			top = maxi(top, b.frame.top_below(x, z, b.frame.h))
-	return top + 1
-
-
-static func _box(b: RampageSim.Building, top: int) -> AABB:
-	return AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, top, b.d))
-
-
-static func _cuts(
-	eye: Vector3, sight: PackedVector3Array, b: RampageSim.Building, top: int
-) -> bool:
-	var box := _box(b, top)
-	if box.has_point(eye):
-		return true
-	for at: Vector3 in sight:
-		if box.has_point(at):
-			continue  # that point of the body is inside the building (wading through it)
-		if box.intersects_segment(eye, at) != null:
-			return true
-	return false
-
-
-## The buildings whose footprint meets the ground rectangle the sight lines stay inside (eye to
-## kaiju's points), each once, in building order.
-func _near(eye: Vector3, sight: PackedVector3Array) -> PackedInt32Array:
-	var lo := Vector2(eye.x, eye.z)
-	var hi := lo
-	for p: Vector3 in sight:
-		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
-		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
+## The buildings whose footprint meets the square of half-side `half` round the eye on the
+## ground, each once, in building order.
+func _near(eye: Vector3, half: float) -> PackedInt32Array:
+	var lo := Vector2(eye.x - half, eye.z - half)
+	var hi := Vector2(eye.x + half, eye.z + half)
 	var found := PackedInt32Array()
 	var first := Vector2i((lo / CELL).floor())
 	var last := Vector2i((hi / CELL).floor())
 	for cx: int in range(first.x, last.x + 1):
 		for cz: int in range(first.y, last.y + 1):
-			found.append_array(_grid.get(Vector2i(cx, cz), PackedInt32Array()))
+			var cell: PackedInt32Array = _grid.get(Vector2i(cx, cz), PackedInt32Array())
+			found.append_array(cell)
 	found.sort()
 	var out := PackedInt32Array()
 	var prev := -1
 	for n: int in found:
-		if n == prev:
-			continue  # a footprint spanning several cells is listed in each
+		if n != prev:  # a footprint spanning several cells is listed in each
+			out.append(n)
 		prev = n
-		var b := _buildings[n]
-		# Cheap reject: the sight lines stay inside the eye-to-kaiju rectangle on the ground.
-		if b.x + b.w * 0.5 < lo.x or b.x - b.w * 0.5 > hi.x:
-			continue
-		if b.z + b.d * 0.5 < lo.y or b.z - b.d * 0.5 > hi.y:
-			continue
-		out.append(n)
 	return out
 
 

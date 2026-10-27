@@ -2,11 +2,10 @@ class_name CityView
 extends Node3D
 ## The voxel city and its effects: sky and light, ground, buildings (BuildingView: voxels by
 ## structural chunk), falling sections, physics debris, fires, dust and sparks (Fx), rings,
-## flames and floating text. Draws only; RampageSim decides what breaks and what falls.
+## flames. Draws only; RampageSim decides what breaks and what falls.
 
 const DEBRIS_PER_CHUNK := 8
 const DEBRIS_PER_LANDING := 160
-const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
 ## Staged (stages.on): _ready builds in stages, one per frame, while the owner draws its loading
@@ -19,9 +18,6 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
-## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the camera bubble
-## takes them beside the sim's own points (R 19.4: a tower over the drawn head or chest).
-var drawn_sight := PackedVector3Array()
 ## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
 var blast_break: BlastBreak
 var _rng: RandomNumberGenerator
@@ -131,10 +127,8 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		# Only a wall at the camera, on the line to the kaiju, is cut away (D-283, D-326).
-		var eye := camera.global_position
-		var focus := feet + Vector3.UP * sim.reach_height() * CameraBubble.HEIGHTS[1]
-		_bubble.update(eye, focus, CameraBubble.sight_of(sim, eye) + drawn_sight, delta)
+		# Only what the camera itself runs into is cut away, never the destruction (D-283, D-326).
+		_bubble.update(camera.global_position, feet, CameraBubble.field(sim), delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
@@ -380,21 +374,3 @@ func ring(centre: Vector3, radius: float, color: Color, seconds: float) -> void:
 	tween.tween_property(mi, "scale", Vector3(radius, 0.3, radius), seconds)
 	tween.tween_property(mat, "albedo_color:a", 0.0, seconds)
 	tween.chain().tween_callback(mi.queue_free)
-
-
-func float_text(text: String, pos: Vector3, color: Color) -> void:
-	var l := Label3D.new()
-	l.text = text
-	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.font_size = 96
-	l.outline_size = 24
-	l.modulate = color
-	l.no_depth_test = true
-	l.add_to_group(FLOAT_TEXT)
-	l.position = pos
-	add_child(l)
-	var tween := l.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(l, "position", pos + Vector3(0, 3, 0), 1.0)
-	tween.tween_property(l, "modulate:a", 0.0, 1.0).set_delay(0.4)
-	tween.chain().tween_callback(l.queue_free)

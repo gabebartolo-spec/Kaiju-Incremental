@@ -18,6 +18,7 @@ const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const FlowStagedStart := preload("res://tests/lib/flow_staged_start.gd")
 const FlowUpgrades := preload("res://tests/lib/flow_upgrades.gd")
 const RAMPAGE_FRAMES := 60 * 75
+const WORDS_EVERY := 10  # frames between counts of text in the world (a number lived 1 s)
 const POWER_FRAMES := 60 * 45
 ## An armoured kaiju with no shell glanced off by now is walked to the nearest tank: a shell hits by
 ## chance, and in city seed 0 all four missed (D-166; 4 of 5 seeds deflect, foot or not).
@@ -173,9 +174,12 @@ func _check_rampage() -> void:
 		"the city fills with civilians and moving cars",
 	)
 	var frames := 0
+	var words := 0
 	while not rampage.sim.over and frames < RAMPAGE_FRAMES:
 		await physics_frame
 		frames += 1
+		words += FlowLayout.world_text(rampage) if frames % WORDS_EVERY == 0 else 0
+	check(words == 0, "no number floats over the city as it breaks (D-284): %d seen" % words)
 	if street != null:
 		check(street.fled > 0, "civilians run from the kaiju (%d fled)" % street.fled)
 		check(street.traffic.fled > 0, "cars flee the kaiju (%d)" % street.traffic.fled)
@@ -217,8 +221,6 @@ func _check_rampage() -> void:
 		hud.beat_running() and hud.headline.text == str(want[0]),
 		"the end beat shows why it ended (%s: %s)" % [reason, hud.headline.text]
 	)
-	var hints := await FlowLayout.late_hints(self, rampage)
-	check(hints == 0, "no world hint shows behind the end beat: %d" % hints)
 	for _i: int in RampageHud.BEAT_FRAMES + 2:
 		await process_frame
 	check(

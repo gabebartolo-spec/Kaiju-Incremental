@@ -3795,10 +3795,9 @@
         "lead_toward_camera": {"$ref": "#/$defs/num"},
         "lead_moving": {"$ref": "#/$defs/num"},
         "lead_depth_share": {"$ref": "#/$defs/num"},
-        "bubble_share": {"$ref": "#/$defs/num"},
+        "bubble_radius": {"$ref": "#/$defs/num"},
         "bubble_max": {"$ref": "#/$defs/int"},
         "bubble_seconds": {"$ref": "#/$defs/num"},
-        "bubble_width": {"$ref": "#/$defs/num"},
         "safe_top": {"$ref": "#/$defs/num"},
         "safe_centre": {"$ref": "#/$defs/num"},
         "head_rise_s": {"$ref": "#/$defs/num"},
@@ -3808,8 +3807,8 @@
       },
       "required": [
         "offset", "fov", "zoom_base", "zoom_per_scale", "lead_base", "lead_per_scale", "lead_hold",
-        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_share",
-        "bubble_max", "bubble_seconds", "bubble_width", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
+        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_radius",
+        "bubble_max", "bubble_seconds", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
         "follow_s", "follow_accel"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

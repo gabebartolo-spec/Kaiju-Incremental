@@ -19,6 +19,7 @@ func run_checks() -> void:
 	await _t("_check_head_room")
 	await _t("_check_damped")
 	await _t("_check_bubble")
+	await _t("_check_bubble_picks")
 	await _t("_check_no_screen_door")
 
 
@@ -123,66 +124,117 @@ func _check_damped() -> void:
 	check(jump <= 100.0 * FRAME + 0.0001, "a capped follower changes speed by %.3f a frame" % jump)
 
 
-## The camera bubble (CameraBubble, director 2026-10-26): its radius is camera.bubble_share of the
-## camera-to-kaiju distance and clears everything near the camera in every direction (the shaders'
-## test is the same distance); a point inside is not drawn, one outside is fully solid.
+## The camera bubble (CameraBubble; D-283, D-326, director 2026-10-27: "its the ones that the
+## camera itself phases through"): a sphere round the camera of camera.bubble_radius that shrinks
+## so its far edge stays the destruction field short of the kaiju on the ground (none inside the
+## field); a point inside it is not drawn, one outside is fully solid, on every side.
 func _check_bubble() -> void:
-	var share := Num.f(Content.section("camera")["bubble_share"])
+	var size := Num.f(Content.section("camera")["bubble_radius"])
+	var field := 10.0
+	var far := CameraBubble.radius_for(Vector3(0, 20, field + size + 50.0), Vector3.ZERO, field)
+	check(is_equal_approx(far, size), "away from the kaiju the sphere is %.1f m" % size)
+	var near := CameraBubble.radius_for(Vector3(0, 20, field + size * 0.5), Vector3.ZERO, field)
 	check(
-		is_equal_approx(CameraBubble.target(50.0), 50.0 * share)
-		and is_equal_approx(CameraBubble.target(100.0), 2.0 * CameraBubble.target(50.0)),
-		"the radius is %.2f of the camera-to-kaiju distance and scales with it" % share
+		is_equal_approx(near, size * 0.5),
+		"nearer, it shrinks so its far edge stays the field's radius from him (%.1f m)" % near
 	)
+	var inside := CameraBubble.radius_for(Vector3(0, 20, field * 0.5), Vector3.ZERO, field)
+	check(inside == 0.0, "a camera inside the field has no bubble")
 	var eye := Vector3(0, 20, 40)
-	var radius := CameraBubble.target(eye.distance_to(Vector3.ZERO))
 	var dirs := [Vector3.LEFT, Vector3.RIGHT, Vector3.UP, Vector3.DOWN, Vector3.BACK]
 	dirs.append(Vector3.FORWARD)
 	var all_sides := true
 	for dir: Vector3 in dirs:
-		var inside: bool = CameraBubble.hides(eye + dir * radius * 0.9, eye, radius)
-		var outside: bool = CameraBubble.hides(eye + dir * radius * 1.1, eye, radius)
-		all_sides = all_sides and inside and not outside
+		var cut: bool = CameraBubble.hides(eye + dir * size * 0.9, eye, size)
+		var kept: bool = CameraBubble.hides(eye + dir * size * 1.1, eye, size)
+		all_sides = all_sides and cut and not kept
 	check(all_sides, "a point 0.9 radius from the camera is cut away and 1.1 stays, on every side")
-	var bubble := CameraBubble.new()
-	bubble.update(eye, Vector3.ZERO, FRAME)
-	var first := bubble.radius()
-	check(is_equal_approx(first, radius), "the radius starts at its size on the first frame")
-	var far := Vector3(0, 20, 140)
-	bubble.update(far, Vector3.ZERO, FRAME)
-	var step := bubble.radius() - first
-	var want := CameraBubble.target(far.distance_to(Vector3.ZERO))
-	var eased := step > 0.0 and step < (want - first) * 0.5
-	check(eased, "a zoom eases the radius, no pop (%.2f)" % step)
-	for _i: int in 60:
-		bubble.update(far, Vector3.ZERO, FRAME)
-	check(is_equal_approx(bubble.radius(), want), "the radius settles on the new size")
 
 
-## Nothing draws a screen door any more: no shader has the dither path, the baked building shader
-## and the voxel shader both read the bubble, a plain voxel material (the kaiju) is not cut by it,
-## and the old tuning keys are gone.
+## What it cuts: the standing buildings the sphere reaches, the nearest first, at most
+## camera.bubble_max; never one in the kaiju's destruction field (even with the camera against
+## it), never a damaged one. A cut starts open on the run's first frame, then opens and closes
+## over camera.bubble_seconds; damage closes it at once.
+func _check_bubble_picks() -> void:
+	var field := 10.0
+	var eye := Vector3(0, 10, 200)
+	var r := CameraBubble.radius_for(eye, Vector3.ZERO, field)
+	var city: Array[RampageSim.Building] = [_box(0, 200, 6), _box(0, 196.0 - r, 4)]
+	city.append(_box(0, 100, 200))  # 2: from his feet to the camera, so in the field
+	for k: int in range(1, 5):
+		city.append(_box(r * 0.2 * k + 0.5, 200, 1))  # 3..6: reached, k * 0.2 radius away
+	var bubble := CameraBubble.new(city, func(_n: int) -> BuildingView: return null)
+	var most := Num.i(Content.section("camera")["bubble_max"])
+	var picked := bubble.picked(eye, Vector3.ZERO, field, r)
+	check(
+		picked == PackedInt32Array([0, 3, 4]) and most == 3,
+		(
+			"it picks the %d nearest it reaches, not the one 2 m past it nor the field's (%s)"
+			% [most, str(picked)]
+		)
+	)
+	bubble.update(eye, Vector3.ZERO, field, FRAME)
+	check(bubble.cut(0) == 1.0 and bubble.cut(4) == 1.0, "the first frame's cuts start open")
+	check(bubble.cut(2) == 0.0, "the building in the field is whole with the camera against it")
+	city[0].frame.remove(Vector3i.ZERO)
+	bubble.update(eye, Vector3.ZERO, field, FRAME)
+	var step := FRAME / Num.f(Content.section("camera")["bubble_seconds"])
+	check(bubble.cut(0) == 0.0, "a building that loses a chunk is whole at once")
+	check(is_equal_approx(bubble.cut(5), step), "the next one in eases open (%.3f)" % bubble.cut(5))
+	bubble.update(Vector3(0, 10, 400), Vector3.ZERO, field, FRAME)
+	check(is_equal_approx(bubble.cut(3), 1.0 - step), "one the sphere leaves eases closed")
+	for _i: int in ceili(1.0 / step):
+		bubble.update(Vector3(0, 10, 400), Vector3.ZERO, field, FRAME)
+	check(bubble.cut(3) == 0.0 and bubble.cut(5) == 0.0, "and is whole once closed")
+
+
+## A standing w x w building of the given height at (x, z), its frame whole.
+func _box(x: float, z: float, w: int, height := 30) -> RampageSim.Building:
+	var b := RampageSim.Building.new()
+	b.x = x
+	b.z = z
+	b.w = w
+	b.d = w
+	b.height = height
+	b.frame = Structure.new(w, w, height, 1.0)
+	b.start_chunks = b.frame.alive_count
+	return b
+
+
+## Nothing draws a screen door any more: no shader has the dither path; only the baked building
+## shader reads the bubble, never in a shadow pass (the cut part keeps its shadow); a piece lifted
+## off a cut building draws whole (D-326); the old fade and share keys are gone.
 func _check_no_screen_door() -> void:
 	var dir := DirAccess.open("res://scenes")
 	var clean := true
+	var readers: Array[String] = []
 	for file: String in dir.get_files():
 		if file.ends_with(".gdshader"):
 			var code := (load("res://scenes/" + file) as Shader).code
 			if code.contains("BAYER") or code.contains("DITHER") or code.contains("float opacity"):
 				clean = false
 				push_error("%s still has the dither path" % file)
+			if code.contains("bubble"):
+				readers.append(file)
 	check(clean, "no shader in scenes/ keeps the screen-door dither")
-	for path: String in ["res://scenes/building_baked.gdshader", "res://scenes/voxel.gdshader"]:
-		check((load(path) as Shader).code.contains("bubble_radius"), "%s reads the bubble" % path)
-	var kaiju_mat := Look.voxel_material(0.0)
-	var cut: Variant = kaiju_mat.get_shader_parameter("bubble_on")
-	check(
-		cut == null or Num.f(cut) == 0.0, "a plain voxel material (the kaiju's) is never cut by it"
-	)
+	var only := readers.size() == 1 and readers[0] == "building_baked.gdshader"
+	check(only, "only the building shader cuts (%s)" % str(readers))
+	var code := BuildingView.SHADER.code
+	check(code.contains("bubble_cut > 0.0 && !IN_SHADOW_PASS"), "the cut keeps its shadow")
+	var view := BuildingView.new(_box(0, 0, 4, 4), Color("8a7f72"))
+	view.set_near_camera(true, 1.0)
+	var piece := view.lift_piece([Vector3i(1, 3, 1)], Vector3.ZERO)
+	var whole := true
+	for child: Node in piece.get_children():
+		var mat := (child as MeshInstance3D).material_override as ShaderMaterial
+		whole = whole and Num.f(mat.get_shader_parameter("bubble_cut")) == 0.0
+	check(whole and view.near_camera_cut() == 1.0, "a piece lifted off a cut building draws whole")
+	piece.free()
+	view.free()
 	var cam := Content.section("camera")
-	check(
-		not cam.has("fade_opacity") and not cam.has("fade_width"),
-		"the dead camera.fade_opacity and fade_width are gone"
-	)
+	var gone := ["fade_opacity", "fade_width", "fade_frame_share", "bubble_share", "bubble_width"]
+	var left := gone.filter(func(k: String) -> bool: return cam.has(k))
+	check(left.is_empty(), "the old camera fade and share keys are gone (%s)" % str(left))
 	check(
 		not Content.section("vehicles").has("fade_opacity"), "vehicles.fade_opacity is gone as well"
 	)

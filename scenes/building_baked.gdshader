@@ -19,8 +19,8 @@ uniform sampler2D alive : filter_nearest;
 uniform float glow = 0.0;
 uniform float roughness_value = 0.9;
 uniform float inside = 0.12;
-// The camera bubble (CameraBubble, D-283): a standing building on the camera-to-kaiju line is
-// cut away inside a sphere round the camera, bubble_cut of the global bubble_radius, with a hard
+// The camera bubble (CameraBubble, D-283): a standing building the camera runs into is cut
+// away inside a sphere round the camera, bubble_cut of the global bubble_radius, with a hard
 // edge on its own blocks (no dither, no fade). 0 (every other building, every falling piece,
 // D-326) draws it whole. Never in a shadow pass: the cut part still casts its shadow.
 global uniform float bubble_radius;
