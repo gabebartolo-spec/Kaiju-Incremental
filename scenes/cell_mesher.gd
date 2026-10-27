@@ -254,6 +254,30 @@ static func to_mesh(arrays: Array) -> ArrayMesh:
 	return mesh
 
 
+## Render plan item 9c: whether this mesher packs a finished surface itself (the native mesher
+## with KaijuMesher.pack_surface; the GDScript path and an older extension do not).
+func can_pack() -> bool:
+	return native != null and native.has_method("pack_surface")
+
+
+## A region's arrays as a mesh from the native packed surface (null when it has no face): the
+## bytes to_mesh's add_surface_from_arrays packs, handed to ArrayMesh._set_surfaces, which makes
+## the mesh with RenderingServer.mesh_create_from_surfaces. Under a real renderer that runs on the
+## calling thread, upload included, so a worker can call this (CellView); the dummy renderer
+## queues it with an allocator that is not thread-safe, so headless calls it on the main thread
+## only (tests). Needs can_pack().
+func packed_mesh(arrays: Array) -> ArrayMesh:
+	var surface: Dictionary = native.call("pack_surface", arrays)
+	if surface.is_empty():
+		return null
+	# An ArrayMesh with no RID yet: _set_surfaces makes it with mesh_create_from_surfaces, which a
+	# RenderingDevice renderer builds on the calling thread by design (async resource creation); no
+	# material. CellView's worker_mesh gate (not headless, a RenderingDevice) keeps others on main.
+	var mesh := ArrayMesh.new()  # thread-ok: RenderingDevice only, gated in CellView (above)
+	mesh.call("_set_surfaces", [surface])
+	return mesh
+
+
 ## SHA-256 of a region's arrays, byte for byte (native == oracle checks).
 static func digest(arrays: Array) -> String:
 	var ctx := HashingContext.new()

@@ -1459,12 +1459,13 @@
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
 		"bolt": {
-			"_note": "BoltRig/BoltView/bolt.gdshader (VFX_STYLE family 6, research 17): the Lightning Breath and the Thunder Beam. halo_mode picks the fringe colours round the white-hot axis (R 17.6 is the director's open question: amber / eye = the species' eye tint / violet = white with a violet fringe); the glow itself is the engine's bloom on the HDR axis (boost_core, fringe_boost). The Thunder Beam core is 1.8x the breath's. Strokes come at least stroke_gap apart (never more than 3 full flashes a second); between strokes the main channel holds at hold_level with a shallow wobble. All shapes are dimensionless (a share of the bolt's length) and seeded per breath (Seeds breath_bolt / thunder_bolt). Widths are metres at body scale 1.",
-			"halo_mode": "amber",
+			"_note": "BoltRig/BoltView/bolt.gdshader (VFX_STYLE family 6, research 17): the Lightning Breath and the Thunder Beam. halo_mode picks the fringe colours round the white-hot axis (R 17.6 is the director's open question: amber / eye = the species' eye tint / violet = white with a violet fringe); the glow itself is the engine's bloom on the HDR axis (boost_core, fringe_boost). The Thunder Beam core is 1.8x the breath's. Strokes come at least stroke_gap apart (never more than 3 full flashes a second); between strokes the main channel holds at hold_level with a shallow wobble. All shapes are dimensionless (a share of the bolt's length) and seeded per breath (Seeds breath_bolt / thunder_bolt). Widths are metres at body scale 1. D-357: purple is the kaiju colour (the kaiju juice): halo_mode purple, core = the axis colour, flare = the mouth light and flares; the bolt leaves from deep in the throat (throat = [share along both jaws from the hinge, share of the way from the lower jaw to the upper]), straight to what it strikes (bow 0, clear 0); charge = the charge-up arcs jumping spine to spine along the ridge (bones, tail tip to head) between the press and the strike: hop_life s each, the first after lead_in, the last ending at the strike, re-rolled every `every` s; the jaw drops jaw_before s before the strike. Widths are metres at body scale 1, lift in voxels.",
+			"halo_mode": "purple",
 			"halo_modes": {
 				"amber": {"inner": "ffb55a", "fringe": "ff7a1e"},
 				"eye": {"inner": "eye", "fringe": "eye", "inner_white": 0.6},
-				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5}
+				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5},
+				"purple": {"inner": "b366ff", "fringe": "7a2cff", "core": "cc66ff", "flare": "c99bff"}
 			},
 			"boost_core": 3.0,
 			"fringe_boost": 1.6,
@@ -1480,7 +1481,7 @@
 			"arc_level": 0.25,
 			"light_follow": 40.0,
 			"strike_decay": 0.07,
-			"muzzle_up": 0.5,
+			"muzzle_up": 0.0,
 			"rebuild_move": 0.1,
 			"wobble": 0.15,
 			"wobble_hz": 22.0,
@@ -1512,21 +1513,23 @@
 			"branch_sparks": 2,
 			"power_share": 0.25,
 			"prewarm_seconds": 0.05,
+			"throat": [0.25, 0.5],
+			"charge": {"width": 0.12, "alpha": 0.7, "min_px": 3.0, "hop_life": 0.18, "lead_in": 0.1, "jaw_before": 0.25, "every": 0.05, "fork": [0.25, 0.5], "push": 0.25, "rounds": 3, "forks": 1, "level": [0.7, 1.0], "middle": [0.3, 0.7], "lift": 1.5, "bones": ["tail8", "tail7", "tail6", "tail5", "tail4", "tail3", "tail2", "tail1", "tail0", "spine0", "spine1", "spine2", "head0", "head1"]},
 			"breath": {
 				"core": 0.6, "sway": 0.1, "branches": [4, 6],
-				"bow": 0.6, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0, "ring_puffs": 8,
-				"arcs": 4, "arc_reach": 8.0, "arc_width": 0.17,
+				"bow": 0.0, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0, "ring_puffs": 8,
+				"arcs": 0, "arc_reach": 8.0, "arc_width": 0.17,
 				"branch_from": [0.3, 0.8], "branch_width": 1.0, "branch_sway": 0.15,
 				"anchor_near": false, "anchor_back": 0.0, "dust": 3.5,
-				"fan_spread": 0.8, "fan_near": 0.55, "clear": 1.5
+				"fan_spread": 0.8, "fan_near": 0.55, "clear": 0.0
 			},
 			"thunder": {
 				"core": 1.08, "sway": 0.22, "branches": [4, 6],
-				"bow": 0.25, "sub_forks": 0, "strike_scale": 0.8, "ring": 6.0, "ring_puffs": 6,
+				"bow": 0.0, "sub_forks": 0, "strike_scale": 0.8, "ring": 6.0, "ring_puffs": 6,
 				"arcs": 0, "arc_reach": 6.0, "arc_width": 0.35, "facade_min": [4, 6],
 				"branch_from": [0.1, 0.99], "branch_width": 0.55, "branch_sway": 0.1,
 				"anchor_near": true, "anchor_back": 0.06, "dust": 2.0,
-				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 1.5, "lash_climb": [2.0, 12.0], "lash_side": 1.0, "turn_hold": 0.12
+				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 0.0, "lash_climb": [2.0, 12.0], "lash_side": 1.0, "turn_hold": 0.12
 			}
 		},
 		"orbit_degrees": 25.0,
@@ -1751,7 +1754,7 @@
 		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
 	},
 	"render_opt": {
-		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). remesh_high_priority: a carved building's meshing task (CellView) is queued high-priority, as Jolt's jobs are (item 9). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
+		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). remesh_high_priority: a carved building's meshing task (CellView) is queued high-priority, as Jolt's jobs are (item 9). remesh_worker_mesh: under a real renderer each carved block's mesh is made and uploaded on its worker, so the swap-in only attaches them, every block of a batch on one frame (item 9c; off, or headless: made on the main thread). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
 		"night_clip_max": 0.08,
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
@@ -1760,7 +1763,10 @@
 		"people_aabb_margin_m": 8.0,
 		"kaiju_three_faces": true,
 		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 262, "puff": 17, "step": 4, "slam": 5, "tree": 43, "spark": 13, "burst": 7, "flames": 12, "embers": 12, "smoke": 12}},
-		"remesh_high_priority": true
+		"remesh_high_priority": true,
+		"remesh_worker_mesh": true,
+		"soft_smoke": true,
+		"soft_smoke_m": 1.5
 	},
 	"death": {
 		"_note": "The kaiju's death (director 2026-10-26, every kaiju; replaces D-267's belly-down slump): Special K overload. A death (reasons, SaveFile.DEATHS) plays the agonised stagger clip for stagger_s (clip death_stagger, frames 20-60 of the approved stagger at 24 fps), the stone creeps over him for stone_s, then he shatters (DeathOverload): shards of his own body (cell world units each at body scale 1, picked from his body discs) are thrown throw_min..throw_max (x body scale) and land after flight_s, each a blow of shard_damage within shard_radius on the top shard_floors floors of what it lands on. A Death Blast node (stat death_blast, 1 per node) adds a front of blast_damage that runs out to a ring round his body: his body's edge plus death_blast x per_node world units (director 2026-10-26 \"Smaller: a ring round his body\"; 5 / 10 / 15, node 3 about one street block), in blast_s, every floor, and it starts blast_after_s after the last shard lands (director 2026-10-27, D-294 \"Shards first\": his falling stone body smashes buildings, then the blast clears the rest). The run ends settle_s after the front (or the last shard with no node). Look: violet = Special K (creation.lab.colors.special_k); stone grey with per-block variation. He breaks into jagged stone chunks, never cubes (director 2026-10-27, D-323 \"Jagged stone chunks\": irregular broken rock in his hide's texture, many sizes, tumbling with dust): look.chunks are the broken rock meshes baked by tools/blender/death_chunks.py (longest side 1); his voxels fly as small chunks of debris_size x his voxel and the sim's shards as big ones of shard_size x cell (most near the small end, size_skew), tumbling at debris_spin rad/s, each shard trailing dust (trail). Placeholders, flagged for tuning.",

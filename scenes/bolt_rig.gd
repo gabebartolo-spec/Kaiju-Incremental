@@ -16,8 +16,9 @@ signal stroked(index: int, at: Vector3)
 signal thundered(at: Vector3)
 
 const FLARE := preload("res://scenes/flare.gdshader")
+## The mouth light's and the flares' colour where the halo mode names none (the purple names
+## its own, D-357).
 const HOT := Color(1.0, 0.85, 0.65)
-## The strike's flash is white-hot whatever the halo.
 const STRIKE_WHITE := Color(1.0, 0.96, 0.88)
 ## Bolt seeds per run: an owner's seed is run * this + the play's number.
 const SEEDS_PER_RUN := 4096
@@ -78,10 +79,10 @@ func _init(kind: String, eye: Color, body_scale: float, cfg: Dictionary) -> void
 	_view = BoltView.new(Num.f(_row["core"]) * body_scale, eye, cfg)
 	add_child(_view)
 	var colours := BoltView.halo_colours(cfg, eye)
-	_setup_light(_mouth_light, HOT)
+	_setup_light(_mouth_light, BoltView.flare_colour(cfg, HOT))
 	_setup_light(_hit_light, colours[0].lightened(0.3))
-	_muzzle = _flare(HOT)
-	_strike = _flare(STRIKE_WHITE)
+	_muzzle = _flare(BoltView.flare_colour(cfg, HOT))
+	_strike = _flare(BoltView.flare_colour(cfg, STRIKE_WHITE))
 	cancel()
 
 
@@ -237,13 +238,13 @@ func _roll_branches() -> void:
 func _main_world() -> PackedVector3Array:
 	var line := BoltShape.place(_main_shape, _clear_of_head(), _hit)
 	var bow := Num.f(_row["bow"]) * line[0].distance_to(line[line.size() - 1])
-	for i: int in range(1, line.size() - 1):  # bowed up: it rises over the head, then strikes down
+	for i: int in range(1, line.size() - 1):  # bowed up by `bow` (0: straight from the throat, D-357)
 		line[i] += Vector3.UP * bow * sin(PI * i / (line.size() - 1))
 	return _kept(line)
 
 
-## Where the main channel starts: a little way out in front of the jaw, so it visibly leaves the
-## mouth instead of running along the head and back.
+## Where the main channel starts: `clear` out along the aim from the mouth point (0: right in the
+## throat, D-357).
 func _clear_of_head() -> Vector3:
 	return _mouth + (_hit - _mouth).normalized() * Num.f(_row["clear"]) * _scale
 

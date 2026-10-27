@@ -1,13 +1,10 @@
 class_name BreathBeam
 extends Node3D
-## The Lightning Breath (D-108, VFX_STYLE family 6): hot forked lightning from the croc's jaw, a
-## dim feeler and then two or three bright strokes down one channel to what it strikes, with a fan
-## of branches across the sim's hit cone (never past it). It is a BoltRig (the game's one bolt)
-## kept on the jaw while the head moves; the old plasma cylinder and flame curtain are gone.
-## Presentation only; all additive, so nothing hides the kaiju (D-025).
-
-## How far along the jaw bone (hinge 0, chin 1) the breath leaves the mouth.
-const MOUTH_ALONG_JAW := 0.7
+## The Lightning Breath (D-108, VFX_STYLE family 6): purple forked lightning from deep in the
+## croc's throat (D-357), a dim feeler and then two or three bright strokes down one channel to
+## what it strikes, with a fan of branches across the sim's hit cone (never past it). It is a
+## BoltRig (the game's one bolt) kept in the throat while the head moves; the old plasma cylinder
+## and flame curtain are gone. Presentation only; all additive, so nothing hides the kaiju (D-025).
 
 ## Signature Power's brightness for the next fire (1..fx.power_max).
 var power := 1.0
@@ -52,11 +49,11 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 	rig.play(_seconds, rng)
 
 
-## Where the breath leaves `model`: most of the way along its jaw bone, between the jaws, so the
-## bolt starts at the snout rather than inside the body. `fallback` for bodies with no jaw.
+## Where the breath leaves `model`: deep in its throat (throat_of). `fallback` for bodies with no
+## jaw.
 static func mouth_of(model: Node3D, fallback: Vector3) -> Vector3:
 	var jaw := jaw_of(model)
-	return along_jaw(jaw) if jaw != null else fallback
+	return throat_of(jaw) if jaw != null else fallback
 
 
 ## The model's "jaw" bone, when it hangs under a KaijuRig.
@@ -70,14 +67,24 @@ static func jaw_of(model: Node3D) -> Node3D:
 	return jaw if rig_node != null else null
 
 
-## The mouth point on `jaw` (from jaw_of) now.
-static func along_jaw(jaw: Node3D) -> Vector3:
+## The throat point of `jaw` (from jaw_of) now, where the bolt leaves (D-357): out from the hinge a
+## share of the way to the jaws' tips (the lower jaw's and its parent bone's), and a share of the
+## way from the lower to the upper (tuning "fx" "bolt" "throat"), so it sits between the jaws
+## behind the teeth however far they are open, never above or in front of the head.
+static func throat_of(jaw: Node3D) -> Vector3:
 	var rig_node := jaw.get_parent()
 	while not rig_node is KaijuRig:
 		rig_node = rig_node.get_parent()
-	return jaw.global_transform * ((rig_node as KaijuRig).dir_of("jaw") * MOUTH_ALONG_JAW)
+	var body := rig_node as KaijuRig
+	var throat: Array = Content.section("fx")["bolt"]["throat"]
+	var along := Num.f(throat[0])
+	var hinge := jaw.global_position
+	var upper := body.parent_of("jaw")
+	var low := hinge.lerp(jaw.global_transform * body.dir_of("jaw"), along)
+	var high := hinge.lerp(body.bone(upper).global_transform * body.dir_of(upper), along)
+	return low.lerp(high, Num.f(throat[1]))
 
 
 func _process(_delta: float) -> void:
 	if rig.live and is_instance_valid(_jaw):
-		rig.aim(along_jaw(_jaw), _hit)
+		rig.aim(throat_of(_jaw), _hit)

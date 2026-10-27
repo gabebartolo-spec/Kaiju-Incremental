@@ -15,6 +15,12 @@ extends Node3D
 ## Render plan item 9 (tuning render_opt.remesh_high_priority): the meshing task is queued on the
 ## pool's high-priority side, where Jolt's own jobs run, so a bite is not left waiting behind them
 ## (the low-priority side keeps only 30% of the threads); each batch's main-thread time is timed.
+## Render plan item 9c (tuning render_opt.remesh_worker_mesh): under a real renderer each block's
+## mesh is made on its worker too (CellMesher.packed_mesh: the native packed surface, uploaded
+## on that thread), so _make only takes it and the budget is nearly never reached; every block of
+## a batch still swaps in on the same frame. Headless (the dummy renderer), no RenderingDevice
+## (gl_compatibility, where a worker-made mesh is not safe), the GDScript mesher or the flag off:
+## _make makes the meshes on the main thread, under the budget.
 
 ## The first build is on screen (once).
 signal drawn
@@ -51,6 +57,8 @@ var drawn_carves := 0
 var gate: Callable
 ## Whether the meshing task goes on the pool's high-priority queue (tuning, set at _init).
 var high_priority := true
+## Whether each block's mesh is made on its worker (tuning, the renderer and the mesher; at _init).
+var worker_mesh := false
 ## Main-thread microseconds the last batch took (its block meshes made, over one frame or more,
 ## and swapped in), and, when keep_timings is on (tests, the bench), one entry per batch.
 var last_finish_us := 0
@@ -65,6 +73,8 @@ var _task := -1
 var _batch: Array[Vector3i] = []
 var _batch_carves := 0
 var _results: Array = []
+## Per block, its mesh made on the worker (worker_mesh; else empty).
+var _meshes: Array = []
 ## Per block of the finished batch: its new mesh (null: no face) and, for a block with no part
 ## yet, the part made for it, hidden until the swap.
 var _made: Array = []
@@ -84,7 +94,14 @@ func _init(
 ) -> void:
 	mesher = p_mesher
 	material = p_material
-	high_priority = Content.section("render_opt").get("remesh_high_priority", true) == true
+	var opt := Content.section("render_opt")
+	high_priority = opt.get("remesh_high_priority", true) == true
+	worker_mesh = (
+		opt.get("remesh_worker_mesh", true) == true
+		and DisplayServer.get_name() != "headless"
+		and RenderingServer.get_rendering_device() != null
+		and mesher.can_pack()
+	)
 	_fed = not regions.is_empty()
 	_cells = cells if _fed else mesher.drawn(cells)
 	if not _fed:
@@ -154,8 +171,11 @@ func _start() -> void:
 	_batch_carves = carves
 	_results.clear()
 	_results.resize(_batch.size())
+	_meshes.clear()
+	if worker_mesh:
+		_meshes.resize(_batch.size())
 	_task = WorkerThreadPool.add_group_task(
-		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results),
+		_mesh_one.bind(mesher, _cells, _batch.duplicate(), _results, _meshes),
 		_batch.size(),
 		-1,
 		high_priority,
@@ -163,13 +183,22 @@ func _start() -> void:
 	)
 
 
-## One worker task: block batch[i] of `cells`, its arrays into results[i]. The mesh resource is
-## made on the main thread (_upload): a mesh RID made on a worker raced the dummy renderer's
-## allocator in the headless bench ("Initializing already initialized RID").
+## One worker task: block batch[i] of `cells`, its arrays into results[i] and, when meshes is
+## sized (worker_mesh), its mesh into meshes[i]. Otherwise the mesh is made on the main thread
+## (_make): a mesh RID made on a worker raced the dummy renderer's allocator in the headless
+## bench ("Initializing already initialized RID"), so headless never makes one here.
 static func _mesh_one(
-	i: int, m: CellMesher, cells: PackedByteArray, batch: Array[Vector3i], results: Array
+	i: int,
+	m: CellMesher,
+	cells: PackedByteArray,
+	batch: Array[Vector3i],
+	results: Array,
+	meshes: Array
 ) -> void:
-	results[i] = m.mesh_region(cells, batch[i])
+	var arrays := m.mesh_region(cells, batch[i])
+	results[i] = arrays
+	if not meshes.is_empty():
+		meshes[i] = m.packed_mesh(arrays)
 
 
 ## The running batch's arrays, once the workers are done (wait: block until they are).
@@ -218,10 +247,11 @@ func _upload(budget: int, force: bool) -> void:
 	_start()
 
 
-## Block k's mesh, and a hidden part for it when it has none yet (made now so the swap is cheap).
+## Block k's mesh (the worker's when worker_mesh, else made here), and a hidden part for it when
+## it has none yet (made now so the swap is cheap).
 func _make(k: int) -> void:
 	var block: Array = _results[k]
-	var mesh := CellMesher.to_mesh(block)
+	var mesh: ArrayMesh = _meshes[k] if not _meshes.is_empty() else CellMesher.to_mesh(block)
 	_made[k] = mesh
 	if mesh != null and not parts.has(_batch[k]):
 		var part := MeshInstance3D.new()
@@ -254,6 +284,7 @@ func _swap() -> void:
 	last_batch = _batch.duplicate()
 	drawn_carves = _batch_carves
 	_results.clear()
+	_meshes.clear()
 	_made.clear()
 	_fresh.clear()
 	_next = -1
