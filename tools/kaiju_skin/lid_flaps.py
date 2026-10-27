@@ -9,15 +9,19 @@ shell lies over the eye just outside its voxels; at rest it is turned `open` deg
 head, where no camera sees it. A blink turns the bone by `open` about that axis and the shell covers the eye. The
 shell is built at rest on the kvox grid (so the closed lid is the same lattice turned): a cell is lid when its closed
 image lies in the cap (`half` degrees each way about the closing axis, `over` more past the top, `lat` to each side)
-and in the band `band` voxels thick that starts `gap` voxels outside the eye's surface along that direction (the first
-empty cell seen from outside: surfaces()) and never nearer than the rig flap (`depth` * DEPTH_GAP). A cell that would
-sit on a voxel or show at rest (a ray from it in any of 26 directions leaves the grid) is dropped. Each lid voxel
+and in the band that runs from `gap` voxels outside the eye itself (eye_tops(): the end of the voxel run the pivot sits
+in) out to `band` voxels past `gap` outside the head's surface along that direction (the first empty cell seen from
+outside: surfaces()), never nearer than the rig flap (`depth` * DEPTH_GAP). Filling in to the eye closes a deep socket
+(the baby's: a ray from the front ran under a band built only at the surface and met the eye, diag 2026-10-28). An empty cell that
+would show at rest (a ray from it in any of 26 directions leaves the grid) is dropped. A cell on a skin voxel stays, a
+twin of that voxel in its colour, so the rest skin looks the same and the closed lid has no holes (bake.py keeps both;
+dropping them left the baby's eye showing past a lid whose rest shell crosses its small cheek). Every other lid voxel
 takes the colour of the nearest non-eye voxel one lid height below its closed place (the cheek under the eye).
 
 The lid frame (the rig's, tools/blender lid build): pivot = the bone head, n = towards its tail, up = world up made
 square to n, axis = n x up; a positive turn about the axis carries n towards up. Parameters come from the skin
 header's "lid_flaps" block (lengths in skin units, angles in degrees, band and gap in voxels):
-    {"depth": 2.13, "open": 100, "half": 30, "over": 16, "lat": 40, "band": 1.8, "gap": 0.9}
+    {"depth": 2.13, "open": 100, "half": 30, "over": 16, "lat": 50, "band": 1.8, "gap": 0.9}   (the adult croc's)
 """
 import json
 import struct
@@ -63,8 +67,9 @@ class Grid:
     def __init__(self, m, cells):
         self.m, self.inv, self.v = m, np.linalg.inv(m), float(m[0, 0])
         self.lo = cells.min(0) - 2
-        self.occ = np.zeros(cells.max(0) + 3 - self.lo, bool)
-        self.occ[tuple((cells - self.lo).T)] = True
+        self.at = np.full(cells.max(0) + 3 - self.lo, -1, int)
+        self.at[tuple((cells - self.lo).T)] = np.arange(len(cells))
+        self.occ = self.at >= 0
 
     def cell(self, p):
         return np.floor((np.c_[p, np.ones(len(p))] @ self.inv.T)[:, :3] + 0.5).astype(int)
@@ -72,12 +77,16 @@ class Grid:
     def centre(self, c):
         return (np.c_[c, np.ones(len(c))] @ self.m.T)[:, :3]
 
-    def filled(self, c):
+    def index(self, c):
+        """The voxel on each cell (its index into the cells), or -1."""
         k = c - self.lo
-        inb = np.all((k >= 0) & (k < self.occ.shape), axis=1)
-        out = np.zeros(len(c), bool)
-        out[inb] = self.occ[tuple(k[inb].T)]
+        inb = np.all((k >= 0) & (k < self.at.shape), axis=1)
+        out = np.full(len(c), -1, int)
+        out[inb] = self.at[tuple(k[inb].T)]
         return out
+
+    def filled(self, c):
+        return self.index(c) >= 0
 
     def hits(self, o, d):
         """Whether each ray o + t d (skin units, d unit) meets a voxel inside the grid (exact grid traversal)."""
@@ -128,6 +137,18 @@ def surfaces(grid, piv, dirs):
     return np.where(o.any(1), ts[np.argmax(o, axis=1)], SURFACE_REACH)
 
 
+def eye_tops(grid, piv, dirs, reach):
+    """Per direction from the pivot, the distance to the end of the voxel run it starts in (the eye's own outer face):
+    the first filled sample must lie within `reach`; 0 where there is none, SURFACE_REACH where the run never ends."""
+    ts = np.arange(0.0, SURFACE_REACH, grid.v / STEP)
+    o = grid.filled(grid.cell((piv[None, None] + dirs[:, None] * ts[None, :, None]).reshape(-1, 3))).reshape(len(dirs), -1)
+    first = np.argmax(o, axis=1)
+    starts = o.any(1) & (ts[first] <= reach)
+    after = ~o & (np.arange(len(ts))[None] >= first[:, None])
+    end = np.where(after.any(1), ts[np.argmax(after, axis=1)], SURFACE_REACH)
+    return np.where(starts, end, 0.0)
+
+
 def eye_voxels(rgb):
     r, g, b = (rgb[:, i].astype(int) for i in range(3))
     amber = (r > EYE_AMBER[0]) & (r > g + EYE_AMBER[1]) & (b < EYE_AMBER[2])
@@ -150,9 +171,10 @@ def one_lid(grid, bone, p):
     cone = (th >= -p["half"]) & (th <= p["half"] + p["over"]) & (np.abs(ps) <= p["lat"]) & (rho < REACH_OUT)
     idx = np.nonzero(cone)[0]
     rin = np.maximum(p["depth"] * DEPTH_GAP, surfaces(grid, piv, dn[idx]) + p["gap"] * grid.v)
-    keep = idx[(rho[idx] >= rin) & (rho[idx] <= rin + p["band"] * grid.v)]
+    rfill = np.maximum(p["depth"] * DEPTH_GAP, eye_tops(grid, piv, dn[idx], p["depth"]) + p["gap"] * grid.v)
+    keep = idx[(rho[idx] >= np.minimum(rfill, rin)) & (rho[idx] <= rin + p["band"] * grid.v)]
     cells = cand[keep]
-    ok = ~grid.filled(cells) & enclosed(grid, cells)
+    ok = grid.filled(cells) | enclosed(grid, cells)
     return cells[ok], shut[keep][ok], up, int((~ok).sum())
 
 
@@ -176,9 +198,12 @@ def make(meta, cells, rgb, names):
         under = shut - up * (np.ptp(shut @ up) if len(shut) else 0.0)  # one lid height down: the cheek
         near = np.array([src[np.argmin(np.sum((src_p - q) ** 2, axis=1))] for q in under], int)
         out_c.append(lc)
-        out_rgb.append(rgb[near] if len(near) else np.zeros((0, 3), np.uint8))
+        col = rgb[near] if len(near) else np.zeros((0, 3), np.uint8)
+        twin = grid.index(lc)
+        col[twin >= 0] = rgb[twin[twin >= 0]]  # on a skin voxel: its twin, in its colour
+        out_rgb.append(col)
         out_o.append(np.full(len(lc), names.index(lid)))
-        said.append(f"{lid} {len(lc)} voxels ({dropped} dropped: on a voxel or seen at rest)")
+        said.append(f"{lid} {len(lc)} voxels ({(twin >= 0).sum()} twins, {dropped} dropped: seen at rest)")
     return np.concatenate(out_c), np.concatenate(out_rgb).astype(np.uint8), np.concatenate(out_o), "; ".join(said)
 
 

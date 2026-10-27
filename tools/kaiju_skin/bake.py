@@ -38,6 +38,8 @@ MOUTH_BONES = ("head1", "jaw")
 # tools/kaiju_skin/lid_flaps.py): they never blend with it, so an open mouth keeps its mass and its teeth (lead review,
 # PR #15) and a lid closes whole.
 HINGES = ("jaw", "mandible_l", "mandible_r", "lid_lo_l", "lid_lo_r")
+# A lid flap voxel may sit on a cheek voxel at rest, its twin (lid_flaps.py): both stay, so the closing lid keeps its shape.
+LID_FLAPS = ("lid_lo_l", "lid_lo_r")
 SKIN_NEAREST = 4  # a voxel blends the weights of this many nearest Blender skin positions
 DIRS = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)])
 
@@ -230,12 +232,15 @@ def bake(name, rest, kdir, rig):
         for b in np.where(from_blender.any(0))[0]:
             moved += from_blender[src, b:b + 1] * ((at - head[b]) @ basis[b].T + origin[b])
     baked = np.round(moved / v - np.array([0.0, 0.5, 0.0])).astype(int)
-    _, first = np.unique(baked, axis=0, return_index=True)
+    lid = np.isin(owner[src], [names.index(n) for n in LID_FLAPS if n in names]).astype(int)
+    _, first = np.unique(np.c_[baked, lid], axis=0, return_index=True)  # one voxel per cell, a lid twin aside
     keep = np.sort(first)
     cells, rgb, owner = baked[keep], rgb[src[keep]], owner[src[keep]]
     kvox_owner = owner  # the mouth test reads the .kvox split, whatever the weights
     count = len(cells)
-    index = {tuple(c): i for i, c in enumerate(cells)}
+    index = {}
+    for i, c in enumerate(cells):
+        index.setdefault(tuple(c), i)  # a cell's neighbour is its skin voxel, never the lid twin over it
     nbr = np.array([[index.get((c[0] + d[0], c[1] + d[1], c[2] + d[2]), -1) for d in DIRS] for c in cells])
     # Lattice-smoothed weights, joint-related bones only; or the Blender skin's, as they are (the
     # filler then pairs voxels by their main bone).
