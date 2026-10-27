@@ -1997,6 +1997,18 @@
           "required": ["on", "own_haze", "base", "base_height", "start"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "far_reflect": {
+          "type": "object",
+          "properties": {
+            "on": {"$ref": "#/$defs/bool"},
+            "strength": {"$ref": "#/$defs/num"},
+            "energy": {"$ref": "#/$defs/num"},
+            "reach": {"$ref": "#/$defs/num"}
+          },
+          "required": ["on", "strength", "energy", "reach"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2019,7 +2031,7 @@
         "min_height", "max_height", "tier_height", "size_scale_per_tier", "young_scale",
         "growth_per_level", "leap_distance", "cone_half_angle_deg", "breath_snout_ahead",
         "chunk_hp", "dwarf_exp", "chunk_rubble", "kaiju_height", "impact_damage", "fall_gravity",
-        "topple_bonus", "far_fog"
+        "topple_bonus", "far_fog", "far_reflect"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
