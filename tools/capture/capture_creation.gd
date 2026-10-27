@@ -9,9 +9,10 @@ extends SceneTree
 ##     --script tools/capture/capture_creation.gd -- --out=<dir>
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <dir>/clip.avi \
 ##     --script tools/capture/capture_creation.gd -- --out=<dir> --clip
-## --after=<frames> holds the run that long after it is built (default AFTER); the log names the
-## drawn frames (Engine.get_frames_drawn, the movie's frame index) where the run was built and where
-## the run intro handed over to the play camera.
+## --run-still also saves the run's last held frame (06_run.png) after the lab's five, at the game
+## camera, in any mode. --after=<frames> holds the run that long after it is built (default AFTER);
+## the log names the drawn frames (Engine.get_frames_drawn, the movie's frame index) where the run
+## was built and where the run intro handed over to the play camera.
 ## --titan=<id> captures that genome's sequence instead of the croc's (the director 2026-10-25:
 ## "ensure the clip is functional for all 3"). A locked genome is unlocked for the capture only,
 ## and one with no kaiju to play yet plays the croc's (reptilian) run after the black.
@@ -34,6 +35,7 @@ const CAP := 60 * 30
 
 var _out := "user://creation"
 var _clip := false
+var _run_still := false
 var _titan := "croc"
 var _after := AFTER
 var _time := ""
@@ -48,6 +50,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--clip":
 			_clip = true
+		elif arg == "--run-still":
+			_run_still = true
 		elif arg.begins_with("--after="):
 			_after = arg.substr(8).to_int()
 		elif arg.begins_with("--titan="):
@@ -109,6 +113,8 @@ func _run() -> void:
 		"INTRO handover on drawn frame %d, %d frames after the build" % [handover, handover - built]
 	)
 	await Kit.frames(self, maxi(0, _after - (handover - built)))
+	if _run_still:
+		print("still %s" % Kit.still(self, _out, "06_run"))
 	print("CREATION_CAPTURE done -> %s" % _out)
 	quit(0)
 
