@@ -24,6 +24,8 @@ var _lib := Lib.new()
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var defaults := Lib.DEFAULTS.duplicate()
 	defaults.merge(
 		{"row": "baseline", "at": 3000, "measure": 300, "warmup": 120, "out": "user://bench"}
