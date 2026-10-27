@@ -12,6 +12,9 @@ extends RefCounted
 
 ## Physics frames the kaiju and the camera get to arrive after the kaiju is put behind the building.
 const SETTLE := 120
+## Physics frames the stream gets to build the chosen building's view (the pick reads the layout
+## only, so how far the stream has got never changes which building it is).
+const BUILD_WAIT := 1200
 ## Frames read, and the seconds handed to each city _process (half of camera.bubble_seconds, so a
 ## cut opening would show on two frames).
 const FRAMES := 40
@@ -57,7 +60,14 @@ static func check(check: Callable, root: Node) -> void:
 			% [index, passed]
 		)
 	)
-	if index < 0:
+	var waited := 0
+	while index >= 0 and rampage._city._stream.built(index) == null and waited < BUILD_WAIT:
+		sim.stomp._timer = 9.0
+		await tree.physics_frame
+		waited += 1
+	var built := index >= 0 and rampage._city._stream.built(index) != null
+	check.call(built, "its view is built (%d frames)" % waited)
+	if not built:
 		rampage.queue_free()
 		await tree.process_frame
 		return
@@ -87,9 +97,9 @@ static func check(check: Callable, root: Node) -> void:
 	await tree.process_frame
 
 
-## Puts the kaiju just behind the first small, built building (on the camera's side of it) that
-## stands on the camera's line to him; the building's index, or -1. `passed` counts the buildings
-## ruled out and why.
+## Puts the kaiju just behind the first small building (on the camera's side of it) that stands on
+## the camera's line to his feet, chest or head; the building's index, or -1. `passed` counts the
+## buildings ruled out and why. Reads the layout only, never the stream.
 static func _stand_behind(rampage: Rampage, passed: Dictionary) -> int:
 	var sim := rampage.sim
 	var rest := CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
@@ -98,21 +108,26 @@ static func _stand_behind(rampage: Rampage, passed: Dictionary) -> int:
 		if b.landmark != "" or b.w < 4 or b.d < 4 or b.height < MIN_FLOORS:
 			passed["unfit"] = Num.i(passed.get("unfit", 0)) + 1
 			continue
-		if rampage._city._stream.built(n) == null:
-			passed["unbuilt"] = Num.i(passed.get("unbuilt", 0)) + 1
-			continue
 		var spot := Vector2(b.x, b.z - b.d * 0.5 - BEHIND)
 		if sim.clamp_to_arena(spot) != spot or _inside_another(sim, spot, n):
 			passed["no_room"] = Num.i(passed.get("no_room", 0)) + 1
 			continue
 		sim.kaiju_pos = spot
 		var at := Vector3(spot.x, sim.stand_y, spot.y)
-		var chest := at + Vector3(0, sim.reach_height() * 0.5, 0)
-		if _box(b).intersects_segment(at + rest, chest) == null:
+		if not _on_line(_box(b), at + rest, at, sim.reach_height()):
 			passed["no_line"] = Num.i(passed.get("no_line", 0)) + 1
 			continue
 		return n
 	return -1
+
+
+## Whether `box` stands on the line from `eye` to the feet, chest or head of a kaiju standing at
+## `at`, `tall` metres high.
+static func _on_line(box: AABB, eye: Vector3, at: Vector3, tall: float) -> bool:
+	for share: float in [0.05, 0.5, 1.0]:
+		if box.intersects_segment(eye, at + Vector3(0, tall * share, 0)) != null:
+			return true
+	return false
 
 
 ## Whether a building other than `except` stands on `spot` (the kaiju must stand in the street).
