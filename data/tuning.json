@@ -634,7 +634,7 @@
 		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
-		"stream_chunks": 24000,
+		"stream_chunks": 25500,
 		"stand_in_fade_s": 0.35,
 		"stream_view": {"_note": "BuildingStream spends the stream_chunks budget on what the camera sees, not on a circle round the kaiju: a building ranks by its distance from the camera, or from the kaiju plus kaiju_extra_m, whichever is less; one that lies only in the margin band (margin_deg wide, each side of the frustum) ranks side_m farther, one outside that outside_m farther; a ring of ring_m round the camera has no penalty. margin_deg covers the camera's shake (camera_shake max_deg 2.5, a test checks it) and a quick turn, so a turn meets buildings the plan has already meshed (the breath's side orbit was cut, D-136). A landmark stays meshed while the frustum or the margin band reaches it or it stands within landmark_keep_m of the camera or the kaiju (a test checks no landmark is ever a box in view); beyond all three it unloads like any building (director 2026-10-22: out-of-view landmarks may unload if no pop-in).", "margin_deg": 30.0, "ring_m": 12.0, "side_m": 40.0, "outside_m": 100.0, "kaiju_extra_m": 30.0, "landmark_keep_m": 80.0},
 		"markings_beyond": 30,
