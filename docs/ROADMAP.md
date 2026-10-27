@@ -400,7 +400,7 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Lightning look (D-136, D-308, D-357): the r7 forked bolt is on main (#309, 10-27). His verdict (D-357): purple (the kaiju-juice colour), starting deep in the throat, never above the head; before each breath and Thunder Beam, arcs jump spine to spine from tail tip to head inside the strike delay. Owner: lightning-purple builder (Opus), the lead merges. Date: 2026-10-28. Status: briefed. Next: one 6 s 1080p clip to him, then merge on by default. The power-grid surge (D-260) is still unbuilt.
 
 ## Interview answers (director 2026-10-23, afternoon; D-163 to D-170)
-- One look from blocks (D-163): props, ground, fire and blasts into the city's look; far blur on the kaiju; cool
+- One look from blocks (D-163): props, ground, fire and blasts into the city's look; no far blur, haze carries the depth (D-360); cool
   shadows, warm fire; fine-block ground; blocks in close shots too. Owner: VFX lead. Status: not started.
 - Heads and skins (D-164, D-170): the Komodo head with its own shape goes forward; a serpentine python round 2 (snake
   jaw and fangs); Obsidian, Abyssal and a new Albino as colour tables per body region. Heads are looks only first,
@@ -566,8 +566,6 @@ Unlanded work, every branch not on main with owner and next step (2026-10-27): `
 Tech debt audit, the night-shift rulings (D-300, D-305 to D-318) and every debt row's owner and status: `docs/roadmap/2026-10-27-tech-debt.md`.
 Director comments of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
 - Army defeat about 1 run in 8 at each growth stage (D-259): claude/army-balance (army range measured to the croc's body line, tanks always have a firing post, per-stage army escalation and damage rows in data/tuning.json, the pacing bot carries the Taskforce clock), not on main. Owner: the army builder; the lead reviews the sim. Date: 2026-10-27. Status: two GitHub balance runs started 2026-10-26 18:54Z (pacing-run/army-b run 40381871503, army-replay/a run 40381900832). Next: the PR with the defeat table and the sim-review packet; the two scratch branches are deleted then.
-
-## Interview audit (D-272, 2026-10-26)
 Every interview answer and director message since 2026-10-16 (782 items) checked against the docs: `docs/roadmap/2026-10-26-interview-audit.md`.
 Its node ideas (section 1) feed E; its missing items (M rows) and decided-but-unrowed work (W rows) are open roadmap items, owner lead, briefed in queue order.
 
@@ -600,6 +598,3 @@ P0 (roads, quays and river walls, bridge decks, pavements, lawns, expressway, ru
 
 ## Hatchlings (D-358, director 2026-10-28)
 - Every species, unlocked by a late node in the Colossus (adult) evolution tree, bought after reaching the Colossus: once a rampage's biomass passes a mark ("challenging but attainable"), a button lights up; when pressed, he spews ONE egg from his maw, crackling with purple energy (the kaiju-juice colour, D-357). It hatches his species' baby form (the young form the player starts as, at that size, with its keyed Cascadeur moves), which rampages the city on its own. Once per rampage. Owner: lead. Date: 2026-10-28. Status: recorded, queued behind the debt list and render plan (D-310). Next: when it is built, ask him the mark's size and judge the spew move from one clip; the sim needs a seeded autonomous baby (seek, attack, devour), its biomass rules asked then.
-
-## Demo time of day (D-359, director 2026-10-28)
-- The demo plays at dusk only: rampages roll from a data list of playable times holding only dusk; the options time toggle is hidden while one time can play; every capture and clip for him shows dusk; perf baselines for the demo (render item 15) run at dusk. Random time (D-145) and the toggle return after the demo by editing the list. Owner: perf-p2b-native-2 (Sonnet), the lead merges. Date: 2026-10-28. Status: briefed; PR when a slot frees. Done: merged, on by default, a suite shows dusk on every run (failing first on main).
