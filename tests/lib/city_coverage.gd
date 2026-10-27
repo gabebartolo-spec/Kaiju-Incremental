@@ -148,3 +148,45 @@ static func _regions(dry: Array[Rect2]) -> Array:
 		apart.append(joined)
 		regions = apart
 	return regions
+
+
+## The rule itself, on planted cells (D-062): a bare cell is bare, a mark anywhere on a cell's one
+## dry part covers it, the bay's stepped edge (strips a band high) is one stretch of shore, and a
+## dry part the bay cut off from the rest still needs a mark of its own.
+static func check_rule(check: Callable) -> void:
+	var cell := Rect2(0.0, 0.0, 10.0, 10.0)
+	var whole: Array[Rect2] = [cell]
+	check.call(not _covered([], whole), "a planted bare cell (no mark) is bare")
+	check.call(not _covered([Vector2(11.0, 5.0)], whole), "a mark outside the cell does not count")
+	check.call(_covered([Vector2(5.0, 5.0)], whole), "a mark in the cell covers it")
+	check.call(_covered([Vector2(10.005, 5.0)], whole), "a mark on the cell's edge covers it")
+	# The bay cuts the cell's north-east corner in three one-metre steps: three strips of dry
+	# ground along the water, one stretch of shore with the cell's main body.
+	var steps: Array[Rect2] = [
+		Rect2(3.0, 0.0, 7.0, 1.0), Rect2(5.0, 1.0, 5.0, 1.0), Rect2(7.0, 2.0, 3.0, 1.0)
+	]
+	var shore := GroundKit.cut(whole, steps)
+	check.call(shore.size() > 2, "the stepped bay leaves the cell in strips (%d)" % shore.size())
+	check.call(_regions(shore).size() == 1, "the strips touch: one stretch of shore")
+	check.call(not _covered([], shore), "a planted bare shore stretch (no mark) is bare")
+	check.call(
+		not _covered([Vector2(8.0, 0.5)], shore), "a mark in the bay's water does not cover it"
+	)
+	check.call(
+		_covered([Vector2(1.0, 9.0)], shore),
+		"one mark on the shore covers the stretch, strips and all"
+	)
+	check.call(
+		_covered([Vector2(2.0, 0.5)], shore), "a mark on one thin strip covers the stretch too"
+	)
+	# A band right across the cell: two separate dry parts, each needs its own mark.
+	var band: Array[Rect2] = [Rect2(4.0, 0.0, 2.0, 10.0)]
+	var apart := GroundKit.cut(whole, band)
+	check.call(_regions(apart).size() == 2, "a band across the cell leaves two separate parts")
+	check.call(
+		not _covered([Vector2(1.0, 5.0)], apart),
+		"a mark on one part leaves the part cut off from it bare"
+	)
+	check.call(
+		_covered([Vector2(1.0, 5.0), Vector2(9.0, 5.0)], apart), "a mark on each part covers both"
+	)
