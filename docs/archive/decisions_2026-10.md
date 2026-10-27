@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-291 · Director · Audit what agents built from loose readings of his rulings
+His words, on the vehicle fade agents had stretched from D-025: "im certain id never have agreed to that if id understood what you were proposing". Asked: "Yes, audit now": a Sonnet reader lists every behaviour the player meets that an agent built beyond the words of a ruling, or with none, each with a still from the real game (C:/kt/rule_audit.md), for him to keep or cut item by item. Every question to him says what he will see on screen in plain words, with a picture or clip of the real effect when it is visual. Not chosen: not now.
+
+## 2026-10-27 · D-290 · Director · Vehicles never go see-through
+His words, seeing the governor's heli ghost over a tower: "the governers heli sometimes blends into the buildings, as if it is translucent"; told the screen-door fade on tanks and helis was an agent's extension of D-025 (smoke) with no decision of his: "why would any vehicle ever go see through?". Asked: "Remove it": VehicleFade goes; every tank and helicopter, the governor's included, always draws solid. Smoke keeps clearing over the kaiju (D-025). Building fades are D-283's bubble rework. Not chosen: keep it for regular vehicles.
+
+## 2026-10-27 · D-289 · Director · The facade jump on the first carve is fixed in the next free slot
+His words (watching runs): "when a building gets carved anywhere, its whole facade changes texture, so even if you carve the bottom of a tower, the top of the tower is changing appearance too". Asked: "Next free slot": a Sonnet builder (briefs/brief-facade-carve.md) takes the next builder slot that frees, ahead of the remaining render-plan items; pass bar: the untouched part of a carved building does not change (upper-half pixel diff mean <= 1/255, p99 <= 4/255), a headless check that fails on main first, one clip to him. Not chosen: a 7th builder now; after the render plan.
+
 ## 2026-10-27 · D-288 · Director · Death Blast upgrades: Overload, Meltdown, Supernova at 2,540 / 8,128 / 17,780
 Asked (PR #240, agent-added values): "Keep them" for the names Overload / Meltdown / Supernova and their card text ("Go out with a bang: when you fall, you take the street with you" / "A bigger bang: your last breath flattens the block" / "The biggest bang: nothing near you outlives you"); "Keep" for costs 2,540 / 8,128 / 17,780 biomass (the steps of Signature Recharge levels 1 and 3 and Crushing Weight's top level). Not chosen: his own names; costs x2 or x0.5. The death look waits for the clip.
 
