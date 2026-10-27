@@ -15,8 +15,17 @@ uniform float core_gain = 4.0;
 uniform float halo_gain = 0.5;
 uniform float ray_gain = 1.5;
 // A glance fades out where its quad meets the street (a soft intersection), not in a hard line.
-uniform sampler2D depth_tex : hint_depth_texture, repeat_disable, filter_nearest;
 uniform float meet_fade = 1.2;
+// Callers that set them (the lightning's muzzle and strike glows): `soft` metres over which the glow
+// fades out against geometry behind it (no hard straight edge where a building cuts the quad), and
+// `edge` > 0 fades it to nothing before the quad's border, ragged by that much.
+uniform sampler2D depth_tex : hint_depth_texture, repeat_disable, filter_nearest;
+uniform float soft = 0.0;
+uniform float edge = 0.0;
+
+float hash1(float x) {
+	return fract(sin(x * 127.1) * 43758.5453);
+}
 
 void vertex() {
 	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(
@@ -35,10 +44,20 @@ void fragment() {
 	float line = exp(-abs(p.y) * 40.0) * (1.0 - smoothstep(0.0, streak_len, abs(p.x)));
 	float rays = mix(cross_rays, line, streak);
 	vec3 hot = mix(tint.rgb, vec3(1.0), core);
-	// A glance's wide soft core must be gone before the quad's edge, or the quad shows as a square.
-	float edge = mix(1.0, 1.0 - smoothstep(0.35, 0.9, r), streak);
 	vec4 scene = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, texture(depth_tex, SCREEN_UV).x, 1.0);
-	float gap = -(scene.z / scene.w) + VERTEX.z;  // how far in front of the street this pixel is
-	float meet = mix(1.0, clamp(gap / meet_fade, 0.0, 1.0), streak);
-	ALBEDO = hot * (core * core_gain + halo + rays * ray_gain) * edge * meet * fade;
+	float gap = -(scene.z / scene.w) + VERTEX.z;  // how far in front of what is behind this pixel is
+	// A glance's wide soft core must be gone before the quad's edge, or the quad shows as a square.
+	float k = fade * mix(1.0, 1.0 - smoothstep(0.35, 0.9, r), streak);
+	k *= mix(1.0, clamp(gap / meet_fade, 0.0, 1.0), streak);
+	if (edge > 0.0) {
+		float a = atan(p.y, p.x) * 3.0;
+		float n = mix(hash1(floor(a)), hash1(floor(a) + 1.0), smoothstep(0.0, 1.0, fract(a)));
+		float lim = 1.0 - edge * n;
+		k *= 1.0 - smoothstep(lim - 0.4, lim, r);
+	}
+	if (soft > 0.0) {
+		k *= clamp(gap / soft, 0.0, 1.0);
+	}
+	float ray_share = edge > 0.0 ? 0.0 : ray_gain;  // a glow with an `edge` is round: no 4-point rays
+	ALBEDO = hot * (core * core_gain + halo + rays * ray_share) * k;
 }
