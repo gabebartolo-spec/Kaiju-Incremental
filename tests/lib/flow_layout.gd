@@ -3,7 +3,6 @@ extends RefCounted
 ## stay on the director's 4K TV at every UI scale, and the evolution reveal fits and measures
 ## against the new stage's city.
 
-
 ## The director's TV (D-027). Headless windows are 64x64 (a tall square canvas), so each check
 ## sizes the window to this first.
 const TV_SIZE := Vector2i(3840, 2160)
