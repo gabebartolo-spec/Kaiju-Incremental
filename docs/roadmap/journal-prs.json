@@ -2084,5 +2084,19 @@
 "s": "OPEN",
 "c": "2026-10-27",
 "m": ""
+},
+{
+"n": 300,
+"t": "tools: prepush steps need their success line; capture picks native",
+"s": "MERGED",
+"c": "2026-10-27",
+"m": "2026-10-27"
+},
+{
+"n": 301,
+"t": "Render plan item 6: lived-in windows (a palette tone and brightness per lit room, on by default)",
+"s": "OPEN",
+"c": "2026-10-27",
+"m": ""
 }
 ]
