@@ -6,10 +6,10 @@ const DT := 1.0 / 60.0
 const BUTTON := 4  # Dash.BUTTON
 ## The growth steps: the young croc, Behemoth, Colossus (the leap's three stages).
 const STAGES := {"young": {}, "Behemoth": {"evolve1": 1}, "Colossus": {"evolve1": 1, "evolve2": 1}}
-## The fixture: seconds walked before the press, then seconds watched after it.
-const FIXTURE_LEAD_S := 1.0
+## The fixture: seconds watched after the press; the take-off's distances short of its target's
+## centre, as shares of the leap's reach (the nearest tried first).
 const FIXTURE_WATCH_S := 4.0
-const FIXTURE_MAX_N := 600
+const FIXTURE_SHARES: Array[float] = [0.3, 0.4, 0.5, 0.6, 0.7]
 
 
 ## The reptilian at `levels`, as Rampage builds it, standing at (0, 30) facing north, on `layout`
@@ -86,21 +86,15 @@ func _tank(sim: RampageSim, id: int, at: Vector2) -> RampageSim.Tank:
 	return tank
 
 
-## The croc walks north into the seeded city FIXTURE_LEAD_S and on until a roof it can land on is
-## ahead (at most FIXTURE_MAX_N steps), then (with `leap`) presses the button,
-## and is watched FIXTURE_WATCH_S with the stick held north.
+## In the seeded city the croc stands facing north short of the first roof it can land on with a
+## clear take-off (_city_start), then (with `leap`) presses the button, and is watched
+## FIXTURE_WATCH_S with the stick held north.
 func _run_city(leap: bool) -> Dictionary:
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
 	var sim := _croc({}, layout)
-	sim.kaiju_pos = Vector2(0.0, CityGen.half_extent(sim.city))
 	var north := Vector2(0, -1)
-	for _n: int in roundi(FIXTURE_LEAD_S / DT):
-		sim.step(DT, north, false, 0)
-	var more := 0  # walks on until a roof it can land on is ahead (a tower is _check_tower_wall's,
-	# a tall one's side _check_tall_side's) and its body stands clear of every building
-	while not _clear_roof_ahead(sim, north) and more < FIXTURE_MAX_N:
-		sim.step(DT, north, false, 0)
-		more += 1
+	var start := _city_start(sim, north)
+	sim.kaiju_pos = start
 	sim.step(DT, north, false, BUTTON if leap else 0)
 	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
 	for _n: int in roundi(FIXTURE_WATCH_S / DT):
@@ -118,7 +112,7 @@ func _run_city(leap: bool) -> Dictionary:
 		"chunks": sim.chunks_destroyed,
 		"rubble": snappedf(sim.rubble, 0.001),
 		"at": sim.kaiju_pos.snapped(Vector2(0.001, 0.001)),
-		"walked_on": more,
+		"start": start,
 	}
 
 
@@ -142,6 +136,26 @@ func _watch_leap(sim: RampageSim, b: RampageSim.Building) -> Dictionary:
 		if land.is_empty():
 			out["land"] = _first(events, "leap_land")
 	return out
+
+
+## The first take-off (building order, then FIXTURE_SHARES) short of a building in the arena,
+## along `dir`, from which the leap aims at that building's roof and the take-off is clear
+## (_clear_roof_ahead); where the croc stands if there is none.
+func _city_start(sim: RampageSim, dir: Vector2) -> Vector2:
+	var home := sim.kaiju_pos
+	var reach := Num.f(_stage(sim)["reach"]) * sim.body_scale()
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		for share: float in FIXTURE_SHARES:
+			var at := Vector2(b.x, b.z) - dir * (sim.body.feet_ahead() + share * reach)
+			if not b.in_arena or sim.clamp_to_arena(at) != at:
+				continue
+			sim.kaiju_pos = at
+			var aim := sim.body.dash.aim_at(at, dir)
+			if Num.i(aim["building"]) == i and _clear_roof_ahead(sim, dir):
+				return at
+	sim.kaiju_pos = home
+	return home
 
 
 ## True when a roof the croc can land on (D-361: at its shoulder or lower) is ahead along `dir`
