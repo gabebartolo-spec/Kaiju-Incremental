@@ -13,8 +13,9 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	await _t("_check_stream_view")
+	for stage: int in StreamView.STAGES:
+		await _t("_check_stream_view", [stage])
 
 
-func _check_stream_view() -> void:
-	await StreamView.new(check, root).run()
+func _check_stream_view(stage: int) -> void:
+	await StreamView.new(check, root).run(stage)
