@@ -327,8 +327,9 @@ func _check_turn_rate() -> void:
 	var times := {}
 	for stage: String in STAGES:
 		var pair: Array[float] = []
+		var levels: Dictionary = STAGES[stage]
 		for full: bool in [true, false]:
-			var sim := _runner(STAGES[stage], [])
+			var sim := _runner(levels, [])
 			var titan := sim.powers.run.titan
 			sim.powers.run.titan = {}
 			_walk(sim, FULL_BY_S, NORTH)  # the same walk-up for both, with no run

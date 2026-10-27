@@ -46,7 +46,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = sim.powers_cfg
 	_rng = rng
-	run = Momentum.new(sim, cfg["momentum"])
+	var run_cfg: Dictionary = cfg["momentum"]
+	run = Momentum.new(sim, run_cfg)
 	tentacles = Tentacles.new(sim, rng)
 	swipe = ClawSwipe.new(sim, cfg)
 	var fire_cfg: Dictionary = cfg["fire"]
