@@ -53,15 +53,22 @@ func _feed(city: CityView, events: Array[Dictionary]) -> Array[Dictionary]:
 		match str(e["type"]):
 			"cells_promoted", "cells_carved", "fall_start":
 				city.on_cells(e)
-				var f: Dictionary = city._falling.get(Num.i(e.get("id", -1)), {})
-				if str(e["type"]) == "fall_start" and f["node"].has_meta("since"):
-					fine.append({"node": f["node"], "index": e["index"], "mats": e["mats"]})
+				if str(e["type"]) == "fall_start":
+					_note_fine(city, e, fine)
 			"chunks_broken":
 				var cells: Array[Vector3i] = e["cells"]
 				city.chunks_broken(Num.i(e["building"]), cells, at)
 			"fall_land":
 				city.fall_land(e)
 	return fine
+
+
+## A fall the fine view draws (its node is CityCarve's, not a lifted chunk piece).
+func _note_fine(city: CityView, e: Dictionary, fine: Array[Dictionary]) -> void:
+	var f: Dictionary = city._falling[Num.i(e["id"])]
+	var node: Node3D = f["node"]
+	if node.has_meta("since"):
+		fine.append({"node": node, "index": e["index"], "mats": e["mats"]})
 
 
 ## One sim step with the kaiju standing at `at`, fed to the city, then one drawn frame.
@@ -75,7 +82,7 @@ func _step(city: CityView, at: Vector2, w: Dictionary) -> void:
 
 ## This frame's invariants (w: the tallies).
 func _watch(city: CityView, w: Dictionary) -> void:
-	var site: Variant = city.carve._sites.get(0, null)
+	var site: CityCarve.Site = city.carve._sites.get(0, null)
 	if site == null or site.cv == null:
 		return
 	var view: BuildingView = site.view
@@ -88,9 +95,12 @@ func _watch(city: CityView, w: Dictionary) -> void:
 		w["early"] += 1  # switched while a carve was still to draw
 	w["was_fine"] = view.fine
 	for h: Dictionary in site.held:
-		if is_instance_valid(h["node"]) and (h["node"] as Node3D).visible:
+		if not is_instance_valid(h["node"]):
+			continue
+		var node: Node3D = h["node"]
+		if node.visible:
 			w["ghost"] += 1  # shown while its cells still stand
-		elif is_instance_valid(h["node"]) and Num.i(h["upto"]) <= cv.drawn_carves:
+		elif Num.i(h["upto"]) <= cv.drawn_carves:
 			w["gap"] += 1  # its cells are gone and it is not shown
 	for p: Dictionary in w["pieces"]:
 		_watch_piece(site.mesher, p, w)
@@ -99,13 +109,13 @@ func _watch(city: CityView, w: Dictionary) -> void:
 ## A piece on screen is drawn; the first frame its own view is drawn, it is checked against its
 ## fall's cells.
 func _watch_piece(m: CellMesher, p: Dictionary, w: Dictionary) -> void:
-	var node: Variant = p["node"]
-	if not is_instance_valid(node) or p.has("checked"):
+	if not is_instance_valid(p["node"]) or p.has("checked"):
 		return
+	var node: Node3D = p["node"]
 	var own: CellView = null
-	for child: Node in (node as Node3D).get_children():
+	for child: Node in node.get_children():
 		own = child as CellView if child is CellView else own
-	if (node as Node3D).visible and (own == null or not own.is_drawn):
+	if node.visible and (own == null or not own.is_drawn):
 		w["blank"] += 1
 	if own == null or not own.is_drawn:
 		return
@@ -168,7 +178,7 @@ func _cut_base(city: CityView, w: Dictionary) -> void:
 
 ## Whether the fine view has drawn everything the sim did and nothing still falls.
 func _all_down(city: CityView) -> bool:
-	var site: Variant = city.carve._sites.get(0, null)
+	var site: CityCarve.Site = city.carve._sites.get(0, null)
 	return (
 		city._falling.is_empty()
 		and site != null
@@ -211,11 +221,12 @@ func _check_rampage_draws_the_grid() -> void:
 			% [w["ghost"], w["gap"], w["blank"]]
 		)
 	)
+	var pieces: Array = w["pieces"]
 	check(
-		w["checked"] == w["pieces"].size() and w["most"] > 1000 and w["piece_off"] == 0,
+		w["checked"] == pieces.size() and w["most"] > 1000 and w["piece_off"] == 0,
 		(
 			"every falling piece held exactly its fall's cells (%d of %d, largest %d, %d off)"
-			% [w["checked"], w["pieces"].size(), w["most"], w["piece_off"]]
+			% [w["checked"], pieces.size(), w["most"], w["piece_off"]]
 		)
 	)
 	_check_standing(city)
@@ -225,7 +236,7 @@ func _check_rampage_draws_the_grid() -> void:
 
 ## The standing view shows exactly the sim's grid now.
 func _check_standing(city: CityView) -> void:
-	var site: Variant = city.carve._sites[0]
+	var site: CityCarve.Site = city.carve._sites[0]
 	var m: CellMesher = site.mesher
 	var cv: CellView = site.cv
 	var want := m.drawn(city.sim.carving.frame(0).cells)

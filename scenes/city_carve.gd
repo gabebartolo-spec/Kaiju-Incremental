@@ -52,12 +52,15 @@ func piece(event: Dictionary) -> Node3D:
 	var site := _site(Num.i(event["building"]))
 	if site == null:
 		return null
-	var op := {"index": event["index"], "mats": event["mats"]}
+	var index: PackedInt32Array = event["index"]
+	var op := {"index": index, "mats": event["mats"]}
 	site.ops.append(op)
-	if site.foreign or not site.view.fine or (event["index"] as PackedInt32Array).is_empty():
+	if site.foreign or not site.view.fine or index.is_empty():
 		return null
-	op["node"] = _hidden_piece(event["pivot"])
-	return op["node"]
+	var pivot: Vector3 = event["pivot"]
+	var node := _hidden_piece(pivot)
+	op["node"] = node
+	return node
 
 
 ## The body tears off what this frame's blow carved from `view` (BodyBite): a node pivoting at
@@ -69,8 +72,9 @@ func bite(view: BuildingView, mid: Vector3) -> Node3D:
 	var op: Dictionary = site.ops[-1]
 	if not op.has("cut") or op.has("node"):
 		return null
-	op["node"] = _hidden_piece(mid)
-	return op["node"]
+	var node := _hidden_piece(mid)
+	op["node"] = node
+	return node
 
 
 ## Building n regrew (Endless): its fine view goes with its old view; a new promotion starts over.
@@ -160,8 +164,11 @@ func _send(site: Site) -> void:
 	var job := CarveJob.new()
 	for op: Dictionary in site.ops:
 		job.ops.append({"index": op["index"], "mats": op["mats"], "piece": op.has("node")})
-		if op.has("node"):
-			job.nodes.append(op["node"])
+		if op.has("node"):  # a piece that landed already holds a null place (shown as unseen)
+			var node: Node3D = null
+			if is_instance_valid(op["node"]):
+				node = op["node"]
+			job.nodes.append(node)
 	if site.mesher == null:
 		var f := _sim.carving.frame(site.n)
 		if f == null:
@@ -204,7 +211,10 @@ func _take(site: Site, job: CarveJob) -> void:
 		return
 	var views: Array[CellView] = []
 	for k: int in job.pieces.size():
-		views.append(_dress_piece(site, job.nodes[k], job.pieces[k]))
+		var view: CellView = null
+		if is_instance_valid(job.nodes[k]):  # not landed while the job ran
+			view = _dress_piece(site, job.nodes[k], job.pieces[k])
+		views.append(view)
 	if job.lo.x > job.hi.x:
 		return
 	var upto := site.cv.carved(site.grid, job.lo, job.hi)
@@ -215,17 +225,20 @@ func _take(site: Site, job: CarveJob) -> void:
 ## A piece's own view under its node (meshes in world space, the node at the pivot), its debris
 ## samples and its box at rest (FallFade).
 func _dress_piece(site: Site, node: Node3D, made: Dictionary) -> CellView:
-	if not is_instance_valid(node):
-		return null
 	var parts: Array = node.get_meta("parts")
-	parts.append_array(made["parts"])
+	var samples: Array = made["parts"]
+	parts.append_array(samples)
 	node.set_meta("box", made["box"])
-	var regions := site.mesher.regions_touching(made["lo"], made["hi"])
-	var view := CellView.new(site.mesher, made["cells"], site.view.cells_material(), regions)
+	var lo: Vector3i = made["lo"]
+	var hi: Vector3i = made["hi"]
+	var cells: PackedByteArray = made["cells"]
+	var regions := site.mesher.regions_touching(lo, hi)
+	var view := CellView.new(site.mesher, cells, site.view.cells_material(), regions)
 	view.upload_usec = _upload_usec
 	view.keep_arrays = keep_arrays
 	view.process_priority = -1  # first at the shared budget: a fall waits on it
-	view.position = -(node.get_meta("pivot") as Vector3)
+	var pivot: Vector3 = node.get_meta("pivot")
+	view.position = -pivot
 	node.add_child(view)
 	return view
 
@@ -234,8 +247,10 @@ func _dress_piece(site: Site, node: Node3D, made: Dictionary) -> CellView:
 ## (or gone: a piece that landed unseen holds nothing back).
 func _may_draw(upto: int, site: Site) -> bool:
 	for h: Dictionary in site.held:
-		var view: Variant = h["view"]
-		if Num.i(h["upto"]) <= upto and is_instance_valid(view) and not (view as CellView).is_drawn:
+		if Num.i(h["upto"]) > upto or not is_instance_valid(h["view"]):
+			continue
+		var view: CellView = h["view"]
+		if not view.is_drawn:
 			return false
 	return true
 
@@ -249,11 +264,10 @@ func _on_batch(upto: int, site: Site) -> void:
 
 
 func _show(h: Dictionary) -> void:
-	var node: Variant = h["node"]
-	if not is_instance_valid(node):
+	if not is_instance_valid(h["node"]):
 		unseen += 1
 		return
-	var piece_node := node as Node3D
+	var piece_node: Node3D = h["node"]
 	piece_node.visible = true
 	shown += 1
 	worst_wait = maxi(worst_wait, Engine.get_process_frames() - Num.i(piece_node.get_meta("since")))

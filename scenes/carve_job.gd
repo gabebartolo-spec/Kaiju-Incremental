@@ -41,7 +41,8 @@ func run() -> void:
 		var index: PackedInt32Array = op["index"]
 		var box := _take(index)
 		if op["piece"]:
-			pieces.append(_piece(index, op["mats"], box))
+			var mats: PackedByteArray = op["mats"]
+			pieces.append(_piece(index, mats, box))
 
 
 func _first() -> void:

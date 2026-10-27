@@ -202,7 +202,8 @@ func _upload(budget: int, force: bool) -> void:
 
 ## Block k's mesh, and a hidden part for it when it has none yet (made now so the swap is cheap).
 func _make(k: int) -> void:
-	var mesh := CellMesher.to_mesh(_results[k])
+	var arrays: Array = _results[k]
+	var mesh := CellMesher.to_mesh(arrays)
 	_made[k] = mesh
 	if mesh != null and not parts.has(_batch[k]):
 		var part := MeshInstance3D.new()
