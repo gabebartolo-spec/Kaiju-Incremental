@@ -5,12 +5,15 @@ render_mode cull_disabled;
 // chunk (UV2.x) and a per-voxel hash (UV2.y). The `alive` texture holds one texel per chunk:
 // 1 standing, 0 gone (its faces collapse to nothing), in between = bitten (that share of the
 // chunk's voxels gone), so breaking the building never rebuilds the mesh. Colour is sRGB; its
-// alpha is the glow flag (0 = glows at `glow`), as in voxel.gdshader. Only outward faces are
+// alpha is the glow flag (0 = glows at `glow`; a lit window's 1/255 glows too and takes its
+// colour and brightness from the window palette), as in voxel.gdshader. Only outward faces are
 // baked, so through a hole you see the backs of the walls: they draw as the dark inside
 // (`inside` of their colour; a landmark's cut faces draw near their own colour instead).
 // Outward faces take the baked voxel AO and their material's finish (building_common).
 
 #include "res://scenes/building_common.gdshaderinc"
+
+#include "res://scenes/window_palette.gdshaderinc"
 
 uniform sampler2D alive : filter_nearest;
 uniform float glow = 0.0;
@@ -22,11 +25,16 @@ uniform float opacity = 1.0;
 const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
 const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
+// Half a voxel inside the face, in model space: the window's cell, the same in the baked shell,
+// the cell grid and a falling piece.
+varying vec3 v_window;
+
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
 }
 
 void vertex() {
+	v_window = VERTEX - NORMAL * (window_voxel * 0.5);
 	float state = texelFetch(alive, ivec2(int(UV2.x + 0.5), 0), 0).r;
 	if (state < 0.02 || UV2.y < 1.0 - state) {
 		VERTEX = vec3(0.0);
@@ -43,8 +51,17 @@ void fragment() {
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
 	ROUGHNESS = roughness_value;
 	if (FRONT_FACING) {
+		float lit = 1.0 - COLOR.a;
+		if (window_tagged(COLOR.a)) {
+			lit = 1.0;
+			if (window_palette_on) {
+				vec4 w = window_pick(window_hash(v_window));
+				albedo = w.rgb;
+				lit = w.a;
+			}
+		}
 		ALBEDO = albedo;
-		EMISSION = albedo * glow * (1.0 - COLOR.a);
+		EMISSION = albedo * glow * lit;
 		AO = voxel_ao(UV);
 		AO_LIGHT_AFFECT = ao_light_affect;
 		if (finish_on) {
