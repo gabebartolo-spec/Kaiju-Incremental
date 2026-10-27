@@ -97,7 +97,10 @@ func digest() -> String:
 	return ctx.finish().hex_encode()
 
 
-## Frees the city and puts the player's graphics counts back.
+## Frees the city and puts the player's graphics counts back. The sim and its parts count each
+## other, so a dropped sim is never freed (SimTeardown, D-179): the game's owners dispose it
+## (scenes/rampage.gd, title_backdrop.gd), and so does this one, or every replay leaks its city.
 func finish() -> void:
 	_holder.free()
+	sim.dispose()
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())
