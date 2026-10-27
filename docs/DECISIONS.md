@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-28 · D-359 · Director · The demo plays at dusk only
+His question: "would it be faster if we focused on just one time of day for the demo". Told that it is (each new look
+is tuned and shown once, not four times; sim, animation and perf work are unchanged), and quoted his 10-22 ruling
+("the time of day will be randomised each run"), he answered "dusk only" (not the recommended night only, not all four,
+not night and dusk). For the demo every rampage plays at dusk, the options time toggle is hidden while only one time
+can play, and every capture and clip for him shows dusk. D-145's random time (never the same twice) and the toggle
+return after the demo; night, morning and noon looks stay in data, untouched (D-279, D-285, D-328 still hold for night).
+
 ## 2026-10-28 · D-358 · Director · Hatchlings: at Apex Titan, one purple-crackling egg spewed from the maw per rampage
 His words: "roadmap: "Hatchlings" / each of our kaiju should be able to lay eggs (or im actually leaning toward they
 spew the eggs out) / late game power where you can spawn an autonomous baby version of your kaiju that rampages the
@@ -388,12 +396,3 @@ His words, seeing the governor's heli ghost over a tower: "the governers heli so
 
 ## 2026-10-27 · D-289 · Director · The facade jump on the first carve is fixed in the next free slot
 His words (watching runs): "when a building gets carved anywhere, its whole facade changes texture, so even if you carve the bottom of a tower, the top of the tower is changing appearance too". Asked: "Next free slot": a Sonnet builder (briefs/brief-facade-carve.md) takes the next builder slot that frees, ahead of the remaining render-plan items; pass bar: the untouched part of a carved building does not change (upper-half pixel diff mean <= 1/255, p99 <= 4/255), a headless check that fails on main first, one clip to him. Not chosen: a 7th builder now; after the render plan.
-
-## 2026-10-27 · D-288 · Director · Death Blast upgrades: Overload, Meltdown, Supernova at 2,540 / 8,128 / 17,780
-Asked (PR #240, agent-added values): "Keep them" for the names Overload / Meltdown / Supernova and their card text ("Go out with a bang: when you fall, you take the street with you" / "A bigger bang: your last breath flattens the block" / "The biggest bang: nothing near you outlives you"); "Keep" for costs 2,540 / 8,128 / 17,780 biomass (the steps of Signature Recharge levels 1 and 3 and Crushing Weight's top level). Not chosen: his own names; costs x2 or x0.5. The death look waits for the clip.
-
-## 2026-10-27 · D-287 · Director · Six builders tonight: P2b and P2c start now
-His words: "speed up our work, make sure our pc is able to manage the workload". Shown: 17 of 31 GB RAM free, CPU 34% of 16 threads, GPU idle. Asked: "Yes, 6 builders": render plan P2b (crowds, item 7) and P2c (pooled effects, item 8) start as builders 5 and 6 beside death overload and army balance; back to 4 on any PC freeze (replaces D-278's 4). Timing benches still run with no other Godot, in bench windows (C:/kt/BENCH_WINDOW* flag files builders respect). Not chosen: keep 4.
-
-## 2026-10-27 · D-286 · Director · The freeze fix merges at its speed check; the soak checks it after
-His words: "i dont want to wait til 7am if possbile". Asked: "Merge at speed check": PR #254 merges once its p95 speed check passes (fix within 5% of main) and CI is green, instead of after the D-282 soak. The soak keeps running (fix runs 1-10 run 40331611227, 11-20 run 40342907172 on soak/fix-b; main run 40331600221 until one freeze); any fix run that freezes means #254 is reverted at once. D-282's pass bar (main >=1 freeze, fix 20/20 clean) is unchanged, only the merge comes first. Not chosen: wait for the soak (~04:20 at the earliest).

@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-288 · Director · Death Blast upgrades: Overload, Meltdown, Supernova at 2,540 / 8,128 / 17,780
+Asked (PR #240, agent-added values): "Keep them" for the names Overload / Meltdown / Supernova and their card text ("Go out with a bang: when you fall, you take the street with you" / "A bigger bang: your last breath flattens the block" / "The biggest bang: nothing near you outlives you"); "Keep" for costs 2,540 / 8,128 / 17,780 biomass (the steps of Signature Recharge levels 1 and 3 and Crushing Weight's top level). Not chosen: his own names; costs x2 or x0.5. The death look waits for the clip.
+
+## 2026-10-27 · D-287 · Director · Six builders tonight: P2b and P2c start now
+His words: "speed up our work, make sure our pc is able to manage the workload". Shown: 17 of 31 GB RAM free, CPU 34% of 16 threads, GPU idle. Asked: "Yes, 6 builders": render plan P2b (crowds, item 7) and P2c (pooled effects, item 8) start as builders 5 and 6 beside death overload and army balance; back to 4 on any PC freeze (replaces D-278's 4). Timing benches still run with no other Godot, in bench windows (C:/kt/BENCH_WINDOW* flag files builders respect). Not chosen: keep 4.
+
+## 2026-10-27 · D-286 · Director · The freeze fix merges at its speed check; the soak checks it after
+His words: "i dont want to wait til 7am if possbile". Asked: "Merge at speed check": PR #254 merges once its p95 speed check passes (fix within 5% of main) and CI is green, instead of after the D-282 soak. The soak keeps running (fix runs 1-10 run 40331611227, 11-20 run 40342907172 on soak/fix-b; main run 40331600221 until one freeze); any fix run that freezes means #254 is reverted at once. D-282's pass bar (main >=1 freeze, fix 20/20 clean) is unchanged, only the merge comes first. Not chosen: wait for the soak (~04:20 at the earliest).
+
 ## 2026-10-27 · D-285 · Director · New colour grading and both clean-ups ship (render items 3 and 4)
 Shown 20 labelled 4K stills of the real game (item 4: night, dusk, morning and noon, current vs new; item 3: night fog, night lamps and dusk sky, each off/deband/sharp/both). Asked: "should the new colour grading ship?" -> "New grading" (AgX 1.6, post contrast 1.0, night tone split; night pure-black area 9.9% -> 0.2%, mid-tones within ~1%). "which clean-up should ship?" -> "Both" (debanding + FSR sharpening). All on by default in #257 with D-279's night fog. Not chosen: keep current; deband only; sharpen only; off.
 
