@@ -96,8 +96,9 @@ func _run_city(leap: bool) -> Dictionary:
 	var north := Vector2(0, -1)
 	for _n: int in roundi(FIXTURE_LEAD_S / DT):
 		sim.step(DT, north, false, 0)
-	var more := 0  # walks on until a roof it can land on is ahead (a tower is _check_tower_wall's)
-	while Num.f(sim.body.dash.aim_at(sim.kaiju_pos, north)["roof"]) <= 0.0 and more < FIXTURE_MAX_N:
+	var more := 0  # walks on until a roof it can land on is ahead (a tower is _check_tower_wall's,
+	# a tall one's side _check_tall_side's) and its body stands clear of every building
+	while not _clear_roof_ahead(sim, north) and more < FIXTURE_MAX_N:
 		sim.step(DT, north, false, 0)
 		more += 1
 	sim.step(DT, north, false, BUTTON if leap else 0)
@@ -117,7 +118,38 @@ func _run_city(leap: bool) -> Dictionary:
 		"chunks": sim.chunks_destroyed,
 		"rubble": snappedf(sim.rubble, 0.001),
 		"at": sim.kaiju_pos.snapped(Vector2(0.001, 0.001)),
+		"walked_on": more,
 	}
+
+
+## Steps a pressed leap at building `b` to its end: its highest lift ("apex"), the chunks of `b`
+## broken while the body is still in the air ("flown"), those below its roof ("side"), and the
+## landing event ("land", empty if none).
+func _watch_leap(sim: RampageSim, b: RampageSim.Building) -> Dictionary:
+	var out := {"apex": 0.0, "flown": 0, "side": 0, "land": {}}
+	for _n: int in roundi(5.0 / DT):
+		if not sim.body.dash.on():
+			break
+		var was := b.frame.alive_count
+		var roof_was := _roof_cells(b)
+		var events := sim.step(DT, Vector2.ZERO, false, 0)
+		out["apex"] = maxf(Num.f(out["apex"]), sim.body.dash.height())
+		var land: Dictionary = out["land"]
+		if land.is_empty() and sim.body.dash.phase() == "flight":
+			var lost := was - b.frame.alive_count
+			out["flown"] = Num.i(out["flown"]) + lost
+			out["side"] = Num.i(out["side"]) + lost - (roof_was - _roof_cells(b))
+		if land.is_empty():
+			out["land"] = _first(events, "leap_land")
+	return out
+
+
+## True when a roof the croc can land on (D-361: at its shoulder or lower) is ahead along `dir`
+## and its body overlaps no standing building (a leap from among them carves them, D-268).
+func _clear_roof_ahead(sim: RampageSim, dir: Vector2) -> bool:
+	if Num.f(sim.body.dash.aim_at(sim.kaiju_pos, dir)["roof"]) <= 0.0:
+		return false
+	return sim.body.inside(sim.kaiju_pos, sim.body.heading).is_empty()
 
 
 ## The drawn model's shoulder as a share of its height at the sim's growth stage: the shoulder

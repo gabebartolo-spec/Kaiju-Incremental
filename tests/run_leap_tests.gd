@@ -153,8 +153,8 @@ func _check_low_roof() -> void:
 
 ## D-361 ("Tall ones: hit the side"): at every growth stage a target taller than his shoulder
 ## takes the leap in its side: the arc never rises over it or comes down on its roof, the body
-## carves into its side in flight (its roof stands), and the feet come
-## down on the street at its foot, where the landing's smash and ring hit it.
+## carves into its side in flight (below its roof; a carved tower may then come down, Collapse),
+## and the feet come down on the street at its foot, where the landing's smash and ring hit it.
 func _check_tall_side() -> void:
 	for stage: String in STAGES:
 		var levels: Dictionary = STAGES[stage]
@@ -163,23 +163,13 @@ func _check_tall_side() -> void:
 		var tall := _block(_ahead(probe, reach * 0.6), 6, ceili(_shoulder_y(probe) * 2.0))
 		var sim := _croc(levels, [tall])
 		var b := sim.buildings[0]
-		var roof := _roof_cells(b)
 		var before := b.frame.alive_count
 		var leap := _first(sim.step(DT, Vector2.ZERO, false, BUTTON), "leap")
-		var apex := 0.0
-		var flown := 0  # chunks of it broken while the body is still in the air
-		var roof_left := 0
-		var land := {}
-		for _n: int in roundi(5.0 / DT):
-			if not sim.body.dash.on():
-				break
-			var was := b.frame.alive_count
-			var events := sim.step(DT, Vector2.ZERO, false, 0)
-			apex = maxf(apex, sim.body.dash.height())
-			if land.is_empty() and sim.body.dash.phase() == "flight":
-				flown += was - b.frame.alive_count
-				roof_left = _roof_cells(b)
-			land = _first(events, "leap_land") if land.is_empty() else land
+		var watched := _watch_leap(sim, b)
+		var apex := Num.f(watched["apex"])
+		var flown := Num.i(watched["flown"])
+		var side := Num.i(watched["side"])
+		var land: Dictionary = watched["land"]
 		var at: Vector2 = land.get("at", Vector2.INF)
 		var step := Num.f(sim.body.dash.cfg["landing_step"])
 		check(
@@ -195,10 +185,10 @@ func _check_tall_side() -> void:
 			)
 		)
 		check(
-			flown > 0 and roof_left == roof,
+			side > 0,
 			(
-				"%s: the body carves its side in flight (%d chunks), its roof stands (%d of %d)"
-				% [stage, flown, roof_left, roof]
+				"%s: the body carves its side in flight (%d chunks, %d below its roof)"
+				% [stage, flown, side]
 			)
 		)
 		check(
@@ -209,10 +199,14 @@ func _check_tall_side() -> void:
 			)
 		)
 		check(
-			b.frame.alive_count < before - flown,
 			(
-				"%s: the landing's smash breaks more of it (%d of %d left)"
-				% [stage, b.frame.alive_count, before]
+				Num.i(land.get("building", -2)) == 0
+				and _gap(b, at) < Num.f(land.get("radius", 0.0))
+				and (b.frame.alive_count < before - flown or b.frame.alive_count == 0)
+			),
+			(
+				"%s: the landing's smash and ring hit it (ring %.2f, %d of %d left)"
+				% [stage, Num.f(land.get("radius", 0.0)), b.frame.alive_count, before]
 			)
 		)
 
