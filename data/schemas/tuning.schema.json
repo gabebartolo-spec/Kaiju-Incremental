@@ -1787,6 +1787,7 @@
         "fog_scale": {"$ref": "#/$defs/num"},
         "load_chunks": {"$ref": "#/$defs/num"},
         "stream_chunks": {"$ref": "#/$defs/num"},
+        "stand_in_fade_s": {"$ref": "#/$defs/num"},
         "stream_view": {
           "type": "object",
           "properties": {
@@ -2002,7 +2003,7 @@
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
         "outer_half", "outer_cores", "coast_z", "bay_width", "far_haze", "far_tower_cap",
-        "fog_scale", "load_chunks", "stream_chunks", "stream_view", "markings_beyond",
+        "fog_scale", "load_chunks", "stream_chunks", "stand_in_fade_s", "stream_view", "markings_beyond",
         "zebra_junctions", "landmarks", "coverage_cell", "view_beyond", "parked_chance",
         "parked_chance_beyond", "parked_gap", "lane_stop_chance", "diagonal_parked_lane",
         "river_quay", "traffic_island", "car_colors", "street_tree_gap", "street_tree_clear",
@@ -4147,11 +4148,12 @@
                       "ring": {"$ref": "#/$defs/num"},
                       "damage": {"$ref": "#/$defs/num"},
                       "fling": {"$ref": "#/$defs/num"},
-                      "cooldown": {"$ref": "#/$defs/num"}
+                      "cooldown": {"$ref": "#/$defs/num"},
+                      "shoulder": {"$ref": "#/$defs/num"}
                     },
                     "required": [
                       "reach", "min_reach", "crouch_s", "flight_s", "settle_s", "recover_s",
-                      "clear", "ring", "damage", "fling", "cooldown"
+                      "clear", "ring", "damage", "fling", "cooldown", "shoulder"
                     ],
                     "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                     "additionalProperties": false
