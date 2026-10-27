@@ -32,7 +32,7 @@ static func sheet(rect: Rect2, y: float, deep: Color, bay: bool, seed: int) -> M
 	var mi := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = rect.size
-	plane.material = material(rect, deep, bay, seed) if on() else _gloss(deep)
+	plane.material = material(rect, deep, bay, seed) if on() else gloss(deep)
 	mi.mesh = plane
 	var mid := rect.get_center()
 	mi.position = Vector3(mid.x, y, mid.y)
@@ -68,8 +68,8 @@ static func material(rect: Rect2, deep: Color, bay: bool, seed: int) -> ShaderMa
 	return mat
 
 
-## The glossy sheet the surface replaced (tuning water.on false).
-static func _gloss(color: Color) -> StandardMaterial3D:
+## The glossy sheet the surface replaced (tuning water.on false; capture_river --off).
+static func gloss(color: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.roughness = GLOSS_ROUGHNESS

@@ -9,6 +9,8 @@ extends SceneTree
 ##   --time=dusk|night|morning|noon   --graphics=potato|low|medium|high|max (default medium)
 ##   --stills=1.5,3 (seconds after the rise starts) --out=<dir> --label=<name>: PNG stills
 ##   --mask  with each still, <label>_tNN_mask.png: the water sheets alone, white on black
+##   --off   with each still, <label>_tNN_off.png: the same frame with the glossy sheet the
+##           surface replaced (WaterSurface.gloss), so a measurement compares like with like
 ##   --tune=section.key=value  (a tuning.json number)   --calm  (no camera shake or dip)
 ## The rise waits for the city to finish streaming in (the sim held, as capture_one_look), and
 ## prints "river: rise starts at drawn frame N" so a clip can be trimmed from there.
@@ -24,6 +26,7 @@ var _stills: Array[float] = []
 var _out := "user://river"
 var _label := "river"
 var _mask := false
+var _off := false
 
 
 func _initialize() -> void:
@@ -47,6 +50,8 @@ func _initialize() -> void:
 			_label = arg.substr(8)
 		elif arg == "--mask":
 			_mask = true
+		elif arg == "--off":
+			_off = true
 		elif arg == "--calm":
 			PlayerSettings.camera_motion = 0.0
 		elif arg.begins_with("--tune="):
@@ -137,12 +142,14 @@ func _still(rampage: Rampage, at: float) -> void:
 	)
 	if _mask:
 		await _save_mask(rampage, name + "_mask.png")
+	if _off:
+		await _save_off(rampage, name + "_off.png")
 	rampage.set_physics_process(true)
 
 
 ## The water sheets alone (WaterSurface.GROUP) in flat white, everything else that can hide
-## them flat black, no sky, fog, glow, far blur, particles or full-screen pass, so a measurement
-## knows which pixels are water. Restores everything after.
+## them flat black, no sky, fog, glow, far blur, particles, full-screen pass or HUD, so a
+## measurement knows which pixels are water. Restores everything after.
 func _save_mask(rampage: Rampage, path: String) -> void:
 	var white := _flat(Color.WHITE)
 	var black := _flat(Color.BLACK)
@@ -153,6 +160,11 @@ func _save_mask(rampage: Rampage, path: String) -> void:
 		geo.material_override = white if geo.is_in_group(WaterSurface.GROUP) else black
 		geo.visible = geo.visible and not (geo is GPUParticles3D or geo is CPUParticles3D)
 		geo.visible = geo.visible and not _full_screen(geo)
+	var layers: Dictionary = {}  # the HUD and any other 2D layer
+	for node: Node in root.find_children("*", "CanvasLayer", true, false):
+		var layer := node as CanvasLayer
+		layers[layer] = layer.visible
+		layer.visible = false
 	var plain := Environment.new()
 	plain.background_mode = Environment.BG_COLOR
 	plain.background_color = Color.BLACK
@@ -172,6 +184,8 @@ func _save_mask(rampage: Rampage, path: String) -> void:
 	for geo: GeometryInstance3D in kept:
 		geo.material_override = kept[geo][0]
 		geo.visible = kept[geo][1]
+	for layer: CanvasLayer in layers:
+		layer.visible = layers[layer]
 	for we: WorldEnvironment in worlds:
 		we.environment = worlds[we][0]
 		we.camera_attributes = worlds[we][1]
@@ -180,6 +194,29 @@ func _save_mask(rampage: Rampage, path: String) -> void:
 	for _i: int in 2:
 		await process_frame
 	print("river: mask %s" % path)
+
+
+## The same frame with every water sheet back on the glossy material it replaced.
+func _save_off(rampage: Rampage, path: String) -> void:
+	var kept: Dictionary = {}
+	for node: Node in rampage.find_children("*", "MeshInstance3D", true, false):
+		var plane := (node as MeshInstance3D).mesh as PlaneMesh
+		if plane == null or not node.is_in_group(WaterSurface.GROUP):
+			continue
+		var mat := plane.material as ShaderMaterial
+		if mat == null:
+			continue
+		var deep: Color = mat.get_shader_parameter("deep_color")
+		kept[plane] = mat
+		plane.material = WaterSurface.gloss(deep)
+	for _i: int in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(path)
+	for plane: PlaneMesh in kept:
+		plane.material = kept[plane]
+	for _i: int in 2:
+		await process_frame
+	print("river: off %s (%d sheets)" % [path, kept.size()])
 
 
 static func _flat(color: Color) -> StandardMaterial3D:
