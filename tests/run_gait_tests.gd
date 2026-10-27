@@ -6,6 +6,8 @@ extends "res://tests/lib/runner.gd"
 ## by a stick a little off it.
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
+const Leaks := preload("res://tests/lib/gait_leaks.gd")
+const Stability := preload("res://tests/lib/gait_stability.gd")
 const DT := 1.0 / 60.0
 ## The growth steps that step their turns (the young croc turns smoothly, D-131).
 const STAGES := {"Behemoth": {"evolve1": 1}, "Colossus": {"evolve1": 1, "evolve2": 1}}
@@ -26,6 +28,8 @@ func run_checks() -> void:
 	await _t("_check_hand_over")
 	await _t("_check_dash")
 	await _t("_check_straight")
+	await _h("Leaks", func() -> void: await Leaks.check(check, root))
+	await _h("Stability", func() -> void: await Stability.check(check, root))
 
 
 ## The reptilian at `levels` on its stage's own tuning, as Rampage builds it, with a far building so
