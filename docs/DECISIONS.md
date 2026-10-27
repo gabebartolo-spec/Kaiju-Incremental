@@ -12,9 +12,10 @@ card's own timer, renting cloud GPUs (no spend), a spare bench PC. Start time "[
 
 ## 2026-10-27 · D-350 · Director · The camera bubble comes forward
 Asked about the dot fade still on main: "Bring the bubble forward". #238 resumes now, ahead of D-283's "after the
-render plan" timing and its place in D-310's order. It carries D-283's rework (only the 0-3 standing buildings on the
-camera-kaiju line are cut; pieces, rubble and vehicles never, D-326; shadows kept) and removes the floating biomass
-numbers (D-284).
+render plan" timing and its place in D-310's order. Which buildings (22:50, replaces D-283's agent wording "between
+camera and kaiju"): "its the ones that the camera itself phases through ... foreground buildings which are nowhere near
+the field of destruction"; never "inside buildings adjacent to the kaiju". A sphere around the camera only; zero cuts in
+the kaiju's destruction field; pieces, rubble and vehicles never (D-326); shadows kept. Removes the biomass numbers (D-284).
 
 ## 2026-10-27 · D-349 · Director · After the walk-start, the keyer keys the young croc walk
 Asked what the one keyer keys after the walk-start (D-343): "Young croc walk", ahead of the grown croc's run. Order:
