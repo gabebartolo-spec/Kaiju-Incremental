@@ -16,6 +16,9 @@ extends RefCounted
 ## held back too, however near its path: the Colossus's long stride (D-302, ~15 m) left a turn's
 ## lift within GAP_STRAIGHT of it, and its toe, the walk's slow peel off the street played at the
 ## turn's quick cadence, skimmed the ground (smoke turn check 2026-10-27: 3.2 foot-frames a second).
+## A swinging foot runs one frame ahead of its clip spot as it comes down (lead): in a turn the body
+## (D-187's even yaw) carries that spot round, and a foot that met it only as it landed slid
+## the last frame's sweep over the street (smoke turn check 2026-10-28: 1.7 foot-frames a second).
 
 const LAG_SECONDS := 0.25
 const LAG_SWING := 0.85
@@ -33,6 +36,7 @@ var _lift_frame: Array[float] = [0.0, 0.0]  # walk frames played when it lifted
 var _lift_toe: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # its clip spot when it lifted
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # where it stood (world)
 var _straight: Array[float] = [1.0, 1.0]  # 1 lifting into a full step, 0 into a turn's short one
+var _last_clip: Array[Vector3] = [Vector3.INF, Vector3.INF]  # its clip spot last frame (world)
 
 
 func _init(swing_frames: float) -> void:
@@ -46,6 +50,7 @@ func lift(gait: ClipGait, i: int, clip_toe: Vector3, lock: Vector3) -> void:
 	_straight[i] = smoothstep(RATIO_TURN, 1.0, gait.step_ratio)
 	_lift_frame[i] = gait.walk_frames
 	_lift_toe[i] = clip_toe
+	_last_clip[i] = clip_toe
 	_lock[i] = lock
 
 
@@ -59,4 +64,6 @@ func target(gait: ClipGait, i: int, dt: float, clip_toe: Vector3) -> Vector3:
 	var gap := _lock[i] - clip_toe + (clip_toe - _lift_toe[i]) * on_path  # from where it went
 	lag[i] = gap * (1.0 - smoothstep(0.0, 1.0, k))
 	var lift_h := minf(LAG_LIFT * gap.length(), LAG_LIFT_MAX * gait.hip_height * gait.s)
-	return clip_toe + lag[i] + Vector3.UP * lift_h * sin(PI * k)
+	var lead := (clip_toe - _last_clip[i]) * smoothstep(0.0, 1.0, k)  # where the spot is next frame
+	_last_clip[i] = clip_toe
+	return clip_toe + lag[i] + lead + Vector3.UP * lift_h * sin(PI * k)

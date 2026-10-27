@@ -4187,7 +4187,8 @@
                   "step_turn_rate_still": {"$ref": "#/$defs/num"},
                   "uturn_s": {"$ref": "#/$defs/num"},
                   "turn_steps": {"$ref": "#/$defs/num"},
-                  "turn_slow": {"$ref": "#/$defs/num"}
+                  "turn_slow": {"$ref": "#/$defs/num"},
+                  "turn_slow_pow": {"$ref": "#/$defs/num"}
                 },
                 "required": ["snout", "pivot", "stomp_foot", "discs"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

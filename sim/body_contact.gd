@@ -31,8 +31,7 @@ var dash: Dash
 ## right): the sim's step clock, which the legs follow (ClipGait) and which opens the yaw slices.
 var phase := 0.0
 ## How much of a full step's length each step takes now, 0..1: a turn's quick steps are short ones
-## (the legs scale the clip's foot travel by it, so a planted foot is passed at the pace the body
-## walks).
+## (the legs scale the clip's foot travel by it: a planted foot is passed at the body's pace).
 var step_ratio := 1.0
 ## Stomps the sim has made (it counts them): they alternate feet, the left first.
 var stomps := 0
@@ -46,15 +45,14 @@ var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
 var _hold_s := 0.0
 var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
-## The feet at body scale 1: (how far ahead of kaiju_pos a foot comes down in a full step; half the
-## gap between the feet).
+## The feet at body scale 1: (how far ahead of kaiju_pos a foot lands in a full step, half gap).
 var _pivot := Vector2.ZERO
 ## Where a stomp's foot comes down at body scale 1: (ahead of kaiju_pos along the heading, out to
 ## the left foot's side); zero for a body with no entry (its stomp is centred on kaiju_pos).
 var _stomp_foot := Vector2.ZERO
 var _stage: Dictionary = {}  # the stage's own entry in contact.bodies (empty: none)
-## Where the last two feet to land stand in the world (they stay there until they lift): the newest
-## first. The body turns about them.
+## Where the last two feet to land stand in the world until they lift, newest first: the body turns
+## about them.
 var _feet: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var _cadence := 0.0  # steps/s the turn adds to the step clock now (eases up in a turn)
 var _standing := true  # the stick was zero last step: the next step sets off on a footfall
@@ -89,18 +87,17 @@ func use_species(species_id: String) -> void:
 	_stomp_foot = Vector2.ZERO  # a body without an entry stomps at kaiju_pos, never a stale foot
 	_stage = {}
 	if not stages.is_empty():
-		var stage: Dictionary = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
-		_stage = stage
-		_discs = stage["discs"]
+		_stage = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
+		_discs = _stage["discs"]
 		_volume.discs = _discs
-		snout = Num.f(stage["snout"])
-		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
-		_uturn_s = Num.f(stage.get("uturn_s", 0.0))
-		_turn_steps = Num.f(stage.get("turn_steps", 0.0))
-		_turn_slow = Num.f(stage.get("turn_slow", cfg["turn_slow"]))
-		var pivot: Array = stage.get("pivot", [0.0, 0.0])
+		snout = Num.f(_stage["snout"])
+		_step_len = Num.f(_stage.get("step_len", cfg["step_len"]))
+		_uturn_s = Num.f(_stage.get("uturn_s", 0.0))
+		_turn_steps = Num.f(_stage.get("turn_steps", 0.0))
+		_turn_slow = Num.f(_stage.get("turn_slow", cfg["turn_slow"]))
+		var pivot: Array = _stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
-		var foot: Array = stage.get("stomp_foot", [0.0, 0.0])
+		var foot: Array = _stage.get("stomp_foot", [0.0, 0.0])
 		_stomp_foot = Vector2(Num.f(foot[0]), Num.f(foot[1]))
 
 
@@ -127,14 +124,13 @@ func length() -> float:
 ## (director comments #16, "lumbering and unstoppable"): the turn gathers speed at turn_accel up
 ## to turn_rate (turn_rate_still at a standstill; both slower for a bigger body, _rate) and slows
 ## before it lands, never overshooting, while the stride eases down in a hard turn (to turn_slow at
-## an about-face) and back up after.
+## an about-face; a stage's turn_slow_pow under 1 keeps it down until the spin eases) and back up.
 ## A body with planted feet (stepping) makes a real turn in steps instead (director 2026-10-21 #3,
 ## "rather than swivelling on the spot like a plastic toy"), heavy and slow (D-187): a U-turn takes
 ## the stage's uturn_s whatever the pace it set off at, the yaw rate rising and falling over
 ## turn_ramp of it and even between (_turn_peak), so each of the turn_steps takes the same slice
-## (the head leads by turn_left); the body swings about its planted feet. A course correction under
-## smooth_below turns smoothly while walking (D-130, "Small turns smooth"), over the planted foot
-## like any turn: a held curve never drags the feet (D-177).
+## (the head leads by turn_left); the body swings about its planted feet. A turn under smooth_below
+## turns smoothly (D-130), over the planted foot: a held curve never drags the feet (D-177).
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
 	footfall_now = false
@@ -148,7 +144,8 @@ func steer(dt: float, want: Vector2) -> float:
 		_standing = false
 	turn_left = sim.facing.angle_to(want)
 	var stepped := _steps_this_turn()
-	var keep := lerpf(1.0, _turn_slow, absf(turn_left) / PI)
+	var slow_pow := Num.f(_stage.get("turn_slow_pow", 1.0))
+	var keep := lerpf(1.0, _turn_slow, pow(absf(turn_left) / PI, slow_pow if stepped else 1.0))
 	# Sets off at full pace at once, but ramped over walk_off_s, not one frame (the motion critic,
 	# 2026-10-22: "the walk start jumps to full speed"); after it the stride eases to the push.
 	_walked_s += dt
@@ -374,13 +371,11 @@ func _face(dt: float) -> void:
 ## A turn rate (rad/s) for this body: bigger is slower, by body scale to the turn_size_exp
 ## ("bigger = slower but not TOO slow, lumbering within reason", director 2026-10-21). A body that
 ## steps its turns reads its own rates (step_turn_*); one that does not, the baby, turns smoothly
-## at the plain ones (D-131, "Baby turns smoothly"). A stage may set its own rates in contact.bodies
-## (the Colossus: D-302, "a step ~1.35 s", so its 90 deg turn spans at least one full step).
+## at the plain ones (D-131, "Baby turns smoothly"); a stage may set its own (the Colossus, D-302).
 func _rate(key: String) -> float:
 	var pre := "step_" if stepping() else ""
-	var size_exp := Num.f(cfg[pre + "turn_size_exp"])
 	var base := Num.f(_stage.get(pre + key, cfg[pre + key]))
-	return base / pow(maxf(sim.body_scale(), 0.01), size_exp)
+	return base / pow(maxf(sim.body_scale(), 0.01), Num.f(cfg[pre + "turn_size_exp"]))
 
 
 ## Whether the body overlaps building `index`'s footprint now (never without a body volume).
