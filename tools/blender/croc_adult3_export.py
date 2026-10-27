@@ -9,7 +9,8 @@ export() (skin.json/.skinw format) on the rig itself.
   The hind toe is its own game bone too (leg_x3; r11 folded it into the foot, leg_x2): the game locks its tip.
 - Eyelids (D-335 blinks): the four lid bones are game bones of their own (lid_up_l/_r carry the brow skin's squint,
   lid_lo_l/_r the lower-lid flaps), listed after every other game bone (rig_from_skin.py bone_names). The lower-lid
-  flaps (rigid shells hidden inside the head at rest) are still left out of every file, so the game mesh is r10's.
+  flaps (rigid shells hidden inside the head at rest) are still left out of every file, so the game mesh is r10's;
+  the skin.json's "lid_flaps" block (LID_FLAPS) is how tools/kaiju_skin/lid_flaps.py builds them in voxels instead.
 - <out>/croc_adult3_landmarks.json: motion_test landmarks at the r10 joints (so its clips' game bones rest on them).
 The repo keeps the landmarks as assets/kaiju/test/croc_adult3_landmarks.json (motion_test.py <it> <glb> <out> clips).
 blender -b croc_adult3_rig_r11.blend --python tools/blender/croc_adult3_export.py -- <out_dir> [height_vox=320]"""
@@ -30,6 +31,10 @@ bpy.ops.object.mode_set(mode="EDIT")
 ROLLS = {e.name: e.roll for e in ad.edit_bones}
 bpy.ops.object.mode_set(mode="OBJECT")
 GAME = np.array([[-1.0, 0, 0], [0, 0, 1.0], [0, 1.0, 0]])
+# The game's voxel lower lids (tools/kaiju_skin/lid_flaps.py; lead 2026-10-28: top edge 16 deg past the eye's centre
+# line, turn 100 deg, 0 eye px shut at the 1080p game camera from all 24 headings): lengths in skin units (depth = the
+# rig flap's 0.008 m), angles in degrees, band and gap in voxels. The rig's flap meshes match (r12f, same lat/over/open).
+LID_FLAPS = {"depth": 2.13, "open": 100, "half": 30, "over": 16, "lat": 50, "band": 1.8, "gap": 0.9}
 SPRING_TAIL = 8  # game tail0-8: the spring tail the game bends on turns (r11's tail bones); tail9-11 follow clips only
 
 # --- drop the lower-lid flaps (r11; in memory only, the .blend is never saved) ----------------------------
@@ -142,7 +147,7 @@ doc = {"version": 1, "units": "m", "axes": "game: Y up, -Z forward, x = -blender
        "pelvis; model normalised to 100 m tall", "height_m": 100.0, "source": STEM + " (croc adult3 a3174b0f, rig r11)",
        "bones": bones, "vertex_count": int(len(g)), "weights_file": f"{STEM}.skinw",
        "bbox_game": [gall.min(0).round(3).tolist(), gall.max(0).round(3).tolist()], "kvox_height": HV,
-       "kvox_cell_to_skin": M.round(6).tolist(),
+       "kvox_cell_to_skin": M.round(6).tolist(), "lid_flaps": LID_FLAPS,
        "kvox_note": "p_skin = M @ (gx, gy, gz, 1): centre of a rig_voxel cell of the SAME glb at kvox_height."}
 (OUT / f"{STEM}.skin.json").write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
 

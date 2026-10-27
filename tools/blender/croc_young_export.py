@@ -9,7 +9,8 @@ kvox cell map stay as they are; this writes the new bones and weights:
   their game bone (the adult croc_adult3_export.py names: lumbar0+1 -> spine1, neck0-2 -> head0, clavicle -> spine2,
   toe -> leg_x3, tail00-11 -> tail0-11, lids keep their names); tail0-8 are the spring tail ("physics").
 - <out>/croctitan_<stage>.skinw: the same positions, top-4 weights per vertex (normalised), bone indices into that list.
-The lower-lid flaps (rigid shells hidden inside the head at rest) are left out, as for the adult.
+The lower-lid flaps (rigid shells hidden inside the head at rest) are left out, as for the adult; the skin.json's
+"lid_flaps" block (LID_FLAPS) is how tools/kaiju_skin/lid_flaps.py builds them in voxels instead.
 blender -b <young rig .blend> --python tools/blender/croc_young_export.py -- <stage> <repo> <out_dir>"""
 import bpy, sys, json
 from pathlib import Path
@@ -21,6 +22,10 @@ STEM = "croctitan_" + STAGE
 SRC = REPO / "assets/kaiju/test" / STEM
 H_BLEND = 0.3754800  # the young rig blends share the adult r11 blend's height (m)
 SPRING_TAIL = 8
+# The game's voxel lower lids per stage (croc_adult3_export.py LID_FLAPS; lead 2026-10-28: adolescent turn 80, baby 100):
+# depth = the rig flap's (baby 0.010 m, adolescent 0.008 m) in skin units; the rig's flap meshes match (y7).
+LID_FLAPS = {"baby": {"depth": 2.66, "open": 100, "half": 30, "over": 16, "lat": 40, "band": 1.8, "gap": 0.9},
+             "adolescent": {"depth": 2.13, "open": 80, "half": 30, "over": 16, "lat": 40, "band": 1.8, "gap": 0.9}}
 arm = [o for o in bpy.data.objects if o.type == "ARMATURE"][0]; ad = arm.data
 mesh = bpy.data.objects["croc_mesh"]; me = mesh.data
 
@@ -104,7 +109,7 @@ with open(OUT / f"{STEM}.skinw", "wb") as f:
     f.write(rec.tobytes())
 doc = json.loads(SRC.with_suffix(".skin.json").read_text(encoding="utf-8"))
 doc.update({"source": f"{STEM} (croc-young-casc rig: the adult r12 joints + eyelids)", "bones": bones,
-            "vertex_count": int(n0), "weights_file": f"{STEM}.skinw"})
+            "vertex_count": int(n0), "weights_file": f"{STEM}.skinw", "lid_flaps": LID_FLAPS[STAGE]})
 (OUT / f"{STEM}.skin.json").write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
 print(f"EXPORT {STEM}: {len(NAMES)} bones -> {len(set(b['game'] for b in bones))} game bones, max infl "
       f"{int((top > 0).sum(1).max())}, weight change from the rig {np.abs(top.sum(1) - 1).max():.1e}")
