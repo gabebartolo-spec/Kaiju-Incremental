@@ -235,7 +235,9 @@ func packed_mesh(arrays: Array) -> ArrayMesh:
 	var surface: Dictionary = native.call("pack_surface", arrays)
 	if surface.is_empty():
 		return null
-	var mesh := ArrayMesh.new()
+	# An ArrayMesh with no RID yet: _set_surfaces makes it with mesh_create_from_surfaces, which a
+	# Forward+ renderer builds on the calling thread by design (async resource creation); no material.
+	var mesh := ArrayMesh.new()  # thread-ok: mesh_create_from_surfaces is async-safe (above)
 	mesh.call("_set_surfaces", [surface])
 	return mesh
 

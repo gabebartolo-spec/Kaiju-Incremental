@@ -11,7 +11,9 @@ extends SceneTree
 ## the behaviour before render plan item 9). --worker=on|off overrides render_opt.remesh_worker_mesh
 ## (item 9c: off makes the meshes in _finish, as before; headless never makes them on the worker).
 ## --frames=on draws a frame after each timed carve (as the game does; untimed), so the renderer's
-## deferred work (uploads, frees) drains between carves instead of piling up over the whole walk.
+## deferred work (uploads, frees) drains between carves instead of piling up over the whole walk;
+## it asks for vsync off (a no_focus window may stay paced) and prints frame_ms, the wall time of a
+## frame after a carve (process + draw: where queued server work lands), and which carve the worst.
 ## tools/capture/bench_cell_runs.sh holds the PC for it.
 ## Seeded by design: fixed buildings and a fixed carve walk.
 ##   godot --headless --path . --script tools/capture/bench_cell_mesh.gd -- [--carves=60]
@@ -41,6 +43,8 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
+	if _frames:
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	if _priority != "":
 		Content.section("render_opt")["remesh_high_priority"] = _priority == "high"
 	if _worker != "":
@@ -92,6 +96,7 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 	var dims := mesher.dims
 	var times: Array[float] = []
 	var blocks := 0
+	var frame_ms: Array[float] = []
 	for k: int in _carves:
 		# Walk down and across the street face, as a kaiju clawing its way down the tower.
 		var centre := Vector3(
@@ -112,13 +117,31 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 		times.append((Time.get_ticks_usec() - s) / 1000.0)
 		blocks += view.last_batch.size()
 		if _frames:
+			var f := Time.get_ticks_usec()
 			await process_frame
+			await process_frame
+			frame_ms.append((Time.get_ticks_usec() - f) / 2000.0)
 	var tris := 0
 	for r: Vector3i in view.parts:
 		var mi: MeshInstance3D = view.parts[r]
 		var mesh: ArrayMesh = mi.mesh
 		tris += mesh.surface_get_array_index_len(0) / 3
 	times.sort()
+	var worst_frame := frame_ms.find(frame_ms.max()) if not frame_ms.is_empty() else -1
+	frame_ms.sort()
+	var frame := (
+		"frame_ms p50 %.2f p95 %.2f max %.2f (carve %d)"
+		% (
+			[
+				frame_ms[frame_ms.size() / 2],
+				frame_ms[floori(frame_ms.size() * 0.95)],
+				frame_ms[-1],
+				worst_frame
+			]
+			if not frame_ms.is_empty()
+			else [0.0, 0.0, 0.0, -1]
+		)
+	)
 	var fin := Array(view.finish_us)
 	var worst := fin.find(fin.max()) if not fin.is_empty() else -1  # which batch (0 = the first carve)
 	fin.sort()
@@ -130,7 +153,7 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				+ " %d triangles after %d carves;"
 				+ " finish_us (first build %d) p50 %d p95 %d max %d (batch %d) over %d batches,"
 				+ " high_priority %s,"
-				+ " worker_mesh %s, frames %s"
+				+ " worker_mesh %s, frames %s (%s)"
 			)
 			% [
 				spec[0],
@@ -154,7 +177,8 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				fin.size(),
 				view.high_priority,
 				view.worker_mesh,
-				_frames
+				_frames,
+				frame
 			]
 		)
 	)
