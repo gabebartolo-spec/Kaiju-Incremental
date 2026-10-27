@@ -13,6 +13,7 @@ concurrency:
 jobs:
   doc-caps:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Enforce line caps
@@ -37,6 +38,7 @@ jobs:
 
   project-lints:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,9 +55,14 @@ jobs:
           else
             echo "tools/lint/run_all.sh not present yet; skipping"
           fi
+      - name: Every workflow job has a timeout
+        run: |
+          python tools/lint/workflow_timeouts.py --self-test
+          python tools/lint/workflow_timeouts.py
 
   gdlint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
