@@ -22,7 +22,7 @@ const GLOSS_SPECULAR := 0.8
 
 ## True when the water surface is on (tuning water.on, on by default).
 static func on() -> bool:
-	return bool(Content.section("water")["on"])
+	return Num.f(Content.section("water")["on"]) > 0.0  # a bool, or a --tune float
 
 
 ## A sheet of water over rect (x, z) at height y. deep: its colour where it is deep; bay: the open

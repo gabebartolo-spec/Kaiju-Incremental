@@ -29,8 +29,9 @@ func run_checks() -> void:
 
 
 func _check_default_on() -> void:
-	var on: Variant = Content.section("water").get("on", false)
-	check(on is bool and on, "tuning water.on defaults to true (the water surface is in the game)")
+	var raw: Variant = Content.section("water").get("on", false)
+	var on: bool = raw is bool and raw == true
+	check(on, "tuning water.on defaults to true (the water surface is in the game)")
 	var knee := Num.f(Content.section("emerge").get("wade_depth", 0.0))
 	check(knee > 0.0, "tuning emerge.wade_depth is above 0 (he wades knee-deep): %.2f" % knee)
 
@@ -56,7 +57,7 @@ func _check_surface_on() -> void:
 		shaded += 1
 		var deep: Color = mat.get_shader_parameter("deep_color")
 		var flow: Vector2 = mat.get_shader_parameter("flow")
-		var swell := float(mat.get_shader_parameter("swell_length"))
+		var swell := Num.f(mat.get_shader_parameter("swell_length"))
 		var size: Vector2 = (mi.mesh as PlaneMesh).size
 		var long := Vector2.RIGHT if size.x >= size.y else Vector2.DOWN
 		if swell > 0.0:
@@ -65,11 +66,8 @@ func _check_surface_on() -> void:
 			var along := flow.length() > 0.0 and absf(flow.normalized().dot(long)) > 0.999
 			rivers += int(along and deep.is_equal_approx(Look.color("river")))
 		shaded -= int(mat.render_priority != WaterSurface.PRIORITY)
-		shaded -= int(
-			not (mat.get_shader_parameter("foam_color") as Color).is_equal_approx(
-				Look.color("water_foam")
-			)
-		)
+		var foam: Color = mat.get_shader_parameter("foam_color")
+		shaded -= int(not foam.is_equal_approx(Look.color("water_foam")))
 	check(
 		shaded == sheets.size(),
 		(
@@ -111,38 +109,37 @@ func _check_surface_off() -> void:
 func _check_waterline() -> void:
 	var knee := Num.f(Content.section("emerge")["wade_depth"])
 	for stage: int in STAGES:
-		var deep := _start(stage, knee)
-		var flat := _start(stage, 0.0)
-		var under: float = deep["surface"] - deep["wading"]
+		var deep := _rise(stage, knee)
+		var flat := _rise(stage, 0.0)
+		var scale := Num.f(deep["scale"])
+		var under := Num.f(deep["surface"]) - Num.f(deep["wading"])
+		var flat_under := Num.f(flat["surface"]) - Num.f(flat["wading"])
 		check(
-			(
-				absf(under - knee * float(deep["scale"])) < EPS
-				and absf(flat["surface"] - flat["wading"]) < EPS
-			),
+			absf(under - knee * scale) < EPS and absf(flat_under) < EPS,
 			(
 				"stage %d: risen, feet %.2f m under the river (%.2f x body scale %.2f); at the surface %.2f"
-				% [stage, under, knee, deep["scale"], flat["surface"] - flat["wading"]]
+				% [stage, under, knee, scale, flat_under]
 			)
 		)
+		var deep_at := Num.f(deep["at"])
+		var flat_at := Num.f(flat["at"])
+		var both := Num.i(deep["emerged"]) == 1 and Num.i(flat["emerged"]) == 1
 		check(
-			(
-				deep["emerged"] == 1
-				and flat["emerged"] == 1
-				and float(deep["at"]) <= float(flat["at"]) + EPS
-			),
+			both and deep_at <= flat_at + EPS,
 			(
 				"stage %d: knee-deep he is on the bank after %.2f s, from the surface %.2f s (no later)"
-				% [stage, deep["at"], flat["at"]]
+				% [stage, deep_at, flat_at]
 			)
 		)
-		check(deep["landed"], "stage %d: knee-deep he ends on his feet on the street" % stage)
+		var landed: bool = deep["landed"]
+		check(landed, "stage %d: knee-deep he ends on his feet on the street" % stage)
 
 
 func _check_wade_replays() -> void:
 	var knee := Num.f(Content.section("emerge")["wade_depth"])
-	var a := _start(2, knee)
-	var b := _start(2, knee)
-	check(a["trace"] == b["trace"], "the same seeded start wades the same (stand height trace)")
+	var a: PackedFloat32Array = _rise(2, knee)["trace"]
+	var b: PackedFloat32Array = _rise(2, knee)["trace"]
+	check(a == b, "the same seeded start wades the same (stand height trace)")
 
 
 ## The city's water sheets with the surface on or off (a stage-1 CityGround), in the tree.
@@ -166,7 +163,7 @@ func _free_sheets(sheets: Array[MeshInstance3D]) -> void:
 
 ## One river start at `stage` with emerge.wade_depth `knee`: the surface and his feet once
 ## risen, when he emerged, whether he ended on the street, and the stand height every tick.
-func _start(stage: int, knee: float) -> Dictionary:
+func _rise(stage: int, knee: float) -> Dictionary:
 	var tuning := CityGrowth.tuning_for(Content.tuning(), stage)
 	tuning["emerge"]["wade_depth"] = knee
 	var stats := UpgradeTree.run_stats(
