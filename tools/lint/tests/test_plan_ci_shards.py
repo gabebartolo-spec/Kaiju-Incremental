@@ -43,8 +43,35 @@ class PlanCiShardsSmoke(unittest.TestCase):
         matrix = json.loads(out)
         self.assertEqual(
             matrix["include"],
-            [{"shard": "1", "suites": "alpha"}, {"shard": "2", "suites": "beta gamma"}],
+            [
+                {"shard": "1", "lanes": "1", "suites": "alpha"},
+                {"shard": "2", "lanes": "1", "suites": "beta gamma"},
+            ],
         )
+
+    def test_lanes_pack_more_bins_per_shard(self):
+        # 2 shards x 2 lanes = 4 bins: each suite its own bin, the matrix says how many lanes to run
+        timings = "shards 2\nlanes 2\nalpha 100\nbeta 60\ngamma 50\ndelta 30\n"
+        exit_code, out = plan(SUITES, timings=timings)
+        self.assertEqual(exit_code, 0, out)
+        self.assertEqual(
+            out.splitlines(), ["shard 1 (~100s, 2 lanes): alpha gamma", "shard 2 (~60s, 2 lanes): beta delta"]
+        )
+        exit_code, out = plan(SUITES, ["--matrix"], timings=timings)
+        self.assertEqual({e["lanes"] for e in json.loads(out)["include"]}, {"2"})
+
+    def test_split_suite_is_planned_as_its_parts_and_never_whole(self):
+        timings = "shards 2\nsplit alpha 2\nalpha@1/2 60\nalpha@2/2 50\nbeta 40\ngamma 30\ndelta 20\n"
+        exit_code, out = plan(SUITES, ["--matrix"], timings=timings)
+        self.assertEqual(exit_code, 0, out)
+        planned = " ".join(e["suites"] for e in json.loads(out)["include"]).split()
+        self.assertEqual(sorted(planned), sorted(["alpha@1/2", "alpha@2/2", "beta", "gamma", "delta"]))
+
+    def test_split_of_an_unknown_suite_or_one_part_fails(self):
+        exit_code, out = plan(SUITES, timings="shards 2\nsplit nosuch 2\nalpha 1\n")
+        self.assertNotEqual(exit_code, 0, out)
+        exit_code, out = plan(SUITES, timings="shards 2\nsplit alpha 1\nalpha 1\n")
+        self.assertNotEqual(exit_code, 0, out)
 
     def test_pr_skip_suite_is_in_the_slow_list_and_not_the_plan(self):
         exit_code, out = plan(SUITES, ["--slow"])

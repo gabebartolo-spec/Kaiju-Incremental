@@ -211,6 +211,16 @@ static func _vec(v: Variant) -> Vector3:
 	return Vector3(Num.f(a[0]), Num.f(a[1]), Num.f(a[2]))
 
 
+## The gait and the helpers it builds hold each other (HexapodUpper.gait, BipedHead.gait,
+## LegReach.gait), and the engine frees a reference-counted object only once nothing counts it, so
+## every rig that was freed kept its gait alive to the end of the run (the leaked instances at
+## exit, debt row 2). Cut the rings as the rig is deleted (SimTeardown, as RampageSim.dispose
+## does for the sim).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and gait != null:
+		SimTeardown.cut(gait)
+
+
 func roar() -> void:
 	gait.roar()
 

@@ -80,6 +80,30 @@ class PrepushPicksSmoke(unittest.TestCase):
             helpers.write(root, "data/tuning.json", json.dumps({"stomp": {"damage": 5}, "fire": {"spread": 3}}))
             self.assertEqual(picks(root, ["data/tuning.json"], env={"BASE_REF": "base"}), [])
 
+    # #279 (run 40419798629): a new tools/capture script printed PASS locally and failed the native suite
+    # ("does not start with the guard") on GitHub, because no runner loads those scripts.
+    def test_new_or_changed_capture_or_bench_script_picks_native(self):
+        with helpers.scratch() as root:
+            project(root)
+            helpers.write(root, "tests/run_native_tests.gd", "func run_checks() -> void:\n\tpass\n")
+            self.assertEqual(picks(root, ["tools/capture/capture_vehicle_solid.gd"]), ["native"])
+            self.assertEqual(picks(root, ["tools/bench/bench_city.gd"]), ["native"])
+            self.assertEqual(picks(root, ["tools/capture/capture_vehicle_solid.gd.uid"]), ["native"])
+            self.assertEqual(picks(root, ["sim/alpha_sim.gd", "tools/capture/x.gd"]), ["alpha", "native"])
+
+    def test_native_is_not_added_twice_or_for_other_tool_files(self):
+        with helpers.scratch() as root:
+            project(root)
+            helpers.write(root, "tests/run_native_tests.gd", "func run_checks() -> void:\n\tpass\n")
+            self.assertEqual(picks(root, ["tests/run_native_tests.gd", "tools/capture/x.gd"]), ["native"])
+            self.assertEqual(picks(root, ["tools/capture/README.md", "tools/capture/ci_capture.sh"]), [])
+            self.assertEqual(picks(root, ["tools/lint/prepush_picks.py", "tools/check_scripts.gd"]), [])
+
+    def test_a_project_without_a_native_suite_picks_nothing_for_them(self):
+        with helpers.scratch() as root:
+            project(root)
+            self.assertEqual(picks(root, ["tools/capture/capture_vehicle_solid.gd"]), [])
+
 
 if __name__ == "__main__":
     unittest.main()

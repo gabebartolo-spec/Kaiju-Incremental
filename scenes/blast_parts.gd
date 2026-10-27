@@ -44,9 +44,7 @@ static func fireball(
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 1.0))
 	curve.add_point(Vector2(1, 0.1))
-	var tex := CurveTexture.new()
-	tex.curve = curve
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, curve)
 	var flame := Gradient.new()  # as Fire's own ramp: an ordinary 8-bit texture, not an HDR one
 	flame.colors = PackedColorArray(Fire.FLAME_COLORS)
 	flame.offsets = PackedFloat32Array(Fire.FLAME_AT)
@@ -123,7 +121,7 @@ static func toxic_cloud(
 	mat.scale_min = Num.f(sizes[0])
 	mat.scale_max = Num.f(sizes[1])
 	var boil_at: Array = cfg["boil"]
-	mat.scale_curve = _boil(boil_at)
+	FxCurve.set_scale(mat, _boil(boil_at))
 	var shades: Array = cfg["shades"]
 	mat.color_initial_ramp = _shades(shades.map(func(c: String) -> Color: return Color(c)))
 	var fade := Gradient.new()  # the puff's own opacity over its life, white so the shade stays
@@ -151,14 +149,12 @@ static func toxic_cloud(
 
 ## A puff's size over its life from [life share, scale] points (the gas's cloud.boil: growing in,
 ## swelling and sagging, then shrinking away: a boil, never a frozen block).
-static func _boil(points: Array) -> CurveTexture:
+static func _boil(points: Array) -> Curve:
 	var c := Curve.new()
 	c.max_value = 4.0
 	for pt: Array in points:
 		c.add_point(Vector2(Num.f(pt[0]), Num.f(pt[1])))
-	var tex := CurveTexture.new()
-	tex.curve = c
-	return tex
+	return c
 
 
 ## A camera-facing soft smoke puff, the game's own (smoke.gdshader): a unit quad to scale.
@@ -254,9 +250,7 @@ static func curve(mat: ParticleProcessMaterial, span: Vector2, curve_at: Array) 
 	c.add_point(Vector2(0.0, Num.f(curve_at[0])))
 	c.add_point(Vector2(0.4, Num.f(curve_at[1])))
 	c.add_point(Vector2(1.0, Num.f(curve_at[2])))
-	var tex := CurveTexture.new()
-	tex.curve = c
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, c)
 
 
 static func ramp(colors: Array, offsets: Array) -> GradientTexture1D:
