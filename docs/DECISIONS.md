@@ -4,6 +4,26 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-355 · Director · The grown croc eases into its walk over about 1.3 s
+For the keyed walk-start (D-343). Asked whether the croc may take about 1.3 s to reach full walking speed from standing
+(today about 0.13 s): picked "Ease in, ~1.3 s (Recommended)". The sim's set-off changes (walk_off_s and the step clock),
+and the keyed walk-start plays over it. A ~6 s clip goes to him before it ships. Not picked: the body trailing the sim
+(a ~30% surge) or a quick 0.4 s first step (the defect he named).
+
+## 2026-10-27 · D-354 · Director · Creature animation runs alongside the parked work
+Asked for a plan to finish the render plan and the debt list ("make a plan to finish the render plan, debt fixes"). Asked
+whether the Cascadeur animation row (debt row 21, 31 of 40 moves to key) holds back the parked work (roads, wider city,
+river intro, D-310): picked "Run alongside (Recommended)". The parked queue opens once every other debt row is merged;
+the keyer and rigger keep keying the whole time. Plan: C:/Users/DANTE/.claude/plans/dapper-percolating-lake.md.
+
+## 2026-10-27 · D-353 · Director · Team: the Cascadeur keyer plus 4 builders
+Replaces D-296. Asked "be honest, would this actually be any slower if we did it with just you and no subagents? maybe 1
+subagent for CI and thats it?". Lead's numbers: 85 merges on 10-27 (no builder limit) against 29 and 33 the two days
+before; costs: collisions (#332 vs #338), 10 open PRs against the cap of 3, the lead relaying instead of checking work.
+Then "what do YOU think, im asking here"; the lead recommended the keyer plus 4. Picked "Yes, keyer + 4 (Recommended)":
+the Cascadeur keyer plus 4 builders (the rigger is one of the 4, D-336), at most 3 open PRs. Running builders finish
+their current task and are not replaced. The lead counts in-game progress on 10-28 and reports it.
+
 ## 2026-10-27 · D-352 · Director · Roof tanks: mostly white solar water heaters, some short wooden towers
 Changes D-348. On the wooden towers: "idk, the rooftanks look massive, and why are the brown"; "i prefer rooftanks like
 the attached image" (a white tank lying on its side on a metal frame above two dark solar panels; reference only,
@@ -375,23 +395,3 @@ His words: "we should probably revisit the stomp attack and replace it with some
 ## 2026-10-26 · D-279 · Director · Night sky: fog matched to the sky (B)
 
 Asked with 4 labelled 4K stills (docs/captures/2026-10-26-clips/night_sky_A-D.png) after his "too much white in the blue ... the lighting or the fog": "Which night look should ship?" Answer: "B: fog matched to sky". Night fog_color 1e2a46 -> 0c1428 (= sky_top); ambient stays 1.4. Measured sky luma 9.5 -> 1.9, facades 39.5 -> 38.3. Not chosen: D both, C dimmer buildings, A keep.
-
-## 2026-10-26 · D-278 · Director · Builder cap 4 for tonight's render plan
-
-Asked: "Can I run 4 builders tonight instead of 3, so the night-shadow, clarity and night-sky batch starts now?" after he said "wow, thats so slow, anyway we can speed it up?". Answer: "4 builders tonight (Recommended)". Kaiju cap is 4 builders + 1 Sonnet reader for tonight; drops back to 3 if anything freezes. Not chosen: 5 builders, keep 3.
-
-## 2026-10-26 · D-277 · Director · Beachfront round 2 kept; defects fixed in Blender; nightclub V03r
-
-Round 2 (D-274's change of method: a reference image first, HD H3.1 chosen by a measured pilot over Smart Mesh, Remove Lighting; 1,365 of the 1,600 credits, balance 5,955) shown as a labelled board with the three round-1 keepers. He picked "All usable, fix defects": all 19 (B01-B07, V01, V02, V03r, V04-V06, S01-S04, P01, P02) go into the beach district; thin canopies, awnings and umbrella poles are thickened and blank backs filled in Blender, then voxelised. Nightclub: "V03r, no sand base". Blender fix waits until the render plan's Godot runs are done (D-276).
-
-## 2026-10-26 · D-275 · Director · The croc tree uses the ring layout, with zoom-out and easy panning
-
-The croc tree grew to 58 nodes (ROADMAP E, b2-28) and no longer fits the 8x6 grid on one screen. Shown three labelled layouts drawn from the real data (A rings from the centre, B a map growing upward, C today's grid widened, panning sideways), he picked "A but we need to be able to zoom out and pan easily": the baby's nodes sit in the middle, each growth stage is a wider ring outward, and the player can zoom out to see the whole tree and pan around it easily.
-
-## 2026-10-26 · D-276 · Director · From 23:00, full focus on the render plan
-
-Godot work resumes at 23:00 (paused earlier in the day). "at 11pm i want to switch full focus to the render plan": every builder slot goes to the render plan (baseline first, then batches P1a, P1b, P1c, then phase 2). Asked what happens to running non-render work, he picked "Let them finish": Tripo beachfront round 2 and the croc tree's ring layout code (D-275) finish, since neither uses Godot; their Godot tests and PRs, the run intro and the other open PRs wait until the render plan is done.
-
-## 2026-10-26 · D-274 · Director · Rise and roar kept; beachfront regenerated (keep B01, S01, S02), up to 1,600 Tripo credits
-
-Shown the Cascadeur clips on r11: rise out of the bay (hips float up while the hind legs tuck under, legs push the last part) "Keep it"; intro roar (inhale, head up, held gape, four throat pulses) "Keep it". Both go into the run intro via the game_r11 export (after #223). Beachfront board after the Blender fixes: "regenerate new building instead, these are mostly unusable. surf shack, beach tower, and apartment tower are usable" (kept: S02 thatched beach bar, S01 lifeguard tower, B01 apartment tower). What was wrong: "Messy or broken geometry", "Muddy, dark textures". Spend: "Up to 1,600" Tripo credits for the other 16 (balance about 7,320). The Blender fixes of D-271 are dropped. Also on the audit's conflict questions: the six-way question "didnt make sense to me then and doesnt now either", the ticker one "meaningless without context", Smart Mesh "idk you said it didnt matter at the time": the lead keeps what is built (bigger blocks with the 6 m diagonal, #243; the helicopter headline cut; HD unless a method test shows Smart Mesh fixes the geometry).
