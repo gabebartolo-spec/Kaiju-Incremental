@@ -9,6 +9,8 @@ shader_type spatial;
 // The stone's colour, variation and kept shade: one formula with the pieces that fly off when he
 // shatters (death_stone.gdshader).
 #include "res://scenes/stone_body.gdshaderinc"
+// Render plan item 14 (tuning render_opt.kaiju_three_faces): each cube drawn as three faces.
+#include "res://scenes/voxel_three_faces.gdshaderinc"
 
 uniform mat4 bones[128];
 // The cubes' own node back to skin (rig) space, so the shader can read each instance's centre.
@@ -21,6 +23,8 @@ uniform float max_grow = 0.0;
 uniform float mouth_open = 0.0;
 uniform float seam_dark = 0.22;
 uniform float roughness_value = 0.9;
+// On: the mesh is ThreeFaceCube's +X, +Y, +Z faces, mirrored per cube to the camera's sides.
+uniform bool three_faces = false;
 // The Special K overload as he dies (scenes/death_view.gd, DeathOverload): `overload` 0..1 lights
 // a share of the cubes violet, flickering cube by cube (the crackle); `stone` 0..1 turns him to
 // stone from the feet up to body_top (rest height, skin units), a ragged front cube by cube. A
@@ -58,7 +62,6 @@ void vertex() {
 	float w1 = COLOR.a;
 	float w2 = max(0.0, 1.0 - w0 - w1);
 	vec3 centre = (to_skin * MODEL_MATRIX)[3].xyz;
-	rest_pos = centre + VERTEX;
 	mat4 blend = bones[b0] * w0 + bones[b1] * w1 + bones[b2] * w2;
 	vec3 moved = (blend * vec4(centre, 1.0)).xyz;
 	float shrink = 1.0 - min(length(blend[0].xyz), min(length(blend[1].xyz), length(blend[2].xyz)));
@@ -69,9 +72,15 @@ void vertex() {
 	vec3 ax = normalize(m[0]);
 	vec3 ay = normalize(m[1] - ax * dot(ax, m[1]));
 	mat3 turn = mat3(ax, ay, cross(ax, ay));
+	vec3 local = VERTEX;
+	vec3 n = NORMAL;
+	if (three_faces) {
+		three_faces_mirror(local, n, moved - centre, turn, MODELVIEW_MATRIX, PROJECTION_MATRIX);
+	}
+	rest_pos = centre + local;
 	// The engine adds the instance's centre back after this.
-	VERTEX = (moved - centre) + turn * (VERTEX * grow);
-	NORMAL = normalize(turn * NORMAL);
+	VERTEX = (moved - centre) + turn * (local * grow);
+	NORMAL = normalize(turn * n);
 	tint = COLOR.rgb;
 	rest = centre;
 	if (mouth > 0.5) {
