@@ -61,7 +61,7 @@ func _screen(main: Node) -> Node:
 
 ## No save: the title offers New Kaiju (no Continue); a click goes to Kaiju Creation, where the
 ## croc genome and the injection start a rampage; Esc pauses it, End Rampage ends it, the end
-## beat plays in slow motion and gives way to the results over the city; EVOLVE opens the tree;
+## beat plays at normal speed and gives way to the results over the city; EVOLVE opens the tree;
 ## the run is on disk.
 func _check_new_game() -> void:
 	var main := await _main()
@@ -114,8 +114,8 @@ func _check_new_game() -> void:
 		"End Rampage ends the run (reason %s)" % rampage.sim.end_reason
 	)
 	check.call(
-		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale < 1.0,
-		"the end beat slams its headline on in slow motion (%s)" % Engine.time_scale
+		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale == 1.0,
+		"the end beat's headline lands at normal speed, no slow motion (%s)" % Engine.time_scale
 	)
 	await GuiInput.key(t, KEY_ENTER)
 	check.call(hud.beat_running(), "a confirm in the first frames does not skip the end beat")

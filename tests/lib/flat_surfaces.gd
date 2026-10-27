@@ -57,8 +57,11 @@ const KNOWN_FLAT: Dictionary = {
 	"VoxelSkin:shader:voxel_skin_fill.gdshader": "P3 the kaiju's own skin pipeline",
 }
 ## Effect families exempt by owner class (their nodes carry no group; VFX never reads as a
-## surface): fire and smoke keepers, shockwaves, the breath beam, the claw sweep, the aim wedge.
-const EXEMPT_OWNERS: Array[String] = ["Fx", "ShaderKeep", "BreathBeam", "AbilityFx", "BreathAim"]
+## surface): fire and smoke keepers, shockwaves, the breath beam, the claw sweep, the aim wedge, the
+## flash of a shot landing on the hide (HideHit, under a tenth of a second).
+const EXEMPT_OWNERS: Array[String] = [
+	"Fx", "ShaderKeep", "BreathBeam", "AbilityFx", "BreathAim", "HideHit"
+]
 
 
 ## Every flat surface under `root` as {type, node, count}, one per type.
