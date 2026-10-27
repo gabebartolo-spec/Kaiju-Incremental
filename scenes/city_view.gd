@@ -95,8 +95,7 @@ func regrow(index: int) -> void:
 	_stream.regrow(index)
 
 
-## Building `index`'s view, built now if it waits (a slam shudders it, SlamView).
-func building(index: int) -> BuildingView:
+func building(index: int) -> BuildingView:  # built now if it waits (SlamView shudders it)
 	return _stream.view(index)
 
 
@@ -302,8 +301,7 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 	_debris.spawn(pos, color, away)
 
 
-## A fire that keeps burning on the ground (wrecks, a crash, a thrown landing); the oldest goes
-## out past the cap. Nothing lights one on a collapse: rubble never burns (#111).
+## A lasting fire on the ground (wrecks, a crash, a throw; never rubble, #111); oldest out past cap.
 func fire(at: Vector3, size: float, seconds := 0.0) -> Fire:
 	var f := Fire.new(size, _rng.randf() * 10.0)
 	f.position = at
