@@ -306,7 +306,8 @@ func _check_diag_rail() -> void:
 			var t := CityGrowth.tuning_for(base, stage)
 			var city: Dictionary = t["city"]
 			var half := CityGen.half_extent(city)
-			var ends := RailLayout.ends(city, t["rail"])
+			var rail_cfg: Dictionary = t["rail"]
+			var ends := RailLayout.ends(city, rail_cfg)
 			var ax := Rail.avenue_x(city)
 			check(
 				false,
@@ -341,7 +342,8 @@ func _check_diag_rail() -> void:
 	for name: String in hand:
 		var row: Array = hand[name]
 		var layout: Array[Dictionary] = []
-		layout.assign(row[0])
+		var entries: Array = row[0]
+		layout.assign(entries)
 		var stats := UpgradeTree.run_stats(
 			Content.section("kaiju"),
 			Content.species_def("reptilian"),
@@ -392,7 +394,7 @@ func _diag_near(sim: RampageSim, p: Vector2) -> String:
 		)
 		var tag := "rail" if not b.rail.is_empty() else (b.landmark if b.landmark != "" else "lot")
 		rows.append([gap.length(), "%d %s h%d %.1f" % [i, tag, b.height, gap.length()]])
-	rows.sort_custom(func(a: Array, c: Array) -> bool: return float(a[0]) < float(c[0]))
+	rows.sort_custom(func(a: Array, c: Array) -> bool: return (a[0] as float) < (c[0] as float))
 	var names: PackedStringArray = []
 	for r: Array in rows.slice(0, 4):
 		names.append(str(r[1]))
