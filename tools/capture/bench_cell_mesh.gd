@@ -10,6 +10,8 @@ extends SceneTree
 ## one. --priority=high|low overrides tuning render_opt.remesh_high_priority for the A/B (low is
 ## the behaviour before render plan item 9). --worker=on|off overrides render_opt.remesh_worker_mesh
 ## (item 9c: off makes the meshes in _finish, as before; headless never makes them on the worker).
+## --frames=on draws a frame after each timed carve (as the game does; untimed), so the renderer's
+## deferred work (uploads, frees) drains between carves instead of piling up over the whole walk.
 ## tools/capture/bench_cell_runs.sh holds the PC for it.
 ## Seeded by design: fixed buildings and a fixed carve walk.
 ##   godot --headless --path . --script tools/capture/bench_cell_mesh.gd -- [--carves=60]
@@ -19,6 +21,7 @@ const RADII: Array[float] = [6.0, 12.0]  # cells: a claw bite, a stomp (RES 8: 0
 var _carves := 60
 var _priority := ""
 var _worker := ""
+var _frames := false
 
 
 func _initialize() -> void:
@@ -31,6 +34,8 @@ func _initialize() -> void:
 			_priority = arg.substr(11)
 		elif arg.begins_with("--worker="):
 			_worker = arg.substr(9)
+		elif arg.begins_with("--frames="):
+			_frames = arg.substr(9) == "on"
 	_run.call_deferred()
 
 
@@ -59,7 +64,7 @@ func _run() -> void:
 			if use_native and not native:
 				continue
 			for radius: float in RADII:
-				_bench(spec, use_native, radius)
+				await _bench(spec, use_native, radius)
 	quit()
 
 
@@ -106,6 +111,8 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 		view.flush()
 		times.append((Time.get_ticks_usec() - s) / 1000.0)
 		blocks += view.last_batch.size()
+		if _frames:
+			await process_frame
 	var tris := 0
 	for r: Vector3i in view.parts:
 		var mi: MeshInstance3D = view.parts[r]
@@ -123,7 +130,7 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				+ " %d triangles after %d carves;"
 				+ " finish_us (first build %d) p50 %d p95 %d max %d (batch %d) over %d batches,"
 				+ " high_priority %s,"
-				+ " worker_mesh %s"
+				+ " worker_mesh %s, frames %s"
 			)
 			% [
 				spec[0],
@@ -146,7 +153,8 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				worst,
 				fin.size(),
 				view.high_priority,
-				view.worker_mesh
+				view.worker_mesh,
+				_frames
 			]
 		)
 	)
