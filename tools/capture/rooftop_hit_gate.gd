@@ -1,10 +1,12 @@
 extends SceneTree
 ## Headless gate for the rooftop rifles (D-063) before any capture: plays the capture's scene
 ## (capture_rooftops.gd: the Behemoth where the most squads fire on screen) and, on the frame each
-## hit spark lights, builds the kaiju's silhouette from the game camera (every voxel of its rig
-## projected to the screen, as its rig poses them) and checks the spark
-## (an upper-body bone's centre, where its tracer ended) falls inside it, dilated DILATE px.
-## Prints the counts and the worst cost of a volley's hit search; exits 1 on any miss.
+## hit lands on the hide (HideHit), builds the kaiju's silhouette from the game camera (every
+## voxel of its rig projected to the screen, as its rig poses them) and checks the hit point
+## (on the hide along the round's line to an upper-body bone's centre) falls inside it, dilated
+## DILATE px.
+## Prints the counts and the worst cost of a volley's hit search and of landing a round; exits 1
+## on any miss.
 ##
 ##   godot --headless --path . --script tools/capture/rooftop_hit_gate.gd -- [--seed=0]
 
@@ -39,13 +41,13 @@ func _run() -> void:
 	rampage.setup(species, stats, layout, _seed)
 	rampage.sim.kaiju_pos = Capture.new()._stand(rampage.sim)
 	rampage.sim.facing = Vector2(0, -1)
+	rampage.sim.emerge.active = false  # on land at the stand spot: the rise from the river is not
+	rampage.sim.stand_y = 0.0  # what this gate plays, and holds the army back until it ends
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	root.add_child(rampage)
+	await rampage.wait_loaded()  # the city builds over several frames
 	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
-	var rig: KaijuRig = GuiInput.find_script(rampage, KaijuRig)
-	if rig == null:
-		for node: Node in rampage.find_children("*", "KaijuRig", true, false):
-			rig = node as KaijuRig
+	var rig := _player_rig(rampage)
 	var camera := root.get_viewport().get_camera_3d()
 	var logged := 0
 	var inside := 0
@@ -71,14 +73,31 @@ func _run() -> void:
 				misses.append("frame %d at %s px %s" % [i, at, px])
 	print(
 		(
-			"rooftop hits: %d sparks, %d on screen, %d inside the kaiju's silhouette (+%d px)"
+			"rooftop hits: %d hits, %d on screen, %d inside the kaiju's silhouette (+%d px)"
 			% [logged, on_screen, inside, DILATE]
 		)
 	)
 	for miss: String in misses:
 		print("  MISS ", miss)
 	print("worst volley hit search: %d usec" % roofs.worst_aim_usec)
+	print("worst round landed on the hide: %d usec" % roofs.landing.worst_usec)
 	quit(0 if misses.is_empty() and on_screen > 0 else 1)
+
+
+## The rig standing on the sim's kaiju: the HUD keeps a portrait rig of its own in a SubViewport,
+## far off, that the first find would pick.
+func _player_rig(rampage: Rampage) -> KaijuRig:
+	var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
+	var best: KaijuRig = null
+	for node: Node in rampage.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		var nearer := best == null
+		nearer = (
+			nearer or rig.global_position.distance_to(at) < best.global_position.distance_to(at)
+		)
+		if nearer:
+			best = rig
+	return best
 
 
 ## Every voxel of the rig projected to the screen as a square its own size: the silhouette. Voxel

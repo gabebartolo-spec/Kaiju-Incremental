@@ -22,8 +22,6 @@ const BEAT_MIN_FRAMES := 40
 const BEAT_SIZE := 128
 ## The headline starts this far from the top: in the top third, the kaiju stays in view (px).
 const BEAT_TOP := 64
-## The world runs at this speed during the end beat.
-const END_SLOWMO := 0.3
 ## The biomass figure snaps to the true value once this close.
 const ROLL_SNAP := 0.5
 ## The first-run card ignores keys for this long, so the key that started the run is not "any key".
@@ -281,9 +279,10 @@ func _end_now() -> void:
 	sim.end("ended")
 
 
-## The end beat: the reason the rampage ended slams onto the screen while the city keeps
-## falling in slow motion. After BEAT_FRAMES (or a confirm once BEAT_MIN_FRAMES have shown, so
-## a held attack button cannot skip it by accident) it reports `beat_done`.
+## The end beat: the reason the rampage ended slams onto the screen while the city keeps falling
+## at normal speed (D-259: slow motion only when a landmark falls, LandmarkSlowmo; time stays 1.0
+## here). After BEAT_FRAMES (or a confirm once BEAT_MIN_FRAMES have shown, so a held attack button
+## cannot skip it by accident) it reports `beat_done`.
 func show_end_beat(reason: String) -> void:
 	if _beat_frame >= 0:
 		return
@@ -291,7 +290,6 @@ func show_end_beat(reason: String) -> void:
 	clock.visible = false
 	news.muted = true
 	news.visible = false
-	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.55, 0.25, 0.45 * PlayerSettings.flash_scale())  # Reduce flashing
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -356,7 +354,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		finish_beat()
 
 
-## Leaving mid-beat or mid-pause (quit to title) must not leave the world slowed or paused.
+## Leaving mid-pause (quit to title) must not leave the world slowed or paused.
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
 	get_tree().paused = false
@@ -366,7 +364,6 @@ func _exit_tree() -> void:
 func finish_beat() -> void:
 	if not beat_running():
 		return
-	Engine.time_scale = 1.0
 	_beat_done = true
 	visible = false  # the report takes over the screen; the city stays behind it
 	beat_done.emit(result())
