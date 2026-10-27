@@ -46,6 +46,7 @@ func run_checks() -> void:
 	await _t("_check_gentle_turn")
 	await _t("_check_turn_rate")
 	await _t("_check_replay")
+	await _t("_check_old_save")
 
 
 ## The croc at `levels` on `layout`, the claws idle, with the run on (his entry) or off (none).
@@ -362,3 +363,29 @@ func _check_replay() -> void:
 	for _n: int in 2:
 		runs.append(_charge(_runner({}, _row()), ROW))
 	check(runs[0] == runs[1], "the same seeded charge replays (%s / %s)" % [runs[0], runs[1]])
+
+
+## A save from before the run was always on (v5, the Momentum node bought to its top) loads as
+## it is: the node kept at its level, and it boosts the run (full momentum sooner).
+func _check_old_save() -> void:
+	var save := SaveFile.new_save("reptilian")
+	save["levels"] = {"r_tail": 1, "r_momentum": 4}
+	var parsed: Dictionary = JSON.parse_string(JSON.stringify(save))  # as the file holds it
+	var loaded := SaveFile.migrate(parsed)
+	var levels: Dictionary = loaded.get("levels", {})
+	check(
+		Num.i(levels.get("r_momentum", 0)) == 4,
+		"an old save keeps its Momentum node at level 4: %s" % [levels]
+	)
+	var full_s: Array[float] = []
+	for owned: Dictionary in [{}, levels]:
+		var sim := _runner(owned, [])
+		var steps := 0
+		while sim.powers.momentum < 1.0 and steps < roundi(MAX_S / DT):
+			sim.step(DT, NORTH, false, 0)
+			steps += 1
+		full_s.append(steps * DT)
+	check(
+		full_s[1] < full_s[0],
+		"the loaded node boosts the run: full in %.2f s vs %.2f s without" % [full_s[1], full_s[0]]
+	)
