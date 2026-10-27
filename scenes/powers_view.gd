@@ -369,7 +369,7 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 		_climbing = climbing
 		_hook("climbing", [climbing])
 	_dust_t -= delta
-	if sim.stat("momentum") > 0.0 and sim.powers.momentum > 0.5 and _dust_t <= 0.0:
+	if sim.powers.momentum > 0.5 and _dust_t <= 0.0:  # a titan's run (Momentum), always on
 		_dust_t = 0.15
 		_city.fx.dust(kaiju_at - _w(sim.facing) * bs + Vector3(0, 0.3, 0), bs * sim.powers.momentum)
 

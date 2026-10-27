@@ -90,10 +90,14 @@ func _ready() -> void:
 	is_loaded = true
 
 
-## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one
-## is built.
+## Building `index` regrew (Endless): its ruin view goes, the sim's standing one is built.
 func regrow(index: int) -> void:
 	_stream.regrow(index)
+
+
+## Building `index`'s view, built now if it waits (a slam shudders it, SlamView).
+func building(index: int) -> BuildingView:
+	return _stream.view(index)
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife;
@@ -270,8 +274,7 @@ func fall_land(event: Dictionary) -> void:
 			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH + spill)
 
 
-## A tower came down across the street: it breaks up and leaves a rubble strip (ToppleFx); what
-## the strip covers is crushed.
+## A tower came down across the street: a rubble strip (ToppleFx) crushes what it covers.
 func _topple_land(node: Node3D, event: Dictionary) -> void:
 	_topple.land(node, event, _stream.view(Num.i(event["building"])).voxels)
 	var from: Vector2 = event["from"]

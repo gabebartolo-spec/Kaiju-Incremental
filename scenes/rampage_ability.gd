@@ -2,13 +2,15 @@ class_name RampageAbility
 extends RefCounted
 ## What the player sees of the signature attack (Rampage hands it each `ability` event): the
 ## breath, the leap's take-off, flight and landing, the lash; and the croc's leap on the dash button
-## (LeapView). Presentation only; the sim decided it.
+## (LeapView) and his slam into a building (SlamView). Presentation only; the sim decided it.
 
 const LEAP_SECONDS := 0.4  # s, take-off to landing
 const LEAP_ARC := 6.0  # units the body rises over the leap
 
 ## The croc's leap on the dash button (Dash): its take-off, landing ring and pose hook.
 var leap := LeapView.new()
+## The croc's slam at full momentum (Momentum.slam): the bang, the kick, the building's shudder.
+var slam := SlamView.new()
 var _rampage: Rampage
 var _city: CityView
 var _kaiju: KaijuModel
@@ -23,6 +25,13 @@ func bind(rampage: Rampage, city: CityView, kaiju: KaijuModel) -> void:
 	_city = city
 	_kaiju = kaiju
 	leap.bind(rampage, city)
+	slam.bind(rampage, city)
+
+
+## Any sim event the leap or the slam draws.
+func on_event(event: Dictionary) -> void:
+	leap.on_event(event)
+	slam.on_event(event)
 
 
 ## Whether the kaiju is in the air of a leap.

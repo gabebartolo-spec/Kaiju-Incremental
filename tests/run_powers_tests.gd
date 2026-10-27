@@ -90,8 +90,9 @@ func _check_tail() -> void:
 	)
 
 
-## Momentum: charging down a straight street lined with blocks, the reptilian goes further
-## and breaks more; a U-turn bleeds the momentum away.
+## Momentum's node (D-337: the run is always on, the node a boost to it): charging down a
+## straight street lined with blocks, the reptilian with it builds full momentum sooner and breaks
+## more of the street; a U-turn bleeds momentum.
 func _check_momentum() -> void:
 	var row: Array[Dictionary] = []
 	for n: int in 5:
@@ -99,28 +100,33 @@ func _check_momentum() -> void:
 	var out: Array[Dictionary] = []
 	for levels: Dictionary in [{"r_tail": 1}, {"r_tail": 1, "r_momentum": 3}]:
 		var sim := _sim("reptilian", levels, row, Vector2(0, 0))
+		sim.powers.use_species("reptilian")  # his run, as BodyContact.use_species picks it
 		sim.stats["swipe_damage"] = 0.0  # the claw swipe would break the whole row either way
-		_run(sim, 6.0, EAST)
-		out.append({"x": sim.kaiju_pos.x, "broken": sim.chunks_destroyed, "sim": sim})
+		var full_s := INF
+		for i: int in roundi(6.0 / DT):
+			sim.step(DT, EAST, false, 0)
+			if full_s == INF and sim.powers.momentum >= 1.0:
+				full_s = (i + 1) * DT
+		out.append({"full_s": full_s, "broken": sim.chunks_destroyed, "sim": sim})
 	check(
-		Num.f(out[1]["x"]) > Num.f(out[0]["x"]) + 2.0,
+		Num.f(out[1]["full_s"]) < Num.f(out[0]["full_s"]),
 		(
-			"momentum carries the reptilian further down the street (%.1f vs %.1f)"
-			% [Num.f(out[1]["x"]), Num.f(out[0]["x"])]
+			"the momentum node builds full momentum sooner (%.2f s vs %.2f s)"
+			% [Num.f(out[1]["full_s"]), Num.f(out[0]["full_s"])]
 		)
 	)
 	check(
 		Num.i(out[1]["broken"]) > Num.i(out[0]["broken"]),
 		(
-			"momentum breaks more of the street (%d vs %d chunks)"
+			"the momentum node breaks more of the street (%d vs %d chunks)"
 			% [Num.i(out[1]["broken"]), Num.i(out[0]["broken"])]
 		)
 	)
-	var charged: RampageSim = out[1]["sim"]
+	var charged: RampageSim = out[0]["sim"]
 	var before := charged.powers.momentum
 	_run(charged, 1.0, -EAST)  # the U-turn itself takes about a second (BodyContact.steer)
 	check(
-		before > 0.6 and charged.powers.momentum < 0.2,
+		before >= 1.0 and charged.powers.momentum < before,
 		"a U-turn bleeds momentum (%.2f to %.2f)" % [before, charged.powers.momentum]
 	)
 

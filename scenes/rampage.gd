@@ -323,7 +323,7 @@ func _on_event(event: Dictionary) -> void:
 		_:
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
-			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
+			_ability.on_event(event)  # the croc's leap (LeapView) and slam (SlamView)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

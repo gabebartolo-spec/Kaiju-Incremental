@@ -88,22 +88,15 @@ func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) 
 
 ## Breaks every standing chunk the body touches moving and turning from one pose to the other in
 ## `step_s` seconds (a building that dwarfs the kaiju is chewed at bite_dps x step_s instead of
-## broken outright, D-091); returns the chunks broken.
+## broken outright, D-091, unless he crashes through it); returns the chunks broken. A slam
+## (Momentum.slam) breaks only its dent and stops the body where it was.
 func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> int:
-	var span := reach()
-	var close := near(from, to, span)
-	if close.is_empty():
+	var hits := touched(from, from_heading, to, to_heading)
+	var run := sim.powers.run
+	if run.slam(hits):
+		sim.kaiju_pos = from
 		return 0
-	var turn := from_heading.angle_to(to_heading)
-	var travel := from.distance_to(to) + absf(turn) * span
-	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
-	var hits: Dictionary = {}
 	var broken := 0
-	for n: int in range(1, samples + 1):
-		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
-		var at: Vector2 = pose[0]
-		var facing: Vector2 = pose[1]
-		collect(at, facing, hits, close)
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
@@ -111,7 +104,8 @@ func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector
 		var before := sim.rubble
 		var first := sim.events.size()
 		var b := sim.buildings[index]
-		var dwarfs := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
+		var crash := run.crashes(b, cells)
+		var dwarfs := not crash and Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
 		var n := sim.damage_chunks(index, cells, Num.f(cfg["bite_dps"]) * step_s if dwarfs else INF)
 		var pay := 1.0 if dwarfs else Num.f(cfg["pay_mult"])
 		if n > 0:  # what the body breaks outright pays a share (pacing); chewed and falls in full
@@ -119,6 +113,25 @@ func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector
 			sim.events[first]["pay"] = pay
 		broken += n
 	return broken
+
+
+## Every standing chunk the body touches moving and turning from one pose to the other:
+## {building index: {Vector3i: true}}.
+func touched(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> Dictionary:
+	var hits: Dictionary = {}
+	var span := reach()
+	var close := near(from, to, span)
+	if close.is_empty():
+		return hits
+	var turn := from_heading.angle_to(to_heading)
+	var travel := from.distance_to(to) + absf(turn) * span
+	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
+	for n: int in range(1, samples + 1):
+		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
+		var at: Vector2 = pose[0]
+		var facing: Vector2 = pose[1]
+		collect(at, facing, hits, close)
+	return hits
 
 
 ## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is
