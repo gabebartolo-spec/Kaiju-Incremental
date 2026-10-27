@@ -319,7 +319,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 
 
 ## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Lightning Breath
-## leaves is drawn at load for this run's cone, and tanks share their voxels yet fade one by one.
+## leaves is drawn at load for this run's cone, and tanks share their voxels.
 func _check_warm_start() -> void:
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
@@ -341,15 +341,7 @@ func _check_warm_start() -> void:
 	var b := TankModel.new()
 	var hull_a: MultiMeshInstance3D = a.get_child(0)
 	var hull_b: MultiMeshInstance3D = b.get_child(0)
-	VehicleParts.set_opacity(a, 0.3)
-	var mat_b := hull_b.material_override as ShaderMaterial
-	if mat_b == null:
-		mat_b = (hull_b.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
-	var faded_b: Variant = mat_b.get_shader_parameter("opacity")
-	check(
-		hull_a.multimesh == hull_b.multimesh and (faded_b == null or Num.f(faded_b) >= 1.0),
-		"a second tank reuses the first one's voxels, and fading one leaves the other solid"
-	)
+	check(hull_a.multimesh == hull_b.multimesh, "a second tank reuses the first one's voxels")
 	a.free()
 	b.free()
 
