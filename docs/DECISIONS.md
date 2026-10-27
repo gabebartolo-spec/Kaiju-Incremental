@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-352 · Director · Roof tanks: mostly white solar water heaters, some short wooden towers
+Changes D-348. On the wooden towers: "idk, the rooftanks look massive, and why are the brown"; "i prefer rooftanks like
+the attached image" (a white tank lying on its side on a metal frame above two dark solar panels; reference only,
+C:/kt/reference/roof_tank/); "i mean keep SOME of the wooden towers, but mix it up with the white ones". Picked "Mostly
+white (Recommended)": same spots and count, about 3 in 4 roofs a white heater, 1 in 4 a wooden tower; and "About 1.5
+storeys (Recommended)": a wooden tower is half today's height, so it sits on the roof instead of looming.
+
 ## 2026-10-27 · D-351 · Director · Countable speed-run bars move to GitHub checks
 Speed runs need his PC to themselves (D-299), so tonight's queue is about 3.5 h. Asked how to clear that bottleneck:
 "Count on GitHub (Recommended)". Bars that can be counted on a pinned seed (draw calls, pieces, nodes) become GitHub
@@ -388,11 +395,3 @@ Godot work resumes at 23:00 (paused earlier in the day). "at 11pm i want to swit
 ## 2026-10-26 · D-274 · Director · Rise and roar kept; beachfront regenerated (keep B01, S01, S02), up to 1,600 Tripo credits
 
 Shown the Cascadeur clips on r11: rise out of the bay (hips float up while the hind legs tuck under, legs push the last part) "Keep it"; intro roar (inhale, head up, held gape, four throat pulses) "Keep it". Both go into the run intro via the game_r11 export (after #223). Beachfront board after the Blender fixes: "regenerate new building instead, these are mostly unusable. surf shack, beach tower, and apartment tower are usable" (kept: S02 thatched beach bar, S01 lifeguard tower, B01 apartment tower). What was wrong: "Messy or broken geometry", "Muddy, dark textures". Spend: "Up to 1,600" Tripo credits for the other 16 (balance about 7,320). The Blender fixes of D-271 are dropped. Also on the audit's conflict questions: the six-way question "didnt make sense to me then and doesnt now either", the ticker one "meaningless without context", Smart Mesh "idk you said it didnt matter at the time": the lead keeps what is built (bigger blocks with the 6 m diagonal, #243; the helicopter headline cut; HD unless a method test shows Smart Mesh fixes the geometry).
-
-## 2026-10-26 · D-273 · Director · Sound-effect credits: no cap (recorded late, ruled 2026-10-25)
-
-On 2026-10-25 at 07:55 the sound session reported its sound-generation subscription at about 2,071 of 40,000 credits used, the train sounds at about 430-450 under a 500 limit, and spending stopped. His reply: "spend as much as u want" and "download them yourself". This is his written yes for spending that subscription's credits on the game's sound effects; it does not cover Tripo or any other service. Found by the interview audit (D-272).
-
-## 2026-10-26 · D-272 · Director · Godot paused, Cascadeur/Blender/code open; interview audit with 4 temporary readers
-
-"so you can use Casc and blender now but no godot"; "and you can do coding tasks, im sure theres plenty of nodes for hte upgrade trees you need to implement". On node ideas: "ill be mad if you havent been adding my ndoe comments to the roadmap / ive been saying node ideas throughout our interviews"; "there must be record of my interviews, find them, read them, then make sure EVERYTHING from the interviews is reflected in the roadmap". Audit slots: "4 temporary readers" (close when done). Every interview answer and director message from all Kaiju transcripts (2026-10-16 to 10-26) is checked against the roadmap; missing items go into ROADMAP or a chapter.
