@@ -211,7 +211,6 @@ func _swing_round(dt: float) -> void:
 ## Feet in diagonal pairs: a pair steps when it is out of place (it lands where the body is
 ## heading, on the sim's heading, so the legs lead a turn); a tap at rest moves one leg.
 func _step(dt: float, root: Transform3D, moving: bool) -> void:
-	var ground := root.origin.y
 	var frame := rig.get_parent_node_3d().global_transform
 	if not _ready:
 		_ready = true
@@ -233,16 +232,32 @@ func _step(dt: float, root: Transform3D, moving: bool) -> void:
 		worst[leg.pair] = maxf(worst[leg.pair], off)
 	var limit := (STEP_AT if moving or darting else SETTLE_AT) * hip_w
 	if swinging[0] == 0 and swinging[1] == 0:
-		var pick := 0 if worst[0] >= worst[1] else 1
-		if worst[pick] > limit:
-			for leg: Leg in legs:
-				if leg.pair == pick:
-					_lift(leg, swing, Vector3.ZERO)
-		elif upper.tap_leg >= 0 and upper.tap_leg < legs.size():
-			var tap := legs[upper.tap_leg]
-			var shift := Vector3(rng.randf_range(-1, 1), 0, rng.randf_range(-1, 1))
-			_lift(tap, TAP_SWING * sqrt(s), shift.normalized() * TAP_SHIFT * hip_w)
+		_pair_step(worst, limit, swing, hip_w)
 	upper.tap_leg = -1
+	_move_feet(dt, root, swing, [frame, lead])
+
+
+## Every foot down: the pair furthest out of place (past `limit`) steps, or a tap at rest moves
+## one leg (HexapodUpper.tap_leg).
+func _pair_step(worst: PackedFloat32Array, limit: float, swing: float, hip_w: float) -> void:
+	var pick := 0 if worst[0] >= worst[1] else 1
+	if worst[pick] > limit:
+		for leg: Leg in legs:
+			if leg.pair == pick:
+				_lift(leg, swing, Vector3.ZERO)
+	elif upper.tap_leg >= 0 and upper.tap_leg < legs.size():
+		var tap := legs[upper.tap_leg]
+		var shift := Vector3(rng.randf_range(-1, 1), 0, rng.randf_range(-1, 1))
+		_lift(tap, TAP_SWING * sqrt(s), shift.normalized() * TAP_SHIFT * hip_w)
+
+
+## Each foot: a planted one stretched too far lifts; a lifted one snaps toward where it lands
+## (`aim` is [the body's frame, the lead]) and plants there.
+func _move_feet(dt: float, root: Transform3D, swing: float, aim: Array) -> void:
+	var ground := root.origin.y
+	var frame: Transform3D = aim[0]
+	var lead: Vector3 = aim[1]
+	var hip_w := hip_height * s
 	for leg: Leg in legs:
 		if leg.planted and _stretch(leg, root) > REACH_STEP:
 			_lift(leg, swing, Vector3.ZERO)
