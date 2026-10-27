@@ -41,7 +41,6 @@ uniform float spec = 0.8;
 uniform float crest_light = 0.25;  // how much lighter a crest's body colour is (light through its top)
 uniform float seed = 0.0;
 
-const float TAU = 6.28318;
 const float GRAVITY = 9.81;
 const int WAVES = 6;
 const int SWELLS = 3;
