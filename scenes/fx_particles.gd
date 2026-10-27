@@ -107,6 +107,4 @@ static func _shrink(mat: ParticleProcessMaterial, size: float) -> void:
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 1.0))
 	curve.add_point(Vector2(1, 0.0))
-	var curve_tex := CurveTexture.new()
-	curve_tex.curve = curve
-	mat.scale_curve = curve_tex
+	FxCurve.set_scale(mat, curve)
