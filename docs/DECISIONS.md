@@ -4,6 +4,25 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-28 · D-363 · Director · Balance waits until the game is beautiful and working
+His words, after dying in every run of the play build: "dont worry abot balance yet. lets get the game beautiful and
+working then we can balance it". Army strength, run length and upgrade costs stay as they are until he says so; the
+lead checked his question instead ("maybe i didnt actualyl getkilled?"): the run summary names the real cause
+(army kill: BROUGHT DOWN, clock: TIME UP), and every ending plays the stone and blast by design (D-263, D-294).
+
+## 2026-10-28 · D-362 · Director · First drafts of every remaining Cascadeur animation, one attempt each
+His words, going to sleep: "do a first draft of all remaining casc animations, dont iterate on any first attempts, try
+to get through them all and we will see what was good / use our reference models and clips that ive shown you", then
+"dont stop the casc work, really rapid fire get through all animations". Every open creature and people row of the
+animation audit gets one keyed draft (the croc at all three stages, plus people, per his 10-25 "Creatures + people"),
+saved as its own .casc and opened in his Cascadeur (D-347); no second takes, no clips, no PRs until he picks. Asked
+about the insectoid and cephalopod, he picked "Croc and people only". Pauses the keyer's #332 work for the run.
+
+## 2026-10-28 · D-361 · Director · The leap lands on roofs up to shoulder height; a taller building takes it in its side
+His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
+picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a
+landing; a taller building takes the leap in its side, he carves in (D-268) and drops to the street at its foot.
+
 ## 2026-10-28 · D-360 · Director · No far blur: the skyline stays sharp, haze alone carries the depth
 His comment watching runs (about 01:4x): "the blurred distance also looks kind of distracting, makes it like you have
 a smudge on your screen". Shown the same dusk Behemoth frame with today's far blur (A) and without it (B), and quoted
@@ -371,27 +390,3 @@ EULA (cascadeur.com/download, read 2026-10-27): Indie (gross revenue under $100k
 
 ## 2026-10-27 · D-300 · Director · Debt fixes go ahead of the render plan
 His words: "maybe we should prioritise the debt fixes" (after the third local freeze tonight and P2b's speed runs swinging 63-81 ms). Asked "Should debt fixes go ahead of the render plan?"; picked "Debt first": debt PRs merge first and get the next speed runs; the Cascadeur remake of the 31 code-driven creature moves (debt row 21) starts now instead of after the render plan; render builders already working finish their items; later render items start after waiting debt. New order: 1 debt, 2 render plan, 3 everything else. Replaces D-298's order.
-
-## 2026-10-27 · D-299 · Director · Each speed run gets the PC to itself
-D-292's check failed: the same freeze-fix build measured 59.47 ms (95th-percentile frame, High) alone and 72.54 ms with 11 headless test runs beside it (+22%; two clean main runs differ 0.1%). Asked "Should each speed run get the PC to itself for its 3 minutes?"; picked "Yes, PC to itself": while a speed run holds C:/kt/BENCH_WINDOW_<owner>, no other Godot starts, headless included (2 min 49 s per run, measured). Enforced by the tool-gate hook (refuses Kaiju Godot launches without C:/kt/wait_window.sh) and by drive_timing.sh (waits for zero Godot, records others=N; a run with others>0 does not count). Replaces D-292's headless-beside rule. Not chosen: keep tests beside; try top CPU priority first.
-
-## 2026-10-27 · D-298 · Director · Priority order: render plan, then debt, then everything else
-His words: "priorities are 1. render plan 2. debt fixes 3. everythin else". Where work competes (speed-check turns, merge order, builder slots, the lead's attention) the render plan (D-276) goes first, the tech-debt list (D-295) second, all other work third. Parked work stays parked ("Render plan first").
-
-## 2026-10-27 · D-297 · Director · Tanks and helicopters remade in Tripo, up to 600 credits
-His words: "i think our helis and tanks look untextured too, they look procedurally drawn rather than proper models". Asked how to remake them; picked "Tripo, up to 600 credits": the tank, the gunship and the governor's helicopter are generated in Tripo Studio (HD model, Private every generation, balance checked before and after), split into the parts the game moves (turret, barrel; main and tail rotor, gun), shown to him from six views, then voxelised into assets/vehicles. This is his written yes for up to 600 Tripo credits on vehicles. Debt row 24.
-
-## 2026-10-27 · D-296 · Director · No builder count: as many as the PC and tests allow
-Asked "so what are these slots? is it a guardrail hallucination?" (the "at most 3 builders" rule had no quote of his behind it; his 10-21 words were "use as many sub agents as you want, up to 8"). Answer: "idc how many, use 100 if its not going to ruin the tests / use as many as is feasible". The machine gates stay (nothing new under 6 GB free RAM or above 85% CPU, one speed check at a time); on a PC freeze find the cause before cutting builders. Rulebook "Kaiju team" line replaced. Replaces D-278 and D-287.
-
-## 2026-10-27 · D-295 · Director · Every tech-debt item is actioned
-Asked "does our project have a proper tech stack and good codebase hygiene", then: "I want the FULL list of debt items, i want them all actioned". Picked "After facade+vehicles" for the hygiene builder. List: docs/roadmap/2026-10-27-tech-debt.md (from C:/kt/debt/debt_list.md), every row owned and closed by a PR.
-
-## 2026-10-27 · D-294 · Director · Death: his stone shards land first, then the blast
-Asked (02:5x, on the death clip with all 3 Death Blast nodes): "Shards first": his falling stone body smashes buildings, then the blast clears the rest; both visibly destroy things. Not chosen: blast first (as built, shards hit only rubble). Same look: "i dont like the pale blocks that come out of the explosion" (plain untextured cubes; fix in the same PR #240).
-
-## 2026-10-27 · D-293 · Director · The rule audit covers workflow rules too
-Asked: "Yes, add workflow rules": the D-291 audit also lists every workflow rule we follow (RULEBOOK, CLAUDE.md files, briefs) with its source, his quote and date or "agent-made", for him to keep or cut each agent-made one. Not chosen: game behaviours only.
-
-## 2026-10-27 · D-292 · Director · Background tests run beside speed checks
-His words: "sometimes a hallucinated guardrail will handcuff our progress even though i never would have wanted to use that guardrail". The lead's own rule "timing benches run with no other Godot" (CLAUDE.md, #255) held four builders idle 01:50-02:24 for ~15 min of benching. Asked: "Yes, let them run": headless Godot runs (tests, imports; no window, no graphics) go ahead while a speed check runs; only windowed/GPU Godot waits for it. Check once: if a speed check's whole-route p95 moves more than 1% with a headless suite beside it, the lead brings it back to him (two clean main High runs differed 0.1%: 55.29 vs 55.23). Not chosen: keep the full stop.
