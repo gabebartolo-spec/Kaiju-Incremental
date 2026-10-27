@@ -118,18 +118,24 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 	pelvis_speed = _pelvis.y
 	var euler := Vector3(-_lean.x, _yaw.x, _roll.x)
 	var offset := Vector3(_sway.x, _pelvis.x, _surge.x)
-	# Keep every planted foot in reach: sink the pelvis (at once) rather than let a foot slide,
-	# and ease back up (never pop) once it is no longer needed.
+	offset = _pose_in_reach(dt, root, euler, offset)
+	_lock_chest(euler, offset)
+
+
+## Keep every planted foot in reach: sink the pelvis (at once) rather than let a foot slide,
+## and ease back up (never pop) once it is no longer needed. Returns the offset it posed.
+func _pose_in_reach(dt: float, root: Transform3D, euler: Vector3, offset: Vector3) -> Vector3:
+	var h := g.hip_height
 	g.rig.pose("spine0", euler, offset)
 	var need := 0.0
-	for leg: BipedGait.Leg in legs:
+	for leg: BipedGait.Leg in g.legs:
 		if leg.planted:
 			need = maxf(need, reach_drop(leg, root) / g.s)
 	need = minf(need, MAX_SINK * h)
 	_sink = maxf(need, move_toward(_sink, need, dt * SINK_RECOVER * h))
 	offset.y -= _sink
 	g.rig.pose("spine0", euler, offset)
-	_lock_chest(euler, offset)
+	return offset
 
 
 ## The chest sits where a pelvis with only its lean, drop and surge would carry it: the hips'
