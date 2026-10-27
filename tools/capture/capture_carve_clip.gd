@@ -9,6 +9,8 @@ extends SceneTree
 ##     --script tools/capture/capture_carve_clip.gd -- --stage=3 --level=2 --seconds=30
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+## Frames after the rampage is freed, so deferred frees run before the engine exits.
+const DRAIN_FRAMES := 30
 
 var _opt := {}
 var _seen := {}  # piece instance id -> true once logged
@@ -43,6 +45,8 @@ func _run() -> void:
 			% [carve.on, carve.shown, carve.unseen, carve.worst_wait]
 		)
 	)
+	rampage.queue_free()  # Rampage lets go of the sim's rings (D-179), as log_smoke does
+	await Kit.frames(self, DRAIN_FRAMES)
 	quit()
 
 
@@ -56,6 +60,7 @@ func _log(city: CityView, frames: int) -> void:
 			continue
 		_seen[node.get_instance_id()] = true
 		var pivot: Vector3 = node.get_meta("pivot")
+		var parts: Array = node.get_meta("parts")
 		var where := "behind"
 		if not cam.is_position_behind(pivot):
 			where = str(cam.unproject_position(pivot).round())
@@ -66,7 +71,7 @@ func _log(city: CityView, frames: int) -> void:
 					frames / 60.0,
 					id,
 					str(f["kind"]),
-					(node.get_meta("parts") as Array).size(),
+					parts.size(),
 					Engine.get_process_frames() - Num.i(node.get_meta("since")),
 					pivot.round(),
 					where
