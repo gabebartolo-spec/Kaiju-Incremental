@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
+His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
+Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
+(Recommended)": the camera stays at his back and turns slowly with him, as heavy as his turn; the intro pivots out
+behind him (D-325) and play starts right there, with no jump; the bay stays on the north edge (D-270). Lead's check
+of main the same day: the follow kept one fixed compass offset (tuning camera.offset, CameraFollow) and did not turn
+with him, so this is built, not restored. D-259's limited swing (about 60 deg) eases back to behind him. Every look
+approved from the fixed view gets one recheck capture.
+
 ## 2026-10-27 · D-329 · Director · Tail whip: the automatic whip stays until the button lash is built
 Q: D-328 removes the automatic tail whip and moves its tree nodes to the button tail lash (D-280), but the lash is
 timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
