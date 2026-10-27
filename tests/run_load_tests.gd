@@ -225,8 +225,7 @@ func _check_stand_in_fade() -> void:
 	if far >= 0:
 		stream.view(far)
 		check(
-			boxes.alpha(far) == 0.0,
-			"a building the rampage touches loses its box at once, no fade"
+			boxes.alpha(far) == 0.0, "a building the rampage touches loses its box at once, no fade"
 		)
 	stream.queue_free()
 	await process_frame

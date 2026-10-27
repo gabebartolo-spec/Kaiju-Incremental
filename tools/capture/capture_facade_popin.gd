@@ -68,9 +68,7 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(_out)
 	PlayerSettings.graphics = _graphics
 	var stats := Kit.stats("reptilian", Kit.STAGE_LEVELS[_stage - 1], "reptilian")
-	var layout := CityGrowth.layout(
-		Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0)
-	)
+	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
 	var rampage := Rampage.new()
 	rampage.setup(Content.species_def("reptilian"), stats, layout, 0)
 	Content.set_time(_time)
@@ -157,8 +155,17 @@ func _run() -> void:
 						(
 							"%d,%d,%d,%.1f,%.2f,%.2f,%d,%d,%d,%d,%d"
 							% [
-								f, n, up, near, near / maxf(start, 0.1), blur, box.size.y,
-								b.height, 1 if b.landmark != "" else 0, waited[n], wanted[n]
+								f,
+								n,
+								up,
+								near,
+								near / maxf(start, 0.1),
+								blur,
+								box.size.y,
+								b.height,
+								1 if b.landmark != "" else 0,
+								waited[n],
+								wanted[n]
 							]
 						)
 					)
@@ -192,7 +199,15 @@ func _run() -> void:
 					(
 						"%d,%d,%d,%.1f,%d,%.3f,%.3f,%.3f,%.3f,%.3f"
 						% [
-							f, c[0], c[1], c[2], c[3], before[0], after[0], before[1], after[1],
+							f,
+							c[0],
+							c[1],
+							c[2],
+							c[3],
+							before[0],
+							after[0],
+							before[1],
+							after[1],
 							_crop_diff(prev_shot, shot, box, rect)
 						]
 					)
