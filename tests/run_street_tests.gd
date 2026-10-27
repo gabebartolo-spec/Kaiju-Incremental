@@ -260,7 +260,9 @@ func _check_people_bounds() -> void:
 
 ## With the extension the civilians walk natively (KaijuWalk, item 7), and every frame the street
 ## is the GDScript loop's: people, random streams and totals, through stomps, braces, a blockade
-## and officers that run far enough to leave (WALK_FRAMES covers their COP_FLEE_SECONDS).
+## and officers that run far enough to leave. The replay's straight line never reaches a
+## blockade, so the kaiju turns toward the first officer's post (measured: the blockade breaks at
+## frame ~480 and the first officer leaves at ~1085 of WALK_FRAMES).
 func _check_walk_native() -> void:
 	if not StreetDraw.available():
 		check(true, "skipped: no native library")
@@ -274,6 +276,9 @@ func _check_walk_native() -> void:
 		on.step()
 		off.step()
 		var i := on.street.cop.find(1)
+		if i >= 0 and seen.is_empty():
+			on.aim(on.street.officers[i].post)
+			off.aim(on.street.officers[i].post)
 		while i >= 0:
 			seen[on.street.officers[i]] = true
 			i = on.street.cop.find(1, i + 1)
