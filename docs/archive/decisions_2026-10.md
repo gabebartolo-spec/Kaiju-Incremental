@@ -2,6 +2,66 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-26 · D-266 · Director · Tripo street-life props, up to 1,500 credits
+
+"if you somehow run out of things to do, please start generating some streetlife props in Tripo"; picked "Up to 1,500 credits" (about 20 props, the most common street things first, every model Private). Balance before: about 9,855. Props go through the same six-view inspection and straight to him.
+
+## 2026-10-26 · D-263 · Director · Interview of 9: charged stomp, bite, combo, time's up, results, city seeds, red-light
+
+Asked ahead of the croc kit, shell and city queue ("ask me questions about jobs next in your queue too"). Charged stomp "Rooted while charging" (he plants and crouches until release). Snap bite "No, snaps mid-stride" (eating never slows him). Combo "Any kill or building break" keeps the ~3 s window going. Time's up: offered a retreat, he answered "wait no i want him to die": at zero the "Army's final strike" (one overwhelming jet run or railgun volley) kills him, he collapses in the street as on defeat, and "Yes, every death counts" (the specimen number goes up on every death). Results: "Headline per ending" (city falls / killed by the final strike / lost to the army). City order "Different per save" (each save slot's own seed plus the run index; replays and tests still reproduce). Red-light district "Neon and signs only" (nothing suggestive, original names).
+
+## 2026-10-26 · D-262 · Director · The croc's leap arcs high and lands on the target's roof
+
+The leap (D-259, replaces the dash) first flew a realistic low arc (about half to one hip height), lower than most buildings, so the body would plough through whatever stood between the croc and its target. Asked how the leap meets "a leap that lands on a building and crushes it with a shockwave", he picked "High arc, lands on roof": the croc springs high over the street and comes down on top of the target building, crushing it with the shockwave; nothing in between is hit. The reader's realistic apex bar (L5) no longer applies to the sim's flight path; every other leap bar stands. Player copy says "Leap", not "Dash".
+
+## 2026-10-26 · D-261 · Director · Cities from shuffled building blocks; railgun warning fits the leap; more slots; trial clips in dev builds
+
+City: today every run in a stage is the same city (fixed map_seed, building stream index 0), short of D-133's per-run landmarks. Ruling: "our city mostly randomised but with pre-determined blocks of buildings" (authored blocks built from the Tripo heroes and fillers, district by district, shuffled onto the street grid each run with the landmarks and explosive sites); streets "Shuffle within a few street plans" (2-3 tested plans per growth stage). "we can also create more districts if that helps". Railgun vs leap (D-178): the lock warning grows to fit the leap's crouch, "Longer warning, scaled by size" (about 0.6 / 0.75 / 1.0 s), so a leap at the lock still dodges the volley. Team: an extra builder slot "for the Shell work", and "open another slot temporarily for the road agent" ("dont leave work half finished"). Cascadeur: "we still have more time on the trial ... continue": trial animations may be used in development builds (register: DEV ONLY); the paid licence (Indie covers every feature we use) and a re-run of each kept animation come before any release; no more asking until then.
+
+## 2026-10-26 · D-260 · Director · Interview of 20: biomass flow, tree rules, stomp charge, power grid, civilians, defeat, specimens
+
+Asked 20 more (checked against the archive first). Biomass "Automatic, shown flowing to him" (a mote stream into the croc); "No refunds"; evolution "At once, with the reveal"; after results "The tree, with 'Rampage' one press away". Stomp "Tap to stomp, hold to charge" (about 1 s charge, bigger shockwave, a crouch and crackle tell); breath stays on its cooldown; the breath "surges the grid" (power lines and substations spark down the street, blow transformers, black out the block). River: no preference (lead's call: he can wade, no rule; healing stays the D-259 tree node). Civilians: "Small blood smear, no chunks" (replaces the archived "bloodless puff"; the gore toggle turns it to dust); they evacuate toward the edges over a run, with jammed exits. Army-wrecked buildings pay "full pay" (jet strikes stay unpaid). Defeat: "He collapses in the street". "+N" pops "Only for big payouts". Navigation: landmarks "Visible on the skyline, nothing else". Time of day stays random per run (D-258's "Night only" was the street-life answer, not the run's time). Specimens: the kaiju is "SPECIMEN K-01" and each death makes the next ("i meant 'dies'"), shown as a 2 s "Lab card + a short headline" (K-01 LOST · K-02 RELEASED) before the rise. No difficulty setting; the Taskforce commander mini-boss "After the demo"; pause has "End rampage" only (pays as on defeat).
+
+## 2026-10-26 · D-259 · Director · Interview of 30: run length, combo, croc kit, defeat, districts, camera, options, demo shell
+
+Asked 30 questions ("study all the features ... 30 pertinent questions"). Loop: rampage timer "60 s up to 3 min" (data rows, timer nodes); on defeat "Keep it all"; combo "a small, quick combo" (about 3 s window, cap about x2, pop on the biomass figure); throw nodes "Ricochet" and "Domino" (no wrecking ball). Croc kit: the leap that replaces the dash ships "in the demo"; claw rake "Stays automatic"; tail whip "Automatic, from a tree node"; healing "A tree node unlocks it" (eating heals once bought); an "automatic snap" bite eats people, cars and helicopters near the snout. Army: defeat "Rarely, about 1 run in 8" (replaces D-069a's softer target); "A small threat icon" (a 1-5 level badge near the timer, the one HUD addition); mortars "After the demo"; the city "falls" at 85% destroyed (the run ends on a win beat). City: "one signature hazard or prey" per district; a "Fresh city each run" (no scars). Shell: "Three slots"; camera "Limited swing, auto-returns" (about 60 deg, eases back); slow motion "Only when a landmark falls" (narrows the archived "rare split-second slow motion on the biggest moments"; the VIP stays without, D-243); rumble "scaled by size, with a toggle"; a simple photo mode in the demo; accessibility: rebinding, reduce flashing, hold or toggle, colour-blind safe cues; gore "On by default, with a toggle" (D-242 unchanged); languages "All six + Chinese at the demo"; results screen: biomass and best combo, destruction tally, body count, personal bests (extends D-152's stats); no demo-end tease; news crawl "On big events"; run stats "Opt-in, attached to feedback" (no background sending; D-152's no-network feedback file gains a tick box); Steam page "Not yet"; a 60 s trailer from game captures; if M4 slips, "Hold M4 until all of it is in". He noted some questions repeated earlier interviews: the lead now greps the archive and roadmap chapters before asking.
+
+## 2026-10-26 · D-258 · Director · Street life, Taskforce and demo rulings
+
+Street life: civilians "Mixed panic"; hydrants "Puts out fires"; traffic "Yes, jams and pile-ups"; time of day "Night only". Taskforce: grapple "Buildings only"; swatting agents out of the air "Yes, with a bonus"; an agent hit is a "Gore splatter"; jetpack "Hover and fire". Demo: the automatic stomp is replaced by the stomp button ("Button replaces it"); scope "Baby to adult croc"; controls "Keyboard+mouse and gamepad".
+
+## 2026-10-26 · D-257 · Director · District buildings: review, scale, colour, signs, rewards; new bridge; stomp button
+
+Asked a batch ("ask me a lot of questions"). Tripo buildings: reviewed as "One board per district"; tallest skyscrapers "About 2x the croc" (adult); "District palettes" applied at voxelising (Chinatown reds/greens, docklands brick, neon strip dark with bright signs); Chinatown signs in "Real Chinese characters" (authentic shop words, meaning checked, no real brands). Red-light district: "Suggestive signage" (cheeky silhouette neon, XXX-style signs; nothing explicit beyond signage). Hero landmarks (bank, town hall, courthouse...): "Yes, a big bonus" (biomass burst + callout). Landmark bridge: "Make a new one" (Golden Gate / Harbour Bridge style suspension span over the wider water, Tripo HD, inside the D-256 4700 cap). Croc stomp: "Its own button" (stomp where you stand, shockwave flattens nearby streets and props). Also: "Swap in the new adult" (adult3 replaces croctitan in game; old clips retargeted until re-keyed in Cascadeur); keep HD over Smart Mesh for buildings ("Keep HD").
+
+## 2026-10-26 · D-256 · Director · Tripo district buildings: hero pieces and 40 fillers, up to 4700 credits
+
+"can probably make the architecture as tripo models then voxelise it if that works?"; picked "Hero buildings, <=1500 credits", then "id be happy for you to make like 30-40 buildings in tripo to act as filler buildings" and picked "Go to 40 filler" (<=3200). Districts total <=4700 credits. Every model gets a six-view check and is voxelised into carvable cell grids (tools/landmarks/bake.py, D-253); filler is placed with variation (facings, mirror, floor stretch, palettes, roof clutter), no model above 5% of a view, no identical neighbours. "can you get started on the tripo": the lead generates through the built-in browser.
+
+## 2026-10-26 · D-255 · Director · Districts grow by stage; street life; human clips may be premade; agents swing and jet
+
+Districts (comment #78): red-light district, Chinatown, docklands, a bar and restaurant street, a business district, neon commercial streets and a giant billboard intersection; picked "Grow by stage" (baby: bar strip + neon street; teen adds Chinatown, red-light, docklands; adult adds business district + billboard intersection). Street life (#77): traffic lights, power lines, manholes, bins, graffiti, street lights, phone booths, food trucks, plus "Add a few more" (hydrants, bus stops, benches, newsstands, bikes). Taskforce (#76): "spiderman" grapple swings then jetpacks, "Mix by situation"; "if the premade clips are better, then we use them" (humans only; kaiju stay Cascadeur); agents get "New voxel poses".
+
+## 2026-10-26 · D-254 · Director · Play area 1.5x wider; landmarks and explosive sites spread; the landmark bridge
+
+"id like to expand the play area for all 3 stages": "1.5x wider" (half-widths 75/120/225 m). "space out our landmarks (of which one is a bridge, so we can also put an expanded water area there) and explosive sites across the new expanded area"; the bridge is the D-133 suspension bridge tower Tripo model, "like a sydney harbor bay bridge/golden gate bridge style".
+
+## 2026-10-26 · D-253 · Director · Carving is universal for every building and structure
+
+"carve is a universal feature for all buildings" (standing rule). Every building and structure, railway included, breaks only through the one voxel carve and collapse path; a CI test fails any structure type that removes geometry another way (landmarks and river bridges are named known gaps until converted). PR #209 rail: "FIX. he doesnt carve it at all? he hits it once and it disappears".
+
+## 2026-10-26 · D-252 · Director · Croc focus to the Itch demo; dragon paused; subagent team; model per task; merge everything
+
+"can we pause all dragon work for now though", "I want to focus on getting croc shipped" (finish line: Itch demo, M4); croc stomp first ("Croc standing stomp", then "Croc stomp next"). Team: subagents, 3 builders + 1 reader; "i need you to determine whether a task demands opus or sonnet". Branches: "I want the branches fully cleaned up and stale ones removed / i want all mergable good work merged"; "why isnt it merged? ive been asking you to merge everything" (PR cap 8 until the backlog lands); branch force-delete unblocked in settings ("Remove the block"). Skeletons: "optimised for natural, smooth animation", "only interested in our reptilian skeletons".
+
+## 2026-10-26 · D-251 · Director · Komodo w29 walk approved; Komodo lands off
+
+"walk is good. ship it"; Komodo motion bars "His own, from w29"; Komodo work lands off by default while paused ("Land it too").
+
+## 2026-10-26 · D-250 · Director · Straight to him: every visual goes to the director, judged by no agent
+
+"just show me the clip, i will immediately know what is wrong and can describe the fix, you then workout how to do that fix"; every visual, every project. Replaces D-249's lead-looks-first route.
+
 ## 2026-10-25 · D-249 · Director · No critics: only the lead and the director judge art
 
 Director: "abandon our critics, all art passes through you who ACTUALLY LOOKS AT IT and then ASK ME, so the builders are never judging the art, only you and me". Confirmed by question: every project, and the VFX lead does not judge either. Why: critics were passing work he could see was wrong. What changes: no critic agents or sessions (the four critic agent types are retired); every image, capture and clip goes straight to the lead, who opens it, checks it at 1x and 2x crops beside a real reference, sends back defects with exact fixes, then asks him with labelled images. Builders and helpers never give an art verdict. RULEBOOK, ~/.claude/CLAUDE.md, art-qa-critic, game-studio-lead and the Kaiju proof and handoff skills updated.
