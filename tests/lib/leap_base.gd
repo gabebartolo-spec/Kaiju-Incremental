@@ -48,6 +48,27 @@ func _finish(sim: RampageSim, stick: Vector2 = Vector2.ZERO) -> Array[Dictionary
 	return seen
 
 
+## Like _finish, but every tank in `held` is put back on the spot it has now before each step until
+## the landing: a young croc's firing band now reaches a tank standing in its way, so the convoy
+## drives it toward a post, and this fixture tests the ring, not that driving.
+func _finish_held(sim: RampageSim, held: Array[RampageSim.Tank]) -> Array[Dictionary]:
+	var spots: Array[Vector2] = []
+	for tank: RampageSim.Tank in held:
+		spots.append(tank.pos)
+	var seen: Array[Dictionary] = []
+	var landed := false
+	for _n: int in roundi(5.0 / DT):
+		if not sim.body.dash.on():
+			break
+		if not landed:
+			for i: int in held.size():
+				held[i].pos = spots[i]
+		var events := sim.step(DT, Vector2.ZERO, false, 0)
+		landed = landed or not _first(events, "leap_land").is_empty()
+		seen.append_array(events)
+	return seen
+
+
 func _first(events: Array[Dictionary], kind: String) -> Dictionary:
 	for event: Dictionary in events:
 		if str(event["type"]) == kind:

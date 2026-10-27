@@ -167,8 +167,10 @@ static func _boxes_touch(
 	return true
 
 
+## The tanks' reach as the sim has it (Convoy.reach: never so short the firing band ends inside
+## the body's keep-away).
 func _reach(sim: RampageSim) -> float:
-	return Num.f(sim.army["range"]) + sim.stomp_radius()
+	return sim.army_units.convoy.reach()
 
 
 func _danger(sim: RampageSim) -> float:
