@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
+const RETARGET_STEPS := 15
 const Rings := preload("res://tests/lib/fixture_rings.gd")
 
 
@@ -52,12 +53,15 @@ func _sim_seeded(
 	return sim
 
 
-## Scripted player: walk to the nearest standing building, use the signature when ready.
-func _autoplay(sim: RampageSim, max_steps: int = MAX_STEPS) -> Dictionary:
+## Scripted player: walk to the nearest standing building, use the signature when ready; it picks
+## its target afresh every `retarget_steps` steps.
+func _autoplay(
+	sim: RampageSim, max_steps: int = MAX_STEPS, retarget_steps: int = RETARGET_STEPS
+) -> Dictionary:
 	var steps := 0
 	var target := Vector2(INF, INF)
 	while not sim.over and steps < max_steps:
-		if steps % 15 == 0:
+		if steps % retarget_steps == 0:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
 		if target.x < INF and not sim.body.stomp_reaches(target):
