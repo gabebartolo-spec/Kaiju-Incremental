@@ -5015,12 +5015,13 @@
         },
         "night_clip_max": {"$ref": "#/$defs/num"},
         "remesh_high_priority": {"$ref": "#/$defs/bool"},
-        "native_colliders": {"$ref": "#/$defs/bool"}
+        "native_colliders": {"$ref": "#/$defs/bool"},
+        "island_merged": {"$ref": "#/$defs/bool"}
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
         "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
-        "remesh_high_priority", "native_colliders"
+        "remesh_high_priority", "native_colliders", "island_merged"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

@@ -5,7 +5,8 @@ extends RefCounted
 ## first clip had inverted normals: faces vanished from outside). Colours by material, with a
 ## faint per-cell shade so a flat wall reads as voxels, darkened at each corner by the baked
 ## voxel AO (VoxelAO, the look's strength; a StandardMaterial3D cannot read it from UV). Shared
-## by island bodies and captures.
+## by island bodies and captures. The faces build on a worker as well (IslandMesh): only
+## to_mesh() and material() touch a render resource.
 
 ## Face order: -x, +x, -y, +y, -z, +z.
 const STEPS: Array[Vector3i] = [
@@ -56,8 +57,8 @@ static var _ao_steps: Array = _make_ao_steps()
 
 
 ## The faces being built: the grid they test against and their arrays (a holder: packed arrays
-## copy on write).
-class _Faces:
+## copy on write). strength: the look's AO strength (VoxelAO.strength(), read on the main thread).
+class Faces:
 	var site: CarveSite
 	var solid: PackedByteArray
 	var size: float
@@ -66,11 +67,11 @@ class _Faces:
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
 
-	func _init(p_site: CarveSite, p_solid: PackedByteArray) -> void:
+	func _init(p_site: CarveSite, p_solid: PackedByteArray, p_strength: float) -> void:
 		site = p_site
 		solid = p_solid
 		size = 1.0 / site.res
-		strength = VoxelAO.strength()
+		strength = p_strength
 
 	## Face f of cell c (corner at p), coloured col and shaded by its corners' AO.
 	func add(c: Vector3i, f: int, p: Vector3, col: Color) -> void:
@@ -133,17 +134,36 @@ static func build_at(
 ) -> ArrayMesh:
 	var mats: PackedByteArray = src[0]
 	var solid: PackedByteArray = src[1]
-	var out := _Faces.new(site, solid)
+	var out := Faces.new(site, solid, VoxelAO.strength())
+	add_cells(out, cells, mats, offset)
+	return to_mesh(out)
+
+
+## Adds the faces of `cells` (indices), coloured by `mats` (parallel), placed relative to
+## `offset` (world), to `out`: a face where the neighbour is outside the grid or not solid.
+static func add_cells(
+	out: Faces, cells: PackedInt32Array, mats: PackedByteArray, offset: Vector3
+) -> void:
+	var site := out.site
 	var base := site.origin - offset
 	for k: int in cells.size():
 		var c := site.cell(cells[k])
-		var col := site.color(mats[k])
-		var shade := SHADE_MIN + (1.0 - SHADE_MIN) * posmod(c.x * 7 + c.y * 13 + c.z * 3, 5) / 4.0
-		col = Color(col.r * shade, col.g * shade, col.b * shade)
+		var col := shaded(site, c, mats[k])
 		var p := base + Vector3(c) * out.size
 		for f: int in 6:
 			if not out.blocks(c + STEPS[f]):
 				out.add(c, f, p, col)
+
+
+## Cell c's colour: its material's, with the faint per-cell shade.
+static func shaded(site: CarveSite, c: Vector3i, m: int) -> Color:
+	var col := site.color(m)
+	var shade := SHADE_MIN + (1.0 - SHADE_MIN) * posmod(c.x * 7 + c.y * 13 + c.z * 3, 5) / 4.0
+	return Color(col.r * shade, col.g * shade, col.b * shade)
+
+
+## The mesh of the faces in `out` (main thread), null when there are none.
+static func to_mesh(out: Faces) -> ArrayMesh:
 	if out.verts.is_empty():
 		return null
 	var arrays := []
