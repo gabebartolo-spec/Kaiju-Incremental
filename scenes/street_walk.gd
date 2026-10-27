@@ -51,6 +51,7 @@ func frame(delta: float, kaiju: Vector2, now: PackedFloat64Array) -> void:
 	var from: PackedInt32Array = out[4]
 	var to: PackedInt32Array = out[5]
 	var corners: PackedInt32Array = out[6]
+	var startled: int = out[7]
 	for i: int in corners:  # last index first, as the loop meets them
 		var next := _pavements.next_corner(to[i], from[i], kaiju, fleeing[i] == 1)
 		from[i] = to[i]
@@ -64,7 +65,7 @@ func frame(delta: float, kaiju: Vector2, now: PackedFloat64Array) -> void:
 	s.pinned_until = out[3]
 	s.from_node = from
 	s.to_node = to
-	s.fled += int(out[7])
+	s.fled += startled
 	for i: int in gone:  # last index first, as the loop removes them
 		s.remove(i)
 
