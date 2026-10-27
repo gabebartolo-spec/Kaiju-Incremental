@@ -11,6 +11,8 @@ extends SceneTree
 ##   --mask  with each still, <label>_tNN_mask.png: the water sheets alone, white on black
 ##   --off   with each still, <label>_tNN_off.png: the same frame with the glossy sheet the
 ##           surface replaced (WaterSurface.gloss), so a measurement compares like with like
+##   --alt=wave_slope=0.15,crest_light=0.35  (repeatable) with each still, <label>_tNN_altN.png:
+##           the same frame with those water uniforms changed, for tuning in one run
 ##   (the mask swaps the environment, resetting its temporal history: in a --mask run, compare
 ##   only the first still with another run's)
 ##   --tune=section.key=value  (a tuning.json number)   --calm  (no camera shake or dip)
@@ -29,6 +31,7 @@ var _out := "user://river"
 var _label := "river"
 var _mask := false
 var _off := false
+var _alts: Array[String] = []
 
 
 func _initialize() -> void:
@@ -54,6 +57,8 @@ func _initialize() -> void:
 			_mask = true
 		elif arg == "--off":
 			_off = true
+		elif arg.begins_with("--alt="):
+			_alts.append(arg.substr(6))
 		elif arg == "--calm":
 			PlayerSettings.camera_motion = 0.0
 		elif arg.begins_with("--tune="):
@@ -144,6 +149,8 @@ func _still(rampage: Rampage, at: float) -> void:
 	)
 	if _off:  # first: it swaps the water's material only, so its frame stays like the still's
 		await _save_off(rampage, name + "_off.png")
+	for i: int in _alts.size():
+		await _save_alt(rampage, _alts[i], "%s_alt%d.png" % [name, i + 1])
 	if _mask:  # the mask swaps the environment too, which resets its temporal history
 		await _save_mask(rampage, name + "_mask.png")
 	rampage.set_physics_process(true)
@@ -226,6 +233,31 @@ func _save_off(rampage: Rampage, path: String) -> void:
 	for _i: int in 2:
 		await process_frame
 	print("river: off %s (%d sheets)" % [path, kept.size()])
+
+
+## The same frame with the water's uniforms changed ("name=value,name=value"), restored after.
+func _save_alt(rampage: Rampage, alt: String, path: String) -> void:
+	var kept: Array[Array] = []
+	for node: Node in rampage.find_children("*", "MeshInstance3D", true, false):
+		var plane := (node as MeshInstance3D).mesh as PlaneMesh
+		var mat := plane.material as ShaderMaterial if plane != null else null
+		if mat == null or not node.is_in_group(WaterSurface.GROUP):
+			continue
+		for pair: String in alt.split(","):
+			var kv := pair.split("=")
+			kept.append([mat, kv[0], mat.get_shader_parameter(kv[0])])
+			mat.set_shader_parameter(kv[0], kv[1].to_float())
+	for _i: int in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(path)
+	kept.reverse()  # a material two sheets share gets its first, true value back last
+	for k: Array in kept:
+		var mat: ShaderMaterial = k[0]
+		var key: String = k[1]
+		mat.set_shader_parameter(key, k[2])
+	for _i: int in 2:
+		await process_frame
+	print("river: alt %s %s" % [alt, path])
 
 
 static func _flat(color: Color) -> StandardMaterial3D:
