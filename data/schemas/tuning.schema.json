@@ -1985,6 +1985,18 @@
           "required": ["on", "own_haze", "base", "base_height", "start"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "far_reflect": {
+          "type": "object",
+          "properties": {
+            "on": {"$ref": "#/$defs/bool"},
+            "strength": {"$ref": "#/$defs/num"},
+            "energy": {"$ref": "#/$defs/num"},
+            "reach": {"$ref": "#/$defs/num"}
+          },
+          "required": ["on", "strength", "energy", "reach"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2007,7 +2019,7 @@
         "min_height", "max_height", "tier_height", "size_scale_per_tier", "young_scale",
         "growth_per_level", "leap_distance", "cone_half_angle_deg", "breath_snout_ahead",
         "chunk_hp", "dwarf_exp", "chunk_rubble", "kaiju_height", "impact_damage", "fall_gravity",
-        "topple_bonus", "far_fog"
+        "topple_bonus", "far_fog", "far_reflect"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -4101,16 +4113,12 @@
         "turn_accel": {"$ref": "#/$defs/num"},
         "step_len": {"$ref": "#/$defs/num"},
         "support_both": {"$ref": "#/$defs/num"},
-        "slice_from": {"$ref": "#/$defs/num"},
-        "slice_open": {"$ref": "#/$defs/num"},
-        "turn_cadence": {"$ref": "#/$defs/num"},
+        "turn_ramp": {"$ref": "#/$defs/num"},
+        "turn_land_deg": {"$ref": "#/$defs/num"},
         "step_ratio_min": {"$ref": "#/$defs/num"},
         "cadence_ease": {"$ref": "#/$defs/num"},
         "turn_min": {"$ref": "#/$defs/num"},
         "smooth_below": {"$ref": "#/$defs/num"},
-        "slice_accel": {"$ref": "#/$defs/num"},
-        "turn_ease_min": {"$ref": "#/$defs/num"},
-        "turn_ease_peak": {"$ref": "#/$defs/num"},
         "turn_slow": {"$ref": "#/$defs/num"},
         "stride_ease": {"$ref": "#/$defs/num"},
         "walk_off_s": {"$ref": "#/$defs/num"},
@@ -4172,7 +4180,10 @@
                   "pivot": {"type": "array", "items": {"$ref": "#/$defs/num"}},
                   "stomp_foot": {"type": "array", "items": {"$ref": "#/$defs/num"}},
                   "discs": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
-                  "step_len": {"$ref": "#/$defs/num"}
+                  "step_len": {"$ref": "#/$defs/num"},
+                  "uturn_s": {"$ref": "#/$defs/num"},
+                  "turn_steps": {"$ref": "#/$defs/num"},
+                  "turn_slow": {"$ref": "#/$defs/num"}
                 },
                 "required": ["snout", "pivot", "stomp_foot", "discs"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -4188,8 +4199,8 @@
       "required": [
         "skin", "sample", "turn_rate", "turn_rate_still", "turn_size_exp", "step_turn_rate",
         "step_turn_rate_still", "step_turn_size_exp", "turn_accel", "step_len", "support_both",
-        "slice_from", "slice_open", "turn_cadence", "step_ratio_min", "cadence_ease", "turn_min",
-        "smooth_below", "slice_accel", "turn_ease_min", "turn_ease_peak", "turn_slow",
+        "turn_ramp", "turn_land_deg", "step_ratio_min", "cadence_ease", "turn_min",
+        "smooth_below", "turn_slow",
         "stride_ease", "walk_off_s", "pay_mult", "bite_dps", "leap", "bodies"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

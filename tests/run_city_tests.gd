@@ -19,6 +19,7 @@ const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
 const EdgeMark := preload("res://tests/lib/city_arena_edge.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
+const RiseForms := preload("res://tests/lib/city_rise_forms.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
 const BridgeLand := preload("res://tests/lib/city_bridge_land.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
@@ -42,6 +43,7 @@ func run_checks() -> void:
 		"city_diag_fill",
 		func() -> void: preload("res://tests/lib/city_diag_fill.gd").new(check, root).run()
 	)
+	await _h("city_rise_forms", func() -> void: RiseForms.check(COVERAGE_SEEDS, check))
 	await _t("_check_reach_is_real")
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
