@@ -3,13 +3,19 @@ extends SceneTree
 ## promoted to their fine grids (CellMesher + CellView), then carved again and again by
 ## stomp-sized spheres down their street face; each carve's remesh (its touched 16^3 blocks on
 ## the WorkerThreadPool, meshes swapped in) is timed from carved() to drawn. Native and GDScript
-## paths. Prints p50/p95/max ms per carve, blocks per carve and the building's triangles.
+## paths. Prints p50/p95/max ms per carve, blocks per carve and the building's triangles, and
+## finish_us: the main-thread time of each batch's swap-in (CellView._finish: the block meshes
+## made and attached), p50/p95/max in microseconds. A headless run uses the dummy renderer, which
+## uploads nothing, so its finish_us understates; run it windowed (a real renderer) for the real
+## one. --priority=high|low overrides tuning render_opt.remesh_high_priority for the A/B (low is
+## the behaviour before render plan item 9). tools/capture/bench_cell_runs.sh holds the PC for it.
 ## Seeded by design: fixed buildings and a fixed carve walk.
 ##   godot --headless --path . --script tools/capture/bench_cell_mesh.gd -- [--carves=60]
 
 const RADII: Array[float] = [6.0, 12.0]  # cells: a claw bite, a stomp (RES 8: 0.75, 1.5 units)
 
 var _carves := 60
+var _priority := ""
 
 
 func _initialize() -> void:
@@ -18,13 +24,29 @@ func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--carves="):
 			_carves = arg.substr(9).to_int()
+		elif arg.begins_with("--priority="):
+			_priority = arg.substr(11)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
+	if _priority != "":
+		Content.section("render_opt")["remesh_high_priority"] = _priority == "high"
 	var native := ClassDB.class_exists("KaijuMesher")
-	print("native mesher loaded: %s; worker threads: %d" % [native, OS.get_processor_count()])
+	var high: bool = Content.section("render_opt").get("remesh_high_priority", true) == true
+	print(
+		(
+			"native mesher loaded: %s; worker threads: %d; display %s, renderer %s; remesh priority %s"
+			% [
+				native,
+				OS.get_processor_count(),
+				DisplayServer.get_name(),
+				RenderingServer.get_video_adapter_name(),
+				"high" if high else "low"
+			]
+		)
+	)
 	for spec: Array in [["glass tower 6x6x16", 6, 6, 16, 3, 2], ["office 3x3x6", 3, 3, 6, 2, 0]]:
 		for use_native: bool in [true, false]:
 			if use_native and not native:
@@ -52,6 +74,8 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 	var view := CellView.new(mesher, grid.cells, StandardMaterial3D.new())
 	view.flush()
 	var t3 := Time.get_ticks_usec()
+	var first_finish_us := view.last_finish_us
+	view.keep_timings = true
 	var cells := grid.cells
 	var dims := mesher.dims
 	var times: Array[float] = []
@@ -81,12 +105,15 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 		var mesh: ArrayMesh = mi.mesh
 		tris += mesh.surface_get_array_index_len(0) / 3
 	times.sort()
+	var fin := Array(view.finish_us)
+	fin.sort()
 	print(
 		(
 			(
 				"%s %s r%d: grid+voxels %.0f ms, looks %.0f ms, first build %.0f ms (%d blocks);"
 				+ " remesh per carve p50 %.2f p95 %.2f max %.2f ms, %.1f blocks a carve;"
-				+ " %d triangles after %d carves"
+				+ " %d triangles after %d carves;"
+				+ " finish_us (first build %d) p50 %d p95 %d max %d over %d batches, high_priority %s"
 			)
 			% [
 				spec[0],
@@ -101,7 +128,13 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				times[-1],
 				float(blocks) / _carves,
 				tris,
-				_carves
+				_carves,
+				first_finish_us,
+				fin[fin.size() / 2],
+				fin[mini(floori(fin.size() * 0.95), fin.size() - 1)],
+				fin[-1],
+				fin.size(),
+				view.high_priority
 			]
 		)
 	)

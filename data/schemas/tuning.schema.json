@@ -1605,19 +1605,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "screen_flash": {
-          "type": "object",
-          "properties": {
-            "alpha": {"$ref": "#/$defs/num"},
-            "seconds": {"$ref": "#/$defs/num"},
-            "full_radius": {"$ref": "#/$defs/num"},
-            "small_share": {"$ref": "#/$defs/num"},
-            "layer": {"$ref": "#/$defs/num"}
-          },
-          "required": ["alpha", "seconds", "full_radius", "small_share", "layer"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "site_rubble": {"$ref": "#/$defs/num"},
         "fireball": {
           "type": "object",
@@ -1749,7 +1736,7 @@
         }
       },
       "required": [
-        "shake", "flash", "core", "kick", "screen_flash", "site_rubble", "fireball", "fire",
+        "shake", "flash", "core", "kick", "site_rubble", "fireball", "fire",
         "shock", "break", "fireworks", "cloud", "fuse", "debris", "debris_colors", "sound"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -2135,12 +2122,15 @@
                 "heli_gun": {"$ref": "#/$defs/str"},
                 "heli_crash": {"$ref": "#/$defs/str"},
                 "ready": {"$ref": "#/$defs/str"},
-                "deflect": {"$ref": "#/$defs/str"}
+                "deflect": {"$ref": "#/$defs/str"},
+                "thunder_beam": {"$ref": "#/$defs/str"},
+                "thunder_beam_end": {"$ref": "#/$defs/str"}
               },
               "required": [
                 "roar", "blast_crack", "blast_body", "blast_rumble", "sonic_boom", "stomp_0",
                 "stomp_1", "stomp_2", "stomp_crack", "collapse", "tank_fire", "shell_hit", "rifle",
-                "rifle_far", "heli_gun", "heli_crash", "ready", "deflect"
+                "rifle_far", "heli_gun", "heli_crash", "ready", "deflect", "thunder_beam",
+                "thunder_beam_end"
               ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -2288,13 +2278,17 @@
             "lash": {"$ref": "#/$defs/num"},
             "ready": {"$ref": "#/$defs/num"},
             "deflect": {"$ref": "#/$defs/num"},
-            "regen_loop": {"$ref": "#/$defs/num"}
+            "regen_loop": {"$ref": "#/$defs/num"},
+            "thunder_beam": {"$ref": "#/$defs/num"},
+            "thunder_beam_loop": {"$ref": "#/$defs/num"},
+            "thunder_beam_end": {"$ref": "#/$defs/num"}
           },
           "required": [
             "roar", "egg_crack", "ui_click", "ui_confirm", "ui_deny", "tank_fire", "shell_hit",
             "rifle", "rifle_far", "heli_rotor", "heli_gun", "heli_crash", "crowd_panic",
             "footstep", "stomp_crack", "collapse", "stomp", "breath", "leap_whoosh", "leap_land",
-            "lash", "ready", "deflect", "regen_loop"
+            "lash", "ready", "deflect", "regen_loop", "thunder_beam", "thunder_beam_loop",
+            "thunder_beam_end"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -3700,7 +3694,10 @@
             "lab_crackle": {"$ref": "#/$defs/str"},
             "lab_overload": {"$ref": "#/$defs/str"},
             "lab_dive": {"$ref": "#/$defs/str"},
-            "egg_crack": {"$ref": "#/$defs/str"}
+            "egg_crack": {"$ref": "#/$defs/str"},
+            "thunder_beam": {"$ref": "#/$defs/str"},
+            "thunder_beam_loop": {"$ref": "#/$defs/str"},
+            "thunder_beam_end": {"$ref": "#/$defs/str"}
           },
           "required": [
             "roar", "stomp_0", "stomp_1", "stomp_2", "stomp_crack", "collapse", "collapse_drop",
@@ -3712,7 +3709,7 @@
             "blast_body", "blast_rumble", "sonic_boom", "fireworks_crackle", "chem_hiss",
             "ui_click", "ui_confirm", "ui_deny", "lab_room", "lab_screens", "lab_latch", "lab_arm",
             "lab_drawup", "lab_dispense", "lab_strike", "lab_crackle", "lab_overload", "lab_dive",
-            "egg_crack"
+            "egg_crack", "thunder_beam", "thunder_beam_loop", "thunder_beam_end"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -3838,9 +3835,10 @@
             "drop": {"$ref": "#/$defs/num"},
             "tank_fire": {"$ref": "#/$defs/num"},
             "ability": {"$ref": "#/$defs/num"},
-            "leap_land": {"$ref": "#/$defs/num"}
+            "leap_land": {"$ref": "#/$defs/num"},
+            "bolt_stroke": {"$ref": "#/$defs/num"}
           },
-          "required": ["stomp", "topple", "drop", "tank_fire", "ability", "leap_land"],
+          "required": ["stomp", "topple", "drop", "tank_fire", "ability", "leap_land", "bolt_stroke"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         }
@@ -3950,22 +3948,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "low_health": {
-          "type": "object",
-          "properties": {
-            "below": {"$ref": "#/$defs/num"},
-            "full_at": {"$ref": "#/$defs/num"},
-            "color": {"$ref": "#/$defs/str"},
-            "alpha": {"$ref": "#/$defs/num"},
-            "depth_px": {"$ref": "#/$defs/num"},
-            "pulse_hz": {"$ref": "#/$defs/num"},
-            "pulse_sharp": {"$ref": "#/$defs/num"},
-            "fade_per_s": {"$ref": "#/$defs/num"}
-          },
-          "required": ["below", "full_at", "color", "alpha", "depth_px", "pulse_hz", "pulse_sharp", "fade_per_s"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "fringe": {
           "type": "object",
           "properties": {
@@ -3985,7 +3967,7 @@
           "additionalProperties": false
         }
       },
-      "required": ["vignette", "low_health", "fringe"],
+      "required": ["vignette", "fringe"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
@@ -4356,9 +4338,6 @@
         },
         "crack_stomp_power": {"$ref": "#/$defs/num"},
         "beam_seconds": {"$ref": "#/$defs/num"},
-        "breath_fade_in": {"$ref": "#/$defs/num"},
-        "breath_curtain_alpha": {"$ref": "#/$defs/num"},
-        "breath_curtain_height": {"$ref": "#/$defs/num"},
         "scorch_seconds": {"$ref": "#/$defs/num"},
         "scorch_soot_in": {"$ref": "#/$defs/num"},
         "scorch_glow_in": {"$ref": "#/$defs/num"},
@@ -4402,13 +4381,206 @@
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
-        }
+        },
+        "bolt": {
+          "type": "object",
+          "properties": {
+            "halo_mode": {"$ref": "#/$defs/str"},
+            "halo_modes": {
+              "type": "object",
+              "properties": {
+                "amber": {
+                  "type": "object",
+                  "properties": {"inner": {"$ref": "#/$defs/str"}, "fringe": {"$ref": "#/$defs/str"}},
+                  "required": ["inner", "fringe"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "eye": {
+                  "type": "object",
+                  "properties": {
+                    "inner": {"$ref": "#/$defs/str"},
+                    "fringe": {"$ref": "#/$defs/str"},
+                    "inner_white": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["inner", "fringe", "inner_white"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "violet": {
+                  "type": "object",
+                  "properties": {
+                    "inner": {"$ref": "#/$defs/str"},
+                    "fringe": {"$ref": "#/$defs/str"},
+                    "halo_boost": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["inner", "fringe", "halo_boost"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                }
+              },
+              "required": ["amber", "eye", "violet"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "boost_core": {"$ref": "#/$defs/num"},
+            "fringe_boost": {"$ref": "#/$defs/num"},
+            "white_to": {"$ref": "#/$defs/num"},
+            "tint_to": {"$ref": "#/$defs/num"},
+            "core_min_px": {"$ref": "#/$defs/num"},
+            "arc_min_px": {"$ref": "#/$defs/num"},
+            "arc_alpha": {"$ref": "#/$defs/num"},
+            "main_tip": {"$ref": "#/$defs/num"},
+            "mouth_share": {"$ref": "#/$defs/num"},
+            "bolt_soft": {"$ref": "#/$defs/num"},
+            "arc_every": {"$ref": "#/$defs/num"},
+            "arc_level": {"$ref": "#/$defs/num"},
+            "light_follow": {"$ref": "#/$defs/num"},
+            "strike_decay": {"$ref": "#/$defs/num"},
+            "muzzle_up": {"$ref": "#/$defs/num"},
+            "rebuild_move": {"$ref": "#/$defs/num"},
+            "wobble": {"$ref": "#/$defs/num"},
+            "wobble_hz": {"$ref": "#/$defs/num"},
+            "depth": {"$ref": "#/$defs/num"},
+            "branch_depth": {"$ref": "#/$defs/num"},
+            "first_at": {"$ref": "#/$defs/num"},
+            "feeler_level": {"$ref": "#/$defs/num"},
+            "feeler_step": {"$ref": "#/$defs/num"},
+            "feeler_reach": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "stroke_gap": {"$ref": "#/$defs/num"},
+            "attack": {"$ref": "#/$defs/num"},
+            "gap_jitter": {"$ref": "#/$defs/num"},
+            "end_margin": {"$ref": "#/$defs/num"},
+            "tail": {"$ref": "#/$defs/num"},
+            "hold_level": {"$ref": "#/$defs/num"},
+            "stroke_decay": {"$ref": "#/$defs/num"},
+            "branch_peak": {"$ref": "#/$defs/num"},
+            "branch_hold": {"$ref": "#/$defs/num"},
+            "branch_decay": {"$ref": "#/$defs/num"},
+            "light_decay": {"$ref": "#/$defs/num"},
+            "light": {
+              "type": "object",
+              "properties": {
+                "hold_share": {"$ref": "#/$defs/num"},
+                "falloff": {"$ref": "#/$defs/num"},
+                "mouth": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "impact": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+              },
+              "required": ["hold_share", "falloff", "mouth", "impact"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "muzzle_flare": {"$ref": "#/$defs/num"},
+            "flare_edge": {"$ref": "#/$defs/num"},
+            "flare_soft": {"$ref": "#/$defs/num"},
+            "strike_flare": {"$ref": "#/$defs/num"},
+            "strike_lift": {"$ref": "#/$defs/num"},
+            "impact_sparks": {"$ref": "#/$defs/num"},
+            "branch_tip": {"$ref": "#/$defs/num"},
+            "branch_sparks": {"$ref": "#/$defs/num"},
+            "power_share": {"$ref": "#/$defs/num"},
+            "prewarm_seconds": {"$ref": "#/$defs/num"},
+            "breath": {
+              "type": "object",
+              "properties": {
+                "core": {"$ref": "#/$defs/num"},
+                "sway": {"$ref": "#/$defs/num"},
+                "branches": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "bow": {"$ref": "#/$defs/num"},
+                "sub_forks": {"$ref": "#/$defs/num"},
+                "strike_scale": {"$ref": "#/$defs/num"},
+                "ring": {"$ref": "#/$defs/num"},
+                "ring_puffs": {"$ref": "#/$defs/num"},
+                "arcs": {"$ref": "#/$defs/num"},
+                "arc_reach": {"$ref": "#/$defs/num"},
+                "arc_width": {"$ref": "#/$defs/num"},
+                "branch_from": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "branch_width": {"$ref": "#/$defs/num"},
+                "branch_sway": {"$ref": "#/$defs/num"},
+                "anchor_near": {"$ref": "#/$defs/bool"},
+                "anchor_back": {"$ref": "#/$defs/num"},
+                "dust": {"$ref": "#/$defs/num"},
+                "fan_spread": {"$ref": "#/$defs/num"},
+                "fan_near": {"$ref": "#/$defs/num"},
+                "clear": {"$ref": "#/$defs/num"}
+              },
+              "required": [
+                "core", "sway", "branches", "bow", "sub_forks", "strike_scale", "ring",
+                "ring_puffs", "arcs", "arc_reach", "arc_width", "branch_from", "branch_width",
+                "branch_sway", "anchor_near", "anchor_back", "dust", "fan_spread", "fan_near",
+                "clear"
+              ],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "thunder": {
+              "type": "object",
+              "properties": {
+                "core": {"$ref": "#/$defs/num"},
+                "sway": {"$ref": "#/$defs/num"},
+                "branches": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "bow": {"$ref": "#/$defs/num"},
+                "sub_forks": {"$ref": "#/$defs/num"},
+                "strike_scale": {"$ref": "#/$defs/num"},
+                "ring": {"$ref": "#/$defs/num"},
+                "ring_puffs": {"$ref": "#/$defs/num"},
+                "arcs": {"$ref": "#/$defs/num"},
+                "arc_reach": {"$ref": "#/$defs/num"},
+                "arc_width": {"$ref": "#/$defs/num"},
+                "facade_min": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "branch_from": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "branch_width": {"$ref": "#/$defs/num"},
+                "branch_sway": {"$ref": "#/$defs/num"},
+                "anchor_near": {"$ref": "#/$defs/bool"},
+                "anchor_back": {"$ref": "#/$defs/num"},
+                "dust": {"$ref": "#/$defs/num"},
+                "end_height": {"$ref": "#/$defs/num"},
+                "street_height": {"$ref": "#/$defs/num"},
+                "into_wall": {"$ref": "#/$defs/num"},
+                "fan_spread": {"$ref": "#/$defs/num"},
+                "fan_near": {"$ref": "#/$defs/num"},
+                "clear": {"$ref": "#/$defs/num"},
+                "lash_climb": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "lash_side": {"$ref": "#/$defs/num"},
+                "turn_hold": {"$ref": "#/$defs/num"}
+              },
+              "required": [
+                "core", "sway", "branches", "bow", "sub_forks", "strike_scale", "ring",
+                "ring_puffs", "arcs", "arc_reach", "arc_width", "facade_min", "branch_from",
+                "branch_width", "branch_sway", "anchor_near", "anchor_back", "dust", "end_height",
+                "street_height", "into_wall", "fan_spread", "fan_near", "clear", "lash_climb",
+                "lash_side", "turn_hold"
+              ],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "halo_mode", "halo_modes", "boost_core", "fringe_boost", "white_to", "tint_to",
+            "core_min_px", "arc_min_px", "arc_alpha", "main_tip", "mouth_share", "bolt_soft",
+            "arc_every", "arc_level", "light_follow", "strike_decay", "muzzle_up", "rebuild_move",
+            "wobble", "wobble_hz", "depth", "branch_depth", "first_at", "feeler_level",
+            "feeler_step", "feeler_reach", "stroke_gap", "attack", "gap_jitter", "end_margin",
+            "tail", "hold_level", "stroke_decay", "branch_peak", "branch_hold", "branch_decay",
+            "light_decay", "light", "muzzle_flare", "flare_edge", "flare_soft", "strike_flare",
+            "strike_lift", "impact_sparks", "branch_tip", "branch_sparks", "power_share",
+            "prewarm_seconds", "breath", "thunder"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "orbit_degrees": {"$ref": "#/$defs/num"},
+        "orbit_rise": {"$ref": "#/$defs/num"},
+        "orbit_in_seconds": {"$ref": "#/$defs/num"},
+        "orbit_out_seconds": {"$ref": "#/$defs/num"},
+        "scorch_glow_mult": {"$ref": "#/$defs/num"}
       },
       "required": [
         "power_max", "tint_dust_night", "footfall_dust", "shockwave", "crack_stomp_power",
-        "beam_seconds", "breath_fade_in", "breath_curtain_alpha", "breath_curtain_height",
-        "scorch_seconds", "scorch_soot_in", "scorch_glow_in", "crater_seconds", "crack_seconds",
-        "sweep_seconds", "leap_trail_seconds", "regen_tint", "deflect_tint", "hide_hit"
+        "beam_seconds", "scorch_seconds", "scorch_soot_in", "scorch_glow_in", "crater_seconds",
+        "crack_seconds", "sweep_seconds", "leap_trail_seconds", "regen_tint", "deflect_tint",
+        "hide_hit", "bolt", "orbit_degrees", "orbit_rise", "orbit_in_seconds", "orbit_out_seconds",
+        "scorch_glow_mult"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -4799,10 +4971,45 @@
         "debris_cache": {"$ref": "#/$defs/bool"},
         "kaiju_tight_bounds": {"$ref": "#/$defs/bool"},
         "kaiju_bounds_slack": {"$ref": "#/$defs/num"},
+        "people_buffers": {"$ref": "#/$defs/bool"},
+        "people_aabb_margin_m": {"$ref": "#/$defs/num"},
         "kaiju_three_faces": {"$ref": "#/$defs/bool"},
-        "night_clip_max": {"$ref": "#/$defs/num"}
+        "fx_pool": {
+          "type": "object",
+          "properties": {
+            "enabled": {"$ref": "#/$defs/bool"},
+            "provisional_sizes": {"$ref": "#/$defs/bool"},
+            "slots": {
+              "type": "object",
+              "properties": {
+                "dust": {"$ref": "#/$defs/int"},
+                "puff": {"$ref": "#/$defs/int"},
+                "step": {"$ref": "#/$defs/int"},
+                "slam": {"$ref": "#/$defs/int"},
+                "tree": {"$ref": "#/$defs/int"},
+                "spark": {"$ref": "#/$defs/int"},
+                "burst": {"$ref": "#/$defs/int"},
+                "flames": {"$ref": "#/$defs/int"},
+                "embers": {"$ref": "#/$defs/int"},
+                "smoke": {"$ref": "#/$defs/int"}
+              },
+              "required": ["dust", "puff", "step", "slam", "tree", "spark", "burst", "flames", "embers", "smoke"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": ["enabled", "provisional_sizes", "slots"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "night_clip_max": {"$ref": "#/$defs/num"},
+        "remesh_high_priority": {"$ref": "#/$defs/bool"}
       },
-      "required": ["debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "kaiju_three_faces", "night_clip_max"],
+      "required": [
+        "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
+        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
+        "remesh_high_priority"
+      ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
