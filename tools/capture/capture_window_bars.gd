@@ -130,6 +130,7 @@ func _make_port() -> void:
 	_eye = Camera3D.new()
 	_port.add_child(_eye)
 	root.add_child(_port)
+	RenderingServer.viewport_set_measure_render_time(_port.get_viewport_rid(), true)
 	_eye.current = true
 	_far = FarDepth.new(_eye)  # the far blur, as the rampage's camera has it
 
@@ -336,6 +337,7 @@ func _building(n: int, scale: float, variant: String) -> void:
 		step = _sim.stat("speed") / FRAME_RATE
 		print("walking pace %.2f m/s = %.4f m per frame" % [_sim.stat("speed"), step])
 	var rect := Rect2i()
+	var gpu_ms: Array[float] = []
 	for f: int in Num.i(_opt["frames"]):
 		_kaiju.position = at + Vector3(0, 0, Num.f(_opt["start"]) + step * f)
 		_kaiju.animate(0.0, 0.0)
@@ -346,6 +348,9 @@ func _building(n: int, scale: float, variant: String) -> void:
 		for _i: int in SETTLE_FRAMES if f == 0 else 1:
 			await process_frame
 		var shot := _port.get_texture().get_image()
+		gpu_ms.append(
+			RenderingServer.viewport_get_measured_render_time_gpu(_port.get_viewport_rid())
+		)
 		if f == 0:
 			rect = _rect(b)
 			print(
@@ -359,6 +364,8 @@ func _building(n: int, scale: float, variant: String) -> void:
 			shot.save_png(dir.path_join("full%03d.png" % f))
 		else:
 			shot.get_region(rect).save_png(dir.path_join("f%03d.png" % f))
+	gpu_ms.sort()
+	print("%s gpu ms: median %.2f" % [variant, gpu_ms[gpu_ms.size() >> 1]])
 	undo.call()
 
 
