@@ -14,11 +14,15 @@ render_mode cull_disabled;
 #include "res://scenes/building_common.gdshaderinc"
 
 #include "res://scenes/window_palette.gdshaderinc"
+#include "res://scenes/dither.gdshaderinc"
 
 uniform sampler2D alive : filter_nearest;
 uniform float glow = 0.0;
 uniform float roughness_value = 0.9;
 uniform float inside = 0.12;
+// The stream swap (StreamDissolve): the share of a standing building drawn while it crosses with
+// its stand-in box, a dither. 1 (every other moment, every falling piece, D-326) draws it whole.
+uniform float dissolve = 1.0;
 // The camera bubble (CameraBubble, D-283): a standing building the camera runs into is cut
 // away inside a sphere round the camera, bubble_cut of the global bubble_radius, with a hard
 // edge on its own blocks (no dither, no fade). 0 (every other building, every falling piece,
@@ -43,6 +47,9 @@ void vertex() {
 }
 
 void fragment() {
+	if (dissolve < 0.999 && !IN_SHADOW_PASS && dither(FRAGCOORD.xy) >= dissolve) {
+		discard;
+	}
 	if (bubble_cut > 0.0 && !IN_SHADOW_PASS && length(VERTEX) < bubble_radius * bubble_cut) {
 		discard;
 	}
