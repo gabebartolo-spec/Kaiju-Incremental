@@ -113,6 +113,7 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 		tris += mesh.surface_get_array_index_len(0) / 3
 	times.sort()
 	var fin := Array(view.finish_us)
+	var worst := fin.find(fin.max()) if not fin.is_empty() else -1  # which batch (0 = the first carve)
 	fin.sort()
 	print(
 		(
@@ -120,7 +121,8 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				"%s %s r%d: grid+voxels %.0f ms, looks %.0f ms, first build %.0f ms (%d blocks);"
 				+ " remesh per carve p50 %.2f p95 %.2f max %.2f ms, %.1f blocks a carve;"
 				+ " %d triangles after %d carves;"
-				+ " finish_us (first build %d) p50 %d p95 %d max %d over %d batches, high_priority %s,"
+				+ " finish_us (first build %d) p50 %d p95 %d max %d (batch %d) over %d batches,"
+				+ " high_priority %s,"
 				+ " worker_mesh %s"
 			)
 			% [
@@ -141,6 +143,7 @@ func _bench(spec: Array, use_native: bool, radius: float) -> void:
 				fin[fin.size() / 2],
 				fin[mini(floori(fin.size() * 0.95), fin.size() - 1)],
 				fin[-1],
+				worst,
 				fin.size(),
 				view.high_priority,
 				view.worker_mesh
