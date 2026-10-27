@@ -23,6 +23,7 @@ func run_checks() -> void:
 	await _t("_check_ground_seeded")
 	await _t("_check_ground_kinds")
 	await _t("_check_wet_is_last")
+	await _t("_check_train_detail")
 	await _h("FlatSurfaces", func() -> void: await FlatSurfaces.run(self, check))
 	await _h("NightClip", func() -> void: await NightClip.run(self, check))
 
@@ -255,3 +256,27 @@ func _check_wet_is_last() -> void:
 		),
 		"wet keeps its darken, roughness and specular, and the burley diffuse"
 	)
+
+
+## A train car draws in the city's surface family with the detail fixed to the car (debt row 25):
+## the detail shader, reading each cube's cell from its custom data, which the car's MultiMesh
+## carries (without it every cube reads the same block and the car is one flat colour again,
+## though the material scan passes). The per-cube values are not read back here: the headless
+## renderer keeps no MultiMesh instance data (every get_instance_* returns the default).
+func _check_train_detail() -> void:
+	var car := TrainModel.car(true, Num.f(Content.section("rail")["car_length"]))
+	var mm := car.multimesh
+	var mat := mm.mesh.surface_get_material(0) as ShaderMaterial
+	check(
+		mat != null and mat.shader == Look.VOXEL_DETAIL_SHADER,
+		"a train car draws on voxel_detail.gdshader"
+	)
+	check(
+		Look.VOXEL_DETAIL_SHADER.code.contains("INSTANCE_CUSTOM.xyz"),
+		"the detail shader places its grain from each cube's cell (INSTANCE_CUSTOM)"
+	)
+	check(
+		mm.use_custom_data and mm.instance_count > 100,
+		"a train car's %d cubes carry custom data" % mm.instance_count
+	)
+	car.free()
