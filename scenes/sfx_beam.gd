@@ -34,12 +34,30 @@ func start() -> void:
 	var levels: Dictionary = Content.section("sfx")["volume_db"]
 	_sfx.played.append(LOOP)
 	_fade(Num.f(levels[LOOP]), FADE_IN)
-	_loop.play()
+	if not _loop.playing:  # already crackling under the charge-up: carries straight on
+		_loop.play()
 
 
 ## The beam ends: the loop out, the closing crack and rumble.
 func stop() -> void:
 	_sfx.play("thunder_beam_end")
+	charge_end()
+
+
+## A lightning power is pressed (D-357): the same crackle loop swells under the charge-up over the
+## `seconds` to its strike (the beam's crack then lands on top of it; no new sound).
+func charge(seconds: float) -> void:
+	if not _sfx.live:
+		return
+	var levels: Dictionary = Content.section("sfx")["volume_db"]
+	_sfx.played.append(LOOP)
+	_fade(Num.f(levels[LOOP]), maxf(seconds, FADE_IN))
+	if not _loop.playing:
+		_loop.play()
+
+
+## The crackle out (the breath's charge-up is spent, or the beam ended).
+func charge_end() -> void:
 	if _loop.playing:
 		_fade(SILENT_DB, FADE_OUT)
 		_tween.tween_callback(_loop.stop)
@@ -48,7 +66,7 @@ func stop() -> void:
 func _fade(to_db: float, seconds: float) -> void:
 	if _tween != null:
 		_tween.kill()
-	if to_db > SILENT_DB:
+	if to_db > SILENT_DB and not _loop.playing:
 		_loop.volume_db = SILENT_DB
 	_tween = create_tween()
 	_tween.tween_property(_loop, "volume_db", to_db, seconds)
