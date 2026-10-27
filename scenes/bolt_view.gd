@@ -40,7 +40,7 @@ func _init(core: float, eye: Color, cfg: Dictionary) -> void:
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", colours[0])
 		mat.set_shader_parameter("fringe", colours[1])
-		mat.set_shader_parameter("core_colour", CORE_COLOUR)
+		mat.set_shader_parameter("core_colour", core_colour(cfg))
 		mat.set_shader_parameter("width", core)
 		mat.set_shader_parameter("boost", Num.f(cfg["boost_core"]))
 		mat.set_shader_parameter("fringe_boost", fringe_boost)
@@ -60,22 +60,43 @@ func _init(core: float, eye: Color, cfg: Dictionary) -> void:
 
 ## The fringe's [inner, fringe] colours for the tuning's mode (or the capture's override).
 static func halo_colours(cfg: Dictionary, eye: Color) -> Array[Color]:
-	var mode := halo_mode_override if halo_mode_override != "" else str(cfg["halo_mode"])
-	var row: Dictionary = cfg["halo_modes"][mode]
+	var row := _mode_row(cfg)
 	var out: Array[Color] = []
 	for key: String in ["inner", "fringe"]:
 		var text := str(row[key])
 		out.append(eye if text == "eye" else Color(text))
-	out[0] = out[0].lerp(CORE_COLOUR, Num.f(row.get("inner_white", 0.0)))  # a white-hot inner
+	out[0] = out[0].lerp(core_colour(cfg), Num.f(row.get("inner_white", 0.0)))  # a white-hot inner
 	return out
 
 
 ## How bright the tuning's fringe mode is (1: as is); a near-white fringe is dimmed so it does not
 ## veil pale ground.
 static func halo_boost(cfg: Dictionary) -> float:
+	return Num.f(_mode_row(cfg).get("halo_boost", 1.0))
+
+
+## The axis colour of the mode (the purple's white-violet, D-357; white-hot where it names none).
+static func core_colour(cfg: Dictionary) -> Color:
+	return Color(str(_mode_row(cfg).get("core", CORE_COLOUR.to_html(false))))
+
+
+## The mouth light's and the flares' colour of the mode (`fallback` where it names none).
+static func flare_colour(cfg: Dictionary, fallback: Color) -> Color:
+	return Color(str(_mode_row(cfg).get("flare", fallback.to_html(false))))
+
+
+static func _mode_row(cfg: Dictionary) -> Dictionary:
 	var mode := halo_mode_override if halo_mode_override != "" else str(cfg["halo_mode"])
 	var row: Dictionary = cfg["halo_modes"][mode]
-	return Num.f(row.get("halo_boost", 1.0))
+	return row
+
+
+## The charge-up's look (SpineCharge): its arcs `alpha` see-through, at least `min_px` wide, and
+## never faded against the hide they jump over (the soft fade would eat them on the back).
+func arc_look(alpha: float, min_px: float) -> void:
+	_arc.set_shader_parameter("alpha_scale", alpha)
+	_arc.set_shader_parameter("min_px", min_px)
+	_arc.set_shader_parameter("soft", 0.0)
 
 
 ## Every material this bolt draws with (a ShaderKeep holds them so none compiles mid-rampage).
