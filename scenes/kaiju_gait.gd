@@ -13,6 +13,8 @@ const BODY_TURN_MAX := 7.0
 ## How much the speed and the turn rate are smoothed (per second).
 const VELOCITY_SMOOTHING := 8.0
 const TURN_SMOOTHING := 10.0
+## How much of a spring's stable step one sub-step may use (see spring_steps).
+const SPRING_MARGIN := 0.9
 
 var rig: KaijuRig
 ## World scale of the rig (the model's body scale).
@@ -98,22 +100,40 @@ func track(delta: float) -> void:
 	rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 
 
-## A damped spring step: returns the new [value, velocity]. zeta < 1 overshoots.
+## A damped spring step: returns the new [value, velocity]. zeta < 1 overshoots. Split into
+## sub-steps (spring_steps), so a slow frame never blows the spring up.
 static func spring(
 	value: float, vel: float, target: float, omega: float, zeta: float, dt: float
 ) -> Vector2:
-	var a := (target - value) * omega * omega - 2.0 * zeta * omega * vel
-	var v := vel + a * dt
-	return Vector2(value + v * dt, v)
+	var steps := spring_steps(omega, zeta, dt)
+	var h := dt / steps
+	for _i: int in steps:
+		var a := (target - value) * omega * omega - 2.0 * zeta * omega * vel
+		vel += a * h
+		value += vel * h
+	return Vector2(value, vel)
 
 
 ## The same spring for a vector; vel is updated in place through the returned pair.
 static func spring3(
 	value: Vector3, vel: Vector3, target: Vector3, omega: float, zeta: float, dt: float
 ) -> PackedVector3Array:
-	var a := (target - value) * omega * omega - vel * (2.0 * zeta * omega)
-	var v := vel + a * dt
-	return PackedVector3Array([value + v * dt, v])
+	var steps := spring_steps(omega, zeta, dt)
+	var h := dt / steps
+	for _i: int in steps:
+		var a := (target - value) * omega * omega - vel * (2.0 * zeta * omega)
+		vel += a * h
+		value += vel * h
+	return PackedVector3Array([value, vel])
+
+
+## How many sub-steps a spring step of dt needs. The step is semi-implicit Euler, which diverges
+## once omega * dt passes 2 * (sqrt(zeta^2 + 1) - zeta) (1.0 at zeta 0.75): the hexapod's snap
+## spring (omega 46) was stable at 60 fps and exploded to NaN at 30 (the engine's non-finite
+## vector errors in a 30 fps capture). A frame within the margin of that limit stays one step.
+static func spring_steps(omega: float, zeta: float, dt: float) -> int:
+	var stable := 2.0 * (sqrt(zeta * zeta + 1.0) - zeta)
+	return maxi(1, ceili(omega * dt / (stable * SPRING_MARGIN)))
 
 
 ## Two-bone IK: where the middle joint goes so bones a (length l1) and b (l2) reach from root to
