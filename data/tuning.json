@@ -1673,7 +1673,8 @@
 			"strobe_on": 0.12
 		},
 		"vip_dark": 0.25,
-		"vip_glow": 1.0
+		"vip_glow": 1.0,
+		"vip_band": [0.3, 0.42]
 	},
 	"destruction": {
 		"res": 8,
