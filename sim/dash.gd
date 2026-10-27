@@ -142,10 +142,13 @@ func _start(aim: Dictionary) -> void:
 		Num.f(cfg["landing_step"]),
 		Num.f(cfg["arc_tries"])
 	)
+	var side := bool(aim["side"])
+	arc.carve = target if side else -1
 	arc.plan(body.discs(), PackedVector2Array([from, to]), dir, numbers)
 	_phase = 0
 	_t = 0.0
 	var leap := {"type": "leap", "from": from, "to": to, "building": target, "dir": dir}
+	leap["side"] = side
 	for n: int in PHASES.size():
 		leap[PHASES[n]] = _phase_s(n)
 	leap["apex"] = arc.top
@@ -154,11 +157,13 @@ func _start(aim: Dictionary) -> void:
 
 
 ## Where a leap from `at` along `ahead` lands: {"building": index or -1, "to": kaiju_pos there,
-## "roof": the height it lands at}. The feet come down on the roof of the nearest standing building
-## in the arena whose centre lies within the aim cone and between min_reach and reach of them; with
-## none, on the street at the full reach along `ahead`. A building that dwarfs the body (D-091), or
-## a landing whose body would sit in one, is not landed on: the body comes down on the street
-## before it, clear of it, and the blow chews its wall.
+## "roof": the height it lands at, "side": whether it takes the target in its side}. The feet come
+## down on the roof of the nearest standing building in the arena whose centre lies within the aim
+## cone and between min_reach and reach of them; with none, on the street at the full reach along
+## `ahead`. A building that dwarfs the body (D-091), or a landing whose body would sit in one, is
+## not landed on: the body comes down on the street before it, clear of it, and the blow chews its
+## wall. A roof above his shoulder (D-361) is not landed on either: the leap takes the building in
+## its side, the feet on the street at its foot and the body carving into it.
 func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 	var feet := at + ahead * body.feet_ahead()
 	var best := _nearest_ahead(feet, ahead)
@@ -169,12 +174,31 @@ func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 		land = Vector2(b.x, b.z)
 		roof = float(b.height)
 	var to := sim.clamp_to_arena(land - ahead * body.feet_ahead())
+	var step := Num.f(cfg["landing_step"])
+	var side := false
 	if best >= 0 and (_dwarfs(best) or _in_tower(to, ahead, roof)):
 		roof = 0.0
-		var step := Num.f(cfg["landing_step"])
 		while to != at and _in_tower(to, ahead, 0.0):
 			to = to.move_toward(at, step)
-	return {"building": best, "to": to, "roof": roof}
+	elif best >= 0 and roof > shoulder_y():
+		roof = 0.0
+		side = true
+		while to != at and _feet_in(best, to, ahead):
+			to = to.move_toward(at, step)
+	return {"building": best, "to": to, "roof": roof, "side": side}
+
+
+## The highest roof a leap lands on (world units above the street): the shoulder of the body at
+## the kaiju's stage, its share of the drawn height (data, measured from the model, D-361).
+func shoulder_y() -> float:
+	return Num.f(_now()["shoulder"]) * sim.reach_height()
+
+
+## Whether the feet of the body at `pose` along `ahead` stand inside building `index`'s footprint.
+func _feet_in(index: int, pose: Vector2, ahead: Vector2) -> bool:
+	var b := sim.buildings[index]
+	var f := pose + ahead * body.feet_ahead()
+	return absf(f.x - b.x) < b.w * 0.5 and absf(f.y - b.z) < b.d * 0.5
 
 
 ## The nearest standing building in the arena whose centre is in the aim cone along `ahead` and
