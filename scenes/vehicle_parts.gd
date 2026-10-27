@@ -61,6 +61,15 @@ func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
 	return mmi
 
 
+## A part's voxels as the buffer build() draws (VoxelBuilder.STRIDE floats a voxel), made afresh and
+## not drawn: a model that paints its own copy starts from it, never from a MultiMesh read back (the
+## readback stalls on the GPU, and a headless one reads nothing).
+func packed(part: String, origin: Vector3, salt: int) -> PackedFloat32Array:
+	var vox: VoxelBuilder = _read(part).frames[0]
+	vox.salt = salt
+	return vox.pack({}, voxel, origin)
+
+
 ## A node on `parent` at the part's hinge (less `centre`), holding the part's voxels.
 func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 	var node := Node3D.new()

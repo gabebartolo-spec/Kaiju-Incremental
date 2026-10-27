@@ -1605,19 +1605,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "screen_flash": {
-          "type": "object",
-          "properties": {
-            "alpha": {"$ref": "#/$defs/num"},
-            "seconds": {"$ref": "#/$defs/num"},
-            "full_radius": {"$ref": "#/$defs/num"},
-            "small_share": {"$ref": "#/$defs/num"},
-            "layer": {"$ref": "#/$defs/num"}
-          },
-          "required": ["alpha", "seconds", "full_radius", "small_share", "layer"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "site_rubble": {"$ref": "#/$defs/num"},
         "fireball": {
           "type": "object",
@@ -1749,7 +1736,7 @@
         }
       },
       "required": [
-        "shake", "flash", "core", "kick", "screen_flash", "site_rubble", "fireball", "fire",
+        "shake", "flash", "core", "kick", "site_rubble", "fireball", "fire",
         "shock", "break", "fireworks", "cloud", "fuse", "debris", "debris_colors", "sound"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -3961,22 +3948,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "low_health": {
-          "type": "object",
-          "properties": {
-            "below": {"$ref": "#/$defs/num"},
-            "full_at": {"$ref": "#/$defs/num"},
-            "color": {"$ref": "#/$defs/str"},
-            "alpha": {"$ref": "#/$defs/num"},
-            "depth_px": {"$ref": "#/$defs/num"},
-            "pulse_hz": {"$ref": "#/$defs/num"},
-            "pulse_sharp": {"$ref": "#/$defs/num"},
-            "fade_per_s": {"$ref": "#/$defs/num"}
-          },
-          "required": ["below", "full_at", "color", "alpha", "depth_px", "pulse_hz", "pulse_sharp", "fade_per_s"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "fringe": {
           "type": "object",
           "properties": {
@@ -3996,7 +3967,7 @@
           "additionalProperties": false
         }
       },
-      "required": ["vignette", "low_health", "fringe"],
+      "required": ["vignette", "fringe"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
@@ -5030,11 +5001,13 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "night_clip_max": {"$ref": "#/$defs/num"}
+        "night_clip_max": {"$ref": "#/$defs/num"},
+        "remesh_high_priority": {"$ref": "#/$defs/bool"}
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
-        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool"
+        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
+        "remesh_high_priority"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

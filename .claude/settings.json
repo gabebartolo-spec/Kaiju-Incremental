@@ -60,6 +60,18 @@
   "deniedMcpServers": [
     {
       "serverName": "comfy-mcp"
+    },
+    {
+      "serverName": "visualize"
+    },
+    {
+      "serverName": "scheduled-tasks"
+    },
+    {
+      "serverName": "terminal"
+    },
+    {
+      "serverName": "mcp-registry"
     }
   ]
 }

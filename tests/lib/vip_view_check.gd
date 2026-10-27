@@ -31,15 +31,15 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 		view._rotor != null and view._rotor.playing and view._rotor.pitch_scale < 1.0,
 		"its own, lower rotor is playing"
 	)
-	# Headless draws nothing and reads back no voxel colours: there the check is that the leader
-	# wears its own model (vip_heli, lit from within on its own copy), not the gunships' shared
-	# one, with its gun hidden; the colours are judged in the clip.
+	# Headless draws nothing and a MultiMesh reads back no voxel colours, so the paint is read from
+	# the colours the model kept as it painted (HelicopterModel.painted), not from the GPU.
 	var plain := HelicopterModel.new()
 	var own := _first_multimesh(view._model) != _first_multimesh(plain)
 	var gunless := not view._model._gun.visible and plain._gun.visible
 	plain.free()
-	check.call(own, "the leader wears its own model's voxels, the gunships' stay theirs")
+	check.call(own, "the leader wears its own recoloured voxels, the gunships' stay theirs")
 	check.call(gunless, "the leader carries no gun, a gunship does")
+	_check_paint(view._model, check)
 	if DisplayServer.get_name() != "headless":
 		var paint := _body_colour(view._model)
 		check.call(
@@ -71,6 +71,66 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 	)
 	rampage.queue_free()
 	await suite.process_frame
+
+
+## What the leader was painted (D-149: a white body with a gold band, gold rotors), read from the
+## colours its model kept as it painted its own voxels. Fails when the view stops painting (nothing
+## kept), paints the gunships' tan, or paints a part the wrong colour. Runs headless and on a GPU.
+static func _check_paint(model: HelicopterModel, check: Callable) -> void:
+	var look: Dictionary = Content.section("vip")["look"]
+	var white := Color(str(look["white"]))
+	var gold := Color(str(look["gold"]))
+	var body: PackedColorArray = model.painted.get("body", PackedColorArray())
+	var whites := 0
+	var golds := 0
+	var sum := Color(0.0, 0.0, 0.0, 0.0)
+	for c: Color in body:
+		if _is_shade_of(c, white):
+			whites += 1
+			sum += c
+		elif _is_shade_of(c, gold):
+			golds += 1
+	check.call(
+		whites * 2 > body.size() and golds > 0 and golds < whites,
+		(
+			"the body is white with a gold band: %d white, %d gold of %d voxels"
+			% [whites, golds, body.size()]
+		)
+	)
+	var mean := sum / maxf(1.0, whites)
+	check.call(
+		whites > 0 and mean.get_luminance() > 0.8 and mean.r >= mean.b,
+		"...a warm white (mean %s), not the gunships' olive" % [mean]
+	)
+	var rotor_voxels := 0
+	var gold_voxels := 0
+	for part: String in ["main_rotor", "tail_rotor"]:
+		var voxels: PackedColorArray = model.painted.get(part, PackedColorArray())
+		rotor_voxels += voxels.size()
+		for c: Color in voxels:
+			gold_voxels += 1 if _is_shade_of(c, gold) else 0
+	check.call(
+		rotor_voxels > 0 and gold_voxels == rotor_voxels,
+		"...and both rotors gold: %d of %d voxels" % [gold_voxels, rotor_voxels]
+	)
+	print(
+		(
+			"VIP paint (headless-readable): body %d white + %d gold of %d, mean white %s; rotors %d/%d gold"
+			% [whites, golds, body.size(), mean, gold_voxels, rotor_voxels]
+		)
+	)
+
+
+## Whether `c` is `ref` times one shade factor (HelicopterModel keeps a voxel's own light, within
+## 0.8 to 1.15 of the colour it paints).
+static func _is_shade_of(c: Color, ref: Color) -> bool:
+	var shade := c.r / ref.r
+	return (
+		shade > 0.79
+		and shade < 1.16
+		and absf(c.g - ref.g * shade) < 0.01
+		and absf(c.b - ref.b * shade) < 0.01
+	)
 
 
 ## The colour of the brightest-lit body voxel of a model.

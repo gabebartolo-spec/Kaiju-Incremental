@@ -95,7 +95,8 @@ func _process(delta: float) -> void:
 func _spawn() -> void:
 	_model = HelicopterModel.new(HelicopterModel.VIP_BASE)
 	add_child(_model)
-	_model.vip_look()
+	var look: Dictionary = _cfg["look"]
+	_model.vip_look(Color(str(look["white"])), Color(str(look["gold"])))
 	_model.position = Vector3(_sim.vip.pos.x, _sim.vip.altitude(), _sim.vip.pos.y)
 	_rotor = AudioStreamPlayer3D.new()
 	_rotor.bus = AudioBuses.of("heli_rotor")
