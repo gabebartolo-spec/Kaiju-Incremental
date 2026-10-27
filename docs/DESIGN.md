@@ -23,7 +23,7 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - **Combo (D-259, D-263):** small and quick: any kill or building break keeps a ~3 s window going, cap about x2, a pop on the biomass figure.
 - **Results:** a headline per ending (the city falls / killed by the final strike / lost to the army); biomass and best combo, destruction tally, body count, personal bests (D-259, D-263).
 - **Controls:** move; stomps land on their own under every footfall (D-280); one signature button; the ultimate on its own button (E / pad Y, long cooldown); the leap (Shift / B; player copy says "Leap", D-262). Keyboard and controller, readable on a TV (D-004, D-040).
-- **Platform:** PC, a 4K 120 Hz TV (RTX 4070 SUPER), fullscreen from code in exports, UI a 1920x1080 canvas at 2x (D-027). Godot 4.7.2.
+- **Platform:** PC, built and judged at 1080p, the common player screen; 4K is supported and checked at each playtest build (D-339); the director plays on a 4K 120 Hz TV (RTX 4070 SUPER), fullscreen from code in exports, UI a 1920x1080 canvas at 2x (D-027). Godot 4.7.2.
 - **Not:** a clicker, idle, infinite exponential numbers, a city builder, a Godzilla copy.
 
 ## The kaiju
@@ -92,7 +92,7 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - **UI look A "Emergency Broadcast"** on every screen: hazard yellow, alert red, near-black, hazard tape, square edges, a news crawl on big events; fonts Kaiju Claw (headings) and Kaiju Block (body), ours (D-061, D-021, D-058, D-259). Bespoke original UI assets (b2-14).
 - **Minimal HUD:** the boxed timer at the top with a 1-5 threat badge beside it that follows the army's real arrival rate (D-259, D-267); biomass a boxless figure bottom right, its tick-up the only readout, no floating numbers (D-284); breath cooldown an icon with a circular fill; health bar removed or repurposed, low health a vignette only (D-326); landmarks visible on the skyline and no other navigation (D-260); controls shown once and in a controls menu; fixed tooltip width; species select with the kaiju centred (b2-10..13, b2-23, b2-11). Text 24 px or more at 1080p.
 - **Shell and options (D-259):** three save slots; rumble scaled by size, with a toggle; a simple photo mode; rebinding, reduce flashing, hold or toggle, colour-blind safe cues; gore on by default, with a toggle; all six languages plus Chinese at the demo; run stats opt-in, attached to feedback (no background sending).
-- **Graphics:** presets Potato / Low / Medium / High / Max; 4K default Medium at 60 fps (D-093, D-109); render-plan speed savings buy a quieter, cooler PC, not a higher render scale (D-312). Looks first, performance after the visuals are final (D-032, b2-25).
+- **Graphics:** presets Potato / Low / Medium / High / Max; the default Medium holds 60 fps at 1080p (D-339, replacing D-093/D-109's 4K target); render-plan speed savings buy a quieter, cooler PC, not a higher render scale (D-312). Looks first, performance after the visuals are final (D-032, b2-25).
 
 ## Audio
 - SFX from ElevenLabs Starter (owned) and CC0 / free libraries, synthesized in-house where better; every source CLEARED in `docs/LICENSING_REGISTER.md` (D-030, D-092). Suno Pro music only after his written spend yes. The director generates in his own browser; agents write prompts, ingest, QA and register.
