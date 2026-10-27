@@ -2,9 +2,10 @@ class_name PostFx
 extends CanvasLayer
 ## The two post effects of a rampage (D-142, tuning "post_fx"), on every graphics preset: a subtle
 ## vignette (dark screen edges, never red: low health is the HUD's heartbeat vignette) and a
-## split-second colour fringe on the top-tier impacts. Two full-screen rects over the 3D view and under the HUD, so the HUD stays
-## clean. The vignette is alpha only; the fringe reads the screen, so its rect is shown only while
-## a burst runs. PostFxState holds the numbers; this node only draws them.
+## split-second colour fringe on the top-tier impacts. Two full-screen rects over the 3D view and
+## under the HUD, so the HUD stays clean. The vignette is alpha only; the fringe reads the screen,
+## so its rect is shown only while a burst runs. PostFxState holds the numbers; this node only
+## draws them.
 
 const VIGNETTE := preload("res://scenes/vignette.gdshader")
 const FRINGE := preload("res://scenes/fringe.gdshader")

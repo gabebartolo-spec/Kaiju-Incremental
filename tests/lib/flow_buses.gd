@@ -83,9 +83,9 @@ static func _ducks(cfg: Dictionary, check: Callable) -> void:
 	)
 
 
-## Which sounds duck the mix: those on Hero (or a bus that sends into it). The roar, a toppled tower,
-## the barrel blasts and the sonic boom do; stomps and footsteps do not (director 2026-10-27,
-## "Keep, not stomps": the war does not pump with every footstep).
+## Which sounds duck the mix: those on Hero (or a bus that sends into it). The roar, a toppled
+## tower, the barrel blasts and the sonic boom do; stomps and footsteps do not (director
+## 2026-10-27, "Keep, not stomps": the war does not pump with every footstep).
 static func _duck_reach(cfg: Dictionary, check: Callable) -> void:
 	var sends := {}
 	var bus_defs: Array = cfg.get("buses", [])
@@ -107,7 +107,9 @@ static func _duck_reach(cfg: Dictionary, check: Callable) -> void:
 	var big: Array[String] = ["roar", "collapse", "blast_crack", "blast_body", "blast_rumble"]
 	big.append("sonic_boom")
 	var missing := big.filter(func(s: String) -> bool: return not ducking.has(s))
-	check.call(missing.is_empty(), "the roar, big collapses and barrel blasts duck the mix: %s" % [ducking])
+	check.call(
+		missing.is_empty(), "the roar, big collapses and barrel blasts duck the mix: %s" % [ducking]
+	)
 	var steps := ducking.filter(
 		func(s: String) -> bool: return s.begins_with("stomp") or s.begins_with("footstep")
 	)

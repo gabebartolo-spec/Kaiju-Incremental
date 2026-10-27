@@ -1,7 +1,8 @@
 extends "res://tests/lib/runner.gd"
 ## Post-effects suite (D-142): the vignette is always on and subtle, never red (low health is the
-## HUD's heartbeat vignette alone, director 2026-10-27); the colour fringe fires only on a top-tier impact (a wide stomp, a tall collapse, a
-## heavy hit), lasts at most 0.25 s, never repeats inside its cooldown and is never on for long;
+## HUD's heartbeat vignette alone, director 2026-10-27); the colour fringe fires only on a top-tier
+## impact (a wide stomp, a tall collapse, a heavy hit), lasts at most 0.25 s, never repeats inside
+## its cooldown and is never on for long;
 ## in a real rampage the rects follow the state, sit under the HUD, and a big stomp lands one.
 ## Seeded by design: no randomness, time is stepped by hand.
 ##   godot --headless --path . --script tests/run_postfx_tests.gd
