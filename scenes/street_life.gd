@@ -44,6 +44,8 @@ var worst_usec := 0
 var total_usec := 0
 var frames := 0
 var toll := ArmyToll.new()  # what the army's own stray shells killed (not the kaiju's)
+## render_opt.people_buffers: with the native extension, StreetDraw places the people.
+var people_buffers: bool = Num.i(Content.section("render_opt")["people_buffers"]) != 0
 var _officers: Array[Police.Officer] = []  # null for a civilian
 var _cfg: Dictionary
 var _fx: Fx
@@ -53,6 +55,7 @@ var _pavements: Pavements
 var _nodes := PackedVector2Array()
 var _mms: Array[MultiMesh] = []
 var _counts := PackedInt32Array()
+var _draw: StreetDraw = null  # people_buffers and the extension
 var _capacity := 0
 var _clock := 0.0
 var _sport_rng: RandomNumberGenerator
@@ -85,18 +88,11 @@ func _ready() -> void:
 		_spawn_civilian(n % maxi(1, blocks))
 	_capacity = pos.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	_capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
-	for dress: int in VoxelPerson.OUTFITS.size():
-		for pose: int in VoxelPerson.POSES:
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = VoxelPerson.mesh(dress, pose, _voxel)
-			mm.instance_count = _capacity
-			mm.visible_instance_count = 0
-			var mmi := MultiMeshInstance3D.new()
-			mmi.multimesh = mm
-			add_child(mmi)
-			_mms.append(mm)
+	var native := people_buffers and StreetDraw.available()
+	_mms = StreetDraw.pools(self, _voxel, 0 if native else _capacity)
 	_counts.resize(_mms.size())
+	if native:
+		_draw = StreetDraw.new(self, _mms, _nodes, _capacity)
 	police = Police.new(self, Seeds.make("police", 0))
 	add_child(police)
 	var stadium := str(Content.sports()["pitch"]["landmark"])
@@ -303,7 +299,7 @@ func _process(delta: float) -> void:
 	_lod.update(get_viewport().get_camera_3d())
 	police.update(delta, kaiju)
 	_walk(delta, kaiju)
-	_lod.draw(self, _mms, _counts, _capacity)
+	_draw_people()
 	var spent := Time.get_ticks_usec() - t0
 	worst_usec = maxi(worst_usec, spent)
 	total_usec += spent
@@ -389,3 +385,10 @@ func pose(i: int) -> int:
 	if fleeing[i] == 1:
 		return VoxelPerson.Pose.RUN_A + int(_clock * RUN_HZ + phase[i] * 2.0) % 2
 	return VoxelPerson.Pose.WALK_A + int(_clock * WALK_HZ + phase[i] * 2.0) % 2
+
+
+func _draw_people() -> void:
+	if _draw != null:  # render plan item 7: every civilian in one native call
+		_draw.frame(_clock)
+		return
+	_lod.draw(self, _mms, _counts, _capacity)  # D-254: only the people in view

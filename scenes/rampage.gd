@@ -51,12 +51,15 @@ var shake := CameraShake.new()
 var rumble: PadRumble
 ## Main: the whole intro (the first run, the first after an evolution) or its short cut (RunIntro).
 var full_intro := true
+var run_index := 0  # the run number (setup's p_run): it seeds each bolt
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
 var _blasts: BlastFx
 var _cues: PowerCues
 var _hud: RampageHud
+## Slow motion when a landmark falls, and the sim's pace through it (LandmarkSlowmo).
+var _slowmo: LandmarkSlowmo
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
 var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
@@ -71,25 +74,23 @@ var _rail: RailView
 var _fx_rng: RandomNumberGenerator
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
-var _stomp_radius := 0.0
-## The foot a walking stomp falls on (the sim names it from its step clock); "" when any will do.
-var _stomp_side := ""
-## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
-var _stomp_wait := 0.0
 var _reader := RunInput.new()  # this frame's presses (held move D-259, the rise's latch)
 var _rise: RampageRise  # the run's opening: the rise from the river and the intro
+## How far the stick pushed on the last sim step (the walk cycle's pace between steps).
+var _move_len := 0.0
+## Sim ticks the last step ran (the intro's short cut and skip run several): the legs keep going.
+var _ticks := 1
 
 
-## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
+## stats: final run stats; layout: CityGrowth.layout for stats.size; p_run seeds the army and
 ## picks the time of day.
-func setup(
-	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
-) -> void:
+func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], p_run: int) -> void:
 	species = p_species
+	run_index = p_run
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
-	Content.set_time(Content.time_for_run(run_index))
+	Content.set_time(Content.time_for_run(p_run))
 	var ability: Dictionary = species["ability"]
-	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
+	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", p_run))
 	sim.ability_type = str(ability["type"])
 	sim.body.use_species(str(species["id"]))  # first: the rise is placed by the body's length
 	sim.army_units.taskforce.carried = city_seconds  # rampage time in this city so far (D-160)
@@ -160,6 +161,7 @@ func _ready() -> void:
 	_kaiju.set_grip_finder(
 		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
 	)
+	_land.bind(self, _city)
 	_kaiju.foot_planted.connect(_on_footfall)
 	_ability.bind(self, _city, _kaiju)
 	_add_camera()
@@ -191,33 +193,45 @@ func _add_overlays() -> void:
 	rumble = PadRumble.new(sim)
 	_kaiju.foot_planted.connect(rumble.footfall)
 	add_child(_hud)
+	_slowmo = LandmarkSlowmo.new(sim, _hud)  # the world slows when a landmark falls
+	add_child(_slowmo)
 
 
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
-	var now := _reader.read(self, _steps, delta)
+	# Slow motion (LandmarkSlowmo, D-259) steps the sim by whole ticks, on fewer of them: a tick it
+	# sits out only draws (steps -1: the tanks' every-tenth-step crush must not repeat).
+	var dt := _slowmo.sim_dt(delta)
+	if dt > 0.0:
+		_step(dt)
+	else:
+		_slowmo.sit_out(delta)
+		_ticks = 1
+	_present(delta, _steps if dt > 0.0 else -1)
+
+
+## One sim step of `dt` with this tick's presses (and any kept from ticks the slow motion sat out).
+## The rise's intro may run several sim ticks in it (RunIntro.ticks): the first live tick takes the
+## presses, once.
+func _step(dt: float) -> void:
+	var now := _slowmo.merge(_reader.read(self, _steps, dt), dt)
 	var move: Vector2 = now["move"]
 	var signature: bool = now["signature"]
 	_steps += 1
 	var buttons := RunInput.buttons(now)
 	var wading := sim.emerge.risen() >= 1.0 and sim.emerge.active
-	var ticks := _rise.intro.ticks()  # the intro's short cut and skip run the rise's ticks faster
-	for k: int in ticks:
+	_ticks = _rise.intro.ticks()  # the intro's short cut and skip run the rise's ticks faster
+	for k: int in _ticks:
 		if k > 0 and not sim.emerge.active:
 			break  # the first live tick takes this frame's presses, once
-		_step_sim(delta, move, signature, buttons)
-	var moving := 1.0 if wading else (0.0 if sim.body.dash.on() else move.length())
-	_kaiju_at = _ability.place(delta * ticks, moving, _kaiju_at)  # the legs keep going
-	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
-	_powers.update(delta, _kaiju_at)
-	_tanks.update(delta, _kaiju_at, _steps)
-	_hud.refresh()
+		_step_sim(dt, move, signature, buttons)
+	_move_len = 1.0 if wading else (0.0 if sim.body.dash.on() else move.length())
 
 
-func _step_sim(delta: float, move: Vector2, signature: bool, buttons: int) -> void:
+func _step_sim(dt: float, move: Vector2, signature: bool, buttons: int) -> void:
 	var t0 := Time.get_ticks_usec()
-	var events := sim.step(delta, move, signature, buttons)
+	var events := sim.step(dt, move, signature, buttons)
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
@@ -230,16 +244,23 @@ func _input(event: InputEvent) -> void:
 		_rise.intro.on_input(event)
 
 
+## One tick's drawing, stepped or not (`delta` is the tick's own, slowed by the time scale).
+func _present(delta: float, steps: int) -> void:
+	_kaiju_at = _ability.place(delta * _ticks, _move_len, _kaiju_at)  # the legs keep going
+	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
+	_powers.update(delta, _kaiju_at)
+	_tanks.update(delta, _kaiju_at, steps)
+	_hud.refresh()
+
+
 func _process(delta: float) -> void:
 	if not is_loaded:
 		return
 	_place_camera(delta)
 	_far_depth.follow(_kaiju_at)
 	shake.update(delta)
-	if _stomp_wait > 0.0:
-		_stomp_wait -= delta
-		if _stomp_wait <= 0.0:  # no foot came down: the sound, no ring or cracks
-			sfx.stomp(_power("stomp_damage"), false)
+	if _land.wait_out(delta):  # no foot came down: the sound, no ring or cracks
+		sfx.stomp(_power("stomp_damage"), false)
 
 
 ## The pause menu's photo mode (PhotoMode, D-259): the gameplay camera flies free round the frozen
@@ -282,7 +303,7 @@ func _on_event(event: Dictionary) -> void:
 	rumble.on_event(event)
 	match str(event["type"]):
 		"stomp":
-			_on_stomp(event)
+			_land.on_stomp(_kaiju, event)
 		"ability":
 			_kaiju.roar()
 			_ability.play(event, _kaiju_at, _power("ability_damage"))
@@ -302,6 +323,7 @@ func _on_event(event: Dictionary) -> void:
 		"building_regrown":
 			_city.regrow(Num.i(event["building"]))
 		"run_over":
+			_slowmo.stop()  # the end beat runs at normal speed (D-259)
 			_hud.run_over(str(event["reason"]))
 		_:
 			if _rise.on_event(event, _kaiju, _hud):
@@ -309,16 +331,6 @@ func _on_event(event: Dictionary) -> void:
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
 			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
-
-
-## A sim stomp: its ring, cracks and crush wait for the foot that delivers it (_on_footfall).
-func _on_stomp(event: Dictionary) -> void:
-	_land.lift(_kaiju, str(event.get("side", "")))
-	_stomp_radius = Num.f(event["radius"])
-	stomp_sim_at.append(event["at"])
-	_stomp_side = str(event["side"]) if event["on_foot"] else ""
-	_stomp_wait = STOMP_WAIT
-	add_trauma(shake.source("stomp"))
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -337,33 +349,9 @@ func _power(stat_name: String) -> float:
 	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
 
 
-## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
-## was waiting for this foot), so what you hear lands with what you see.
+## Every footfall dips the camera a little; StompLanding does the rest (dust, ring, sound).
 func _on_footfall(side: String, strength: float, at: Vector3) -> void:
-	var stomped := _stomp_wait > 0.0 and side != "tail" and _stomp_side in ["", side]
-	if stomped:
-		_land_stomp(side, at)
-	sfx.footstep(strength)
-	var size := sim.body_scale() * (0.2 + strength)
-	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
-		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
-	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
-	_city.fx.shockwave(at, ring, side == "tail", stomped)
-	var dip := FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
-	_step_dip = maxf(_step_dip, dip)
-
-
-## The waiting stomp lands under the foot that delivers it: cracks (if heavy enough), the street
-## crushed around that foot, one dust ripple. Sound is released by the same footfall (Sfx.footstep).
-func _land_stomp(side: String, at: Vector3) -> void:
-	_stomp_wait = 0.0
-	rumble.stomp()
-	var heavy := _power("stomp_damage")
-	sfx.stomp(heavy, _land.landed(side, ability_fx.stomp_cracks(at, _stomp_radius, heavy)))
-	var street := _city.street  # the foot lands wider than its ring (stomp_catch)
-	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
-	_city.crush(at, _stomp_radius + catch)
-	stomp_ring_at.append(at)
+	_step_dip = maxf(_step_dip, _land.footfall(side, strength, at))
 
 
 ## The sound hears the world: the sfx its camera, helicopters and street; CitySound (D-155) the sim

@@ -105,7 +105,7 @@ func _rumble() -> void:
 		sent[-1] == _row(cfg["footfall"][2]) and sent[-1].y > foot.y,
 		"an adult's footfall thuds harder than a baby's (%s vs %s)" % [sent[-1], foot]
 	)
-	rampage._land_stomp("left", rampage._kaiju_at)
+	rampage._land.land_under("left", rampage._kaiju_at)
 	rampage.rumble.on_event({"type": "fall_land", "kind": "topple"})
 	check.call(
 		sent.slice(-2) == [_row(cfg["stomp"][tier]), _row(cfg["collapse"])],
