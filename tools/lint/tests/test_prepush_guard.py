@@ -104,7 +104,7 @@ def project(root, run_tests=SUITES["ok"], check_scripts=COMPILE["ok"], run_all=L
     helpers.write(root, "tools/prepush.sh", PREPUSH.read_text(encoding="utf-8"))
     # prepush.sh sources tools/speed_gate.sh (D-299); the real one, made a no-op by SPEED_GATE in prepush_env.
     helpers.write(root, "tools/speed_gate.sh", Path(helpers.tool("tools", "speed_gate.sh")).read_text(encoding="utf-8"))
-    for name in ("tuning_keys", "licence_register", "complexity_ratchet", "data_schemas"):
+    for name in ("workflow_timeouts", "tuning_keys", "licence_register", "complexity_ratchet", "data_schemas"):
         helpers.write(root, f"tools/lint/{name}.py", "")
     # prepush_picks.py prints "suite<TAB>reason" lines; `picks` is the list of suites it picks.
     lines = "".join(f"{s}\\tchanged\\n" for s in picks)

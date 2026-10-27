@@ -7,7 +7,8 @@ name: tests
 #   - A push to main whose tree is the tree a green PR run already tested skips its re-test
 #     (tools/ci_reuse_pr_run.sh).
 #   - The shards come from measured times (tools/ci_timings.txt, tools/plan_ci_shards.sh):
-#     no suite or shard list is kept by hand. A PR run targets 10-12 minutes; it is about 4.
+#     no suite or shard list is kept by hand. A PR run targets 10-12 minutes (debt row 4, D-295).
+#     Each shard runs `lanes` suites at once on its 4 vCPUs (tools/run_tests.sh LANES).
 #   - Slow, noisy suites ("pr_skip" in tools/ci_timings.txt; none yet) run on pushes to main
 #     only, reported and never blocking.
 #   - Every test function must have run and made a check (tests/lib/functions_ran.gd); there is
@@ -48,7 +49,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # the PR merge commit and its parents; main's previous commit
+          # A pull request needs only its merge commit and the two parents (full history took 6 s to 51 s
+          # to clone, and every job waits on this one); a push to main reads main's previous commit and
+          # a pull request ref (tools/ci_reuse_pr_run.sh).
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
 
       # Anything outside docs/ and *.md files counts as code.
       - name: Check for code changes
@@ -114,6 +118,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The display fonts are LFS: as bare pointer files the import hung once on kaiju_claw.ttf
+          # (run 40364468498: 10 minutes, then red). The shards check out the real files and never hung.
+          lfs: true
       # Two seconds of Python, before Godot: a tuning key read in code exists in data/tuning.json
       # (audit 2026-10-21 #5), and no function newly breaks the 40-line / complexity-12 limits (#25).
       - name: Tuning keys and complexity ratchet
@@ -133,8 +141,14 @@ jobs:
       - uses: ./.github/actions/setup-godot
       - name: Import the project (compiles the scripts it loads)
         run: |
+          # The import takes about 20 s. A hung one (exit 124) is tried once more after 4 minutes, not 10.
           code=0
-          timeout 600 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+          for attempt in 1 2; do
+            code=0
+            timeout 240 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+            [ "$code" != 124 ] && break
+            echo "::warning::the import hung (attempt $attempt)"
+          done
           if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log"; then
             grep -E -A3 "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log" | head -40
             tail -5 "$RUNNER_TEMP/import.log"
@@ -147,9 +161,11 @@ jobs:
       - name: Parse and compile every GDScript file
         run: GODOT="$HOME/godot/godot" tools/check_scripts.sh
 
+  # The shards start beside the preflight, not after it (about 0.5 minute off every run): a project that
+  # fails to import fails its shards in seconds (tools/run_tests.sh), and `test` still needs the preflight.
   shard:
     name: shard ${{ matrix.shard }}
-    needs: [plan, preflight, native]
+    needs: [plan, native]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -173,6 +189,7 @@ jobs:
         env:
           KAIJU_NATIVE_REQUIRED: "1"
           SUITES: ${{ matrix.suites }}
+          LANES: ${{ matrix.lanes }}
         run: VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
 
       - name: Upload test logs
@@ -186,7 +203,7 @@ jobs:
   # check-less test function fails, an untyped declaration does not compile).
   extras:
     name: harness self-test
-    needs: [plan, preflight, native]
+    needs: [plan]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30

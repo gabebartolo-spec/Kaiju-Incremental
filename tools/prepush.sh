@@ -87,6 +87,8 @@ changed=$(git diff --name-only --diff-filter=ACMR "$BASE...HEAD")
 gd=$(echo "$changed" | grep -E '\.gd$' | grep -v -E '^(\.godot|\.claude|tests/fixtures/lint)/' || true)
 
 step "2 tuning keys and complexity"
+# every workflow job names a timeout-minutes (lint.yml runs it too)
+python tools/lint/workflow_timeouts.py || fail "a workflow job has no timeout-minutes"
 python tools/lint/tuning_keys.py || fail "tuning keys"
 python tools/lint/licence_register.py || fail "licence register (docs/LICENSING_REGISTER.md covers every assets/ file)"
 python tools/lint/complexity_ratchet.py || fail "complexity ratchet"
