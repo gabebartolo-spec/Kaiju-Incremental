@@ -327,7 +327,8 @@ func _check_nodes_saved() -> void:
 func _check_chunks_jagged() -> void:
 	var planted := ChunkCheck.planted()
 	for label: String in planted:
-		var why := ChunkCheck.boxy(planted[label])
+		var box: Mesh = planted[label]
+		var why := ChunkCheck.boxy(box)
 		check(
 			why.contains(label), "the cube test catches a planted box by its %s: %s" % [label, why]
 		)

@@ -57,23 +57,30 @@ static func planted() -> Dictionary:
 	return {"faces": box, "own axes": _mesh(tris), "three square directions": _mesh(turned)}
 
 
-## His death in flight (DeathView, at the burst): every piece a jagged chunk, sizes spread.
+## His death in flight (DeathView, at the burst): every piece a jagged chunk, sizes spread. The
+## sizes are the pieces' own (DeathChunks.size, the longest side each is drawn at: its mesh's
+## longest side is 1), not read back from the MultiMesh: headless, the renderer keeps no transforms.
 static func check_view(view: Node, check_fn: Callable) -> void:
 	var bad: Array[String] = []
 	var lo := INF
 	var hi := 0.0
 	var count := 0
 	for node: MultiMeshInstance3D in _multis(view):
-		var mm := node.multimesh
-		var why := "a BoxMesh" if mm.mesh is BoxMesh else boxy(mm.mesh)
+		var mesh := node.multimesh.mesh
+		var why := "a BoxMesh" if mesh is BoxMesh else boxy(mesh)
+		var side := mesh.get_aabb().get_longest_axis_size() if mesh != null else 0.0
+		if why == "" and absf(side - 1.0) > 0.02:
+			why = "longest side %.3f, not 1 (its size would be wrong)" % side
 		if why != "":
 			bad.append("%s: %s" % [node.get_path(), why])
-		var longest := mm.mesh.get_aabb().get_longest_axis_size()
-		for i: int in mm.instance_count:
-			var s := mm.get_instance_transform(i).basis.get_scale().x * longest
-			lo = minf(lo, s)
-			hi = maxf(hi, s)
-			count += 1
+	for group: Node in view.get_children():
+		if group is DeathChunks:
+			for s: float in (group as DeathChunks).size:
+				lo = minf(lo, s)
+				hi = maxf(hi, s)
+				count += 1
+	var meshes := _multis(view).size()
+	print("his death's chunks: %d pieces of %d meshes, sizes %.3f..%.3f" % [count, meshes, lo, hi])
 	check_fn.call(bad.is_empty(), "every piece of his death is a jagged chunk: %s" % [bad])
 	check_fn.call(
 		count > 0 and hi >= lo * SPREAD_MIN,
@@ -91,9 +98,9 @@ static func _faces(mesh: Mesh) -> Array[Array]:
 	for s: int in mesh.get_surface_count():
 		var arrays := mesh.surface_get_arrays(s)
 		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-		var index: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
-		if index.is_empty():
-			index = PackedInt32Array(range(verts.size()))
+		var index := PackedInt32Array(range(verts.size()))  # no index: the triangles in order
+		if arrays[Mesh.ARRAY_INDEX] != null:
+			index = arrays[Mesh.ARRAY_INDEX]
 		for t: int in range(0, index.size() - 2, 3):
 			var a := verts[index[t]]
 			var cross := (verts[index[t + 1]] - a).cross(verts[index[t + 2]] - a)

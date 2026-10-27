@@ -89,7 +89,8 @@ func _begin() -> void:
 	for path: String in _look["chunks"]:
 		var mesh: Mesh = load(path)
 		_chunks.append(mesh)
-		_corners.append(mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX])
+		var corners: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		_corners.append(corners)
 	_stone_mat = ShaderMaterial.new()
 	_stone_mat.shader = STONE
 	DeathStone.look(_stone_mat)
@@ -119,10 +120,11 @@ func _burst(d: DeathOverload) -> void:
 		_debris.paint(i, _piece(own))
 	_shards = _pieces("Shards", d.shards.size(), d.cell_size(), "shard_size")
 	var puff := FxParticles.dust_puff()
+	var trail_look: Dictionary = _look["trail"]
 	for s: DeathOverload.Shard in d.shards:
 		_shards.paint(s.id, _piece(_own_colour(points, s.from)))
 		_spin.append(_axis())
-		var trail := FxParticles.dust_trail(_shards.size[s.id], _look["trail"], puff)
+		var trail := FxParticles.dust_trail(_shards.size[s.id], trail_look, puff)
 		add_child(trail)
 		trail.global_position = s.from
 		_trails.append(trail)
