@@ -4,13 +4,13 @@ extends Node3D
 ## memory: before the rampage starts only the buildings nearest the kaiju are meshed, up to
 ## city.load_chunks structural chunks; the rest stand as plain facade boxes while worker threads
 ## mesh them, landmarks first (a stadium never stands as a box: lead 9, 2026-10-21), then nearest
-## first, each swapping in as it is ready. A building the rampage touches before its turn is
-## built on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at
-## most city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that
-## stand near, and every building the rampage has touched): as the kaiju walks, the nearest
-## unbuilt buildings stream in and the untouched ones far behind him go back to boxes. Presentation
-## only. Nearest is judged from the camera as well as the kaiju (StreamRank). A landmark is held
-## meshed whenever its wedge, the margin band or city.stream_view.landmark_keep_m reaches it.
+## first, each swapping in as it is ready. A building the rampage touches before its turn is built
+## on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at most
+## city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that stand near,
+## and every building the rampage has touched): as the kaiju walks, the nearest unbuilt buildings
+## stream in and the untouched ones far behind him go back to boxes. Presentation only. Nearest is
+## judged from the camera as well as the kaiju (StreamRank). A landmark is held meshed whenever its
+## wedge, the margin band or city.stream_view.landmark_keep_m reaches it.
 
 ## Workers meshing at once (each holds a raw voxel set until baked).
 const IN_FLIGHT := 4
@@ -46,7 +46,7 @@ var _ready_views: Array[BuildingView] = []
 var _ready_index: Array[int] = []
 var _mutex := Mutex.new()
 var _rest: Array[int] = []
-var _stand_ins: StreamStandIns
+var _stand_ins: StreamDissolve
 var _now: Array[int] = []
 var _pre: Array[BuildingView] = []
 var _initial := -1  # the initial group task while it is out, else -1
@@ -58,8 +58,7 @@ var _queue_at := 0
 var _planned_at := Vector2(INF, INF)
 var _since_plan := 0.0
 var _evict: Array[int] = []
-## What a building ranks by: its distance from the camera and the kaiju, and whether the camera
-## can see it (StreamRank).
+## What a building ranks by: its distance from the camera and kaiju, and camera visibility.
 var _rank: StreamRank
 var _cutoff := INF  # the last plan's rank of the first building left out
 var _held := 0  # chunks of the buildings the last plan holds meshed
@@ -139,7 +138,7 @@ func finish_initial() -> void:
 		WorkerThreadPool.wait_for_group_task_completion(_initial)
 		_initial = -1
 	_pending = false
-	_stand_ins = StreamStandIns.new(_sim.buildings)
+	_stand_ins = StreamDissolve.new(_sim.buildings, _sim.city)
 	add_child(_stand_ins.build(_colors))
 	for k: int in _now.size():
 		var n := _now[k]
@@ -260,6 +259,7 @@ func step(delta: float, settle := false) -> void:
 	for pair: Array in _take_ready():
 		var done: BuildingView = pair[1]
 		_place(Num.i(pair[0]), done)
+	_stand_ins.step(delta)
 	_since_plan += delta
 	if _since_plan >= PLAN_EVERY and _replan_wanted():
 		var t0 := Time.get_ticks_usec()
@@ -293,11 +293,11 @@ func _take_ready() -> Array[Array]:
 	return out
 
 
-## Building n's view, built now if it is still waiting, or taken the moment a worker is done.
-## Asking for a view means the rampage touches the building, so it is never freed again.
+## Building n's view, built now if still waiting. Asking means the rampage touches it: never freed.
 func view(n: int) -> BuildingView:
 	_pinned[n] = 1
 	if _views[n] != null:
+		_stand_ins.touch(n)
 		return _views[n]
 	finish_initial()  # n may be one of the nearest buildings, still on its worker
 	if _views[n] != null:
@@ -359,7 +359,7 @@ func _place(n: int, built: BuildingView) -> void:
 	_mutex.unlock()
 	_views[n] = built
 	add_child(built)
-	_stand_ins.hide(n)
+	_stand_ins.dissolve(n, built, _pinned[n] == 0)
 
 
 ## Building n regrew (Endless mode): its view goes, pinned or not, and is rebuilt.
@@ -375,10 +375,7 @@ func _free_view(n: int, force := false) -> void:
 	_pinned[n] = 0
 	_views[n] = null
 	_state[n] = 0
-	remove_child(gone)
-	BuildingView.forget(gone)
-	gone.free()
-	_stand_ins.show(n)
+	_stand_ins.leave(n, gone, not force)
 
 
 func _exit_tree() -> void:
