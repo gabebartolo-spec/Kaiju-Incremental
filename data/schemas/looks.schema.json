@@ -214,6 +214,17 @@
           "roof": {"$ref": "#/$defs/hex6"},
           "window": {"$ref": "#/$defs/hex6"},
           "window_lit_color": {"$ref": "#/$defs/hex6"},
+          "window_palette_on": {"$ref": "#/$defs/num"},
+          "window_lit_palette": {
+            "type": "array", "minItems": 1, "maxItems": 8,
+            "items": {
+              "type": "array", "minItems": 2, "maxItems": 2,
+              "prefixItems": [{"$ref": "#/$defs/hex6"}, {"$ref": "#/$defs/num"}]
+            }
+          },
+          "window_lit_gain": {
+            "type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/num"}
+          },
           "outskirts": {"$ref": "#/$defs/str"},
           "asphalt": {"$ref": "#/$defs/str"},
           "lot": {"$ref": "#/$defs/str"},
@@ -238,6 +249,7 @@
           "ground_tar", "ground_patch_dark", "ground_stain", "ground_gutter", "ground_panel",
           "ground_damp", "ground_streak", "ground_soil", "ground_paving", "ground_band_h",
           "ground_night_floor", "ground_lamp_pool", "styles", "roof", "window", "window_lit_color",
+          "window_palette_on", "window_lit_palette", "window_lit_gain",
           "outskirts", "asphalt", "lot", "water", "river", "ambient_color", "lamp_energy"
         ],
         "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

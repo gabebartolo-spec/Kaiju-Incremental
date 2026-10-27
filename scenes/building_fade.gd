@@ -1,7 +1,8 @@
 class_name BuildingFade
 extends RefCounted
-## A building between the camera and the kaiju's body fades to a screen door, as vehicles do
-## (D-025's rule, VehicleFade), so a grown kaiju among towers its own height is always seen.
+## A building between the camera and the kaiju's body fades to a screen door, as smoke does
+## (D-025's rule; vehicles never do, D-290), so a grown kaiju among towers its own height is
+## always seen.
 ## Each frame, the sight lines from the camera to points over the kaiju's body (up its height
 ## and forward along its facing, where the torso and head are) are tested against every built
 ## building's box; one that cuts a line eases down to camera.fade_opacity, the rest ease back,

@@ -55,7 +55,6 @@ var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kic
 var _city: CityView
 var _powers: PowersView
 var _blasts: BlastFx
-var _fade: VehicleFade
 var _cues: PowerCues
 var _hud: RampageHud
 var _kaiju: KaijuModel
@@ -154,7 +153,6 @@ func _ready() -> void:
 	_rise = RampageRise.new(self, _city.fx, _kaiju, full_intro)
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	_add_vehicles()
-	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
 	_follow.focus = _kaiju_at
@@ -237,7 +235,6 @@ func _process(delta: float) -> void:
 		return
 	_place_camera(delta)
 	_far_depth.follow(_kaiju_at)
-	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	shake.update(delta)
 	if _stomp_wait > 0.0:
 		_stomp_wait -= delta
