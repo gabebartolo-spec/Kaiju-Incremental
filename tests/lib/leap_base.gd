@@ -103,23 +103,29 @@ func _run_city(leap: bool) -> Dictionary:
 		more += 1
 	sim.step(DT, north, false, BUTTON if leap else 0)
 	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
-	var dbg: Array = [sim.kaiju_pos, sim.body.dash.to, sim.body.dash.target, sim.body.dash.arc.top]
+	var d := sim.body.dash
+	var dbg: Array = [d.from, d.to, d.target, d.arc.top, d.arc.carve, d.shoulder_y()]
+	dbg.append(d.arc._overlaps(d.from, d.dir).keys())
 	for n: int in roundi(FIXTURE_WATCH_S / DT):
-		var flying := sim.body.dash.phase() == "flight"
+		var flying := d.phase() == "flight"
 		var was := sim.body.broken
+		var alive: Array[int] = []
+		for bb: RampageSim.Building in sim.buildings:
+			alive.append(bb.frame.alive_count)
 		sim.step(DT, north, false, 0)
-		if flying and sim.body.dash.phase() == "flight":
+		if flying and d.phase() == "flight":
 			in_flight += sim.body.broken - was
 			var ins := sim.body.inside(sim.kaiju_pos, sim.body.heading)
 			in_flight += ins.size()
-			if (sim.body.broken - was > 0 or ins.size() > 0) and dbg.size() < 12:
-				dbg.append(
-					[n, snappedf(sim.body.dash.height(), 0.01), sim.body.broken - was, ins.keys()]
-				)
-	for i: int in sim.buildings.size():
+			var hit: Array = []
+			for i: int in sim.buildings.size():
+				if sim.buildings[i].frame.alive_count < alive[i]:
+					hit.append([i, alive[i] - sim.buildings[i].frame.alive_count])
+			if not hit.is_empty() or ins.size() > 0:
+				dbg.append([n, snappedf(d.height(), 0.01), sim.kaiju_pos, hit, ins.keys()])
+	for i: int in [157, 160, 164]:
 		var bb := sim.buildings[i]
-		if bb.x > -6.0 and bb.x < 10.0 and bb.z > 15.0 and bb.z < 35.0:
-			dbg.append([i, bb.x, bb.z, bb.w, bb.d, bb.height, bb.frame.alive_count])
+		dbg.append([i, bb.x, bb.z, bb.w, bb.d, bb.height, bb.frame.alive_count])
 	print("LEAPDBG ", dbg)
 	return {
 		"in_flight": in_flight,
