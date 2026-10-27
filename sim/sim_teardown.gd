@@ -51,7 +51,7 @@ static func cut_all() -> int:
 static func cut_built(built: Array[WeakRef]) -> int:
 	var cut_sims := 0
 	for ref: WeakRef in built:
-		var sim := ref.get_ref() as RefCounted
+		var sim: RefCounted = ref.get_ref()
 		if sim != null:
 			cut(sim)
 			cut_sims += 1
