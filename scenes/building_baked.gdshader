@@ -9,6 +9,9 @@ render_mode cull_disabled;
 // colour and brightness from the window palette), as in voxel.gdshader. Only outward faces are
 // baked, so through a hole you see the backs of the walls: they draw as the dark inside
 // (`inside` of their colour; a landmark's cut faces draw near their own colour instead).
+// Outward faces take the baked voxel AO and their material's finish (building_common).
+
+#include "res://scenes/building_common.gdshaderinc"
 
 #include "res://scenes/window_palette.gdshaderinc"
 
@@ -59,6 +62,13 @@ void fragment() {
 		}
 		ALBEDO = albedo;
 		EMISSION = albedo * glow * lit;
+		AO = voxel_ao(UV);
+		AO_LIGHT_AFFECT = ao_light_affect;
+		if (finish_on) {
+			int f = voxel_finish(UV);
+			ROUGHNESS = finish_roughness[f];
+			SPECULAR = finish_specular[f];
+		}
 	} else {
 		ALBEDO = albedo * inside;
 		NORMAL = -NORMAL;
