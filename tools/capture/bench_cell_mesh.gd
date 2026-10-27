@@ -6,10 +6,11 @@ extends SceneTree
 ## paths. Prints p50/p95/max ms per carve, blocks per carve and the building's triangles, and
 ## finish_us: the main-thread time of each batch's swap-in (CellView._finish: the block meshes
 ## made and attached), p50/p95/max in microseconds. A headless run uses the dummy renderer, which
-## uploads nothing, so its finish_us understates; run it windowed (a real renderer) for the real one.
+## uploads nothing, so its finish_us understates; run it windowed (a real renderer) for the real
+## one. --priority=high|low overrides tuning render_opt.remesh_high_priority for the A/B (low is
+## the behaviour before render plan item 9). tools/capture/bench_cell_runs.sh holds the PC for it.
 ## Seeded by design: fixed buildings and a fixed carve walk.
-##   godot --headless --path . --script tools/capture/bench_cell_mesh.gd -- [--carves=60] [--priority=high|low]
-##   --priority overrides tuning render_opt.remesh_high_priority for the A/B (default: tuning).
+##   godot --headless --path . --script tools/capture/bench_cell_mesh.gd -- [--carves=60]
 
 const RADII: Array[float] = [6.0, 12.0]  # cells: a claw bite, a stomp (RES 8: 0.75, 1.5 units)
 

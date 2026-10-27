@@ -31,6 +31,7 @@ const CARVE_R: Array[float] = [5.0, 7.0, 6.0, 4.0, 3.0]
 
 const CellFaces := preload("res://tests/lib/cell_faces.gd")
 const BalconyFaces := preload("res://tests/lib/balcony_faces.gd")
+const RemeshPriority := preload("res://tests/lib/remesh_priority.gd")
 
 var _native := false
 
@@ -48,9 +49,9 @@ func run_checks() -> void:
 	await _t("_check_closed_surface_after_carves")
 	await _t("_check_only_touched_regions")
 	await _t("_check_incremental_equals_fresh")
-	await _t("_check_remesh_priority_and_timers")
 	await _t("_check_native_matches_oracle")
 	await _t("_check_promote_keeps_fade")
+	await _h("remesh priority", func() -> void: RemeshPriority.new(check, _native).run())
 
 
 func _building(f: Array) -> RampageSim.Building:
@@ -324,56 +325,6 @@ func _stale_blocks(m: CellMesher, view: CellView, cells: PackedByteArray) -> int
 		if view.parts.has(r) != (fresh_verts.size() > 0):
 			off += 1
 	return off
-
-
-## Render plan item 9 (tuning render_opt.remesh_high_priority): the flag is ON by default, a view
-## reads it when it is made, the blocks come out byte for byte the same on either queue, and every
-## batch's swap-in is timed (finish_us: one entry per batch, the last one in last_finish_us).
-func _check_remesh_priority_and_timers() -> void:
-	var opt := Content.section("render_opt")
-	var was: Variant = opt.get("remesh_high_priority", null)
-	check(was == true, "render_opt.remesh_high_priority is ON by default")
-	var shown := {}
-	for high: bool in [true, false]:
-		opt["remesh_high_priority"] = high
-		var m := _mesher(_fixture("office"), _native)
-		var cells := BuildingCells.new(_building(_fixture("office")), {}).cells
-		var view := CellView.new(m, cells, StandardMaterial3D.new())
-		view.keep_arrays = true
-		view.keep_timings = true
-		var which := "high" if high else "low"
-		check(view.high_priority == high, "a view made with the flag %s queues %s" % [high, which])
-		view.flush()
-		for k: int in CARVE_AT.size():
-			cells = cells.duplicate()
-			var box := CellFaces.carve(cells, m.dims, CARVE_AT[k], CARVE_R[k])
-			view.carved(cells, box[0], box[1])
-			view.flush()
-		var batches := 1 + CARVE_AT.size()
-		check(
-			view.finish_us.size() == batches,
-			"%s: one finish time per batch (%d of %d)" % [which, view.finish_us.size(), batches]
-		)
-		var timed := 0
-		for us: int in view.finish_us:
-			timed += 1 if us > 0 else 0
-		check(timed == batches, "%s: every finish took measurable time (%d)" % [which, timed])
-		check(
-			view.last_finish_us == view.finish_us[-1],
-			"%s: last_finish_us is the last batch's time" % which
-		)
-		var digests := {}
-		for r: Vector3i in view.arrays:
-			digests[r] = CellMesher.digest(view.arrays[r])
-		shown[which] = digests
-		view.free()
-	opt["remesh_high_priority"] = was
-	var high_digests: Dictionary = shown["high"]
-	var low_digests: Dictionary = shown["low"]
-	check(
-		not high_digests.is_empty() and high_digests == low_digests,
-		"high and low queues build the same bytes for every block (%d blocks)" % high_digests.size()
-	)
 
 
 ## The native mesher gives the oracle's bytes for every block, uncarved and carved.
