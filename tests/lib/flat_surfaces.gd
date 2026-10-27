@@ -183,8 +183,29 @@ static func _add_ruins(rampage: Rampage) -> void:
 	yard._add(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
 
 
-## The check: build the real city, scan it, fail every flat type not on KNOWN_FLAT, and fail a
-## KNOWN_FLAT entry that no longer exists (so the list shrinks as types are fixed).
+## Runs the real sim until the first train is on the viaduct (rail.first_s after the kaiju's rise
+## from the river) and its cars are drawn, so the trains are in the scan (debt row 25: the cars
+## rendered flat and a scan 30 frames in never saw one). True when RailView holds a train's cars.
+static func _await_train(tree: SceneTree, rampage: Rampage) -> bool:
+	var rail: Rail = rampage.sim.rail
+	var rise := Num.f(Content.section("emerge")["max_seconds"])
+	var ticks := ceili((rise + Num.f(rail.cfg["first_s"]) + 2.0) * Engine.physics_ticks_per_second)
+	for i: int in ticks:
+		if not rail.trains.is_empty():
+			break
+		await tree.physics_frame
+	for i: int in 2:
+		await tree.process_frame
+	var view: RailView = rampage.get("_rail")
+	if view == null:
+		return false
+	var cars: Dictionary = view.get("_cars")
+	return not cars.is_empty()
+
+
+## The check: build the real city, run it until a train runs, scan it, fail every flat type not
+## on KNOWN_FLAT, and fail a KNOWN_FLAT entry that no longer exists (so the list shrinks as types
+## are fixed).
 static func run(tree: SceneTree, check_fn: Callable) -> void:
 	Content.set_time("noon")
 	var species := Content.species_def("reptilian")
@@ -197,6 +218,7 @@ static func run(tree: SceneTree, check_fn: Callable) -> void:
 	await rampage.wait_loaded()
 	for i: int in 30:
 		await tree.process_frame
+	check_fn.call(await _await_train(tree, rampage), "a train runs on the viaduct in the scan")
 	_add_ruins(rampage)
 	check_fn.call(
 		rampage._city.ruins().get_child_count() >= 3,
