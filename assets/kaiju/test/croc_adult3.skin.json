@@ -1482,5 +1482,14 @@
    1.0
   ]
  ],
+ "lid_flaps": {
+  "depth": 2.13,
+  "open": 100,
+  "half": 30,
+  "over": 16,
+  "lat": 50,
+  "band": 1.8,
+  "gap": 0.9
+ },
  "kvox_note": "p_skin = M @ (gx, gy, gz, 1): centre of a rig_voxel cell of the SAME glb at kvox_height."
 }
