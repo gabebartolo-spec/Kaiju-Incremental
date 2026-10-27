@@ -309,13 +309,8 @@ func _check_diag_rail() -> void:
 			var rail_cfg: Dictionary = t["rail"]
 			var ends := RailLayout.ends(city, rail_cfg)
 			var ax := Rail.avenue_x(city)
-			check(
-				false,
-				(
-					"DIAG %s s%d: half %.0f, rail x %.1f z %.0f..%.0f"
-					% [label, stage, half, ax, ends.x, ends.y]
-				)
-			)
+			var line := "DIAG %s s%d: half %.0f, rail x %.1f z %.0f..%.0f"
+			check(false, line % [label, stage, half, ax, ends.x, ends.y])
 		var sim := _sim("reptilian", {"evolve1": 1}, 0, CityGrowth.tuning_for(base, 2))
 		var spawn := sim.kaiju_pos
 		var near0 := _diag_near(sim, spawn)
@@ -324,13 +319,8 @@ func _check_diag_rail() -> void:
 		var from := sim.kaiju_pos
 		_run(sim, 1.5, "", way)
 		var walked := from.distance_to(sim.kaiju_pos)
-		check(
-			false,
-			(
-				"DIAG %s tf s2 spawn %s near [%s]; way %s walked %.1f in 1.5 s; end near [%s]"
-				% [label, spawn, near0, way, walked, _diag_near(sim, sim.kaiju_pos)]
-			)
-		)
+		var msg := "DIAG %s tf s2 spawn %s near [%s]; way %s walked %.1f in 1.5 s; end near [%s]"
+		check(false, msg % [label, spawn, near0, way, walked, _diag_near(sim, sim.kaiju_pos)])
 	var hand := {
 		"carving":
 		[[{"x": 0.0, "z": 0.0, "w": 3, "d": 3, "h": 14, "tier": 1, "style": 0}], Vector2(2.6, 0)],
@@ -393,8 +383,14 @@ func _diag_near(sim: RampageSim, p: Vector2) -> String:
 		)
 		var tag := "rail" if not b.rail.is_empty() else (b.landmark if b.landmark != "" else "lot")
 		rows.append([gap.length(), "%d %s h%d %.1f" % [i, tag, b.height, gap.length()]])
-	rows.sort_custom(func(a: Array, c: Array) -> bool: return (a[0] as float) < (c[0] as float))
+	rows.sort_custom(_diag_closer)
 	var names: PackedStringArray = []
 	for r: Array in rows.slice(0, 4):
 		names.append(str(r[1]))
 	return ", ".join(names)
+
+
+func _diag_closer(a: Array, c: Array) -> bool:
+	var ga: float = a[0]
+	var gc: float = c[0]
+	return ga < gc
