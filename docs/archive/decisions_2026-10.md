@@ -2,6 +2,42 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-26 · D-256 · Director · Tripo district buildings: hero pieces and 40 fillers, up to 4700 credits
+
+"can probably make the architecture as tripo models then voxelise it if that works?"; picked "Hero buildings, <=1500 credits", then "id be happy for you to make like 30-40 buildings in tripo to act as filler buildings" and picked "Go to 40 filler" (<=3200). Districts total <=4700 credits. Every model gets a six-view check and is voxelised into carvable cell grids (tools/landmarks/bake.py, D-253); filler is placed with variation (facings, mirror, floor stretch, palettes, roof clutter), no model above 5% of a view, no identical neighbours. "can you get started on the tripo": the lead generates through the built-in browser.
+
+## 2026-10-26 · D-255 · Director · Districts grow by stage; street life; human clips may be premade; agents swing and jet
+
+Districts (comment #78): red-light district, Chinatown, docklands, a bar and restaurant street, a business district, neon commercial streets and a giant billboard intersection; picked "Grow by stage" (baby: bar strip + neon street; teen adds Chinatown, red-light, docklands; adult adds business district + billboard intersection). Street life (#77): traffic lights, power lines, manholes, bins, graffiti, street lights, phone booths, food trucks, plus "Add a few more" (hydrants, bus stops, benches, newsstands, bikes). Taskforce (#76): "spiderman" grapple swings then jetpacks, "Mix by situation"; "if the premade clips are better, then we use them" (humans only; kaiju stay Cascadeur); agents get "New voxel poses".
+
+## 2026-10-26 · D-254 · Director · Play area 1.5x wider; landmarks and explosive sites spread; the landmark bridge
+
+"id like to expand the play area for all 3 stages": "1.5x wider" (half-widths 75/120/225 m). "space out our landmarks (of which one is a bridge, so we can also put an expanded water area there) and explosive sites across the new expanded area"; the bridge is the D-133 suspension bridge tower Tripo model, "like a sydney harbor bay bridge/golden gate bridge style".
+
+## 2026-10-26 · D-253 · Director · Carving is universal for every building and structure
+
+"carve is a universal feature for all buildings" (standing rule). Every building and structure, railway included, breaks only through the one voxel carve and collapse path; a CI test fails any structure type that removes geometry another way (landmarks and river bridges are named known gaps until converted). PR #209 rail: "FIX. he doesnt carve it at all? he hits it once and it disappears".
+
+## 2026-10-26 · D-252 · Director · Croc focus to the Itch demo; dragon paused; subagent team; model per task; merge everything
+
+"can we pause all dragon work for now though", "I want to focus on getting croc shipped" (finish line: Itch demo, M4); croc stomp first ("Croc standing stomp", then "Croc stomp next"). Team: subagents, 3 builders + 1 reader; "i need you to determine whether a task demands opus or sonnet". Branches: "I want the branches fully cleaned up and stale ones removed / i want all mergable good work merged"; "why isnt it merged? ive been asking you to merge everything" (PR cap 8 until the backlog lands); branch force-delete unblocked in settings ("Remove the block"). Skeletons: "optimised for natural, smooth animation", "only interested in our reptilian skeletons".
+
+## 2026-10-26 · D-251 · Director · Komodo w29 walk approved; Komodo lands off
+
+"walk is good. ship it"; Komodo motion bars "His own, from w29"; Komodo work lands off by default while paused ("Land it too").
+
+## 2026-10-26 · D-250 · Director · Straight to him: every visual goes to the director, judged by no agent
+
+"just show me the clip, i will immediately know what is wrong and can describe the fix, you then workout how to do that fix"; every visual, every project. Replaces D-249's lead-looks-first route.
+
+## 2026-10-25 · D-249 · Director · No critics: only the lead and the director judge art
+
+Director: "abandon our critics, all art passes through you who ACTUALLY LOOKS AT IT and then ASK ME, so the builders are never judging the art, only you and me". Confirmed by question: every project, and the VFX lead does not judge either. Why: critics were passing work he could see was wrong. What changes: no critic agents or sessions (the four critic agent types are retired); every image, capture and clip goes straight to the lead, who opens it, checks it at 1x and 2x crops beside a real reference, sends back defects with exact fixes, then asks him with labelled images. Builders and helpers never give an art verdict. RULEBOOK, ~/.claude/CLAUDE.md, art-qa-critic, game-studio-lead and the Kaiju proof and handoff skills updated.
+
+## 2026-10-25 · D-248 · Director · Team cap, handoff folder, start-up budget, mouth method, clean road
+
+Team: at most 2 helper sessions, and every session (the lead included) runs at most 1 subagent; tonight casc-anim and vfx-lead (his pick), the atmosphere lead, Komodo mouth, claw and tongue parked. Handoffs: one copy per role in ~/.claude/handoffs/kaiju/<role>.md outside git, listed by the start hook from any folder (#205), after a regenerated lead could not find its handoff among stale branch copies. Start-up context: measured 108.6k tokens before any work; duplicate plugins off, comfy-mcp denied here, rulebook capped at 18 KB, a Stop hook logs and flags every session's start (budget 100k, lowered once he switches the unused claude.ai plugins and connectors off on both accounts). Komodo mouth: built tooth by tooth and strand by strand from a measured 1 cm grid (#60). Road: clean asphalt, dark and even with fine grain, crisp paint and faint tyre lines only (#61). Eyes rule: the lead opens every image a helper reports before replying (#62).
+
 ## 2026-10-25 · D-247 · Director · Smoke look confirmed; sound judged as a soundscape; Komodo keyed first; landmarks burn; rail carves; Nim 023
 
 Smoke and sky (extends D-154): of the rampage still, "i think we can both agree the effect here is a bit much"; shown a reference picture and asked if it is the look he wants for the rampage smoke and sky: "Yes, that look" (dark plume columns with fire at their base, orange only at the horizon and behind the plumes, the city kept sharp). So D-154's "orange sky" means a low horizon glow, never a wash over the whole sky; the atmosphere lead's round 4 builds to that picture. Sound: "leave the sound listens to the playtest, ill listen to it as a collective soundscape rather than individual sounds" and "if anything sounds off or annoying we can iterate later": no single sound is sent to him; sound is judged at playtest milestones (the survey has a sound section) and iterated after. Animation (D-199/D-216/D-228 stand): the teen croc's stomp is redone in Cascadeur ("for the millionth time. I want 100% of our animation done with Casc"); machines (cars, turrets, rotors, trains) stay code, the rule covers "Creatures + people"; the new stomp is keyed on the "Komodo first", then the croc stages; until the real mouth is modelled the Komodo's roar is "Komodo mouth first, closed until then" (jaws shut, drool stays, D-239). Fire: "Yes, landmarks burn" (the agent-added off-switch goes ON). Walk weight (#4): "Drop it" (walk-m2 is dropped). Railway: "Yes, all of it" (pillars, deck and station break when the kaiju walks through; "all buildings in the play area must be destructible"; buildings that fall on the track damage it). Insectoid in the distant city: "yes bring it back" (on by default). Nim 023 is the train sound loops; "he can use $20 of claude api" (the lead's earlier question read as about ElevenLabs, which he corrected: "we use credits"). Comments #41-59.
