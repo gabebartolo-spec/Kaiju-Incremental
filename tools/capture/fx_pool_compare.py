@@ -4,8 +4,12 @@
 
 Per phase (walk_in, first_collapses, peak_ruin, whole run) and per mode, over every pass: frames over
 16.7 ms and over 33.4 ms (wall_ms), p95, p99 and max frame time, the sum of the 20 worst frames, and
-the pipeline-compilation monitors' rise (a first-use hitch). Render plan item 8's bar: frames over
-16.7 ms in the collapse phases down 30% or more with the pool ON. Standard library only.
+the pipeline-compilation monitors' rise (a first-use hitch), plus the mean and median frame time and
+the node count at the end. Render plan item 8's bar: frames
+over 16.7 ms in the collapse phases down 30% or more with the pool ON. At 4K on Medium every frame is over
+16.7 ms (the GPU alone is ~22 ms), so the bar cannot show there: read the 33.4 ms count, the mean and the
+median beside it, and the spread between two passes of the same mode (the noise any change must beat).
+Standard library only.
 """
 import csv
 import glob
@@ -38,14 +42,18 @@ def stats(rows):
     rise = 0
     if rows:
         rise = sum(int(float(rows[-1][p])) - int(float(rows[0][p])) for p in pipes if p in rows[0])
+    nodes = [float(r.get("nodes", 0)) for r in rows]
     return {
         "frames": len(times),
         "over_16.7": sum(t > 16.7 for t in times),
         "over_33.4": sum(t > 33.4 for t in times),
+        "mean": sum(times) / len(times) if times else 0.0,
+        "p50": percentile(times, 0.5),
         "p95": percentile(times, 0.95),
         "p99": percentile(times, 0.99),
         "max": max(times) if times else 0.0,
         "worst20_sum": sum(worst),
+        "nodes_end": int(nodes[-1]) if nodes else 0,
         "pipeline_rise": rise,
     }
 
