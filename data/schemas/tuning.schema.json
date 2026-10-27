@@ -1397,6 +1397,7 @@
             "reserve": {"$ref": "#/$defs/num"},
             "danger": {"$ref": "#/$defs/num"},
             "edge_gap": {"$ref": "#/$defs/num"},
+            "band_depth": {"$ref": "#/$defs/num"},
             "retreat_speed": {"$ref": "#/$defs/num"},
             "lookahead": {"$ref": "#/$defs/num"},
             "danger_cost": {"$ref": "#/$defs/num"},
@@ -1420,7 +1421,7 @@
           },
           "required": [
             "column", "hull", "turret", "gun", "clear", "two_lanes", "follow", "entry_depth",
-            "band", "standoff", "post_gap", "reserve", "danger", "edge_gap", "retreat_speed",
+            "band", "standoff", "post_gap", "reserve", "danger", "edge_gap", "band_depth", "retreat_speed",
             "lookahead", "danger_cost", "held_cost", "oncoming_cost", "uturn_cost", "commit",
             "spread_deg", "cover", "street_cost", "replan", "plans_per_step", "search_margin",
             "stuck", "yield_cap", "reverse", "grid", "hull_turn", "pivot_deg", "skew_deg"
