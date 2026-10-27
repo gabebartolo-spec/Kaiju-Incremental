@@ -31,7 +31,8 @@ const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
 	"CitySkyline:std": "P3 lamp heads (glow)",
 	"CitySkyline:shader:facade.gdshader": "P2 far towers and roof gear, P3 lattice tower",
-	"CitySkyline:shader:facade_far.gdshader": "P2 far towers, P3 lattice tower",
+	# facade_far.gdshader's twin with the engine fog (FarHaze, city far_fog on; comment #37)
+	"CitySkyline:shader:facade_far_fogged.gdshader": "P2 far towers, P3 lattice tower",
 	# P2 rooftops and building faces
 	"BuildingStream:shader:facade.gdshader": "P2 building faces",
 	"BuildingView:shader:voxel.gdshader": "P2 building faces",
