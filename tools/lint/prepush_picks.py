@@ -223,7 +223,9 @@ def main(argv):
             for ln in f:
                 parts = ln.split()
                 if len(parts) >= 2 and parts[1].replace(".", "").isdigit():
-                    t[parts[0]] = float(parts[1])
+                    # a suite CI runs in parts ("flow@1/2") costs the sum of its parts
+                    base = parts[0].split("@")[0]
+                    t[base] = t.get(base, 0) + float(parts[1])
         print(f"# expected: {len(picked)} suites, ~{int(sum(t.get(s, 60) for s, _ in picked))} s")
     return 0
 
