@@ -10,8 +10,7 @@ extends Node
 ## stomp waits for the next plant to play its heavy thump there (or alone if no foot lands soon).
 
 const STOMPS := 3
-## Footstep sounds the steps take turns with (footstep, footstep_1..3), in this order: no two
-## steps in a row sound the same.
+## Footstep sounds the steps take turns with (footstep, footstep_1..3): no two in a row alike.
 const STEPS: Array[String] = ["footstep", "footstep_2", "footstep_1", "footstep_3"]
 ## How fast the regen bubbles fade once their cue is over (dB a second), and where a fade ends.
 const REGEN_FADE_DB_PER_S := 40.0
@@ -79,6 +78,7 @@ func _ready() -> void:
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
 	names.append_array(STEPS)
+	names.append_array(["thunder_beam", "thunder_beam_end"])  # SfxBeam plays them
 	for sound: String in names:
 		_streams[sound] = load("res://assets/sfx/%s.ogg" % sound)
 	_streams["rifle_far"] = _streams["rifle"]  # a distant squad: the same shot, softer and lower
