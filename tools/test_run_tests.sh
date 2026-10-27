@@ -102,6 +102,17 @@ else
 	cat "$tmp/out.txt"
 	bad=1
 fi
+# A suite that passes every check but leaks at the exit fails (debt row 2), naming the engine's own line.
+if QUICK=1 RUNNER_DIR=tests/fixtures SUITES_ONLY=1 tools/run_tests.sh leak > "$tmp/out.txt" 2>&1; then
+	echo "FAIL: a suite whose exit leaked passed"
+	bad=1
+elif grep -q "the exit leaked: .*ObjectDB instances" "$tmp/out.txt"; then
+	echo "ok: a suite that leaks at the exit fails the run, with the engine's line"
+else
+	echo "FAIL: the leak fixture failed without saying why"
+	cat "$tmp/out.txt"
+	bad=1
+fi
 # Two suites at once (LANES=2, what CI shards use) report exactly what one at a time reports.
 if QUICK=1 LANES=2 SUITES_ONLY=1 tools/run_tests.sh carving structures > "$tmp/out.txt" 2>&1 	&& grep -q "All checks passed (2 suites)" "$tmp/out.txt"; then
 	echo "ok: two suites in two lanes both run and pass"
