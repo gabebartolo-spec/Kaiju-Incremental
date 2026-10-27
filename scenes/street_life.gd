@@ -45,7 +45,7 @@ var total_usec := 0
 var frames := 0
 var toll := ArmyToll.new()  # what the army's own stray shells killed (not the kaiju's)
 ## render_opt.people_buffers: with the native extension, StreetDraw places the people.
-var people_buffers: bool = Content.section("render_opt")["people_buffers"] == true
+var people_buffers: bool = Num.i(Content.section("render_opt")["people_buffers"]) != 0
 var _officers: Array[Police.Officer] = []  # null for a civilian
 var _cfg: Dictionary
 var _fx: Fx

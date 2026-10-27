@@ -69,7 +69,7 @@ var _people: MultiMeshBuckets
 var _flash_out: MultiMeshBuckets
 var _spark_out: MultiMeshBuckets
 var _tracer_out: MultiMeshBuckets
-var _buffers: bool = Content.section("render_opt")["people_buffers"] == true
+var _buffers: bool = Num.i(Content.section("render_opt")["people_buffers"]) != 0
 var _sparks: Array[Dictionary] = []
 var _frame := 0
 var _flashes: Array[Dictionary] = []
