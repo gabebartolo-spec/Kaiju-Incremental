@@ -11,7 +11,8 @@ const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowSave := preload("res://tests/lib/flow_save.gd")
 const FlowStats := preload("res://tests/lib/flow_stats.gd")
 const FlowFps := preload("res://tests/lib/flow_fps.gd")
-const FlowSettingsRows := preload("res://tests/lib/flow_settings_rows.gd")
+const FlowSettings := preload("res://tests/lib/flow_settings.gd")
+const DeathWait := preload("res://tests/lib/death_wait.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -60,7 +61,7 @@ func _screen(main: Node) -> Node:
 
 ## No save: the title offers New Kaiju (no Continue); a click goes to Kaiju Creation, where the
 ## croc genome and the injection start a rampage; Esc pauses it, End Rampage ends it, the end
-## beat plays in slow motion and gives way to the results over the city; EVOLVE opens the tree;
+## beat plays at normal speed and gives way to the results over the city; EVOLVE opens the tree;
 ## the run is on disk.
 func _check_new_game() -> void:
 	var main := await _main()
@@ -107,13 +108,14 @@ func _check_new_game() -> void:
 	check.call(not rampage.sim.over, "End Rampage asks first (Are you sure?) and the run goes on")
 	await GuiInput.click(t, GuiInput.button(menu, "YES"))
 	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	await DeathWait.end_rampage_dies(t, check, rampage, hud)
 	check.call(
 		rampage.sim.over and rampage.sim.end_reason == "ended" and not t.paused,
 		"End Rampage ends the run (reason %s)" % rampage.sim.end_reason
 	)
 	check.call(
-		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale < 1.0,
-		"the end beat slams its headline on in slow motion (%s)" % Engine.time_scale
+		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale == 1.0,
+		"the end beat's headline lands at normal speed, no slow motion (%s)" % Engine.time_scale
 	)
 	await GuiInput.key(t, KEY_ENTER)
 	check.call(hud.beat_running(), "a confirm in the first frames does not skip the end beat")
@@ -122,8 +124,7 @@ func _check_new_game() -> void:
 	await _frames(2)
 	var results := GuiInput.find_script(rampage, ResultsScreen) as ResultsScreen
 	check.call(
-		results != null and Engine.time_scale == 1.0,
-		"after the beat the results show over the city at normal speed"
+		results != null and Engine.time_scale == 1.0, "results at normal speed after the beat"
 	)
 	check.call(
 		not (GuiInput.find_script(rampage, RampageHud) as RampageHud).visible,
@@ -320,73 +321,7 @@ func _check_evolution_and_continue() -> void:
 ## Settings from the title: the fullscreen toggle and the UI scale step by click and stick;
 ## the controls list covers keyboard and pad; Esc goes back.
 func _check_settings() -> void:
-	var main := await _main()
-	var title := _screen(main)
-	Sfx.ui_played.clear()
-	await GuiInput.click(t, title.find_child("Gear", true, false) as Button)
-	var menu := GuiInput.find_script(title, SettingsMenu) as SettingsMenu
-	check.call(menu != null, "clicking the title gear opens the settings")
-	check.call(Sfx.ui_played == ["ui_click"], "a menu button clicks: %s" % [Sfx.ui_played])
-	if menu == null:
-		main.queue_free()
-		return
-	await layout.fits_at_scales(menu, "settings")
-	FlowSettingsRows.run(check, menu)
-	var was_full: bool = PlayerSettings.fullscreen
-	await GuiInput.click(t, GuiInput.button(menu, "< ON >" if was_full else "< OFF >"))
-	check.call(PlayerSettings.fullscreen != was_full, "clicking the fullscreen switch flips it")
-	PlayerSettings.set_fullscreen(was_full)
-	await GuiInput.click(t, GuiInput.button(menu, "< 100% >"))
-	check.call(
-		(
-			is_equal_approx(PlayerSettings.ui_scale, 1.15)
-			and is_equal_approx(t.root.content_scale_factor, 1.15)
-		),
-		"clicking UI scale steps it to 115%% and scales the UI (%s)" % t.root.content_scale_factor
-	)
-	await GuiInput.drag(t, menu.effects, 0.1, 0.7)
-	var sfx_db := AudioServer.get_bus_volume_db(PlayerSettings.bus("SFX"))
-	check.call(
-		(
-			is_equal_approx(PlayerSettings.sfx_volume, 0.7)
-			and is_equal_approx(sfx_db, linear_to_db(0.7))
-		),
-		(
-			"dragging Sound effects to 70%% sets the SFX bus (%s, %.1f dB)"
-			% [PlayerSettings.sfx_volume, sfx_db]
-		)
-	)
-	await GuiInput.click(t, GuiInput.button(menu, "CONTROLS"))  # its own page (D-259)
-	var texts: Array[String] = []
-	for node: Node in menu.find_children("*", "Control", true, false):  # labels and buttons
-		texts.append(str(node.get("text")))
-	menu.page.close()
-	check.call(
-		texts.has("Ultimate") and texts.has("E") and texts.has("Y") and texts.has("Start"),
-		"the controls list shows keyboard and pad"
-	)
-	await GuiInput.key(t, KEY_ESCAPE)
-	check.call(not is_instance_valid(menu), "Esc closes the settings")
-	var cfg := ConfigFile.new()
-	check.call(
-		(
-			cfg.load(PlayerSettings.PATH) == OK
-			and is_equal_approx(Num.f(cfg.get_value("display", "ui_scale")), 1.15)
-		),
-		"the UI scale is saved to settings.cfg"
-	)
-	PlayerSettings.sfx_volume = -1.0
-	PlayerSettings.load_saved(false)
-	check.call(
-		is_equal_approx(PlayerSettings.sfx_volume, 0.7),
-		"the sound-effects volume comes back after a reload (%s)" % PlayerSettings.sfx_volume
-	)
-	PlayerSettings.set_sfx_volume(Num.f(Content.section("sfx")["default_volume"]))
-	PlayerSettings.next_ui_scale()
-	PlayerSettings.next_ui_scale()
-	check.call(PlayerSettings.ui_scale == 1.0, "UI scale wraps back to 100%")
-	main.queue_free()
-	await _frames(2)
+	await FlowSettings.run(t, check, layout, await _main())
 
 
 func _evolve_cost() -> int:

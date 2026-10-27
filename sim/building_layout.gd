@@ -5,10 +5,11 @@ extends RefCounted
 ## (RES cells per sim unit, local to the footprint) to its key, in the order the parts are laid.
 ## Facades have depth: windows sit one cell back in their reveals behind proud sills and
 ## lintels; piers, spandrels, mullions and transoms frame them. Four archetypes: office (ribbon
-## windows over spandrel bands, AC plant), brick (punched windows, balconies, water tank), glass
-## (flush curtain wall on a structural frame, mast with beacon), stone (pilasters, cornices and
-## string courses, stepped roof). Ground floors are shopfronts under a sign band and an awning;
-## some shops hang a vertical neon sign off a street face. Hollow shell plus a slab per floor.
+## windows over spandrel bands, AC plant), brick (punched windows, balconies, a solar water
+## heater or a wooden water tower: RoofTank), glass (flush curtain wall on a structural frame,
+## mast with beacon), stone (pilasters, cornices and string courses, stepped roof). Ground floors
+## are shopfronts under a sign band and an awning; some shops hang a vertical neon sign off a
+## street face. Hollow shell plus a slab per floor.
 ## Keys are materials (data/materials.json) except the lit windows the view asks for: with
 ## lit_chance 0 (the sim) no "lit" or "shop_lit" key is laid. Layout rolls hash the cell with the
 ## building's position: no RNG stream, no clock. The bay patterns are drawn for an 8-cell bay.
@@ -68,19 +69,18 @@ func _box(a: Vector3i, c: Vector3i, key: String) -> void:
 				cells[Vector3i(x, y, z)] = key
 
 
-## Every cell inside the ellipsoid at `centre` with half-axes `radii` (VoxelBuilder.blob).
-func _blob(centre: Vector3, radii: Vector3, key: String) -> void:
-	var lo := Vector3i((centre - radii).floor())
-	var hi := Vector3i((centre + radii).ceil())
-	for x: int in range(lo.x, hi.x + 1):
-		for y: int in range(lo.y, hi.y + 1):
-			for z: int in range(lo.z, hi.z + 1):
-				if ((Vector3(x, y, z) - centre) / radii).length_squared() <= 1.0:
-					cells[Vector3i(x, y, z)] = key
+## Whether v lies in lo..hi, both ends included.
+static func _in(v: int, lo: int, hi: int) -> bool:
+	return v >= lo and v <= hi
 
 
 func _roll(cell: Vector3i, mod: int) -> int:
-	return absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(b.x * 13.0 + b.z)))) % mod
+	return roll_for(b, cell, mod)
+
+
+## The roll for building `of` at `cell`: a hash of the cell and the building's position.
+static func roll_for(of: RampageSim.Building, cell: Vector3i, mod: int) -> int:
+	return absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(of.x * 13.0 + of.z)))) % mod
 
 
 ## The cell `layer` cells in from the face (0 = the wall plane, -1 proud, 1 recessed) at
@@ -171,12 +171,13 @@ func _office(r: int, q: int, top_row: bool) -> Array[String]:
 
 ## Punched windows with sills and lintels; a balcony with a railing every other floor.
 func _brick(r: int, q: int, floor_n: int) -> Array[String]:
-	var balcony := floor_n % 2 == 0 and q >= 1 and q <= 6
-	if q >= 2 and q <= 5 and r >= 2 and r <= 6:
+	var balcony := floor_n % 2 == 0 and _in(q, 1, 6)
+	var punched := _in(q, 2, 5)
+	if punched and _in(r, 2, 6):
 		return ["recess", "mullion" if r == 4 else "window", "", ""]
-	if r == 7 and q >= 2 and q <= 5:
+	if r == 7 and punched:
 		return ["frame", "", "frame", ""]  # lintel
-	if r == 1 and q >= 1 and q <= 6:
+	if r == 1 and _in(q, 1, 6):
 		return ["wall", "", "rail" if balcony else "sill", "rail" if balcony else ""]
 	if r == 0 and balcony:
 		return ["wall", "", "slab", "slab"]
@@ -189,11 +190,11 @@ func _stone(r: int, q: int, course: bool, top_row: bool) -> Array[String]:
 		return ["trim", "", "trim", "trim" if top_row else ""]
 	if q == 0:
 		return ["pillar", "", "pillar", ""]
-	if q >= 2 and q <= 5 and r >= 2 and r <= 6:
+	if _in(q, 2, 5) and _in(r, 2, 6):
 		return ["recess", "window", "", ""]
-	if r == 1 and q >= 2 and q <= 5:
+	if r == 1 and _in(q, 2, 5):
 		return ["wall", "", "sill", ""]
-	if r == 7 and q >= 3 and q <= 4:
+	if r == 7 and _in(q, 3, 4):
 		return ["trim", "", "trim", ""]  # keystone
 	return ["wall", "", "", ""]
 
@@ -229,28 +230,39 @@ func _slabs() -> void:
 
 func _roof() -> void:
 	var top := _h
-	for x: int in _w:  # parapet, two cells high
-		for z: int in _d:
-			if x == 0 or z == 0 or x == _w - 1 or z == _d - 1:
-				_box(Vector3i(x, top, z), Vector3i(x, top + 1, z), "trim")
+	_parapet(top)
 	_stair_hut(top)
 	match archetype():
 		OFFICE:
 			_ac_units(top)
 		BRICK:
-			_water_tank(top)
+			RoofTank.new(cells, _w, _d).lay(b, top)
 		GLASS:
 			_mast(top)
-		_:  # stepped stone roof
-			for step: int in 3:
-				for x: int in range(2 + step * 4, _w - 2 - step * 4):
-					for z: int in range(2 + step * 4, _d - 2 - step * 4):
-						_box(
-							Vector3i(x, top + step * 2, z),
-							Vector3i(x, top + step * 2 + 1, z),
-							"trim"
-						)
-	for v: int in clampi(b.d, 1, 3):  # vent stacks
+		_:
+			_stepped_roof(top)
+	_vents(top)
+
+
+## The parapet round the roof's edge, two cells high.
+func _parapet(top: int) -> void:
+	for x: int in _w:
+		for z: int in _d:
+			if x == 0 or z == 0 or x == _w - 1 or z == _d - 1:
+				_box(Vector3i(x, top, z), Vector3i(x, top + 1, z), "trim")
+
+
+## A stone building's stepped roof: three tiers, each four cells in from the last.
+func _stepped_roof(top: int) -> void:
+	for step: int in 3:
+		for x: int in range(2 + step * 4, _w - 2 - step * 4):
+			for z: int in range(2 + step * 4, _d - 2 - step * 4):
+				_box(Vector3i(x, top + step * 2, z), Vector3i(x, top + step * 2 + 1, z), "trim")
+
+
+## Vent stacks, one to three by depth.
+func _vents(top: int) -> void:
+	for v: int in clampi(b.d, 1, 3):
 		var at := Vector3i(
 			2 + _roll(Vector3i(v, 5, 1), maxi(1, _w - 4)),
 			top,
@@ -270,25 +282,6 @@ func _ac_units(top: int) -> void:
 		_box(at, at + Vector3i(4, 3, 3), "gear")
 		_box(at + Vector3i(1, 4, 1), at + Vector3i(3, 4, 2), "vent")
 		_box(at + Vector3i(5, 1, 1), at + Vector3i(8, 1, 1), "pipe")
-
-
-## A water tank on legs, a riser pipe under its middle (the legs stand clear of the tank's
-## curve; the riser is what holds it to the roof).
-func _water_tank(top: int) -> void:
-	var c := Vector3(_w * 0.65, top + 11.0, _d * 0.4)
-	for leg: Vector3i in [
-		Vector3i(-4, 0, -4), Vector3i(4, 0, -4), Vector3i(-4, 0, 4), Vector3i(4, 0, 4)
-	]:
-		var foot := Vector3i(roundi(c.x), top, roundi(c.z)) + leg
-		_box(foot, foot + Vector3i(0, 6, 0), "gear")
-	var riser := Vector3i(roundi(c.x), top, roundi(c.z))
-	_box(riser, riser + Vector3i(0, 5, 0), "pipe")
-	_blob(c, Vector3(5.2, 5.6, 5.2), "tank")
-	_box(
-		Vector3i(roundi(c.x), roundi(c.y) + 6, roundi(c.z)),
-		Vector3i(roundi(c.x), roundi(c.y) + 7, roundi(c.z)),
-		"tank"
-	)
 
 
 ## A mast with a red beacon on the tall towers.
@@ -318,28 +311,43 @@ func _stair_hut(top: int) -> void:
 func _sign() -> void:
 	if b.height < 3 or archetype() == GLASS or _roll(Vector3i(7, 7, 7), 1000) >= SIGN_CHANCE * 1000:
 		return
-	var open: Array[Vector2i] = []
-	for side: Vector2i in SIDES:
-		if not _party.has(side):  # signs hang only off faces with no neighbour at all
-			open.append(side)
+	var open := _open_sides()
 	if open.is_empty():
 		return
 	var side := open[_roll(Vector3i(3, 1, 4), open.size())]
-	var top := mini(_h - 6, res * 5)
 	var colour := _roll(Vector3i(5, 9, 2), NEON_COUNT)
 	var length := _d if side.x != 0 else _w
 	var along := 4 if _roll(Vector3i(1, 2, 3), 2) == 0 else length - 8
-	for y: int in range(res + 2, top):
-		for a: int in 4:
-			for out: int in range(-3, -1):
-				var edge := a == 0 or a == 3 or y == res + 2 or y == top - 1
-				var band := floori((y - res) / 3.0) % 4
-				var key := (
-					"sign_frame" if edge or band == 3 else "neon%d" % ((colour + band) % NEON_COUNT)
-				)
-				_put(_at(side, along + a, y, out), key)
-		# An office face has nothing proud for the sign to touch: a bracket at each frame
-		# edge, on every spandrel row, holds it to the wall.
-		if archetype() == OFFICE and y % res == 1:
-			for a: int in [0, 3]:
-				_put(_at(side, along + a, y, -1), "sign_frame")
+	for y: int in range(res + 2, _sign_top()):
+		_sign_row(side, along, y, colour)
+
+
+## The sides that have no neighbour at all: signs hang only off those.
+func _open_sides() -> Array[Vector2i]:
+	var open: Array[Vector2i] = []
+	for side: Vector2i in SIDES:
+		if not _party.has(side):
+			open.append(side)
+	return open
+
+
+## The floor above the sign's last row: up to five floors from the ground.
+func _sign_top() -> int:
+	return mini(_h - 6, res * 5)
+
+
+## One floor of the sign (`along` the face, in neon `colour`).
+func _sign_row(side: Vector2i, along: int, y: int, colour: int) -> void:
+	for a: int in 4:
+		for out: int in range(-3, -1):
+			var edge := a == 0 or a == 3 or y == res + 2 or y == _sign_top() - 1
+			var band := floori((y - res) / 3.0) % 4
+			var key := (
+				"sign_frame" if edge or band == 3 else "neon%d" % ((colour + band) % NEON_COUNT)
+			)
+			_put(_at(side, along + a, y, out), key)
+	# An office face has nothing proud for the sign to touch: a bracket at each frame
+	# edge, on every spandrel row, holds it to the wall.
+	if archetype() == OFFICE and y % res == 1:
+		for a: int in [0, 3]:
+			_put(_at(side, along + a, y, -1), "sign_frame")

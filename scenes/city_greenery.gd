@@ -80,86 +80,16 @@ func plant() -> void:
 	_yards()
 
 
-## Where the street trees will stand, worked out before CityDecor parks its cars so the
-## parking leaves room for them (lead review round 3: a car parked against a trunk): one every
-## city.street_tree_gap metres down both kerbs of every avenue and street
-## (city.street_tree_kinds) out to the edge of the view (D-062), the trunk on the kerb line
-## (city.street_tree_kerb in from the road's edge), clear of the crossings
-## (city.street_tree_clear), the buildings and the diagonal, and city.tree_min_apart from every
-## spot kept before it (a crossing's two streets would stand 1.2 m apart). Draws nothing from
-## the RNG.
+## Where the street trees will stand (KerbTrees), worked out before CityDecor parks its cars so
+## the parking leaves room for them (lead review round 3: a car parked against a trunk). Draws
+## nothing from the RNG.
 func kerb_spots() -> Array[Vector2]:
-	var nodes: Array[Vector2] = _plan["nodes"]
-	var gap := Num.f(_sim.city["street_tree_gap"])
-	var clear := Num.f(_sim.city["street_tree_clear"])
-	var kinds: Array = _sim.city["street_tree_kinds"]
-	var walk := Num.f(_sim.city["sidewalk"])
-	var diagonal := CityGen.width_of(CityGen.DIAGONAL, _sim.city) * 0.5 + walk
-	var out: Array[Vector2] = []
-	var apart := Num.f(_sim.city["tree_min_apart"])
-	var taken := TreeSpots.new()  # the spots kept so far
+	var kerb := KerbTrees.new(_sim, _plan, _on_building, _beyond)
+	var out := kerb.positions()
+	_spots.append_array(kerb.spots)
 	var rows: Array = green["rows"]
-	for street: Dictionary in _plan["streets"]:
-		if not str(street["kind"]) in kinds:
-			continue
-		var a := nodes[Num.i(street["from"])]
-		var b := nodes[Num.i(street["to"])]
-		if not (_inside(a, _beyond) or _inside(b, _beyond)):
-			continue
-		var playable := _inside(a, 0.5) and _inside(b, 0.5)  # only these count in green
-		var dir := (b - a).normalized()
-		var side := Vector2(-dir.y, dir.x)
-		var length := a.distance_to(b)
-		var kerb := Num.f(street["width"]) * 0.5 + Num.f(_sim.city["street_tree_kerb"])
-		if playable:
-			green["avenue_m"] = Num.f(green["avenue_m"]) + length
-		var along: Array[Vector2] = [dir, -dir]
-		for s: float in [-1.0, 1.0]:
-			var lean := Vector2i(roundi(-side.x * s), roundi(-side.y * s))  # over the road
-			# One city-wide spacing (trunks where along-street position is a whole number of gaps),
-			# so the rows carry on across the crossings instead of restarting at each block.
-			var t := ceilf((a.dot(dir) + clear) / gap) * gap - a.dot(dir)
-			var row := -1  # a new row starts after anything but a lamp breaks the line
-			while t < length - clear:
-				var p := a + dir * t + side * s * kerb
-				var fits := func(q: Vector2) -> bool:
-					return (
-						_inside(q, _beyond)
-						and not _on_building.call(q)
-						and CityGen.diagonal_distance(_plan, q) > diagonal
-					)
-				var slid := false
-				if fits.call(p) and taken.crowded(p, apart):
-					# Too close to a tree already kept (a crossing's other street): slide along
-					# the kerb to the nearest free spot, and start a row of its own there.
-					slid = true
-					p = TreeSpots.nearest(
-						p,
-						along,
-						_sim.city,
-						func(q: Vector2) -> bool:
-							var at := (q - a).dot(dir)
-							return (
-								at >= clear
-								and at <= length - clear
-								and fits.call(q)
-								and not taken.crowded(q, apart)
-							)
-					)
-				if p.is_finite() and fits.call(p):
-					if slid:
-						row = -1
-					if row < 0 and playable:
-						rows.append([] as Array[Vector2])
-						row = rows.size() - 1
-					_spots.append({"p": p, "lean": lean, "playable": playable, "row": row})
-					out.append(p)
-					taken.add(p)
-					if slid:
-						row = -1
-				else:
-					row = -1
-				t += gap
+	rows.append_array(kerb.rows)
+	green["avenue_m"] = Num.f(green["avenue_m"]) + kerb.avenue_m
 	return out
 
 
@@ -204,34 +134,13 @@ static func playground_pad(park: Rect2, cfg: Dictionary) -> Rect2:
 ## beds down both sides of the path (city.park_flower_beds per 100 m2), and a playground.
 func _park_garden(rect: Rect2) -> void:
 	green["parks"] = Num.i(green["parks"]) + 1
-	var mid := rect.get_center().x
-	var inner := rect.grow(-1.0)
-	var gap := Num.f(_sim.city["garden_bush_gap"])
 	var play_rect := playground_pad(rect, _sim.city)
 	if play_rect.has_area():
 		var at := play_rect.get_center()
 		_props.add(Vector3(at.x, 0, at.y), _playground)
 		green["playgrounds"] = Num.i(green["playgrounds"]) + 1
 	var beds := roundi(rect.get_area() / 100.0 * Num.f(_sim.city["park_flower_beds"]))
-	var spots: Array[Vector2] = []
-	var z := inner.position.y + gap * 0.5
-	while z < inner.end.y:
-		for s: float in [-1.0, 1.0]:
-			spots.append(Vector2(mid + s * 1.6, z))
-		z += gap
-	# The border hedge, open where the path meets the street.
-	var border := rect.grow(-0.6)
-	var x := border.position.x + gap * 0.5
-	while x < border.end.x:
-		if absf(x - mid) > 1.6:
-			spots.append(Vector2(x, border.position.y))
-			spots.append(Vector2(x, border.end.y))
-		x += gap
-	z = border.position.y + gap * 1.5
-	while z < border.end.y - gap:
-		spots.append(Vector2(border.position.x, z))
-		spots.append(Vector2(border.end.x, z))
-		z += gap
+	var spots := _garden_spots(rect)
 	var blooms: Array[String] = ["flower_red", "flower_yellow", "flower_white", "flower_pink"]
 	for i: int in spots.size():
 		var p := spots[i]
@@ -247,6 +156,33 @@ func _park_garden(rect: Rect2) -> void:
 			green["bushes"] = Num.i(green["bushes"]) + 1
 
 
+## Where a park's hedges and flower beds go: down both sides of the middle path, then round the
+## edge (open where the path meets the street), one every city.garden_bush_gap.
+func _garden_spots(rect: Rect2) -> Array[Vector2]:
+	var mid := rect.get_center().x
+	var inner := rect.grow(-1.0)
+	var gap := Num.f(_sim.city["garden_bush_gap"])
+	var spots: Array[Vector2] = []
+	var z := inner.position.y + gap * 0.5
+	while z < inner.end.y:
+		for s: float in [-1.0, 1.0]:
+			spots.append(Vector2(mid + s * 1.6, z))
+		z += gap
+	var border := rect.grow(-0.6)
+	var x := border.position.x + gap * 0.5
+	while x < border.end.x:
+		if absf(x - mid) > 1.6:
+			spots.append(Vector2(x, border.position.y))
+			spots.append(Vector2(x, border.end.y))
+		x += gap
+	z = border.position.y + gap * 1.5
+	while z < border.end.y - gap:
+		spots.append(Vector2(border.position.x, z))
+		spots.append(Vector2(border.end.x, z))
+		z += gap
+	return spots
+
+
 func _near_park_tree(p: Vector2) -> bool:
 	for tree: Vector2 in _park_trees:
 		if tree.distance_to(p) < 1.0:
@@ -257,8 +193,6 @@ func _near_park_tree(p: Vector2) -> bool:
 ## Front yards: where a house steps back off the street (CityLots yards, city.yard_depth deep),
 ## a hedge with now and then a flower bed fills the strip between its wall and the pavement.
 func _yards() -> void:
-	var depth_range: Array = _sim.city["yard_depth"]
-	var gap := Num.f(_sim.city["garden_bush_gap"])
 	var rects: Array[Rect2] = []
 	for block: Dictionary in _plan["blocks"]:
 		if str(block["use"]) == "built":
@@ -268,39 +202,49 @@ func _yards() -> void:
 		for rect: Rect2 in rects:
 			if not rect.has_point(box.get_center()):
 				continue
-			var gaps: Array[float] = [
-				box.position.y - rect.position.y,
-				rect.end.y - box.end.y,
-				box.position.x - rect.position.x,
-				rect.end.x - box.end.x,
-			]
-			var normals: Array[Vector2] = [
-				Vector2(0, -1), Vector2(0, 1), Vector2(-1, 0), Vector2(1, 0)
-			]
-			for f: int in 4:
-				var depth := gaps[f]
-				if depth < Num.f(depth_range[0]) or depth > Num.f(depth_range[1]):
-					continue
-				green["yards"] = Num.i(green["yards"]) + 1
-				var normal := normals[f]
-				var along := Vector2(-normal.y, normal.x)
-				var span := absf(along.dot(box.size))
-				var reach := absf(normal.dot(box.size)) * 0.5 + depth * 0.5
-				var centre := box.get_center() + normal * reach
-				var t := -span * 0.5 + gap * 0.5
-				while t < span * 0.5:
-					var p := centre + along * t
-					if _rng.randf() < 0.25:
-						_props.add(
-							Vector3(p.x, 0, p.y),
-							func(v: VoxelBuilder) -> void: _flower_bed(v, "flower_white")
-						)
-						green["flower_beds"] = Num.i(green["flower_beds"]) + 1
-					else:
-						_props.add(Vector3(p.x, 0, p.y), _bush)
-						green["hedges"] = Num.i(green["hedges"]) + 1
-					t += gap
+			_yard_faces(box, rect)
 			break
+
+
+## The yards round one building `box` in its block `rect`: each face that stands the right depth
+## back from the block's edge gets a hedge.
+func _yard_faces(box: Rect2, rect: Rect2) -> void:
+	var depth_range: Array = _sim.city["yard_depth"]
+	var gaps: Array[float] = [
+		box.position.y - rect.position.y,
+		rect.end.y - box.end.y,
+		box.position.x - rect.position.x,
+		rect.end.x - box.end.x,
+	]
+	var normals: Array[Vector2] = [Vector2(0, -1), Vector2(0, 1), Vector2(-1, 0), Vector2(1, 0)]
+	for f: int in 4:
+		var depth := gaps[f]
+		if depth < Num.f(depth_range[0]) or depth > Num.f(depth_range[1]):
+			continue
+		green["yards"] = Num.i(green["yards"]) + 1
+		_yard_hedge(box, normals[f], depth)
+
+
+## A hedge (a flower bed now and then) along the face of `box` that looks down `normal`, in the
+## yard `depth` deep.
+func _yard_hedge(box: Rect2, normal: Vector2, depth: float) -> void:
+	var gap := Num.f(_sim.city["garden_bush_gap"])
+	var along := Vector2(-normal.y, normal.x)
+	var span := absf(along.dot(box.size))
+	var reach := absf(normal.dot(box.size)) * 0.5 + depth * 0.5
+	var centre := box.get_center() + normal * reach
+	var t := -span * 0.5 + gap * 0.5
+	while t < span * 0.5:
+		var p := centre + along * t
+		if _rng.randf() < 0.25:
+			_props.add(
+				Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _flower_bed(v, "flower_white")
+			)
+			green["flower_beds"] = Num.i(green["flower_beds"]) + 1
+		else:
+			_props.add(Vector3(p.x, 0, p.y), _bush)
+			green["hedges"] = Num.i(green["hedges"]) + 1
+		t += gap
 
 
 ## A street tree: a tall trunk on the kerb and a crown (city.street_tree_crown voxels) that

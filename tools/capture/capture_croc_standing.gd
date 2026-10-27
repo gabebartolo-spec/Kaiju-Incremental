@@ -33,6 +33,8 @@ var _last_cam := Vector3.ZERO
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args(
 		{"out": _out, "seconds": _seconds, "shots": false, "log": false, "walk": _walk}
 	)

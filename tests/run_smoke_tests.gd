@@ -8,6 +8,9 @@ extends "res://tests/lib/runner.gd"
 const AUTOLOADS: Array[String] = ["Debug", "EventBus", "GameData", "Rng", "SaveSystem", "Settings"]
 const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
+const VehiclesSolid := preload("res://tests/lib/smoke_vehicles_solid.gd")
+const BuildingsSolid := preload("res://tests/lib/smoke_buildings_solid.gd")
+const SmokeMantle := preload("res://tests/lib/smoke_mantle.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -37,7 +40,10 @@ func run_checks() -> void:
 	await _t("_check_voxel_skin")
 	await _t("_check_tank")
 	await _t("_check_heli")
-	await _t("_check_vehicle_fade")
+	await _h("VehicleParts", func() -> void: VehiclePartsCheck.check(check))
+	await _t("_check_air_clear_side")
+	await _h("VehiclesSolid", func() -> void: await VehiclesSolid.check(check, root))
+	await _h("BuildingsSolid", func() -> void: await BuildingsSolid.check(check, root))
 	await _t("_check_crease_pass")
 
 
@@ -153,7 +159,7 @@ func _check_voxel_skin() -> void:
 					broken.append(species)
 					break
 			if species == "cephalopod":
-				mantle_ok = _mantle_follows(kaiju, skin)
+				mantle_ok = SmokeMantle.follows(kaiju, skin)
 		kaiju.queue_free()
 		await process_frame
 	check(
@@ -174,19 +180,6 @@ func _check_voxel_skin() -> void:
 	check(none, "the debug flag draws the rigid voxels instead (no skin)")
 	rigid.free()
 	VoxelSkin.show_rigid_voxels = false
-
-
-## The mantle voxels' node (which gait_radial scales to breathe) sizes the skin's mantle0 bone.
-func _mantle_follows(kaiju: KaijuModel, skin: VoxelSkin) -> bool:
-	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
-	var held: Variant = rig.skins.get("mantle0", null)
-	if not is_instance_valid(held):
-		return false
-	var mantle: Node3D = held
-	mantle.scale = Vector3.ONE * 1.2  # a roar puff
-	skin.sync()
-	var m := skin.pose[rig.bone_names().find("mantle0")]
-	return absf(Vector3(m.x.x, m.x.y, m.x.z).length() - 1.2) < 0.001
 
 
 ## The mouth's inside shows on the skin as BipedHead shows it: hidden while a closed jaw rests,
@@ -330,27 +323,9 @@ func _check_heli() -> void:
 	heli.free()
 
 
-## A helicopter between the camera and the kaiju fades to the screen door and one off to the side
-## stays solid; the sim keeps helicopters off the side the game camera actually views from.
-func _check_vehicle_fade() -> void:
-	var front := HelicopterModel.new()
-	var side := HelicopterModel.new()
-	root.add_child(front)
-	root.add_child(side)
-	var eye := CameraTuning.offset()
-	front.position = eye * 0.5
-	side.position = Vector3(20, 9, 0)
-	var nodes: Array[Node3D] = [front, side]
-	var fade := VehicleFade.new(func() -> Array: return [], func() -> Array: return nodes)
-	for _i: int in 30:
-		fade.update(eye, Vector3.ZERO, 1.0, 1.0 / 30.0)
-	var low := Num.f(Content.section("vehicles")["fade_opacity"])
-	var a: float = front.get_meta("opacity", 1.0)
-	var b: float = side.get_meta("opacity", 1.0)
-	check(
-		is_equal_approx(a, low) and b == 1.0,
-		"a helicopter in front of the kaiju fades to %.2f, one at the side stays %.2f" % [a, b]
-	)
+## The sim keeps helicopters off the side the game camera actually views from. (That no vehicle
+## ever draws see-through is guarded by tests/lib/smoke_vehicles_solid.gd, D-290.)
+func _check_air_clear_side() -> void:
 	var bearing := rad_to_deg(atan2(CameraTuning.offset().z, CameraTuning.offset().x))
 	var air := Num.f(Content.section("air")["camera_bearing"])
 	check(
@@ -360,8 +335,6 @@ func _check_vehicle_fade() -> void:
 			% [air, bearing]
 		)
 	)
-	front.free()
-	side.free()
 
 
 ## The crease pass (crease.gdshader) is built from the look, switched off by it, and does no

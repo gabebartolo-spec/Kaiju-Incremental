@@ -10,6 +10,9 @@ const Green := preload("res://tests/lib/city_green.gd")
 const RiverBody := preload("res://tests/lib/city_river_body.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
 const TreeApart := preload("res://tests/lib/city_tree_apart.gd")
+const TreeGround := preload("res://tests/lib/city_tree_ground.gd")
+const RoofTanks := preload("res://tests/lib/city_roof_tanks.gd")
+const SkyTanks := preload("res://tests/lib/city_skyline_tanks.gd")
 const StadiumFar := preload("res://tests/lib/city_stadium_far.gd")
 const Kerb := preload("res://tests/lib/city_kerb.gd")
 const BreathTrees := preload("res://tests/lib/city_breath_trees.gd")
@@ -17,6 +20,7 @@ const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
 const EdgeMark := preload("res://tests/lib/city_arena_edge.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
+const RiseForms := preload("res://tests/lib/city_rise_forms.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
 const BridgeLand := preload("res://tests/lib/city_bridge_land.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
@@ -35,6 +39,12 @@ func run_checks() -> void:
 	await _t("_check_calm_streets")
 	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
 	await _t("_check_no_empty_ground")
+	await _t("_check_rooftop_tanks")
+	await _h(
+		"city_diag_fill",
+		func() -> void: preload("res://tests/lib/city_diag_fill.gd").new(check, root).run()
+	)
+	await _h("city_rise_forms", func() -> void: RiseForms.check(COVERAGE_SEEDS, check))
 	await _t("_check_reach_is_real")
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
@@ -144,6 +154,7 @@ func _check_calm_streets() -> void:
 ## and past its edge, as far as the game camera shows (city.view_beyond), a stand-in building,
 ## a parked car or a street tree: never bare asphalt.
 func _check_no_empty_ground() -> void:
+	var tanks := {}
 	for tier: int in [1, 2]:
 		for map_seed: int in COVERAGE_SEEDS:
 			var base: Dictionary = Content.tuning().duplicate(true)
@@ -197,6 +208,8 @@ func _check_no_empty_ground() -> void:
 			SpawnView.check(tier, map_seed, sim, skyline, check)
 			Green.check_city(tier, map_seed, sim, decor, check)
 			TreeApart.check(tier, map_seed, sim, decor, check)
+			TreeGround.check(tier, map_seed, sim, decor, skyline, check)
+			SkyTanks.add(skyline, "stage %d, map_seed %d" % [tier, map_seed], tanks)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			StadiumFar.check(tier, map_seed, sim, check)
 			Kerb.check(tier, map_seed, sim, decor, check)
@@ -204,6 +217,13 @@ func _check_no_empty_ground() -> void:
 			BreathTrees.check(tier, map_seed, sim, decor, check)
 			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()
+	SkyTanks.verdict(tanks, check)
+
+
+## The rooftop tanks are a mix of white solar heaters and short wooden towers, stages 1-3
+## (tests/lib/city_roof_tanks.gd; director 2026-10-27, D-348, D-352).
+func _check_rooftop_tanks() -> void:
+	RoofTanks.check([1, 2, 3] as Array[int], COVERAGE_SEEDS, check)
 
 
 ## Every block the kaiju can reach is real, destroyable buildings at every stage

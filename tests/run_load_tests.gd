@@ -1,15 +1,16 @@
 extends "res://tests/lib/runner.gd"
-## Load suite: a grown city loads fast and its kaiju stays in sight (adult-city playability): the
-## party-wall pass grows about linearly, the city streams its far buildings in after the
-## rampage starts (BuildingStream), and a tower between the camera and the kaiju fades to a
-## screen door (BuildingFade, D-025). Headless; the stream check meshes a Behemoth city.
+## Load suite: a grown city loads fast (adult-city playability): the party-wall pass grows
+## about linearly and the city streams its far buildings in after the rampage starts
+## (BuildingStream). Headless; the stream check meshes a Behemoth city.
 ##   godot --headless --path . --script tests/run_load_tests.gd
 
 const LoadLandmark := preload("res://tests/lib/load_landmark.gd")
-const FadeSpawn := preload("res://tests/lib/fade_spawn.gd")
+const LoadOffMain := preload("res://tests/lib/load_off_main.gd")
 
-## Real time to wait for the stream to finish (headless frames are not real seconds).
-const STREAM_WAIT_MS := 120000
+## One frame of the stream's clock (the suite runs at --fixed-fps 60). The stream checks own that
+## clock: _process is off and a wait steps the stream by hand with its workers settled (_drain),
+## so no wall clock decides a result and a slow worker only makes a wait take longer.
+const FRAME := 1.0 / 60.0
 
 
 func suite_name() -> String:
@@ -18,12 +19,9 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_party_walls")
-	await _t("_check_building_fade")
-	await _t("_check_fade_rise")
-	await _t("_check_fall_fade")
-	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
+	await _h("LoadOffMain", func() -> void: LoadOffMain.new(check, _sim_at(1), root).run())
 	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
 	await _t("_check_stream")
 	await _t("_check_stream_budget")
@@ -122,116 +120,6 @@ func _check_party_walls() -> void:
 	)
 
 
-## The sight test behind the building screen door (D-025, R 19.4): a tower between the camera
-## and the kaiju's body or feet fades, and so does one the camera is in; one behind the kaiju,
-## beside the sight line, or carved down to a stump below every sight line does not.
-func _check_building_fade() -> void:
-	var eye := Vector3(0, 30, 40)
-	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3(0, 0, -3))
-	var tower := RampageSim.Building.new()
-	tower.w = 6
-	tower.d = 6
-	tower.height = 30
-	tower.x = 0.0
-	tower.z = 15.0
-	var front := BuildingFade.blocks(eye, sight, tower)
-	tower.z = -15.0
-	var behind := BuildingFade.blocks(eye, sight, tower)
-	tower.z = 15.0
-	tower.x = 30.0
-	var beside := BuildingFade.blocks(eye, sight, tower)
-	check(
-		front and not behind and not beside,
-		"a tower fades only when it stands between camera and kaiju"
-	)
-	tower.x = 0.0
-	tower.z = 40.0
-	tower.frame = Structure.new(tower.w, tower.d, tower.height, 1.0)
-	var around := BuildingFade.blocks(Vector3(0, 20, 40), sight, tower)
-	tower.z = 15.0
-	for y: int in range(1, tower.height):
-		for z: int in tower.d:
-			for x: int in tower.w:
-				tower.frame.remove(Vector3i(x, y, z))
-	var stump := BuildingFade.blocks(eye, sight, tower)
-	check(around and not stump, "a tower round the camera fades; a carved stump never does")
-
-
-## The rise from the river (comment #27): the sight points spread over the part of the body above
-## the water, so a low block in front of the surfacing kaiju fades; and a building already in the
-## way on the run's first frame starts faded instead of easing in over the kaiju.
-func _check_fade_rise() -> void:
-	var eye := Vector3(0, 8, 40)
-	var feet := Vector3(0, -20, 0)  # sunk: only the top of a 22-tall body is above the water
-	var low := RampageSim.Building.new()
-	low.w = 6
-	low.d = 2
-	low.height = 2
-	low.z = 15.0
-	var dry := BuildingFade.blocks(eye, BuildingFade.targets(feet, 22.0, Vector3.ZERO), low)
-	var wet := BuildingFade.targets(feet, 22.0, Vector3.ZERO, -1.6)
-	var above := true
-	for p: Vector3 in wet:
-		above = above and p.y >= -1.6
-	check(
-		above and not dry and BuildingFade.blocks(eye, wet, low),
-		"under water the sight points cover the body above the surface, so a low block in front fades"
-	)
-	var buildings: Array[RampageSim.Building] = [low]
-	var fade := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
-	fade.update(eye, wet, 1.0 / 60.0)
-	var first := fade.opacity(0)
-	fade.update(eye, wet, 1.0 / 60.0)
-	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
-	later.update(eye, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
-	later.update(eye, wet, 1.0 / 60.0)
-	var floor_opacity := Num.f(Content.section("camera")["fade_opacity"])
-	check(
-		is_equal_approx(first, floor_opacity) and later.opacity(0) > floor_opacity,
-		(
-			(
-				"a building in the way on the first frame starts faded (%.2f); one that comes in later"
-				+ " eases (%.2f)"
-			)
-			% [first, later.opacity(0)]
-		)
-	)
-
-
-## A toppling section fades like a standing building (R 19.4, D-121 review): a tower tipping over
-## between the camera and the kaiju covers the sight lines as it is tilted now, and starts faded;
-## the same tower tipped the other way, away from the line, stays solid.
-func _check_fall_fade() -> void:
-	var eye := Vector3(0, 20, 40)
-	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3.ZERO)
-	var piece := Node3D.new()
-	piece.position = Vector3(10, 0, 15)  # the pivot: its base edge, beside the sight line
-	piece.set_meta("pivot", piece.position)
-	piece.set_meta("box", AABB(Vector3(9, 0, 14), Vector3(2, 25, 2)))  # 25 tall, upright
-	var mesh := MeshInstance3D.new()
-	mesh.material_override = ShaderMaterial.new()
-	piece.add_child(mesh)
-	root.add_child(piece)
-	var upright := FallFade.covers(piece, eye, sight)
-	piece.rotation = Vector3(0, 0, PI * 0.25)  # tipping toward -x, across the sight line
-	var across := FallFade.covers(piece, eye, sight)
-	var fade := FallFade.new()
-	var pieces: Array[Node3D] = [piece]
-	fade.update(pieces, eye, sight, 1.0 / 60.0)
-	var first := fade.opacity(piece)
-	piece.rotation = Vector3(0, 0, -PI * 0.25)  # tipping toward +x, away from it
-	var away := FallFade.covers(piece, eye, sight)
-	piece.free()
-	check(
-		not upright and across and not away,
-		"a toppling section covers the kaiju only while it is tilted across the sight line"
-	)
-	check(
-		is_equal_approx(first, Num.f(Content.section("camera")["fade_opacity"])),
-		"a section already in the way when it starts to fall starts faded (%.2f)" % first
-	)
-
-
 ## a building touched before its turn is built on the spot; in the end every building is real.
 func _check_stream() -> void:
 	var sim := _sim_at(2)
@@ -242,6 +130,7 @@ func _check_stream() -> void:
 		colors.append(Color.GRAY)
 	var stream := BuildingStream.new(sim, colors)
 	root.add_child(stream)
+	stream.set_process(false)
 	var at_load := stream.built_at_load()
 	check(
 		at_load > 0 and at_load < sim.buildings.size(),
@@ -279,9 +168,7 @@ func _check_stream() -> void:
 		stream.view(far) != null,
 		"a building the rampage touches before its turn is built on the spot"
 	)
-	var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
-	while not stream.complete() and Time.get_ticks_msec() < deadline:
-		await process_frame
+	await _drain(stream, sim, stream.complete)
 	var missing := 0
 	for n: int in sim.buildings.size():
 		missing += 1 if stream.built(n) == null else 0
@@ -303,11 +190,10 @@ func _check_stream_budget() -> void:
 		colors.append(Color.GRAY)
 	var stream := BuildingStream.new(sim, colors)
 	root.add_child(stream)
+	stream.set_process(false)
 	var spot := sim.kaiju_pos
 	var near := _nearest_plain(sim, spot)
-	var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
-	while not stream.complete() and Time.get_ticks_msec() < deadline:
-		await process_frame
+	await _drain(stream, sim, stream.complete)
 	var cap := 30000 + _ring_slack(sim)
 	check(
 		stream.resident_chunks() <= cap and stream.resident_chunks() > 3000,
@@ -329,19 +215,16 @@ func _check_stream_budget() -> void:
 	var arrived := _nearest_plain(sim, far)
 	var other := _nearest_plain(sim, spot, near)
 	var digest := _digest(stream.built(other))
-	while (
-		(stream.built(arrived) == null or stream.built(other) != null)
-		and Time.get_ticks_msec() < deadline
-	):
-		await process_frame
+	var walked := func() -> bool:
+		return stream.built(arrived) != null and stream.built(other) == null
+	await _drain(stream, sim, walked)
 	check(stream.built(arrived) != null, "the building the kaiju walks up to is meshed")
 	check(stream.built(other) == null, "an untouched building far behind him goes back to a box")
 	check(
 		stream.built(near) == touched and touched.is_inside_tree(),
 		"a building the rampage touched is never freed"
 	)
-	while not stream.complete() and Time.get_ticks_msec() < deadline:
-		await process_frame
+	await _drain(stream, sim, stream.complete)
 	check(
 		(
 			stream.resident_chunks()
@@ -351,8 +234,8 @@ func _check_stream_budget() -> void:
 	)
 	# He walks back: the freed building meshes again, identical to before.
 	sim.kaiju_pos = spot
-	while stream.built(other) == null and Time.get_ticks_msec() < deadline:
-		await process_frame
+	var met := func() -> bool: return stream.built(other) != null
+	await _drain(stream, sim, met)
 	check(
 		stream.built(other) != null and _digest(stream.built(other)) == digest,
 		"a building freed and met again meshes identically"
@@ -364,6 +247,20 @@ func _check_stream_budget() -> void:
 	)
 	stream.queue_free()
 	await process_frame
+
+
+## Steps the stream until `done` holds. A settled step lands every building in flight, so each step
+## with work left builds one at least and the bound counts steps, never seconds: a stream not done
+## within it is stuck, and fails here the same way on every machine.
+func _drain(stream: BuildingStream, sim: RampageSim, done: Callable) -> void:
+	var bound := sim.buildings.size() * 2 + 120
+	for _i: int in bound:
+		if done.call():
+			return
+		stream.step(FRAME, true)
+		await process_frame
+	if not done.call():
+		check(false, "the stream settles within %d steps" % bound)
 
 
 ## The nearest ordinary building to `at`, other than `skip`.

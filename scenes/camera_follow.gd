@@ -89,8 +89,3 @@ func aim(kaiju: Node3D, body_scale: float, view: Vector2, delta: float) -> Vecto
 	if head == null:
 		head = HeadFrame.new(kaiju)
 	return head.aim(eye(), look_at(body_scale), view, delta)
-
-
-## The drawn body's points the building fade keeps in sight (HeadFrame.sight).
-func sight() -> PackedVector3Array:
-	return head.sight() if head != null else PackedVector3Array()

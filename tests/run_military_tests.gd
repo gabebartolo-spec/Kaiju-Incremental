@@ -5,11 +5,13 @@ extends "res://tests/lib/military_view.gd"
 ## on generated cities (RAMPAGE_SEEDS), at the young and Behemoth stages (and the Colossus city,
 ## where tanks enter round the kaiju, D-039, D-135), and the clip's scene through the game camera.
 ## The helicopters are today's (their flight is its own branch, claude/heli-flight). Helpers: the
-## clumsy army's strays (MilitaryStray) and a boxed-in tank's bounded yield (MilitaryYield).
+## clumsy army's strays (MilitaryStray), a boxed-in tank's bounded yield (MilitaryYield) and the
+## reach measured to the body (MilitaryReach).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 
 const MilitaryStray := preload("res://tests/lib/military_stray.gd")
 const MilitaryYield := preload("res://tests/lib/military_yield.gd")
+const MilitaryReach := preload("res://tests/lib/military_reach.gd")
 
 ## Parked-in-range tank-steps the rampages must see before their standoff share means anything.
 const MIN_PARKED_IN_RANGE := 20
@@ -43,6 +45,7 @@ func run_checks() -> void:
 	await _t("_check_rampages")
 	await _h("MilitaryStray", func() -> void: MilitaryStray.new(check, _rampage, _autoplay).run())
 	await _h("MilitaryYield", func() -> void: MilitaryYield.new(check, _rampage).run())
+	await _h("MilitaryReach", func() -> void: MilitaryReach.new(check, _rampage).run())
 	await _t("_check_standoff_held")
 	await _t("_check_pivot_beside_parked")
 	await _t("_check_rubble")

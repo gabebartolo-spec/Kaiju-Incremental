@@ -55,9 +55,7 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 1.0))
 	curve.add_point(Vector2(1, 0.1))
-	var tex := CurveTexture.new()
-	tex.curve = curve
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, curve)
 	var ramp := Gradient.new()  # only the life fade: the colour is the flame shader's, by height
 	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)])
 	ramp.offsets = PackedFloat32Array([0.0, 0.06, 0.8, 1.0])
@@ -137,9 +135,7 @@ static func _smoke_mat(cfg: Dictionary) -> ParticleProcessMaterial:
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 0.5))
 	curve.add_point(Vector2(1, 1.7))
-	var tex := CurveTexture.new()
-	tex.curve = curve
-	mat.scale_curve = tex
+	FxCurve.set_scale(mat, curve)
 	var warm := Color(str(cfg["smoke_warm"]))
 	var mid := Color(str(cfg["smoke_mid"]))
 	var stops: Array[Color] = []  # Fire's charcoal ramp, young smoke glowing with the flames under it
@@ -177,16 +173,24 @@ static func _burst(
 	at: Vector3,
 	explosive := 0.95
 ) -> void:
-	var p := GPUParticles3D.new()
+	var p := FxPool.take("burst", amount)  # a pooled system when one is free (render plan item 8)
+	var pooled := p != null
+	if not pooled:
+		p = GPUParticles3D.new()
 	p.amount_ratio = GraphicsPresets.cap("particles")
 	p.process_material = mat
 	p.draw_pass_1 = mesh
-	p.amount = amount
+	if p.amount != amount:
+		p.amount = amount
 	p.lifetime = life
 	p.one_shot = true
 	p.explosiveness = explosive
-	p.emitting = true
 	p.visibility_aabb = AABB(Vector3(-40, -10, -40), Vector3(80, 60, 80))
 	p.position = at
 	parent.add_child(p)
-	parent.get_tree().create_timer(life + 0.3).timeout.connect(p.queue_free)
+	if pooled:
+		p.restart()  # after the values, so no stale particle shows
+		FxPool.give_after(p, life + 0.3)
+	else:
+		p.emitting = true
+		parent.get_tree().create_timer(life + 0.3).timeout.connect(p.queue_free)

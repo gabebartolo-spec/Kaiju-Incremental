@@ -153,6 +153,32 @@ func update(delta: float, kaiju: Vector2) -> void:
 
 ## Picks a crossing ahead of the kaiju and sends two cruisers to block the street there.
 func _start_blockade(kaiju: Vector2) -> void:
+	var best := _blockade_crossing(kaiju)
+	if best < 0:
+		return
+	var traffic := _street.traffic
+	var b := Blockade.new()
+	b.at = traffic.crossing(best)
+	# Block the street that leads from the crossing most nearly toward the kaiju.
+	var v := (kaiju - b.at).normalized()
+	for d: Vector2 in traffic.street_dirs(best):
+		if b.toward == Vector2.ZERO or d.dot(v) > b.toward.dot(v):
+			b.toward = d
+	b.across = Vector2(-b.toward.y, b.toward.x)
+	var line := b.at + b.toward * BARRIER
+	_send_cruisers(b, line)
+	b.light = PooledLight.new("beacon")
+	b.light.set_energy(SIREN_ENERGY)
+	b.light.omni_range = 7.0
+	b.light.position = Vector3(line.x, 1.2, line.y)
+	add_child(b.light)
+	_blockades.append(b)
+	blockades_made += 1
+
+
+## The crossing ahead of the kaiju, in range, nearest the blockade distance (a facing crossing
+## wins ties), that no tank or blockade holds; -1 when there is none.
+func _blockade_crossing(kaiju: Vector2) -> int:
 	var traffic := _street.traffic
 	var want := Num.f(_cfg["blockade_distance"])
 	var best := -1
@@ -166,38 +192,31 @@ func _start_blockade(kaiju: Vector2) -> void:
 		var facing := d.normalized().dot(sim.facing)
 		if facing < AHEAD:
 			continue
-		var taken := false
-		for tank: RampageSim.Tank in sim.tanks:  # never across a tank's road
-			taken = taken or tank.pos.distance_to(at) < TankKeepOut.KEEP * 2.0
-		for other: Blockade in _blockades:
-			taken = taken or other.at.distance_to(at) < 1.0
 		var score := absf(dist - want) - facing * 4.0
-		if not taken and score < best_score:
+		if score < best_score and not _crossing_taken(at):
 			best_score = score
 			best = n
-	if best < 0:
-		return
-	var b := Blockade.new()
-	b.at = traffic.crossing(best)
-	# Block the street that leads from the crossing most nearly toward the kaiju.
-	var v := (kaiju - b.at).normalized()
-	for d: Vector2 in traffic.street_dirs(best):
-		if b.toward == Vector2.ZERO or d.dot(v) > b.toward.dot(v):
-			b.toward = d
-	b.across = Vector2(-b.toward.y, b.toward.x)
-	var line := b.at + b.toward * BARRIER
-	for s: float in [-1.0, 1.0]:  # nose to nose across the road
+	return best
+
+
+## Whether a tank's road (never across it) or another blockade already holds the crossing at `at`.
+func _crossing_taken(at: Vector2) -> bool:
+	for tank: RampageSim.Tank in sim.tanks:
+		if tank.pos.distance_to(at) < TankKeepOut.KEEP * 2.0:
+			return true
+	for other: Blockade in _blockades:
+		if other.at.distance_to(at) < 1.0:
+			return true
+	return false
+
+
+## Two cruisers nose to nose across the road at `line`, each driving in from behind the crossing.
+func _send_cruisers(b: Blockade, line: Vector2) -> void:
+	for s: float in [-1.0, 1.0]:
 		var slot := line + b.across * s * 0.85
 		var from := b.at - b.toward * 9.0 + b.across * s * 0.4
 		var angle := _rng.randf_range(-0.2, 0.2)
 		_street.traffic.add_police(from, slot, (-b.across * s).rotated(angle))
-	b.light = PooledLight.new("beacon")
-	b.light.set_energy(SIREN_ENERGY)
-	b.light.omni_range = 7.0
-	b.light.position = Vector3(line.x, 1.2, line.y)
-	add_child(b.light)
-	_blockades.append(b)
-	blockades_made += 1
 
 
 func _cops_out(b: Blockade) -> void:

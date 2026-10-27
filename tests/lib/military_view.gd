@@ -9,6 +9,7 @@ extends "res://tests/lib/military_base.gd"
 ## probe table (a VIEW line) for the PR.
 
 const Clip := preload("res://tools/capture/capture_military.gd")
+const MilitaryCornered := preload("res://tests/lib/military_cornered.gd")
 const VIEW_SECONDS := 18.0
 ## Standoff: a tank's hull (its nearest corner or side) this far from the kaiju's body edge
 ## (LEAD r6; r7: from the hull, not its centre).
@@ -232,7 +233,7 @@ func _measure_cars(rampage: Rampage, got: Dictionary) -> void:
 		var was_at: Vector2 = seen.get(tank.id, tank.pos)
 		seen[tank.id] = tank.pos
 		var was := _hull_to_body(sim, was_at, u)  # where it stood a sim step ago, body as now
-		if edge < EDGE_GAP and _cornered(sim, tank.pos):  # LEAD r7: it holds and fires
+		if edge < EDGE_GAP and MilitaryCornered.cornered(sim, tank.pos):  # LEAD r7: it holds and fires
 			got["cornered"] = Num.i(got["cornered"]) + 1
 			got["cornered_edge"] = minf(Num.f(got["cornered_edge"]), edge)
 			if edge < was - 0.05:  # it drove nearer the body (not the body nearer it)
@@ -248,23 +249,6 @@ func _measure_cars(rampage: Rampage, got: Dictionary) -> void:
 			var ly := absf(d.dot(u.orthogonal())) - half.y - CAR_HALF.y
 			if not car.crushed and maxf(lx, ly) <= 0.0:
 				got["on_car"] = Num.i(got["on_car"]) + 1
-
-
-## Has the tank at p no road out: every way along every army road it stands on (RoadGraph: the
-## plan clipped to the box the army operates in) ends nearer the kaiju's body line than it stands
-## now? (A stub out to the box's edge with the kaiju at its mouth.)
-static func _cornered(sim: RampageSim, p: Vector2) -> bool:
-	var graph := sim.army_units.convoy.graph
-	var snout: Vector2 = BreathCone.of(sim)["origin"]
-	var here := Geometry2D.get_closest_point_to_segment(p, sim.kaiju_pos, snout).distance_to(p)
-	for e: int in graph.roads_at(graph.cell_of(p)):
-		if not graph.on_edge(p, e):
-			continue
-		for end: Vector2 in [graph.nodes[graph.edge_a[e]], graph.nodes[graph.edge_b[e]]]:
-			var q := Geometry2D.get_closest_point_to_segment(end, sim.kaiju_pos, snout)
-			if end.distance_to(p) > 0.5 and end.distance_to(q) > here:
-				return false
-	return true
 
 
 ## How far the hull's nearest corner or side (HULL_LENGTH x 2 HULL_HALF_WIDTH along `u`; a

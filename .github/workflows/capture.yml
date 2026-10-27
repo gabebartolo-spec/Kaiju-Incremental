@@ -55,9 +55,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
-          # The display fonts are LFS (3 files, ~26 KB): without them every label logs a
-          # FreeType error with a backtrace and the render crawls past the time limit.
-          lfs: true
+          # native/godot-cpp: the bench and capture tools refuse to run without the native library
+          # (tools/capture/native_guard.gd), so the run builds it, from the cache when unchanged.
+          submodules: true
+      # The display fonts are LFS: without them every label logs a FreeType error with a backtrace and the
+      # render crawls past the time limit; the kaiju skins and voxel models are LFS too.
+      - uses: ./.github/actions/lfs-files
+
+      - name: Build the native core
+        if: hashFiles('.github/actions/native-build/action.yml') != ''
+        uses: ./.github/actions/native-build
 
       - name: Cache Godot
         id: godot-cache
@@ -112,6 +119,7 @@ jobs:
             local movie_args=(--fixed-fps "$FPS")
             if [ "$MOVIE" = true ]; then movie_args+=(--write-movie "$out/clip.avi"); fi
             echo "=== $1 on $2 ===" | tee -a "$out/RENDERER.txt"
+            result_log="$out/godot-$1.log"
             # $user_args is split on purpose: it is a list of --flag=value words.
             # shellcheck disable=SC2086
             timeout 3000 xvfb-run -a -s "-screen 0 ${RES}x24" \
@@ -133,6 +141,14 @@ jobs:
             gl_compatibility) run_one gl_compatibility opengl3 || code=$?;;
           esac
           tail -n 60 "$out"/godot-*.log
+          # The engine's exit report of leaks fails a capture that otherwise worked (debt row 2): a
+          # RampageSim is cut at the quit by NativeGuard.ok, anything else a tool builds it frees. It
+          # reads the log of the run that produced the result (the last one started), not a renderer
+          # that failed before the fallback.
+          if [ "$code" = 0 ] && ! bash tools/lint/log_smoke.sh --leaks "$result_log"; then
+            echo "::error::$SCRIPT left objects alive at its exit (tools/lint/log_smoke.sh --leaks)"
+            code=1
+          fi
           exit "$code"
 
       - name: Convert the clip to MP4 and collect user:// output

@@ -304,6 +304,7 @@ func _dim_windows() -> void:
 		mat.set_shader_parameter("blackout", Num.f(cut["blackout"]))
 		mat.set_shader_parameter("lit_color", Color(str(cut["lit_color"])))
 		mat.set_shader_parameter("glow", Num.f(cut["glow"]))
+		mat.set_shader_parameter("window_palette_on", false)  # its own dim colour, as tuned
 
 
 ## The play area's quay (world z).

@@ -1,4 +1,4 @@
-extends "res://tests/lib/runner.gd"
+extends "res://tests/lib/leap_base.gd"
 ## The croc's leap on the dash button (Dash, D-259 "a leap that lands on a building and crushes it
 ## with a shockwave (replaces the dash)"): it aims at the standing building ahead in reach (else the
 ## full reach), crouches, flies its stage's flight time and lands; nothing breaks before the contact
@@ -7,15 +7,6 @@ extends "res://tests/lib/runner.gd"
 ## coat shatters, and the same seed replays the same leap. Player-effect fixture "croc.leap": the
 ## same seeded rampage with the leap pressed and with it walked breaks a different city.
 ## Seeded by design: every sim is Seeds.make("army", 0); the fixture city is Seeds.make("city", 0).
-
-const DT := 1.0 / 60.0
-const BUTTON := 4  # Dash.BUTTON
-## The growth steps: the young croc, Behemoth, Colossus (the leap's three stages).
-const STAGES := {"young": {}, "Behemoth": {"evolve1": 1}, "Colossus": {"evolve1": 1, "evolve2": 1}}
-## The fixture: seconds walked before the press, then seconds watched after it.
-const FIXTURE_LEAD_S := 1.0
-const FIXTURE_WATCH_S := 4.0
-const FIXTURE_MAX_N := 600
 
 
 func suite_name() -> String:
@@ -32,49 +23,6 @@ func run_checks() -> void:
 	await _t("_check_cooldown_and_frost")
 	await _t("_check_replay")
 	await _t("_check_effect")
-
-
-## The reptilian at `levels`, as Rampage builds it, standing at (0, 30) facing north, on `layout`
-## plus a small block far behind it, so the run is not over for want of a city.
-func _croc(levels: Dictionary, p_layout: Array[Dictionary]) -> RampageSim:
-	var layout := p_layout.duplicate()
-	layout.append(_block(Vector2(38.0, 38.0), 2, 2))
-	var def := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), def, tree)
-	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
-	sim.ability_type = "cone"
-	sim.body.use_species("reptilian")
-	sim.time_left = 1.0e9
-	sim.kaiju_pos = Vector2(0.0, 30.0)
-	return sim
-
-
-## A building of `w` x `w` cells, `h` floors, centred at `at`.
-func _block(at: Vector2, w: int, h: int) -> Dictionary:
-	return {"x": at.x, "z": at.y, "w": w, "d": w, "h": h, "tier": 1, "style": 0}
-
-
-## Where the feet of a croc at (0, 30) facing north land on a building centre `ahead` units on.
-func _ahead(sim: RampageSim, ahead: float) -> Vector2:
-	return Vector2(0.0, 30.0 - sim.body.feet_ahead() - ahead)
-
-
-## Steps the sim until the leap is over (at most 5 s), returning every event on the way.
-func _finish(sim: RampageSim, stick: Vector2 = Vector2.ZERO) -> Array[Dictionary]:
-	var seen: Array[Dictionary] = []
-	for _n: int in roundi(5.0 / DT):
-		if not sim.body.dash.on():
-			break
-		seen.append_array(sim.step(DT, stick, false, 0))
-	return seen
-
-
-func _first(events: Array[Dictionary], kind: String) -> Dictionary:
-	for event: Dictionary in events:
-		if str(event["type"]) == kind:
-			return event
-	return {}
 
 
 ## The leap picks the standing building ahead in reach (not one off to the side, not one beyond
@@ -261,8 +209,9 @@ func _check_ring_and_fling() -> void:
 	var centre := Vector2(0.0, 30.0 - sim.body.feet_ahead() - reach)
 	var near := _tank(sim, 901, centre + Vector2(ring * 0.5, 0.0))
 	var far := _tank(sim, 902, centre + Vector2(-ring * 2.5, 0.0))
+	var held: Array[RampageSim.Tank] = [near, far]  # on their spots through the crouch and flight
 	sim.step(DT, Vector2.ZERO, false, BUTTON)
-	var events := _finish(sim)
+	var events := _finish_held(sim, held)
 	var land := _first(events, "leap_land")
 	var flung := {}
 	for event: Dictionary in events:
@@ -282,16 +231,6 @@ func _check_ring_and_fling() -> void:
 		not flung.has(902) and far.hp == 1000.0,
 		"a tank past twice the ring is untouched (hp %.0f)" % far.hp
 	)
-
-
-func _tank(sim: RampageSim, id: int, at: Vector2) -> RampageSim.Tank:
-	var tank := RampageSim.Tank.new()
-	tank.id = id
-	tank.pos = at
-	tank.hp = 1000.0
-	tank.cooldown = 1.0e9
-	sim.tanks.append(tank)
-	return tank
 
 
 ## A second press inside the cooldown does nothing; after it, it leaps again. A leap shatters frost.
@@ -350,42 +289,3 @@ func _check_effect() -> void:
 			% [Num.i(leapt["chunks"]), Num.i(walked["chunks"])]
 		)
 	)
-
-
-## The croc walks north into the seeded city FIXTURE_LEAD_S and on until a roof it can land on is
-## ahead (at most FIXTURE_MAX_N steps), then (with `leap`) presses the button,
-## and is watched FIXTURE_WATCH_S with the stick held north.
-func _run_city(leap: bool) -> Dictionary:
-	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
-	var sim := _croc({}, layout)
-	sim.kaiju_pos = Vector2(0.0, CityGen.half_extent(sim.city))
-	var north := Vector2(0, -1)
-	for _n: int in roundi(FIXTURE_LEAD_S / DT):
-		sim.step(DT, north, false, 0)
-	var more := 0  # walks on until a roof it can land on is ahead (a tower is _check_tower_wall's)
-	while Num.f(sim.body.dash.aim_at(sim.kaiju_pos, north)["roof"]) <= 0.0 and more < FIXTURE_MAX_N:
-		sim.step(DT, north, false, 0)
-		more += 1
-	sim.step(DT, north, false, BUTTON if leap else 0)
-	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
-	for _n: int in roundi(FIXTURE_WATCH_S / DT):
-		var flying := sim.body.dash.phase() == "flight"
-		var was := sim.body.broken
-		sim.step(DT, north, false, 0)
-		if flying and sim.body.dash.phase() == "flight":
-			in_flight += sim.body.broken - was
-			in_flight += sim.body.inside(sim.kaiju_pos, sim.body.heading).size()
-	return {
-		"in_flight": in_flight,
-		"roof": sim.body.dash.arc.land_y,
-		"blocked": sim.body.dash.arc.blocked,
-		"landings": sim.body.dash.landings,
-		"chunks": sim.chunks_destroyed,
-		"rubble": snappedf(sim.rubble, 0.001),
-		"at": sim.kaiju_pos.snapped(Vector2(0.001, 0.001)),
-	}
-
-
-func _stage(sim: RampageSim) -> Dictionary:
-	var stages: Array = sim.body.dash.cfg["stages"]["reptilian"]
-	return stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
