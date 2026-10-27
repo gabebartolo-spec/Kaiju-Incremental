@@ -26,7 +26,6 @@ scenes/pitch_props.gd::mesh 45 16
 scenes/police.gd::_start_blockade 46 16
 scenes/powers_view.gd::on_event 71 24
 scenes/powers_view.gd::update 49 16
-scenes/rampage.gd::_physics_process 41 11
 scenes/rampage.gd::_ready 53 8
 scenes/settings_menu.gd::_ready 55 1
 scenes/sfx.gd::play 43 12
