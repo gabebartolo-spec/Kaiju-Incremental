@@ -186,7 +186,8 @@
             94,
             118,
             124,
-            145
+            145,
+            306
           ]
         },
         {
@@ -225,7 +226,9 @@
             293,
             296,
             299,
-            300
+            300,
+            303,
+            304
           ]
         },
         {
@@ -676,6 +679,13 @@
           "prs": [
             274
           ]
+        },
+        {
+          "text": "Never fade out the destruction (D-290, D-326): no tank, helicopter or falling piece ever draws see-through",
+          "status": "in progress",
+          "prs": [
+            279
+          ]
         }
       ],
       "asks": [
@@ -999,11 +1009,14 @@
           "text": "Render plan (D-276, D-298): a measured 4K baseline bench and its tools (Phase 0), debris bookkeeping cached per tick (item 1), the kaiju's shadow drawn in a tight box (item 2), night fog, debanding and sharpen, and the new colour grading on by default (items 3 and 4, D-285)",
           "status": "done",
           "prs": [
-            259,
             252,
             253,
             257,
-            284
+            259,
+            284,
+            288,
+            301,
+            302
           ]
         },
         {
@@ -1218,7 +1231,8 @@
           "text": "The far insectoid rampages through the distant skyline across the bay, on by default (D-120; his 2026-10-25 'yes bring it back')",
           "status": "done",
           "prs": [
-            213
+            213,
+            305
           ]
         },
         {
