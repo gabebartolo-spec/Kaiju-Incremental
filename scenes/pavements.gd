@@ -22,11 +22,7 @@ var rng: RandomNumberGenerator
 func _init(sim: RampageSim) -> void:
 	var half := CityGen.half_extent(sim.city)
 	var plan := CityGen.map(sim.city)
-	var avenue: Array[Dictionary] = []  # only the diagonal runs through a block
-	for road: Dictionary in plan["streets"]:
-		if str(road["kind"]) == CityGen.DIAGONAL:
-			avenue.append(road)
-	var diagonal := {"nodes": plan["nodes"], "streets": avenue}
+	var diagonal := _diagonal_only(plan)  # only the diagonal runs through a block
 	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
@@ -47,24 +43,43 @@ func _init(sim: RampageSim) -> void:
 			var b := first + (c + 1) % 4
 			if in_road[a] == 0 and in_road[b] == 0:
 				_link(a, b)
-	# Crossings: a corner links to the nearest corner of another block straight across a street.
+	_cross_streets()
+
+
+## The plan with only its diagonal avenue among the streets (CityGen.road_at's input).
+static func _diagonal_only(plan: Dictionary) -> Dictionary:
+	var avenue: Array[Dictionary] = []
+	for road: Dictionary in plan["streets"]:
+		if str(road["kind"]) == CityGen.DIAGONAL:
+			avenue.append(road)
+	return {"nodes": plan["nodes"], "streets": avenue}
+
+
+## Crossings: a corner links to the nearest corner of another block straight across a street.
+func _cross_streets() -> void:
 	for a: int in nodes.size():
 		if in_road[a] == 1:
 			continue
 		for axis: int in 2:
-			var best := -1
-			for b: int in nodes.size():
-				if a >> 2 == b >> 2 or in_road[b] == 1:
-					continue
-				var d := nodes[b] - nodes[a]
-				var along := absf(d.x) if axis == 0 else absf(d.y)
-				var off := absf(d.y) if axis == 0 else absf(d.x)
-				if off > 1.0 or along > CROSSWALK:
-					continue
-				if best < 0 or along < nodes[best].distance_to(nodes[a]):
-					best = b
+			var best := _nearest_across(a, axis)
 			if best >= 0 and not links[a].has(best):
 				_link(a, best)
+
+
+## The nearest corner of another block across a street from corner a along `axis` (0: x), or -1.
+func _nearest_across(a: int, axis: int) -> int:
+	var best := -1
+	for b: int in nodes.size():
+		if a >> 2 == b >> 2 or in_road[b] == 1:
+			continue
+		var d := nodes[b] - nodes[a]
+		var along := absf(d.x) if axis == 0 else absf(d.y)
+		var off := absf(d.y) if axis == 0 else absf(d.x)
+		if off > 1.0 or along > CROSSWALK:
+			continue
+		if best < 0 or along < nodes[best].distance_to(nodes[a]):
+			best = b
+	return best
 
 
 ## The corners people can walk between (4 per block, minus the ones in the road).
