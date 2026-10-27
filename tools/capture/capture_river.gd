@@ -11,6 +11,8 @@ extends SceneTree
 ##   --mask  with each still, <label>_tNN_mask.png: the water sheets alone, white on black
 ##   --off   with each still, <label>_tNN_off.png: the same frame with the glossy sheet the
 ##           surface replaced (WaterSurface.gloss), so a measurement compares like with like
+##   (the mask swaps the environment, resetting its temporal history: in a --mask run, compare
+##   only the first still with another run's)
 ##   --tune=section.key=value  (a tuning.json number)   --calm  (no camera shake or dip)
 ## The rise waits for the city to finish streaming in (the sim held, as capture_one_look), and
 ## prints "river: rise starts at drawn frame N" so a clip can be trimmed from there.
@@ -140,10 +142,10 @@ func _still(rampage: Rampage, at: float) -> void:
 			% [name, at, rampage.sim.kaiju_pos, rampage.sim.stand_y]
 		)
 	)
-	if _mask:
-		await _save_mask(rampage, name + "_mask.png")
-	if _off:
+	if _off:  # first: it swaps the water's material only, so its frame stays like the still's
 		await _save_off(rampage, name + "_off.png")
+	if _mask:  # the mask swaps the environment too, which resets its temporal history
+		await _save_mask(rampage, name + "_mask.png")
 	rampage.set_physics_process(true)
 
 

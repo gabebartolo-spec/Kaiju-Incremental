@@ -49,6 +49,7 @@ const float SLOPE_STEP = 0.9;
 const float SPREAD = 1.2;  // radians of spread round the wind
 const float RIPPLE_STEP = 0.43;
 const float WATER_F0 = 0.16;  // the engine's dielectric F0 is 0.16 * spec^2
+const float CREST_MEAN = 0.4658;  // the mean of exp(sin - 1), I0(1) / e: heights centre on the still surface
 
 float wh(float n) {
 	return fract(sin(n * 91.3458 + seed * 1.37) * 47453.5453);
@@ -105,7 +106,7 @@ vec3 wave_set(vec2 p, float t, float fp, float len0, float slope0, int count, fl
 		float ph = k * dot(d, p) - sqrt(GRAVITY * k) * t + TAU * wh(fi + 17.0);
 		float e = exp(sin(ph) - 1.0);
 		float keep = 1.0 - smoothstep(len * 0.12, len * 0.4, fp);
-		sum += keep * vec3(s / k * e, s * e * cos(ph) * d);
+		sum += keep * vec3(s / k * (e - CREST_MEAN), s * e * cos(ph) * d);
 		lost += (1.0 - keep) * s * s;
 		len *= WAVE_STEP;
 		s *= SLOPE_STEP;
@@ -153,6 +154,8 @@ void fragment() {
 	float lost = 0.0;
 	vec3 h = wave_set(carried, t, fp, wave_length, wave_slope, WAVES, SPREAD, 0.0, lost);
 	h += ripples(carried, t, fp, lost);
+	// A crest's body is lighter (light through its top): the wind waves and ripples, not the slow swell.
+	float crest = clamp(h.x / max(0.001, wave_slope * wave_length / TAU), -1.0, 1.0);
 	if (swell_length > 0.0) {
 		h += wave_set(p, t, fp, swell_length, swell_slope, SWELLS, SPREAD * 0.4, 40.0, lost);
 	}
@@ -172,7 +175,6 @@ void fragment() {
 	float f0 = WATER_F0 * spec * spec;
 	float fres = f0 + (1.0 - f0) * pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 5.0);
 
-	float crest = clamp(h.x / max(0.001, wave_slope * wave_length / TAU), -1.0, 1.0);
 	vec3 body = mix(shallow_color, deep_color, smoothstep(0.0, murk, below));
 	body *= 1.0 + crest_light * crest;
 
