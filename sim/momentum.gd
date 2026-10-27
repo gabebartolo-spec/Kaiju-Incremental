@@ -2,8 +2,10 @@ class_name Momentum
 extends RefCounted
 ## The titan's run (D-337, "momentum based, at high momentum he can crash right through smaller
 ## buildings, and collide with a bang into bigger ones"). From the first rampage it builds while he
-## walks (to full in build_seconds; the momentum node builds it faster) and bleeds as he turns
-## (turn_bleed a radian) or stands (idle_decay a second); it adds speed_bonus x itself to his walk.
+## walks on open ground (to full in build_seconds; the momentum node builds it faster), never while
+## his body is at a building he is not crashing through (it holds there: slam and stop, momentum
+## spent until open ground), and bleeds as he turns (turn_bleed a radian) or stands (idle_decay a
+## second); it adds speed_bonus x itself to his walk.
 ## At crash_min he crashes through what stands under his crash height without slowing or spending
 ## it; at slam_min his first touch of anything taller is a slam: one "slam" event, a dent, momentum
 ## 0 and the body stopped where it was (then it is held as any wall holds it). Each titan reads its
@@ -19,6 +21,10 @@ var slams := 0
 var titan: Dictionary = {}
 var _cfg: Dictionary
 var _touching: Dictionary = {}  # what the body touched last step: a slam is a new touch
+## Ground walked since the body last touched a building it is not crashing through, and whether
+## that is his body's reach or more (open ground: the run builds).
+var _clear := INF
+var _open := true
 
 
 ## cfg: the tuning's powers.momentum section.
@@ -49,7 +55,8 @@ func build(dt: float, turn: float, moving: bool) -> void:
 		return
 	if moving:
 		var boost := 1.0 + sim.stat("momentum") * Num.f(titan["node_build"])
-		value += dt * boost / Num.f(titan["build_seconds"]) - turn * Num.f(titan["turn_bleed"])
+		var gain := dt * boost / Num.f(titan["build_seconds"]) if _open else 0.0
+		value += gain - turn * Num.f(titan["turn_bleed"])
 	else:
 		value -= dt * Num.f(titan["idle_decay"])
 	value = clampf(value, 0.0, 1.0)
@@ -100,15 +107,33 @@ static func standing(b: RampageSim.Building, cells: Array[Vector3i]) -> int:
 	return top
 
 
-## The body's sweep this step touches `hits` ({building: {cell: true}}). At slam_min the first
-## touch of a building at or over his crash height is a slam (never in a leap's flight). Returns
-## whether he slammed: the caller stops the body where it was.
+## The body's sweep this step: it moved `travel` and touched `hits` ({building: {cell: true}});
+## `reach` is its own. At slam_min the first touch of a building at or over his crash height is a
+## slam (never in a leap's flight); a touch of one he is not crashing through, or a slam, puts
+## him off open ground until he has walked his reach clear of it. Returns whether he slammed: the
+## caller stops the body where it was.
+func touch(hits: Dictionary, travel: float, reach: float) -> bool:
+	if not active() or sim.body.dash.on():
+		_touching = hits
+		return false
+	var slammed := slam(hits)
+	var at := slammed
+	for index: int in hits:
+		var touched: Dictionary = hits[index]
+		var cells: Array[Vector3i] = []
+		cells.assign(touched.keys())
+		at = at or not crashes(sim.buildings[index], cells)
+	_clear = 0.0 if at else _clear + travel
+	_open = _clear >= reach
+	return slammed
+
+
+## At slam_min the first touch (`hits`, this step's) of a building at or over his crash height is
+## a slam. Returns whether he slammed.
 func slam(hits: Dictionary) -> bool:
 	var was := _touching
 	_touching = hits
-	if not active() or titan["slams"] != true or value < Num.f(titan["slam_min"]):
-		return false
-	if sim.body.dash.on():
+	if titan["slams"] != true or value < Num.f(titan["slam_min"]):
 		return false
 	var height := crash_height()
 	for index: int in hits:

@@ -93,7 +93,7 @@ func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) 
 func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> int:
 	var hits := touched(from, from_heading, to, to_heading)
 	var run := sim.powers.run
-	if run.slam(hits):
+	if run.touch(hits, from.distance_to(to), reach()):
 		sim.kaiju_pos = from
 		return 0
 	var broken := 0
