@@ -1,14 +1,19 @@
 class_name HelicopterModel
 extends Node3D
-## The attack helicopter (D-042): modelled in Blender (assets/source/vehicles/build_heli.py) and
-## voxelized per part (tools/blender/voxelize_parts.py) at 2x real size, desert tan, facing -Z,
-## the node's origin under the mast, level with the wheels. The main and tail rotors spin about
-## their real hubs; the chin gun aims at aim()'s target and fire() returns its muzzle.
+## The attack helicopter (D-297, D-309): a Tripo model cut into body, rotors and chin gun
+## (assets/vehicles/heli*), voxelized per part with the texture's own colours, facing -Z, the node's
+## origin under the mast, level with the wheels. The main and tail rotors spin about their real
+## hubs; the chin gun aims at aim()'s target and fire() returns its muzzle. The leader's helicopter
+## is its own model (VIP_BASE) that vip_look() paints white with a gold band and gold rotors.
 ## Presentation only.
 
 const BASE := "res://assets/vehicles/heli"
-## Body tan, for wreck debris.
-const TAN := Color("b89c6a")
+## The leader's helicopter (D-149): its own Tripo model, painted white and gold by vip_look().
+const VIP_BASE := "res://assets/vehicles/vip_heli"
+## Body paint (the model's mean colour, military olive), for wreck debris.
+const PAINT := Color("748059")
+## The gunship's two chunk paints (a wreck's chunks take their helicopter's paint).
+const GUNSHIP_PAINT: Array[Color] = [PAINT, PAINT]
 ## Below this sine of the angle to straight down, look_at() has no stable up: keep the last aim.
 const MIN_TILT := 0.05
 ## The voxel jitter's salt, the same for every part (build and repaint must agree).
@@ -18,6 +23,7 @@ const SALT := 5
 ## part draws them; empty on a gunship. Kept because a headless MultiMesh reads back nothing: this
 ## is the only place a test sees what the leader was painted.
 var painted: Dictionary = {}
+var _base := BASE
 var _parts: VehicleParts
 var _centre := Vector3.ZERO  # under the mast: the body's hinge level with the wheels
 var _body: Node3D
@@ -37,9 +43,19 @@ static func added_to(parent: Node) -> HelicopterModel:
 	return heli
 
 
-func _init() -> void:
+## Builds both models' voxels once now (the gunship's and the leader's own), so a first spawn
+## reuses them.
+static func warm() -> void:
+	HelicopterModel.new().free()
+	HelicopterModel.new(VIP_BASE).free()
+
+
+## `base` is the parts file's path without ".parts.json": BASE for a gunship, VIP_BASE for the
+## leader.
+func _init(base := BASE) -> void:
+	_base = base
 	_cfg = Content.section("vehicles")
-	_parts = VehicleParts.new(BASE, Num.f(_cfg["heli_height"]))
+	_parts = VehicleParts.new(base, Num.f(_cfg["heli_height"]))
 	_centre = _parts.pivot("body") * Vector3(1, 0, 1)
 	_body = _parts.build("body", -_centre, SALT)
 	add_child(_body)
@@ -99,6 +115,22 @@ func _lamp(at: Vector3, color: Color, energy: float, size := 0.0) -> Node3D:
 	return bulb
 
 
+## The two paints this helicopter's wreck chunks wear: the gunship's olive, the leader's white and
+## gold (tuning "vip" look).
+func debris_paint() -> Array[Color]:
+	if _base != VIP_BASE:
+		return GUNSHIP_PAINT
+	var look: Dictionary = Content.section("vip")["look"]
+	return [Color(str(look["white"])), Color(str(look["gold"]))]
+
+
+## `node`'s wreck paint: a helicopter's own, a stand-in's the gunship's.
+static func paint_of(node: Node3D) -> Array[Color]:
+	if node is HelicopterModel:
+		return (node as HelicopterModel).debris_paint()
+	return GUNSHIP_PAINT
+
+
 ## Points the chin gun at `target` (world space).
 func aim(target: Vector3) -> void:
 	if not _gun.is_inside_tree():
@@ -114,7 +146,7 @@ func fire() -> Vector3:
 
 
 ## The leader's look (D-149): a white body with a gold band, gold rotors, no gun. Each part gets its
-## own voxels painted from the part's packed buffer (the shared cache keeps the gunships' tan ones),
+## own voxels painted from the part's packed buffer (the shared cache keeps the gunships' own),
 ## and `painted` keeps the colours it gave them.
 func vip_look(white: Color, gold: Color) -> void:
 	_gun.visible = false

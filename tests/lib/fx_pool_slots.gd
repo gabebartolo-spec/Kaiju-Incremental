@@ -4,8 +4,9 @@ extends RefCounted
 ## burst); a slot given back is hidden and stopped and comes out reset (a tinted dust's colour
 ## ramp does not stay on the next plain dust); a kind with no free slot falls back to building a
 ## system, so no burst is dropped, and the extras are freed as before; the flag off gives exactly
-## the old path; a fire and a blast take bare slots and give them back. Seeded by design: nothing
-## here is random.
+## the old path; a fire and a blast take bare slots and give them back; with two pools (the city
+## has two Fx nodes) a slot goes back to the pool that made it. Seeded by design: nothing here is
+## random.
 
 const Nodes := preload("res://tests/lib/fx_burst_nodes.gd")
 const SCALE := 10.0
@@ -34,6 +35,7 @@ func run() -> void:
 	await _reset_on_take()
 	await _exhausted_and_flag_off()
 	await _fire_and_blast()
+	await _two_pools()  # last: freeing the second pool leaves no shared pool
 	Engine.time_scale = scale_before
 	_fx.free()
 
@@ -154,3 +156,48 @@ func _fire_and_blast() -> void:
 	_check.call(_pool.free_count("burst") == blast, "and gives it back")
 	_check.call(Nodes.particles_under(_fx) == before, "the pool's node count is unchanged")
 	host.free()
+
+
+## The city has two Fx nodes, so two pools; `shared` is the one that entered the tree last. A slot
+## the give_after timer returns goes back to the pool that made it, never to `shared`: given to the
+## other pool, it moved there and stayed counted as taken in its own (on the counts route the city
+## Fx's dust "in use" only climbed, to 2,687, and every later dust burst was built from nothing).
+func _two_pools() -> void:
+	var other := Fx.new()
+	_tree.root.add_child(other)
+	await _tree.process_frame
+	await _wait()  # the second Fx's own prewarm bursts are given back first
+	_check.call(
+		FxPool.shared == other.pool, "the Fx that entered the tree last has the shared pool"
+	)
+	_check.call(_in_use(_pool) == 0 and _in_use(other.pool) == 0, "no dust slot is taken yet")
+	for i: int in 4:
+		var p := _pool.acquire("dust", 12)
+		p.restart()
+		FxPool.give_after(p, 0.5)
+	_check.call(_in_use(_pool) == 4, "4 dust slots taken from the pool that is not shared")
+	await _tree.create_timer(1.0).timeout
+	_check.call(
+		_in_use(_pool) == 0,
+		"the give_after timer gave all 4 back to their own pool (in use %d)" % _in_use(_pool)
+	)
+	_check.call(
+		_in_use(other.pool) == 0,
+		"the shared pool took none of them (in use %d)" % _in_use(other.pool)
+	)
+	for i: int in 4:
+		_fx.dust(Vector3(i, 0, 12), 1.0)
+	await _wait()
+	_check.call(
+		_in_use(_pool) == 0 and _in_use(other.pool) == 0,
+		(
+			"4 dust bursts of the Fx that is not shared all come back to its pool (in use %d, %d)"
+			% [_in_use(_pool), _in_use(other.pool)]
+		)
+	)
+	other.free()
+
+
+## Dust slots taken and not back in the pool (negative when a pool holds another pool's slots).
+static func _in_use(pool: FxPool) -> int:
+	return pool.slot_count("dust") - pool.free_count("dust")

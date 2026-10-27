@@ -39,6 +39,7 @@ func run_checks() -> void:
 	await _t("_check_voxel_skin")
 	await _t("_check_tank")
 	await _t("_check_heli")
+	await _h("VehicleParts", func() -> void: VehiclePartsCheck.check(check))
 	await _t("_check_air_clear_side")
 	await _h("VehiclesSolid", func() -> void: await VehiclesSolid.check(check, root))
 	await _h("BuildingsSolid", func() -> void: await BuildingsSolid.check(check, root))

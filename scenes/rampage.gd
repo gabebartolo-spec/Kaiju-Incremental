@@ -271,10 +271,11 @@ func _note_cost(what: String, since: int) -> void:
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), Time.get_ticks_usec() - since)
 
 
-## Tanks and helicopters (voxels built once now, so the first spawn reuses them), and the railway.
+## The army's tanks (their voxels built once now, so the first spawn reuses them), the
+## helicopters' voxels (the gunships' and the leader's own), and the railway.
 func _add_vehicles() -> void:
 	TankModel.new().free()
-	HelicopterModel.new().free()
+	HelicopterModel.warm()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
 	_rail = RailView.new(self, sim, _city)
 	add_child(_rail)
