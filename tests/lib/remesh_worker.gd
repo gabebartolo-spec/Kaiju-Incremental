@@ -44,20 +44,17 @@ func run() -> void:
 	var fx := _fixture()
 	var m: CellMesher = fx[0]
 	var cells: PackedByteArray = fx[1]
-	_check.call(m.can_pack(), "the native mesher packs a block's surface (KaijuMesher.pack_surface)")
+	var packs := "the native mesher packs a block's surface (KaijuMesher.pack_surface)"
+	_check.call(m.can_pack(), packs)
 	if not m.can_pack():
 		return
 	_same_bytes(m, cells)
 	var headless := DisplayServer.get_name() == "headless"
 	var view := CellView.new(m, cells, StandardMaterial3D.new())
 	view.flush()
-	_check.call(
-		view.worker_mesh == (not headless),
-		(
-			"a view with the flag on meshes on its worker exactly when the renderer is real (%s: %s)"
-			% [DisplayServer.get_name(), view.worker_mesh]
-		)
-	)
+	var says := "a view with the flag on meshes on its worker exactly when the renderer is real"
+	var on_worker := view.worker_mesh == (not headless)
+	_check.call(on_worker, "%s (%s: %s)" % [says, DisplayServer.get_name(), view.worker_mesh])
 	view.free()
 	if not headless:
 		_same_view(opt, was)
@@ -108,7 +105,9 @@ func _same_view(opt: Dictionary, was: Variant) -> void:
 		var m: CellMesher = fx[0]
 		var cells: PackedByteArray = fx[1]
 		var view := CellView.new(m, cells, StandardMaterial3D.new())
-		_check.call(view.worker_mesh == on, "a windowed view with the flag %s: worker_mesh %s" % [on, on])
+		_check.call(
+			view.worker_mesh == on, "a windowed view with the flag %s: worker_mesh %s" % [on, on]
+		)
 		view.flush()
 		for k: int in RemeshPriority.CARVE_AT.size():
 			cells = cells.duplicate()
@@ -128,7 +127,10 @@ func _same_view(opt: Dictionary, was: Variant) -> void:
 	var off_digests: Dictionary = shown[false]
 	_check.call(
 		not on_digests.is_empty() and on_digests == off_digests,
-		"worker-made and main-thread views show the same bytes in every block (%d)" % on_digests.size()
+		(
+			"worker-made and main-thread views show the same bytes in every block (%d)"
+			% on_digests.size()
+		)
 	)
 
 
