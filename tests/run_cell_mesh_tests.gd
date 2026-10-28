@@ -96,12 +96,11 @@ func _check_native_loaded() -> void:
 		check(true, "native library not built: native checks skipped on purpose")
 
 
-## Uncarved, the grid's mesh holds every face of the baked view (shell and slabs) in the same
-## colour, and its only extra faces are wall and roof faces looking into the building's hollow,
-## plus a balcony slab's faces: the baked view never draws a slab proud of the walls (D-289; the
-## live game does not draw the grid yet, so reconcile the two when it does).
-## The one face the baked view draws that the grid's mesh does not is a wall face behind a balcony
-## slab (the baked view hides that slab, so the wall must show; the grid draws the slab itself).
+## Uncarved, the grid's drawn mesh (CellMesher.drawn, as CellView and the game draw it) holds
+## every face of the baked view (shell and slabs) in the same colour, the walls behind a balcony
+## slab included, and its only extra faces are wall and roof faces looking into the building's
+## hollow: like the baked view it never draws a slab proud of the walls (D-289), so a building
+## that switches to its grid in play (destruction plan stage 1) looks the same.
 func _check_matches_baked_view() -> void:
 	for f: Array in FIXTURES:
 		var b := CellFixture.building(f)
@@ -112,7 +111,7 @@ func _check_matches_baked_view() -> void:
 		var old := {}
 		CellFaces.mesh_faces(baked.shell, old)
 		CellFaces.mesh_faces(baked.slabs, old)
-		var now := CellFaces.cell_faces(m, cells.cells)
+		var now := CellFaces.cell_faces(m, m.drawn(cells.cells))
 		var missing := 0
 		var recoloured := 0
 		for key: Array in old:
@@ -142,7 +141,7 @@ func _check_matches_baked_view() -> void:
 			)
 			var inside := local.x >= 1 and local.x <= w - 2 and local.z >= 1 and local.z <= d - 2
 			if not (inside and local.y >= 0 and local.y < h - 1):
-				# The baked view never draws a balcony slab (D-289); the grid's mesh still does.
+				# Neither view draws a balcony slab proud of the walls (D-289).
 				var solid := local - normal
 				var is_balcony: bool = voxels.vox.cells.get(solid, "") == "slab"
 				if is_balcony and (solid.x < 0 or solid.x >= w or solid.z < 0 or solid.z >= d):
@@ -151,16 +150,16 @@ func _check_matches_baked_view() -> void:
 					stray += 1
 		var behind := BalconyFaces.behind(voxels, baked)
 		check(
-			missing == behind.size() and recoloured == 0,
+			missing == 0 and recoloured == 0,
 			(
-				"%s: every baked face is drawn in its colour, bar %d balcony walls (%d, %d of %d)"
+				"%s: every baked face is drawn in its colour, %d balcony walls too (%d, %d of %d)"
 				% [f[0], behind.size(), missing, recoloured, old.size()]
 			)
 		)
 		check(
-			stray == 0 and extra > 0,
+			stray == 0 and balcony == 0 and extra > 0,
 			(
-				"%s: the only extra faces look into the hollow or are balcony slabs (%d, %d, %d stray)"
+				"%s: the only extra faces look into the hollow, none is a slab's (%d, %d, %d stray)"
 				% [f[0], extra, balcony, stray]
 			)
 		)
