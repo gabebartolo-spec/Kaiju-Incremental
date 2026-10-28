@@ -91,6 +91,23 @@ if os.environ.get("TOEUP", "0") == "1":   # r6: the toe never pitches under its 
             for kk in (Dn, Ad):
                 FR[f][kk] = tuple(round(float(c), 4) for c in P0 + Rr @ (_np.array(FR[f][kk], float) - P0))
         print("TOEUP %s max %.1f deg, frames %d" % (s, phi.max(), int((phi > 1e-3).sum())))
+if os.environ.get("PLIFT"):   # r8 (lead): the body, not the toe: plift.py's curves from the solved r6/r7 over the plant. Every point
+    _PL = json.load(open(os.environ["PLIFT"]))   # up by body[f] except the hind shin/foot/toe; foot+toe up by foot_<s>[f]; knee re-solved
+    for f in range(NF):                          # at the rest lengths from the lifted hip + ankle, the shin's points ride it
+        dy = _PL["body"][f]
+        if dy == 0 and _PL["foot_l"][f] == 0 and _PL["foot_r"][f] == 0: continue
+        V = lambda f_, k: _np.array(FR[f_][k], float); old = {s_: V(f, "shin_MainPoint_" + s_) for s_ in "lr"}
+        hind = lambda k: k.startswith(("shin_", "foot_", "toe_"))
+        for k in FR[f]:
+            if not hind(k): FR[f][k] = (FR[f][k][0], round(FR[f][k][1] + dy, 4), FR[f][k][2])
+        for s_ in "lr":
+            for k in [k for k in FR[f] if k.startswith(("foot_", "toe_")) and k.endswith("_" + s_)]:
+                FR[f][k] = (FR[f][k][0], round(FR[f][k][1] + _PL["foot_" + s_][f], 4), FR[f][k][2])
+            L1 = _np.linalg.norm(V(-1, "shin_MainPoint_" + s_) - V(-1, "thigh_MainPoint_" + s_)); L2 = _np.linalg.norm(V(-1, "foot_MainPoint_" + s_) - V(-1, "shin_MainPoint_" + s_))
+            dK = _knee(V(f, "thigh_MainPoint_" + s_), old[s_], V(f, "foot_MainPoint_" + s_), L1, L2) - old[s_]
+            for k in [k for k in FR[f] if k.startswith("shin_") and k.endswith("_" + s_)]:
+                FR[f][k] = tuple(round(float(c), 4) for c in V(f, k) + dK)
+    print("PLIFT body max %.2f foot max %.2f/%.2f" % (max(_PL["body"]), max(_PL["foot_l"]), max(_PL["foot_r"])))
 if os.environ.get("TOEROLL"):   # r7: toe_AdditionalPoint at the standing roll (the rest offset turned by the minimal turn of the
     _R0, _R1 = (int(v) for v in os.environ["TOEROLL"].split(","))   # toe's Main->Direction from rest), full on R0..R1, eased in/out 4 f
     def _rmin(a, b):
