@@ -300,7 +300,7 @@ func _worst_second(times: Array) -> int:
 ## hand-built fixtures, old (pre-1.5x) vs new city; each line fails, for the annotations.
 func _check_diag_rail() -> void:
 	var old := _diag_old()
-	for label: String in ["old", "new"]:
+	for label: String in ["new"]:
 		var base := old if label == "old" else Content.tuning()
 		for stage: int in [1, 2, 3]:
 			var t := CityGrowth.tuning_for(base, stage)
@@ -310,7 +310,8 @@ func _check_diag_rail() -> void:
 			var ends := RailLayout.ends(city, rail_cfg)
 			var ax := Rail.avenue_x(city)
 			var line := "DIAG %s s%d: half %.0f, rail x %.1f z %.0f..%.0f"
-			check(false, line % [label, stage, half, ax, ends.x, ends.y])
+			if stage == 0:  # rail x read in run 40604527128
+				check(false, line % [label, stage, half, ax, ends.x, ends.y])
 		var sim := _sim("reptilian", {"evolve1": 1}, 0, CityGrowth.tuning_for(base, 2))
 		var spawn := sim.kaiju_pos
 		var near0 := _diag_near(sim, spawn)
