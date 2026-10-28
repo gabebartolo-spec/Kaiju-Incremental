@@ -1,5 +1,5 @@
 """Game export of the approved croc adult3 rig (D-219 model; rig r11 = the r10 skeleton with r11 skin weights and eyelid
-bones): the skin the game samples and the files the repo's import tools take. Mirrors tools/blender/motion_test.py
+bones; r12m hip-seam rows from croc_adult3_hip_r12m.json): the skin the game samples and the files the repo's import tools take. Mirrors tools/blender/motion_test.py
 export() (skin.json/.skinw format) on the rig itself.
 - <out>/croc_adult3.glb: the mesh at rest, turned to face -Y (rig_voxel / skin_faces / motion_test input).
 - <out>/croc_adult3.skin.json + .skinw: the 37 r10 bones (helpers folded: half k -> (1-k) parent + k target,
@@ -37,6 +37,7 @@ bm = bmesh.new()
 bm.from_mesh(me)
 dl = bm.verts.layers.deform.verify()
 flap = [v for v in bm.verts if any(i in FLAPS and w > 0.0 for i, w in v[dl].items())]
+_fs = set(flap); KEPT = [v.index for v in bm.verts if v not in _fs]   # r11 vertex index of each vertex left after the drop
 bmesh.ops.delete(bm, geom=flap, context="VERTS")
 bm.to_mesh(me)
 bm.free()
@@ -80,6 +81,19 @@ for v in me.vertices:
         for b, f in (HELP[n].items() if n in HELP else ((n, 1.0),)):
             if b in NAMES:
                 W[v.index, NAMES.index(b)] += x.weight * f
+
+# --- r12m hip seam (croc-young-casc 10-28): the fixed folded rows replace the r11 ones (flipped tris per leg 16-30 -> <= 7)
+HIP = json.loads((Path(__file__).with_name("croc_adult3_hip_r12m.json")).read_text(encoding="utf-8"))["verts"]
+new_of = {o: n for n, o in enumerate(KEPT)}; nhip = 0
+for o, row in HIP.items():
+    n = new_of.get(int(o))
+    if n is None:
+        continue
+    W[n] = 0.0
+    for b, w in row.items():
+        W[n, NAMES.index(b)] = w
+    nhip += 1
+print("HIP r12m rows", nhip, "of", len(HIP))
 
 # --- frames ---------------------------------------------------------------------------------------------
 MW = R @ mesh.matrix_world
