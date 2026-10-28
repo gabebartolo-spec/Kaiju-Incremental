@@ -65,6 +65,16 @@ func _exit_tree() -> void:
 	_rubble.free_bodies()
 
 
+## Every body this building's debris holds: live pieces, then rubble (a digest reads them).
+func body_rids() -> Array[RID]:
+	var out: Array[RID] = []
+	out.append_array(_rids)
+	for rid: RID in _rubble.rids:
+		if rid.is_valid():
+			out.append(rid)
+	return out
+
+
 ## A new live piece at `xf`, `size` (world); motion is [velocity, spin, gravity scale, mass].
 func spawn(xf: Transform3D, size: Vector3, color: Color, motion: Array) -> void:
 	var v: Vector3 = motion[0]

@@ -39,7 +39,7 @@ func add_site(site: CarveSite, grid: PackedByteArray) -> void:
 	_sites[site.key] = site
 	var collider := CarveCollider.new(site)
 	add_child(collider)
-	collider.build(grid)
+	collider.build(grid, true)  # over the next ticks: a first hit never hitches (item 10)
 	_colliders[site.key] = collider
 	var debris := CarveDebris.new()
 	debris.site = site
@@ -151,6 +151,7 @@ func _split(key: int, parts: Array[Dictionary], parent: IslandBody) -> void:
 
 func _physics_process(delta: float) -> void:
 	_clock += delta
+	IslandMesh.reap(false)  # remeshes of islands already gone
 	var over := live_bodies() - int(GraphicsPresets.cap("debris_live"))
 	if over > 0:
 		var live := maxi(1, live_bodies())
@@ -166,6 +167,11 @@ func _physics_process(delta: float) -> void:
 		for key: int in _debris:
 			var d: CarveDebris = _debris[key]
 			d.trim_static(floori(float(d.static_bodies()) * cap / statics))
+
+
+## The islands left before it (children exit first): wait on any remesh still running.
+func _exit_tree() -> void:
+	IslandMesh.reap(true)
 
 
 ## An island broke on impact: its bricks fly as half-brick pieces in their own colours; rubble
