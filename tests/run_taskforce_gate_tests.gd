@@ -329,11 +329,22 @@ func _check_diag_walk() -> void:
 		msg += " min mult %.2f mean stride %.2f speed %.2f; heading off %.0f deg; emerge %s"
 		check(
 			false,
-			msg % [
-				Rail.avenue_x(sim.city), way, from.distance_to(sim.kaiju_pos), want, pushed,
-				blocked, low, strides / 90.0, sim.stat("speed"),
-				rad_to_deg(absf(sim.body.heading.angle_to(way))), sim.emerge.active
-			]
+			(
+				msg
+				% [
+					Rail.avenue_x(sim.city),
+					way,
+					from.distance_to(sim.kaiju_pos),
+					want,
+					pushed,
+					blocked,
+					low,
+					strides / 90.0,
+					sim.stat("speed"),
+					rad_to_deg(absf(sim.body.heading.angle_to(way))),
+					sim.emerge.active
+				]
+			)
 		)
 		sim.dispose()
 	Rail._x_cache.erase(key)
