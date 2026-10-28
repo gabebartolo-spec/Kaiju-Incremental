@@ -1,6 +1,6 @@
 # Director comments 2026-10-28
 
-Rulings of the night are in DECISIONS (D-356 to D-367); the evening before is in 2026-10-27-director-comments.md.
+Rulings of the night are in DECISIONS (D-356 to D-368); the evening before is in 2026-10-27-director-comments.md.
 
 | Time | His words | What it is | Owner, next step | Status |
 |---|---|---|---|---|
@@ -24,3 +24,4 @@ Rulings of the night are in DECISIONS (D-356 to D-367); the evening before is in
 | 14:2x | charge: "fix, needs an action of him lowering his head" | add a head-lowering wind-up into the charge | keyer | to do |
 | 14:2x | tail whip: "fix, doesnt read as a tail whip at all, the tail doesnt move, kaiju needs to twist one direction then release the other direction swinging the tail in an arc" | redo: body twists one way, releases the other way, tail swings through a wide arc | keyer | to do |
 | 14:2x | turn on the spot, walk-turn left, walk-turn right: "fix, hes t-posing during the turn" / "fix, tposing" | the turns fall back to the T-pose: key every frame of the turn | keyer | to do |
+| 16:0x | "why does the mouth never open in these animations?"; picked "Key it in Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)" | every croc draft left the jaw shut for a Blender layer (D-228) that was never scheduled; the jaw is now keyed in Cascadeur with the body, all three stages: wide open on roar and beam, snarl gape on charge, claw rake, standing stomp, tail sweep, leap landing | D-368; keyer: in every fix pass (young croc first, then Behemoth and Colossus) | to do |
