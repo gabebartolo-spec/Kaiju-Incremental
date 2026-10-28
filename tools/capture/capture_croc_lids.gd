@@ -1,9 +1,9 @@
 extends SceneTree
-## The croc at one stage standing in a real rampage at the game camera, with its lower lids shut: each
-## lid_lo bone turned `--open` degrees about its lid axis (tools/kaiju_skin/lid_flaps.py: n = the bone's
-## head->tail, up = rig up made square to n, axis = n x up; a positive turn carries n towards up), the
-## pose a blink closes to (D-190). Saves a 1080p still and a 2x crop round the head. No input: the sim's
-## own stomps and rakes play on.
+## The croc at one stage standing in a real rampage at the game camera, with its lower lids
+## shut: each lid_lo bone turned `--open` degrees about its lid axis (tools/kaiju_skin/lid_flaps.py:
+## n = the bone's head->tail, up = rig up made square to n, axis = n x up; a positive turn carries
+## n towards up), the pose a blink closes to (D-190). Saves a 1080p still and a 2x crop round the
+## head. No input: the sim's own stomps and rakes play on.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_croc_lids.gd -- --out=<dir> --stage=2 --open=100 [--seconds=3]
