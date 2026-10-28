@@ -137,7 +137,13 @@ func _stage(stage: int, group: int) -> void:
 	var plan_usec: int = Num.i(_stream.get("plan_usec") if "plan_usec" in _stream else 0)
 	var line := (
 		("VIEWDEPTH stage %d group %d (%d buildings; worst step %.0f ms, mean replan %.1f ms):")
-		% [stage, group, _sim.buildings.size(), worst_step / 1000.0, plan_usec / 1000.0 / maxi(1, plans)]
+		% [
+			stage,
+			group,
+			_sim.buildings.size(),
+			worst_step / 1000.0,
+			plan_usec / 1000.0 / maxi(1, plans)
+		]
 	)
 	line += (
 		"\n  landmarks %d, %d chunks (stream budget %d), resident at the end %d"
@@ -197,14 +203,11 @@ func _stage(stage: int, group: int) -> void:
 	for phase: String in results:
 		steps.append(results[phase]["step"])
 	steps.sort()
-	(
-		_check
-		. call(
-			steps[(steps.size() - 1) / 2] <= 50.0,
-			(
-				"stage %d group %d: worst stream step under 50 ms (median %.0f, worst %.0f ms)"
-				% [stage, group, steps[(steps.size() - 1) / 2], steps[-1]]
-			)
+	_check.call(
+		steps[(steps.size() - 1) / 2] <= 50.0,
+		(
+			"stage %d group %d: worst stream step under 50 ms (median %.0f, worst %.0f ms)"
+			% [stage, group, steps[(steps.size() - 1) / 2], steps[-1]]
 		)
 	)
 	var shake := Num.f(Content.section("camera_shake")["max_deg"])
