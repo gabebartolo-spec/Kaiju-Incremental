@@ -555,6 +555,7 @@ Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interv
 Unlanded work, every branch not on main with owner and next step: `docs/roadmap/2026-10-27-unlanded-audit.md` (10-27), `docs/roadmap/2026-10-28-unlanded-audit.md` (10-28, 14 more branches with status).
 Tech debt audit, the night-shift rulings (D-300, D-305 to D-318) and every debt row's owner and status: `docs/roadmap/2026-10-27-tech-debt.md`.
 Director comments of 2026-10-28 (4K performance, leap at skyscrapers, deaths, Cascadeur first drafts): `docs/roadmap/2026-10-28-director-comments.md`; of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
+Young croc thigh twitch (director 2026-10-29 00:5x): "the weird hip issue hasnt been fixed at all ... before he steps, his thigh twitches, briefly going diagonal before the leg starts moving, it reads as unnatural". fix2 fixed rump yaw, not this. Bar: in the frames before foot lift the thigh never reverses or swings sideways (yaw/roll change under 2 deg), measured on all 4 baby takes before they reach him. Owner: keyer. Status: open.
 Every interview answer and director message since 2026-10-16 (782 items) checked against the docs: `docs/roadmap/2026-10-26-interview-audit.md`.
 Its node ideas (section 1) feed E; its missing items (M rows) and decided-but-unrowed work (W rows) are open roadmap items, owner lead, briefed in queue order.
 
