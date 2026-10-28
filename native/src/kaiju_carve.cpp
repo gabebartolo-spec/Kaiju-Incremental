@@ -11,6 +11,77 @@ void KaijuCarve::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_grid"), &KaijuCarve::get_grid);
 	ClassDB::bind_method(D_METHOD("carve_sphere", "centre", "radius"), &KaijuCarve::carve_sphere);
 	ClassDB::bind_method(D_METHOD("ground_flood"), &KaijuCarve::ground_flood);
+	ClassDB::bind_method(D_METHOD("region_boxes", "grid", "dims", "region", "bricks", "res", "sparse"),
+			&KaijuCarve::region_boxes);
+}
+
+namespace {
+
+// The cell box round the solid cells of the block at (lx, ly, lz), n cells a side, clamped to the
+// grid: box[0..2] its lower cell, box[3..5] its size. Returns the solid count (0: no box).
+int solid_span(const uint8_t *g, int w, int h, int d, int lx, int ly, int lz, int n, int *box) {
+	int ax = w, ay = h, az = d, bx = -1, by = -1, bz = -1, count = 0;
+	const int x1 = std::min(w, lx + n), y1 = std::min(h, ly + n), z1 = std::min(d, lz + n);
+	for (int y = std::max(0, ly); y < y1; y++)
+		for (int z = std::max(0, lz); z < z1; z++) {
+			const uint8_t *row = g + size_t(z) * w + size_t(y) * w * d;
+			for (int x = std::max(0, lx); x < x1; x++) {
+				if (!row[x]) continue;
+				ax = std::min(ax, x);
+				ay = std::min(ay, y);
+				az = std::min(az, z);
+				bx = std::max(bx, x);
+				by = std::max(by, y);
+				bz = std::max(bz, z);
+				count++;
+			}
+		}
+	if (count == 0) return 0;
+	box[0] = ax;
+	box[1] = ay;
+	box[2] = az;
+	box[3] = bx - ax + 1;
+	box[4] = by - ay + 1;
+	box[5] = bz - az + 1;
+	return count;
+}
+
+} // namespace
+
+PackedInt32Array KaijuCarve::region_boxes(const PackedByteArray &p_grid, const Vector3i &p_dims,
+		const Vector3i &p_region, int p_bricks, int p_res, double p_sparse) const {
+	PackedInt32Array out;
+	const int gw = p_dims.x, gh = p_dims.y, gd = p_dims.z;
+	if (gw <= 0 || gh <= 0 || gd <= 0 || p_res <= 0 || p_bricks <= 0 ||
+			int64_t(gw) * gh * gd != p_grid.size())
+		return out;
+	const uint8_t *g = p_grid.ptr();
+	const int half = p_res >> 1;
+	std::vector<int32_t> boxes;
+	int box[6];
+	for (int y = 0; y < p_bricks; y++)
+		for (int z = 0; z < p_bricks; z++)
+			for (int x = 0; x < p_bricks; x++) {
+				const int lx = (p_region.x * p_bricks + x) * p_res;
+				const int ly = (p_region.y * p_bricks + y) * p_res;
+				const int lz = (p_region.z * p_bricks + z) * p_res;
+				const int count = solid_span(g, gw, gh, gd, lx, ly, lz, p_res, box);
+				if (count == 0) continue;
+				const double volume = double(box[3]) * box[4] * box[5];
+				if (double(count) / volume >= p_sparse || p_res < 2) {
+					boxes.insert(boxes.end(), box, box + 6);
+					continue;
+				}
+				for (int sy = 0; sy < 2; sy++)
+					for (int sz = 0; sz < 2; sz++)
+						for (int sx = 0; sx < 2; sx++)
+							if (solid_span(g, gw, gh, gd, lx + sx * half, ly + sy * half, lz + sz * half,
+										half, box))
+								boxes.insert(boxes.end(), box, box + 6);
+			}
+	out.resize(int64_t(boxes.size()));
+	if (!boxes.empty()) std::copy(boxes.begin(), boxes.end(), out.ptrw());
+	return out;
 }
 
 bool KaijuCarve::set_grid(const PackedByteArray &p_grid, const Vector3i &p_dims) {

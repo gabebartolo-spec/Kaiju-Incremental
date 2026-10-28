@@ -5166,12 +5166,16 @@
         "remesh_high_priority": {"$ref": "#/$defs/bool"},
         "remesh_worker_mesh": {"$ref": "#/$defs/bool"},
         "soft_smoke": {"$ref": "#/$defs/bool"},
-        "soft_smoke_m": {"$ref": "#/$defs/num"}
+        "soft_smoke_m": {"$ref": "#/$defs/num"},
+        "native_colliders": {"$ref": "#/$defs/bool"},
+        "collider_boxes_per_tick": {"$ref": "#/$defs/int"},
+        "island_merged": {"$ref": "#/$defs/bool"}
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
         "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
-        "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m"
+        "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m",
+        "native_colliders", "collider_boxes_per_tick", "island_merged"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
