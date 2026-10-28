@@ -48,7 +48,3 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
   (the lead owns it; any PR may carry it). Only the lead edits `docs/DESIGN.md`. `docs/STATUS.md` is generated
   (`python tools/status.py`, never by hand) after merges. Main requires checks, so no direct push and no separate board
   PR: pure log/status updates ride in the lead's next PR (docs-only, no Godot jobs).
-
-## Skills
-`~/.claude/skills/kaiju-*` (outside git since 10-28, so no branch carries a stale copy) extend the general skills; each has a `references/learnings.md` (evidence bar in
-`~/.claude/CLAUDE.md`). General lessons go to the general skill's log.

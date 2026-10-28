@@ -22,6 +22,6 @@ STATUS.md item <n> / decision <D-id>
 ## [MERGE NOTE]
 - Hot files touched: <sim core, save model, UI kit, caps, docs>
 - Floors: <suite base → new (+inc)>
-- Review needed: <none | kaiju-sim-review by <agent>>
+- Review needed: <none | sim review by <agent>>
 - Director gate: <none | look approval pending | approved in D-id>
 - Ordering with other PRs: <…>
