@@ -62,7 +62,9 @@ func _run() -> void:
 	await RenderingServer.frame_post_draw
 	var img := root.get_texture().get_image()
 	img.save_png(_out.path_join("lids_shut_stage%d.png" % _stage))
-	var at := rig.bone(HEAD_BONE).global_position if rig.has_bone(HEAD_BONE) else rig.global_position
+	var at := (
+		rig.bone(HEAD_BONE).global_position if rig.has_bone(HEAD_BONE) else rig.global_position
+	)
 	var centre := Kit.image_point(self, rampage._camera, at, Vector2(img.get_size()))
 	Kit.crop_2x(img, centre, CROP, _out.path_join("lids_shut_stage%d_2x.png" % _stage))
 	print("capture_croc_lids: stage %d, lids shut %.0f deg, saved" % [_stage, _open])
