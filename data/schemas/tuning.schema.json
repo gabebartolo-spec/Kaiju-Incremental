@@ -2071,6 +2071,7 @@
           "type": "object",
           "properties": {
             "reserve_hero": {"$ref": "#/$defs/num"},
+            "hero_cut_after_s": {"$ref": "#/$defs/num"},
             "retrigger_ms": {"$ref": "#/$defs/num"},
             "default": {"$ref": "#/$defs/str"},
             "categories": {
@@ -2186,7 +2187,7 @@
               "additionalProperties": false
             }
           },
-          "required": ["reserve_hero", "retrigger_ms", "default", "categories", "sounds"],
+          "required": ["reserve_hero", "hero_cut_after_s", "retrigger_ms", "default", "categories", "sounds"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },

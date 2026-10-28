@@ -736,9 +736,10 @@
 		"files": ["breath", "leap_whoosh", "leap_land", "lash", "ready", "deflect", "stomp_crack", "collapse", "roar", "tank_fire", "shell_hit", "heli_gun", "heli_crash", "rifle", "blast_crack", "blast_body", "blast_rumble", "sonic_boom", "fireworks_crackle", "chem_hiss"],
 		"pitch_jitter": 0.06,
 		"voices": 24,
-		"_voice_caps": "SfxVoices (R 8.2): voices each category may hold at once; hero categories are never stolen and reserve_hero voices stay free for them; others steal their quietest voice; the same sound is not restarted within retrigger_ms",
+		"_voice_caps": "SfxVoices (R 8.2): voices each category may hold at once; hero categories are never stolen by another sound and reserve_hero voices stay free for them; a full hero category cuts its own oldest voice once it has played hero_cut_after_s seconds (D-367, newest cuts oldest), else the new one is dropped; others steal their quietest voice; the same sound is not restarted within retrigger_ms",
 		"voice_caps": {
 			"reserve_hero": 8,
+			"hero_cut_after_s": 1.0,
 			"retrigger_ms": 30.0,
 			"default": "body",
 			"categories": {
