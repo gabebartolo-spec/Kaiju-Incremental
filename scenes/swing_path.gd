@@ -21,9 +21,11 @@ extends RefCounted
 ## spot swung round with the body, and a foot that followed it skimmed the street in its last
 ## frames aloft (smoke turn check 2026-10-28: 1.7 foot-frames a second). The aim turns the spot
 ## about the body by the yaw still to come (this frame's yaw run on for the clip frames left
-## aloft), faded in with the swing (`aim`). Only the yaw: the clip's own swing and the body's
-## travel already meet where a straight walk lands (run on too, they kicked the knees: motion
-## gate 2026-10-28, shin jerk p99 34.5 on the Colossus).
+## aloft) about the planted foot, the point the sim turns the body about (motion gate pivot),
+## faded in with the swing (`aim`). Only the yaw: the clip's own swing and the body's travel
+## already meet where a straight walk lands (run on too, they kicked the knees: motion gate
+## 2026-10-28, shin jerk p99 34.5 on the Colossus); turned about the body's origin instead, the
+## aim missed the spot's sweep (smoke 3.5 foot-frames a second).
 
 const LAG_SECONDS := 0.25
 const LAG_SWING := 0.85
@@ -76,8 +78,8 @@ func target(gait: ClipGait, i: int, dt: float, clip_toe: Vector3) -> Vector3:
 
 
 ## How far the body's turn carries foot i's clip spot before the foot lands (world): this frame's
-## yaw run on for the clip frames it has left aloft, about the body. Zero for a smooth turner
-## (D-131), a foot not walking, or the first frame aloft.
+## yaw run on for the clip frames it has left aloft, about the other (planted) foot. Zero for a
+## smooth turner (D-131), a foot not walking, the first frame aloft, or no foot down.
 func _aim(gait: ClipGait, i: int, clip_toe: Vector3) -> Vector3:
 	var body := gait.rig.global_transform
 	var yaw := atan2(body.basis.z.x, body.basis.z.z)
@@ -85,8 +87,13 @@ func _aim(gait: ClipGait, i: int, clip_toe: Vector3) -> Vector3:
 	var played := gait.walk_frames - _last_frames[i]
 	_last_yaw[i] = yaw
 	_last_frames[i] = gait.walk_frames
-	if gait.step_phase == INF or gait.state != "walk" or played <= 0.0:
+	if (
+		gait.step_phase == INF
+		or gait.state != "walk"
+		or played <= 0.0
+		or not gait.legs[1 - i].planted
+	):
 		return Vector3.ZERO
 	var left := maxf(_swing_frames - (gait.walk_frames - _lift_frame[i]), 0.0)
-	var arm := clip_toe - body.origin
+	var arm := clip_toe - gait._lock[1 - i]
 	return arm.rotated(Vector3.UP, turned * maxf(left / played, 1.0)) - arm
