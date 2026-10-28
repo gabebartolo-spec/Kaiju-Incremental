@@ -52,8 +52,8 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	if game == null:
 		rampage.queue_free()
 		return
-	# Into the stadium: the kaiju starts at its kerb on the bay's side and autoplay takes it to the nearest
-	# standing building, the stadium.
+	# Into the stadium: the kaiju starts at its kerb on the bay's side and autoplay takes it to the
+	# nearest standing building, the stadium.
 	var sim := rampage.sim
 	var stadium: RampageSim.Building = null
 	for b: RampageSim.Building in sim.buildings:
