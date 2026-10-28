@@ -9,6 +9,9 @@ extends Node3D
 ## core (KaijuCarve.region_boxes) where the extension is loaded; script_boxes() below is the oracle
 ## it is held to (tests/run_native_tests.gd). A region keeps its one static body: a rebuild swaps
 ## its shapes through the physics server, one box shape per size in cells shared by every body.
+## A building's first build can be spread (build(grid, true)): its regions are built bottom up,
+## render_opt.collider_boxes_per_tick boxes a physics tick (a count, never a clock, so a replay
+## builds the same regions on the same tick), and a carve builds the regions it touches at once.
 
 const REGION := 2  # bricks per region side
 const SPARSE := 0.35  # a brick whose cells fill less of its box than this is split in eight
@@ -22,15 +25,21 @@ var use_native := true
 var worst_usec := 0
 var _regions: Dictionary = {}  # region -> StaticBody3D
 var _shapes: Dictionary = {}  # box size in cells (Vector3i) -> BoxShape3D
+var _pending: Array[Vector3i] = []  # regions a spread build has still to make, in build order
+var _waiting: Dictionary = {}  # the same regions, for lookup
+var _grid := PackedByteArray()  # the latest grid, for the spread build
+var _per_tick := 0
 
 
 func _init(p_site: CarveSite) -> void:
 	site = p_site
-	use_native = Content.section("render_opt").get("native_colliders", true) == true
+	var opt := Content.section("render_opt")
+	use_native = opt.get("native_colliders", true) == true
+	_per_tick = Num.i(opt["collider_boxes_per_tick"])
 
 
-## Builds every region from the whole grid.
-func build(grid: PackedByteArray) -> void:
+## Builds every region from the whole grid: now, or with `spread` over the next physics ticks.
+func build(grid: PackedByteArray, spread := false) -> void:
 	var units := Vector3i(
 		ceili(float(site.size.x) / site.res),
 		ceili(float(site.size.y) / site.res),
@@ -41,7 +50,37 @@ func build(grid: PackedByteArray) -> void:
 		for z: int in units.z:
 			for x: int in units.x:
 				regions[Vector3i(x, y, z) / REGION] = true
-	refresh(grid, regions)
+	if not spread:
+		refresh(grid, regions)
+		return
+	_grid = grid
+	for key: Vector3i in regions:
+		if not _waiting.has(key):
+			_waiting[key] = true
+			_pending.append(key)
+
+
+## Regions a spread build has still to make.
+func pending() -> int:
+	return _pending.size()
+
+
+func _physics_process(_delta: float) -> void:
+	if not _pending.is_empty():
+		var start := Time.get_ticks_usec()
+		build_step()
+		worst_usec = maxi(worst_usec, Time.get_ticks_usec() - start)
+
+
+## One tick of a spread build: regions until collider_boxes_per_tick boxes are made; returns the
+## box count.
+func build_step() -> int:
+	var made := 0
+	while not _pending.is_empty() and made < _per_tick:
+		var key: Vector3i = _pending.pop_front()
+		_waiting.erase(key)
+		made += _rebuild(_grid, key)
+	return made
 
 
 ## Rebuilds the regions that hold any of `cells` (indices).
@@ -49,6 +88,10 @@ func touched(grid: PackedByteArray, cells: PackedInt32Array) -> void:
 	var regions := {}
 	for i: int in cells:
 		regions[site.cell(i) / site.res / REGION] = true
+	_grid = grid
+	for key: Vector3i in regions:
+		if _waiting.erase(key):
+			_pending.erase(key)
 	refresh(grid, regions)
 
 
@@ -101,24 +144,33 @@ func world_box(boxes: PackedInt32Array, k: int) -> AABB:
 	return AABB(site.origin + lo * s, n * s)
 
 
-func _rebuild(grid: PackedByteArray, region: Vector3i) -> void:
+## Rebuilds region `region`; returns its box count.
+func _rebuild(grid: PackedByteArray, region: Vector3i) -> int:
 	var boxes := region_boxes(grid, region)
 	var body: StaticBody3D = _regions.get(region)
 	if boxes.is_empty():
 		if body != null:
 			_regions.erase(region)
 			body.queue_free()
-		return
+		return 0
 	if body == null:
 		body = StaticBody3D.new()
 		add_child(body)
 		_regions[region] = body
 	var rid := body.get_rid()
+	# Out of its space while its shapes change: in a space Jolt rebuilds the body's compound shape
+	# on every add (a 72-region tower's build took 10-27 ms in space, item 10's speed bar is 2 ms).
+	var space := PhysicsServer3D.body_get_space(rid)
+	if space.is_valid():
+		PhysicsServer3D.body_set_space(rid, RID())
 	PhysicsServer3D.body_clear_shapes(rid)
 	for k: int in range(0, boxes.size(), BOX):
 		var box := world_box(boxes, k)
 		var shape := _shape(Vector3i(boxes[k + 3], boxes[k + 4], boxes[k + 5]), box.size)
 		PhysicsServer3D.body_add_shape(rid, shape.get_rid(), Transform3D(Basis(), box.get_center()))
+	if space.is_valid():
+		PhysicsServer3D.body_set_space(rid, space)
+	return boxes.size() / BOX
 
 
 ## The shared box shape of a box `cells` cells a side (`size` in the world).

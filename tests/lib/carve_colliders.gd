@@ -27,6 +27,7 @@ func run() -> void:
 		"a loaded extension has KaijuCarve.region_boxes (stale dll: rebuild native/)"
 	)
 	_server_shapes()
+	_spread_build()
 	if nat != null:
 		_digest(nat)
 
@@ -102,6 +103,40 @@ func _server_shapes() -> void:
 	_check.call(
 		col.body(region) == null and col.region_boxes(grid, region).is_empty(),
 		"a region carved empty has no body"
+	)
+	col.free()
+
+
+## A spread build (a building's first hit) makes at most collider_boxes_per_tick boxes a tick
+## (plus the region that crosses it, 64 boxes at most), a carve builds a waiting region at once,
+## and the finished build is the immediate build's bodies, shape for shape.
+func _spread_build() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = SEED + 2
+	var dims := Vector3i(48, 96, 48)
+	var site := CarveSite.new(0, Vector3.ZERO, dims, 8)
+	var grid := _grid(rng, dims)
+	var col := CarveCollider.new(site)
+	col.build(grid, true)
+	var waiting := col.pending()
+	var top := Vector3i(0, dims.y - 1, 0) / site.res / CarveCollider.REGION
+	var cut := _carve(grid, dims, Vector3(2.0, dims.y - 3.0, 2.0), 2.5)
+	col.touched(grid, cut)
+	var carved_now := col.body(top) != null and _body_matches(col, grid, top)
+	var per_tick := Num.i(Content.section("render_opt")["collider_boxes_per_tick"])
+	var most := 0
+	var ticks := 0
+	while col.pending() > 0 and ticks < 10000:
+		most = maxi(most, col.build_step())
+		ticks += 1
+	var bad := _bodies_off(col, grid)
+	_check.call(
+		waiting > 1 and ticks > 1 and most < per_tick + 64 and carved_now and bad.is_empty(),
+		(
+			"a spread build of %d regions takes %d ticks, at most %d boxes a tick (budget %d); a carve"
+			+ " builds its waiting region at once; the bodies end as the boxes (off: %s)"
+		)
+		% [waiting, ticks, most, per_tick, bad]
 	)
 	col.free()
 

@@ -39,7 +39,7 @@ func add_site(site: CarveSite, grid: PackedByteArray) -> void:
 	_sites[site.key] = site
 	var collider := CarveCollider.new(site)
 	add_child(collider)
-	collider.build(grid)
+	collider.build(grid, true)  # over the next ticks: a first hit never hitches (item 10)
 	_colliders[site.key] = collider
 	var debris := CarveDebris.new()
 	debris.site = site
