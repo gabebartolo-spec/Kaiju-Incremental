@@ -296,55 +296,31 @@ func _worst_second(times: Array) -> int:
 	return worst
 
 
-## TEMP diag (to revert): the stage-2 spawn walk, rail at its own x then forced to -28.
+## TEMP diag (to revert): what holds the 1.5 s spawn walk, un-iced and iced.
 func _check_diag_walk() -> void:
-	var t := CityGrowth.tuning_for(Content.tuning(), 2)
-	var city: Dictionary = t["city"]
-	var key := "%s:%s" % [city["map_seed"], city["half"]]
-	for forced: float in [INF]:
-		Rail._x_cache.erase(key)
-		if forced != INF:
-			Rail._x_cache[key] = forced
+	for iced: bool in [false, true]:
 		var sim := _adolescent()
 		_open(sim)
 		var way := _face_free_way(sim)
+		if iced:
+			sim.army_units.taskforce.frost.frost_left = 4.0
 		var from := sim.kaiju_pos
-		var want := 0.0
-		var blocked := 0
-		var low := 1.0
-		var strides := 0.0
-		var pushed := 0.0
-		for _n: int in 45:
-			var at := sim.kaiju_pos
-			var mult := sim.powers.speed_mult()
-			low = minf(low, mult)
-			if sim.powers.blocked(at, sim.powers.block_radius()):
-				blocked += 1
+		var broke := sim.body.broken
+		var holds := 0
+		var first := -1
+		var walls := {}
+		for n: int in 45:
 			sim.step(DT, way, false)
-			var meant := sim.stat("speed") * mult * sim.body.stride * DT
-			want += meant
-			strides += sim.body.stride
-			pushed += maxf(0.0, meant - at.distance_to(sim.kaiju_pos))
-		var msg := "DIAG walk rail x %.1f: way %s walked %.1f (want %.1f, lost %.1f); blocked %d/45"
-		msg += " min mult %.2f mean stride %.2f speed %.2f; heading off %.0f deg; emerge %s"
-		check(
-			false,
-			(
-				msg
-				% [
-					Rail.avenue_x(sim.city),
-					way,
-					from.distance_to(sim.kaiju_pos),
-					want,
-					pushed,
-					blocked,
-					low,
-					strides / 45.0,
-					sim.stat("speed"),
-					rad_to_deg(absf(sim.body.heading.angle_to(way))),
-					sim.emerge.active
-				]
-			)
-		)
+			if sim.body.held:
+				holds += 1
+				first = n if first < 0 else first
+				for k: Variant in sim.body.inside(sim.kaiju_pos + way * 0.3, sim.body.heading):
+					var b := sim.buildings[Num.i(k)]
+					var tag := "rail" if not b.rail.is_empty() else b.landmark
+					walls["%d %s h%d at (%.0f, %.0f) w%d d%d" % [k, tag, b.height, b.x, b.z, b.w, b.d]] = 1
+		var msg := "DIAG walk iced %s: from %s way %s walked %.1f; held %d/45 from step %d; broke %d;"
+		msg += " held by %s; rail x %.1f"
+		var out := [iced, from, way, from.distance_to(sim.kaiju_pos), holds, first]
+		out.append_array([sim.body.broken - broke, walls.keys(), Rail.avenue_x(sim.city)])
+		check(false, msg % out)
 		sim.dispose()
-	Rail._x_cache.erase(key)
