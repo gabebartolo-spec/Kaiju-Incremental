@@ -138,7 +138,7 @@ func _stage(stage: int, group: int) -> void:
 					_body = Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y)
 					_follow.focus = _body
 					await _settle()
-				var back := (
+				var back: String = (
 					way[0] + " and back"
 					if legs[1]
 					else way[0] + " back %.0f to %.0f" % [from * metres, to * metres]
