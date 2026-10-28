@@ -210,6 +210,14 @@ static func _faintest(piece: Node3D) -> float:
 static func _check_sound_cap(check: Callable, sfx: Sfx) -> void:
 	sfx._process(1.0)  # last frame's sounds are out of the way
 	var before := sfx.played.count("collapse")
+	var pool := sfx.voices
+	var left := 0.0
+	for i: int in pool.players.size():
+		if pool._category[i] == "collapse":
+			left = maxf(left, pool._until[i] - pool._now)
+	var drop0 := pool.dropped
+	var diag := "DIAG sound: live %s, collapse busy %d of %d (longest left %.1f s), all busy %d"
+	diag = diag % [sfx.live, pool.busy_in("collapse"), pool.cap("collapse"), left, pool.busy_in("")]
 	for n: int in LANDINGS:
 		sfx.collapse(n % 3 == 0)
 	sfx._process(1.0 / 60.0)
@@ -217,6 +225,7 @@ static func _check_sound_cap(check: Callable, sfx: Sfx) -> void:
 	sfx._process(1.0 / 60.0)
 	var later := sfx.played.count("collapse") - before - first
 	var cap := Num.i(Content.section("sfx")["collapse_per_frame"])
+	check.call(false, diag + ", then dropped %d, played %d" % [pool.dropped - drop0, first])
 	check.call(
 		first > 0 and first <= cap and later == 0,
 		(

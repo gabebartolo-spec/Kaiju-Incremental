@@ -301,7 +301,7 @@ func _check_diag_walk() -> void:
 	var t := CityGrowth.tuning_for(Content.tuning(), 2)
 	var city: Dictionary = t["city"]
 	var key := "%s:%s" % [city["map_seed"], city["half"]]
-	for forced: float in [INF, -28.0]:
+	for forced: float in [INF]:
 		Rail._x_cache.erase(key)
 		if forced != INF:
 			Rail._x_cache[key] = forced
@@ -314,7 +314,7 @@ func _check_diag_walk() -> void:
 		var low := 1.0
 		var strides := 0.0
 		var pushed := 0.0
-		for _n: int in 90:
+		for _n: int in 45:
 			var at := sim.kaiju_pos
 			var mult := sim.powers.speed_mult()
 			low = minf(low, mult)
@@ -325,7 +325,7 @@ func _check_diag_walk() -> void:
 			want += meant
 			strides += sim.body.stride
 			pushed += maxf(0.0, meant - at.distance_to(sim.kaiju_pos))
-		var msg := "DIAG walk rail x %.1f: way %s walked %.1f (want %.1f, lost %.1f); blocked %d/90"
+		var msg := "DIAG walk rail x %.1f: way %s walked %.1f (want %.1f, lost %.1f); blocked %d/45"
 		msg += " min mult %.2f mean stride %.2f speed %.2f; heading off %.0f deg; emerge %s"
 		check(
 			false,
@@ -339,7 +339,7 @@ func _check_diag_walk() -> void:
 					pushed,
 					blocked,
 					low,
-					strides / 90.0,
+					strides / 45.0,
 					sim.stat("speed"),
 					rad_to_deg(absf(sim.body.heading.angle_to(way))),
 					sim.emerge.active
