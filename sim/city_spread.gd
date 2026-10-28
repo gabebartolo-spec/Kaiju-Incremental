@@ -14,7 +14,11 @@ extends RefCounted
 ## of that stage's width; a pair with a site of an inner district keeps the share of the INNER
 ## stage's width. Landmarks also keep spawn_clear x width (or their own "rise_clear" m, the
 ## stadium: b2-21) from the kaiju's rise, plus rise_slack for the rise's exact spot, which the
-## river fixes only once the blocks are laid.
+## river fixes only once the blocks are laid. A landmark with "far_from_rise" (the stadium: "as
+## far away from our spawn spot as possible", b2-21) takes the fitting cell of its district
+## farthest from the rise (seeded order breaks a tie); "max_ring" caps its districts (the stadium
+## stays reachable from stage 2: D-271); "place_order" places the most constrained first (the
+## stadium, then the bridge, which only the river's far bank takes), the rest after them.
 
 const LANDMARK_STREAM := "city_spread"
 
@@ -32,7 +36,8 @@ static func width(rings: Array[float], ring: int) -> float:
 ## The landmark sites: the pool (city "landmarks") in seeded order, each into a seeded district
 ## from its "min_ring" on with room left (spread "landmarks_per_ring"), at the first seeded cell
 ## of that district where it fits and keeps its distances. A landmark no district can take is
-## left out. A spec with an "anchor" [x, z] stands there instead (no spread).
+## left out. A spec with an "anchor" [x, z] stands there instead (no spread). Specs place in
+## "place_order" (lowest first; none = after every ordered one), seeded order among equals.
 static func landmarks(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
 ) -> Array[Dictionary]:
@@ -48,6 +53,7 @@ static func landmarks(
 		if shapes.has(str(spec["id"])):
 			pool.append(spec)
 	_shuffle(pool, rng)
+	pool = _in_place_order(pool)
 	var per_ring := Num.i(spread.get("landmarks_per_ring", 0))
 	var taken: Array[int] = []
 	for k: int in rings.size():
@@ -66,7 +72,8 @@ static func landmarks(
 				out.append(pinned)
 			continue
 		var choices: Array = []
-		for k: int in range(Num.i(spec.get("min_ring", 0)), rings.size()):
+		var last := mini(Num.i(spec.get("max_ring", rings.size() - 1)), rings.size() - 1)
+		for k: int in range(Num.i(spec.get("min_ring", 0)), last + 1):
 			if taken[k] < per_ring:
 				choices.append(k)
 		_shuffle(choices, rng)
@@ -113,6 +120,8 @@ static func _place(
 			if reach > inner and reach < rings[k]:
 				anchors.append(at)
 	_shuffle(anchors, rng)
+	if spec.get("far_from_rise", false) and rise.x != INF:
+		anchors = _farthest_first(anchors, rise)
 	var bridge := str(spec.get("kind", "")) == "bridge"
 	var rows := Num.i(spread.get("bridge_rows", 1))
 	for at: Vector2 in anchors:
@@ -155,6 +164,43 @@ static func _landmark_ok(
 		if at.distance_to(other_rect.get_center()) < gap:
 			return false
 	return true
+
+
+## The pool sorted by "place_order" (none = last); equal orders keep their (seeded) order.
+static func _in_place_order(pool: Array) -> Array:
+	var keyed: Array = []
+	for n: int in pool.size():
+		var spec: Dictionary = pool[n]
+		keyed.append([-Num.f(spec.get("place_order", INF)), n, spec])
+	keyed.sort_custom(_farther)
+	var out: Array = []
+	for row: Array in keyed:
+		out.append(row[2])
+	return out
+
+
+## The anchors sorted farthest from the rise first; equal distances keep their (seeded) order.
+static func _farthest_first(anchors: Array, rise: Vector2) -> Array:
+	var keyed: Array = []
+	for n: int in anchors.size():
+		var at: Vector2 = anchors[n]
+		keyed.append([at.distance_to(rise), n, at])
+	keyed.sort_custom(_farther)
+	var out: Array = []
+	for row: Array in keyed:
+		out.append(row[2])
+	return out
+
+
+## Sort order for [key, seeded index, item] rows: the larger key first, then the lower index.
+static func _farther(a: Array, b: Array) -> bool:
+	var da: float = a[0]
+	var db: float = b[0]
+	if da != db:
+		return da > db
+	var ia: int = a[1]
+	var ib: int = b[1]
+	return ia < ib
 
 
 static func _shuffle(items: Array, rng: RandomNumberGenerator) -> void:

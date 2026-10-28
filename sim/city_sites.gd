@@ -182,7 +182,8 @@ static func entries(plan: Dictionary, ring: int) -> Array[Dictionary]:
 
 ## The run of grid cells (first, last) round v whose inside, kerb to kerb, is at least `need`
 ## wide: grown one cell at a time, toward whichever side keeps v nearer the middle, never past a
-## ring avenue. (-1, -1) if it cannot. axis: {lines, rings, avenues, cfg}.
+## avenue (a site that swallowed one would leave the avenue's cut ends poking into its plaza:
+## the landmark-clear audit). (-1, -1) if it cannot. axis: {lines, rings, avenues, cfg}.
 static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 	var lines: Array[float] = axis["lines"]
 	var rings: Array[float] = axis["rings"]
@@ -196,8 +197,10 @@ static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 		return Vector2i(-1, -1)
 	var b := a
 	while lines[b + 1] - lines[a] - _inset(avenues, a, cfg) - _inset(avenues, b + 1, cfg) < need:
-		var low_ok := a > 0 and not _is_ring(lines[a], rings)
-		var high_ok := b + 2 < lines.size() and not _is_ring(lines[b + 1], rings)
+		var low_ok := a > 0 and not _is_ring(lines[a], rings) and not avenues.has(a)
+		var high_ok := (
+			b + 2 < lines.size() and not _is_ring(lines[b + 1], rings) and not avenues.has(b + 1)
+		)
 		if not low_ok and not high_ok:
 			return Vector2i(-1, -1)
 		if low_ok and (not high_ok or v - lines[a] < lines[b + 1] - v):

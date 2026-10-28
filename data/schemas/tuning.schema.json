@@ -1828,6 +1828,9 @@
                 "additionalProperties": false
               },
               "min_ring": {"$ref": "#/$defs/num"},
+              "max_ring": {"$ref": "#/$defs/num"},
+              "far_from_rise": {"$ref": "#/$defs/bool"},
+              "place_order": {"$ref": "#/$defs/num"},
               "rise_clear": {"$ref": "#/$defs/num"},
               "kind": {"$ref": "#/$defs/str"},
               "landing": {"$ref": "#/$defs/num"}

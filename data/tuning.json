@@ -641,13 +641,13 @@
 		"zebra_junctions": 1,
 		"landmarks": [
 			{
-				"id": "stadium", "min_ring": 1, "rise_clear": 190, "margin": 0, "tier": 1, "rubble_bonus": 1.5,
+				"id": "stadium", "place_order": 1, "min_ring": 1, "max_ring": 1, "far_from_rise": true, "rise_clear": 190, "margin": 0, "tier": 1, "rubble_bonus": 1.5,
 				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
-			{"id": "wheel", "margin": 2, "tier": 2, "rubble_bonus": 1.5},
-			{"id": "bridge", "kind": "bridge", "min_ring": 1, "landing": 4, "margin": 0, "tier": 2, "rubble_bonus": 1.5}
+			{"id": "wheel", "min_ring": 1, "margin": 2, "tier": 2, "rubble_bonus": 1.5},
+			{"id": "bridge", "kind": "bridge", "place_order": 2, "min_ring": 1, "landing": 4, "margin": 0, "tier": 2, "rubble_bonus": 1.5}
 		],
-		"spread": {"_note": "CitySpread (D-254): landmarks spread by map_seed. landmarks_per_ring = most landmarks a district takes; a landmark's min_ring = the first district it may stand in (the stadium and the bridge never in the young city: b2-21, the river); landmark_gap = share of a stage's play-area width that the landmarks it newly opens keep apart (a pair with an inner district's site keeps the inner stage's share: lead call 2026-10-26); spawn_clear = share of the width kept off the kaiju's rise (a landmark's own rise_clear m when more: the stadium, b2-21; rise_slack m covers the rise's exact spot); bridge_rows = rows of blocks the bridge's inlet takes past the river", "landmarks_per_ring": 3, "landmark_gap": 0.4, "spawn_clear": 0.2, "rise_slack": 6.0, "bridge_rows": 2},
+		"spread": {"_note": "CitySpread (D-254): landmarks spread by map_seed. landmarks_per_ring = most landmarks a district takes; a landmark's min_ring = the first district it may stand in (the stadium, the wheel and the bridge never in the young city: b2-21, D-270 'South, past the river', the river), max_ring the last (the stadium reachable from stage 2: D-271 'The stage-2 stadium bar stands'); place_order = the order landmarks place in, lowest first, none after every ordered one (the most constrained first: the stadium, then the bridge, which only the river's far bank takes); far_from_rise = it takes the fitting cell of its district farthest from the kaiju's rise (the stadium: b2-21 'as far away from our spawn spot as possible'); landmark_gap = share of a stage's play-area width that the landmarks it newly opens keep apart (a pair with an inner district's site keeps the inner stage's share: lead call 2026-10-26); spawn_clear = share of the width kept off the kaiju's rise (a landmark's own rise_clear m when more: the stadium, b2-21; rise_slack m covers the rise's exact spot); bridge_rows = rows of blocks the bridge's inlet takes past the river", "landmarks_per_ring": 3, "landmark_gap": 0.4, "spawn_clear": 0.2, "rise_slack": 6.0, "bridge_rows": 2},
 		"coverage_cell": 10,
 		"view_beyond": 30,
 		"parked_chance": 0.7,
