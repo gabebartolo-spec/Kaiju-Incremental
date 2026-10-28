@@ -72,6 +72,18 @@
     },
     {
       "serverName": "mcp-registry"
+    },
+    {
+      "serverName": "Blender"
+    },
+    {
+      "serverName": "claude-in-chrome"
+    },
+    {
+      "serverName": "computer-use"
+    },
+    {
+      "serverName": "local-models"
     }
   ]
 }
