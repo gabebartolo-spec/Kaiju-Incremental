@@ -7,8 +7,10 @@ export() (skin.json/.skinw format) on the rig itself.
 - r12 (D-307): every rig tail joint is its own game bone (tail0-11; r11 folded tail08-11 into tail8, so the tip's whip
   never reached the game). The game's spring tail stays tail0-SPRING_TAIL ("physics"); the tip bones only play clips.
   The hind toe is its own game bone too (leg_x3; r11 folded it into the foot, leg_x2): the game locks its tip.
-- r11's eyelids are Blender-only (D-228): the lid bones fold into the head, and the lower-lid flaps (rigid shells
-  hidden inside the head at rest, all their weight on lid_lo_*) are left out of every file, so the game mesh is r10's.
+- Eyelids (D-335 blinks): the four lid bones are game bones of their own (lid_up_l/_r carry the brow skin's squint,
+  lid_lo_l/_r the lower-lid flaps), listed after every other game bone (rig_from_skin.py bone_names). The lower-lid
+  flaps (rigid shells hidden inside the head at rest) are still left out of every file, so the game mesh is r10's;
+  the skin.json's "lid_flaps" block (LID_FLAPS) is how tools/kaiju_skin/lid_flaps.py builds them in voxels instead.
 - <out>/croc_adult3_landmarks.json: motion_test landmarks at the r10 joints (so its clips' game bones rest on them).
 The repo keeps the landmarks as assets/kaiju/test/croc_adult3_landmarks.json (motion_test.py <it> <glb> <out> clips).
 blender -b croc_adult3_rig_r11.blend --python tools/blender/croc_adult3_export.py -- <out_dir> [height_vox=320]"""
@@ -29,6 +31,10 @@ bpy.ops.object.mode_set(mode="EDIT")
 ROLLS = {e.name: e.roll for e in ad.edit_bones}
 bpy.ops.object.mode_set(mode="OBJECT")
 GAME = np.array([[-1.0, 0, 0], [0, 0, 1.0], [0, 1.0, 0]])
+# The game's voxel lower lids (tools/kaiju_skin/lid_flaps.py; lead 2026-10-28: top edge 16 deg past the eye's centre
+# line, turn 100 deg, 0 eye px shut at the 1080p game camera from all 24 headings): lengths in skin units (depth = the
+# rig flap's 0.008 m), angles in degrees, band and gap in voxels. The rig's flap meshes match (r12f, same lat/over/open).
+LID_FLAPS = {"depth": 2.13, "open": 100, "half": 30, "over": 16, "lat": 50, "band": 1.8, "gap": 0.9}
 SPRING_TAIL = 8  # game tail0-8: the spring tail the game bends on turns (r11's tail bones); tail9-11 follow clips only
 
 # --- drop the lower-lid flaps (r11; in memory only, the .blend is never saved) ----------------------------
@@ -59,9 +65,6 @@ for pb in arm.pose.bones:
         HELP[pb.name] = {par.name: 1 - k, c.subtarget: k} if c.subtarget != par.name else {par.name: 1.0}
     else:
         HELP[pb.name] = {par.name: 1.0}
-for pb in arm.pose.bones:
-    if pb.name.startswith("lid_"):  # r11 eyelids (Blender-only): the head carries them
-        HELP[pb.name] = {"head": 1.0}
 print("FOLD", {h: {b: round(w, 3) for b, w in m.items()} for h, m in HELP.items()})
 order = []
 def visit(b):
@@ -128,6 +131,8 @@ def game_bone(n):
              "neck1": "head0", "neck2": "head0", "head": "head1", "jaw": "jaw"}
     if n in fixed:
         return fixed[n]
+    if n.startswith("lid_"):  # eyelids keep their rig names (lid_up_l, lid_lo_l, lid_up_r, lid_lo_r)
+        return n
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
     return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
@@ -171,7 +176,7 @@ doc = {"version": 1, "units": "m", "axes": "game: Y up, -Z forward, x = -blender
        "pelvis; model normalised to 100 m tall", "height_m": 100.0, "source": STEM + " (croc adult3 a3174b0f, rig r11)",
        "bones": bones, "helpers": HELPERS, "vertex_count": int(len(g)), "weights_file": f"{STEM}.skinw",
        "bbox_game": [gall.min(0).round(3).tolist(), gall.max(0).round(3).tolist()], "kvox_height": HV,
-       "kvox_cell_to_skin": M.round(6).tolist(),
+       "kvox_cell_to_skin": M.round(6).tolist(), "lid_flaps": LID_FLAPS,
        "kvox_note": "p_skin = M @ (gx, gy, gz, 1): centre of a rig_voxel cell of the SAME glb at kvox_height."}
 (OUT / f"{STEM}.skin.json").write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
 

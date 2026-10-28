@@ -38,9 +38,13 @@ MIXED = 0.98  # a voxel whose main bone has less than this share is in a joint: 
 FILL_INSET = 0.3  # voxels: the filler sits this far inside the cubes
 MOUTH_RED = 1.35  # BipedHead.MOUTH_RED: the sculpt's pink mouth inside
 MOUTH_BONES = ("head1", "jaw")
-# Hinged parts that move as one rigid piece against their parent (a jaw, a mantis mandible): they
-# never blend with it, so an open mouth keeps its mass and its teeth (lead review, PR #15).
-HINGES = ("jaw", "mandible_l", "mandible_r")
+# Hinged parts that move as one rigid piece against their parent (a jaw, a mantis mandible, a croc's lower-lid flap:
+# tools/kaiju_skin/lid_flaps.py): they never blend with it, so an open mouth keeps its mass and its teeth (lead review,
+# PR #15) and a lid closes whole.
+HINGES = ("jaw", "mandible_l", "mandible_r", "lid_lo_l", "lid_lo_r")
+# A lid flap voxel may sit on a cheek voxel at rest, its twin (lid_flaps.py): both stay, so the closing lid keeps its shape.
+# The flaps are hinges without the hinge_hold fade: the skin round an eye keeps its own weights (the brow's squint).
+LID_FLAPS = ("lid_lo_l", "lid_lo_r")
 # Lattice steps over which the skin round a hinge goes from following the hinge's parent to its own
 # Blender weights (hinge_hold): at the full head lead (ClipGait.HEAD_LEAD_MAX) no voxel pair round
 # a croc's shut jaw parts by more than about a voxel (jawslit sim, 2026-10-28).
@@ -193,7 +197,7 @@ def blender_weights(kdir, name, cells, owner, names, parents):
         w[:, j] = 0.0
         w[mine] = 0.0
         w[mine, j] = 1.0
-        if p != j and mine.any():
+        if p != j and mine.any() and hinge not in LID_FLAPS:
             w = hinge_hold(w / np.maximum(w.sum(1, keepdims=True), 1e-12), cells, mine, p)
     empty = w.sum(1) <= 0  # only jaw-weighted positions nearby: keep the .kvox bone
     w[empty, owner[empty]] = 1.0
@@ -281,12 +285,15 @@ def bake(name, rest, kdir, rig):
             j = on[b]
             moved += from_blender[src, b:b + 1] * ((at - head[j]) @ basis[j].T + origin[j])
     baked = np.round(moved / v - np.array([0.0, 0.5, 0.0])).astype(int)
-    _, first = np.unique(baked, axis=0, return_index=True)
+    lid = np.isin(owner[src], [names.index(n) for n in LID_FLAPS if n in names]).astype(int)
+    _, first = np.unique(np.c_[baked, lid], axis=0, return_index=True)  # one voxel per cell, a lid twin aside
     keep = np.sort(first)
     cells, rgb, owner = baked[keep], rgb[src[keep]], owner[src[keep]]
     kvox_owner = owner  # the mouth test reads the .kvox split, whatever the weights
     count = len(cells)
-    index = {tuple(c): i for i, c in enumerate(cells)}
+    index = {}
+    for i, c in enumerate(cells):
+        index.setdefault(tuple(c), i)  # a cell's neighbour is its skin voxel, never the lid twin over it
     nbr = np.array([[index.get((c[0] + d[0], c[1] + d[1], c[2] + d[2]), -1) for d in DIRS] for c in cells])
     # Lattice-smoothed weights, joint-related bones only; or the Blender skin's, as they are (the
     # filler then pairs voxels by their main bone).

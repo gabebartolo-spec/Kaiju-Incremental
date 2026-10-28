@@ -1,0 +1,15 @@
+== adolescent_rise_pc_e (free 7040 MB)
+{"level": "Info", "text": "SAVED C:/kt/casc_drafts_1028/adolescent/rise_pc_e.casc frames 17 in 3 s"}
+{"level": "Info", "text": "NOTOPENED C:/kt/casc_drafts_1028/adolescent/rise_pc_e.casc (RAM) tabs 5 -> 5"}
+casc_lock: held by keyer
+dump rc=0
+casc_lock: released
+{"level": "Info", "text": "CDUMP ado_pc_e NF 17 verts 5514 corners 31335 weights 11785 joints 41 in 2 s"}
+-20,30,100,-25,60,-9,0,-0.7,-10    back 18.70 | low belly -0.33 sh +5.38 legs -8.47 tail +1.10 head +10.65 | tris head 0 leg_l 6 leg_r 6 | knee 46/46
+-20,30,100,-25,75,-9,0,-0.7,-10    back 18.70 | low belly -0.46 sh +5.38 legs -7.83 tail +1.10 head +10.65 | tris head 0 leg_l 8 leg_r 8 | knee 46/46
+-20,30,100,-95,60,-9,0,-0.7,-10    back 18.70 | low belly -0.33 sh +5.38 legs -2.01 tail +1.10 head +10.65 | tris head 0 leg_l 7 leg_r 7 | knee 46/46
+-20,30,100,-95,75,-9,0,-0.7,-10    back 18.70 | low belly -0.46 sh +5.38 legs -1.53 tail +1.10 head +10.65 | tris head 0 leg_l 9 leg_r 9 | knee 46/46
+-20,50,100,-25,60,-9,0,-0.7,-10    back 18.70 | low belly -0.55 sh +5.38 legs -10.46 tail +1.02 head +10.65 | tris head 0 leg_l 8 leg_r 10 | knee 46/46
+-20,50,100,-25,75,-9,0,-0.7,-10    back 18.70 | low belly -0.56 sh +5.38 legs -8.88 tail +1.07 head +10.65 | tris head 0 leg_l 10 leg_r 11 | knee 46/46
+-20,50,100,-95,60,-9,0,-0.7,-10    back 18.70 | low belly -0.55 sh +5.38 legs -2.31 tail +1.02 head +10.65 | tris head 0 leg_l 11 leg_r 11 | knee 46/46
+-20,50,100,-95,75,-9,0,-0.7,-10    back 18.70 | low belly -0.56 sh +5.38 legs -1.75 tail +1.07 head +10.65 | tris head 0 leg_l 13 leg_r 12 | knee 46/46
