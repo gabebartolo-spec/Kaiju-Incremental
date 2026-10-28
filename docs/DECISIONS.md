@@ -4,6 +4,26 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-28 · D-367 · Director · Collapse sounds: the newest cuts the oldest
+Asked why many collapses at once went silent in the wider city (each collapse rings about 3.4 s and only 3 play at
+once, so a 4th was dropped), he picked "Newest cuts oldest (Recommended)". When a hero sound's voices are all busy, a
+new collapse takes over that sound's own oldest voice once it has played at least 1.0 s (a tuning value); no other
+hero sound is ever cut for it.
+
+## 2026-10-28 · D-366 · Director · Wider-city music pacing waits for balancing
+Asked about the city music's last layers never arriving in the wider (1.5x) city (there is more city to destroy before
+they trigger), he picked "Leave it for balancing" (D-363). The pacing stays as it is; only the test is refit to the
+bigger city.
+
+## 2026-10-28 · D-365 · Director · Claw rake PR #332 closed, branch kept
+Asked whether to close #332 (grown croc claw rake, waiting on a rebake) to free a PR slot, he picked "Yes, close it
+(Recommended)". The branch claude/croc-claw stays; the PR reopens when its rebake passes on GitHub.
+
+## 2026-10-28 · D-364 · Director · Cascadeur restarted to free memory
+Asked whether to restart Cascadeur (holding about 11 GB, free memory under 2 GB, every rebake and local run waiting),
+he picked "Yes, restart it (Recommended)". It had already exited when the lead went to close it and was relaunched
+minimized; one copy only (D-336).
+
 ## 2026-10-28 · D-363 · Director · Balance waits until the game is beautiful and working
 His words, after dying in every run of the play build: "dont worry abot balance yet. lets get the game beautiful and
 working then we can balance it". Army strength, run length and upgrade costs stay as they are until he says so; the
@@ -348,45 +368,3 @@ interview tomorrow". Q: should visual changes made tonight go into the game befo
 you judge tomorrow (Recommended)". So: tonight's visual PRs merge on by default after one iteration; each keeps a saved
 1080p clip or 4K still in C:/kt/interview_2026-10-27/ for the morning interview; anything he rejects is reverted. No
 second visual rounds without him. Overrides, for this night only, the director look gate on merges.
-
-## 2026-10-27 · D-307 · Director · The croc skeleton may gain bones to match the Dracorex
-Q (05:3x): may the croc gain bones (more tail or neck joints)? A: "Yes, add bones if needed (Recommended)".
-So: bones are added where the study shows the croc lacks them; the croc is re-skinned and the approved roar, idle and
-turns move to the new skeleton, each shown to him again in a clip before it replaces the old one.
-
-## 2026-10-27 · D-306 · Director · Recreate the Dracorex walk with its methods and our own keys
-Q (05:3x, his request "look at every single frame of the dracorex walk loop and apply those learnings to our models
-skeletons / take of the settings and techniques used in that dracorex file and try to recreate it with our model"):
-same methods with our own keys, or copy its motion? A: "Same methods, our own keys (Recommended)".
-So: every frame of the sample walk is studied and its settings and techniques (controller layout, key grid, curve
-types, tail and neck set-up, timing) are copied; the croc walk is keyed fresh. No key, curve or pose from the sample
-(licence not cleared) enters our files. Refines D-302.
-
-## 2026-10-27 · D-305 · Director · Our animator works inside his open Cascadeur
-Q (05:3x, after "casc is open"): use his open copy, or he closes his? A: "Use my open copy (Recommended)".
-So: the Cascadeur builder runs its script server inside his running Cascadeur and opens its own tabs beside his
-Dracorex file. It never closes, edits or saves his file, and never takes his keyboard or mouse (no window activation,
-no clicks). Owner: croc moves builder (row 21).
-
-## 2026-10-27 · D-304 · Director · Clips render at 1080p; stills stay 4K
-Q (05:0x, after he asked "why do we need to capture things in 4k? surely that takes much longer and uses more gpu?"):
-switch clips to 1080p? A: "Clips 1080p, stills 4K (Recommended)".
-So: every ~6 s clip renders at 1920x1080; stills keep the 3840x2160 check for text and fine detail. The first 1080p
-clip is timed against a 4K one so the saving is measured, not assumed. Replaces the 4K-clip wording in briefs.
-
-## 2026-10-27 · D-303 · Director · Balcony railings take the window-sill tone
-Q (05:0x, with the window-bars 4K A/B, C:/kt/wb_old/ab2.png): the short black bars under the windows on brick towers are
-balcony railings (palette key "rail", 2a2c2e, 2 voxels proud); they stay pitch black at night and slide over the windows
-as the camera moves. Leave, lighten to sill tone, or drop? A: "Lighten to sill tone (Recommended)".
-So: the rail voxels use the window-sill colour; brick towers keep their balconies. Owner: window-bars (PR #274).
-
-## 2026-10-27 · D-302 · Director · Croc walk reworked from the Dracorex study; size-matched steps
-Q (after the Dracorex study he asked for at 03:5x, "maybe you should study this and take some learnings from it"; numbers in C:/kt/dracorex/learnings.md): rework the approved walk with the learnings? "Rework, send a clip (Recommended)". How fast should his legs step at his normal walking speed? "Size-matched, ~1.4 s a step (Recommended)".
-So: the Cascadeur builder (debt row 21) rekeys the croc walk to the study's bars: a steady head (heading range <= 25% of the trunk's twist, bob <= 70% of the pelvis, 2-4 f late); the neck lifting as the body drops (r <= -0.5, >= 3 deg range); the chest swinging against the hips (S-shaped spine); the tail tip trailing the base by >= 0.25 cycle, swinging wider toward the tip; feet that peel (ankle peak 15-30% into the swing) then reach (toe peak in the last 20%); planted feet still slide <= 1 cm. Sizes the study left open (trunk twist, tail swing, bob) sit between today's croc and the sample; he judges ONE ~6 s side-on clip, and today's walk stays in the game until he approves the new one. Tempo: same ground speed; a cycle of ~2.7 s (a step ~1.35 s, stride ~15 m) instead of 1.10 s and 6.06 m; the sim's footstep cadence follows the clip (D-201); damage under his feet is re-tuned so the street clears per metre walked as it does today. Not chosen: keep the walk and use the learnings for new moves only; halfway (~0.95 s a step); today's ~0.55 s a step. No key, curve or pose from the sample enters the game (licence not cleared): measurements only.
-
-## 2026-10-27 · D-301 · Director · Cascadeur bought just before release; trial clips re-exported under it
-Q: the release build would ship clips keyed on the Cascadeur Pro Trial, whose EULA (2.2(e)) "prohibits any Commercial Use". Answer: "as long as we can use our trial animations after I pay, im happy to wait still a long time left on the trial".
-EULA (cascadeur.com/download, read 2026-10-27): Indie (gross revenue under $100k/yr) and Pro permit Commercial Use; the licensee keeps ownership of its animations (6.3); it says nothing either way about trial-made work after upgrading. So: keep working on the trial; buy before the Itch release; at purchase re-open every clip's .casc in the paid Cascadeur and re-export it, so every shipped clip is exported under a paid licence; every clip keeps its .casc source; credits name Cascadeur (EULA asks for it). Release checklist item.
-
-## 2026-10-27 · D-300 · Director · Debt fixes go ahead of the render plan
-His words: "maybe we should prioritise the debt fixes" (after the third local freeze tonight and P2b's speed runs swinging 63-81 ms). Asked "Should debt fixes go ahead of the render plan?"; picked "Debt first": debt PRs merge first and get the next speed runs; the Cascadeur remake of the 31 code-driven creature moves (debt row 21) starts now instead of after the render plan; render builders already working finish their items; later render items start after waiting debt. New order: 1 debt, 2 render plan, 3 everything else. Replaces D-298's order.
