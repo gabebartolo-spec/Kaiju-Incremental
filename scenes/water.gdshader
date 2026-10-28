@@ -41,6 +41,7 @@ uniform float spec = 0.8;
 uniform float crest_light = 0.25;  // how much lighter a crest's body colour is (light through its top)
 uniform float mottle_length = 3.0;  // broad patches of lighter and darker water (m)
 uniform float mottle_amp = 0.3;  // how much they vary the body colour
+uniform float day_glow = 0.2;  // the same by day, so the patches read in daylight too
 uniform float night_glow = 1.0;  // the sky's glow the water holds at night (times the look's window_lit)
 uniform vec3 sky_color : source_color = vec3(0.25, 0.33, 0.5);
 uniform float night = 0.0;  // the look's window_lit: none by day
@@ -195,8 +196,8 @@ void fragment() {
 	float seen = clear * (1.0 - fres);  // the share of what is under the water that reaches the eye
 	ALBEDO = mix(body * (1.0 - clear) * (1.0 - fres), foam_color, froth);
 	ALPHA = mix(1.0 - seen, 1.0, froth);
-	// At night the unlit body would be black: the sky's glow, in patches, holds it up (sky_color, per look).
-	EMISSION = sky_color * night_glow * night * clamp(0.5 + mottle, 0.0, 1.5) * (1.0 - clear * (1.0 - fres)) * (1.0 - froth);
+	// The sky's glow in patches (an unlit body would be black at night) (sky_color, per look).
+	EMISSION = sky_color * (night_glow * night + day_glow) * clamp(0.5 + mottle, 0.0, 1.5) * (1.0 - froth);
 	SPECULAR = spec * (1.0 - froth);
 	ROUGHNESS = mix(ROUGHNESS, 0.7, froth);
 }

@@ -5273,6 +5273,7 @@
         "mottle_length": {"$ref": "#/$defs/num"},
         "mottle_amp": {"$ref": "#/$defs/num"},
         "night_glow": {"$ref": "#/$defs/num"},
+        "day_glow": {"$ref": "#/$defs/num"},
         "river": {
           "type": "object",
           "properties": {
@@ -5312,7 +5313,7 @@
       },
       "required": [
         "on", "absorb", "murk", "foam_depth", "foam", "rough_near", "rough_far", "specular",
-        "crest_light", "mottle_length", "mottle_amp", "night_glow", "river", "bay"
+        "crest_light", "mottle_length", "mottle_amp", "night_glow", "day_glow", "river", "bay"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
