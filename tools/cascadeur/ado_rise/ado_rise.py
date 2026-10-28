@@ -11,6 +11,7 @@ for kv in sys.argv[2:]:
     k, v = kv.split("="); os.environ[k] = v
 sys.path.insert(0, "C:/Users/DANTE/cascadeur_bridge/croc_new/claw/drafts")
 import dk  # noqa: E402
+if os.environ.get("KFLOOR"): dk._rc.FLOOR_DEG = float(os.environ["KFLOOR"])   # r7: the knee reach clamp floor (lead: 45.2; bar stays >= 45)
 cp = dk.cp; K = dk.K
 LEN = {"Y0": -18.2, "YP": -8.0, "YD": -13.0, "ILIFT": 3.0, "RLIFT": 0.6, "LIFT": 0.0}
 for k, v in LEN.items():
@@ -90,6 +91,22 @@ if os.environ.get("TOEUP", "0") == "1":   # r6: the toe never pitches under its 
             for kk in (Dn, Ad):
                 FR[f][kk] = tuple(round(float(c), 4) for c in P0 + Rr @ (_np.array(FR[f][kk], float) - P0))
         print("TOEUP %s max %.1f deg, frames %d" % (s, phi.max(), int((phi > 1e-3).sum())))
+if os.environ.get("TOEROLL"):   # r7: toe_AdditionalPoint at the standing roll (the rest offset turned by the minimal turn of the
+    _R0, _R1 = (int(v) for v in os.environ["TOEROLL"].split(","))   # toe's Main->Direction from rest), full on R0..R1, eased in/out 4 f
+    def _rmin(a, b):
+        a = a / _np.linalg.norm(a); b = b / _np.linalg.norm(b); v = _np.cross(a, b); c = float(_np.dot(a, b))
+        if _np.linalg.norm(v) < 1e-9: return _np.eye(3)
+        Kx = _np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]]); return _np.eye(3) + Kx + Kx @ Kx / (1 + c)
+    for s_ in "lr":
+        M, Dn, Ad = "toe_MainPoint_" + s_, "toe_DirectionPoint_" + s_, "toe_AdditionalPoint_" + s_
+        d0 = _np.subtract(FR[-1][Dn], FR[-1][M]); a0 = _np.subtract(FR[-1][Ad], FR[-1][M]); mx = 0.0
+        for f in range(NF):
+            w = rk.ss(_R0 - 4, _R0, f) * (1.0 - rk.ss(_R1, _R1 + 4, f))
+            if w <= 0: continue
+            P0 = _np.array(FR[f][M], float); tgt = P0 + _rmin(d0, _np.subtract(FR[f][Dn], P0)) @ a0; old = _np.array(FR[f][Ad], float)
+            new = old + w * (tgt - old); r = _np.linalg.norm(old - P0); v = new - P0; new = P0 + v / _np.linalg.norm(v) * r
+            mx = max(mx, float(_np.linalg.norm(new - old))); FR[f][Ad] = tuple(round(float(c), 4) for c in new)
+        print("TOEROLL %s f%d-%d move max %.2f cm" % (s_, _R0, _R1, mx))
 key = dk.KEY("rise_bay") + "_rise_" + TAG
 dk.save("rise_bay", FR, {"reach": rig.reach, "note": "Behemoth rise_bay %s from rise_p" % TAG, "FD1": rk.FD1, "SE": rk.SE,
                          "phases": {"U0": rk.U0, "HB": rk.HB, "SC": rk.SC, "LP": rk.LP, "SE": rk.SE}})
