@@ -108,7 +108,7 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 		var toes: Array[Vector3] = []
 		for i: int in 2:
 			var leg: BipedGait.Leg = gait.legs[i]
-			var toe := rig.tail_world(leg.names[2])
+			var toe := rig.tail_world(leg.tip)
 			var catching := gait._stomp.catching(i)
 			if warm and catching and not was_catch[i] and not gait._stomp._stomping[i]:
 				out["catch"] = Num.i(out["catch"]) + 1
