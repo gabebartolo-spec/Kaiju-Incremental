@@ -107,5 +107,5 @@ func _end(n: int) -> void:
 func _drop(view: BuildingView) -> void:
 	if view.get_parent() != null:
 		view.get_parent().remove_child(view)
-	BuildingView.forget(view)
+	BuildingBakeCache.forget(view.bake_key())
 	view.free()
