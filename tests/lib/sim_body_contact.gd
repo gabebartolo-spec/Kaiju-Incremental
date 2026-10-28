@@ -131,7 +131,14 @@ func _walk(body: bool, tier: int) -> Dictionary:
 		sim.step(DT, move, false)
 		held += 1 if sim.body.held else 0
 		worst = maxi(worst, Fixture.count(probe.inside(sim.kaiju_pos, sim.body.heading)))
-	return {"worst": worst, "held": held, "broken": sim.body.broken, "chunks": sim.chunks_destroyed}
+	var out := {
+		"worst": worst, "held": held, "broken": sim.body.broken, "chunks": sim.chunks_destroyed
+	}
+	if probe != sim.body:
+		# A part built by hand is a ring no sim holds: its dash points back at it and it holds the
+		# sim, so the whole run outlived the process (debt row 2).
+		SimTeardown.cut(probe)
+	return out
 
 
 ## The runner's scripted rampage (determinism, upgrade effects, rooftops) runs with the body.

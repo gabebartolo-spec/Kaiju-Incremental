@@ -31,6 +31,8 @@ var cut_walls: Array[Rect2] = []
 ## where they cross, RoadJunctions.crossings lays the street's asphalt over both.
 var street_pieces: Array[Dictionary] = []
 var diagonal_pieces: Array[PackedVector2Array] = []
+## The bay's water sheet (FarWaterGlow lays the far city's window light on it by the far shore).
+var bay: MeshInstance3D
 var _slabs: Array[Dictionary] = []
 var _paint: Array[Transform3D] = []
 
@@ -66,7 +68,8 @@ func _ready() -> void:
 		add_child(mmi)
 	add_child(_build_slabs(mat))
 	add_child(_build_paint())
-	add_child(_water())
+	bay = _water()
+	add_child(bay)
 
 
 ## One block's pavement, and what stands on it (lawn, plaza, parking bays).

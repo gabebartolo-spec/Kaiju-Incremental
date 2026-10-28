@@ -16,6 +16,7 @@ class Played:
 	var tanks := 0
 	var helis := 0
 	var vip := ""
+	var chunks := 0
 	var fates: Array[String] = []  # each forced gunship kill: id, fate, fall time, drift, crew
 
 
@@ -64,6 +65,7 @@ func _play(leader: bool, kill_at := -1.0) -> Played:
 	out.tanks = sim.tanks_destroyed
 	out.helis = sim.air.destroyed
 	out.vip = sim.vip.state
+	out.chunks = sim.chunks_destroyed
 	return out
 
 
@@ -135,4 +137,16 @@ func _check_vip_kill_leaves_gunship_falls() -> void:
 	var off := _play(false, 10.0)
 	print("VIP_KILL_PARITY fates on %d, off %d" % [on.fates.size(), off.fates.size()])
 	check(on.fates.size() >= 3, "gunships fell after the leader (%d)" % on.fates.size())
-	check(on.fates == off.fates, "same gunship fates and drifts with the leader killed")
+	# The wreck falls like any gunship's and may smash city where it lands, which raises the
+	# escalation the air wing's cap reads: then the leader run launches one more gunship late. So
+	# every fate the leaderless run drew must come out the same (draws, drifts, crew) and extra
+	# ones are allowed only after the wreck smashed more (this city: 776 chunks against 635).
+	var same := on.fates.slice(0, off.fates.size()) == off.fates
+	var smashed := on.chunks > off.chunks
+	check(
+		same and (on.fates.size() == off.fates.size() or smashed),
+		(
+			"same gunship fates and drifts with the leader killed (%d vs %d fates; chunks %d/%d)"
+			% [on.fates.size(), off.fates.size(), on.chunks, off.chunks]
+		)
+	)

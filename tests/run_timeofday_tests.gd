@@ -17,12 +17,63 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	await _t("_check_dusk_only")
+	var shipped: Variant = Content.time_table().get("play")
+	Content.time_table()["play"] = Content.times().duplicate()
 	await _t("_check_never_twice")
 	await _t("_check_fixed_setting")
 	await _t("_check_setting_steps")
 	await _t("_check_settings_file")
 	await _t("_check_old_save")
 	await _t("_check_through_main")
+	Content.time_table()["play"] = shipped
+
+
+## D-359: every run plays dusk, with the setting Random and with a saved "night" (an old file),
+## through the real Main too; the menu has no time choice to offer; "order" stays whole.
+func _check_dusk_only() -> void:
+	var wrong := 0
+	for run: int in 60:
+		for last: String in ["", "dusk", "night"]:
+			for setting: String in [TimeOfDay.RANDOM, "night", "noon", "bogus"]:
+				if TimeOfDay.pick(run, last, TimeOfDay.clean(setting)) != "dusk":
+					wrong += 1
+	check(
+		wrong == 0, "every run plays dusk, whatever the setting or the last time (%d wrong)" % wrong
+	)
+	var kept := PlayerSettings.time_of_day
+	var cfg := ConfigFile.new()
+	cfg.load(PlayerSettings.PATH)
+	cfg.set_value("display", "time_of_day", "night")
+	cfg.save(PlayerSettings.PATH)
+	PlayerSettings.time_of_day = "noon"
+	PlayerSettings.load_saved(false)
+	var loaded := PlayerSettings.time_of_day
+	PlayerSettings.time_of_day = kept
+	check(loaded == TimeOfDay.RANDOM, 'a saved "night" loads as Random, not night (%s)' % loaded)
+	var played: Array[String] = []
+	for run: int in 4:
+		PlayerSettings.time_of_day = loaded
+		SaveFile.save_game(SaveFile.new_save("reptilian") if run == 0 else SaveFile.load_game())
+		var main: Node = (load(MAIN_SCENE) as PackedScene).instantiate()
+		root.add_child(main)
+		await process_frame
+		await process_frame
+		main.call("_continue_slot", 1)
+		played.append(str(SaveFile.load_game().get("last_time", "")))
+		main.queue_free()
+		await process_frame
+		await process_frame
+	PlayerSettings.time_of_day = kept
+	check(
+		played == ["dusk", "dusk", "dusk", "dusk"],
+		"four rampages started through Main with a saved night all play dusk: %s" % [played]
+	)
+	check(not TimeOfDay.has_choice(), "the options menu has no time of day choice to show")
+	check(
+		Content.times().has("night") and Content.time_for_run(1) == "night",
+		"order stays whole, so --time= flags in captures, benches and tests still reach night"
+	)
 
 
 func _pick_run(last: String, setting: String, run: int) -> String:

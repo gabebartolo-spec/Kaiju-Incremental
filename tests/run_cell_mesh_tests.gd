@@ -32,6 +32,8 @@ const CARVE_R: Array[float] = [5.0, 7.0, 6.0, 4.0, 3.0]
 const CellFaces := preload("res://tests/lib/cell_faces.gd")
 const BalconyFaces := preload("res://tests/lib/balcony_faces.gd")
 const RemeshPriority := preload("res://tests/lib/remesh_priority.gd")
+const RemeshWorker := preload("res://tests/lib/remesh_worker.gd")
+const CellFixture := preload("res://tests/lib/cell_fixture.gd")
 
 var _native := false
 
@@ -50,21 +52,9 @@ func run_checks() -> void:
 	await _t("_check_only_touched_regions")
 	await _t("_check_incremental_equals_fresh")
 	await _t("_check_native_matches_oracle")
-	await _t("_check_promote_keeps_fade")
+	await _t("_check_promote_keeps_cut")
 	await _h("remesh priority", func() -> void: RemeshPriority.new(check, _native).run())
-
-
-func _building(f: Array) -> RampageSim.Building:
-	var b := RampageSim.Building.new()
-	b.x = f[1]
-	b.z = f[2]
-	b.w = f[3]
-	b.d = f[4]
-	b.height = f[5]
-	b.tier = f[6]
-	b.style = f[7]
-	b.frame = Structure.new(b.w, b.d, b.height, 1.0)
-	return b
+	await _h("remesh worker", func() -> void: RemeshWorker.new(check, _native).run())
 
 
 func _party(f: Array) -> Dictionary:
@@ -80,7 +70,7 @@ func _fixture(name: String) -> Array:
 
 
 func _mesher(f: Array, use_native: bool) -> CellMesher:
-	var b := _building(f)
+	var b := CellFixture.building(f)
 	return CellMesher.new(
 		BuildingVoxels.new(b, Color("8a7f72"), _party(f)),
 		BuildingCells.new(b, _party(f)),
@@ -114,7 +104,7 @@ func _check_native_loaded() -> void:
 ## slab (the baked view hides that slab, so the wall must show; the grid draws the slab itself).
 func _check_matches_baked_view() -> void:
 	for f: Array in FIXTURES:
-		var b := _building(f)
+		var b := CellFixture.building(f)
 		var voxels := BuildingVoxels.new(b, Color("8a7f72"), _party(f))
 		var baked := BuildingMesher.new(voxels)
 		var cells := BuildingCells.new(b, _party(f))
@@ -184,7 +174,7 @@ func _check_matches_baked_view() -> void:
 func _check_no_face_hidden_by_a_hidden_slab() -> void:
 	var balcony_fixtures := 0
 	for f: Array in FIXTURES:
-		var voxels := BuildingVoxels.new(_building(f), Color("8a7f72"), _party(f))
+		var voxels := BuildingVoxels.new(CellFixture.building(f), Color("8a7f72"), _party(f))
 		var baked := BuildingMesher.new(voxels)
 		var hidden := BalconyFaces.hidden(voxels, baked)
 		var behind := BalconyFaces.behind(voxels, baked).size()
@@ -204,7 +194,7 @@ func _check_no_face_hidden_by_a_hidden_slab() -> void:
 func _check_balcony_rail_takes_the_sill_tone() -> void:
 	var f := _fixture("brick")
 	var base := Color("8a7f72")
-	var voxels := BuildingVoxels.new(_building(f), base, _party(f))
+	var voxels := BuildingVoxels.new(CellFixture.building(f), base, _party(f))
 	var rails := 0
 	for cell: Vector3i in voxels.vox.cells:
 		rails += 1 if voxels.vox.cells[cell] == "rail" else 0
@@ -229,7 +219,7 @@ func _check_balcony_rail_takes_the_sill_tone() -> void:
 func _check_closed_surface_after_carves() -> void:
 	for name: String in ["office", "glass"]:
 		var m := _mesher(_fixture(name), false)
-		var cells := BuildingCells.new(_building(_fixture(name)), {}).cells
+		var cells := BuildingCells.new(CellFixture.building(_fixture(name)), {}).cells
 		var solid := CellFaces.solid(cells)
 		for k: int in CARVE_AT.size():
 			CellFaces.carve(cells, m.dims, CARVE_AT[k], CARVE_R[k])
@@ -252,7 +242,7 @@ func _check_closed_surface_after_carves() -> void:
 ## blocks round it; the other blocks keep their meshes.
 func _check_only_touched_regions() -> void:
 	var m := _mesher(_fixture("glass"), _native)
-	var cells := BuildingCells.new(_building(_fixture("glass")), {}).cells
+	var cells := BuildingCells.new(CellFixture.building(_fixture("glass")), {}).cells
 	var view := CellView.new(m, cells, StandardMaterial3D.new())
 	view.flush()
 	var total := m.all_regions().size()
@@ -300,7 +290,7 @@ func _check_only_touched_regions() -> void:
 func _check_incremental_equals_fresh() -> void:
 	for queued: bool in [false, true]:
 		var m := _mesher(_fixture("office"), _native)
-		var cells := BuildingCells.new(_building(_fixture("office")), {}).cells
+		var cells := BuildingCells.new(CellFixture.building(_fixture("office")), {}).cells
 		var view := CellView.new(m, cells, StandardMaterial3D.new())
 		view.keep_arrays = true
 		view.flush()
@@ -311,29 +301,15 @@ func _check_incremental_equals_fresh() -> void:
 			view.carved(cells, box[0], box[1])
 			if not queued:
 				view.flush()
-				off += _stale_blocks(m, view, cells)
+				off += CellFixture.stale_blocks(m, view, cells)
 		view.flush()
-		off += _stale_blocks(m, view, cells)
+		off += CellFixture.stale_blocks(m, view, cells)
 		var how := "queued on a running batch" if queued else "each drawn before the next"
 		check(view.settled(), "the view has drawn every carve (%s)" % how)
 		check(
 			off == 0, "every block shows a fresh mesh of the grid, carves %s (%d off)" % [how, off]
 		)
 		view.free()
-
-
-## Blocks whose shown mesh is not a fresh mesh of `cells`.
-func _stale_blocks(m: CellMesher, view: CellView, cells: PackedByteArray) -> int:
-	var off := 0
-	for r: Vector3i in m.all_regions():
-		var fresh := m.mesh_region(cells, r)
-		var shown: Array = view.arrays.get(r, [])
-		if shown.is_empty() or CellMesher.digest(shown) != CellMesher.digest(fresh):
-			off += 1
-		var fresh_verts: PackedVector3Array = fresh[0]
-		if view.parts.has(r) != (fresh_verts.size() > 0):
-			off += 1
-	return off
 
 
 ## The native mesher gives the oracle's bytes for every block, uncarved and carved.
@@ -350,7 +326,7 @@ func _check_native_matches_oracle() -> void:
 			fast.native != null and oracle.native == null,
 			"%s: one path native, one GDScript" % f[0]
 		)
-		var cells := BuildingCells.new(_building(f), _party(f)).cells
+		var cells := BuildingCells.new(CellFixture.building(f), _party(f)).cells
 		for step: int in CARVE_AT.size() + 1:
 			if step > 0:
 				CellFaces.carve(cells, oracle.dims, CARVE_AT[step - 1], CARVE_R[step - 1])
@@ -368,12 +344,13 @@ func _check_native_matches_oracle() -> void:
 	)
 
 
-## Promoted, a building draws from its grid with the baked shader, and BuildingFade's
-## set_opacity still reaches it.
-func _check_promote_keeps_fade() -> void:
+## Promoted, a building draws from its grid with the baked shader and keeps the camera bubble's
+## cut (set_near_camera before the promote).
+func _check_promote_keeps_cut() -> void:
 	var f := _fixture("brick")
-	var b := _building(f)
+	var b := CellFixture.building(f)
 	var view := BuildingView.new(b, Color("8a7f72"), _party(f))
+	view.set_near_camera(true, 0.5)
 	var cv := view.promote(BuildingCells.new(b, _party(f)))
 	cv.flush()
 	check(
@@ -385,12 +362,8 @@ func _check_promote_keeps_fade() -> void:
 		mat != null and mat.shader == BuildingView.SHADER,
 		"the region meshes use the baked building shader"
 	)
-	view.set_opacity(0.4)
-	var opacity: Variant = mat.get_shader_parameter("opacity")
-	check(
-		opacity is float and is_equal_approx(Num.f(opacity), 0.4),
-		"set_opacity (BuildingFade) reaches the cell view"
-	)
+	var cut := Num.f(mat.get_shader_parameter("bubble_cut")) if mat != null else 0.0
+	check(cut == 0.5, "the bubble's cut carries over to the region meshes (%.2f)" % cut)
 	var shown := 0
 	for child: Node in view.get_children():
 		if child is MeshInstance3D and (child as MeshInstance3D).visible:

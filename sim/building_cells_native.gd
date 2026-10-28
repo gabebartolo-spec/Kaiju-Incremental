@@ -28,6 +28,9 @@ const KEYS: Array[String] = [
 	"tank",
 	"beacon",
 	"sign_frame",
+	"heater",
+	"heater_hi",
+	"solar",
 ]
 
 

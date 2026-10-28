@@ -221,7 +221,7 @@ and GPU type; quality NEVER drops on its own: "We have to optimise our game well
 allow flexibility" (D-136) (R 18.5) · Potato =
 gl_compatibility behind a restart, last (R 18.6) · the shader baker on for exports, presets applied only from menus
 or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
-Render plan status (D-276, D-300), 2026-10-27: items 1-4 (P1a debris bookkeeping, P1b kaiju shadow bounds, P1c 4K clarity and night grain) are merged and on. Item 6 (lived-in windows, P2a) merged and on (#301, 999cd81c); item 5 (solid-building fast path) follows it on the same branch, without the camera bubble. Item 7 (crowds in one go): the native buffer fill merged and on (#297, 69facd0a; whole crowd -54% in the micro bench, street script time -26.7% in the full game), and is being re-measured in the full game against the 30% bar (perf-p2b-native-2). Item 8 (pooled dust, sparks and fire) merged and on (#277, 600d28f4); its slot sizes are re-set after the speed run on main (perf-p2c). Item 9 (remesh without spikes, P3b) starts after item 5 merges. Items 10 and 11 are not built (D-311). Item 12 (baked voxel AO and finish, P4a), item 13 (soft smoke, P4b) and item 14 (kaiju geometry cut to 3 faces a cube, 4.74 to 1.80 ms, P4c) are in their test runs before their PRs; the visual ones merge on after one look per D-308, with clips in the interview pack. Item 15 (spend the savings) is a quieter, cooler PC (D-312) and runs last. Owner: the perf builders; the lead decides. Date: 2026-10-27.
+Render plan status (D-276, D-300), 2026-10-28 (main 4be64711): merged and on: items 0-4 (Phase 0 baseline; P1a debris bookkeeping, P1b kaiju shadow bounds, P1c 4K clarity and night grain), 6 (lived-in windows, #301), 7 (the crowd in one native call, #327), 8 (pooled dust, sparks and fire, #277; slots go back to their own pool, #342; slot sizes measured on the night run, #349), 9a+b (remesh queued high-priority, swap-in timed, #318), 9c (carve meshes made on the worker, #355 8d710cf2: office-stomp swap-in p95 5.05-5.18 ms to 0.075-0.091 ms against the 2 ms bar, carve-to-drawn p95 1.23-1.44 ms against 5.05, same pixels at 0.336% / max d 10 against the 0.603% / 11 floor; only with a RenderingDevice, so gl_compatibility keeps the main-thread path), 12 (baked voxel AO and finish, #319), 13 (soft smoke, P4b, #354 5d8ad65b: +0.113 ms mean GPU at peak ruin against the +0.15 ms bar, flag ON) and 14 (the croc's cubes draw three faces, #302). Item 5 (solid-building fast path) is parked (the D-192 pixel bar). Items 10 and 11 are not built (D-311); they return with destruction stage 2. Item 15 (spend the savings) is a quieter, cooler PC (D-312): one re-baseline run on current main (with roads, #367), running 10-28 (perf-p3c, docs/research/2026-10-28-render-rebaseline.md), the last open item. Owner: the perf builders; the lead decides. Date: 2026-10-28.
 
 **H. Content after the slice (already decided, unchanged order).**
 Background city rampage (director 2026-10-21, comments #16: "would be cool if our distant background city had a kaiju
@@ -397,10 +397,10 @@ state. No director clips or per-change approvals in between; clips only where mo
   pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
 - Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
   ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.
-- Thunder Beam lightning look (D-136, VFX_STYLE, b2-18): the r7 look is 16 commits on claude/thunder-beam-2 (bolt shaders and rig, three thunder_beam sounds; replaces beam.gdshader and the old breath curtain), not on main. Owner: thunder-land builder (Opus), the lead merges. Date: 2026-10-27, tonight. Status: landing as claude/thunder-land (main merged in, not pushed, no PR yet), ON by default (D-308); its 1080p clip goes to C:/kt/interview_2026-10-27/ for the morning. Next: prepush, push, PR.
+- Lightning look (D-136, D-308, D-357): the r7 forked bolt is on main (#309, 10-27). His verdict (D-357): purple (the kaiju-juice colour), starting deep in the throat, never above the head; before each breath and Thunder Beam, arcs jump spine to spine from tail tip to head inside the strike delay. Owner: lightning-purple builder (Opus), the lead merges. Date: 2026-10-28. Status: briefed. Next: one 6 s 1080p clip to him, then merge on by default. The power-grid surge (D-260) is still unbuilt.
 
 ## Interview answers (director 2026-10-23, afternoon; D-163 to D-170)
-- One look from blocks (D-163): props, ground, fire and blasts into the city's look; far blur on the kaiju; cool
+- One look from blocks (D-163): props, ground, fire and blasts into the city's look; no far blur, haze carries the depth (D-360); cool
   shadows, warm fire; fine-block ground; blocks in close shots too. Owner: VFX lead. Status: not started.
 - Heads and skins (D-164, D-170): the Komodo head with its own shape goes forward; a serpentine python round 2 (snake
   jaw and fangs); Obsidian, Abyssal and a new Albino as colour tables per body region. Heads are looks only first,
@@ -562,12 +562,10 @@ state. No director clips or per-change approvals in between; clips only where mo
 
 ## Interviews 2026-10-26 (D-257 to D-260)
 Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interviews.md`.
-Unlanded work, every branch not on main with owner and next step (2026-10-27): `docs/roadmap/2026-10-27-unlanded-audit.md`.
+Unlanded work, every branch not on main with owner and next step: `docs/roadmap/2026-10-27-unlanded-audit.md` (10-27), `docs/roadmap/2026-10-28-unlanded-audit.md` (10-28, 14 more branches with status).
 Tech debt audit, the night-shift rulings (D-300, D-305 to D-318) and every debt row's owner and status: `docs/roadmap/2026-10-27-tech-debt.md`.
-Director comments of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
+Director comments of 2026-10-28 (4K performance, leap at skyscrapers, deaths, Cascadeur first drafts): `docs/roadmap/2026-10-28-director-comments.md`; of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
 - Army defeat about 1 run in 8 at each growth stage (D-259): claude/army-balance (army range measured to the croc's body line, tanks always have a firing post, per-stage army escalation and damage rows in data/tuning.json, the pacing bot carries the Taskforce clock), not on main. Owner: the army builder; the lead reviews the sim. Date: 2026-10-27. Status: two GitHub balance runs started 2026-10-26 18:54Z (pacing-run/army-b run 40381871503, army-replay/a run 40381900832). Next: the PR with the defeat table and the sim-review packet; the two scratch branches are deleted then.
-
-## Interview audit (D-272, 2026-10-26)
 Every interview answer and director message since 2026-10-16 (782 items) checked against the docs: `docs/roadmap/2026-10-26-interview-audit.md`.
 Its node ideas (section 1) feed E; its missing items (M rows) and decided-but-unrowed work (W rows) are open roadmap items, owner lead, briefed in queue order.
 
@@ -597,3 +595,6 @@ P0 (roads, quays and river walls, bridge decks, pavements, lawns, expressway, ru
 | KaijuRig:shader:voxel.gdshader | the kaiju's own skin pipeline | VFX lead | P3 | 2026-11-04 |
 | VoxelSkin:shader:voxel_skin.gdshader | the kaiju's skin | VFX lead | P3 | 2026-11-04 |
 | VoxelSkin:shader:voxel_skin_fill.gdshader | the kaiju's skin fill | VFX lead | P3 | 2026-11-04 |
+
+## Hatchlings (D-358, director 2026-10-28)
+- Every species, unlocked by a late node in the Colossus (adult) evolution tree, bought after reaching the Colossus: once a rampage's biomass passes a mark ("challenging but attainable"), a button lights up; when pressed, he spews ONE egg from his maw, crackling with purple energy (the kaiju-juice colour, D-357). It hatches his species' baby form (the young form the player starts as, at that size, with its keyed Cascadeur moves), which rampages the city on its own. Once per rampage. Owner: lead. Date: 2026-10-28. Status: recorded, queued behind the debt list and render plan (D-310). Next: when it is built, ask him the mark's size and judge the spew move from one clip; the sim needs a seeded autonomous baby (seek, attack, devour), its biomass rules asked then.
