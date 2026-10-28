@@ -170,7 +170,8 @@ func _plan() -> void:
 	var keys: PackedFloat64Array = ranked["keys"]
 	_held = Num.i(ranked["held"])
 	var picked := StreamPlan.pick(keys, marks, _state, _chunks, _held, _budget)
-	_queue.assign(picked["queue"])
+	var wanted: Array[int] = picked["queue"]
+	_queue.assign(wanted)
 	_queue_at = 0
 	_cutoff = Num.f(picked["cutoff"])
 	_evict.assign(StreamPlan.evict(keys, _cutoff, _views))
