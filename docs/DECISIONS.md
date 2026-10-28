@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-28 · D-377 · Director · The bay is a fixed block on the north edge; the city is laid around it
+His words (~23:5x), after the cut-in bay kept leaving stubs and slivers: "instead of just throwing shit at the wall and seeing
+what sticks why dont u make an implementation plan for the beach front"; "if its easier the bay can always be in the same
+positon on the map, fixed location". Q: the plan (`C:/kt/beach_plan/PLAN.md`)? A: "Go (Recommended)". The bay is a
+rectangle of whole blocks centred on the north edge, one size per stage in data; streets are pinned to its sides and a
+coast road runs along its south side; the crescent sand, water and quays are drawn inside it; landmarks, parks and plazas
+are never placed in it; the rise is at the bay centre. Player bars stay. Serves D-270, D-373; the beachfront pieces (D-277)
+take fixed spots from it.
+
 ## 2026-10-28 · D-376 · Director · Windowed Godot runs start by GPU load check, not one at a time (replaces D-340's rule)
 His words (10-28 ~22:1x): "that wasnt something i told you to codify though, it was something specific for that time, i
 never told you to make it a rule". Q: what replaces it? A: "Load check (Recommended)". `C:/kt/gpu_slot.sh` admits a
@@ -378,23 +387,3 @@ Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be
 sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
 solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
 measure the flicker in motion first).
-
-## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
-Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
-add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.
-
-## 2026-10-27 · D-319 · Director · A finished change runs its full test check on GitHub first
-Q (after "whats the point of having so many helpers if most of them are waiting half a day to work"): where should a
-finished change run its full test check before it goes up for merge? A: "On GitHub first (Recommended)". So: the
-local full prepush stops being the gate. A builder runs the cheap local gates (no Godot), pushes, and GitHub runs every
-shard on the branch (`C:/kt/gh_check.sh`, one lead watcher); the PR is ready only after that passes, so no red PR
-shows. Builders still run locally only the suites they iterate on. Replaces the local-prepush gate (D-186 stands).
-
-## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
-Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
-copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
-file name (never overwrite his file), then restart Cascadeur and reopen the copy. Narrows the never-restart rule.
-
-## 2026-10-27 · D-317 · Director · Tonight: keep the 6 GB memory floor, drop the 85% CPU cap
-Q: the PC rule (nothing new under 6 GB free RAM or above 85% CPU), tonight? A: "Keep memory floor, drop CPU cap
-(Recommended)". So: the RAM floor (freeze guard) stays; the CPU cap is off for the night shift.
