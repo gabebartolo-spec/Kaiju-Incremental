@@ -4,6 +4,22 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-28 · D-374 · Director · The Colossus rig gets hip and knee helper joints; every skeleton is checked over its full move range
+His words (10-28 ~18:4x), on the knee/thigh crumple in charge, emerge, hlt, run, slam and leap, which skin weights alone
+cannot fix: "add the joints, i asked you to make sure the skeletons were ready for animation, you failed, do your job
+properly do not do lazy work". So: corrective helper joints at the hip and knee keep the big poses (no smaller-swing pose
+bar); the young croc and Behemoth skeletons get the same full-range check and fix now; the Colossus drafts are
+retargeted onto the new rig in Cascadeur (D-199).
+
+## 2026-10-28 · D-373 · Director · The river intro is dropped; the beach start ships straight onto main
+His words (10-28 ~18:2x): "im sick of seeing runs start in the river. when will our beach front patch hit the godot
+runs?"; "why would river intro - a scene we nixed and dont require any further build - go before our planned ship?";
+"we already spoke about this today ... we arent using the river intro". So: PR #245 (branch claude/intro-port, the kaiju
+rising from the river) is never landed and is never a dependency for anything; the D-310 queue slot "river intro #245"
+is removed. Runs start in the crescent sea bay on the north edge and walk up the beach (D-270); the bay, beach and quays
+from claude/intro-bay are ported straight onto main (builder beach-start), rising on the approved rise clip until the
+keyed rise_bay clip exists (D-199). Never ask him about the river intro or the river for the intro again.
+
 ## 2026-10-28 · D-372 · Director · Render item 15 (Medium GPU p95 bar) is parked for now
 The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
 runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
@@ -381,15 +397,3 @@ Q: keep D-299's ~3 min sole-PC turns tonight? A: "Keep it (Recommended)". D-299 
 ## 2026-10-27 · D-312 · Director · Item 15: the speed savings buy a quieter, cooler PC
 Q: what should the headroom buy at Medium? A: "A quieter, cooler PC (Recommended)". So: same look at 60 fps with the
 GPU working less (D-093's reason for Medium); no render-scale rise. Closes render plan item 15.
-
-## 2026-10-27 · D-311 · Director · Render plan items 10 and 11 build tonight, last in the plan
-Q (06:2x): items 10 (native collider rebuild, no freeze on big stomps) and 11 (no stutter when a tower starts to fall),
-parked until after the demo by D-094, build them tonight? A: "Yes, last in the plan (Recommended)". So: both go in
-after every other render-plan item, each proved by a D-299 speed check. Reverses D-094's "after demo exe 2" for these two.
-Correction (lead, 06:18, director away): not built. The question described both wrongly: the code they speed up (carve physics) runs only in a capture tool, never in the shipped game (checked on main b0fe3687; the baseline measured 0 ms there), so neither changes what the player sees. Back to him at the next interview (D-094 option A, full-game destruction, would bring them back).
-
-## 2026-10-27 · D-310 · Director · Parked work starts tonight, after the debt fixes
-Q (06:1x): work parked until the render plan is done (D-276: roads, play area, camera bubble, rubble, stomp rework,
-Tripo buildings), start it tonight? A: "yes, but not before the debt fixes". So: parked items start tonight once every
-D-295 debt row is done (merged), in the set order (roads #243, then play area #241, then intro #245, then the rest).
-Refines D-276.
