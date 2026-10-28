@@ -83,38 +83,65 @@ static func _cut(plan: Dictionary, street: Dictionary, water: Array[Rect2]) -> A
 	var nodes: Array[Vector2] = plan["nodes"]
 	var a := nodes[Num.i(street["from"])]
 	var b := nodes[Num.i(street["to"])]
-	var half := Num.f(street["width"]) * 0.5
-	var road := Rect2(a.min(b), (b - a).abs()).grow(half)
+	var width := Num.f(street["width"])
+	var half := width * 0.5
+	var axis := -1
+	if absf(a.x - b.x) < 0.001:
+		axis = 1
+	elif absf(a.y - b.y) < 0.001:
+		axis = 0
+	var road := Rect2(a.min(b), (b - a).abs())
+	if axis == 1:
+		road = road.grow_individual(half, 0.0, half, 0.0)  # its carriageway, not past its ends
+	elif axis == 0:
+		road = road.grow_individual(0.0, half, 0.0, half)
+	else:
+		road = road.grow(half)
 	var wet: Array[Rect2] = []
 	for w: Rect2 in water:
 		if w.intersects(road):
 			wet.append(w)
 	if wet.is_empty():
 		return [street]
-	var axis := -1
-	if absf(a.x - b.x) < 0.001:
-		axis = 1
-	elif absf(a.y - b.y) < 0.001:
-		axis = 0
 	if axis < 0:
 		return []
+	var p0 := a if a[axis] < b[axis] else b
+	var p1 := b if a[axis] < b[axis] else a
 	var lo := INF
 	var hi := -INF
 	for w: Rect2 in wet:  # the bay is convex: the bands it reaches are one span along the street
 		lo = minf(lo, w.position[axis])
 		hi = maxf(hi, w.end[axis])
+	lo = maxf(lo, p0[axis])  # the water cuts the street, never lengthens it
+	hi = minf(hi, p1[axis])
+	var before := p0[axis] < lo - CUT_MIN  # a dry piece before the water
+	var after := p1[axis] > hi + CUT_MIN
+	var joins_p1 := before and _joins(p1, p1[axis] - lo, width, water)
+	if joins_p1 or (after and _joins(p0, hi - p0[axis], width, water)):
+		return [street]
 	var out: Array[Dictionary] = []
-	var p0 := a if a[axis] < b[axis] else b
-	var p1 := b if a[axis] < b[axis] else a
-	if p0[axis] < lo - CUT_MIN:
+	if before:
 		var end := p0
 		end[axis] = lo
 		out.append(_piece(plan, street, p0, end))
-	if p1[axis] > hi + CUT_MIN:
+	if after:
 		var start := p1
 		start[axis] = hi
 		out.append(_piece(plan, street, start, p1))
 	return out
+
+
+## Whether a street the water would stop `gap` metres short of its own junction `node` runs on
+## whole instead: the junction's centre is dry and the gap is no longer than the street is wide
+## (the bay's curve only clips the junction's corner: the street meets its cross street, never
+## ends in a dead end a few metres short of it).
+static func _joins(node: Vector2, gap: float, width: float, water: Array[Rect2]) -> bool:
+	if gap > width:
+		return false
+	for w: Rect2 in water:
+		if w.has_point(node):
+			return false
+	return true
 
 
 ## A copy of `street` running from a to b, a new node at whichever end is not one yet.
