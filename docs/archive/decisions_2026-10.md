@@ -2,6 +2,18 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-309 · Director · Up to 1,000 more Tripo credits tonight, any task
+Q (06:1x): Tripo credits tonight? A: "Up to 1,000 more, any task". So: on top of D-297's vehicle budget (600, 260 used
+at 05:3x), up to 1,000 more credits may be spent tonight on any outstanding Tripo task (vehicles, buildings,
+beachfront). Every task id, credits and verdict logged in the provenance file; Private on every generation.
+
+## 2026-10-27 · D-308 · Director · Night shift: visual changes go into the game; he judges them next morning
+His words (06:1x, before sleeping): "any visual work is fine but after the first iteration save it and show me in
+interview tomorrow". Q: should visual changes made tonight go into the game before he has seen them? A: "In the game,
+you judge tomorrow (Recommended)". So: tonight's visual PRs merge on by default after one iteration; each keeps a saved
+1080p clip or 4K still in C:/kt/interview_2026-10-27/ for the morning interview; anything he rejects is reverted. No
+second visual rounds without him. Overrides, for this night only, the director look gate on merges.
+
 ## 2026-10-27 · D-307 · Director · The croc skeleton may gain bones to match the Dracorex
 Q (05:3x): may the croc gain bones (more tail or neck joints)? A: "Yes, add bones if needed (Recommended)".
 So: bones are added where the study shows the croc lacks them; the croc is re-skinned and the approved roar, idle and

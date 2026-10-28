@@ -278,10 +278,15 @@
 		"tail_reach": 11.0,
 		"tail_floor_lo": 1,
 		"tail_floors": 3,
-		"momentum_build_seconds": 2.5,
-		"momentum_turn_bleed": 1.4,
-		"momentum_idle_decay": 2.0,
-		"momentum_speed": 0.6,
+		"momentum": {
+			"_note": "D-337 the titan's run (sim/momentum.gd; director 2026-10-27: 'momentum based, at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones'; always on). Momentum 0..1 builds while he walks, to full in build_seconds (the momentum node builds it faster: build_seconds / (1 + its stat x node_build)), bleeds turn_bleed per radian turned and idle_decay a second standing, and speeds his walk by speed_bonus x momentum. At crash_min he crashes through every building column standing under his crash height (crash_height 'shoulder': shoulder by stage, or 'body': his body's top, the contact discs) without slowing or spending it; at slam_min (slams true) his first touch of anything at or over it is one slam: strength = momentum x hit, a dent of dent_radius x body scale x strength across the ground on the floors he touched, momentum 0, the body stopped where it was. shoulder: world units at body scale 1 by stage, the arm_l0 joint's height over the rig's height x 10 in assets/kaiju/reptilian_<stage>.rig.json (young 123.38/200, Behemoth 186.48/260, Colossus 208.77/320). titans: by creation.titans id; a species with no entry has no momentum.",
+			"dent_radius": 4.0,
+			"titans": {
+				"croc": {"_note": "speed_bonus 0 until the keyed croc run lands: that run carries the speed in its own stride (lead 2026-10-27; at 0.6 the walk clip steps 1.6x and the motion gate, D-192, fails)", "build_seconds": 1.2, "turn_bleed": 0.35, "idle_decay": 2.0, "speed_bonus": 0.0, "crash_min": 0.8, "slam_min": 0.8, "hit": 1.0, "node_build": 0.25, "crash_height": "shoulder", "slams": true, "shoulder": [6.17, 7.17, 6.52]},
+				"komodo": {"_note": "pending their builds (D-338): today's build, bleed and speed; the croc's shoulder", "build_seconds": 2.5, "turn_bleed": 1.4, "idle_decay": 2.0, "speed_bonus": 0.6, "crash_min": 0.8, "slam_min": 0.8, "hit": 1.0, "node_build": 0.25, "crash_height": "shoulder", "slams": true, "shoulder": [6.17, 7.17, 6.52]},
+				"serpent": {"_note": "pending their builds (D-338): today's build, bleed and speed; the croc's shoulder", "build_seconds": 2.5, "turn_bleed": 1.4, "idle_decay": 2.0, "speed_bonus": 0.6, "crash_min": 0.8, "slam_min": 0.8, "hit": 1.0, "node_build": 0.25, "crash_height": "body", "slams": false, "shoulder": [6.17, 7.17, 6.52]}
+			}
+		},
 		"ram_interval": 0.25,
 		"ram_min": 0.3,
 		"knockback": 3.0,
@@ -1211,6 +1216,13 @@
 			"egg_crack": "SFX"
 		}
 	},
+	"slam_fx": {
+		"_note": "SlamView (D-337): the croc's slam into a building at or over his shoulder. sound: assets/sfx/<name>.ogg, the bang (leap_land, the leap's landing smash, CLEARED); the camera kick is camera_shake.sources.slam x the slam's strength; the building he hit shudders shudder world units x strength along the blow, at shudder_hz, easing out over shudder_s seconds.",
+		"sound": "leap_land",
+		"shudder": 0.3,
+		"shudder_s": 0.5,
+		"shudder_hz": 11.0
+	},
 	"claw_fx": {
 		"strike_s": 0.12,
 		"recover_s": 0.26,
@@ -1264,7 +1276,7 @@
 		"near_per_scale": 20.0,
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
-		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7, "bolt_stroke": 0.25}
+		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7, "bolt_stroke": 0.25, "slam": 0.9}
 	},
 	"accessibility": {
 		"_note": "Settings > ACCESSIBILITY (D-259). flash_scale: while Reduce flashing is on, every flash of light (explosion, muzzle and breath lights, flares, the end beat's screen flash, the lab's lightning white) is drawn at this share of its brightness, and the colour fringe never shows.",
