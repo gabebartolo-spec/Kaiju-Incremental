@@ -1774,7 +1774,7 @@
 		"people_buffers": true,
 		"people_aabb_margin_m": 8.0,
 		"kaiju_three_faces": true,
-		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 262, "puff": 17, "step": 4, "slam": 5, "tree": 43, "spark": 13, "burst": 7, "flames": 12, "embers": 12, "smoke": 12}},
+		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 330, "puff": 25, "step": 4, "slam": 5, "tree": 43, "spark": 13, "burst": 7, "flames": 12, "embers": 12, "smoke": 12}},
 		"remesh_high_priority": true,
 		"remesh_worker_mesh": true,
 		"soft_smoke": true,
