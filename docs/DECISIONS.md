@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-28 · D-369 · Director · No cap on open PRs
+Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
+Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
+conflicting over an hour. The repo is public, so extra checks cost no CI minutes.
+
 ## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
 Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
 was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
