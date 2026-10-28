@@ -648,10 +648,11 @@
 		"zebra_junctions": 1,
 		"landmarks": [
 			{
-				"id": "stadium", "anchor": [-24, -57], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
+				"_note": "anchors (stadium and wheel): the director 2026-10-28, \"so i want maps to be randomised as you know, but if we need to make certain constants like stadium is west, wheel is east, thats ok, as long as the rest of the city is random\": the stadium in the west band north of the river row, the wheel in the east band, over 100 m from the rise and inside the stage-2 city (D-271); the rest of the plan stays seeded (tests/lib/city_landmark_sides.gd).",
+				"id": "stadium", "anchor": [-65, 38], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
 				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
-			{"id": "wheel", "anchor": [30, -56], "margin": 2, "tier": 2, "rubble_bonus": 1.5}
+			{"id": "wheel", "anchor": [65, 38], "margin": 2, "tier": 2, "rubble_bonus": 1.5}
 		],
 		"coverage_cell": 10,
 		"view_beyond": 30,
@@ -703,7 +704,7 @@
 		"river": true,
 		"river_depth": 1.6,
 		"river_inset": 2.0,
-		"harbour": {"_note": "The sea bay every run rises from (CityHarbour; director 2026-10-26 \"Sea bay, real beach\"): a crescent cut from the coast into the arena's north edge, centred on the north-south street nearest the centre line. width_share: its half-width as a share of the arena's half (EmergeReach.fit widens it for the stage's biggest body: fit_width); reach_in: metres its beach's apex lies inside the arena edge; crescent_share: the curve's depth as a share of the half-width; step: metres per band the land is cut in across the curve; arc_points: the curve's polyline; beach: metres from the curve to the foot of the sand slope; sand_top: the beach's top under the street; sea_level: the water's surface (CityGround's sea); seabed_depth: metres from the surface to the floor at the rise, fitted as crouch_back (per body scale: the adult's rise_bay crouch, its highest bone 3.58 over the feet plus 0.6 of hide, tools/capture/probe_rise.gd) x the biggest body scale + seabed_clear; nose_gap: metres between the nose and the beach's foot at the rise; bank_inset: metres past the apex he wades to; view_clear (fitted) and view_margin: no painted stand-in in camera reach of the rise.", "width_share": 0.55, "reach_in": 14.0, "crescent_share": 0.6, "step": 1.0, "arc_points": 32, "beach": 10.0, "sand_top": -0.05, "sea_level": -0.8, "seabed_depth": 2.0, "crouch_back": 4.2, "seabed_clear": 1.0, "nose_gap": 0.5, "bank_inset": 4.0, "fit_margin": 2.0, "view_margin": 4.0},
+		"harbour": {"_note": "The sea bay every run rises from (CityHarbour; director 2026-10-26 \"Sea bay, real beach\"): a crescent cut from the coast into the arena's north edge, centred on the north-south street nearest the centre line. width_share: its half-width as a share of the arena's half (EmergeReach.fit widens it for the stage's biggest body: fit_width); reach_in: metres its beach's apex lies inside the arena edge; crescent_share: the curve's depth as a share of the half-width; step: metres per band the land is cut in across the curve; arc_points: the curve's polyline; beach: metres from the curve to the foot of the sand slope; sand_top: the beach's top under the street; sea_level: the water's surface (CityGround's sea); seabed_depth: metres from the surface to the floor at the rise, fitted as crouch_back (per body scale: the tallest stage's rise_bay crouch at its first frame, the Behemoth's back top 5.67 (keyer 2026-10-28; the adult's is 3.58 over the feet plus 0.6 of hide, tools/capture/probe_rise.gd), so every stage's back starts under the water) x the stage's biggest body scale + seabed_clear; nose_gap: metres between the nose and the beach's foot at the rise; bank_inset: metres past the apex he wades to; view_clear (fitted) and view_margin: no painted stand-in in camera reach of the rise.", "width_share": 0.55, "reach_in": 14.0, "crescent_share": 0.6, "step": 1.0, "arc_points": 32, "beach": 10.0, "sand_top": -0.05, "sea_level": -0.8, "seabed_depth": 2.0, "crouch_back": 5.67, "seabed_clear": 1.0, "nose_gap": 0.5, "bank_inset": 4.0, "fit_margin": 2.0, "view_margin": 4.0},
 		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1, "depth": 2},
 		"diagonal_through": [-6, 12.85],
 		"diagonal_deg": 26.75,

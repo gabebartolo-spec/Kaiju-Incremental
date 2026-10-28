@@ -14,13 +14,30 @@ extends RefCounted
 ## Laid pieces by key: [cells (Vector3i -> material name), chunk layers].
 static var _cache: Dictionary = {}
 static var _lock := Mutex.new()
+## The sea bay's southmost water under the line, by map seed and half extent (CityGen.map is slow).
+static var _bay_cache := {}
 
 
-## The line's north and south ends (world z).
+## The line's north and south ends (world z): tuning "span" of the city's half extent, its north
+## end moved south to the first piece boundary clear of the sea bay's water (CityHarbour; the bay
+## cuts the avenue it runs up, so the line starts at the beach, never over the water).
 static func ends(city: Dictionary, cfg: Dictionary) -> Vector2:
 	var half := CityGen.half_extent(city)
 	var span: Array = cfg["span"]
-	return Vector2(half * Num.f(span[0]), half * Num.f(span[1]))
+	var north := half * Num.f(span[0])
+	var key := "%s:%s" % [city["map_seed"], half]
+	_lock.lock()
+	if not _bay_cache.has(key):
+		var s: Dictionary = cfg["structure"]
+		var reach := Num.f(cfg["deck_width"]) * 0.5 + Num.f(s["platform"]) + Num.f(s["stair"])
+		var x := Rail.avenue_x(city)
+		_bay_cache[key] = CityHarbour.south_at(CityGen.map(city), x - reach, x + reach)
+	var water := Num.f(_bay_cache[key])
+	_lock.unlock()
+	if water > north:
+		var long := Num.f(cfg["bay_length"]) * Num.i(cfg["piece_bays"])
+		north = ceilf(water / long) * long
+	return Vector2(north, half * Num.f(span[1]))
 
 
 ## The station's platforms along the line (world z): a train's length and a little, round the

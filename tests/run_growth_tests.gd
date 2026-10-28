@@ -94,7 +94,9 @@ func _check_stages_grow() -> void:
 
 
 ## An evolution adds districts round the one the kaiju knows: the street plan is the same at
-## every stage, and every lot of the young city stands where it stood (only taller or not).
+## every stage, and every lot of the young city stands where it stood (only taller or not), but
+## its beachfront: the sea bay lies on each city's north edge (D-270), so the grown city builds
+## over the young bay, and the quay sheds by the young beach (CityRiver.sheds) go with it.
 func _check_districts_kept() -> void:
 	var young := Content.section("city")
 	var adult: Dictionary = _tuning(3)["city"]
@@ -106,8 +108,15 @@ func _check_districts_kept() -> void:
 	for e: Dictionary in _layout(3):
 		footprints[Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))] = true
 	var moved := 0
+	var bank: Vector2 = young_plan.get("rise_bank", Vector2.INF)
+	var quay := Num.f(young["quay"]["reach"])
 	for e: Dictionary in _layout(1):
-		if not footprints.has(Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))):
+		var w := Num.f(e["w"])
+		var d := Num.f(e["d"])
+		var foot := Rect2(Num.f(e["x"]) - w * 0.5, Num.f(e["z"]) - d * 0.5, w, d)
+		if bank.clamp(foot.position, foot.end).distance_to(bank) <= quay:
+			continue  # the young beachfront's quay
+		if not footprints.has(Vector4(Num.f(e["x"]), Num.f(e["z"]), w, d)):
 			moved += 1
 	check(moved == 0, "every lot of the young city is still there at Colossus (%d moved)" % moved)
 

@@ -79,8 +79,11 @@ func _check_hand_over() -> void:
 			sim.step(DT, sim.facing, false, 0)  # the stick held from the first live tick
 		var moved := sim.kaiju_pos.distance_to(from)
 		check(
-			rose and not sim.emerge.active and off > 30.0,
-			"%s: the rise hands over with the body %.0f deg off the way it faces" % [stage, off]
+			rose and not sim.emerge.active and off < 30.0,
+			(
+				"%s: the rise from the bay hands over with the body %.0f deg off the way it faces"
+				% [stage, off]
+			)
 		)
 		check(
 			moved < MAX_HAND_OVER,

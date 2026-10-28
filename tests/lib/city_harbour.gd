@@ -16,6 +16,10 @@ const WADE_SAMPLES := 64  # points along the wade line checked against the viadu
 const BLOCKS_WIDE := 2  # the beach at stage 1 spans at least this many blocks (lead, option A)
 const ON_BANK := 1.0  # metres from the bank point the wade may end
 const SAND_UNDER := 0.25  # metres: the sand's top lies within this under the street
+## Each keyed rise_bay crouch's back top at its first frame, per body scale (metres over the
+## feet): the adult's highest bone 3.58 plus 0.6 of hide (tools/capture/probe_rise.gd), the
+## Behemoth's back 5.67 (keyer, 2026-10-28). Measured, not read from the tuning.
+const CROUCH_TOPS := {"adult": 4.18, "Behemoth": 5.67}
 
 
 static func check(
@@ -72,7 +76,37 @@ static func _check_walk_in(tier: int, map_seed: int, sim: RampageSim, check_fn: 
 ## The biggest kaiju that can emerge at this stage (size tier = stage, as Main starts a run; the
 ## most growth it can own there, EmergeReach: director 2026-10-21, "Fit the biggest possible")
 ## rises in open water: its rise point is in the bay over the sea floor (CityHarbour.seabed), and
-## through the rise no part of its body's discs is outside the bay's water.
+## through the rise no part of its body's discs is outside the bay's water (or the open sea past
+## its mouth, where the biggest body's tail may reach).
+## At this stage the sea floor at the rise lies deep enough that every measured crouch
+## (CROUCH_TOPS) at the stage's biggest body scale starts wholly under the water: the back never
+## shows at the rise's first frame (coordinator 2026-10-28).
+static func check_seabed(tier: int, check_fn: Callable) -> void:
+	var tuning := CityGrowth.tuning_for(Content.tuning().duplicate(true), tier)
+	var cfg: Dictionary = tuning["city"]
+	var depth := CityHarbour.sea(cfg) - CityHarbour.seabed(cfg)
+	var scale := EmergeReach.biggest_scale(tuning, Content.upgrades(), tier)
+	var tallest := ""
+	var top := 0.0
+	for form: String in CROUCH_TOPS:
+		if Num.f(CROUCH_TOPS[form]) * scale > top:
+			top = Num.f(CROUCH_TOPS[form]) * scale
+			tallest = form
+	(
+		check_fn
+		. call(
+			depth >= top,
+			(
+				(
+					"stage %d: the sea floor at the rise lies %.2f m under the water, over the %s crouch's"
+					+ " back (%.2f m at body scale %.2f)"
+				)
+				% [tier, depth, tallest, top, scale]
+			)
+		)
+	)
+
+
 static func check_rise(tier: int, map_seed: int, check_fn: Callable) -> void:
 	var grown := EmergeReach.max_growth(Content.upgrades(), "reptilian", tier)
 	var sim := _fresh(tier, map_seed, tier, grown)
@@ -144,7 +178,7 @@ static func check_rail_clear(tier: int, map_seed: int, check_fn: Callable) -> vo
 	)
 
 
-## The beach at stage 1 spans at least BLOCKS_WIDE of the city's widest blocks, and the bay grows
+## The beach at stage 1 spans at least BLOCKS_WIDE of the city's longest blocks, and the bay grows
 ## with the arena: wider at each stage than the last.
 static func check_width(map_seed: int, check_fn: Callable) -> void:
 	var widths: Array[float] = []
@@ -153,10 +187,9 @@ static func check_width(map_seed: int, check_fn: Callable) -> void:
 		var sim := _fresh(tier, map_seed)
 		var plan := CityGen.map(sim.city)
 		widths.append(Num.f(plan["harbour"]["half"]) * 2.0 if plan.has("harbour") else 0.0)
-		if tier == 1:
-			for b: Dictionary in plan["blocks"]:
-				var rect: Rect2 = b["rect"]
-				block = maxf(block, rect.size.x)
+		if tier == 1:  # the city's longest block as authored (the outskirts' gaps run wider)
+			var long: Array = sim.city["block_long"]
+			block = Num.f(long[1])
 	(
 		check_fn
 		. call(
@@ -175,6 +208,7 @@ static func check_width(map_seed: int, check_fn: Callable) -> void:
 ## How many sample points of the body's discs (centre, and eight round the rim) lie outside the
 ## bay's water.
 static func _on_ground(sim: RampageSim, plan: Dictionary) -> int:
+	var mouth := Num.f(plan["harbour"]["mouth"])
 	var s := sim.body_scale()
 	var out := 0
 	for d: Array in sim.body.discs():
@@ -182,7 +216,7 @@ static func _on_ground(sim: RampageSim, plan: Dictionary) -> int:
 		var r := Num.f(d[1]) * s
 		for k: int in 9:
 			var p := c if k == 8 else c + Vector2.from_angle(k * PI / 4.0) * r
-			if not CityHarbour.holds(plan, p):
+			if not CityHarbour.holds(plan, p) and p.y >= mouth:  # past the mouth: the open sea
 				out += 1
 	return out
 

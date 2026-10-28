@@ -5,7 +5,8 @@ extends RefCounted
 ## returns named violations with world coordinates (x, z in metres), one per road side and cause.
 ##   R3 the asphalt edge is straight through a junction: no pavement juts into a carriageway or
 ##      the box where two roads cross
-##   R4 a kerbed pavement lines both sides of every road (bridges and quays excepted): asphalt
+##   R4 a kerbed pavement lines both sides of every road (bridges and quays excepted, the sea
+##      bay's too): asphalt
 ##      never meets bare asphalt, a lawn, a plaza or a car park, nor a pavement no higher than it
 ##   R5 lane paint stops at junction edges; zebra crossings only at the central junction (D-054)
 ##   R6 (geometry) two road pieces that meet are one surface: no height step along a road
@@ -78,8 +79,9 @@ static func _kerb_fault(ground: RoadGround, r: int, t: float, side: float) -> St
 	var p := _edge(road, t, side, INSET)
 	var outer: Dictionary = ground.at(p)
 	var kind := str(outer["kind"])
-	if kind in [RoadGround.DECK, RoadGround.WATER] or not Num.i(outer["road"]) in [-1, r]:
-		return ""  # a bridge, a quay, or another road crossing this one
+	var wet := [RoadGround.DECK, RoadGround.WATER, RoadGround.HARBOUR]
+	if kind in wet or not Num.i(outer["road"]) in [-1, r]:
+		return ""  # a bridge, a quay (the river's or the sea bay's), or another road crossing it
 	if kind == RoadGround.PAVE and Num.f(outer["top"]) >= Num.f(inner["top"]) + KERB:
 		return ""
 	var what := (

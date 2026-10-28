@@ -8,6 +8,7 @@ const CORNERS: Array[Vector2] = [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1),
 const PAVEMENT := 0.45  # pavement line, out from the block's edge (its buildings' walls)
 const CROSSWALK := 9.5  # longest crossing to the corner of the block across the street
 const CROSS_CHANCE := 0.3  # a walker at a corner crosses the street rather than turns
+const WET_SAMPLES := 10  # points along a crossing tested for the bay's water
 
 var nodes := PackedVector2Array()
 var links: Array[Array] = []
@@ -25,9 +26,8 @@ func _init(sim: RampageSim) -> void:
 	var plan := CityGen.map(sim.city)
 	var diagonal := _diagonal_only(plan)  # only the diagonal runs through a block
 	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
-	var bay := CityHarbour.bands(plan, sim.city)
 	for block: Dictionary in plan["blocks"]:
-		var ring := _ring(block, sim.city, half, bay)
+		var ring := _ring(block, sim.city, half, plan)
 		if not ring.has_area():
 			continue  # past the edge, the river, or no room left beside the bay
 		var size := ring.size * 0.5
@@ -42,7 +42,7 @@ func _init(sim: RampageSim) -> void:
 			var b := first + (c + 1) % 4
 			if in_road[a] == 0 and in_road[b] == 0:
 				_link(a, b)
-	_cross_streets()
+	_cross_streets(plan)
 
 
 ## The plan with only its diagonal avenue among the streets (CityGen.road_at's input).
@@ -55,14 +55,23 @@ static func _diagonal_only(plan: Dictionary) -> Dictionary:
 
 
 ## Crossings: a corner links to the nearest corner of another block straight across a street.
-func _cross_streets() -> void:
+## None crosses the sea bay's water (CityHarbour.holds), where a street the bay cut ran.
+func _cross_streets(plan: Dictionary) -> void:
 	for a: int in nodes.size():
 		if in_road[a] == 1:
 			continue
 		for axis: int in 2:
 			var best := _nearest_across(a, axis)
-			if best >= 0 and not links[a].has(best):
+			if best >= 0 and not links[a].has(best) and not _wet(plan, nodes[a], nodes[best]):
 				_link(a, best)
+
+
+## Whether the line from a to b runs through the sea bay's water.
+static func _wet(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
+	for k: int in WET_SAMPLES + 1:
+		if CityHarbour.holds(plan, a.lerp(b, float(k) / WET_SAMPLES)):
+			return true
+	return false
 
 
 ## The nearest corner of another block across a street from corner a along `axis` (0: x), or -1.
@@ -83,17 +92,17 @@ func _nearest_across(a: int, axis: int) -> int:
 
 ## A block's pavement line, the same distance in from the kerb as round every other block; an
 ## empty Rect2 past the edge, on the river or in the sea bay (no one walks on the water). A ring
-## that would cross the sea bay (CityHarbour.bands) starts south of it instead, and a block the
+## that would cross the sea bay's water (its true curve) starts south of it instead, and a block the
 ## bay leaves no room in has none (it would sit in the street past the block).
-static func _ring(block: Dictionary, city: Dictionary, half: float, bay: Array[Rect2]) -> Rect2:
+static func _ring(block: Dictionary, city: Dictionary, half: float, plan: Dictionary) -> Rect2:
 	var rect: Rect2 = block["rect"]
 	if str(block["use"]) in NO_WALK or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
 		return Rect2()
 	var ring := CityGen.pavement(block, city).grow(PAVEMENT - Num.f(city["sidewalk"]))
 	var top := ring.position.y
-	for basin: Rect2 in bay:
-		if basin.intersects(ring):
-			top = maxf(top, basin.end.y + PAVEMENT)
+	var water := CityHarbour.south_at(plan, ring.position.x, ring.end.x)
+	if water >= top:
+		top = water + PAVEMENT
 	if ring.end.y - top < PAVEMENT:
 		return Rect2()
 	return Rect2(ring.position.x, top, ring.size.x, ring.end.y - top)

@@ -13,7 +13,7 @@ const BUCKET := 8.0
 ## Per district (block "district"), over the plan's "built" blocks: {k: {"blocks", "area",
 ## "built", "share", "empty": [Rect2]}}, where "built" is the buildings' footprint inside the
 ## block (a building belongs to the block holding its centre) and "empty" lists the built blocks
-## that could hold a lot (holds_a_lot, off the diagonal) and hold no building at all.
+## that could hold a lot (dry_holds_a_lot, off the diagonal) and hold no building at all.
 static func districts(plan: Dictionary, layout: Array[Dictionary], cfg: Dictionary) -> Dictionary:
 	var built: Array[Dictionary] = []
 	for block: Dictionary in plan["blocks"]:
@@ -45,7 +45,7 @@ static func districts(plan: Dictionary, layout: Array[Dictionary], cfg: Dictiona
 		row["blocks"] = Num.i(row["blocks"]) + 1
 		row["area"] = Num.f(row["area"]) + rect.get_area()
 		row["built"] = Num.f(row["built"]) + area[n]
-		if lots[n] == 0 and holds_a_lot(rect) and not on_diagonal(plan, rect, cfg):
+		if lots[n] == 0 and dry_holds_a_lot(plan, rect) and not on_diagonal(plan, rect, cfg):
 			var empty: Array = row["empty"]
 			empty.append(rect)
 	for k: int in out:
@@ -61,6 +61,38 @@ static func holds_a_lot(rect: Rect2) -> bool:
 	var w := floori(rect.end.x) - ceili(rect.position.x)
 	var d := floori(rect.end.y) - ceili(rect.position.y)
 	return mini(w, d) >= 3
+
+
+## holds_a_lot for the block's dry ground: a block the sea bay (CityHarbour) reaches holds a lot
+## when some whole-unit square 3 by 3 of it is dry (CityHarbour.dry drops the lots in the water;
+## a beach-front sliver too thin for a lot is not ground left bare).
+static func dry_holds_a_lot(plan: Dictionary, rect: Rect2) -> bool:
+	if not holds_a_lot(rect):
+		return false
+	if CityHarbour.south_at(plan, rect.position.x, rect.end.x) < rect.position.y:
+		return true  # the bay never reaches it
+	var x0 := ceili(rect.position.x)
+	var z0 := ceili(rect.position.y)
+	var nx := floori(rect.end.x) - x0
+	var nz := floori(rect.end.y) - z0
+	var dry: Array[bool] = []
+	for j: int in nz:
+		for i: int in nx:
+			var cell := Rect2(x0 + i, z0 + j, 1.0, 1.0)
+			var spots := [cell.position, cell.end, cell.get_center()]
+			spots.append_array(
+				[Vector2(cell.end.x, cell.position.y), Vector2(cell.position.x, cell.end.y)]
+			)
+			dry.append(not spots.any(func(q: Vector2) -> bool: return CityHarbour.holds(plan, q)))
+	for j: int in nz - 2:
+		for i: int in nx - 2:
+			var all := true
+			for dj: int in 3:
+				for di: int in 3:
+					all = all and dry[(j + dj) * nx + i + di]
+			if all:
+				return true
+	return false
 
 
 ## True when the diagonal avenue (its carriageway and sidewalks) reaches into the block: its lots

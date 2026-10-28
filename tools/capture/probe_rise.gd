@@ -9,6 +9,8 @@ const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_run.call_deferred()
 
 

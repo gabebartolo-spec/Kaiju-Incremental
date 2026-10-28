@@ -17,6 +17,7 @@ const LAWN := "lawn"
 const PLAZA := "plaza"
 const LOT := "car park"
 const BAY := "bay"
+const HARBOUR := "sea bay"  # the bay the kaiju rises from (CityHarbour), cut into the city
 const BUCKET := 16.0  # spatial hash cell (m)
 const PARK_LAWN_INSET := 0.5  # CityGround: a park's lawn, in from its pavement
 const LOT_INSET := 0.6  # CityGround: a car park's asphalt, in from its pavement
@@ -33,6 +34,8 @@ var reach: float
 var roads: Array[Dictionary] = []
 var decks: Array[Rect2] = []
 var water: Array[Rect2] = []
+## The sea bay's water as CityGround cuts it from the land (CityHarbour.bands).
+var bay: Array[Rect2] = []
 var _blocks: Array[Dictionary] = []  # {walk, rect, use}
 var _block_hash := {}  # Vector2i -> Array[int]
 var _road_hash := {}  # Vector2i -> Array[int]
@@ -46,6 +49,7 @@ func _init(p_plan: Dictionary, p_cfg: Dictionary) -> void:
 	reach = CityBand.extent(cfg)
 	_coast = Num.f(cfg["coast_z"])
 	water = CityRiver.channels(plan, cfg)
+	bay = CityHarbour.bands(plan, cfg)
 	decks = CityRiver.bridges(plan, cfg)
 	_diag_deck = CityRiver.diagonal_deck(plan, cfg)
 	_index_roads()
@@ -65,6 +69,9 @@ func at(p: Vector2) -> Dictionary:
 	for w: Rect2 in water:
 		if w.has_point(p):
 			return _is(WATER, -Num.f(cfg.get("river_depth", 0.0)))
+	for w: Rect2 in bay:
+		if w.has_point(p):
+			return _is(HARBOUR, CityHarbour.sea(cfg))
 	var block := _block_at(p)
 	if block >= 0:
 		return _paving(_blocks[block], p)

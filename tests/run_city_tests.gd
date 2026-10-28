@@ -26,6 +26,7 @@ const RiseForms := preload("res://tests/lib/city_rise_forms.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
 const BridgeLand := preload("res://tests/lib/city_bridge_land.gd")
 const RoadAudit := preload("res://tools/audit/road_audit.gd")
+const LandmarkSides := preload("res://tests/lib/city_landmark_sides.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -48,6 +49,8 @@ func run_checks() -> void:
 	await _t("_check_reach_is_real")
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
+	await _h("city_landmark_sides", func() -> void: LandmarkSides.check(check))
+	await _h("city_no_landmarks", func() -> void: LandmarkSides.check_without(check))
 	await _t("_check_bridges_meet_land")
 	await _t("_check_rise_in_water")
 	await _t("_check_rise_clear_of_rail")
@@ -254,10 +257,12 @@ func _check_bridges_meet_land() -> void:
 	BridgeLand.check(COVERAGE_SEEDS, check)
 
 
-## The biggest kaiju of each stage 1-3 rises over the sea floor wholly in the bay's water
-## (tests/lib/city_harbour.gd check_rise; director 2026-10-26, "Sea bay, real beach").
+## The biggest kaiju of each stage 1-3 rises over the sea floor wholly in the bay's water, its
+## crouched back under the surface at first (tests/lib/city_harbour.gd check_seabed, check_rise;
+## director 2026-10-26, "Sea bay, real beach").
 func _check_rise_in_water() -> void:
 	for tier: int in [1, 2, 3]:
+		Harbour.check_seabed(tier, check)
 		for map_seed: int in COVERAGE_SEEDS:
 			Harbour.check_rise(tier, map_seed, check)
 

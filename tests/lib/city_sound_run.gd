@@ -43,6 +43,8 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 		CityGrowth.layout(base, tier, Seeds.make("city", 0)),
 		Seeds.make("army", 0)
 	)
+	sim.body.use_species("reptilian")
+	sim.emerge.start(sim, RampageRise.keyed(sim, "reptilian"))  # up from the sea bay, as Rampage
 	_holder = Node3D.new()
 	tree.root.add_child(_holder)
 	var fx := Fx.new()
@@ -79,8 +81,13 @@ func step() -> void:
 	_frame += 1
 
 
-## Runs `seconds` of play.
+## Plays out the rise from the bay, then runs `seconds` of play from the kaiju's first step
+## ashore (the samples count from there: the first stomp).
 func run(seconds: float) -> void:
+	while sim.emerge.active:
+		step()
+	samples.clear()
+	_frame = 0
 	for _i: int in roundi(seconds / DT):
 		step()
 

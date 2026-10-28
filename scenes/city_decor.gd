@@ -58,7 +58,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
 	for channel: Rect2 in CityRiver.channels(plan, sim.city):
 		_water.append(channel.grow(0.5 + CAR_HALF.y))  # a car at a bridge end clears the wall
-	for basin: Rect2 in CityHarbour.bands(plan, sim.city):
+	for basin: Rect2 in CityHarbour.bands(plan, sim.city, true):  # all of its water
 		_props.keep_out.append(basin.grow(0.3))  # nothing planted in the bay the kaiju rises in
 	for b: RampageSim.Building in sim.lot_buildings():  # the street runs on under the viaduct
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))

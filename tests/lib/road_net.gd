@@ -5,7 +5,7 @@ extends RefCounted
 ## roads and pavements in a natural, realistic way"). Each rule returns its violations as named
 ## strings with world coordinates (x, z in metres); an empty array is a pass. Only what the stage
 ## draws as the real city counts (RoadGround.in_view).
-##   R1 every road end meets a road, a junction, a bridge deck or the plan's edge
+##   R1 every road end meets a road, a junction, a bridge deck, the sea bay or the plan's edge
 ##   R2 a bridge deck lands on a road of its width and axis at both ends; no road crosses open
 ##      water off a deck
 ##   R3 junctions are T or X junctions; a road keeps its width through a junction
@@ -63,6 +63,8 @@ static func r1_dead_ends(ground: RoadGround) -> Array[String]:
 		var road := ground.roads[Num.i(list[0]["road"])]
 		var dir: Vector2 = list[0]["dir"]
 		var beyond: Dictionary = ground.at(p - dir * (Num.f(road["half"]) + PAST))
+		if _at_the_bay(ground, p, dir, Num.f(road["half"])):
+			continue
 		out.append(
 			(
 				"R1 dead end at %s: a %s %.0f m wide runs into %s"
@@ -70,6 +72,20 @@ static func r1_dead_ends(ground: RoadGround) -> Array[String]:
 			)
 		)
 	return out
+
+
+## Whether a road ending at p (dir: along it, away from the end) runs into the sea bay's water:
+## water just past its end anywhere across its carriageway (lead 2026-10-28: each street the bay
+## cuts ends in a junction or at the beach).
+static func _at_the_bay(ground: RoadGround, p: Vector2, dir: Vector2, half: float) -> bool:
+	var across := dir.orthogonal()
+	var t := -half
+	while t <= half:
+		var q := p - dir * (half + PAST) + across * t
+		if str(ground.at(q)["kind"]) == RoadGround.HARBOUR:
+			return true
+		t += STEP
+	return false
 
 
 ## R2: every deck carries a road of its own width and axis, which goes on onto the land at both

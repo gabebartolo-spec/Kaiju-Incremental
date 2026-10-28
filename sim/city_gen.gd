@@ -44,6 +44,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
 	out = CityHarbour.dry(plan, cfg, out)  # nothing stands in the bay the kaiju rises in
+	out.append_array(CityHarbour.refill(plan, cfg, out))  # its beach-side blocks on dry ground
 	var sheds := CityHarbour.dry(plan, cfg, CityRiver.sheds(plan, quay, out, cfg))
 	CityHazards.tag(out, plan, cfg, sheds)  # + red barrels (#19)
 	return out

@@ -11,19 +11,23 @@ extends RefCounted
 ## {cx, half, mouth, curve_from, apex} and the rise as plan["rise_spawn"] (in the water, on the
 ## centre line) and plan["rise_bank"] (on the promenade past the beach). Pure.
 
+const CUT_MIN := 0.01  # metres: a street piece the bay leaves shorter than this is no street
 
-## Marks the bay on `plan` (CityGen.map's, its streets laid): removes every street that runs
-## into its water, turns every block wholly inside it into sea ("harbour"), records the bay and
-## the rise. A city without a "harbour" row has none.
+
+## Marks the bay on `plan` (CityGen.map's, its streets laid): its beach's apex stops at the far
+## pavement of a street it would run under (that street runs on along the beach); each street
+## its water reaches ends at the water (at the beach or a quay, never short of it on bare
+## ground), turns every block wholly inside it into sea ("harbour"), records the bay and the
+## rise. A city without a "harbour" row has none.
 static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 	if not cfg.has("harbour"):
 		return
 	var h: Dictionary = cfg["harbour"]
 	var edge := CityGen.half_extent(cfg) + Num.f(cfg["arena_margin"])
 	var half := maxf(Num.f(h["width_share"]) * edge, Num.f(h.get("fit_width", 0.0)) * 0.5)
-	var apex := -edge + Num.f(h["reach_in"])
-	var curve := half * Num.f(h["crescent_share"])
 	var cx := _centre(plan)
+	var apex := _clear_of_streets(plan, cfg, -edge + Num.f(h["reach_in"]), cx, half)
+	var curve := half * Num.f(h["crescent_share"])
 	plan["harbour"] = {
 		"cx": cx,
 		"half": half,
@@ -35,16 +39,9 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 	plan["rise_spawn"] = Vector2(cx, spawn_z)
 	plan["rise_bank"] = Vector2(cx, apex + Num.f(h["bank_inset"]))
 	var water := bands(plan, cfg)
-	var side := Num.f(cfg["sidewalk"])
-	var nodes: Array[Vector2] = plan["nodes"]
 	var kept: Array[Dictionary] = []
 	for street: Dictionary in plan["streets"]:
-		var a := nodes[Num.i(street["from"])]
-		var b := nodes[Num.i(street["to"])]
-		var reach := Num.f(street["width"]) * 0.5 + side
-		var road := Rect2(a.min(b), (b - a).abs()).grow(reach)
-		if not water.any(func(w: Rect2) -> bool: return w.intersects(road)):
-			kept.append(street)
+		kept.append_array(_cut(plan, street, water))
 	plan["streets"] = kept
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
@@ -54,6 +51,87 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 			if not block.has("was"):
 				block["was"] = block["use"]
 			block["use"] = "harbour"
+
+
+## The beach's apex z, moved north (smaller z) off every east-west street between x cx - half
+## and cx + half whose carriageway or pavement it would fall on, to that street's far pavement
+## edge: the street runs whole along the beach, its pavement meeting the sand.
+static func _clear_of_streets(
+	plan: Dictionary, cfg: Dictionary, apex: float, cx: float, half: float
+) -> float:
+	var nodes: Array[Vector2] = plan["nodes"]
+	var side := Num.f(cfg["sidewalk"])
+	var moved := true
+	while moved:
+		moved = false
+		for street: Dictionary in plan["streets"]:
+			var a := nodes[Num.i(street["from"])]
+			var b := nodes[Num.i(street["to"])]
+			var reach := Num.f(street["width"]) * 0.5 + side
+			var across := maxf(a.x, b.x) > cx - half and minf(a.x, b.x) < cx + half
+			if absf(a.y - b.y) < 0.001 and across and absf(apex - a.y) < reach - 0.001:
+				apex = a.y - reach
+				moved = true
+	return apex
+
+
+## What is left of `street` once the bay's water (its bands) is cut out of it: the street
+## itself if no band reaches its carriageway; else each dry piece of a north-south or
+## east-west street, ending where its carriageway meets the water (a new node there); none for
+## a street wholly in the water, or any other (the diagonal) the water reaches.
+static func _cut(plan: Dictionary, street: Dictionary, water: Array[Rect2]) -> Array[Dictionary]:
+	var nodes: Array[Vector2] = plan["nodes"]
+	var a := nodes[Num.i(street["from"])]
+	var b := nodes[Num.i(street["to"])]
+	var half := Num.f(street["width"]) * 0.5
+	var road := Rect2(a.min(b), (b - a).abs()).grow(half)
+	var wet: Array[Rect2] = []
+	for w: Rect2 in water:
+		if w.intersects(road):
+			wet.append(w)
+	if wet.is_empty():
+		return [street]
+	var axis := -1
+	if absf(a.x - b.x) < 0.001:
+		axis = 1
+	elif absf(a.y - b.y) < 0.001:
+		axis = 0
+	if axis < 0:
+		return []
+	var lo := INF
+	var hi := -INF
+	for w: Rect2 in wet:  # the bay is convex: the bands it reaches are one span along the street
+		lo = minf(lo, w.position[axis])
+		hi = maxf(hi, w.end[axis])
+	var out: Array[Dictionary] = []
+	var p0 := a if a[axis] < b[axis] else b
+	var p1 := b if a[axis] < b[axis] else a
+	if p0[axis] < lo - CUT_MIN:
+		var end := p0
+		end[axis] = lo
+		out.append(_piece(plan, street, p0, end))
+	if p1[axis] > hi + CUT_MIN:
+		var start := p1
+		start[axis] = hi
+		out.append(_piece(plan, street, start, p1))
+	return out
+
+
+## A copy of `street` running from a to b, a new node at whichever end is not one yet.
+static func _piece(plan: Dictionary, street: Dictionary, a: Vector2, b: Vector2) -> Dictionary:
+	var out := street.duplicate()
+	out["from"] = _node_at(plan, a)
+	out["to"] = _node_at(plan, b)
+	return out
+
+
+static func _node_at(plan: Dictionary, p: Vector2) -> int:
+	var nodes: Array[Vector2] = plan["nodes"]
+	for n: int in nodes.size():
+		if nodes[n].distance_to(p) < 0.001:
+			return n
+	nodes.append(p)
+	return nodes.size() - 1
 
 
 ## The north-south street line nearest the city's centre line (x 0): the bay's centre.
@@ -71,8 +149,10 @@ static func _centre(plan: Dictionary) -> float:
 ## The bay's water as rects (x, z), each wholly inside it: the straight reach from the coast to
 ## where the crescent begins, then one band every city "harbour" "step" metres across the
 ## crescent, each as wide as the curve at its city-side edge, so the land always covers the true
-## curve (the beach runs on under it, CityGround). Empty without a bay.
-static func bands(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+## curve (the beach runs on under it, CityGround). Empty without a bay. outer: each band as wide
+## as the curve at its sea-side edge instead, so together they cover all the water (the true
+## curve) rather than lie inside it.
+static func bands(plan: Dictionary, cfg: Dictionary, outer: bool = false) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	if not plan.has("harbour"):
 		return out
@@ -87,7 +167,8 @@ static func bands(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	var z := from
 	while z < apex - 0.001:
 		var z1 := minf(apex, z + step)
-		var w := half * sqrt(maxf(0.0, 1.0 - pow((z1 - from) / (apex - from), 2.0)))
+		var at := z if outer else z1
+		var w := half * sqrt(maxf(0.0, 1.0 - pow((at - from) / (apex - from), 2.0)))
 		if w > 0.001:
 			out.append(Rect2(cx - w, z, w * 2.0, z1 - z))
 		z = z1
@@ -110,6 +191,21 @@ static func holds(plan: Dictionary, p: Vector2) -> bool:
 	var u := (p.x - cx) / half
 	var v := (p.y - from) / (apex - from)
 	return u * u + v * v <= 1.0
+
+
+## The southmost z of the bay's water (the true curve) anywhere between x0 and x1; -INF where
+## the bay never reaches (or there is none).
+static func south_at(plan: Dictionary, x0: float, x1: float) -> float:
+	if not plan.has("harbour"):
+		return -INF
+	var b: Dictionary = plan["harbour"]
+	var cx := Num.f(b["cx"])
+	var half := Num.f(b["half"])
+	if x1 < cx - half or x0 > cx + half:
+		return -INF
+	var u := (clampf(cx, x0, x1) - cx) / half
+	var from := Num.f(b["curve_from"])
+	return from + (Num.f(b["apex"]) - from) * sqrt(maxf(0.0, 1.0 - u * u))
 
 
 ## The crescent's curve, the beach's waterline-to-street edge, as points from its west end to
@@ -173,3 +269,58 @@ static func dry(plan: Dictionary, cfg: Dictionary, entries: Array[Dictionary]) -
 		if not water.any(func(b: Rect2) -> bool: return b.intersects(r)):
 			out.append(e)
 	return out
+
+
+## Lots for each built block the bay's water reaches that `standing` (CityGen.generate's
+## buildings, after dry) leaves with none: filled again on the block's largest dry part
+## (dry_part), from numbers of their own so no other lot moves, and kept clear of the water.
+static func refill(
+	plan: Dictionary, cfg: Dictionary, standing: Array[Dictionary]
+) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if not plan.has("harbour"):
+		return out
+	var water := bands(plan, cfg)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%d:sea bay lots" % Num.i(cfg["map_seed"]))
+	for block: Dictionary in plan["blocks"]:
+		var rect: Rect2 = block["rect"]
+		if str(block["use"]) != "built" or _empty_of(rect, standing).is_empty():
+			continue
+		if not water.any(func(b: Rect2) -> bool: return b.intersects(rect)):
+			continue
+		var part := block.duplicate()
+		part["rect"] = dry_part(rect, water)
+		out.append_array(CityLots.fill_block(rng, plan, part, cfg, 1.0))
+	return dry(plan, cfg, out)
+
+
+## [rect] when no entry of `standing` has its centre in rect, else [].
+static func _empty_of(rect: Rect2, standing: Array[Dictionary]) -> Array[Rect2]:
+	var area := rect.grow(0.01)
+	for e: Dictionary in standing:
+		if area.has_point(Vector2(Num.f(e["x"]), Num.f(e["z"]))):
+			return []
+	return [rect]
+
+
+## The largest part of `rect` wholly clear of `water`'s rects that reach it: the strip south,
+## north, east or west of all of them.
+static func dry_part(rect: Rect2, water: Array[Rect2]) -> Rect2:
+	var lo := rect.end
+	var hi := rect.position
+	for w: Rect2 in water:
+		if w.intersects(rect):
+			lo = lo.min(w.position)
+			hi = hi.max(w.end)
+	var parts: Array[Rect2] = [
+		Rect2(rect.position.x, hi.y, rect.size.x, rect.end.y - hi.y),
+		Rect2(rect.position, Vector2(rect.size.x, lo.y - rect.position.y)),
+		Rect2(hi.x, rect.position.y, rect.end.x - hi.x, rect.size.y),
+		Rect2(rect.position, Vector2(lo.x - rect.position.x, rect.size.y)),
+	]
+	var best := Rect2()
+	for p: Rect2 in parts:
+		if p.size.x > 0.0 and p.size.y > 0.0 and p.get_area() > best.get_area():
+			best = p
+	return best
