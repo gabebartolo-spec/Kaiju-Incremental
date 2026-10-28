@@ -1,5 +1,5 @@
 """Game export of the approved croc adult3 rig (D-219 model; rig r11 = the r10 skeleton with r11 skin weights and eyelid
-bones; r12m hip-seam rows from croc_adult3_hip_r12m.json): the skin the game samples and the files the repo's import tools take. Mirrors tools/blender/motion_test.py
+bones; r12m hip-seam rows from croc_adult3_hip_r12m.json; D-374 helper joints and their rows from croc_adult3_helpers.json): the skin the game samples and the files the repo's import tools take. Mirrors tools/blender/motion_test.py
 export() (skin.json/.skinw format) on the rig itself.
 - <out>/croc_adult3.glb: the mesh at rest, turned to face -Y (rig_voxel / skin_faces / motion_test input).
 - <out>/croc_adult3.skin.json + .skinw: the 37 r10 bones (helpers folded: half k -> (1-k) parent + k target,
@@ -95,6 +95,21 @@ for o, row in HIP.items():
     nhip += 1
 print("HIP r12m rows", nhip, "of", len(HIP))
 
+# --- D-374 corrective helper joints (croc-young-casc 10-28): hip, knee, web, ankle and belly per leg, weighted after the
+# bones (.skinw index len(NAMES) + k); the game poses them from their two bones (scenes/voxel_skin_helpers.gd)
+HJ = json.loads((Path(__file__).with_name("croc_adult3_helpers.json")).read_text(encoding="utf-8"))
+HELPERS = HJ["helpers"]; COLS = NAMES + [h["name"] for h in HELPERS]
+W = np.c_[W, np.zeros((len(W), len(HELPERS)))]; nhel = 0
+for o, row in HJ["verts"].items():
+    n = new_of.get(int(o))
+    if n is None:
+        continue
+    W[n] = 0.0
+    for b, w in row.items():
+        W[n, COLS.index(b)] = w
+    nhel += 1
+print("HELPERS", len(HELPERS), "rows", nhel, "of", len(HJ["verts"]))
+
 # --- frames ---------------------------------------------------------------------------------------------
 MW = R @ mesh.matrix_world
 AW = R @ arm.matrix_world
@@ -139,7 +154,7 @@ g = np.array([skin(p) for p in pos], np.float32)
 rec = np.zeros(len(g), dtype=[("p", "<f4", 3), ("b", "u1", 4), ("w", "<f4", 4)])
 rec["p"], rec["b"], rec["w"] = g, idx, top.astype(np.float32)
 with open(OUT / f"{STEM}.skinw", "wb") as f:
-    f.write(b"KSKW" + np.array([1, len(g)], "<u4").tobytes() + np.array([len(NAMES)], "<u2").tobytes())
+    f.write(b"KSKW" + np.array([1, len(g)], "<u4").tobytes() + np.array([len(COLS)], "<u2").tobytes())
     f.write(rec.tobytes())
 sc = (HV - 1) / (HI[2] - LO[2])
 origin = np.array([(LO[0] + HI[0]) / 2, (LO[1] + HI[1]) / 2, LO[2]])
@@ -154,7 +169,7 @@ M[:3, 3] = o0
 gall = np.array([skin(p) for p in P])
 doc = {"version": 1, "units": "m", "axes": "game: Y up, -Z forward, x = -blender x; origin on the ground under the "
        "pelvis; model normalised to 100 m tall", "height_m": 100.0, "source": STEM + " (croc adult3 a3174b0f, rig r11)",
-       "bones": bones, "vertex_count": int(len(g)), "weights_file": f"{STEM}.skinw",
+       "bones": bones, "helpers": HELPERS, "vertex_count": int(len(g)), "weights_file": f"{STEM}.skinw",
        "bbox_game": [gall.min(0).round(3).tolist(), gall.max(0).round(3).tolist()], "kvox_height": HV,
        "kvox_cell_to_skin": M.round(6).tolist(),
        "kvox_note": "p_skin = M @ (gx, gy, gz, 1): centre of a rig_voxel cell of the SAME glb at kvox_height."}

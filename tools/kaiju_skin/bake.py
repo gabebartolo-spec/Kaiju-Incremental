@@ -17,7 +17,9 @@ rig_voxel.py) and writes <name>.vskin:
 .vskin is gzip of: "VSKN", u32 version, 8 bytes source stamp (the first 8 bytes of SHA-256 over the
 .kvox then the .rig.json, so a test can tell a stale skin), u16 bones, f32 voxel, u32 cells, per cell i16 x y z,
 u8 r g b, u8 flags (1 = mouth inside), u8 bone[3], u8 weight[2] (the third is the rest); u32 filler
-vertices, per vertex f32 x y z (rig units), u8 r g b, u8 bone[3], u8 weight[2]; u32 indices, u32 each.
+vertices, per vertex f32 x y z (rig units), u8 r g b, u8 bone[3], u8 weight[2]; u32 indices, u32 each;
+then, when the skin.json lists D-374 helper joints, "HELP", u16 count and each helper (skin_helpers.py):
+the u16 bones then counts the rig's bones and the helpers, which take the indices after the bones.
 """
 import gzip
 import hashlib
@@ -27,6 +29,8 @@ import sys
 from pathlib import Path
 
 import numpy as np
+
+import skin_helpers
 
 VERSION = 2
 LATTICE_PASSES = 12  # joint blend width, in voxel-lattice smoothing passes (look test round 2)
@@ -124,7 +128,8 @@ def sample_skin(meta_path, cells, names):
     assert raw[:4] == b"KSKW", files[1]
     count = struct.unpack_from("<I", raw, 8)[0]
     rec = np.frombuffer(raw, dtype=[("p", "<f4", 3), ("b", "u1", 4), ("w", "<f4", 4)], count=count, offset=14)
-    to_game = np.array([names.index(b["game"]) for b in meta["bones"]])
+    to_game = np.array([names.index(b["game"]) for b in meta["bones"]]
+                       + [names.index(h["name"]) for h in skin_helpers.helpers_of(meta)], dtype=int)
     per_pos = np.zeros((count, len(names)))
     for slot in range(4):
         real = rec["b"][:, slot] != 255
@@ -237,13 +242,22 @@ def bake(name, rest, kdir, rig):
     names = [b["name"] for b in bones]
     nb = len(names)
     parents = {b["name"]: b["parent"] for b in rig["bones"]}
+    files = skin_files(kdir, name)
+    meta = json.loads(files[0].read_text(encoding="utf-8")) if files else {}
+    helpers = skin_helpers.to_rig(skin_helpers.helpers_of(meta), meta, bones, names, rest["voxel"])
+    on = np.array(list(range(nb)) + [h["a"] for h in helpers])  # the rig bone each weight column rides at rest
+    names = names + [h["name"] for h in helpers]
+    nw = len(names)
     from_blender = blender_weights(kdir, name, cells, owner, names, parents)
     v = rest["voxel"]
-    related = np.eye(nb, dtype=bool)
+    related = np.eye(nw, dtype=bool)
     for i, n in enumerate(names):
         if parents.get(n) is not None:
             j = names.index(parents[n])
             related[i, j] = related[j, i] = n not in HINGES
+    for k, h in enumerate(helpers):  # a helper blends with the two bones it sits between
+        for j in (h["a"], h["b"]):
+            related[nb + k, j] = related[j, nb + k] = True
     # Into the rest pose the game builds (rig units), and back onto the grid.
     xf = np.array([b["xform"] for b in bones])
     basis = xf[:, :9].reshape(-1, 3, 3).transpose(0, 2, 1)  # columns x, y, z
@@ -254,7 +268,7 @@ def bake(name, rest, kdir, rig):
     # bone alone, the top of the shoulder swung down with the arm and left a hole, croc titan).
     turned = np.abs(basis - np.eye(3)).max(axis=(1, 2)) > 1e-4
     src = np.arange(len(cells))
-    many = np.where(turned[owner] if from_blender is None else (from_blender[:, turned] > 0).any(1))[0]
+    many = np.where(turned[owner] if from_blender is None else (from_blender[:, turned[on]] > 0).any(1))[0]
     subs = [np.array(o) * 0.5 - 0.25 for o in np.ndindex(2, 2, 2)]
     src = np.concatenate([src] + [many] * len(subs))
     off = np.concatenate([np.zeros((len(cells), 3))] + [np.tile(o, (len(many), 1)) for o in subs])
@@ -264,7 +278,8 @@ def bake(name, rest, kdir, rig):
     else:
         moved = np.zeros_like(at)
         for b in np.where(from_blender.any(0))[0]:
-            moved += from_blender[src, b:b + 1] * ((at - head[b]) @ basis[b].T + origin[b])
+            j = on[b]
+            moved += from_blender[src, b:b + 1] * ((at - head[j]) @ basis[j].T + origin[j])
     baked = np.round(moved / v - np.array([0.0, 0.5, 0.0])).astype(int)
     _, first = np.unique(baked, axis=0, return_index=True)
     keep = np.sort(first)
@@ -275,7 +290,7 @@ def bake(name, rest, kdir, rig):
     nbr = np.array([[index.get((c[0] + d[0], c[1] + d[1], c[2] + d[2]), -1) for d in DIRS] for c in cells])
     # Lattice-smoothed weights, joint-related bones only; or the Blender skin's, as they are (the
     # filler then pairs voxels by their main bone).
-    w = np.zeros((count, nb))
+    w = np.zeros((count, nw))
     w[np.arange(count), owner] = 1.0
     if from_blender is not None:
         w = from_blender[src[keep]]
@@ -334,7 +349,7 @@ def bake(name, rest, kdir, rig):
     fpos, fnrm = np.array(fpos).reshape(-1, 3), np.array(fnrm).reshape(-1, 3)
     fnrm /= np.maximum(1e-9, np.linalg.norm(fnrm, axis=1, keepdims=True))
     fpos = (fpos - fnrm * FILL_INSET) * v
-    fb, fq = top3(np.array(fw).reshape(-1, nb)) if len(fw) else (np.zeros((0, 3), int), np.zeros((0, 2), int))
+    fb, fq = top3(np.array(fw).reshape(-1, nw)) if len(fw) else (np.zeros((0, 3), int), np.zeros((0, 2), int))
     cell_rec = np.zeros(count, dtype=np.dtype([("p", "<i2", 3), ("c", "u1", 3), ("f", "u1"), ("b", "u1", 3),
                                                ("w", "u1", 2)]))
     cell_rec["p"], cell_rec["c"], cell_rec["f"] = cells, rgb, mouth.astype(np.uint8)
@@ -344,11 +359,12 @@ def bake(name, rest, kdir, rig):
     vert_rec["p"], vert_rec["c"] = fpos, np.round(np.array(fcol).reshape(-1, 3)).astype(np.uint8)
     vert_rec["b"], vert_rec["w"] = fb, fq
     blob = b"VSKN" + struct.pack("<I", VERSION) + source_stamp(kdir, name)
-    blob += struct.pack("<HfI", nb, v, count) + cell_rec.tobytes()
+    blob += struct.pack("<HfI", nw, v, count) + cell_rec.tobytes()
     blob += struct.pack("<I", len(fpos)) + vert_rec.tobytes()
     blob += struct.pack("<I", len(tris) * 3) + np.array(tris, dtype="<u4").tobytes()
+    blob += skin_helpers.block(helpers)
     (kdir / f"{name}.vskin").write_bytes(gzip.compress(blob, 9))
-    print(f"{name}: {count} voxels, {nb} bones, weights {'Blender skin' if from_blender is not None else 'lattice'}, "
+    print(f"{name}: {count} voxels, {nb} bones, {len(helpers)} helpers, weights {'Blender skin' if from_blender is not None else 'lattice'}, "
           f"filler {len(fpos)} vertices {len(tris)} triangles, {mouth.sum()} mouth voxels")
 
 
