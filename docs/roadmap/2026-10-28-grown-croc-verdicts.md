@@ -53,5 +53,6 @@ Your words, per Cascadeur tab (D-362 one-attempt drafts; files C:/kt/casc_drafts
 | Stomp wind-up | 13, 31 | cut the wind-up: short lift, heavy stomp |
 | Smoother | 9, 27 (landing), 15, 33 (turn), 6, 24 (evolve shake; 24 head warp) | ease the landing, smooth the turn, cut the shake |
 | Emerge | 5, 23 | key DESIGN's rise: from the sea bay, head first, shoulders, legs push last, then the roar, walks straight in (D-270, D-274) |
+| Walk feel (class 2) | 16-19, 25, 34-37 | your pick 10-28: low, steady stalk (pelvis 0.05 H lower, head bob halved, snout 8° down, same pace, no foot slap) |
 | Claw rake | 3 | bigger horizontal swipe, not a downward bounce |
 | Beam weight + jaw | 20, 22 | heavier, more furious beam; jaw on every stage (D-368) |
