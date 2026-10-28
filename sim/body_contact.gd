@@ -52,7 +52,6 @@ var _pivot := Vector2.ZERO
 ## Where a stomp's foot comes down at body scale 1: (ahead of kaiju_pos along the heading, out to
 ## the left foot's side); zero for a body with no entry (its stomp is centred on kaiju_pos).
 var _stomp_foot := Vector2.ZERO
-var _stage: Dictionary = {}  # the stage's own entry in contact.bodies (empty: none)
 ## Where the last two feet to land stand in the world (they stay there until they lift): the newest
 ## first. The body turns about them.
 var _feet: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
@@ -87,10 +86,8 @@ func use_species(species_id: String) -> void:
 	_discs = []
 	_volume.discs = _discs
 	_stomp_foot = Vector2.ZERO  # a body without an entry stomps at kaiju_pos, never a stale foot
-	_stage = {}
 	if not stages.is_empty():
 		var stage: Dictionary = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
-		_stage = stage
 		_discs = stage["discs"]
 		_volume.discs = _discs
 		snout = Num.f(stage["snout"])
@@ -374,13 +371,11 @@ func _face(dt: float) -> void:
 ## A turn rate (rad/s) for this body: bigger is slower, by body scale to the turn_size_exp
 ## ("bigger = slower but not TOO slow, lumbering within reason", director 2026-10-21). A body that
 ## steps its turns reads its own rates (step_turn_*); one that does not, the baby, turns smoothly
-## at the plain ones (D-131, "Baby turns smoothly"). A stage may set its own rates in contact.bodies
-## (the Colossus: D-302, "a step ~1.35 s", so its 90 deg turn spans at least one full step).
+## at the plain ones (D-131, "Baby turns smoothly").
 func _rate(key: String) -> float:
 	var pre := "step_" if stepping() else ""
 	var size_exp := Num.f(cfg[pre + "turn_size_exp"])
-	var base := Num.f(_stage.get(pre + key, cfg[pre + key]))
-	return base / pow(maxf(sim.body_scale(), 0.01), size_exp)
+	return Num.f(cfg[pre + key]) / pow(maxf(sim.body_scale(), 0.01), size_exp)
 
 
 ## Whether the body overlaps building `index`'s footprint now (never without a body volume).
