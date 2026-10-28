@@ -18,7 +18,8 @@ gpu_busy() {  # his game, another windowed Godot or another builder's bench wind
   tasklist 2>/dev/null | grep -qi "League of Legends" && return 0  # his game: timings beside it are void
   nvidia-smi --query-compute-apps=process_name --format=csv,noheader 2>/dev/null | grep -qi "League" && return 0
   others | grep -v -- "--headless" | grep . >/dev/null && return 0
-  ls /c/kt/BENCH_WINDOW* 2>/dev/null | grep -v "BENCH_WINDOW_perf-p0" | grep . >/dev/null && return 0
+  # HELD_BY=gq: run as a gq speed job, whose dispatcher holds BENCH_WINDOW_gq for this run (not another's)
+  ls /c/kt/BENCH_WINDOW* 2>/dev/null | grep -v "BENCH_WINDOW_perf-p0" | grep -v "BENCH_WINDOW_${HELD_BY:-perf-p0}$" \n    | grep . >/dev/null && return 0
   return 1
 }
 wait_free() {  # take the bench window only when nothing else holds it; check twice, 20 s apart
