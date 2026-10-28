@@ -23,6 +23,8 @@ var _frames := 30
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"stage": 3, "preset": "", "live": false, "at": 90, "frames": 30})
 	_at = Num.i(a["at"])
 	_live = a["live"] == true
