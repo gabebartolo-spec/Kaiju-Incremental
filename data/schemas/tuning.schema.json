@@ -4974,11 +4974,13 @@
         "carve": {"$ref": "#/$defs/bool"},
         "chunk_alive_share": {"$ref": "#/$defs/num"},
         "warm_margin": {"$ref": "#/$defs/num"},
-        "warm_emerge_margin": {"$ref": "#/$defs/num"}
+        "warm_emerge_margin": {"$ref": "#/$defs/num"},
+        "carve_view": {"$ref": "#/$defs/bool"},
+        "view_upload_usec": {"$ref": "#/$defs/num"}
       },
       "required": [
         "res", "arc_shed_cells", "column_bay", "carve", "chunk_alive_share", "warm_margin",
-        "warm_emerge_margin"
+        "warm_emerge_margin", "carve_view", "view_upload_usec"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
