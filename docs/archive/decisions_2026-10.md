@@ -2,6 +2,23 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
+Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
+military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
+(#301 stays). Far city at night: "Fog + reflection" (both far-city PRs; the glow is re-measured with #301's window
+colours). Facade carve (#288): "impossible to tell from the clip, but ship and ill test in play".
+
+## 2026-10-27 · D-323 · Director · Kaiju death: jagged stone chunks replace the cubes; the 0.2 s wait stays
+On #240's clip: "you didnt change the blocks that i said i hated. you just changed their colour, but the bllocks are
+stupid and look bad". Q: what should fly out of his body? A: "Jagged stone chunks" (irregular broken rock in his
+hide's texture, many sizes, tumbling with dust; keeps D-294's shards first). Blast wait 0.2 s: "Keep 0.2 s".
+
+## 2026-10-27 · D-322 · Director · Interview batch 1: roar and solid vehicles kept; window flicker not solved
+Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be a question, no other choice makes any
+sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
+solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
+measure the flicker in motion first).
+
 ## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
 Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
 add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.

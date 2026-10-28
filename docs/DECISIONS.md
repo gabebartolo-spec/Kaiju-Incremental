@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
+His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
+the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not
+practice"). On skills: "can we delete all our skills, i dont think we need them"; Q: what should happen to the
+skills? A: "Delete all outright". So: RULEBOOK.md no longer loads; `~/.claude/memory-shared` moved to
+`~/.claude-archive/memory-shared-2026-10-29` and the stop hook no longer asks for lessons; the 14 personal skills in
+`~/.claude/skills` are deleted (app-synced Anthropic skills untouched). `~/.claude/CLAUDE.md` keeps "straight to me",
+no spend, end-with-state and write-concisely. Replaces D-378's rulebook and skill mentions.
+
 ## 2026-10-29 · D-378 · Director · Sessions boot on a small core; history is searched, not read at start
 His words (~03:0x): "90% of them are pointless. really we could cull almost everything. no wonder our context is always
 so high". Q: how hard to cut startup reading? A: "Core only (Recommended)". A session boots on its handoff, the CLAUDE.md
@@ -378,20 +387,3 @@ a textureless, depthless colour so it looks like hes floating in a void, we desp
 add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
 reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
 each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
-
-## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
-Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
-military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
-(#301 stays). Far city at night: "Fog + reflection" (both far-city PRs; the glow is re-measured with #301's window
-colours). Facade carve (#288): "impossible to tell from the clip, but ship and ill test in play".
-
-## 2026-10-27 · D-323 · Director · Kaiju death: jagged stone chunks replace the cubes; the 0.2 s wait stays
-On #240's clip: "you didnt change the blocks that i said i hated. you just changed their colour, but the bllocks are
-stupid and look bad". Q: what should fly out of his body? A: "Jagged stone chunks" (irregular broken rock in his
-hide's texture, many sizes, tumbling with dust; keeps D-294's shards first). Blast wait 0.2 s: "Keep 0.2 s".
-
-## 2026-10-27 · D-322 · Director · Interview batch 1: roar and solid vehicles kept; window flicker not solved
-Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be a question, no other choice makes any
-sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
-solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
-measure the flicker in motion first).
