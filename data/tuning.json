@@ -648,11 +648,11 @@
 		"zebra_junctions": 1,
 		"landmarks": [
 			{
-				"_note": "anchors (stadium and wheel): the director 2026-10-28, \"so i want maps to be randomised as you know, but if we need to make certain constants like stadium is west, wheel is east, thats ok, as long as the rest of the city is random\": the stadium in the west band north of the river row, the wheel in the east band, over 100 m from the rise and inside the stage-2 city (D-271); the rest of the plan stays seeded (tests/lib/city_landmark_sides.gd).",
-				"id": "stadium", "anchor": [-65, 38], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
+				"_note": "anchors (stadium and wheel): the director 2026-10-28, \"so i want maps to be randomised as you know, but if we need to make certain constants like stadium is west, wheel is east, thats ok, as long as the rest of the city is random\": the stadium in the west band north of the river row, the wheel in the east band, over 100 m from the rise and inside the stage-2 city (D-271); the rest of the plan stays seeded (tests/lib/city_landmark_sides.gd). STOPGAP until random cities (D-261, D-375; lead 2026-10-28, option B): the anchors sit one band out (x 80..115 each side), where both shapes get a site without turning; inside stage 2 does not hold for them yet.",
+				"id": "stadium", "anchor": [-97, 38], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
 				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
-			{"id": "wheel", "anchor": [65, 38], "margin": 2, "tier": 2, "rubble_bonus": 1.5}
+			{"id": "wheel", "anchor": [97, 38], "margin": 2, "tier": 2, "rubble_bonus": 1.5}
 		],
 		"coverage_cell": 10,
 		"view_beyond": 30,

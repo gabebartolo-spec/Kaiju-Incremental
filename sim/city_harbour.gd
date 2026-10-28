@@ -12,6 +12,7 @@ extends RefCounted
 ## centre line) and plan["rise_bank"] (on the promenade past the beach). Pure.
 
 const CUT_MIN := 0.01  # metres: a street piece the bay leaves shorter than this is no street
+const NOTCH_PASSES := 4  # rounds of notching: a notch can bring the water off another junction
 
 
 ## Marks the bay on `plan` (CityGen.map's, its streets laid): its beach's apex stops at the far
@@ -38,6 +39,7 @@ static func mark(plan: Dictionary, cfg: Dictionary) -> void:
 	var spawn_z := apex - Num.f(h["beach"]) - Num.f(h["nose_gap"])
 	plan["rise_spawn"] = Vector2(cx, spawn_z)
 	plan["rise_bank"] = Vector2(cx, apex + Num.f(h["bank_inset"]))
+	_notch_junctions(plan, cfg)
 	var water := bands(plan, cfg)
 	var kept: Array[Dictionary] = []
 	for street: Dictionary in plan["streets"]:
@@ -83,9 +85,8 @@ static func _cut(plan: Dictionary, street: Dictionary, water: Array[Rect2]) -> A
 	var nodes: Array[Vector2] = plan["nodes"]
 	var a := nodes[Num.i(street["from"])]
 	var b := nodes[Num.i(street["to"])]
-	var width := Num.f(street["width"])
 	var axis := _axis(a, b)
-	var wet := _wet(_carriageway(a, b, width * 0.5, axis), water)
+	var wet := _wet(_carriageway(a, b, Num.f(street["width"]) * 0.5, axis), water)
 	if wet.is_empty():
 		return [street]
 	if axis < 0:
@@ -101,9 +102,6 @@ static func _cut(plan: Dictionary, street: Dictionary, water: Array[Rect2]) -> A
 	hi = minf(hi, p1[axis])
 	var before := p0[axis] < lo - CUT_MIN  # a dry piece before the water
 	var after := p1[axis] > hi + CUT_MIN
-	var joins_p1 := before and _joins(p1, p1[axis] - lo, width, water)
-	if joins_p1 or (after and _joins(p0, hi - p0[axis], width, water)):
-		return [street]
 	var out: Array[Dictionary] = []
 	if before:
 		var end := p0
@@ -145,17 +143,115 @@ static func _wet(road: Rect2, water: Array[Rect2]) -> Array[Rect2]:
 	return out
 
 
-## Whether a street the water would stop `gap` metres short of its own junction `node` runs on
-## whole instead: the junction's centre is dry and the gap is no longer than the street is wide
-## (the bay's curve only clips the junction's corner: the street meets its cross street, never
-## ends in a dead end a few metres short of it).
-static func _joins(node: Vector2, gap: float, width: float, water: Array[Rect2]) -> bool:
-	if gap > width:
-		return false
+## The junctions the bay's curve only clips (lead 2026-10-28, "the junction wins"): where the
+## water would stop a north-south or east-west street no more than its own width short of a dry
+## junction, the bay's water is notched round that junction's asphalt and pavement and the
+## street's own from there to the water (a small quay step in the shore), so the street runs on
+## to its cross street. Recorded as plan["harbour"]["notches"]; bands and holds leave them dry.
+static func _notch_junctions(plan: Dictionary, cfg: Dictionary) -> void:
+	var notches: Array[Rect2] = []
+	plan["harbour"]["notches"] = notches
+	for _pass: int in NOTCH_PASSES:
+		var water := bands(plan, cfg)
+		var added := false
+		for street: Dictionary in plan["streets"]:
+			for r: Rect2 in _notch(plan, street, water, cfg):
+				if not notches.has(r):
+					notches.append(r)
+					added = true
+		if not added:
+			return
+
+
+## The notches `street` needs (its junction's square and its own corridor to the water, see
+## _notch_junctions); [] when the water leaves it whole, cuts it through, or stops it further
+## from its junction.
+static func _notch(
+	plan: Dictionary, street: Dictionary, water: Array[Rect2], cfg: Dictionary
+) -> Array[Rect2]:
+	var nodes: Array[Vector2] = plan["nodes"]
+	var a := nodes[Num.i(street["from"])]
+	var b := nodes[Num.i(street["to"])]
+	var width := Num.f(street["width"])
+	var axis := _axis(a, b)
+	var wet := _wet(_carriageway(a, b, width * 0.5, axis), water)
+	if wet.is_empty() or axis < 0:
+		return []
+	for end: Vector2 in [a, b]:
+		var other := b if end == a else a
+		var reach := _wet_reach(end, other, axis, wet)
+		if reach > CUT_MIN and reach <= width and _dry(end, water) and _dry(other, water):
+			var side := width * 0.5 + Num.f(cfg["sidewalk"])
+			var tip := end.lerp(other, reach / end.distance_to(other))
+			var lane := Rect2(end, Vector2.ZERO).expand(tip).grow(side)
+			return [_junction(plan, end, cfg), lane]
+	return []
+
+
+## How far from `end` toward `other` (along axis) the water over the street reaches, when it
+## lies on `end`'s half of the street; 0 when it lies only on the far half.
+static func _wet_reach(end: Vector2, other: Vector2, axis: int, wet: Array[Rect2]) -> float:
+	var out := 0.0
+	var dir := signf(other[axis] - end[axis])
+	var length := absf(other[axis] - end[axis])
+	for w: Rect2 in wet:
+		var near := w.position[axis] if dir > 0.0 else w.end[axis]
+		var far := w.end[axis] if dir > 0.0 else w.position[axis]
+		if (near - end[axis]) * dir <= length * 0.5:
+			out = maxf(out, minf((far - end[axis]) * dir, length))
+	return out
+
+
+## Whether p lies outside every band of `water`.
+static func _dry(p: Vector2, water: Array[Rect2]) -> bool:
 	for w: Rect2 in water:
-		if w.has_point(node):
+		if w.has_point(p):
 			return false
 	return true
+
+
+## The asphalt and pavement square of the junction at p: half its widest street of each axis,
+## plus the pavement, each way.
+static func _junction(plan: Dictionary, p: Vector2, cfg: Dictionary) -> Rect2:
+	var nodes: Array[Vector2] = plan["nodes"]
+	var half := Vector2.ZERO
+	for street: Dictionary in plan["streets"]:
+		var a := nodes[Num.i(street["from"])]
+		var b := nodes[Num.i(street["to"])]
+		if a.distance_to(p) < 0.001 or b.distance_to(p) < 0.001:
+			var axis := _axis(a, b)
+			if axis >= 0:
+				half[1 - axis] = maxf(half[1 - axis], Num.f(street["width"]) * 0.5)
+	return Rect2(p - half, half * 2.0).grow(Num.f(cfg["sidewalk"]))
+
+
+## Each of `rects` less every rect of `holes`.
+static func _minus(rects: Array[Rect2], holes: Array) -> Array[Rect2]:
+	var out := rects
+	for hole: Rect2 in holes:
+		var next: Array[Rect2] = []
+		for r: Rect2 in out:
+			next.append_array(_cut_rect(r, hole))
+		out = next
+	return out
+
+
+## r less hole: up to four rects (the strips above, below, left and right of the hole).
+static func _cut_rect(r: Rect2, hole: Rect2) -> Array[Rect2]:
+	if not r.intersects(hole):
+		return [r]
+	var cut := r.intersection(hole)
+	var pieces: Array[Rect2] = [
+		Rect2(r.position.x, r.position.y, r.size.x, cut.position.y - r.position.y),
+		Rect2(r.position.x, cut.end.y, r.size.x, r.end.y - cut.end.y),
+		Rect2(r.position.x, cut.position.y, cut.position.x - r.position.x, cut.size.y),
+		Rect2(cut.end.x, cut.position.y, r.end.x - cut.end.x, cut.size.y),
+	]
+	var out: Array[Rect2] = []
+	for piece: Rect2 in pieces:
+		if piece.size.x > CUT_MIN and piece.size.y > CUT_MIN:
+			out.append(piece)
+	return out
 
 
 ## A copy of `street` running from a to b, a new node at whichever end is not one yet.
@@ -213,7 +309,8 @@ static func bands(plan: Dictionary, cfg: Dictionary, outer: bool = false) -> Arr
 		if w > 0.001:
 			out.append(Rect2(cx - w, z, w * 2.0, z1 - z))
 		z = z1
-	return out
+	var notches: Array = b.get("notches", [])
+	return _minus(out, notches)
 
 
 ## Whether p lies in the bay's water (the true curve, not the bands).
@@ -227,6 +324,9 @@ static func holds(plan: Dictionary, p: Vector2) -> bool:
 	var apex := Num.f(b["apex"])
 	if absf(p.x - cx) > half or p.y < Num.f(b["mouth"]) or p.y > apex:
 		return false
+	for notch: Rect2 in b.get("notches", []):
+		if notch.has_point(p):
+			return false
 	if p.y <= from:
 		return true
 	var u := (p.x - cx) / half

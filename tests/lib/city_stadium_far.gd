@@ -21,7 +21,10 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 	var wheel_rect: Rect2 = wheel["rect"]
 	_check_lots(plan, [rect, wheel_rect], tier, map_seed, check_fn)
 	if tier >= 2:
-		var inside := _reach(rect) <= here and CityBand.real(rect, sim.city)
+		# STOPGAP until random cities (D-261, D-375; lead 2026-10-28, option B): the anchors sit one
+		# band out (x 80..115), past the stage-2 edge, so only "real" is held here; restore the reach
+		# term (_reach(rect) <= here) when the landmark pool lands.
+		var inside := CityBand.real(rect, sim.city)
 		check_fn.call(
 			inside,
 			(
