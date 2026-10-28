@@ -563,6 +563,7 @@ state. No director clips or per-change approvals in between; clips only where mo
 ## Interviews 2026-10-26 (D-257 to D-260)
 Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interviews.md`.
 Unlanded work, every branch not on main with owner and next step (2026-10-27): `docs/roadmap/2026-10-27-unlanded-audit.md`.
+Unlanded work audit, 14 branches without a row, each with status and next step (2026-10-28): `docs/roadmap/2026-10-28-unlanded-audit.md`.
 Tech debt audit, the night-shift rulings (D-300, D-305 to D-318) and every debt row's owner and status: `docs/roadmap/2026-10-27-tech-debt.md`.
 Director comments of 2026-10-28 (4K performance, leap at skyscrapers, deaths, Cascadeur first drafts): `docs/roadmap/2026-10-28-director-comments.md`; of the 2026-10-26 night (night sky, freeze, rubble, glow cracks, stomp, bubble, numbers): `docs/roadmap/2026-10-26-director-comments.md`.
 - Army defeat about 1 run in 8 at each growth stage (D-259): claude/army-balance (army range measured to the croc's body line, tanks always have a firing post, per-stage army escalation and damage rows in data/tuning.json, the pacing bot carries the Taskforce clock), not on main. Owner: the army builder; the lead reviews the sim. Date: 2026-10-27. Status: two GitHub balance runs started 2026-10-26 18:54Z (pacing-run/army-b run 40381871503, army-replay/a run 40381900832). Next: the PR with the defeat table and the sim-review packet; the two scratch branches are deleted then.
