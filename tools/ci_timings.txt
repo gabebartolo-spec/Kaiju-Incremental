@@ -3,32 +3,34 @@
 # tools/plan_ci_shards.sh packs the suites into shards x lanes bins; each shard runs its lanes at once (tools/run_tests.sh LANES).
 shards 5
 lanes 3
-split streamview 8
+split streamview 10
 split flow 2
 flow@2/2 367
 taskforce 324
 load 316
 growth 314
+streamview@10/10 300
 flow@1/2 278
-streamview@7/8 270
-streamview@8/8 270
 heliflight 268
-streamview@6/8 267
-streamview@2/8 255
 sim 250
+streamview@8/10 249
 military 244
+streamview@7/10 204
+streamview@5/10 190
 roads 182
 croc_standing 180
 city 175
-streamview@1/8 168
-streamview@5/8 166
-streamview@3/8 160
-streamview@4/8 150
+streamview@9/10 150
+streamview@2/10 147
+streamview@1/10 139
+streamview@3/10 139
 sim_play 136
 smoke 128
 crowd 125
+streamview@6/10 124
 city_sound 108
 demoend 101
+streamview@4/10 100
 results 94
 capture_camera 93
 empty_space 87
