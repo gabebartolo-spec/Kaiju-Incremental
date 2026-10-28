@@ -148,23 +148,39 @@ static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 	var rings: Array[float] = axis["rings"]
 	var avenues: Dictionary = axis["avenues"]
 	var cfg: Dictionary = axis["cfg"]
-	var a := -1
-	for k: int in lines.size() - 1:
-		if v >= lines[k] and v < lines[k + 1]:
-			a = k
+	var a := _cell_of(lines, v)
 	if a < 0:
 		return Vector2i(-1, -1)
 	var b := a
 	while lines[b + 1] - lines[a] - _inset(avenues, a, cfg) - _inset(avenues, b + 1, cfg) < need:
-		var low_ok := a > 0 and not _is_ring(lines[a], rings)
-		var high_ok := b + 2 < lines.size() and not _is_ring(lines[b + 1], rings)
-		if not low_ok and not high_ok:
+		var grow := _grow_side(lines, rings, v, a, b)
+		if grow == 0:
 			return Vector2i(-1, -1)
-		if low_ok and (not high_ok or v - lines[a] < lines[b + 1] - v):
+		if grow < 0:
 			a -= 1
 		else:
 			b += 1
 	return Vector2i(a, b)
+
+
+## The index of the grid cell holding v (the last, if lines overlap), -1 if none.
+static func _cell_of(lines: Array[float], v: float) -> int:
+	var a := -1
+	for k: int in lines.size() - 1:
+		if v >= lines[k] and v < lines[k + 1]:
+			a = k
+	return a
+
+
+## Which side the run a..b grows on: -1 low, +1 high, 0 neither (ring avenues and the edge stop it).
+static func _grow_side(lines: Array[float], rings: Array[float], v: float, a: int, b: int) -> int:
+	var low_ok := a > 0 and not _is_ring(lines[a], rings)
+	var high_ok := b + 2 < lines.size() and not _is_ring(lines[b + 1], rings)
+	if not low_ok and not high_ok:
+		return 0
+	if low_ok and (not high_ok or v - lines[a] < lines[b + 1] - v):
+		return -1
+	return 1
 
 
 static func _is_ring(line: float, rings: Array[float]) -> bool:
