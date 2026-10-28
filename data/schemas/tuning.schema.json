@@ -965,10 +965,6 @@
         "tail_reach": {"$ref": "#/$defs/num"},
         "tail_floor_lo": {"$ref": "#/$defs/num"},
         "tail_floors": {"$ref": "#/$defs/num"},
-        "momentum_build_seconds": {"$ref": "#/$defs/num"},
-        "momentum_turn_bleed": {"$ref": "#/$defs/num"},
-        "momentum_idle_decay": {"$ref": "#/$defs/num"},
-        "momentum_speed": {"$ref": "#/$defs/num"},
         "ram_interval": {"$ref": "#/$defs/num"},
         "ram_min": {"$ref": "#/$defs/num"},
         "knockback": {"$ref": "#/$defs/num"},
@@ -1032,7 +1028,90 @@
         "ink_reach": {"$ref": "#/$defs/num"},
         "ink_seconds": {"$ref": "#/$defs/num"},
         "ink_splash": {"$ref": "#/$defs/num"},
-        "ink_unit_mult": {"$ref": "#/$defs/num"}
+        "ink_unit_mult": {"$ref": "#/$defs/num"},
+        "momentum": {
+          "type": "object",
+          "properties": {
+            "dent_radius": {"$ref": "#/$defs/num"},
+            "titans": {
+              "type": "object",
+              "properties": {
+                "croc": {
+                  "type": "object",
+                  "properties": {
+                    "build_seconds": {"$ref": "#/$defs/num"},
+                    "turn_bleed": {"$ref": "#/$defs/num"},
+                    "idle_decay": {"$ref": "#/$defs/num"},
+                    "speed_bonus": {"$ref": "#/$defs/num"},
+                    "crash_min": {"$ref": "#/$defs/num"},
+                    "slam_min": {"$ref": "#/$defs/num"},
+                    "hit": {"$ref": "#/$defs/num"},
+                    "node_build": {"$ref": "#/$defs/num"},
+                    "crash_height": {"$ref": "#/$defs/str"},
+                    "slams": {"$ref": "#/$defs/bool"},
+                    "shoulder": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+                  },
+                  "required": [
+                    "build_seconds", "turn_bleed", "idle_decay", "speed_bonus", "crash_min",
+                    "slam_min", "hit", "node_build", "crash_height", "slams", "shoulder"
+                  ],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "komodo": {
+                  "type": "object",
+                  "properties": {
+                    "build_seconds": {"$ref": "#/$defs/num"},
+                    "turn_bleed": {"$ref": "#/$defs/num"},
+                    "idle_decay": {"$ref": "#/$defs/num"},
+                    "speed_bonus": {"$ref": "#/$defs/num"},
+                    "crash_min": {"$ref": "#/$defs/num"},
+                    "slam_min": {"$ref": "#/$defs/num"},
+                    "hit": {"$ref": "#/$defs/num"},
+                    "node_build": {"$ref": "#/$defs/num"},
+                    "crash_height": {"$ref": "#/$defs/str"},
+                    "slams": {"$ref": "#/$defs/bool"},
+                    "shoulder": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+                  },
+                  "required": [
+                    "build_seconds", "turn_bleed", "idle_decay", "speed_bonus", "crash_min",
+                    "slam_min", "hit", "node_build", "crash_height", "slams", "shoulder"
+                  ],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "serpent": {
+                  "type": "object",
+                  "properties": {
+                    "build_seconds": {"$ref": "#/$defs/num"},
+                    "turn_bleed": {"$ref": "#/$defs/num"},
+                    "idle_decay": {"$ref": "#/$defs/num"},
+                    "speed_bonus": {"$ref": "#/$defs/num"},
+                    "crash_min": {"$ref": "#/$defs/num"},
+                    "slam_min": {"$ref": "#/$defs/num"},
+                    "hit": {"$ref": "#/$defs/num"},
+                    "node_build": {"$ref": "#/$defs/num"},
+                    "crash_height": {"$ref": "#/$defs/str"},
+                    "slams": {"$ref": "#/$defs/bool"},
+                    "shoulder": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+                  },
+                  "required": [
+                    "build_seconds", "turn_bleed", "idle_decay", "speed_bonus", "crash_min",
+                    "slam_min", "hit", "node_build", "crash_height", "slams", "shoulder"
+                  ],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                }
+              },
+              "required": ["croc", "komodo", "serpent"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": ["dent_radius", "titans"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
       },
       "required": [
         "fire", "body_radius", "block_radius", "block_street_margin", "squeeze_max",
@@ -1040,7 +1119,6 @@
         "climb_load_radius", "coat_reach_mult", "block_slow", "tail_turn_rad", "tail_turn_decay",
         "tail_cooldown", "swipe_interval", "swipe_windup", "swipe_near", "swipe_far", "swipe_top",
         "swipe_chew_s", "swipe_chew_rows", "tail_reach", "tail_floor_lo", "tail_floors",
-        "momentum_build_seconds", "momentum_turn_bleed", "momentum_idle_decay", "momentum_speed",
         "ram_interval", "ram_min", "knockback", "ultimate_cooldown", "beam_seconds", "beam_range",
         "beam_half_width", "beam_turn_speed", "burn_seconds", "burn_dps", "glide_speed_mult",
         "glide_land_mult", "climb_speed", "climb_dig", "climb_load", "egg_spread",
@@ -1049,7 +1127,7 @@
         "brood_bite_interval", "brood_bite_radius", "brood_hunt_radius", "limb_interval",
         "limb_reach", "limb_radius", "limb_mult", "grab_cooldown", "car_wait", "grab_reach",
         "throw_range", "throw_seconds", "throw_blast", "throw_mult", "ink_reach", "ink_seconds",
-        "ink_splash", "ink_unit_mult"
+        "ink_splash", "ink_unit_mult", "momentum"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1737,8 +1815,8 @@
         }
       },
       "required": [
-        "shake", "flash", "core", "kick", "site_rubble", "fireball", "fire",
-        "shock", "break", "fireworks", "cloud", "fuse", "debris", "debris_colors", "sound"
+        "shake", "flash", "core", "kick", "site_rubble", "fireball", "fire", "shock", "break",
+        "fireworks", "cloud", "fuse", "debris", "debris_colors", "sound"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1787,6 +1865,7 @@
         "fog_scale": {"$ref": "#/$defs/num"},
         "load_chunks": {"$ref": "#/$defs/num"},
         "stream_chunks": {"$ref": "#/$defs/num"},
+        "stand_in_fade_s": {"$ref": "#/$defs/num"},
         "stream_view": {
           "type": "object",
           "properties": {
@@ -1866,7 +1945,10 @@
             "pole_cells": {"$ref": "#/$defs/num"},
             "bollard_cells": {"$ref": "#/$defs/num"},
             "bollards": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
-            "lane_clear": {"$ref": "#/$defs/num"},
+            "at": {"$ref": "#/$defs/str"},
+            "wedge_reach": {"$ref": "#/$defs/num"},
+            "kerb_gap": {"$ref": "#/$defs/num"},
+            "prop_clear": {"$ref": "#/$defs/num"},
             "node_clear": {"$ref": "#/$defs/num"},
             "search_step": {"$ref": "#/$defs/num"},
             "colors": {
@@ -1888,8 +1970,8 @@
             }
           },
           "required": [
-            "half_cells", "pole_cells", "bollard_cells", "bollards", "lane_clear", "node_clear",
-            "search_step", "colors"
+            "at", "wedge_reach", "kerb_gap", "prop_clear", "half_cells", "pole_cells", "bollard_cells",
+            "bollards", "node_clear", "search_step", "colors"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -1923,6 +2005,16 @@
         "tree_puff_alpha": {"$ref": "#/$defs/num"},
         "block_long": {"type": "array", "items": {"$ref": "#/$defs/num"}},
         "block_short": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "block_far": {
+          "type": "object",
+          "properties": {
+            "long": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "short": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["long", "short"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "avenues": {"$ref": "#/$defs/num"},
         "avenue_width": {"$ref": "#/$defs/num"},
         "street_width": {"$ref": "#/$defs/num"},
@@ -1940,9 +2032,10 @@
             "reach": {"$ref": "#/$defs/num"},
             "width": {"type": "array", "items": {"$ref": "#/$defs/num"}},
             "height": {"type": "array", "items": {"$ref": "#/$defs/num"}},
-            "gap": {"$ref": "#/$defs/num"}
+            "gap": {"$ref": "#/$defs/num"},
+            "depth": {"$ref": "#/$defs/num"}
           },
-          "required": ["reach", "width", "height", "gap"],
+          "required": ["reach", "width", "height", "gap", "depth"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
@@ -2002,7 +2095,7 @@
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
         "outer_half", "outer_cores", "coast_z", "bay_width", "far_haze", "far_tower_cap",
-        "fog_scale", "load_chunks", "stream_chunks", "stream_view", "markings_beyond",
+        "fog_scale", "load_chunks", "stream_chunks", "stand_in_fade_s", "stream_view", "markings_beyond",
         "zebra_junctions", "landmarks", "coverage_cell", "view_beyond", "parked_chance",
         "parked_chance_beyond", "parked_gap", "lane_stop_chance", "diagonal_parked_lane",
         "river_quay", "traffic_island", "car_colors", "street_tree_gap", "street_tree_clear",
@@ -2011,7 +2104,7 @@
         "garden_bush_gap", "park_flower_beds", "flower_bloom", "playground_size", "yard_depth",
         "trample_share", "stump_color", "tree_debris_leaf", "tree_debris_bark", "tree_debris_size",
         "tree_debris_speed", "tree_leaf_speed", "tree_leaf_spread", "tree_bark_size",
-        "tree_puff_size", "tree_puff_alpha", "block_long", "block_short", "avenues",
+        "tree_puff_size", "tree_puff_alpha", "block_long", "block_short", "block_far", "avenues",
         "avenue_width", "street_width", "alley_width", "sidewalk", "alley_chance",
         "parking_chance", "plaza_blocks", "river", "river_depth", "river_inset", "quay",
         "diagonal_through", "diagonal_deg", "cores", "depth_min", "depth_max", "frontage_min",
@@ -3860,9 +3953,10 @@
             "tank_fire": {"$ref": "#/$defs/num"},
             "ability": {"$ref": "#/$defs/num"},
             "leap_land": {"$ref": "#/$defs/num"},
-            "bolt_stroke": {"$ref": "#/$defs/num"}
+            "bolt_stroke": {"$ref": "#/$defs/num"},
+            "slam": {"$ref": "#/$defs/num"}
           },
-          "required": ["stomp", "topple", "drop", "tank_fire", "ability", "leap_land", "bolt_stroke"],
+          "required": ["stomp", "topple", "drop", "tank_fire", "ability", "leap_land", "bolt_stroke", "slam"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         }
@@ -4147,11 +4241,12 @@
                       "ring": {"$ref": "#/$defs/num"},
                       "damage": {"$ref": "#/$defs/num"},
                       "fling": {"$ref": "#/$defs/num"},
-                      "cooldown": {"$ref": "#/$defs/num"}
+                      "cooldown": {"$ref": "#/$defs/num"},
+                      "shoulder": {"$ref": "#/$defs/num"}
                     },
                     "required": [
                       "reach", "min_reach", "crouch_s", "flight_s", "settle_s", "recover_s",
-                      "clear", "ring", "damage", "fling", "cooldown"
+                      "clear", "ring", "damage", "fling", "cooldown", "shoulder"
                     ],
                     "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                     "additionalProperties": false
@@ -4180,9 +4275,12 @@
                   "stomp_foot": {"type": "array", "items": {"$ref": "#/$defs/num"}},
                   "discs": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
                   "step_len": {"$ref": "#/$defs/num"},
+                  "step_turn_rate": {"$ref": "#/$defs/num"},
+                  "step_turn_rate_still": {"$ref": "#/$defs/num"},
                   "uturn_s": {"$ref": "#/$defs/num"},
                   "turn_steps": {"$ref": "#/$defs/num"},
-                  "turn_slow": {"$ref": "#/$defs/num"}
+                  "turn_slow": {"$ref": "#/$defs/num"},
+                  "turn_slow_pow": {"$ref": "#/$defs/num"}
                 },
                 "required": ["snout", "pivot", "stomp_foot", "discs"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -5160,6 +5258,18 @@
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
+    },
+    "slam_fx": {
+      "type": "object",
+      "properties": {
+        "sound": {"$ref": "#/$defs/str"},
+        "shudder": {"$ref": "#/$defs/num"},
+        "shudder_s": {"$ref": "#/$defs/num"},
+        "shudder_hz": {"$ref": "#/$defs/num"}
+      },
+      "required": ["sound", "shudder", "shudder_s", "shudder_hz"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
     }
   },
   "required": [
@@ -5169,7 +5279,7 @@
     "rail_look", "creation", "chain", "audio", "claw_fx", "clip_stomp", "camera", "slowmo", "camera_shake",
     "accessibility", "photo_mode", "rumble", "post_fx", "topple_fx", "skyline_rampage",
     "arena_edge", "body", "contact", "growth", "fx", "landmark_burst", "carve_physics", "crowd",
-    "street", "vehicles", "destruction", "lights", "rain", "render_opt", "death"
+    "street", "vehicles", "destruction", "lights", "rain", "render_opt", "death", "slam_fx"
   ],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,

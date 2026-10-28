@@ -37,6 +37,10 @@ MOUTH_BONES = ("head1", "jaw")
 # Hinged parts that move as one rigid piece against their parent (a jaw, a mantis mandible): they
 # never blend with it, so an open mouth keeps its mass and its teeth (lead review, PR #15).
 HINGES = ("jaw", "mandible_l", "mandible_r")
+# Lattice steps over which the skin round a hinge goes from following the hinge's parent to its own
+# Blender weights (hinge_hold): at the full head lead (ClipGait.HEAD_LEAD_MAX) no voxel pair round
+# a croc's shut jaw parts by more than about a voxel (jawslit sim, 2026-10-28).
+HINGE_FADE = 12
 SKIN_NEAREST = 4  # a voxel blends the weights of this many nearest Blender skin positions
 DIRS = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)])
 
@@ -166,10 +170,12 @@ def sample_skin(meta_path, cells, names):
     return np.maximum(w, 0.0), gap
 
 
-def blender_weights(kdir, name, cells, owner, names):
+def blender_weights(kdir, name, cells, owner, names, parents):
     """Per-voxel weights (cells x bones) from the Blender skin listed for this kaiju, or None.
     Hinges stay rigid: a voxel the .kvox gives to the jaw is all jaw, and no other voxel takes any
-    jaw weight (the .kvox draws the mouth line: tools/kaiju_skin/rig_from_skin.py)."""
+    jaw weight (the .kvox draws the mouth line: tools/kaiju_skin/rig_from_skin.py); the jaw share
+    the Blender skin gave another voxel goes to the bone the jaw hangs from, and the skin round the
+    jaw follows that bone (hinge_hold)."""
     files = skin_files(kdir, name)
     if not files:
         return None
@@ -177,12 +183,43 @@ def blender_weights(kdir, name, cells, owner, names):
     for hinge in (h for h in HINGES if h in names):
         j = names.index(hinge)
         mine = owner == j
+        p = names.index(parents[hinge]) if parents.get(hinge) in names else j
+        w[~mine, p] += w[~mine, j]  # shut, a hinge moves as its parent: its share stays with it
         w[:, j] = 0.0
         w[mine] = 0.0
         w[mine, j] = 1.0
+        if p != j and mine.any():
+            w = hinge_hold(w / np.maximum(w.sum(1, keepdims=True), 1e-12), cells, mine, p)
     empty = w.sum(1) <= 0  # only jaw-weighted positions nearby: keep the .kvox bone
     w[empty, owner[empty]] = 1.0
     return w / w.sum(1, keepdims=True)
+
+
+def hinge_hold(w, cells, mine, p):
+    """The voxels round a hinge's own (mine) follow its parent p, fading over HINGE_FADE lattice
+    steps into their own weights. A rigid jaw against skin weighted to the neck opened a slit along
+    the jaw's rear corner whenever the head turned on the neck (director 2026-10-28, "is that a slit
+    in crocs jaw? when he looks left or right"): shut, the jaw moves as the head does, so the skin
+    touching it does too, and the turn spreads over the fade instead of one seam."""
+    index = {tuple(c): i for i, c in enumerate(cells.tolist())}
+    dist = np.full(len(cells), HINGE_FADE)
+    ring = np.nonzero(mine)[0]
+    dist[ring] = 0
+    for step in range(1, HINGE_FADE):
+        nxt = []
+        for i in ring:
+            x, y, z = cells[i]
+            for d in DIRS:
+                k = index.get((x + d[0], y + d[1], z + d[2]))
+                if k is not None and dist[k] > step:
+                    dist[k] = step
+                    nxt.append(k)
+        ring = nxt
+    f = 1.0 - dist / HINGE_FADE
+    f[mine] = 0.0
+    held = np.zeros_like(w)
+    held[:, p] = 1.0
+    return (1.0 - f[:, None]) * w + f[:, None] * held
 
 
 def top3(w):
@@ -199,9 +236,9 @@ def bake(name, rest, kdir, rig):
     bones = rest["bones"]
     names = [b["name"] for b in bones]
     nb = len(names)
-    from_blender = blender_weights(kdir, name, cells, owner, names)
-    v = rest["voxel"]
     parents = {b["name"]: b["parent"] for b in rig["bones"]}
+    from_blender = blender_weights(kdir, name, cells, owner, names, parents)
+    v = rest["voxel"]
     related = np.eye(nb, dtype=bool)
     for i, n in enumerate(names):
         if parents.get(n) is not None:

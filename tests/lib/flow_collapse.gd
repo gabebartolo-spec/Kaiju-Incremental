@@ -208,7 +208,13 @@ static func _faintest(piece: Node3D) -> float:
 
 
 static func _check_sound_cap(check: Callable, sfx: Sfx) -> void:
-	sfx._process(1.0)  # last frame's sounds are out of the way
+	# Last frames' sounds are out of the way: a late collapse in the rampage can still hold the
+	# hero collapse voices (cap 3, never stolen), and then the burst plays none.
+	var rung := 0
+	while sfx.voices.busy_in("collapse") > 0 and rung < 30:
+		sfx._process(1.0)
+		rung += 1
+	sfx._process(1.0)
 	var before := sfx.played.count("collapse")
 	for n: int in LANDINGS:
 		sfx.collapse(n % 3 == 0)
@@ -220,7 +226,7 @@ static func _check_sound_cap(check: Callable, sfx: Sfx) -> void:
 	check.call(
 		first > 0 and first <= cap and later == 0,
 		(
-			"%d landings in one frame play %d collapse sounds (cap %d), none held over (%d)"
-			% [LANDINGS, first, cap, later]
+			"%d landings in one frame play %d collapse sounds (cap %d), none held over (%d; %d s)"
+			% [LANDINGS, first, cap, later, rung]
 		)
 	)

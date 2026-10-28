@@ -110,7 +110,11 @@ func _reptile_details() -> void:
 				return "belly_dark"
 			return key
 	)
-	# Dorsal plates: flat triangles rooted on the spine, biggest over the shoulders.
+	_dorsal_plates()
+
+
+## Dorsal plates: flat triangles rooted on the spine, biggest over the shoulders.
+func _dorsal_plates() -> void:
 	for i: int in 10:
 		var z := roundi((-1.0 + i * 1.4) * RES)
 		var root := _vox.top(0, z, ["accent", "accent_edge"])
@@ -130,33 +134,7 @@ func _insectoid() -> void:
 	_tube(Vector3(0, 5.6, -1.2), Vector3(0, 5.9, -2.4), Vector2(1.0, 0.9), "body")  # neck
 	_blob(Vector3(0, 6.0, -4.2), Vector3(2.2, 1.9, 2.0), "belly")  # head
 	for side: int in [-1, 1]:
-		_blob(Vector3(side * 1.8, 6.6, -4.8), Vector3(0.8, 0.9, 0.9), "eye")  # compound eyes
-		_tube(
-			Vector3(side * 1.3, 5.0, -5.8),
-			Vector3(side * 0.5, 4.8, -8.0),
-			Vector2(0.45, 0.25),
-			"accent"
-		)
-		_tube(
-			Vector3(side * 0.6, 4.8, -7.9),
-			Vector3(side * 0.1, 4.8, -8.4),
-			Vector2(0.2, 0.2),
-			"ivory"
-		)
-		var antenna: Array[Vector3] = [
-			_u(Vector3(side * 0.8, 7.6, -5.0)),
-			_u(Vector3(side * 2.4, 10.6, -7.0)),
-			_u(Vector3(side * 3.4, 11.6, -6.0)),
-		]
-		var thin: Array[float] = [0.4, 0.3, 0.3]
-		_vox.chain(antenna, thin, "accent")
-		for leg: int in 3:  # six legs: up to a high knee, splayed out and down to the ground
-			var hip := Vector3(side * 1.2, 5.0, -0.4 + leg)
-			var knee := Vector3(side * 5.0, 8.0, -2.0 + leg * 2.5)
-			var foot := Vector3(side * 8.0, 0.0, -4.0 + leg * 4.0)
-			_tube(hip, knee, Vector2(0.5, 0.45), "accent")
-			_tube(knee, foot, Vector2(0.45, 0.3), "accent")
-			_blob(knee, Vector3.ONE * 0.6, "joint")
+		_insect_side(side)
 	_vox.repaint(
 		func(cell: Vector3i, key: String) -> String:
 			if key == "body" and cell.z > roundi(3.0 * RES) and cell.z % 4 == 0:
@@ -165,6 +143,34 @@ func _insectoid() -> void:
 				return "pupil"  # compound-eye facets
 			return key
 	)
+
+
+## One side of the insectoid: its compound eye, mandible and tip, antenna and three legs.
+func _insect_side(side: int) -> void:
+	_blob(Vector3(side * 1.8, 6.6, -4.8), Vector3(0.8, 0.9, 0.9), "eye")  # compound eyes
+	_tube(
+		Vector3(side * 1.3, 5.0, -5.8),
+		Vector3(side * 0.5, 4.8, -8.0),
+		Vector2(0.45, 0.25),
+		"accent"
+	)
+	_tube(
+		Vector3(side * 0.6, 4.8, -7.9), Vector3(side * 0.1, 4.8, -8.4), Vector2(0.2, 0.2), "ivory"
+	)
+	var antenna: Array[Vector3] = [
+		_u(Vector3(side * 0.8, 7.6, -5.0)),
+		_u(Vector3(side * 2.4, 10.6, -7.0)),
+		_u(Vector3(side * 3.4, 11.6, -6.0)),
+	]
+	var thin: Array[float] = [0.4, 0.3, 0.3]
+	_vox.chain(antenna, thin, "accent")
+	for leg: int in 3:  # six legs: up to a high knee, splayed out and down to the ground
+		var hip := Vector3(side * 1.2, 5.0, -0.4 + leg)
+		var knee := Vector3(side * 5.0, 8.0, -2.0 + leg * 2.5)
+		var foot := Vector3(side * 8.0, 0.0, -4.0 + leg * 4.0)
+		_tube(hip, knee, Vector2(0.5, 0.45), "accent")
+		_tube(knee, foot, Vector2(0.45, 0.3), "accent")
+		_blob(knee, Vector3.ONE * 0.6, "joint")
 
 
 func _cephalopod() -> void:

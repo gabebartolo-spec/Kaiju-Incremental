@@ -72,7 +72,13 @@ func _check_file() -> void:
 		for b: Dictionary in skin["bones"]:
 			if not games.has(str(b["game"])):
 				games.append(str(b["game"]))
-		var same := games.size() == clips.bones.size() and clips.bones.size() == 27
+		var rig: Dictionary = JSON.parse_string(
+			FileAccess.get_file_as_string("res://assets/kaiju/reptilian_%s.rig.json" % stage)
+		)
+		var order: Array[String] = []
+		for r: Dictionary in rig["bones"]:
+			order.append(str(r["name"]))
+		var same := games.size() == clips.bones.size() and clips.bones == order
 		for g: String in games:
 			same = same and clips.bones.has(g)
 		tracks_ok = tracks_ok and same

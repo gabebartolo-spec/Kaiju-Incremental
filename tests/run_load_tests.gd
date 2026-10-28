@@ -25,6 +25,7 @@ func run_checks() -> void:
 	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
 	await _t("_check_stream")
 	await _t("_check_stream_budget")
+	await _t("_check_stand_in_fade")
 
 
 func _tuning(tier: int) -> Dictionary:
@@ -173,6 +174,79 @@ func _check_stream() -> void:
 	for n: int in sim.buildings.size():
 		missing += 1 if stream.built(n) == null else 0
 	check(stream.complete() and missing == 0, "every building streams in (%d missing)" % missing)
+	stream.queue_free()
+	await process_frame
+
+
+## Facade pop-in (director 2026-10-28; the lead's call): a streamed building's box does not vanish
+## the frame its mesh arrives, it dissolves out over city.stand_in_fade_s; a building the rampage
+## touches (carved, broken, falling) loses its box at once, never a fade (D-326).
+func _check_stand_in_fade() -> void:
+	var sim := _sim_at(2)
+	var fade := Num.f(sim.city.get("stand_in_fade_s", 0.0))
+	check(fade > 0.0, "the stand-in dissolve is on by default (city.stand_in_fade_s %.2f)" % fade)
+	sim.city["load_chunks"] = 3000
+	sim.city["stream_chunks"] = 1 << 30
+	var colors: Array[Color] = []
+	for b: RampageSim.Building in sim.buildings:
+		colors.append(Color.GRAY)
+	var stream := BuildingStream.new(sim, colors)
+	root.add_child(stream)
+	stream.set_process(false)
+	var boxes: StreamStandIns = stream.get("_stand_ins")
+	var waiting: Array[int] = []
+	for n: int in sim.buildings.size():
+		if stream.built(n) == null and not sim.buildings[n].is_rail():  # a viaduct has no box
+			waiting.append(n)
+	var placed := -1
+	for _i: int in 600:
+		stream.step(0.0, true)
+		await process_frame
+		for n: int in waiting:
+			if stream.built(n) != null:
+				placed = n
+				break
+		if placed >= 0:
+			break
+	check(placed >= 0, "a streamed building is placed")
+	if placed >= 0:
+		var mesh := stream.built(placed)
+		var now := boxes.alpha(placed)
+		check(now > 0.9, "its box is still drawn the moment its mesh arrives (%.2f)" % now)
+		check(mesh.dissolve_share() < 0.1, "its mesh starts undrawn (%.2f)" % mesh.dissolve_share())
+		stream.step(fade * 0.5)
+		var half := boxes.alpha(placed)
+		check(half > 0.2 and half < 0.8, "its box is half dissolved at half the time (%.2f)" % half)
+		var half_mesh := mesh.dissolve_share()
+		check(half_mesh > 0.2 and half_mesh < 0.8, "its mesh is half drawn (%.2f)" % half_mesh)
+		stream.step(fade)
+		check(boxes.alpha(placed) == 0.0, "its box is gone once the fade is over")
+		check(mesh.dissolve_share() == 1.0, "its mesh is whole once the fade is over")
+		stream.call("_free_view", placed)  # the kaiju walked away: the box comes back
+		check(stream.built(placed) == null, "an untouched building goes back to its box")
+		check(is_instance_valid(mesh), "its mesh is still drawn while it dissolves out")
+		check(boxes.alpha(placed) < 0.1, "its box starts undrawn (%.2f)" % boxes.alpha(placed))
+		stream.step(fade * 0.5)
+		var out_mesh := mesh.dissolve_share() if is_instance_valid(mesh) else -1.0
+		check(out_mesh > 0.2 and out_mesh < 0.8, "its mesh is half dissolved out (%.2f)" % out_mesh)
+		check(boxes.alpha(placed) > 0.2 and boxes.alpha(placed) < 0.8, "its box is half drawn in")
+		stream.step(fade)
+		check(not is_instance_valid(mesh), "its mesh is gone once the fade is over")
+		check(boxes.alpha(placed) == 1.0, "its box is whole once the fade is over")
+	var far := -1
+	for n: int in waiting:
+		if stream.built(n) == null:
+			far = n
+	check(far >= 0, "a building is still waiting to test a touched one")
+	if far >= 0:
+		stream.view(far)
+		check(
+			boxes.alpha(far) == 0.0, "a building the rampage touches loses its box at once, no fade"
+		)
+		var touched := stream.built(far)
+		stream.regrow(far)  # a destroyed building: no dissolve either way (D-326)
+		check(not is_instance_valid(touched), "a regrown building's mesh goes at once")
+		check(boxes.alpha(far) == 1.0, "a regrown building's box is back at once")
 	stream.queue_free()
 	await process_frame
 

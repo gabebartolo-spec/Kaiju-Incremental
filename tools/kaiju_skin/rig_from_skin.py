@@ -28,10 +28,23 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bake  # noqa: E402
 
-# The game's biped bones, in rig.json order (each voxel's flags byte is an index into this list).
+# The game's biped bones, in rig.json order (each voxel's flags byte is an index into the list). A skin may add bones
+# of its own (the adult croc r12's tail tip, D-307): they follow these (bone_names).
 GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0",
               "leg_l1", "leg_l2", "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [
               f"tail{i}" for i in range(9)] + ["jaw"]
+
+
+def extra_order(name):
+    """Sort key of a skin's own game bones: by chain, then by number (tail9 before tail10: parents first)."""
+    stem = name.rstrip("0123456789")
+    return stem, int(name[len(stem):] or 0)
+
+
+def bone_names(meta):
+    """GAME_BONES, then any other game bone the skin names (tools/blender/croc_adult3_clips.py orders its clips' bones
+    the same way)."""
+    return GAME_BONES + sorted({b["game"] for b in meta["bones"]} - set(GAME_BONES), key=extra_order)
 
 
 def game_rig(meta, to_rig, height):
@@ -49,7 +62,7 @@ def game_rig(meta, to_rig, height):
                              and np.allclose(b["head"], last[g]["tail"], atol=1e-3)):
             last[g] = b
     bones = []
-    for g in GAME_BONES:
+    for g in bone_names(meta):
         root = first[g]
         par = by_name.get(root["parent"])
         head, tail = to_rig(np.array(root["head"])), to_rig(np.array(last[g]["tail"]))
@@ -84,7 +97,8 @@ def main():
     data = bytearray(kvox_path.read_bytes())
     height = struct.unpack_from("<H", data, 12)[0]
     cells, _, _ = bake.read_kvox(kvox_path)
-    w, gap = bake.sample_skin(meta_path, cells, GAME_BONES)
+    names = bone_names(meta)
+    w, gap = bake.sample_skin(meta_path, cells, names)
     owner = np.argmax(w, axis=1)
     if line:
         pts = (np.c_[cells, np.ones(len(cells))] @ m.T)[:, :3]
@@ -97,10 +111,10 @@ def main():
     for off, bone in zip(flags, owner):
         data[off] = int(bone)
     kvox_path.write_bytes(bytes(data))
-    counts = np.bincount(owner, minlength=len(GAME_BONES))
+    counts = np.bincount(owner, minlength=len(names))
     print(f"rigged {kvox_path.name} from {meta_path.name}: {len(cells)} voxels; gap to skin median "
-          f"{np.median(gap):.2f} m, p95 {np.percentile(gap, 95):.2f} m; jaw {counts[-1]} voxels; "
-          f"fewest {GAME_BONES[int(np.argmin(counts))]} {counts.min()}")
+          f"{np.median(gap):.2f} m, p95 {np.percentile(gap, 95):.2f} m; {len(names)} bones; jaw {counts[names.index('jaw')]} "
+          f"voxels; fewest {names[int(np.argmin(counts))]} {counts.min()}")
 
 
 if __name__ == "__main__":

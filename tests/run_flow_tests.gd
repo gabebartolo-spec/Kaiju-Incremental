@@ -17,6 +17,7 @@ const FlowCollapse := preload("res://tests/lib/flow_collapse.gd")
 const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const FlowStagedStart := preload("res://tests/lib/flow_staged_start.gd")
 const FlowUpgrades := preload("res://tests/lib/flow_upgrades.gd")
+const FlowWarmStart := preload("res://tests/lib/flow_warm_start.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const WORDS_EVERY := 10  # frames between counts of text in the world (a number lived 1 s)
 const POWER_FRAMES := 60 * 45
@@ -323,29 +324,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 ## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Lightning Breath
 ## leaves is drawn at load for this run's cone, and tanks share their voxels.
 func _check_warm_start() -> void:
-	var species := Content.species_def("reptilian")
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
-	)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
-	)
-	root.add_child(rampage)
-	var half := deg_to_rad(Num.f(rampage.sim.city["cone_half_angle_deg"]))
-	check(
-		FxDecals.is_drawn(FxDecals.Shape.WEDGE, {"half_angle": half}),
-		"the breath's scorch for this run's %.2f rad cone is drawn before the first breath" % half
-	)
-	rampage.queue_free()
-	await process_frame
-	var a := TankModel.new()
-	var b := TankModel.new()
-	var hull_a: MultiMeshInstance3D = a.get_child(0)
-	var hull_b: MultiMeshInstance3D = b.get_child(0)
-	check(hull_a.multimesh == hull_b.multimesh, "a second tank reuses the first one's voxels")
-	a.free()
-	b.free()
+	await FlowWarmStart.run(self, check)
 
 
 ## An autoplayed rampage with a species branch bought (and a helicopter called in) draws every

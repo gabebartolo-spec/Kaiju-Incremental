@@ -69,19 +69,7 @@ var _hide_hit: HideHit
 
 
 func _ready() -> void:
-	var dust_style := {
-		"spread": 70.0,
-		"gravity": Vector3(0, 0.6, 0),
-		"vmin": 1.5,
-		"vmax": 4.0,
-		"smin": 1.0,
-		"smax": 2.6,
-		"grow": true,
-		"colors": [Color(_dust_light(), 0.47), Color(_dust_light(), 0.0)],
-	}
-	_dust_mat = FxParticleMats.dust(dust_style)
-	_dust_mesh = _puff(2.2)
-	_puff_mesh = _puff(0.5)
+	_build_dust()
 	_step_cfg = Content.section("fx")["footfall_dust"]
 	var alpha := Num.f(_step_cfg["alpha"])
 	var step_style := {
@@ -111,6 +99,23 @@ func _ready() -> void:
 	add_child(_hide_hit)
 	_keep_materials()
 	_prewarm()
+
+
+## The dust a fall or a break raises, and the small puff.
+func _build_dust() -> void:
+	var dust_style := {
+		"spread": 70.0,
+		"gravity": Vector3(0, 0.6, 0),
+		"vmin": 1.5,
+		"vmax": 4.0,
+		"smin": 1.0,
+		"smax": 2.6,
+		"grow": true,
+		"colors": [Color(_dust_light(), 0.47), Color(_dust_light(), 0.0)],
+	}
+	_dust_mat = FxParticleMats.dust(dust_style)
+	_dust_mesh = _puff(2.2)
+	_puff_mesh = _puff(0.5)
 
 
 ## Holds every effect material compiled for the run (see ShaderKeep).

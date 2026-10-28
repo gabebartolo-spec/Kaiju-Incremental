@@ -51,18 +51,7 @@ func _ready() -> void:
 	if not await stages.next(self):
 		return
 	_build_buildings()
-	fx = Fx.new()
-	add_child(fx)
-	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
-	add_child(_debris)
-	_ruins = RuinYard.new(sim, _stream.view)
-	add_child(_ruins)
-	_topple = ToppleFx.new(self, _rng)
-	add_child(_topple)
-	_falls = CityFalls.new(self, _stream, _topple, _rng)
-	_falling = _falls.falling
-	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
-	Fire.prewarm(self)
+	_add_layers()
 	if not await stages.next(self):
 		return
 	if _with_decor:
@@ -84,11 +73,31 @@ func _ready() -> void:
 	is_loaded = true
 
 
+## The effect layers: dust and sparks, debris, ruins, topples, falls and the light pool.
+func _add_layers() -> void:
+	fx = Fx.new()
+	add_child(fx)
+	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
+	add_child(_debris)
+	_ruins = RuinYard.new(sim, _stream.view)
+	add_child(_ruins)
+	_topple = ToppleFx.new(self, _rng)
+	add_child(_topple)
+	_falls = CityFalls.new(self, _stream, _topple, _rng)
+	_falling = _falls.falling
+	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
+	Fire.prewarm(self)
+
+
 ## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one
 ## is built.
 func regrow(index: int) -> void:
 	carve.forget(index)
 	_stream.regrow(index)
+
+
+func building(index: int) -> BuildingView:  # built now if it waits (SlamView shudders it)
+	return _stream.view(index)
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife;
@@ -145,10 +154,7 @@ func falling_pieces() -> Array[Node3D]:
 
 ## The buildings (streamed in), their fine-grid views and the camera bubble.
 func _build_buildings() -> void:
-	var colors: Array[Color] = []
-	for b: RampageSim.Building in sim.buildings:
-		colors.append(_base_color(b))
-	_stream = BuildingStream.new(sim, colors)
+	_stream = BuildingStream.new(sim, BuildingColors.of(sim))
 	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
 	add_child(_stream)
 	carve = CityCarve.new(sim, _stream)
@@ -171,11 +177,6 @@ func _build_ground() -> void:
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
 		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
-
-
-func _base_color(b: RampageSim.Building) -> Color:
-	var styles := Look.styles()
-	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
