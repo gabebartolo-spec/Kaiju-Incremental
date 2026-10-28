@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-28 · D-376 · Director · Windowed Godot runs start by GPU load check, not one at a time (replaces D-340's rule)
+His words (10-28 ~22:1x): "that wasnt something i told you to codify though, it was something specific for that time, i
+never told you to make it a rule". Q: what replaces it? A: "Load check (Recommended)". `C:/kt/gpu_slot.sh` admits a
+window when under 3 Godot windows are open, >=3 GB video memory free, GPU use <85%, <80 C, 20 s after the last start
+(logged in `C:/kt/gpu_slot.log`); gq runs up to 3 window jobs. D-340's "don't cook the GPU" aim stands.
+
 ## 2026-10-28 · D-375 · Director · Landmarks are drawn at random from a pool into designated spots, tiered by stage
 His words (10-28 ~21:xx), on the stadium placement clash between D-270 ("south, past the river") and D-271 (reachable
 from stage 2) once the bay moved the start: "so i want maps to be randomised as you know, but if we need to make certain
@@ -235,7 +241,7 @@ to him.
 On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
 (Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
 
-## 2026-10-27 · D-340 · Director · One Godot window on the GPU at a time
+## 2026-10-27 · D-340 · Director · One Godot window on the GPU at a time (rule replaced by D-376)
 His words (22:0x): "having 2 godot open is cooking the GPU, you gotta do a better jop managing it". Cause: the rules
 allowed up to 3 captures at once and up to 2 Godot processes per agent, and nothing counted windows PC-wide, so two
 builders' clips rendered together. Rule: every windowed Godot run (capture, clip, still, speed run) takes the one
