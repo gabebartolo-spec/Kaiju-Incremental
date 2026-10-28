@@ -56,8 +56,8 @@ finish() {
 }
 trap finish EXIT
 
-# take the window: nobody else may hold one
-if ls C:/kt/BENCH_WINDOW* 2> /dev/null | grep -v "BENCH_WINDOW_$OWNER" | grep -q .; then
+# take the window: nobody else may hold one (the Godot queue's own BENCH_WINDOW_gq is held for this very job)
+if ls C:/kt/BENCH_WINDOW* 2> /dev/null | grep -v -e "BENCH_WINDOW_$OWNER" -e "BENCH_WINDOW_gq" | grep -q .; then
 	echo "another bench window is held; not starting (rerun behind wait_window.sh)" | tee -a "$LOG"
 	exit 3
 fi
