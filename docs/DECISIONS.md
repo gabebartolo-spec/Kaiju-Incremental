@@ -2,7 +2,31 @@
 
 Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest first. A decision
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
-changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
+changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
+
+## 2026-10-28 · D-370 · Director · Ruleset after the rule audit
+Rule audit 10-28; his picks, each the recommended option except roadmap. Decision log: a decision goes into
+DECISIONS.md in the PR that acts on it, the lead owns the wording; log-only updates ride in the lead's next PR (main
+requires checks, so no direct push); no separate board PR after each merge. Godot queue: gq syncs a job's worktree to
+latest main itself (only a real conflict refuses); a speed run waiting over 20 min in the day moves to NIGHT_QUEUE.txt;
+NO_GODOT_UNTIL holds every start. Reading: what the task touches, in full, grep the rest. Asking: only real calls.
+Handoffs about 150 lines, edited after a commit, push or PR change. Reports short, no line count, no read receipts.
+Tool caps raised (output 25k, reads 25k, commands 6000). Player-effect fixture only for new systems or rules.
+Checklist walks only where a defect reached you twice. Roadmap: picked "Wait for assignment" (unchanged).
+Team shape stays keyer + 4 builders (D-353).
+
+## 2026-10-28 · D-369 · Director · No cap on open PRs
+Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
+Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
+conflicting over an hour. The repo is public, so extra checks cost no CI minutes.
+
+## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
+Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
+was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
+Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)". The croc's jaw is keyed in the same
+Cascadeur file as the body at all three stages (D-228's Blender jaw stays only for rigs with no Cascadeur jaw). Wide
+open on roar and breath-beam; a snarling gape showing teeth on charge, claw rake, standing stomp, tail sweep and leap
+landing (D-239); every other move keeps the jaw shut.
 
 ## 2026-10-28 · D-367 · Director · Collapse sounds: the newest cuts the oldest
 Asked why many collapses at once went silent in the wider city (each collapse rings about 3.4 s and only 3 play at
