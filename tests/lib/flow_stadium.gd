@@ -3,11 +3,14 @@ extends RefCounted
 ## kits and a ball kicked about), and the moment the stadium loses its first chunk every player
 ## runs for the tunnels; once out (or crushed) they are gone from the pitch. The stands are full
 ## of seated fans (director 2026-10-18) who stand and stream out of the exits with the players,
-## and every section it sheds bursts where it stands, never swinging over the pitch.
+## and every section it sheds bursts where it stands, never swinging over the pitch. The run
+## plays the stage-2 city: the stadium stands past the young city's edge, reachable from stage 2
+## (D-271 "The stage-2 stadium bar stands"), so a young croc can never walk into it.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const PLAY_FRAMES := 240
 const BREAK_FRAMES := 900
+const STADIUM_STAGE := 2  # the first stage whose city holds the stadium (D-271)
 const FLEE_FRAMES := 240
 ## Director playtest (2026-10-19): "stadium audience shouldnt disappear so suddenly, let us kill
 ## them". This long after the panic at least half the fans are still in view, on their way out.
@@ -20,7 +23,8 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
 	)
-	var layout := CityGrowth.layout(Content.tuning(), 1, Seeds.make("city", 0))
+	stats["size"] = float(STADIUM_STAGE)  # the run's city and arena are the stage's (for_stats)
+	var layout := CityGrowth.layout(Content.tuning(), STADIUM_STAGE, Seeds.make("city", 0))
 	rampage.setup(species, stats, layout, 0)
 	tree.root.add_child(rampage)
 	await tree.process_frame
@@ -48,7 +52,7 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	if game == null:
 		rampage.queue_free()
 		return
-	# Into the stadium: the kaiju starts at its south kerb and autoplay takes it to the nearest
+	# Into the stadium: the kaiju starts at its kerb on the bay's side and autoplay takes it to the nearest
 	# standing building, the stadium.
 	var sim := rampage.sim
 	var stadium: RampageSim.Building = null
