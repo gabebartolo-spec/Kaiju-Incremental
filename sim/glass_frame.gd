@@ -19,12 +19,17 @@ static func cells(w: int, d: int, h: int, res: int) -> Dictionary:
 			var column := p == 1 or p == length - 2 or p % bay == 0
 			for y: int in h:
 				if column or (y >= res and y % res == 4):
-					var cell := Vector3i(1, y, p)  # layer 1 of the -x face
-					if side.x > 0:
-						cell = Vector3i(w - 2, y, p)
-					elif side.y < 0:
-						cell = Vector3i(p, y, 1)
-					elif side.y > 0:
-						cell = Vector3i(p, y, d - 2)
-					out[cell] = "pillar" if column else "frame"
+					out[_face_cell(side, p, y, Vector2i(w, d))] = "pillar" if column else "frame"
 	return out
+
+
+## The cell one layer inside face `side` at p along it, y up, for a size.x x size.y footprint.
+static func _face_cell(side: Vector2i, p: int, y: int, size: Vector2i) -> Vector3i:
+	var cell := Vector3i(1, y, p)  # layer 1 of the -x face
+	if side.x > 0:
+		cell = Vector3i(size.x - 2, y, p)
+	elif side.y < 0:
+		cell = Vector3i(p, y, 1)
+	elif side.y > 0:
+		cell = Vector3i(p, y, size.y - 2)
+	return cell
