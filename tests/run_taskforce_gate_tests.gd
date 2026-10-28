@@ -12,6 +12,7 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	await _t("_check_diag_walk")
 	await _t("_check_first_arrival")
 	await _t("_check_city_clock")
 	await _t("_check_armour")
@@ -293,3 +294,46 @@ func _worst_second(times: Array) -> int:
 			times.filter(func(t: float) -> bool: return t >= start and t <= start + 1.0).size()
 		)
 	return worst
+
+
+## TEMP diag (to revert): the stage-2 spawn walk, rail at its own x then forced to -28.
+func _check_diag_walk() -> void:
+	var t := CityGrowth.tuning_for(Content.tuning(), 2)
+	var city: Dictionary = t["city"]
+	var key := "%s:%s" % [city["map_seed"], city["half"]]
+	for forced: float in [INF, -28.0]:
+		Rail._x_cache.erase(key)
+		if forced != INF:
+			Rail._x_cache[key] = forced
+		var sim := _adolescent()
+		_open(sim)
+		var way := _face_free_way(sim)
+		var from := sim.kaiju_pos
+		var want := 0.0
+		var blocked := 0
+		var low := 1.0
+		var strides := 0.0
+		var pushed := 0.0
+		for _n: int in 90:
+			var at := sim.kaiju_pos
+			var mult := sim.powers.speed_mult()
+			low = minf(low, mult)
+			if sim.powers.blocked(at, sim.powers.block_radius()):
+				blocked += 1
+			sim.step(DT, way, false)
+			var meant := sim.stat("speed") * mult * sim.body.stride * DT
+			want += meant
+			strides += sim.body.stride
+			pushed += maxf(0.0, meant - at.distance_to(sim.kaiju_pos))
+		var msg := "DIAG walk rail x %.1f: way %s walked %.1f (want %.1f, lost %.1f); blocked %d/90"
+		msg += " min mult %.2f mean stride %.2f speed %.2f; heading off %.0f deg; emerge %s"
+		check(
+			false,
+			msg % [
+				Rail.avenue_x(sim.city), way, from.distance_to(sim.kaiju_pos), want, pushed,
+				blocked, low, strides / 90.0, sim.stat("speed"),
+				rad_to_deg(absf(sim.body.heading.angle_to(way))), sim.emerge.active
+			]
+		)
+		sim.dispose()
+	Rail._x_cache.erase(key)
