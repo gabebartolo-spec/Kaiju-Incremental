@@ -9,7 +9,8 @@ extends SceneTree
 ##   --scene=block   six towers cut at the base at once (drops and topples), the city-wide cap
 ##   --seconds=N  --out=<dir>  --markers (show the blow sphere; off by default)
 ##   --settle=S  at S seconds pause, draw every remesh, save one <scene>_settled.png and quit
-##   (the deterministic pixel A/B; no timeline stills)  --no-shots (a speed run)  --off=island_merged,native_colliders (render_opt flags off: the A/B)
+##   (the deterministic pixel A/B; no timeline stills)  --no-shots (a speed run)
+##   --off=island_merged,native_colliders (render_opt flags off: the A/B)
 ## CI: tools/capture/ci_capture.sh --movie capture_carve_physics.gd -- --scene=tower --out=<dir>
 @warning_ignore_start("integer_division")
 
@@ -99,40 +100,6 @@ func _pin_seed(node: Node) -> void:
 		_seeded += 1
 
 
-## Building n's footprint centre, size in units, and its blow's path (a centre at time t, or
-## null when the blow is done).
-func _layout() -> Array[Dictionary]:
-	match _scene:
-		"swipe":
-			return [{"at": Vector3.ZERO, "units": Vector3i(6, 12, 6), "radius": 1.3, "delay": 0.0}]
-		"block":
-			var out: Array[Dictionary] = []
-			for n: int in 6:
-				var at := Vector3((n % 3 - 1) * 9.0, 0.0, (n / 3 - 0.5) * 10.0)
-				var units := Vector3i(6, 12 + (n * 5) % 9, 6)
-				out.append({"at": at, "units": units, "radius": 2.4, "delay": n * 0.3, "n": n})
-			return out
-	return [{"at": Vector3.ZERO, "units": Vector3i(6, 16, 6), "radius": 2.4, "delay": 0.0}]
-
-
-func _path(b: Dictionary, t: float) -> Variant:
-	var c: Vector3 = b["at"]
-	if _scene == "swipe":
-		if t < 2.0:
-			return c + Vector3(lerpf(-5.0, 5.0, t / 2.0), 7.0, -3.3)
-		if t < 4.0:
-			var k := (t - 2.0) / 2.0
-			return c + Vector3(lerpf(5.0, -5.0, k), lerpf(9.5, 4.0, k), -3.2)
-		return null
-	# A base cut in two passes; the second stops short on towers that should topple.
-	var stop := 1.0 if _scene == "tower" or Num.i(b.get("n", 0)) % 2 == 1 else 6.0
-	if t < 1.6:
-		return c + Vector3(lerpf(-6.0, 1.0, t / 1.6), 1.6, -1.6)
-	if t < 3.2:
-		return c + Vector3(lerpf(-6.0, stop, (t - 1.6) / 1.6), 1.6, 1.6)
-	return null
-
-
 func _setup() -> void:
 	_world = Node3D.new()
 	root.add_child(_world)
@@ -144,7 +111,7 @@ func _setup() -> void:
 	_phys.fx = fx
 	_world.add_child(_phys)
 	_phys.spawned.connect(func(chunk: IslandBody) -> void: chunk.broke.connect(_on_broke))
-	var layout := _layout()
+	var layout := STAGE.layout(_scene)
 	for n: int in layout.size():
 		var b := layout[n]
 		var units: Vector3i = b["units"]
@@ -178,7 +145,7 @@ func _on_frame() -> void:
 	_frame += 1
 	var t := _frame / 30.0
 	var t0 := Time.get_ticks_usec()
-	var layout := _layout()
+	var layout := STAGE.layout(_scene)
 	for n: int in layout.size():
 		_blow(n, layout[n], t - Num.f(layout[n]["delay"]))
 	var sim_ms := (Time.get_ticks_usec() - t0) / 1000.0
@@ -198,7 +165,7 @@ func _on_frame() -> void:
 
 func _blow(n: int, b: Dictionary, t: float) -> void:
 	var sphere := _spheres[n]
-	var at: Variant = _path(b, t) if t >= 0.0 else null
+	var at: Variant = STAGE.path(_scene, b, t) if t >= 0.0 else null
 	sphere.visible = _markers and at != null
 	if at == null:
 		return
@@ -217,7 +184,7 @@ func _blow(n: int, b: Dictionary, t: float) -> void:
 	for k: int in removed.size():
 		mats[k] = before[removed[k]]
 	var cut := {"cells": removed, "mats": mats}
-	var ahead: Variant = _path(b, t + 1.0 / 30.0)
+	var ahead: Variant = STAGE.path(_scene, b, t + 1.0 / 30.0)
 	cut["push"] = Vector3.ZERO
 	if ahead != null:
 		var next: Vector3 = ahead

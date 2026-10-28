@@ -177,3 +177,38 @@ static func settled_shot(tree: SceneTree, phys: CarvePhysics, path: String, fram
 		await RenderingServer.frame_post_draw
 	tree.root.get_viewport().get_texture().get_image().save_png(path)
 	print("SETTLED %s %s" % [path, state_digest(phys)])
+
+
+## Building n's footprint centre, size in units, and its blow's path (a centre at time t, or
+## null when the blow is done).
+static func layout(scene: String) -> Array[Dictionary]:
+	match scene:
+		"swipe":
+			return [{"at": Vector3.ZERO, "units": Vector3i(6, 12, 6), "radius": 1.3, "delay": 0.0}]
+		"block":
+			var out: Array[Dictionary] = []
+			for n: int in 6:
+				@warning_ignore("integer_division")
+				var at := Vector3((n % 3 - 1) * 9.0, 0.0, (n / 3 - 0.5) * 10.0)
+				var units := Vector3i(6, 12 + (n * 5) % 9, 6)
+				out.append({"at": at, "units": units, "radius": 2.4, "delay": n * 0.3, "n": n})
+			return out
+	return [{"at": Vector3.ZERO, "units": Vector3i(6, 16, 6), "radius": 2.4, "delay": 0.0}]
+
+
+static func path(scene: String, b: Dictionary, t: float) -> Variant:
+	var c: Vector3 = b["at"]
+	if scene == "swipe":
+		if t < 2.0:
+			return c + Vector3(lerpf(-5.0, 5.0, t / 2.0), 7.0, -3.3)
+		if t < 4.0:
+			var k := (t - 2.0) / 2.0
+			return c + Vector3(lerpf(5.0, -5.0, k), lerpf(9.5, 4.0, k), -3.2)
+		return null
+	# A base cut in two passes; the second stops short on towers that should topple.
+	var stop := 1.0 if scene == "tower" or Num.i(b.get("n", 0)) % 2 == 1 else 6.0
+	if t < 1.6:
+		return c + Vector3(lerpf(-6.0, 1.0, t / 1.6), 1.6, -1.6)
+	if t < 3.2:
+		return c + Vector3(lerpf(-6.0, stop, (t - 1.6) / 1.6), 1.6, 1.6)
+	return null
