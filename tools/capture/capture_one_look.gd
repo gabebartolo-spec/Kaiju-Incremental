@@ -12,6 +12,7 @@ extends SceneTree
 ##   --graphics=potato|low|medium|high|max   --frames=N  (print the mean frame time after N frames)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const SLOW_MS := 33.4  # a frame under 30 fps (destruction plan stage 1, speed bar d)
 ## What --today zeroes: every number phase 1 added to the look (the keys that make a pair differ).
 const PHASE_ONE_KEYS: Array[String] = [
 	"far_blur_amount",
@@ -77,7 +78,7 @@ func _initialize() -> void:
 					_sets[kv[0]] = kv[1] == "true"
 				else:
 					_sets[kv[0]] = float(kv[1]) if kv[1].is_valid_float() else kv[1]
-		elif arg.begins_with("--tune="):  # --tune=camera.fade_opacity=1 (a tuning.json number)
+		elif arg.begins_with("--tune="):  # --tune=camera.bubble_radius=12 (a tuning.json number)
 			var tv := arg.substr(7).split("=")
 			var path := tv[0].split(".")  # any depth: display.graphics.medium.fsr_sharpness=0.1
 			var table: Dictionary = Content.section(path[0])
@@ -206,6 +207,7 @@ func _bench_frames(rampage: Rampage, city: CityView) -> void:
 	var gpu: Array[float] = []
 	var vp: RID = root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
+	CellView.worst_usec = 0  # the fine-grid views' costliest frame, from here on
 	var last := Time.get_ticks_usec()
 	for i: int in _bench:
 		await process_frame
@@ -245,6 +247,29 @@ func _bench_frames(rampage: Rampage, city: CityView) -> void:
 				gpu[int(gpu.size() * 0.95)],
 				gpu[gpu.size() - 1],
 				gpu.size()
+			]
+		)
+	)
+	_carve_line(city, times)
+
+
+## The fine-grid views' share (destruction plan stage 1, speed bar d): frames over SLOW_MS, the
+## most main-thread time one frame spent on them, the most frames a falling piece waited to show.
+func _carve_line(city: CityView, times: Array[float]) -> void:
+	var slow := 0
+	for t: float in times:
+		slow += int(t > SLOW_MS)
+	var carve := city.carve
+	print(
+		(
+			"ONEL carve slow_frames %d worst_main_ms %.2f worst_wait %d shown %d unseen %d on %s"
+			% [
+				slow,
+				CellView.worst_usec / 1000.0,
+				carve.worst_wait,
+				carve.shown,
+				carve.unseen,
+				carve.on
 			]
 		)
 	)

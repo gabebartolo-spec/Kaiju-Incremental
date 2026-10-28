@@ -7,6 +7,7 @@ extends RefCounted
 ## distance, and small lights cast no shadow.
 
 const GL_CAP := 32  # positional lights a frame in gl_compatibility
+const STAGE := 2  # growth stage of the fixture city
 const FADE_STEP := 0.1  # seconds the lights fade between two checks
 const SETTLE := 8  # steps for a hand-over to finish (fade_seconds is well under SETTLE * STEP)
 
@@ -19,11 +20,12 @@ static func check(root: Node, check_fn: Callable) -> void:
 		Content.species_def("reptilian"),
 		UpgradeTree.new(Content.upgrades())
 	)
+	# The Behemoth's city: since the road geometry fix (D-265) the first stage's bigger blocks
+	# carry fewer lamps than the cap, and the pool must be shown handling more than the cap.
+	var tuning := CityGrowth.tuning_for(Content.tuning(), STAGE)
+	var city: Dictionary = tuning["city"]
 	var sim := RampageSim.new(
-		stats,
-		Content.tuning(),
-		CityGen.generate(Seeds.make("city", 0), Content.section("city")),
-		Seeds.make("army", 0)
+		stats, tuning, CityGen.generate(Seeds.make("city", 0), city), Seeds.make("army", 0)
 	)
 	var holder := Node3D.new()
 	root.add_child(holder)

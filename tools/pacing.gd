@@ -56,6 +56,7 @@ func _pace(species_id: String) -> void:
 	var stages: Dictionary = {}  # tier -> {runs, seconds, rubble, destruction, ends}
 	var run := 0
 	var first_power := -1
+	var city_seconds := 0.0  # the Taskforce's clock, carried run to run as the save does (D-160)
 	while run < _runs and tree.levels_owned() < tree.levels_total():
 		var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 		var tier := Num.i(stats["size"])
@@ -70,8 +71,10 @@ func _pace(species_id: String) -> void:
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
 		sim.body.use_species(species_id)
+		sim.army_units.taskforce.carried = city_seconds  # as scenes/rampage.gd: the Taskforce joins
 		var steps := PacingPlayer.play(sim, _goal(sim))
 		var res := sim.result()
+		city_seconds = sim.army_units.taskforce.city_seconds()
 		sim.dispose()  # its parts point back at it: else every run's sim stays in memory
 		clock += steps * DT + TREE_SECONDS
 		rubble += Num.i(res["rubble"])

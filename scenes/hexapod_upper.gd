@@ -108,26 +108,7 @@ func roar() -> void:
 ## A twitch at rest, a hunting head and the scythes posed. calm: 0 walking, 1 standing.
 func update(dt: float, calm: float) -> void:
 	var rng := _gait.rng
-	_twitch_in -= dt
-	if _twitch_in <= 0.0:
-		_twitch_in = rng.randf_range(TWITCH_EVERY.x, TWITCH_EVERY.y)
-		for _i: int in rng.randi_range(1, TWITCH_PARTS):
-			_twitch(rng.randi() % 6, calm)
-	_tap_in -= dt
-	if _tap_in <= 0.0:
-		_tap_in = rng.randf_range(TAP_EVERY.x, TAP_EVERY.y)
-		if calm > 0.5:
-			tap_leg = rng.randi() % 4
-	_head_hold -= dt
-	if _head_hold <= 0.0:
-		_head_hold = rng.randf_range(HEAD_HOLD.x, HEAD_HOLD.y)
-		var lead := clampf(_gait.yaw_rate * 0.25, -0.5, 0.5)
-		_snap_to(
-			"head_yaw", rng.randf_range(-HEAD_YAW, HEAD_YAW) * lerpf(0.4, 1.0, calm) + lead, 9.0
-		)
-		_snap_to("head_pitch", rng.randf_range(-HEAD_PITCH, HEAD_PITCH * 0.5), 9.0)
-		var cock := rng.randf_range(-HEAD_COCK, HEAD_COCK) if rng.randf() < 0.45 else 0.0
-		_snap_to("head_cock", cock, 9.0)
+	_restless(dt, calm, rng)
 	for i: int in SNAPS.size():
 		_step_snap(i, dt)
 	_strike = maxf(0.0, _strike - dt * STRIKE_DECAY)
@@ -152,6 +133,30 @@ func update(dt: float, calm: float) -> void:
 		var flex := _v("flex_" + arm.right(1))
 		_pose_arm(arm, maxf(lash, perch * 0.35), flex, display)
 	_pose_mandibles(maxf(_v("mandibles"), display * MANDIBLE_FLARE))
+
+
+## A twitch now and then, a tapped leg at rest and a hunting head: each on its own timer.
+func _restless(dt: float, calm: float, rng: RandomNumberGenerator) -> void:
+	_twitch_in -= dt
+	if _twitch_in <= 0.0:
+		_twitch_in = rng.randf_range(TWITCH_EVERY.x, TWITCH_EVERY.y)
+		for _i: int in rng.randi_range(1, TWITCH_PARTS):
+			_twitch(rng.randi() % 6, calm)
+	_tap_in -= dt
+	if _tap_in <= 0.0:
+		_tap_in = rng.randf_range(TAP_EVERY.x, TAP_EVERY.y)
+		if calm > 0.5:
+			tap_leg = rng.randi() % 4
+	_head_hold -= dt
+	if _head_hold <= 0.0:
+		_head_hold = rng.randf_range(HEAD_HOLD.x, HEAD_HOLD.y)
+		var lead := clampf(_gait.yaw_rate * 0.25, -0.5, 0.5)
+		_snap_to(
+			"head_yaw", rng.randf_range(-HEAD_YAW, HEAD_YAW) * lerpf(0.4, 1.0, calm) + lead, 9.0
+		)
+		_snap_to("head_pitch", rng.randf_range(-HEAD_PITCH, HEAD_PITCH * 0.5), 9.0)
+		var cock := rng.randf_range(-HEAD_COCK, HEAD_COCK) if rng.randf() < 0.45 else 0.0
+		_snap_to("head_cock", cock, 9.0)
 
 
 ## One random part twitches to a new pose and holds it.

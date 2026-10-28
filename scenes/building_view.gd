@@ -14,14 +14,6 @@ const BITE_CHANCE := 0.5  # ...and this share of the chunks next to a hole are b
 
 ## Building pairs the last party_walls() call compared (tests check it grows about linearly).
 static var pair_checks := 0
-## A building's voxels and meshes never change in a rampage (damage is the alive texture), and
-## every run of a stage builds the same city, so they are kept for the next run (director's
-## playtest: "load times when you start a run could be quicker"). Key: _key().
-static var _baked: Dictionary = {}
-static var _baked_lock := Mutex.new()
-## The city being built (begin_city); an entry not used by it is dropped at end_city, so only
-## the current city's buildings stay in memory as the city grows between runs.
-static var _generation := 0
 
 var b: RampageSim.Building
 ## The building's fine voxels, rebuilt (the build is deterministic) the first time something needs
@@ -30,11 +22,14 @@ var b: RampageSim.Building
 var voxels: BuildingVoxels:
 	get:
 		if _voxels == null:
-			_voxels = _make_voxels()
+			_voxels = voxels_of(b, _base, _party)
 		return _voxels
 var mesher: BuildingMesher
-## The fine-grid view once the building is carved (promote); null while it is on its chunks.
+## The fine-grid view once the building is carved (promote, attach_cells); null while it is on
+## its chunks.
 var cells_view: CellView
+## Whether the fine-grid view draws the building now (show_cells): the baked meshes stay hidden.
+var fine := false
 var _voxels: BuildingVoxels
 var _base: Color
 var _party: Dictionary
@@ -51,7 +46,11 @@ var _slabs: MeshInstance3D
 var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
 var _shell: MeshInstance3D
+## The standing fine-grid view's material (attach_cells), cut by the bubble as the shell is.
 var _cells_mat: ShaderMaterial
+## The camera bubble's cut on this building (set_near_camera): 0 whole .. 1 the whole radius.
+var _cut := 0.0
+var _share := 1.0  # how much of the standing building is drawn (StreamDissolve)
 ## The landmark ground's mesh arrays until _dress makes its mesh.
 var _ground: Array = []
 
@@ -64,23 +63,14 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	b = p_building
 	_base = base
 	_party = party
-	var key := _key(b, base, party)
-	_key_of = key
-	_baked_lock.lock()
-	var kept: Array = _baked.get(key, [])
-	if not kept.is_empty():
-		kept[2] = _generation
-	_baked_lock.unlock()
-	if kept.is_empty():
-		var made := _make_voxels()
+	_key_of = BuildingBakeCache.key(b, base, party)
+	mesher = BuildingBakeCache.take(_key_of)  # kept from an earlier run of this city
+	if mesher == null:
+		var made := voxels_of(b, _base, _party)
 		mesher = BuildingMesher.new(made)
 		if b.landmark != "":
 			_voxels = made  # a landmark is few and its ground mesh is drawn below
-		_baked_lock.lock()
-		_baked[key] = [null, mesher, _generation]
-		_baked_lock.unlock()
-	else:
-		mesher = kept[1]
+		BuildingBakeCache.keep(_key_of, mesher)
 	_alive = Image.create(maxi(1, b.w * b.d * b.height), 1, false, Image.FORMAT_R8)
 	_alive.fill(Color(1, 1, 1))
 	if b.landmark != "" and not (voxels as LandmarkVoxels).ground.cells.is_empty():
@@ -115,80 +105,116 @@ func _dress() -> void:
 		_ground = []
 
 
-func _make_voxels() -> BuildingVoxels:
-	if b.is_rail():
-		return RailVoxels.new(b, _base)
-	if b.landmark != "":
-		return LandmarkVoxels.new(b, _base)
-	if b.hazard != "":
-		return HazardVoxels.new(b, _base)  # a red barrel (comments #19)
-	return BuildingVoxels.new(b, _base, _party)
+## A building's fine voxels (pure data: safe on a worker thread).
+static func voxels_of(at: RampageSim.Building, base: Color, party: Dictionary) -> BuildingVoxels:
+	if at.is_rail():
+		return RailVoxels.new(at, base)
+	if at.landmark != "":
+		return LandmarkVoxels.new(at, base)
+	if at.hazard != "":
+		return HazardVoxels.new(at, base)  # a red barrel (comments #19)
+	return BuildingVoxels.new(at, base, party)
 
 
-## A new city's build starts (BuildingStream): what it uses is marked as its own.
-static func begin_city() -> void:
-	_baked_lock.lock()
-	_generation += 1
-	_baked_lock.unlock()
+## Builds this building's voxels anew when called, holding no reference to the view (a worker
+## may call it while the view is streamed out); adopt_voxels hands them back.
+func voxel_maker() -> Callable:
+	return voxels_of.bind(b, _base, _party)
 
 
-## The city is done with (its rampage leaves): every kept building it did not use is dropped.
-static func end_city() -> void:
-	_baked_lock.lock()
-	for key: String in _baked.keys():
-		var kept: Array = _baked[key]
-		if Num.i(kept[2]) != _generation:
-			_baked.erase(key)
-	_baked_lock.unlock()
+## The voxels voxel_maker built (the same data the getter would build): kept, not built again.
+func adopt_voxels(made: BuildingVoxels) -> void:
+	if _voxels == null:
+		_voxels = made
 
 
-## A view leaves for good (BuildingStream sends a far, untouched building back to a box): its
-## kept meshes go too, so the memory is really returned.
-static func forget(view: BuildingView) -> void:
-	_baked_lock.lock()
-	_baked.erase(view._key_of)
-	_baked_lock.unlock()
+## Whether the voxels are built already (the getter would not build them).
+func has_voxels() -> bool:
+	return _voxels != null
 
 
-## Buildings whose voxels and meshes are kept (tests).
-static func cached() -> int:
-	return _baked.size()
+## Its BuildingBakeCache key (BuildingStream forgets the kept meshes of a view it frees).
+func bake_key() -> String:
+	return _key_of
 
 
-## What makes two buildings bake alike: place, size, floors, landmark, hazard, wall colour, party
-## walls.
-static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> String:
-	return (
-		"%s|%s|%d|%d|%d|%s|%s|%s|%s"
-		% [at.x, at.z, at.w, at.d, at.height, at.landmark, at.hazard, base.to_html(), str(party)]
-	)
-
-
-## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
-func set_opacity(value: float) -> void:
+## The camera bubble's seam (CameraBubble, D-283; render plan item 5 names it too): while `on`,
+## this standing building is cut away inside the bubble round the camera, `share` of its radius
+## (1 = all of it; less while the cut opens or closes); off, it draws whole. Only the standing
+## building takes it: a piece lifted off it makes its own materials, never cut (D-326).
+func set_near_camera(on: bool, share := 1.0) -> void:
+	var cut := clampf(share, 0.0, 1.0) if on else 0.0
+	if cut == _cut and _shell_mat != null:
+		return
 	_dress()
-	_shell_mat.set_shader_parameter("opacity", value)
-	_slab_mat.set_shader_parameter("opacity", value)
-	if cells_view != null:
-		cells_view.set_opacity(value)
+	_cut = cut
+	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
+		if mat != null:
+			mat.set_shader_parameter("bubble_cut", cut)
+
+
+## The stream swap (StreamDissolve): `share` of this standing building is drawn, a dither (1 =
+## whole, 0 = none). Only the stream sets it; a carved, broken or falling piece is whole (D-326).
+func set_dissolve(share: float) -> void:
+	_share = share
+	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
+		if mat != null:
+			mat.set_shader_parameter("dissolve", share)
+
+
+## How much of this building the stream swap draws now (1 = whole; tests read it).
+func dissolve_share() -> float:
+	return _share
+
+
+## How much of the bubble cuts this building now (0 = whole; tests read it).
+func near_camera_cut() -> float:
+	return _cut
 
 
 ## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
 ## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
-## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6).
+## The same shader draws both, so the bubble's cut and the glow carry over. Not for a landmark
+## (WP6). At once, on the main thread (tests, captures); play goes through CityCarve
+## (attach_cells, show_cells).
 func promote(grid: CellGrid) -> CellView:
 	if cells_view != null:
 		return cells_view
+	attach_cells(CellView.new(CellMesher.new(voxels, grid), grid.cells, cells_material()))
+	show_cells()
+	return cells_view
+
+
+## A material for a fine-grid mesh of this building: the baked shader with every face standing,
+## uncut. The CellView's (attach_cells gives it the bubble's cut, as the shell has) and each
+## falling piece's own (a lifted piece is never cut, D-326).
+func cells_material() -> ShaderMaterial:
 	_dress()
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
-	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
-	_cells_mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
-	cells_view = CellView.new(CellMesher.new(voxels, grid), grid.cells, _cells_mat)
-	add_child(cells_view)
+	return _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
+
+
+## Adds the fine-grid view, hidden: the baked meshes draw on until show_cells. From now on its
+## material takes the bubble's cut with the shell's (set_near_camera): the grid stands where the
+## shell did.
+func attach_cells(view: CellView) -> void:
+	_dress()
+	cells_view = view
+	_cells_mat = view.material as ShaderMaterial
+	if _cells_mat != null:
+		_cells_mat.set_shader_parameter("bubble_cut", _cut)
+	view.visible = false
+	add_child(view)
+
+
+## The fine-grid view draws the building from now on; the baked meshes are hidden (the same
+## frame, so nothing blinks).
+func show_cells() -> void:
+	cells_view.visible = true
 	_shell.visible = false
 	_slabs.visible = false
-	return cells_view
+	fine = true
 
 
 func _material(tex: Texture2D) -> ShaderMaterial:
@@ -267,7 +293,7 @@ func _upload() -> void:
 ## Hides these chunks; returns world positions and colours to throw as debris.
 func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 	_dress()
-	_slabs.visible = true
+	_slabs.visible = not fine
 	var out := _parts(cells)
 	for c: Vector3i in cells:
 		_put_state(c, 0.0)
@@ -282,7 +308,7 @@ func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 ## noise; its arcs (Arcs) come down whole instead.
 func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictionary]:
 	_dress()
-	_slabs.visible = true
+	_slabs.visible = not fine
 	if b.landmark != "":
 		return []
 	var bitten: Array[Vector3i] = []

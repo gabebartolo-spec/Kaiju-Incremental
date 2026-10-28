@@ -14,11 +14,15 @@ const FRAMES := 600
 ## change to street life, its tuning or the city plan re-pins it (3ce3931c7b6a5cdc ->
 ## 1532d9c3297b48fe, D-135: the cities are wider, so the plan and the people on it changed;
 ## -> e6dc7d4d2660f21f, road network: no alleys on the river banks, so the plan's streets, and the
-## pavements the people walk, differ at stage 1).
-const PINNED := "e6dc7d4d2660f21f"
+## pavements the people walk, differ at stage 1; -> e451a8ed2f5a4ead, road geometry #243: bigger
+## blocks, the diagonal mid-block and quay sheds by the bank change the plan and its lots; street
+## life and its tuning untouched).
+const PINNED := "e451a8ed2f5a4ead"
 ## Frames of the buffer tests: five seconds of the street, with stomps, a brace and a blockade.
 const BUFFER_FRAMES := 300
 const STRIDE := 12  # floats of a 3D transform in a MultiMesh buffer
+## Frames of the native walk check: long enough for officers to hold, flee and leave.
+const WALK_FRAMES := 1500
 
 
 func suite_name() -> String:
@@ -32,6 +36,7 @@ func run_checks() -> void:
 	await _t("_check_buffers_byte_equal")
 	await _t("_check_buckets_resize")
 	await _t("_check_people_bounds")
+	await _t("_check_walk_native")
 
 
 ## The buffer checks run the native buckets (KaijuBuckets, item 7): without the library they skip,
@@ -98,7 +103,7 @@ func _misdrawn(street: StreetLife) -> String:
 ## holds, else a two-frame walk or run (officers and runners at RUN_HZ).
 func _pose(street: StreetLife, i: int) -> int:
 	var clock := street._clock
-	var officer: Police.Officer = street._officers[i]
+	var officer: Police.Officer = street.officers[i]
 	if officer == null and street.pinned_until[i] > clock:
 		return VoxelPerson.Pose.WALK_A
 	if officer != null and officer.state == 1:
@@ -253,3 +258,44 @@ func _check_people_bounds() -> void:
 				outside += 1
 	check(outside == 0, "every person is inside every MultiMesh's box (%d outside)" % outside)
 	replay.finish()
+
+
+## With the extension the civilians walk natively (KaijuWalk, item 7), and every frame the street
+## is the GDScript loop's: people, random streams and totals, through stomps, braces, a blockade
+## and officers that run far enough to leave. The replay's straight line never reaches a
+## blockade, so the kaiju turns toward the first officer's post (measured: the blockade breaks at
+## frame ~480 and the first officer leaves at ~1085 of WALK_FRAMES).
+func _check_walk_native() -> void:
+	if not StreetDraw.available():
+		check(true, "skipped: no native library")
+		return
+	var on := Replay.new(self, 1, "high", true)
+	var off := Replay.new(self, 1, "high", false)
+	check(on.street._walker != null, "the extension walks the street (KaijuWalk is registered)")
+	var differ := -1
+	var seen := {}
+	for f: int in WALK_FRAMES:
+		on.step()
+		off.step()
+		var i := on.street.cop.find(1)
+		if i >= 0 and seen.is_empty():
+			on.aim(on.street.officers[i].post)
+			off.aim(on.street.officers[i].post)
+		while i >= 0:
+			seen[on.street.officers[i]] = true
+			i = on.street.cop.find(1, i + 1)
+		if differ < 0 and on.digest() != off.digest():
+			differ = f
+	var left := 0
+	for officer: Police.Officer in seen:
+		left += 1 if officer.timer > Police.COP_FLEE_SECONDS else 0
+	check(differ < 0, "native and GDScript walks match every frame (first differs: %d)" % differ)
+	check(
+		on.street.fled > 0 and on.street.killed > 0 and left > 0,
+		(
+			"the run has people fleeing (%d), crushed (%d) and officers leaving (%d)"
+			% [on.street.fled, on.street.killed, left]
+		)
+	)
+	on.finish()
+	off.finish()

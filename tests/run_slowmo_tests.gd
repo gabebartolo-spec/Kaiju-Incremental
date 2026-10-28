@@ -78,14 +78,18 @@ func _frames(n: int) -> void:
 		await physics_frame
 
 
-## Tuned: a split second at a fraction of speed, then eased back; the curve follows the tuning.
+## Tuned: a beat at a fraction of speed, then eased back; the curve follows the tuning. The length
+## is longer than the 0.75 s the director found too brief (D-342) and still a beat, not a cutscene.
 func _check_speed_curve() -> void:
 	var cfg: Dictionary = Content.section("slowmo")
 	var low := Num.f(cfg["scale"])
 	var hold := Num.f(cfg["hold_s"])
 	var ease_s := Num.f(cfg["ease_s"])
 	check(low > 0.0 and low < 1.0, "the slow motion is slower than normal, not stopped (%s)" % low)
-	check(hold + ease_s <= 1.0, "and it is a split second (%s s)" % (hold + ease_s))
+	check(
+		hold + ease_s > 0.75 and hold + ease_s <= 3.0,
+		"and it lasts longer than the old 0.75 s but stays a beat (%s s, D-342)" % (hold + ease_s)
+	)
 	check(LandmarkSlowmo.speed_at(-1.0, cfg) == 1.0, "no fall: full speed")
 	check(LandmarkSlowmo.speed_at(0.0, cfg) == low, "a fall slows the world at once")
 	check(LandmarkSlowmo.speed_at(hold - 0.001, cfg) == low, "and holds it for the tuned time")
@@ -172,7 +176,8 @@ func _check_second_fall_restarts() -> void:
 		Engine.time_scale == low,
 		"and it restarted the clock: %.2f s after the first fall it still holds" % (hold * 1.6)
 	)
-	node.advance(Num.f(cfg["hold_s"]) * 0.4 + Num.f(cfg["ease_s"]) * 0.5)
+	# The restarted clock is at 0.8 of hold: on to the end of hold, then halfway up the ease.
+	node.advance(hold * 0.2 + Num.f(cfg["ease_s"]) * 0.5)
 	check(Engine.time_scale > low and Engine.time_scale < 1.0, "then it eases back once")
 	node.advance(Num.f(cfg["ease_s"]))
 	check(Engine.time_scale == 1.0 and not node.active(), "and ends at 1.0")
@@ -293,3 +298,4 @@ func _check_press_waits() -> void:
 	var again: bool = node.merge(quiet, tick)["signature"]
 	check(first, "a press on a tick it sat out reaches the step")
 	check(not again, "and is given to one step only")
+	node.free()  # a node never added to the tree is no one's child (debt row 2)

@@ -26,41 +26,57 @@ static func mesh(sport: Dictionary, half: Vector2, voxel: float) -> ArrayMesh:
 		_line_z(v, 0, f.y)  # halfway
 	match str(sport["posts"]):
 		"afl":
-			_ellipse(v, Vector2(3, 3), "line")  # centre circle
-			for end: int in [-1, 1]:
-				for z: int in [-3, 3]:
-					_post(v, Vector2i(end * f.x, z), 13)  # goal posts
-				for z: int in [-8, 8]:
-					_post(v, Vector2i(end * f.x, z), 8)  # behind posts
+			_afl_posts(v, f)
 		"uprights":
-			for k: int in range(1, 10):  # yard lines between the end zones
-				_line_z(v, -f.x + roundi(f.x * 2.0 * k / 10.0), f.y)
-			for end: int in [-1, 1]:
-				var x := end * (f.x + 1)
-				_post(v, Vector2i(x, 0), 5)
-				v.box(Vector3i(x, 5, -3), Vector3i(x, 5, 3), "post")  # crossbar
-				for z: int in [-3, 3]:
-					v.box(Vector3i(x, 6, z), Vector3i(x, 14, z), "post")
+			_uprights(v, f)
 		"goals":
-			_ellipse(v, Vector2(4, 4), "line")
-			for end: int in [-1, 1]:
-				_rect(v, Vector2i(end * f.x - end * 7, -9), Vector2i(end * f.x, 9))  # penalty box
-				var x := end * (f.x + 1)
-				for z: int in [-3, 3]:
-					_post(v, Vector2i(x, z), 3)
-				v.box(Vector3i(x, 3, -3), Vector3i(x, 3, 3), "post")
+			_goals(v, f)
 		"stumps":
-			v.box(Vector3i(-10, 0, -1), Vector3i(10, 0, 1), "strip")  # the pitch strip
-			for end: int in [-1, 1]:
-				_line_z(v, end * 8, 2)  # crease
-				for z: int in [-1, 0, 1]:
-					v.box(Vector3i(end * 9, 1, z), Vector3i(end * 9, 3, z), "post")
+			_stumps(v)
 	var palette := {
 		"line": Color(str(sport["line"])),
 		"post": Color(str(sport["post_color"])),
 		"strip": Color(str(sport.get("strip", sport["line"]))),
 	}
 	return v.bake(palette, voxel, Vector3.ZERO, 0.0)
+
+
+static func _afl_posts(v: VoxelBuilder, f: Vector2i) -> void:
+	_ellipse(v, Vector2(3, 3), "line")  # centre circle
+	for end: int in [-1, 1]:
+		for z: int in [-3, 3]:
+			_post(v, Vector2i(end * f.x, z), 13)  # goal posts
+		for z: int in [-8, 8]:
+			_post(v, Vector2i(end * f.x, z), 8)  # behind posts
+
+
+static func _uprights(v: VoxelBuilder, f: Vector2i) -> void:
+	for k: int in range(1, 10):  # yard lines between the end zones
+		_line_z(v, -f.x + roundi(f.x * 2.0 * k / 10.0), f.y)
+	for end: int in [-1, 1]:
+		var x := end * (f.x + 1)
+		_post(v, Vector2i(x, 0), 5)
+		v.box(Vector3i(x, 5, -3), Vector3i(x, 5, 3), "post")  # crossbar
+		for z: int in [-3, 3]:
+			v.box(Vector3i(x, 6, z), Vector3i(x, 14, z), "post")
+
+
+static func _goals(v: VoxelBuilder, f: Vector2i) -> void:
+	_ellipse(v, Vector2(4, 4), "line")
+	for end: int in [-1, 1]:
+		_rect(v, Vector2i(end * f.x - end * 7, -9), Vector2i(end * f.x, 9))  # penalty box
+		var x := end * (f.x + 1)
+		for z: int in [-3, 3]:
+			_post(v, Vector2i(x, z), 3)
+		v.box(Vector3i(x, 3, -3), Vector3i(x, 3, 3), "post")
+
+
+static func _stumps(v: VoxelBuilder) -> void:
+	v.box(Vector3i(-10, 0, -1), Vector3i(10, 0, 1), "strip")  # the pitch strip
+	for end: int in [-1, 1]:
+		_line_z(v, end * 8, 2)  # crease
+		for z: int in [-1, 0, 1]:
+			v.box(Vector3i(end * 9, 1, z), Vector3i(end * 9, 3, z), "post")
 
 
 static func _ellipse(v: VoxelBuilder, radii: Vector2, key: String) -> void:

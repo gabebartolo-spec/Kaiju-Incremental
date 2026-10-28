@@ -7,15 +7,12 @@ extends Node3D
 ## the bay has a lattice tower and blinking beacons; lamps glow down the outer streets and a
 ## few aircraft lights cross the sky. Never destroyed; presentation only.
 
-const FACADE := preload("res://scenes/facade.gdshader")
-const FACADE_FAR := preload("res://scenes/facade_far.gdshader")
 const DECK_Y := 7.0
 const DECK_WIDTH := 5.0
 const DETAIL_REACH := 200.0  # roof clutter and lamp heads only this close to the centre
 const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the expressway
 const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
-const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
 const LATTICE_HEIGHT := 130.0
 const SUPERTALL := 1.8  # a far tower that is a supertall stands this many times taller
 ## A capped far shore (cfg far_tower_cap, the title's): towers under this share of the cap stand as
@@ -54,23 +51,31 @@ func _ready() -> void:
 		_freeway(path)
 	_far_shore()
 	SkylineLamps.outer_streets(ground, _lamps)
-	add_child(_facades(_near, 0.0))
-	var far := _facades(_far, Num.f(cfg["far_haze"]))
+	add_child(SkylineMeshes.facades(_near, 0.0))
+	var far := SkylineMeshes.facades(_far, Num.f(cfg["far_haze"]))
 	var far_mesh: BoxMesh = far.multimesh.mesh
 	var far_mat: ShaderMaterial = far_mesh.material
 	far_mat.set_shader_parameter("grain", FAR_GRAIN)
 	far_haze.track([far_mat])
 	add_child(far)
 	far_view = far
-	add_child(_plain_boxes())
+	add_child(SkylineMeshes.plain_boxes(_plain, cfg, far_haze))
 	add_child(SkylineLamps.heads(_lamps))
 	add_child(Aircraft.new(_rng))
 	far_haze.apply_default()  # the far city in the same air as the bay (director comment #37)
+	var reflect: Dictionary = cfg["far_reflect"]  # its lit windows on the far water
+	FarWaterGlow.cover(ground.bay, reflect, ground.coast - Num.f(cfg["bay_width"]))
 
 
 ## The far skyline's boxes, in far_view's instance order; a supertall's crown has "crown_of".
 func far_boxes() -> Array[Dictionary]:
 	return _far
+
+
+## The plain boxes as drawn (roof gear, tanks, the lattice tower, concrete): {"t": Transform3D,
+## "c": Color, "hazy": bool, "concrete": bool}.
+func plain_drawn() -> Array[Dictionary]:
+	return _plain
 
 
 ## Every painted stand-in building (near and far), as {"size": Vector3, "at": Vector3 centre}.
@@ -115,7 +120,8 @@ func _outer_blocks() -> void:
 				_roof_clutter(top, Vector2(Num.f(lot["w"]), Num.f(lot["d"])))
 
 
-## Rooftop stair huts, plant boxes and water tanks, so the stand-ins' roofs are not bare.
+## Rooftop stair huts, plant boxes and water tanks (SkylineRoofTank: white heaters and wooden
+## towers, as on the playable brick buildings), so the stand-ins' roofs are not bare.
 func _roof_clutter(top: Vector3, size: Vector2) -> void:
 	var gear := Look.color("roof").lightened(0.15)
 	for n: int in _rng.randi_range(0, 2):
@@ -127,7 +133,14 @@ func _roof_clutter(top: Vector3, size: Vector2) -> void:
 			s.y * 0.5,
 			_rng.randf_range(-0.5, 0.5) * maxf(0.0, size.y - s.z - 0.6)
 		)
-		_box(Basis(), AABB(top + off, s), gear if n == 0 else TANK)
+		if n == 0:
+			_box(Basis(), AABB(top + off, s), gear)
+			continue
+		for part: Dictionary in SkylineRoofTank.boxes(top + Vector3(off.x, 0, off.z), gear):
+			var at: Vector3 = part["at"]
+			var extent: Vector3 = part["size"]
+			var color: Color = part["color"]
+			_box(Basis(), AABB(at, extent), color)
 
 
 func _lit() -> float:
@@ -292,83 +305,3 @@ func _box(turn: Basis, box: AABB, color: Color, hazy: bool = false) -> void:
 func _concrete_box(turn: Basis, box: AABB, color: Color, hazy: bool = false) -> void:
 	_box(turn, box, color, hazy)
 	_plain[-1]["concrete"] = true
-
-
-func _facades(boxes: Array[Dictionary], haze: float) -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.use_custom_data = true
-	var mesh := BoxMesh.new()
-	mesh.material = facade_material(haze)
-	mm.mesh = mesh
-	mm.instance_count = boxes.size()
-	for i: int in boxes.size():
-		var box: Dictionary = boxes[i]
-		var size: Vector3 = box["size"]
-		var at: Vector3 = box["at"]
-		mm.set_instance_transform(i, Transform3D(Basis.from_scale(size), at))
-		var color: Color = box["color"]
-		var custom: Color = box["custom"]
-		mm.set_instance_color(i, color)
-		mm.set_instance_custom_data(i, custom)
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	if haze > 0.0:
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mmi
-
-
-static func facade_material(haze: float) -> ShaderMaterial:
-	var mat := ShaderMaterial.new()
-	mat.shader = FACADE_FAR if haze > 0.0 else FACADE
-	mat.set_shader_parameter("roof_color", Look.color("roof"))
-	mat.set_shader_parameter("window_color", Look.color("window"))
-	mat.set_shader_parameter("lit_color", Look.color("window_lit_color"))
-	mat.set_shader_parameter("glow", Look.value("window_glow"))
-	mat.set_shader_parameter("haze_color", Look.color("fog_color"))
-	mat.set_shader_parameter("haze", haze)
-	return WindowPalette.apply_common(mat)
-
-
-## The plain boxes: roof gear and the lattice tower in the instance colour; the concrete
-## (expressway, far shore quay) in the ground's concrete look. The hazy ones fade like the far
-## skyline.
-func _plain_boxes() -> Node3D:
-	var holder := Node3D.new()
-	for variant: int in 4:
-		var hazy := variant % 2 == 1
-		var concrete := variant >= 2
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.use_colors = true
-		mm.use_custom_data = true
-		var mesh := BoxMesh.new()
-		var haze := Num.f(cfg["far_haze"]) * 1.6 if hazy else 0.0
-		var mat := (
-			GroundKit.concrete_material(haze, hazy, Num.i(cfg["map_seed"]))
-			if concrete
-			else facade_material(haze)
-		)
-		if not concrete:
-			mat.set_shader_parameter("plain", true)
-		if hazy:
-			far_haze.track([mat])
-		mesh.material = mat
-		mm.mesh = mesh
-		var picked: Array[Dictionary] = []
-		for box: Dictionary in _plain:
-			if box["hazy"] == hazy and box["concrete"] == concrete:
-				picked.append(box)
-		mm.instance_count = picked.size()
-		for i: int in picked.size():
-			var t: Transform3D = picked[i]["t"]
-			var c: Color = picked[i]["c"]
-			mm.set_instance_transform(i, t)
-			mm.set_instance_color(i, c)
-			mm.set_instance_custom_data(i, Color(0, 0, 0, 0))
-		var mmi := MultiMeshInstance3D.new()
-		mmi.multimesh = mm
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		holder.add_child(mmi)
-	return holder

@@ -1,6 +1,6 @@
 extends RefCounted
 ## The flow suite's mass-collapse checks (rooftops #63 CI run 39109733215, a Behemoth city: 133
-## "axis must be normalized" errors from CityView._animate_falls and 171 collapse sounds in two
+## "axis must be normalized" errors from CityFalls.animate and 171 collapse sounds in two
 ## frames). A topple whose direction came out zero (the sim rounds a tiny overhang to none) still
 ## turns over, and a burst of landings plays at most tuning "sfx" "collapse_per_frame" collapse
 ## sounds a frame. A dropped part that lands crumbles into the street over "topple_fx"
@@ -56,7 +56,7 @@ static func _check_still_topple(check: Callable, rampage: Rampage) -> void:
 	)
 	var fall: Dictionary = city._falling[ID]
 	var piece: Node3D = fall["node"]
-	city._animate_falls(0.5)
+	city._falls.animate(0.5)
 	var turned := piece.basis.get_rotation_quaternion().get_angle()
 	check.call(
 		turned > 0.1 and piece.basis.is_conformal(),
@@ -96,7 +96,7 @@ static func _check_drop_crumbles(check: Callable, rampage: Rampage) -> void:
 	}
 	city.fall_start(start)
 	var piece: Node3D = city._falling[ID + 1]["node"]
-	city._animate_falls(0.2)
+	city._falls.animate(0.2)
 	city.fall_land({"id": ID + 1, "kind": "drop", "building": index})
 	var landed := is_instance_valid(piece) and not piece.is_queued_for_deletion()
 	var span := Num.f(Content.section("topple_fx")["drop_crumble_s"])
@@ -192,18 +192,29 @@ static func _in_the_way(piece: Node3D, eye: Vector3, sight: PackedVector3Array) 
 
 
 ## The lowest opacity any of the part's meshes draws at now (1 = solid; a mesh whose shader has no
-## opacity share is solid).
+## opacity share is solid; one the camera bubble cuts, bubble_cut above 0, counts as 0: D-326).
 static func _faintest(piece: Node3D) -> float:
 	var low := 1.0
 	for mi: Node in piece.find_children("*", "MeshInstance3D", true, false):
 		var mat := (mi as MeshInstance3D).material_override as ShaderMaterial
-		if mat != null and mat.get_shader_parameter("opacity") != null:
+		if mat == null:
+			continue
+		if mat.get_shader_parameter("opacity") != null:
 			low = minf(low, Num.f(mat.get_shader_parameter("opacity")))
+		var cut: Variant = mat.get_shader_parameter("bubble_cut")
+		if cut != null and Num.f(cut) > 0.0:
+			low = 0.0
 	return low
 
 
 static func _check_sound_cap(check: Callable, sfx: Sfx) -> void:
-	sfx._process(1.0)  # last frame's sounds are out of the way
+	# Last frames' sounds are out of the way: a late collapse in the rampage can still hold the
+	# hero collapse voices (cap 3, never stolen), and then the burst plays none.
+	var rung := 0
+	while sfx.voices.busy_in("collapse") > 0 and rung < 30:
+		sfx._process(1.0)
+		rung += 1
+	sfx._process(1.0)
 	var before := sfx.played.count("collapse")
 	for n: int in LANDINGS:
 		sfx.collapse(n % 3 == 0)
@@ -215,7 +226,7 @@ static func _check_sound_cap(check: Callable, sfx: Sfx) -> void:
 	check.call(
 		first > 0 and first <= cap and later == 0,
 		(
-			"%d landings in one frame play %d collapse sounds (cap %d), none held over (%d)"
-			% [LANDINGS, first, cap, later]
+			"%d landings in one frame play %d collapse sounds (cap %d), none held over (%d; %d s)"
+			% [LANDINGS, first, cap, later, rung]
 		)
 	)
