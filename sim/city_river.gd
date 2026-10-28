@@ -163,59 +163,106 @@ static func diagonal_deck(plan: Dictionary, cfg: Dictionary) -> Dictionary:
 
 
 ## Quay sheds (lead check 2026-10-19: the young city's first steps out of the water must hit
-## something): small buildings lining the pavement of each bare built block of the first
-## district (one whose lots came out empty, a sliver between close street lines) within
-## city "quay" "reach" of the bank point. They draw their own numbers, so no other lot moves,
-## and stand the same at every stage.
-static func sheds(plan: Dictionary, bare: Array[Dictionary], cfg: Dictionary) -> Array[Dictionary]:
+## something; lead 2026-10-26, once blocks grew, D-265: "blocks within quay reach of the bank
+## build the 2 m sheds on their river face, so the start plays as before"): every built block of
+## the first district within city "quay" "reach" of the bank point drops the lots that reach
+## within it (off_quay) and lines that ground with small sheds instead, in rows "depth" deep
+## from its river face inward. They draw their own numbers, so no other lot moves, and stand the
+## same at every stage.
+static func on_quay(plan: Dictionary, block: Dictionary, cfg: Dictionary) -> bool:
+	if not plan.has("river_bank"):
+		return false
+	var rect: Rect2 = block["rect"]
+	var bank: Vector2 = plan["river_bank"]
+	return _gap(rect, bank) <= Num.f(cfg["quay"]["reach"])
+
+
+## The lots of a quay block that stand clear of the quay (every one, without a river).
+static func off_quay(
+	plan: Dictionary, lots: Array[Dictionary], cfg: Dictionary
+) -> Array[Dictionary]:
+	if not plan.has("river_bank"):
+		return lots
+	var reach := Num.f(cfg["quay"]["reach"])
+	var bank: Vector2 = plan["river_bank"]
+	var out: Array[Dictionary] = []
+	for b: Dictionary in lots:
+		if _gap(_foot(b), bank) > reach:
+			out.append(b)
+	return out
+
+
+## The sheds of the quay blocks (on_quay), clear of the diagonal and of `standing` (the city's
+## other buildings).
+static func sheds(
+	plan: Dictionary, quay: Array[Dictionary], standing: Array[Dictionary], cfg: Dictionary
+) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	if not plan.has("river_bank"):
 		return out
-	var quay: Dictionary = cfg["quay"]
+	var q: Dictionary = cfg["quay"]
 	var bank: Vector2 = plan["river_bank"]
-	var widths: Array = quay["width"]
-	var heights: Array = quay["height"]
-	var gap := Num.i(quay["gap"])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Num.i(cfg["map_seed"]) + 3
 	var clear := CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + 1.0
-	for block: Dictionary in bare:
+	for block: Dictionary in quay:
 		var rect: Rect2 = block["rect"]
-		var strip := rect.grow(Num.f(cfg["sidewalk"]))
-		var along_x := strip.size.x >= strip.size.y
-		var length := roundi(maxf(strip.size.x, strip.size.y))
-		var deep := floori(minf(strip.size.x, strip.size.y))
-		var t := gap
-		while deep >= 2:
+		for shed: Dictionary in _rows(rng, rect, bank, q):
+			var foot := _foot(shed)
+			if _gap(foot, bank) > Num.f(q["reach"]):
+				continue
+			if CityGen.diagonal_distance(plan, foot.get_center()) < clear + foot.size.x:
+				continue
+			if standing.any(func(b: Dictionary) -> bool: return _foot(b).intersects(foot)):
+				continue
+			shed["tier"] = CityGen.tier_for_height(Num.i(shed["h"]), cfg)
+			out.append(shed)
+	return out
+
+
+## Rows of sheds along a block's face toward the bank, "depth" deep each, back to back inward;
+## along each row, widths and gaps drawn from `rng` (every shed draws, kept or not).
+static func _rows(
+	rng: RandomNumberGenerator, rect: Rect2, bank: Vector2, q: Dictionary
+) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var depth := Num.i(q["depth"])
+	var gap := Num.i(q["gap"])
+	var widths: Array = q["width"]
+	var heights: Array = q["height"]
+	var south := bank.y >= rect.get_center().y  # rows start at the face toward the bank
+	for k: int in floori(rect.size.y / depth):
+		var z := rect.end.y - depth * (k + 0.5) if south else rect.position.y + depth * (k + 0.5)
+		var t := float(gap)
+		while true:
 			var w := rng.randi_range(Num.i(widths[0]), Num.i(widths[1]))
 			var h := rng.randi_range(Num.i(heights[0]), Num.i(heights[1]))
 			var style := rng.randi_range(0, 3)
-			if t + w > length - gap:
+			if t + w > rect.size.x - gap:
 				break
-			var mid := t + w * 0.5
-			var c := (
-				strip.position + (Vector2(mid, deep * 0.5) if along_x else Vector2(deep * 0.5, mid))
+			out.append(
+				{
+					"x": rect.position.x + t + w * 0.5,
+					"z": z,
+					"w": w,
+					"d": depth,
+					"h": h,
+					"style": style
+				}
 			)
 			t += w + gap
-			if c.distance_to(bank) > Num.f(quay["reach"]):
-				continue
-			if CityGen.diagonal_distance(plan, c) < clear + w:
-				continue
-			(
-				out
-				. append(
-					{
-						"x": c.x,
-						"z": c.y,
-						"w": w if along_x else deep,
-						"d": deep if along_x else w,
-						"h": h,
-						"tier": CityGen.tier_for_height(h, cfg),
-						"style": style,
-					}
-				)
-			)
 	return out
+
+
+static func _foot(b: Dictionary) -> Rect2:
+	var w := Num.f(b["w"])
+	var d := Num.f(b["d"])
+	return Rect2(Num.f(b["x"]) - w * 0.5, Num.f(b["z"]) - d * 0.5, w, d)
+
+
+## How far `p` lies from `rect` (0 inside it).
+static func _gap(rect: Rect2, p: Vector2) -> float:
+	return p.clamp(rect.position, rect.end).distance_to(p)
 
 
 ## The river blocks with their sidewalks, west to east.

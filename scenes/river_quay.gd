@@ -7,16 +7,10 @@ extends RefCounted
 ## every bridge deck so a crossing's own cell is never bare; none on a deck or a crossing.
 ## Crushable props like a lamp. Presentation only; no RNG.
 
-## Off only so a test can show another rule's need without the riverside's crates
-## (tests/lib/city_diag_fill.gd, tests/lib/junction_island.gd).
-static var enabled := true
-
 
 ## Plants the crates into decor's props (before the traffic islands, so a riverside junction
 ## cell that holds a crate needs no island).
 static func plant(decor: CityDecor) -> void:
-	if not enabled:
-		return
 	var city := decor.sim.city
 	var cfg: Dictionary = city["river_quay"]
 	var plan := decor.plan

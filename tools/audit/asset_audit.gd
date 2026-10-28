@@ -34,7 +34,7 @@ const HAZARDS_KEY := "hazards"
 ## Assets placed only by a fill rule, never by chance: why they can be missing from a seed.
 const FILL_ONLY := {
 	"prop:traffic_island":
-	"TrafficIsland fills only a ground cell that is all junction with nothing else in it",
+	"TrafficIsland plants one only where the diagonal crosses an avenue, in a free wedge",
 	"prop:bollard": "only on a traffic island (TrafficIsland)",
 }
 

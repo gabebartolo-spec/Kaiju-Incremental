@@ -4,9 +4,7 @@ scenes/gait_biped.gd::_step_feet 98 48
 scenes/gait_clip.gd::_choose 33 18
 scenes/kaiju_rig.gd::_build 54 13
 scenes/rampage.gd::_ready 53 8
-scenes/traffic_island.gd::spots 48 18
 sim/city_gen.gd::map 84 17
-sim/city_river.gd::sheds 49 10
 sim/city_sites.gd::_span 22 13
 sim/claw_swipe.gd::_undermine 43 18
 sim/collapse.gd::_crush_strip 31 13

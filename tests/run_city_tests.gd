@@ -40,10 +40,6 @@ func run_checks() -> void:
 	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
 	await _t("_check_no_empty_ground")
 	await _t("_check_rooftop_tanks")
-	await _h(
-		"city_diag_fill",
-		func() -> void: preload("res://tests/lib/city_diag_fill.gd").new(check, root).run()
-	)
 	await _h("city_rise_forms", func() -> void: RiseForms.check(COVERAGE_SEEDS, check))
 	await _t("_check_reach_is_real")
 	await _t("_check_emerge_cap")
