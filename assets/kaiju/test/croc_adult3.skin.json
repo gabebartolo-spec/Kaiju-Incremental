@@ -707,7 +707,7 @@
   },
   {
    "name": "toe_l",
-   "game": "leg_l2",
+   "game": "leg_l3",
    "parent": "foot_l",
    "head": [
     -31.6925,
@@ -847,7 +847,7 @@
   },
   {
    "name": "toe_r",
-   "game": "leg_r2",
+   "game": "leg_r3",
    "parent": "foot_r",
    "head": [
     31.6925,
@@ -1197,7 +1197,7 @@
   },
   {
    "name": "tail09",
-   "game": "tail8",
+   "game": "tail9",
    "parent": "tail08",
    "head": [
     -0.0,
@@ -1227,12 +1227,12 @@
     ]
    ],
    "roll_blender": 0.07232,
-   "physics": true,
+   "physics": false,
    "jaw": false
   },
   {
    "name": "tail10",
-   "game": "tail8",
+   "game": "tail10",
    "parent": "tail09",
    "head": [
     -0.0,
@@ -1262,12 +1262,12 @@
     ]
    ],
    "roll_blender": -0.03998,
-   "physics": true,
+   "physics": false,
    "jaw": false
   },
   {
    "name": "tail11",
-   "game": "tail8",
+   "game": "tail11",
    "parent": "tail10",
    "head": [
     -0.0,
@@ -1297,7 +1297,7 @@
     ]
    ],
    "roll_blender": -0.03998,
-   "physics": true,
+   "physics": false,
    "jaw": false
   }
  ],
