@@ -8,14 +8,12 @@ extends Node3D
 const SHOCKWAVE := preload("res://scenes/shockwave.gdshader")
 ## A tail slam's puffs (shockwave(tail), lead review PR #54): one at the tip and SLAM_PUFFS around
 ## it, each SLAM_SIZE x the ring radius it was given; they live SLAM_SECONDS, grow from 0.4 to full
-## over the first SLAM_GROW of it with their alpha rising from 0 to its peak at SLAM_PEAK, stop
-## growing by SLAM_HOLD and fade to nothing by the end (not the step puff's pop and slow climb).
+## over the first FxParticleMats.SLAM_GROW of it with their alpha rising from 0 to its peak at
+## SLAM_PEAK, stop growing by SLAM_HOLD and fade to nothing by the end (not the step puff's pop and
+## slow climb).
 const SLAM_PUFFS := 3
 const SLAM_SIZE := 0.6
 const SLAM_SECONDS := 0.85
-const SLAM_GROW := 0.15
-const SLAM_PEAK := 0.18
-const SLAM_HOLD := 0.4
 const SMOKE := preload("res://scenes/smoke.gdshader")
 ## The street's dust: one tone for every dust call (the cloud, a person's puff, the footfall and
 ## slam puffs, a tree's soil puff and the ring; docs/VFX_STYLE.md families 3 and 7; the VFX look
@@ -51,6 +49,10 @@ const SPARK_CUBE := 0.2
 var keep := ShaderKeep.new()
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
 var steps_live: Array[GPUParticles3D] = []
+## The reused particle systems (render plan item 8, tuning render_opt.fx_pool): every burst below
+## takes one instead of building and freeing a system. Shared with Fire and BlastParts through
+## FxPool.shared.
+var pool: FxPool
 
 var _dust_mat: ParticleProcessMaterial
 var _dust_mesh: Mesh
@@ -67,54 +69,79 @@ var _hide_hit: HideHit
 
 
 func _ready() -> void:
-	_dust_mat = _particle_mat(
-		{
-			"spread": 70.0,
-			"gravity": Vector3(0, 0.6, 0),
-			"vmin": 1.5,
-			"vmax": 4.0,
-			"smin": 1.0,
-			"smax": 2.6,
-			"grow": true,
-			"colors": [Color(_dust_light(), 0.47), Color(_dust_light(), 0.0)],
-		}
-	)
-	_dust_mesh = _puff(2.2)
-	_puff_mesh = _puff(0.5)
+	_build_dust()
 	_step_cfg = Content.section("fx")["footfall_dust"]
 	var alpha := Num.f(_step_cfg["alpha"])
-	_step_mat = _particle_mat(
-		{
-			"spread": 55.0,
-			"gravity": Vector3(0, 0.2, 0),
-			"vmin": 0.5,
-			"vmax": Num.f(_step_cfg["rise"]),
-			"smin": 0.8,
-			"smax": 1.6,
-			"grow": true,
-			"colors": [Color(_dust_light(), alpha), Color(_dust_light(), 0.0)],
-		}
-	)
+	var step_style := {
+		"spread": 55.0,
+		"gravity": Vector3(0, 0.2, 0),
+		"vmin": 0.5,
+		"vmax": Num.f(_step_cfg["rise"]),
+		"smin": 0.8,
+		"smax": 1.6,
+		"grow": true,
+		"colors": [Color(_dust_light(), alpha), Color(_dust_light(), 0.0)],
+	}
+	_step_mat = FxParticleMats.dust(step_style)
 	_step_mesh = _puff(3.0)
 	_clear_centre_off(_step_mesh)  # a footfall is at the kaiju's foot: the dust must show there
-	_slam_mat = _slam_puff_mat(_step_mat, alpha)
+	_slam_mat = FxParticleMats.slam(_step_mat, alpha, _dust_light())
 	# The game's one spark (docs/VFX_STYLE.md family 5): white-hot glow cubes cooling to orange.
 	_spark_mat = FxParticles.sparks(SPARK_TINT)
 	_spark_mat.direction = Vector3.UP
 	_spark_mesh = FxParticles.glow_cube(SPARK_CUBE)
-	_tree_mat = _tree_puff_mat()
+	_tree_mat = FxParticleMats.tree()
 	_tree_mesh = _puff(1.0)
 	_clear_centre_off(_tree_mesh)
 	add_child(keep)
+	_register_pool()
 	_hide_hit = HideHit.new()
 	add_child(_hide_hit)
+	_keep_materials()
+	_prewarm()
+
+
+## The dust a fall or a break raises, and the small puff.
+func _build_dust() -> void:
+	var dust_style := {
+		"spread": 70.0,
+		"gravity": Vector3(0, 0.6, 0),
+		"vmin": 1.5,
+		"vmax": 4.0,
+		"smin": 1.0,
+		"smax": 2.6,
+		"grow": true,
+		"colors": [Color(_dust_light(), 0.47), Color(_dust_light(), 0.0)],
+	}
+	_dust_mat = FxParticleMats.dust(dust_style)
+	_dust_mesh = _puff(2.2)
+	_puff_mesh = _puff(0.5)
+
+
+## Holds every effect material compiled for the run (see ShaderKeep).
+func _keep_materials() -> void:
 	var claws := ClawSlash.marks_material(Content.section("claw_fx"))
 	var kept: Array[Material] = [_dust_mat, _step_mat, _slam_mat, _spark_mat, _tree_mat]
 	kept.append_array([_tree_mesh.material, _spark_mesh.material, _step_mesh.material])
 	kept.append_array([claws, LandmarkBurst.chunk_material()])
 	for mat: Material in kept:
 		keep.hold(str(mat.get_instance_id()), mat)
-	_prewarm()
+
+
+## Slots per burst kind, from tuning render_opt.fx_pool.slots (provisional: to be re-sized from
+## the bench's peak concurrency), then the bare slots the blasts and fires take from FxPool.shared.
+func _register_pool() -> void:
+	pool = FxPool.new()
+	add_child(pool)
+	pool.register("dust", _dust_mat, _dust_mesh, FxPool.slots_for("dust", 24))
+	pool.register("puff", _dust_mat, _puff_mesh, FxPool.slots_for("puff", 8))
+	pool.register("step", _step_mat, _step_mesh, FxPool.slots_for("step", 8))
+	pool.register("slam", _slam_mat, _step_mesh, FxPool.slots_for("slam", 8))
+	pool.register("tree", _tree_mat, _tree_mesh, FxPool.slots_for("tree", 8))
+	pool.register("spark", _spark_mat, _spark_mesh, FxPool.slots_for("spark", 8))
+	pool.register_bare("burst", FxPool.slots_for("burst", 16))
+	for part: String in ["flames", "embers", "smoke"]:
+		pool.register_bare(part, FxPool.slots_for(part, 12))
 
 
 ## Prewarm: one of each, out of sight, so the first real one does not stall a frame.
@@ -129,7 +156,7 @@ func _prewarm() -> void:
 ## A billowing dust cloud; size ~ the width of what came down.
 ## tint (alpha > 0): the puff's colour instead of the grey (a toppled tower's pale concrete).
 func dust(at: Vector3, size: float, tint := Color(0, 0, 0, 0)) -> void:
-	var p := _burst(_dust_mat, _dust_mesh, roundi(12 * clampf(size, 0.5, 4.0)), 2.6)
+	var p := _burst("dust", roundi(12 * clampf(size, 0.5, 4.0)), 2.6)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
@@ -148,14 +175,17 @@ func dust(at: Vector3, size: float, tint := Color(0, 0, 0, 0)) -> void:
 ## unless uncapped (a tail slam's puffs, shockwave(tail)).
 func footfall(at: Vector3, size: float, capped := true) -> void:
 	var alive: Array[GPUParticles3D] = []
-	for puff: Variant in steps_live:  # a finished puff is freed: check before using it
-		if is_instance_valid(puff):
-			alive.append(puff)
+	for puff: Variant in steps_live:  # a finished puff is freed or given back: check it
+		if not is_instance_valid(puff):
+			continue
+		var system: GPUParticles3D = puff
+		if system.visible and not alive.has(system):  # a pooled puff given back is hidden
+			alive.append(system)
 	steps_live = alive
 	if capped and steps_live.size() >= Num.i(_step_cfg["max_live"]):
 		return
 	var amount := roundi(6 * clampf(size, 0.5, 3.0))
-	var p := _burst(_step_mat, _step_mesh, amount, Num.f(_step_cfg["seconds"]))
+	var p := _burst("step", amount, Num.f(_step_cfg["seconds"]))
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size * 0.6, 0.2, size * 0.6)
@@ -167,7 +197,7 @@ func footfall(at: Vector3, size: float, capped := true) -> void:
 ## A dust puff over a crushed tree's stump: a few street-dust puffs `size` across in the soil's
 ## tint that come up to `peak` in PUFF_RISE, hold, grow a little and are gone in under a second.
 func tree_puff(at: Vector3, size: float, peak: float) -> void:
-	var p := _burst(_tree_mat, _tree_mesh, 3, PUFF_RISE + PUFF_HOLD + PUFF_FADE)
+	var p := _burst("tree", 3, PUFF_RISE + PUFF_HOLD + PUFF_FADE)
 	p.position = at + Vector3(0, size * 0.35, 0)
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size * 0.2, 0.1, size * 0.2)
@@ -189,7 +219,7 @@ func tree_puff(at: Vector3, size: float, peak: float) -> void:
 
 ## A small puff of dust: a person crushed underfoot.
 func puff(at: Vector3) -> void:
-	var p := _burst(_dust_mat, _puff_mesh, 6, 1.2)
+	var p := _burst("puff", 6, 1.2)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(0.2, 0.1, 0.2)
@@ -212,7 +242,7 @@ func hide_hit(at: Vector3, normal: Vector3, unit: float, away := HideHit.NO_GLAN
 
 
 func sparks(at: Vector3) -> void:
-	var p := _burst(_spark_mat, _spark_mesh, SPARK_COUNT, 0.5)
+	var p := _burst("spark", SPARK_COUNT, 0.5)
 	p.position = at
 
 
@@ -263,7 +293,8 @@ func shockwave_to(at: Vector3, reach: float) -> void:
 
 
 func _slam_puff(at: Vector3, size: float) -> void:
-	var p := _burst(_slam_mat, _step_mesh, roundi(6 * clampf(size, 0.5, 3.0)), SLAM_SECONDS)
+	var amount := roundi(6 * clampf(size, 0.5, 3.0))
+	var p := _burst("slam", amount, SLAM_SECONDS)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size * 0.6, 0.2, size * 0.6)
@@ -271,26 +302,28 @@ func _slam_puff(at: Vector3, size: float) -> void:
 	mat.scale_max = 0.8 * size
 
 
-## The step puff's material with the slam's life curves (see SLAM_SECONDS).
-func _slam_puff_mat(step: ParticleProcessMaterial, alpha: float) -> ParticleProcessMaterial:
-	var mat: ParticleProcessMaterial = step.duplicate()
-	var curve := Curve.new()
-	curve.add_point(Vector2(0.0, 0.4))
-	curve.add_point(Vector2(SLAM_GROW, 1.0))
-	curve.add_point(Vector2(SLAM_HOLD, 1.05))
-	curve.add_point(Vector2(1.0, 1.05))
-	FxCurve.set_scale(mat, curve)
-	var ramp := Gradient.new()
-	ramp.offsets = PackedFloat32Array([0.0, SLAM_PEAK, 1.0])
-	var c := _dust_light()
-	ramp.colors = PackedColorArray([Color(c, 0.0), Color(c, alpha), Color(c, 0.0)])
-	var ramp_tex := GradientTexture1D.new()
-	ramp_tex.gradient = ramp
-	mat.color_ramp = ramp_tex
-	return mat
+## One burst of `kind`: a pooled system when one is free (its values set, then restart()ed so no
+## stale particle shows; it is given back when its particles are done), else a new one that frees
+## itself, as before, so a burst is never dropped.
+func _burst(kind: String, amount: int, life: float) -> GPUParticles3D:
+	var pooled := pool.acquire(kind, amount)
+	if pooled == null:
+		return _build_burst(pool.base_of(kind), pool.mesh_of(kind), amount, life)
+	pooled.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
+	if pooled.amount != amount:
+		pooled.amount = amount
+	pooled.lifetime = life
+	pooled.one_shot = true
+	pooled.explosiveness = 0.9
+	pooled.restart()
+	FxPool.give_after(pooled, life + 0.2)
+	return pooled
 
 
-func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
+## The burst built from nothing: the way every burst was made before the pool.
+func _build_burst(
+	mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float
+) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
 	p.process_material = mat.duplicate()
@@ -303,53 +336,6 @@ func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) 
 	add_child(p)
 	get_tree().create_timer(life + 0.2).timeout.connect(p.queue_free)
 	return p
-
-
-func _particle_mat(o: Dictionary) -> ParticleProcessMaterial:
-	var mat := ParticleProcessMaterial.new()
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = Vector3(0.5, 0.3, 0.5)
-	mat.direction = Vector3.UP
-	mat.spread = Num.f(o["spread"])
-	mat.gravity = o["gravity"]
-	mat.initial_velocity_min = Num.f(o["vmin"])
-	mat.initial_velocity_max = Num.f(o["vmax"])
-	mat.angular_velocity_min = -120.0
-	mat.angular_velocity_max = 120.0
-	mat.damping_min = 1.5
-	mat.damping_max = 3.0
-	mat.scale_min = Num.f(o["smin"])
-	mat.scale_max = Num.f(o["smax"])
-	var curve := Curve.new()
-	var grow: bool = o["grow"]
-	curve.add_point(Vector2(0, 0.4 if grow else 1.0))
-	curve.add_point(Vector2(1, 1.6 if grow else 0.2))
-	FxCurve.set_scale(mat, curve)
-	var ramp := Gradient.new()
-	var colors: Array = o["colors"]
-	ramp.colors = PackedColorArray([colors[0], colors[1]])
-	var ramp_tex := GradientTexture1D.new()
-	ramp_tex.gradient = ramp
-	mat.color_ramp = ramp_tex
-	return mat
-
-
-## The tree puff's motion: barely rising, growing to 1.35x over its life (its ramp is per puff).
-static func _tree_puff_mat() -> ParticleProcessMaterial:
-	var mat := ParticleProcessMaterial.new()
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.direction = Vector3.UP
-	mat.spread = 40.0
-	mat.initial_velocity_min = 0.2
-	mat.initial_velocity_max = 0.6
-	mat.gravity = Vector3(0, 0.2, 0)
-	mat.angular_velocity_min = -60.0
-	mat.angular_velocity_max = 60.0
-	var curve := Curve.new()
-	curve.add_point(Vector2(0, 0.6))
-	curve.add_point(Vector2(1, 1.4))
-	FxCurve.set_scale(mat, curve)
-	return mat
 
 
 ## The street dust's tone for this time of day (NIGHT_DUST in the dark, STREET_DUST at noon).

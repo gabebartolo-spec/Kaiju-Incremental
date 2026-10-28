@@ -130,3 +130,36 @@ static func drop(f: VoxelFrame, index: PackedInt32Array) -> float:
 
 static func _geo(g: Carving.Grid) -> PackedInt32Array:
 	return PackedInt32Array([g.frame.w, g.frame.d, g.frame.h, g.bw, g.bd])
+
+
+## One settled part in Collapse's part shape (Carving.settle): `info` is fallen()'s answer for it
+## and `deaths` the chunks it took with it.
+static func part_event(
+	f: VoxelFrame, part: Dictionary, info: Array, deaths: Array[Vector3i]
+) -> Dictionary:
+	var index: PackedInt32Array = part["index"]
+	var lo: Vector3i = info[0]
+	var hi: Vector3i = info[1]
+	var base: Rect2i = info[2]
+	var under: bool = info[3]
+	var dir: Vector2i = part["dir"]
+	var span := hi - lo + Vector3i.ONE
+	var event := {
+		"cells": deaths,
+		"kind": part["kind"],
+		"pivot": part["pivot"],
+		"dir": dir,
+		"index": index,
+		"mats": part["mats"],
+		"low": float(lo.y) / f.res,
+		"height": ceilf(float(span.y) / f.res),
+		"width": float(span.z if dir.x != 0 else span.x) / f.res,
+	}
+	event["base"] = Rect2(
+		Vector2(base.position + Vector2i(f.offset.x, f.offset.z)) / f.res,
+		Vector2(base.size) / f.res
+	)
+	event["gutted"] = not under and span.y > mini(base.size.x, base.size.y)
+	if str(part["kind"]) != "topple":
+		event["drop"] = drop(f, index)
+	return event

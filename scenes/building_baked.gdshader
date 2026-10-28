@@ -9,18 +9,26 @@ render_mode cull_disabled;
 // colour and brightness from the window palette), as in voxel.gdshader. Only outward faces are
 // baked, so through a hole you see the backs of the walls: they draw as the dark inside
 // (`inside` of their colour; a landmark's cut faces draw near their own colour instead).
+// Outward faces take the baked voxel AO and their material's finish (building_common).
+
+#include "res://scenes/building_common.gdshaderinc"
 
 #include "res://scenes/window_palette.gdshaderinc"
+#include "res://scenes/dither.gdshaderinc"
 
 uniform sampler2D alive : filter_nearest;
 uniform float glow = 0.0;
 uniform float roughness_value = 0.9;
 uniform float inside = 0.12;
-// Below 1, a screen-door fade (a building between the camera and the kaiju, D-025's rule as
-// the vehicles have it, voxel.gdshader): a share of its pixels is dropped in a fixed pattern.
-uniform float opacity = 1.0;
-const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
-const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
+// The stream swap (StreamDissolve): the share of a standing building drawn while it crosses with
+// its stand-in box, a dither. 1 (every other moment, every falling piece, D-326) draws it whole.
+uniform float dissolve = 1.0;
+// The camera bubble (CameraBubble, D-283): a standing building the camera runs into is cut
+// away inside a sphere round the camera, bubble_cut of the global bubble_radius, with a hard
+// edge on its own blocks (no dither, no fade). 0 (every other building, every falling piece,
+// D-326) draws it whole. Never in a shadow pass: the cut part still casts its shadow.
+global uniform float bubble_radius;
+uniform float bubble_cut = 0.0;
 
 // Half a voxel inside the face, in model space: the window's cell, the same in the baked shell,
 // the cell grid and a falling piece.
@@ -39,11 +47,11 @@ void vertex() {
 }
 
 void fragment() {
-	if (opacity < 1.0) {
-		ivec2 p = ivec2(mod(floor(FRAGCOORD.xy / DITHER_PX), 4.0));  // cells of DITHER_PX pixels
-		if ((BAYER[p.y * 4 + p.x] + 0.5) / 16.0 >= opacity) {
-			discard;
-		}
+	if (dissolve < 0.999 && !IN_SHADOW_PASS && dither(FRAGCOORD.xy) >= dissolve) {
+		discard;
+	}
+	if (bubble_cut > 0.0 && !IN_SHADOW_PASS && length(VERTEX) < bubble_radius * bubble_cut) {
+		discard;
 	}
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
 	ROUGHNESS = roughness_value;
@@ -59,6 +67,13 @@ void fragment() {
 		}
 		ALBEDO = albedo;
 		EMISSION = albedo * glow * lit;
+		AO = voxel_ao(UV);
+		AO_LIGHT_AFFECT = ao_light_affect;
+		if (finish_on) {
+			int f = voxel_finish(UV);
+			ROUGHNESS = finish_roughness[f];
+			SPECULAR = finish_specular[f];
+		}
 	} else {
 		ALBEDO = albedo * inside;
 		NORMAL = -NORMAL;

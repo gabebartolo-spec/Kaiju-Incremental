@@ -14,6 +14,7 @@ extends RefCounted
 ## has to be textured (or include surface_detail.gdshaderinc) to land. A type is "<owner>:<kind>":
 ## the nearest scripted ancestor's class name and what is flat about it.
 
+const ChunkCheck := preload("res://tests/lib/chunk_check.gd")
 const DETAIL_INCLUDE := "surface_detail.gdshaderinc"
 ## Physics frames his death may take to reach the burst (about 3.2 s in data at 60 fps, with room).
 const DEATH_FRAMES := 600
@@ -31,7 +32,8 @@ const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
 	"CitySkyline:std": "P3 lamp heads (glow)",
 	"CitySkyline:shader:facade.gdshader": "P2 far towers and roof gear, P3 lattice tower",
-	"CitySkyline:shader:facade_far.gdshader": "P2 far towers, P3 lattice tower",
+	# facade_far.gdshader's twin with the engine fog (FarHaze, city far_fog on; comment #37)
+	"CitySkyline:shader:facade_far_fogged.gdshader": "P2 far towers, P3 lattice tower",
 	# P1 water
 	"CityGround:std": "P1 water (river and bay sheets)",
 	# P2 rooftops and building faces
@@ -55,8 +57,11 @@ const KNOWN_FLAT: Dictionary = {
 	"VoxelSkin:shader:voxel_skin_fill.gdshader": "P3 the kaiju's own skin pipeline",
 }
 ## Effect families exempt by owner class (their nodes carry no group; VFX never reads as a
-## surface): fire and smoke keepers, shockwaves, the breath beam, the claw sweep, the aim wedge.
-const EXEMPT_OWNERS: Array[String] = ["Fx", "ShaderKeep", "BreathBeam", "AbilityFx", "BreathAim"]
+## surface): fire and smoke keepers, shockwaves, the breath beam, the claw sweep, the aim wedge, the
+## flash of a shot landing on the hide (HideHit, under a tenth of a second).
+const EXEMPT_OWNERS: Array[String] = [
+	"Fx", "ShaderKeep", "BreathBeam", "AbilityFx", "BreathAim", "HideHit"
+]
 
 
 ## Every flat surface under `root` as {type, node, count}, one per type.
@@ -269,5 +274,6 @@ static func _death(tree: SceneTree, rampage: Rampage, check_fn: Callable) -> voi
 		pieces.size() >= 2, "the debris and the shards are in the scan: %d" % pieces.size()
 	)
 	check_fn.call(fresh.is_empty(), "no flat-colour surface in his death: %s" % [fresh])
+	ChunkCheck.check_view(view, check_fn)  # D-323: jagged chunks of many sizes, never a box
 	for type: String in found:
 		print("FLAT death %s x%d %s" % [type, found[type]["count"], found[type]["node"]])

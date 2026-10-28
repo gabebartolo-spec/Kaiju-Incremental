@@ -1,0 +1,10 @@
+BENCH_SUMMARY label=A_medium_1 time=night weather=clear graphics=medium stage=3 frames=3575 first_fall=0 vsync=false
+BENCH_ROUTE steps=3695 tally={ "stomps": 39, "swipes": 27, "breaths": 8, "beams": 0, "falls": 160 }
+BENCH_PHASE whole n=3575 wall p50 28.93 p95 37.50 p99 71.89 max 1907.70 | gpu p50 27.82 p95 29.97 p99 30.30 | rcpu p95 3.95 | proc+phys p95 416.28 p99 1100.55 max 2081.08 | over16.7 3575 over33.4 471 | draws p50 3479 vis_draws 1215 sh_draws 2171 vis_prims 27850941 sh_prims 51947350 | vram_mb 1813
+BENCH_PHASE walk_in n=600 wall p50 25.56 p95 41.81 p99 141.56 max 979.15 | gpu p50 24.10 p95 24.97 p99 25.12 | rcpu p95 3.84 | proc+phys p95 725.69 p99 987.54 max 987.54 | over16.7 600 over33.4 90 | draws p50 3243 vis_draws 1182 sh_draws 2056 vis_prims 25234461 sh_prims 45051068 | vram_mb 1756
+BENCH_PHASE first_collapses n=600 wall p50 27.36 p95 38.06 p99 48.78 max 756.58 | gpu p50 25.89 p95 27.17 p99 27.78 | rcpu p95 4.14 | proc+phys p95 908.56 p99 908.56 max 908.56 | over16.7 600 over33.4 72 | draws p50 3329 vis_draws 1198 sh_draws 2092 vis_prims 26681648 sh_prims 48875542 | vram_mb 1767
+BENCH_PHASE peak_ruin n=600 wall p50 29.52 p95 35.87 p99 65.48 max 412.70 | gpu p50 28.77 p95 29.18 p99 29.38 | rcpu p95 3.42 | proc+phys p95 269.48 p99 415.61 max 415.61 | over16.7 600 over33.4 71 | draws p50 3729 vis_draws 1224 sh_draws 2461 vis_prims 27759504 sh_prims 54746886 | vram_mb 1743
+BENCH_PIPELINES pipe_canvas 6->6 pipe_mesh 0->0 pipe_surface 82->89 pipe_draw 53->57 pipe_spec 66->72
+BENCH_COSTS worst ms per frame: sim.step 100.9, swipe 1.5, chunks_broken 1092.3, fall_start 107.7, fall_land 62.5, tank_spawned 4.9, heli_fired 13.7, ability 8.4, heli_spawned 2.0, stray_landed 1.7, vip_spawned 14.5, train_station 2.2, run_over 2.9
+BENCH_TIMERS building_stream worst 70.1 ms, island break worst 0.0 ms, street total 10410.8 ms worst 6.2 ms (cumulative)
+BENCH_END sim_over=true chunks_destroyed=10804

@@ -59,7 +59,10 @@ uses) prints every suite's line.
 1. Fails on `origin/main` too (scratch worktree, same suite)? Then it is main, not you.
 2. Someone else running Godot? Rerun with your own user data.
 3. Passes on rerun? Unpinned randomness: pin it.
-4. A SCRIPT ERROR fails the run even when every check passed. Fix it; do not mute it.
+4. A SCRIPT ERROR fails the run even when every check passed. Fix it; do not mute it. So does the
+   engine's exit report "N ObjectDB instances were leaked" / "N resources still in use at exit": a
+   RampageSim a test drops is cut at the quit (tests/lib/runner.gd, SimTeardown), but any other
+   object a test builds and drops in a ring must be freed by the test (`log_smoke.sh --leaks`).
 After two similar failed fixes, stop and gather different evidence.
 
 ## CI

@@ -83,5 +83,4 @@ func destroy(id: int, pos: Vector3) -> void:
 		var node: Node3D = nodes[id]
 		node.queue_free()
 		nodes.erase(id)
-	var gained := Num.f(_sim.army["tank_rubble"]) * _sim.stat("rubble_mult")
-	TankFx.wreck(_city, pos, gained)
+	TankFx.wreck(_city, pos)

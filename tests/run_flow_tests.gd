@@ -17,7 +17,9 @@ const FlowCollapse := preload("res://tests/lib/flow_collapse.gd")
 const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const FlowStagedStart := preload("res://tests/lib/flow_staged_start.gd")
 const FlowUpgrades := preload("res://tests/lib/flow_upgrades.gd")
+const FlowWarmStart := preload("res://tests/lib/flow_warm_start.gd")
 const RAMPAGE_FRAMES := 60 * 75
+const WORDS_EVERY := 10  # frames between counts of text in the world (a number lived 1 s)
 const POWER_FRAMES := 60 * 45
 ## An armoured kaiju with no shell glanced off by now is walked to the nearest tank: a shell hits by
 ## chance, and in city seed 0 all four missed (D-166; 4 of 5 seeds deflect, foot or not).
@@ -173,9 +175,12 @@ func _check_rampage() -> void:
 		"the city fills with civilians and moving cars",
 	)
 	var frames := 0
+	var words := 0
 	while not rampage.sim.over and frames < RAMPAGE_FRAMES:
 		await physics_frame
 		frames += 1
+		words += FlowLayout.world_text(rampage) if frames % WORDS_EVERY == 0 else 0
+	check(words == 0, "no number floats over the city as it breaks (D-284): %d seen" % words)
 	if street != null:
 		check(street.fled > 0, "civilians run from the kaiju (%d fled)" % street.fled)
 		check(street.traffic.fled > 0, "cars flee the kaiju (%d)" % street.traffic.fled)
@@ -217,8 +222,6 @@ func _check_rampage() -> void:
 		hud.beat_running() and hud.headline.text == str(want[0]),
 		"the end beat shows why it ended (%s: %s)" % [reason, hud.headline.text]
 	)
-	var hints := await FlowLayout.late_hints(self, rampage)
-	check(hints == 0, "no world hint shows behind the end beat: %d" % hints)
 	for _i: int in RampageHud.BEAT_FRAMES + 2:
 		await process_frame
 	check(
@@ -319,39 +322,9 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 
 
 ## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Lightning Breath
-## leaves is drawn at load for this run's cone, and tanks share their voxels yet fade one by one.
+## leaves is drawn at load for this run's cone, and tanks share their voxels.
 func _check_warm_start() -> void:
-	var species := Content.species_def("reptilian")
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
-	)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
-	)
-	root.add_child(rampage)
-	var half := deg_to_rad(Num.f(rampage.sim.city["cone_half_angle_deg"]))
-	check(
-		FxDecals.is_drawn(FxDecals.Shape.WEDGE, {"half_angle": half}),
-		"the breath's scorch for this run's %.2f rad cone is drawn before the first breath" % half
-	)
-	rampage.queue_free()
-	await process_frame
-	var a := TankModel.new()
-	var b := TankModel.new()
-	var hull_a: MultiMeshInstance3D = a.get_child(0)
-	var hull_b: MultiMeshInstance3D = b.get_child(0)
-	VehicleParts.set_opacity(a, 0.3)
-	var mat_b := hull_b.material_override as ShaderMaterial
-	if mat_b == null:
-		mat_b = (hull_b.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
-	var faded_b: Variant = mat_b.get_shader_parameter("opacity")
-	check(
-		hull_a.multimesh == hull_b.multimesh and (faded_b == null or Num.f(faded_b) >= 1.0),
-		"a second tank reuses the first one's voxels, and fading one leaves the other solid"
-	)
-	a.free()
-	b.free()
+	await FlowWarmStart.run(self, check)
 
 
 ## An autoplayed rampage with a species branch bought (and a helicopter called in) draws every

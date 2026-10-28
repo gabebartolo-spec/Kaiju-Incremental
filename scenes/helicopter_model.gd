@@ -1,17 +1,31 @@
 class_name HelicopterModel
 extends Node3D
-## The attack helicopter (D-042): modelled in Blender (assets/source/vehicles/build_heli.py) and
-## voxelized per part (tools/blender/voxelize_parts.py) at 2x real size, desert tan, facing -Z,
-## the node's origin under the mast, level with the wheels. The main and tail rotors spin about
-## their real hubs; the chin gun aims at aim()'s target and fire() returns its muzzle.
+## The attack helicopter (D-297, D-309): a Tripo model cut into body, rotors and chin gun
+## (assets/vehicles/heli*), voxelized per part with the texture's own colours, facing -Z, the node's
+## origin under the mast, level with the wheels. The main and tail rotors spin about their real
+## hubs; the chin gun aims at aim()'s target and fire() returns its muzzle. The leader's helicopter
+## is its own model (VIP_BASE) that vip_look() paints white with a gold band and gold rotors.
 ## Presentation only.
 
 const BASE := "res://assets/vehicles/heli"
-## Body tan, for wreck debris.
-const TAN := Color("b89c6a")
+## The leader's helicopter (D-149): its own Tripo model, painted white and gold by vip_look().
+const VIP_BASE := "res://assets/vehicles/vip_heli"
+## Body paint (the model's mean colour, military olive), for wreck debris.
+const PAINT := Color("748059")
+## The gunship's two chunk paints (a wreck's chunks take their helicopter's paint).
+const GUNSHIP_PAINT: Array[Color] = [PAINT, PAINT]
 ## Below this sine of the angle to straight down, look_at() has no stable up: keep the last aim.
 const MIN_TILT := 0.05
+## The voxel jitter's salt, the same for every part (build and repaint must agree).
+const SALT := 5
 
+## The colour of every voxel of each part (by part name) as vip_look() painted it, in the order the
+## part draws them; empty on a gunship. Kept because a headless MultiMesh reads back nothing: this
+## is the only place a test sees what the leader was painted.
+var painted: Dictionary = {}
+var _base := BASE
+var _parts: VehicleParts
+var _centre := Vector3.ZERO  # under the mast: the body's hinge level with the wheels
 var _body: Node3D
 var _main_rotor: Node3D
 var _tail_rotor: Node3D
@@ -29,16 +43,26 @@ static func added_to(parent: Node) -> HelicopterModel:
 	return heli
 
 
-func _init() -> void:
+## Builds both models' voxels once now (the gunship's and the leader's own), so a first spawn
+## reuses them.
+static func warm() -> void:
+	HelicopterModel.new().free()
+	HelicopterModel.new(VIP_BASE).free()
+
+
+## `base` is the parts file's path without ".parts.json": BASE for a gunship, VIP_BASE for the
+## leader.
+func _init(base := BASE) -> void:
+	_base = base
 	_cfg = Content.section("vehicles")
-	var parts := VehicleParts.new(BASE, Num.f(_cfg["heli_height"]))
-	var centre := parts.pivot("body") * Vector3(1, 0, 1)
-	_body = parts.build("body", -centre, 5)
+	_parts = VehicleParts.new(base, Num.f(_cfg["heli_height"]))
+	_centre = _parts.pivot("body") * Vector3(1, 0, 1)
+	_body = _parts.build("body", -_centre, SALT)
 	add_child(_body)
-	_main_rotor = parts.hinge("main_rotor", self, centre, 5)
-	_tail_rotor = parts.hinge("tail_rotor", self, centre, 5)
-	_gun = parts.hinge("gun", self, centre, 5)
-	_muzzle = Vector3(0, 0, parts.front("gun") - parts.pivot("gun").z)
+	_main_rotor = _parts.hinge("main_rotor", self, _centre, SALT)
+	_tail_rotor = _parts.hinge("tail_rotor", self, _centre, SALT)
+	_gun = _parts.hinge("gun", self, _centre, SALT)
+	_muzzle = Vector3(0, 0, _parts.front("gun") - _parts.pivot("gun").z)
 	_clock = float(get_instance_id() % 997) * 0.37  # each helicopter flashes on its own beat
 	_add_lights((_body as MultiMeshInstance3D).get_aabb())
 	for part: Node in find_children("*", "MultiMeshInstance3D", true, false):
@@ -91,6 +115,22 @@ func _lamp(at: Vector3, color: Color, energy: float, size := 0.0) -> Node3D:
 	return bulb
 
 
+## The two paints this helicopter's wreck chunks wear: the gunship's olive, the leader's white and
+## gold (tuning "vip" look).
+func debris_paint() -> Array[Color]:
+	if _base != VIP_BASE:
+		return GUNSHIP_PAINT
+	var look: Dictionary = Content.section("vip")["look"]
+	return [Color(str(look["white"])), Color(str(look["gold"]))]
+
+
+## `node`'s wreck paint: a helicopter's own, a stand-in's the gunship's.
+static func paint_of(node: Node3D) -> Array[Color]:
+	if node is HelicopterModel:
+		return (node as HelicopterModel).debris_paint()
+	return GUNSHIP_PAINT
+
+
 ## Points the chin gun at `target` (world space).
 func aim(target: Vector3) -> void:
 	if not _gun.is_inside_tree():
@@ -105,66 +145,79 @@ func fire() -> Vector3:
 	return _gun.to_global(_muzzle)
 
 
-## The leader's look (D-149): a white body with a gold band, gold rotors, no gun. It recolours this
-## model's own copy of the shared voxels (the cache keeps the gunships' tan ones).
+## The leader's look (D-149): a white body with a gold band, gold rotors, no gun. Each part gets its
+## own voxels painted from the part's packed buffer (the shared cache keeps the gunships' own),
+## and `painted` keeps the colours it gave them.
 func vip_look(white: Color, gold: Color) -> void:
 	_gun.visible = false
-	for part: Node3D in [_main_rotor, _tail_rotor]:
-		_recolour(part, gold, gold, 0.0)
-	_recolour(_body, white, gold, Num.f(_cfg["vip_dark"]))
+	var hinges := {"main_rotor": _main_rotor, "tail_rotor": _tail_rotor}
+	for part: String in hinges:
+		var hinge: Node3D = hinges[part]
+		var mmi := hinge.get_child(0) as MultiMeshInstance3D  # hinge() holds the one voxel mesh
+		var voxels := _parts.packed(part, -_parts.pivot(part), SALT)
+		_repaint(mmi, part, _paint(voxels, gold, gold, 0.0))
+	var body := _parts.packed("body", -_centre, SALT)
+	_repaint(
+		_body as MultiMeshInstance3D, "body", _paint(body, white, gold, Num.f(_cfg["vip_dark"]))
+	)
 
 
-## Every voxel of `root` takes `base` (keeping its own light and shade), the band at the model's
-## lower middle takes `band`, and voxels darker than `dark` (glass, skids) are left alone.
-func _recolour(root: Node3D, base: Color, band: Color, dark: float) -> void:
-	var parts: Array[Node] = root.find_children("*", "MultiMeshInstance3D", true, false)
-	parts.append(root)  # the body is itself a voxel mesh
-	for part: Node in parts:
-		var mmi := part as MultiMeshInstance3D
-		if mmi == null:
-			continue
-		var mm := _copy(mmi.multimesh)
-		mmi.multimesh = mm
-		var mat := (mm.mesh as PrimitiveMesh).material.duplicate() as ShaderMaterial
-		mat.set_shader_parameter("glow", Num.f(_cfg["vip_glow"]))  # lit from within: reads at night
-		mmi.material_override = mat
-		var low := INF
-		var high := -INF
-		var shade := 0.0
-		for i: int in mm.instance_count:
-			var y := mm.get_instance_transform(i).origin.y
-			low = minf(low, y)
-			high = maxf(high, y)
-			shade += mm.get_instance_color(i).get_luminance() / mm.instance_count
-		var from := low + (high - low) * Num.f(_cfg["vip_band"][0])
-		var to := low + (high - low) * Num.f(_cfg["vip_band"][1])
-		for i: int in mm.instance_count:
-			var old := mm.get_instance_color(i)
-			if old.get_luminance() < dark:
-				continue
-			var y := mm.get_instance_transform(i).origin.y
-			var paint := band if y >= from and y <= to else base
-			var k := clampf(old.get_luminance() / maxf(0.01, shade), 0.8, 1.15)
-			mm.set_instance_color(i, Color(paint.r * k, paint.g * k, paint.b * k, 0.0))  # 0: glows
-
-
-## A copy of a shared voxel multimesh that can take its own colours.
-func _copy(from: MultiMesh) -> MultiMesh:
+## `mmi` takes its own MultiMesh of `buf` (a part's painted voxels), glowing from within; `painted`
+## keeps their colours.
+func _repaint(mmi: MultiMeshInstance3D, part: String, buf: PackedFloat32Array) -> void:
 	var mm := MultiMesh.new()
-	mm.transform_format = from.transform_format
+	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
-	mm.mesh = from.mesh
-	mm.instance_count = from.instance_count
-	for i: int in from.instance_count:
-		mm.set_instance_transform(i, from.get_instance_transform(i))
-		mm.set_instance_color(i, from.get_instance_color(i))
-	return mm
+	mm.mesh = mmi.multimesh.mesh
+	mm.instance_count = floori(buf.size() / float(VoxelBuilder.STRIDE))
+	if mm.instance_count > 0:
+		mm.buffer = buf
+	mmi.multimesh = mm
+	var mat := (mm.mesh as PrimitiveMesh).material.duplicate() as ShaderMaterial
+	mat.set_shader_parameter("glow", Num.f(_cfg["vip_glow"]))  # lit from within: reads at night
+	mmi.material_override = mat
+	var colours := PackedColorArray()
+	for k: int in range(0, buf.size(), VoxelBuilder.STRIDE):
+		colours.append(_colour_at(buf, k))
+	painted[part] = colours
+
+
+## A part's packed voxels (VoxelBuilder's buffer) painted: every voxel takes `base` (keeping its own
+## light and shade), the band at the part's lower middle takes `band`, and voxels darker than `dark`
+## (glass, skids) are left alone. Painted voxels glow (alpha 0).
+func _paint(buf: PackedFloat32Array, base: Color, band: Color, dark: float) -> PackedFloat32Array:
+	var stride := VoxelBuilder.STRIDE
+	var count := floori(buf.size() / float(stride))
+	var low := INF
+	var high := -INF
+	var shade := 0.0
+	for k: int in range(0, buf.size(), stride):
+		low = minf(low, buf[k + 7])  # the voxel's height: the transform's y translation
+		high = maxf(high, buf[k + 7])
+		shade += _colour_at(buf, k).get_luminance() / count
+	var from := low + (high - low) * Num.f(_cfg["vip_band"][0])
+	var to := low + (high - low) * Num.f(_cfg["vip_band"][1])
+	var out := buf.duplicate()
+	for k: int in range(0, buf.size(), stride):
+		var old := _colour_at(buf, k)
+		if old.get_luminance() < dark:
+			continue
+		var paint := band if buf[k + 7] >= from and buf[k + 7] <= to else base
+		var lit := clampf(old.get_luminance() / maxf(0.01, shade), 0.8, 1.15)
+		out[k + 12] = paint.r * lit
+		out[k + 13] = paint.g * lit
+		out[k + 14] = paint.b * lit
+		out[k + 15] = 0.0  # 0: glows
+	return out
+
+
+static func _colour_at(buf: PackedFloat32Array, k: int) -> Color:
+	return Color(buf[k + 12], buf[k + 13], buf[k + 14], buf[k + 15])
 
 
 ## Takes the body, both rotors and the gun off the helicopter into `into` (world transforms kept)
 ## and returns them: a wreck's pieces to throw. The helicopter is left empty.
 func break_up(into: Node3D) -> Array[Node3D]:
-	VehicleParts.set_opacity(self, 1.0)  # it was fading as a screen door: pieces are solid
 	var out: Array[Node3D] = []
 	for part: Node3D in [_body, _main_rotor, _tail_rotor, _gun]:
 		var at := part.global_transform

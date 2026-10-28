@@ -7,13 +7,14 @@ extends Node3D
 ## moved to render layer 0, where nothing draws them. Presentation only. Child of the rig.
 
 const CUBE_SHADER := preload("res://scenes/voxel_skin.gdshader")
-const FILL_SHADER := preload("res://scenes/voxel_skin_fill.gdshader")
 ## Bones the shaders take (the hydra has 79).
 const MAX_BONES := 128
 ## Gzip'd .vskin layout version this reader understands (tools/kaiju_skin/bake.py).
 const VERSION := 2
 ## Bytes before the first cube in a .vskin (bake.py): magic, version, stamp, bones, voxel, cells.
 const HEADER_BYTES := 26
+## Bytes a cube takes in a .vskin: cell x y z (s16 each), colour, bone flags, three bones, weight.
+const CELL_BYTES := 15
 ## Generous bounds: the shaders move every vertex away from where the engine thinks it is.
 ## A cell's centre sits half a voxel up from its corner (VoxelBuilder's lift).
 const HALF_UP := Vector3(0, 0.5, 0)
@@ -169,9 +170,28 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	var cfg: Dictionary = Content.section("render_opt")
 	_tight = Num.i(cfg["kaiju_tight_bounds"]) != 0
 	_slack = maxf(1.0, Num.f(cfg["kaiju_bounds_slack"]))
+	var three := Num.i(cfg["kaiju_three_faces"]) != 0
 	var voxel := raw.decode_float(18)
 	var cells := raw.decode_u32(22)
-	var at := HEADER_BYTES
+	var tune: Dictionary = Content.section("fx")["hide_hit"]
+	hits.setup(_nodes.size(), voxel, Num.i(tune["max_wounds"]))
+	var mm := _cube_multimesh(raw, cells, voxel, three)
+	var corner := HALF_DIAGONAL * voxel * Look.value("voxel_inset") * (1.0 + MAX_GROW)
+	_reach.measure_cubes(raw, cells, voxel, corner)
+	_cubes = _cube_material(voxel, tune)
+	_cubes.set_shader_parameter("three_faces", three)
+	_cube_node = _cube_instance(mm)
+	add_child(_cube_node)
+	_fill_node = VoxelSkinFill.node(raw, HEADER_BYTES + cells * CELL_BYTES, _reach)
+	if _fill_node != null:
+		_fill = _fill_node.material_override as ShaderMaterial
+		add_child(_fill_node)
+	_hide_rig_voxels()
+
+
+## The cubes as one MultiMesh from raw's cell block: a transform, a tint and the bones' packing
+## (pack) per cell; every cell is also handed to `hits`.
+func _cube_multimesh(raw: PackedByteArray, cells: int, voxel: float, three: bool) -> MultiMesh:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -179,10 +199,11 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * voxel * Look.value("voxel_inset")
 	mm.mesh = box
+	if three:  # render plan item 14: three faces a cube, turned to each camera
+		mm.mesh = ThreeFaceCube.mesh(box.size)
 	mm.instance_count = cells
 	mm.custom_aabb = BOUNDS
-	var tune: Dictionary = Content.section("fx")["hide_hit"]
-	hits.setup(_nodes.size(), voxel, Num.i(tune["max_wounds"]))
+	var at := HEADER_BYTES
 	for i: int in cells:
 		var cell := Vector3i(raw.decode_s16(at), raw.decode_s16(at + 2), raw.decode_s16(at + 4))
 		var base := Color8(raw[at + 6], raw[at + 7], raw[at + 8])
@@ -192,78 +213,18 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		mm.set_instance_color(i, tint)
 		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
 		hits.add_cell(raw[at + 10], cell, base)
-		at += 15
-	var corner := HALF_DIAGONAL * voxel * Look.value("voxel_inset") * (1.0 + MAX_GROW)
-	_reach.measure_cubes(raw, cells, voxel, corner)
-	_cubes = _cube_material(voxel, tune)
+		at += CELL_BYTES
+	return mm
+
+
+## The node that draws the cubes, with the cube material.
+func _cube_instance(mm: MultiMesh) -> MultiMeshInstance3D:
 	var cubes := MultiMeshInstance3D.new()
-	_cube_node = cubes
 	cubes.multimesh = mm
 	cubes.material_override = _cubes
 	cubes.custom_aabb = BOUNDS
 	cubes.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
-	add_child(cubes)
-	_add_fill(raw, at)
-	_hide_rig_voxels()
-
-
-## The filler under the cubes, from the .vskin's vertex block (raw[start] is its vertex count).
-func _add_fill(raw: PackedByteArray, start: int) -> void:
-	var at := start
-	var verts := raw.decode_u32(at)
-	at += 4
-	var pos := PackedVector3Array()
-	var col := PackedColorArray()
-	var custom0 := PackedFloat32Array()
-	var custom1 := PackedFloat32Array()
-	pos.resize(verts)
-	col.resize(verts)
-	custom0.resize(verts * 4)
-	custom1.resize(verts * 4)
-	for i: int in verts:
-		pos[i] = Vector3(raw.decode_float(at), raw.decode_float(at + 4), raw.decode_float(at + 8))
-		col[i] = Color8(raw[at + 12], raw[at + 13], raw[at + 14])
-		var w0 := raw[at + 18] / 255.0
-		var w1 := raw[at + 19] / 255.0
-		custom0[i * 4] = raw[at + 15]
-		custom0[i * 4 + 1] = raw[at + 16]
-		custom0[i * 4 + 2] = raw[at + 17]
-		custom0[i * 4 + 3] = w0
-		custom1[i * 4] = w1
-		custom1[i * 4 + 1] = maxf(0.0, 1.0 - w0 - w1)
-		at += 20
-	_reach.measure_fill(pos, custom0, custom1)
-	var indices := raw.decode_u32(at)
-	at += 4
-	if verts > 0 and indices > 0:
-		var idx := raw.slice(at, at + indices * 4).to_int32_array()
-		var arrays := []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = pos
-		arrays[Mesh.ARRAY_COLOR] = col
-		arrays[Mesh.ARRAY_CUSTOM0] = custom0
-		arrays[Mesh.ARRAY_CUSTOM1] = custom1
-		arrays[Mesh.ARRAY_INDEX] = idx
-		_add_fill_node(arrays)
-
-
-## The filler as a mesh instance on the skin, drawn with the fill shader.
-func _add_fill_node(arrays: Array) -> void:
-	var flags := (
-		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
-		| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
-	)
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
-	_fill = ShaderMaterial.new()
-	_fill.shader = FILL_SHADER
-	_fill.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
-	_fill_node = MeshInstance3D.new()
-	_fill_node.mesh = mesh
-	_fill_node.material_override = _fill
-	_fill_node.custom_aabb = BOUNDS
-	_fill_node.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
-	add_child(_fill_node)
+	return cubes
 
 
 ## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps

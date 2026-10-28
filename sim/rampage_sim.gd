@@ -141,6 +141,7 @@ var _events: Array[Dictionary] = []
 func _init(
 	p_stats: Dictionary, tuning: Dictionary, layout: Array[Dictionary], rng: RandomNumberGenerator
 ) -> void:
+	SimTeardown.note(self)  # a run that drops it without dispose() is cut at the exit
 	stats = Growth.stage_stats(p_stats, tuning)
 	army = tuning["army"]
 	city = tuning["city"]
@@ -256,7 +257,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
-		_signature()
+		SignatureStrike.fire(self)
 	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
 	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
 		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
@@ -310,34 +311,6 @@ static func falloff(distance: float, radius: float) -> float:
 	if distance <= radius:
 		return 1.0
 	return clampf(1.0 - (distance - radius) / radius, 0.0, 1.0)
-
-
-func _signature() -> void:
-	var reach := ability_reach()
-	var damage := stat("ability_damage")
-	match ability_type:
-		"cone":
-			strikes.breath()  # the cone burns at the strike, where he faces then (D-166)
-		"leap":
-			var from := kaiju_pos
-			kaiju_pos = clamp_to_arena(
-				kaiju_pos + facing * Num.f(city["leap_distance"]) * body_scale()
-			)
-			var land := kaiju_pos
-			_events.append({"type": "ability", "kind": "leap", "reach": reach, "from": from})
-			hit_area(
-				func(p: Vector2, r: float) -> float: return falloff(p.distance_to(land) - r, reach),
-				damage
-			)
-			powers.leap_landed()
-		_:
-			var centre := kaiju_pos
-			_events.append({"type": "ability", "kind": "ring", "reach": reach})
-			hit_area(
-				func(p: Vector2, r: float) -> float:
-					return falloff(p.distance_to(centre) - r, reach),
-				damage
-			)
 
 
 ## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach), every

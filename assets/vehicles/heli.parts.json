@@ -6,31 +6,31 @@
    "pivot": [
     -0.5,
     0.0,
-    -2.755
+    -5.608
    ]
   },
   "main_rotor": {
    "kvox": "heli_main_rotor.kvox",
    "pivot": [
     -0.5,
-    17.587,
-    -4.213
+    18.7,
+    -5.608
    ]
   },
   "tail_rotor": {
    "kvox": "heli_tail_rotor.kvox",
    "pivot": [
-    -2.055,
-    16.761,
-    37.326
+    -3.764,
+    17.16,
+    32.037
    ]
   },
   "gun": {
    "kvox": "heli_gun.kvox",
    "pivot": [
     -0.5,
-    4.178,
-    -35.694
+    2.772,
+    -18.282
    ]
   }
  }

@@ -42,38 +42,47 @@ static func build(colors: Dictionary, model_height: float, glow: float) -> Kaiju
 		_ellipsoid(vox, at, Vector3(0.45, 0.55, 0.45), v, eye, eye, 0)
 		vox.put_color(Vector3i((at + Vector3(side * 0.42, 0, -0.1)) / v), Color("15130f"))
 	for arm: int in ARMS:
-		var angle := TAU * (arm + 0.5) / ARMS
-		var dir := Vector3(sin(angle), 0, -cos(angle))
-		var joints: Array[Vector3] = []
-		for j: int in SEGMENTS + 1:
-			var f := float(j) / SEGMENTS
-			var r := ROOT_RING + REACH * f
-			var y := lerpf(ROOT_Y, lerpf(THICK.x, THICK.y, f), sqrt(f))
-			joints.append(dir * r + Vector3(0, y, 0))
-		var parent := "mantle0"
-		for j: int in SEGMENTS:
-			var name := "tentacle%d_%d" % [arm, j]
-			(
-				bones
-				. append(
-					{
-						"name": name,
-						"parent": parent,
-						"head": _cells(joints[j], v),
-						"tail": _cells(joints[j + 1], v),
-						"physics": true,
-					}
-				)
-			)
-			var index := bones.size() - 1
-			var r0 := lerpf(THICK.x, THICK.y, float(j) / SEGMENTS)
-			var r1 := lerpf(THICK.x, THICK.y, float(j + 1) / SEGMENTS)
-			_tube(vox, joints[j], joints[j + 1], Vector2(r0, r1), v, [body, belly], index)
-			parent = name
+		_arm(vox, bones, arm, [v, body, belly])
 	vox.height_hint = roundi((MANTLE.y + MANTLE_R.y) / v)
 	var spec := {"type": "radial", "bones": bones}
 	var scale := model_height / ((MANTLE.y + MANTLE_R.y) / v)
 	return KaijuRig.from_spec(spec, vox, scale, glow)
+
+
+## Arm `arm` of the ring: its joints out from the mantle, a bone per segment (appended to `bones`)
+## and a tapering tube of voxels. `look` is [voxel size, body colour, belly colour].
+static func _arm(vox: VoxelBuilder, bones: Array, arm: int, look: Array) -> void:
+	var v: float = look[0]
+	var body: Color = look[1]
+	var belly: Color = look[2]
+	var angle := TAU * (arm + 0.5) / ARMS
+	var dir := Vector3(sin(angle), 0, -cos(angle))
+	var joints: Array[Vector3] = []
+	for j: int in SEGMENTS + 1:
+		var f := float(j) / SEGMENTS
+		var r := ROOT_RING + REACH * f
+		var y := lerpf(ROOT_Y, lerpf(THICK.x, THICK.y, f), sqrt(f))
+		joints.append(dir * r + Vector3(0, y, 0))
+	var parent := "mantle0"
+	for j: int in SEGMENTS:
+		var name := "tentacle%d_%d" % [arm, j]
+		(
+			bones
+			. append(
+				{
+					"name": name,
+					"parent": parent,
+					"head": _cells(joints[j], v),
+					"tail": _cells(joints[j + 1], v),
+					"physics": true,
+				}
+			)
+		)
+		var index := bones.size() - 1
+		var r0 := lerpf(THICK.x, THICK.y, float(j) / SEGMENTS)
+		var r1 := lerpf(THICK.x, THICK.y, float(j + 1) / SEGMENTS)
+		_tube(vox, joints[j], joints[j + 1], Vector2(r0, r1), v, [body, belly], index)
+		parent = name
 
 
 static func _cells(p: Vector3, v: float) -> Array:
