@@ -50,6 +50,9 @@ var _follow: CameraFollow
 var _body := Vector3.ZERO
 var _zoom := 1.0
 var _step_us := 0  # the slowest stream frame of the phase (microseconds)
+var _us_stream := 0
+var _us_settle := 0
+var _n_settle := 0
 
 
 func _init(p_check: Callable, p_host: Node) -> void:
@@ -146,6 +149,13 @@ func _stage(stage: int) -> void:
 			% [phase, r["depth"], r["ahead"], r["short"], DEPTH_M, r["pop"], r["out"]]
 		)
 	print(line)
+	var diag := (
+		"TIMING stage %d (%d buildings), settles %d fr %d ms;"
+		% [stage, _sim.buildings.size(), _n_settle, _us_settle / 1000]
+	)
+	for phase: String in results:
+		diag += " | %s: %s" % [phase, results[phase]["diag"]]
+	_check.call(false, diag)
 	for phase: String in results:
 		if not (phase.begins_with("leap") or phase.begins_with("walk")):  # reported, not held
 			var depth: float = results[phase]["depth"]
@@ -242,11 +252,13 @@ func _frame() -> void:
 ## bound is stuck, and fails the same way on every machine.
 func _advance() -> void:
 	var t0 := Time.get_ticks_usec()
+	var t_all := t0
 	_stream.step(DT)
 	_step_us = maxi(_step_us, Time.get_ticks_usec() - t0)
 	var bound := _sim.buildings.size() * 2 + 120
 	for _i: int in bound:
 		if _stuck or _stream.complete():
+			_us_stream += Time.get_ticks_usec() - t_all
 			return
 		_stream.step(0.0, true)
 	if not _stream.complete():
@@ -257,6 +269,13 @@ func _advance() -> void:
 ## Lets the camera hold still until the stream has nothing left to mesh or free: every frame
 ## (_advance) runs the stream to completion, and it replans a quarter second after the camera moves.
 func _settle() -> void:
+	var t0 := Time.get_ticks_usec()
+	_n_settle += 75
+	await _settle_frames()
+	_us_settle += Time.get_ticks_usec() - t0
+
+
+func _settle_frames() -> void:
 	for i: int in 45:
 		await _frame()
 	for i: int in 30:
@@ -274,14 +293,24 @@ func _phase(seconds: float, step: Callable) -> Dictionary:
 	var pop := 0
 	var out := 0
 	var t := 0.0
+	var started := Time.get_ticks_usec()
+	_us_stream = 0
+	var us_box := 0
+	var us_marks := 0
+	var frames := 0
 	while t < seconds:
 		step.call(t)
 		await _frame()
+		frames += 1
+		var t1 := Time.get_ticks_usec()
 		var d := _view.nearest_box()
+		us_box += Time.get_ticks_usec() - t1
 		depth = minf(depth, d)
 		aheadmin = minf(aheadmin, _view.ahead)
 		short += 1 if d < DEPTH_M else 0
+		var t2 := Time.get_ticks_usec()
 		pop += 1 if _view.landmark_pops() > 0 else 0
+		us_marks += Time.get_ticks_usec() - t2
 		out += 1 if _view.unbuilt > 0 else 0
 		t += DT
 	worst_step = maxi(worst_step, _step_us)
@@ -291,7 +320,18 @@ func _phase(seconds: float, step: Callable) -> Dictionary:
 		"ahead": aheadmin,
 		"pop": pop,
 		"out": out,
-		"step": _step_us / 1000.0
+		"step": _step_us / 1000.0,
+		"diag":
+		(
+			"%d fr %d ms (stream %d, box %d, marks %d)"
+			% [
+				frames,
+				(Time.get_ticks_usec() - started) / 1000,
+				_us_stream / 1000,
+				us_box / 1000,
+				us_marks / 1000
+			]
+		)
 	}
 
 
