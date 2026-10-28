@@ -14,18 +14,27 @@ const EPS := 0.5
 
 static func run(check: Callable, menu: SettingsMenu) -> void:
 	var rects: Array[Rect2] = []
+	# D-359: the time-of-day row is hidden while one time may be played; weather then follows graphics.
+	var time_shown := TimeOfDay.has_choice()
 	for name: String in NAMES:
 		var b: Button = menu.get(name)
+		if name == "_time" and not time_shown:
+			check.call(not b.is_visible_in_tree(), "settings: the time of day button is hidden")
+			rects.append(Rect2())
+			continue
 		rects.append(b.get_global_rect())
 		check.call(
 			b.text.begins_with("< ") and b.text.ends_with(" >"),
 			"settings: %s shows its < > cue ('%s')" % [name, b.text]
 		)
+	if not time_shown:
+		rects[4] = rects[5]  # same columns as weather, so the column checks hold
 	var fullscreen := rects[0]
 	var scale := rects[1]
 	var graphics := rects[2]
 	var fps := rects[3]
 	var time := rects[4]
+	var above_weather := time if time_shown else graphics
 	var weather := rects[5]
 	var right := menu.effects.get_global_rect().end.x
 	for r: Rect2 in [scale, fps, time, weather]:
@@ -58,15 +67,15 @@ static func run(check: Callable, menu: SettingsMenu) -> void:
 	check.call(
 		(
 			absf(graphics.position.y - fullscreen.end.y - ROW_GAP) < EPS
-			and absf(time.position.y - graphics.end.y - ROW_GAP) < EPS
-			and absf(weather.position.y - time.end.y - ROW_GAP) < EPS
+			and (not time_shown or absf(time.position.y - graphics.end.y - ROW_GAP) < EPS)
+			and absf(weather.position.y - above_weather.end.y - ROW_GAP) < EPS
 		),
 		(
 			"settings: 10 px between button rows (%s, %s, %s)"
 			% [
 				graphics.position.y - fullscreen.end.y,
 				time.position.y - graphics.end.y,
-				weather.position.y - time.end.y
+				weather.position.y - above_weather.end.y
 			]
 		)
 	)

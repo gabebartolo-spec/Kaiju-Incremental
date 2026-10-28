@@ -42,7 +42,8 @@ const FREE := 0
 const BUSY := 1
 const PARKING := 2
 
-## The pool in use (the Fx node's), for the fire, blast and helicopter code that has no Fx.
+## The pool take() uses (the Fx node's that entered the tree last), for the fire, blast and
+## helicopter code that has no Fx. A slot still goes back to the pool that made it (owner_of).
 static var shared: FxPool
 
 ## Whether pooling is on (tuning render_opt.fx_pool.enabled); tests switch it per pool.
@@ -95,10 +96,21 @@ static func give_after(p: GPUParticles3D, seconds: float) -> void:
 ## Gives a taken slot back now; false when it is not a pool slot or there is no pool (the caller
 ## frees it).
 static func give(p: Node) -> bool:
-	if shared == null or not is_instance_valid(shared) or not p.has_meta("fx_gen"):
+	var pool := owner_of(p)
+	if pool == null:
 		return false
-	shared.release(p as GPUParticles3D)
+	pool.release(p as GPUParticles3D)
 	return true
+
+
+## The pool that made slot `p`, or null (not a slot, or its pool is gone). A slot always goes back
+## to its own pool: the city has more than one (each Fx has its own), and `shared` is only the one
+## take() uses. Given to another pool, a slot moved there and stayed counted as taken in its own.
+static func owner_of(p: Node) -> FxPool:
+	if p == null or not p.has_meta("fx_pool"):
+		return null
+	var id: int = p.get_meta("fx_pool")  # as it is: an instance id through a float may round
+	return instance_from_id(id) as FxPool
 
 
 static func _gen(p: Node) -> int:
@@ -109,8 +121,9 @@ static func _timeout(id: int, gen: int) -> void:
 	var p := instance_from_id(id) as GPUParticles3D
 	if p == null or not is_instance_valid(p) or _gen(p) != gen:
 		return  # freed, or already given back (and maybe taken again)
-	if shared != null and is_instance_valid(shared):
-		shared.release(p)
+	var pool := owner_of(p)
+	if pool != null:
+		pool.release(p)
 	else:
 		p.queue_free()
 
@@ -262,6 +275,7 @@ func _make(kind: String) -> void:
 		p.process_material = base.duplicate()
 		p.draw_pass_1 = mesh
 	p.set_meta("fx_kind", kind)
+	p.set_meta("fx_pool", get_instance_id())
 	p.set_meta("fx_state", FREE)
 	p.set_meta("fx_gen", 0)
 	p.amount_ratio = GraphicsPresets.cap("particles")  # an idle slot holds the run's cap

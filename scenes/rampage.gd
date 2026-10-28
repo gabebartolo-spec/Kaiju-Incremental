@@ -20,9 +20,8 @@ const DIP_RECOVER := 4.0
 const GLIDE_LIFT := 3.0
 
 var sim: RampageSim
-## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
-## LoadingOverlay, and nothing runs until it is done, so starting a run never freezes the screen
-## (b2-30). false (tests, captures): _ready builds it all at once, as before.
+## true (the game's own flow): _ready builds the scene in stages, a frame each, behind a
+## LoadingOverlay, and nothing runs until it is done (b2-30). false (tests, captures): all at once.
 var staged := false
 ## Rampage seconds in the adolescent city or later, from the save; set before setup (D-160).
 var city_seconds := 0.0
@@ -100,8 +99,7 @@ func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], 
 	_cues = PowerCues.new(sim, sfx)
 
 
-## Returns once the scene is built (at once when it is; flow suites and captures that start a run
-## through Main wait here, as the staged build takes a number of frames).
+## Returns once the scene is built (flow suites and captures started through Main wait here).
 func wait_loaded() -> void:
 	while not is_loaded and is_inside_tree():
 		await get_tree().process_frame
@@ -118,6 +116,12 @@ func set_autoplay(on: bool) -> void:
 func _exit_tree() -> void:
 	if sim != null:
 		sim.dispose()
+
+
+## setup() builds sfx, _ready() adds it later: freed in between, nothing frees it (debt row 2).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(sfx) and sfx.get_parent() == null:
+		sfx.free()
 
 
 func _ready() -> void:
@@ -247,11 +251,9 @@ func _process(delta: float) -> void:
 
 
 ## The pause menu's photo mode (PhotoMode, D-259): the gameplay camera flies free round the frozen
-## kaiju; the breath's aim and the floating numbers hide while it is up.
+## kaiju; the breath's aim hides while it is up.
 func photo_mode() -> PhotoMode:
 	var hide: Array[Node3D] = [_aim]
-	for node: Node in get_tree().get_nodes_in_group(CityView.FLOAT_TEXT):
-		hide.append(node as Node3D)
 	var rest := (camera_rest * CameraTuning.zoom(sim.body_scale())).length()
 	return PhotoMode.new(_camera, _kaiju_at, rest, hide)
 
@@ -268,10 +270,10 @@ func _note_cost(what: String, since: int) -> void:
 
 
 ## The army's tanks (their voxels built once now, so the first spawn reuses them), the
-## helicopters' voxels, and the railway.
+## helicopters' voxels (the gunships' and the leader's own), and the railway.
 func _add_vehicles() -> void:
 	TankModel.new().free()
-	HelicopterModel.new().free()
+	HelicopterModel.warm()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
 	_rail = RailView.new(self, sim, _city)
 	add_child(_rail)
@@ -318,17 +320,12 @@ func _on_event(event: Dictionary) -> void:
 		_:
 			_powers.on_event(event, _kaiju_at)
 			_rail.on_event(event)
-			_ability.leap.on_event(event)  # the croc's leap on the dash button (LeapView)
+			_ability.on_event(event)  # the croc's leap (LeapView) and slam (SlamView)
 
 
-func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
+## No number floats up for the biomass (D-284: "Remove them entirely"); the HUD counts it.
+func _on_chunks_broken(index: int, cells: Array[Vector3i], _pay: float) -> void:
 	_city.chunks_broken(index, cells, _kaiju_at)
-	var b := sim.buildings[index]
-	var per := b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult") * pay
-	var gained := cells.size() * per
-	if gained >= 1.0:
-		var at := b.chunk_world(cells[0]) + Vector3(0, 2.0, 0)
-		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
 
 
 ## How far an upgraded stat is above the species' own value (1 = not upgraded).
@@ -388,5 +385,4 @@ func _place_camera(delta: float) -> void:
 	var nod := shake.turn(sim.body_scale(), motion).y
 	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
 	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
-	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

@@ -7,6 +7,7 @@ extends RefCounted
 ## exit; hovering moves the focus; every button is a worn plate and its text 24 px or more.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
+const FocusOrder := preload("res://tests/lib/focus_order.gd")
 const CANVAS := Vector2i(1920, 1080)
 const SUMMARY := "Reptilian, 7 rampages"
 ## The ticker along the bottom edge, and how far the corner buttons may stand from the screen's.
@@ -181,7 +182,7 @@ func _with_save() -> void:
 		fr.end.x <= CANVAS.x * 0.4,
 		"the button row stays in the left 40%% of the screen (ends at %d)" % int(fr.end.x)
 	)
-	_focus_order(title, [cont, fresh, gear, exit], "with a save")
+	FocusOrder.run(check, title, [cont, fresh, gear, exit], "with a save")
 	gear.grab_focus()
 	cont.mouse_entered.emit()
 	check.call(cont.has_focus() and not gear.has_focus(), "hovering Continue moves the focus to it")
@@ -364,17 +365,6 @@ func _without_save() -> void:
 				):
 					no_tape = false
 		check.call(no_tape, "no hazard tape runs along the top edge (director 2026-10-25)")
-		_focus_order(title, [fresh, gear, exit], "with no save")
+		FocusOrder.run(check, title, [fresh, gear, exit], "with no save")
 	title.queue_free()
 	await t.process_frame
-
-
-## Tab order: each button's focus_next is the next one in `order`, wrapping round.
-func _focus_order(title: Node, order: Array, label: String) -> void:
-	var good := true
-	for i: int in order.size():
-		var here: Button = order[i]
-		var next: Button = order[(i + 1) % order.size()]
-		if here.get_node_or_null(here.focus_next) != next:
-			good = false
-	check.call(good, "focus order %s is Continue/New Kaiju, gear, exit (%s)" % [label, title.name])

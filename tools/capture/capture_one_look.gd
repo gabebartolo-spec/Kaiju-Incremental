@@ -77,7 +77,7 @@ func _initialize() -> void:
 					_sets[kv[0]] = kv[1] == "true"
 				else:
 					_sets[kv[0]] = float(kv[1]) if kv[1].is_valid_float() else kv[1]
-		elif arg.begins_with("--tune="):  # --tune=camera.fade_opacity=1 (a tuning.json number)
+		elif arg.begins_with("--tune="):  # --tune=camera.bubble_radius=12 (a tuning.json number)
 			var tv := arg.substr(7).split("=")
 			var path := tv[0].split(".")  # any depth: display.graphics.medium.fsr_sharpness=0.1
 			var table: Dictionary = Content.section(path[0])

@@ -7,8 +7,10 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_bolt.gd -- --out=<dir> --mode=breath --run=1 --halo=amber
-## --mode=breath|beam|clip; --run=1 night, 3 noon (Content.times() order); --side: from the kaiju's
-## right, level with its chest; --young: the baby-stage build (no first evolution).
+## --mode=breath|beam|clip; --run=1 night, 3 noon (Content.times() order); --time=dusk|night|..:
+## that time of day whatever the run (D-359: the demo plays at dusk); --side: from the kaiju's
+## right, level with its chest; --young: the baby-stage build (no first evolution); --core=hex: the
+## bolt's core colour for this run.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 120
@@ -31,6 +33,7 @@ var _out := "user://bolt"
 var _mode := "breath"
 var _run := 1
 var _halo := ""
+var _time := ""
 var _side := false
 var _young := false
 var _debug := false
@@ -53,9 +56,11 @@ func _initialize() -> void:
 				"mode": _mode,
 				"run": _run,
 				"halo": _halo,
+				"time": _time,
 				"side": false,
 				"young": false,
 				"min_px": -1.0,
+				"core": "",
 				"debug": false,
 				"shots": "",
 			}
@@ -65,6 +70,7 @@ func _initialize() -> void:
 	_mode = str(a["mode"])
 	_run = a["run"]
 	_halo = str(a["halo"])
+	_time = str(a["time"])
 	_side = a["side"]
 	_young = a["young"]
 	_debug = a["debug"]
@@ -72,6 +78,11 @@ func _initialize() -> void:
 	if _halo == "debug":  # a pure green halo: proves which frame pixels are the bolt
 		var modes: Dictionary = Content.section("fx")["bolt"]["halo_modes"]
 		modes["debug"] = {"inner": "00ff00", "fringe": "00ff00"}
+	if str(a["core"]) != "":  # try a different core colour (hex) without editing the tuning
+		var bolt_cfg: Dictionary = Content.section("fx")["bolt"]
+		var rows: Dictionary = bolt_cfg["halo_modes"]
+		var row: Dictionary = rows[str(bolt_cfg["halo_mode"])]
+		row["core"] = str(a["core"])
 	if Num.f(a["min_px"]) >= 0.0:  # try a different least width without editing the tuning
 		var bolt: Dictionary = Content.section("fx")["bolt"]
 		bolt["core_min_px"] = a["min_px"]
@@ -89,6 +100,8 @@ func _go() -> void:
 	if _young:
 		levels.erase("evolve1")
 	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels, "reptilian"), _run)
+	if _time != "":
+		Content.set_time(_time)
 	rampage.scripted = _scripted_input
 	root.add_child(rampage)
 	var settle := CLIP_SETTLE if _mode == "clip" else SETTLE
@@ -97,12 +110,75 @@ func _go() -> void:
 	_fire_beam = fire if _mode == "beam" else (fire + CLIP_GAP if _mode == "clip" else -1)
 	await Kit.ticks(self, settle)
 	if _mode == "clip":
-		await Kit.frames(self, CLIP_FRAMES)
+		await _clip(rampage)
 	else:
 		await _stills(rampage)
 	rampage.queue_free()
 	await Kit.frames(self, 2)
 	quit()
+
+
+## The clip's frames, each logged for the D-357 bars (measure from the movie's frames): per bolt
+## lit (breath, beam), how far its highest drawn point and its start are over the top of the head
+## (m) and its main channel in pixels; the charge-up's arc count and its highest point over the
+## head.
+func _clip(rampage: Rampage) -> void:
+	var size := root.get_visible_rect().size
+	for frame: int in CLIP_FRAMES:
+		await Kit.frames(self, 1)
+		var cam := root.get_viewport().get_camera_3d()
+		var top := _head_top(rampage)
+		var thunder := rampage._powers._thunder
+		var text := "CLIPF %d drawn=%d top=%.2f" % [frame, Engine.get_frames_drawn(), top]
+		var rigs := {"breath": rampage.ability_fx._beam.rig, "beam": thunder.rig}
+		for kind: String in rigs:
+			var rig: BoltRig = rigs[kind]
+			if not rig.live or rig.drawn_main.size() < 2:
+				continue
+			var lines: Array[PackedVector3Array] = [rig.drawn_main]
+			lines.append_array(rig.drawn_lines)
+			var main := ""
+			for p: Vector3 in rig.drawn_main:
+				var at := Kit.image_point(self, cam, p, size)
+				main += " %d,%d" % [at.x, at.y]
+			var start := rig.drawn_main[0].y - top
+			text += (
+				" | %s over=%.2f start=%.2f main=%s" % [kind, _highest(lines) - top, start, main]
+			)
+		if not thunder.charge.lines.is_empty():
+			var over := _highest(thunder.charge.lines) - top
+			text += " | charge arcs=%d over=%.2f" % [thunder.charge.lines.size(), over]
+		print(text)
+
+
+static func _highest(lines: Array[PackedVector3Array]) -> float:
+	var out := -INF
+	for line: PackedVector3Array in lines:
+		for p: Vector3 in line:
+			out = maxf(out, p.y)
+	return out
+
+
+## The top of the croc's head now (world y): the highest head cell of its jawed body (the
+## rampage holds other rigs too).
+static func _head_top(rampage: Rampage) -> float:
+	var out := -INF
+	for found: Node in rampage.find_children("*", "KaijuRig", true, false):
+		var body := found as KaijuRig
+		if body.is_visible_in_tree() and body.has_bone("jaw") and body.has_bone("head1"):
+			out = maxf(out, _cells_top(body))
+	return out
+
+
+static func _cells_top(body: KaijuRig) -> float:
+	var out := -INF
+	for bone_name: String in ["head0", "head1", "jaw"]:
+		var cells := body.voxels_of(bone_name)
+		var at := body.bone(bone_name).global_transform
+		for cell: Vector3i in cells.cells:
+			var p := (Vector3(cell) + Vector3.ONE) * body.voxel_size() - body.head_of(bone_name)
+			out = maxf(out, (at * p).y)
+	return out
 
 
 ## Stills a set number of frames after the fire.

@@ -103,21 +103,7 @@ func _ready() -> void:
 	var voxel := Num.f(Content.section("street")["person_voxel"])
 	var per_side := Num.i(sport["per_side"])
 	var kits: Array = sport["kits"]
-	for team: int in kits.size():
-		var kit: Dictionary = kits[team]
-		for skin: int in SKINS.size():
-			var outfit := kit.duplicate()
-			outfit["skin"] = SKINS[skin]
-			for pose: int in POSES:
-				var mm := MultiMesh.new()
-				mm.transform_format = MultiMesh.TRANSFORM_3D
-				mm.mesh = VoxelPerson.dressed(outfit, pose, voxel)
-				mm.instance_count = per_side
-				mm.visible_instance_count = 0
-				var mmi := MultiMeshInstance3D.new()
-				mmi.multimesh = mm
-				add_child(mmi)
-				_mms.append(mm)
+	_add_kits(kits, per_side, voxel)
 	_counts.resize(_mms.size())
 	var field := Vector2(PitchProps.field(sport, _half)) / PitchProps.RES
 	for team: int in kits.size():
@@ -133,6 +119,25 @@ func _ready() -> void:
 		crowd = StadiumCrowd.new(sim, _index, kits, _rng)
 		crowd.fx = _fx
 		add_child(crowd)
+
+
+## One MultiMesh per team, skin and pose (players dressed in their kit), none shown yet.
+func _add_kits(kits: Array, per_side: int, voxel: float) -> void:
+	for team: int in kits.size():
+		var kit: Dictionary = kits[team]
+		for skin: int in SKINS.size():
+			var outfit := kit.duplicate()
+			outfit["skin"] = SKINS[skin]
+			for pose: int in POSES:
+				var mm := MultiMesh.new()
+				mm.transform_format = MultiMesh.TRANSFORM_3D
+				mm.mesh = VoxelPerson.dressed(outfit, pose, voxel)
+				mm.instance_count = per_side
+				mm.visible_instance_count = 0
+				var mmi := MultiMeshInstance3D.new()
+				mmi.multimesh = mm
+				add_child(mmi)
+				_mms.append(mm)
 
 
 ## Loose positions over the field, each side mostly in its own half; the first player starts by
@@ -288,6 +293,11 @@ func _play(delta: float) -> void:
 		if to.length() > 0.02:
 			p.heading = to.normalized()
 			p.pos += p.heading * minf(sprint if i < chasers else step, to.length())
+	_hold_or_kick(order, delta)
+
+
+## The nearest has the ball at their feet (never dead) and kicks it once the kick is due.
+func _hold_or_kick(order: Array, delta: float) -> void:
 	_kick_in -= delta
 	if not order.is_empty() and _ball_t >= 1.0:  # the nearest has it at their feet: never dead
 		var holder: Player = order[0]

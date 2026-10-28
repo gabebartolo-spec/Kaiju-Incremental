@@ -99,6 +99,13 @@ static func times() -> Array:
 	return _times["order"]
 
 
+## The times a rampage may roll (data/looks.json "times" "play", D-359); a subset of times(), which
+## stays whole so --time= flags in captures, benches and tests keep working. No "play": all of them.
+static func play_times() -> Array:
+	_load()
+	return _times.get("play", _times["order"])
+
+
 ## The whole "times" table of data/looks.json (order, labels, each time's look overrides).
 static func time_table() -> Dictionary:
 	_load()

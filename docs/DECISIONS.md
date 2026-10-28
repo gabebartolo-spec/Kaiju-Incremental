@@ -2,7 +2,135 @@
 
 Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest first. A decision
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
-changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
+changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
+
+## 2026-10-28 · D-370 · Director · Ruleset after the rule audit
+Rule audit 10-28; his picks, each the recommended option except roadmap. Decision log: a decision goes into
+DECISIONS.md in the PR that acts on it, the lead owns the wording; log-only updates ride in the lead's next PR (main
+requires checks, so no direct push); no separate board PR after each merge. Godot queue: gq syncs a job's worktree to
+latest main itself (only a real conflict refuses); a speed run waiting over 20 min in the day moves to NIGHT_QUEUE.txt;
+NO_GODOT_UNTIL holds every start. Reading: what the task touches, in full, grep the rest. Asking: only real calls.
+Handoffs about 150 lines, edited after a commit, push or PR change. Reports short, no line count, no read receipts.
+Tool caps raised (output 25k, reads 25k, commands 6000). Player-effect fixture only for new systems or rules.
+Checklist walks only where a defect reached you twice. Roadmap: picked "Wait for assignment" (unchanged).
+Team shape stays keyer + 4 builders (D-353).
+
+## 2026-10-28 · D-369 · Director · No cap on open PRs
+Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
+Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
+conflicting over an hour. The repo is public, so extra checks cost no CI minutes.
+
+## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
+Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
+was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
+Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)". The croc's jaw is keyed in the same
+Cascadeur file as the body at all three stages (D-228's Blender jaw stays only for rigs with no Cascadeur jaw). Wide
+open on roar and breath-beam; a snarling gape showing teeth on charge, claw rake, standing stomp, tail sweep and leap
+landing (D-239); every other move keeps the jaw shut.
+
+## 2026-10-28 · D-367 · Director · Collapse sounds: the newest cuts the oldest
+Asked why many collapses at once went silent in the wider city (each collapse rings about 3.4 s and only 3 play at
+once, so a 4th was dropped), he picked "Newest cuts oldest (Recommended)". When a hero sound's voices are all busy, a
+new collapse takes over that sound's own oldest voice once it has played at least 1.0 s (a tuning value); no other
+hero sound is ever cut for it.
+
+## 2026-10-28 · D-366 · Director · Wider-city music pacing waits for balancing
+Asked about the city music's last layers never arriving in the wider (1.5x) city (there is more city to destroy before
+they trigger), he picked "Leave it for balancing" (D-363). The pacing stays as it is; only the test is refit to the
+bigger city.
+
+## 2026-10-28 · D-365 · Director · Claw rake PR #332 closed, branch kept
+Asked whether to close #332 (grown croc claw rake, waiting on a rebake) to free a PR slot, he picked "Yes, close it
+(Recommended)". The branch claude/croc-claw stays; the PR reopens when its rebake passes on GitHub.
+
+## 2026-10-28 · D-364 · Director · Cascadeur restarted to free memory
+Asked whether to restart Cascadeur (holding about 11 GB, free memory under 2 GB, every rebake and local run waiting),
+he picked "Yes, restart it (Recommended)". It had already exited when the lead went to close it and was relaunched
+minimized; one copy only (D-336).
+
+## 2026-10-28 · D-363 · Director · Balance waits until the game is beautiful and working
+His words, after dying in every run of the play build: "dont worry abot balance yet. lets get the game beautiful and
+working then we can balance it". Army strength, run length and upgrade costs stay as they are until he says so; the
+lead checked his question instead ("maybe i didnt actualyl getkilled?"): the run summary names the real cause
+(army kill: BROUGHT DOWN, clock: TIME UP), and every ending plays the stone and blast by design (D-263, D-294).
+
+## 2026-10-28 · D-362 · Director · First drafts of every remaining Cascadeur animation, one attempt each
+His words, going to sleep: "do a first draft of all remaining casc animations, dont iterate on any first attempts, try
+to get through them all and we will see what was good / use our reference models and clips that ive shown you", then
+"dont stop the casc work, really rapid fire get through all animations". Every open creature and people row of the
+animation audit gets one keyed draft (the croc at all three stages, plus people, per his 10-25 "Creatures + people"),
+saved as its own .casc and opened in his Cascadeur (D-347); no second takes, no clips, no PRs until he picks. Asked
+about the insectoid and cephalopod, he picked "Croc and people only". Pauses the keyer's #332 work for the run.
+
+## 2026-10-28 · D-361 · Director · The leap lands on roofs up to shoulder height; a taller building takes it in its side
+His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
+picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a
+landing; a taller building takes the leap in its side, he carves in (D-268) and drops to the street at its foot.
+
+## 2026-10-28 · D-360 · Director · No far blur: the skyline stays sharp, haze alone carries the depth
+His comment watching runs (about 01:4x): "the blurred distance also looks kind of distracting, makes it like you have
+a smudge on your screen". Shown the same dusk Behemoth frame with today's far blur (A) and without it (B), and quoted
+D-163 ("Far blur only", locked on the kaiju, haze carrying the depth), he picked "B: no far blur" (not keep A, not a
+lighter blur). Replaces D-163's depth-blur clause only: far blur is off by default; haze, cool shadows with warm fire
+and fine-block ground stay as D-163 set them. Owner: load-flake (flag off by default, PR); the facade pop-in probe
+("Blurry turns sharp") follows.
+
+## 2026-10-28 · D-359 · Director · The demo plays at dusk only
+His question: "would it be faster if we focused on just one time of day for the demo". Told that it is (each new look
+is tuned and shown once, not four times; sim, animation and perf work are unchanged), and quoted his 10-22 ruling
+("the time of day will be randomised each run"), he answered "dusk only" (not the recommended night only, not all four,
+not night and dusk). For the demo every rampage plays at dusk, the options time toggle is hidden while only one time
+can play, and every capture and clip for him shows dusk. D-145's random time (never the same twice) and the toggle
+return after the demo; night, morning and noon looks stay in data, untouched (D-279, D-285, D-328 still hold for night).
+
+## 2026-10-28 · D-358 · Director · Hatchlings: a late Colossus node, one purple-crackling egg spewed from the maw per rampage
+His words: "roadmap: "Hatchlings" / each of our kaiju should be able to lay eggs (or im actually leaning toward they
+spew the eggs out) / late game power where you can spawn an autonomous baby version of your kaiju that rampages the
+city"; "they should only lay 1 egg, and it should be crackling with purple energy". Picks: "Spewed from the maw
+(Recommended)"; unlock: first offered as "Apex Titan (Recommended)", a stage D-135 had already cut (the lead's mistake, from a stale note); asked again (01:3x, "what is "apex titan""), he picked "A late Colossus node" (bought on the evolution tree after reaching the Colossus, the adult final form, so it is worked toward inside that stage); how it is earned: "must reach a certain biomass threshold within
+a run, challenging but attainable"; at the mark "You choose when to spew (Recommended)" (a button lights up, one egg
+per rampage, the player picks the moment); the hatchling is "Your species' baby form (Recommended)" (the young form the
+player starts as, at that size, with its keyed moves), rampaging on its own. Every species gets it. The egg's purple is
+the kaiju-juice colour (D-357). Earlier the cut insectoid's Brood ultimate (archive SPECIES_2026-10) laid several eggs;
+this replaces that idea with one egg for all species. Queued behind the debt list and render plan (D-310); the mark's
+size and the spew move are asked when it is built.
+
+## 2026-10-28 · D-357 · Director · The lightning is purple, from deep in the throat, with arcs up the spines first
+Shown the round 7 clip (#309, D-308): "currently it spawns above his head slightly in front, arcing from up to down /
+its light yellow/white / i want it to come from deep in his throat and be purple lightning / I want his spines to light
+up from tip of his [tail] to his head in sequence before he spews purple lightning from his maw"; "purple is our
+default 'kaiju colour', because of the kaiju juice that fuels their evolution". Told that plates lighting tail to head
+before a glowing breath is the Godzilla charge-up D-108 steered away from, he picked: "Arcs jump up the spines
+(Recommended)" (lightning crackles spine to spine, tail tip to head, never a steady glow); "Fit inside it
+(Recommended)" (the charge-up plays inside the D-166 strike delay, 0.8 / 1.1 / 1.4 s, the breath no slower); "Yes,
+both match (Recommended)" (the Thunder Beam turns purple with the same charge-up). Changes: D-108's white-hot colour
+and the open halo-colour question (R 17.6) are replaced by purple; the bolt starts inside the mouth, never above the head.
+
+## 2026-10-28 · D-356 · Director · The Godot window is never left idle
+"godot has been empty like 90% of the time recently, make sure its always being used so we can be efficient". Asked
+whether tonight's speed runs may start at once instead of at 01:00 (D-331): picked "Start now (Recommended)"; the hold
+was lifted 00:30 and the night queue runs back to back, builders' captures queue behind it. Standing rule: a capture,
+clip or speed run always waits behind the one-window slot, so the window never sits empty while work is queued.
+
+## 2026-10-27 · D-355 · Director · The grown croc eases into its walk over about 1.3 s
+For the keyed walk-start (D-343). Asked whether the croc may take about 1.3 s to reach full walking speed from standing
+(today about 0.13 s): picked "Ease in, ~1.3 s (Recommended)". The sim's set-off changes (walk_off_s and the step clock),
+and the keyed walk-start plays over it. A ~6 s clip goes to him before it ships. Not picked: the body trailing the sim
+(a ~30% surge) or a quick 0.4 s first step (the defect he named).
+
+## 2026-10-27 · D-354 · Director · Creature animation runs alongside the parked work
+Asked for a plan to finish the render plan and the debt list ("make a plan to finish the render plan, debt fixes"). Asked
+whether the Cascadeur animation row (debt row 21, 31 of 40 moves to key) holds back the parked work (roads, wider city,
+river intro, D-310): picked "Run alongside (Recommended)". The parked queue opens once every other debt row is merged;
+the keyer and rigger keep keying the whole time. Plan: C:/Users/DANTE/.claude/plans/dapper-percolating-lake.md.
+
+## 2026-10-27 · D-353 · Director · Team: the Cascadeur keyer plus 4 builders
+Replaces D-296. Asked "be honest, would this actually be any slower if we did it with just you and no subagents? maybe 1
+subagent for CI and thats it?". Lead's numbers: 85 merges on 10-27 (no builder limit) against 29 and 33 the two days
+before; costs: collisions (#332 vs #338), 10 open PRs against the cap of 3, the lead relaying instead of checking work.
+Then "what do YOU think, im asking here"; the lead recommended the keyer plus 4. Picked "Yes, keyer + 4 (Recommended)":
+the Cascadeur keyer plus 4 builders (the rigger is one of the 4, D-336), at most 3 open PRs. Running builders finish
+their current task and are not replaced. The lead counts in-game progress on 10-28 and reports it.
 
 ## 2026-10-27 · D-352 · Director · Roof tanks: mostly white solar water heaters, some short wooden towers
 Changes D-348. On the wooden towers: "idk, the rooftanks look massive, and why are the brown"; "i prefer rooftanks like
@@ -264,134 +392,3 @@ interview tomorrow". Q: should visual changes made tonight go into the game befo
 you judge tomorrow (Recommended)". So: tonight's visual PRs merge on by default after one iteration; each keeps a saved
 1080p clip or 4K still in C:/kt/interview_2026-10-27/ for the morning interview; anything he rejects is reverted. No
 second visual rounds without him. Overrides, for this night only, the director look gate on merges.
-
-## 2026-10-27 · D-307 · Director · The croc skeleton may gain bones to match the Dracorex
-Q (05:3x): may the croc gain bones (more tail or neck joints)? A: "Yes, add bones if needed (Recommended)".
-So: bones are added where the study shows the croc lacks them; the croc is re-skinned and the approved roar, idle and
-turns move to the new skeleton, each shown to him again in a clip before it replaces the old one.
-
-## 2026-10-27 · D-306 · Director · Recreate the Dracorex walk with its methods and our own keys
-Q (05:3x, his request "look at every single frame of the dracorex walk loop and apply those learnings to our models
-skeletons / take of the settings and techniques used in that dracorex file and try to recreate it with our model"):
-same methods with our own keys, or copy its motion? A: "Same methods, our own keys (Recommended)".
-So: every frame of the sample walk is studied and its settings and techniques (controller layout, key grid, curve
-types, tail and neck set-up, timing) are copied; the croc walk is keyed fresh. No key, curve or pose from the sample
-(licence not cleared) enters our files. Refines D-302.
-
-## 2026-10-27 · D-305 · Director · Our animator works inside his open Cascadeur
-Q (05:3x, after "casc is open"): use his open copy, or he closes his? A: "Use my open copy (Recommended)".
-So: the Cascadeur builder runs its script server inside his running Cascadeur and opens its own tabs beside his
-Dracorex file. It never closes, edits or saves his file, and never takes his keyboard or mouse (no window activation,
-no clicks). Owner: croc moves builder (row 21).
-
-## 2026-10-27 · D-304 · Director · Clips render at 1080p; stills stay 4K
-Q (05:0x, after he asked "why do we need to capture things in 4k? surely that takes much longer and uses more gpu?"):
-switch clips to 1080p? A: "Clips 1080p, stills 4K (Recommended)".
-So: every ~6 s clip renders at 1920x1080; stills keep the 3840x2160 check for text and fine detail. The first 1080p
-clip is timed against a 4K one so the saving is measured, not assumed. Replaces the 4K-clip wording in briefs.
-
-## 2026-10-27 · D-303 · Director · Balcony railings take the window-sill tone
-Q (05:0x, with the window-bars 4K A/B, C:/kt/wb_old/ab2.png): the short black bars under the windows on brick towers are
-balcony railings (palette key "rail", 2a2c2e, 2 voxels proud); they stay pitch black at night and slide over the windows
-as the camera moves. Leave, lighten to sill tone, or drop? A: "Lighten to sill tone (Recommended)".
-So: the rail voxels use the window-sill colour; brick towers keep their balconies. Owner: window-bars (PR #274).
-
-## 2026-10-27 · D-302 · Director · Croc walk reworked from the Dracorex study; size-matched steps
-Q (after the Dracorex study he asked for at 03:5x, "maybe you should study this and take some learnings from it"; numbers in C:/kt/dracorex/learnings.md): rework the approved walk with the learnings? "Rework, send a clip (Recommended)". How fast should his legs step at his normal walking speed? "Size-matched, ~1.4 s a step (Recommended)".
-So: the Cascadeur builder (debt row 21) rekeys the croc walk to the study's bars: a steady head (heading range <= 25% of the trunk's twist, bob <= 70% of the pelvis, 2-4 f late); the neck lifting as the body drops (r <= -0.5, >= 3 deg range); the chest swinging against the hips (S-shaped spine); the tail tip trailing the base by >= 0.25 cycle, swinging wider toward the tip; feet that peel (ankle peak 15-30% into the swing) then reach (toe peak in the last 20%); planted feet still slide <= 1 cm. Sizes the study left open (trunk twist, tail swing, bob) sit between today's croc and the sample; he judges ONE ~6 s side-on clip, and today's walk stays in the game until he approves the new one. Tempo: same ground speed; a cycle of ~2.7 s (a step ~1.35 s, stride ~15 m) instead of 1.10 s and 6.06 m; the sim's footstep cadence follows the clip (D-201); damage under his feet is re-tuned so the street clears per metre walked as it does today. Not chosen: keep the walk and use the learnings for new moves only; halfway (~0.95 s a step); today's ~0.55 s a step. No key, curve or pose from the sample enters the game (licence not cleared): measurements only.
-
-## 2026-10-27 · D-301 · Director · Cascadeur bought just before release; trial clips re-exported under it
-Q: the release build would ship clips keyed on the Cascadeur Pro Trial, whose EULA (2.2(e)) "prohibits any Commercial Use". Answer: "as long as we can use our trial animations after I pay, im happy to wait still a long time left on the trial".
-EULA (cascadeur.com/download, read 2026-10-27): Indie (gross revenue under $100k/yr) and Pro permit Commercial Use; the licensee keeps ownership of its animations (6.3); it says nothing either way about trial-made work after upgrading. So: keep working on the trial; buy before the Itch release; at purchase re-open every clip's .casc in the paid Cascadeur and re-export it, so every shipped clip is exported under a paid licence; every clip keeps its .casc source; credits name Cascadeur (EULA asks for it). Release checklist item.
-
-## 2026-10-27 · D-300 · Director · Debt fixes go ahead of the render plan
-His words: "maybe we should prioritise the debt fixes" (after the third local freeze tonight and P2b's speed runs swinging 63-81 ms). Asked "Should debt fixes go ahead of the render plan?"; picked "Debt first": debt PRs merge first and get the next speed runs; the Cascadeur remake of the 31 code-driven creature moves (debt row 21) starts now instead of after the render plan; render builders already working finish their items; later render items start after waiting debt. New order: 1 debt, 2 render plan, 3 everything else. Replaces D-298's order.
-
-## 2026-10-27 · D-299 · Director · Each speed run gets the PC to itself
-D-292's check failed: the same freeze-fix build measured 59.47 ms (95th-percentile frame, High) alone and 72.54 ms with 11 headless test runs beside it (+22%; two clean main runs differ 0.1%). Asked "Should each speed run get the PC to itself for its 3 minutes?"; picked "Yes, PC to itself": while a speed run holds C:/kt/BENCH_WINDOW_<owner>, no other Godot starts, headless included (2 min 49 s per run, measured). Enforced by the tool-gate hook (refuses Kaiju Godot launches without C:/kt/wait_window.sh) and by drive_timing.sh (waits for zero Godot, records others=N; a run with others>0 does not count). Replaces D-292's headless-beside rule. Not chosen: keep tests beside; try top CPU priority first.
-
-## 2026-10-27 · D-298 · Director · Priority order: render plan, then debt, then everything else
-His words: "priorities are 1. render plan 2. debt fixes 3. everythin else". Where work competes (speed-check turns, merge order, builder slots, the lead's attention) the render plan (D-276) goes first, the tech-debt list (D-295) second, all other work third. Parked work stays parked ("Render plan first").
-
-## 2026-10-27 · D-297 · Director · Tanks and helicopters remade in Tripo, up to 600 credits
-His words: "i think our helis and tanks look untextured too, they look procedurally drawn rather than proper models". Asked how to remake them; picked "Tripo, up to 600 credits": the tank, the gunship and the governor's helicopter are generated in Tripo Studio (HD model, Private every generation, balance checked before and after), split into the parts the game moves (turret, barrel; main and tail rotor, gun), shown to him from six views, then voxelised into assets/vehicles. This is his written yes for up to 600 Tripo credits on vehicles. Debt row 24.
-
-## 2026-10-27 · D-296 · Director · No builder count: as many as the PC and tests allow
-Asked "so what are these slots? is it a guardrail hallucination?" (the "at most 3 builders" rule had no quote of his behind it; his 10-21 words were "use as many sub agents as you want, up to 8"). Answer: "idc how many, use 100 if its not going to ruin the tests / use as many as is feasible". The machine gates stay (nothing new under 6 GB free RAM or above 85% CPU, one speed check at a time); on a PC freeze find the cause before cutting builders. Rulebook "Kaiju team" line replaced. Replaces D-278 and D-287.
-
-## 2026-10-27 · D-295 · Director · Every tech-debt item is actioned
-Asked "does our project have a proper tech stack and good codebase hygiene", then: "I want the FULL list of debt items, i want them all actioned". Picked "After facade+vehicles" for the hygiene builder. List: docs/roadmap/2026-10-27-tech-debt.md (from C:/kt/debt/debt_list.md), every row owned and closed by a PR.
-
-## 2026-10-27 · D-294 · Director · Death: his stone shards land first, then the blast
-Asked (02:5x, on the death clip with all 3 Death Blast nodes): "Shards first": his falling stone body smashes buildings, then the blast clears the rest; both visibly destroy things. Not chosen: blast first (as built, shards hit only rubble). Same look: "i dont like the pale blocks that come out of the explosion" (plain untextured cubes; fix in the same PR #240).
-
-## 2026-10-27 · D-293 · Director · The rule audit covers workflow rules too
-Asked: "Yes, add workflow rules": the D-291 audit also lists every workflow rule we follow (RULEBOOK, CLAUDE.md files, briefs) with its source, his quote and date or "agent-made", for him to keep or cut each agent-made one. Not chosen: game behaviours only.
-
-## 2026-10-27 · D-292 · Director · Background tests run beside speed checks
-His words: "sometimes a hallucinated guardrail will handcuff our progress even though i never would have wanted to use that guardrail". The lead's own rule "timing benches run with no other Godot" (CLAUDE.md, #255) held four builders idle 01:50-02:24 for ~15 min of benching. Asked: "Yes, let them run": headless Godot runs (tests, imports; no window, no graphics) go ahead while a speed check runs; only windowed/GPU Godot waits for it. Check once: if a speed check's whole-route p95 moves more than 1% with a headless suite beside it, the lead brings it back to him (two clean main High runs differed 0.1%: 55.29 vs 55.23). Not chosen: keep the full stop.
-
-## 2026-10-27 · D-291 · Director · Audit what agents built from loose readings of his rulings
-His words, on the vehicle fade agents had stretched from D-025: "im certain id never have agreed to that if id understood what you were proposing". Asked: "Yes, audit now": a Sonnet reader lists every behaviour the player meets that an agent built beyond the words of a ruling, or with none, each with a still from the real game (C:/kt/rule_audit.md), for him to keep or cut item by item. Every question to him says what he will see on screen in plain words, with a picture or clip of the real effect when it is visual. Not chosen: not now.
-
-## 2026-10-27 · D-290 · Director · Vehicles never go see-through
-His words, seeing the governor's heli ghost over a tower: "the governers heli sometimes blends into the buildings, as if it is translucent"; told the screen-door fade on tanks and helis was an agent's extension of D-025 (smoke) with no decision of his: "why would any vehicle ever go see through?". Asked: "Remove it": VehicleFade goes; every tank and helicopter, the governor's included, always draws solid. Smoke keeps clearing over the kaiju (D-025). Building fades are D-283's bubble rework. Not chosen: keep it for regular vehicles.
-
-## 2026-10-27 · D-289 · Director · The facade jump on the first carve is fixed in the next free slot
-His words (watching runs): "when a building gets carved anywhere, its whole facade changes texture, so even if you carve the bottom of a tower, the top of the tower is changing appearance too". Asked: "Next free slot": a Sonnet builder (briefs/brief-facade-carve.md) takes the next builder slot that frees, ahead of the remaining render-plan items; pass bar: the untouched part of a carved building does not change (upper-half pixel diff mean <= 1/255, p99 <= 4/255), a headless check that fails on main first, one clip to him. Not chosen: a 7th builder now; after the render plan.
-
-## 2026-10-27 · D-288 · Director · Death Blast upgrades: Overload, Meltdown, Supernova at 2,540 / 8,128 / 17,780
-Asked (PR #240, agent-added values): "Keep them" for the names Overload / Meltdown / Supernova and their card text ("Go out with a bang: when you fall, you take the street with you" / "A bigger bang: your last breath flattens the block" / "The biggest bang: nothing near you outlives you"); "Keep" for costs 2,540 / 8,128 / 17,780 biomass (the steps of Signature Recharge levels 1 and 3 and Crushing Weight's top level). Not chosen: his own names; costs x2 or x0.5. The death look waits for the clip.
-
-## 2026-10-27 · D-287 · Director · Six builders tonight: P2b and P2c start now
-His words: "speed up our work, make sure our pc is able to manage the workload". Shown: 17 of 31 GB RAM free, CPU 34% of 16 threads, GPU idle. Asked: "Yes, 6 builders": render plan P2b (crowds, item 7) and P2c (pooled effects, item 8) start as builders 5 and 6 beside death overload and army balance; back to 4 on any PC freeze (replaces D-278's 4). Timing benches still run with no other Godot, in bench windows (C:/kt/BENCH_WINDOW* flag files builders respect). Not chosen: keep 4.
-
-## 2026-10-27 · D-286 · Director · The freeze fix merges at its speed check; the soak checks it after
-His words: "i dont want to wait til 7am if possbile". Asked: "Merge at speed check": PR #254 merges once its p95 speed check passes (fix within 5% of main) and CI is green, instead of after the D-282 soak. The soak keeps running (fix runs 1-10 run 40331611227, 11-20 run 40342907172 on soak/fix-b; main run 40331600221 until one freeze); any fix run that freezes means #254 is reverted at once. D-282's pass bar (main >=1 freeze, fix 20/20 clean) is unchanged, only the merge comes first. Not chosen: wait for the soak (~04:20 at the earliest).
-
-## 2026-10-27 · D-285 · Director · New colour grading and both clean-ups ship (render items 3 and 4)
-Shown 20 labelled 4K stills of the real game (item 4: night, dusk, morning and noon, current vs new; item 3: night fog, night lamps and dusk sky, each off/deband/sharp/both). Asked: "should the new colour grading ship?" -> "New grading" (AgX 1.6, post contrast 1.0, night tone split; night pure-black area 9.9% -> 0.2%, mid-tones within ~1%). "which clean-up should ship?" -> "Both" (debanding + FSR sharpening). All on by default in #257 with D-279's night fog. Not chosen: keep current; deband only; sharpen only; off.
-
-## 2026-10-27 · D-284 · Director · No floating biomass numbers
-
-"the biomass numbers also visible THROUGH te buildings and kaiju isnt great"; then, on a screenshot of +numbers sprinkled over the croc's tail (docs/captures/2026-10-26-clips/numbers_over_kaiju.webp): "i dont want to see the numbers. i want to see kaiju". Always-on-top numbers were agent-added at the greybox kickoff (8d02a024), no decision. First pick "Hidden behind it", then asked again: "Remove them entirely". Every floating +biomass number goes (callers in rampage.gd, rooftop_view.gd, rail_view.gd, tank_fx.gd); the biomass counter and its tick-up are the only readout. When: "With the bubble" (D-283), after the render plan.
-
-## 2026-10-27 · D-283 · Director · Camera bubble after the render plan
-
-"see why we need the bubble", "the bubble would solve unsightly views like the above" (screenshots: a building wall filling the frame; the screen-door fade over the croc at night, wall: docs/captures/2026-10-26-clips/bubble_why_wall.webp; the screen-door one was not saved to disk). Asked when to build it; picked "After the render plan". Rework #238 (solid by default, cut away only the 0-3 buildings between camera and kaiju, shadows kept); his two screenshots are the pass bar (no wall fills the frame, no screen-door over the kaiju); the clip goes straight to him. Re-asked 00:58 while League blocked the speed benches (start it now in the gap?): "Keep it after the plan".
-
-## 2026-10-27 · D-282 · Director · The freeze fix's 20-run test runs on GitHub first
-
-His question: "is it possible to do this on github instead?". Asked: "Yes, GitHub first": 20 runs on main and 20 on the fix on GitHub (software rendering, free on the public repo); main must freeze at least once there to prove GitHub catches it; then 20/20 clean on the fix passes. If main never freezes there, the test returns to the local GPU. Speed benches and stills stay on the local GPU (no GPU on GitHub). Not chosen: keep local, both.
-
-## 2026-10-27 · D-281 · Director · The charged stomp becomes the dragon's attack
-
-His words: "stomp fits the dragon more than the croc". Asked: "Yes, dragon's kit": the tap/hold charged stomp (D-260, D-263), its 0.80x speed and Frenzy speed-up (D-264) move to the dragon's design for when dragon work resumes (paused, D-25x); the dragon gets its own Cascadeur clip.
-
-## 2026-10-27 · D-280 · Director · Croc: the stomp turns automatic and weak; a tail lash takes its button
-
-His words: "we should probably revisit the stomp attack and replace it with something else, make stomp damage weaker and automatic / a stationary stomp goes against the croc's power fantasy as an athletic kaiju". Asked: auto stomp "Every footfall crushes" (damage under his feet as he walks and runs, never stops to stomp); power "Street-level only" (people, cars, trees, props underfoot; buildings only chip); the button "Tail lash" (mid-stride tail whip flattening a ring beside him, never breaking his run; Cascadeur clip); timing "After the render plan". Replaces D-260 "Button replaces it" and D-263 "Rooted while charging" for the croc. Not chosen: rhythm stomps, chipping buildings, death roll, lunge bite.
-
-## 2026-10-26 · D-279 · Director · Night sky: fog matched to the sky (B)
-
-Asked with 4 labelled 4K stills (docs/captures/2026-10-26-clips/night_sky_A-D.png) after his "too much white in the blue ... the lighting or the fog": "Which night look should ship?" Answer: "B: fog matched to sky". Night fog_color 1e2a46 -> 0c1428 (= sky_top); ambient stays 1.4. Measured sky luma 9.5 -> 1.9, facades 39.5 -> 38.3. Not chosen: D both, C dimmer buildings, A keep.
-
-## 2026-10-26 · D-278 · Director · Builder cap 4 for tonight's render plan
-
-Asked: "Can I run 4 builders tonight instead of 3, so the night-shadow, clarity and night-sky batch starts now?" after he said "wow, thats so slow, anyway we can speed it up?". Answer: "4 builders tonight (Recommended)". Kaiju cap is 4 builders + 1 Sonnet reader for tonight; drops back to 3 if anything freezes. Not chosen: 5 builders, keep 3.
-
-## 2026-10-26 · D-277 · Director · Beachfront round 2 kept; defects fixed in Blender; nightclub V03r
-
-Round 2 (D-274's change of method: a reference image first, HD H3.1 chosen by a measured pilot over Smart Mesh, Remove Lighting; 1,365 of the 1,600 credits, balance 5,955) shown as a labelled board with the three round-1 keepers. He picked "All usable, fix defects": all 19 (B01-B07, V01, V02, V03r, V04-V06, S01-S04, P01, P02) go into the beach district; thin canopies, awnings and umbrella poles are thickened and blank backs filled in Blender, then voxelised. Nightclub: "V03r, no sand base". Blender fix waits until the render plan's Godot runs are done (D-276).
-
-## 2026-10-26 · D-275 · Director · The croc tree uses the ring layout, with zoom-out and easy panning
-
-The croc tree grew to 58 nodes (ROADMAP E, b2-28) and no longer fits the 8x6 grid on one screen. Shown three labelled layouts drawn from the real data (A rings from the centre, B a map growing upward, C today's grid widened, panning sideways), he picked "A but we need to be able to zoom out and pan easily": the baby's nodes sit in the middle, each growth stage is a wider ring outward, and the player can zoom out to see the whole tree and pan around it easily.
-
-## 2026-10-26 · D-276 · Director · From 23:00, full focus on the render plan
-
-Godot work resumes at 23:00 (paused earlier in the day). "at 11pm i want to switch full focus to the render plan": every builder slot goes to the render plan (baseline first, then batches P1a, P1b, P1c, then phase 2). Asked what happens to running non-render work, he picked "Let them finish": Tripo beachfront round 2 and the croc tree's ring layout code (D-275) finish, since neither uses Godot; their Godot tests and PRs, the run intro and the other open PRs wait until the render plan is done.
-
-## 2026-10-26 · D-274 · Director · Rise and roar kept; beachfront regenerated (keep B01, S01, S02), up to 1,600 Tripo credits
-
-Shown the Cascadeur clips on r11: rise out of the bay (hips float up while the hind legs tuck under, legs push the last part) "Keep it"; intro roar (inhale, head up, held gape, four throat pulses) "Keep it". Both go into the run intro via the game_r11 export (after #223). Beachfront board after the Blender fixes: "regenerate new building instead, these are mostly unusable. surf shack, beach tower, and apartment tower are usable" (kept: S02 thatched beach bar, S01 lifeguard tower, B01 apartment tower). What was wrong: "Messy or broken geometry", "Muddy, dark textures". Spend: "Up to 1,600" Tripo credits for the other 16 (balance about 7,320). The Blender fixes of D-271 are dropped. Also on the audit's conflict questions: the six-way question "didnt make sense to me then and doesnt now either", the ticker one "meaningless without context", Smart Mesh "idk you said it didnt matter at the time": the lead keeps what is built (bigger blocks with the 6 m diagonal, #243; the helicopter headline cut; HD unless a method test shows Smart Mesh fixes the geometry).

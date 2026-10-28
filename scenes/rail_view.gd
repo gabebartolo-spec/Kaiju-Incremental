@@ -157,8 +157,8 @@ func on_event(event: Dictionary) -> void:
 			_play("station_bell", Vector3(_sim.rail.track_x(1), _sim.rail.deck_y, 0.0))
 
 
-## Sparks and a flash where the train left the rail, debris, fire, the biomass it paid, the
-## shake, the screech and the crash.
+## Sparks and a flash where the train left the rail, debris, fire, the shake, the screech and
+## the crash.
 func _derailed(event: Dictionary) -> void:
 	var pos := Vector3(Num.f(event["x"]), _sim.rail.deck_y + FLOOR, Num.f(event["z"]))
 	for n: int in 10:
@@ -166,8 +166,6 @@ func _derailed(event: Dictionary) -> void:
 		_city.debris(pos + Vector3(0, 0.5, 0), col, Vector3.UP)
 	_city.flash(pos, Color("ffb35a"), 9.0, 0.6)
 	_city.fire(pos, 0.7)
-	var gained := Num.f(event["rubble"]) * _sim.stat("rubble_mult")
-	_city.float_text("+%d" % Num.i(gained), pos + Vector3(0, 2, 0), UiKit.WARN)
 	_host.add_trauma(_host.shake.source("topple"), pos)
 	_play("train_screech", pos)
 	_play("train_crash", pos)

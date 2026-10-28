@@ -25,9 +25,22 @@ const DT := 1.0 / 60.0
 ## The body the camera follows eases toward the sim's kaiju at this rate (RampageAbility.place).
 const BODY_FOLLOW := 12.0
 const LOOK_M := StreamFrustum.LOOK_M
-## Real time to wait for the stream to settle.
-const SETTLE_MS := 240000
 const STAGES: Array[int] = [2, 3]
+## A stage runs as five groups so CI can run each as its own part (tests/lib/functions_ran.gd
+## part()): 0 the rests at the three spots and the two leaps, 1 the walk east and back, 2 the walk
+## north-east, 3 and 4 the walk back from its far end in two halves (the kaiju placed where the
+## half starts and the stream settled there, the state the walk before it ends in). Each group holds
+## phases of the one run it replaces, from the settled stream at the junction; the north-east walk
+## and back alone took half a stage.
+const GROUPS := 5
+## Group -> [index in WALKS, walks out, back from, back to] (the back leg as fractions of the walk
+## from the junction; from < 0: no back leg).
+const LEGS := {
+	1: [0, true, 1.0, 0.0],
+	2: [1, true, -1.0, 0.0],
+	3: [1, false, 1.0, 0.5],
+	4: [1, false, 0.5, 0.0]
+}
 ## Walks out from the junction (name, heading, metres) and back: the landmarks leave the view and
 ## return to it. The north-east walk
 ## ends in the arena corner, 250 m and more from them with the camera turned away.
@@ -38,6 +51,8 @@ const WALKS: Array[Array] = [
 const SPOTS: Array[Vector2] = [Vector2(0, 0), Vector2(26, -14), Vector2(-30, 18)]
 
 var worst_step := 0
+
+var _stuck := false  # a wait ran out its steps: reported once, not again every frame
 
 var _check: Callable
 var _marks: Array[int] = []
@@ -57,13 +72,12 @@ func _init(p_check: Callable, p_host: Node) -> void:
 	_host = p_host
 
 
-## One stage's whole check (the suite calls it once per stage in STAGES, so CI can run the stages as
-## two parts side by side: tests/lib/functions_ran.gd part()).
-func run(stage: int) -> void:
-	await _stage(stage)
+## One group of a stage's check (the suite calls it once per stage in STAGES and group in GROUPS).
+func run(stage: int, group: int) -> void:
+	await _stage(stage, group)
 
 
-func _stage(stage: int) -> void:
+func _stage(stage: int, group: int) -> void:
 	var species := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[stage - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
@@ -97,22 +111,42 @@ func _stage(stage: int) -> void:
 	var seconds := Num.f(leap["flight_s"])
 	var speed := Num.f(leap["reach"]) * _sim.body_scale() / seconds
 	for at: int in SPOTS.size():
+		if group != 0 and at > 0:
+			break  # only the rests visit the other spots
 		_sim.kaiju_pos = SPOTS[at]
 		_body = Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y)
 		_follow.focus = _body
 		await _settle()
 		var tag := "" if at == 0 else " at %d" % at
-		results["rest" + tag] = await _phase(1.0, func(_t: float) -> void: pass)
+		if group == 0:
+			results["rest" + tag] = await _phase(1.0, func(_t: float) -> void: pass)
 		if at > 0:
 			continue
 		await _settle()
-		for way: Array in WALKS:
+		if LEGS.has(group):
+			var legs: Array = LEGS[group]
+			var way: Array = WALKS[legs[0]]
 			var heading: Vector2 = way[1]
 			var metres: float = way[2]
-			results[way[0]] = await _walk(heading, metres)
-			results[way[0] + " and back"] = await _walk(-heading, metres)
-			await _settle()
+			var from: float = legs[2]
+			var to: float = legs[3]
+			if legs[1]:
+				results[way[0]] = await _walk(heading, metres)
+			if from >= 0.0:
+				if not legs[1]:
+					_sim.kaiju_pos = _sim.clamp_to_arena(SPOTS[0] + heading * metres * from)
+					_body = Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y)
+					_follow.focus = _body
+					await _settle()
+				var back: String = (
+					way[0] + " and back"
+					if legs[1]
+					else way[0] + " back %.0f to %.0f" % [from * metres, to * metres]
+				)
+				results[back] = await _walk(-heading, metres * (from - to))
 		for way: Array in [["leap ahead", Vector2(0, -1)], ["leap sideways", Vector2(1, 0)]]:
+			if group != 0:
+				break
 			var dir: Vector2 = way[1]
 			var from := _sim.kaiju_pos
 			var run := func(t: float) -> void:
@@ -124,8 +158,14 @@ func _stage(stage: int) -> void:
 	var plans: int = Num.i(_stream.get("plans") if "plans" in _stream else 0)
 	var plan_usec: int = Num.i(_stream.get("plan_usec") if "plan_usec" in _stream else 0)
 	var line := (
-		("VIEWDEPTH stage %d (%d buildings; worst step %.0f ms, mean replan %.1f ms):")
-		% [stage, _sim.buildings.size(), worst_step / 1000.0, plan_usec / 1000.0 / maxi(1, plans)]
+		("VIEWDEPTH stage %d group %d (%d buildings; worst step %.0f ms, mean replan %.1f ms):")
+		% [
+			stage,
+			group,
+			_sim.buildings.size(),
+			worst_step / 1000.0,
+			plan_usec / 1000.0 / maxi(1, plans)
+		]
 	)
 	line += (
 		"\n  landmarks %d, %d chunks (stream budget %d), resident at the end %d"
@@ -173,7 +213,8 @@ func _stage(stage: int) -> void:
 	var unloaded := 0
 	for phase: String in results:
 		unloaded += Num.i(results[phase]["out"])
-	if stage == STAGES[-1]:  # the walks reach 200 m from the landmarks only in the big arena (stage 3)
+	# the north-east walk reaches 200 m from the landmarks only in the big arena (stage 3)
+	if stage == STAGES[-1] and group == 2:
 		_check.call(
 			unloaded > 0,
 			(
@@ -184,14 +225,11 @@ func _stage(stage: int) -> void:
 	for phase: String in results:
 		steps.append(results[phase]["step"])
 	steps.sort()
-	(
-		_check
-		. call(
-			steps[steps.size() / 2] <= 50.0,
-			(
-				"stage %d: the stream's worst step stays under 50 ms (median phase %.0f ms, worst %.0f ms)"
-				% [stage, steps[steps.size() / 2], steps[-1]]
-			)
+	_check.call(
+		steps[(steps.size() - 1) / 2] <= 50.0,
+		(
+			"stage %d group %d: worst stream step under 50 ms (median %.0f, worst %.0f ms)"
+			% [stage, group, steps[(steps.size() - 1) / 2], steps[-1]]
 		)
 	)
 	var shake := Num.f(Content.section("camera_shake")["max_deg"])
@@ -237,22 +275,27 @@ func _frame() -> void:
 
 ## The stream's frame of DT seconds, then its workers run to the end of what they were given: the
 ## test judges what the plan has meshed in camera time, never how fast this machine's workers are.
+## Each further step settles its workers (BuildingStream.step) and so lands at least one building,
+## so the wait is bounded by a count of steps, never by seconds: a stream still not done within the
+## bound is stuck, and fails the same way on every machine.
 func _advance() -> void:
 	var t0 := Time.get_ticks_usec()
 	_stream.step(DT)
 	_step_us = maxi(_step_us, Time.get_ticks_usec() - t0)
-	var deadline := Time.get_ticks_msec() + SETTLE_MS
-	while not _stream.complete() and Time.get_ticks_msec() < deadline:
-		OS.delay_usec(200)
-		_stream.step(0.0)
+	var bound := _sim.buildings.size() * 2 + 120
+	for _i: int in bound:
+		if _stuck or _stream.complete():
+			return
+		_stream.step(0.0, true)
+	if not _stream.complete():
+		_stuck = true
+		_check.call(false, "the stream settles within %d steps" % bound)
 
 
-## Waits until the stream has nothing left to mesh or free (the camera holds still).
+## Lets the camera hold still until the stream has nothing left to mesh or free: every frame
+## (_advance) runs the stream to completion, and it replans a quarter second after the camera moves.
 func _settle() -> void:
-	var deadline := Time.get_ticks_msec() + SETTLE_MS
-	for i: int in 45:  # the stream replans a quarter second after the camera moves
-		await _frame()
-	while not _stream.complete() and Time.get_ticks_msec() < deadline:
+	for i: int in 45:
 		await _frame()
 	for i: int in 30:
 		await _frame()

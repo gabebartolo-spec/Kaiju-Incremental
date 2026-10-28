@@ -52,6 +52,9 @@ var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
 var _shell: MeshInstance3D
 var _cells_mat: ShaderMaterial
+## The camera bubble's cut on this building (set_near_camera): 0 whole .. 1 the whole radius.
+var _cut := 0.0
+var _share := 1.0  # how much of the standing building is drawn (StreamDissolve)
 ## The landmark ground's mesh arrays until _dress makes its mesh.
 var _ground: Array = []
 
@@ -164,18 +167,44 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 	)
 
 
-## Screen-door share (1 = solid): a wall that fills the frame at the camera (BuildingFade, D-326).
-func set_opacity(value: float) -> void:
+## The camera bubble's seam (CameraBubble, D-283; render plan item 5 names it too): while `on`,
+## this standing building is cut away inside the bubble round the camera, `share` of its radius
+## (1 = all of it; less while the cut opens or closes); off, it draws whole. Only the standing
+## building takes it: a piece lifted off it makes its own materials, never cut (D-326).
+func set_near_camera(on: bool, share := 1.0) -> void:
+	var cut := clampf(share, 0.0, 1.0) if on else 0.0
+	if cut == _cut and _shell_mat != null:
+		return
 	_dress()
-	_shell_mat.set_shader_parameter("opacity", value)
-	_slab_mat.set_shader_parameter("opacity", value)
-	if cells_view != null:
-		cells_view.set_opacity(value)
+	_cut = cut
+	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
+		if mat != null:
+			mat.set_shader_parameter("bubble_cut", cut)
+
+
+## The stream swap (StreamDissolve): `share` of this standing building is drawn, a dither (1 =
+## whole, 0 = none). Only the stream sets it; a carved, broken or falling piece is whole (D-326).
+func set_dissolve(share: float) -> void:
+	_share = share
+	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
+		if mat != null:
+			mat.set_shader_parameter("dissolve", share)
+
+
+## How much of this building the stream swap draws now (1 = whole; tests read it).
+func dissolve_share() -> float:
+	return _share
+
+
+## How much of the bubble cuts this building now (0 = whole; tests read it).
+func near_camera_cut() -> float:
+	return _cut
 
 
 ## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
 ## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
-## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6).
+## The same shader draws both, so the bubble's cut and the glow carry over. Not for a landmark
+## (WP6).
 func promote(grid: CellGrid) -> CellView:
 	if cells_view != null:
 		return cells_view
@@ -183,7 +212,7 @@ func promote(grid: CellGrid) -> CellView:
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
 	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
-	_cells_mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
+	_cells_mat.set_shader_parameter("bubble_cut", _cut)  # the grid stands where the shell did
 	cells_view = CellView.new(CellMesher.new(voxels, grid), grid.cells, _cells_mat)
 	add_child(cells_view)
 	_shell.visible = false
