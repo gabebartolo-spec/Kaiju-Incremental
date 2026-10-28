@@ -108,6 +108,12 @@ func follow(pivot: Vector3, dir: Vector2, duration: float, seconds: float) -> vo
 	freeze = true
 
 
+## Blocks until a running remesh is drawn (a capture's settled frame; tests).
+func finish_mesh() -> void:
+	if _view != null:
+		_view.finish()
+
+
 func cell_count() -> int:
 	var n := 0
 	for key: Vector3i in _bricks:

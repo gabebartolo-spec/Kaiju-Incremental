@@ -139,3 +139,41 @@ static func print_slow(wall: Array) -> void:
 		over[0] += 1 if ms > 16.7 else 0
 		over[1] += 1 if ms > 33.4 else 0
 	print("  SLOW frames over 16.7 ms %d, over 33.4 ms %d, of %d" % [over[0], over[1], wall.size()])
+
+
+## A digest of where every physics piece is (live debris, rubble, falling islands), rounded to
+## 0.1 mm: two runs of the same scene that agree here simulated the same thing (the A/B's
+## determinism check; no clock goes in).
+static func state_digest(phys: CarvePhysics) -> String:
+	var parts := PackedStringArray()
+	for child: Node in phys.get_children():
+		if child is CarveDebris:
+			var debris: CarveDebris = child
+			for rid: RID in debris.body_rids():
+				var xf: Transform3D = PhysicsServer3D.body_get_state(
+					rid, PhysicsServer3D.BODY_STATE_TRANSFORM
+				)
+				parts.append(_rounded(xf))
+	for island: IslandBody in phys.islands():
+		parts.append(_rounded(island.global_transform))
+	return "%d pieces %s" % [parts.size(), "|".join(parts).md5_text().substr(0, 12)]
+
+
+static func _rounded(xf: Transform3D) -> String:
+	var o := (xf.origin * 10000.0).round()
+	var x := (xf.basis.x * 10000.0).round()
+	return "%d,%d,%d;%d,%d,%d" % [o.x, o.y, o.z, x.x, x.y, x.z]
+
+
+## The A/B's settled frame: the tree pauses (no physics tick, no clock), every island's remesh is
+## drawn, then `frames` frames render so temporal effects converge, and one still is saved. Two
+## runs of one scene simulate the same pieces (state_digest), so their settled stills compare
+## pixel for pixel: what differs is how the pieces are drawn, nothing else.
+static func settled_shot(tree: SceneTree, phys: CarvePhysics, path: String, frames: int) -> void:
+	tree.paused = true
+	for island: IslandBody in phys.islands():
+		island.finish_mesh()
+	for _k: int in frames:
+		await RenderingServer.frame_post_draw
+	tree.root.get_viewport().get_texture().get_image().save_png(path)
+	print("SETTLED %s %s" % [path, state_digest(phys)])

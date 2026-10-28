@@ -8,7 +8,8 @@ extends SceneTree
 ##   --scene=swipe   two swipes across a facade: carved-cell debris, nothing falls
 ##   --scene=block   six towers cut at the base at once (drops and topples), the city-wide cap
 ##   --seconds=N  --out=<dir>  --markers (show the blow sphere; off by default)
-##   --no-shots (a speed run)  --off=island_merged,native_colliders (render_opt flags off: the A/B)
+##   --settle=S  at S seconds pause, draw every remesh, save one <scene>_settled.png and quit
+##   (the deterministic pixel A/B; no timeline stills)  --no-shots (a speed run)  --off=island_merged,native_colliders (render_opt flags off: the A/B)
 ## CI: tools/capture/ci_capture.sh --movie capture_carve_physics.gd -- --scene=tower --out=<dir>
 @warning_ignore_start("integer_division")
 
@@ -17,6 +18,7 @@ const VIEW_STUB := preload("res://tools/capture/carve_view_stub.gd")
 const STAGE := preload("res://tools/capture/carve_stage.gd")
 const RES := 8
 const SHOT_EVERY := 15  # frames between timeline stills
+const SETTLE_FRAMES := 12  # frames drawn, paused, before the settled still
 const CROP := Vector2i(320, 180)  # crop round an event, saved at 2x
 const MAX_EVENT_SHOTS := 8
 const SUNK := 0.03  # a piece reaching this far below the road counts as sunk into it
@@ -27,6 +29,7 @@ var _out := "user://carve_physics"
 var _seconds := 0.0
 var _markers := false  # --markers: show the blow sphere (a test overlay, off by default)
 var _shots := true  # --no-shots: no stills (a speed run: a 4K save is a slow frame)
+var _settle := 0.0  # --settle=S: the settled frame at S seconds (0: none)
 var _phys: CarvePhysics
 var _grids: Array[VoxelFrame] = []
 var _views: Array[VIEW_STUB] = []
@@ -69,6 +72,9 @@ func _initialize() -> void:
 			_markers = true
 		elif arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()
+		elif arg.begins_with("--settle="):
+			_settle = arg.substr(9).to_float()
+			_shots = false
 		elif arg == "--no-shots":
 			_shots = false
 		elif arg.begins_with("--off="):
@@ -155,6 +161,8 @@ func _setup() -> void:
 
 
 func _on_frame() -> void:
+	if paused:  # the settled frame is being drawn: nothing moves
+		return
 	_frame += 1
 	var t := _frame / 30.0
 	var t0 := Time.get_ticks_usec()
@@ -167,7 +175,11 @@ func _on_frame() -> void:
 	if _shots and not headless and (_frame % SHOT_EVERY == 0 or not _queue.is_empty()):
 		await RenderingServer.frame_post_draw
 		_shoot(t)
-	if t >= _seconds:
+	if _settle > 0.0 and t >= _settle and not paused:
+		var still := _out.path_join(_scene + "_settled.png")
+		await STAGE.settled_shot(self, _phys, still, SETTLE_FRAMES)
+		quit()
+	elif t >= _seconds:
 		_report()
 		quit()
 
@@ -277,6 +289,7 @@ func _record(sim_ms: float) -> void:
 	STAGE.record_render(_phys, _stats)
 	if _frame % 30 == 0:
 		_enclosed.append(_phys.enclosed(ENCLOSED))
+		print("STATE %d %s" % [_frame / 30, STAGE.state_digest(_phys)])
 		print(
 			(
 				(
