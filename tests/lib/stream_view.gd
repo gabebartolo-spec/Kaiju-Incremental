@@ -26,11 +26,21 @@ const DT := 1.0 / 60.0
 const BODY_FOLLOW := 12.0
 const LOOK_M := StreamFrustum.LOOK_M
 const STAGES: Array[int] = [2, 3]
-## A stage runs as three groups so CI can run each as its own part (tests/lib/functions_ran.gd
+## A stage runs as five groups so CI can run each as its own part (tests/lib/functions_ran.gd
 ## part()): 0 the rests at the three spots and the two leaps, 1 the walk east and back, 2 the walk
-## north-east and back. The groups hold the same phases, from the same settled stream at the
-## junction, as the one run they replace; the north-east walk alone took half a stage's time.
-const GROUPS := 3
+## north-east, 3 and 4 the walk back from its far end in two halves (the kaiju placed where the
+## half starts and the stream settled there, the state the walk before it ends in). Each group holds
+## phases of the one run it replaces, from the settled stream at the junction; the north-east walk
+## and back alone took half a stage.
+const GROUPS := 5
+## Group -> [index in WALKS, walks out, back from, back to] (the back leg as fractions of the walk
+## from the junction; from < 0: no back leg).
+const LEGS := {
+	1: [0, true, 1.0, 0.0],
+	2: [1, true, -1.0, 0.0],
+	3: [1, false, 1.0, 0.5],
+	4: [1, false, 0.5, 0.0]
+}
 ## Walks out from the junction (name, heading, metres) and back: the landmarks leave the view and
 ## return to it. The north-east walk
 ## ends in the arena corner, 250 m and more from them with the camera turned away.
@@ -113,15 +123,27 @@ func _stage(stage: int, group: int) -> void:
 		if at > 0:
 			continue
 		await _settle()
-		for w: int in WALKS.size():
-			if group != w + 1:
-				continue
-			var way: Array = WALKS[w]
+		if LEGS.has(group):
+			var legs: Array = LEGS[group]
+			var way: Array = WALKS[legs[0]]
 			var heading: Vector2 = way[1]
 			var metres: float = way[2]
-			results[way[0]] = await _walk(heading, metres)
-			results[way[0] + " and back"] = await _walk(-heading, metres)
-			await _settle()
+			var from: float = legs[2]
+			var to: float = legs[3]
+			if legs[1]:
+				results[way[0]] = await _walk(heading, metres)
+			if from >= 0.0:
+				if not legs[1]:
+					_sim.kaiju_pos = _sim.clamp_to_arena(SPOTS[0] + heading * metres * from)
+					_body = Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y)
+					_follow.focus = _body
+					await _settle()
+				var back: String = (
+					way[0] + " and back"
+					if legs[1]
+					else way[0] + " back %.0f to %.0f" % [from * metres, to * metres]
+				)
+				results[back] = await _walk(-heading, metres * (from - to))
 		for way: Array in [["leap ahead", Vector2(0, -1)], ["leap sideways", Vector2(1, 0)]]:
 			if group != 0:
 				break
@@ -192,7 +214,7 @@ func _stage(stage: int, group: int) -> void:
 	for phase: String in results:
 		unloaded += Num.i(results[phase]["out"])
 	# the north-east walk reaches 200 m from the landmarks only in the big arena (stage 3)
-	if stage == STAGES[-1] and group == GROUPS - 1:
+	if stage == STAGES[-1] and group == 2:
 		_check.call(
 			unloaded > 0,
 			(
