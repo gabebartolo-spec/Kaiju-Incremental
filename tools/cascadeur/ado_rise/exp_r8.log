@@ -1,0 +1,15 @@
+casc_lock: held by keyer
+casc_lock: released
+{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/adolescent/rise_bay_rise_r8_y8.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/adolescent_rise_bay_joints.fbx exists True in 2 s"}
+{"level": "Info", "text": "AFTER: tabs ['untitled.casc'] current 'untitled.casc'"}
+FOOTIK ankle error before: max 0.0 cm, mean 0.0 cm
+FULLFBX4 saved C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/adolescent_rise_bay.blend
+EXIT 0
+00:02.219  blend            | Read blend: "C:\Users\DANTE\cascadeur_bridge\croc_new\claw\game_out\young\adolescent_rise_bay.blend"
+CLIP rise_bay (still) 180 frames at 30 fps from keyed 0..179; rest heads vs the file 0.000 m; worst game-joint error 2.044 m (arm_r0 head); travel 0.00 m; end yaw 0.0 deg
+PLANTED -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR LR
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+Blender quit
+EXIT 0
+-rw-r--r-- 1 DANTE 197121 59089 Oct 28 22:51 C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/reptilian_adolescent.kclip
+EXIT 0

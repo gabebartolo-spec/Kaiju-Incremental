@@ -15,14 +15,14 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
 A foot is planted while its toe tip is within PLANT_UP of its rest height and moves under PLANT_SLIDE to the next frame
 (world): from the keyed contact until the toe tip peels off (the walk's stance, as the game locks the toe tip).
 r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
-turns (tail9-11) and the hind toes' (leg_x3), after the 27 r11 bones. A file of the r11 bones is upgraded on the
-way: its clips get still tip and toe bones (each turned as its parent, which is what r11's fold did), so a clip
-not re-baked plays exactly as before.
+turns (tail9-11) and the hind toes' (leg_x3), after the 27 r11 bones; the four eyelid bones (lid_lo_l/_r, lid_up_l/_r)
+follow last (D-335 blinks). A file of fewer bones is upgraded on the way: its clips get still tip, toe and lid bones
+(each turned as its parent, which is what the old fold did), so a clip not re-baked plays exactly as before.
 The adult's keyed clips so far (director-approved; sources in C:/Users/DANTE/cascadeur_bridge/croc_new/rig11/, keys
 croc_<move>_<tag>.casc), added to the Blender clips' file:
     roar roar_intro/roar_c.blend 12 124 still | rise_bay roar_intro/rise_p.blend 0 120 still |
     death_stagger stagger/stagger_a.blend 20 41 still"""
-import bpy, sys, json, math, struct
+import bpy, sys, json, math, re, struct
 from pathlib import Path
 from mathutils import Matrix, Quaternion, Vector as V
 
@@ -44,7 +44,7 @@ assert F0 + FIRST + N - 1 <= scene.frame_end, f"{NAME}: frames past the blend's 
 R = Matrix.Rotation(-math.pi / 2, 4, "Z")
 G3 = Matrix(((-1, 0, 0), (0, 0, 1), (0, 1, 0)))
 M3 = G3 @ R.to_3x3()
-HELPER = lambda n: "_hlp" in n or "_tw" in n or n.startswith("lid_")  # lids: Blender-only, folded into the head
+HELPER = lambda n: "_hlp" in n or "_tw" in n
 
 
 def game_bone(n):
@@ -53,6 +53,8 @@ def game_bone(n):
              "neck1": "head0", "neck2": "head0", "head": "head1", "jaw": "jaw"}
     if n in fixed:
         return fixed[n]
+    if n.startswith("lid_"):  # eyelids keep their rig names (croc_adult3_export.py)
+        return n
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
     return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
@@ -72,7 +74,7 @@ skin = lambda p: G3 @ ((V(tuple(p)) - C) * S - V((0.0, ROOT_Y, 0.0)))
 deform = [b for b in ad.bones if b.use_deform and not HELPER(b.name)]
 # The rig's own game bones follow, by chain then number (parents first; rig_from_skin.py bone_names, so the rig.json
 # and the clips list the bones in one order).
-EXTRA = lambda n: (n.rstrip("0123456789"), int(n[len(n.rstrip("0123456789")):] or 0))
+EXTRA = lambda n: (n.startswith("lid_"), n.rstrip("0123456789"), int(n[len(n.rstrip("0123456789")):] or 0))
 GAME_BONES = BASE_BONES + sorted({game_bone(b.name) for b in deform} - set(BASE_BONES), key=EXTRA)
 first, last = {}, {}
 for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0; r12: the toe is leg_x3)
@@ -206,7 +208,7 @@ def mirror(rec):
     """The other turn: sides swapped and mirrored across the game's x (motion_test.py mirror_frame)."""
     qs, off, toes, planted, yaw, root = rec
     idx = {g: k for k, g in enumerate(GAME_BONES)}
-    swap = lambda g: g.replace("_l", "_R").replace("_r", "_l").replace("_R", "_r")
+    swap = lambda g: re.sub(r"_([lr])(?=\d|$)", lambda m: "_" + "rl"[m.group(1) == "r"], g)  # the side tag only
     mq = [None] * len(GAME_BONES)
     for g in GAME_BONES:
         q = qs[idx[swap(g)]]
