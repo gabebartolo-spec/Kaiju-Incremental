@@ -3,8 +3,10 @@ extends RefCounted
 ## stadium is free biomass, it needs to be placed as far away from our spawn spot as possible";
 ## director 2026-10-20 picked "past the edge"): in the stage-1 city it stands wholly outside
 ## the baby's walk (real, in the band past the edge: the baby at the edge can still bite into
-## it, as with every band block) and at least FAR m from the river rise; in the stage-2 city it
-## is real and inside the play area. The wheel, moved with it, also stands past the baby's edge
+## it, as with every band block) and at least FAR m from the rise in the sea bay; in the stage-2
+## city it is real, in the band at least, so the Behemoth at the edge can bite into it (the
+## stage-1 rule; lead 2026-10-29: the old "inside the play area" bar had no decision behind it
+## and no site meets it beside the fixed bay). The wheel, moved with it, also stands past the baby's edge
 ## and never overlaps the stadium; no block's lot overlaps a landmark's plaza.
 
 const FAR := 100.0
@@ -21,19 +23,18 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 	var wheel_rect: Rect2 = wheel["rect"]
 	_check_lots(plan, [rect, wheel_rect], tier, map_seed, check_fn)
 	if tier >= 2:
-		var inside := _reach(rect) <= here and CityBand.real(rect, sim.city)
 		check_fn.call(
-			inside,
+			CityBand.real(rect, sim.city),
 			(
 				(
-					"stage %d, map_seed %d: the stadium is real and inside the play area (reach"
-					+ " %.1f, edge %.1f)"
+					"stage %d, map_seed %d: the stadium is real, in the band the kaiju at the"
+					+ " edge bites into (reach %.1f, edge %.1f)"
 				)
 				% [tier, map_seed, _reach(rect), here]
 			)
 		)
 		return
-	var spawn: Vector2 = plan.get("river_spawn", Vector2.ZERO)
+	var spawn: Vector2 = plan.get("rise_spawn", Vector2.ZERO)
 	var far := spawn.distance_to(rect.get_center())
 	check_fn.call(
 		CityBand.near_edge(rect) > here and far >= FAR,

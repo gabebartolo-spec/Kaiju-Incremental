@@ -3,8 +3,9 @@ extends RefCounted
 ## indicated somehow (not too loud) so players dont continuously try to destroy indestructible
 ## buildings"): ArenaEdge stands bollards on the pavement just past the arena's edge. Every
 ## bollard is on that line, none over water, on a street or in a street tree's trunk; every
-## side but the river's carries at least 35% of the bollards its length allows (counted per
-## side, corners apart, so two corner posts cannot pass for a side: critic on #114).
+## side but the river's carries at least 35% of the bollards its dry length allows (counted per
+## side, corners apart, so two corner posts cannot pass for a side: critic on #114); where the
+## sea bay (CityHarbour) cuts the north side, the water marks the edge itself.
 
 
 static func check(
@@ -16,7 +17,7 @@ static func check(
 	var trees := ArenaEdge.trees_of(decor)
 	var posts := ArenaEdge.spots(sim, trees)
 	var plan := CityGen.map(sim.city)
-	var water := CityRiver.channels(plan, sim.city)
+	var water := CityRiver.channels(plan, sim.city) + CityHarbour.basin(plan)
 	var roads := ArenaEdge._roads(plan, sim.city, half)
 	var per_side := {"n": 0, "s": 0, "e": 0, "w": 0}
 	var bad := {"off": 0, "wet": 0, "road": 0, "tree": 0}
@@ -37,10 +38,12 @@ static func check(
 		if trees.any(func(t: Vector2) -> bool: return t.distance_to(ground) < clear):
 			bad["tree"] += 1
 	var want := int(half * 2.0 / Num.f(cfg["spacing"]) * 0.35)  # streets crossing leave gaps
+	var want_n := int(_dry_north(plan, half) / Num.f(cfg["spacing"]) * 0.35)
 	var river_side := "s" if plan.has("river") else ""
 	var thin := []
 	for side: String in per_side:
-		if side != river_side and Num.i(per_side[side]) < want:
+		var need := want_n if side == "n" else want
+		if side != river_side and Num.i(per_side[side]) < need:
 			thin.append(side)
 	var clean: bool = bad.values().all(func(v: int) -> bool: return v == 0)
 	check_fn.call(
@@ -50,6 +53,20 @@ static func check(
 				"stage %d, map_seed %d: the edge is marked on every side but the river (%s, want"
 				% [tier, map_seed, per_side]
 			)
-			+ " >= %d each; thin %s; bad %s; %d street trees)" % [want, thin, bad, trees.size()]
+			+ (
+				" >= %d each, n %d; thin %s; bad %s; %d street trees)"
+				% [want, want_n, thin, bad, trees.size()]
+			)
 		)
 	)
+
+
+## Metres of the north side's line (z = -half) that lie on land, not in the sea bay's water.
+static func _dry_north(plan: Dictionary, half: float) -> float:
+	var dry := 0.0
+	var x := -half
+	while x < half:
+		if not CityHarbour.holds(plan, Vector2(x + 0.5, -half)):
+			dry += 1.0
+		x += 1.0
+	return dry

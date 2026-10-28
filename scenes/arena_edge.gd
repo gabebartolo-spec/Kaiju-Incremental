@@ -53,7 +53,7 @@ static func spots(sim: RampageSim, trees: Array[Vector2]) -> Array[Vector3]:
 	var step := Num.f(cfg["spacing"])
 	var clear := Num.f(cfg["tree_clear"])
 	var plan := CityGen.map(sim.city)
-	var water := CityRiver.channels(plan, sim.city)
+	var water := CityRiver.channels(plan, sim.city) + CityHarbour.basin(plan)
 	var roads := _roads(plan, sim.city, half)
 	var near := trees.filter(func(tr: Vector2) -> bool: return absf(_ring(tr) - half) < BAND)
 	var out: Array[Vector3] = []

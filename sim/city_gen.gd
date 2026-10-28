@@ -107,6 +107,7 @@ static func map(cfg: Dictionary) -> Dictionary:
 		"diagonal": diag,
 		"xs": xs,
 		"zs": zs,
+		"bay": CityHarbour.rect_of(cfg),  # the sea bay, laid first: no street enters it
 	}
 	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
 	# Which grid edges are alleys (CityAlleys): x-line i between zs[j] and zs[j+1] is
@@ -274,7 +275,7 @@ static func _node(plan: Dictionary, index: Dictionary, p: Vector2) -> int:
 static func _street(
 	plan: Dictionary, index: Dictionary, a: Vector2, b: Vector2, kind: String, cfg: Dictionary
 ) -> void:
-	if a.distance_to(b) < 0.01 or CitySites.cuts(plan, a, b):
+	if a.distance_to(b) < 0.01 or CitySites.cuts(plan, a, b) or CityHarbour.inside(plan, a, b):
 		return
 	var streets: Array[Dictionary] = plan["streets"]
 	(
@@ -344,6 +345,7 @@ static func _blocks(
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
 	CityRiver.mark(plan, zs, cfg)
+	_harbour(plan, avenues_x, avenues_z, cfg)
 	# One park per district: its biggest block between the towers and its ring. One plaza: the
 	# block at the heart of the first tower district.
 	var rings := districts(cfg)
@@ -356,9 +358,9 @@ static func _blocks(
 	var best_plaza := -1
 	var plaza_away := INF
 	for n: int in inner:
-		if str(blocks[n]["use"]) != "built":
-			continue  # the river (CityRiver)
 		var rect: Rect2 = blocks[n]["rect"]
+		if str(blocks[n]["use"]) != "built" or CityHarbour.in_any(cfg, rect):
+			continue  # the river (CityRiver), any stage's sea bay (CityHarbour)
 		var ring := Num.i(blocks[n]["district"])
 		var town := CityLots.town_share(rect.get_center(), cfg)
 		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]
@@ -376,3 +378,19 @@ static func _blocks(
 	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
 		blocks[best_plaza]["use"] = "plaza"
 	CityBand.hold_back(plan, inner, cfg)
+
+
+## The sea bay's blocks (CityHarbour.mark), with its side streets' and coast road's half-widths.
+static func _harbour(
+	plan: Dictionary, avenues_x: Dictionary, avenues_z: Dictionary, cfg: Dictionary
+) -> void:
+	var bay: Rect2 = plan["bay"]
+	if not bay.has_area():
+		return
+	var xs: Array[float] = plan["xs"]
+	var zs: Array[float] = plan["zs"]
+	var side := xs.find(bay.position.x)
+	var coast := zs.find(bay.end.y)
+	var side_half := width_of(AVENUE if avenues_x.has(side) else STREET, cfg) * 0.5
+	var coast_half := width_of(AVENUE if avenues_z.has(coast) else STREET, cfg) * 0.5
+	CityHarbour.mark(plan, cfg, side_half, coast_half)

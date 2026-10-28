@@ -56,6 +56,22 @@ func points() -> PackedVector3Array:
 	return out
 
 
+## The drawn head's box in the world now: its skull and jaw bones' voxels (an empty AABB for an
+## unrigged body). The run intro frames it (RunIntro.shot).
+func head_box() -> AABB:
+	var points := PackedVector3Array()
+	for bone: String in _boxes:
+		if bone == "head1" or bone == "jaw":  # the skull and jaw, not the neck (head0)
+			var box: AABB = _boxes[bone]
+			var at := _rig.bone(bone).global_transform
+			for i: int in 8:
+				points.append(at * box.get_endpoint(i))
+	var out := AABB(points[0], Vector3.ZERO) if not points.is_empty() else AABB()
+	for p: Vector3 in points:
+		out = out.expand(p)
+	return out
+
+
 ## Where a camera at `eye` looking at `look` should look instead, so the highest drawn point sits
 ## at least safe_top below the frame's top. `view` is (vertical fov in degrees, the camera shake's
 ## pitch in radians, up positive): the shake is applied after the aim, so it counts, and a shake

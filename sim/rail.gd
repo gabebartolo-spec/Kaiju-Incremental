@@ -77,10 +77,9 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	_sim = sim
 	cfg = tuning["rail"]
 	_rng = rng
-	var half := CityGen.half_extent(sim.city)
-	var span: Array = cfg["span"]
-	_z0 = half * Num.f(span[0])
-	length = half * Num.f(span[1]) - _z0
+	var line := RailLayout.ends(sim.city, cfg)
+	_z0 = line.x
+	length = line.y - line.x
 	deck_y = Num.f(cfg["deck_y"])
 	_x = avenue_x(sim.city)
 	_next = Num.f(cfg["first_s"])

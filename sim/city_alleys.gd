@@ -38,6 +38,7 @@ static func lay(
 				# riverside park beyond it (a road there brings parked cars and street trees)
 				or (bank >= 0 and (j == bank or j == bank + 1))
 				or _on_site(plan, Vector2(xs[i], zs[j]), Vector2(xs[i], zs[j + 1]))
+				or CityHarbour.touches(plan, Vector2(xs[i], zs[j]), Vector2(xs[i], zs[j + 1]))
 			)
 			if _ok(rng.randf(), [xs[i], zs[j], zs[j + 1]], full, keep, cfg):
 				ax[Vector2i(i, j)] = true
@@ -47,6 +48,7 @@ static func lay(
 				av_z.has(j)
 				or (bank >= 0 and (j == bank or j == bank + 1))
 				or _on_site(plan, Vector2(xs[i], zs[j]), Vector2(xs[i + 1], zs[j]))
+				or CityHarbour.touches(plan, Vector2(xs[i], zs[j]), Vector2(xs[i + 1], zs[j]))
 			)
 			if _ok(rng.randf(), [zs[j], xs[i], xs[i + 1]], full, keep, cfg):
 				az[Vector2i(j, i)] = true

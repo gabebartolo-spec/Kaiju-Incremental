@@ -16,11 +16,21 @@ static var _cache: Dictionary = {}
 static var _lock := Mutex.new()
 
 
-## The line's north and south ends (world z).
+## The line's north and south ends (world z): tuning "span" of the city's half extent, its north
+## end moved south to the first piece boundary past the sea bay's coast road when the line runs
+## up into the bay (CityHarbour: no street enters it, so the line starts at the beach, never
+## over the water).
 static func ends(city: Dictionary, cfg: Dictionary) -> Vector2:
 	var half := CityGen.half_extent(city)
 	var span: Array = cfg["span"]
-	return Vector2(half * Num.f(span[0]), half * Num.f(span[1]))
+	var north := half * Num.f(span[0])
+	var bay := CityHarbour.rect_of(city)
+	var x := Rail.avenue_x(city)
+	var reach := Num.f(cfg["deck_width"]) * 0.5
+	if bay.has_area() and x + reach > bay.position.x and x - reach < bay.end.x and north < bay.end.y:
+		var long := Num.f(cfg["bay_length"]) * Num.i(cfg["piece_bays"])
+		north = ceilf(bay.end.y / long) * long
+	return Vector2(north, half * Num.f(span[1]))
 
 
 ## The station's platforms along the line (world z): a train's length and a little, round the
