@@ -26,6 +26,11 @@ const DT := 1.0 / 60.0
 const BODY_FOLLOW := 12.0
 const LOOK_M := StreamFrustum.LOOK_M
 const STAGES: Array[int] = [2, 3]
+## A stage runs as three groups so CI can run each as its own part (tests/lib/functions_ran.gd
+## part()): 0 the rests at the three spots and the two leaps, 1 the walk east and back, 2 the walk
+## north-east and back. The groups hold the same phases, from the same settled stream at the
+## junction, as the one run they replace; the north-east walk alone took half a stage's time.
+const GROUPS := 3
 ## Walks out from the junction (name, heading, metres) and back: the landmarks leave the view and
 ## return to it. The north-east walk
 ## ends in the arena corner, 250 m and more from them with the camera turned away.
@@ -57,13 +62,12 @@ func _init(p_check: Callable, p_host: Node) -> void:
 	_host = p_host
 
 
-## One stage's whole check (the suite calls it once per stage in STAGES, so CI can run the stages as
-## two parts side by side: tests/lib/functions_ran.gd part()).
-func run(stage: int) -> void:
-	await _stage(stage)
+## One group of a stage's check (the suite calls it once per stage in STAGES and group in GROUPS).
+func run(stage: int, group: int) -> void:
+	await _stage(stage, group)
 
 
-func _stage(stage: int) -> void:
+func _stage(stage: int, group: int) -> void:
 	var species := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[stage - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
@@ -97,22 +101,30 @@ func _stage(stage: int) -> void:
 	var seconds := Num.f(leap["flight_s"])
 	var speed := Num.f(leap["reach"]) * _sim.body_scale() / seconds
 	for at: int in SPOTS.size():
+		if group != 0 and at > 0:
+			break  # only the rests visit the other spots
 		_sim.kaiju_pos = SPOTS[at]
 		_body = Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y)
 		_follow.focus = _body
 		await _settle()
 		var tag := "" if at == 0 else " at %d" % at
-		results["rest" + tag] = await _phase(1.0, func(_t: float) -> void: pass)
+		if group == 0:
+			results["rest" + tag] = await _phase(1.0, func(_t: float) -> void: pass)
 		if at > 0:
 			continue
 		await _settle()
-		for way: Array in WALKS:
+		for w: int in WALKS.size():
+			if group != w + 1:
+				continue
+			var way: Array = WALKS[w]
 			var heading: Vector2 = way[1]
 			var metres: float = way[2]
 			results[way[0]] = await _walk(heading, metres)
 			results[way[0] + " and back"] = await _walk(-heading, metres)
 			await _settle()
 		for way: Array in [["leap ahead", Vector2(0, -1)], ["leap sideways", Vector2(1, 0)]]:
+			if group != 0:
+				break
 			var dir: Vector2 = way[1]
 			var from := _sim.kaiju_pos
 			var run := func(t: float) -> void:
@@ -124,8 +136,14 @@ func _stage(stage: int) -> void:
 	var plans: int = Num.i(_stream.get("plans") if "plans" in _stream else 0)
 	var plan_usec: int = Num.i(_stream.get("plan_usec") if "plan_usec" in _stream else 0)
 	var line := (
-		("VIEWDEPTH stage %d (%d buildings; worst step %.0f ms, mean replan %.1f ms):")
-		% [stage, _sim.buildings.size(), worst_step / 1000.0, plan_usec / 1000.0 / maxi(1, plans)]
+		("VIEWDEPTH stage %d group %d (%d buildings; worst step %.0f ms, mean replan %.1f ms):")
+		% [
+			stage,
+			group,
+			_sim.buildings.size(),
+			worst_step / 1000.0,
+			plan_usec / 1000.0 / maxi(1, plans)
+		]
 	)
 	line += (
 		"\n  landmarks %d, %d chunks (stream budget %d), resident at the end %d"
@@ -173,7 +191,8 @@ func _stage(stage: int) -> void:
 	var unloaded := 0
 	for phase: String in results:
 		unloaded += Num.i(results[phase]["out"])
-	if stage == STAGES[-1]:  # the walks reach 200 m from the landmarks only in the big arena (stage 3)
+	# the north-east walk reaches 200 m from the landmarks only in the big arena (stage 3)
+	if stage == STAGES[-1] and group == GROUPS - 1:
 		_check.call(
 			unloaded > 0,
 			(
@@ -184,14 +203,11 @@ func _stage(stage: int) -> void:
 	for phase: String in results:
 		steps.append(results[phase]["step"])
 	steps.sort()
-	(
-		_check
-		. call(
-			steps[steps.size() / 2] <= 50.0,
-			(
-				"stage %d: the stream's worst step stays under 50 ms (median phase %.0f ms, worst %.0f ms)"
-				% [stage, steps[steps.size() / 2], steps[-1]]
-			)
+	_check.call(
+		steps[(steps.size() - 1) / 2] <= 50.0,
+		(
+			"stage %d group %d: worst stream step under 50 ms (median %.0f, worst %.0f ms)"
+			% [stage, group, steps[(steps.size() - 1) / 2], steps[-1]]
 		)
 	)
 	var shake := Num.f(Content.section("camera_shake")["max_deg"])

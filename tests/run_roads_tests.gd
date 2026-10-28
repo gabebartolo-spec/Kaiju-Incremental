@@ -44,7 +44,9 @@ const SEEDS: Array[int] = [
 	9999,
 	31337
 ]
-const PARK_DECK_X := -3.0  # the bridge into a park the director saw (stage 1, seed 7301)
+## The bridge into a park the director saw was at x=-3 (stage 1, seed 7301); since the road
+## geometry fix (D-265) moved the street lines, the fixture plants it at the deck nearest x=0.
+const PARK_DECK_X := 0.0
 const SHOWN := 4  # violations quoted in a failure message (the count is always given)
 
 var _cities: Array[Dictionary] = []  # {tier, seed, ground, paint}
@@ -115,16 +117,17 @@ func _check_r2_bridges_land_on_roads() -> void:
 	)
 
 
-## Known-bad fixture: the spot the director saw (stage 1, seed 7301, the deck at x=-3) with a park
-## laid over the landing at its low-z end; R2 must name it a bridge into a park.
+## Known-bad fixture: the spot the director saw (stage 1, seed 7301, the deck nearest the middle)
+## with a park laid over the landing at its low-z end; R2 must name it a bridge into a park.
 func _check_r2_names_a_bridge_into_a_park() -> void:
 	var cfg := _cfg(1, 7301)
 	var plan := CityGen.map(cfg)
 	var deck := Rect2()
 	for d: Rect2 in CityRiver.bridges(plan, cfg):
-		if absf(d.get_center().x - PARK_DECK_X) < 1.0:
+		var off := absf(d.get_center().x - PARK_DECK_X)
+		if not deck.has_area() or off < absf(deck.get_center().x - PARK_DECK_X):
 			deck = d
-	check(deck.has_area(), "stage 1, seed 7301 has a bridge deck at x=%.0f" % PARK_DECK_X)
+	check(deck.has_area(), "stage 1, seed 7301 has a bridge deck (nearest x=%.0f)" % PARK_DECK_X)
 	var park := Rect2(deck.position.x - 4.0, deck.position.y - 10.0, deck.size.x + 8.0, 10.0)
 	var blocks: Array = plan["blocks"]
 	blocks.append({"rect": park, "use": "park"})
