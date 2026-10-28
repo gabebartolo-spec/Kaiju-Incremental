@@ -110,10 +110,8 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		var node := Node3D.new()
 		node.name = bone_name
 		var head: Vector3 = heads[bone_name]
-		var parent: Node3D = _bones.get(parent_name, self)
 		var parent_head: Vector3 = heads.get(parent_name, Vector3.ZERO)
 		node.position = head - parent_head
-		parent.add_child(node)
 		_bones[bone_name] = node
 		_rest[bone_name] = node.transform
 		_head[bone_name] = head
@@ -123,6 +121,11 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
 			_voxels[bone_name] = per_bone[i]
+	# Parented once every bone exists: a rig.json lists bones added later (the croc's collar bones) after the
+	# bones they carry (rig_from_skin.py extra_order), so the list is not parents first.
+	for bone_name: String in _parent:
+		var parent: Node3D = _bones.get(_parent[bone_name], self)
+		parent.add_child(_bones[bone_name])
 	var bands := RigJoints.overlap(self)
 	for bone_name: String in _voxels:
 		var part: VoxelBuilder = _voxels[bone_name]

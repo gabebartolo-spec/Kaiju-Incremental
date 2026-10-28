@@ -28,6 +28,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bake  # noqa: E402
 import lid_flaps  # noqa: E402
+import skin_helpers  # noqa: E402
 
 # The game's biped bones, in rig.json order (each voxel's flags byte is an index into the list). A skin may add bones
 # of its own (the adult croc r12's tail tip, D-307): they follow these (bone_names).
@@ -36,11 +37,18 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
               f"tail{i}" for i in range(9)] + ["jaw"]
 
 
+# A skin's own game bones in the order they were added, so a file of the earlier bones stays a prefix of the new list:
+# the r12 tail tip and hind toes (D-307), then the eyelids (lid_*, D-335 blinks), then the collar bones (clavicle_l/_r,
+# lead 2026-10-28 call A: the Cascadeur rise's shrug, no longer folded into spine2).
+LATER = ("lid_", "clavicle_")
+
+
 def extra_order(name):
-    """Sort key of a skin's own game bones: by chain, then by number (tail9 before tail10: parents first); the eyelids
-    (lid_*, D-335 blinks) last, so a file of the earlier bones stays a prefix of the new list."""
+    """Sort key of a skin's own game bones: by when they were added (LATER), then by chain, then by number (tail9
+    before tail10: parents first). A collar bone is listed after the arm it carries (rig.json is not parents first)."""
     stem = name.rstrip("0123456789")
-    return name.startswith("lid_"), stem, int(name[len(stem):] or 0)
+    late = next((i + 1 for i, p in enumerate(LATER) if name.startswith(p)), 0)
+    return late, stem, int(name[len(stem):] or 0)
 
 
 def bone_names(meta):
@@ -58,8 +66,8 @@ def game_rig(meta, to_rig, height):
     for b in meta["bones"]:
         g = b["game"]
         first.setdefault(g, b)
-        # The chain's end: a bone that starts where the chain's last one ends extends it (the
-        # collar bones that fold into spine2 start beside the chest, not at its end).
+        # The chain's end: a bone that starts where the chain's last one ends extends it (a bone
+        # folded into a game bone without continuing its chain, e.g. a side branch, starts elsewhere).
         if g not in last or (b["parent"] == last[g]["name"]
                              and np.allclose(b["head"], last[g]["tail"], atol=1e-3)):
             last[g] = b
@@ -106,7 +114,11 @@ def main():
     # go before the skin is sampled, so a rerun rebuilds them.
     kept = ~np.isin(before, lid_flaps.lid_bones(names))
     cells, rgb = cells[kept], rgb[kept]
-    w, gap = bake.sample_skin(meta_path, cells, names)
+    helpers = skin_helpers.helpers_of(meta)  # D-374 corrective joints: weight columns after the bones (bake.py)
+    w, gap = bake.sample_skin(meta_path, cells, names + [h["name"] for h in helpers])
+    for k, h in enumerate(helpers):  # a voxel is rigid: a helper's share stays with the bone it rides at rest
+        w[:, names.index(h["a"])] += w[:, len(names) + k]
+    w = w[:, :len(names)]
     own = w.copy()
     for i in (i for i, n in enumerate(names) if n.startswith("lid_")):  # an eyelid moves its skin by the weights
         own[:, names.index("head1")] += own[:, i]  # (bake.py); the voxel stays a part of the head
