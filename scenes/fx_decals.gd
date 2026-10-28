@@ -55,8 +55,9 @@ static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -
 
 ## Fades a mark out in `seconds` instead of its slow fade (a foot is lifting off it), then frees it.
 static func fade_out(decal: Decal, seconds: float) -> void:
-	var slow: Tween = decal.get_meta("fade", null)
-	if slow != null:
+	# A decal not made by spawn() (a test's bare crack) has no slow fade to end.
+	if decal.has_meta("fade"):
+		var slow: Tween = decal.get_meta("fade")
 		slow.kill()
 	var tween := decal.create_tween().set_parallel()
 	tween.tween_property(decal, "emission_energy", 0.0, seconds)
