@@ -186,21 +186,15 @@ static func entries(plan: Dictionary, ring: int) -> Array[Dictionary]:
 ## the landmark-clear audit). (-1, -1) if it cannot. axis: {lines, rings, avenues, cfg}.
 static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 	var lines: Array[float] = axis["lines"]
-	var rings: Array[float] = axis["rings"]
 	var avenues: Dictionary = axis["avenues"]
 	var cfg: Dictionary = axis["cfg"]
-	var a := -1
-	for k: int in lines.size() - 1:
-		if v >= lines[k] and v < lines[k + 1]:
-			a = k
+	var a := _cell_of(lines, v)
 	if a < 0:
 		return Vector2i(-1, -1)
 	var b := a
 	while lines[b + 1] - lines[a] - _inset(avenues, a, cfg) - _inset(avenues, b + 1, cfg) < need:
-		var low_ok := a > 0 and not _is_ring(lines[a], rings) and not avenues.has(a)
-		var high_ok := (
-			b + 2 < lines.size() and not _is_ring(lines[b + 1], rings) and not avenues.has(b + 1)
-		)
+		var low_ok := a > 0 and _may_swallow(axis, a)
+		var high_ok := b + 2 < lines.size() and _may_swallow(axis, b + 1)
 		if not low_ok and not high_ok:
 			return Vector2i(-1, -1)
 		if low_ok and (not high_ok or v - lines[a] < lines[b + 1] - v):
@@ -208,6 +202,23 @@ static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 		else:
 			b += 1
 	return Vector2i(a, b)
+
+
+## The grid cell of `lines` holding v (-1 if none).
+static func _cell_of(lines: Array[float], v: float) -> int:
+	var a := -1
+	for k: int in lines.size() - 1:
+		if v >= lines[k] and v < lines[k + 1]:
+			a = k
+	return a
+
+
+## Whether a plaza may grow past street line k: not a ring street, not an avenue.
+static func _may_swallow(axis: Dictionary, k: int) -> bool:
+	var lines: Array[float] = axis["lines"]
+	var rings: Array[float] = axis["rings"]
+	var avenues: Dictionary = axis["avenues"]
+	return not _is_ring(lines[k], rings) and not avenues.has(k)
 
 
 static func _is_ring(line: float, rings: Array[float]) -> bool:
