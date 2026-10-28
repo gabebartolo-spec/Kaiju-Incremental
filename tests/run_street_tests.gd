@@ -166,6 +166,7 @@ func _check_buffers_byte_equal() -> void:
 		return
 	var on := Replay.new(self, 1, "high", true)
 	var off := Replay.new(self, 1, "high", false)
+	off.step_everyone()
 	var wrong := 0
 	var first := ""
 	for f: int in BUFFER_FRAMES:
@@ -271,6 +272,7 @@ func _check_walk_native() -> void:
 		return
 	var on := Replay.new(self, 1, "high", true)
 	var off := Replay.new(self, 1, "high", false)
+	off.step_everyone()
 	check(on.street._walker != null, "the extension walks the street (KaijuWalk is registered)")
 	var differ := -1
 	var seen := {}
