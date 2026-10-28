@@ -54,7 +54,7 @@ rises every stage and stays at or under about 35% (R 19.1).
 dramatic camera shot, zoomed in on the water which begins to ripple and fount before our kaiju emerges, roaring with rage
 before the camera zooms out into the play angle and the run begins. the entire scene should run for no longer than 3
 seconds"), with R 20.1-20.4 from Phase D, ahead of the rest of D; it ends on today's play angle until the camera growth pick.
-Run intro follow-ups, parked by D-310 behind PR #245 (OPEN; it carries the intro): claude/intro-bay (tip 4af591e3: crescent sea bay, beach and quays, D-270; the keyed rise_bay Cascadeur clip is still to make, D-199) and backup/intro-cinematic-2 (10f3629c: the intro's real water, D-244). Owner: lead. Date: parked 2026-10-27. Next: #245 merges, then rebase, tests green, PR; the water ports onto #245's intro or closes as superseded.
+Beach start (D-373, D-270): the river intro #245 is dropped, never landed. claude/intro-bay's sea bay, beach and quays port straight onto main (builder beach-start, branch claude/beach-start, from 2026-10-28); the keyed rise_bay Cascadeur clip follows (keyer, D-199). backup/intro-cinematic-2's water closes as superseded by the water builder (D-325). Owner: lead. Next: beach-start PR, merge, in the next build.
 **Now, in parallel (director 2026-10-21: "id also like to bump the UI design up the priority list, its annoying me to
 look at our current design every day"; picked: start now, HUD and menus first, keep Emergency Broadcast D-061):** Phase F's
 HUD (b2-10..13, R 15.1-15.8) and every menu (title, pause, settings, results, species select b2-11, loading) with bespoke
@@ -475,7 +475,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
   becomes the camera-to-kaiju corridor). Status: in progress. Atmosphere rulings A1-A16: D-191 (order: escalation,
   weather, sky and sea life; #167 drew no weather yet).
-- Escalation + far-city floating fix (D-154, D-189, D-191; the fix asked for twice): claude/atm-escalation-2, 12 commits at round 4 (tip 62fd50a5), not on main. Owner: lead. Date: parked 2026-10-27 (D-310). Next: after every D-295 debt row merges (order #243, #241, #245, then the rest): sync with main, horizon seam, wide noon and dusk renders, fog cost, clip straight to the director, PR (the audit suggests the far-city fix alone could land first).
+- Escalation + far-city floating fix (D-154, D-189, D-191; the fix asked for twice): claude/atm-escalation-2, 12 commits at round 4 (tip 62fd50a5), not on main. Owner: lead. Date: parked 2026-10-27 (D-310). Next: after every D-295 debt row merges (order #243, #241, then the rest; #245 dropped, D-373): sync with main, horizon seam, wide noon and dusk renders, fog cost, clip straight to the director, PR (the audit suggests the far-city fix alone could land first).
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
