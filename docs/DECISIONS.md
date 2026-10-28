@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-28 · D-370 · Director · Ruleset after the rule audit
+Rule audit 10-28; his picks, each the recommended option except roadmap. Decision log: a decision goes into
+DECISIONS.md in the PR that acts on it, the lead owns the wording; log-only updates ride in the lead's next PR (main
+requires checks, so no direct push); no separate board PR after each merge. Godot queue: gq syncs a job's worktree to
+latest main itself (only a real conflict refuses); a speed run waiting over 20 min in the day moves to NIGHT_QUEUE.txt;
+NO_GODOT_UNTIL holds every start. Reading: what the task touches, in full, grep the rest. Asking: only real calls.
+Handoffs about 150 lines, edited after a commit, push or PR change. Reports short, no line count, no read receipts.
+Tool caps raised (output 25k, reads 25k, commands 6000). Player-effect fixture only for new systems or rules.
+Checklist walks only where a defect reached you twice. Roadmap: picked "Wait for assignment" (unchanged).
+Team shape stays keyer + 4 builders (D-353).
+
 ## 2026-10-28 · D-369 · Director · No cap on open PRs
 Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
 Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
