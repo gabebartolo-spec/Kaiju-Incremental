@@ -12,7 +12,6 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	await _t("_check_diag_walk")
 	await _t("_check_first_arrival")
 	await _t("_check_city_clock")
 	await _t("_check_armour")
@@ -294,83 +293,3 @@ func _worst_second(times: Array) -> int:
 			times.filter(func(t: float) -> bool: return t >= start and t <= start + 1.0).size()
 		)
 	return worst
-
-
-## TEMP diag (to revert): the spawn's surroundings, the free ways, and what holds the walk.
-func _check_diag_walk() -> void:
-	var sim := _adolescent()
-	_open(sim)
-	var at := sim.kaiju_pos
-	var near: Array[String] = []
-	for k: int in sim.buildings.size():
-		var b := sim.buildings[k]
-		var gap := Vector2(
-			maxf(absf(at.x - b.x) - b.w * 0.5, 0.0), maxf(absf(at.y - b.z) - b.d * 0.5, 0.0)
-		)
-		if gap.length() < 14.0 and b.height > 0:
-			var tag := "rail" if not b.rail.is_empty() else b.landmark
-			near.append(
-				(
-					"%d%s h%d c(%.0f,%.0f) %dx%d g%.1f"
-					% [k, tag, b.height, b.x, b.z, b.w, b.d, gap.length()]
-				)
-			)
-	var ways: Array[String] = []
-	for n: int in 16:
-		var way := Vector2.from_angle(n * TAU / 16.0)
-		var why := "ok"
-		for reach: int in range(1, 11):
-			var spot := at + way * reach
-			if why != "ok":
-				break
-			if sim.clamp_to_arena(spot) != spot:
-				why = "edge%d" % reach
-			elif sim.powers.blocked(spot, sim.powers.block_radius()):
-				why = "slow%d" % reach
-			elif not sim.body.inside(spot, way).is_empty():
-				why = "wall%d:%s" % [reach, sim.body.inside(spot, way).keys()]
-		ways.append("%d:%s" % [n, why])
-	var h0 := sim.body.heading
-	check(
-		false,
-		(
-			"DIAG3 spawn %s heading %s inside_now %s; near %s"
-			% [at, h0, sim.body.inside(at, h0).keys(), near]
-		)
-	)
-	check(false, "DIAG3 ways %s" % [ways])
-	for iced: bool in [false, true]:
-		var run := _adolescent()
-		_open(run)
-		var way := _face_free_way(run)
-		if iced:
-			run.army_units.taskforce.frost.frost_left = 4.0
-		var settled := rad_to_deg(absf(run.body.heading.angle_to(way)))
-		var from := run.kaiju_pos
-		var holds := 0
-		var walls := {}
-		for n: int in 45:
-			var pos := run.kaiju_pos
-			run.step(DT, way, false)
-			if run.body.held:
-				holds += 1
-				for k: Variant in run.body.inside(pos + run.body.heading * 0.3, run.body.heading):
-					walls[Num.i(k)] = 1
-		var msg := "DIAG3 iced %s way %s settled off %.0f deg, heading %s; walked %.1f; held %d/45 by %s"
-		check(
-			false,
-			(
-				msg
-				% [
-					iced,
-					way,
-					settled,
-					run.body.heading,
-					from.distance_to(run.kaiju_pos),
-					holds,
-					walls.keys()
-				]
-			)
-		)
-		run.dispose()
-	sim.dispose()
