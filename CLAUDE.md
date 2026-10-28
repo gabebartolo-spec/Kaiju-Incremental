@@ -48,5 +48,5 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
   board and log changes in the body.
 
 ## Skills
-`.claude/skills/kaiju-*` extend the general skills; each has a `references/learnings.md` (evidence bar in
+`~/.claude/skills/kaiju-*` (outside git since 10-28, so no branch carries a stale copy) extend the general skills; each has a `references/learnings.md` (evidence bar in
 `~/.claude/CLAUDE.md`). General lessons go to the general skill's log.
