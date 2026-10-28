@@ -1716,7 +1716,10 @@
 		"carve": true,
 		"chunk_alive_share": 0.5,
 		"warm_margin": 3,
-		"warm_emerge_margin": 12
+		"warm_emerge_margin": 12,
+		"_carve_view": "Destruction plan stage 1 (D-327): a carved building is drawn from its own fine cells in play (CityCarve), so a blow bites out exactly what the sim removed and a falling section is exactly its cells. view_upload_usec: main-thread microseconds a frame all fine-grid views together may spend making meshes of finished arrays.",
+		"carve_view": true,
+		"view_upload_usec": 1500
 	},
 	"lights": {
 		"_note": "Positional lights (street lamps, fires, police beacons; R 12.1, R 12.2). Only the pool_size lights nearest the camera are real lights (gl_compatibility ignores every positional light past 32 a frame, rendering/limits/opengl/max_renderable_lights); the rest are their emissive voxels and glow. Each light also fades out with camera distance: begin and length in metres.",
@@ -1774,7 +1777,7 @@
 		"people_buffers": true,
 		"people_aabb_margin_m": 8.0,
 		"kaiju_three_faces": true,
-		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 262, "puff": 17, "step": 4, "slam": 5, "tree": 43, "spark": 13, "burst": 7, "flames": 12, "embers": 12, "smoke": 12}},
+		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 330, "puff": 25, "step": 4, "slam": 5, "tree": 43, "spark": 13, "burst": 7, "flames": 12, "embers": 12, "smoke": 12}},
 		"remesh_high_priority": true,
 		"remesh_worker_mesh": true,
 		"soft_smoke": true,
