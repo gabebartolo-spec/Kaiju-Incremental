@@ -3,7 +3,7 @@ extends RefCounted
 ## The species branches of the upgrade tree as simulation (docs/SPECIES.md): each power is
 ## off until its node is bought (its stat is 0) and grows with every level. Part of
 ## RampageSim; split out to keep files small. Pure and seeded.
-##   Reptilian: tail sweep on a hard turn, momentum on a straight line, Atomic Beam.
+##   Reptilian: tail sweep on a hard turn, Atomic Beam; momentum is always on (Momentum, D-337).
 ##   Insectoid: glide after a leap while the button is held, climbing (Brood is in Brood).
 ##   Cephalopod: squeezing through gaps, Corrosive Ink (limbs, grab and throw: Tentacles).
 ## Shared: buildings block the body (slow it) unless a power says otherwise, and coatings
@@ -14,8 +14,14 @@ const CHUNK_HALF := 0.5
 
 var sim: RampageSim
 var cfg: Dictionary
-## 0..1: how much straight-line speed the reptilian has built.
-var momentum := 0.0
+## 0..1: how much run the titan has built (Momentum).
+var momentum: float:
+	get:
+		return run.value
+	set(v):
+		run.value = v
+## The titan's run (D-337): momentum, crashing through what is under it, the slam.
+var run: Momentum
 var beam_left := 0.0
 var glide_left := 0.0
 ## Coated chunks, key building * 2^20 + chunk index: {"b", "c", "t", "dps", "kind"}.
@@ -40,6 +46,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = sim.powers_cfg
 	_rng = rng
+	var run_cfg: Dictionary = cfg["momentum"]
+	run = Momentum.new(sim, run_cfg)
 	tentacles = Tentacles.new(sim, rng)
 	swipe = ClawSwipe.new(sim, cfg)
 	var fire_cfg: Dictionary = cfg["fire"]
@@ -50,11 +58,16 @@ func _bs() -> float:
 	return sim.body_scale()
 
 
+## The species the sim plays (BodyContact.use_species): its titan's momentum entry.
+func use_species(species_id: String) -> void:
+	run.use_species(species_id)
+
+
 ## --- Movement: blocking, momentum, climbing --------------------------------------------
 
 
-## Speed multiplier this step: buildings in the way slow the body, except when it climbs
-## over them, glides above them, squeezes between them or has the momentum to ram on.
+## Speed multiplier this step: momentum speeds the walk; buildings in the way slow the body, except
+## when it climbs over them, glides above them, squeezes between them or crashes through them.
 func speed_mult() -> float:
 	return _ground_mult() * sim.army_units.taskforce.frost.mult()  # ice on the legs slows it
 
@@ -64,14 +77,11 @@ func _ground_mult() -> float:
 		return Num.f(cfg["beam_move_mult"])
 	if sim.airborne:
 		return Num.f(cfg["glide_speed_mult"])
-	var mult := 1.0 + momentum * Num.f(cfg["momentum_speed"]) if sim.stat("momentum") > 0.0 else 1.0
+	var mult := run.speed_mult()
 	if sim.stat("climb") > 0.0:
 		return mult
 	if blocked(sim.kaiju_pos, block_radius()):
-		var slow := Num.f(cfg["block_slow"])
-		if sim.stat("momentum") > 0.0:
-			slow = lerpf(slow, 1.0, momentum)
-		mult *= slow
+		mult *= Num.f(cfg["block_slow"])
 	return mult
 
 
@@ -85,7 +95,8 @@ func block_radius() -> float:
 	return minf(Num.f(cfg["block_radius"]), street) * squeeze
 
 
-## Any standing street-level chunk whose square the circle (pos, radius) overlaps.
+## Any standing street-level chunk whose square the circle (pos, radius) overlaps (one a crash
+## takes, Momentum.crashes_column, does not hold the body).
 func blocked(pos: Vector2, radius: float) -> bool:
 	for b: RampageSim.Building in sim.buildings:
 		if b.frame.alive_count == 0:
@@ -95,7 +106,7 @@ func blocked(pos: Vector2, radius: float) -> bool:
 		for x: int in b.w:
 			for z: int in b.d:
 				var c := Vector3i(x, 0, z)
-				if b.frame.alive(c):
+				if b.frame.alive(c) and not run.crashes_column(b, x, z):
 					var p := b.chunk_world(c)
 					var gap := Vector2(
 						maxf(absf(p.x - pos.x) - CHUNK_HALF, 0.0),
@@ -122,13 +133,7 @@ func turn_toward(from: Vector2, to: Vector2, dt: float) -> Vector2:
 
 func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 	var turn := absf(old_facing.angle_to(sim.facing)) if moving else 0.0
-	if moving:
-		momentum += (
-			dt / Num.f(cfg["momentum_build_seconds"]) - turn * Num.f(cfg["momentum_turn_bleed"])
-		)
-	else:
-		momentum -= dt * Num.f(cfg["momentum_idle_decay"])
-	momentum = clampf(momentum, 0.0, 1.0)
+	run.build(dt, turn, moving)
 	_turn = _turn * exp(-Num.f(cfg["tail_turn_decay"]) * dt) + turn
 	_tail_cd -= dt
 	if sim.stat("tail_damage") > 0.0 and _turn >= Num.f(cfg["tail_turn_rad"]) and _tail_cd <= 0.0:
@@ -140,7 +145,7 @@ func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 	swipe.step(dt)
 
 
-## Stomp (and ram) damage multiplier from momentum.
+## Stomp (and ram) damage multiplier from momentum: the momentum node makes it hit harder.
 func hit_mult() -> float:
 	return 1.0 + sim.stat("momentum") * momentum
 
@@ -171,7 +176,7 @@ func _tail_sweep(side: float) -> void:
 	tail_cut += sim.chunks_destroyed - before
 
 
-## With momentum the reptilian rams what is in front of it and knocks tanks away.
+## With the momentum node the reptilian rams what is in front of it and knocks tanks away.
 func _ram(dt: float) -> void:
 	_ram_cd -= dt
 	if sim.stat("momentum") <= 0.0 or momentum < Num.f(cfg["ram_min"]) or _ram_cd > 0.0:
