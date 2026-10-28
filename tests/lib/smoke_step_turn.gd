@@ -201,7 +201,7 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 			down = down or leg.planted
 			drift = maxf(drift, _drift(kaiju, leg, lock, i) if t > 1.5 else 0.0)
 			foot_yaw = maxf(foot_yaw, _foot_yaw(kaiju, leg, toe_yaw, i) if t > 1.5 else 0.0)
-			toes.append(kaiju._rig.tail_world(leg.names[2]))
+			toes.append(kaiju._rig.tail_world(leg.tip))
 		if t >= turn_t:
 			yaws.append(Vector2(t, dyaw))
 		if t >= turn_t and landed == INF:
@@ -252,7 +252,7 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 
 ## How far (cm, flat) leg `i`'s foot has moved since it went down (0 while it is up).
 static func _drift(kaiju: KaijuModel, leg: BipedGait.Leg, lock: Array[Vector3], i: int) -> float:
-	var at := kaiju._rig.tail_world(leg.names[2])
+	var at := kaiju._rig.tail_world(leg.tip)
 	if not leg.planted:
 		lock[i] = Vector3.INF
 		return 0.0
@@ -266,7 +266,7 @@ static func _foot_yaw(kaiju: KaijuModel, leg: BipedGait.Leg, since: Array[float]
 	if not leg.planted:
 		since[i] = INF
 		return 0.0
-	var toes := kaiju._rig.tail_world(leg.names[2]) - kaiju._rig.bone(leg.names[2]).global_position
+	var toes := kaiju._rig.tail_world(leg.tip) - kaiju._rig.bone(leg.names[2]).global_position
 	var yaw := atan2(toes.x, toes.z)
 	if since[i] == INF:
 		since[i] = yaw

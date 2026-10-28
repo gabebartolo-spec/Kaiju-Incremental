@@ -14,6 +14,10 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
   taken out of the pose. The mirrored turn is appended too (turn_left <-> turn_right).
 A foot is planted while its toe tip is within PLANT_UP of its rest height and moves under PLANT_SLIDE to the next frame
 (world): from the keyed contact until the toe tip peels off (the walk's stance, as the game locks the toe tip).
+r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
+turns (tail9-11) and the hind toes' (leg_x3), after the 27 r11 bones. A file of the r11 bones is upgraded on the
+way: its clips get still tip and toe bones (each turned as its parent, which is what r11's fold did), so a clip
+not re-baked plays exactly as before.
 The adult's keyed clips so far (director-approved; sources in C:/Users/DANTE/cascadeur_bridge/croc_new/rig11/, keys
 croc_<move>_<tag>.casc), added to the Blender clips' file:
     roar roar_intro/roar_c.blend 12 124 still | rise_bay roar_intro/rise_p.blend 0 120 still |
@@ -28,8 +32,9 @@ assert MODE in ("still", "walk", "turn"), MODE
 KEYED_FPS = 30
 PLANT_UP = 0.1  # m (100 m model): toe tip height over its rest height that still counts as down
 PLANT_SLIDE = 0.5  # m a keyed frame: a planted toe tip holds still (the peel moves it 0.25, a swing metres)
-GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
+BASE_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
               "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [f"tail{i}" for i in range(9)] + ["jaw"]
+IDENTITY = struct.pack("<4h", 0, 0, 0, 32767)
 MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left"}
 arm = bpy.data.objects["croc_rig"]; ad = arm.data
 mesh = bpy.data.objects["croc_mesh"]; me = mesh.data
@@ -49,9 +54,9 @@ def game_bone(n):
     if n in fixed:
         return fixed[n]
     if n.startswith("tail"):
-        return f"tail{min(int(n[4:]), 8)}"
+        return f"tail{int(n[4:])}"
     return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
-            "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}2"}[n[:-2]]
+            "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}3"}[n[:-2]]
 
 
 # The rest frame of croc_adult3_export.py: the mesh at rest without the lid flaps, 100 m tall, origin under the pelvis.
@@ -65,8 +70,12 @@ ROOT_Y = ((AW @ ad.bones["pelvis"].head_local).y - C.y) * S
 skin = lambda p: G3 @ ((V(tuple(p)) - C) * S - V((0.0, ROOT_Y, 0.0)))
 
 deform = [b for b in ad.bones if b.use_deform and not HELPER(b.name)]
+# The rig's own game bones follow, by chain then number (parents first; rig_from_skin.py bone_names, so the rig.json
+# and the clips list the bones in one order).
+EXTRA = lambda n: (n.rstrip("0123456789"), int(n[len(n.rstrip("0123456789")):] or 0))
+GAME_BONES = BASE_BONES + sorted({game_bone(b.name) for b in deform} - set(BASE_BONES), key=EXTRA)
 first, last = {}, {}
-for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0, foot + toe = leg_x2)
+for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0; r12: the toe is leg_x3)
     g = game_bone(b.name)
     first.setdefault(g, b)
     if g not in last or (b.parent is not None and b.parent.name == last[g].name
@@ -114,7 +123,17 @@ if OUT.exists():
     data = OUT.read_bytes()
     hl = struct.unpack_from("<I", data, 8)[0]
     header, body = json.loads(data[12:12 + hl]), bytearray(data[12 + hl:])
-    assert header["bones"] == GAME_BONES
+    old = header["bones"]
+    if old != GAME_BONES:  # an r11 file: its clips' tip bones stay as their parents turn (still, local identity)
+        assert GAME_BONES[:len(old)] == old, f"{OUT.name}: bones {old} are not a prefix of {GAME_BONES}"
+        fb, add = header["frame_bytes"], len(GAME_BONES) - len(old)
+        cut = len(old) * 8
+        body = bytearray(b"".join(body[k:k + cut] + IDENTITY * add + body[k + cut:k + fb]
+                                  for k in range(0, len(body), fb)))
+        header["bones"], header["frame_bytes"] = GAME_BONES, fb + add * 8
+        header["gathers"] = {g: [b.name for b in deform if game_bone(b.name) == g] for g in GAME_BONES}
+        header["rest_heads_m"].update({g: [round(c, 3) for c in heads[g]] for g in GAME_BONES[len(old):]})
+        print(f"UPGRADED {OUT.name}: {len(old)} -> {len(GAME_BONES)} bones, {len(body) // header['frame_bytes']} frames")
     rest_gap = max((V(header["rest_heads_m"][g]) - heads[g]).length for g in GAME_BONES)
     assert rest_gap < 0.5, f"rest heads differ from {OUT.name}'s by {rest_gap:.3f} m"
 else:
@@ -154,6 +173,12 @@ travel = V((0.0, 0.0, 0.0))
 if MODE == "walk":
     travel = sample(float(N))[0][1] - raw[1][1]
     travel.y = 0.0
+# Keys that walk forward from their frame 0 reach a later cycle whole strides down the path: that lead is taken out
+# too (along the travel only, so the pelvis keeps its sway and surge), so the clip's pelvis sits over the sim's.
+lead = V((0.0, 0.0, 0.0))
+if MODE == "walk" and travel.length > 1e-6:
+    d = travel.normalized()
+    lead = d * (sum((raw[i + 1][1] - travel * (i / M) - heads["spine0"]).dot(d) for i in range(M)) / M)
 frames, lows = [], []
 for i in range(M):
     world, pelvis, feet = raw[i + 1]
@@ -171,8 +196,8 @@ for i in range(M):
         par = first[g].parent
         pg = game_bone(par.name) if par is not None else None
         quats.append(((world[pg].inverted() @ world[g]) if pg else (inv @ world[g])).normalized())
-    off = inv @ (pelvis - root) - heads["spine0"]
-    toes = [inv @ (ft - root) for ft in feet]
+    off = inv @ (pelvis - root - lead) - heads["spine0"]
+    toes = [inv @ (ft - root - lead) for ft in feet]
     frames.append((quats, off, toes, planted, math.degrees(yaw), root))
     lows.append("".join("L" if planted[0] else "-") + ("R" if planted[1] else "-"))
 

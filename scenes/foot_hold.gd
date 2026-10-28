@@ -27,7 +27,7 @@ func rig_yaw() -> float:
 ## poses it. A splayed foot (the adult croc's) swings its flat heading as it rolls over the stance,
 ## so a planted foot holds this heading, not only the body's turn.
 func foot_yaw(leg: BipedGait.Leg) -> float:
-	var toes := _rig.tail_world(leg.names[2]) - _rig.bone(leg.names[2]).global_position
+	var toes := _rig.tail_world(leg.tip) - _rig.bone(leg.names[2]).global_position
 	return atan2(-toes.x, -toes.z)
 
 
@@ -45,7 +45,7 @@ func hold(plant_yaw: float, plant_heading: float, leg: BipedGait.Leg) -> float:
 func held(leg: BipedGait.Leg, s: float, toe: Vector3, fix: float) -> float:
 	var hip := _rig.bone(leg.names[0]).global_position
 	var ankle_now := _rig.bone(leg.names[2]).global_position
-	var off := _rig.tail_world(leg.names[2]) - ankle_now
+	var off := _rig.tail_world(leg.tip) - ankle_now
 	var most := (leg.l1 + leg.l2) * s * HELD_REACH
 	var k := 1.0
 	var lo := 0.0
