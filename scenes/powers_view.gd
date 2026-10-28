@@ -108,7 +108,22 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	roar.on_event(event, sim.time_left, self, _kaiju)
 	_vip.on_event(event)  # the leader's helicopter and its headlines (vip_*, its wreck)
 	var bs := sim.body_scale()
-	match str(event["type"]):
+	var kind := str(event["type"])
+	# The lightning's charge-up, the Thunder Beam.
+	if kind in ["strike_windup", "beam_start", "beam_end"]:
+		if not _thunder.on_event(event, kaiju_at):
+			return false
+	elif not PowerSplash.play(_city, event, kaiju_at, bs) and not _acted(kind, event, kaiju_at, bs):
+		return rooftops.on_event(event, kaiju_at)
+	if not played.has(str(event["type"])):
+		played.append(str(event["type"]))
+	return true
+
+
+## The powers PowersView plays itself (the arms' sweeps, coats, a limb's strike, grabs,
+## helicopters); false for any other event.
+func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bool:
+	match kind:
 		"tail_sweep":
 			var side := Num.f(event["side"])
 			_hook("tail_sweep", [side])
@@ -119,44 +134,14 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
 		"swipe":
 			_swiped(event, kaiju_at)
-		"strike_windup", "beam_start", "beam_end":  # the lightning's charge-up, the Thunder Beam
-			if not _thunder.on_event(event, kaiju_at):
-				return false
 		"coated", "fire_burning":
 			_lit(event)
-		"glide_start":
-			_city.fx.dust(kaiju_at + Vector3(0, 0.3, 0), bs * 1.5)
-		"glide_land":
-			_city.fx.shockwave(kaiju_at, Num.f(event["reach"]) * 1.2)
-			_city.crush(kaiju_at, Num.f(event["reach"]))
-		"eggs_laid":
-			var eggs: Array = event["at"]
-			for at: Vector2 in eggs:
-				_city.fx.puff(_w(at, 0.3))
-		"brood_hatched":
-			_city.fx.puff(_w(event["at"], 0.4))
-		"brood_bite":
-			var at: Vector2 = event["at"]
-			_city.crush(_w(at), 1.6)  # the young eat the people and police where they bite
-			_city.fx.puff(_w(at, 0.5))
-		"brood_died":
-			_city.debris(_w(event["at"], 0.6), YOUNG, Vector3.UP)
 		"limb":
 			var to: Vector2 = event["at"]
 			_streak(kaiju_at + Vector3(0, 1.5 * bs, 0), _w(to, 1.0), _tint, 0.18)
 			_city.fx.dust(_w(to, 0.4), 0.6)
 		"grab":
 			_thrown(event, kaiju_at)
-		"throw_land":
-			var at := _w(event["at"])
-			var radius := Num.f(event["radius"])
-			_city.flash(at + Vector3(0, 1.0, 0), Color("ff8a3a"), 9.0, 0.5)
-			_city.fx.shockwave(at, radius * 1.3)
-			_city.fx.dust(at + Vector3(0, 0.4, 0), radius * 0.6)
-			_city.fire(at, 0.6)
-			_city.crush(at, radius)
-		"ink":
-			_city.ring(kaiju_at, Num.f(event["reach"]), INK, 0.8)
 		"heli_spawned":
 			_helis[Num.i(event["heli"])] = HelicopterModel.added_to(self)
 		"heli_fired":
@@ -164,9 +149,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"heli_destroyed", "heli_crashed":
 			_heli_down(event)
 		_:
-			return rooftops.on_event(event, kaiju_at)
-	if not played.has(str(event["type"])):
-		played.append(str(event["type"]))
+			return false
 	return true
 
 
@@ -334,6 +317,20 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 				var heading := atan2(-to.x, -to.z)
 				node.rotation.y = lerp_angle(node.rotation.y, heading, turn)
 			node.aim(kaiju_at + Vector3(0, 3.0 * bs, 0))
+	_track_young()
+	_thunder.update(kaiju_at)
+	var climbing := sim.stand_y > 0.5
+	if climbing != _climbing:
+		_climbing = climbing
+		_hook("climbing", [climbing])
+	_dust_t -= delta
+	if sim.stat("momentum") > 0.0 and sim.powers.momentum > 0.5 and _dust_t <= 0.0:
+		_dust_t = 0.15
+		_city.fx.dust(kaiju_at - _w(sim.facing) * bs + Vector3(0, 0.3, 0), bs * sim.powers.momentum)
+
+
+## The young on their hunt: an egg's node until it hatches, then a young's; gone ones freed.
+func _track_young() -> void:
 	var seen := {}
 	for y: Brood.Young in sim.brood.young:
 		seen[y.id] = true
@@ -355,35 +352,9 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 			var gone: Node3D = _young[id]
 			gone.queue_free()
 			_young.erase(id)
-	_thunder.update(kaiju_at)
-	var climbing := sim.stand_y > 0.5
-	if climbing != _climbing:
-		_climbing = climbing
-		_hook("climbing", [climbing])
-	_dust_t -= delta
-	if sim.stat("momentum") > 0.0 and sim.powers.momentum > 0.5 and _dust_t <= 0.0:
-		_dust_t = 0.15
-		_city.fx.dust(kaiju_at - _w(sim.facing) * bs + Vector3(0, 0.3, 0), bs * sim.powers.momentum)
 
 
 func _young_node(egg: bool) -> Node3D:
-	var node := Node3D.new()
-	if egg:
-		node.set_meta("egg", true)
-		var shell := _box(Vector3(0.8, 1.0, 0.8), EGG, false)
-		shell.position.y = 0.5
-		node.add_child(shell)
-	else:
-		# Elephant-sized: a low body, a head and six legs, in the insectoid's dark brown.
-		var body := _box(Vector3(1.4, 1.0, 2.4), YOUNG, false)
-		body.position.y = 1.2
-		node.add_child(body)
-		var head := _box(Vector3(1.0, 0.8, 0.8), YOUNG.lightened(0.15), false)
-		head.position = Vector3(0, 1.4, -1.5)
-		node.add_child(head)
-		for n: int in 6:
-			var leg := _box(Vector3(0.25, 1.2, 0.25), YOUNG.darkened(0.3), false)
-			leg.position = Vector3(0.8 if n % 2 == 0 else -0.8, 0.5, -0.8 + (n / 2) * 0.8)
-			node.add_child(leg)
+	var node := BroodModel.make(egg, _box)
 	add_child(node)
 	return node

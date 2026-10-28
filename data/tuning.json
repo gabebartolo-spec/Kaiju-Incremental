@@ -455,7 +455,7 @@
 		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds, then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). hp = the air wing's hp x hp_mult; radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
 		"window": [0.12, 0.5],
 		"ranks": ["MAYOR", "GOVERNOR", "PRESIDENT"],
-		"payout": [38.0, 40.0, 40.0],
+		"payout": [62.0, 98.0, 101.0],
 		"hp_mult": 1.0,
 		"radius": 1.2,
 		"altitude": 9.0,
@@ -634,7 +634,8 @@
 		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
-		"stream_chunks": 24000,
+		"stream_chunks": 25500,
+		"stand_in_fade_s": 0.35,
 		"stream_view": {"_note": "BuildingStream spends the stream_chunks budget on what the camera sees, not on a circle round the kaiju: a building ranks by its distance from the camera, or from the kaiju plus kaiju_extra_m, whichever is less; one that lies only in the margin band (margin_deg wide, each side of the frustum) ranks side_m farther, one outside that outside_m farther; a ring of ring_m round the camera has no penalty. margin_deg covers the camera's shake (camera_shake max_deg 2.5, a test checks it) and a quick turn, so a turn meets buildings the plan has already meshed (the breath's side orbit was cut, D-136). A landmark stays meshed while the frustum or the margin band reaches it or it stands within landmark_keep_m of the camera or the kaiju (a test checks no landmark is ever a box in view); beyond all three it unloads like any building (director 2026-10-22: out-of-view landmarks may unload if no pop-in).", "margin_deg": 30.0, "ring_m": 12.0, "side_m": 40.0, "outside_m": 100.0, "kaiju_extra_m": 30.0, "landmark_keep_m": 80.0},
 		"markings_beyond": 30,
 		"zebra_junctions": 1,
@@ -653,7 +654,7 @@
 		"lane_stop_chance": 0.12,
 		"diagonal_parked_lane": 2.2,
 		"river_quay": {"_note": "RiverQuay (D-062): crate stacks along the water's street-side edge, every gap m, kerb m off the water, clear of bridge decks (deck_clear m) and crossings (node_clear m); low and top are [half width, height] in prop voxels (0.25 m).", "gap": 8.0, "kerb": 0.5, "deck_clear": 1.5, "node_clear": 3.0, "low": [1, 2], "top": [0, 1], "colors": {"quay_crate": "8a6a3a", "quay_band": "5e4a2a"}},
-		"traffic_island": {"half_cells": 1, "pole_cells": 6, "bollard_cells": 3, "bollards": [[-1, -1], [1, 1]], "lane_clear": 0.95, "node_clear": 3.0, "search_step": 0.25, "colors": {"island_kerb": "9a968c", "island_bollard": "d8d4c8", "signal_housing": "1c1e20", "signal_red": "d0301e00", "signal_amber": "8a6420", "signal_green": "2e6a38"}},
+		"traffic_island": {"_note": "TrafficIsland (director 2026-10-26: \"Where the diagonal meets avenues\"): at = diagonal_avenue plants one island per diagonal x avenue crossing in the playable city, in a sharp corner's free wedge, searched every search_step m along its bisector from node_clear out to wedge_reach, kerb_gap clear of every carriageway and prop_clear of every prop.", "at": "diagonal_avenue", "wedge_reach": 22.0, "kerb_gap": 0.3, "prop_clear": 0.75, "half_cells": 1, "pole_cells": 6, "bollard_cells": 3, "bollards": [[-1, -1], [1, 1]], "node_clear": 3.0, "search_step": 0.25, "colors": {"island_kerb": "9a968c", "island_bollard": "d8d4c8", "signal_housing": "1c1e20", "signal_red": "d0301e00", "signal_amber": "8a6420", "signal_green": "2e6a38"}},
 		"car_colors": ["6b6e70", "5b6b7a", "5a2a26", "8a8a84", "6b7a52", "6a5e48"],
 		"street_tree_gap": 6,
 		"street_tree_clear": 3,
@@ -683,6 +684,7 @@
 		"tree_puff_alpha": 0.6,
 		"block_long": [18, 26],
 		"block_short": [10, 13],
+		"block_far": {"_note": "The outskirts' block gaps (CityLines.gaps): m added to block_long / block_short's [lo, hi] past the last district, so they are no even grid (lo never under a lot between avenues).", "long": [-6, 14], "short": [-2, 12]},
 		"avenues": 1,
 		"avenue_width": 6,
 		"street_width": 4,
@@ -694,9 +696,9 @@
 		"river": true,
 		"river_depth": 1.6,
 		"river_inset": 2.0,
-		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1},
-		"diagonal_through": [-6, 4],
-		"diagonal_deg": 27,
+		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1, "depth": 2},
+		"diagonal_through": [-6, 12.85],
+		"diagonal_deg": 26.75,
 		"cores": [[14, -14, 30], [-24, 24, 20], [54, 48, 22], [-52, -50, 20], [72, -64, 30], [-68, 66, 28], [94, 86, 36], [-90, -88, 34], [6, 94, 30], [165, -150, 46], [-170, 145, 46], [175, 115, 40], [-150, -170, 42], [10, 180, 44], [-185, -20, 38]],
 		"depth_min": 3,
 		"depth_max": 5,
@@ -1390,15 +1392,15 @@
 		"pay_mult": 0.2,
 		"bite_dps": 140.0,
 		"leap": {
-			"_note": "The dash button's leap (Dash, D-259 \"a leap that lands on a building and crushes it with a shockwave (replaces the dash)\"). Per species and stage (baby, adolescent, adult): reach / min_reach = how far the feet may land from where they stand (design units at body scale 1): the nearest standing building whose centre is in that band and within aim_half_angle_deg of the facing, else the full reach; a target that dwarfs the body (D-091), or a roof landing that would put the body inside such a building, is landed before instead: on the street, backed off along the flight line in landing_step units until clear. crouch_s (crouch and push), flight_s (airborne), settle_s (impact settle), recover_s (to walk-ready) are the reader's L1 frames at 30 fps (C:/kt/croc_kit/reference.md: 14+15+15+18 / 18+21+21+25 / 24+26+26+32); the body takes no stick through all four. The flight is a high arc onto the target's roof (director 2026-10-26 \"High arc, lands on roof\"; supersedes reader bar L5 for the sim path, LeapArc): its top clears every building the body passes over by clear (design units at body scale 1), the path sampled every landing_step units, the top raised by clear up to arc_tries times; through the settle the body sinks from the roof to the street as the building breaks under it. On contact one blow of damage hits at full force within ring (x body scale) and fades to nothing at twice it (shockwave), through the carve path; tanks in it slide outward by fling x the force. cooldown from the press. PLACEHOLDER NUMBERS (tune) except the phase times.",
+			"_note": "The dash button's leap (Dash, D-259 \"a leap that lands on a building and crushes it with a shockwave (replaces the dash)\"). Per species and stage (baby, adolescent, adult): reach / min_reach = how far the feet may land from where they stand (design units at body scale 1): the nearest standing building whose centre is in that band and within aim_half_angle_deg of the facing, else the full reach; a target that dwarfs the body (D-091), or a roof landing that would put the body inside such a building, is landed before instead: on the street, backed off along the flight line in landing_step units until clear. crouch_s (crouch and push), flight_s (airborne), settle_s (impact settle), recover_s (to walk-ready) are the reader's L1 frames at 30 fps (C:/kt/croc_kit/reference.md: 14+15+15+18 / 18+21+21+25 / 24+26+26+32); the body takes no stick through all four. The flight is a high arc onto the target's roof (director 2026-10-26 \"High arc, lands on roof\"; supersedes reader bar L5 for the sim path, LeapArc): its top clears every building the body passes over by clear (design units at body scale 1), the path sampled every landing_step units, the top raised by clear up to arc_tries times; through the settle the body sinks from the roof to the street as the building breaks under it. On contact one blow of damage hits at full force within ring (x body scale) and fades to nothing at twice it (shockwave), through the carve path; tanks in it slide outward by fling x the force. cooldown from the press. shoulder = the highest roof a leap lands on, as a share of the body's drawn height (kaiju_height x body scale): the shoulder joint (arm_l0's head) over the model's height in assets/kaiju/reptilian_<stage>.rig.json, 123.38/200, 186.48/260, 208.77/320 (D-361 \"Tall ones: hit the side\"); a taller target takes the leap in its side: the arc ends at its facade, the body carves into it in flight (the body sweep, D-268) and the feet land on the street at its foot (backed off in landing_step units until outside it), where the smash and ring hit it; one that dwarfs the body keeps the D-091 rule above. PLACEHOLDER NUMBERS (tune) except the phase times and shoulder.",
 			"aim_half_angle_deg": 30.0,
 			"landing_step": 0.5,
 			"arc_tries": 12,
 			"stages": {
 				"reptilian": [
-					{"reach": 30.0, "min_reach": 6.0, "crouch_s": 0.467, "flight_s": 0.5, "settle_s": 0.5, "recover_s": 0.6, "clear": 2.0, "ring": 7.0, "damage": 40.0, "fling": 8.0, "cooldown": 4.0},
-					{"reach": 28.0, "min_reach": 6.0, "crouch_s": 0.6, "flight_s": 0.7, "settle_s": 0.7, "recover_s": 0.833, "clear": 2.0, "ring": 8.0, "damage": 60.0, "fling": 10.0, "cooldown": 4.5},
-					{"reach": 26.0, "min_reach": 6.0, "crouch_s": 0.8, "flight_s": 0.867, "settle_s": 0.867, "recover_s": 1.067, "clear": 2.0, "ring": 9.0, "damage": 90.0, "fling": 12.0, "cooldown": 5.0}
+					{"reach": 30.0, "min_reach": 6.0, "crouch_s": 0.467, "flight_s": 0.5, "settle_s": 0.5, "recover_s": 0.6, "clear": 2.0, "ring": 7.0, "damage": 40.0, "fling": 8.0, "cooldown": 4.0, "shoulder": 0.617},
+					{"reach": 28.0, "min_reach": 6.0, "crouch_s": 0.6, "flight_s": 0.7, "settle_s": 0.7, "recover_s": 0.833, "clear": 2.0, "ring": 8.0, "damage": 60.0, "fling": 10.0, "cooldown": 4.5, "shoulder": 0.717},
+					{"reach": 26.0, "min_reach": 6.0, "crouch_s": 0.8, "flight_s": 0.867, "settle_s": 0.867, "recover_s": 1.067, "clear": 2.0, "ring": 9.0, "damage": 90.0, "fling": 12.0, "cooldown": 5.0, "shoulder": 0.652}
 				]
 			}
 		},

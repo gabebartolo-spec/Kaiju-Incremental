@@ -11,6 +11,10 @@ const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
 const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
 const SimDispose := preload("res://tests/lib/sim_dispose.gd")
 
+const EVOLVED := {"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}
+const PLAIN := {"claws": 3, "hide": 3, "rage": 3}
+const BOT_CITIES := 3  # city seeds 0 to 2, army seed 0
+
 
 func suite_name() -> String:
 	return "Sim"
@@ -227,20 +231,27 @@ func _check_upgrade_effects() -> void:
 			% [Num.f(rage["destruction"]), Num.f(few["destruction"])]
 		)
 	)
-	# A heavy turn (D-187) needs a bot that holds a heading as a player does: retarget every 60 steps.
-	var evolved := _autoplay(
-		_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}), MAX_STEPS, 60, true
-	)
-	var unevolved := _autoplay(
-		_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3}), MAX_STEPS, 60, true
-	)
+	# A heavy turn (D-187) needs a bot that holds a heading as a player does: retarget every 60
+	# steps. The bar is the mean over city seeds 0-2: one path is not the rule (in the
+	# bigger-block layout seed 0 alone gives evolved 0.357 against plain 0.417, seeds 1-5 give
+	# 0.512/0.368, 0.530/0.333, 0.354/0.344, 0.632/0.343, 0.385/0.339; CI run 40599146621).
+	var evolved := 0.0
+	var plain := 0.0
+	for city_seed: int in BOT_CITIES:
+		var at := Vector2i(city_seed, 0)
+		evolved += _destroyed(_sim_seeded("reptilian", EVOLVED, {}, at))
+		plain += _destroyed(_sim_seeded("reptilian", PLAIN, {}, at))
+	evolved /= BOT_CITIES
+	plain /= BOT_CITIES
 	check(
-		Num.f(evolved["destruction"]) > Num.f(unevolved["destruction"]),
-		(
-			"evolving destroys more (%.3f vs %.3f)"
-			% [Num.f(evolved["destruction"]), Num.f(unevolved["destruction"])]
-		)
+		evolved > plain,
+		"evolving destroys more (mean over %d cities %.3f vs %.3f)" % [BOT_CITIES, evolved, plain]
 	)
+
+
+## What the held-heading bot destroys in `sim` (a share of the city).
+func _destroyed(sim: RampageSim) -> float:
+	return Num.f(_autoplay(sim, MAX_STEPS, 60, true)["destruction"])
 
 
 func _check_species_differ() -> void:

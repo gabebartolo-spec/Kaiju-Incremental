@@ -1787,6 +1787,7 @@
         "fog_scale": {"$ref": "#/$defs/num"},
         "load_chunks": {"$ref": "#/$defs/num"},
         "stream_chunks": {"$ref": "#/$defs/num"},
+        "stand_in_fade_s": {"$ref": "#/$defs/num"},
         "stream_view": {
           "type": "object",
           "properties": {
@@ -1866,7 +1867,10 @@
             "pole_cells": {"$ref": "#/$defs/num"},
             "bollard_cells": {"$ref": "#/$defs/num"},
             "bollards": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
-            "lane_clear": {"$ref": "#/$defs/num"},
+            "at": {"$ref": "#/$defs/str"},
+            "wedge_reach": {"$ref": "#/$defs/num"},
+            "kerb_gap": {"$ref": "#/$defs/num"},
+            "prop_clear": {"$ref": "#/$defs/num"},
             "node_clear": {"$ref": "#/$defs/num"},
             "search_step": {"$ref": "#/$defs/num"},
             "colors": {
@@ -1888,8 +1892,8 @@
             }
           },
           "required": [
-            "half_cells", "pole_cells", "bollard_cells", "bollards", "lane_clear", "node_clear",
-            "search_step", "colors"
+            "at", "wedge_reach", "kerb_gap", "prop_clear", "half_cells", "pole_cells", "bollard_cells",
+            "bollards", "node_clear", "search_step", "colors"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -1923,6 +1927,16 @@
         "tree_puff_alpha": {"$ref": "#/$defs/num"},
         "block_long": {"type": "array", "items": {"$ref": "#/$defs/num"}},
         "block_short": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "block_far": {
+          "type": "object",
+          "properties": {
+            "long": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "short": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["long", "short"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "avenues": {"$ref": "#/$defs/num"},
         "avenue_width": {"$ref": "#/$defs/num"},
         "street_width": {"$ref": "#/$defs/num"},
@@ -1940,9 +1954,10 @@
             "reach": {"$ref": "#/$defs/num"},
             "width": {"type": "array", "items": {"$ref": "#/$defs/num"}},
             "height": {"type": "array", "items": {"$ref": "#/$defs/num"}},
-            "gap": {"$ref": "#/$defs/num"}
+            "gap": {"$ref": "#/$defs/num"},
+            "depth": {"$ref": "#/$defs/num"}
           },
-          "required": ["reach", "width", "height", "gap"],
+          "required": ["reach", "width", "height", "gap", "depth"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
@@ -2002,7 +2017,7 @@
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
         "outer_half", "outer_cores", "coast_z", "bay_width", "far_haze", "far_tower_cap",
-        "fog_scale", "load_chunks", "stream_chunks", "stream_view", "markings_beyond",
+        "fog_scale", "load_chunks", "stream_chunks", "stand_in_fade_s", "stream_view", "markings_beyond",
         "zebra_junctions", "landmarks", "coverage_cell", "view_beyond", "parked_chance",
         "parked_chance_beyond", "parked_gap", "lane_stop_chance", "diagonal_parked_lane",
         "river_quay", "traffic_island", "car_colors", "street_tree_gap", "street_tree_clear",
@@ -2011,7 +2026,7 @@
         "garden_bush_gap", "park_flower_beds", "flower_bloom", "playground_size", "yard_depth",
         "trample_share", "stump_color", "tree_debris_leaf", "tree_debris_bark", "tree_debris_size",
         "tree_debris_speed", "tree_leaf_speed", "tree_leaf_spread", "tree_bark_size",
-        "tree_puff_size", "tree_puff_alpha", "block_long", "block_short", "avenues",
+        "tree_puff_size", "tree_puff_alpha", "block_long", "block_short", "block_far", "avenues",
         "avenue_width", "street_width", "alley_width", "sidewalk", "alley_chance",
         "parking_chance", "plaza_blocks", "river", "river_depth", "river_inset", "quay",
         "diagonal_through", "diagonal_deg", "cores", "depth_min", "depth_max", "frontage_min",
@@ -4149,11 +4164,12 @@
                       "ring": {"$ref": "#/$defs/num"},
                       "damage": {"$ref": "#/$defs/num"},
                       "fling": {"$ref": "#/$defs/num"},
-                      "cooldown": {"$ref": "#/$defs/num"}
+                      "cooldown": {"$ref": "#/$defs/num"},
+                      "shoulder": {"$ref": "#/$defs/num"}
                     },
                     "required": [
                       "reach", "min_reach", "crouch_s", "flight_s", "settle_s", "recover_s",
-                      "clear", "ring", "damage", "fling", "cooldown"
+                      "clear", "ring", "damage", "fling", "cooldown", "shoulder"
                     ],
                     "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                     "additionalProperties": false

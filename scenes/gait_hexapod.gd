@@ -172,36 +172,45 @@ func _skitter(dt: float, hip_w: float, moving: bool) -> void:
 			holding = false
 			_dart_time = 0.0
 	else:
-		_dart_time += dt
-		var rate := DART_RATE * maxf(speed, STAND_SPEED * hip_w * 4.0)
-		_lag = _lag.move_toward(Vector3.ZERO, rate * dt)
-		var facing := absf(wrapf(model_yaw - body_yaw, -PI, PI)) < FACING
-		var down := true
-		for leg: Leg in legs:
-			down = down and leg.planted
-		if moving and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
-			holding = true
-			_held_yaw = body_yaw
-			_anchor = frame.origin - _lag  # where the body is drawn now, not the sim
-			var span := LONG_HOLD if rng.randf() < LONG_HOLD_CHANCE else HOLD
-			_hold_left = rng.randf_range(span.x, span.y)
+		_dart(dt, hip_w, moving, frame)
 	rig.position = frame.basis.inverse() * -_lag
 	if not holding:
-		# The legs move first; then the body swings round after them at a constant, snappy rate.
-		var airborne := false
-		for leg: Leg in legs:
-			airborne = airborne or not leg.planted
-		var big := absf(wrapf(model_yaw - _held_yaw, -PI, PI)) > BIG_TURN
-		if _dart_time >= LEG_LEAD and (airborne or not big):
-			_held_yaw = rotate_toward(_held_yaw, model_yaw, TURN_RATE / sqrt(maxf(s, 0.01)) * dt)
-		body_yaw = _held_yaw
-		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
+		_swing_round(dt)
+
+
+## Darting: the body catches up with the sim; a hold starts once every foot is down and it
+## faces the sim's heading.
+func _dart(dt: float, hip_w: float, moving: bool, frame: Transform3D) -> void:
+	_dart_time += dt
+	var rate := DART_RATE * maxf(speed, STAND_SPEED * hip_w * 4.0)
+	_lag = _lag.move_toward(Vector3.ZERO, rate * dt)
+	var facing := absf(wrapf(model_yaw - body_yaw, -PI, PI)) < FACING
+	var down := true
+	for leg: Leg in legs:
+		down = down and leg.planted
+	if moving and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
+		holding = true
+		_held_yaw = body_yaw
+		_anchor = frame.origin - _lag  # where the body is drawn now, not the sim
+		var span := LONG_HOLD if rng.randf() < LONG_HOLD_CHANCE else HOLD
+		_hold_left = rng.randf_range(span.x, span.y)
+
+
+## The legs move first; then the body swings round after them at a constant, snappy rate.
+func _swing_round(dt: float) -> void:
+	var airborne := false
+	for leg: Leg in legs:
+		airborne = airborne or not leg.planted
+	var big := absf(wrapf(model_yaw - _held_yaw, -PI, PI)) > BIG_TURN
+	if _dart_time >= LEG_LEAD and (airborne or not big):
+		_held_yaw = rotate_toward(_held_yaw, model_yaw, TURN_RATE / sqrt(maxf(s, 0.01)) * dt)
+	body_yaw = _held_yaw
+	rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 
 
 ## Feet in diagonal pairs: a pair steps when it is out of place (it lands where the body is
 ## heading, on the sim's heading, so the legs lead a turn); a tap at rest moves one leg.
 func _step(dt: float, root: Transform3D, moving: bool) -> void:
-	var ground := root.origin.y
 	var frame := rig.get_parent_node_3d().global_transform
 	if not _ready:
 		_ready = true
@@ -223,16 +232,32 @@ func _step(dt: float, root: Transform3D, moving: bool) -> void:
 		worst[leg.pair] = maxf(worst[leg.pair], off)
 	var limit := (STEP_AT if moving or darting else SETTLE_AT) * hip_w
 	if swinging[0] == 0 and swinging[1] == 0:
-		var pick := 0 if worst[0] >= worst[1] else 1
-		if worst[pick] > limit:
-			for leg: Leg in legs:
-				if leg.pair == pick:
-					_lift(leg, swing, Vector3.ZERO)
-		elif upper.tap_leg >= 0 and upper.tap_leg < legs.size():
-			var tap := legs[upper.tap_leg]
-			var shift := Vector3(rng.randf_range(-1, 1), 0, rng.randf_range(-1, 1))
-			_lift(tap, TAP_SWING * sqrt(s), shift.normalized() * TAP_SHIFT * hip_w)
+		_pair_step(worst, limit, swing, hip_w)
 	upper.tap_leg = -1
+	_move_feet(dt, root, swing, [frame, lead])
+
+
+## Every foot down: the pair furthest out of place (past `limit`) steps, or a tap at rest moves
+## one leg (HexapodUpper.tap_leg).
+func _pair_step(worst: PackedFloat32Array, limit: float, swing: float, hip_w: float) -> void:
+	var pick := 0 if worst[0] >= worst[1] else 1
+	if worst[pick] > limit:
+		for leg: Leg in legs:
+			if leg.pair == pick:
+				_lift(leg, swing, Vector3.ZERO)
+	elif upper.tap_leg >= 0 and upper.tap_leg < legs.size():
+		var tap := legs[upper.tap_leg]
+		var shift := Vector3(rng.randf_range(-1, 1), 0, rng.randf_range(-1, 1))
+		_lift(tap, TAP_SWING * sqrt(s), shift.normalized() * TAP_SHIFT * hip_w)
+
+
+## Each foot: a planted one stretched too far lifts; a lifted one snaps toward where it lands
+## (`aim` is [the body's frame, the lead]) and plants there.
+func _move_feet(dt: float, root: Transform3D, swing: float, aim: Array) -> void:
+	var ground := root.origin.y
+	var frame: Transform3D = aim[0]
+	var lead: Vector3 = aim[1]
+	var hip_w := hip_height * s
 	for leg: Leg in legs:
 		if leg.planted and _stretch(leg, root) > REACH_STEP:
 			_lift(leg, swing, Vector3.ZERO)
