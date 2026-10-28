@@ -36,9 +36,10 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
 
 
 def extra_order(name):
-    """Sort key of a skin's own game bones: by chain, then by number (tail9 before tail10: parents first)."""
+    """Sort key of a skin's own game bones: by chain, then by number (tail9 before tail10: parents first); the eyelids
+    (lid_*, D-335 blinks) last, so a file of the earlier bones stays a prefix of the new list."""
     stem = name.rstrip("0123456789")
-    return stem, int(name[len(stem):] or 0)
+    return name.startswith("lid_"), stem, int(name[len(stem):] or 0)
 
 
 def bone_names(meta):
@@ -75,11 +76,13 @@ def game_rig(meta, to_rig, height):
 
 
 def split_mouth(owner, pts, line):
-    """The jaw: head voxels in front of the gape under the tooth line (see the module note)."""
+    """The jaw: head voxels in front of the gape under the tooth line (see the module note). The neck's voxels in front
+    of the gape count as the head's (the young croc rigs' neck weights reach under the jaw's back, croc-young-casc):
+    in front of the gape every voxel is skull or jaw."""
     z0, y0, z1, y1 = line
-    head1, jaw = GAME_BONES.index("head1"), GAME_BONES.index("jaw")
+    head0, head1, jaw = GAME_BONES.index("head0"), GAME_BONES.index("head1"), GAME_BONES.index("jaw")
     at = y0 + (y1 - y0) * (pts[:, 2] - z0) / (z1 - z0)
-    zone = np.isin(owner, (head1, jaw)) & (pts[:, 2] < z1 + 0.5)
+    zone = np.isin(owner, (head0, head1, jaw)) & (pts[:, 2] < z1 + 0.5)
     out = owner.copy()
     out[zone] = np.where(pts[zone, 1] < at[zone], jaw, head1)
     out[~zone & (owner == jaw)] = head1  # no jaw behind the gape
@@ -99,7 +102,11 @@ def main():
     cells, _, _ = bake.read_kvox(kvox_path)
     names = bone_names(meta)
     w, gap = bake.sample_skin(meta_path, cells, names)
-    owner = np.argmax(w, axis=1)
+    own = w.copy()
+    for i in (i for i, n in enumerate(names) if n.startswith("lid_")):  # an eyelid moves its skin by the weights
+        own[:, names.index("head1")] += own[:, i]  # (bake.py); the voxel stays a part of the head
+        own[:, i] = 0.0
+    owner = np.argmax(own, axis=1)
     if line:
         pts = (np.c_[cells, np.ones(len(cells))] @ m.T)[:, :3]
         owner = split_mouth(owner, pts, line)
