@@ -29,6 +29,7 @@ var _out := "user://carve_physics"
 var _seconds := 0.0
 var _markers := false  # --markers: show the blow sphere (a test overlay, off by default)
 var _shots := true  # --no-shots: no stills (a speed run: a 4K save is a slow frame)
+var _seeded := 0  # --settle: particle systems seeded so far (_pin_seed)
 var _settle := 0.0  # --settle=S: the settled frame at S seconds (0: none)
 var _phys: CarvePhysics
 var _grids: Array[VoxelFrame] = []
@@ -83,8 +84,19 @@ func _initialize() -> void:
 	if _seconds <= 0.0:
 		_seconds = {"tower": 9.0, "swipe": 6.0, "block": 10.0}.get(_scene, 9.0)
 	DirAccess.make_dir_recursive_absolute(_out)
+	if _settle > 0.0:  # dust is GPU particles, randomly seeded: pin each one in the order made
+		node_added.connect(_pin_seed)
 	_setup()
 	process_frame.connect(_on_frame)
+
+
+## A settled still compares across runs: every particle system gets a seed from its add order.
+func _pin_seed(node: Node) -> void:
+	if node is GPUParticles3D:
+		var p: GPUParticles3D = node
+		p.use_fixed_seed = true
+		p.seed = _seeded
+		_seeded += 1
 
 
 ## Building n's footprint centre, size in units, and its blow's path (a centre at time t, or
