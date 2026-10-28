@@ -95,6 +95,10 @@ func regrow(index: int) -> void:
 	_stream.regrow(index)
 
 
+func building(index: int) -> BuildingView:  # built now if it waits (SlamView shudders it)
+	return _stream.view(index)
+
+
 ## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife;
 ## by_army: a stray shell did it, so the dead are the army's: ArmyToll).
 func crush(at: Vector3, radius: float, by_tank: bool = false, by_army: bool = false) -> void:

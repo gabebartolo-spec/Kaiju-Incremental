@@ -2,7 +2,44 @@
 
 Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest first. A decision
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
-changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
+changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
+
+## 2026-10-28 · D-372 · Director · Render item 15 (Medium GPU p95 bar) is parked for now
+The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
+runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
+or GPU-cut work on item 15 until he unparks it; the render plan's other open items (10 and 11, D-327) go ahead.
+
+## 2026-10-28 · D-371 · Director · The "never touch" rules on Dracorex, Defender and his Cascadeur tabs are removed
+His words (10-28 ~17:0x): "i never made these rules. i dont even know what they are, you can remove the rules". The
+"never open, edit or save the Dracorex file", "never touch Defender" and "never touch his Cascadeur tabs" lines were
+agent-added on top of D-305, D-318 and D-320. Removed: agents treat the Dracorex sample and the open Cascadeur tabs
+like any other file and tab. D-318 and D-320 stay only as the record of what he answered. Method lessons stay (tabs
+in batches of 5, probes never switch scene: they prevent crashes). Claude still cannot change Windows security
+settings itself (its own tool limit, not his rule).
+
+## 2026-10-28 · D-370 · Director · Ruleset after the rule audit
+Rule audit 10-28; his picks, each the recommended option except roadmap. Decision log: a decision goes into
+DECISIONS.md in the PR that acts on it, the lead owns the wording; log-only updates ride in the lead's next PR (main
+requires checks, so no direct push); no separate board PR after each merge. Godot queue: gq syncs a job's worktree to
+latest main itself (only a real conflict refuses); a speed run waiting over 20 min in the day moves to NIGHT_QUEUE.txt;
+NO_GODOT_UNTIL holds every start. Reading: what the task touches, in full, grep the rest. Asking: only real calls.
+Handoffs about 150 lines, edited after a commit, push or PR change. Reports short, no line count, no read receipts.
+Tool caps raised (output 25k, reads 25k, commands 6000). Player-effect fixture only for new systems or rules.
+Checklist walks only where a defect reached you twice. Roadmap: picked "Wait for assignment" (unchanged).
+Team shape stays keyer + 4 builders (D-353).
+
+## 2026-10-28 · D-369 · Director · No cap on open PRs
+Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
+Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
+conflicting over an hour. The repo is public, so extra checks cost no CI minutes.
+
+## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
+Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
+was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
+Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)". The croc's jaw is keyed in the same
+Cascadeur file as the body at all three stages (D-228's Blender jaw stays only for rigs with no Cascadeur jaw). Wide
+open on roar and breath-beam; a snarling gape showing teeth on charge, claw rake, standing stomp, tail sweep and leap
+landing (D-239); every other move keeps the jaw shut.
 
 ## 2026-10-28 · D-367 · Director · Collapse sounds: the newest cuts the oldest
 Asked why many collapses at once went silent in the wider city (each collapse rings about 3.4 s and only 3 play at
@@ -356,15 +393,3 @@ Q (06:1x): work parked until the render plan is done (D-276: roads, play area, c
 Tripo buildings), start it tonight? A: "yes, but not before the debt fixes". So: parked items start tonight once every
 D-295 debt row is done (merged), in the set order (roads #243, then play area #241, then intro #245, then the rest).
 Refines D-276.
-
-## 2026-10-27 · D-309 · Director · Up to 1,000 more Tripo credits tonight, any task
-Q (06:1x): Tripo credits tonight? A: "Up to 1,000 more, any task". So: on top of D-297's vehicle budget (600, 260 used
-at 05:3x), up to 1,000 more credits may be spent tonight on any outstanding Tripo task (vehicles, buildings,
-beachfront). Every task id, credits and verdict logged in the provenance file; Private on every generation.
-
-## 2026-10-27 · D-308 · Director · Night shift: visual changes go into the game; he judges them next morning
-His words (06:1x, before sleeping): "any visual work is fine but after the first iteration save it and show me in
-interview tomorrow". Q: should visual changes made tonight go into the game before he has seen them? A: "In the game,
-you judge tomorrow (Recommended)". So: tonight's visual PRs merge on by default after one iteration; each keeps a saved
-1080p clip or 4K still in C:/kt/interview_2026-10-27/ for the morning interview; anything he rejects is reverted. No
-second visual rounds without him. Overrides, for this night only, the director look gate on merges.
