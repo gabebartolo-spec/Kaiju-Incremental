@@ -1,14 +1,11 @@
 extends "res://tests/lib/runner.gd"
-## Load suite: a grown city loads fast and its kaiju stays in sight (adult-city playability): the
-## party-wall pass grows about linearly, the city streams its far buildings in after the
-## rampage starts (BuildingStream), and a tower between the camera and the kaiju fades to a
-## screen door (BuildingFade, D-025). Headless; the stream check meshes a Behemoth city.
+## Load suite: a grown city loads fast (adult-city playability): the party-wall pass grows
+## about linearly and the city streams its far buildings in after the rampage starts
+## (BuildingStream). Headless; the stream check meshes a Behemoth city.
 ##   godot --headless --path . --script tests/run_load_tests.gd
 
 const LoadLandmark := preload("res://tests/lib/load_landmark.gd")
-const FadeSpawn := preload("res://tests/lib/fade_spawn.gd")
 const LoadOffMain := preload("res://tests/lib/load_off_main.gd")
-const FadeFrame := preload("res://tests/lib/fade_frame.gd")
 
 ## One frame of the stream's clock (the suite runs at --fixed-fps 60). The stream checks own that
 ## clock: _process is off and a wait steps the stream by hand with its workers settled (_drain),
@@ -22,16 +19,13 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_party_walls")
-	await _t("_check_building_fade")
-	await _t("_check_fade_rise")
-	await _h("FadeFrame", func() -> void: FadeFrame.check(check))
-	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
 	await _h("LoadOffMain", func() -> void: LoadOffMain.new(check, _sim_at(1), root).run())
 	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
 	await _t("_check_stream")
 	await _t("_check_stream_budget")
+	await _t("_check_stand_in_fade")
 
 
 func _tuning(tier: int) -> Dictionary:
@@ -127,85 +121,6 @@ func _check_party_walls() -> void:
 	)
 
 
-## The sight test behind the building screen door (D-025, R 19.4): a tower between the camera
-## and the kaiju's body or feet fades, and so does one the camera is in; one behind the kaiju,
-## beside the sight line, or carved down to a stump below every sight line does not.
-func _check_building_fade() -> void:
-	var eye := Vector3(0, 30, 40)
-	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3(0, 0, -3))
-	var tower := RampageSim.Building.new()
-	tower.w = 6
-	tower.d = 6
-	tower.height = 30
-	tower.x = 0.0
-	tower.z = 15.0
-	var front := BuildingFade.blocks(eye, sight, tower)
-	tower.z = -15.0
-	var behind := BuildingFade.blocks(eye, sight, tower)
-	tower.z = 15.0
-	tower.x = 30.0
-	var beside := BuildingFade.blocks(eye, sight, tower)
-	check(
-		front and not behind and not beside,
-		"a tower fades only when it stands between camera and kaiju"
-	)
-	tower.x = 0.0
-	tower.z = 40.0
-	tower.frame = Structure.new(tower.w, tower.d, tower.height, 1.0)
-	var around := BuildingFade.blocks(Vector3(0, 20, 40), sight, tower)
-	tower.z = 15.0
-	for y: int in range(1, tower.height):
-		for z: int in tower.d:
-			for x: int in tower.w:
-				tower.frame.remove(Vector3i(x, y, z))
-	var stump := BuildingFade.blocks(eye, sight, tower)
-	check(around and not stump, "a tower round the camera fades; a carved stump never does")
-
-
-## The rise from the river (comment #27): the sight points spread over the part of the body above
-## the water, so a low block in front of the surfacing kaiju fades; and a building already in the
-## way on the run's first frame starts faded instead of easing in over the kaiju.
-func _check_fade_rise() -> void:
-	var eye := Vector3(0, 8, 40)
-	var feet := Vector3(0, -20, 0)  # sunk: only the top of a 22-tall body is above the water
-	var low := RampageSim.Building.new()
-	low.w = 6
-	low.d = 2
-	low.height = 2
-	low.z = 15.0
-	var dry := BuildingFade.blocks(eye, BuildingFade.targets(feet, 22.0, Vector3.ZERO), low)
-	var wet := BuildingFade.targets(feet, 22.0, Vector3.ZERO, -1.6)
-	var above := true
-	for p: Vector3 in wet:
-		above = above and p.y >= -1.6
-	check(
-		above and not dry and BuildingFade.blocks(eye, wet, low),
-		"under water the sight points cover the body above the surface, so a low block in front fades"
-	)
-	var buildings: Array[RampageSim.Building] = [low]
-	# Share 0: this is the easing, so every building a sight line crosses fades (the frame-fill
-	# rule is checked by FadeFrame).
-	var frame := FrameShare.looking(eye, feet, CameraTuning.fov(), 16.0 / 9.0)
-	var fade := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null, 0.0)
-	fade.update(frame, wet, 1.0 / 60.0)
-	var first := fade.opacity(0)
-	fade.update(frame, wet, 1.0 / 60.0)
-	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null, 0.0)
-	later.update(frame, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
-	later.update(frame, wet, 1.0 / 60.0)
-	var floor_opacity := Num.f(Content.section("camera")["fade_opacity"])
-	check(
-		is_equal_approx(first, floor_opacity) and later.opacity(0) > floor_opacity,
-		(
-			(
-				"a building in the way on the first frame starts faded (%.2f); one that comes in later"
-				+ " eases (%.2f)"
-			)
-			% [first, later.opacity(0)]
-		)
-	)
-
-
 ## a building touched before its turn is built on the spot; in the end every building is real.
 func _check_stream() -> void:
 	var sim := _sim_at(2)
@@ -259,6 +174,79 @@ func _check_stream() -> void:
 	for n: int in sim.buildings.size():
 		missing += 1 if stream.built(n) == null else 0
 	check(stream.complete() and missing == 0, "every building streams in (%d missing)" % missing)
+	stream.queue_free()
+	await process_frame
+
+
+## Facade pop-in (director 2026-10-28; the lead's call): a streamed building's box does not vanish
+## the frame its mesh arrives, it dissolves out over city.stand_in_fade_s; a building the rampage
+## touches (carved, broken, falling) loses its box at once, never a fade (D-326).
+func _check_stand_in_fade() -> void:
+	var sim := _sim_at(2)
+	var fade := Num.f(sim.city.get("stand_in_fade_s", 0.0))
+	check(fade > 0.0, "the stand-in dissolve is on by default (city.stand_in_fade_s %.2f)" % fade)
+	sim.city["load_chunks"] = 3000
+	sim.city["stream_chunks"] = 1 << 30
+	var colors: Array[Color] = []
+	for b: RampageSim.Building in sim.buildings:
+		colors.append(Color.GRAY)
+	var stream := BuildingStream.new(sim, colors)
+	root.add_child(stream)
+	stream.set_process(false)
+	var boxes: StreamStandIns = stream.get("_stand_ins")
+	var waiting: Array[int] = []
+	for n: int in sim.buildings.size():
+		if stream.built(n) == null and not sim.buildings[n].is_rail():  # a viaduct has no box
+			waiting.append(n)
+	var placed := -1
+	for _i: int in 600:
+		stream.step(0.0, true)
+		await process_frame
+		for n: int in waiting:
+			if stream.built(n) != null:
+				placed = n
+				break
+		if placed >= 0:
+			break
+	check(placed >= 0, "a streamed building is placed")
+	if placed >= 0:
+		var mesh := stream.built(placed)
+		var now := boxes.alpha(placed)
+		check(now > 0.9, "its box is still drawn the moment its mesh arrives (%.2f)" % now)
+		check(mesh.dissolve_share() < 0.1, "its mesh starts undrawn (%.2f)" % mesh.dissolve_share())
+		stream.step(fade * 0.5)
+		var half := boxes.alpha(placed)
+		check(half > 0.2 and half < 0.8, "its box is half dissolved at half the time (%.2f)" % half)
+		var half_mesh := mesh.dissolve_share()
+		check(half_mesh > 0.2 and half_mesh < 0.8, "its mesh is half drawn (%.2f)" % half_mesh)
+		stream.step(fade)
+		check(boxes.alpha(placed) == 0.0, "its box is gone once the fade is over")
+		check(mesh.dissolve_share() == 1.0, "its mesh is whole once the fade is over")
+		stream.call("_free_view", placed)  # the kaiju walked away: the box comes back
+		check(stream.built(placed) == null, "an untouched building goes back to its box")
+		check(is_instance_valid(mesh), "its mesh is still drawn while it dissolves out")
+		check(boxes.alpha(placed) < 0.1, "its box starts undrawn (%.2f)" % boxes.alpha(placed))
+		stream.step(fade * 0.5)
+		var out_mesh := mesh.dissolve_share() if is_instance_valid(mesh) else -1.0
+		check(out_mesh > 0.2 and out_mesh < 0.8, "its mesh is half dissolved out (%.2f)" % out_mesh)
+		check(boxes.alpha(placed) > 0.2 and boxes.alpha(placed) < 0.8, "its box is half drawn in")
+		stream.step(fade)
+		check(not is_instance_valid(mesh), "its mesh is gone once the fade is over")
+		check(boxes.alpha(placed) == 1.0, "its box is whole once the fade is over")
+	var far := -1
+	for n: int in waiting:
+		if stream.built(n) == null:
+			far = n
+	check(far >= 0, "a building is still waiting to test a touched one")
+	if far >= 0:
+		stream.view(far)
+		check(
+			boxes.alpha(far) == 0.0, "a building the rampage touches loses its box at once, no fade"
+		)
+		var touched := stream.built(far)
+		stream.regrow(far)  # a destroyed building: no dissolve either way (D-326)
+		check(not is_instance_valid(touched), "a regrown building's mesh goes at once")
+		check(boxes.alpha(far) == 1.0, "a regrown building's box is back at once")
 	stream.queue_free()
 	await process_frame
 

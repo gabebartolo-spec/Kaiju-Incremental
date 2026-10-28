@@ -1865,6 +1865,7 @@
         "fog_scale": {"$ref": "#/$defs/num"},
         "load_chunks": {"$ref": "#/$defs/num"},
         "stream_chunks": {"$ref": "#/$defs/num"},
+        "stand_in_fade_s": {"$ref": "#/$defs/num"},
         "stream_view": {
           "type": "object",
           "properties": {
@@ -1944,7 +1945,10 @@
             "pole_cells": {"$ref": "#/$defs/num"},
             "bollard_cells": {"$ref": "#/$defs/num"},
             "bollards": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
-            "lane_clear": {"$ref": "#/$defs/num"},
+            "at": {"$ref": "#/$defs/str"},
+            "wedge_reach": {"$ref": "#/$defs/num"},
+            "kerb_gap": {"$ref": "#/$defs/num"},
+            "prop_clear": {"$ref": "#/$defs/num"},
             "node_clear": {"$ref": "#/$defs/num"},
             "search_step": {"$ref": "#/$defs/num"},
             "colors": {
@@ -1966,8 +1970,8 @@
             }
           },
           "required": [
-            "half_cells", "pole_cells", "bollard_cells", "bollards", "lane_clear", "node_clear",
-            "search_step", "colors"
+            "at", "wedge_reach", "kerb_gap", "prop_clear", "half_cells", "pole_cells", "bollard_cells",
+            "bollards", "node_clear", "search_step", "colors"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -2001,6 +2005,16 @@
         "tree_puff_alpha": {"$ref": "#/$defs/num"},
         "block_long": {"type": "array", "items": {"$ref": "#/$defs/num"}},
         "block_short": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "block_far": {
+          "type": "object",
+          "properties": {
+            "long": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "short": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["long", "short"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "avenues": {"$ref": "#/$defs/num"},
         "avenue_width": {"$ref": "#/$defs/num"},
         "street_width": {"$ref": "#/$defs/num"},
@@ -2018,9 +2032,10 @@
             "reach": {"$ref": "#/$defs/num"},
             "width": {"type": "array", "items": {"$ref": "#/$defs/num"}},
             "height": {"type": "array", "items": {"$ref": "#/$defs/num"}},
-            "gap": {"$ref": "#/$defs/num"}
+            "gap": {"$ref": "#/$defs/num"},
+            "depth": {"$ref": "#/$defs/num"}
           },
-          "required": ["reach", "width", "height", "gap"],
+          "required": ["reach", "width", "height", "gap", "depth"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
@@ -2080,7 +2095,7 @@
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
         "outer_half", "outer_cores", "coast_z", "bay_width", "far_haze", "far_tower_cap",
-        "fog_scale", "load_chunks", "stream_chunks", "stream_view", "markings_beyond",
+        "fog_scale", "load_chunks", "stream_chunks", "stand_in_fade_s", "stream_view", "markings_beyond",
         "zebra_junctions", "landmarks", "coverage_cell", "view_beyond", "parked_chance",
         "parked_chance_beyond", "parked_gap", "lane_stop_chance", "diagonal_parked_lane",
         "river_quay", "traffic_island", "car_colors", "street_tree_gap", "street_tree_clear",
@@ -2089,7 +2104,7 @@
         "garden_bush_gap", "park_flower_beds", "flower_bloom", "playground_size", "yard_depth",
         "trample_share", "stump_color", "tree_debris_leaf", "tree_debris_bark", "tree_debris_size",
         "tree_debris_speed", "tree_leaf_speed", "tree_leaf_spread", "tree_bark_size",
-        "tree_puff_size", "tree_puff_alpha", "block_long", "block_short", "avenues",
+        "tree_puff_size", "tree_puff_alpha", "block_long", "block_short", "block_far", "avenues",
         "avenue_width", "street_width", "alley_width", "sidewalk", "alley_chance",
         "parking_chance", "plaza_blocks", "river", "river_depth", "river_inset", "quay",
         "diagonal_through", "diagonal_deg", "cores", "depth_min", "depth_max", "frontage_min",
@@ -3885,10 +3900,9 @@
         "lead_toward_camera": {"$ref": "#/$defs/num"},
         "lead_moving": {"$ref": "#/$defs/num"},
         "lead_depth_share": {"$ref": "#/$defs/num"},
-        "fade_opacity": {"$ref": "#/$defs/num"},
-        "fade_seconds": {"$ref": "#/$defs/num"},
-        "fade_width": {"$ref": "#/$defs/num"},
-        "fade_frame_share": {"$ref": "#/$defs/num"},
+        "bubble_radius": {"$ref": "#/$defs/num"},
+        "bubble_max": {"$ref": "#/$defs/int"},
+        "bubble_seconds": {"$ref": "#/$defs/num"},
         "safe_top": {"$ref": "#/$defs/num"},
         "safe_centre": {"$ref": "#/$defs/num"},
         "head_rise_s": {"$ref": "#/$defs/num"},
@@ -3898,9 +3912,9 @@
       },
       "required": [
         "offset", "fov", "zoom_base", "zoom_per_scale", "lead_base", "lead_per_scale", "lead_hold",
-        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "fade_opacity",
-        "fade_seconds", "fade_width", "fade_frame_share", "safe_top", "safe_centre", "head_rise_s",
-        "head_settle_s", "follow_s", "follow_accel"
+        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_radius",
+        "bubble_max", "bubble_seconds", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
+        "follow_s", "follow_accel"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -4227,11 +4241,12 @@
                       "ring": {"$ref": "#/$defs/num"},
                       "damage": {"$ref": "#/$defs/num"},
                       "fling": {"$ref": "#/$defs/num"},
-                      "cooldown": {"$ref": "#/$defs/num"}
+                      "cooldown": {"$ref": "#/$defs/num"},
+                      "shoulder": {"$ref": "#/$defs/num"}
                     },
                     "required": [
                       "reach", "min_reach", "crouch_s", "flight_s", "settle_s", "recover_s",
-                      "clear", "ring", "damage", "fling", "cooldown"
+                      "clear", "ring", "damage", "fling", "cooldown", "shoulder"
                     ],
                     "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                     "additionalProperties": false
@@ -4510,6 +4525,18 @@
                   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                   "additionalProperties": false
                 },
+                "purple": {
+                  "type": "object",
+                  "properties": {
+                    "inner": {"$ref": "#/$defs/str"},
+                    "fringe": {"$ref": "#/$defs/str"},
+                    "core": {"$ref": "#/$defs/hex6"},
+                    "flare": {"$ref": "#/$defs/hex6"}
+                  },
+                  "required": ["inner", "fringe", "core", "flare"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
                 "violet": {
                   "type": "object",
                   "properties": {
@@ -4522,7 +4549,31 @@
                   "additionalProperties": false
                 }
               },
-              "required": ["amber", "eye", "violet"],
+              "required": ["amber", "eye", "violet", "purple"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "throat": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+            "charge": {
+              "type": "object",
+              "properties": {
+                "width": {"$ref": "#/$defs/num"},
+                "alpha": {"$ref": "#/$defs/num"},
+                "min_px": {"$ref": "#/$defs/num"},
+                "hop_life": {"$ref": "#/$defs/num"},
+                "lead_in": {"$ref": "#/$defs/num"},
+                "jaw_before": {"$ref": "#/$defs/num"},
+                "every": {"$ref": "#/$defs/num"},
+                "fork": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "push": {"$ref": "#/$defs/num"},
+                "rounds": {"$ref": "#/$defs/int"},
+                "forks": {"$ref": "#/$defs/int"},
+                "level": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "middle": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "lift": {"$ref": "#/$defs/num"},
+                "bones": {"type": "array", "items": {"$ref": "#/$defs/str"}, "minItems": 2}
+              },
+              "required": ["width", "alpha", "min_px", "hop_life", "lead_in", "jaw_before", "every", "fork", "push", "rounds", "forks", "level", "middle", "lift", "bones"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             },
@@ -4667,7 +4718,7 @@
             "tail", "hold_level", "stroke_decay", "branch_peak", "branch_hold", "branch_decay",
             "light_decay", "light", "muzzle_flare", "flare_edge", "flare_soft", "strike_flare",
             "strike_lift", "impact_sparks", "branch_tip", "branch_sparks", "power_share",
-            "prewarm_seconds", "breath", "thunder"
+            "prewarm_seconds", "breath", "thunder", "throat", "charge"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -5106,12 +5157,15 @@
           "additionalProperties": false
         },
         "night_clip_max": {"$ref": "#/$defs/num"},
-        "remesh_high_priority": {"$ref": "#/$defs/bool"}
+        "remesh_high_priority": {"$ref": "#/$defs/bool"},
+        "remesh_worker_mesh": {"$ref": "#/$defs/bool"},
+        "soft_smoke": {"$ref": "#/$defs/bool"},
+        "soft_smoke_m": {"$ref": "#/$defs/num"}
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
         "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
-        "remesh_high_priority"
+        "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

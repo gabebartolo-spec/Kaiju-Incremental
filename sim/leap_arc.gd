@@ -4,14 +4,18 @@ extends RefCounted
 ## he springs high over the street and comes down on top of the target building). One parabola from
 ## the street at take-off to `land_y` (the target's roof, or the street) whose top clears, by
 ## `clear`, every building the body passes over on the way (its discs' footprints, each disc's
-## bottom held above the roof), so the body never clips through a building in flight. Planned once
-## at the press from the standing city; Dash reads at(). Part of Dash; pure, no randomness.
+## bottom held above the roof), so the body never clips through a building in flight; a target
+## taken in its side (`carve`, D-361) is not cleared: the arc ends at its facade and the body
+## carves into it. Planned once at the press from the standing city; Dash reads at(). Part of
+## Dash; pure, no randomness.
 
 ## The height it lands at (world units above the street) and the top of the arc.
 var land_y := 0.0
 var top := 0.0
 ## Buildings the planned path still passes through at the arc's height (0 when it clears them all).
 var blocked := 0
+## The building the leap takes in its side (D-361), set before plan(); -1 for none.
+var carve := -1
 var _a := 0.0
 var _b := 0.0
 var _sim: RampageSim
@@ -30,7 +34,9 @@ func at(f: float) -> float:
 ## Plans the arc of a leap from `start` to `land` along `ahead` (kaiju_pos both; the body's discs at
 ## body scale 1), landing at `p_land_y`: samples the path every `step` units, then raises the top
 ## by `clear` at a time (at most `tries` times) until every sample clears what it passes over.
-## Buildings the body already overlaps at take-off are skipped (it stands among them).
+## Buildings the body already overlaps at take-off are skipped (it stands among them), and so is
+## `carve`, a building the leap takes in its side (D-361): the arc ends at its facade and the body
+## carves into it rather than clearing it.
 func plan(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vector4) -> void:
 	_discs = discs
 	var start := ends[0]
@@ -38,6 +44,8 @@ func plan(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vecto
 	land_y = numbers.x
 	var clear := numbers.y
 	var skip := _overlaps(start, ahead)
+	if carve >= 0:
+		skip[carve] = true
 	var span := start.distance_to(land)
 	var count := maxi(1, ceili(span / maxf(numbers.z, 0.01)))
 	var needs := PackedVector2Array()

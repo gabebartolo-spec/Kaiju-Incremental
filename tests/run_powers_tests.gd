@@ -8,6 +8,7 @@ extends "res://tests/lib/powers_base.gd"
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")
 const TurnWeight := preload("res://tests/lib/powers_turn_weight.gd")
 const Bolt := preload("res://tests/lib/powers_bolt.gd")
+const Lightning := preload("res://tests/lib/powers_lightning.gd")
 
 
 func suite_name() -> String:
@@ -20,6 +21,7 @@ func run_checks() -> void:
 	await _h("TailCity", func() -> void: TailCity.check(check))
 	await _h("TurnWeight", func() -> void: TurnWeight.check(check, _sim))
 	await _h("Bolt", func() -> void: Bolt.check(check))
+	await _h("Lightning", func() -> void: await Lightning.new(self, check).run())
 	await _t("_check_momentum")
 	await _t("_check_shear")
 	await _t("_check_beam")
