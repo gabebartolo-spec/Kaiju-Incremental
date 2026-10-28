@@ -115,7 +115,25 @@ static func map(cfg: Dictionary) -> Dictionary:
 	var alley_x: Dictionary = alleys["x"]
 	var alley_z: Dictionary = alleys["z"]
 	var index := {}
-	# x-lines (streets running along z), split at every crossing and where the diagonal crosses.
+	_lay_streets(plan, index, lines, [alley_x, alley_z], cfg)
+	_lay_diagonal(plan, index, diag, xs, zs, outer, cfg)
+	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
+	return plan
+
+
+## Every grid street, split at each crossing and where the diagonal crosses: x-lines (running
+## along z) first, then z-lines. alleys: [alley_x, alley_z].
+static func _lay_streets(
+	plan: Dictionary, index: Dictionary, lines: Dictionary, alleys: Array, cfg: Dictionary
+) -> void:
+	var xs: Array[float] = lines["xs"]
+	var zs: Array[float] = lines["zs"]
+	var outer := Num.f(cfg["outer_half"])
+	var diag: Dictionary = plan["diagonal"]
+	var avenues_x: Dictionary = lines["avenues_x"]
+	var avenues_z: Dictionary = lines["avenues_z"]
+	var alley_x: Dictionary = alleys[0]
+	var alley_z: Dictionary = alleys[1]
 	for i: int in xs.size():
 		var stops: Array[float] = []
 		stops.assign(zs)
@@ -142,7 +160,18 @@ static func map(cfg: Dictionary) -> Dictionary:
 			if alley_z.has(Vector2i(j, i)):
 				kind = ALLEY
 			_street(plan, index, Vector2(stops[k], zs[j]), Vector2(stops[k + 1], zs[j]), kind, cfg)
-	# The diagonal avenue, crossing to crossing.
+
+
+## The diagonal avenue, crossing to crossing.
+static func _lay_diagonal(
+	plan: Dictionary,
+	index: Dictionary,
+	diag: Dictionary,
+	xs: Array[float],
+	zs: Array[float],
+	outer: float,
+	cfg: Dictionary
+) -> void:
 	var along: Array[Vector2] = []
 	for x: float in xs:
 		var z := _diag_at_x(diag, x)
@@ -155,8 +184,6 @@ static func map(cfg: Dictionary) -> Dictionary:
 	along.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
-	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
-	return plan
 
 
 ## The diagonal avenue of cfg: {at, dir} (city.diagonal_through, city.diagonal_deg).

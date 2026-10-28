@@ -2,6 +2,18 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-311 · Director · Render plan items 10 and 11 build tonight, last in the plan
+Q (06:2x): items 10 (native collider rebuild, no freeze on big stomps) and 11 (no stutter when a tower starts to fall),
+parked until after the demo by D-094, build them tonight? A: "Yes, last in the plan (Recommended)". So: both go in
+after every other render-plan item, each proved by a D-299 speed check. Reverses D-094's "after demo exe 2" for these two.
+Correction (lead, 06:18, director away): not built. The question described both wrongly: the code they speed up (carve physics) runs only in a capture tool, never in the shipped game (checked on main b0fe3687; the baseline measured 0 ms there), so neither changes what the player sees. Back to him at the next interview (D-094 option A, full-game destruction, would bring them back).
+
+## 2026-10-27 · D-310 · Director · Parked work starts tonight, after the debt fixes
+Q (06:1x): work parked until the render plan is done (D-276: roads, play area, camera bubble, rubble, stomp rework,
+Tripo buildings), start it tonight? A: "yes, but not before the debt fixes". So: parked items start tonight once every
+D-295 debt row is done (merged), in the set order (roads #243, then play area #241, then intro #245, then the rest).
+Refines D-276.
+
 ## 2026-10-27 · D-309 · Director · Up to 1,000 more Tripo credits tonight, any task
 Q (06:1x): Tripo credits tonight? A: "Up to 1,000 more, any task". So: on top of D-297's vehicle budget (600, 260 used
 at 05:3x), up to 1,000 more credits may be spent tonight on any outstanding Tripo task (vehicles, buildings,
