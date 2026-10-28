@@ -19,6 +19,7 @@ const FLAT := 0.005  # the greatest height step two joined road pieces may have 
 const ZEBRA_SIZE := Vector2(0.3, 1.2)  # RoadPaint._zebra's stripe (across, along)
 const ZEBRA_OFF := 0.9  # RoadPaint.marks: a zebra's centre past the crossing's kerb line
 const STOP_REACH := 3.5  # a stop line's farthest centre past the junction box (a zebra's width counted)
+const SHORT_SPAN := 4.0  # R7: a road with a slanted end this many dash pitches long or less may be bare
 const PERPENDICULAR := 0.999  # |sin| of a crossing whose junction box an edge runs through
 
 
@@ -196,7 +197,10 @@ static func r7_markings(ground: RoadGround, paint: Array[Transform3D]) -> Array[
 			continue
 		var start: Vector2 = road["a"]
 		var gap := half + Num.f(rp["dash_clear"])
-		if Num.f(road["length"]) - 2.0 * gap > Num.f(rp["dash_pitch"]) and not centre.has(r):
+		var span := Num.f(road["length"]) - 2.0 * gap
+		# A short road between a slanted crossing's long mouth and the next is left bare.
+		var short := span < SHORT_SPAN * Num.f(rp["dash_pitch"]) and _slanted_end(ground, all, road, r)
+		if span > Num.f(rp["dash_pitch"]) and not short and not centre.has(r):
 			out.append(
 				"R7 %s at %s has no centre line" % [road["kind"], RoadGround.where(start)]
 			)
@@ -211,6 +215,17 @@ static func r7_markings(ground: RoadGround, paint: Array[Transform3D]) -> Array[
 					% [road["kind"], RoadGround.where(start), "first" if end == 0 else "last"]
 				)
 	return out
+
+## True when a road not square or parallel to road r meets it at either end.
+static func _slanted_end(ground: RoadGround, all: Dictionary, road: Dictionary, r: int) -> bool:
+	var own: Vector2 = ground.roads[r]["dir"]
+	for node: int in [Num.i(road["from"]), Num.i(road["to"])]:
+		for arm: Dictionary in all.get(node, []):
+			var other: Vector2 = arm["dir"]
+			var turn := absf(own.cross(other))
+			if turn > 0.01 and turn < PERPENDICULAR:
+				return true
+	return false
 
 
 ## True when a slanted road's asphalt lies where the stop line of road's `end` would be.
@@ -256,13 +271,20 @@ static func _stripe_fault(ground: RoadGround, stripe: Transform3D) -> String:
 	var c := Vector2(stripe.origin.x, stripe.origin.z)
 	var long := Vector2(stripe.basis.z.x, stripe.basis.z.z) * 0.5
 	var wide := Vector2(stripe.basis.x.x, stripe.basis.x.z) * 0.5
+	var stop := false  # a stop line: square across the road under its middle
+	for r: int in ground.roads_at(c, -1.0):
+		var under: Vector2 = ground.roads[r]["dir"]
+		stop = stop or absf(under.cross(long.normalized())) >= PERPENDICULAR
 	for corner: Vector2 in [c + long + wide, c + long - wide, c - long + wide, c - long - wide]:
 		var under: Dictionary = ground.at(corner)
 		if not str(under["kind"]) in [RoadGround.ROAD, RoadGround.DECK]:
 			return "R5 paint off the road at %s (on %s)" % [RoadGround.where(corner), under["kind"]]
 		for r: int in ground.roads_at(corner, -1.0):
 			var dir: Vector2 = ground.roads[r]["dir"]
-			if absf(dir.cross(long.normalized())) > 1.0 - PERPENDICULAR:
+			var turn := absf(dir.cross(long.normalized()))
+			# A stop line lies square across its own road, so only a road not square to it is a fault.
+			var bad := turn < PERPENDICULAR if stop else turn > 1.0 - PERPENDICULAR
+			if bad:
 				return (
 					"R5 paint inside the junction at %s (a stripe %s, on the %s's asphalt)"
 					% [RoadGround.where(corner), RoadGround.where(c), ground.roads[r]["kind"]]

@@ -3,13 +3,16 @@ extends RefCounted
 ## CityGround's road paint (split out to keep files small, D-159): quiet marks readable from the
 ## kaiju's height, kept clear of every crossing (roads suite R5) and zebras only at the central
 ## junction (D-054). Presentation only: transforms of the paint boxes, which CityGround draws.
+## Every number is city.road_paint in data/tuning.json.
 
-const DASH_CLEAR := 2.5  # dashes stop this far short of a crossing road's asphalt
+const PERPENDICULAR := 0.999  # |sin| of a crossing square to the road (roads suite R5)
+const ZEBRA_OFF := 0.9  # a zebra's centre past the crossing's kerb line
 const ZEBRA_HALF := 0.6  # half a zebra stripe's length
 const DASH_SLANT := 0.01  # |sin| below which a road runs on rather than crosses
 
 var plan: Dictionary
 var cfg: Dictionary
+var rp: Dictionary  # city.road_paint
 var coast: float
 var paint: Array[Transform3D] = []
 
@@ -17,49 +20,121 @@ var paint: Array[Transform3D] = []
 func _init(p_plan: Dictionary, p_cfg: Dictionary, p_coast: float) -> void:
 	plan = p_plan
 	cfg = p_cfg
+	rp = p_cfg["road_paint"]
 	coast = p_coast
 
 
-## Quiet road paint, readable from the kaiju's height: a dashed centre line on the avenues and
-## the diagonal, and zebra crossings (one per arm) only at the few junctions where two avenues
-## cross nearest the city centre (city.zebra_junctions). Nothing else gets crossings.
+## Road paint by real marking logic (D-248, D-054), readable from the kaiju's height, on every
+## road the plan lays that is wide enough for two lanes (road_paint.two_lane_min): a dashed
+## centre line on a street, a double solid one on a wider road, lane dashes and edge lines on a
+## road with more than one lane each way, and a stop line across the approaching lane where a
+## road meets a crossing one. Alleys get none; zebras (one per arm) only at the few junctions
+## where two avenues cross nearest the city centre (city.zebra_junctions).
 func marks() -> Array[Transform3D]:
 	var nodes: Array[Vector2] = plan["nodes"]
-	var reach := Num.f(cfg["half"]) + Num.f(cfg["markings_beyond"])
 	var zebras := zebra_junctions()
 	var crossing := _crossings()
 	paint.clear()
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
-		if kind == CityGen.ALLEY:
+		var width := Num.f(street["width"])
+		if kind == CityGen.ALLEY or width < Num.f(rp["two_lane_min"]):
 			continue
 		var ends: Array[int] = [Num.i(street["from"]), Num.i(street["to"])]
 		var a := nodes[ends[0]]
 		var b := nodes[ends[1]]
-		if maxf(maxf(absf(a.x), absf(a.y)), maxf(absf(b.x), absf(b.y))) > reach:
-			continue
 		if minf(a.y, b.y) < coast:
 			continue
 		var dir := (b - a).normalized()
-		var width := Num.f(street["width"])
-		var length := a.distance_to(b)
-		if kind != CityGen.STREET:
-			var lift := (
-				CityGround.DIAG_TOP + CityGround.PAINT
-				if kind == CityGen.DIAGONAL
-				else CityGround.PAINT
-			)
-			_dashes(a, dir * length, width, [lift, _near_crossings(crossing, ends, dir)])
+		var near := _near_crossings(crossing, ends, dir)
+		var lift := CityGround.PAINT
+		if kind == CityGen.DIAGONAL:
+			lift += CityGround.DIAG_TOP
+		_road_lines(a, dir, a.distance_to(b), width, [lift, near])
 		if kind == CityGen.DIAGONAL:
 			continue
 		for i: int in 2:
-			if zebras.has(ends[i]):
-				var toward := dir if i == 0 else -dir
-				var clear := _near_crossings(crossing, ends, dir).filter(
-					func(road: Array) -> bool: return not nodes[ends[i]] in [road[0], road[1]]
-				)
-				_zebra(nodes[ends[i]] + toward * (width * 0.5 + 0.9), toward, width, clear)
+			var toward := dir if i == 0 else -dir
+			_junction_end(nodes[ends[i]], toward, width, [crossing, near, ends[i]], zebras)
 	return paint
+
+
+## The paint at one end of a road, at `at` (node join[2]): a stop line, and a zebra at the zebra
+## junctions. `toward` runs from the node along the road; join = [crossing, near, node].
+func _junction_end(
+	at: Vector2, toward: Vector2, width: float, join: Array, zebras: Dictionary
+) -> void:
+	var crossing: Dictionary = join[0]
+	var near: Array = join[1]
+	var node: int = join[2]
+	var box := box_of(crossing, node, toward)
+	var zebra := zebras.has(node)
+	if box > 0.0:
+		_stop_line(at, toward, width, box + (ZEBRA_OFF + ZEBRA_HALF if zebra else 0.0), near)
+	if zebra:
+		var clear := near.filter(func(road: Array) -> bool: return not at in [road[0], road[1]])
+		_zebra(at + toward * (width * 0.5 + ZEBRA_OFF), toward, width, clear)
+
+
+## How far the junction box at `node` reaches along a road running `dir` into it: the half width
+## of the widest road crossing it square (0 when none: a slanted crossing is laid over everything).
+func box_of(crossing: Dictionary, node: int, dir: Vector2) -> float:
+	var out := 0.0
+	for road: Array in crossing.get(node, []):
+		var p0: Vector2 = road[0]
+		var p1: Vector2 = road[1]
+		if absf((p1 - p0).normalized().cross(dir)) >= PERPENDICULAR:
+			out = maxf(out, Num.f(road[2]))
+	return out
+
+
+## The lines down a road from a along dir: the centre line, then lane dashes and edge lines when
+## there is more than one lane each way. style = [height, crossing roads to keep clear of].
+func _road_lines(a: Vector2, dir: Vector2, length: float, width: float, style: Array) -> void:
+	var side := Vector2(-dir.y, dir.x)
+	var lanes := floori(width / (2.0 * Num.f(rp["lane_width"])))
+	if width >= Num.f(rp["double_min"]):
+		for s: float in [-1.0, 1.0]:
+			_solid(a + side * s * Num.f(rp["double_gap"]) * 0.5, dir, length, width, style)
+	else:
+		_dashes(a, dir, length, width, style)
+	for k: int in range(1, lanes):
+		for s: float in [-1.0, 1.0]:
+			var off := side * s * (width * 0.5 * float(k) / float(lanes))
+			_dashes(a + off, dir, length, width, style)
+	if lanes > 1:
+		for s: float in [-1.0, 1.0]:
+			var edge := width * 0.5 - Num.f(rp["edge_inset"])
+			_solid(a + side * s * edge, dir, length, width, style)
+
+
+## A stop line across the lane approaching `node` along an arm running `toward` from it (the
+## driver's right-hand lane), just outside the junction box and `extra` past it; none when it
+## would reach a slanted crossing's asphalt.
+func _stop_line(node: Vector2, toward: Vector2, width: float, extra: float, near: Array) -> void:
+	var inset := Num.f(rp["stop_inset"])
+	var long := width * 0.5 - inset - Num.f(rp["edge_inset"])
+	var side := Vector2(toward.y, -toward.x)
+	var thick := Num.f(rp["stop_width"])
+	var at := node + toward * (extra + Num.f(rp["stop_gap"]) + thick * 0.5)
+	var mid := at + side * (inset + long * 0.5)
+	for end: float in [-1.0, 1.0]:
+		for ahead: float in [-1.0, 1.0]:
+			var corner := mid + side * long * 0.5 * end + toward * thick * 0.5 * ahead
+			if _on_crossing(corner, near, 0.0):
+				return
+	_stripe(mid, side, thick, long, CityGround.PAINT)
+
+
+## One painted box centred on p, its length along `along`.
+func _stripe(p: Vector2, along: Vector2, wide: float, length: float, y: float) -> void:
+	var angle := -along.angle() + PI * 0.5
+	paint.append(
+		Transform3D(
+			Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(wide, 0.04, length)),
+			Vector3(p.x, y, p.y)
+		)
+	)
 
 
 ## The junctions that get zebra crossings: where an avenue along x meets one along z, nearest
@@ -138,7 +213,7 @@ static func _node_at(nodes: Array[Vector2], p: Vector2) -> int:
 
 ## True when p lies on the asphalt of one of `roads` ([from, to, half]), reaching into its
 ## crossings, or within `margin` of it.
-static func _on_crossing(p: Vector2, roads: Array, margin: float = DASH_CLEAR) -> bool:
+static func _on_crossing(p: Vector2, roads: Array, margin: float) -> bool:
 	for road: Array in roads:
 		var a: Vector2 = road[0]
 		var b: Vector2 = road[1]
@@ -150,28 +225,40 @@ static func _on_crossing(p: Vector2, roads: Array, margin: float = DASH_CLEAR) -
 	return false
 
 
-## Dashes down the centre line from a along `span` (direction times length), at height
-## style[0], none in or near a crossing: within half the road's width plus DASH_CLEAR of either
+## Dashes along a line from a (a road's, or parallel to it) in direction dir, at height
+## style[0], none in or near a crossing: within half the road's width plus dash_clear of either
 ## end, or near the asphalt of the roads in style[1] (_near_crossings).
-func _dashes(a: Vector2, span: Vector2, width: float, style: Array) -> void:
-	var dir := span.normalized()
-	var length := span.length()
-	var angle := -dir.angle() + PI * 0.5
+func _dashes(a: Vector2, dir: Vector2, length: float, width: float, style: Array) -> void:
 	var y := Num.f(style[0])
 	var near: Array = style[1]
-	var gap := width * 0.5 + DASH_CLEAR  # none in or near the crossings
-	var t := gap
-	while t < length - gap:
+	var clear := Num.f(rp["dash_clear"])
+	var t := width * 0.5 + clear
+	while t < length - width * 0.5 - clear:
 		var p := a + dir * t
-		t += 3.0
-		if _on_crossing(p, near):
-			continue
-		paint.append(
-			Transform3D(
-				Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(0.12, 0.04, 0.9)),
-				Vector3(p.x, y, p.y)
-			)
-		)
+		t += Num.f(rp["dash_pitch"])
+		if not _on_crossing(p, near, clear):
+			_stripe(p, dir, Num.f(rp["line_width"]), Num.f(rp["dash_length"]), y)
+
+
+## A solid line along the same span, in the stretches clear of every crossing.
+func _solid(a: Vector2, dir: Vector2, length: float, width: float, style: Array) -> void:
+	var y := Num.f(style[0])
+	var near: Array = style[1]
+	var clear := Num.f(rp["dash_clear"])
+	var step := Num.f(rp["solid_step"])
+	var last := length - width * 0.5 - clear
+	var from := -1.0
+	var t := width * 0.5 + clear
+	while t <= last + 0.0001:
+		var open := not _on_crossing(a + dir * t, near, clear)
+		if open and from < 0.0:
+			from = t
+		if from >= 0.0 and (not open or t + step > last):
+			var to := t if open else t - step
+			if to > from:
+				_stripe(a + dir * (from + to) * 0.5, dir, Num.f(rp["line_width"]), to - from, y)
+			from = -1.0
+		t += step
 
 
 ## A zebra crossing over a road `width` wide, its stripes along `along` centred on `at`; none where
