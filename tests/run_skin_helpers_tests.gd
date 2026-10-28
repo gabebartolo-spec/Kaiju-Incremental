@@ -53,7 +53,13 @@ func _check_colossus_has_helpers() -> void:
 		check(posed == rig_bones + COLOSSUS_HELPERS, "every frame poses each rig bone and helper")
 		var finite := true
 		for m: Projection in skin.pose:
-			finite = finite and m.x.is_finite() and m.y.is_finite() and m.z.is_finite() and m.w.is_finite()
+			finite = (
+				finite
+				and m.x.is_finite()
+				and m.y.is_finite()
+				and m.z.is_finite()
+				and m.w.is_finite()
+			)
 		check(finite, "every helper pose is finite while the Colossus walks")
 	kaiju.queue_free()
 
@@ -68,7 +74,9 @@ func _check_reference_maths() -> void:
 		Vector3(0.408222, 0.657833, 0.632938),
 		Vector3(0.392176, -0.752474, 0.529132)
 	)
-	var want := {1: Vector3(-0.134586, -0.856861, 1.362362), 0: Vector3(-0.053419, -0.9859, 1.381531)}
+	var want := {
+		1: Vector3(-0.134586, -0.856861, 1.362362), 0: Vector3(-0.053419, -0.9859, 1.381531)
+	}
 	for grow: int in want:
 		var got := _one(grow).helper(a, b, 0)
 		check(_near(got.basis, want_basis), "helper turn matches the reference (grow %d)" % grow)

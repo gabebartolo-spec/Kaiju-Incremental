@@ -91,7 +91,11 @@ static func load_for(rig: KaijuRig, base: String) -> VoxelSkin:
 	var count_bones := raw.decode_u16(16)
 	var helpers := VoxelSkinHelpers.read(raw, _filler_end(raw))
 	var rig_bones := count_bones - helpers.count
-	if rig_bones != rig.bone_names().size() or count_bones > MAX_BONES or not helpers.fits(rig_bones):
+	if (
+		rig_bones != rig.bone_names().size()
+		or count_bones > MAX_BONES
+		or not helpers.fits(rig_bones)
+	):
 		push_warning(
 			"VoxelSkin: %s is stale (bones changed): rerun tools/kaiju_skin/bake_all.sh" % path
 		)
