@@ -132,6 +132,8 @@ static func _lay_streets(
 	var diag: Dictionary = plan["diagonal"]
 	var avenues_x: Dictionary = lines["avenues_x"]
 	var avenues_z: Dictionary = lines["avenues_z"]
+	var alley_x: Dictionary = alleys[0]
+	var alley_z: Dictionary = alleys[1]
 	for i: int in xs.size():
 		var stops: Array[float] = []
 		stops.assign(zs)
@@ -142,7 +144,7 @@ static func _lay_streets(
 		for k: int in stops.size() - 1:
 			var j := _cell(zs, (stops[k] + stops[k + 1]) * 0.5)
 			var kind := AVENUE if avenues_x.has(i) else STREET
-			if alleys[0].has(Vector2i(i, j)):
+			if alley_x.has(Vector2i(i, j)):
 				kind = ALLEY
 			_street(plan, index, Vector2(xs[i], stops[k]), Vector2(xs[i], stops[k + 1]), kind, cfg)
 	for j: int in zs.size():
@@ -155,7 +157,7 @@ static func _lay_streets(
 		for k: int in stops.size() - 1:
 			var i := _cell(xs, (stops[k] + stops[k + 1]) * 0.5)
 			var kind := AVENUE if avenues_z.has(j) else STREET
-			if alleys[1].has(Vector2i(j, i)):
+			if alley_z.has(Vector2i(j, i)):
 				kind = ALLEY
 			_street(plan, index, Vector2(stops[k], zs[j]), Vector2(stops[k + 1], zs[j]), kind, cfg)
 
