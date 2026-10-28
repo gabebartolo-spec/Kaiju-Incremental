@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-28 · D-371 · Director · The "never touch" rules on Dracorex, Defender and his Cascadeur tabs are removed
+His words (10-28 ~17:0x): "i never made these rules. i dont even know what they are, you can remove the rules". The
+"never open, edit or save the Dracorex file", "never touch Defender" and "never touch his Cascadeur tabs" lines were
+agent-added on top of D-305, D-318 and D-320. Removed: agents treat the Dracorex sample and the open Cascadeur tabs
+like any other file and tab. D-318 and D-320 stay only as the record of what he answered. Method lessons stay (tabs
+in batches of 5, probes never switch scene: they prevent crashes). Claude still cannot change Windows security
+settings itself (its own tool limit, not his rule).
+
 ## 2026-10-28 · D-370 · Director · Ruleset after the rule audit
 Rule audit 10-28; his picks, each the recommended option except roadmap. Decision log: a decision goes into
 DECISIONS.md in the PR that acts on it, the lead owns the wording; log-only updates ride in the lead's next PR (main
@@ -380,15 +388,3 @@ Q (06:1x): work parked until the render plan is done (D-276: roads, play area, c
 Tripo buildings), start it tonight? A: "yes, but not before the debt fixes". So: parked items start tonight once every
 D-295 debt row is done (merged), in the set order (roads #243, then play area #241, then intro #245, then the rest).
 Refines D-276.
-
-## 2026-10-27 · D-309 · Director · Up to 1,000 more Tripo credits tonight, any task
-Q (06:1x): Tripo credits tonight? A: "Up to 1,000 more, any task". So: on top of D-297's vehicle budget (600, 260 used
-at 05:3x), up to 1,000 more credits may be spent tonight on any outstanding Tripo task (vehicles, buildings,
-beachfront). Every task id, credits and verdict logged in the provenance file; Private on every generation.
-
-## 2026-10-27 · D-308 · Director · Night shift: visual changes go into the game; he judges them next morning
-His words (06:1x, before sleeping): "any visual work is fine but after the first iteration save it and show me in
-interview tomorrow". Q: should visual changes made tonight go into the game before he has seen them? A: "In the game,
-you judge tomorrow (Recommended)". So: tonight's visual PRs merge on by default after one iteration; each keeps a saved
-1080p clip or 4K still in C:/kt/interview_2026-10-27/ for the morning interview; anything he rejects is reverted. No
-second visual rounds without him. Overrides, for this night only, the director look gate on merges.
