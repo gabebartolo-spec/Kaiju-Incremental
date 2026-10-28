@@ -29,6 +29,8 @@ var salt: int
 var noise: float
 ## Per cell, the palette index it draws with: its material id, or LIT/SHOP_LIT.
 var looks: PackedByteArray
+## Grid indices of the cells the view never draws (drawn()): a balcony floor proud of the walls.
+var hidden := PackedInt32Array()
 ## Look id -> colour (sRGB; alpha 0 = glows), 256 entries.
 var palette: PackedColorArray
 ## The native mesher when the extension is loaded (null: the GDScript path).
@@ -60,22 +62,8 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 	salt = voxels.b.style
 	noise = Look.value("color_noise")
 	origin = voxels.origin() + Vector3(0, voxel * 0.5, 0) + Vector3(offset) * voxel
-	palette = PackedColorArray()
-	palette.resize(256)
-	palette.fill(Color.MAGENTA)
-	for m: Dictionary in Content.materials():
-		palette[Num.i(m["id"])] = voxels.palette.get(str(m["name"]), Color.MAGENTA)
-	palette[LIT] = voxels.palette["lit"]
-	palette[SHOP_LIT] = voxels.palette["shop_lit"]
-	looks = cells.cells.duplicate()
-	for i: int in looks.size():
-		if looks[i] == 0:
-			continue
-		var key := voxels.vox.key_at(_local(i))
-		if key == "lit":
-			looks[i] = LIT
-		elif key == "shop_lit":
-			looks[i] = SHOP_LIT
+	_fill_palette(voxels)
+	_read_looks(voxels, cells)
 	var half := voxel * 0.5
 	for d: Vector3i in NEIGHBOURS:
 		var nf := Vector3(d)
@@ -87,11 +75,58 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 		_rings.append(VoxelAO.ring_of(d))
 	finish = VoxelAO.finish_by_look(LIT, SHOP_LIT)
 	if use_native and ClassDB.class_exists("KaijuMesher"):
-		native = ClassDB.instantiate("KaijuMesher")
-		native.call("setup", dims, offset, origin, voxel, salt, noise, looks, palette)
-		# A library older than item 12 has no AO: the oracle draws instead.
-		if not native.has_method("set_finish") or not native.call("set_finish", finish):
-			native = null
+		_start_native()
+
+
+## Look id -> colour: each material's from the building's palette, and the two lit looks.
+func _fill_palette(voxels: BuildingVoxels) -> void:
+	palette = PackedColorArray()
+	palette.resize(256)
+	palette.fill(Color.MAGENTA)
+	for m: Dictionary in Content.materials():
+		palette[Num.i(m["id"])] = voxels.palette.get(str(m["name"]), Color.MAGENTA)
+	palette[LIT] = voxels.palette["lit"]
+	palette[SHOP_LIT] = voxels.palette["shop_lit"]
+
+
+## Each cell's look (its material, or a lit window's), and the balcony floors proud of the walls
+## the view never draws (hidden).
+func _read_looks(voxels: BuildingVoxels, cells: CellGrid) -> void:
+	looks = cells.cells.duplicate()
+	var foot := Rect2i(Vector2i.ZERO, Vector2i(voxels.b.w, voxels.b.d) * BuildingVoxels.RES)
+	for i: int in looks.size():
+		if looks[i] == 0:
+			continue
+		var local := _local(i)
+		var key := voxels.vox.key_at(local)
+		if key == "lit":
+			looks[i] = LIT
+		elif key == "shop_lit":
+			looks[i] = SHOP_LIT
+		elif key == "slab" and not foot.has_point(Vector2i(local.x, local.z)):
+			hidden.append(i)
+
+
+## The native mesher, set up as this one; a library older than item 12 has no AO, so the oracle
+## draws instead (native stays null).
+func _start_native() -> void:
+	native = ClassDB.instantiate("KaijuMesher")
+	native.call("setup", dims, offset, origin, voxel, salt, noise, looks, palette)
+	if not native.has_method("set_finish") or not native.call("set_finish", finish):
+		native = null
+
+
+## The grid as the view draws it: `cells` with the hidden cells as air. A slab proud of the walls
+## (a balcony floor) is in neither of the baked view's meshes (D-289), so promotion must not pop
+## it in; the sim still holds it, and the wall behind it draws its own face, as the baked shell's
+## does.
+func drawn(cells: PackedByteArray) -> PackedByteArray:
+	if hidden.is_empty():
+		return cells
+	var out := cells.duplicate()
+	for i: int in hidden:
+		out[i] = 0
+	return out
 
 
 ## Regions along each axis.
