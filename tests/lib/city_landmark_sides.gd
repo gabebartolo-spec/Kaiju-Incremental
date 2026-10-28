@@ -103,7 +103,8 @@ static func check_without(check_fn: Callable) -> void:
 			city["map_seed"] = map_seed
 			city["landmarks"] = []
 			var tuning := CityGrowth.tuning_for(base, tier)
-			var plan := CityGen.map(tuning["city"])
+			var cfg: Dictionary = tuning["city"]
+			var plan := CityGen.map(cfg)
 			var layout := CityGrowth.layout(base, tier, Seeds.make("city", 0))
 			var sites: Array = plan.get("sites", [])
 			var spawn: Vector2 = plan.get("rise_spawn", Vector2.INF)

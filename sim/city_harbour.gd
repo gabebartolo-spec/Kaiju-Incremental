@@ -84,23 +84,8 @@ static func _cut(plan: Dictionary, street: Dictionary, water: Array[Rect2]) -> A
 	var a := nodes[Num.i(street["from"])]
 	var b := nodes[Num.i(street["to"])]
 	var width := Num.f(street["width"])
-	var half := width * 0.5
-	var axis := -1
-	if absf(a.x - b.x) < 0.001:
-		axis = 1
-	elif absf(a.y - b.y) < 0.001:
-		axis = 0
-	var road := Rect2(a.min(b), (b - a).abs())
-	if axis == 1:
-		road = road.grow_individual(half, 0.0, half, 0.0)  # its carriageway, not past its ends
-	elif axis == 0:
-		road = road.grow_individual(0.0, half, 0.0, half)
-	else:
-		road = road.grow(half)
-	var wet: Array[Rect2] = []
-	for w: Rect2 in water:
-		if w.intersects(road):
-			wet.append(w)
+	var axis := _axis(a, b)
+	var wet := _wet(_carriageway(a, b, width * 0.5, axis), water)
 	if wet.is_empty():
 		return [street]
 	if axis < 0:
@@ -128,6 +113,35 @@ static func _cut(plan: Dictionary, street: Dictionary, water: Array[Rect2]) -> A
 		var start := p1
 		start[axis] = hi
 		out.append(_piece(plan, street, start, p1))
+	return out
+
+
+## 1 for a north-south street a-b, 0 for an east-west one, -1 for any other (the diagonal).
+static func _axis(a: Vector2, b: Vector2) -> int:
+	if absf(a.x - b.x) < 0.001:
+		return 1
+	if absf(a.y - b.y) < 0.001:
+		return 0
+	return -1
+
+
+## The asphalt of street a-b, `half` each side of its line (not past its ends, but for the
+## diagonal).
+static func _carriageway(a: Vector2, b: Vector2, half: float, axis: int) -> Rect2:
+	var road := Rect2(a.min(b), (b - a).abs())
+	if axis == 1:
+		return road.grow_individual(half, 0.0, half, 0.0)
+	if axis == 0:
+		return road.grow_individual(0.0, half, 0.0, half)
+	return road.grow(half)
+
+
+## The bands of `water` that reach `road`.
+static func _wet(road: Rect2, water: Array[Rect2]) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for w: Rect2 in water:
+		if w.intersects(road):
+			out.append(w)
 	return out
 
 
