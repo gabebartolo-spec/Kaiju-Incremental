@@ -49,8 +49,11 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		waited += DT
 		clock_held = clock_held and (emerged > 0 or sim.time_left == clock)
 	var landed := sim.clamp_to_arena(sim.kaiju_pos) == sim.kaiju_pos and sim.stand_y == 0.0
-	for rect: Rect2 in wet:
+	# Out of the water: the river's blocks, and the bay's water by its true curve (the bank is on
+	# the sand inside the bay's rect, so the rect alone would count it wet).
+	for rect: Rect2 in rivers:
 		landed = landed and not rect.has_point(sim.kaiju_pos)
+	landed = landed and not CityHarbour.holds(plan, sim.kaiju_pos)
 	(
 		check_fn
 		. call(

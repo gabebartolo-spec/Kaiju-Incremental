@@ -398,3 +398,9 @@ file name (never overwrite his file), then restart Cascadeur and reopen the copy
 ## 2026-10-27 · D-317 · Director · Tonight: keep the 6 GB memory floor, drop the 85% CPU cap
 Q: the PC rule (nothing new under 6 GB free RAM or above 85% CPU), tonight? A: "Keep memory floor, drop CPU cap
 (Recommended)". So: the RAM floor (freeze guard) stays; the CPU cap is off for the night shift.
+
+## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
+Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
+row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
+Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
+Stadium-driven tests (flow, crowd) play the stage-2 city.

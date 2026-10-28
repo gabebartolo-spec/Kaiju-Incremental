@@ -24,7 +24,7 @@ const PARTS: Array[String] = ["hull", "turret", "barrel"]
 const CLIP_SPAWN := 44.0
 ## Where the kaiju stands: a crossing at the north end of the Behemoth city (the same spot as
 ## round 3's clip, so the critic compares like with like).
-const CLIP_AT := Vector2(5, -70)
+const CLIP_AT := Vector2(5, -50)  # south of the stage-2 bay's coast road (z -62, D-377)
 ## Mid-clip the kaiju strides east down the avenue at the tanks posted there (physics frames),
 ## so the take shows them fall back out of its reach and post again.
 const WALK_FRAMES := Vector2i(540, 780)

@@ -146,6 +146,7 @@ func _view_run(run: int) -> Dictionary:
 	await physics_frame
 	while rampage.sim.emerge.active:  # the river rise holds the sim back (D-083)
 		await physics_frame
+	rampage.sim.kaiju_pos = Clip.CLIP_AT  # the rise lands it on the bay's bank; the clip is inland
 	_clip_overrides(rampage.sim)
 	var roads := _roads(rampage.sim)
 	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0, "closest": INF, "on_car": 0}

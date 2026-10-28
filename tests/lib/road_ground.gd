@@ -24,6 +24,7 @@ const LAWN_RISE := 0.02  # CityGround: the lawn over the pavement
 const LOT_RISE := 0.01  # CityGround: the car park over the pavement
 const DECK_TOP := 0.001  # CityGround: a deck's top, level with the land
 const LAND_TOP := 0.001  # CityGround: the asphalt land's top
+const QUAY_RISE := 0.3  # CityGround._harbour: a bay quay's deck over the pavement
 
 var plan: Dictionary
 var cfg: Dictionary
@@ -65,6 +66,16 @@ func at(p: Vector2) -> Dictionary:
 	for w: Rect2 in water:
 		if w.has_point(p):
 			return _is(WATER, -Num.f(cfg.get("river_depth", 0.0)))
+	# The sea bay (CityGround._harbour): a raised quay deck down each side, the promenade's
+	# pavement at its city end, its water and sand between them.
+	for quay: Rect2 in HarbourView.quays(plan):
+		if quay.has_point(p):
+			return _is(PAVE, CityGround.PAVE_TOP + QUAY_RISE)
+	for bay: Rect2 in CityHarbour.basin(plan):
+		if bay.has_point(p):
+			if HarbourView.promenade(plan, cfg).has_point(p):
+				return _is(PAVE, CityGround.PAVE_TOP)
+			return _is(WATER, CityHarbour.sea(cfg))
 	var block := _block_at(p)
 	if block >= 0:
 		return _paving(_blocks[block], p)

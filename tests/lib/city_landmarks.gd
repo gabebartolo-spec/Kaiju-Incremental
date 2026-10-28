@@ -164,9 +164,9 @@ func _arcs() -> void:
 	)
 
 
-## Landmark sites (city.landmarks): on the shipping map the stadium and the wheel both stand in
-## the first city (the wheel past the edge, in the real band the camera shows, CityBand:
-## build 2 note 6) and at the Behemoth, each centred on its own plaza of merged
+## Landmark sites (city.landmarks, fixed spots whose landmark rotates): on the shipping map the
+## east spot's landmark stands in the first city (past the edge, in the real band the camera
+## shows, CityBand: build 2 note 6) and both spots' at the Behemoth, each centred on its own plaza of merged
 ## blocks: no street runs through a site, the landmark fits inside its kerbs, and no other
 ## building touches it.
 func _sites() -> void:
@@ -199,7 +199,15 @@ func _sites() -> void:
 				if other != e and _footprint(other).intersects(foot):
 					touching += 1
 		ids.sort()
-		var want: Array[String] = ["stadium", "wheel"]
+		# By spot, not by landmark: the spots are fixed, the landmark in each rotates (director
+		# 2026-10-29). Stage 1 shows the east spot only (the west one sits south of the river row,
+		# ~0.5 m past the baby's band); both from the Behemoth (lead call A, director "idc").
+		var want: Array[String] = []
+		for spec: Dictionary in Content.section("city")["landmarks"]:
+			var east := Num.f(spec["anchor"][0]) > 0.0
+			if tier > 1 or east:
+				want.append(str(spec["id"]))
+		want.sort()
 		(
 			_check
 			. call(

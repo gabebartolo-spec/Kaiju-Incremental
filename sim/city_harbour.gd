@@ -69,11 +69,13 @@ static func pins(cfg: Dictionary) -> Dictionary:
 	return {"x": xs, "z": zs}
 
 
-## True when the street from a to b runs inside the bay (its middle strictly within plan["bay"]):
+## True when the street from a to b enters the bay (any part strictly within plan["bay"]):
 ## it is never laid. The bay's own side streets and coast road lie on its edge and are laid.
 static func inside(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var bay: Rect2 = plan.get("bay", Rect2())
-	return bay.has_area() and bay.grow(-0.01).has_point((a + b) * 0.5)
+	# Any part of the line inside (not only its middle): a long segment can cross the bay's corner
+	# with its middle outside. Streets along the bay's edge stay (the -0.01 inset).
+	return bay.has_area() and bay.grow(-0.01).intersects(Rect2(a.min(b), (b - a).abs()), true)
 
 
 ## True when the street from a to b lies on the bay's edge or inside it (CityAlleys: never an
@@ -81,6 +83,19 @@ static func inside(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
 static func touches(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var bay: Rect2 = plan.get("bay", Rect2())
 	return bay.has_area() and bay.grow(0.01).has_point((a + b) * 0.5)
+
+
+## touches() for every stage's bay (CityAlleys: a line that edges a bay at any stage is a street
+## with a pavement at every stage, so the young city's blocks keep their kerbs as it grows).
+static func touches_any(cfg: Dictionary, a: Vector2, b: Vector2) -> bool:
+	if not cfg.has("harbour"):
+		return false
+	var top := -Num.f(cfg["outer_half"]) - 1.0
+	for at: Array in cfg["harbour"]["bays"]:
+		var half := Num.f(at[0])
+		if Rect2(-half, top, half * 2.0, Num.f(at[1]) - top).grow(0.01).has_point((a + b) * 0.5):
+			return true
+	return false
 
 
 ## True when grid cell (i, j) lies in the bay (its centre inside plan["bay"]).
