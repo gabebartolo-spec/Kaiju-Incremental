@@ -632,9 +632,12 @@
 		"rough_near": 0.06,
 		"rough_far": 0.22,
 		"specular": 0.8,
-		"crest_light": 0.2,
-		"river": {"wave_length": 4.0, "wave_slope": 0.08, "ripple_length": 0.8, "ripple_slope": 0.1, "flow": 0.6, "swell_length": 0.0, "swell_slope": 0.0},
-		"bay": {"wave_length": 9.0, "wave_slope": 0.1, "ripple_length": 1.1, "ripple_slope": 0.1, "flow": 0.0, "swell_length": 38.0, "swell_slope": 0.035}
+		"crest_light": 0.35,
+		"mottle_length": 3.0,
+		"mottle_amp": 0.3,
+		"night_glow": 1.0,
+		"river": {"wave_length": 4.0, "wave_slope": 0.2, "ripple_length": 0.8, "ripple_slope": 0.18, "flow": 0.6, "swell_length": 0.0, "swell_slope": 0.0},
+		"bay": {"wave_length": 9.0, "wave_slope": 0.2, "ripple_length": 1.1, "ripple_slope": 0.18, "flow": 0.0, "swell_length": 38.0, "swell_slope": 0.035}
 	},
 	"city": {
 		"map_seed": 7301,

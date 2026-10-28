@@ -56,6 +56,10 @@ static func material(rect: Rect2, deep: Color, bay: bool, seed: int) -> ShaderMa
 		mat.set_shader_parameter(key, Num.f(cfg[key]))
 	mat.set_shader_parameter("spec", Num.f(cfg["specular"]))
 	mat.set_shader_parameter("crest_light", Num.f(cfg["crest_light"]))
+	for key: String in ["mottle_length", "mottle_amp", "night_glow"]:
+		mat.set_shader_parameter(key, Num.f(cfg[key]))
+	mat.set_shader_parameter("sky_color", Look.color("ambient_color"))
+	mat.set_shader_parameter("night", Look.value("window_lit"))
 	for key: String in ["wave_length", "wave_slope", "ripple_length", "ripple_slope"]:
 		mat.set_shader_parameter(key, Num.f(kind[key]))
 	mat.set_shader_parameter("swell_length", Num.f(kind.get("swell_length", 0.0)))
