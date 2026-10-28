@@ -2,7 +2,7 @@
 
 Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest first. A decision
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
-changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
+changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
 ## 2026-10-28 · D-369 · Director · No cap on open PRs
 Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.

@@ -1,7 +1,7 @@
 # Kaiju Incremental: working rules for every Claude Code session
 
-Godot 4.7.2, GDScript (static typing on). Read this file, then `docs/DESIGN.md` in full (the one design document),
-then your handoff (`~/.claude/handoffs/kaiju/<role>.md`, outside git), then only your assigned `docs/ROADMAP.md` section (never whole).
+Godot 4.7.2, GDScript (static typing on). Read this file, your handoff (`~/.claude/handoffs/kaiju/<role>.md`, outside git), the skill(s) you apply, and the
+`docs/DESIGN.md` and `docs/ROADMAP.md` sections your task changes or relies on, in full; grep the rest. No read-receipt message.
 Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what is true for Kaiju Incremental.
 
 ## Philosophy
@@ -21,7 +21,8 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
 4. **Data holds content and balance** (`data/`, schema-validated); magic numbers in code are rejected.
 5. **Licensing:** nothing enters `assets/` or `tools/` unless `docs/LICENSING_REGISTER.md` lists it CLEARED.
 6. **No spend** without the director's written yes in `docs/DECISIONS.md`.
-7. **Proof before "done":** the evidence (what the game did) is in the PR body.
+7. **Proof before "done":** the evidence (what the game did) is in the PR body; a new system or rule adds a player-effect
+   fixture (on vs off), a bug fix or tuning change the test that shows it fixed.
 8. **Change method after two failed fixes.**
 
 ## Machine and repo (project detail on the rulebook)
@@ -43,9 +44,10 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`; remove
   when the PR merges; `tools/lint/worktrees.sh` flags merged and idle ones (D-053). Revert `.import` churn.
-- Only the lead edits `docs/DECISIONS.md` and `docs/DESIGN.md`; `docs/STATUS.md` is generated (`python tools/status.py`,
-  never by hand) after merges. Other PRs state their
-  board and log changes in the body.
+- A decision goes into `docs/DECISIONS.md` in the PR that acts on it: the builder writes it, the lead checks the wording
+  (the lead owns it; any PR may carry it). Only the lead edits `docs/DESIGN.md`. `docs/STATUS.md` is generated
+  (`python tools/status.py`, never by hand) after merges. Main requires checks, so no direct push and no separate board
+  PR: pure log/status updates ride in the lead's next PR (docs-only, no Godot jobs).
 
 ## Skills
 `~/.claude/skills/kaiju-*` (outside git since 10-28, so no branch carries a stale copy) extend the general skills; each has a `references/learnings.md` (evidence bar in
