@@ -130,13 +130,18 @@ func _spread_build() -> void:
 		most = maxi(most, col.build_step())
 		ticks += 1
 	var bad := _bodies_off(col, grid)
-	_check.call(
-		waiting > 1 and ticks > 1 and most < per_tick + 64 and carved_now and bad.is_empty(),
-		(
-			"a spread build of %d regions takes %d ticks, at most %d boxes a tick (budget %d); a carve"
-			+ " builds its waiting region at once; the bodies end as the boxes (off: %s)"
+	(
+		_check
+		. call(
+			waiting > 1 and ticks > 1 and most < per_tick + 64 and carved_now and bad.is_empty(),
+			(
+				(
+					"a spread build of %d regions takes %d ticks, at most %d boxes a tick (budget %d); a carve"
+					+ " builds its waiting region at once; the bodies end as the boxes (off: %s)"
+				)
+				% [waiting, ticks, most, per_tick, bad]
+			)
 		)
-		% [waiting, ticks, most, per_tick, bad]
 	)
 	col.free()
 
