@@ -98,7 +98,9 @@ func _one(grow: int) -> VoxelSkinHelpers:
 	raw.encode_u8(6, 0)
 	raw.encode_u8(7, 1)
 	raw.encode_u8(8, grow)
-	var floats: PackedFloat32Array = [0.4, 1, 2, 3, 0.5, -0.2, 0.1, 0.1, 0, 0.2, 0.2, 0.3, 0, 0, 0.1, 0.1]
+	var floats: PackedFloat32Array = [
+		0.4, 1, 2, 3, 0.5, -0.2, 0.1, 0.1, 0, 0.2, 0.2, 0.3, 0, 0, 0.1, 0.1
+	]
 	for i: int in floats.size():
 		raw.encode_float(10 + i * 4, floats[i])
 	return VoxelSkinHelpers.read(raw, 0)
