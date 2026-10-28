@@ -5,8 +5,8 @@ extends RefCounted
 ## Hero categories (the roar, stomps, a toppled tower, an explosion's core) are never stolen by
 ## another category: a hero over its own cap takes its own oldest voice once that has played
 ## "hero_cut_after_s" (D-367, "Newest cuts oldest"), else it is dropped, and "reserve_hero"
-## voices stay free for heroes whatever the rest of the city is doing. Any other sound over its cap, or over the non-hero share of the pool,
-## takes the quietest voice (its dB has the distance fade in it, so the quietest is also the
+## voices stay free for heroes whatever the rest of the city is doing. Any other sound over its
+## cap, or over the non-hero share of the pool, takes the quietest voice (its dB has the distance fade in it, so the quietest is also the
 ## farthest; ties go to the oldest) if it is at least as loud, else it is dropped. The same sound
 ## in the same category is not restarted within its "retrigger_ms". Time is the frames' own
 ## delta (advance), never the clock, so a replay drops the same sounds. Presentation only.
