@@ -2,7 +2,9 @@ extends RefCounted
 ## One seeded, headless rampage feeding CitySound (tests/run_city_sound_tests.gd, and the
 ## tools/capture/capture_city_sound.gd measurement): a real RampageSim played by the scripted
 ## player (walk to the nearest standing building, signature when ready, as tests/lib/sim_suite.gd)
-## with a real StreetLife beside it, a fixed DT per frame and no clock. Every `SAMPLE_EVERY`
+## with a real StreetLife beside it, a fixed DT per frame and no clock. The 1.5x city (D-254) takes
+## longer to ruin than one rampage's clock (its pacing waits for balancing, D-366), so the run
+## plays on a clock no run can end and the army cannot end it either. Every `SAMPLE_EVERY`
 ## frames it records the phase and each bed's level, so a test can read how the sound went.
 ## Seeds "city", "army" and "civilians" 0.
 
@@ -43,6 +45,7 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 		CityGrowth.layout(base, tier, Seeds.make("city", 0)),
 		Seeds.make("army", 0)
 	)
+	sim.time_left = 1.0e9  # the ruin, not the clock, is what the sound waits for (D-366)
 	_holder = Node3D.new()
 	tree.root.add_child(_holder)
 	var fx := Fx.new()
@@ -57,6 +60,7 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 
 ## One frame: the scripted player moves, the street lives, the driver follows.
 func step() -> void:
+	sim.hp = sim.max_hp  # nor the army
 	if _frame % 15 == 0:
 		_target = sim.nearest_standing(sim.kaiju_pos)
 	var move := Vector2.ZERO
