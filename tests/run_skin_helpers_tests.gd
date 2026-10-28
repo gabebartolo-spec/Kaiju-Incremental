@@ -37,7 +37,8 @@ func _check_colossus_has_helpers() -> void:
 	var helpers := _helpers_of(COLOSSUS)
 	check(helpers.count == COLOSSUS_HELPERS, "the Colossus skin carries 10 helper joints")
 	var def: Dictionary = Content.species_def("reptilian")
-	var kaiju := KaijuModel.new("reptilian", def["colors"], "adult")
+	var colors: Dictionary = def["colors"]
+	var kaiju := KaijuModel.new("reptilian", colors, "adult")
 	root.add_child(kaiju)
 	for frame: int in 20:
 		kaiju.position.z -= 0.05
@@ -46,7 +47,8 @@ func _check_colossus_has_helpers() -> void:
 	check(skins.size() == 1, "the Colossus is drawn by its voxel skin, helpers and all")
 	if skins.size() == 1:
 		var skin: VoxelSkin = skins[0]
-		var rig_bones: int = skin.get_parent().call("bone_names").size()
+		var bone_names: Array = skin.get_parent().call("bone_names")
+		var rig_bones: int = bone_names.size()
 		var posed: int = skin.pose.size()
 		check(posed == rig_bones + COLOSSUS_HELPERS, "every frame poses each rig bone and helper")
 		var finite := true
@@ -70,7 +72,8 @@ func _check_reference_maths() -> void:
 	for grow: int in want:
 		var got := _one(grow).helper(a, b, 0)
 		check(_near(got.basis, want_basis), "helper turn matches the reference (grow %d)" % grow)
-		var moved: bool = got.origin.distance_to(want[grow]) < CLOSE
+		var target: Vector3 = want[grow]
+		var moved: bool = got.origin.distance_to(target) < CLOSE
 		check(moved, "helper move matches the reference (grow %d)" % grow)
 
 
@@ -95,7 +98,7 @@ func _one(grow: int) -> VoxelSkinHelpers:
 	raw.encode_u8(6, 0)
 	raw.encode_u8(7, 1)
 	raw.encode_u8(8, grow)
-	var floats := [0.4, 1, 2, 3, 0.5, -0.2, 0.1, 0.1, 0, 0.2, 0.2, 0.3, 0, 0, 0.1, 0.1]
+	var floats: PackedFloat32Array = [0.4, 1, 2, 3, 0.5, -0.2, 0.1, 0.1, 0, 0.2, 0.2, 0.3, 0, 0, 0.1, 0.1]
 	for i: int in floats.size():
 		raw.encode_float(10 + i * 4, floats[i])
 	return VoxelSkinHelpers.read(raw, 0)
