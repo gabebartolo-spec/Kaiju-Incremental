@@ -4,6 +4,19 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-28 · D-375 · Director · Landmarks are drawn at random from a pool into designated spots, tiered by stage
+His words (10-28 ~21:xx), on the stadium placement clash between D-270 ("south, past the river") and D-271 (reachable
+from stage 2) once the bay moved the start: "so i want maps to be randomised as you know, but if we need to make certain
+constants like stadium is west, wheel is east, thats ok, as long as the rest of the city is random"; "as long as you are
+also considering that landmarks will be picked at random from a pool of many"; "so the stadium and wheel are no
+certainty to appear"; "we can have designated landmark spots though". Q: tier the spots by stage? A: "Tier per stage
+(Recommended)". So: each street plan keeps a few designated landmark spots; each run fills every spot with a random
+landmark from a large pool, drawn from the tier that spot's stage reaches (near the beach medium, stadium and wheel
+size; the next ring big, spire size; the outer ring the biggest, megatower size), so every stage still reaches something
+bigger. The stadium and wheel are two pool entries, not certain to appear; when drawn, the stadium takes the west spot
+and the wheel the east one, inside stage 2's reach. Everything else stays random per seed (D-263). Replaces D-071's fixed
+four in order and D-270's "south, past the river with the Ferris wheel"; D-271's reach holds.
+
 ## 2026-10-28 · D-374 · Director · The Colossus rig gets hip and knee helper joints; every skeleton is checked over its full move range
 His words (10-28 ~18:4x), on the knee/thigh crumple in charge, emerge, hlt, run, slam and leap, which skin weights alone
 cannot fix: "add the joints, i asked you to make sure the skeletons were ready for animation, you failed, do your job
@@ -379,21 +392,3 @@ file name (never overwrite his file), then restart Cascadeur and reopen the copy
 ## 2026-10-27 · D-317 · Director · Tonight: keep the 6 GB memory floor, drop the 85% CPU cap
 Q: the PC rule (nothing new under 6 GB free RAM or above 85% CPU), tonight? A: "Keep memory floor, drop CPU cap
 (Recommended)". So: the RAM floor (freeze guard) stays; the CPU cap is off for the night shift.
-
-## 2026-10-27 · D-316 · Director · Export a playable build at the end of the shift
-Q: export a build at the end of the shift? A: "Yes, in the usual build folder (Recommended)". So: a demo .exe from
-main in the fixed build folder before he wakes, with a short note of what merged overnight.
-
-## 2026-10-27 · D-315 · Director · No usage cap tonight
-Q: weekly limit 17% used; how much may tonight use? A: "Whatever the work needs (Recommended)". No usage stop tonight.
-
-## 2026-10-27 · D-314 · Director · Opus at high effort for the hardest builds tonight
-Q: Opus high for the hardest builds (new engine code, kaiju posing, tail and toe skeleton)? A: "Yes, hardest builds
-only (Recommended)". So: Opus high only for P2a, P3a, P3c, P4c and the r21 rig work; everything else stays as is.
-
-## 2026-10-27 · D-313 · Director · Speed runs keep the PC to themselves tonight
-Q: keep D-299's ~3 min sole-PC turns tonight? A: "Keep it (Recommended)". D-299 stands through the night shift.
-
-## 2026-10-27 · D-312 · Director · Item 15: the speed savings buy a quieter, cooler PC
-Q: what should the headroom buy at Medium? A: "A quieter, cooler PC (Recommended)". So: same look at 60 fps with the
-GPU working less (D-093's reason for Medium); no render-scale rise. Closes render plan item 15.
