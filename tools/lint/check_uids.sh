@@ -33,8 +33,10 @@ in_ignored_dir() { # in_ignored_dir <path>
 	return 1
 }
 
+# The file list is fed through process substitution, never a here-string: on Git Bash a here-string over
+# 64 KiB (the list passed that at ~2060 tracked files) blocks forever and every local lint run hung.
 declare -A have
-while IFS= read -r f; do have["$f"]=1; done <<< "$files"
+while IFS= read -r f; do have["$f"]=1; done < <(printf '%s\n' "$files")
 
 bad=0
 checked=0
@@ -58,7 +60,7 @@ while IFS= read -r f; do
 			fi
 			;;
 	esac
-done <<< "$files"
+done < <(printf '%s\n' "$files")
 
 # One uid value, one file. (Reads the working tree copy of each tracked .uid.)
 dups="$(printf '%s\n' "$files" | grep -E '\.uid$' | while IFS= read -r u; do

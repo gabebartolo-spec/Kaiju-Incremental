@@ -79,12 +79,7 @@ static func short_price(price: int) -> String:
 
 ## Redraws the node from the tree and the rubble in hand.
 func show_state(tree: UpgradeTree, rubble: int) -> void:
-	if tree.is_maxed(id):
-		state = "maxed"
-	elif not tree.is_unlocked(id):
-		state = "locked"
-	else:
-		state = "buy" if tree.can_buy(id, rubble) else "poor"
+	_pick_state(tree, rubble)
 	var price := short_price(tree.cost(id))
 	var status: String = {"maxed": "MAXED", "locked": "", "buy": "BUY " + price, "poor": price}[state]
 	var tag := "\n[E / Y]" if role == "ultimate" else ""
@@ -100,26 +95,41 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 		edge = UiKit.ACCENT if state != "locked" else UiKit.ACCENT.darkened(0.55)
 		width = 6
 	for look: String in ["normal", "hover", "focus", "pressed"]:
-		var box_fill := fill
-		var box_edge := edge
-		var box_width := width
-		if look != "normal":
-			box_edge = Color.WHITE
-			box_fill = fill.darkened(0.2) if look == "pressed" else fill.lightened(0.15)
-			# Plain nodes thicken when focused; evolutions and the ultimate are thick already.
-			if look == "focus" and width < 5:
-				box_width = width + 2
-		var style := UiKit.hazard(box_fill, box_edge, box_width)
-		style.dashed = state == "locked" and look == "normal"
-		if role == "ultimate":
-			style.band = HazardBox.Band.TOP
-			style.band_size = ULTIMATE_BAND
-			if state == "locked":
-				style.tape_on = UiKit.LOCKED
-		# The border is drawn inside the box: keep the text clear of the thickest one.
-		style.set_content_margin_all(PAD + Num.f(MAX_BORDER[role]))
-		add_theme_stylebox_override(look, style)
+		add_theme_stylebox_override(look, _look(look, fill, edge, width))
 	# Locked and unaffordable read as dimmed, but stay well above 4.5:1 on their fills.
 	var font := UiKit.TEXT if state in ["buy", "maxed"] else UiKit.MUTED.lightened(0.25)
 	for key: String in ["font_color", "font_hover_color", "font_focus_color"]:
 		add_theme_color_override(key, font)
+
+
+## Sets `state`: maxed, locked, or (unlocked) buy when `rubble` covers the price, else poor.
+func _pick_state(tree: UpgradeTree, rubble: int) -> void:
+	if tree.is_maxed(id):
+		state = "maxed"
+	elif not tree.is_unlocked(id):
+		state = "locked"
+	else:
+		state = "buy" if tree.can_buy(id, rubble) else "poor"
+
+
+## The box one look of the button ("normal", "hover", "focus", "pressed") draws.
+func _look(look: String, fill: Color, edge: Color, width: int) -> HazardBox:
+	var box_fill := fill
+	var box_edge := edge
+	var box_width := width
+	if look != "normal":
+		box_edge = Color.WHITE
+		box_fill = fill.darkened(0.2) if look == "pressed" else fill.lightened(0.15)
+		# Plain nodes thicken when focused; evolutions and the ultimate are thick already.
+		if look == "focus" and width < 5:
+			box_width = width + 2
+	var style := UiKit.hazard(box_fill, box_edge, box_width)
+	style.dashed = state == "locked" and look == "normal"
+	if role == "ultimate":
+		style.band = HazardBox.Band.TOP
+		style.band_size = ULTIMATE_BAND
+		if state == "locked":
+			style.tape_on = UiKit.LOCKED
+	# The border is drawn inside the box: keep the text clear of the thickest one.
+	style.set_content_margin_all(PAD + Num.f(MAX_BORDER[role]))
+	return style

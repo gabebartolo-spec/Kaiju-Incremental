@@ -88,44 +88,71 @@ func _undermine(band: Callable, floors: Vector2i, centre: Vector2, ahead: Vector
 	var rows := Num.f(cfg["swipe_chew_rows"])
 	if chew <= 0.0:
 		return
+	var aim := [centre, ahead, rows]
 	var bases: Dictionary = {}  # building index -> its standing base chunks in reach
-	var lane_front: Dictionary = {}  # lane -> along of the nearest standing chunk
-	var lane_owner: Dictionary = {}  # lane -> index of the building it belongs to
+	# lane -> along of the nearest standing chunk; lane -> index of the building it belongs to
+	var lanes: Array[Dictionary] = [{}, {}]
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
 		var near: float = band.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
 		if near <= 0.0 or b.frame.alive_count == 0:
 			continue
-		var base: Array[Vector3i] = []
-		for y: int in range(floors.x, mini(floors.y, b.height)):
-			for x: int in b.w:
-				for z: int in b.d:
-					var c := Vector3i(x, y, z)
-					var at := _where(b, c, centre, ahead)
-					if at.x >= 0.0 and b.frame.alive(c):  # the claw rakes ahead of the kaiju
-						base.append(c)
-						var lane := floori(at.y)
-						if at.x < Num.f(lane_front.get(lane, INF)):
-							lane_front[lane] = at.x
-							lane_owner[lane] = i
+		var base := _base_in_reach(i, floors, aim, lanes)
 		if not base.is_empty():
 			bases[i] = base
 	for i: int in bases:
-		var b := sim.buildings[i]
 		var base: Array[Vector3i] = bases[i]
-		var seen: Array[Vector3i] = []
-		var front := INF
-		for c: Vector3i in base:
-			var at := _where(b, c, centre, ahead)
-			if Num.i(lane_owner[floori(at.y)]) == i:
-				seen.append(c)
-				front = minf(front, at.x)
-		var cells: Array[Vector3i] = []
-		for c: Vector3i in seen:
-			if _where(b, c, centre, ahead).x < front + rows:
-				cells.append(c)
+		var cells := _owned_front(i, base, lanes[1], aim)
 		if not cells.is_empty():
 			sim.damage_chunks(i, cells, chew)
+
+
+## Building i's standing chunks on floors the rake reaches, ahead of the kaiju (aim: [centre,
+## ahead, rows]); each claims its lane in lanes ([front, owner]) if it is the nearest yet.
+func _base_in_reach(
+	i: int, floors: Vector2i, aim: Array, lanes: Array[Dictionary]
+) -> Array[Vector3i]:
+	var b := sim.buildings[i]
+	var centre: Vector2 = aim[0]
+	var ahead: Vector2 = aim[1]
+	var lane_front: Dictionary = lanes[0]
+	var lane_owner: Dictionary = lanes[1]
+	var base: Array[Vector3i] = []
+	for y: int in range(floors.x, mini(floors.y, b.height)):
+		for x: int in b.w:
+			for z: int in b.d:
+				var c := Vector3i(x, y, z)
+				var at := _where(b, c, centre, ahead)
+				if at.x >= 0.0 and b.frame.alive(c):  # the claw rakes ahead of the kaiju
+					base.append(c)
+					var lane := floori(at.y)
+					if at.x < Num.f(lane_front.get(lane, INF)):
+						lane_front[lane] = at.x
+						lane_owner[lane] = i
+	return base
+
+
+## The chunks of building i's base in the lanes it owns, within rows of its front (aim: [centre,
+## ahead, rows]).
+func _owned_front(
+	i: int, base: Array[Vector3i], lane_owner: Dictionary, aim: Array
+) -> Array[Vector3i]:
+	var b := sim.buildings[i]
+	var centre: Vector2 = aim[0]
+	var ahead: Vector2 = aim[1]
+	var rows: float = aim[2]
+	var seen: Array[Vector3i] = []
+	var front := INF
+	for c: Vector3i in base:
+		var at := _where(b, c, centre, ahead)
+		if Num.i(lane_owner[floori(at.y)]) == i:
+			seen.append(c)
+			front = minf(front, at.x)
+	var cells: Array[Vector3i] = []
+	for c: Vector3i in seen:
+		if _where(b, c, centre, ahead).x < front + rows:
+			cells.append(c)
+	return cells
 
 
 ## Chunk c of building b as (distance ahead of the kaiju, distance across the rake).

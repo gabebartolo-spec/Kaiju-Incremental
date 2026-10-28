@@ -455,7 +455,7 @@
 		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds, then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). hp = the air wing's hp x hp_mult; radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
 		"window": [0.12, 0.5],
 		"ranks": ["MAYOR", "GOVERNOR", "PRESIDENT"],
-		"payout": [38.0, 40.0, 40.0],
+		"payout": [62.0, 98.0, 101.0],
 		"hp_mult": 1.0,
 		"radius": 1.2,
 		"altitude": 9.0,
@@ -529,6 +529,8 @@
 			"reserve": 1.5,
 			"danger": 0.55,
 			"edge_gap": 8.0,
+			"_band_depth": "How far past the body's keep-away (body_radius + edge_gap + the hull's half diagonal) the tanks' firing band always reaches, in units: their reach is at least (keep-away + band_depth) / band[1], so a small kaiju (the young croc) is never out of every firing post (Convoy.reach).",
+			"band_depth": 4.0,
 			"retreat_speed": 3.5,
 			"lookahead": 3.0,
 			"danger_cost": 200.0,
@@ -628,10 +630,12 @@
 		"bay_width": 190,
 		"far_haze": 0.004,
 		"far_fog": {"_note": "Director comment #37 (2026-10-25, asked twice: 'something funky going on with the distant city'): the far city floated crisp above the haze, its own gentler haze (far_haze) and no engine fog, so it was clearer than the bay in front of it. on: the far skyline (towers, quay, lattice tower, the far rampage's beast and smoke) takes the engine's depth fog as the bay does (FarHaze); own_haze: the share of its own built haze kept on top (0 = the same air as the bay); base: height fog, this much more haze at the foot of the far city fading over base_height metres up, so it shows no hard base line (0.5: its foot within 2% of the bay's luma at night and noon, tools/capture/far_city_bars.py); start: metres from the camera where its own haze and the height fog begin. Off = the look it was built with. Presentation only.", "on": true, "own_haze": 0.0, "base": 0.5, "base_height": 30.0, "start": 120.0},
+		"far_reflect": {"_note": "Director comment #37 (the far city and the bay before it differ); lead 2026-10-27: real night bays show the city's lit windows reflected on the water near the far shore. on: a faint band of the window palette's light (looks window_lit_color) over the bay's water (FarWaterGlow, a pass over its own material, so the water colour is unchanged elsewhere): strength times the share of windows lit (looks window_lit, none by day) at the far shore, fading to none reach metres out, so nothing near the camera changes; energy: the light's brightness (strength 1.1, energy 0.042 by sweep: the far water by the far shore within 10% of the far city's foot per channel and in luma at night, tools/capture/far_city_bars.py). Off = no glow. Presentation only.", "on": true, "strength": 1.1, "energy": 0.042, "reach": 40.0},
 		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
-		"stream_chunks": 24000,
+		"stream_chunks": 25500,
+		"stand_in_fade_s": 0.35,
 		"stream_view": {"_note": "BuildingStream spends the stream_chunks budget on what the camera sees, not on a circle round the kaiju: a building ranks by its distance from the camera, or from the kaiju plus kaiju_extra_m, whichever is less; one that lies only in the margin band (margin_deg wide, each side of the frustum) ranks side_m farther, one outside that outside_m farther; a ring of ring_m round the camera has no penalty. margin_deg covers the camera's shake (camera_shake max_deg 2.5, a test checks it) and a quick turn, so a turn meets buildings the plan has already meshed (the breath's side orbit was cut, D-136). A landmark stays meshed while the frustum or the margin band reaches it or it stands within landmark_keep_m of the camera or the kaiju (a test checks no landmark is ever a box in view); beyond all three it unloads like any building (director 2026-10-22: out-of-view landmarks may unload if no pop-in).", "margin_deg": 30.0, "ring_m": 12.0, "side_m": 40.0, "outside_m": 100.0, "kaiju_extra_m": 30.0, "landmark_keep_m": 80.0},
 		"markings_beyond": 30,
 		"zebra_junctions": 1,
@@ -650,7 +654,7 @@
 		"lane_stop_chance": 0.12,
 		"diagonal_parked_lane": 2.2,
 		"river_quay": {"_note": "RiverQuay (D-062): crate stacks along the water's street-side edge, every gap m, kerb m off the water, clear of bridge decks (deck_clear m) and crossings (node_clear m); low and top are [half width, height] in prop voxels (0.25 m).", "gap": 8.0, "kerb": 0.5, "deck_clear": 1.5, "node_clear": 3.0, "low": [1, 2], "top": [0, 1], "colors": {"quay_crate": "8a6a3a", "quay_band": "5e4a2a"}},
-		"traffic_island": {"half_cells": 1, "pole_cells": 6, "bollard_cells": 3, "bollards": [[-1, -1], [1, 1]], "lane_clear": 0.95, "node_clear": 3.0, "search_step": 0.25, "colors": {"island_kerb": "9a968c", "island_bollard": "d8d4c8", "signal_housing": "1c1e20", "signal_red": "d0301e00", "signal_amber": "8a6420", "signal_green": "2e6a38"}},
+		"traffic_island": {"_note": "TrafficIsland (director 2026-10-26: \"Where the diagonal meets avenues\"): at = diagonal_avenue plants one island per diagonal x avenue crossing in the playable city, in a sharp corner's free wedge, searched every search_step m along its bisector from node_clear out to wedge_reach, kerb_gap clear of every carriageway and prop_clear of every prop.", "at": "diagonal_avenue", "wedge_reach": 22.0, "kerb_gap": 0.3, "prop_clear": 0.75, "half_cells": 1, "pole_cells": 6, "bollard_cells": 3, "bollards": [[-1, -1], [1, 1]], "node_clear": 3.0, "search_step": 0.25, "colors": {"island_kerb": "9a968c", "island_bollard": "d8d4c8", "signal_housing": "1c1e20", "signal_red": "d0301e00", "signal_amber": "8a6420", "signal_green": "2e6a38"}},
 		"car_colors": ["6b6e70", "5b6b7a", "5a2a26", "8a8a84", "6b7a52", "6a5e48"],
 		"street_tree_gap": 6,
 		"street_tree_clear": 3,
@@ -680,6 +684,7 @@
 		"tree_puff_alpha": 0.6,
 		"block_long": [18, 26],
 		"block_short": [10, 13],
+		"block_far": {"_note": "The outskirts' block gaps (CityLines.gaps): m added to block_long / block_short's [lo, hi] past the last district, so they are no even grid (lo never under a lot between avenues).", "long": [-6, 14], "short": [-2, 12]},
 		"avenues": 1,
 		"avenue_width": 6,
 		"street_width": 4,
@@ -691,9 +696,9 @@
 		"river": true,
 		"river_depth": 1.6,
 		"river_inset": 2.0,
-		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1},
-		"diagonal_through": [-6, 4],
-		"diagonal_deg": 27,
+		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1, "depth": 2},
+		"diagonal_through": [-6, 12.85],
+		"diagonal_deg": 26.75,
 		"cores": [[14, -14, 30], [-24, 24, 20], [54, 48, 22], [-52, -50, 20], [72, -64, 30], [-68, 66, 28], [94, 86, 36], [-90, -88, 34], [6, 94, 30], [165, -150, 46], [-170, 145, 46], [175, 115, 40], [-150, -170, 42], [10, 180, 44], [-185, -20, 38]],
 		"depth_min": 3,
 		"depth_max": 5,
@@ -1239,12 +1244,12 @@
 		"dip": 0.05, "dip_attack": 0.04, "dip_s": 0.2,
 		"kick_deg": 0.8, "crack_fade_s": 0.12
 	},
-	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "fade_opacity": 0.35, "fade_seconds": 0.25, "fade_width": 1.0, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "bubble_radius": 17.0, "bubble_max": 3, "bubble_seconds": 0.1, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0},
 	"slowmo": {
-		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The director tunes these at playtest.",
+		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The scale is the director's (\"looks good\"); the length follows D-342 (director 2026-10-27 on the first clip, hold 0.5 s + ease 0.25 s: \"the slowdown is too brief\"), now 1.5 s held + 0.5 s eased. The director tunes these at playtest.",
 		"scale": 0.35,
-		"hold_s": 0.5,
-		"ease_s": 0.25
+		"hold_s": 1.5,
+		"ease_s": 0.5
 	},
 	"camera_shake": {
 		"_note": "CameraShake (R 19.2): hits add trauma 0..1 (sources), it fades at decay_per_s; the camera turns by trauma squared on smooth noise (noise_hz noise units a second; 1.6 keeps a 60 fps frame under 5 px at 1080p at the 2 deg cap, motion critic 2026-10-21), yaw and pitch only, full trauma = deg_per_root_scale x sqrt(body scale) degrees, at most max_deg. A hit away from the focus fades from near_per_scale to far_per_scale body scales. default_motion: the camera-motion setting's default (0..1).",
@@ -1369,31 +1374,32 @@
 		"turn_accel": 14.0,
 		"step_len": 2.33,
 		"support_both": 0.0,
-		"slice_from": 0.0,
-		"slice_open": 0.75,
-		"turn_cadence": 3.85,
+		"turn_ramp": 0.15,
+		"turn_land_deg": 5.0,
+		"_note_turn_ramp": "D-187: a stepped (Behemoth, Colossus) U-turn speeds its yaw up over this share of its uturn_s, runs even between, and slows over the same share at the end; so the peak yaw rate is 1 / (1 - turn_ramp) of the turn's mean rate (1.18 at 0.15; the bar is 1.3). A smaller share is a snappier start and stop, a larger one a gentler, peakier turn.",
+		"_note_turn_land_deg": "D-187: a U-turn counts as made when the body is within this many degrees of the new way (the motion critic's measure); the last degrees take a little longer.",
+		"_note_uturn_s": "D-187, per growth step in bodies.reptilian: seconds a stick-reversed U-turn takes while walking, until within turn_land_deg of the new way (Behemoth 1.94, Colossus 3.0; the young croc has none: it turns smoothly, D-131). The director's pick is Behemoth 2 s, Colossus 3 s (D-187); the Behemoth runs 1.94 by the lead's ruling 2026-10-27 (1.9, then 1.94 by the sweep below) because the motion gate's centre_max 0.5 (D-177, the body turns about its middle, not a planted foot) needs a peak yaw of at least ~99 deg/s. Sweep, 60 Hz motion drive, centre travel on turn90 / turn180 / stand_turn: uturn_s 2.0 0.506 / 0.340 / 0.472 (turn90 misses by 0.006); 1.94 0.481 / 0.340 / 0.459 (every motion bar met); 1.9 0.481 / 0.330 / 0.459; 1.8 0.450 / 0.314 / 0.420 (stand_turn pivot 0.087 over its 0.08 bar); 1.2 0.281 / 0.210 / 0.321 (stand_turn pivot 0.326 and aloft yaw 1.30 fail). The bots in the sim and city suites chase the nearest chunk and can circle it with a heavy turn, so their results jump with uturn_s: 1.94 is the value near 2 where the motion gate, the rise-point bar (every map seed down within 10 s: 2.8 / 4.0 / 8.9 s) and the sim suite (evolved 0.788 vs 0.520) all pass; 1.9 fails the rise bar on seed 1234 (23.5 s) and the sim check (0.058). Colossus at 3.0 passes unchanged. Any other angle turns at the same peak rate and ramps.",
+		"_note_turn_slow": "D-187, per growth step in bodies.reptilian, optional (else the contact turn_slow 0.5): the share of full stride the body keeps at an about-face. A stepped body turns on the spot nearly: while the stride runs on, the walk and the pivot about the planted foot cancel on one foot (it shuffles) and add on the other, and the rotation centre drifts off the feet.",
+		"_note_turn_steps": "D-187, per growth step in bodies.reptilian: footfalls a U-turn is made in, so a turn steps at turn_steps / uturn_s footfalls a second (Behemoth 2.84, Colossus 1.83, against the straight walk's 2.14 and 1.75), 33 degrees of yaw a step on average, 39 at the peak (the motion critic's bar is at most 40). Fewer would put more yaw in a step, more would shuffle the feet: a foot moves less than a third of its length in a step.",
 		"step_ratio_min": 0.2,
 		"cadence_ease": 12.0,
 		"turn_min": 0.05,
 		"smooth_below": 0.35,
-		"slice_accel": 50.0,
-		"turn_ease_min": 0.5,
-		"turn_ease_peak": 1.4,
 		"turn_slow": 0.5,
 		"stride_ease": 5.0,
 		"walk_off_s": 0.134,
 		"pay_mult": 0.2,
 		"bite_dps": 140.0,
 		"leap": {
-			"_note": "The dash button's leap (Dash, D-259 \"a leap that lands on a building and crushes it with a shockwave (replaces the dash)\"). Per species and stage (baby, adolescent, adult): reach / min_reach = how far the feet may land from where they stand (design units at body scale 1): the nearest standing building whose centre is in that band and within aim_half_angle_deg of the facing, else the full reach; a target that dwarfs the body (D-091), or a roof landing that would put the body inside such a building, is landed before instead: on the street, backed off along the flight line in landing_step units until clear. crouch_s (crouch and push), flight_s (airborne), settle_s (impact settle), recover_s (to walk-ready) are the reader's L1 frames at 30 fps (C:/kt/croc_kit/reference.md: 14+15+15+18 / 18+21+21+25 / 24+26+26+32); the body takes no stick through all four. The flight is a high arc onto the target's roof (director 2026-10-26 \"High arc, lands on roof\"; supersedes reader bar L5 for the sim path, LeapArc): its top clears every building the body passes over by clear (design units at body scale 1), the path sampled every landing_step units, the top raised by clear up to arc_tries times; through the settle the body sinks from the roof to the street as the building breaks under it. On contact one blow of damage hits at full force within ring (x body scale) and fades to nothing at twice it (shockwave), through the carve path; tanks in it slide outward by fling x the force. cooldown from the press. PLACEHOLDER NUMBERS (tune) except the phase times.",
+			"_note": "The dash button's leap (Dash, D-259 \"a leap that lands on a building and crushes it with a shockwave (replaces the dash)\"). Per species and stage (baby, adolescent, adult): reach / min_reach = how far the feet may land from where they stand (design units at body scale 1): the nearest standing building whose centre is in that band and within aim_half_angle_deg of the facing, else the full reach; a target that dwarfs the body (D-091), or a roof landing that would put the body inside such a building, is landed before instead: on the street, backed off along the flight line in landing_step units until clear. crouch_s (crouch and push), flight_s (airborne), settle_s (impact settle), recover_s (to walk-ready) are the reader's L1 frames at 30 fps (C:/kt/croc_kit/reference.md: 14+15+15+18 / 18+21+21+25 / 24+26+26+32); the body takes no stick through all four. The flight is a high arc onto the target's roof (director 2026-10-26 \"High arc, lands on roof\"; supersedes reader bar L5 for the sim path, LeapArc): its top clears every building the body passes over by clear (design units at body scale 1), the path sampled every landing_step units, the top raised by clear up to arc_tries times; through the settle the body sinks from the roof to the street as the building breaks under it. On contact one blow of damage hits at full force within ring (x body scale) and fades to nothing at twice it (shockwave), through the carve path; tanks in it slide outward by fling x the force. cooldown from the press. shoulder = the highest roof a leap lands on, as a share of the body's drawn height (kaiju_height x body scale): the shoulder joint (arm_l0's head) over the model's height in assets/kaiju/reptilian_<stage>.rig.json, 123.38/200, 186.48/260, 208.77/320 (D-361 \"Tall ones: hit the side\"); a taller target takes the leap in its side: the arc ends at its facade, the body carves into it in flight (the body sweep, D-268) and the feet land on the street at its foot (backed off in landing_step units until outside it), where the smash and ring hit it; one that dwarfs the body keeps the D-091 rule above. PLACEHOLDER NUMBERS (tune) except the phase times and shoulder.",
 			"aim_half_angle_deg": 30.0,
 			"landing_step": 0.5,
 			"arc_tries": 12,
 			"stages": {
 				"reptilian": [
-					{"reach": 30.0, "min_reach": 6.0, "crouch_s": 0.467, "flight_s": 0.5, "settle_s": 0.5, "recover_s": 0.6, "clear": 2.0, "ring": 7.0, "damage": 40.0, "fling": 8.0, "cooldown": 4.0},
-					{"reach": 28.0, "min_reach": 6.0, "crouch_s": 0.6, "flight_s": 0.7, "settle_s": 0.7, "recover_s": 0.833, "clear": 2.0, "ring": 8.0, "damage": 60.0, "fling": 10.0, "cooldown": 4.5},
-					{"reach": 26.0, "min_reach": 6.0, "crouch_s": 0.8, "flight_s": 0.867, "settle_s": 0.867, "recover_s": 1.067, "clear": 2.0, "ring": 9.0, "damage": 90.0, "fling": 12.0, "cooldown": 5.0}
+					{"reach": 30.0, "min_reach": 6.0, "crouch_s": 0.467, "flight_s": 0.5, "settle_s": 0.5, "recover_s": 0.6, "clear": 2.0, "ring": 7.0, "damage": 40.0, "fling": 8.0, "cooldown": 4.0, "shoulder": 0.617},
+					{"reach": 28.0, "min_reach": 6.0, "crouch_s": 0.6, "flight_s": 0.7, "settle_s": 0.7, "recover_s": 0.833, "clear": 2.0, "ring": 8.0, "damage": 60.0, "fling": 10.0, "cooldown": 4.5, "shoulder": 0.717},
+					{"reach": 26.0, "min_reach": 6.0, "crouch_s": 0.8, "flight_s": 0.867, "settle_s": 0.867, "recover_s": 1.067, "clear": 2.0, "ring": 9.0, "damage": 90.0, "fling": 12.0, "cooldown": 5.0, "shoulder": 0.652}
 				]
 			}
 		},
@@ -1401,9 +1407,9 @@
 			"reptilian": [
 				{"snout": 10.5, "pivot": [0.0, 0.0], "stomp_foot": [4.72, 3.98], "discs": [[8.8, 2.0, 3.0, 10.0], [5.0, 3.6, 0.0, 10.0], [2.0, 3.0, 0.0, 8.0],
 					[-0.5, 1.8, 0.0, 5.0], [-3.0, 1.2, 0.0, 2.7], [-6.0, 0.9, 0.0, 1.9], [-9.0, 0.6, 0.0, 1.4]]},
-				{"snout": 10.3, "pivot": [7.0, 3.0], "step_len": 2.79, "stomp_foot": [5.21, 2.99], "discs": [[8.3, 2.4, 5.0, 10.0], [4.5, 2.9, 0.0, 9.5], [1.0, 1.4, 4.5, 7.5],
+				{"snout": 10.3, "pivot": [7.0, 3.0], "step_len": 2.79, "uturn_s": 1.94, "turn_steps": 5.5, "turn_slow": 0.1, "stomp_foot": [5.21, 2.99], "discs": [[8.3, 2.4, 5.0, 10.0], [4.5, 2.9, 0.0, 9.5], [1.0, 1.4, 4.5, 7.5],
 					[-2.5, 1.0, 4.8, 6.6], [-6.0, 0.6, 5.5, 6.8], [-9.0, 0.3, 6.0, 6.8]]},
-				{"snout": 13.3, "pivot": [4.2, 3.2], "step_len": 2.33, "stomp_foot": [2.8, 3.17], "discs": [[11.5, 1.5, 3.6, 9.7], [8.5, 2.0, 3.4, 10.0], [5.5, 2.0, 4.9, 9.8],
+				{"snout": 13.3, "pivot": [4.2, 3.2], "step_len": 2.33, "uturn_s": 3.0, "turn_steps": 5.5, "turn_slow": 0.1, "stomp_foot": [2.8, 3.17], "discs": [[11.5, 1.5, 3.6, 9.7], [8.5, 2.0, 3.4, 10.0], [5.5, 2.0, 4.9, 9.8],
 					[2.5, 4.6, 0.0, 9.6], [-0.5, 3.8, 0.0, 9.7], [-3.5, 0.9, 6.6, 10.0], [-6.5, 0.8, 7.7, 10.0], [-9.5, 0.6, 8.2, 10.0], [-12.5, 0.4, 8.9, 10.0]]}
 			]
 		}
@@ -1417,15 +1423,16 @@
 			{
 				"city": {"half": 50, "coast_z": -120, "max_height": 26},
 				"air": {"max": 0},
-				"army": {"range": 11.0, "tank_damage": 14, "fire_interval": 0.7, "spawn_radius": 64},
+				"army": {"range": 11.0, "tank_damage": 9.4, "fire_interval": 0.7, "spawn_radius": 64,
+					"escalation_per_chunk": 0.0008},
 				"per_level": {},
 				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
 			},
 			{
 				"city": {"half": 80, "coast_z": -150, "max_height": 32, "tower_chance": 0.6,
 					"fog_scale": 0.6, "far_haze": 0.0024},
-				"army": {"range": 14.5, "spawn_radius": 52, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6.7, "tank_rubble": 6,
-					"escalation_per_chunk": 0.001, "threat_per_chunk": 0.0002},
+				"army": {"range": 14.5, "spawn_radius": 52, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6.9, "tank_rubble": 6,
+					"escalation_per_chunk": 0.00011, "threat_per_chunk": 0.0002},
 				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12},
 				"per_level": {
 					"army": {"tank_hp": 0.02, "tank_damage": 0.02, "start_interval": -0.01},
@@ -1435,10 +1442,14 @@
 			{
 				"city": {"half": 150, "coast_z": -220, "max_height": 40, "tower_chance": 0.65,
 					"fog_scale": 0.34, "far_haze": 0.0014},
-				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 10.5,
-					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.0004, "threat_per_chunk": 0.00008},
-				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 6,
-					"rubble": 30}
+				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 7.3,
+					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.00002, "threat_per_chunk": 0.00008},
+				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 5.4,
+					"rubble": 30},
+				"per_level": {
+					"army": {"tank_hp": 0.03, "tank_damage": 0.02, "start_interval": -0.01},
+					"air": {"hp": 0.03, "damage": 0.03}
+				}
 			}
 		]
 	},
@@ -1450,12 +1461,13 @@
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
 		"bolt": {
-			"_note": "BoltRig/BoltView/bolt.gdshader (VFX_STYLE family 6, research 17): the Lightning Breath and the Thunder Beam. halo_mode picks the fringe colours round the white-hot axis (R 17.6 is the director's open question: amber / eye = the species' eye tint / violet = white with a violet fringe); the glow itself is the engine's bloom on the HDR axis (boost_core, fringe_boost). The Thunder Beam core is 1.8x the breath's. Strokes come at least stroke_gap apart (never more than 3 full flashes a second); between strokes the main channel holds at hold_level with a shallow wobble. All shapes are dimensionless (a share of the bolt's length) and seeded per breath (Seeds breath_bolt / thunder_bolt). Widths are metres at body scale 1.",
-			"halo_mode": "amber",
+			"_note": "BoltRig/BoltView/bolt.gdshader (VFX_STYLE family 6, research 17): the Lightning Breath and the Thunder Beam. halo_mode picks the fringe colours round the white-hot axis (R 17.6 is the director's open question: amber / eye = the species' eye tint / violet = white with a violet fringe); the glow itself is the engine's bloom on the HDR axis (boost_core, fringe_boost). The Thunder Beam core is 1.8x the breath's. Strokes come at least stroke_gap apart (never more than 3 full flashes a second); between strokes the main channel holds at hold_level with a shallow wobble. All shapes are dimensionless (a share of the bolt's length) and seeded per breath (Seeds breath_bolt / thunder_bolt). Widths are metres at body scale 1. D-357: purple is the kaiju colour (the kaiju juice): halo_mode purple, core = the axis colour, flare = the mouth light and flares; the bolt leaves from deep in the throat (throat = [share along both jaws from the hinge, share of the way from the lower jaw to the upper]), straight to what it strikes (bow 0, clear 0); charge = the charge-up arcs jumping spine to spine along the ridge (bones, tail tip to head) between the press and the strike: hop_life s each, the first after lead_in, the last ending at the strike, re-rolled every `every` s; the jaw drops jaw_before s before the strike. Widths are metres at body scale 1, lift in voxels.",
+			"halo_mode": "purple",
 			"halo_modes": {
 				"amber": {"inner": "ffb55a", "fringe": "ff7a1e"},
 				"eye": {"inner": "eye", "fringe": "eye", "inner_white": 0.6},
-				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5}
+				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5},
+				"purple": {"inner": "b366ff", "fringe": "7a2cff", "core": "cc66ff", "flare": "c99bff"}
 			},
 			"boost_core": 3.0,
 			"fringe_boost": 1.6,
@@ -1471,7 +1483,7 @@
 			"arc_level": 0.25,
 			"light_follow": 40.0,
 			"strike_decay": 0.07,
-			"muzzle_up": 0.5,
+			"muzzle_up": 0.0,
 			"rebuild_move": 0.1,
 			"wobble": 0.15,
 			"wobble_hz": 22.0,
@@ -1503,21 +1515,23 @@
 			"branch_sparks": 2,
 			"power_share": 0.25,
 			"prewarm_seconds": 0.05,
+			"throat": [0.25, 0.5],
+			"charge": {"width": 0.12, "alpha": 0.7, "min_px": 3.0, "hop_life": 0.18, "lead_in": 0.1, "jaw_before": 0.25, "every": 0.05, "fork": [0.25, 0.5], "push": 0.25, "rounds": 3, "forks": 1, "level": [0.7, 1.0], "middle": [0.3, 0.7], "lift": 1.5, "bones": ["tail8", "tail7", "tail6", "tail5", "tail4", "tail3", "tail2", "tail1", "tail0", "spine0", "spine1", "spine2", "head0", "head1"]},
 			"breath": {
 				"core": 0.6, "sway": 0.1, "branches": [4, 6],
-				"bow": 0.6, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0, "ring_puffs": 8,
-				"arcs": 4, "arc_reach": 8.0, "arc_width": 0.17,
+				"bow": 0.0, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0, "ring_puffs": 8,
+				"arcs": 0, "arc_reach": 8.0, "arc_width": 0.17,
 				"branch_from": [0.3, 0.8], "branch_width": 1.0, "branch_sway": 0.15,
 				"anchor_near": false, "anchor_back": 0.0, "dust": 3.5,
-				"fan_spread": 0.8, "fan_near": 0.55, "clear": 1.5
+				"fan_spread": 0.8, "fan_near": 0.55, "clear": 0.0
 			},
 			"thunder": {
 				"core": 1.08, "sway": 0.22, "branches": [4, 6],
-				"bow": 0.25, "sub_forks": 0, "strike_scale": 0.8, "ring": 6.0, "ring_puffs": 6,
+				"bow": 0.0, "sub_forks": 0, "strike_scale": 0.8, "ring": 6.0, "ring_puffs": 6,
 				"arcs": 0, "arc_reach": 6.0, "arc_width": 0.35, "facade_min": [4, 6],
 				"branch_from": [0.1, 0.99], "branch_width": 0.55, "branch_sway": 0.1,
 				"anchor_near": true, "anchor_back": 0.06, "dust": 2.0,
-				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 1.5, "lash_climb": [2.0, 12.0], "lash_side": 1.0, "turn_hold": 0.12
+				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 0.0, "lash_climb": [2.0, 12.0], "lash_side": 1.0, "turn_hold": 0.12
 			}
 		},
 		"orbit_degrees": 25.0,
@@ -1739,7 +1753,7 @@
 		"smear": {"length_per_height": 2.2, "width": 1.6, "alpha": 0.7, "every_s": 1.0, "max": 400, "lamp_max": 100, "reach": 120.0, "lamp_energy_full": 4.0, "window_reach": 110.0, "window_color": "ffd9a0", "window_gain": 0.8, "window_length_per_height": 0.3, "window_length_max": 9.0}
 	},
 	"render_opt": {
-		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). facade_aa (window-flicker, director 10-27 \"flashing/stuttering lit windows\"): the stand-in and skyline facades box-filter their window pattern over the pixel (every facade cell under it, weighted by the share it covers, the footprint held to facade_aa_cells cells each way) once a pixel spans more than facade_aa_start cells, so windows thinner than a pixel stop popping in motion; nearer walls keep the one exact sample. remesh_high_priority: a carved building's meshing task (CellView) is queued high-priority, as Jolt's jobs are (item 9). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
+		"_note": "Render plan 2026-10-26. night_clip_max: the most of a night still that may sit at 0-2 of 255 (item 4; tests/lib/night_clip.gd). facade_aa (window-flicker, director 10-27 \"flashing/stuttering lit windows\"): the stand-in and skyline facades box-filter their window pattern over the pixel (every facade cell under it, weighted by the share it covers, the footprint held to facade_aa_cells cells each way) once a pixel spans more than facade_aa_start cells, so windows thinner than a pixel stop popping in motion; nearer walls keep the one exact sample. remesh_high_priority: a carved building's meshing task (CellView) is queued high-priority, as Jolt's jobs are (item 9). remesh_worker_mesh: under a real renderer each carved block's mesh is made and uploaded on its worker, so the swap-in only attaches them, every block of a batch on one frame (item 9c; off, or headless: made on the main thread). Look flags live in data/looks.json: deband, agx_contrast, post_contrast.",
 		"night_clip_max": 0.08,
 		"debris_cache": true,
 		"kaiju_tight_bounds": true,
@@ -1747,8 +1761,11 @@
 		"people_buffers": true,
 		"people_aabb_margin_m": 8.0,
 		"kaiju_three_faces": true,
-		"fx_pool": {"enabled": true, "provisional_sizes": true, "slots": {"dust": 24, "puff": 8, "step": 8, "slam": 8, "tree": 8, "spark": 8, "burst": 16, "flames": 12, "embers": 12, "smoke": 12}},
+		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 262, "puff": 17, "step": 4, "slam": 5, "tree": 43, "spark": 13, "burst": 7, "flames": 12, "embers": 12, "smoke": 12}},
 		"remesh_high_priority": true,
+		"remesh_worker_mesh": true,
+		"soft_smoke": true,
+		"soft_smoke_m": 1.5,
 		"facade_aa": true,
 		"facade_aa_start": 0.25,
 		"facade_aa_cells": 6.0

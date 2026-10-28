@@ -119,6 +119,7 @@ jobs:
             local movie_args=(--fixed-fps "$FPS")
             if [ "$MOVIE" = true ]; then movie_args+=(--write-movie "$out/clip.avi"); fi
             echo "=== $1 on $2 ===" | tee -a "$out/RENDERER.txt"
+            result_log="$out/godot-$1.log"
             # $user_args is split on purpose: it is a list of --flag=value words.
             # shellcheck disable=SC2086
             timeout 3000 xvfb-run -a -s "-screen 0 ${RES}x24" \
@@ -140,6 +141,14 @@ jobs:
             gl_compatibility) run_one gl_compatibility opengl3 || code=$?;;
           esac
           tail -n 60 "$out"/godot-*.log
+          # The engine's exit report of leaks fails a capture that otherwise worked (debt row 2): a
+          # RampageSim is cut at the quit by NativeGuard.ok, anything else a tool builds it frees. It
+          # reads the log of the run that produced the result (the last one started), not a renderer
+          # that failed before the fallback.
+          if [ "$code" = 0 ] && ! bash tools/lint/log_smoke.sh --leaks "$result_log"; then
+            echo "::error::$SCRIPT left objects alive at its exit (tools/lint/log_smoke.sh --leaks)"
+            code=1
+          fi
           exit "$code"
 
       - name: Convert the clip to MP4 and collect user:// output

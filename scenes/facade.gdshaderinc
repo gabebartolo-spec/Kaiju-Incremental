@@ -10,6 +10,7 @@
 // window here (an exact per-window match across the stream swap is impossible).
 
 #include "res://scenes/window_palette.gdshaderinc"
+#include "res://scenes/dither.gdshaderinc"
 
 uniform vec3 roof_color : source_color = vec3(0.43, 0.42, 0.40);
 uniform vec3 window_color : source_color = vec3(0.17, 0.23, 0.27);
@@ -125,6 +126,10 @@ void vertex() {
 }
 
 void fragment() {
+	// A box dissolving out as its mesh arrives (StreamDissolve): instance alpha is its opacity.
+	if (COLOR.a < 0.999 && dither(FRAGCOORD.xy) > COLOR.a) {
+		discard;
+	}
 	vec3 wall = srgb_to_linear(COLOR.rgb);
 	vec3 albedo = wall;
 	vec3 emit = vec3(0.0);

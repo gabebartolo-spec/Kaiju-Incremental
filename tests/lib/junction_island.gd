@@ -1,15 +1,13 @@
 extends RefCounted
-## An all-junction cell gets a traffic island (TrafficIsland; lead 10, 2026-10-21): in three
-## Behemoth cities whose plan leaves a no-empty-ground cell that is all road junction (a street,
-## an avenue and the diagonal meet; no parked car fits), the island fills it, so the
-## no-empty-ground measure finds no bare cell; with the islands off the same cities have one.
-## Every island keeps clear of every lane Traffic drives (its footprint plus a car's half width
-## off each lane line, both sides) and of every parked car.
+## Traffic islands where the diagonal meets avenues (TrafficIsland; director 2026-10-26: "Where
+## the diagonal meets avenues", after the city audit, D-265, found none in any seed): on the
+## shipped plan's seeds at the first and last stage every city gets at least one island, each
+## within wedge_reach of a crossing of the diagonal with an avenue; no island blocks a lane
+## (its footprint plus a car's half width off each lane line) or stands on a parked car. With the
+## rule off (city.traffic_island.at "") the same cities get none, so the rule is what plants them.
 
-const Coverage := preload("res://tests/lib/city_coverage.gd")
-const SEEDS: Array[int] = [94, 55, 60]
-const TIER := 2
-const Rings := preload("res://tests/lib/fixture_rings.gd")
+const SEEDS: Array[int] = [7301, 1234, 98765]
+const TIERS: Array[int] = [1, 3]
 
 var _check: Callable
 var _root: Node
@@ -21,55 +19,56 @@ func _init(check_fn: Callable, root: Node) -> void:
 
 
 func run() -> void:
-	# The riverside crates would fill some of these cells too; with them off the bank row is bare
-	# (no alleys on the banks), so Coverage.off_bank leaves that row out of the count.
-	RiverQuay.enabled = false
-	for map_seed: int in SEEDS:
-		TrafficIsland.enabled = false
-		var without: Dictionary = _city(map_seed)
-		TrafficIsland.enabled = true
-		var with_island: Dictionary = _city(map_seed)
-		var bare_without: Array = without["empty"]
-		var bare_with: Array = with_island["empty"]
-		var islands: Array = with_island["islands"]
-		_check.call(
-			bare_without.size() > 0 and bare_with.is_empty() and islands.size() > 0,
+	for tier: int in TIERS:
+		for map_seed: int in SEEDS:
+			var got := _city(tier, map_seed, "diagonal_avenue")
+			var islands: Array = got["islands"]
 			(
-				(
-					"stage %d, map_seed %d: a traffic island fills the all-junction cell (%d bare"
-					+ " without at %s; %d with, islands at %s)"
+				_check
+				. call(
+					islands.size() >= 1 and Num.i(got["off_crossing"]) == 0,
+					(
+						(
+							"stage %d, map_seed %d: islands where the diagonal meets avenues (%d at %s, %d"
+							+ " away from such a crossing)"
+						)
+						% [tier, map_seed, islands.size(), islands, Num.i(got["off_crossing"])]
+					)
 				)
-				% [TIER, map_seed, bare_without.size(), bare_without, bare_with.size(), islands]
 			)
-		)
-		_check.call(
-			Num.f(with_island["lane_gap"]) >= 0.0 and Num.i(with_island["on_cars"]) == 0,
 			(
-				(
-					"stage %d, map_seed %d: no island blocks a lane (closest %.2f clear of a car"
-					+ " in its lane) or stands on a parked car (%d do)"
+				_check
+				. call(
+					Num.f(got["lane_gap"]) >= 0.0 and Num.i(got["on_cars"]) == 0,
+					(
+						(
+							"stage %d, map_seed %d: no island blocks a lane (closest %.2f clear of a car"
+							+ " in its lane) or stands on a parked car (%d do)"
+						)
+						% [tier, map_seed, Num.f(got["lane_gap"]), Num.i(got["on_cars"])]
+					)
 				)
-				% [TIER, map_seed, Num.f(with_island["lane_gap"]), Num.i(with_island["on_cars"])]
 			)
-		)
-	TrafficIsland.enabled = true
-	RiverQuay.enabled = true
+	var off := _city(1, SEEDS[0], "")
+	var none: Array = off["islands"]
+	_check.call(none.is_empty(), "with the rule off no island is planted (%d)" % none.size())
 
 
-## The bare cells, the island centres, how far the nearest island footprint keeps from a car
-## driving any lane (negative: they touch) and how many islands overlap a car.
-func _city(map_seed: int) -> Dictionary:
+## The island centres, how many lie beyond wedge_reach of every diagonal x avenue crossing, how
+## far the nearest island footprint keeps from a car driving any lane (negative: they touch) and
+## how many islands overlap a parked car.
+func _city(tier: int, map_seed: int, rule: String) -> Dictionary:
 	var base: Dictionary = Content.tuning().duplicate(true)
 	base["city"]["map_seed"] = map_seed
-	Rings.apply(base)
+	base["city"]["traffic_island"]["at"] = rule
 	var sim := RampageSim.new(
 		UpgradeTree.run_stats(
 			Content.section("kaiju"),
 			Content.species_def("reptilian"),
 			UpgradeTree.new(Content.upgrades())
 		),
-		CityGrowth.tuning_for(base, TIER),
-		CityGrowth.layout(base, TIER, Seeds.make("city", 0)),
+		CityGrowth.tuning_for(base, tier),
+		CityGrowth.layout(base, tier, Seeds.make("city", 0)),
 		Seeds.make("army", 0)
 	)
 	var holder := Node3D.new()
@@ -80,18 +79,17 @@ func _city(map_seed: int) -> Dictionary:
 	holder.add_child(fx)
 	var street := StreetLife.new(sim, fx, Seeds.make("civilians", 0))
 	holder.add_child(street)
-	var ground := CityGround.new(sim.city)
-	holder.add_child(ground)
-	var skyline := CitySkyline.new(ground, Seeds.make("skyline", 0))
-	holder.add_child(skyline)
-	var got: Dictionary = Coverage.measure(sim, decor, street, skyline)
 	var islands := decor.islands
-	var cells := Num.i(sim.city["traffic_island"]["half_cells"]) * 2 + 1
+	var cfg: Dictionary = sim.city["traffic_island"]
+	var cells := Num.i(cfg["half_cells"]) * 2 + 1
 	var foot := cells * CityDecor.PROP_VOXEL * 0.5 * sqrt(2.0)  # the slab's corner, any facing
 	var traffic := street.traffic
 	var lane_gap := INF
 	var on_cars := 0
+	var off_crossing := 0
 	for at: Vector2 in islands:
+		if not _by_crossing(decor.plan, at, Num.f(cfg["wedge_reach"])):
+			off_crossing += 1
 		for a: int in traffic._lanes.size():
 			for lane: Dictionary in traffic._lanes[a]:
 				var from := traffic._nodes[a]
@@ -108,8 +106,24 @@ func _city(map_seed: int) -> Dictionary:
 				on_cars += 1
 	holder.free()
 	return {
-		"empty": Coverage.off_bank(got["empty"], sim),
-		"islands": islands,
-		"lane_gap": lane_gap,
-		"on_cars": on_cars,
+		"islands": islands, "lane_gap": lane_gap, "on_cars": on_cars, "off_crossing": off_crossing
 	}
+
+
+## Whether `at` lies within `reach` of a crossing where the diagonal and an avenue meet.
+static func _by_crossing(plan: Dictionary, at: Vector2, reach: float) -> bool:
+	var nodes: Array[Vector2] = plan["nodes"]
+	var kinds := {}  # node -> {kind: true}
+	for s: Dictionary in plan["streets"]:
+		for end: String in ["from", "to"]:
+			var n := Num.i(s[end])
+			if not kinds.has(n):
+				kinds[n] = {}
+			var seen: Dictionary = kinds[n]
+			seen[str(s["kind"])] = true
+	for n: int in kinds:
+		var seen: Dictionary = kinds[n]
+		if seen.has(CityGen.DIAGONAL) and seen.has(CityGen.AVENUE):
+			if nodes[n].distance_to(at) <= reach:
+				return true
+	return false

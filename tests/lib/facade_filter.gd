@@ -49,7 +49,7 @@ func run() -> void:
 	var start := Num.f(cfg["facade_aa_start"])
 	var cells := Num.f(cfg["facade_aa_cells"])
 	for haze: float in [0.0, 0.004]:
-		var mat := CitySkyline.facade_material(haze)
+		var mat := SkylineMeshes.facade_material(haze)
 		var carried: bool = (
 			mat.get_shader_parameter("filter_windows") == on
 			and is_equal_approx(Num.f(mat.get_shader_parameter("filter_start")), start)

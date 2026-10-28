@@ -18,6 +18,9 @@ var _failures: Array[String] = []
 
 
 func _initialize() -> void:
+	# A test that drops a RampageSim without dispose() would leak it at the exit (debt row 2):
+	# the quit cuts every sim's rings, so no test has to remember.
+	QuitGame.release_sims_at_exit(self)
 	_start.call_deferred()
 
 
@@ -26,6 +29,8 @@ func _start() -> void:
 	await process_frame
 	await run_checks()
 	print(Ran.line(suite_name(), self))
+	# A menu sound still playing (Sfx.ui) at the quit leaks its stream and playbacks (debt row 2).
+	await QuitGame.settle_audio(self)
 	quit(0 if _failures.is_empty() else 1)
 
 

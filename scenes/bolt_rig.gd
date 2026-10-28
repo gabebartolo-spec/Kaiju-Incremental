@@ -16,18 +16,14 @@ signal stroked(index: int, at: Vector3)
 signal thundered(at: Vector3)
 
 const FLARE := preload("res://scenes/flare.gdshader")
+## The mouth light's and the flares' colour where the halo mode names none (the purple names
+## its own, D-357).
 const HOT := Color(1.0, 0.85, 0.65)
-## The strike's flash is white-hot whatever the halo.
 const STRIKE_WHITE := Color(1.0, 0.96, 0.88)
 ## Bolt seeds per run: an owner's seed is run * this + the play's number.
 const SEEDS_PER_RUN := 4096
 ## The impact light sits this far back from the struck point (world units at body scale 1).
 const LIGHT_BACK := 1.5
-## A sub-fork leaves its branch this far along it (0..1), turned this many radians, at this share
-## of the rest of the branch's length.
-const SUB_FORK_AT := 0.55
-const SUB_FORK_TURN := 0.7
-const SUB_FORK_LENGTH := 0.9
 
 ## The signature Power's brightness for this play (1..fx.power_max).
 var power := 1.0
@@ -69,6 +65,7 @@ var _main_shape := PackedVector3Array()
 var _branches: Array[Dictionary] = []
 var _arcs: BoltArcs
 var _thrown: BoltImpact
+var _forks: BoltBranches
 
 
 ## kind: the owner's row in tuning "fx" "bolt" ("breath", "thunder"); eye: the species' eye colour.
@@ -78,13 +75,14 @@ func _init(kind: String, eye: Color, body_scale: float, cfg: Dictionary) -> void
 	_scale = body_scale
 	_arcs = BoltArcs.new(_row, cfg, body_scale)
 	_thrown = BoltImpact.new(_row, cfg, body_scale)
+	_forks = BoltBranches.new(self, cfg, _row)
 	_view = BoltView.new(Num.f(_row["core"]) * body_scale, eye, cfg)
 	add_child(_view)
 	var colours := BoltView.halo_colours(cfg, eye)
-	_setup_light(_mouth_light, HOT)
+	_setup_light(_mouth_light, BoltView.flare_colour(cfg, HOT))
 	_setup_light(_hit_light, colours[0].lightened(0.3))
-	_muzzle = _flare(HOT)
-	_strike = _flare(STRIKE_WHITE)
+	_muzzle = _flare(BoltView.flare_colour(cfg, HOT))
+	_strike = _flare(BoltView.flare_colour(cfg, STRIKE_WHITE))
 	cancel()
 
 
@@ -231,79 +229,22 @@ func _stroke() -> void:
 		thundered.emit(_hit)
 
 
-## 3-5 (the owner's row) fresh branches off the main channel, each to its own target.
+## Fresh branches off the main channel for this stroke (BoltBranches).
 func _roll_branches() -> void:
-	_branches.clear()
-	var count: Array = _row["branches"]
-	var n := _rng.randi_range(Num.i(count[0]), Num.i(count[1]))
-	var main := _main_world()
-	var targets: Array = []
-	if ends.is_valid():
-		targets = ends.call(_rng, n)
-	elif not cone.is_empty():
-		var fan := cone.duplicate()  # a tighter fan, forking toward where the bolt lands
-		fan["spread"] = _row["fan_spread"]
-		fan["near"] = _row["fan_near"]
-		targets = BoltShape.fan_ends(_rng, fan, n)
-	for target: Vector3 in targets:
-		var t := _anchor(target)
-		var from := BoltShape.at_t(main, t)
-		var shape := BoltShape.channel(
-			_rng, Num.i(_cfg["branch_depth"]), Num.f(_row["branch_sway"])
-		)
-		_branches.append({"t": t, "end": _stopped(from, target), "shape": shape, "of": -1})
-	for k: int in mini(Num.i(_row["sub_forks"]), _branches.size()):
-		_branches.append(_sub_fork(k, main))
-
-
-## A short fork off branch `k`, a bit past its middle, turned to one side (same cone, same blocker).
-func _sub_fork(k: int, main: PackedVector3Array) -> Dictionary:
-	var parent := _branches[k]
-	var pend: Vector3 = parent["end"]
-	var from := BoltShape.at_t(main, Num.f(parent["t"]))
-	var mid := from.lerp(pend, SUB_FORK_AT)
-	var turn := SUB_FORK_TURN if _rng.randf() < 0.5 else -SUB_FORK_TURN
-	var end := mid + (pend - mid).rotated(Vector3.UP, turn) * SUB_FORK_LENGTH
-	if not cone.is_empty():
-		end = BoltShape.clamp_to_cone(end, cone)
-	var shape := BoltShape.channel(_rng, Num.i(_cfg["branch_depth"]), Num.f(_row["branch_sway"]))
-	return {"t": SUB_FORK_AT, "end": _stopped(mid, end), "shape": shape, "of": k}
-
-
-## Where along the main channel (0..1) a branch to `target` forks off: the owner's range at random,
-## or, where its branches strike things beside the beam, just short of the point nearest the target.
-func _anchor(target: Vector3) -> float:
-	var span: Array = _row["branch_from"]
-	var lo := Num.f(span[0])
-	var hi := Num.f(span[1])
-	var near: bool = _row["anchor_near"]
-	if not near:
-		return _rng.randf_range(lo, hi)
-	var axis := _hit - _mouth
-	var along := (target - _mouth).dot(axis) / maxf(axis.length_squared(), 0.001)
-	return clampf(along - Num.f(_row["anchor_back"]), lo, hi)
-
-
-## `target` cut short where something solid is in the way from `from`.
-func _stopped(from: Vector3, target: Vector3) -> Vector3:
-	if not blocker.is_valid():
-		return target
-	var span := target - from
-	var share: float = blocker.call(from, span)
-	return from + span * share
+	_branches = _forks.roll(_rng, _main_world(), _mouth, _hit)
 
 
 ## The main channel in the world, from the mouth to the struck point, kept inside the cone.
 func _main_world() -> PackedVector3Array:
 	var line := BoltShape.place(_main_shape, _clear_of_head(), _hit)
 	var bow := Num.f(_row["bow"]) * line[0].distance_to(line[line.size() - 1])
-	for i: int in range(1, line.size() - 1):  # bowed up: it rises over the head, then strikes down
+	for i: int in range(1, line.size() - 1):  # bowed up by `bow` (0: straight from the throat, D-357)
 		line[i] += Vector3.UP * bow * sin(PI * i / (line.size() - 1))
 	return _kept(line)
 
 
-## Where the main channel starts: a little way out in front of the jaw, so it visibly leaves the
-## mouth instead of running along the head and back.
+## Where the main channel starts: `clear` out along the aim from the mouth point (0: right in the
+## throat, D-357).
 func _clear_of_head() -> Vector3:
 	return _mouth + (_hit - _mouth).normalized() * Num.f(_row["clear"]) * _scale
 

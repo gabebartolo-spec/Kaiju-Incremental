@@ -53,18 +53,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 16)
 	root.add_child(col)
-
-	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 24)
-	col.add_child(header)
-	var title := UiKit.label("EVOLUTION TREE", 48, UiKit.ACCENT)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
-	_rubble_label = UiKit.label("", UiKit.SIZE_HEAD, UiKit.WARN)
-	header.add_child(_rubble_label)
-	var menu := UiKit.button("MENU", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	menu.pressed.connect(func() -> void: menu_pressed.emit())
-	header.add_child(menu)
+	_add_header(col)
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -82,6 +71,21 @@ func _ready() -> void:
 	body.add_child(_build_side())
 	_selected = tree.order[0]
 	_refresh()
+
+
+## The title, the rubble counter and the MENU button across the top.
+func _add_header(col: Control) -> void:
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 24)
+	col.add_child(header)
+	var title := UiKit.label("EVOLUTION TREE", 48, UiKit.ACCENT)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+	_rubble_label = UiKit.label("", UiKit.SIZE_HEAD, UiKit.WARN)
+	header.add_child(_rubble_label)
+	var menu := UiKit.button("MENU", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	menu.pressed.connect(func() -> void: menu_pressed.emit())
+	header.add_child(menu)
 
 
 func _build_side() -> Control:
