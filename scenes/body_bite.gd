@@ -26,7 +26,9 @@ static func tear(
 		mid += b.chunk_world(c)
 	mid /= cells.size()
 	var chipped := view.chip(cells, rng)  # ragged edges round the hole, as for any blow
-	var piece := view.lift_piece(cells, mid)
+	var piece := city.carve.bite(view, mid)  # exactly the cells the blow carved, when drawn fine
+	if piece == null:
+		piece = view.lift_piece(cells, mid)
 	city.add_child(piece)
 	var away := Vector3(mid.x - kaiju_at.x, 0, mid.z - kaiju_at.z).normalized()
 	var land := Vector3(mid.x, MIN_DROP * 0.5, mid.z) + away * THROW

@@ -4,12 +4,12 @@ extends SceneTree
 ## stomp-sized spheres down their street face; each carve's remesh (its touched 16^3 blocks on
 ## the WorkerThreadPool, meshes swapped in) is timed from carved() to drawn. Native and GDScript
 ## paths. Prints p50/p95/max ms per carve, blocks per carve and the building's triangles, and
-## finish_us: the main-thread time of each batch's swap-in (CellView._finish: the block meshes
-## made and attached), p50/p95/max in microseconds. A headless run uses the dummy renderer, which
+## finish_us: the main-thread time of each batch's swap-in (CellView._upload: the block meshes
+## made and swapped in), p50/p95/max in microseconds. A headless run uses the dummy renderer, which
 ## uploads nothing, so its finish_us understates; run it windowed (a real renderer) for the real
 ## one. --priority=high|low overrides tuning render_opt.remesh_high_priority for the A/B (low is
 ## the behaviour before render plan item 9). --worker=on|off overrides render_opt.remesh_worker_mesh
-## (item 9c: off makes the meshes in _finish, as before; headless never makes them on the worker).
+## (item 9c: off: CellView._make makes them, as before; headless never makes them on the worker).
 ## --frames=on draws a frame after each timed carve (as the game does; untimed), so the renderer's
 ## deferred work (uploads, frees) drains between carves instead of piling up over the whole walk;
 ## it asks for vsync off (a no_focus window may stay paced) and prints frame_ms, the wall time of a

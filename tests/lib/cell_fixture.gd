@@ -20,8 +20,9 @@ static func building(f: Array) -> RampageSim.Building:
 ## Blocks whose shown mesh is not a fresh mesh of `cells`.
 static func stale_blocks(m: CellMesher, view: CellView, cells: PackedByteArray) -> int:
 	var off := 0
+	var drawn := m.drawn(cells)  # what a CellView draws of the grid (no proud balcony slab)
 	for r: Vector3i in m.all_regions():
-		var fresh := m.mesh_region(cells, r)
+		var fresh := m.mesh_region(drawn, r)
 		var shown: Array = view.arrays.get(r, [])
 		if shown.is_empty() or CellMesher.digest(shown) != CellMesher.digest(fresh):
 			off += 1
