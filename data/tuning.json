@@ -636,7 +636,7 @@
 		"mottle_length": 3.0,
 		"mottle_amp": 0.3,
 		"night_glow": 3.5,
-		"day_glow": 0.2,
+		"day_glow": 0.0,
 		"river": {"wave_length": 4.0, "wave_slope": 0.2, "ripple_length": 0.8, "ripple_slope": 0.18, "flow": 0.6, "swell_length": 0.0, "swell_slope": 0.0},
 		"bay": {"wave_length": 9.0, "wave_slope": 0.2, "ripple_length": 1.1, "ripple_slope": 0.18, "flow": 0.0, "swell_length": 38.0, "swell_slope": 0.035}
 	},
