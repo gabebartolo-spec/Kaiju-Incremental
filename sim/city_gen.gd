@@ -43,7 +43,9 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 						lots = CityRiver.off_quay(plan, lots, cfg)
 					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
-	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, quay, out, cfg))  # + red barrels (#19)
+	out = CityHarbour.dry(plan, cfg, out)  # nothing stands in the bay the kaiju rises in
+	var sheds := CityHarbour.dry(plan, cfg, CityRiver.sheds(plan, quay, out, cfg))
+	CityHazards.tag(out, plan, cfg, sheds)  # + red barrels (#19)
 	return out
 
 
@@ -349,3 +351,4 @@ static func _blocks(
 	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
 		blocks[best_plaza]["use"] = "plaza"
 	CityBand.hold_back(plan, inner, cfg)
+	CityHarbour.mark(plan, cfg)  # the sea bay the kaiju rises from, cut into the north edge

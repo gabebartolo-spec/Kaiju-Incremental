@@ -144,3 +144,15 @@ static func concrete_material(haze: float, hazy: bool, map_seed: int) -> ShaderM
 	mat.set_shader_parameter("haze_color", Look.color("fog_color"))
 	mat.set_shader_parameter("haze", haze)
 	return mat
+
+
+## The flat ground the city's physics debris lands on (moved here from CityView).
+static func floor_body() -> StaticBody3D:
+	var ground := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box_shape := BoxShape3D.new()
+	box_shape.size = Vector3(800.0, 1.0, 800.0)
+	shape.shape = box_shape
+	shape.position.y = -0.5
+	ground.add_child(shape)
+	return ground

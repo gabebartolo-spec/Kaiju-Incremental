@@ -1,10 +1,10 @@
 extends RefCounted
-## D-083 (director 2026-10-19: "a city caught unaware - have our reptilian emerge from a river
-## to start each run"): the city suite's river check, called from its D-062 loop for each stage
-## and map_seed. The city has a river, the same at every stage, with no building in it; a run
-## the game starts puts the kaiju in the river, under the water; the run's clock waits while it
-## rises and wades out; then the sim says "kaiju_emerged" once, with the kaiju standing on land
-## inside the arena, out of the river (at every stage: the grown city's arena takes the river in).
+## D-083 (director 2026-10-19: "a city caught unaware"; 2026-10-26: the kaiju rises from the sea
+## bay, CityHarbour): the city suite's river and start check, called from its D-062 loop for each
+## stage and map_seed. The city has a river, the same at every stage, with no building in it or
+## in the bay; a run the game starts puts the kaiju in the bay, under the water; the run's clock
+## waits while it rises and wades out; then the sim says "kaiju_emerged" once, with the kaiju
+## standing on land inside the arena, out of the water.
 
 const DT := 1.0 / 30.0
 ## Parked cars keep this far off the channel's edge (CityDecor's water margin): their bodies
@@ -14,26 +14,30 @@ const CAR_CLEAR := 0.5
 
 static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable) -> void:
 	var plan := CityGen.map(sim.city)
-	var spawn: Vector2 = plan.get("river_spawn", Vector2(INF, INF))
+	var spawn: Vector2 = plan.get("rise_spawn", Vector2(INF, INF))
 	var rivers: Array[Rect2] = []
 	for block: Dictionary in plan["blocks"]:
 		if str(block["use"]) == "river":
 			var rect: Rect2 = block["rect"]
 			rivers.append(rect)
+	# The river's blocks and the sea bay the kaiju rises in (CityHarbour.bands).
+	var wet: Array[Rect2] = rivers.duplicate()
+	wet.append_array(CityHarbour.bands(plan, sim.city))
 	var built := 0
 	for b: RampageSim.Building in sim.lot_buildings():
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		for rect: Rect2 in rivers:
+		for rect: Rect2 in wet:
 			if rect.intersects(foot):
 				built += 1
-	var in_river := false
-	for rect: Rect2 in rivers:
-		in_river = in_river or rect.has_point(spawn)
+	var in_river := CityHarbour.holds(plan, spawn)
 	var stage_one: Dictionary = CityGrowth.tuning_for(_with_seed(map_seed), 1)["city"]
 	var same: bool = CityGen.map(stage_one).get("river", Vector2.ZERO) == plan.get("river")
 	var clock := sim.time_left
 	sim.emerge.start(sim)
-	var started := sim.kaiju_pos == spawn and sim.stand_y < 0.0
+	var started := (  # under the water, in the bay
+		CityHarbour.holds(plan, sim.kaiju_pos)
+		and sim.stand_y + sim.reach_height() < CityHarbour.sea(sim.city)
+	)
 	var waited := 0.0
 	var emerged := 0
 	var clock_held := true
@@ -45,39 +49,42 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		waited += DT
 		clock_held = clock_held and (emerged > 0 or sim.time_left == clock)
 	var landed := sim.clamp_to_arena(sim.kaiju_pos) == sim.kaiju_pos and sim.stand_y == 0.0
-	for rect: Rect2 in rivers:
+	for rect: Rect2 in wet:
 		landed = landed and not rect.has_point(sim.kaiju_pos)
-	check_fn.call(
-		(
-			not rivers.is_empty()
-			and in_river
-			and built == 0
-			and same
-			and started
-			and emerged == 1
-			and clock_held
-			and landed
-		),
-		(
+	(
+		check_fn
+		. call(
 			(
-				"stage %d, map_seed %d: river start (%d river blocks, spawn %s in one: %s, %d"
-				+ " buildings in it, same river as stage 1: %s; rose from under the water: %s,"
-				+ " emerged after %.1f s: %s, clock held: %s, out of the river, in the arena: %s)"
+				not rivers.is_empty()
+				and in_river
+				and built == 0
+				and same
+				and started
+				and emerged == 1
+				and clock_held
+				and landed
+			),
+			(
+				(
+					"stage %d, map_seed %d: river and start (%d river blocks, spawn %s in the bay: %s, %d"
+					+ " buildings in it, same river as stage 1: %s; rose from under the water: %s,"
+					+ " emerged after %.1f s: %s, clock held: %s, out of the river, in the arena: %s)"
+				)
+				% [
+					tier,
+					map_seed,
+					rivers.size(),
+					spawn,
+					in_river,
+					built,
+					same,
+					started,
+					waited,
+					emerged == 1,
+					clock_held,
+					landed
+				]
 			)
-			% [
-				tier,
-				map_seed,
-				rivers.size(),
-				spawn,
-				in_river,
-				built,
-				same,
-				started,
-				waited,
-				emerged == 1,
-				clock_held,
-				landed
-			]
 		)
 	)
 
@@ -122,7 +129,7 @@ static func check_look(
 		for channel: Rect2 in channels:
 			if channel.grow(CAR_CLEAR + CityDecor.CAR_HALF.y).has_point(car.get_center()):
 				in_water += 1
-	var bank: Vector2 = plan.get("river_bank", Vector2(INF, INF))
+	var bank: Vector2 = plan.get("rise_bank", Vector2(INF, INF))
 	var landing := sim.clamp_to_arena(bank)
 	var reach := Num.f(sim.city["quay"]["reach"])
 	var near := 0
@@ -159,22 +166,22 @@ static func check_look(
 	)
 
 
-## The start can never stall (sim review FIX 2026-10-20 on #88): with city "river_inset" 0 the
-## bank point lies on the river's sidewalk, inside the sunk channel, and in the Behemoth city
-## (stage 2) the arena does not clamp it back onto land, so the wade never climbs out.
+## The start can never stall (sim review FIX 2026-10-20 on #88): with city "harbour" "bank_inset"
+## pulled back half a beach the bank point lies in the water, on the beach's slope, so the wade
+## never climbs out.
 ## Without the cap (max_seconds pushed out of reach) the kaiju is still wading past tuning
 ## "emerge" "max_seconds"; with it, it stands on the bank and the sim says "kaiju_emerged" once,
 ## by that time. Seeded by design: the default map_seed, no randomness in the rise or the wade.
 static func check_cap(check_fn: Callable) -> void:
 	var shipped: Dictionary = Content.tuning().duplicate(true)
-	shipped["city"]["river_inset"] = 0.0
-	var base := CityGrowth.tuning_for(shipped, 2)  # its arena takes the river in: no clamp out
+	var bay: Dictionary = shipped["city"]["harbour"]
+	bay["bank_inset"] = -Num.f(bay["beach"]) * 0.5
+	var base := CityGrowth.tuning_for(shipped, 2)
 	var city: Dictionary = base["city"]
 	var cap := Num.f(base["emerge"]["max_seconds"])
-	var bank: Vector2 = CityGen.map(city).get("river_bank", Vector2(INF, INF))
-	var wet := false
-	for channel: Rect2 in CityRiver.channels(CityGen.map(city), city):
-		wet = wet or channel.has_point(bank)
+	var plan := CityGen.map(city)
+	var bank: Vector2 = plan.get("rise_bank", Vector2(INF, INF))
+	var wet := CityHarbour.floor_at(plan, city, bank) < 0.0
 	(
 		check_fn
 		. call(
@@ -193,7 +200,7 @@ static func check_cap(check_fn: Callable) -> void:
 		wet and stalled["emerged"] == 0 and capped["emerged"] == 1 and capped["landed"],
 		(
 			(
-				"river start never stalls (bank %s in the channel: %s; no cap: emerged %d times"
+				"the start never stalls (bank %s in the water: %s; no cap: emerged %d times"
 				+ " in %.1f s; cap %.1f s: emerged %d time(s) after %.2f s, on its feet: %s)"
 			)
 			% [

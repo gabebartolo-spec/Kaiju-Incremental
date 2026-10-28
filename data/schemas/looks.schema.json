@@ -230,6 +230,7 @@
           "asphalt": {"$ref": "#/$defs/str"},
           "lot": {"$ref": "#/$defs/str"},
           "water": {"$ref": "#/$defs/str"},
+          "sand": {"$ref": "#/$defs/str"},
           "river": {"$ref": "#/$defs/str"},
           "ambient_color": {"$ref": "#/$defs/hex6"},
           "lamp_energy": {"$ref": "#/$defs/num"},

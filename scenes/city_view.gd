@@ -31,6 +31,7 @@ var _decor: CityDecor
 var _fires: Array[Fire] = []
 var _chunk_fires := BuildingFires.new()
 var _debris: DebrisField
+var _streets: CityGround
 
 var _with_decor := true
 
@@ -164,19 +165,12 @@ func _build_buildings() -> void:
 
 ## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
 func _build_ground() -> void:
-	var ground := StaticBody3D.new()
-	var shape := CollisionShape3D.new()
-	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3(800.0, 1.0, 800.0)
-	shape.shape = box_shape
-	shape.position.y = -0.5
-	ground.add_child(shape)
-	add_child(ground)
-	var streets := CityGround.new(sim.city)
-	add_child(streets)
+	add_child(GroundKit.floor_body())
+	_streets = CityGround.new(sim.city)
+	add_child(_streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
-		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
+		SkylineRampage.attach(self, CitySkyline.new(_streets, Seeds.make("skyline", 0)), _rng)
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
