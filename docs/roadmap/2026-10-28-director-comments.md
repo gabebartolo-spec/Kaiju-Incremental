@@ -1,6 +1,6 @@
 # Director comments 2026-10-28
 
-Rulings of the night are in DECISIONS (D-356 to D-363); the evening before is in 2026-10-27-director-comments.md.
+Rulings of the night are in DECISIONS (D-356 to D-367); the evening before is in 2026-10-27-director-comments.md.
 
 | Time | His words | What it is | Owner, next step | Status |
 |---|---|---|---|---|
@@ -9,3 +9,9 @@ Rulings of the night are in DECISIONS (D-356 to D-363); the evening before is in
 | 04:5x | "leap attack is broken because you can leap to the top of a sky scraper haha"; picked "Tall ones: hit the side" | changes D-262: roofs only up to about shoulder height; a taller building takes the leap in its side, he carves in and drops to the street at its foot | D-361; lead: leap-fix builder (sim + leap test) on the next free slot | queued |
 | 04:5x | "i died in every single run ... maybe i didnt actualyl getkilled? check that, but dont worry abot balance yet. lets get the game beautiful and working then we can balance it" | every run end plays the stone and blast by design (D-263, D-294); the summary headline follows the real reason (army kill: BROUGHT DOWN, clock: TIME UP); runs last 40 s base | lead: checked on main, headline code reads the reason correctly; no balance change (D-363) | checked |
 | 04:5x | afk: "do a first draft of all remaining casc animations, dont iterate on any first attempts ... use our reference models and clips that ive shown you"; 05:0x "really rapid fire get through all animations" | one Cascadeur draft per move, no second takes: croc at all three stages plus people (his 10-25 "Creatures + people"); insectoid and cephalopod wait (picked "Croc and people only") | keyer croc-claw (adult, then adolescent), rigger croc-young-casc (baby, then people); C:/kt/casc_drafts_1028/BRIEF.md and INDEX.md; #332 parked (D-362) | keying |
+| 12:2x | "status check on render and debt plans" | status asked; four answers followed | lead | answered |
+| 12:2x | restart Cascadeur: "Yes, restart it (Recommended)" | frees about 10 GB for rebakes and local runs (D-364) | lead | done: relaunched minimized |
+| 12:2x | close #332, keep its branch: "Yes, close it (Recommended)" | frees a PR slot (D-365) | croc-claw rebakes, lead reopens on a pass | closed |
+| 12:2x | city music's last layers never arrive in the wider city: "Leave it for balancing" | pacing kept until balancing (D-363, D-366) | leap-side refits the test | doing |
+| 12:2x | collapse sounds dropped when many fall at once: "Newest cuts oldest (Recommended)" | a full collapse sound takes over its own oldest voice after 1.0 s (D-367) | leap-side, check shown red first | doing |
+| 12:3x | afk 1-2 h: "focus on wrapping up the render and debt plan loose ends / do github hygiene / then continue wrapping up any other loose ends / ... then we interview when i get home" | lead keeps working, asks nothing, lists each call for the interview | lead | doing |
