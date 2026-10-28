@@ -1,7 +1,7 @@
 extends SceneTree
-## The start of a run (D-083): the kaiju rises from the city's river and steps out, on the game
-## camera, at a stage (1 hatchling, 2 adolescent, 3 adult: capture_kit STAGE_LEVELS). Prints
-## the frame it emerged on. Pair with --write-movie for the clip. Needs a window: CI, or
+## The start of a run (D-083, D-270): the kaiju rises from the city's sea bay and wades out, on
+## the game camera, at a stage (1 hatchling, 2 adolescent, 3 adult: capture_kit STAGE_LEVELS).
+## Prints the frame it emerged on. Pair with --write-movie for the clip. Needs a window: CI, or
 ## off-screen with the no-focus override.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 30 \
@@ -10,6 +10,7 @@ extends SceneTree
 ##   such as --still-at=0.5,1.0,1.5 saves one PNG per time)
 ##   ... -- --side=<m>  (a close side camera that far east of the rise point, at the street,
 ##   looking west across the bay: the deck he bursts through and the shore he climbs)
+##   ... -- --time=<id>  (the time of day, data/looks.json "times"; default: run 0's)
 ##   ... -- --short  (the run intro's short cut, as on a run with nothing new to show; default:
 ##   the whole intro, as on the first run)
 
@@ -21,6 +22,7 @@ var _still_at: Array[float] = []
 var _out := "user://river"
 var _side := 0.0
 var _full := true
+var _run_index := 0  # the run setup is given: its time of day (--time)
 
 
 func _initialize() -> void:
@@ -36,6 +38,8 @@ func _initialize() -> void:
 				_still_at.append(at.to_float())
 		elif arg.begins_with("--side="):
 			_side = arg.substr(7).to_float()
+		elif arg.begins_with("--time="):
+			_run_index = maxi(0, Content.times().find(arg.substr(7)))
 		elif arg == "--short":
 			_full = false
 		elif arg.begins_with("--out="):
@@ -53,7 +57,7 @@ func _run() -> void:
 	var rampage := Rampage.new()
 	rampage.full_intro = _full
 	rampage.setup(
-		species, stats, CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0)), 0
+		species, stats, CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0)), _run_index
 	)
 	rampage.autoplay_signature = false
 	root.add_child(rampage)
