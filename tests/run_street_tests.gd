@@ -16,8 +16,9 @@ const FRAMES := 600
 ## -> e6dc7d4d2660f21f, road network: no alleys on the river banks, so the plan's streets, and the
 ## pavements the people walk, differ at stage 1; -> e451a8ed2f5a4ead, road geometry #243: bigger
 ## blocks, the diagonal mid-block and quay sheds by the bank change the plan and its lots; street
-## life and its tuning untouched).
-const PINNED := "e451a8ed2f5a4ead"
+## life and its tuning untouched; -> c898fced4ad97159, D-254: the 1.5x play area and its spread
+## landmarks change the stage-1 plan; the native walk the replay runs is untouched).
+const PINNED := "c898fced4ad97159"
 ## Frames of the buffer tests: five seconds of the street, with stomps, a brace and a blockade.
 const BUFFER_FRAMES := 300
 const STRIDE := 12  # floats of a 3D transform in a MultiMesh buffer
