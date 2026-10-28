@@ -2,6 +2,24 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-316 · Director · Export a playable build at the end of the shift
+Q: export a build at the end of the shift? A: "Yes, in the usual build folder (Recommended)". So: a demo .exe from
+main in the fixed build folder before he wakes, with a short note of what merged overnight.
+
+## 2026-10-27 · D-315 · Director · No usage cap tonight
+Q: weekly limit 17% used; how much may tonight use? A: "Whatever the work needs (Recommended)". No usage stop tonight.
+
+## 2026-10-27 · D-314 · Director · Opus at high effort for the hardest builds tonight
+Q: Opus high for the hardest builds (new engine code, kaiju posing, tail and toe skeleton)? A: "Yes, hardest builds
+only (Recommended)". So: Opus high only for P2a, P3a, P3c, P4c and the r21 rig work; everything else stays as is.
+
+## 2026-10-27 · D-313 · Director · Speed runs keep the PC to themselves tonight
+Q: keep D-299's ~3 min sole-PC turns tonight? A: "Keep it (Recommended)". D-299 stands through the night shift.
+
+## 2026-10-27 · D-312 · Director · Item 15: the speed savings buy a quieter, cooler PC
+Q: what should the headroom buy at Medium? A: "A quieter, cooler PC (Recommended)". So: same look at 60 fps with the
+GPU working less (D-093's reason for Medium); no render-scale rise. Closes render plan item 15.
+
 ## 2026-10-27 · D-311 · Director · Render plan items 10 and 11 build tonight, last in the plan
 Q (06:2x): items 10 (native collider rebuild, no freeze on big stomps) and 11 (no stutter when a tower starts to fall),
 parked until after the demo by D-094, build them tonight? A: "Yes, last in the plan (Recommended)". So: both go in
