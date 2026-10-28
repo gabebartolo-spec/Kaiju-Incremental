@@ -96,6 +96,10 @@ if E_("P0"):
 
 
 TOPK = int(E_("TOPK", "0")); TOPFIX = E_("TOPFIX", "1") == "1"; TMASK = None; PUSHQ = E_("PUSHQ", "0") == "1"; LCL = E_("LCL", "0") == "1"; SHIN = n.index("shin_" + S); PLJ = [n.index(x) for x in ("pelvis", "lumbar0", "lumbar1")]
+if TOPK and E_("P0") and jj.get("top") and jj.get("verts") == vs.tolist():   # keep the P0 fit's own support mask
+    TMASK = torch.zeros((len(vs), NJ + NH), dtype=torch.float64)
+    for r_, cs_ in enumerate(jj["top"]): TMASK[r_, cs_] = 1.0
+    print("P0 mask kept", flush=True)
 CMASK = tt((W0[vs][:, SHIN] >= float(E_("CMIN", "0.3"))).astype(float)); BMASK = tt((np.linalg.norm(Pb[vs] - hipc, axis=1) < BR).astype(float))
 CL = torch.full((len(vs),), -6.0, dtype=torch.float64, requires_grad=LCL)
 if E_("P0") and jj.get("clean"):
