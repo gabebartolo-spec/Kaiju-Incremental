@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-378 · Director · Sessions boot on a small core; history is searched, not read at start
+His words (~03:0x): "90% of them are pointless. really we could cull almost everything. no wonder our context is always
+so high". Q: how hard to cut startup reading? A: "Core only (Recommended)". A session boots on its handoff, the CLAUDE.md
+files, the rulebook and the DESIGN sections its task touches. Handoffs hold current state only, max 80 lines; their
+history moves to `~/.claude/handoffs/kaiju/archive/`. The co-lead playbook, roadmap chapters and archives are grepped when
+a task needs the why, never boot reading. Nothing is deleted. Changes: RULEBOOK (Session start, Context), kaiju-handoff
+and game-studio-lead skills; lead handoff cut from 253 to ~60 lines.
+
 ## 2026-10-28 · D-377 · Director · The bay is a fixed block on the north edge; the city is laid around it
 His words (~23:5x), after the cut-in bay kept leaving stubs and slivers: "instead of just throwing shit at the wall and seeing
 what sticks why dont u make an implementation plan for the beach front"; "if its easier the bay can always be in the same
