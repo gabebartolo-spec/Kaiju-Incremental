@@ -342,7 +342,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	if planted and _was_planted[i] and _overreached(leg, _lock[i], clip_toe):
 		_stomp.restep(i)  # the body got away from this foot: step after it
 		planted = false
-	var target := clip_toe + _lag[i]
+	var target := _path.down(i, clip_toe + _lag[i])
 	if _stomp.catching(i):
 		var k := _stomp.advance(i, dt)
 		_lag[i] *= 1.0 - smoothstep(0.0, 1.0, k)

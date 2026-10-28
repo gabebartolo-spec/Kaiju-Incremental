@@ -16,16 +16,16 @@ extends RefCounted
 ## held back too, however near its path: the Colossus's long stride (D-302, ~15 m) left a turn's
 ## lift within GAP_STRAIGHT of it, and its toe, the walk's slow peel off the street played at the
 ## turn's quick cadence, skimmed the ground (smoke turn check 2026-10-27: 3.2 foot-frames a second).
-## A stepping turner's foot (D-187's stepped yaw; not the young croc's smooth turn, D-131) aims
-## as it comes down at where the body's turn will have carried its clip spot when it lands: the
-## spot swung round with the body, and a foot that followed it skimmed the street in its last
-## frames aloft (smoke turn check 2026-10-28: 1.7 foot-frames a second). The aim turns the spot
-## about the body by the yaw still to come (this frame's yaw run on for the clip frames left
-## aloft) about the planted foot, the point the sim turns the body about (motion gate pivot),
-## faded in with the swing (`aim`). Only the yaw: the clip's own swing and the body's travel
-## already meet where a straight walk lands (run on too, they kicked the knees: motion gate
-## 2026-10-28, shin jerk p99 34.5 on the Colossus); turned about the body's origin instead, the
-## aim missed the spot's sweep (smoke 3.5 foot-frames a second).
+## A stepping turner's foot (D-187's stepped yaw; not the young croc's smooth turn, D-131) aims,
+## from AIM_FROM of its swing on, at where the body's turn will have carried its clip spot when it
+## lands: this frame's yaw run on for the clip frames left aloft, about the planted foot, the point
+## the sim turns the body about (motion gate pivot). Only the yaw: the clip's swing and the body's
+## travel already meet where a straight walk lands (run on too, they kicked the knees: shin jerk
+## p99 34.5 on the Colossus). Aimed from the lift, it swept the toes along the street as they rose
+## (smoke turn check 2026-10-28: 2.3 foot-frames a second). A turn's short-step foot lands under
+## where it was aloft the frame before (`down`), not on the clip spot the turning body swung on
+## that frame: it jumped there as it touched down (1.7); a full step lands on its spot (landing
+## where it was aloft kicked the young croc's knees: shin jerk p99 4.8 walking).
 
 const LAG_SECONDS := 0.25
 const LAG_SWING := 0.85
@@ -34,6 +34,7 @@ const LAG_LIFT_MAX := 0.15
 const GAP_STRAIGHT := 0.03
 const GAP_TURN := 0.08
 const RATIO_TURN := 0.5
+const AIM_FROM := 0.25
 
 ## Each foot's offset from its clip path (world), set by target().
 var lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
@@ -45,6 +46,8 @@ var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # where it stood (worl
 var _straight: Array[float] = [1.0, 1.0]  # 1 lifting into a full step, 0 into a turn's short one
 var _last_yaw: Array[float] = [INF, INF]  # the body's yaw last frame (rad)
 var _last_frames: Array[float] = [0.0, 0.0]  # walk frames played last frame
+var _aloft: Array[bool] = [false, false]  # it was on this path last frame
+var _last_toe: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # where then, below its lift (world)
 
 
 func _init(swing_frames: float) -> void:
@@ -73,8 +76,20 @@ func target(gait: ClipGait, i: int, dt: float, clip_toe: Vector3) -> Vector3:
 	var gap := _lock[i] - clip_toe + (clip_toe - _lift_toe[i]) * on_path  # from where it went
 	lag[i] = gap * (1.0 - smoothstep(0.0, 1.0, k))
 	var lift_h := minf(LAG_LIFT * gap.length(), LAG_LIFT_MAX * gait.hip_height * gait.s)
-	var aim := _aim(gait, i, clip_toe) * smoothstep(0.0, 1.0, k)
-	return clip_toe + lag[i] + aim + Vector3.UP * lift_h * sin(PI * k)
+	var aim := _aim(gait, i, clip_toe) * smoothstep(AIM_FROM, 1.0, k)
+	_aloft[i] = true
+	_last_toe[i] = clip_toe + lag[i] + aim
+	return _last_toe[i] + Vector3.UP * lift_h * sin(PI * k)
+
+
+## Where foot i lands if its clip puts it down this frame (world): a turn's short step under where
+## it was last frame on this path (blended by how full a step it is), else at `spot` (its clip spot
+## and offset); at `spot`'s height.
+func down(i: int, spot: Vector3) -> Vector3:
+	var was := _aloft[i]
+	_aloft[i] = false
+	var aloft := Vector3(_last_toe[i].x, spot.y, _last_toe[i].z)
+	return spot.lerp(aloft, 1.0 - _straight[i]) if was else spot
 
 
 ## How far the body's turn carries foot i's clip spot before the foot lands (world): this frame's
