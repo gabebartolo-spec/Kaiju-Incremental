@@ -108,8 +108,8 @@ static func map(cfg: Dictionary) -> Dictionary:
 	# ...and their blocks vary far more than the city's, so the outskirts are no even grid.
 	CityLines.extend(far, xs, outer, Num.i(long[0]) - 6, Num.i(long[1]) + 14)
 	CityLines.extend(far, zs, outer, Num.i(short[0]) - 2, Num.i(short[1]) + 12)
-	var avenues_x := _avenues(rng, xs, rings, cfg)
-	var avenues_z := _avenues(rng, zs, rings, cfg)
+	var avenues_x := _avenues(rng, xs, rings, cfg, Num.f(cfg["avenue_spawn_clear"]))
+	var avenues_z := _avenues(rng, zs, rings, cfg, 0.0)
 	var plan := {
 		"nodes": [] as Array[Vector2],
 		"streets": [] as Array[Dictionary],
@@ -171,12 +171,20 @@ static func map(cfg: Dictionary) -> Dictionary:
 	return plan
 
 
-## Every district's ring lines and one or two lines through the first district are avenues.
+## Every district's ring lines and one or two lines through the first district are avenues; an
+## inner avenue keeps `keep` off the middle line when one can (the north-south one carries the
+## viaduct, Rail, and the kaiju sets off from the middle of the south ring: tuning city
+## "avenue_spawn_clear").
 static func _avenues(
-	rng: RandomNumberGenerator, lines: Array[float], rings: Array[float], cfg: Dictionary
+	rng: RandomNumberGenerator,
+	lines: Array[float],
+	rings: Array[float],
+	cfg: Dictionary,
+	keep: float
 ) -> Dictionary:
 	var out := {}
 	var inner: Array[int] = []
+	var clear: Array[int] = []
 	for i: int in lines.size():
 		var ring := false
 		for h: float in rings:
@@ -185,6 +193,10 @@ static func _avenues(
 			out[i] = true
 		elif absf(lines[i]) < rings[0]:
 			inner.append(i)
+			if absf(lines[i]) >= keep:
+				clear.append(i)
+	if not clear.is_empty():
+		inner = clear
 	for n: int in mini(Num.i(cfg["avenues"]), inner.size()):
 		var pick := inner[rng.randi_range(0, inner.size() - 1)]
 		inner.erase(pick)

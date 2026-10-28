@@ -687,6 +687,8 @@
 		"block_long": [18, 26],
 		"block_short": [10, 13],
 		"avenues": 1,
+		"_avenue_spawn_clear": "How far off the middle line (x = 0) an inner north-south avenue is picked when a line allows it (CityGen): that avenue carries the viaduct (Rail), and the kaiju sets off from (0, half) on the south ring, so a viaduct closer holds up its first steps. 28 is where the viaduct stood before the 1.5x city (leap-side 2026-10-28, runs 40604527128 and 40610643072).",
+		"avenue_spawn_clear": 28,
 		"avenue_width": 6,
 		"street_width": 4,
 		"alley_width": 2,

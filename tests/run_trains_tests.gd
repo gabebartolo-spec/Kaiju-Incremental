@@ -17,6 +17,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_line_and_schedule")
+	await _t("_check_clear_of_spawn")
 	await _t("_check_station_stop")
 	await _t("_check_stomp_derails")
 	await _t("_check_train_behind_stops")
@@ -61,6 +62,26 @@ func _check_line_and_schedule() -> void:
 	var gap := train.cars[0].pos.distance_to(train.cars[1].pos)
 	var want := Num.f(sim.rail.cfg["car_length"]) + Num.f(sim.rail.cfg["coupler_gap"])
 	check(absf(gap - want) < 0.05, "the cars follow each other at the coupled spacing: %.2f" % gap)
+
+
+## The viaduct stands clear of where the kaiju sets off (the middle of the south ring, x = 0) at
+## every stage, so its first steps are not held up by it (the 1.5x city put it 10 m off: a 1.6 m
+## walk in 1.5 s; tuning city "avenue_spawn_clear").
+func _check_clear_of_spawn() -> void:
+	var off: Array[float] = []
+	var keep := 0.0
+	for stage: int in [1, 2, 3]:
+		var city: Dictionary = CityGrowth.tuning_for(Content.tuning(), stage)["city"]
+		keep = Num.f(city["avenue_spawn_clear"])
+		off.append(absf(Rail.avenue_x(city)))
+	var nearest: float = off.min()
+	check(
+		keep > 0.0 and nearest >= keep,
+		(
+			"the viaduct stands %s m off the kaiju's start at the three stages (at least %.0f)"
+			% [off, keep]
+		)
+	)
 
 
 func _check_station_stop() -> void:
