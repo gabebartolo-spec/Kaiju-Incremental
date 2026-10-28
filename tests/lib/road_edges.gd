@@ -18,8 +18,8 @@ const KERB := 0.05  # the least step from asphalt up to its pavement that reads 
 const FLAT := 0.005  # the greatest height step two joined road pieces may have (m)
 const ZEBRA_SIZE := Vector2(0.3, 1.2)  # RoadPaint._zebra's stripe (across, along)
 const ZEBRA_OFF := 0.9  # RoadPaint.marks: a zebra's centre past the crossing's kerb line
-const STOP_REACH := 3.5  # a stop line's farthest centre past the junction box (a zebra's width counted)
-const SHORT_SPAN := 4.0  # R7: a road with a slanted end this many dash pitches long or less may be bare
+const STOP_REACH := 3.5  # a stop line's farthest centre past the junction box, zebra counted
+const SHORT_SPAN := 4.0  # R7: a road with a slanted end this short (dash pitches) may be bare
 const PERPENDICULAR := 0.999  # |sin| of a crossing whose junction box an edge runs through
 
 
@@ -159,8 +159,9 @@ static func r5_paint(ground: RoadGround, paint: Array[Transform3D]) -> Array[Str
 		out.append("R5 the central junction at %s has no zebra" % RoadGround.where(nodes[central]))
 	return out
 
+
 ## R7 (director 2026-10-28: "all roads must have road lines when appropriate"): every road in view
-## wide enough for two lanes (city.road_paint.two_lane_min) long enough for a dash carries its centre
+## wide enough for two lanes (road_paint.two_lane_min), long enough for a dash, carries its centre
 ## line, and every end of it that meets a road square to it carries a stop line across its
 ## approaching lane, unless a slanted crossing's asphalt lies where the stop line would.
 static func r7_markings(ground: RoadGround, paint: Array[Transform3D]) -> Array[String]:
@@ -199,22 +200,26 @@ static func r7_markings(ground: RoadGround, paint: Array[Transform3D]) -> Array[
 		var gap := half + Num.f(rp["dash_clear"])
 		var span := Num.f(road["length"]) - 2.0 * gap
 		# A short road between a slanted crossing's long mouth and the next is left bare.
-		var short := span < SHORT_SPAN * Num.f(rp["dash_pitch"]) and _slanted_end(ground, all, road, r)
+		var short := (
+			span < SHORT_SPAN * Num.f(rp["dash_pitch"]) and _slanted_end(ground, all, road, r)
+		)
 		if span > Num.f(rp["dash_pitch"]) and not short and not centre.has(r):
-			out.append(
-				"R7 %s at %s has no centre line" % [road["kind"], RoadGround.where(start)]
-			)
+			out.append("R7 %s at %s has no centre line" % [road["kind"], RoadGround.where(start)])
 		if str(road["kind"]) == CityGen.DIAGONAL:
 			continue
 		for end: int in 2:
 			var node := Num.i(road["from"] if end == 0 else road["to"])
 			var box := _box(ground, all, node, r)
-			if box > 0.0 and not stops.has(Vector2i(r, end)) and not _slanted_there(ground, road, end, box, rp):
+			var covered := stops.has(Vector2i(r, end)) or _slanted_there(ground, road, end, box, rp)
+			if box > 0.0 and not covered:
 				out.append(
-					"R7 %s at %s has no stop line at its %s end"
-					% [road["kind"], RoadGround.where(start), "first" if end == 0 else "last"]
+					(
+						"R7 %s at %s has no stop line at its %s end"
+						% [road["kind"], RoadGround.where(start), "first" if end == 0 else "last"]
+					)
 				)
 	return out
+
 
 ## True when a road not square or parallel to road r meets it at either end.
 static func _slanted_end(ground: RoadGround, all: Dictionary, road: Dictionary, r: int) -> bool:

@@ -50,27 +50,29 @@ func marks() -> Array[Transform3D]:
 		var lift := CityGround.PAINT
 		if kind == CityGen.DIAGONAL:
 			lift += CityGround.DIAG_TOP
-		_road_lines(a, dir, a.distance_to(b), width, [lift, near])
+		_road_lines([a, dir, a.distance_to(b), width], [lift, near])
 		if kind == CityGen.DIAGONAL:
 			continue
 		for i: int in 2:
-			var toward := dir if i == 0 else -dir
-			_junction_end(nodes[ends[i]], toward, width, [crossing, near, ends[i]], zebras)
+			var arm := [nodes[ends[i]], dir if i == 0 else -dir, width]
+			_junction_end(arm, [crossing, near, ends[i]], zebras)
 	return paint
 
 
-## The paint at one end of a road, at `at` (node join[2]): a stop line, and a zebra at the zebra
-## junctions. `toward` runs from the node along the road; join = [crossing, near, node].
-func _junction_end(
-	at: Vector2, toward: Vector2, width: float, join: Array, zebras: Dictionary
-) -> void:
+## The paint at one end of a road: a stop line, and a zebra at the zebra junctions.
+## arm = [the node's position, the direction from it along the road, the road's width];
+## join = [crossing, near, node index].
+func _junction_end(arm: Array, join: Array, zebras: Dictionary) -> void:
+	var at: Vector2 = arm[0]
+	var toward: Vector2 = arm[1]
+	var width := Num.f(arm[2])
 	var crossing: Dictionary = join[0]
 	var near: Array = join[1]
 	var node: int = join[2]
 	var box := box_of(crossing, node, toward)
 	var zebra := zebras.has(node)
 	if box > 0.0:
-		_stop_line(at, toward, width, box + (ZEBRA_OFF + ZEBRA_HALF if zebra else 0.0), near)
+		_stop_line(arm, box + (ZEBRA_OFF + ZEBRA_HALF if zebra else 0.0), near)
 	if zebra:
 		var clear := near.filter(func(road: Array) -> bool: return not at in [road[0], road[1]])
 		_zebra(at + toward * (width * 0.5 + ZEBRA_OFF), toward, width, clear)
@@ -88,30 +90,42 @@ func box_of(crossing: Dictionary, node: int, dir: Vector2) -> float:
 	return out
 
 
-## The lines down a road from a along dir: the centre line, then lane dashes and edge lines when
-## there is more than one lane each way. style = [height, crossing roads to keep clear of].
-func _road_lines(a: Vector2, dir: Vector2, length: float, width: float, style: Array) -> void:
+## The lines down a road, line = [start, direction, length, width]: the centre line, then lane
+## dashes and edge lines when there is more than one lane each way. style = [height, crossing
+## roads to keep clear of].
+func _road_lines(line: Array, style: Array) -> void:
+	var dir: Vector2 = line[1]
+	var width := Num.f(line[3])
 	var side := Vector2(-dir.y, dir.x)
 	var lanes := floori(width / (2.0 * Num.f(rp["lane_width"])))
 	if width >= Num.f(rp["double_min"]):
 		for s: float in [-1.0, 1.0]:
-			_solid(a + side * s * Num.f(rp["double_gap"]) * 0.5, dir, length, width, style)
+			_solid(_shifted(line, side * s * Num.f(rp["double_gap"]) * 0.5), style)
 	else:
-		_dashes(a, dir, length, width, style)
+		_dashes(line, style)
 	for k: int in range(1, lanes):
 		for s: float in [-1.0, 1.0]:
 			var off := side * s * (width * 0.5 * float(k) / float(lanes))
-			_dashes(a + off, dir, length, width, style)
+			_dashes(_shifted(line, off), style)
 	if lanes > 1:
 		for s: float in [-1.0, 1.0]:
 			var edge := width * 0.5 - Num.f(rp["edge_inset"])
-			_solid(a + side * s * edge, dir, length, width, style)
+			_solid(_shifted(line, side * s * edge), style)
 
 
-## A stop line across the lane approaching `node` along an arm running `toward` from it (the
-## driver's right-hand lane), just outside the junction box and `extra` past it; none when it
-## would reach a slanted crossing's asphalt.
-func _stop_line(node: Vector2, toward: Vector2, width: float, extra: float, near: Array) -> void:
+## `line` moved sideways by `off`.
+static func _shifted(line: Array, off: Vector2) -> Array:
+	var from: Vector2 = line[0]
+	return [from + off, line[1], line[2], line[3]]
+
+
+## A stop line across the lane approaching the node of `arm` (the driver's right-hand lane), just
+## outside the junction box and `extra` past it; none when it would reach a slanted crossing's
+## asphalt.
+func _stop_line(arm: Array, extra: float, near: Array) -> void:
+	var node: Vector2 = arm[0]
+	var toward: Vector2 = arm[1]
+	var width := Num.f(arm[2])
 	var inset := Num.f(rp["stop_inset"])
 	var long := width * 0.5 - inset - Num.f(rp["edge_inset"])
 	var side := Vector2(toward.y, -toward.x)
@@ -123,15 +137,15 @@ func _stop_line(node: Vector2, toward: Vector2, width: float, extra: float, near
 			var corner := mid + side * long * 0.5 * end + toward * thick * 0.5 * ahead
 			if _on_crossing(corner, near, 0.0):
 				return
-	_stripe(mid, side, thick, long, CityGround.PAINT)
+	_stripe(mid, side, Vector2(thick, long), CityGround.PAINT)
 
 
-## One painted box centred on p, its length along `along`.
-func _stripe(p: Vector2, along: Vector2, wide: float, length: float, y: float) -> void:
+## One painted box centred on p, size = (across, along), its length along `along`.
+func _stripe(p: Vector2, along: Vector2, size: Vector2, y: float) -> void:
 	var angle := -along.angle() + PI * 0.5
 	paint.append(
 		Transform3D(
-			Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(wide, 0.04, length)),
+			Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(size.x, 0.04, size.y)),
 			Vector3(p.x, y, p.y)
 		)
 	)
@@ -225,10 +239,14 @@ static func _on_crossing(p: Vector2, roads: Array, margin: float) -> bool:
 	return false
 
 
-## Dashes along a line from a (a road's, or parallel to it) in direction dir, at height
-## style[0], none in or near a crossing: within half the road's width plus dash_clear of either
-## end, or near the asphalt of the roads in style[1] (_near_crossings).
-func _dashes(a: Vector2, dir: Vector2, length: float, width: float, style: Array) -> void:
+## Dashes along a line (start, direction, length, road width; a road's or parallel to it) at
+## height style[0], none in or near a crossing: within half the road's width plus dash_clear of
+## either end, or near the asphalt of the roads in style[1] (_near_crossings).
+func _dashes(line: Array, style: Array) -> void:
+	var a: Vector2 = line[0]
+	var dir: Vector2 = line[1]
+	var length := Num.f(line[2])
+	var width := Num.f(line[3])
 	var y := Num.f(style[0])
 	var near: Array = style[1]
 	var clear := Num.f(rp["dash_clear"])
@@ -237,11 +255,15 @@ func _dashes(a: Vector2, dir: Vector2, length: float, width: float, style: Array
 		var p := a + dir * t
 		t += Num.f(rp["dash_pitch"])
 		if not _on_crossing(p, near, clear):
-			_stripe(p, dir, Num.f(rp["line_width"]), Num.f(rp["dash_length"]), y)
+			_stripe(p, dir, Vector2(Num.f(rp["line_width"]), Num.f(rp["dash_length"])), y)
 
 
 ## A solid line along the same span, in the stretches clear of every crossing.
-func _solid(a: Vector2, dir: Vector2, length: float, width: float, style: Array) -> void:
+func _solid(line: Array, style: Array) -> void:
+	var a: Vector2 = line[0]
+	var dir: Vector2 = line[1]
+	var length := Num.f(line[2])
+	var width := Num.f(line[3])
 	var y := Num.f(style[0])
 	var near: Array = style[1]
 	var clear := Num.f(rp["dash_clear"])
@@ -256,7 +278,9 @@ func _solid(a: Vector2, dir: Vector2, length: float, width: float, style: Array)
 		if from >= 0.0 and (not open or t + step > last):
 			var to := t if open else t - step
 			if to > from:
-				_stripe(a + dir * (from + to) * 0.5, dir, Num.f(rp["line_width"]), to - from, y)
+				_stripe(
+					a + dir * (from + to) * 0.5, dir, Vector2(Num.f(rp["line_width"]), to - from), y
+				)
 			from = -1.0
 		t += step
 
