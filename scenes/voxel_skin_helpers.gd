@@ -67,14 +67,16 @@ func add_poses(pose: Array[Projection], bones: int) -> void:
 ## two bones' mean image of it), then pushed out by its push, which grows with the turn.
 func helper(a: Transform3D, b: Transform3D, i: int) -> Transform3D:
 	var ra := a.basis.orthonormalized()
-	var q := (ra.transposed() * b.basis.orthonormalized()).get_rotation_quaternion()
+	var q := (ra.transposed() * b.basis.orthonormalized()).get_rotation_quaternion().normalized()
 	if q.w < 0.0:
 		q = -q
-	var angle := q.get_angle()
+	var v := Vector3(q.x, q.y, q.z)
+	var s := v.length()
+	var angle := 2.0 * atan2(s, q.w)
 	var turn := Vector3.ZERO
 	var r := ra
-	if angle > STILL:
-		var axis := q.get_axis()
+	if s > sin(STILL * 0.5):
+		var axis := v / s
 		turn = axis * angle
 		r = ra * Basis(axis, _frac[i] * angle)
 	var c := _centre[i]
