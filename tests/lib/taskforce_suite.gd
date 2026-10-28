@@ -47,6 +47,41 @@ func _free_way(sim: RampageSim) -> Vector2:
 	return best
 
 
+## Moves the kaiju to the street crossing (CityGen.map's nodes, no alley) nearest its start where
+## its body stands on no building and a free way leads off: runs start at the beach (D-270), so
+## the sim's bare start on the ring is no spot to measure a walk from (the 1.5x city sets the
+## Behemoth's body into the ring's lots there, director and lead 2026-10-28). With `leap`, the free
+## way also has no building in the leap's reach (Dash.aim_at aims at none), so a leap clears it.
+func _street_start(sim: RampageSim, leap: bool = false) -> void:
+	var plan := CityGen.map(sim.city)
+	var nodes: Array[Vector2] = plan["nodes"]
+	var start := sim.kaiju_pos
+	var spots: Array[Vector2] = []
+	for st: Dictionary in plan["streets"]:
+		if str(st["kind"]) != CityGen.ALLEY:
+			for end: String in ["from", "to"]:
+				var p := nodes[Num.i(st[end])]
+				if not spots.has(p) and sim.clamp_to_arena(p) == p:
+					spots.append(p)
+	spots.sort_custom(
+		func(a: Vector2, b: Vector2) -> bool:
+			var da := a.distance_squared_to(start)
+			var db := b.distance_squared_to(start)
+			return da < db or (da == db and a.x < b.x)
+	)
+	for p: Vector2 in spots:
+		sim.kaiju_pos = p
+		if not sim.body.inside(p, sim.body.heading).is_empty():
+			continue
+		var way := _free_way(sim)
+		if (
+			way != Vector2.ZERO
+			and (not leap or Num.i(sim.body.dash.aim_at(p, way)["building"]) < 0)
+		):
+			return
+	sim.kaiju_pos = start
+
+
 ## Turns the standing kaiju to a free way and lets the body settle on it, so a walk along it needs
 ## no turn (a real turn takes the body longer than a railgun's last 0.4 s); the way, or (0, 0).
 func _face_free_way(sim: RampageSim) -> Vector2:
