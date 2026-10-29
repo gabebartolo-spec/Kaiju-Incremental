@@ -11,6 +11,10 @@ extends BipedGait
 const BLEND_SECONDS := 0.25
 ## Heading error (rad) that makes a standing kaiju turn on the spot with a turn clip.
 const TURN_TRIGGER := 0.6
+## How fast a standing body creeps after a heading change too small for a turn clip (rad/s): slow,
+## so a sim that turns a standing kaiju briskly opens the gap to TURN_TRIGGER and plays the clip
+## instead of the body sliding round on planted feet (a baby's track() catches up at ~10 rad/s).
+const IDLE_CREEP := 0.5
 ## Frames of lead-in kept before the part of a turn clip that carries its yaw, and of settle
 ## after it (the tail's whip settles about half a second after the body stops).
 const TURN_PAD := 6
@@ -29,11 +33,6 @@ const JAW_HOLD_SECONDS := 0.15
 const ROAR_SLAM_FRAME := 44.0
 const SLAM_WINDOW := 10.0
 const TAIL_SLAM_STRENGTH := 1.6
-## A planted foot that ends this far from its clip spot (strides), or past a straight leg (fraction
-## of the leg's length), takes a quick catch step back to the clip (ClipStomp). At 0.98 the
-## adolescent's long legs, nearly straight at heel strike, re-stepped on every plant (PR #54).
-const RESTEP_GAP := 0.3
-const RESTEP_REACH := 1.0
 ## The head looks into a turn before the body makes it (director comments #16): it eases (1/s)
 ## toward the yaw still to turn (KaijuGait.turn_ahead), at most HEAD_LEAD_MAX (rad), the neck
 ## taking NECK_SHARE of it and the skull the rest, on top of the clip's pose.
@@ -74,8 +73,10 @@ var _plant_heading: Array[float] = [0.0, 0.0]
 var _yaw_fix: Array[float] = [0.0, 0.0]
 var _was_planted: Array[bool] = [false, false]
 var _stomp := ClipStomp.new()  # catch steps, and the standing stomp
+var _restep := ClipRestep.new()  # when a planted foot takes one
 var _jaw_hold := 0.0
 var _jaw_peak := Quaternion.IDENTITY
+var _jaw_shut := Quaternion.IDENTITY  # the idle's jaw (BipedHead.show_mouth)
 var _tail: ClipTail
 var _hold: FootHold  # a planted foot's world yaw
 var _ik: LegReach  # the leg solve, the body sunk so no knee pops
@@ -108,6 +109,8 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_path = SwingPath.new(_steps.swing_frames)
 	var peak := clips.jaw_peak("roar", ROAR_PEAK_FRAME)
 	_jaw_peak = clips.pose_at("roar", peak).turns[clips.bones.find("jaw")]
+	if clips.bones.has("jaw"):
+		_jaw_shut = clips.pose_at("idle", 0.0).turns[clips.bones.find("jaw")]
 	var springs: Array[String] = []
 	for chain: KaijuRig.SpringChain in rig.chains:
 		springs.append_array(chain.names)
@@ -122,7 +125,12 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 
 
 func update(delta: float) -> void:
+	var held := body_yaw if _started else INF
 	track(delta)
+	if held != INF and state == "idle" and speed < STAND_SPEED * hip_height * s:
+		body_yaw = rotate_toward(held, model_yaw, IDLE_CREEP * delta)
+		_body_yaw_v = 0.0
+		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
 	if state != KaijuModel.RISE_CLIP or _roar_queued:  # the rise's frame is set (RampageRise)
@@ -130,7 +138,10 @@ func update(delta: float) -> void:
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
-		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
+		var to := pose
+		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), to, smoothstep(0.0, 1.0, _blend))
+		for i: int in 2:  # the new clip's lifted foot lifts at once: held down, it caught up later
+			pose.planted[i] = pose.planted[i] and to.planted[i]
 	_apply(rake.layer(pose, dt), dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
@@ -215,6 +226,7 @@ func _walk_clock(dt: float) -> void:
 func _go(next: String, at: float) -> void:
 	if state == "walk" and next == "idle":
 		_stomp.settle()  # the weight settles as he stops
+	_restep.go(next == "walk" and state != "walk" and step_phase == INF)
 	_from = state
 	_from_time = clip_time
 	_blend = 0.0
@@ -223,28 +235,9 @@ func _go(next: String, at: float) -> void:
 
 
 ## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
-## feet (_walk_entry).
+## feet (ClipRestep.walk_entry).
 func _walk_start() -> float:
-	return _steps.frame_at(step_phase) if step_phase != INF else _walk_entry()
-
-
-## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
-## (rig space), so the first stance does not overreach.
-func _walk_entry() -> float:
-	var best := 0.0
-	var best_cost := INF
-	var to_rig := rig.global_transform.affine_inverse()
-	for t: int in clips.frames_of("walk"):
-		var pose := clips.pose_at("walk", t)
-		var cost := 0.0
-		for i: int in mini(legs.size(), 2):
-			if pose.planted[i]:
-				var now := to_rig * rig.tail_world(legs[i].tip)
-				cost += (clips.to_rig(pose.feet[i]) - now).length()
-		if cost < best_cost:
-			best_cost = cost
-			best = t
-	return best
+	return _steps.frame_at(step_phase) if step_phase != INF else ClipRestep.walk_entry(self)
 
 
 ## The body follows the turn clip's yaw from where it faced to the new heading.
@@ -267,6 +260,8 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		var q := pose.turns[i]
 		if bone_name == "jaw" and _jaw_hold > 0.0:
 			q = q.slerp(_jaw_peak, smoothstep(0.0, 1.0, _jaw_hold))  # the maw held open (the beam)
+		if bone_name == "jaw":
+			head.show_mouth(q.angle_to(_jaw_shut))  # the clip drives the jaw, never the head
 		elif bone_name.begins_with("tail") and bone_name.to_int() < _spring_tail:
 			var i_tail := bone_name.to_int()
 			var bend := swing.whip_yaw(i_tail) + _tail.bend(i_tail)
@@ -339,7 +334,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	var leg := legs[i]
 	var clip_toe := rig.global_transform * _stepped(clips.to_rig(pose.feet[i]))
 	var planted := pose.planted[i] and not _stomp.catching(i)
-	if planted and _was_planted[i] and _overreached(leg, _lock[i], clip_toe):
+	if planted and _was_planted[i] and _restep.overreached(self, i, _lock[i], clip_toe):
 		_stomp.restep(i)  # the body got away from this foot: step after it
 		planted = false
 	var target := _path.down(i, clip_toe + _lag[i])
@@ -360,6 +355,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 		_lag[i] = _path.lag[i]
 	leg.planted = planted
 	_was_planted[i] = planted
+	_restep.update(i, planted)
 	return target
 
 
@@ -389,12 +385,3 @@ func _stepped(toe: Vector3) -> Vector3:
 	if step_phase == INF:  # a smooth turner (D-131) walks the curve its body turns
 		return _steps.curved(toe, -yaw_rate / maxf(speed, 0.01) * s)
 	return _steps.shortened(toe, step_ratio)
-
-
-## True when a planted foot has been left too far behind (or ahead) of its clip spot to hold.
-func _overreached(leg: BipedGait.Leg, lock: Vector3, clip_toe: Vector3) -> bool:
-	if (lock - clip_toe).length() > RESTEP_GAP * stride():
-		return true
-	var hip := rig.bone(leg.names[0]).global_position
-	var ankle := lock + (rig.bone(leg.names[2]).global_position - rig.tail_world(leg.tip))
-	return (ankle - hip).length() > RESTEP_REACH * (leg.l1 + leg.l2) * s
