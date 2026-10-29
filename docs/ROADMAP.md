@@ -48,8 +48,9 @@ record); nothing is appended as a log. D-310 order: debt fixes, then parked work
    names them as known failures), varied collapse directions (b2-5), the stadium crowd falling with a broken stand
    (comments #17). Plan: `docs/roadmap/2026-10-27-destruction-plan.md`.
 5. **Random cities (D-259, D-261, D-263, D-375):** a fresh city each run from shuffled blocks, the landmark pool drawn
-   into tiered spots. Open: sim/city_seed.gd ignores the save seed (replays differ per slot: D-261, D-263); the pool
-   and spots per D-375 (stage 1 shows the east spot only, D-380).
+   into tiered spots. Each save has its own city seed; buildings vary per slot and run (D-263). Open: street plans
+   shuffled within a few tested plans per stage (D-261); the pool and spots per D-375 (stage 1 shows the east spot
+   only, D-380).
 6. **Upgrade tree (D-275, b2-28):** rings per species, 2-3x the nodes, his croc node ideas first
    (`docs/roadmap/2026-10-26-interview-audit.md` section 1), an upgrade affordable after every rampage; the tree screen
    skin follows. Balance itself waits (D-363). Throw nodes "Ricochet" and "Domino" (D-259); the tail lash's nodes (D-329).

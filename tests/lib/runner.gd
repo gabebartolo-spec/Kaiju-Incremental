@@ -21,6 +21,7 @@ func _initialize() -> void:
 	# A test that drops a RampageSim without dispose() would leak it at the exit (debt row 2):
 	# the quit cuts every sim's rings, so no test has to remember.
 	QuitGame.release_sims_at_exit(self)
+	SaveFile.pinned_seed = 0  # a kaiju made through the lab plays the same cities every run
 	_start.call_deferred()
 
 
