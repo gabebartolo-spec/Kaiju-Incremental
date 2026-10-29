@@ -47,6 +47,7 @@ func _ready() -> void:
 	var siren := str(_cfg["siren"])
 	if ResourceLoader.exists(SFX_DIR % siren):
 		_loop(siren, Num.f(_cfg["siren_db"]))
+	_theme()
 	_make_stomp()
 	_boom = AudioStreamPlayer.new()
 	_boom.name = "boom"
@@ -248,6 +249,23 @@ func _loop(sound: String, db: float) -> void:
 	# The bed swells in from nothing, so the title never opens on a full wall of sound.
 	player.volume_db = FADE_FROM_DB
 	create_tween().tween_property(player, "volume_db", db, Num.f(_cfg["fade_in_s"]))
+
+
+## The theme (D-184, his remaster) over the city sound, on the Music bus: its opening plays once,
+## then it loops from tuning "theme" "loop_offset_s" (where tools/music/cut_loops.py cut it). A
+## missing file leaves the title on the city sound alone.
+func _theme() -> void:
+	var row: Dictionary = _cfg["theme"]
+	var file := str(row["file"])
+	if not ResourceLoader.exists(file):
+		return
+	var stream: AudioStreamOggVorbis = load(file)
+	stream.loop = true
+	stream.loop_offset = Num.f(row["loop_offset_s"])
+	var bus := StringName(str(Content.section("music")["bus"]))
+	var player := _player("theme", stream, bus, FADE_FROM_DB)
+	player.play()
+	create_tween().tween_property(player, "volume_db", Num.f(row["db"]), Num.f(_cfg["fade_in_s"]))
 
 
 func _shoot() -> void:

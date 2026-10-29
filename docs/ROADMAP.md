@@ -63,8 +63,8 @@ record); nothing is appended as a log. D-310 order: debt fixes, then parked work
    suites (the `pr_skip` line of tools/ci_timings.txt), which run on main; no local suite runs, push and CI is the test.
    Open: the first push-to-main run after #412 proves the slow job.
 10. **Sound and music:** croc takes made ("Croc now, others later"); the Godzilla set (D-184) on the menu and as the three
-   city Covers; collapse voices (D-367). Open: layered music following the ruin (D-125), wider-city pacing waits for
-   balancing (D-366); every file CLEARED in `docs/LICENSING_REGISTER.md`; Suno only after his written spend yes.
+   city Covers; collapse voices (D-367); layered music following the ruin (D-125, D-189 order) and the menu theme,
+   all CLEARED. Open: wider-city pacing waits for balancing (D-366); Suno only after his written spend yes.
 11. **Demo shell (M3 below):** textured surfaces (Flat surfaces programme), the graphics preview, load-screen art (about 12
    staged 4K shots on one board, he picks), the demo end screen and feedback button, six languages plus Chinese.
 

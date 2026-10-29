@@ -98,7 +98,7 @@ func _check_music_data() -> void:
 			names.append(str(stem["name"]))
 			ordered = ordered and Num.f(stem["enter"]) > last_enter
 			last_enter = Num.f(stem["enter"])
-		check(",".join(names) == "drums,bass,lead,choir", "%s stems: %s" % [row["id"], names])
+		check(",".join(names) == "low,drums,brass,full", "%s stems: %s" % [row["id"], names])
 		check(ordered, "%s: stems fade in one after another" % row["id"])
 		check(
 			Num.f(row["bpm"]) > 0.0 and MusicLayers.track_seconds(row) > 60.0,
@@ -163,7 +163,7 @@ func _check_planted_bad_curve_fails() -> void:
 	check(Run.panic_then_quiet(real, EARLY, DROP_DB), "the real curve passes on the same phases")
 
 
-## Music stems follow the same phase: drums first, the choir last, never out of order.
+## Music stems follow the same phase (D-189): low strings and bass first, the full theme last.
 func _check_stems_follow_the_phase() -> void:
 	var levels: Array[float] = _run.sound.music.levels
 	check(levels.size() == 4, "four stems on the player: %d" % levels.size())
@@ -177,11 +177,13 @@ func _check_stems_follow_the_phase() -> void:
 		"at the first stomp every stem waits"
 	)
 	music.follow(0.06, 1000.0)
-	check(levels[0] == 0.0 and levels[1] <= -59.0, "the drums start alone: %s" % [levels])
+	check(
+		levels[0] == 0.0 and levels[1] <= -59.0, "low strings and bass start alone: %s" % [levels]
+	)
 	music.follow(0.6, 1000.0)
-	check(levels[0] == 0.0 and levels[1] == 0.0, "by 0.6 the drums and bass are in")
-	check(levels[2] > -60.0 and levels[2] < 0.0, "the lead is swelling in: %.1f dB" % levels[2])
-	check(levels[3] <= -59.0, "the choir waits for the final stretch")
+	check(levels[0] == 0.0 and levels[1] == 0.0, "by 0.6 the low layer and the drums are in")
+	check(levels[2] > -60.0 and levels[2] < 0.0, "the brass is swelling in: %.1f dB" % levels[2])
+	check(levels[3] <= -59.0, "the full theme waits for the peak")
 
 
 ## Every track's stems share one bar grid, and the player keeps them on one stream.
@@ -197,6 +199,11 @@ func _check_music_stems_locked() -> void:
 			"%s: one stream, %d stems" % [row["id"], rows.size()]
 		)
 		var streams := layers._streams()
+		check(not layers.placeholders.has(true), "%s: every stem has its music file" % row["id"])
+		check(
+			streams.all(func(s: AudioStream) -> bool: return s is AudioStreamOggVorbis and s.loop),
+			"%s: every stem file loops" % row["id"]
+		)
 		check(
 			MusicLayers.lock_error(streams, row) <= Num.f(music_cfg["lock_tolerance_s"]),
 			(

@@ -35,6 +35,8 @@ func _ready() -> void:
 		var file := str(stem["file"])
 		var real := ResourceLoader.exists(file)
 		var source: AudioStream = load(file) if real else quiet
+		if source is AudioStreamOggVorbis:
+			source.loop = true  # each stem loops in place; the sync stream keeps them together
 		stream.set_sync_stream(i, source)
 		stream.set_sync_stream_volume(i, Num.f(_cfg["silent_db"]))
 		stems.append(stem)
