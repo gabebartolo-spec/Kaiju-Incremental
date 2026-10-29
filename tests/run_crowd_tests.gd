@@ -3,7 +3,7 @@ extends "res://tests/lib/runner.gd"
 ## standing on nothing once the stand under them has gone, and the crowd thins over seconds
 ## instead of vanishing. Each test drives the sim's stadium (RampageSim.damage_chunks) and reads
 ## the StadiumCrowd the rampage built; "standing" is a fan still seated or running upright, "dying"
-## one that fell, or lies under the dust (StadiumCrowd.State). Once the stadium carves (D-387) a
+## one that fell, or lies under the dust (StadiumCrowd.State). Once the stadium carves (D-388) a
 ## fan whose own cell of the stand has gone is on nothing too, though its chunk still stands;
 ## player-effect fixture "fans_on_cells": that rule on (carving) and off (chunks only).
 ##   godot --headless --path . --script tests/run_crowd_tests.gd

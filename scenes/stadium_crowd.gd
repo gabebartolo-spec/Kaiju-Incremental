@@ -16,7 +16,7 @@ extends Node3D
 ## once; the bob, the standing, the run, the exit and the fall are all crowd.gdshader's (the fall
 ## through each fan's custom data). This script places fans with the shader's formula only when
 ## it needs to (a blow, a fallen chunk), says when a fan starts to fall and counts who is still
-## in view. Once the stadium carves on cells (D-387) a fan stands on the fine cell under its feet,
+## in view. Once the stadium carves on cells (D-388) a fan stands on the fine cell under its feet,
 ## not on its chunk: when a blow or a fallen arc takes that cell the fan falls to what still stands
 ## below it, though the chunk (which only goes at half its cells) still stands. Presentation only
 ## (a fan's death feeds no biomass); tuning in data/tuning.json "crowd".
