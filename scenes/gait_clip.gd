@@ -80,6 +80,7 @@ var _was_planted: Array[bool] = [false, false]
 var _stomp := ClipStomp.new()  # catch steps, and the standing stomp
 var _jaw_hold := 0.0
 var _jaw_peak := Quaternion.IDENTITY
+var _jaw_shut := Quaternion.IDENTITY  # the idle's jaw: the mouth shows once the clip drops it past MOUTH_SHOWS
 var _tail: ClipTail
 var _hold: FootHold  # a planted foot's world yaw
 var _ik: LegReach  # the leg solve, the body sunk so no knee pops
@@ -112,6 +113,8 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_path = SwingPath.new(_steps.swing_frames)
 	var peak := clips.jaw_peak("roar", ROAR_PEAK_FRAME)
 	_jaw_peak = clips.pose_at("roar", peak).turns[clips.bones.find("jaw")]
+	if clips.bones.has("jaw"):
+		_jaw_shut = clips.pose_at("idle", 0.0).turns[clips.bones.find("jaw")]
 	var springs: Array[String] = []
 	for chain: KaijuRig.SpringChain in rig.chains:
 		springs.append_array(chain.names)
@@ -275,6 +278,8 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		var q := pose.turns[i]
 		if bone_name == "jaw" and _jaw_hold > 0.0:
 			q = q.slerp(_jaw_peak, smoothstep(0.0, 1.0, _jaw_hold))  # the maw held open (the beam)
+		if bone_name == "jaw":
+			head.show_mouth(q.angle_to(_jaw_shut))  # the clip drives the jaw, so the head never poses it
 		elif bone_name.begins_with("tail") and bone_name.to_int() < _spring_tail:
 			var i_tail := bone_name.to_int()
 			var bend := swing.whip_yaw(i_tail) + _tail.bend(i_tail)

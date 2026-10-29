@@ -242,11 +242,14 @@ def drop(name):
             o["first"] -= c["frames"]
 
 
+# A walk may hold several strides (the baby's 90 frames hold two): one per lift of the left foot, so the
+# game's stride_m is one cycle's travel and its step clock does not run at half the keyed pace.
+cycles = max(1, sum(1 for k in range(M) if frames[k - 1][3][0] and not frames[k][3][0])) if MODE == "walk" else 1
 clips = [(NAME, frames)] + ([(MIRROR[NAME], [mirror(r) for r in frames])] if MODE == "turn" else [])
 for name, recs in clips:
     drop(name)
     start = sum(c["frames"] for c in header["clips"])
-    entry = {"name": name, "first": start, "frames": M, "loop": MODE == "walk" or name == "idle", "cycles": 1,
+    entry = {"name": name, "first": start, "frames": M, "loop": MODE == "walk" or name == "idle", "cycles": cycles,
              "source": f"{Path(bpy.data.filepath).name} keyed frames {FIRST}..{FIRST + N - 1} at {KEYED_FPS} fps"}
     if name == "roar":  # the beam holds the jaw at its widest; the keyed roar arches its tail up, it never slams
         jaw = GAME_BONES.index("jaw")
@@ -255,7 +258,7 @@ for name, recs in clips:
     header["clips"].append(entry)
     body += pack(recs)
 if MODE == "walk":
-    header["stride_m"] = round(travel.length, 4)
+    header["stride_m"] = round(travel.length / cycles, 4)
 hb = json.dumps(header, separators=(",", ":")).encode()
 OUT.write_bytes(b"KCLP" + struct.pack("<II", 1, len(hb)) + hb + bytes(body))
 print(f"CLIP {NAME} ({MODE}) {M} frames at {header['fps']} fps from keyed {FIRST}..{FIRST + N - 1}; rest heads vs "

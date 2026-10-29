@@ -221,7 +221,12 @@ func _pose_jaw(dt: float) -> void:
 	_jaw_open = lerpf(_jaw_open, target, minf(1.0, dt * 18.0))
 	# Shut at rest (the sculpt's snarl closed by the rig's "close" angle), dropped open to roar.
 	g.rig.pose("jaw", Vector3(Num.f(g.rig.bone_close.get("jaw", 0.0)) - _jaw_open, 0, 0))
-	var showing := _jaw_open > MOUTH_SHOWS
+	show_mouth(_jaw_open)
+
+
+## Shows the pink inside once the jaw has dropped `open` radians, the dark lip seam below that.
+func show_mouth(open: float) -> void:
+	var showing := open > MOUTH_SHOWS
 	for node: Node3D in _mouth_open:
 		node.visible = showing
 	for node: Node3D in _mouth_shut:
