@@ -79,6 +79,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 
 ## Picks the body volume for a species at the sim's size tier (call after setting the species).
 func use_species(species_id: String) -> void:
+	sim.powers.use_species(species_id)  # its titan's momentum (Momentum)
 	var bodies: Dictionary = cfg.get("bodies", {})
 	var stages: Array = bodies.get(species_id, [])
 	dash.use_species(species_id)

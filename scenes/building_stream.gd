@@ -17,12 +17,8 @@ const IN_FLIGHT := 4
 ## A replan when the kaiju or the camera moved this far, at most every PLAN_EVERY s.
 const PLAN_MOVE := 4.0
 const PLAN_EVERY := 0.25
-## An untouched building goes back to a box only this far past the last one still wanted.
-const EVICT_MARGIN := 10.0
 const EVICT_PER_FRAME := 6  # buildings freed per frame (a view is a few dozen nodes)
 const PLAN_TURN := 4.0  # ...or the camera has turned this far (degrees)
-## Key resolution: buildings within 1/KEY_STEP m of each other in rank tie (then by index).
-const KEY_STEP := 16.0
 
 ## true: _ready starts meshing the nearest buildings on workers and returns at once; the owner
 ## polls initial_done() and calls finish_initial() (a loading screen keeps drawing meanwhile).
@@ -72,7 +68,7 @@ func _init(p_sim: RampageSim, colors: Array[Color]) -> void:
 
 
 func _ready() -> void:
-	BuildingView.begin_city()
+	BuildingBakeCache.begin_city()
 	Content.look()  # merged on first use: read here, never raced by the workers
 	var count := _sim.buildings.size()
 	_views.resize(count)
@@ -169,47 +165,16 @@ func _plan() -> void:
 	_planned_at = from
 	_since_plan = 0.0
 	var marks: Array[int] = []
-	var keys := _rank_keys(from, marks)
-	var used := _held
-	_queue.clear()
-	for n: int in marks:
-		if _state[n] == 0:
-			_queue.append(n)
-	var cutoff := INF
-	for key: float in keys:
-		var n := int(fmod(key, 65536.0))
-		if used + _chunks[n] > _budget:
-			cutoff = floorf(key / 65536.0) / KEY_STEP
-			break
-		used += _chunks[n]
-		if _state[n] == 0:
-			_queue.append(n)
+	var limit := _cutoff + _rank.outside + StreamPlan.EVICT_MARGIN + PLAN_MOVE * 4.0  # INF if all fit
+	var ranked := StreamPlan.rank_keys(_sim, _rank, _chunks, _pinned, from, limit, marks)
+	var keys: PackedFloat64Array = ranked["keys"]
+	_held = Num.i(ranked["held"])
+	var picked := StreamPlan.pick(keys, marks, _state, _chunks, _held, _budget)
+	var wanted: Array[int] = picked["queue"]
+	_queue.assign(wanted)
 	_queue_at = 0
-	_cutoff = cutoff
-	_evict.clear()
-	if cutoff < INF:
-		for key: float in keys:
-			var n := int(fmod(key, 65536.0))
-			if floorf(key / 65536.0) / KEY_STEP > cutoff + EVICT_MARGIN and _views[n] != null:
-				_evict.append(n)
-
-
-## The buildings not held, as sorted keys (rank, then index). The held ones (landmarks that stay
-## meshed, listed in `marks`, and touched buildings) add their chunks to _held.
-func _rank_keys(from: Vector2, marks: Array[int]) -> PackedFloat64Array:
-	var keys := PackedFloat64Array()
-	var limit := _cutoff + _rank.outside + EVICT_MARGIN + PLAN_MOVE * 4.0  # INF while all fit
-	_held = 0
-	for n: int in _sim.buildings.size():
-		if _sim.buildings[n].is_held() and _rank.keeps_landmark(n, from):
-			marks.append(n)
-			_held += _chunks[n]
-		elif _pinned[n] == 1:
-			_held += _chunks[n]
-		else:
-			keys.append(floorf(_rank.rank(n, from, limit) * KEY_STEP) * 65536.0 + n)
-	keys.sort()
-	return keys
+	_cutoff = Num.f(picked["cutoff"])
+	_evict.assign(StreamPlan.evict(keys, _cutoff, _views))
 
 
 ## The camera the stream ranks by (StreamRank.look), or [] when there is none.
@@ -394,4 +359,4 @@ func _exit_tree() -> void:
 	for pair: Array in _take_ready():  # finished after the last frame: never entered the tree
 		var orphan: BuildingView = pair[1]
 		orphan.free()
-	BuildingView.end_city()  # streaming is done: keep only this city's buildings
+	BuildingBakeCache.end_city()  # streaming is done: keep only this city's buildings

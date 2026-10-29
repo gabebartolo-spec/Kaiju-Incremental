@@ -22,7 +22,9 @@
 #   ROUTE:   the replay route file (default the baseline's route.json).
 # Output: <OUT>/COST.txt (every run, its others count, VALID or VOID, and a final SUMMARY of the VALID runs
 # per config: mean of the GPU mean and median, and of the wall mean), <OUT>/run_<name>.log (the raw run).
-# The DLL path and date are logged first: a bench on the wrong native library measures the script fallback.
+# The DLL path and date are logged first (FAIL if older than main's last native/ change): a bench on the
+# wrong native library measures the script fallback. A run log saying NATIVE LIBRARY NOT LOADED stops the
+# driver at once with the fix line, exit 4 (no retries).
 set -u
 cd "$(dirname "$0")/../.." || exit 1
 : "${GODOT:?set GODOT to the console exe}" "${OUT:?set OUT to a scratch folder}"
@@ -56,8 +58,8 @@ finish() {
 }
 trap finish EXIT
 
-# take the window: nobody else may hold one
-if ls C:/kt/BENCH_WINDOW* 2> /dev/null | grep -v "BENCH_WINDOW_$OWNER" | grep -q .; then
+# take the window: nobody else may hold one (the Godot queue's own BENCH_WINDOW_gq is held for this very job)
+if ls C:/kt/BENCH_WINDOW* 2> /dev/null | grep -v -e "BENCH_WINDOW_$OWNER" -e "BENCH_WINDOW_gq" | grep -q .; then
 	echo "another bench window is held; not starting (rerun behind wait_window.sh)" | tee -a "$LOG"
 	exit 3
 fi
@@ -69,7 +71,15 @@ if [ ! -e override.cfg ]; then # the windowed run must never take focus
 fi
 {
 	echo "== bench_driver $(date '+%F %H:%M:%S') sha $(git rev-parse --short HEAD) owner $OWNER rounds $ROUNDS"
-	for dll in native/bin/*.dll; do [ -e "$dll" ] && echo "   DLL $(pwd)/$dll $(date -r "$dll" '+%F %H:%M')"; done
+	native_at=$(git log -1 --format=%ct origin/main -- native/ 2> /dev/null) # last native/ change on main
+	for dll in native/bin/*.dll; do
+		[ -e "$dll" ] || continue
+		stale=""
+		if [ -n "$native_at" ] && [ "$(date -r "$dll" +%s)" -lt "$native_at" ]; then
+			stale=" FAIL older than origin/main's last native/ change ($(date -d "@$native_at" '+%F %H:%M')): bash tools/native_dll.sh fetch"
+		fi
+		echo "   DLL $(pwd)/$dll $(date -r "$dll" '+%F %H:%M')$stale"
+	done
 	echo "   common: $COMMON"
 } | tee -a "$LOG"
 
@@ -99,6 +109,10 @@ run_one() { # $1 = config name, $2 = its extra args, $3 = run id; 0 = VALID, 1 =
 	done
 	wait "$pid"
 	grep -E "ONEL frame|ONEL gpu|SCRIPT ERROR" "$rl" | tee -a "$LOG"
+	if grep -q "NATIVE LIBRARY NOT LOADED" "$rl"; then # every run would be void: stop the whole driver
+		echo "   NATIVE LIBRARY NOT LOADED: stopping the driver (no retries). fix: bash tools/native_dll.sh fetch (main's CI build), or build native/ (native/SConstruct), then import once." | tee -a "$LOG"
+		exit 4
+	fi
 	local lg=""
 	league && lg="+League"
 	if [ "$maxo" = 0 ] && [ -z "$lg" ] && grep -q "ONEL gpu" "$rl"; then

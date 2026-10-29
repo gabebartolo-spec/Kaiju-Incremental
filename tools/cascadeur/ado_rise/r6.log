@@ -1,0 +1,17 @@
+== adolescent_rise_bay_rise_r6 (free 16307 MB)
+{"level": "Info", "text": "SAVED C:/kt/casc_drafts_1028/adolescent/rise_bay_rise_r6.casc frames 180 in 3 s"}
+{"level": "Info", "text": "NOTOPENED C:/kt/casc_drafts_1028/adolescent/rise_bay_rise_r6.casc (RAM) tabs 1 -> 1"}
+casc_lock: held by keyer
+dump rc=0
+casc_lock: released
+{"level": "Info", "text": "CDUMP ado_rise_r6 NF 180 verts 5514 corners 31335 weights 11785 joints 41 in 2 s"}
+{"level": "Info", "text": "AFTER: tabs 1 -> 1, current untitled.casc"}
+BAR U1 order PASS: head 25 shoulders 49 belly 70 -> gaps 24 / 21 f (bar >= 12 each)
+BAR U2 start FAIL: start back top 20.43 cm vs W 23.98 (seabed depth 6.75 game m); start lows belly +2.83 shoulders +7.01 legs +0.08 (touching: min < 0.78); lowest skin -0.32 f72 legs (bar >= 0)
+BAR U3 legs last PASS: 77 % of the pelvis rise after the shoulders clear (bar >= 60); feet slide from the plant f78 0.10 cm (bar <= 0.78)
+BAR U4 mass PASS: pelvis vertical speed peak 0.021 hip/f (bar <= 0.08); worst accel spike x1.87 ('foot_MainPoint_l', 77) (bar <= 3; under 0.23 cm/f2 ignored)
+BAR U5 end PASS: last 12 f max key offset from the rest pose 0.000 cm (bar <= 0.5); skin motion within them 0.000 cm (bar <= 0.5)
+RBARS ado_rise_r6 4/5
+PASS ado_rise_r6 | twist max: chest>neck0 2@f32, neck0>neck1 11@f32, neck1>neck2 0@f17, neck2>head 22@f32 | head+neck flip+collapsed tris max 4 @f27, frames over 6: 0/180
+ado_rise_r6 head max 4 over6 0 | leg_l max 6 over6 0 | leg_r max 6 over6 0
+KNEE FAIL ado_rise_r6 | l len 1.000-1.000 knee min 44.8 ahead min +1.35 twist max 3.9 deg/f | r len 1.000-1.000 knee min 44.8 ahead min +1.35 twist max 3.9 deg/f
