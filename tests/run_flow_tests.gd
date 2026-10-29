@@ -130,6 +130,8 @@ func _check_upgrade_screen() -> void:
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:
+		screen.show_node("claws")  # the view opens on the newest buyable node
+		await process_frame
 		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)
 		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])

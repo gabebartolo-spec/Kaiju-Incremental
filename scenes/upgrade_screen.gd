@@ -304,5 +304,10 @@ func _refresh() -> void:
 		_select(_selected)
 
 
+## Pans the tree so a node sits in the middle of the view.
+func show_node(id: String) -> void:
+	_area.centre_on(id)
+
+
 func node_button(id: String) -> UpgradeNode:
 	return _area.buttons[id]

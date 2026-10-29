@@ -17,7 +17,7 @@
 		{"id": "greed", "name": "Hoarder", "desc": "Devour more of what you flatten.", "pos": [1, 4], "max_level": 5, "ring": 1, "kind": "stat",
 			"cost": [132, 142, 152, 163, 175], "source": "agent-added, no decision", "requires": ["hide"], "effects": {"rubble_mult": 0.15}},
 		{"id": "frenzy", "name": "Frenzy", "desc": "Stomp more often.", "pos": [2, 1], "max_level": 4, "ring": 1, "kind": "stat",
-			"cost": [145, 156, 167, 179], "requires": ["quake"], "effects": {"stomp_interval": -0.05}},
+			"cost": [145, 156, 167, 179], "source": "base tree stomp cadence (agent-added); D-281 moved the slowed stomp and its speed-up to the dragon", "requires": ["quake"], "effects": {"stomp_interval": -0.05}},
 		{"id": "evolve1", "name": "EVOLVE: Behemoth", "desc": "Grow huge. Tear through towers faster.", "pos": [2, 2], "max_level": 1, "ring": 1, "kind": "stage",
 			"cost": [600], "source": "D-135 three growth steps (Behemoth)", "requires": ["claws", "hide", "rage"], "effects": {"size": 1, "hp": 40, "stomp_damage": 4}},
 		{"id": "sig_power", "name": "Signature Power", "desc": "Your signature attack hits harder.", "pos": [3, 1], "max_level": 5, "ring": 2, "kind": "stat",
