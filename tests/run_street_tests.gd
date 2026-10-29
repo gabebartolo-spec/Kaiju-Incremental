@@ -1,25 +1,13 @@
 extends "res://tests/lib/runner.gd"
 ## Street suite: StreetLife's people (civilians and police officers; presentation only), kept as
 ## packed arrays (perf study 2026-10-21). Every frame each person is drawn in its pose's MultiMesh
-## at its own transform, and a seeded run repeats its pinned state exactly.
+## at its own transform, and a seeded run repeats its state exactly.
 ## Seeded by design: Seeds "city", "army" and "civilians" 0, a scripted kaiju line and a fixed
 ## frame step (tests/lib/street_replay.gd).
 ##   godot --headless --path . --script tests/run_street_tests.gd
 
 const Replay := preload("res://tests/lib/street_replay.gd")
 const FRAMES := 600
-## Replay.digest() after FRAMES frames at stage 1, High (first 16 hex digits). The packed-array
-## StreetLife drew every MultiMesh buffer bit for bit as the Person objects it replaced, over
-## 600 frames at the then-biggest stage on Medium, High and Max (to-kaiju/014). A deliberate
-## change to street life, its tuning or the city plan re-pins it (3ce3931c7b6a5cdc ->
-## 1532d9c3297b48fe, D-135: the cities are wider, so the plan and the people on it changed;
-## -> e6dc7d4d2660f21f, road network: no alleys on the river banks, so the plan's streets, and the
-## pavements the people walk, differ at stage 1; -> e451a8ed2f5a4ead, road geometry #243: bigger
-## blocks, the diagonal mid-block and quay sheds by the bank change the plan and its lots;
-## -> 9a649408e1b35f5d, the sea bay (D-377): its coast road and the streets it pins change the
-## plan's south; -> d92dedfaeb729c86, Tripo pool D-256: models replace the procedural lots, so
-## the lots the people walk past differ; street life and its tuning untouched).
-const PINNED := "d92dedfaeb729c86"
 ## Frames of the buffer tests: five seconds of the street, with stomps, a brace and a blockade.
 const BUFFER_FRAMES := 300
 const STRIDE := 12  # floats of a 3D transform in a MultiMesh buffer
@@ -33,7 +21,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_draw_counts")
-	await _t("_check_replay_pinned")
+	await _t("_check_replay_matches")
 	await _t("_check_native_loaded")
 	await _t("_check_buffers_byte_equal")
 	await _t("_check_buckets_resize")
@@ -116,9 +104,9 @@ func _pose(street: StreetLife, i: int) -> int:
 	return (VoxelPerson.Pose.RUN_A if running else VoxelPerson.Pose.WALK_A) + stride
 
 
-## The same seeded run twice gives the same people, random streams and totals, and they are the
-## pinned ones.
-func _check_replay_pinned() -> void:
+## The same seeded run twice gives the same people, random streams and totals (run against run,
+## no pinned digest: D-385).
+func _check_replay_matches() -> void:
 	var got: Array[String] = []
 	for _run: int in 2:
 		var replay := Replay.new(self, 1, "high")
@@ -126,10 +114,7 @@ func _check_replay_pinned() -> void:
 			replay.step()
 		got.append(replay.digest().left(16))
 		replay.finish()
-	check(
-		got[0] == got[1] and got[0] == PINNED,
-		"a seeded street replays exactly and matches the pinned %s (got %s)" % [PINNED, got]
-	)
+	check(got[0] == got[1], "a seeded street replays exactly (got %s)" % [got])
 
 
 ## The floats the engine's per-instance setter writes for a transform (a MultiMesh keeps the 3x4
