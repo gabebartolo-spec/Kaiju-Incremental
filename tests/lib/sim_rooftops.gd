@@ -119,8 +119,8 @@ func run() -> void:
 	# The same city stepped with the roof standing: what the step pays elsewhere is not the squad's.
 	var roof := _one_squad(_new({}))
 	var twin := _one_squad(_new({}))
-	for sim: RampageSim in [roof, twin]:
-		sim.kaiju_pos = Vector2(sim.arena_half, sim.arena_half)  # far off: no stomp lands
+	for each: RampageSim in [roof, twin]:
+		each.kaiju_pos = Vector2(each.arena_half, each.arena_half)  # far off: no stomp lands
 	var squad := roof.army_units.squads[0]
 	var before := roof.rubble
 	var twin_before := twin.rubble
