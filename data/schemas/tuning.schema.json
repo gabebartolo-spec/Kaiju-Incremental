@@ -2075,9 +2075,14 @@
             "side_m": {"$ref": "#/$defs/num"},
             "outside_m": {"$ref": "#/$defs/num"},
             "kaiju_extra_m": {"$ref": "#/$defs/num"},
-            "landmark_keep_m": {"$ref": "#/$defs/num"}
+            "landmark_keep_m": {"$ref": "#/$defs/num"},
+            "hold_m": {"$ref": "#/$defs/num"},
+            "fall_margin_m": {"$ref": "#/$defs/num"}
           },
-          "required": ["margin_deg", "ring_m", "side_m", "outside_m", "kaiju_extra_m", "landmark_keep_m"],
+          "required": [
+            "margin_deg", "ring_m", "side_m", "outside_m", "kaiju_extra_m", "landmark_keep_m",
+            "hold_m", "fall_margin_m"
+          ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },

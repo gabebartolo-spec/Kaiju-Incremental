@@ -31,6 +31,7 @@ func _init(
 func start(event: Dictionary) -> void:
 	var index := Num.i(event["building"])
 	var pivot: Vector3 = event["pivot"]
+	_stream.expect_fall(event)  # a topple's landing strip is meshed before it lands
 	var piece: Node3D = _city.carve.piece(event) if _city.carve != null else null
 	if piece == null:
 		var cells: Array[Vector3i] = event["cells"]

@@ -23,6 +23,11 @@ round(model_height * 8) + 1. This step:
     cell it grows from), until every part is joined to the ground layer. Added cells open the
     faces that face air, hide the faces of voxels they now cover, and mark their chunk structural.
     python tools/landmarks/bake.py --connect <id>
+  - --pool <raw.kvox> <id> (a city building of data/city_buildings.json, D-256/D-257): the same
+    bake into assets/city_buildings/<id>.kvox and its pool row (w, d, h, chunks, kvox,
+    stretch_floor), after cropping the generated base slab (crop_plinth) and grading the sampled
+    texture colours to the row's district palette (district_grade); then the --connect pass.
+    python tools/landmarks/bake.py --pool <raw.kvox> <id>
 Pure Python + numpy.
 """
 import json
@@ -35,6 +40,13 @@ import numpy as np
 RES = 8
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA = os.path.join(ROOT, "data", "landmarks.json")
+## The city's building pool (Tripo heroes and fillers, D-256): rows in, baked shapes out.
+POOL = os.path.join(ROOT, "data", "city_buildings.json")
+## A base slab is at most this share of the model's height (crop_plinth).
+PLINTH_SHARE = 0.03
+## A sign's colour: saturation and value above these keep their brightness (district_grade).
+SIGN_SAT = 0.45
+SIGN_VAL = 0.55
 STEPS = [(-1, 0, 0), (1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, -1), (0, 0, 1)]
 
 
@@ -137,12 +149,13 @@ def bridge(lab, comp):
         frontier = np.array(nxt, dtype=np.int64)
 
 
-def connect(ident):
-    path = os.path.join(ROOT, "assets", "landmarks", ident + ".kvox")
+def connect(ident, pool=False):
+    kvox_path, data_path, table = _target(ident, pool)
+    path = kvox_path
     xyz, rgb, flags = read_baked(path)
-    with open(DATA, encoding="utf-8") as f:
+    with open(data_path, encoding="utf-8") as f:
         data = json.load(f)
-    shape = data["landmarks"][ident]
+    shape = data[table][ident]
     w, d, h = shape["w"], shape["d"], shape["h"]
     dims = (w * RES, h * RES, d * RES)
     occ = np.zeros(dims, bool)
@@ -201,7 +214,7 @@ def connect(ident):
     for x, y, z in added:
         layers[y // RES][(z // RES) * w + x // RES] = "1"
     shape["chunks"] = ["".join(layer) for layer in layers]
-    with open(DATA, "w", encoding="utf-8", newline="\n") as f:
+    with open(data_path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, indent="\t", sort_keys=True)
         f.write("\n")
 
@@ -227,8 +240,71 @@ def outside_air(occ):
         out = grown
 
 
-def bake(src, ident, ground=()):
+def _target(ident, pool):
+    """(kvox path, data file, table key) for a landmark or a city building of the pool."""
+    if pool:
+        return (os.path.join(ROOT, "assets", "city_buildings", ident + ".kvox"), POOL, "pool")
+    return (os.path.join(ROOT, "assets", "landmarks", ident + ".kvox"), DATA, "landmarks")
+
+
+def crop_plinth(cells, cols):
+    """A generated building stands on a thin base slab wider than itself: keep only the voxels
+    inside the plan of everything above the slab (PLINTH_SHARE of the height, at least 2 cells)."""
+    top = cells[:, 1].max()
+    above = cells[cells[:, 1] >= max(2, int(top * PLINTH_SHARE))]
+    lo, hi = above.min(axis=0), above.max(axis=0)
+    keep = ((cells[:, 0] >= lo[0]) & (cells[:, 0] <= hi[0])
+            & (cells[:, 2] >= lo[2]) & (cells[:, 2] <= hi[2]))
+    return cells[keep], cols[keep]
+
+
+def _sat_val(rgb):
+    """rgb (N x 3, 0..1) -> saturation, value."""
+    mx, mn = rgb.max(axis=1), rgb.min(axis=1)
+    return np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0.0), mx
+
+
+def district_grade(cols, district):
+    """Maps sampled texture colours to a district palette (D-257): each voxel moves `mix` of the
+    way toward the palette colour nearest its own tint, at the voxel's own brightness, so the
+    texture's light and dark detail stays; `dark` scales every voxel but the bright, saturated
+    ones (signs), which `bright` scales instead (a neon strip: dark walls, bright signs)."""
+    rgb = cols.astype(np.float64) / 255.0
+    pal = np.array([[int(c[k:k + 2], 16) / 255.0 for k in (0, 2, 4)] for c in district["palette"]])
+    luma = np.array([0.299, 0.587, 0.114])
+    lum = rgb @ luma
+    tint = rgb - lum[:, None]
+    ptint = pal - (pal @ luma)[:, None]
+    near = np.argmin(((tint[:, None, :] - ptint[None, :, :]) ** 2).sum(axis=2), axis=1)
+    target = ptint[near] + lum[:, None]
+    out = rgb + (target - rgb) * float(district.get("mix", 0.4))
+    sat, val = _sat_val(rgb)
+    sign = (sat > SIGN_SAT) & (val > SIGN_VAL)
+    out[~sign] *= float(district.get("dark", 1.0))
+    out[sign] = rgb[sign] * float(district.get("bright", 1.0))
+    return np.clip(np.round(out * 255.0), 0, 255).astype(np.uint8)
+
+
+def stretch_floor(occ, h):
+    """The floor (sim layer) whose cells repeat unchanged in the floor above it, nearest the middle:
+    the one a taller variant of the building repeats. -1 when no floor repeats."""
+    best, away = -1, h
+    for f in range(1, h - 2):
+        a = occ[:, f * RES:(f + 1) * RES, :]
+        b = occ[:, (f + 1) * RES:(f + 2) * RES, :]
+        if a.any() and np.array_equal(a, b) and abs(f - h / 2) < away:
+            best, away = f, abs(f - h / 2)
+    return best
+
+
+def bake(src, ident, ground=(), pool=False):
     cells, cols = read_kvox(src)
+    if pool:
+        with open(POOL, encoding="utf-8") as f:
+            book = json.load(f)
+        cells, cols = crop_plinth(cells, cols)
+        cells[:, 1] -= cells[:, 1].min()
+        cols = district_grade(cols, book["districts"][book["pool"][ident]["district"]])
     lo, hi = cells.min(axis=0), cells.max(axis=0)
     span = hi - lo + 1
     w, d = int(-(-span[0] // RES)), int(-(-span[2] // RES))
@@ -253,23 +329,22 @@ def bake(src, ident, ground=()):
     layers = []
     for y in range(h):
         layers.append("".join("1" if chunks[x, y, z] else "0" for z in range(d) for x in range(w)))
-    out_kvox = os.path.join(ROOT, "assets", "landmarks", ident + ".kvox")
+    out_kvox, data_path, table = _target(ident, pool)
     os.makedirs(os.path.dirname(out_kvox), exist_ok=True)
-    with open(out_kvox, "wb") as f:
-        f.write(b"KVOX")
-        f.write(struct.pack("<IIH", 2, 1, h * RES))
-        f.write(struct.pack("<I", int(keep.sum())))
-        for (x, y, z), (r, g, b), m in zip(cells[keep], cols[keep], masks[keep]):
-            f.write(struct.pack("<hhhBBBB", int(x), int(y), int(z), int(r), int(g), int(b), int(m)))
-    data = {"landmarks": {}}
-    if os.path.exists(DATA):
-        with open(DATA, encoding="utf-8") as f:
+    write_baked(out_kvox, h, cells[keep], cols[keep], masks[keep])
+    data = {table: {}}
+    if os.path.exists(data_path):
+        with open(data_path, encoding="utf-8") as f:
             data = json.load(f)
-    data["landmarks"][ident] = {"w": w, "d": d, "h": h, "kvox": "res://assets/landmarks/%s.kvox" % ident,
-                                "chunks": layers}
+    entry = data[table].get(ident, {}) if pool else {}
+    entry.update({"w": w, "d": d, "h": h, "chunks": layers,
+                  "kvox": "res://" + os.path.relpath(out_kvox, ROOT).replace(os.sep, "/")})
+    if pool:
+        entry["stretch_floor"] = stretch_floor(occ[1:-1, 1:-1, 1:-1], h)
     if ground:
-        data["landmarks"][ident]["ground"] = list(ground)
-    with open(DATA, "w", encoding="utf-8", newline="\n") as f:
+        entry["ground"] = list(ground)
+    data[table][ident] = entry
+    with open(data_path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, indent="\t", sort_keys=True)
         f.write("\n")
     print(f"baked {ident}: {w} x {d} x {h} chunks ({int(chunks.sum())} structural), "
@@ -278,7 +353,13 @@ def bake(src, ident, ground=()):
 
 if __name__ == "__main__":
     if sys.argv[1] == "--connect":
-        connect(sys.argv[2])
+        connect(sys.argv[2], "--pool" in sys.argv)
+        sys.exit(0)
+    if sys.argv[1] == "--pool":  # a city building of data/city_buildings.json: bake, then connect
+        bake(sys.argv[2], sys.argv[3], pool=True)
+        connect(sys.argv[3], True)
         sys.exit(0)
     extra = [a[len("--ground="):].split(",") for a in sys.argv[3:] if a.startswith("--ground=")]
     bake(sys.argv[1], sys.argv[2], extra[0] if extra else [])
+
+
