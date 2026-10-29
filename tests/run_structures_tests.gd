@@ -15,9 +15,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_structures_tests.gd
 
 ## Type -> why it is waiting (roadmap C, "Carve is universal").
-const KNOWN := {
-	"bridge": "river bridges are a flat ground deck, not destructible; roadmap C, after PR #209",
-}
+const KNOWN := {}
 ## The shared carve: the only sim scripts that may keep structure strength or send its losses.
 const SHARED: Array[String] = [
 	"structure.gd",
@@ -25,6 +23,7 @@ const SHARED: Array[String] = [
 	"carving_cells.gd",
 	"collapse.gd",
 	"rampage_sim.gd",
+	"sim_damage.gd",  # rampage_sim's damage paths, split out for its line cap
 	"voxel_frame.gd",
 	"voxel_support.gd",
 	"cell_grid.gd",
@@ -54,10 +53,13 @@ func _types(sim: RampageSim) -> Dictionary:
 		var b := sim.buildings[n]
 		var type := "building"
 		var rail: Variant = b.get("rail")  # read by name: the suite also runs on older revisions
+		var bridge: Variant = b.get("bridge")
 		if b.landmark != "":
 			type = "landmark"
 		elif rail != null and rail != {}:
 			type = "railway"
+		elif bridge != null and bridge != {}:
+			type = "bridge"
 		if not out.has(type):
 			out[type] = [] as Array[int]
 		var list: Array[int] = out[type]
@@ -118,7 +120,8 @@ func _check_every_structure_carves() -> void:
 		var city: Dictionary = city_tuning["city"]
 		if not CityRiver.bridges(CityGen.map(city), city).is_empty():
 			seen["bridge"] = true
-			faults["bridge"] = "the river bridges are not among the city's structures"
+			if not types.has("bridge"):
+				faults["bridge"] = "the river bridges are not among the city's structures"
 		for type: String in types:
 			seen[type] = true
 			var list: Array[int] = types[type]

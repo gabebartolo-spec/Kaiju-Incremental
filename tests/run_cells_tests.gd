@@ -59,8 +59,8 @@ func run_checks() -> void:
 
 
 ## data/materials.json: unique ids 1..255 (0 is empty), unique names, a strength above zero, a
-## debris colour the view's palette has (a hz_, landmark_ or railway material draws in its own
-## colours); every material the generator uses is listed.
+## debris colour the view's palette has (a hz_, landmark_, bridge_ or railway material draws in
+## its own colours); every material the generator uses is listed.
 func _check_materials_table() -> void:
 	var palette := BuildingVoxels.new(_building(FIXTURES[0]), Color.GRAY).palette
 	var ids := {}
@@ -74,9 +74,10 @@ func _check_materials_table() -> void:
 		var fixture: Variant = m.get("fixture")
 		ok = ok and (id is float or id is int) and Num.i(id) >= 1 and Num.i(id) <= 255
 		ok = ok and mname is String and str(mname) != ""
-		var own := str(mname).begins_with("landmark_") or RailVoxels.COLORS.has(str(mname))
+		var own := str(mname).begins_with("landmark_") or str(mname).begins_with("bridge_")
+		own = own or RailVoxels.COLORS.has(str(mname))
 		own = own or HazardVoxels.COLORS.has(str(mname))
-		ok = ok and (palette.has(str(mname)) or own)  # landmark, railway or red-barrel colours
+		ok = ok and (palette.has(str(mname)) or own)  # landmark, bridge, railway, red-barrel
 		ok = ok and (strength is float or strength is int) and Num.f(strength) > 0.0
 		ok = ok and debris is String and palette.has(str(debris))
 		ok = ok and fixture is bool and fixture == (str(mname) in FIXTURES_EXPECTED)
