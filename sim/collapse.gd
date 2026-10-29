@@ -19,7 +19,8 @@ var _rng: RandomNumberGenerator
 func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	_rng = rng
-	var dirs: Dictionary = tuning.get("destruction", {}).get("fall_dirs", {})
+	var cfg: Dictionary = tuning.get("destruction", {})
+	var dirs: Dictionary = cfg.get("fall_dirs", {})
 	if not dirs.is_empty():
 		var side := Num.f(dirs["side"])
 		_odds = PackedFloat32Array([Num.f(dirs["cut"]), side, side, Num.f(dirs["away"])])
