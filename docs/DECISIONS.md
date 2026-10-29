@@ -17,7 +17,7 @@ Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chu
 Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
 ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
 section above the stub comes down as one topple over the stub's edge (rim outward, stands inward) before the support
-settle. Landmarks keep their cut side (D-387). River and bay bridges still render as decks, not carved buildings.
+settle. Landmarks keep their cut side (D-387). Bay bridges still render as decks (river bridges carve, D-389).
 
 ## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
 Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
