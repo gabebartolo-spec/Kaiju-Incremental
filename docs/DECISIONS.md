@@ -10,7 +10,9 @@ spans drop" and "Keep deck, add piers". Each river bridge (CityRiver.bridges) is
 (tuning bridge.span, sim/bridge_layout.gd, the railway's pattern): an asphalt deck at street level, a stone parapet
 each side, a pier to the riverbed at each end. A piece's floor 0 is the riverbed, bed floors under the street
 (Building.base), so a deck cut off its piers drops or tips into the river. CityGround keeps only the abutments; the
-Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks.
+Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks. The spread
+suite's "1.5x city razes a smaller share" check goes (he picked "Drop share check": with bridges breakable it read 40%
+vs 39%, a balance number under D-385); its bigger-city and replay checks stay.
 
 ## 2026-10-30 · D-388 · Director · Landmarks carve on cells
 Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
