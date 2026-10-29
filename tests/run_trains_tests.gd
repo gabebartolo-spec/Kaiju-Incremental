@@ -50,6 +50,11 @@ func _until_running(sim: RampageSim, share: float) -> Rail.Train:
 func _check_line_and_schedule() -> void:
 	var sim := _scene()
 	check(sim.rail != null and sim.rail.length > 40.0, "an elevated line runs up an avenue")
+	var x := Rail.avenue_x(sim.city)  # the fixed front (D-381) once pushed it to its west end
+	check(
+		absf(x) < sim.arena_half,
+		"the line's avenue is in the arena: x %.0f within ±%.0f" % [x, sim.arena_half]
+	)
 	var train := _until_running(sim, 0.1)
 	check(train != null, "a train comes along on the schedule")
 	if train == null:

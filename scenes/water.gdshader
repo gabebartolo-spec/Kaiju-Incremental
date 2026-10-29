@@ -6,6 +6,10 @@ shader_type spatial;
 //    exp(sin) profile; Finch, GPU Gems 1 ch. 1; Acerola, "How Games Fake Water") and fine ripples
 //    (two octaves of gradient noise drifting apart); on the river both ride its current;
 //  - on the bay a long gentle swell (normals only);
+//  - on the beach's sea, waves lapping the shore (director 2026-10-29: "gentle waves lapping against
+//    the shore"): low wavelets run landward (`lap_dir`) and lift the surface itself, so the waterline
+//    and its foam climb the sloping sand and slide back down (the sheet is cut into rows for it; its
+//    vertex colour's red fades the lift out toward the open sea, so it meets that sheet flat);
 //  - each wave fades out where a pixel is wider than a share of its wavelength (no shimmer at 4K),
 //    the slope it loses going into the roughness, so far water keeps its sheen;
 //  - depth from the depth texture (Godot docs, advanced post-processing): the view path through
@@ -46,6 +50,10 @@ uniform float night_glow = 1.0;  // the sky's glow the water holds at night (tim
 uniform vec3 sky_color : source_color = vec3(0.25, 0.33, 0.5);
 uniform float night = 0.0;  // the look's window_lit: none by day
 uniform float seed = 0.0;
+uniform float lap_height = 0.0;  // the lapping wavelets' height (m); 0 = none (the river, the old bay)
+uniform float lap_length = 8.0;  // their spacing (m)
+uniform float lap_period = 6.0;  // seconds between one reaching the sand and the next
+uniform vec2 lap_dir = vec2(0.0, 1.0);  // landward (unit, x z)
 
 const float GRAVITY = 9.81;
 const int WAVES = 6;
@@ -56,6 +64,9 @@ const float SPREAD = 1.2;  // radians of spread round the wind
 const float RIPPLE_STEP = 0.43;
 const float WATER_F0 = 0.16;  // the engine's dielectric F0 is 0.16 * spec^2
 const float CREST_MEAN = 0.4658;  // the mean of exp(sin - 1), I0(1) / e: heights centre on the still surface
+const float LAP_BEND = 1.4;  // how far (m) a lapping crest bends along the shore, over these two lengths (m)
+const float LAP_BEND_LONG = 23.0;
+const float LAP_BEND_SHORT = 9.0;
 
 float wh(float n) {
 	return fract(sin(n * 91.3458 + seed * 1.37) * 47453.5453);
@@ -137,6 +148,23 @@ vec3 ripples(vec2 p, float t, float fp, inout float lost) {
 		s *= 0.8;
 	}
 	return sum;
+}
+
+// The lapping wavelets' lift at p (m): a sharp-crested profile, centred on the still surface, its
+// crests bent a little along the shore so they do not reach the sand all at once.
+float lap(vec2 p, float t) {
+	vec2 side = vec2(-lap_dir.y, lap_dir.x);
+	float u = dot(side, p);
+	float bend = LAP_BEND * sin(u / LAP_BEND_LONG + seed) + LAP_BEND * 0.6 * sin(u / LAP_BEND_SHORT - seed * 0.7);
+	float ph = TAU * ((dot(lap_dir, p) + bend) / lap_length - t / lap_period);
+	return lap_height * (exp(sin(ph) - 1.0) - CREST_MEAN) / (1.0 - CREST_MEAN);
+}
+
+void vertex() {
+	if (lap_height > 0.0) {
+		vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+		VERTEX.y += lap(w.xz, TIME) * COLOR.r;
+	}
 }
 
 // What lies behind this pixel in view space (the depth texture, both renderers' NDC).

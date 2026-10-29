@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
+Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
+12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
+stands up out of the sea to his first beachfront hotel down; the walk across the sand counts (the sand gets umbrellas
+and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
+landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
+
 ## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test
 Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
 a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
@@ -21,6 +28,17 @@ tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last
 alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
 plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
 suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
+
+## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
+His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
+fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
+every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
+road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
+man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
+(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
+The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
+stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
+wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1 (built in a later PR).
 
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
@@ -376,22 +394,3 @@ Q: D-328 removes the automatic tail whip and moves its tree nodes to the button 
 timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
 So: the automatic whip and its nodes (r_tail, r_shear) stay as they are until the D-280 lash is built after the
 render plan; then the whip goes and its nodes upgrade the lash. Changes D-328's tail line on timing only.
-
-## 2026-10-27 · D-328 · Director · Interview: tail, night, lab, skins, crowds, turn, ElevenLabs, night calls
-Tail (asked whether the button tail lash, D-280, is the same move as the automatic tail whip from a tree node, D-259):
-"remove the automatic whip, repurpose the nodes to improve our button whip". Night (D-106/D-145 "lighter" vs D-242 "dark
-and moody"): "Tonight's look" (D-285 stands; the older wording is retired on this point). Kaiju Creation lab scene:
-"Both" (a new save and each new species). Skins earned by playing: "Both" (each form reached, and rampage records).
-Crowds speed-up (render plan item 7): "Keep trying (Recommended)" if the second method misses. Heavier turn (D-187,
-Behemoth seed 1234 takes 11.9 s to flatten the buildings by its rise): "Keep it heavy"; the turn stays heavy (D-187,
-D-192 A: short steps, turn_slow 0.1) and the 10 s bar of D-131/D-192 stays, met without changing the turn (lead's
-correction: the question wrongly offered to fit his bar).
-ElevenLabs: "I'll sign in" (the lead reads the four train sounds' generation ids for the licence register). Night calls
-(night_calls.md): "All fine". Not asked, lead's call from D-326: rooftop soldiers near the camera stay undrawn.
-
-## 2026-10-27 · D-327 · Director · Physics destruction ships with the demo; render items 10 and 11 are built with it
-Q: real-physics destruction (D-094: carved buildings, loose pieces topple and fall) is planned after demo build 2;
-keep that timing or build it sooner? A: "WTF do you mean render items come with it, render is our number 1 priority,
-stop fucking with me. the destructions ship with the demo, the destruction is the game". So: D-094's "after demo exe 2"
-is reversed; real carving and falling pieces ship in the demo, and render plan items 10 and 11 (the physics speed-ups,
-D-311) are built now as render priority 1 work, not parked. Corrects D-311's correction note.

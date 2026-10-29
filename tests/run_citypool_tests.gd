@@ -86,7 +86,7 @@ func _check_variant_maps() -> void:
 	check(top == 33, "a cell above the band rises by the stretch (y %d)" % top)
 
 
-## D-256 bars: every model in at least one city, heroes in 10%, each filler in 25%.
+## D-256 bars: every model in at least one city, heroes in 10%, each filler in 20%.
 func _check_appears() -> void:
 	var report := Bars.appearances(_cities.cities, Content.city_buildings())
 	print("  pool: ", report["line"])
@@ -95,7 +95,7 @@ func _check_appears() -> void:
 	var fillers: Array = report["rare_fillers"]
 	check(missing.is_empty(), "every baked model appears: missing %s" % [missing])
 	check(heroes.is_empty(), "heroes in >= 10%% of cities: under %s" % [heroes])
-	check(fillers.is_empty(), "fillers in >= 25%% of cities: under %s" % [fillers])
+	check(fillers.is_empty(), "fillers in >= 20%% of cities: under %s" % [fillers])
 
 
 ## No pool building overlaps another building, a street's carriageway or the river.

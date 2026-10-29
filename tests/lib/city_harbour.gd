@@ -13,8 +13,8 @@ const DT := 1.0 / 30.0
 const WALK := 1.0  # seconds of walking ahead once out
 const SLIDE := 0.02  # metres sideways, and radians of turn, that still count as none
 const WADE_SAMPLES := 64  # points along the wade line checked against the viaduct
-const BLOCKS_WIDE := 2  # the beach at stage 1 spans at least this many blocks (lead, option A)
 const ON_BANK := 1.0  # metres from the bank point the wade may end
+const STOMP := 3.0  # metres: the stomp at the rise bank that flattens the beach props there
 const SAND_UNDER := 0.25  # metres: the sand's top lies within this under the street
 ## Each keyed rise_bay crouch's back top at its first frame, per body scale (metres over the
 ## feet): the adult's highest bone 3.58 plus 0.6 of hide (tools/capture/probe_rise.gd), the
@@ -33,6 +33,7 @@ static func check(
 		return
 	_check_walk_in(tier, map_seed, _fresh(tier, map_seed), check_fn)
 	_check_bay(tier, map_seed, sim, plan, decor, check_fn)
+	_check_beach_props(tier, map_seed, sim, plan, decor, check_fn)
 
 
 static func _check_walk_in(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable) -> void:
@@ -178,29 +179,25 @@ static func check_rail_clear(tier: int, map_seed: int, check_fn: Callable) -> vo
 	)
 
 
-## The bay at stage 1 spans at least BLOCKS_WIDE of the city's longest blocks (its rectangle, side
-## street to side street: whole blocks, CityHarbour), and grows with the arena: wider at each
-## stage than the last.
-static func check_width(map_seed: int, check_fn: Callable) -> void:
-	var widths: Array[float] = []
-	var block := 0.0
-	for tier: int in [1, 2, 3]:
-		var sim := _fresh(tier, map_seed)
-		var plan := CityGen.map(sim.city)
-		var bay: Rect2 = plan.get("bay", Rect2())
-		widths.append(bay.size.x)  # the bay's rectangle, side street to side street
-		if tier == 1:  # the city's longest block as authored (the outskirts' gaps run wider)
-			var long: Array = sim.city["block_long"]
-			block = Num.f(long[1])
+## The beachfront is the same at every stage (D-381, director 2026-10-29: "its always the
+## same"): its rectangle, its shapes (shoreline, port, side streets) and the rise point match
+## stage 1's at every later stage, for every map seed.
+static func check_fixed(map_seed: int, check_fn: Callable) -> void:
+	var first := {}
+	var moved: Array[int] = []
+	for tier: int in range(1, CityGrowth.stage_count(Content.tuning()) + 1):
+		var plan := CityGen.map(_fresh(tier, map_seed).city)
+		var b: Dictionary = plan["harbour"]
+		var shape := [
+			plan["bay"], b["rect"], b["apex"], b["quay_z"], b["sides"], plan["rise_spawn"]
+		]
+		if first.is_empty():
+			first["shape"] = shape
+		elif shape != first["shape"]:
+			moved.append(tier)
 	check_fn.call(
-		widths[0] >= block * BLOCKS_WIDE and widths[1] > widths[0] and widths[2] > widths[1],
-		(
-			(
-				"map_seed %d: the bay is %.1f m wide at stage 1 (>= %d blocks of %.1f m) and"
-				+ " grows with the arena: %s"
-			)
-			% [map_seed, widths[0], BLOCKS_WIDE, block, widths]
-		)
+		moved.is_empty(),
+		"map_seed %d: the beachfront is the same at every stage (moved at %s)" % [map_seed, moved]
 	)
 
 
@@ -272,8 +269,7 @@ static func _check_bay(
 			roads += 1
 	var wet := 0
 	for b: RampageSim.Building in sim.buildings:
-		var r := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		if water.any(func(w: Rect2) -> bool: return w.intersects(r)):
+		if wet_at(plan, Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)):
 			wet += 1
 	for g: Dictionary in decor._props._groups:
 		var at: Vector3 = g["at"]
@@ -289,6 +285,57 @@ static func _check_bay(
 			% [tier, map_seed, foot, top, roads, wet]
 		)
 	)
+
+
+## The sand is crowded and he flattens it (D-381): umbrellas and courts stand on the sand only,
+## none flat until he comes; a stomp at the rise bank flattens those within STOMP of it, and no
+## other.
+static func _check_beach_props(
+	tier: int,
+	map_seed: int,
+	sim: RampageSim,
+	plan: Dictionary,
+	decor: CityDecor,
+	check_fn: Callable
+) -> void:
+	var groups: Array[Dictionary] = decor._beach._groups if decor._beach != null else []
+	var dry := 0
+	var flat := 0
+	for g: Dictionary in groups:
+		var at: Vector3 = g["at"]
+		dry += 0 if CityHarbour.on_sand(plan, sim.city, Vector2(at.x, at.z)) else 1
+		flat += 1 if g.get("crushed", false) else 0
+	var bank: Vector2 = plan["rise_bank"]
+	var hit := Vector3(bank.x, 0.0, bank.y)
+	decor.crush(hit, STOMP)
+	var under := 0
+	var stray := 0
+	for g: Dictionary in groups:
+		var at: Vector3 = g["at"]
+		var near := Vector2(at.x - hit.x, at.z - hit.z).length() <= STOMP
+		if g.get("crushed", false):
+			under += 1 if near else 0
+			stray += 0 if near else 1
+	check_fn.call(
+		groups.size() > 0 and dry == 0 and flat == 0 and under > 0 and stray == 0,
+		(
+			(
+				"stage %d, map_seed %d: %d beach props, %d off the sand, %d flat before he comes;"
+				+ " a stomp at the rise bank flattens %d within %.0f m, %d past it"
+			)
+			% [tier, map_seed, groups.size(), dry, flat, under, STOMP, stray]
+		)
+	)
+
+
+## True when any of nine points over r (corners, edge middles, centre) lies in the front's water
+## (CityHarbour.holds): the hotel blocks stand inside the front's rectangle, on dry land.
+static func wet_at(plan: Dictionary, r: Rect2) -> bool:
+	for i: int in 3:
+		for j: int in 3:
+			if CityHarbour.holds(plan, r.position + r.size * Vector2(i, j) * 0.5):
+				return true
+	return false
 
 
 ## No walker's pavement corner, nor the line between two linked corners, in the bay.

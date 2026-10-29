@@ -4,6 +4,7 @@ extends RefCounted
 ## player (walk to the nearest standing building, signature when ready, as tests/lib/sim_suite.gd)
 ## with a real StreetLife beside it, a fixed DT per frame and no clock. Every `SAMPLE_EVERY`
 ## frames it records the phase and each bed's level, so a test can read how the sound went.
+## The kaiju is kept at full health (the fixed front's roofs killed him short of the ruin, #411).
 ## Seeds "city", "army" and "civilians" 0.
 
 const DT := 1.0 / 60.0
@@ -58,6 +59,7 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 
 ## One frame: the scripted player moves, the street lives, the driver follows.
 func step() -> void:
+	sim.hp = sim.max_hp  # the sound waits for the ruined city, not a fight: he never falls
 	if _frame % 15 == 0:
 		_target = sim.nearest_standing(sim.kaiju_pos)
 	var move := Vector2.ZERO

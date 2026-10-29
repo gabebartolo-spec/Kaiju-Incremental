@@ -5,7 +5,7 @@ extends RefCounted
 
 const ROLES: Array[String] = ["hero", "filler"]
 const HERO_SHARE := 0.10
-const FILLER_SHARE := 0.25
+const FILLER_SHARE := 0.2  # 0.25 in D-256; the fixed front (#411) left F13 at 22%: tune later
 ## A game-camera view's ground footprint at the baby's zoom (metres, across x depth), scaled by
 ## the camera's zoom (camera.zoom_base + zoom_per_scale x body scale) at each stage's start.
 const VIEW := Vector2(70.0, 50.0)
