@@ -261,7 +261,7 @@ func _check_evolution_and_continue() -> void:
 	FlowFps.stale_cap(check)
 	check.call(
 		(
-			tree.node_button("i_glide").role == "branch"
+			tree.node_button("r_tail").role == "branch"
 			and tree.node_button("evolve1").role == "evolve"
 		),
 		"branch nodes and evolutions are marked as such"
