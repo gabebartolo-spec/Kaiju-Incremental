@@ -208,6 +208,27 @@ for i in range(M):
     toes = [inv @ (ft - root - lead) for ft in feet]
     frames.append((quats, off, toes, planted, math.degrees(yaw), root))
     lows.append("".join("L" if planted[0] else "-") + ("R" if planted[1] else "-"))
+# Cascadeur can solve the same keys a little differently on the second stride, so a loop's last frame need not lead
+# back into its first: the baby walk's knee snapped 10-24 deg at the seam. The mismatch (the frame after the last
+# against the first) is eased out over the last SEAM clip frames.
+SEAM = 20
+if MODE == "walk" and M > 2 * SEAM:
+    world, pelvis = raw[M + 1][0], raw[M + 1][1]
+    end = []
+    for g in GAME_BONES:
+        par = first[g].parent
+        pg = game_bone(par.name) if par is not None else None
+        end.append(((world[pg].inverted() @ world[g]) if pg else world[g]).normalized())
+    end_off = pelvis - travel - lead - heads["spine0"]
+    gaps = [(frames[0][0][b] @ end[b].inverted()).normalized() for b in range(len(GAME_BONES))]
+    worst_seam = max(min(q.angle, 2 * math.pi - q.angle) for q in gaps)
+    for i in range(M - SEAM, M):
+        s = (i - (M - SEAM) + 1) / (SEAM + 1)
+        w = s * s * (3.0 - 2.0 * s)
+        qs, off, toes, planted, yaw, root = frames[i]
+        qs = [(Quaternion().slerp(gaps[b], w) @ qs[b]).normalized() for b in range(len(qs))]
+        frames[i] = (qs, off + (frames[0][1] - end_off) * w, toes, planted, yaw, root)
+    print(f"SEAM worst turn gap {math.degrees(worst_seam):.1f} deg, eased over the last {SEAM} frames")
 
 
 def mirror(rec):
