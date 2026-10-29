@@ -621,7 +621,9 @@
 		"debris_colors": {"fuel_silo": ["d9d7cf", "f2c21b", "222224"], "fireworks_factory": ["7a3b2e", "c8312a", "2f62c9", "f2c21b"], "chem_lab": ["e6e9e3", "6bd85f", "2d5ca3"]},
 		"sound": {"speed": 98.0, "boom_from": 25.0, "boom_max_delay": 1.2, "small_db": -3.0, "tail_db": -4.0, "crack_db": 4.0}
 	},
-	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
+	"emerge": {"_note": "Emergence. keyed_surface_seconds: a body with a keyed rise clip (the adult's rise_bay, D-270) breaks the water this far into the clip, measured by tools/capture/probe_rise.gd (the head crown passes crouch_back + seabed_clear over the sea floor at the adult's scale).", "hold_seconds": 0.8, "rise_seconds": 1.0, "wade_seconds": 1.0, "depth": 0.6, "max_seconds": 3.0, "keyed_surface_seconds": 1.4, "input_latch_seconds": 0.2},
+	"intro": {"yaw_deg": 45.0, "distance": 12.0, "height": 2.5, "clearance": 1.5, "push_in": 0.3, "fov": 45.0, "aim_ahead": 8.8, "aim_height": 0.5, "aim_head": 0.75, "aim_soft": 1.5, "pull_from_seconds": 1.6, "short_seconds": 1.5, "short_lead_seconds": 0.15, "skip_ticks": 8, "hud_fade_seconds": 0.2, "aim_fade_seconds": 0.2,
+		"water": {"ripple_seconds": 0.2, "ripple_radius": 4.0, "ripple_grow": 0.8, "fount_from_seconds": 0.1, "fount_after_seconds": 0.4, "fount_start": 0.5, "fount_amount": 260, "fount_speed": 14.0, "fount_spread": 10.0, "burst_amount": 260, "burst_speed": 14.0, "burst_spread": 30.0, "gravity": 9.8, "life": 1.0, "drop": 0.2, "drop_min": 0.35, "width": 0.35, "colors": ["f6fbff", "c4d9e6", "8ea8ba"]}},
 	"city": {
 		"map_seed": 7301,
 		"hazards": {"kinds": ["fuel_silo", "fireworks_factory", "chem_lab"], "count": [2, 3, 4, 5], "min_spacing": 12.0, "spawn_clear": 16.0, "edge_share": 0.45, "max_height": 10},
@@ -647,10 +649,11 @@
 		"zebra_junctions": 1,
 		"landmarks": [
 			{
-				"id": "stadium", "anchor": [-24, -57], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
+				"_note": "anchors: STOPGAP until random cities (D-261, D-375): moved off the fixed sea bay (CityHarbour, every stage's) by the cheapest number change (lead 2026-10-29, option A): the stadium south past the river row, west of centre, and the wheel beside it to the east (DESIGN Landmarks, D-271), both past the baby's edge, the stadium over 100 m from the rise (build 2 note 21: \"as far away from our spawn spot as possible\") and real in the Behemoth's band, so he can bite into it from the edge (tests/lib/city_stadium_far.gd).",
+				"id": "stadium", "anchor": [-25, 80], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
 				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
-			{"id": "wheel", "anchor": [30, -56], "margin": 2, "tier": 2, "rubble_bonus": 1.5}
+			{"id": "wheel", "anchor": [38, 70], "margin": 2, "tier": 2, "rubble_bonus": 1.5}
 		],
 		"coverage_cell": 10,
 		"view_beyond": 30,
@@ -702,6 +705,7 @@
 		"river": true,
 		"river_depth": 1.6,
 		"river_inset": 2.0,
+		"harbour": {"_note": "The sea bay every run rises from (CityHarbour; D-270 a crescent bay on the north edge, D-373 every run starts in it; director 2026-10-28 \"if its easier the bay can always be in the same positon on the map, fixed location\"): a fixed rectangle of whole blocks centred on x 0, laid before the streets. bays: one [half, south] per district (stage): its side street lines at x +-half and its coast road on the z-line at south, pinned into every plan (CityLines); its water is at least EmergeReach's fit_width wide. quay: the straight quay deck's width down each side; sand: metres of beach from the promenade's pavement to the curve's apex; crescent_share: the curve's depth as a share of the water's half-width; arc_points: the curve's polyline; beach: metres from the curve to the foot of the sand slope; sand_top: the beach's top under the street; sea_level: the water's surface (CityGround's sea); seabed_depth: metres from the surface to the floor at the rise, fitted as crouch_back (per body scale: the tallest stage's rise_bay crouch at its first frame, the Behemoth's back top 5.67, keyer 2026-10-28, tools/capture/probe_rise.gd) x the stage's biggest body scale + seabed_clear; nose_gap: metres between the nose and the beach's foot at the rise; bank_inset: metres past the apex he wades to; fit_margin: metres added to the body's width (fit_width); view_clear (fitted) and view_margin: no painted stand-in in camera reach of the rise.", "bays": [[26, -35], [50, -50], [80, -130]], "quay": 3.0, "sand": 6.0, "crescent_share": 0.6, "arc_points": 32, "beach": 10.0, "sand_top": -0.05, "sea_level": -0.8, "seabed_depth": 2.0, "crouch_back": 5.67, "seabed_clear": 1.0, "nose_gap": 0.5, "bank_inset": 4.0, "fit_margin": 2.0, "view_margin": 4.0},
 		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1, "depth": 2},
 		"diagonal_through": [-6, 12.85],
 		"diagonal_deg": 26.75,
@@ -1073,8 +1077,8 @@
 			{"id": "serpent", "name": "SERPENT", "species": "", "unlocked": false, "genome": "2e9e8a"}
 		],
 		"save_key": "titans_unlocked",
-		"timing": {"place_s": 4.2, "inject_s": 3.0, "takeover_s": 2.0, "zoom_s": 0.9, "black_s": 1.3},
-		"crack_sound": "egg_crack", "crack_from_s": 0.35, "sounds": {"_note": "the lab's sounds (director 2026-10-25: \"nice, clinical sfx for this scene, lab sounds and high-tech precision machinery whirring\"; ElevenLabs, D-138): loops play from the first frame to the black; pick on choosing a genome; trip: the cue on entering each phase of an injector trip (CreationInjector.phase: 1 turn to the source, 3 draw, 5 turn back, 7 dispense); strike and crackle (a loop) at the takeover, overload at the second hit-stop (started overload_lead_s early: its whine leads to the bang), dive at the zoom; assets/sfx/<name>.ogg", "loops": ["lab_room", "lab_screens"], "pick": "lab_latch", "trip": {"1": "lab_arm", "3": "lab_drawup", "5": "lab_arm", "7": "lab_dispense"}, "strike": "lab_strike", "crackle": "lab_crackle", "overload": "lab_overload", "overload_lead_s": 0.3, "dive": "lab_dive"},
+		"timing": {"place_s": 4.2, "inject_s": 3.0, "takeover_s": 2.0, "zoom_s": 0.9, "black_s": 1.9},
+		"crack_sound": "egg_crack", "cracks": [{"_note": "the egg in the black (director 2026-10-26: \"a crack, a few moments pause before a couple more cracks, another pause, then ROARR\"): each a cut of crack_sound (from_s, len_s) played at_s into the black; the roar is the run's, as the head breaks the water (Emergence surface_break)", "at_s": 0.0, "from_s": 0.5, "len_s": 0.25}, {"at_s": 1.15, "from_s": 0.76, "len_s": 0.2}, {"at_s": 1.4, "from_s": 0.97, "len_s": 0.3}], "sounds": {"_note": "the lab's sounds (director 2026-10-25: \"nice, clinical sfx for this scene, lab sounds and high-tech precision machinery whirring\"; ElevenLabs, D-138): loops play from the first frame to the black; pick on choosing a genome; trip: the cue on entering each phase of an injector trip (CreationInjector.phase: 1 turn to the source, 3 draw, 5 turn back, 7 dispense); strike and crackle (a loop) at the takeover, overload at the second hit-stop (started overload_lead_s early: its whine leads to the bang), dive at the zoom; assets/sfx/<name>.ogg", "loops": ["lab_room", "lab_screens"], "pick": "lab_latch", "trip": {"1": "lab_arm", "3": "lab_drawup", "5": "lab_arm", "7": "lab_dispense"}, "strike": "lab_strike", "crackle": "lab_crackle", "overload": "lab_overload", "overload_lead_s": 0.3, "dive": "lab_dive"},
 		"lab": {
 			"_note": "D-207 board (approved 2026-10-25): Tripo props voxelised at one block size (voxel, metres) under Shader Cinematic; the rack's vials, the monitor screens and the dish surface are located in each model's own cells. bolt: the takeover lightning drawn as branching white-hot cells (the croc breath's bolt shader is not on main yet). freeze_s: the hit-stops at the strike and the overload. Colours are PLACEHOLDERS for the VFX lead.",
 			"voxel": 0.005,
@@ -1779,7 +1783,7 @@
 		"people_buffers": true,
 		"people_aabb_margin_m": 8.0,
 		"kaiju_three_faces": true,
-		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 330, "puff": 25, "step": 4, "slam": 5, "tree": 43, "spark": 13, "burst": 7, "flames": 12, "embers": 12, "smoke": 12}},
+		"fx_pool": {"enabled": true, "provisional_sizes": false, "slots": {"dust": 330, "puff": 25, "step": 4, "slam": 5, "tree": 50, "spark": 13, "burst": 7, "flames": 18, "embers": 18, "smoke": 18}},
 		"remesh_high_priority": true,
 		"remesh_worker_mesh": true,
 		"soft_smoke": true,

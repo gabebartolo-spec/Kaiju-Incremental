@@ -5,6 +5,7 @@ extends RefCounted
 ## Seeded by design: the city layout and the army use pinned streams; no check reads the clock.
 
 const FlowHandover := preload("res://tests/lib/flow_handover.gd")
+const FlowIntro := preload("res://tests/lib/flow_intro.gd")
 ## Frames a staged build may take at most; a hung build fails here instead of hanging the suite.
 const LOAD_FRAME_CAP := 6000
 ## A staged build spans at least this many frames (a one-call build spans none).
@@ -16,6 +17,7 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	await _leave_mid_build(tree, check)
 	await _plain_build(tree, check)
 	await FlowHandover.run(tree, check)  # the run's start, then its hand-over (research 19, 20)
+	await FlowIntro.run(tree, check)  # the run intro: 3 s, short cut, skip, roar (#11)
 
 
 static func _rampage(staged: bool) -> Rampage:
@@ -38,7 +40,7 @@ static func _staged_build(tree: SceneTree, check: Callable) -> void:
 		not rampage.find_children("*", "LoadingOverlay", false, false).is_empty(),
 		"a loading screen is up while it builds"
 	)
-	var risen := rampage.sim.emerge.risen()
+	var risen := rampage.sim.emerge.progress()
 	var overlay: LoadingOverlay = rampage.find_children("*", "LoadingOverlay", false, false)[0]
 	var shown := 0
 	var frames := 0
@@ -56,7 +58,7 @@ static func _staged_build(tree: SceneTree, check: Callable) -> void:
 	check.call(rampage.is_loaded, "the staged build finishes (%d frames)" % frames)
 	check.call(frames >= MIN_STAGES, "it is built over several frames, not one call: %d" % frames)
 	check.call(
-		rampage.sim.emerge.risen() == risen, "the sim stood still while it built (%.2f)" % risen
+		rampage.sim.emerge.progress() == risen, "the sim stood still while it built (%.2f)" % risen
 	)
 	await tree.process_frame
 	check.call(
@@ -74,7 +76,7 @@ static func _staged_build(tree: SceneTree, check: Callable) -> void:
 	)
 	for _i: int in 30:
 		await tree.physics_frame
-	check.call(rampage.sim.emerge.risen() > risen, "the sim steps once it is built")
+	check.call(rampage.sim.emerge.progress() > risen, "the sim steps once it is built")
 	rampage.queue_free()
 	await tree.process_frame
 

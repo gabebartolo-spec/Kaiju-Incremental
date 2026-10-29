@@ -89,9 +89,9 @@ func enter(id: int, column: int, node: int) -> Vector2:
 	return graph.nodes[node]
 
 
-## The way in for a column on `bearing` (RoadGraph.pick_entry).
+## The way in for a column on `bearing` (RoadGraph.pick_entry): never inside the danger line.
 func pick_entry(bearing: float) -> int:
-	return graph.pick_entry(bearing, sim.kaiju_pos, Num.f(sim.army["spawn_radius"]))
+	return graph.pick_entry(bearing, sim.kaiju_pos, Num.f(sim.army["spawn_radius"]), danger())
 
 
 ## One step for every tank: read what fell across the roads, re-plan where needed (at most

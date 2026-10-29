@@ -19,6 +19,8 @@ const IVORY := Color("e8e0c8")
 const PUPIL := Color("15130f")
 ## A wound stays this many cubes clear of an eye.
 const EYE_KEEP_OFF := 3
+## The keyed rise from the sea bay (D-270: head first, shoulders, legs push last, then the roar).
+const RISE_CLIP := "rise_bay"
 
 var species_id: String
 ## His death (DeathOverload, DeathView): the stagger clip, the overload on his hide, the burst.

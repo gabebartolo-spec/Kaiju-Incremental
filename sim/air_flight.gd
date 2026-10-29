@@ -184,7 +184,9 @@ func _plan(heli: AirWing.Heli, helis: Array[AirWing.Heli], dt: float) -> void:
 
 
 ## A pass in two parts. It lines up: the helicopter flies to the entry end of the line (on its own
-## side, beyond him, as it flies to a slot, braking to a hover) and once there (`arrive`) it runs:
+## side, beyond him, as it flies to a slot, braking to a hover) and once there (`arrive`, and
+## drifting across the line no faster than it hovers: run sooner and it skids on over the line)
+## it runs:
 ## it follows a point `strafe_carrot` ahead along the line (which moves with the kaiju's walk) at
 ## full speed; once abeam of him the line bends outward (`strafe_veer`, so it never swings back
 ## across the corridor) and it is over `strafe_exit` past him, where it turns back out to its slot.
@@ -196,7 +198,11 @@ func _plan_pass(heli: AirWing.Heli, dt: float) -> void:
 	var along := (heli.pos - origin).dot(heli.pass_dir)
 	if not heli.run:
 		heli.goal = origin - heli.pass_dir * reach
-		heli.run = heli.pos.distance_to(heli.goal) <= Num.f(cfg["arrive"]) * 2.0
+		var hover := Num.f(cfg["nose_share"]) * Num.f(cfg["heli_speed"])
+		heli.run = (
+			heli.pos.distance_to(heli.goal) <= Num.f(cfg["arrive"]) * 2.0
+			and absf(heli.vel.dot(heli.pass_at)) <= hover
+		)
 	if heli.run and along >= Num.f(cfg["strafe_exit"]) * sim.body_scale() or heli.pass_left <= 0.0:
 		heli.passing = false
 		heli.run = false
