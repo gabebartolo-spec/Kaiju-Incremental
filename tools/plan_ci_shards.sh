@@ -11,7 +11,7 @@
 #
 #   tools/plan_ci_shards.sh            # print the plan
 #   tools/plan_ci_shards.sh --matrix   # the GitHub matrix as JSON (tests.yml plan job)
-#   tools/plan_ci_shards.sh --slow     # the "pr_skip" suites: pushes to main only
+#   tools/plan_ci_shards.sh --slow     # the "pr_skip" suites (a split one as its parts): pushes to main only
 #
 # Re-measure at least weekly and after adding a slow suite, from the shard logs of real CI runs:
 #   python tools/ci_retime.py
@@ -23,7 +23,18 @@ DEFAULT_SECS="${DEFAULT_SECS:-60}"
 
 skip=" $(awk '$1 == "pr_skip" {for (i = 2; i <= NF; i++) printf "%s ", $i}' "$TIMINGS" 2> /dev/null)"
 if [ "$mode" = "--slow" ]; then
-	echo "${skip# }" | xargs
+	# A split suite goes to the slow job as its parts too: whole, it would pass run_tests.sh's SUITE_TIMEOUT.
+	slow=""
+	for s in $skip; do
+		parts=$(awk -v s="$s" '$1 == "split" && $2 == s {print $3}' "$TIMINGS" 2> /dev/null | head -1)
+		if [ -n "$parts" ] && [ "$parts" -ge 2 ] 2> /dev/null; then
+			k=1
+			while [ "$k" -le "$parts" ]; do slow+="$s@$k/$parts "; k=$((k + 1)); done
+		else
+			slow+="$s "
+		fi
+	done
+	echo "$slow" | xargs
 	exit 0
 fi
 rows=""

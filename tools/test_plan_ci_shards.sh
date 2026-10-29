@@ -32,7 +32,7 @@ wanted() {  # timings file -> what the matrix must hold, one per line, sorted
 	local timings="$1" slow s n k
 	slow=" $(CI_TIMINGS="$timings" bash "$PLAN" --slow) "
 	for s in $(suites); do
-		case "$slow" in *" $s "*) continue ;; esac
+		case "$slow" in *" $s "* | *" $s@"*) continue ;; esac
 		n=$(awk -v s="$s" '$1 == "split" && $2 == s {print $3}' "$timings" | head -1)
 		if [ -n "$n" ]; then
 			for ((k = 1; k <= n; k++)); do echo "$s@$k/$n"; done
