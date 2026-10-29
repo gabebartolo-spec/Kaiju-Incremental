@@ -25,7 +25,7 @@ jobs:
           check() { # file cap
             n=$(wc -l < "$1")
             if [ "$n" -gt "$2" ]; then
-              echo "::error file=$1::$n lines, cap is $2"
+              echo "::error file=$1::$n lines, cap is $2 (DECISIONS.md: python tools/roll_decisions.py)"
               fail=1
             fi
           }
