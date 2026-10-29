@@ -22,9 +22,9 @@ const SHOTS: Array[int] = [300, 480, 600, 720, 750, 780, 840, 900, 960, 1050, 10
 const PARTS: Array[String] = ["hull", "turret", "barrel"]
 ## Where columns call in from, metres from the kaiju (the game's is army.spawn_radius).
 const CLIP_SPAWN := 44.0
-## Where the kaiju stands: a crossing at the north end of the Behemoth city (the same spot as
-## round 3's clip, so the critic compares like with like).
-const CLIP_AT := Vector2(5, -7)  # on the beachfront's back street (harbour back_z, D-381)
+## Where the kaiju stands: a crossing in the Behemoth city behind the fixed front, on a straight
+## east street (its back street corners tanks against the beach, D-381).
+const CLIP_AT := Vector2(-1, 34)
 ## Mid-clip the kaiju strides east down the avenue at the tanks posted there (physics frames),
 ## so the take shows them fall back out of its reach and post again.
 const WALK_FRAMES := Vector2i(540, 780)
