@@ -73,6 +73,16 @@ class Tank:
 	## Burning or ink-coated: damage per second until coat_t runs out.
 	var coat_t := 0.0
 	var coat_dps := 0.0
+	## Sent flying (TankFlight): height over the street, velocity (y up), bounces taken, and how
+	## deep in a Domino chain it is. A tank at rest on a roof keeps its height.
+	var flying := false
+	var height := 0.0
+	var vel := Vector3.ZERO
+	var bounces := 0
+	var gen := 0
+	var tilt := Basis.IDENTITY  # its tumble (TankFlight): off upright, on top of its heading
+	var spin := Vector3.ZERO  # axis x rad/s
+	var toppled := false  # landed on its side or roof: out of the fight for good
 
 
 ## step() button flags.
@@ -114,6 +124,7 @@ var collapse: Collapse
 var carving: Carving
 ## The tanks' behaviour (Army); the tanks themselves are in `tanks`. Explosives: the red barrels.
 var army_units: Army
+var flight: TankFlight  # tanks the reptilian sends flying
 var explosives: Explosives
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
@@ -172,6 +183,8 @@ func _init(
 	collapse = Collapse.new(self, tuning, Seeds.derive(rng, 0xFA11))
 	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
+	var flight_cfg: Dictionary = army["flight"]
+	flight = TankFlight.new(self, flight_cfg, Seeds.derive(rng, 0xF117))
 	explosives = Explosives.new(self, tuning, Seeds.derive(rng, 0xE7))
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
@@ -275,7 +288,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	brood.step(dt)
 	collapse.step(dt)
 	explosives.step(dt)
-	army_units.step(dt)
+	_step_ground(dt)
 	_step_sky(dt)
 	rail.step(dt)
 	Endless.step(self, dt)
@@ -306,6 +319,12 @@ func end(reason: String, now := false) -> void:
 
 func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
+
+
+## The tanks: the flung ones fly (TankFlight), then the army drives and fires the rest.
+func _step_ground(dt: float) -> void:
+	flight.step(dt)
+	army_units.step(dt)
 
 
 ## The helicopters: the air wing's gunships, then the leader's escape (D-149).

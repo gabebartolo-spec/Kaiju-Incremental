@@ -6,7 +6,9 @@ extends SceneTree
 ## is left. The city grows with each evolution (CityGrowth). Prints, per species, the play time
 ## at which each evolution and each branch node lands, a table per growth stage (runs, hours,
 ## rubble per run, city destroyed, how runs ended) and when the tree is complete.
-## Play time = rampage seconds + TREE_SECONDS per visit.
+## Play time = rampage seconds + TREE_SECONDS per visit. The shopping and the cadence bars are
+## TreePacing's (tuning "tree" "pacing"): a species with rings prints each bar it misses over the
+## first window and its ring sizes against their targets.
 ##   godot --headless --path . --script tools/pacing.gd -- [--species=id] [--runs=400]
 ##     [--verbose] [--flat] [--seed=k]  (--flat: one fixed city and army, as before D-039;
 ##     --seed: another army stream per run; --verbose prints every run: what it paid, what it
@@ -50,8 +52,7 @@ func _initialize() -> void:
 func _pace(species_id: String) -> void:
 	var species := Content.species_def(species_id)
 	var tree := UpgradeTree.new(Content.upgrades(), {}, species_id)
-	var rubble := 0
-	var clock := 0.0
+	var shop := TreePacing.new(TREE_SECONDS)
 	var marks: Array[String] = []
 	var stages: Dictionary = {}  # tier -> {runs, seconds, rubble, destruction, ends}
 	var run := 0
@@ -76,17 +77,11 @@ func _pace(species_id: String) -> void:
 		var res := sim.result()
 		city_seconds = sim.army_units.taskforce.city_seconds()
 		sim.dispose()  # its parts point back at it: else every run's sim stays in memory
-		clock += steps * DT + TREE_SECONDS
-		rubble += Num.i(res["rubble"])
 		run += 1
 		_tally(stages, tier, steps * DT + TREE_SECONDS, res)
-		var bought := 0
-		while true:
-			var pick := _cheapest(tree, rubble)
-			if pick == "":
-				break
-			rubble -= tree.buy(pick, rubble)
-			bought += 1
+		var picks := shop.visit(tree, steps * DT, Num.i(res["rubble"]))
+		var bought := picks.size()
+		for pick: String in picks:
 			var def: Dictionary = tree.defs[pick]
 			var branch := str(def.get("species", "")) != ""
 			if branch and first_power < 0:
@@ -95,7 +90,7 @@ func _pace(species_id: String) -> void:
 				marks.append(
 					(
 						"%s at %.2f h (run %d, %.0f%% city)"
-						% [pick, clock / 3600.0, run, Num.f(res["destruction"]) * 100.0]
+						% [pick, shop.clock / 3600.0, run, Num.f(res["destruction"]) * 100.0]
 					)
 				)
 		if _verbose:
@@ -142,9 +137,31 @@ func _pace(species_id: String) -> void:
 	print(
 		(
 			"  tree %d/%d levels after %d runs, %.2f h"
-			% [tree.levels_owned(), tree.levels_total(), run, clock / 3600.0]
+			% [tree.levels_owned(), tree.levels_total(), run, shop.clock / 3600.0]
 		)
 	)
+	_bars(tree, shop)
+
+
+## A species with rings: each ring's size against its target, then the cadence bars it misses
+## over the first window (TreePacing, tuning "tree" "pacing").
+func _bars(tree: UpgradeTree, shop: TreePacing) -> void:
+	if tree.rings.is_empty():
+		return
+	var counts: Dictionary = {}
+	for id: String in tree.order:
+		counts[tree.ring(id)] = Num.i(counts.get(tree.ring(id), 0)) + 1
+	for r: int in range(1, tree.rings.size() + 1):
+		var ring_def: Dictionary = tree.rings[r - 1]
+		print(
+			(
+				"  ring %d: %d nodes (target %d)"
+				% [r, Num.i(counts.get(r, 0)), Num.i(ring_def["target"])]
+			)
+		)
+	var pacing: Dictionary = Content.section("tree")["pacing"]
+	var misses := shop.misses(tree, pacing)
+	print("  bars: %s" % ("PASS" if misses.is_empty() else "MISS " + "; ".join(misses)))
 
 
 func _tally(stages: Dictionary, tier: int, seconds: float, res: Dictionary) -> void:
@@ -182,13 +199,3 @@ func _goal(sim: RampageSim) -> Vector2:
 		if _landmark != "" and b.landmark == _landmark:
 			return Vector2(b.x, b.z)
 	return Vector2(INF, INF)
-
-
-func _cheapest(tree: UpgradeTree, rubble: int) -> String:
-	var best := ""
-	var best_cost := rubble + 1
-	for id: String in tree.order:
-		if tree.can_buy(id, rubble) and tree.cost(id) < best_cost:
-			best = id
-			best_cost = tree.cost(id)
-	return best

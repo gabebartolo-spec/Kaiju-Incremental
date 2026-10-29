@@ -3,6 +3,12 @@ extends RefCounted
 ## The upgrade tree: definitions (data/upgrades.json), the levels bought, and the stats they
 ## produce on top of a species. Pure: no nodes, no files. A definition with a "species" key
 ## belongs to that species' own branch and is left out of every other species' tree.
+## Rings (tuning "tree", ROADMAP E): a species listed there grows its tree outward in rings, each
+## node a kind (stat, verb, stage); only the open rings can be bought, the next one shows as
+## shapes, the rest stay hidden (R 1.4, R 16.3). A species not listed keeps the whole tree open.
+
+## How much of a node the tree screen may show (R 16.3).
+enum Reveal { HIDDEN, SHAPE, FULL }
 
 var defs: Dictionary = {}
 var order: Array[String] = []
@@ -10,6 +16,9 @@ var levels: Dictionary = {}
 ## Every price x this (data/species.json cost_mult of the kaiju's species, D-167 pacing bar);
 ## 1 for "".
 var cost_mult := 1.0
+## The species' rings from the centre out (tuning "tree" "species"): each {"stage", "target"}.
+## Empty: no rings, every node open.
+var rings: Array = []
 var _tiers: Dictionary = {}
 
 ## species_id "" keeps every branch (data checks); a game passes its kaiju's species.
@@ -27,6 +36,11 @@ func _init(
 		order.append(id)
 	if species_id != "":
 		cost_mult = Num.f(Content.species_def(species_id).get("cost_mult", 1.0))
+		var ringed: Dictionary = Content.section("tree").get("species", {})
+		var own: Dictionary = ringed.get(species_id, {})
+		rings = own.get("rings", [])
+	# Old saves keep every level they bought: ids never change and levels are only clamped
+	# to today's max (a save owning a node in a ring not yet open still owns it).
 	for id: String in saved_levels:
 		if defs.has(id):
 			levels[id] = clampi(Num.i(saved_levels[id]), 0, max_level(id))
@@ -55,14 +69,67 @@ func cost(id: String) -> int:
 	return roundi(Num.f(costs[next]) * cost_mult)
 
 
-## Every prerequisite owned at level 1 or more.
+## Every prerequisite owned at level 1 or more, in an open ring.
 func is_unlocked(id: String) -> bool:
+	if not ring_open(ring(id)):
+		return false
 	var def: Dictionary = defs[id]
 	var requires: Array = def.get("requires", [])
 	for req: String in requires:
 		if level(req) < 1:
 			return false
 	return true
+
+
+## The node's ring, 1 at the centre (1 when the species has no rings).
+func ring(id: String) -> int:
+	var def: Dictionary = defs[id]
+	return Num.i(def.get("ring", 1))
+
+
+## "stat", "verb" or "stage"; a node without a kind is a stage if it grows the kaiju, else a stat.
+func kind(id: String) -> String:
+	var def: Dictionary = defs[id]
+	if def.has("kind"):
+		return str(def["kind"])
+	var effects: Dictionary = def.get("effects", {})
+	return "stage" if effects.has("size") else "stat"
+
+
+## The growth stage the kaiju has reached: 1 plus the evolutions owned.
+func stage() -> int:
+	var out := 1
+	for id: String in order:
+		if kind(id) == "stage":
+			out += level(id)
+	return out
+
+
+## A ring can be bought from once the kaiju has reached its stage and owns a node of the ring
+## before it (ring 1 always). Every ring is open when the species has no rings.
+func ring_open(r: int) -> bool:
+	if rings.is_empty() or r <= 1:
+		return true
+	if r > rings.size():
+		return false
+	var ring_def: Dictionary = rings[r - 1]
+	if stage() < Num.i(ring_def["stage"]):
+		return false
+	for id: String in order:
+		if ring(id) == r - 1 and level(id) > 0:
+			return true
+	return false
+
+
+## What the tree screen shows of a node: in full when its ring is open or it is owned; as a
+## shape in the next ring out, and an evolution always (the landmark ahead); else nothing.
+func reveal(id: String) -> Reveal:
+	var r := ring(id)
+	if level(id) > 0 or ring_open(r):
+		return Reveal.FULL
+	if kind(id) == "stage" or ring_open(r - 1):
+		return Reveal.SHAPE
+	return Reveal.HIDDEN
 
 
 func can_buy(id: String, rubble: int) -> bool:
