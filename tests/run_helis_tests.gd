@@ -7,9 +7,6 @@ extends "res://tests/lib/powers_base.gd"
 ## Strafing passes a helicopter is sent on, and the seconds each is given (strafe_seconds).
 const PASSES := 8
 const PASS_SECONDS := 22.0
-## How fast the grown croc's walk curves (radians a second) while the passes run: a pass aims
-## ahead of his walk into the claw's band; past a croc standing still it runs down his flank.
-const WALK_TURN := 0.3
 
 
 func suite_name() -> String:
@@ -52,10 +49,13 @@ func _check_helicopters() -> void:
 		# in the claw's band for about 1.6 s of it).
 		_run(grown, 0.4 * pass_n, Vector2.ZERO)
 		grown.air.flight.start_pass(diver)
-		for i: int in roundi(PASS_SECONDS / DT):
+		for _i: int in roundi(PASS_SECONDS / DT):
 			grown.hp = grown.max_hp  # the passes run on; the helicopters' fire is not measured
-			var walk := Vector2.from_angle(i * DT * WALK_TURN)
-			for event: Dictionary in grown.step(DT, walk, false):
+			# He stands and turns to the diver, as a player swatting it does: a pass runs down his
+			# flank, so a turning walk met the claw's band only by where the city let him walk.
+			if diver.pos.distance_to(grown.kaiju_pos) > 0.01:
+				grown.facing = (diver.pos - grown.kaiju_pos).normalized()
+			for event: Dictionary in grown.step(DT, Vector2.ZERO, false):
 				swatted = swatted or str(event["type"]) == "heli_destroyed"
 		if swatted:
 			break

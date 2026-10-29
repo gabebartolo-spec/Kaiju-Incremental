@@ -119,7 +119,9 @@ static func check_look(
 			east = maxf(east, rect.end.x)
 			covered = covered and not channels.is_empty() and channels[0].encloses(rect)
 	var whole := (
-		channels.size() == 1 and channels[0].position.x <= west and channels[0].end.x >= east
+		channels.size() == 1 + CityRiver.inlets(plan).size()  # the river, then bridge inlets
+		and channels[0].position.x <= west
+		and channels[0].end.x >= east
 	)
 	var bridged := true
 	for deck: Rect2 in bridges:

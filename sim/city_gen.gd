@@ -345,6 +345,8 @@ static func _blocks(
 			var roll := rng.randf()
 			if CitySites.covers(plan, i, j):
 				continue  # one of a landmark's merged cells
+			if not rect.has_area():
+				continue  # two bays' pinned lines closer than their kerbs: only street between them
 			if city and CityLots.town_share(rect.get_center(), cfg) < 0.2:
 				if roll < Num.f(cfg["parking_chance"]):
 					use = "parking"
@@ -361,35 +363,5 @@ static func _blocks(
 	CitySites.add_blocks(plan, cfg)
 	CityRiver.mark(plan, zs, cfg)
 	CityHarbour.mark(plan, avenues_x, avenues_z, cfg)  # the sea bay's blocks
-	# One park per district: its biggest block between the towers and its ring. One plaza: the
-	# block at the heart of the first tower district.
-	var rings := districts(cfg)
-	var heart := cores(cfg)[0]
-	var parks: Array[int] = []
-	var park_area: Array[float] = []
-	for k: int in rings.size():
-		parks.append(-1)
-		park_area.append(0.0)
-	var best_plaza := -1
-	var plaza_away := INF
-	for n: int in inner:
-		var rect: Rect2 = blocks[n]["rect"]
-		if str(blocks[n]["use"]) != "built" or CityHarbour.in_any(cfg, rect):
-			continue  # the river (CityRiver), any stage's sea bay (CityHarbour)
-		var ring := Num.i(blocks[n]["district"])
-		var town := CityLots.town_share(rect.get_center(), cfg)
-		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]
-		var inside := edge < 0.75 or ring > 0  # a later district is one ring of blocks deep
-		if town < 0.1 and inside and rect.get_area() > park_area[ring]:
-			parks[ring] = n
-			park_area[ring] = rect.get_area()
-		var away := rect.get_center().distance_to(Vector2(heart.x, heart.y))
-		if away < plaza_away:
-			best_plaza = n
-			plaza_away = away
-	for n: int in parks:
-		if n >= 0:
-			blocks[n]["use"] = "park"
-	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
-		blocks[best_plaza]["use"] = "plaza"
+	CityParks.pick(plan, inner, cfg)
 	CityBand.hold_back(plan, inner, cfg)

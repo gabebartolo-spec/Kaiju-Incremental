@@ -49,6 +49,36 @@ static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
 		plan["river"] = band
 		plan["river_spawn"] = spawn
 		plan["river_bank"] = Vector2(spawn.x, band.x - inset)
+		_dig_inlets(plan, band, cfg)
+
+
+## A bridge landmark's water (D-254): an inlet off the river's far bank, its span's length less a
+## landing at each end wide, from the river's open water to a landing short of its plaza's far
+## kerb, so the bridge meets land at both ends (#12). Sets the site's "water" (Rect2) and "at"
+## (where the bridge stands: across the inlet's middle).
+static func _dig_inlets(plan: Dictionary, band: Vector2, cfg: Dictionary) -> void:
+	var walk := Num.f(cfg["sidewalk"])
+	for site: Dictionary in plan.get("sites", []):
+		var spec: Dictionary = site["spec"]
+		if str(spec.get("kind", "")) != "bridge":
+			continue
+		var shape: Dictionary = site["shape"]
+		var rect: Rect2 = site["rect"]
+		var landing := Num.f(spec["landing"])
+		var wide := Num.f(shape["w"]) - 2.0 * landing
+		var top := band.y + walk  # where the river's open water ends (a sidewalk past its blocks)
+		var water := Rect2(rect.get_center().x - wide * 0.5, top, wide, rect.end.y - landing - top)
+		site["water"] = water
+		site["at"] = Vector2(rect.get_center().x, water.get_center().y)
+
+
+## Every bridge inlet's water (empty without one).
+static func inlets(plan: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for site: Dictionary in plan.get("sites", []):
+		if site.has("water"):
+			out.append(site["water"])
+	return out
 
 
 ## The street-grid row (z cell) the river runs along: the one just south of district 0's ring
@@ -68,7 +98,7 @@ static func river_row(zs: Array[float], cfg: Dictionary) -> int:
 ## The river's open water (x, z): ONE channel from the west end of the street grid to the east
 ## end, however many blocks and gaps lie along it (a gap is a street or a landmark's site; each
 ## is carried over the water by CityRiver.bridges, so the water runs on under all of them and is
-## never cut short). Empty without a river.
+## never cut short), first; then each bridge landmark's inlet off it. Empty without a river.
 static func channels(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var spans := _spans(plan, cfg)
@@ -78,6 +108,7 @@ static func channels(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	for span: Rect2 in spans:
 		whole = whole.merge(span)
 	out.append(whole)
+	out.append_array(inlets(plan))
 	return out
 
 
@@ -93,10 +124,20 @@ static func bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 		return out
 	var z0 := water[0].position.y
 	var deep := water[0].size.y
+	var mouths: Array[Rect2] = []  # no road bridge where an inlet opens (its streets are cut)
+	for site: Dictionary in plan.get("sites", []):
+		if site.has("water"):
+			mouths.append(site["outer"])
 	for n: int in range(1, spans.size()):
 		var from := spans[n - 1].end.x
 		if spans[n].position.x - from > 0.01:
-			out.append(Rect2(from, z0, spans[n].position.x - from, deep))
+			var deck := Rect2(from, z0, spans[n].position.x - from, deep)
+			var cut := false
+			for mouth: Rect2 in mouths:
+				var mid := deck.get_center().x
+				cut = cut or (mid > mouth.position.x and mid < mouth.end.x)
+			if not cut:
+				out.append(deck)
 	return out
 
 
