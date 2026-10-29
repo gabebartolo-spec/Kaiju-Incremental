@@ -14,6 +14,7 @@ static var _weather: Dictionary = {}
 static var _weather_id := ""
 static var _merged: Dictionary = {}
 static var _landmarks: Dictionary = {}
+static var _pool: Dictionary = {}
 static var _sports: Dictionary = {}
 static var _materials: Array[Dictionary] = []
 
@@ -51,6 +52,13 @@ static func species_def(id: String) -> Dictionary:
 static func landmarks() -> Dictionary:
 	_load()
 	return _landmarks
+
+
+## The city's building pool (data/city_buildings.json, D-256): the whole book (districts,
+## placement, "pool" rows by id with their baked shapes; CityPool, ModelVariant).
+static func city_buildings() -> Dictionary:
+	_load()
+	return _pool
 
 
 ## The stadium's matches (D-078, data/sports.json): "pitch" (where on the stadium, pace) and
@@ -173,6 +181,7 @@ static func _load() -> void:
 	_weather = looks_file.get("weather", {"order": [""], "labels": {}, "random_label": ""})
 	_weather_id = str(_weather["order"][0])
 	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
+	_pool = load_json("res://data/city_buildings.json")
 	_sports = load_json("res://data/sports.json")
 	_materials = _list("res://data/materials.json", "materials")
 	var names: Dictionary = _tuning.get("names", {})
@@ -181,6 +190,7 @@ static func _load() -> void:
 	# The city plan reads landmark shapes from its config, so CityGen.map stays a function of cfg.
 	var city: Dictionary = _tuning.get("city", {})
 	city["landmark_shapes"] = _landmarks
+	city["building_pool"] = _pool
 
 
 static func _list(path: String, key: String) -> Array[Dictionary]:

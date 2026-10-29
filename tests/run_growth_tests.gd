@@ -97,7 +97,8 @@ func _check_stages_grow() -> void:
 
 
 ## An evolution adds districts round the one the kaiju knows: the street plan is the same at
-## every stage, and every lot of the young city stands where it stood (only taller or not).
+## every stage. The buildings on it are not kept: the city is randomised and every Tripo model
+## serves every stage (director 2026-10-29).
 func _check_districts_kept() -> void:
 	var young := Content.section("city")
 	var adult: Dictionary = _tuning(3)["city"]
@@ -105,31 +106,6 @@ func _check_districts_kept() -> void:
 	var adult_plan := CityGen.map(adult)
 	var same: bool = young_plan["xs"] == adult_plan["xs"] and young_plan["zs"] == adult_plan["zs"]
 	check(same, "the street plan is the same at every stage")
-	var footprints := {}
-	for e: Dictionary in _layout(3):
-		footprints[Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))] = true
-	# The beachfront is the same at every stage (D-381); its hotel blocks are built or stand-ins
-	# by the stage's band, so the front is left out. The blocks by the landing give their lots to
-	# its quay sheds (CityRiver.off_quay).
-	var sea := CityHarbour.rect_of(adult)
-	var quays: Array[Rect2] = []
-	for block: Dictionary in young_plan["blocks"]:
-		if str(block["use"]) == "built" and CityRiver.on_quay(young_plan, block, young):
-			var rect: Rect2 = block["rect"]
-			quays.append(rect)
-	var moved := 0
-	for e: Dictionary in _layout(1):
-		var foot := Rect2(
-			Num.f(e["x"]) - Num.f(e["w"]) * 0.5,
-			Num.f(e["z"]) - Num.f(e["d"]) * 0.5,
-			Num.f(e["w"]),
-			Num.f(e["d"])
-		)
-		if sea.intersects(foot) or quays.any(func(q: Rect2) -> bool: return q.intersects(foot)):
-			continue
-		if not footprints.has(Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))):
-			moved += 1
-	check(moved == 0, "every lot of the young city is still there at Colossus (%d moved)" % moved)
 
 
 ## The edges still read (D-024) at every size: the bay lies past the north ring with room for

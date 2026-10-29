@@ -19,6 +19,7 @@ const MAGIC := "KVOX"
 
 ## A parsed model per landmark id: {"cells": PackedInt32Array x, y, z triples, "mats": names}.
 static var _cache: Dictionary = {}
+static var _lock := Mutex.new()
 
 var b: RampageSim.Building
 ## The chunk shape's arcs, or null for a landmark without them.
@@ -34,7 +35,7 @@ func _init(p_building: RampageSim.Building) -> void:
 	arcs = b.frame.arcs if b.frame != null else null
 	res = cell_res()
 	_shed_at = Num.i(Content.section("destruction").get("arc_shed_cells", 1))
-	var model := _model(b.landmark)
+	var model := _model(b.landmark) if b.model == "" else model_of(b)
 	var xyz: PackedInt32Array = model["xyz"]
 	var mats: PackedByteArray = model["mats"]
 	var lo := Vector3i.ZERO
@@ -142,6 +143,35 @@ static func material_of(c: Color, ground: Array) -> String:
 	return "landmark_other"
 
 
+## A pool building's model (data/city_buildings.json) as cells, turned, mirrored and stretched as
+## the building was placed (ModelVariant); the base read is kept once, the variant made per call
+## (only a building the rampage reaches is promoted).
+static func model_of(building: RampageSim.Building) -> Dictionary:
+	var v := building.variant if not building.variant.is_empty() else ModelVariant.of({})
+	var row := ModelVariant.row_of(building.model)
+	var out := {"xyz": PackedInt32Array(), "mats": PackedByteArray()}
+	var path := str(row.get("kvox", ""))
+	if path != "" and FileAccess.file_exists(path):
+		_lock.lock()
+		var base: Dictionary = _cache.get(path, {})
+		_lock.unlock()
+		if base.is_empty():
+			base = _read(path, [])
+			_lock.lock()
+			_cache[path] = base
+			_lock.unlock()
+		var base_xyz: PackedInt32Array = base["xyz"]
+		var turned := ModelVariant.cells(base_xyz, row, v, cell_res())
+		var src: PackedInt32Array = turned["src"]
+		var mats: PackedByteArray = base["mats"]
+		var picked := PackedByteArray()
+		picked.resize(src.size())
+		for i: int in src.size():
+			picked[i] = mats[src[i]]
+		out = {"xyz": turned["xyz"], "mats": picked}
+	return out
+
+
 ## The landmark's model as cells, read once: {"xyz": x, y, z per voxel, "mats": material ids}.
 ## Empty if the shape or file is missing.
 static func _model(id: String) -> Dictionary:
@@ -174,19 +204,18 @@ static func _read(path: String, ground: Array) -> Dictionary:
 	f.get_16()  # model height
 	var voxels := first if version == 1 else f.get_32()
 	var by_class: Dictionary[int, int] = {}
-	for _v: int in voxels:
-		var x := _signed16(f.get_16())
-		var y := _signed16(f.get_16())
-		var z := _signed16(f.get_16())
-		var color := Color8(f.get_8(), f.get_8(), f.get_8())
-		f.get_8()  # face flags: a view look
-		var key := color.to_rgba32()
+	var buf := f.get_buffer(voxels * 10)  # per voxel: x, y, z int16, r, g, b, face flags
+	voxels = buf.size() / 10
+	xyz.resize(voxels * 3)
+	mats.resize(voxels)
+	for v: int in voxels:
+		var o := v * 10
+		xyz[v * 3] = buf.decode_s16(o)
+		xyz[v * 3 + 1] = buf.decode_s16(o + 2)
+		xyz[v * 3 + 2] = buf.decode_s16(o + 4)
+		var key := (buf[o + 6] << 16) | (buf[o + 7] << 8) | buf[o + 8]
 		if not by_class.has(key):
+			var color := Color8(buf[o + 6], buf[o + 7], buf[o + 8])
 			by_class[key] = Num.i(ids[material_of(color, ground)])
-		xyz.append_array(PackedInt32Array([x, y, z]))
-		mats.append(by_class[key])
+		mats[v] = by_class[key]
 	return {"xyz": xyz, "mats": mats}
-
-
-static func _signed16(v: int) -> int:
-	return v - 65536 if v >= 32768 else v

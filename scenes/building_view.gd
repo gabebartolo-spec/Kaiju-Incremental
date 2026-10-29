@@ -109,7 +109,7 @@ func _dress() -> void:
 static func voxels_of(at: RampageSim.Building, base: Color, party: Dictionary) -> BuildingVoxels:
 	if at.is_rail():
 		return RailVoxels.new(at, base)
-	if at.landmark != "":
+	if at.landmark != "" or at.model != "":
 		return LandmarkVoxels.new(at, base)
 	if at.hazard != "":
 		return HazardVoxels.new(at, base)  # a red barrel (comments #19)

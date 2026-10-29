@@ -8,7 +8,8 @@ extends RefCounted
 
 
 ## A building from one layout entry: x, z (centre), w, d, h, tier, style, and for a landmark
-## landmark, chunks, rubble_bonus. Its chunks are chunk_hp x tier tough.
+## landmark, chunks, rubble_bonus; for a pool building (CityPool) model, facing, mirror, stretch,
+## palette. Its chunks are chunk_hp x tier tough.
 static func building(entry: Dictionary, chunk_hp: float) -> RampageSim.Building:
 	var b := RampageSim.Building.new()
 	b.x = Num.f(entry["x"])
@@ -22,7 +23,14 @@ static func building(entry: Dictionary, chunk_hp: float) -> RampageSim.Building:
 	b.landmark = str(entry.get("landmark", ""))
 	b.rubble_bonus = Num.f(entry.get("rubble_bonus", 1.0))
 	b.hazard = str(entry.get("hazard", ""))
-	if entry.has("chunks"):
+	if entry.has("model"):  # a pool building: its baked model's chunks, turned as placed
+		b.model = str(entry["model"])
+		b.variant = ModelVariant.of(entry)
+		b.palette = Num.i(entry.get("palette", 0))
+		var row := ModelVariant.row_of(b.model)
+		if not row.is_empty():
+			b.frame.keep(ModelVariant.chunks(row, b.variant))
+	elif entry.has("chunks"):
 		var shape: Array = entry["chunks"]
 		b.frame.keep(shape)
 	if entry.has("arcs"):
