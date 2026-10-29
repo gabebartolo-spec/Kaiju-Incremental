@@ -65,6 +65,7 @@ func _ready() -> void:
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)
+	_harbour(pavement)  # its slabs join the multimesh below
 	var mat := _slab_material()
 	var colors := {"pavement": pavement, "asphalt": asphalt, "stone": pavement.lightened(0.12)}
 	for mmi: MultiMeshInstance3D in DiagonalPaving.meshes(self, colors, mat):
@@ -74,7 +75,6 @@ func _ready() -> void:
 	add_child(_build_paint())
 	bay = _water()
 	add_child(bay)
-	_harbour(pavement)
 
 
 ## One block's pavement, and what stands on it (lawn, plaza, parking bays).
@@ -224,20 +224,25 @@ func _quay(pavement: Color) -> void:
 		_slab(lip, Vector2(PAVE_TOP + 0.7, 1.0), pavement.darkened(0.3), wet)
 
 
-## The sea bay (CityHarbour): its water and sand beach (HarbourView), a quay deck down each
-## straight side, as the coast's quay, and the promenade's pavement along the coast road.
+## The fixed beachfront (CityHarbour, D-381; HarbourView): its water and sand beach, the port's
+## decks (quay, piers, seawall), the promenade, the beach road and side streets, and the pavement
+## the hotel blocks and the port's yard stand on.
 func _harbour(pavement: Color) -> void:
 	if not plan.has("harbour"):
 		return
 	var sea := CityHarbour.sea(cfg)
 	for deck: Rect2 in HarbourView.quays(plan):
 		_face(deck, Vector2(PAVE_TOP + 0.3, 1.6), pavement.darkened(0.15), sea)
-	_slab(
-		HarbourView.promenade(plan, cfg),
-		Vector2(PAVE_TOP, 0.3),
-		pavement,
-		GroundKit.kind(GroundKit.K_PAVEMENT)
-	)
+	var bands := HarbourView.bands(plan, cfg)
+	var asphalt := Look.color("asphalt")
+	var walk := Vector2(PAVE_TOP, 0.3)
+	var road := Vector2(ROAD_TOP, 0.3)
+	for r: Rect2 in bands["promenade"] + bands["pavement"]:
+		_slab(r, walk, pavement, GroundKit.kind(GroundKit.K_PAVEMENT))
+	for r: Rect2 in bands["yard"]:
+		_slab(r, walk, pavement.darkened(0.15), GroundKit.kind(GroundKit.K_CONCRETE))
+	for r: Rect2 in bands["road"] + bands["side"]:
+		_slab(r, road, asphalt, GroundKit.kind(GroundKit.K_ASPHALT))
 	add_child(HarbourView.water(plan, cfg, Look.color("water")))
 	add_child(HarbourView.beach(plan, cfg, Look.color("sand")))
 

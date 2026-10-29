@@ -72,6 +72,18 @@ static func material(rect: Rect2, deep: Color, bay: bool, seed: int) -> ShaderMa
 	return mat
 
 
+## Lifts a sheet into the beach's lapping wavelets (tuning water.lap; director 2026-10-29: "gentle
+## waves lapping against the shore"). The sheet must be cut into rows for them (HarbourView.water).
+static func lap(mat: ShaderMaterial) -> void:
+	var cfg: Dictionary = Content.section("water")["lap"]
+	for key: String in ["height", "length", "period"]:
+		mat.set_shader_parameter("lap_" + key, Num.f(cfg[key]))
+	var landward: Array = cfg["dir"]
+	mat.set_shader_parameter(
+		"lap_dir", Vector2(Num.f(landward[0]), Num.f(landward[1])).normalized()
+	)
+
+
 ## The glossy sheet the surface replaced (tuning water.on false; capture_river --off).
 static func gloss(color: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()

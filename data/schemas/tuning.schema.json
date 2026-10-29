@@ -1994,6 +1994,52 @@
             }
           },
           "additionalProperties": false
+        },
+        "lap": {
+          "type": "object",
+          "properties": {
+            "height": {
+              "$ref": "#/$defs/num"
+            },
+            "length": {
+              "$ref": "#/$defs/num"
+            },
+            "period": {
+              "$ref": "#/$defs/num"
+            },
+            "dir": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/num"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "row": {
+              "$ref": "#/$defs/num"
+            },
+            "column": {
+              "$ref": "#/$defs/num"
+            },
+            "fade": {
+              "$ref": "#/$defs/num"
+            }
+          },
+          "required": [
+            "height",
+            "length",
+            "period",
+            "dir",
+            "row",
+            "column",
+            "fade"
+          ],
+          "patternProperties": {
+            "^_": {
+              "$ref": "#/$defs/str"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2011,7 +2057,8 @@
         "night_glow",
         "day_glow",
         "river",
-        "bay"
+        "bay",
+        "lap"
       ],
       "patternProperties": {
         "^_": {
@@ -2262,10 +2309,18 @@
         "harbour": {
           "type": "object",
           "properties": {
-            "bays": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
-            "quay": {"$ref": "#/$defs/num"},
-            "sand": {"$ref": "#/$defs/num"},
-            "crescent_share": {"$ref": "#/$defs/num"},
+            "beach_x": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "sea_z": {"$ref": "#/$defs/num"},
+            "shore": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "sand": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "promenade": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "road": {"$ref": "#/$defs/num"},
+            "back_z": {"$ref": "#/$defs/num"},
+            "side_streets": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "quay_back": {"$ref": "#/$defs/num"},
+            "piers": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "seawall": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "light": {"type": "array", "items": {"$ref": "#/$defs/num"}},
             "arc_points": {"$ref": "#/$defs/num"},
             "beach": {"$ref": "#/$defs/num"},
             "sand_top": {"$ref": "#/$defs/num"},
@@ -2273,12 +2328,47 @@
             "seabed_depth": {"$ref": "#/$defs/num"},
             "crouch_back": {"$ref": "#/$defs/num"},
             "seabed_clear": {"$ref": "#/$defs/num"},
+            "rise_x": {"$ref": "#/$defs/num"},
             "nose_gap": {"$ref": "#/$defs/num"},
             "bank_inset": {"$ref": "#/$defs/num"},
             "fit_margin": {"$ref": "#/$defs/num"},
-            "view_margin": {"$ref": "#/$defs/num"}
+            "view_margin": {"$ref": "#/$defs/num"},
+            "props": {
+              "type": "object",
+              "properties": {
+                "voxel": {"$ref": "#/$defs/num"},
+                "spacing": {"$ref": "#/$defs/num"},
+                "from_east": {"$ref": "#/$defs/num"},
+                "from_water": {"$ref": "#/$defs/num"},
+                "from_edge": {"$ref": "#/$defs/num"},
+                "umbrella": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
+                "lounger": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
+                "courts": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "court": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "court_shift": {"$ref": "#/$defs/num"},
+                "court_clear": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                "net": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
+                "line_proud": {"$ref": "#/$defs/num"},
+                "crowd": {
+                  "type": "object",
+                  "properties": {
+                    "per_umbrella": {"$ref": "#/$defs/num"},
+                    "stand": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+                    "spread": {"$ref": "#/$defs/num"},
+                    "release": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["per_umbrella", "stand", "spread", "release"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "colors": {"type": "object", "additionalProperties": {"$ref": "#/$defs/str"}}
+              },
+              "required": ["voxel", "spacing", "from_east", "from_water", "from_edge", "umbrella", "lounger", "courts", "court", "court_shift", "court_clear", "net", "line_proud", "crowd", "colors"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
           },
-          "required": ["bays", "quay", "sand", "crescent_share", "arc_points", "beach", "sand_top", "sea_level", "seabed_depth", "crouch_back", "seabed_clear", "nose_gap", "bank_inset", "fit_margin", "view_margin"],
+          "required": ["beach_x", "sea_z", "shore", "sand", "promenade", "road", "back_z", "side_streets", "quay_back", "piers", "seawall", "light", "arc_points", "beach", "sand_top", "sea_level", "seabed_depth", "crouch_back", "seabed_clear", "rise_x", "nose_gap", "bank_inset", "fit_margin", "view_margin", "props"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },

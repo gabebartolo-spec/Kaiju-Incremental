@@ -5,7 +5,7 @@ extends RefCounted
 ## bollard is on that line, none over water, on a street or in a street tree's trunk; every
 ## side but the river's carries at least 35% of the bollards its dry length allows (counted per
 ## side, corners apart, so two corner posts cannot pass for a side: critic on #114); where the
-## sea bay (CityHarbour) cuts the north side, the water marks the edge itself.
+## beachfront (CityHarbour) cuts a side, the water and sand mark the edge themselves.
 
 
 static func check(
@@ -37,13 +37,13 @@ static func check(
 			bad["road"] += 1
 		if trees.any(func(t: Vector2) -> bool: return t.distance_to(ground) < clear):
 			bad["tree"] += 1
-	var want := int(half * 2.0 / Num.f(cfg["spacing"]) * 0.35)  # streets crossing leave gaps
-	var want_n := int(_dry_north(plan, half) / Num.f(cfg["spacing"]) * 0.35)
+	var want := {}
+	for side: String in per_side:  # streets crossing leave gaps
+		want[side] = int(_dry(plan, half, side) / Num.f(cfg["spacing"]) * 0.35)
 	var river_side := "s" if plan.has("river") else ""
 	var thin := []
 	for side: String in per_side:
-		var need := want_n if side == "n" else want
-		if side != river_side and Num.i(per_side[side]) < need:
+		if side != river_side and Num.i(per_side[side]) < Num.i(want[side]):
 			thin.append(side)
 	var clean: bool = bad.values().all(func(v: int) -> bool: return v == 0)
 	check_fn.call(
@@ -53,20 +53,23 @@ static func check(
 				"stage %d, map_seed %d: the edge is marked on every side but the river (%s, want"
 				% [tier, map_seed, per_side]
 			)
-			+ (
-				" >= %d each, n %d; thin %s; bad %s; %d street trees)"
-				% [want, want_n, thin, bad, trees.size()]
-			)
+			+ (" >= %s; thin %s; bad %s; %d street trees)" % [want, thin, bad, trees.size()])
 		)
 	)
 
 
-## Metres of the north side's line (z = -half) that lie on land, not in the sea bay's water.
-static func _dry_north(plan: Dictionary, half: float) -> float:
+## Metres of a side's line (n, s, e or w at +-half) that lie on the city's own land, not in the
+## beachfront (CityHarbour.basin: its beach marks the edge itself; D-381 it reaches down the
+## east and west sides too).
+static func _dry(plan: Dictionary, half: float, side: String) -> float:
+	var front := CityHarbour.basin(plan)
 	var dry := 0.0
-	var x := -half
-	while x < half:
-		if not CityHarbour.holds(plan, Vector2(x + 0.5, -half)):
+	var t := -half
+	while t < half:
+		var at := Vector2(t + 0.5, half if side == "s" else -half)
+		if side == "e" or side == "w":
+			at = Vector2(half if side == "e" else -half, t + 0.5)
+		if not front.any(func(r: Rect2) -> bool: return r.has_point(at)):
 			dry += 1.0
-		x += 1.0
+		t += 1.0
 	return dry

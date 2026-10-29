@@ -14,6 +14,7 @@ const TreeGround := preload("res://tests/lib/city_tree_ground.gd")
 const RoofTanks := preload("res://tests/lib/city_roof_tanks.gd")
 const SkyTanks := preload("res://tests/lib/city_skyline_tanks.gd")
 const Harbour := preload("res://tests/lib/city_harbour.gd")
+const BeachCrowdCheck := preload("res://tests/lib/beach_crowd_check.gd")
 const StadiumFar := preload("res://tests/lib/city_stadium_far.gd")
 const Kerb := preload("res://tests/lib/city_kerb.gd")
 const BreathTrees := preload("res://tests/lib/city_breath_trees.gd")
@@ -49,7 +50,7 @@ func run_checks() -> void:
 	await _t("_check_bridges_meet_land")
 	await _t("_check_rise_in_water")
 	await _t("_check_rise_clear_of_rail")
-	await _t("_check_bay_width")
+	await _t("_check_bay_fixed")
 	await _t("_check_rise_fits_intro")
 	await _h(
 		"city_light_pool",
@@ -210,6 +211,7 @@ func _check_no_empty_ground() -> void:
 			SpawnView.check(tier, map_seed, sim, skyline, check)
 			Harbour.check(tier, map_seed, sim, decor, check)
 			Harbour.check_walkers(tier, map_seed, sim, street, check)
+			BeachCrowdCheck.check(tier, map_seed, street, check)
 			Green.check_city(tier, map_seed, sim, decor, check)
 			TreeApart.check(tier, map_seed, sim, decor, check)
 			TreeGround.check(tier, map_seed, sim, decor, skyline, check)
@@ -270,11 +272,10 @@ func _check_rise_clear_of_rail() -> void:
 			Harbour.check_rail_clear(tier, map_seed, check)
 
 
-## The bay spans at least two whole blocks at stage 1 and grows with the arena
-## (tests/lib/city_harbour.gd check_width; D-270).
-func _check_bay_width() -> void:
+## The beachfront is the same at every stage (tests/lib/city_harbour.gd check_fixed; D-381).
+func _check_bay_fixed() -> void:
 	for map_seed: int in COVERAGE_SEEDS:
-		Harbour.check_width(map_seed, check)
+		Harbour.check_fixed(map_seed, check)
 
 
 ## The whole start fits the 3 s run intro at stages 1-3, base and biggest body

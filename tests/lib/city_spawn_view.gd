@@ -3,19 +3,16 @@ extends RefCounted
 ## seem destructible?"): the city suite's spawn-view check, called from its D-062 loop for each
 ## stage and map_seed. Within the game camera's reach of where the kaiju rises (its ground
 ## distance behind the kaiju, CameraTuning.offset().z, plus a margin, scaled by body size like
-## the camera), no skyline stand-in stands, and every building there is a real one a stomp
-## breaks, and there is at least one (lead check 2026-10-19: his first steps out of the water
-## hit something; CityRiver's quay sheds). Distances run from the nearer of the rise point (in
-## the sea bay, CityHarbour) and the bank point it wades to, where the run starts and the camera
-## settles.
+## the camera), no skyline stand-in stands. And the rise bar (D-384, director 2026-10-29: "Hotels
+## hit in 10 s"): from the moment he stands up out of the sea, his first beachfront hotel
+## (CityHarbour's "front" blocks, D-381) is down within DOWN_BY seconds, the walk across the
+## sand counted. Distances run from the nearer of the rise point (in the sea, CityHarbour) and the
+## bank point it wades to, where the run starts and the camera settles.
 
 const MARGIN := 4.0  # past the camera's ground point: the bottom of the screen
 const DT := 1.0 / 30.0
-## D-091: big buildings take longer to chew down, so the check is time, not one stomp. The
-## buildings within NEAR metres of the rise point must all be down within DOWN_BY seconds of the
-## kaiju walking in at them (young kaiju, body contact and stomps). Measured worst case over
-## stage 1 and the Behemoth, three map seeds (2026-10-20): 8.0 s; DOWN_BY is that plus a margin.
-const NEAR := 12.0
+## D-091: big buildings take longer to chew down, so the bar is time, not one stomp (D-131: 10 s
+## stays; D-384: counted to the first beachfront hotel down, from when he stands).
 const DOWN_BY := 10.0
 const WALK_LIMIT := 1000.0  # stops a walk that never finishes
 
@@ -34,10 +31,36 @@ static func check(
 		var foot := Rect2(at.x - size.x * 0.5, at.z - size.z * 0.5, size.x, size.z)
 		if _gap(foot, spawn, land) < reach:
 			stand_ins += 1
-	var near := _near_buildings(sim, spawn, land)
-	var species := "reptilian"
-	sim.body.use_species(species)
-	sim.emerge.start(sim)  # the run's start, as the game plays it: up out of the river
+	sim.body.use_species("reptilian")
+	var got := first_hotel(sim)
+	check_fn.call(
+		stand_ins == 0 and Num.i(got["hotels"]) > 0 and Num.f(got["seconds"]) <= DOWN_BY,
+		(
+			(
+				"stage %d, map_seed %d: within %.0f m of the rise point %s or %s, %d stand-ins;"
+				+ " first of %d beachfront hotels down %.1f s after he stands (within %.0f s)"
+			)
+			% [
+				tier,
+				map_seed,
+				reach,
+				spawn,
+				land,
+				stand_ins,
+				Num.i(got["hotels"]),
+				Num.f(got["seconds"]),
+				DOWN_BY
+			]
+		)
+	)
+
+
+## The run's start as the game plays it (up out of the sea), then a bot walking at the nearest
+## standing chunk of a beachfront hotel until one is down: {hotels (in the arena), seconds (from
+## when he stands; WALK_LIMIT if none falls)}.
+static func first_hotel(sim: RampageSim) -> Dictionary:
+	var hotels := front_hotels(sim)
+	sim.emerge.start(sim)
 	var landed := false
 	var guard := 0
 	while not landed and guard < 3000:
@@ -45,50 +68,25 @@ static func check(
 			landed = landed or str(event["type"]) == "kaiju_emerged"
 		guard += 1
 	var walked := 0.0
-	while walked < WALK_LIMIT and _standing(sim, near) > 0:
-		var goal := _nearest(sim, near)
+	while walked < WALK_LIMIT and not hotels.is_empty() and _standing(sim, hotels) == hotels.size():
+		var goal := _nearest(sim, hotels)
 		var to := goal - sim.kaiju_pos
 		sim.step(DT, to.normalized() if to.length() > 0.2 else Vector2.ZERO, false)
 		walked += DT
-	var left := _standing(sim, near)
-	(
-		check_fn
-		. call(
-			stand_ins == 0 and not near.is_empty() and left == 0 and walked <= DOWN_BY,
-			(
-				(
-					"stage %d, map_seed %d: within %.0f m of the rise point %s or %s, %d stand-ins;"
-					+ " the %d buildings within %.0f m of it: %d standing after %.1f s of a kaiju walking"
-					+ " in (they must be down within %.0f s)"
-				)
-				% [
-					tier,
-					map_seed,
-					reach,
-					spawn,
-					land,
-					stand_ins,
-					near.size(),
-					NEAR,
-					left,
-					walked,
-					DOWN_BY
-				]
-			)
-		)
-	)
+	return {"hotels": hotels.size(), "seconds": walked}
 
 
-## The buildings within NEAR metres of the rise point or the bank point it wades to.
-static func _near_buildings(
-	sim: RampageSim, spawn: Vector2, land: Vector2
-) -> Array[RampageSim.Building]:
+## The buildings on the beachfront's hotel blocks (CityHarbour, "front") the kaiju can reach.
+static func front_hotels(sim: RampageSim) -> Array[RampageSim.Building]:
+	var fronts: Array[Rect2] = []
+	for block: Dictionary in CityGen.map(sim.city)["blocks"]:
+		var rect: Rect2 = block["rect"]
+		if block.get("front", false):
+			fronts.append(rect)
 	var out: Array[RampageSim.Building] = []
-	for b: RampageSim.Building in sim.lot_buildings():  # the viaduct stands over a street
-		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		# Only what the kaiju can reach: the bay (CityHarbour) cuts into the arena's north edge,
-		# its rise point nearer the arena's edge than the buildings past it.
-		if _gap(foot, spawn, land) < NEAR and b.in_arena:
+	for b: RampageSim.Building in sim.lot_buildings():
+		var at := Vector2(b.x, b.z)
+		if b.in_arena and fronts.any(func(r: Rect2) -> bool: return r.has_point(at)):
 			out.append(b)
 	return out
 

@@ -15,6 +15,13 @@ go, run-vs-run matches stay; menu checks by exact wording and pixel gaps become 
 species lists come from the data. Kept: slide, catch steps, knee pops, locked legs, NaN, overlaps, determinism, saves,
 text size and contrast. Report: the audit's REPORT_tests_too_strict.md. Replaces motion_gate.json's "never widen".
 
+## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
+Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
+12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
+stands up out of the sea to his first beachfront hotel down; the walk across the sand counts (the sand gets umbrellas
+and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
+landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
+
 ## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test
 Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
 a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
@@ -32,6 +39,17 @@ tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last
 alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
 plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
 suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
+
+## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
+His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
+fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
+every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
+road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
+man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
+(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
+The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
+stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
+wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1 (built in a later PR).
 
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
@@ -372,18 +390,3 @@ Q (18:1x): speed tests during the day? A: "One block now, then none": the queued
 perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
 until D-333's start. Builders, Cascadeur, suites, captures and builds use the PC freely. D-299/D-313's window rules
 still govern every speed run that does start.
-
-## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
-His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
-Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
-(Recommended)": the camera stays at his back and turns slowly with him, as heavy as his turn; the intro pivots out
-behind him (D-325) and play starts right there, with no jump; the bay stays on the north edge (D-270). Lead's check
-of main the same day: the follow kept one fixed compass offset (tuning camera.offset, CameraFollow) and did not turn
-with him, so this is built, not restored. D-259's limited swing (about 60 deg) eases back to behind him. Every look
-approved from the fixed view gets one recheck capture.
-
-## 2026-10-27 · D-329 · Director · Tail whip: the automatic whip stays until the button lash is built
-Q: D-328 removes the automatic tail whip and moves its tree nodes to the button tail lash (D-280), but the lash is
-timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
-So: the automatic whip and its nodes (r_tail, r_shear) stay as they are until the D-280 lash is built after the
-render plan; then the whip goes and its nodes upgrade the lash. Changes D-328's tail line on timing only.
