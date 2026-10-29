@@ -198,12 +198,12 @@ func _autoplay(sim: RampageSim, steps: int, target: Vector2) -> Vector2:
 static func _diag_parts(p: Vector2, u: Vector2, q: Vector2, w: Vector2, kaiju: Vector2) -> String:
 	var a := _drawn(p, u, kaiju)
 	var b := _drawn(q, w, kaiju)
-	var names := ["hull", "turret", "gun"]
+	var names: Array[String] = ["hull", "turret", "gun"]
 	var out := ""
 	for i: int in range(0, a.size(), 3):
 		for j: int in range(0, b.size(), 3):
 			if _boxes_touch(a[i], a[i + 1], a[i + 2], b[j], b[j + 1], b[j + 2]):
-				out += "%s-%s " % [names[i / 3], names[j / 3]]
+				out += "%s-%s " % [names[int(i / 3.0)], names[int(j / 3.0)]]
 	return out
 
 

@@ -134,18 +134,10 @@ func _check_rampages() -> void:
 											]
 										)
 									)
-									print(
-										(
-											"DIAG  A "
-											+ _diag_state(sim, tank, last.get(tank.id, tank.pos))
-										)
-									)
-									print(
-										(
-											"DIAG  B "
-											+ _diag_state(sim, other, last.get(other.id, other.pos))
-										)
-									)
+									var was_a: Vector2 = last.get(tank.id, tank.pos)  # DIAG
+									var was_b: Vector2 = last.get(other.id, other.pos)  # DIAG
+									print("DIAG  A " + _diag_state(sim, tank, was_a))
+									print("DIAG  B " + _diag_state(sim, other, was_b))
 							closest = minf(closest, tank.pos.distance_to(other.pos))
 					var d := tank.pos.distance_to(sim.kaiju_pos)
 					var was: Vector2 = last.get(tank.id, Vector2(INF, INF))
