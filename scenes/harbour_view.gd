@@ -42,7 +42,7 @@ static func promenade(plan: Dictionary, cfg: Dictionary) -> Rect2:
 
 
 ## The bay's water: one sheet at the sea's level over its whole outline (straight reach and
-## crescent), glossy like the open sea past the coast.
+## crescent), on the water surface (WaterSurface) like the open sea past the coast.
 static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstance3D:
 	var b: Dictionary = plan["harbour"]
 	var cx := Num.f(b["cx"])
@@ -62,14 +62,16 @@ static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstan
 	for k: int in range(tris.size() - 1, -1, -1):  # wound to face up
 		var p := outline[tris[k]]
 		st.add_vertex(Vector3(p.x, y, p.y))
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.12
-	mat.metallic_specular = 0.8
+	var rect: Rect2 = b["rect"]
 	var mi := MeshInstance3D.new()
 	mi.mesh = st.commit()
-	mi.material_override = mat
+	mi.material_override = (
+		WaterSurface.material(rect, color, true, Num.i(cfg["map_seed"]))
+		if WaterSurface.on()
+		else WaterSurface.gloss(color)
+	)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.add_to_group(WaterSurface.GROUP)
 	return mi
 
 
