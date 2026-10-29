@@ -229,11 +229,10 @@ static func baked(arrays: Array, glow: float, detail_voxel := 0.0) -> ArrayMesh:
 	if arrays.is_empty():
 		return mesh
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	var mat: Material = (
-		Look.voxel_detail_material(detail_voxel, glow, true) if detail_voxel > 0.0
-		else Look.voxel_material(glow)
-	)
-	mesh.surface_set_material(0, mat)
+	if detail_voxel > 0.0:
+		mesh.surface_set_material(0, Look.voxel_detail_material(detail_voxel, glow, true))
+	else:
+		mesh.surface_set_material(0, Look.voxel_material(glow))
 	return mesh
 
 

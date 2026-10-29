@@ -325,7 +325,7 @@ func _check_baked_detail() -> void:
 		var mat := (meshes[what] as ArrayMesh).surface_get_material(0) as ShaderMaterial
 		check(
 			mat != null and mat.shader == Look.VOXEL_DETAIL_SHADER
-			and bool(mat.get_shader_parameter("baked")),
+			and mat.get_shader_parameter("baked") == true,
 			"%s draws on voxel_detail.gdshader, baked" % what
 		)
 	var off := VoxelBuilder.new()
