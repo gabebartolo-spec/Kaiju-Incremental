@@ -33,7 +33,11 @@ const MIN_PARKED_IN_RANGE := 20
 ## Re-probed for road geometry (#243: bigger blocks), seeds 0-23: tank-steps in range 2 (3),
 ## 5 (3), 6 (17), 15 (17), 22 (5), all in the band, none elsewhere; seeds 2, 6, 15 and 22 give
 ## 42 against the bar of 20.
-const RAMPAGE_SEEDS: Array[int] = [2, 6, 15, 22]
+## Re-probed for the Tripo pool (#409, 2026-10-29: models replace procedural lots) on main's sea
+## bay, seeds 0-29 at tiers 1-3: tank-steps in range 0 (24), 1 (7), 5 (48), 6 (100), 8 (34),
+## 10 (41), 17 (56), 21 (114), 28 (86), none elsewhere; seeds 0, 1, 10 and 12 give 72 against
+## the bar of 20.
+const RAMPAGE_SEEDS: Array[int] = [0, 1, 10, 12]
 
 
 func suite_name() -> String:

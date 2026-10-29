@@ -1,0 +1,1325 @@
+{
+	"_note": "The city's building pool (D-256 Tripo heroes and fillers, D-257 district palettes, D-253 one carve path). Rows by hand: name, district, role (hero or filler), storeys (real-world, from the prompt sheet). tools/landmarks/bake.py --pool fills each row's baked shape: w, d, h (sim units and floors), chunks, kvox, stretch_floor. floors = max(min_floors, round(storeys x tallest_floors / tallest_storeys)): the tallest skyscraper is tallest_floors high, about 2x the adult croc (D-257). districts: the palette each model's colours are graded to at bake time (mix toward the nearest palette tint, dark on all but signs, bright on signs), the town_share range its blocks take in today's city (CityPool), and four palette shifts [hue degrees, saturation, value] a placed copy picks from. placement: see CityPool. A row's floors, when set, overrides the storeys rule: H11, H12, H13 and F33 are shrunk until they fit a block's depth (about 7 units; lead's default A, 2026-10-26); H10, the tallest, is 24 floors so its 6-unit base fits a block. A model is taken out of the game by deleting its row. placement (CityPool): on; hero_chance = chance a block takes a hero (set into a corner, the lots under it give way); share = chance a remaining lot takes a filler; fill_slack = most units a filler may fall short of its lot a side; big_chance = chance a block that draws no hero takes a filler of at least big_side units a side instead (too big for a lot); hero_rise = a block model may be this many times the block's tallest lot; patch_m = the side of the square that takes one district style; reuse_m = no copy of a model within this of another (wider than the adult's game-camera view, about 82 x 58 m, so a model shows at most once a view); max_stretch = most floors a copy adds; a model suits a lot within height_fit x the lot's floors (at least height_fit_min).",
+	"districts": {
+		"bar_strip": {
+			"bright": 1.2,
+			"dark": 0.9,
+			"mix": 0.35,
+			"palette": [
+				"6e3b2c",
+				"8a5a3a",
+				"3a3330",
+				"c9b79a",
+				"2f4a3a"
+			],
+			"shifts": [
+				[
+					0,
+					1.0,
+					1.0
+				],
+				[
+					12,
+					0.9,
+					1.06
+				],
+				[
+					-14,
+					1.1,
+					0.92
+				],
+				[
+					0,
+					0.75,
+					1.1
+				]
+			],
+			"town": [
+				0.0,
+				0.6
+			]
+		},
+		"business": {
+			"bright": 1.1,
+			"dark": 1.0,
+			"mix": 0.25,
+			"palette": [
+				"5a6e80",
+				"8a929a",
+				"b0aca2",
+				"3e4a56"
+			],
+			"shifts": [
+				[
+					0,
+					1.0,
+					1.0
+				],
+				[
+					12,
+					0.9,
+					1.06
+				],
+				[
+					-14,
+					1.1,
+					0.92
+				],
+				[
+					0,
+					0.75,
+					1.1
+				]
+			],
+			"town": [
+				0.45,
+				1.0
+			]
+		},
+		"chinatown": {
+			"bright": 1.2,
+			"dark": 0.95,
+			"mix": 0.5,
+			"palette": [
+				"8e1b1b",
+				"b0302a",
+				"1f5a3a",
+				"2e7d4f",
+				"c9a24a",
+				"3a3330"
+			],
+			"shifts": [
+				[
+					0,
+					1.0,
+					1.0
+				],
+				[
+					12,
+					0.9,
+					1.06
+				],
+				[
+					-14,
+					1.1,
+					0.92
+				],
+				[
+					0,
+					0.75,
+					1.1
+				]
+			],
+			"town": [
+				0.1,
+				0.6
+			]
+		},
+		"docklands": {
+			"bright": 1.1,
+			"dark": 0.95,
+			"mix": 0.45,
+			"palette": [
+				"7a3b2a",
+				"9a4a35",
+				"5c2e22",
+				"6b6258",
+				"3d4a52"
+			],
+			"shifts": [
+				[
+					0,
+					1.0,
+					1.0
+				],
+				[
+					12,
+					0.9,
+					1.06
+				],
+				[
+					-14,
+					1.1,
+					0.92
+				],
+				[
+					0,
+					0.75,
+					1.1
+				]
+			],
+			"town": [
+				0.0,
+				0.35
+			]
+		},
+		"neon": {
+			"bright": 1.35,
+			"dark": 0.55,
+			"mix": 0.5,
+			"palette": [
+				"1c1f2a",
+				"2a2d3a",
+				"3a3d4a",
+				"24303a"
+			],
+			"shifts": [
+				[
+					0,
+					1.0,
+					1.0
+				],
+				[
+					12,
+					0.9,
+					1.06
+				],
+				[
+					-14,
+					1.1,
+					0.92
+				],
+				[
+					0,
+					0.75,
+					1.1
+				]
+			],
+			"town": [
+				0.3,
+				0.9
+			]
+		},
+		"red_light": {
+			"bright": 1.35,
+			"dark": 0.55,
+			"mix": 0.5,
+			"palette": [
+				"2a1a1e",
+				"3a1f26",
+				"1c1a22",
+				"4a2028"
+			],
+			"shifts": [
+				[
+					0,
+					1.0,
+					1.0
+				],
+				[
+					12,
+					0.9,
+					1.06
+				],
+				[
+					-14,
+					1.1,
+					0.92
+				],
+				[
+					0,
+					0.75,
+					1.1
+				]
+			],
+			"town": [
+				0.15,
+				0.7
+			]
+		},
+		"residential": {
+			"bright": 1.1,
+			"dark": 1.0,
+			"mix": 0.3,
+			"palette": [
+				"8a5a44",
+				"9a8e7e",
+				"6a6a66",
+				"b0a490"
+			],
+			"shifts": [
+				[
+					0,
+					1.0,
+					1.0
+				],
+				[
+					12,
+					0.9,
+					1.06
+				],
+				[
+					-14,
+					1.1,
+					0.92
+				],
+				[
+					0,
+					0.75,
+					1.1
+				]
+			],
+			"town": [
+				0.0,
+				0.5
+			]
+		}
+	},
+	"min_floors": 2,
+	"placement": {
+		"big_chance": 0.2,
+		"big_side": 6,
+		"fill_slack": 2,
+		"height_fit": 0.6,
+		"height_fit_min": 3.0,
+		"hero_chance": 0.3,
+		"hero_rise": 2.5,
+		"max_stretch": 6,
+		"on": true,
+		"patch_m": 40.0,
+		"reuse_m": 102.0,
+		"share": 0.4
+	},
+	"pool": {
+		"F01": {
+			"chunks": [
+				"111111111111",
+				"111111111111"
+			],
+			"d": 4,
+			"district": "bar_strip",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F01.kvox",
+			"name": "pub",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F02": {
+			"chunks": [
+				"11",
+				"11"
+			],
+			"d": 2,
+			"district": "bar_strip",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F02.kvox",
+			"name": "narrow_bar",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 1
+		},
+		"F03": {
+			"chunks": [
+				"111111111111111111111111111111111111",
+				"011111111111111111111111111111111111"
+			],
+			"d": 6,
+			"district": "bar_strip",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F03.kvox",
+			"name": "terrace_restaurant",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 6
+		},
+		"F04": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "bar_strip",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F04.kvox",
+			"name": "corner_bistro",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F05": {
+			"chunks": [
+				"1111",
+				"1111"
+			],
+			"d": 2,
+			"district": "bar_strip",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F05.kvox",
+			"name": "warehouse_bar",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 2
+		},
+		"F06": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111"
+			],
+			"d": 4,
+			"district": "bar_strip",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F06.kvox",
+			"name": "diner",
+			"role": "filler",
+			"storeys": 1,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F07": {
+			"chunks": [
+				"111111111",
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "neon",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F07.kvox",
+			"name": "shops_over_flats",
+			"role": "filler",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F08": {
+			"chunks": [
+				"111111",
+				"111111"
+			],
+			"d": 2,
+			"district": "neon",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F08.kvox",
+			"name": "arcade",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F09": {
+			"chunks": [
+				"111111",
+				"111111",
+				"111111"
+			],
+			"d": 2,
+			"district": "neon",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F09.kvox",
+			"name": "karaoke",
+			"role": "filler",
+			"storeys": 5,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F10": {
+			"chunks": [
+				"1111",
+				"1111",
+				"1111",
+				"1111"
+			],
+			"d": 2,
+			"district": "neon",
+			"h": 4,
+			"kvox": "res://assets/city_buildings/F10.kvox",
+			"name": "electronics_tower",
+			"role": "filler",
+			"storeys": 6,
+			"stretch_floor": -1,
+			"w": 2
+		},
+		"F11": {
+			"chunks": [
+				"11111111111111111111",
+				"11101111111111111111",
+				"11101111111111111111",
+				"11101111111111111111",
+				"01101111111111111111"
+			],
+			"d": 5,
+			"district": "neon",
+			"h": 5,
+			"kvox": "res://assets/city_buildings/F11.kvox",
+			"name": "hotel",
+			"role": "filler",
+			"storeys": 8,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F12": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "neon",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F12.kvox",
+			"name": "mall_annex",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F13": {
+			"chunks": [
+				"11",
+				"11"
+			],
+			"d": 2,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F13.kvox",
+			"name": "shophouse",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 1
+		},
+		"F14": {
+			"chunks": [
+				"111111111",
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "chinatown",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F14.kvox",
+			"name": "tenement",
+			"role": "filler",
+			"storeys": 5,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F15": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F15.kvox",
+			"name": "grocery",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F16": {
+			"chunks": [
+				"1111",
+				"1111"
+			],
+			"d": 2,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F16.kvox",
+			"name": "restaurant_row",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 2
+		},
+		"F17": {
+			"chunks": [
+				"1111",
+				"1111"
+			],
+			"d": 2,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F17.kvox",
+			"name": "bakery",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 2
+		},
+		"F18": {
+			"chunks": [
+				"111111",
+				"111111"
+			],
+			"d": 2,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F18.kvox",
+			"name": "tea_house",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F19": {
+			"chunks": [
+				"111111111111",
+				"111111111111"
+			],
+			"d": 3,
+			"district": "red_light",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F19.kvox",
+			"name": "club_front",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F20": {
+			"chunks": [
+				"111111111",
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "red_light",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F20.kvox",
+			"name": "small_hotel",
+			"role": "filler",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F21": {
+			"chunks": [
+				"1111",
+				"1111"
+			],
+			"d": 2,
+			"district": "red_light",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F21.kvox",
+			"name": "red_lamp_bar",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 2
+		},
+		"F22": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "red_light",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F22.kvox",
+			"name": "theatre_bar",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F23": {
+			"chunks": [
+				"111111111111",
+				"111111111111",
+				"111111111111"
+			],
+			"d": 4,
+			"district": "red_light",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F23.kvox",
+			"name": "flats_over_bars",
+			"role": "filler",
+			"storeys": 5,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F24": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "docklands",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F24.kvox",
+			"name": "small_warehouse",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F25": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "docklands",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F25.kvox",
+			"name": "cold_store",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F26": {
+			"chunks": [
+				"111111111111",
+				"111111111111"
+			],
+			"d": 3,
+			"district": "docklands",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F26.kvox",
+			"name": "dock_office",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F27": {
+			"chunks": [
+				"1111100111110110",
+				"1111111111111111"
+			],
+			"d": 4,
+			"district": "docklands",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F27.kvox",
+			"name": "fish_market",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F28": {
+			"chunks": [
+				"1111111111111111111111111",
+				"1111111111111111111111111",
+				"1111111111111111111111111"
+			],
+			"d": 5,
+			"district": "docklands",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F28.kvox",
+			"name": "loft_apartments",
+			"role": "filler",
+			"storeys": 5,
+			"stretch_floor": -1,
+			"w": 5
+		},
+		"F29": {
+			"chunks": [
+				"111111",
+				"111111"
+			],
+			"d": 2,
+			"district": "docklands",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F29.kvox",
+			"name": "chandlery",
+			"role": "filler",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F31": {
+			"chunks": [
+				"1111111111111111111111111",
+				"1111111111111111111111111",
+				"1111111111111111111111111",
+				"1111111111111111111111111",
+				"1111111111111111111111111"
+			],
+			"d": 5,
+			"district": "business",
+			"h": 5,
+			"kvox": "res://assets/city_buildings/F31.kvox",
+			"name": "stone_mid_rise",
+			"role": "filler",
+			"storeys": 8,
+			"stretch_floor": -1,
+			"w": 5
+		},
+		"F32": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111"
+			],
+			"d": 4,
+			"district": "business",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F32.kvox",
+			"name": "bank_branch",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F33": {
+			"chunks": [
+				"1111111111111111111111111111111111111111111111111",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100111110011111001111100000000"
+			],
+			"d": 7,
+			"district": "business",
+			"floors": 10,
+			"h": 10,
+			"kvox": "res://assets/city_buildings/F33.kvox",
+			"name": "insurance_tower",
+			"role": "filler",
+			"storeys": 20,
+			"stretch_floor": -1,
+			"w": 7
+		},
+		"F34": {
+			"chunks": [
+				"111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+				"111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+				"111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+				"000000011111101111110111111011111101111110111111011111101111110111110011111000000000",
+				"000000001111100111110011111001111100111110011111001111100111110000000000000000000000",
+				"000000001111100111110011111001111100111110011111001111100111110000000000000000000000",
+				"000000001111100111110011111001111100111110011111001111100111110000000000000000000000",
+				"000000001111100111110011111001111100111110011111001111100111110000000000000000000000",
+				"000000001111100111110011111001111100111110011111001111100111110000000000000000000000",
+				"000000001111100111110011111001111100111110011111001111100111110000000000000000000000"
+			],
+			"d": 12,
+			"district": "business",
+			"h": 10,
+			"kvox": "res://assets/city_buildings/F34.kvox",
+			"name": "hotel_tower",
+			"role": "filler",
+			"storeys": 15,
+			"stretch_floor": -1,
+			"w": 7
+		},
+		"F35": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111",
+				"1111111111111111"
+			],
+			"d": 4,
+			"district": "business",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F35.kvox",
+			"name": "government_annex",
+			"role": "filler",
+			"storeys": 5,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F36": {
+			"chunks": [
+				"111111",
+				"111111",
+				"111111"
+			],
+			"d": 2,
+			"district": "residential",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F36.kvox",
+			"name": "walk_up_flats",
+			"role": "filler",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F37": {
+			"chunks": [
+				"111111111111111111111111111111",
+				"111111111111111111111111111111",
+				"111111111111111111111111111111",
+				"111111111111111111111111111111",
+				"111111111111111111111111111111",
+				"111111111111111111111111111111"
+			],
+			"d": 6,
+			"district": "residential",
+			"h": 6,
+			"kvox": "res://assets/city_buildings/F37.kvox",
+			"name": "apartment_slab",
+			"role": "filler",
+			"storeys": 10,
+			"stretch_floor": -1,
+			"w": 5
+		},
+		"F38": {
+			"chunks": [
+				"11111111",
+				"11111111"
+			],
+			"d": 2,
+			"district": "residential",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/F38.kvox",
+			"name": "row_houses",
+			"role": "filler",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"F39": {
+			"chunks": [
+				"111111111",
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "residential",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/F39.kvox",
+			"name": "office_over_shops",
+			"role": "filler",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"F40": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111",
+				"1111111111111111",
+				"1111111111111111"
+			],
+			"d": 4,
+			"district": "residential",
+			"h": 4,
+			"kvox": "res://assets/city_buildings/F40.kvox",
+			"name": "corner_apartments",
+			"role": "filler",
+			"storeys": 6,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H01": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111",
+				"1111111111111111"
+			],
+			"d": 4,
+			"district": "business",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/H01.kvox",
+			"name": "bank",
+			"role": "hero",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H02": {
+			"chunks": [
+				"111111111111111111111111",
+				"110011111111111111111111",
+				"110011111111111111111111",
+				"000000001100001100000000"
+			],
+			"d": 4,
+			"district": "business",
+			"h": 4,
+			"kvox": "res://assets/city_buildings/H02.kvox",
+			"name": "town_hall",
+			"role": "hero",
+			"storeys": 6,
+			"stretch_floor": -1,
+			"w": 6
+		},
+		"H03": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111",
+				"0000111111110000"
+			],
+			"d": 4,
+			"district": "business",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/H03.kvox",
+			"name": "courthouse",
+			"role": "hero",
+			"storeys": 5,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H04": {
+			"chunks": [
+				"1111",
+				"1111"
+			],
+			"d": 1,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/H04.kvox",
+			"name": "chinatown_gate",
+			"role": "hero",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H05": {
+			"chunks": [
+				"1111",
+				"1111"
+			],
+			"d": 2,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/H05.kvox",
+			"name": "chinatown_restaurant",
+			"role": "hero",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 2
+		},
+		"H06": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "chinatown",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/H06.kvox",
+			"name": "pagoda_hall",
+			"role": "hero",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"H07": {
+			"chunks": [
+				"00011111000000000000000000000000000000000001111100",
+				"00001011000000000000000000000000000000000000101100",
+				"00001111000000101000000000110000001010000000111100",
+				"00001111000000000000000000100000000000000000111100",
+				"00001111000000111111000011111100001111110000111100",
+				"00001011000011111111001111111100111111110000101100",
+				"00000000000111111110011111111001111111100000000000",
+				"00000000001110110000111111000011101100000000000000",
+				"00000000001100000000110000000011000000000000000000"
+			],
+			"d": 5,
+			"district": "docklands",
+			"h": 9,
+			"kvox": "res://assets/city_buildings/H07.kvox",
+			"name": "gantry_crane",
+			"role": "hero",
+			"storeys": 14,
+			"stretch_floor": -1,
+			"w": 10
+		},
+		"H08": {
+			"chunks": [
+				"111111111111111111111111111111111111",
+				"111111111111111111111111111111111111"
+			],
+			"d": 6,
+			"district": "docklands",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/H08.kvox",
+			"name": "dock_warehouse",
+			"role": "hero",
+			"storeys": 2,
+			"stretch_floor": -1,
+			"w": 6
+		},
+		"H09": {
+			"chunks": [
+				"111111111",
+				"111111111",
+				"000101000"
+			],
+			"d": 3,
+			"district": "docklands",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/H09.kvox",
+			"name": "customs_house",
+			"role": "hero",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"H10": {
+			"chunks": [
+				"111111111111111111111111111111111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111100001100001100001100001111111",
+				"111111110001110001110001100001111111",
+				"011111010001010001110001100001111111",
+				"011111011111011111111111111111111111",
+				"000000001110001110001100001100000000"
+			],
+			"d": 6,
+			"district": "business",
+			"floors": 24,
+			"h": 24,
+			"kvox": "res://assets/city_buildings/H10.kvox",
+			"name": "glass_skyscraper",
+			"role": "hero",
+			"storeys": 40,
+			"stretch_floor": -1,
+			"w": 6
+		},
+		"H11": {
+			"chunks": [
+				"1111111111111111111111111111111111111111111111111",
+				"0000000011111001111100111110011111001111100000000",
+				"0000000011111001111100011100011111001111100000000",
+				"0000000011111001111100011100011111001111100000000",
+				"0000000001110000111000011100001110000111000000000",
+				"0000000001110000111000011100001110000111000000000",
+				"0000000000000000111000011100001110000000000000000",
+				"0000000000000000111000011100001110000000000000000",
+				"0000000000000000011000001100000110000000000000000",
+				"0000000000000000000000001100000000000000000000000",
+				"0000000000000000000000000100000000000000000000000"
+			],
+			"d": 7,
+			"district": "business",
+			"floors": 11,
+			"h": 11,
+			"kvox": "res://assets/city_buildings/H11.kvox",
+			"name": "art_deco_skyscraper",
+			"role": "hero",
+			"storeys": 35,
+			"stretch_floor": -1,
+			"w": 7
+		},
+		"H12": {
+			"chunks": [
+				"1111111111111111111111111111111111111111111111111",
+				"1111111111111111111111111111111111111111111111111",
+				"1111111111111111111111111111111111111111111111111",
+				"0111110111111111111111111111111111111111110111110",
+				"0111110111111011111101111110111111011111100111110",
+				"0111110111111011111101111110111111011111100111110",
+				"0111110011111001111100111110011111001111100111110",
+				"0111110011111001111100111110011111001111100111110",
+				"0111110011111001111100111110011111001111100111110",
+				"0000000011111001111100111110011111001111100000000"
+			],
+			"d": 7,
+			"district": "business",
+			"floors": 10,
+			"h": 10,
+			"kvox": "res://assets/city_buildings/H12.kvox",
+			"name": "brutalist_tower",
+			"role": "hero",
+			"storeys": 25,
+			"stretch_floor": -1,
+			"w": 7
+		},
+		"H13": {
+			"chunks": [
+				"1111111111111111111111111111111111111111111111111",
+				"0001110111111111111111111111011111101111110111000",
+				"0001110111111011111101111111011111101111110111000",
+				"0011100011111011111111111111011111101111100011100",
+				"0011100011111011111111111111111111101111100011100",
+				"0011100011111011111111111111111111101111100001100",
+				"0111000011111101111111111111111111011111100001110",
+				"0110000011111101111110111110111111011111100000010",
+				"0000110111111011111100111111011111101111110110000",
+				"0001110111111011111101111111011111101111110111100",
+				"0001100011111011111111111111111111101111100011100",
+				"0011100011111011111111111111111111101111100001110",
+				"0011100011111011111111111111111111111111100001110",
+				"0000000001110011111101111110111111000111000000000"
+			],
+			"d": 7,
+			"district": "business",
+			"floors": 14,
+			"h": 14,
+			"kvox": "res://assets/city_buildings/H13.kvox",
+			"name": "twisted_skyscraper",
+			"role": "hero",
+			"storeys": 38,
+			"stretch_floor": -1,
+			"w": 7
+		},
+		"H14": {
+			"chunks": [
+				"111111111111",
+				"111111111111",
+				"111111111111",
+				"111111111111",
+				"111111111111",
+				"111111111111",
+				"111111111111",
+				"111111111111"
+			],
+			"d": 3,
+			"district": "neon",
+			"h": 8,
+			"kvox": "res://assets/city_buildings/H14.kvox",
+			"name": "billboard_tower",
+			"role": "hero",
+			"storeys": 12,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H15": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111",
+				"1111111111111111",
+				"1111111111111111",
+				"1111111111111111"
+			],
+			"d": 4,
+			"district": "neon",
+			"h": 5,
+			"kvox": "res://assets/city_buildings/H15.kvox",
+			"name": "led_corner_block",
+			"role": "hero",
+			"storeys": 8,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H16": {
+			"chunks": [
+				"011101111111111111111111111111",
+				"000000111111111111111111111111",
+				"000000111111111111111111111111"
+			],
+			"d": 6,
+			"district": "neon",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/H16.kvox",
+			"name": "grand_theatre",
+			"role": "hero",
+			"storeys": 5,
+			"stretch_floor": -1,
+			"w": 5
+		},
+		"H17": {
+			"chunks": [
+				"111111111",
+				"111111111"
+			],
+			"d": 3,
+			"district": "red_light",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/H17.kvox",
+			"name": "nightclub",
+			"role": "hero",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		},
+		"H18": {
+			"chunks": [
+				"111111111111111111111111",
+				"111111111111111111111111",
+				"111111111111111111111111",
+				"000011000111000010000000"
+			],
+			"d": 4,
+			"district": "neon",
+			"h": 4,
+			"kvox": "res://assets/city_buildings/H18.kvox",
+			"name": "department_store",
+			"role": "hero",
+			"storeys": 6,
+			"stretch_floor": -1,
+			"w": 6
+		},
+		"H19": {
+			"chunks": [
+				"111111111111",
+				"111111111111",
+				"111001100110"
+			],
+			"d": 3,
+			"district": "residential",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/H19.kvox",
+			"name": "police_station",
+			"role": "hero",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H20": {
+			"chunks": [
+				"1111111111111111",
+				"1111111111111111",
+				"0000000011110011"
+			],
+			"d": 4,
+			"district": "residential",
+			"h": 3,
+			"kvox": "res://assets/city_buildings/H20.kvox",
+			"name": "fire_station",
+			"role": "hero",
+			"storeys": 4,
+			"stretch_floor": -1,
+			"w": 4
+		},
+		"H21": {
+			"chunks": [
+				"011100111110111111111111011111011100",
+				"011100011110111111111111011111011100",
+				"011100011110111111111111011111011100",
+				"011100011110111111111111011111011100"
+			],
+			"d": 6,
+			"district": "business",
+			"h": 4,
+			"kvox": "res://assets/city_buildings/H21.kvox",
+			"name": "car_park",
+			"role": "hero",
+			"storeys": 6,
+			"stretch_floor": -1,
+			"w": 6
+		},
+		"H22": {
+			"chunks": [
+				"111111",
+				"111111"
+			],
+			"d": 2,
+			"district": "bar_strip",
+			"h": 2,
+			"kvox": "res://assets/city_buildings/H22.kvox",
+			"name": "old_cinema",
+			"role": "hero",
+			"storeys": 3,
+			"stretch_floor": -1,
+			"w": 3
+		}
+	},
+	"tallest_floors": 26,
+	"tallest_storeys": 40
+}

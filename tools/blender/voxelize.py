@@ -80,7 +80,9 @@ def triangles(objects):
 def image_array(img, cache):
     if img.name not in cache:
         w, h = img.size
-        px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, img.channels)[:, :, :3]
+        px = np.empty(w * h * img.channels, dtype=np.float32)
+        img.pixels.foreach_get(px)
+        px = px.reshape(h, w, img.channels)[:, :, :3]
         cache[img.name] = px
     return cache[img.name]
 
@@ -125,6 +127,92 @@ def voxelize(tris, frame_fit):
     return cells
 
 
+def _samplers(obj, cache):
+    """Per material slot: the base-colour image array (h, w, 3) or a flat colour (3,)."""
+    out = []
+    for slot in obj.material_slots or [None]:
+        mat = slot.material if slot is not None else None
+        img = base_image(mat)
+        if img is not None and img.size[0] > 0:
+            out.append(image_array(img, cache))
+        else:
+            out.append(base_colour(mat))
+    return out
+
+
+def voxelize_fast(objects, height):
+    """The same cells as voxelize() for one static pose, vectorised over every triangle at once
+    (a Tripo HD model has ~1.8M faces: the per-triangle loop takes hours). Returns
+    {(x, y, z): [r, g, b, n]} in the same game axes."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    parts = []
+    cache = {}
+    for obj in objects:
+        ev = obj.evaluated_get(depsgraph)
+        mesh = ev.to_mesh()
+        mesh.calc_loop_triangles()
+        nt = len(mesh.loop_triangles)
+        nv = len(mesh.vertices)
+        co = np.empty(nv * 3, np.float64)
+        mesh.vertices.foreach_get("co", co)
+        co = (np.c_[co.reshape(-1, 3), np.ones(nv)] @ np.array(obj.matrix_world).T)[:, :3]
+        tv = np.empty(nt * 3, np.int64)
+        mesh.loop_triangles.foreach_get("vertices", tv)
+        tl = np.empty(nt * 3, np.int64)
+        mesh.loop_triangles.foreach_get("loops", tl)
+        tm = np.empty(nt, np.int64)
+        mesh.loop_triangles.foreach_get("material_index", tm)
+        uv = np.zeros((len(mesh.loops), 2))
+        if mesh.uv_layers.active:
+            flat = np.empty(len(mesh.loops) * 2, np.float64)
+            mesh.uv_layers.active.data.foreach_get("uv", flat)
+            uv = flat.reshape(-1, 2)
+        parts.append((co[tv.reshape(-1, 3)], uv[tl.reshape(-1, 3)], tm, _samplers(obj, cache)))
+        ev.to_mesh_clear()
+    allp = np.concatenate([p[0].reshape(-1, 3) for p in parts])
+    lo, hi = allp.min(axis=0), allp.max(axis=0)
+    scale = (height - 1) / max(1e-6, hi[2] - lo[2])
+    base = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
+    keys_all, cols_all = [], []
+    for tris, uvs, mats, samplers in parts:
+        q = (tris - base) * scale
+        edge = np.max(np.linalg.norm(q - np.roll(q, 1, axis=1), axis=2), axis=1)
+        n_of = np.maximum(2, (edge * 2.0).astype(np.int64) + 1)
+        for n in np.unique(n_of):
+            sel = n_of == n
+            a, b = np.meshgrid(np.linspace(0, 1, n), np.linspace(0, 1, n))
+            a, b = a.ravel(), b.ravel()
+            keep = a + b <= 1.0
+            a, b = a[keep], b[keep]
+            c = 1.0 - a - b
+            w = np.c_[c, a, b]  # (k, 3) barycentric weights
+            qs, us, ms = q[sel], uvs[sel], mats[sel]
+            pts = np.einsum("kj,tjd->tkd", w, qs).reshape(-1, 3)
+            uvp = np.einsum("kj,tjd->tkd", w, us).reshape(-1, 2)
+            mp = np.repeat(ms, len(w))
+            cols = np.zeros((len(pts), 3))
+            for m, s in enumerate(samplers):
+                hit = mp == m
+                if not hit.any():
+                    continue
+                if s.ndim == 3:
+                    h, wd = s.shape[:2]
+                    ix = np.clip((uvp[hit, 0] % 1.0) * (wd - 1), 0, wd - 1).astype(int)
+                    iy = np.clip((uvp[hit, 1] % 1.0) * (h - 1), 0, h - 1).astype(int)
+                    cols[hit] = s[iy, ix]
+                else:
+                    cols[hit] = s
+            keys_all.append(np.floor(np.c_[-pts[:, 0], pts[:, 2], pts[:, 1]]).astype(np.int64))
+            cols_all.append(cols)
+    keys = np.concatenate(keys_all)
+    cols = np.concatenate(cols_all)
+    uniq, inv = np.unique(keys, axis=0, return_inverse=True)
+    inv = inv.ravel()
+    sums = np.stack([np.bincount(inv, weights=cols[:, k], minlength=len(uniq)) for k in range(3)], axis=1)
+    count = np.bincount(inv, minlength=len(uniq))
+    return {tuple(k): [s[0], s[1], s[2], n] for k, s, n in zip(uniq.tolist(), sums, count)}
+
+
 def frame_range():
     """(start, end) of the first action in the scene, or None."""
     for obj in bpy.context.scene.objects:
@@ -146,7 +234,9 @@ def main():
         frames = 1
     poses = []
     fit = None
-    for i in range(frames):
+    if frames == 1:  # one static pose: the vectorised path
+        poses.append(voxelize_fast(objects, height))
+    for i in range(frames if frames > 1 else 0):
         if frames > 1:
             bpy.context.scene.frame_set(int(span[0] + (span[1] - span[0]) * i / frames))
         tris = triangles(objects)

@@ -12,12 +12,23 @@ static var _lock := Mutex.new()
 static var _generation := 0
 
 
-## What makes two buildings bake alike: place, size, floors, landmark, hazard, wall colour, party
-## walls.
+## What makes two buildings bake alike: place, size, floors, landmark, hazard, wall colour,
+## party walls, and a pool building's model, variant and palette.
 static func key(at: RampageSim.Building, base: Color, party: Dictionary) -> String:
+	var model := "%s|%s|%d" % [at.model, str(at.variant), at.palette]
 	return (
 		"%s|%s|%d|%d|%d|%s|%s|%s|%s"
-		% [at.x, at.z, at.w, at.d, at.height, at.landmark, at.hazard, base.to_html(), str(party)]
+		% [
+			at.x,
+			at.z,
+			at.w,
+			at.d,
+			at.height,
+			at.landmark + at.hazard,
+			base.to_html(),
+			str(party),
+			model
+		]
 	)
 
 

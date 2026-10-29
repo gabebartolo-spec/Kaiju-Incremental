@@ -6,8 +6,8 @@ extends Node3D
 ## mesh them, landmarks first (a stadium never stands as a box: lead 9, 2026-10-21), then nearest
 ## first, each swapping in as it is ready. A building the rampage touches before its turn is built
 ## on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at most
-## city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that stand near,
-## and every building the rampage has touched): as the kaiju walks, the nearest unbuilt buildings
+## city.stream_chunks chunks stay meshed (plus StreamRank.holds: landmarks, hold_m, touched; and a
+## topple's landing strip, expect_fall): as the kaiju walks, the nearest unbuilt buildings
 ## stream in and the untouched ones far behind him go back to boxes. Presentation only. Nearest is
 ## judged from the camera as well as the kaiju (StreamRank). A landmark is held meshed whenever its
 ## wedge, the margin band or city.stream_view.landmark_keep_m reaches it.
@@ -78,7 +78,7 @@ func _ready() -> void:
 	_rank = StreamRank.new(_sim.buildings)
 	for n: int in count:
 		var b := _sim.buildings[n]
-		_chunks[n] = 0 if b.is_rail() else b.w * b.d * b.height  # a viaduct piece is mostly air
+		_chunks[n] = StreamRank.chunks(b)
 	_budget = Num.i(_sim.city.get("stream_chunks", 1 << 30))
 	_party = BuildingView.party_walls(_sim.buildings)
 	var order: Array[int] = []
@@ -156,9 +156,8 @@ func _make(n: int) -> BuildingView:
 	return BuildingView.new(_sim.buildings[n], _colors[n], _party[n])
 
 
-## Decides which buildings should be meshed now: the held ones, then the best ranked until the
-## chunk budget is spent. Queues the wanted ones not built (landmarks first) and lists the
-## untouched built ones well past the last wanted building to go back to boxes.
+## Decides what to mesh now: the held, then the best ranked until the chunk budget is spent. Queues
+## the wanted not built (landmarks first); lists the untouched built ones well past it to evict.
 func _plan() -> void:
 	var from := _sim.kaiju_pos
 	_rank.set_view(_look(), _sim.city)
@@ -168,6 +167,7 @@ func _plan() -> void:
 	var limit := _cutoff + _rank.outside + StreamPlan.EVICT_MARGIN + PLAN_MOVE * 4.0  # INF if all fit
 	var ranked := StreamPlan.rank_keys(_sim, _rank, _chunks, _pinned, from, limit, marks)
 	var keys: PackedFloat64Array = ranked["keys"]
+	StreamRank.landmarks_first(_sim.buildings, marks)  # then the ones held for the kaiju's reach
 	_held = Num.i(ranked["held"])
 	var picked := StreamPlan.pick(keys, marks, _state, _chunks, _held, _budget)
 	var wanted: Array[int] = picked["queue"]
@@ -238,8 +238,7 @@ func step(delta: float, settle := false) -> void:
 	_feed()
 
 
-## Whether the kaiju or the camera has moved, or the camera turned, enough since the last plan
-## (or the camera has appeared or gone).
+## Whether the kaiju or camera moved or turned enough since the last plan (or the camera came/went).
 func _replan_wanted() -> bool:
 	if _sim.kaiju_pos.distance_to(_planned_at) >= PLAN_MOVE:
 		return true
@@ -256,6 +255,15 @@ func _take_ready() -> Array[Array]:
 	_ready_index = []
 	_mutex.unlock()
 	return out
+
+
+## A topple's landing strip (StreamRank.under_fall) is meshed at once, pinned, past IN_FLIGHT.
+func expect_fall(event: Dictionary) -> void:
+	for n: int in _rank.under_fall(event):
+		_pinned[n] = 1
+		if _state[n] == 0:
+			_state[n] = 1
+			_tasks[n] = WorkerThreadPool.add_task(_stream_one.bind(n))
 
 
 ## Building n's view, built now if still waiting. Asking means the rampage touches it: never freed.

@@ -32,7 +32,7 @@ static func tag(
 	for i: int in out.size():
 		var e := out[i]
 		var at := Vector2(Num.f(e["x"]), Num.f(e["z"]))
-		if e.has("landmark") or Num.i(e["h"]) > Num.i(h["max_height"]):
+		if e.has("landmark") or e.has("model") or Num.i(e["h"]) > Num.i(h["max_height"]):
 			continue
 		if not CityBand.touches(at.x, at.y, Vector2(Num.f(e["w"]), Num.f(e["d"])), half):
 			continue

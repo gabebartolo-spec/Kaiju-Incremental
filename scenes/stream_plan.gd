@@ -10,8 +10,8 @@ const KEY_STEP := 16.0
 
 
 ## The buildings not held, as sorted keys (rank, then index), and the chunks the held ones add:
-## {keys, held}. The held ones (landmarks that stay meshed, listed in `marks`, and touched
-## buildings) add their chunks to held.
+## {keys, held}. The held ones (StreamRank.holds: touched, near the kaiju, or landmarks that stay
+## meshed) go in `marks` and add their chunks to held.
 static func rank_keys(
 	sim: RampageSim,
 	rank: StreamRank,
@@ -24,10 +24,8 @@ static func rank_keys(
 	var keys := PackedFloat64Array()
 	var held := 0
 	for n: int in sim.buildings.size():
-		if sim.buildings[n].is_held() and rank.keeps_landmark(n, from):
+		if rank.holds(n, sim.buildings[n], from, pinned[n] == 1):
 			marks.append(n)
-			held += chunks[n]
-		elif pinned[n] == 1:
 			held += chunks[n]
 		else:
 			keys.append(floorf(rank.rank(n, from, limit) * KEY_STEP) * 65536.0 + n)
