@@ -150,8 +150,9 @@ static func _gap_ok(a: float, b: float, rule: Dictionary) -> bool:
 	var cb := crossing(diag, b)
 	if absf(cb - ca) < need:
 		return false
-	# A ring or pinned z-line between the two crossings is a z-line fixed in place: the z-lines either side
-	# of it must still reach it in one gap (z_cap), so neither crossing lies too far from it.
+	# A ring or pinned z-line between the two crossings is a z-line fixed in place: the z-lines
+	# either side of it must still reach it in one gap (z_cap), so neither crossing lies too far
+	# from it.
 	var cap := Num.f(rule["z_cap"])
 	for r: float in rule["fixed_z"]:
 		if (r - ca) * (r - cb) < 0.0:
