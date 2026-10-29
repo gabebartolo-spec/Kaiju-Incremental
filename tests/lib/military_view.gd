@@ -126,7 +126,6 @@ func _check_view() -> void:
 func _view_runs() -> Dictionary:
 	var all := {}
 	for run: int in VIEW_RUNS:
-		print("TEMPDIAG run %d" % run)
 		var got := await _view_run(run)
 		if all.is_empty():
 			all = got
@@ -218,30 +217,6 @@ func _measure_retreat(
 	got["retreat_steps"] = Num.i(got["retreat_steps"]) + 1
 	if pace >= RETREAT_PACE.x and pace <= RETREAT_PACE.y:
 		got["retreat_ok"] = Num.i(got["retreat_ok"]) + 1
-	else:  # TEMP diag (to revert): why a fall-back step is off pace
-		var to_wp := r.path[0].distance_to(tank.pos) if not r.path.is_empty() else -1.0
-		print(
-			(
-				(
-					"TEMPDIAG tank %d pace %.2f front %s heading %s rev %s yield %.2f stuck %.2f path %d"
-					+ " to_wp %.2f body %.1f danger %.1f give_to %d"
-				)
-				% [
-					tank.id,
-					pace,
-					r.front,
-					r.heading,
-					r.reversing,
-					r.yield_t,
-					r.stuck_t,
-					r.path.size(),
-					to_wp,
-					convoy.posts.to_body(tank.pos),
-					convoy.danger(),
-					r.give_to
-				]
-			)
-		)
 	got["retreat_min"] = minf(Num.f(got["retreat_min"]), pace)
 	got["retreat_max"] = maxf(Num.f(got["retreat_max"]), pace)
 
