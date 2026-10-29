@@ -53,6 +53,7 @@ func _sim(blast_nodes: int, tree_levels: Dictionary = {}) -> RampageSim:
 	if tree_levels.is_empty():
 		stats["death_blast"] = blast_nodes
 	var sim := RampageSim.new(stats, Content.tuning(), _layout(), Seeds.make("army", 0))
+	sim.collapse.cut_only()  # the ring's reach, not where b2-5's mix sends its edge's topples
 	sim.ability_type = "leap"
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2.ZERO
