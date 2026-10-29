@@ -129,21 +129,32 @@ static func diagonal_deck(plan: Dictionary, cfg: Dictionary) -> Dictionary:
 ## from its river face inward. They draw their own numbers, so no other lot moves, and stand the
 ## same at every stage.
 static func on_quay(plan: Dictionary, block: Dictionary, cfg: Dictionary) -> bool:
-	if not plan.has("river_bank"):
+	if not _has_start(plan):
 		return false
 	var rect: Rect2 = block["rect"]
-	var bank: Vector2 = plan["river_bank"]
+	var bank := _start(plan)
 	return _gap(rect, bank) <= Num.f(cfg["quay"]["reach"])
+
+
+## Where the run starts on land: the sea bay's bank (CityHarbour plan["rise_bank"]) when the
+## city has a bay, else the river's (plan["river_bank"]). The quay sheds stand by it, so his
+## first steps out of the water meet small buildings (SpawnView's 10 s bar, D-131).
+static func _start(plan: Dictionary) -> Vector2:
+	return plan.get("rise_bank", plan.get("river_bank", Vector2(INF, INF)))
+
+
+static func _has_start(plan: Dictionary) -> bool:
+	return plan.has("rise_bank") or plan.has("river_bank")
 
 
 ## The lots of a quay block that stand clear of the quay (every one, without a river).
 static func off_quay(
 	plan: Dictionary, lots: Array[Dictionary], cfg: Dictionary
 ) -> Array[Dictionary]:
-	if not plan.has("river_bank"):
+	if not _has_start(plan):
 		return lots
 	var reach := Num.f(cfg["quay"]["reach"])
-	var bank: Vector2 = plan["river_bank"]
+	var bank := _start(plan)
 	var out: Array[Dictionary] = []
 	for b: Dictionary in lots:
 		if _gap(_foot(b), bank) > reach:
@@ -157,10 +168,10 @@ static func sheds(
 	plan: Dictionary, quay: Array[Dictionary], standing: Array[Dictionary], cfg: Dictionary
 ) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	if not plan.has("river_bank"):
+	if not _has_start(plan):
 		return out
 	var q: Dictionary = cfg["quay"]
-	var bank: Vector2 = plan["river_bank"]
+	var bank := _start(plan)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Num.i(cfg["map_seed"]) + 3
 	var clear := CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + 1.0

@@ -73,8 +73,8 @@ static func measure(form: Dictionary, map_seed: int) -> Dictionary:
 		CityGrowth.layout(base, tier, Seeds.make("city", 0)),
 		Seeds.make("army", 0)
 	)
-	var spawn: Vector2 = CityGen.map(sim.city).get("river_spawn", sim.kaiju_pos)
-	var bank: Vector2 = CityGen.map(sim.city).get("river_bank", spawn)
+	var spawn: Vector2 = CityGen.map(sim.city).get("rise_spawn", sim.kaiju_pos)
+	var bank: Vector2 = CityGen.map(sim.city).get("rise_bank", spawn)
 	var near := SpawnView._near_buildings(sim, spawn, sim.clamp_to_arena(bank))
 	sim.body.use_species("reptilian")
 	sim.emerge.start(sim)

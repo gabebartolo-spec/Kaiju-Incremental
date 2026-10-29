@@ -63,6 +63,7 @@ var _sim: RampageSim
 var _rng: RandomNumberGenerator
 var _x := 0.0
 var _z0 := 0.0
+var _station := Vector2.ZERO  # station_span, from the north end
 var _next := 0.0
 var _next_id := 0
 var _dir := 1
@@ -77,16 +78,20 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	_sim = sim
 	cfg = tuning["rail"]
 	_rng = rng
-	var half := CityGen.half_extent(sim.city)
-	var span: Array = cfg["span"]
-	_z0 = half * Num.f(span[0])
-	length = half * Num.f(span[1]) - _z0
+	var line := RailLayout.ends(sim.city, cfg)
+	_z0 = line.x
+	length = line.y - line.x
+	var st := RailLayout.station_z(sim.city, cfg)
+	_station = Vector2(st.x - _z0, st.y - _z0)
 	deck_y = Num.f(cfg["deck_y"])
 	_x = avenue_x(sim.city)
 	_next = Num.f(cfg["first_s"])
 
 
-## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan.
+## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan;
+## never one inside the sea bay's width (CityHarbour.rect_of: it ends at the coast road, and the
+## line would run up to the beach the kaiju wades out on). With none outside it, the bay's west
+## side street (the young city: its one inner avenue is inside the bay).
 static func avenue_x(city: Dictionary) -> float:
 	var key := "%s:%s" % [city["map_seed"], city["half"]]
 	if _x_cache.has(key):
@@ -94,16 +99,19 @@ static func avenue_x(city: Dictionary) -> float:
 	var half := CityGen.half_extent(city)
 	var plan := CityGen.map(city)
 	var nodes: Array = plan["nodes"]
+	var bay := CityHarbour.rect_of(city)
 	var best := INF
 	for street: Dictionary in plan["streets"]:
 		var a: Vector2 = nodes[Num.i(street["from"])]
 		var b: Vector2 = nodes[Num.i(street["to"])]
 		if str(street["kind"]) != CityGen.AVENUE or absf(a.x - b.x) > 0.01:
 			continue
+		if a.x > bay.position.x + 0.01 and a.x < bay.end.x - 0.01:
+			continue
 		if absf(a.x) < half - 1.0 and absf(a.x) < absf(best):
 			best = a.x
 	if best == INF:
-		best = 0.0
+		best = bay.position.x if bay.has_area() else 0.0
 	_x_cache[key] = best
 	return best
 
@@ -119,9 +127,10 @@ func point(s: float, dir: int) -> Vector2:
 	return Vector2(track_x(dir), z)
 
 
-## The station's place along the line for a train running `dir`.
+## The station's place along the line for a train running `dir`: its platforms' middle.
 func station_s(dir: int) -> float:
-	var at := length * Num.f(cfg["station_share"])
+	var st := station_span()
+	var at := (st.x + st.y) * 0.5
 	return at if dir > 0 else length - at
 
 
@@ -303,8 +312,7 @@ func centre_x() -> float:
 
 ## The station's span along the line (from the north end): its platforms (RailLayout).
 func station_span() -> Vector2:
-	var at := RailLayout.station_z(_sim.city, cfg)
-	return Vector2(at.x - _z0, at.y - _z0)
+	return _station
 
 
 ## The kaiju's body walking into a train (when it stands tall enough to reach the deck).
