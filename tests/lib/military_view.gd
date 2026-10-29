@@ -302,6 +302,7 @@ func _view_scene(run: int) -> Rampage:
 	var rampage := Rampage.new()
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	rampage.setup(species, stats, layout, run)
+	rampage.sim.collapse.cut_only()  # the tanks' retreat as fitted, not b2-5's fall mix
 	Clip.start_at(rampage.sim)
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	return rampage

@@ -378,32 +378,3 @@ rigger" and said "No" to testing a second Cascadeur copy. So: one builder (croc-
 rake, walk first step, idle, run, turn B, then the young clips); one rigger (croc-young-casc) readies the young
 skeletons (D-335, bars S1-S5) and brings finished clips into the game; every Cascadeur job holds C:/kt/casc_lock.sh;
 croc-idle-run and croc-casc-s2 are not respawned.
-
-## 2026-10-27 · D-335 · Director · Every croc stage is animated in Cascadeur; D-047's Blender clips are replaced
-His words (19:0x), on a plan to key the claw rake for the adult only while the baby and adolescent kept the code rake:
-"this is NOT correct, as ive said OVER AND OVER AGAIN, EVERY SINGLE ANIMATION MUST BE DONE IN CASC" (restates D-199,
-D-216 and D-247's "I want 100% of our animation done with Casc"). So: every move at every stage (baby, adolescent,
-adult) is keyed in Cascadeur (tail, jaw, tongue may be Blender, D-228); D-047's Blender-script clips and every code
-layer are defects to replace, never an exemption. Then "make sure their skeletons are ready for animation": the young
-skeletons get the adult's r12 treatment (D-307: same joint chains, bones added where missing, re-skinned, the r12
-Cascadeur rig) and pass chain, pivot, skin, rig and round-trip bars before any young clip is keyed.
-
-## 2026-10-27 · D-334 · Director · Render item 12: look B (glass and metal sheen) merges
-Q (18:5x, PR #319: baked voxel AO and material finish, flags on): A: "Yes, merge B (Recommended)": #319 merges with
-look B on by default (render plan item 12).
-
-## 2026-10-27 · D-333 · Director · The night's speed tests start when he says he is done for the day
-Q (18:1x): when do tonight's speed tests start? A: "When I say I'm done": the lead deletes `C:/kt/SPEED_DAY_HOLD` the
-moment he says he is done for the day, then runs `C:/kt/NIGHT_QUEUE.txt` one line at a time; if he says nothing, the
-hold ends at 01:00 (10-28).
-
-## 2026-10-27 · D-332 · Director · The lead restarts fresh at about 18:10
-Q (18:1x): when does the lead restart? A: "At ~18:10": a fresh lead session runs from its handoff; the old lead session
-hosts the builders it started until each one's step ends and reports them in `C:/kt/relay.md`; every role that ends is
-respawned fresh from its own handoff by the new lead, never while still hosted.
-
-## 2026-10-27 · D-331 · Director · One block of speed tests now, then none in the day
-Q (18:1x): speed tests during the day? A: "One block now, then none": the queued block (perf-p4b, perf-p2b-native,
-perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
-until D-333's start. Builders, Cascadeur, suites, captures and builds use the PC freely. D-299/D-313's window rules
-still govern every speed run that does start.
