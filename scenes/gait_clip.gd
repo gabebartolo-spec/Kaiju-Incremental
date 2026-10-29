@@ -11,6 +11,10 @@ extends BipedGait
 const BLEND_SECONDS := 0.25
 ## Heading error (rad) that makes a standing kaiju turn on the spot with a turn clip.
 const TURN_TRIGGER := 0.6
+## How fast a standing body creeps after a heading change too small for a turn clip (rad/s). It is slow,
+## so a sim that turns a standing kaiju briskly opens the gap to TURN_TRIGGER and plays the clip
+## instead of the body sliding round on planted feet (a baby's track() catches up at ~10 rad/s).
+const IDLE_CREEP := 0.5
 ## Frames of lead-in kept before the part of a turn clip that carries its yaw, and of settle
 ## after it (the tail's whip settles about half a second after the body stops).
 const TURN_PAD := 6
@@ -122,7 +126,12 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 
 
 func update(delta: float) -> void:
+	var held := body_yaw if _started else INF
 	track(delta)
+	if held != INF and state == "idle" and speed < STAND_SPEED * hip_height * s:
+		body_yaw = rotate_toward(held, model_yaw, IDLE_CREEP * delta)
+		_body_yaw_v = 0.0
+		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
