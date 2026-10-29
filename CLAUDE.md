@@ -1,8 +1,9 @@
 # Kaiju Incremental: working rules for every Claude Code session
 
-Godot 4.7.2, GDScript (static typing on). Read this file, your handoff (`~/.claude/handoffs/kaiju/<role>.md`, outside git), the skill(s) you apply, and the
-`docs/DESIGN.md` and `docs/ROADMAP.md` sections your task changes or relies on, in full; grep the rest. No read-receipt message.
-Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what is true for Kaiju Incremental.
+Godot 4.7.2, GDScript (static typing on). Read this file, your handoff (`~/.claude/handoffs/kaiju/<role>.md`, outside git), the
+`docs/DESIGN.md` sections your task changes or relies on, the `docs/ROADMAP.md` index and only the rows your task names;
+grep the rest. No read-receipt message.
+Shared rules: `~/.claude/CLAUDE.md`; this file holds only what is true for Kaiju Incremental.
 
 ## Philosophy
 - **Designed by a person, developed with AI, never designed by AI.** **You are the disaster: every rampage must feel
@@ -25,20 +26,9 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
    fixture (on vs off), a bug fix or tuning change the test that shows it fixed.
 8. **Change method after two failed fixes.**
 
-## Machine and repo (project detail on the rulebook)
-- Captures and clips render on the local GPU (RTX 4070 SUPER) always, even while he games, in a no_focus
-  override.cfg window (it may show on his screen so he can watch, 2026-10-26; it never steals focus; `blender -b`), ONE
-  Godot window at a time PC-wide via `bash C:/kt/gpu_slot.sh <command>` (D-340, hook-enforced; headless runs need no
-  slot), until he says pause (2026-10-21, comment #41).
-  CI captures (`tools/capture/ci_capture.sh`, xvfb, software: ~25-35 min a clip) only for gl_compatibility checks or
-  while paused. GPU jobs share the card by VRAM budget (rulebook: Machine and screen).
-- No speed runs in the day (D-331): while `C:/kt/SPEED_DAY_HOLD` exists the tool-gate hook refuses them; the lead
-  deletes it when the director says he is done for the day, 01:00 at the latest, then runs `C:/kt/NIGHT_QUEUE.txt` one
-  line at a time (D-333). Builders, Cascadeur, suites, captures and builds run freely in the day.
-- Speed runs get the PC to themselves (D-299): while a `C:/kt/BENCH_WINDOW_<owner>` under 20 min old exists, start no
-  Godot (headless included); run it behind `bash C:/kt/wait_window.sh && <command>`. The tool-gate hook refuses
-  otherwise; a run that saw another Godot (`others>0`) is void, and so is one taken while League is in a game.
-  `~/.claude/focus-pause` (his pause) stops every Godot start until it is gone.
+## Machine and repo
+- Windowed Godot runs go through `bash C:/kt/gpu_slot.sh <command>` (D-376); speed runs only at night (D-331) and
+  alone on the PC (D-299). The focus and tool-gate hooks enforce these and their refusal says what to do.
 - Resolution (D-339, Kaiju only): 1080p is the baseline. Text, look and the 60 fps Medium bar are judged at 1080p;
   stills and clips for him are 1080p; 4K is checked at each playtest build. Replaces the rulebook's 4K-first check.
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
@@ -48,7 +38,3 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
   (the lead owns it; any PR may carry it). Only the lead edits `docs/DESIGN.md`. `docs/STATUS.md` is generated
   (`python tools/status.py`, never by hand) after merges. Main requires checks, so no direct push and no separate board
   PR: pure log/status updates ride in the lead's next PR (docs-only, no Godot jobs).
-
-## Skills
-`~/.claude/skills/kaiju-*` (outside git since 10-28, so no branch carries a stale copy) extend the general skills; each has a `references/learnings.md` (evidence bar in
-`~/.claude/CLAUDE.md`). General lessons go to the general skill's log.
