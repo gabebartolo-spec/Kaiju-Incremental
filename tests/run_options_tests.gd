@@ -14,6 +14,8 @@ const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const OptionsPlay := preload("res://tests/lib/options_play.gd")
 
 var _menu: SettingsMenu
+## The shipped bindings' text by "action/slot", read after KeyBinds.reset() (D-385: no key names).
+var _defaults := {}
 
 
 func suite_name() -> String:
@@ -22,6 +24,9 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	KeyBinds.reset()
+	for entry: Array in KeyBinds.actions():
+		for slot: String in [KeyBinds.KEYS, KeyBinds.PAD]:
+			_defaults["%s/%s" % [entry[0], slot]] = KeyBinds.text(str(entry[0]), slot)
 	await _t("_check_rebind_keys")
 	await _t("_check_rebind_pad_and_reset")
 	await _t("_check_bindings_saved")
@@ -31,6 +36,10 @@ func run_checks() -> void:
 	await _t("_check_pages_fit")
 	await _h("Options in play", func() -> void: await OptionsPlay.new(self, check).run())
 	KeyBinds.reset()
+
+
+func _default(action: String, slot: String) -> String:
+	return str(_defaults.get("%s/%s" % [action, slot], ""))
 
 
 func _frames(n: int) -> void:
@@ -69,7 +78,11 @@ func _check_rebind_keys() -> void:
 	if page == null:
 		return
 	var sig: Button = page.binds["signature"][KeyBinds.KEYS]
-	check(sig.text == "Space", "the signature attack starts on Space ('%s')" % sig.text)
+	var first := _default("signature", KeyBinds.KEYS)
+	check(
+		first not in ["", "-"] and sig.text == first,
+		"the signature attack starts on its default key ('%s', default '%s')" % [sig.text, first]
+	)
 	await GuiInput.click(self, sig)
 	await _frames(1)
 	check(sig.text == ControlsMenu.WAIT_KEYS, "a clicked binding waits for a key ('%s')" % sig.text)
@@ -80,19 +93,22 @@ func _check_rebind_keys() -> void:
 		"pressing R binds the signature attack to R ('%s')" % sig.text
 	)
 	check(
-		not InputMap.action_has_event("signature", _key(KEY_SPACE)),
-		"Space no longer fires the signature attack"
+		KeyBinds.events("signature", KeyBinds.KEYS).size() == 1,
+		"the default key no longer fires the signature attack, R alone does"
 	)
 	await _bind(page, "dash", KeyBinds.KEYS, func() -> void: await GuiInput.key(self, KEY_ESCAPE))
 	check(
-		KeyBinds.text("dash", KeyBinds.KEYS) == "Shift" and is_instance_valid(page),
+		(
+			KeyBinds.text("dash", KeyBinds.KEYS) == _default("dash", KeyBinds.KEYS)
+			and is_instance_valid(page)
+		),
 		"Esc while a binding waits keeps the old key and the page open"
 	)
 	await _bind(page, "dash", KeyBinds.KEYS, func() -> void: await GuiInput.key(self, KEY_W))
 	check(
 		(
 			KeyBinds.text("dash", KeyBinds.KEYS) == "W"
-			and KeyBinds.text("move_up", KeyBinds.KEYS) == "Up"
+			and not KeyBinds.text("move_up", KeyBinds.KEYS).split(" / ").has("W")
 		),
 		(
 			"W on dash takes W off move up (dash '%s', move up '%s')"
@@ -124,11 +140,11 @@ func _check_rebind_pad_and_reset() -> void:
 	await _frames(2)
 	check(
 		(
-			KeyBinds.text("signature", KeyBinds.KEYS) == "Space"
-			and KeyBinds.text("ultimate", KeyBinds.PAD) == "Y"
-			and KeyBinds.text("move_up", KeyBinds.KEYS).begins_with("W")
+			KeyBinds.text("signature", KeyBinds.KEYS) == _default("signature", KeyBinds.KEYS)
+			and KeyBinds.text("ultimate", KeyBinds.PAD) == _default("ultimate", KeyBinds.PAD)
+			and KeyBinds.text("move_up", KeyBinds.KEYS) == _default("move_up", KeyBinds.KEYS)
 		),
-		"RESET brings back Space, pad Y and W"
+		"RESET brings back the default signature key, pad ultimate and move up"
 	)
 	# Leave R on the signature attack for the next checks and the rampage.
 	var press_r := func() -> void: await GuiInput.key(self, KEY_R)
@@ -141,7 +157,8 @@ func _check_bindings_saved() -> void:
 	cfg.load(PlayerSettings.PATH)
 	KeyBinds.reset()
 	check(
-		KeyBinds.text("signature", KeyBinds.KEYS) == "Space", "the defaults are back before loading"
+		KeyBinds.text("signature", KeyBinds.KEYS) == _default("signature", KeyBinds.KEYS),
+		"the defaults are back before loading"
 	)
 	cfg.save(PlayerSettings.PATH)
 	PlayerSettings.load_saved(false)
@@ -167,42 +184,49 @@ func _check_access_page() -> void:
 	check(page != null, "clicking ACCESSIBILITY in Settings opens its page")
 	if page == null:
 		return
-	check(
-		(
-			page.held.text == "< HOLD >"
-			and page.flashing.text == "< OFF >"
-			and page.rumble.text == "< ON >"
-			and page.gore.text == "< ON >"
-		),
-		"the defaults read HOLD, flashing OFF, rumble ON, gore ON"
-	)
-	for b: Button in [page.held, page.flashing, page.rumble, page.gore]:
+	# D-385: no button copy; each click flips its setting, relabels its button and is saved.
+	var buttons: Array[Button] = [page.held, page.flashing, page.rumble, page.gore]
+	var was := _access()
+	var labels: Array[String] = []
+	for b: Button in buttons:
+		labels.append(b.text)
 		await GuiInput.click(self, b)
 	await _frames(2)
+	var now := _access()
+	var relabelled := true
+	for i: int in buttons.size():
+		relabelled = relabelled and buttons[i].text.strip_edges() != ""
+		relabelled = relabelled and buttons[i].text != labels[i]
+	var flipped := true
+	for i: int in was.size():
+		flipped = flipped and now[i] != was[i]
+	check(flipped, "each click flips its setting (%s -> %s)" % [was, now])
+	check(relabelled, "each click relabels its button (%s -> %s)" % [labels, buttons.map(_text)])
 	var cfg := ConfigFile.new()
 	cfg.load(PlayerSettings.PATH)
+	var saved: Array[bool] = []
+	for key: String in ["hold_toggle", "reduce_flashing", "rumble", "gore"]:
+		saved.append(cfg.get_value("access", key, null) == true)
 	check(
-		(
-			page.held.text == "< TOGGLE >"
-			and page.flashing.text == "< ON >"
-			and page.rumble.text == "< OFF >"
-			and page.gore.text == "< REDUCED >"
-		),
-		"each click steps its setting (%s)" % [[page.held.text, page.gore.text]]
-	)
-	check(
-		(
-			str(cfg.get_value("access", "hold_toggle")) == "true"
-			and str(cfg.get_value("access", "reduce_flashing")) == "true"
-			and str(cfg.get_value("access", "rumble")) == "false"
-			and str(cfg.get_value("access", "gore")) == "false"
-			and not PlayerSettings.gore_on()
-		),
-		"settings.cfg keeps all four"
+		saved == now and PlayerSettings.gore_on() == PlayerSettings.gore,
+		"settings.cfg keeps all four (%s)" % [saved]
 	)
 	await GuiInput.key(self, KEY_ESCAPE)
 	await _frames(2)
 	check(not is_instance_valid(page) and is_instance_valid(_menu), "Esc closes only the page")
+
+
+func _access() -> Array[bool]:
+	return [
+		PlayerSettings.hold_toggle,
+		PlayerSettings.reduce_flashing,
+		PlayerSettings.rumble,
+		PlayerSettings.gore,
+	]
+
+
+func _text(b: Button) -> String:
+	return b.text
 
 
 func _check_held_toggle() -> void:
@@ -222,10 +246,14 @@ func _check_rumble_rows() -> void:
 	var cfg := Content.section("rumble")
 	for key: String in ["footfall", "stomp"]:
 		var rows: Array = cfg[key]
-		var grows := rows.size() == 3
+		var stages := CityGrowth.stage_count(Content.tuning())
+		var grows := rows.size() == stages
 		for i: int in range(1, rows.size()):
 			grows = grows and Num.f(rows[i]["strong"]) > Num.f(rows[i - 1]["strong"])
-		check(grows, "the %s rumble grows with each of the three growth stages" % key)
+		check(
+			grows,
+			"the %s rumble has a row per growth stage (%d) and grows with each" % [key, stages]
+		)
 
 
 func _check_pages_fit() -> void:

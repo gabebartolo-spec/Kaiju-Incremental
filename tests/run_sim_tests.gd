@@ -41,18 +41,28 @@ func run_checks() -> void:
 	await _t("_check_growth")
 
 
+## D-385: the species come from data/species.json; each one loads whole, and the croc's is there.
 func _check_data() -> void:
-	check(
-		Content.species().size() == 3,
-		"three species are defined, not %d" % Content.species().size()
-	)
 	var ids: Array[String] = []
+	var broken: Array[String] = []
 	for def: Dictionary in Content.species():
-		ids.append(str(def["id"]))
+		var id := str(def.get("id", ""))
+		var whole: bool = (
+			id != ""
+			and not ids.has(id)
+			and str(def.get("name", "")) != ""
+			and def.get("stats") is Dictionary
+			and def.get("colors") is Dictionary
+			and Content.species_def(id) == def
+		)
+		if not whole:
+			broken.append(id)
+		ids.append(id)
 	check(
-		ids == ["reptilian", "insectoid", "cephalopod"],
-		"the species are reptilian, insectoid, cephalopod: %s" % [ids]
+		not ids.is_empty() and broken.is_empty(),
+		"every species in the data loads with a unique id, name, stats and colours: %s" % [broken]
 	)
+	check(ids.has("reptilian"), "the reptilian (the croc) is in the data: %s" % [ids])
 	var tree := _tree()
 	var dangling: Array[String] = []
 	for id: String in tree.order:

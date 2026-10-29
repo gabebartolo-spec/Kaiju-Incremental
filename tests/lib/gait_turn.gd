@@ -213,15 +213,36 @@ static func check_big(check: Callable, make: Callable, stage: String, levels: Di
 	)
 
 
-## The young croc's turns (D-131, "Baby turns smoothly"), the stick walked through four legs: where
-## it stands and which way it faces at the end of each, as Vector3(x, z, heading degrees).
-static func young_legs(sim: RampageSim) -> Array[Vector3]:
-	var out: Array[Vector3] = []
+## The young croc's turns (D-131, "Baby turns smoothly"), the stick walked through four legs: for
+## each, {pos (where it ends), heading (degrees it ends facing), stick (degrees the stick points),
+## path (units walked), seconds, snap (most degrees turned in one frame)}.
+static func young_legs(sim: RampageSim) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
 	sim.kaiju_pos = Vector2(0.0, 30.0)
 	for leg: Array in YOUNG_ROUTE:
 		var stick: Vector2 = leg[0]
+		var path := 0.0
+		var snap := 0.0
 		for _n: int in roundi(Num.f(leg[1]) / DT):
+			var was_pos := sim.kaiju_pos
+			var was := _deg(sim.body.heading)
 			sim.step(DT, stick, false, 0)
-		var h := sim.body.heading
-		out.append(Vector3(sim.kaiju_pos.x, sim.kaiju_pos.y, rad_to_deg(atan2(h.x, -h.y))))
+			path += sim.kaiju_pos.distance_to(was_pos)
+			snap = maxf(
+				snap, absf(angle_difference(deg_to_rad(was), deg_to_rad(_deg(sim.body.heading))))
+			)
+		var row := {
+			"pos": sim.kaiju_pos,
+			"heading": _deg(sim.body.heading),
+			"stick": _deg(stick),
+			"path": path,
+			"seconds": Num.f(leg[1]),
+			"snap": rad_to_deg(snap),
+		}
+		out.append(row)
 	return out
+
+
+## Degrees a heading faces, 0 north (-z), 90 east.
+static func _deg(h: Vector2) -> float:
+	return rad_to_deg(atan2(h.x, -h.y))

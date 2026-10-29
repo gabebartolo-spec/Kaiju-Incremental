@@ -1,118 +1,86 @@
 extends RefCounted
-## The settings menu's rows as the screen critic asked (round 2, D-145): the two-button rows split
-## the sliders' span in equal halves and every right edge, time of day included, is the sliders'
-## right edge; 10 px between button rows; 20 px above the CONTROLS and ACCESSIBILITY buttons and
-## between them and BACK;
-## every cycling button shows its < > cue. Read from real layout rects at 1x, in canvas px.
+## The settings menu's rows as rules (D-385: no member names, pixel gaps or row copy): on the
+## director's 4K TV no two controls overlap, every one stands on screen, every button shows a
+## label, and Tab from the card's first control reaches every visible button and slider.
 
-const GuiInput := preload("res://tests/lib/gui_input.gd")
-const NAMES: Array[String] = ["_fullscreen", "_scale", "_graphics", "_fps", "_time", "_weather"]
-const ROW_GAP := 10.0
-const BLOCK_GAP := 20.0
+const FlowLayout := preload("res://tests/lib/flow_layout.gd")
+## Rects may share an edge; anything deeper than this (px) is an overlap.
 const EPS := 0.5
+## More focus steps than any settings card has controls.
+const MAX_STEPS := 64
 
 
-static func run(check: Callable, menu: SettingsMenu) -> void:
-	var rects: Array[Rect2] = []
-	# D-359: the time-of-day row is hidden while one time may be played; weather then follows graphics.
-	var time_shown := TimeOfDay.has_choice()
-	for name: String in NAMES:
-		var b: Button = menu.get(name)
-		if name == "_time" and not time_shown:
-			check.call(not b.is_visible_in_tree(), "settings: the time of day button is hidden")
-			rects.append(Rect2())
-			continue
-		rects.append(b.get_global_rect())
-		check.call(
-			b.text.begins_with("< ") and b.text.ends_with(" >"),
-			"settings: %s shows its < > cue ('%s')" % [name, b.text]
-		)
-	if not time_shown:
-		rects[4] = rects[5]  # same columns as weather, so the column checks hold
-	var fullscreen := rects[0]
-	var scale := rects[1]
-	var graphics := rects[2]
-	var fps := rects[3]
-	var time := rects[4]
-	var above_weather := time if time_shown else graphics
-	var weather := rects[5]
-	var right := menu.effects.get_global_rect().end.x
-	for r: Rect2 in [scale, fps, time, weather]:
-		check.call(
-			absf(r.end.x - right) < EPS, "settings: a right edge is the sliders' (%s)" % r.end.x
-		)
-	check.call(
-		absf(fullscreen.size.x - scale.size.x) < EPS and absf(graphics.size.x - fps.size.x) < EPS,
-		"settings: each two-button row splits its span in equal halves"
-	)
-	check.call(
-		(
-			absf(scale.position.x - fps.position.x) < EPS
-			and absf(fullscreen.position.x - graphics.position.x) < EPS
-		),
-		(
-			"settings: both two-button rows share one split (%s, %s)"
-			% [scale.position.x, fps.position.x]
-		)
-	)
-	check.call(
-		(
-			absf(time.position.x - fullscreen.position.x) < EPS
-			and absf(time.end.x - scale.end.x) < EPS
-			and absf(weather.position.x - fullscreen.position.x) < EPS
-			and absf(weather.end.x - scale.end.x) < EPS
-		),
-		"settings: time of day and weather span the same columns edge to edge"
-	)
-	check.call(
-		(
-			absf(graphics.position.y - fullscreen.end.y - ROW_GAP) < EPS
-			and (not time_shown or absf(time.position.y - graphics.end.y - ROW_GAP) < EPS)
-			and absf(weather.position.y - above_weather.end.y - ROW_GAP) < EPS
-		),
-		(
-			"settings: 10 px between button rows (%s, %s, %s)"
-			% [
-				graphics.position.y - fullscreen.end.y,
-				time.position.y - graphics.end.y,
-				weather.position.y - above_weather.end.y
-			]
-		)
-	)
-	_blocks(check, menu, weather)
+static func run(t: SceneTree, check: Callable, menu: SettingsMenu) -> void:
+	var window := t.root.size
+	t.root.size = FlowLayout.TV_SIZE
+	for _i: int in 3:
+		await t.process_frame
+	var view := t.root.get_visible_rect()
+	var parts: Array[Control] = []
+	for found: Node in menu.find_children("*", "Control", true, false):
+		var c := found as Control
+		var shown := c.is_visible_in_tree() and not _inside_button(c, menu)
+		if shown and (c is Button or c is Slider or (c is Label and (c as Label).text != "")):
+			parts.append(c)
+	var overlaps: Array[String] = []
+	var off: Array[String] = []
+	var blank: Array[String] = []
+	for i: int in parts.size():
+		var r := parts[i].get_global_rect()
+		if not view.grow(EPS).encloses(r):
+			off.append(_name(parts[i]))
+		if parts[i] is Button and (parts[i] as Button).text.strip_edges() == "":
+			blank.append(str(parts[i].name))
+		for j: int in range(i + 1, parts.size()):
+			if r.grow(-EPS).intersects(parts[j].get_global_rect().grow(-EPS)):
+				overlaps.append("%s / %s" % [_name(parts[i]), _name(parts[j])])
+	check.call(parts.size() > 1, "settings: the card draws its rows (%d controls)" % parts.size())
+	check.call(overlaps.is_empty(), "settings: no two rows or controls overlap: %s" % [overlaps])
+	check.call(off.is_empty(), "settings: every row stands on screen: %s" % [off])
+	check.call(blank.is_empty(), "settings: every button shows its label: %s" % [blank])
+	_reachable(check, parts)
+	t.root.size = window
+	for _i: int in 2:
+		await t.process_frame
 
 
-static func _blocks(check: Callable, menu: SettingsMenu, time: Rect2) -> void:
-	var controls: Button = GuiInput.button(menu, "CONTROLS")
-	var access: Button = GuiInput.button(menu, "ACCESSIBILITY")
-	var back: Button = GuiInput.button(menu, "BACK")
+## Focus order (find_next_valid_focus, the walk Tab takes) from the card's first button or slider
+## reaches every visible button and slider on it.
+static func _reachable(check: Callable, parts: Array[Control]) -> void:
+	var focusable: Array[Control] = []
+	for c: Control in parts:
+		if c is Button or c is Slider:
+			focusable.append(c)
+	var seen: Array[Control] = []
+	var at: Control = null
+	if not focusable.is_empty():
+		at = focusable[0]
+	for _i: int in MAX_STEPS:
+		if at == null or seen.has(at):
+			break
+		seen.append(at)
+		at = at.find_next_valid_focus()
+	var missed: Array[String] = []
+	for c: Control in focusable:
+		if not seen.has(c):
+			missed.append(_name(c))
 	check.call(
-		(
-			controls != null
-			and access != null
-			and controls.get_global_rect().position.y - time.end.y >= BLOCK_GAP - EPS
-			and (
-				absf(controls.get_global_rect().position.y - access.get_global_rect().position.y)
-				< EPS
-			)
-		),
-		"settings: 20 px or more above the CONTROLS and ACCESSIBILITY buttons, side by side"
+		not focusable.is_empty() and missed.is_empty(),
+		"settings: every row is reachable by focus (missed %s)" % [missed]
 	)
-	check.call(
-		(
-			controls != null
-			and back != null
-			and (
-				back.get_global_rect().position.y - controls.get_global_rect().end.y
-				>= BLOCK_GAP - EPS
-			)
-		),
-		"settings: 20 px or more between the page buttons and BACK"
-	)
-	var names: Array[String] = []
-	for found: Node in menu.find_children("*", "Label", true, false):
-		names.append((found as Label).text)
-	check.call(
-		names.has("Graphics and FPS") and not names.has("Graphics and frame cap"),
-		"settings: the GPU row is named Graphics and FPS"
-	)
+
+
+static func _inside_button(c: Control, menu: Node) -> bool:
+	var up := c.get_parent()
+	while up != null and up != menu:
+		if up is Button:
+			return true
+		up = up.get_parent()
+	return false
+
+
+static func _name(c: Control) -> String:
+	var text: Variant = c.get("text")
+	if text is String:
+		return "%s '%s'" % [c.name, text]
+	return str(c.name)

@@ -5,6 +5,8 @@ extends RefCounted
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const UiFeedback := preload("res://tests/lib/ui_feedback.gd")
+## More D-pad presses than the pause menu has buttons (D-385: the walk stops on END RAMPAGE).
+const MAX_DOWNS := 12
 
 
 static func run(tree: SceneTree, check: Callable) -> void:
@@ -40,11 +42,7 @@ static func run(tree: SceneTree, check: Callable) -> void:
 static func _pad_round(
 	tree: SceneTree, check: Callable, menu: PauseMenu, ended: Array[bool]
 ) -> void:
-	for _i: int in 3:  # RESUME, SETTINGS, the report button, END RAMPAGE
-		await GuiInput.pad(tree, JOY_BUTTON_DPAD_DOWN)
-	check.call(
-		_on(tree, GuiInput.button(menu, "END RAMPAGE")), "pad: down three times reaches END RAMPAGE"
-	)
+	check.call(await _down_to_end(tree, menu), "pad: pressing down from RESUME reaches END RAMPAGE")
 	await GuiInput.pad(tree, JOY_BUTTON_A)
 	await UiFeedback.frames(tree, 3)
 	var ask := GuiInput.find_script(menu, EndConfirm) as EndConfirm
@@ -61,8 +59,7 @@ static func _pad_round(
 	tree.paused = true
 	menu = _menu(tree, ended)
 	await UiFeedback.frames(tree, 3)
-	for _i: int in 3:
-		await GuiInput.pad(tree, JOY_BUTTON_DPAD_DOWN)
+	await _down_to_end(tree, menu)
 	await GuiInput.pad(tree, JOY_BUTTON_A)
 	await UiFeedback.frames(tree, 3)
 	ask = GuiInput.find_script(menu, EndConfirm) as EndConfirm
@@ -72,8 +69,7 @@ static func _pad_round(
 		not is_instance_valid(ask) and ended.is_empty() and tree.paused,
 		"pad: B closes the question, the run goes on"
 	)
-	for _i: int in 3:  # RESUME is focused again: down to END RAMPAGE
-		await GuiInput.pad(tree, JOY_BUTTON_DPAD_DOWN)
+	await _down_to_end(tree, menu)  # RESUME is focused again: down to END RAMPAGE
 	await GuiInput.pad(tree, JOY_BUTTON_A)
 	await UiFeedback.frames(tree, 3)
 	ask = GuiInput.find_script(menu, EndConfirm) as EndConfirm
@@ -95,6 +91,16 @@ static func _yes_by_click(tree: SceneTree, check: Callable, ended: Array[bool]) 
 	await GuiInput.click(tree, GuiInput.button(menu, "YES"))
 	await UiFeedback.frames(tree, 3)
 	check.call(ended == [true] and not tree.paused, "clicking YES ends the run and unpauses")
+
+
+## Presses D-pad down until END RAMPAGE has the focus, at most MAX_DOWNS times; true once it has.
+static func _down_to_end(tree: SceneTree, menu: PauseMenu) -> bool:
+	var end := GuiInput.button(menu, "END RAMPAGE")
+	for _i: int in MAX_DOWNS:
+		if _on(tree, end):
+			return true
+		await GuiInput.pad(tree, JOY_BUTTON_DPAD_DOWN)
+	return _on(tree, end)
 
 
 static func _menu(tree: SceneTree, ended: Array[bool]) -> PauseMenu:

@@ -19,29 +19,46 @@ static func run(t: SceneTree, check: Callable, layout: FlowLayout, main: Node) -
 		main.queue_free()
 		return
 	await layout.fits_at_scales(menu, "settings")
-	FlowSettingsRows.run(check, menu)
+	await FlowSettingsRows.run(t, check, menu)
 	var was_full: bool = PlayerSettings.fullscreen
-	await GuiInput.click(t, GuiInput.button(menu, "< ON >" if was_full else "< OFF >"))
+	var full_button := GuiInput.button(menu, "< ON >" if was_full else "< OFF >")
+	check.call(full_button != null, "settings: the fullscreen switch is on the card")
+	if full_button != null:
+		await GuiInput.click(t, full_button)
 	check.call(PlayerSettings.fullscreen != was_full, "clicking the fullscreen switch flips it")
 	PlayerSettings.set_fullscreen(was_full)
-	await GuiInput.click(t, GuiInput.button(menu, "< 100% >"))
+	# D-385: the step is the game's own UI_SCALES, whatever they are.
+	var scales := PlayerSettings.UI_SCALES
+	var before := PlayerSettings.ui_scale
+	var want := scales[(scales.find(before) + 1) % scales.size()]
+	var step := GuiInput.button(menu, "< %d%%" % roundi(before * 100.0))
+	check.call(step != null, "settings: the UI scale button is on the card")
+	if step != null:
+		await GuiInput.click(t, step)
 	check.call(
 		(
-			is_equal_approx(PlayerSettings.ui_scale, 1.15)
-			and is_equal_approx(t.root.content_scale_factor, 1.15)
+			want != before
+			and is_equal_approx(PlayerSettings.ui_scale, want)
+			and is_equal_approx(t.root.content_scale_factor, want)
 		),
-		"clicking UI scale steps it to 115%% and scales the UI (%s)" % t.root.content_scale_factor
+		(
+			"clicking UI scale steps it %s -> %s and scales the UI (%s)"
+			% [before, want, t.root.content_scale_factor]
+		)
 	)
-	await GuiInput.drag(t, menu.effects, 0.1, 0.7)
+	var was_sfx := PlayerSettings.sfx()
+	await GuiInput.drag(t, menu.effects, 0.5, 0.1 if was_sfx > 0.5 else 0.9)
+	var sfx := PlayerSettings.sfx_volume
 	var sfx_db := AudioServer.get_bus_volume_db(PlayerSettings.bus("SFX"))
 	check.call(
 		(
-			is_equal_approx(PlayerSettings.sfx_volume, 0.7)
-			and is_equal_approx(sfx_db, linear_to_db(0.7))
+			not is_equal_approx(sfx, was_sfx)
+			and is_equal_approx(sfx, menu.effects.value / 100.0)
+			and is_equal_approx(sfx_db, linear_to_db(sfx))
 		),
 		(
-			"dragging Sound effects to 70%% sets the SFX bus (%s, %.1f dB)"
-			% [PlayerSettings.sfx_volume, sfx_db]
+			"dragging Sound effects moves it (%s -> %s) and sets the SFX bus (%.1f dB)"
+			% [was_sfx, sfx, sfx_db]
 		)
 	)
 	await GuiInput.click(t, GuiInput.button(menu, "CONTROLS"))  # its own page (D-259)
@@ -59,20 +76,28 @@ static func run(t: SceneTree, check: Callable, layout: FlowLayout, main: Node) -
 	check.call(
 		(
 			cfg.load(PlayerSettings.PATH) == OK
-			and is_equal_approx(Num.f(cfg.get_value("display", "ui_scale")), 1.15)
+			and is_equal_approx(Num.f(cfg.get_value("display", "ui_scale")), want)
 		),
 		"the UI scale is saved to settings.cfg"
 	)
 	PlayerSettings.sfx_volume = -1.0
 	PlayerSettings.load_saved(false)
 	check.call(
-		is_equal_approx(PlayerSettings.sfx_volume, 0.7),
+		is_equal_approx(PlayerSettings.sfx_volume, sfx),
 		"the sound-effects volume comes back after a reload (%s)" % PlayerSettings.sfx_volume
 	)
 	PlayerSettings.set_sfx_volume(Num.f(Content.section("sfx")["default_volume"]))
+	var walked: Array[float] = []
+	for _i: int in scales.size():
+		PlayerSettings.next_ui_scale()
+		walked.append(PlayerSettings.ui_scale)
+	check.call(
+		walked.back() == want and scales.all(func(s: float) -> bool: return walked.has(s)),
+		"UI scale steps through every scale and wraps round (%s)" % [walked]
+	)
+	PlayerSettings.ui_scale = scales[scales.size() - 1]
 	PlayerSettings.next_ui_scale()
-	PlayerSettings.next_ui_scale()
-	check.call(PlayerSettings.ui_scale == 1.0, "UI scale wraps back to 100%")
+	check.call(PlayerSettings.ui_scale == scales[0], "UI scale wraps from the last to the first")
 	main.queue_free()
 	for _i: int in 2:
 		await t.process_frame

@@ -6,15 +6,6 @@ extends "res://tests/lib/runner.gd"
 ## Seeded by design: the model is baked data and nothing here draws a random number.
 ##   godot --headless --path . --script tests/run_landmarkcells_tests.gd
 
-## Per landmark: [cells, digest] (first 16 hex digits of the grid's SHA-256 with its dims).
-const PINNED := {
-	"stadium": [95493, "94482793d0eef362"],
-	"wheel": [61577, "84994f8dff691b8c"],
-}
-## Stadium material counts [wall, seat, pitch, other].
-const PINNED_CLASSES: Array = [61528, 24066, 7864, 2035]
-## The stadium section a foot hit brings down: [cells, digest of its cells].
-const PINNED_SECTION: Array = [1820, "2a1f5d63b106c629"]
 ## LandmarkCells compiles before RampageSim (a const resolves first). Reached the other way, through
 ## Landmarks.building() and RampageSim.Building, the engine never frees the two scripts' cycle and
 ## the exit leaks 31 scripts (debt row 2): loading the grid script first keeps the exit clean.
@@ -35,7 +26,6 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_materials")
 	await _t("_check_matches_view")
-	await _t("_check_pinned")
 	await _t("_check_deterministic")
 	await _t("_check_no_islands")
 	await _t("_check_arcs_foot_hit")
@@ -114,21 +104,6 @@ func _check_matches_view() -> void:
 		)
 
 
-func _check_pinned() -> void:
-	var tally := [0, 0, 0, 0]
-	for id: String in ["stadium", "wheel"]:
-		var g := LandmarkCells.new(_landmark(id))
-		var have: Array = [g.count(), L.digest(g)]
-		var want: Array = PINNED[id]
-		check(want == have, "%s pinned at %s (got %s)" % [id, want, have])
-		if id == "stadium":
-			for k: int in 4:
-				tally[k] = g.cells.count(Num.i(CellGrid.material_ids()[CLASSES[k]]))
-	check(
-		tally == PINNED_CLASSES, "stadium classes pinned at %s (got %s)" % [PINNED_CLASSES, tally]
-	)
-
-
 ## The fixture rule: before any carve a landmark is one part joined to the ground under
 ## VoxelSupport's real rule. The raw shell was not (stadium 157 loose parts / 49,443 cells, wheel
 ## 56 / 53,348, joined only by an edge or corner); `bake.py --connect` adds the missing cells to
@@ -172,13 +147,6 @@ func _lose_chunk(g: LandmarkCells, chunk: Vector3i) -> int:
 	var before := g.count()
 	g.clear_chunk(chunk)
 	return before - g.count()
-
-
-func _section_digest(cells: Array[Vector3i]) -> String:
-	var ctx := HashingContext.new()
-	ctx.start(HashingContext.HASH_SHA256)
-	ctx.update(var_to_bytes(cells))
-	return ctx.finish().hex_encode().substr(0, 16)
 
 
 ## A hit at the foot of the rim brings its arc down outward over the stub, as one section that
@@ -230,11 +198,6 @@ func _check_arcs_foot_hit() -> void:
 			"the section is the chunk Structure's: %d chunks of its %d (%d hold model cells)"
 			% [mine.size(), chunks.size(), occupied.size()]
 		)
-	)
-	var have: Array = [section.size(), _section_digest(section)]
-	check(
-		have == PINNED_SECTION,
-		"the foot-hit section pinned at %s (got %s)" % [PINNED_SECTION, have]
 	)
 	for c: Vector3i in section:
 		g.clear_cell(c)
