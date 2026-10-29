@@ -35,7 +35,7 @@ record); nothing is appended as a log. D-310 order: debt fixes, then parked work
    and rise clips (#398), collar bones (#410), claw rake (#332), beam_jaw (#392), Colossus helper joints (#396).
    Open: the 29 FIX clips of the grown
    croc verdicts; the baby jaw (neck0-2 split into game bones); the Komodo and serpent clips wait with their species.
-2. **Bay-coast junction spacing (director 2026-10-29, after #413):** at stage 2 the diagonal crosses the young bay's coast road (z -60) 2-9 m from a seeded north-south street on every map seed; CityLines lays the bay's pinned z-lines without the diagonal-crossing rule the other z-lines get. Fix it in city-gen and remove city audit's _at_bay_coast exemption.
+2. **Bay-coast junction spacing (director 2026-10-29, after #413):** fixed in city-gen: CityLineFit.x_rule keeps the diagonal's crossings an avenue's clearance off the bay's pinned back street (z -7), as it does the ring z-lines; city audit "close!" holds on every seed with no exemption (the _at_bay_coast one never reached main). PR open, claude/bay-coast-junctions.
 3. **Destruction (D-327, in the demo):** stage 1 (carved buildings drawn from the sim's cells, #328) and stage 2 (native
    carve colliders, merged falling islands; render items 10 and 11, #381) are on main. Open: landmarks carve on cells and
    river/bay bridges become carved structures (carve is universal, director 2026-10-26; tests/run_structures_tests.gd

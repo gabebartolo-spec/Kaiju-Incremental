@@ -135,7 +135,7 @@ static func _pos_ok(p: int, rule: Dictionary) -> bool:
 	if str(rule.get("axis", "")) == "x":
 		var diag: Dictionary = rule["diag"]
 		var c := crossing(diag, float(p))
-		for z: float in rule["ring_z"]:
+		for z: float in rule["fixed_z"]:
 			if absf(c - z) < Num.f(rule["s_avenue"]):
 				return false
 	return true
@@ -150,10 +150,10 @@ static func _gap_ok(a: float, b: float, rule: Dictionary) -> bool:
 	var cb := crossing(diag, b)
 	if absf(cb - ca) < need:
 		return false
-	# A ring z-line between the two crossings is a z-line fixed in place: the z-lines either side
+	# A ring or pinned z-line between the two crossings is a z-line fixed in place: the z-lines either side
 	# of it must still reach it in one gap (z_cap), so neither crossing lies too far from it.
 	var cap := Num.f(rule["z_cap"])
-	for r: float in rule["ring_z"]:
+	for r: float in rule["fixed_z"]:
 		if (r - ca) * (r - cb) < 0.0:
 			if absf(r - ca) > cap - _s_of(a, rule) or absf(r - cb) > cap - _s_of(b, rule):
 				return false
@@ -178,13 +178,18 @@ static func crossing(diag: Dictionary, x: float) -> float:
 	return at.y + (x - at.x) * dir.y / dir.x
 
 
-## The x-lines' rule: rings are the district ring lines (both axes share them); z_cap the widest
-## z gap CityLines fits (the z-lines' own max(hi, 2 lo - 1)).
+## The x-lines' rule: rings are the district ring lines (both axes share them); fixed_z those and
+## the sea bay's pinned z-lines (CityHarbour.pins: the back street), which no fitted z-line can
+## dodge the diagonal for, so the x-lines keep its crossings an avenue's clearance off them; z_cap
+## the widest z gap CityLines fits (the z-lines' own max(hi, 2 lo - 1)).
 static func x_rule(cfg: Dictionary, diag: Dictionary, rings: Array[float]) -> Dictionary:
 	var ring_z: Array[float] = []
 	for r: float in rings:
 		ring_z.append(r)
 		ring_z.append(-r)
+	var fixed_z := ring_z.duplicate()
+	var pinned: Array[float] = CityHarbour.pins(cfg)["z"]
+	fixed_z.append_array(pinned)
 	var s := _clearances(cfg)
 	var short: Array = cfg["block_short"]
 	var z_cap := maxi(Num.i(short[1]), 2 * Num.i(short[0]) - 1)
@@ -192,6 +197,7 @@ static func x_rule(cfg: Dictionary, diag: Dictionary, rings: Array[float]) -> Di
 		"axis": "x",
 		"diag": diag,
 		"ring_z": ring_z,
+		"fixed_z": fixed_z,
 		"s_street": s[0],
 		"s_avenue": s[1],
 		"z_cap": float(z_cap),
