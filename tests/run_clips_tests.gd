@@ -195,6 +195,25 @@ func _check_walk_phase() -> void:
 	await process_frame
 
 
+## The sim eases a standing kaiju round 90 deg left (like the capture, rotation.y at dt x 10): the
+## turn clip it starts, "" when the body only slid round.
+func _eased_turn(stage: String) -> String:
+	var kaiju := _model("reptilian", stage)
+	kaiju.scale = Vector3.ONE * (0.5 if stage == "baby" else 1.3)
+	var rig := _rig_of(kaiju)
+	var gait: ClipGait = rig.gait
+	var turned := ""
+	for frame: int in 30:
+		_step(kaiju, rig)
+	for frame: int in 240:
+		kaiju.rotation.y = lerpf(kaiju.rotation.y, PI * 0.5, minf(1.0, DT * 10.0))
+		_step(kaiju, rig)
+		if gait.state.begins_with("turn") and turned.is_empty():
+			turned = gait.state
+	kaiju.queue_free()
+	return turned
+
+
 ## Standing, a 90 deg heading change plays the turn clip to that side and ends facing the new
 ## heading; a roar plays, drops the jaw (the skin shows the mouth) and settles back to idle. No
 ## bone transform goes NaN or infinite at any frame.
@@ -220,6 +239,15 @@ func _check_turn_and_roar() -> void:
 			% [turned, facing]
 		)
 	)
+	for stage: String in ["baby", "adult"]:
+		turned = _eased_turn(stage)
+		check(
+			turned == "turn_left",
+			(
+				"standing, a %s eased round 90 deg left by the sim plays the left turn clip (%s)"
+				% [stage, turned]
+			)
+		)
 	kaiju.roar()
 	var opened := false
 	for frame: int in 420:

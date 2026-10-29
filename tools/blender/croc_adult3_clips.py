@@ -214,6 +214,151 @@ for i in range(M):
     toes = [inv @ (ft - root - lead) for ft in feet]
     frames.append((quats, off, toes, planted, math.degrees(yaw), root))
     lows.append("".join("L" if planted[0] else "-") + ("R" if planted[1] else "-"))
+# Cascadeur can solve the same keys a little differently on the second stride, so a loop's last frame need not lead
+# back into its first: the baby walk's knee snapped 10-24 deg at the seam. The mismatch (the frame after the last
+# against the first) is eased out over the last SEAM clip frames.
+SEAM = 20
+if MODE == "walk" and M > 2 * SEAM:
+    world, pelvis = raw[M + 1][0], raw[M + 1][1]
+    end = []
+    for g in GAME_BONES:
+        par = first[g].parent
+        pg = game_bone(par.name) if par is not None else None
+        end.append(((world[pg].inverted() @ world[g]) if pg else world[g]).normalized())
+    end_off = pelvis - travel - lead - heads["spine0"]
+    gaps = [(frames[0][0][b] @ end[b].inverted()).normalized() for b in range(len(GAME_BONES))]
+    worst_seam = max(min(q.angle, 2 * math.pi - q.angle) for q in gaps)
+
+    def ramp(i, a, b):  # 0 before frame a, smoothstep up to 1 at frame b, 1 after
+        s = min(max((i - a + 1) / (b - a + 1), 0.0), 1.0)
+        return s * s * (3.0 - 2.0 * s)
+
+    # A leg takes its mismatch (mostly the knee swinging about the hip-ankle line) from its last swing on, with the
+    # ankle and foot kept where they were keyed, so a planted foot never slides (the baby's right foot was dragged in
+    # stance, the walk's first second in game); the rest of the body eases over the last SEAM.
+    window = {g: (M - SEAM, M) for g in GAME_BONES}
+    for s, sd in enumerate(("l", "r")):
+        e = M - 1
+        while e > 0 and frames[e][3][s]:
+            e -= 1
+        a = e
+        while a > 0 and not frames[a - 1][3][s]:
+            a -= 1
+        if 0 < a <= e:
+            window.update({g: (a, e + 1) for g in GAME_BONES if g.startswith(f"leg_{sd}")})
+            print(f"SEAM leg_{sd} eased over its swing f{a}-{e}")
+    PARENT = {}
+    for g in GAME_BONES:
+        par = first[g].parent
+        PARENT[g] = game_bone(par.name) if par is not None else None
+    IDX = {g: b for b, g in enumerate(GAME_BONES)}
+
+    def fk(qs, off, root=V((0.0, 0.0, 0.0))):  # world turns and heads, rebuilt from a clip frame as the game does
+        wq, head = {}, {}
+        for b, g in enumerate(GAME_BONES):
+            pg = PARENT[g]
+            wq[g] = (wq[pg] @ qs[b]) if pg else qs[b]
+            head[g] = (head[pg] + wq[pg] @ (heads[g] - heads[pg])) if pg else off + heads["spine0"] + root
+        return wq, head
+
+    # Where each foot's last landing must move (ankle, body frame) and turn so its stance runs on into frame 0's.
+    w0, h0 = fk(frames[0][0], frames[0][1])
+    wM, hM = fk(end, end_off)
+    land = {sd: (h0[f"leg_{sd}2"] - hM[f"leg_{sd}2"], (w0[f"leg_{sd}2"] @ wM[f"leg_{sd}2"].inverted()).normalized())
+            for sd in ("l", "r")}
+    print("SEAM landing moved " + " ".join(f"{sd} {m.length:.2f} m {math.degrees(min(q.angle, 2 * math.pi - q.angle)):.1f} deg"
+                                         for sd, (m, q) in land.items()))
+
+    # The stance across the seam meets halfway: the last landing moves half the gap on, the first lift-off half back
+    # (each eased in over that swing), so no leg reaches far.
+    first_swing = {}
+    for s, sd in enumerate(("l", "r")):
+        a = 0
+        while a < M and frames[a][3][s]:
+            a += 1
+        e = a
+        while e < M and not frames[e][3][s]:
+            e += 1
+        if 0 < a < e < M:
+            first_swing[sd] = (a, e)
+
+    def shift_of(i, sd):
+        w = 0.5 * ramp(i, *window[f"leg_{sd}0"])
+        if sd in first_swing:
+            w -= 0.5 * (1.0 - ramp(i, *first_swing[sd]))
+        return w
+
+    def pin_leg(qs, raw_qs, off, sd, w):
+        """The eased leg's knee swing onto the keyed ankle and foot, moved w of the seam's gap (two-bone IK in the plane
+        of the eased knee)."""
+        t, sh, ft = (f"leg_{sd}{k}" for k in range(3))
+        wq, head = fk(qs, off)
+        rq, rhead = fk(raw_qs, off)
+        move, turn = land[sd]
+        hip, ankle = head[t], rhead[ft] + move * w
+        foot = (Quaternion().slerp(turn if w > 0 else turn.inverted(), abs(w)) @ rq[ft]).normalized()
+        reach[0] = max(reach[0], (ankle - hip).length / (l1 + l2) if (l1 := (heads[sh] - heads[t]).length) and
+                       (l2 := (heads[ft] - heads[sh]).length) else 0.0)
+        l1, l2 = (heads[sh] - heads[t]).length, (heads[ft] - heads[sh]).length
+        axis = ankle - hip
+        d = min(max(axis.length, abs(l1 - l2) + 1e-6), l1 + l2 - 1e-6)
+        u = axis.normalized()
+        pole = head[sh] - hip
+        pole = (pole - u * pole.dot(u)).normalized()
+        a = (l1 * l1 + d * d - l2 * l2) / (2 * d)
+        knee = hip + u * a + pole * math.sqrt(max(l1 * l1 - a * a, 0.0))
+        tw = ((head[sh] - hip).rotation_difference(knee - hip) @ wq[t]).normalized()
+        sw0 = (tw @ qs[IDX[sh]]).normalized()
+        sw = ((sw0 @ (heads[ft] - heads[sh])).rotation_difference(ankle - knee) @ sw0).normalized()
+        out = list(qs)
+        out[IDX[t]] = (wq[PARENT[t]].inverted() @ tw).normalized()
+        out[IDX[sh]] = (tw.inverted() @ sw).normalized()
+        out[IDX[ft]] = (sw.inverted() @ foot).normalized()
+        out[IDX[f"leg_{sd}3"]] = raw_qs[IDX[f"leg_{sd}3"]]
+        return out
+
+    before, reach = list(frames), [0.0]
+    for i in range(M):
+        qs, off, toes, planted, yaw, root = frames[i]
+        off = off + (frames[0][1] - end_off) * ramp(i, M - SEAM, M)
+        eased = [(Quaternion().slerp(gaps[b], ramp(i, *window[g])) @ qs[b]).normalized() for b, g in enumerate(GAME_BONES)]
+        for s, sd in enumerate(("l", "r")):
+            w = shift_of(i, sd)
+            if w != 0.0 or ramp(i, *window[f"leg_{sd}0"]) > 0.0:
+                eased = pin_leg(eased, qs, off, sd, w)
+        frames[i] = (eased, off, toes, planted, yaw, root)
+    print(f"SEAM worst turn gap {math.degrees(worst_seam):.1f} deg, pelvis gap {(frames[0][1] - end_off).length:.3f} m,"
+          f" worst leg reach {reach[0]:.3f} of its length, first swings {first_swing}")
+
+    def fk_toes(rec):  # both toe tips
+        wq, head = fk(rec[0], rec[1], rec[5])
+        return [head[f"leg_{sd}3"] + wq[f"leg_{sd}3"] @ (skin(AW @ last[f"leg_{sd}3"].tail_local) - heads[f"leg_{sd}3"])
+                for sd in ("l", "r")]
+
+    def knee_swing(recs):  # worst frame-to-frame turn of the shins, the loop seam included
+        wqs = [fk(r[0], r[1])[0] for r in recs]
+        return [max((math.degrees(wqs[i][f"leg_{sd}1"].rotation_difference(wqs[(i + 1) % M][f"leg_{sd}1"]).angle), i)
+                    for i in range(M)) for sd in ("l", "r")]
+
+    for name, recs in (("before", before), ("after", frames)):
+        (lw, lf), (rw, rf) = knee_swing(recs)
+        print(f"SEAM shin worst turn/frame {name}: l {lw:.1f} at f{lf} r {rw:.1f} at f{rf} deg")
+        tips = [fk_toes(r) for r in recs]
+        runs = []  # each stance: (side, first frame, last frame, how far the toe drifts from where it landed)
+        for s in range(2):
+            i = 0
+            while i < M:
+                if recs[i][3][s]:
+                    j = i
+                    while j + 1 < M and recs[j + 1][3][s]:
+                        j += 1
+                    runs.append((s, i, j, max((tips[k][s] - tips[i][s]).xz.length for k in range(i, j + 1))))
+                    i = j + 1
+                else:
+                    i += 1
+        print(f"SEAM stance drift {name}: " + " ".join(f"{'lr'[s]} f{a}-{b} {d:.2f}" for s, a, b, d in runs) + " m")
+    print("SEAM gaps deg: " + " ".join(f"{g} {math.degrees(min(q.angle, 2 * math.pi - q.angle)):.1f}"
+                                       for g, q in zip(GAME_BONES, gaps) if min(q.angle, 2 * math.pi - q.angle) > 0.02))
 
 
 def mirror(rec):
@@ -254,11 +399,14 @@ def drop(name):
             o["first"] -= c["frames"]
 
 
+# A walk may hold several strides (the baby's 90 frames hold two): one per lift of the left foot, so the
+# game's stride_m is one cycle's travel and its step clock does not run at half the keyed pace.
+cycles = max(1, sum(1 for k in range(M) if frames[k - 1][3][0] and not frames[k][3][0])) if MODE == "walk" else 1
 clips = [(NAME, frames)] + ([(MIRROR[NAME], [mirror(r) for r in frames])] if MODE in ("turn", "layer") else [])
 for name, recs in clips:
     drop(name)
     start = sum(c["frames"] for c in header["clips"])
-    entry = {"name": name, "first": start, "frames": M, "loop": MODE == "walk" or name == "idle", "cycles": 1,
+    entry = {"name": name, "first": start, "frames": M, "loop": MODE == "walk" or name == "idle", "cycles": cycles,
              "source": f"{Path(bpy.data.filepath).name} keyed frames {FIRST}..{FIRST + N - 1} at {KEYED_FPS} fps"}
     if name == "roar":  # the beam holds the jaw at its widest; the keyed roar arches its tail up, it never slams
         jaw = GAME_BONES.index("jaw")
@@ -271,7 +419,7 @@ for name, recs in clips:
     header["clips"].append(entry)
     body += pack(recs)
 if MODE == "walk":
-    header["stride_m"] = round(travel.length, 4)
+    header["stride_m"] = round(travel.length / cycles, 4)
 hb = json.dumps(header, separators=(",", ":")).encode()
 OUT.write_bytes(b"KCLP" + struct.pack("<II", 1, len(hb)) + hb + bytes(body))
 print(f"CLIP {NAME} ({MODE}) {M} frames at {header['fps']} fps from keyed {FIRST}..{FIRST + N - 1}; rest heads vs "

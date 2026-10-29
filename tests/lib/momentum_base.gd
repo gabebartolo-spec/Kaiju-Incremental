@@ -6,7 +6,7 @@ const NORTH := Vector2(0.0, -1.0)
 const EAST := Vector2(1.0, 0.0)
 ## The charge: the croc at (0, 30) walks north CHARGE_S; the first building's near face stands
 ## LEAD beyond his snout (he meets it at full momentum), the rest of a row GAP apart.
-const CHARGE_S := 10.0  # his walk (about 3.3 units a second) clears the row
+const CHARGE_S := 13.0  # his walk (about 2.75 units a second, young speed 0.5) clears the row
 const LEAD := 9.0
 const GAP := 6.0
 const ROW := 4
