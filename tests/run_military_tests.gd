@@ -120,13 +120,32 @@ func _check_rampages() -> void:
 								if not diag_was.has(key) and diag_n < 12:
 									diag_n += 1
 									print(
-										"DIAG touch tier %d seed %d step %d kaiju %v kvel %v parts %s"
-										% [tier, seed, steps, sim.kaiju_pos,
-										sim.army_units.convoy.kaiju_vel,
-										_diag_parts(tank.pos, hu, other.pos, hw, sim.kaiju_pos)]
+										(
+											"DIAG touch tier %d seed %d step %d kaiju %v kvel %v parts %s"
+											% [
+												tier,
+												seed,
+												steps,
+												sim.kaiju_pos,
+												sim.army_units.convoy.kaiju_vel,
+												_diag_parts(
+													tank.pos, hu, other.pos, hw, sim.kaiju_pos
+												)
+											]
+										)
 									)
-									print("DIAG  A " + _diag_state(sim, tank, last.get(tank.id, tank.pos)))
-									print("DIAG  B " + _diag_state(sim, other, last.get(other.id, other.pos)))
+									print(
+										(
+											"DIAG  A "
+											+ _diag_state(sim, tank, last.get(tank.id, tank.pos))
+										)
+									)
+									print(
+										(
+											"DIAG  B "
+											+ _diag_state(sim, other, last.get(other.id, other.pos))
+										)
+									)
 							closest = minf(closest, tank.pos.distance_to(other.pos))
 					var d := tank.pos.distance_to(sim.kaiju_pos)
 					var was: Vector2 = last.get(tank.id, Vector2(INF, INF))
