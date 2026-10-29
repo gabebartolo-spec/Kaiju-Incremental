@@ -375,6 +375,11 @@ state. No director clips or per-change approvals in between; clips only where mo
   22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
   Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: done 2026-10-23: it was the
   test's start pose inside the neighbouring towers, not the sim (PR #168, tests only).
+- Bay-coast junction spacing (director 2026-10-29: "city-gen junction spacing at the bay coast, fixed separately"):
+  on the 1.5x city, at stage 2, the diagonal crosses the young bay's coast road (z -60) 2-9 m from a seeded
+  north-south street on every map seed (city audit "close!"). CityLines lays the bay's pinned z-lines without the
+  diagonal-crossing rule the other z-lines get. Fix it in city-gen and remove the city audit's _at_bay_coast
+  exemption. Owner: lead's builder. Status: open.
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).

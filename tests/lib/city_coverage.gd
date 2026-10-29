@@ -55,6 +55,7 @@ static func measure(
 		cover.call(Rect2(at.x - sz.x * 0.5, at.z - sz.z * 0.5, sz.x, sz.z), dressed)
 	var coast := Num.f(cfg["coast_z"])
 	var river: Vector2 = plan.get("river", Vector2(INF, -INF))  # water, like the bay (D-083)
+	var bay: Rect2 = plan.get("bay", Rect2())  # the sea bay's water and quays (CityHarbour)
 	var empty: Array[Vector2] = []
 	var lines: PackedStringArray = []
 	var checked := 0
@@ -64,7 +65,8 @@ static func measure(
 		for i: int in n:
 			var c := Vector2i(i, j)
 			var centre := Vector2(origin + (i + 0.5) * size, origin + (j + 0.5) * size)
-			if not road.has(c) or centre.y < coast or (centre.y > river.x and centre.y < river.y):
+			var wet := (centre.y > river.x and centre.y < river.y) or bay.has_point(centre)
+			if not road.has(c) or centre.y < coast or wet:
 				line += " "
 				continue
 			checked += 1

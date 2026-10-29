@@ -18,13 +18,15 @@ const FRAMES := 600
 ## blocks, the diagonal mid-block and quay sheds by the bank change the plan and its lots; street
 ## life and its tuning untouched; -> c898fced4ad97159, D-254: the 1.5x play area and its spread
 ## landmarks change the stage-1 plan; the native walk the replay runs is untouched;
-## -> 9841a2be615dcf7a, re-pinned on the merge with main 10-28, CI 40647230489, replays equal).
-const PINNED := "9841a2be615dcf7a"
+## -> 9841a2be615dcf7a, re-pinned on the merge with main 10-28, CI 40647230489, replays equal;
+## main's sea bay (D-377) pinned 9a649408e1b35f5d on the old city -> 0529f1dc3a5467f7, the bay's
+## streets on the 1.5x plan (young coast z -60), merged 10-29, replays equal).
+const PINNED := "0529f1dc3a5467f7"
 ## Frames of the buffer tests: five seconds of the street, with stomps, a brace and a blockade.
 const BUFFER_FRAMES := 300
 const STRIDE := 12  # floats of a 3D transform in a MultiMesh buffer
 ## Frames of the native walk check: long enough for officers to hold, flee and leave.
-const WALK_FRAMES := 1500
+const WALK_FRAMES := 1800
 
 
 func suite_name() -> String:
@@ -266,8 +268,8 @@ func _check_people_bounds() -> void:
 ## With the extension the civilians walk natively (KaijuWalk, item 7), and every frame the street
 ## is the GDScript loop's: people, random streams and totals, through stomps, braces, a blockade
 ## and officers that run far enough to leave. The replay's straight line never reaches a
-## blockade, so the kaiju turns toward the first officer's post (measured: the blockade breaks at
-## frame ~480 and the first officer leaves at ~1085 of WALK_FRAMES).
+## blockade, so the kaiju turns toward the first officer's post (measured on the 1.5x city with
+## the sea bay: the first officer is out at frame 353 and the first leaves at 1598 of WALK_FRAMES).
 func _check_walk_native() -> void:
 	if not StreetDraw.available():
 		check(true, "skipped: no native library")

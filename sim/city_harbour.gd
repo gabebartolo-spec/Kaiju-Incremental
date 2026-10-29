@@ -49,6 +49,8 @@ static func in_any(cfg: Dictionary, rect: Rect2) -> bool:
 	var top := -Num.f(cfg["outer_half"]) - 1.0
 	for at: Array in cfg["harbour"]["bays"]:
 		var half := Num.f(at[0])
+		if Num.f(at[1]) <= top:
+			continue  # an older stage's bay lies past this young city's north edge
 		if Rect2(-half, top, half * 2.0, Num.f(at[1]) - top).intersects(rect.grow(-0.01)):
 			return true
 	return false
@@ -93,6 +95,8 @@ static func touches_any(cfg: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var top := -Num.f(cfg["outer_half"]) - 1.0
 	for at: Array in cfg["harbour"]["bays"]:
 		var half := Num.f(at[0])
+		if Num.f(at[1]) <= top:
+			continue  # an older stage's bay lies past this young city's north edge
 		if Rect2(-half, top, half * 2.0, Num.f(at[1]) - top).grow(0.01).has_point((a + b) * 0.5):
 			return true
 	return false

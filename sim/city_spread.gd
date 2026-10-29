@@ -63,11 +63,10 @@ static func landmarks(
 	var out: Array[Dictionary] = []
 	for spec: Dictionary in pool:
 		var shape: Dictionary = shapes[str(spec["id"])]
-		if spec.has("anchor"):  # pinned where the spec says (a test fixture's own plan)
+		if spec.has("anchor"):  # its designated spot (D-375), or the nearest cell that fits
 			var at: Array = spec["anchor"]
-			var pinned := CitySites.site_at(
-				plan, spec, shape, Vector2(Num.f(at[0]), Num.f(at[1])), axes
-			)
+			var spot := Vector2(Num.f(at[0]), Num.f(at[1]))
+			var pinned := _nearest(plan, spec, shape, spot, axes, out)
 			if not pinned.is_empty():
 				out.append(pinned)
 			continue
@@ -84,6 +83,52 @@ static func landmarks(
 				taken[k] += 1
 				break
 	return out
+
+
+## An anchored landmark's site: at its spot, else in the cell of the spot's district nearest it
+## where it fits clear of the sites placed before it (the diagonal or a sea bay can cross the
+## spot on some seeds); {} if none fits.
+static func _nearest(
+	plan: Dictionary,
+	spec: Dictionary,
+	shape: Dictionary,
+	spot: Vector2,
+	axes: Array,
+	placed: Array[Dictionary]
+) -> Dictionary:
+	var along_x: Dictionary = axes[0]
+	var cfg: Dictionary = along_x["cfg"]
+	var site := CitySites.site_at(plan, spec, shape, spot, axes)
+	if not site.is_empty() and _clear(site, placed):
+		return site
+	var xs: Array[float] = plan["xs"]
+	var zs: Array[float] = plan["zs"]
+	var ring := CityGen.district_of(Rect2(spot, Vector2.ZERO), cfg)
+	var cells: Array[Vector2] = []
+	for i: int in xs.size() - 1:
+		for j: int in zs.size() - 1:
+			cells.append(Vector2((xs[i] + xs[i + 1]) * 0.5, (zs[j] + zs[j + 1]) * 0.5))
+	cells.sort_custom(
+		func(a: Vector2, b: Vector2) -> bool:
+			var da := a.distance_squared_to(spot)
+			var db := b.distance_squared_to(spot)
+			return da < db if da != db else (a.x < b.x if a.x != b.x else a.y < b.y)
+	)
+	for at: Vector2 in cells:
+		site = CitySites.site_at(plan, spec, shape, at, axes)
+		if not site.is_empty() and Num.i(site["district"]) == ring and _clear(site, placed):
+			return site
+	return {}
+
+
+## True when the site's plaza overlaps none of the placed sites'.
+static func _clear(site: Dictionary, placed: Array[Dictionary]) -> bool:
+	var outer: Rect2 = site["outer"]
+	for other: Dictionary in placed:
+		var theirs: Rect2 = other["outer"]
+		if outer.grow(-0.01).intersects(theirs):
+			return false
+	return true
 
 
 ## Roughly where the kaiju rises: the middle of the stage's sea bay's coast road (CityHarbour,

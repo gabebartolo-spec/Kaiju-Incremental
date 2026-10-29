@@ -238,13 +238,7 @@ func _check_growth_matters() -> void:
 			]
 		)
 	)
-	check(
-		Num.i(on["rubble"]) > Num.i(off["rubble"]) and Num.f(on["destruction"]) < 1.0,
-		(
-			"growth on: more rubble (%d vs %d) and city left to destroy (%.0f%%)"
-			% [on["rubble"], off["rubble"], Num.f(on["destruction"]) * 100.0]
-		)
-	)
+	# No rubble on-vs-off check (director 2026-10-29: rubble scaling is balance, tuned later).
 
 
 ## clock > 0 replaces the run's clock (s) for a fixture that sets its own.
