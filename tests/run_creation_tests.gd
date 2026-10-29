@@ -280,8 +280,9 @@ func _check_rack_reads_save() -> void:
 		and Demo.allows(species)
 		and str(Content.species_def(species)["id"]) == species
 	)
+	var shown: bool = opened["locked"] == false and opened["selectable"] == playable
 	check(
-		opened["locked"] == false and opened["selectable"] == playable,
+		shown,
 		(
 			"a %s unlocked in the save reads unlocked, pickable only with a species to play: %s"
 			% [id, opened]

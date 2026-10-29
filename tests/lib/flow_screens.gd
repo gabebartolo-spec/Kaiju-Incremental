@@ -312,7 +312,7 @@ func _check_evolution_and_continue() -> void:
 		var shown: Array[String] = []
 		for node: Node in reveal.find_children("*", "Label", true, false):
 			shown.append((node as Label).text)
-		var named := EvolutionReveal.title_of(tree.tree.defs["evolve1"]).to_upper()
+		var named := EvolutionReveal.title_of(tree.tree.defs["evolve1"] as Dictionary).to_upper()
 		check.call(
 			named != "" and shown.has(named),
 			"the reveal is titled by the node bought (D-051, %s): %s" % [named, shown]
