@@ -3,7 +3,7 @@ and jaw layered in Blender, D-228) into the adult croc's .kclip (scenes/kaiju_cl
 tools/blender/motion_test.py clips_export()): per frame the 27 game bones' local turns, the pelvis offset, both toe tips
 and the planted bits, in the croc_adult3_export.py frame (turned to face -Y, 100 m tall, origin on the ground under the
 pelvis).
-    blender -b <move>.blend --python tools/blender/croc_adult3_clips.py -- <x.kclip> <name> <first> <frames> <mode>
+    blender -b <move>.blend --python tools/blender/croc_adult3_clips.py -- <x.kclip> <name> <first> <frames> <mode>         [<hit> <trail from> <trail to>]
 <first> and <frames> are keyed frames (30 fps), <first> counted from the blend's first frame. A missing <x.kclip> is
 started at 30 fps (header from the rig); an existing one keeps its fps (the Blender clips' 24): the keys are resampled to
 it (turns slerped, points blended between the two nearest keyed frames), and a clip of the same name is replaced. Modes:
@@ -12,6 +12,10 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
   in place and the game's step clock moves the body (header stride_m = that travel).
 - turn: a turn on the spot; the root yaw is the pelvis heading (stored per frame, the game turns the body by it) and is
   taken out of the pose. The mirrored turn is appended too (turn_left <-> turn_right).
+- layer: in place as keyed, played over the other clips on the arms and torso (ClipRake: the claw rake, D-185); its
+  entry carries "layer": true, the hit frame (the claw crosses the snout line, where the sim's rake lands) and the
+  trail's first and last frames (the streak, D-243), given as keyed frames from <first> and stored as clip frames.
+  The mirrored rake is appended too (rake_r <-> rake_l).
 A foot is planted while its toe tip is within PLANT_UP of its rest height and moves under PLANT_SLIDE to the next frame
 (world): from the keyed contact until the toe tip peels off (the walk's stance, as the game locks the toe tip).
 r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
@@ -28,14 +32,16 @@ from mathutils import Matrix, Quaternion, Vector as V
 
 a = sys.argv[sys.argv.index("--") + 1:]
 OUT, NAME, FIRST, N, MODE = Path(a[0]), a[1], int(a[2]), int(a[3]), a[4]
-assert MODE in ("still", "walk", "turn"), MODE
+assert MODE in ("still", "walk", "turn", "layer"), MODE
+MARKS = [float(x) for x in a[5:8]]  # layer: hit, trail from, trail to (keyed frames from FIRST)
+assert MODE != "layer" or len(MARKS) == 3, "layer needs <hit> <trail from> <trail to>"
 KEYED_FPS = 30
 PLANT_UP = 0.1  # m (100 m model): toe tip height over its rest height that still counts as down
 PLANT_SLIDE = 0.5  # m a keyed frame: a planted toe tip holds still (the peel moves it 0.25, a swing metres)
 BASE_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
               "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [f"tail{i}" for i in range(9)] + ["jaw"]
 IDENTITY = struct.pack("<4h", 0, 0, 0, 32767)
-MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left"}
+MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "rake_r": "rake_l", "rake_l": "rake_r"}
 arm = bpy.data.objects["croc_rig"]; ad = arm.data
 mesh = bpy.data.objects["croc_mesh"]; me = mesh.data
 scene = bpy.context.scene
@@ -245,7 +251,7 @@ def drop(name):
 # A walk may hold several strides (the baby's 90 frames hold two): one per lift of the left foot, so the
 # game's stride_m is one cycle's travel and its step clock does not run at half the keyed pace.
 cycles = max(1, sum(1 for k in range(M) if frames[k - 1][3][0] and not frames[k][3][0])) if MODE == "walk" else 1
-clips = [(NAME, frames)] + ([(MIRROR[NAME], [mirror(r) for r in frames])] if MODE == "turn" else [])
+clips = [(NAME, frames)] + ([(MIRROR[NAME], [mirror(r) for r in frames])] if MODE in ("turn", "layer") else [])
 for name, recs in clips:
     drop(name)
     start = sum(c["frames"] for c in header["clips"])
@@ -255,6 +261,10 @@ for name, recs in clips:
         jaw = GAME_BONES.index("jaw")
         entry["jaw_peak"] = max(range(M), key=lambda k: min(recs[k][0][jaw].angle, 2 * math.pi - recs[k][0][jaw].angle))
         entry["tail_slam"] = False
+    if MODE == "layer":
+        entry["layer"] = True
+        entry["hit"] = round(MARKS[0] / STEP, 2)
+        entry["trail"] = [round(MARKS[1] / STEP, 2), round(MARKS[2] / STEP, 2)]
     header["clips"].append(entry)
     body += pack(recs)
 if MODE == "walk":
