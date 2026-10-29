@@ -4,6 +4,21 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-382 · Director · The rise bar counts to his first hotel down, sand walk included
+Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
+12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
+stands up out of the sea to his first beachfront hotel down; the walk across the sand counts (the sand gets umbrellas
+and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
+landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
+
+## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
+His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
+fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
+every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
+road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
+man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
+(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
+
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
 row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
@@ -377,19 +392,3 @@ keep that timing or build it sooner? A: "WTF do you mean render items come with 
 stop fucking with me. the destructions ship with the demo, the destruction is the game". So: D-094's "after demo exe 2"
 is reversed; real carving and falling pieces ship in the demo, and render plan items 10 and 11 (the physics speed-ups,
 D-311) are built now as render priority 1 work, not parked. Corrects D-311's correction note.
-
-## 2026-10-27 · D-326 · Director · Never fade out the destruction; audit cuts and keeps
-Q: falling chunks of a toppling building fade out when they pass between the camera and the kaiju; keep or cut? A:
-"Cut. ive said a thousand times, its ok to obscure the kaiju, its not ok to block the camera, please stop asking me
-questions about this, please stop making buildings fade out, the destruction IS THE GAME, NEVER FADE OUT THE
-DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-through; it may hide the kaiju. Only a
-wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
-"Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
-screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
-
-## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
-Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
-a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
-add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
-reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
-each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.

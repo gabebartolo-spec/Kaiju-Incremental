@@ -56,7 +56,8 @@ func _layout(tier: int) -> Array[Dictionary]:
 	return CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 
 
-## Every evolution opens a bigger city with taller towers: more ground, buildings and chunks.
+## Every evolution opens a bigger city with taller towers: more ground, buildings and chunks
+## (the tallest off the fixed beachfront and not a landmark: both stand the same at every stage).
 func _check_stages_grow() -> void:
 	var stages := CityGrowth.stage_count(Content.tuning())
 	check(stages == 3, "one growth stage per body, young to Colossus (%d, D-135)" % stages)
@@ -77,9 +78,11 @@ func _check_stages_grow() -> void:
 		var layout := _layout(tier)
 		var chunks := 0
 		var tallest := 0
+		var front := CityHarbour.rect_of(cfg)  # its hotels stand the same at every stage (D-381)
 		for e: Dictionary in layout:
 			chunks += Num.i(e["w"]) * Num.i(e["d"]) * Num.i(e["h"])
-			tallest = maxi(tallest, Num.i(e["h"]))
+			if not (e.has("landmark") or front.has_point(Vector2(Num.f(e["x"]), Num.f(e["z"])))):
+				tallest = maxi(tallest, Num.i(e["h"]))
 		var now := {
 			"half": Num.f(cfg["half"]),
 			"buildings": layout.size(),
@@ -105,9 +108,9 @@ func _check_districts_kept() -> void:
 	var footprints := {}
 	for e: Dictionary in _layout(3):
 		footprints[Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))] = true
-	# The Colossus's bay is wider and deeper than the baby's (city "harbour" "bays", D-377): the
-	# young lots it covers are sea at that stage, not moved. The blocks by the baby's landing
-	# give their lots to its quay sheds (CityRiver.off_quay); the landing moves with the bay.
+	# The beachfront is the same at every stage (D-381); its hotel blocks are built or stand-ins
+	# by the stage's band, so the front is left out. The blocks by the landing give their lots to
+	# its quay sheds (CityRiver.off_quay).
 	var sea := CityHarbour.rect_of(adult)
 	var quays: Array[Rect2] = []
 	for block: Dictionary in young_plan["blocks"]:

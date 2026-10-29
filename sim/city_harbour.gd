@@ -1,76 +1,46 @@
 class_name CityHarbour
 extends RefCounted
-## The sea bay the kaiju rises from at the start of every run (D-270: a crescent bay on the city's
-## north edge, a sand beach at its city end, quays on its flanks; D-373: every run starts in it;
-## director 2026-10-28: "if its easier the bay can always be in the same positon on the map,
-## fixed location"). It is laid first, as a fixed rectangle of whole blocks centred on x 0: city
-## "harbour" "bays" holds one [half, south] per stage (district), its side street lines at x
-## +-half and its coast road, the beach promenade, on the z-line at `south`. CityLines pins those
-## lines into every plan (every stage's, so the plan is the same at each); no street, alley or
-## diagonal is laid inside the stage's bay (the streets that reach it end in a T on its coast road
-## or side streets), its blocks are sea ("harbour"), and no landmark, park or plaza is chosen in
-## it. The crescent (sand, water) and the straight quays are drawn inside the rectangle; the
-## street plan never sees the curve. Part of CityGen.map, which records the bay as plan["bay"]
-## (the rectangle between the street centre lines), plan["harbour"] {cx, half, mouth, curve_from,
-## apex, rect, quay} and the rise as plan["rise_spawn"] (in the water on the centre line) and
+## The fixed beachfront the kaiju rises from at the start of every run (D-381, board v4, director
+## 2026-10-29: "build this as a bespoke, fixed location, its always the same, just have the
+## randomzied map connect to these fixed roads and environmental positions"). Everything north of
+## the back street (city "harbour" "back_z", the one street line it pins, CityLines) is the
+## front, the same at every stage: the sea, a long curved beach (sand, promenade, the beach road),
+## hotel blocks squared off between side streets from the road to the back street, and past the
+## beach's east end a man-made seawall and the working port (quay, finger piers, yard). The random
+## grid meets it on the back street: no grid street, alley or diagonal is laid north of it, and
+## no landmark, park or plaza is chosen there. Part of CityGen.map, which records the front as
+## plan["bay"] (out to the map's edges, down to the back street's centre line), plan["harbour"]
+## (its shapes) and the rise as plan["rise_spawn"] (in the water off the beach at "rise_x") and
 ## plan["rise_bank"] (on the sand straight up the beach). Pure.
 
 
-## The stage's bay row of city "harbour" "bays" ([half, south]): the district whose half-extent
-## is the city's own (the stage in play); [] without a bay.
-static func row(cfg: Dictionary) -> Array:
-	if not cfg.has("harbour"):
-		return []
-	var bays: Array = cfg["harbour"]["bays"]
-	var rings := CityGen.districts(cfg)
-	var half := CityGen.half_extent(cfg)
-	var k := 0
-	while k < rings.size() - 1 and rings[k] < half - 0.001:
-		k += 1
-	return bays[mini(k, bays.size() - 1)]
-
-
-## The bay between its street centre lines (x, z): x +-half, from past the outskirts' north edge
-## down to the coast road at `south`; an empty Rect2 without a bay.
+## The front between the street centre lines: the whole map north of the back street; an empty
+## Rect2 without one.
 static func rect_of(cfg: Dictionary) -> Rect2:
-	var at := row(cfg)
-	if at.is_empty():
-		return Rect2()
-	var half := Num.f(at[0])
-	var top := -Num.f(cfg["outer_half"]) - 1.0
-	return Rect2(-half, top, half * 2.0, Num.f(at[1]) - top)
-
-
-## True when `rect` reaches into any stage's bay (CityGen and CitySites keep landmarks, parks
-## and plazas out of every one, so the plan's picks are the same at every stage).
-static func in_any(cfg: Dictionary, rect: Rect2) -> bool:
 	if not cfg.has("harbour"):
-		return false
-	var top := -Num.f(cfg["outer_half"]) - 1.0
-	for at: Array in cfg["harbour"]["bays"]:
-		var half := Num.f(at[0])
-		if Rect2(-half, top, half * 2.0, Num.f(at[1]) - top).intersects(rect.grow(-0.01)):
-			return true
-	return false
+		return Rect2()
+	var outer := Num.f(cfg["outer_half"]) + 1.0
+	return Rect2(-outer, -outer, outer * 2.0, Num.f(cfg["harbour"]["back_z"]) + outer)
 
 
-## The street lines every plan pins, from every stage's bay: {"x": [...], "z": [...]}, so the
-## street plan is the same at every stage (only the bay in play changes).
+## True when `rect` reaches into the front (CityGen and CitySites keep landmarks, parks and plazas
+## out of it).
+static func in_any(cfg: Dictionary, rect: Rect2) -> bool:
+	var bay := rect_of(cfg)
+	return bay.has_area() and bay.intersects(rect.grow(-0.01))
+
+
+## The street lines every plan pins: {"x": [], "z": [the back street]}.
 static func pins(cfg: Dictionary) -> Dictionary:
 	var xs: Array[float] = []
 	var zs: Array[float] = []
 	if cfg.has("harbour"):
-		for at: Array in cfg["harbour"]["bays"]:
-			for x: float in [-Num.f(at[0]), Num.f(at[0])]:
-				if not x in xs:
-					xs.append(x)
-			if not Num.f(at[1]) in zs:
-				zs.append(Num.f(at[1]))
+		zs.append(Num.f(cfg["harbour"]["back_z"]))
 	return {"x": xs, "z": zs}
 
 
-## True when the street from a to b enters the bay (any part strictly within plan["bay"]):
-## it is never laid. The bay's own side streets and coast road lie on its edge and are laid.
+## True when the street from a to b enters the front (any part strictly within plan["bay"]): it
+## is never laid. The back street lies on its edge and is laid.
 static func inside(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var bay: Rect2 = plan.get("bay", Rect2())
 	# Any part of the line inside (not only its middle): a long segment can cross the bay's corner
@@ -78,27 +48,20 @@ static func inside(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
 	return bay.has_area() and bay.grow(-0.01).intersects(Rect2(a.min(b), (b - a).abs()), true)
 
 
-## True when the street from a to b lies on the bay's edge or inside it (CityAlleys: never an
-## alley, so the bay always meets a street with a pavement).
+## True when the street from a to b lies on the front's edge or inside it (CityAlleys: never an
+## alley, so the front always meets a street with a pavement).
 static func touches(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var bay: Rect2 = plan.get("bay", Rect2())
 	return bay.has_area() and bay.grow(0.01).has_point((a + b) * 0.5)
 
 
-## touches() for every stage's bay (CityAlleys: a line that edges a bay at any stage is a street
-## with a pavement at every stage, so the young city's blocks keep their kerbs as it grows).
+## touches() from the city's config alone (CityAlleys: the back street is never an alley).
 static func touches_any(cfg: Dictionary, a: Vector2, b: Vector2) -> bool:
-	if not cfg.has("harbour"):
-		return false
-	var top := -Num.f(cfg["outer_half"]) - 1.0
-	for at: Array in cfg["harbour"]["bays"]:
-		var half := Num.f(at[0])
-		if Rect2(-half, top, half * 2.0, Num.f(at[1]) - top).grow(0.01).has_point((a + b) * 0.5):
-			return true
-	return false
+	var bay := rect_of(cfg)
+	return bay.has_area() and bay.grow(0.01).has_point((a + b) * 0.5)
 
 
-## True when grid cell (i, j) lies in the bay (its centre inside plan["bay"]).
+## True when grid cell (i, j) lies in the front (its centre inside plan["bay"]).
 static func covers(plan: Dictionary, i: int, j: int) -> bool:
 	var bay: Rect2 = plan.get("bay", Rect2())
 	var xs: Array[float] = plan["xs"]
@@ -107,22 +70,19 @@ static func covers(plan: Dictionary, i: int, j: int) -> bool:
 	return bay.has_area() and bay.has_point(c)
 
 
-## Marks the bay on `plan` (CityGen.map's, its blocks laid): every block in it becomes sea
+## Marks the front on `plan` (CityGen.map's, its blocks laid): every grid block in it becomes sea
 ## ("harbour", keeping its use under "was" so CityGen.generate draws its lots the same and drops
-## them), and records its shapes and the rise. avenues_x/avenues_z: the plan's avenue line
-## indices, so the side streets' and coast road's carriageways take an avenue's width there.
+## them), its own hotel blocks are added, and its shapes and the rise are recorded. avenues_z:
+## the plan's avenue line indices, so the back street's carriageway takes an avenue's width there.
 static func mark(
-	plan: Dictionary, avenues_x: Dictionary, avenues_z: Dictionary, cfg: Dictionary
+	plan: Dictionary, _avenues_x: Dictionary, avenues_z: Dictionary, cfg: Dictionary
 ) -> void:
 	var bay: Rect2 = plan.get("bay", Rect2())
 	if not bay.has_area():
 		return
-	var xs: Array[float] = plan["xs"]
 	var zs: Array[float] = plan["zs"]
-	var side_kind := CityGen.AVENUE if avenues_x.has(xs.find(bay.position.x)) else CityGen.STREET
-	var coast_kind := CityGen.AVENUE if avenues_z.has(zs.find(bay.end.y)) else CityGen.STREET
-	var side := CityGen.width_of(side_kind, cfg) * 0.5
-	var coast := CityGen.width_of(coast_kind, cfg) * 0.5
+	var back_kind := CityGen.AVENUE if avenues_z.has(zs.find(bay.end.y)) else CityGen.STREET
+	var back := CityGen.width_of(back_kind, cfg) * 0.5
 	for block: Dictionary in plan["blocks"]:
 		if block.has("cell") and not block.has("site"):
 			var cell: Vector2i = block["cell"]
@@ -130,29 +90,125 @@ static func mark(
 				block["was"] = block.get("was", block["use"])
 				block["use"] = "harbour"
 	var h: Dictionary = cfg["harbour"]
-	var walk := Num.f(cfg["sidewalk"])
-	var inner := Rect2(
-		bay.position.x + side, bay.position.y, bay.size.x - side * 2.0, bay.size.y - coast
-	)
-	var half := inner.size.x * 0.5 - walk - Num.f(h["quay"])
-	var apex := inner.end.y - walk - Num.f(h["sand"])
+	var inner := Rect2(bay.position, Vector2(bay.size.x, bay.size.y - back))
+	var ends: Array = h["beach_x"]
+	var walls: Array[Rect2] = []
+	for r: Array in h["seawall"]:
+		walls.append(Rect2(Num.f(r[0]), Num.f(r[1]), Num.f(r[2]), Num.f(r[3])))
+	var quay := bands(h, Num.f(ends[1]))[2] - Num.f(h["quay_back"])
+	var piers: Array[Rect2] = []
+	for r: Array in h["piers"]:
+		var w := Num.f(r[1])
+		piers.append(Rect2(Num.f(r[0]) - w, quay - Num.f(r[2]), w, Num.f(r[2])))
+	var light: Array = h["light"]
+	var rise := Num.f(h["rise_x"])
+	var apex := shore_at(h, rise)
 	plan["harbour"] = {
-		"cx": inner.get_center().x,
-		"half": half,
-		"mouth": Num.f(cfg["coast_z"]),
-		"curve_from": apex - half * Num.f(h["crescent_share"]),
-		"apex": apex,
 		"rect": inner,
-		"quay": Num.f(h["quay"]) + walk,
+		"h": h,
+		"mouth": Num.f(cfg["coast_z"]),
+		"apex": apex,
+		"beach_east": Num.f(ends[1]),
+		"port_x": walls[0].end.x,
+		"quay_z": quay,
+		"walls": walls,
+		"piers": piers,
+		"light": Vector2(Num.f(light[0]), Num.f(light[1])),
+		"sides": sides(h, inner),
 	}
-	var cx := inner.get_center().x
-	plan["rise_spawn"] = Vector2(cx, apex - Num.f(h["beach"]) - Num.f(h["nose_gap"]))
-	plan["rise_bank"] = Vector2(cx, apex + Num.f(h["bank_inset"]))
+	plan["rise_spawn"] = Vector2(rise, apex - Num.f(h["beach"]) - Num.f(h["nose_gap"]))
+	plan["rise_bank"] = Vector2(rise, apex + Num.f(h["bank_inset"]))
+	_hotel_blocks(plan, cfg)
 
 
-## The bay inside its kerbs (plan["harbour"]["rect"]): no land, pavement block or prop of the
-## city's own; the harbour's water, sand, promenade and quays stand there (HarbourView). [] with
-## none.
+## The side streets' x lines, west from city "harbour" "side_streets" [first, spacing] to the
+## front's west edge.
+static func sides(h: Dictionary, inner: Rect2) -> Array[float]:
+	var row: Array = h["side_streets"]
+	var out: Array[float] = []
+	var x := Num.f(row[0])
+	while x > inner.position.x:
+		out.append(x)
+		x -= Num.f(row[1])
+	return out
+
+
+## The hotel blocks: one between each pair of side streets (the first from the beach's east end),
+## from the beach road's far kerb (its furthest point along the block, so the block is square)
+## to the back street, inset by the sidewalk; built inside the last district, a stand-in past
+## the stage's band (CityBand), "outer" past the last district.
+static func _hotel_blocks(plan: Dictionary, cfg: Dictionary) -> void:
+	var b: Dictionary = plan["harbour"]
+	var h: Dictionary = b["h"]
+	var inner: Rect2 = b["rect"]
+	var walk := Num.f(cfg["sidewalk"])
+	var street := CityGen.width_of(CityGen.STREET, cfg) * 0.5
+	var full := CityGen.districts(cfg)[-1]
+	var edges: Array[float] = [Num.f(b["beach_east"]) + street]
+	var sides: Array[float] = b["sides"]
+	edges.append_array(sides)
+	edges.append(inner.position.x - street - walk)
+	var blocks: Array[Dictionary] = plan["blocks"]
+	var held: Array[int] = []
+	for k: int in edges.size() - 1:
+		var x0 := edges[k + 1] + street + walk
+		var x1 := edges[k] - street - walk
+		var kerb := -INF
+		var x := x0
+		while x < x1 + 0.5:
+			kerb = maxf(kerb, bands(h, minf(x, x1))[3])
+			x += 0.5
+		var rect := Rect2(x0, kerb + walk, x1 - x0, inner.end.y - kerb - walk * 2.0)
+		if rect.size.y < Num.f(cfg["depth_min"]) or rect.size.x < Num.f(cfg["frontage_min"]):
+			continue
+		var city := maxf(absf(x0), absf(x1)) < full
+		(
+			blocks
+			. append(
+				{
+					"rect": rect,
+					"use": "built" if city or CityBand.real(rect, cfg) else "outer",
+					"district": CityGen.district_of(rect, cfg),
+					"front": true,
+				}
+			)
+		)
+		if city:
+			held.append(blocks.size() - 1)
+	CityBand.hold_back(plan, held, cfg)
+
+
+## u along the beach: 0 at its east end, 1 at its west end (held past them).
+static func _u(h: Dictionary, x: float) -> float:
+	var ends: Array = h["beach_x"]
+	var east := Num.f(ends[1])
+	return clampf((east - x) / (east - Num.f(ends[0])), 0.0, 1.0)
+
+
+## The waterline's z at x (city "harbour" "shore"; h: that dictionary).
+static func shore_at(h: Dictionary, x: float) -> float:
+	var s: Array = h["shore"]
+	var u := _u(h, x)
+	var bulge := Num.f(s[1]) * pow(sin(PI * u), Num.f(s[2]))
+	return Num.f(h["sea_z"]) + Num.f(s[0]) + bulge + Num.f(s[3]) * u
+
+
+## The beach's bands at x, landward: [the waterline, the sand's land edge, the promenade's land
+## edge (the beach road's near kerb), the road's far kerb] (z). Past the beach's east end the
+## road runs on straight along the port.
+static func bands(h: Dictionary, x: float) -> PackedFloat32Array:
+	var u := _u(h, x)
+	var sand: Array = h["sand"]
+	var prom: Array = h["promenade"]
+	var water := shore_at(h, x)
+	var top := water + lerpf(Num.f(sand[0]), Num.f(sand[1]), u)
+	var kerb := top + lerpf(Num.f(prom[0]), Num.f(prom[1]), u)
+	return PackedFloat32Array([water, top, kerb, kerb + Num.f(h["road"])])
+
+
+## The front inside its kerbs (plan["harbour"]["rect"]): no land, pavement block or prop of the
+## city's own; the front's water, sand, promenade, roads and port stand there (HarbourView). []
+## with none.
 static func basin(plan: Dictionary) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	if plan.has("harbour"):
@@ -160,58 +216,57 @@ static func basin(plan: Dictionary) -> Array[Rect2]:
 	return out
 
 
-## Whether p lies in the bay's water (the crescent's true curve, between the quays, south of the
-## coast).
+## Whether p lies in the front's water: seaward of the beach's waterline, of the port's quay (bar
+## its piers) and of the seawall, south of the coast.
 static func holds(plan: Dictionary, p: Vector2) -> bool:
 	if not plan.has("harbour"):
 		return false
 	var b: Dictionary = plan["harbour"]
-	var cx := Num.f(b["cx"])
-	var half := Num.f(b["half"])
-	var from := Num.f(b["curve_from"])
-	var apex := Num.f(b["apex"])
-	if absf(p.x - cx) > half or p.y < Num.f(b["mouth"]) or p.y > apex:
+	var rect: Rect2 = b["rect"]
+	if not rect.has_point(p) or p.y < Num.f(b["mouth"]):
 		return false
-	if p.y <= from:
-		return true
-	var u := (p.x - cx) / half
-	var v := (p.y - from) / (apex - from)
-	return u * u + v * v <= 1.0
+	var walls: Array[Rect2] = b["walls"]
+	if walls.any(func(r: Rect2) -> bool: return r.has_point(p)):
+		return false
+	if p.x >= Num.f(b["port_x"]):
+		var piers: Array[Rect2] = b["piers"]
+		var dry := piers.any(func(r: Rect2) -> bool: return r.has_point(p))
+		return p.y < Num.f(b["quay_z"]) and not dry
+	var h: Dictionary = b["h"]
+	return p.y < shore_at(h, p.x)
 
 
-## Whether p lies on the bay's sand: inside its kerbs, between the quays, past the promenade's
-## pavement and out of the water.
-static func on_sand(plan: Dictionary, cfg: Dictionary, p: Vector2) -> bool:
+## Whether p lies on the beach's sand: between the waterline and the promenade, west of the
+## seawall.
+static func on_sand(plan: Dictionary, _cfg: Dictionary, p: Vector2) -> bool:
 	if not plan.has("harbour"):
 		return false
 	var b: Dictionary = plan["harbour"]
-	var cx := Num.f(b["cx"])
-	var shore := Num.f(b["apex"]) + Num.f(cfg["harbour"]["sand"])
-	var curve := Num.f(b["curve_from"])
-	return (
-		absf(p.x - cx) <= Num.f(b["half"]) and p.y >= curve and p.y <= shore and not holds(plan, p)
-	)
+	var rect: Rect2 = b["rect"]
+	var h: Dictionary = b["h"]
+	var at := bands(h, p.x)
+	return rect.has_point(p) and p.x <= Num.f(b["beach_east"]) and p.y >= at[0] and p.y <= at[1]
 
 
-## The crescent's curve, the waterline, as points from its west end to its east end (city
-## "harbour" "arc_points" of them).
+## The waterline from the front's west edge to the beach's east end (city "harbour" "arc_points"
+## samples along the beach).
 static func arc(plan: Dictionary, cfg: Dictionary) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	if not plan.has("harbour"):
 		return out
 	var b: Dictionary = plan["harbour"]
-	var cx := Num.f(b["cx"])
-	var half := Num.f(b["half"])
-	var from := Num.f(b["curve_from"])
-	var depth := Num.f(b["apex"]) - from
+	var h: Dictionary = b["h"]
+	var ends: Array = h["beach_x"]
+	var rect: Rect2 = b["rect"]
+	out.append(Vector2(rect.position.x, shore_at(h, rect.position.x)))
 	var n := Num.i(cfg["harbour"]["arc_points"])
 	for k: int in n + 1:
-		var a := PI * float(k) / n  # PI at the west end, 0 at the east: south half of the curve
-		out.append(Vector2(cx - cos(a) * half, from + sin(a) * depth))
+		var x := lerpf(Num.f(ends[0]), Num.f(ends[1]), float(k) / n)
+		out.append(Vector2(x, shore_at(h, x)))
 	return out
 
 
-## How far p lies from the beach's curve (the arc), metres.
+## How far p lies from the waterline (the arc), metres.
 static func from_shore(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
 	var line := arc(plan, cfg)
 	var best := INF
@@ -233,12 +288,15 @@ static func seabed(cfg: Dictionary) -> float:
 	return sea(cfg) - Num.f(cfg["harbour"]["seabed_depth"]) if cfg.has("harbour") else 0.0
 
 
-## The ground's height at p: 0 (the street) on land; in the bay's water the sea floor, rising
-## across the beach (city "harbour" "beach" metres from its curve) to "sand_top", the sand's own
-## height, just under the street.
+## The ground's height at p: 0 (the street) on land; in the water the sea floor, rising across
+## the beach (city "harbour" "beach" metres seaward of the waterline, measured straight out) to
+## "sand_top", the sand's own height, just under the street; the port's water is deep to its quay.
 static func floor_at(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
 	if not holds(plan, p):
 		return 0.0
+	var b: Dictionary = plan["harbour"]
 	var h: Dictionary = cfg["harbour"]
-	var share := clampf(from_shore(plan, cfg, p) / Num.f(h["beach"]), 0.0, 1.0)
+	if p.x >= Num.f(b["port_x"]):
+		return seabed(cfg)
+	var share := clampf((shore_at(h, p.x) - p.y) / Num.f(h["beach"]), 0.0, 1.0)
 	return lerpf(Num.f(h["sand_top"]), seabed(cfg), share)

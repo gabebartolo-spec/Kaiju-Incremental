@@ -60,6 +60,8 @@ var _walker: StreetWalk = null  # the same, with the extension's walk
 var _capacity := 0
 var _clock := 0.0
 var _sport_rng: RandomNumberGenerator
+var _beach_rng := Seeds.make("beach_crowd", 0)  # its own stream: the street's draws stay the same
+var _beach_held := true  # the beach's people wait for him (BeachCrowd) until his head is out
 
 
 ## sport_rng: the run's presentation stream that picks each stadium's sport (null: a fixed one).
@@ -85,6 +87,8 @@ func _ready() -> void:
 	var blocks := _nodes.size() >> 2
 	for n: int in per_lot * sim.lot_buildings().size():
 		_spawn_civilian(n % maxi(1, blocks))
+	var view := sim.arena_half + Num.f(sim.city["view_beyond"])
+	BeachCrowd.gather(self, CityGen.map(sim.city), view, _beach_rng)
 	_capacity = pos.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	_capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
 	var native := people_buffers and StreetDraw.available()
@@ -270,6 +274,9 @@ func remove(i: int) -> void:
 func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	_clock += delta
+	if _beach_held and (sim.emerge.surfaced or not sim.emerge.active):
+		_beach_held = false
+		BeachCrowd.release(self, _clock, _beach_rng)
 	var kaiju := sim.kaiju_pos
 	traffic.update(delta)
 	police.update(delta, kaiju)
