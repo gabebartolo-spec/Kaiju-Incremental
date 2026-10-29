@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-336 · Director · One Cascadeur keyer and one rigger; no second Cascadeur copy
+His words (19:3x), on hearing that Cascadeur runs one copy at a time: "if only 1 builder can use casc at a time then
+we only need 1 casc builder otherwise the others are just twiddling their thumbs". Asked, he picked "1 keyer + 1
+rigger" and said "No" to testing a second Cascadeur copy. So: one builder (croc-claw) keys every move in turn (claw
+rake, walk first step, idle, run, turn B, then the young clips); one rigger (croc-young-casc) readies the young
+skeletons (D-335, bars S1-S5) and brings finished clips into the game; every Cascadeur job holds C:/kt/casc_lock.sh;
+croc-idle-run and croc-casc-s2 are not respawned.
+
 ## 2026-10-27 · D-335 · Director · Every croc stage is animated in Cascadeur; D-047's Blender clips are replaced
 His words (19:0x), on a plan to key the claw rake for the adult only while the baby and adolescent kept the code rake:
 "this is NOT correct, as ive said OVER AND OVER AGAIN, EVERY SINGLE ANIMATION MUST BE DONE IN CASC" (restates D-199,

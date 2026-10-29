@@ -46,6 +46,8 @@ jobs:
           python-version: '3.11'
       - name: Install jsonschema (the data_schemas smoke test needs it; tests.yml pins the same)
         run: pip install --quiet "jsonschema>=4.18,<5" "fonttools>=4.40,<5"
+      - name: Fetch the Chinese font (check_i18n reads its characters; the rest stays a pointer)
+        run: git lfs pull --include assets/fonts/kaiju_cjk.ttf
       - name: Run project lints
         shell: bash
         run: |

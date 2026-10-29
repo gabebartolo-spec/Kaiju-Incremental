@@ -66,7 +66,7 @@ static func plate_text(info: Dictionary) -> String:
 		return "%s\n%s" % [head, TranslationServer.translate(EMPTY)]
 	if info.get("readable", true) != true:
 		return "%s\n%s" % [head, TranslationServer.translate(UNREADABLE)]
-	var line := (
+	var line: String = (
 		str(info["summary"])
 		if info.get("continues", false) == true
 		else TranslationServer.translate(LOCKED)
