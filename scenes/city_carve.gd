@@ -119,7 +119,7 @@ func _exit_tree() -> void:
 
 ## Building n's site, made on its first event; null when it is not carved here.
 func _site(n: int) -> Site:
-	if not on or _sim.buildings[n].landmark != "":
+	if not on:
 		return null
 	if _sites.has(n):
 		return _sites[n]
