@@ -21,7 +21,7 @@ const Lib := preload("res://tools/capture/bench_lib.gd")
 const ROUTE := "res://tools/capture/routes/replay_adult.json"
 ## Slots a kind for the measuring run (the item-8 sizing run's count).
 const MEASURE := 300
-## Kinds that need more to measure: dust peaks at 373 at once on this route (the 1.5x city, #413;
+## Kinds that need more to measure: dust peaks at 391 at once on this route (the 1.5x city, #413;
 ## 2,687 before the FxPool owner fix, when the city's dust slots leaked to the other pool); 5,000
 ## measures either.
 const MEASURE_MORE := {"dust": 5000}

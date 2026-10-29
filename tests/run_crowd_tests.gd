@@ -232,9 +232,10 @@ func _check_crowd_thins_when_it_flees() -> void:
 
 
 ## Player-effect fixture "fans_on_cells": the same blow on a stand with carving on and off. On:
-## fans whose cells went fall though their chunk still stands, and none is left on nothing; off:
-## only the fans on chunks that went fall.
+## more fans lie dead over a chunk that still stands (their cells went) than off, where only a
+## fan crushed or caught running dies there; none is left on nothing either way.
 func _check_fans_on_cells() -> void:
+	var dead_on_standing := {}
 	for carve: bool in [true, false]:
 		if not await _begin():
 			return
@@ -248,12 +249,19 @@ func _check_fans_on_cells() -> void:
 			var c := _chunk_at(fan.pos)
 			if fan.is_dead() and _stadium.frame.inside(c) and hp[_stadium.frame.index(c)] > 0.0:
 				on_cells += 1
-		var ok := on_cells > 0 if carve else on_cells == 0
+		dead_on_standing[carve] = on_cells
 		_numbered(
-			ok and Num.i(seen["streak"]) <= GRACE,
+			Num.i(seen["streak"]) <= GRACE,
 			(
-				"fans_on_cells %s: %d fell from their cells in a standing chunk; %d frames on nothing"
+				"fans_on_cells %s: %d dead in a standing chunk; %d frames on nothing"
 				% ["on" if carve else "off", on_cells, seen["streak"]]
 			)
 		)
 		await _end()
+	_numbered(
+		Num.i(dead_on_standing.get(true, 0)) > Num.i(dead_on_standing.get(false, 0)),
+		(
+			"fans_on_cells: carving drops fans from their cells (%d dead on standing chunks on, %d off)"
+			% [dead_on_standing.get(true, 0), dead_on_standing.get(false, 0)]
+		)
+	)
