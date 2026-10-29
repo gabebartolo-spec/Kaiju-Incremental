@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-389 · Director · River bridges carve on cells
+Q (ROADMAP 4, "carve is universal"; river bridges were flat decks CityGround drew, never broken): they picked "Carve,
+spans drop" and "Keep deck, add piers". Each river bridge (CityRiver.bridges) is now a row of buildings, one per span
+(tuning bridge.span, sim/bridge_layout.gd, the railway's pattern): an asphalt deck at street level, a stone parapet
+each side, a pier to the riverbed at each end. A piece's floor 0 is the riverbed, bed floors under the street
+(Building.base), so a deck cut off its piers drops or tips into the river. CityGround keeps only the abutments; the
+Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks.
+
 ## 2026-10-30 · D-388 · Director · Landmarks carve on cells
 Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
 Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
