@@ -357,7 +357,7 @@ static func _blocks(
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
 	CityRiver.mark(plan, zs, cfg)
-	_harbour(plan, avenues_x, avenues_z, cfg)
+	CityHarbour.mark(plan, avenues_x, avenues_z, cfg)  # the sea bay's blocks
 	# One park per district: its biggest block between the towers and its ring. One plaza: the
 	# block at the heart of the first tower district.
 	var rings := districts(cfg)
@@ -390,19 +390,3 @@ static func _blocks(
 	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
 		blocks[best_plaza]["use"] = "plaza"
 	CityBand.hold_back(plan, inner, cfg)
-
-
-## The sea bay's blocks (CityHarbour.mark), with its side streets' and coast road's half-widths.
-static func _harbour(
-	plan: Dictionary, avenues_x: Dictionary, avenues_z: Dictionary, cfg: Dictionary
-) -> void:
-	var bay: Rect2 = plan["bay"]
-	if not bay.has_area():
-		return
-	var xs: Array[float] = plan["xs"]
-	var zs: Array[float] = plan["zs"]
-	var side := xs.find(bay.position.x)
-	var coast := zs.find(bay.end.y)
-	var side_half := width_of(AVENUE if avenues_x.has(side) else STREET, cfg) * 0.5
-	var coast_half := width_of(AVENUE if avenues_z.has(coast) else STREET, cfg) * 0.5
-	CityHarbour.mark(plan, cfg, side_half, coast_half)

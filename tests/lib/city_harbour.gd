@@ -1,13 +1,13 @@
 extends RefCounted
-## The kaiju rises from the sea bay and walks up its beach into the city (director 2026-10-26:
-## "move it to the bay where a shoreline makes more natural sense", "Sea bay, real beach"; D-270:
-## a crescent bay on the city's north edge, laid first as a fixed rectangle of whole blocks
-## (CityHarbour), at least 2 blocks wide at stage 1, growing with the arena; earlier, 2026-10-21 #17:
-## "have him emerging facing the city so he can walk straight in"): the run's start (Emergence)
+## The kaiju rises from the sea bay and walks up its beach into the city (director 2026-10-26: "move
+## it to the bay where a shoreline makes more natural sense", "Sea bay, real beach"; D-270: a
+## crescent bay on the city's north edge, laid first as a fixed rectangle of whole blocks
+## (CityHarbour), at least 2 blocks wide at stage 1, growing with the arena; earlier, 2026-10-21
+## #17: "have him emerging facing the city so he can walk straight in"): the run's start (Emergence)
 ## rises in open water over the sea floor, facing the city, never turning or sliding sideways
 ## through the rise, the wade up the beach and its first second of walking ahead; the beach slopes
-## from the sea floor to sand just under the street; nothing (street, building, prop, walker)
-## stands in the bay; the railway keeps clear of the rise.
+## from the sea floor to sand just under the street; nothing (street, building, prop, walker) stands
+## in the bay; the railway keeps clear of the rise.
 
 const DT := 1.0 / 30.0
 const WALK := 1.0  # seconds of walking ahead once out
@@ -192,17 +192,14 @@ static func check_width(map_seed: int, check_fn: Callable) -> void:
 		if tier == 1:  # the city's longest block as authored (the outskirts' gaps run wider)
 			var long: Array = sim.city["block_long"]
 			block = Num.f(long[1])
-	(
-		check_fn
-		. call(
-			widths[0] >= block * BLOCKS_WIDE and widths[1] > widths[0] and widths[2] > widths[1],
+	check_fn.call(
+		widths[0] >= block * BLOCKS_WIDE and widths[1] > widths[0] and widths[2] > widths[1],
+		(
 			(
-				(
-					"map_seed %d: the bay is %.1f m wide at stage 1 (>= %d blocks of %.1f m) and"
-					+ " grows with the arena: %s"
-				)
-				% [map_seed, widths[0], BLOCKS_WIDE, block, widths]
+				"map_seed %d: the bay is %.1f m wide at stage 1 (>= %d blocks of %.1f m) and"
+				+ " grows with the arena: %s"
 			)
+			% [map_seed, widths[0], BLOCKS_WIDE, block, widths]
 		)
 	)
 

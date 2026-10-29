@@ -109,12 +109,20 @@ static func covers(plan: Dictionary, i: int, j: int) -> bool:
 
 ## Marks the bay on `plan` (CityGen.map's, its blocks laid): every block in it becomes sea
 ## ("harbour", keeping its use under "was" so CityGen.generate draws its lots the same and drops
-## them), and records its shapes and the rise. side: the half-width of the side streets'
-## carriageway, coast: the coast road's (avenues are wider).
-static func mark(plan: Dictionary, cfg: Dictionary, side: float, coast: float) -> void:
+## them), and records its shapes and the rise. avenues_x/avenues_z: the plan's avenue line
+## indices, so the side streets' and coast road's carriageways take an avenue's width there.
+static func mark(
+	plan: Dictionary, avenues_x: Dictionary, avenues_z: Dictionary, cfg: Dictionary
+) -> void:
 	var bay: Rect2 = plan.get("bay", Rect2())
 	if not bay.has_area():
 		return
+	var xs: Array[float] = plan["xs"]
+	var zs: Array[float] = plan["zs"]
+	var side_kind := CityGen.AVENUE if avenues_x.has(xs.find(bay.position.x)) else CityGen.STREET
+	var coast_kind := CityGen.AVENUE if avenues_z.has(zs.find(bay.end.y)) else CityGen.STREET
+	var side := CityGen.width_of(side_kind, cfg) * 0.5
+	var coast := CityGen.width_of(coast_kind, cfg) * 0.5
 	for block: Dictionary in plan["blocks"]:
 		if block.has("cell") and not block.has("site"):
 			var cell: Vector2i = block["cell"]
@@ -180,7 +188,9 @@ static func on_sand(plan: Dictionary, cfg: Dictionary, p: Vector2) -> bool:
 	var cx := Num.f(b["cx"])
 	var shore := Num.f(b["apex"]) + Num.f(cfg["harbour"]["sand"])
 	var curve := Num.f(b["curve_from"])
-	return absf(p.x - cx) <= Num.f(b["half"]) and p.y >= curve and p.y <= shore and not holds(plan, p)
+	return (
+		absf(p.x - cx) <= Num.f(b["half"]) and p.y >= curve and p.y <= shore and not holds(plan, p)
+	)
 
 
 ## The crescent's curve, the waterline, as points from its west end to its east end (city

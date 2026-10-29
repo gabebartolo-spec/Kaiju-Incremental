@@ -66,8 +66,19 @@ func at(p: Vector2) -> Dictionary:
 	for w: Rect2 in water:
 		if w.has_point(p):
 			return _is(WATER, -Num.f(cfg.get("river_depth", 0.0)))
-	# The sea bay (CityGround._harbour): a raised quay deck down each side, the promenade's
-	# pavement at its city end, its water and sand between them.
+	var bay := _in_bay(p)
+	if not bay.is_empty():
+		return bay
+	var block := _block_at(p)
+	if block >= 0:
+		return _paving(_blocks[block], p)
+	var road := _road_holding(p, false)
+	return _is(ROAD if road >= 0 else BARE, LAND_TOP, road)
+
+
+## The sea bay's ground at p (CityGround._harbour), {} outside it: a raised quay deck down each
+## side, the promenade's pavement at its city end, its water and sand between them.
+func _in_bay(p: Vector2) -> Dictionary:
 	for quay: Rect2 in HarbourView.quays(plan):
 		if quay.has_point(p):
 			return _is(PAVE, CityGround.PAVE_TOP + QUAY_RISE)
@@ -76,11 +87,7 @@ func at(p: Vector2) -> Dictionary:
 			if HarbourView.promenade(plan, cfg).has_point(p):
 				return _is(PAVE, CityGround.PAVE_TOP)
 			return _is(WATER, CityHarbour.sea(cfg))
-	var block := _block_at(p)
-	if block >= 0:
-		return _paving(_blocks[block], p)
-	var road := _road_holding(p, false)
-	return _is(ROAD if road >= 0 else BARE, LAND_TOP, road)
+	return {}
 
 
 ## True when road r's carriageway, reaching `into` past each crossing, holds p.

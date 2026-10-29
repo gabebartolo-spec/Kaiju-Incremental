@@ -188,6 +188,16 @@ static func _add_ruins(rampage: Rampage) -> void:
 	yard._add(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
 
 
+## Every landmark's view, built now, so the scan covers them wherever the kaiju starts (it rises
+## from the bay, D-373, and the stream meshes the buildings nearest it first).
+static func _add_landmarks(rampage: Rampage) -> void:
+	var city: CityView = rampage._city
+	var stream: BuildingStream = city.get("_stream")
+	for n: int in rampage.sim.buildings.size():
+		if rampage.sim.buildings[n].landmark != "":
+			stream.view(n)
+
+
 ## Runs the real sim until the first train is on the viaduct (rail.first_s after the kaiju's rise
 ## from the river) and its cars are drawn, so the trains are in the scan (debt row 25: the cars
 ## rendered flat and a scan 30 frames in never saw one). True when RailView holds a train's cars.
@@ -229,6 +239,7 @@ static func run(tree: SceneTree, check_fn: Callable) -> void:
 		rampage._city.ruins().get_child_count() >= 3,
 		"the rubble field (heap, strip, chunk) is in the scan"
 	)
+	_add_landmarks(rampage)
 	var found := scan(rampage)
 	var fresh: Array[String] = []
 	for type: String in found:

@@ -6,8 +6,8 @@ extends RefCounted
 ## it, as with every band block) and at least FAR m from the rise in the sea bay; in the stage-2
 ## city it is real, in the band at least, so the Behemoth at the edge can bite into it (the
 ## stage-1 rule; lead 2026-10-29: the old "inside the play area" bar had no decision behind it
-## and no site meets it beside the fixed bay). The wheel, moved with it, also stands past the baby's edge
-## and never overlaps the stadium; no block's lot overlaps a landmark's plaza.
+## and no site meets it beside the fixed bay). The wheel, moved with it, also stands past the
+## baby's edge and never overlaps the stadium; no block's lot overlaps a landmark's plaza.
 
 const FAR := 100.0
 

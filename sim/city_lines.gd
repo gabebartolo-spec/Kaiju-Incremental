@@ -175,14 +175,9 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 	var outer := Num.f(cfg["outer_half"])
 	var x_rule := CityLineFit.x_rule(cfg, diag, rings)
 	var gaps := gaps(cfg)
-	# Each later district's streets, out to its own ring avenue, draw from their own stream; the
-	# outskirts from theirs, so tuning them never reshuffles the city. The x-lines come first: the
-	# z-lines then sit between the diagonal's crossings with them (CityLineFit).
-	var grow := RandomNumberGenerator.new()
-	grow.seed = Num.i(cfg["map_seed"]) + 2
-	var far := RandomNumberGenerator.new()
-	far.seed = Num.i(cfg["map_seed"]) + 1
-	var streams: Array[RandomNumberGenerator] = [rng, grow, far]
+	# The x-lines come first: the z-lines then sit between the diagonal's crossings with them
+	# (CityLineFit).
+	var streams := _streams(rng, cfg)
 	var report := {"breaks": 0}
 	var bay := CityHarbour.pins(cfg)  # the sea bay's own street lines, laid first
 	var bay_x: Array[float] = bay["x"]
@@ -196,8 +191,7 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 	var x_fits := func(i: int) -> bool: return CityLineFit.avenue_fits_x(x_rule, xs, i)
 	var avenues_x := avenues(rng, xs, rings, x_fits, cfg)
 	var avenue_at: Array[float] = []
-	for i: int in avenues_x:
-		avenue_at.append(xs[i])
+	avenue_at.assign(avenues_x.keys().map(func(i: int) -> float: return xs[i]))
 	var z_rule := CityLineFit.z_rule(cfg, diag, xs, rings, avenue_at)
 	z_rule["report"] = report
 	var zs := _lay(
@@ -215,6 +209,16 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 		"avenues_z": avenues_z,
 		"breaks": Num.i(report["breaks"]),
 	}
+
+
+## The plan's streams: its own, then each later district's streets (out to its own ring avenue)
+## and the outskirts' from their own, so tuning them never reshuffles the city.
+static func _streams(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[RandomNumberGenerator]:
+	var grow := RandomNumberGenerator.new()
+	grow.seed = Num.i(cfg["map_seed"]) + 2
+	var far := RandomNumberGenerator.new()
+	far.seed = Num.i(cfg["map_seed"]) + 1
+	return [rng, grow, far]
 
 
 ## One axis's lines: across the first district from streams[0] (rules[0], the first district's

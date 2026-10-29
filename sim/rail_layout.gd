@@ -27,19 +27,29 @@ static func ends(city: Dictionary, cfg: Dictionary) -> Vector2:
 	var bay := CityHarbour.rect_of(city)
 	var x := Rail.avenue_x(city)
 	var reach := Num.f(cfg["deck_width"]) * 0.5
-	if bay.has_area() and x + reach > bay.position.x and x - reach < bay.end.x and north < bay.end.y:
+	if (
+		bay.has_area()
+		and x + reach > bay.position.x
+		and x - reach < bay.end.x
+		and north < bay.end.y
+	):
 		var long := Num.f(cfg["bay_length"]) * Num.i(cfg["piece_bays"])
 		north = ceilf(bay.end.y / long) * long
 	return Vector2(north, half * Num.f(span[1]))
 
 
-## The station's platforms along the line (world z): a train's length and a little, round the
-## station stop (the north-bound stop; both tracks share the platforms).
+## The station's platforms along the line (world z): whole pieces, enough for a train's length
+## and a little, centred as near station_share of the line as piece boundaries allow (both
+## tracks share the platforms). Whole pieces, so no piece carries a stub of platform, canopy
+## and stair too short to stand on its own (it toppled where the bay moved the line's end).
 static func station_z(city: Dictionary, cfg: Dictionary) -> Vector2:
 	var line := ends(city, cfg)
 	var at := line.x + (line.y - line.x) * Num.f(cfg["station_share"])
-	var long := Num.i(cfg["cars"]) * (Num.f(cfg["car_length"]) + 0.3) + 2.0
-	return Vector2(at - long * 0.5, at + long * 0.5)
+	var train := Num.i(cfg["cars"]) * (Num.f(cfg["car_length"]) + 0.3) + 2.0
+	var piece := Num.f(cfg["bay_length"]) * Num.i(cfg["piece_bays"])
+	var n := ceilf(train / piece)
+	var lo := roundf(at / piece - n * 0.5) * piece
+	return Vector2(lo, lo + n * piece)
 
 
 ## The layout entries (CityGen's shape, plus "chunks" and "rail") of the line's pieces, north to
