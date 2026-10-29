@@ -2,6 +2,13 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
+Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
+a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
+add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
+reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
+each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
+
 ## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
 Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
 military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
