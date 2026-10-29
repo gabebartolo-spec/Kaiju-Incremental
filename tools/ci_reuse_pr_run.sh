@@ -9,7 +9,8 @@
 #   - the merge ref has the same tree as the pushed commit, and its first parent is the
 #     commit main was at before this push (so the PR was tested on today's base);
 #   - the PR's last tests.yml run on its head commit succeeded with every shard green
-#     (not skipped), and started after that base commit existed.
+#     (not skipped), ran every suite (its plan log says CI-SELECTION all, not a re-push's selection,
+#     tools/ci_select_suites.py), and started after that base commit existed.
 # Any doubt (no PR, missing ref, API error) prints nothing: a re-test is the safe answer.
 set -u
 sha="${GITHUB_SHA:-$(git rev-parse HEAD)}"
@@ -28,6 +29,8 @@ read -r run_id conclusion created <<< "$run"
 shards=$(gh api "repos/$repo/actions/runs/$run_id/jobs?per_page=50" \
 	--jq '[.jobs[] | select(.name | startswith("shard"))] | if length > 0 and all(.conclusion == "success") then "ok" else "no" end' 2> /dev/null) || exit 0
 [ "$shards" = ok ] || exit 0
+plan=$(gh api "repos/$repo/actions/runs/$run_id/jobs?per_page=50" --jq '.jobs[] | select(.name == "plan") | .id' 2> /dev/null) || exit 0
+gh api "repos/$repo/actions/jobs/$plan/logs" 2> /dev/null | grep -q "CI-SELECTION all" || exit 0
 base_time=$(git log -1 --format=%cI "$sha^1")
 [ "$(date -d "$created" +%s)" -gt "$(date -d "$base_time" +%s)" ] || exit 0
 echo "reuse $pr"

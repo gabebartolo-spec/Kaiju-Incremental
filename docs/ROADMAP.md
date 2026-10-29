@@ -31,44 +31,35 @@ owner is whichever session takes it and reports to him. The director decides; a 
 ## Live work, in order
 Each row: what, where it stands, next. A row leaves this list when its PR merges (its decision and PR number are the
 record); nothing is appended as a log. D-310 order: debt fixes, then parked work; creature animation runs alongside (D-354).
-1. **Fixed beachfront (D-377, D-381):** the fixed sea bay, beach, promenade, quays and port on every city, beach props
-   and crowd. Branch claude/fixed-beachfront, PR #411: CI red on the stage-2 building count, front pushed north
-   (sea_z -80); his comments on the ground, umbrellas and the port board awaited. Next: re-fit the failing tests,
-   push, merge on green; waves lapping (D-325 water on the bay sheet) after the water merge (#388).
-2. **Wider city (D-254, play area 1.5x):** PR #413 (play-area-1p5-land); squash-merges on green, then the play-area
-   worktrees and branches go. Then the bay-coast junction spacing (director 2026-10-29: "city-gen junction spacing
-   at the bay coast, fixed separately"): at stage 2 the diagonal crosses the young bay's coast road (z -60) 2-9 m from
-   a seeded north-south street on every map seed; CityLines lays the bay's pinned z-lines without the
-   diagonal-crossing rule the other z-lines get. Fix it in city-gen and remove city audit's _at_bay_coast exemption.
-3. **Croc animation, keyed in Cascadeur (D-199, D-302, D-362):** young croc walk and turns rebuilt (#405), adult eyelids
+1. **Croc animation, keyed in Cascadeur (D-199, D-302, D-362):** young croc walk and turns rebuilt (#405), adult eyelids
    and rise clips (#398), collar bones (#410), claw rake (#332), beam_jaw (#392), Colossus helper joints (#396).
-   Open: the young croc thigh twitch before a foot lifts (director 2026-10-29, `docs/roadmap/2026-10-23-26-sections.md`
-   "Young croc thigh twitch"; th5 takes sent, walk_turn_right_th5 has a reversal at f9); the 29 FIX clips of the grown
+   Open: the 29 FIX clips of the grown
    croc verdicts; the baby jaw (neck0-2 split into game bones); the Komodo and serpent clips wait with their species.
-4. **Destruction (D-327, in the demo):** stage 1 (carved buildings drawn from the sim's cells, #328) and stage 2 (native
+2. **Bay-coast junction spacing (director 2026-10-29, after #413):** at stage 2 the diagonal crosses the young bay's coast road (z -60) 2-9 m from a seeded north-south street on every map seed; CityLines lays the bay's pinned z-lines without the diagonal-crossing rule the other z-lines get. Fix it in city-gen and remove city audit's _at_bay_coast exemption.
+3. **Destruction (D-327, in the demo):** stage 1 (carved buildings drawn from the sim's cells, #328) and stage 2 (native
    carve colliders, merged falling islands; render items 10 and 11, #381) are on main. Open: landmarks carve on cells and
    river/bay bridges become carved structures (carve is universal, director 2026-10-26; tests/run_structures_tests.gd
    names them as known failures), varied collapse directions (b2-5), the stadium crowd falling with a broken stand
    (comments #17). Plan: `docs/roadmap/2026-10-27-destruction-plan.md`.
-5. **Random cities (D-259, D-261, D-263, D-375):** a fresh city each run from shuffled blocks, the landmark pool drawn
+4. **Random cities (D-259, D-261, D-263, D-375):** a fresh city each run from shuffled blocks, the landmark pool drawn
    into tiered spots. Open: sim/city_seed.gd ignores the save seed (replays differ per slot: D-261, D-263); the pool
    and spots per D-375 (stage 1 shows the east spot only, D-380).
-6. **Upgrade tree (D-275, b2-28):** rings per species, 2-3x the nodes, his croc node ideas first
+5. **Upgrade tree (D-275, b2-28):** rings per species, 2-3x the nodes, his croc node ideas first
    (`docs/roadmap/2026-10-26-interview-audit.md` section 1), an upgrade affordable after every rampage; the tree screen
    skin follows. Balance itself waits (D-363). Throw nodes "Ricochet" and "Domino" (D-259); the tail lash's nodes (D-329).
-7. **Render plan and performance (D-276, D-300, D-312):** items 0-4, 6-9, 12-14 merged and on; item 5 parked (D-192 bar);
+6. **Render plan and performance (D-276, D-300, D-312):** items 0-4, 6-9, 12-14 merged and on; item 5 parked (D-192 bar);
    item 15 (Medium GPU p95, 0.3-0.9 ms over the bar at the 10-28 re-baseline, `docs/research/2026-10-28-render-rebaseline.md`)
    PARKED (D-372). Graphics presets Potato..Max exist in data; the live preview in the options menu (comment #90) and the
    measured per-preset audit at 1080p and 4K (b2-25) are open, after the visuals are final.
-8. **Tech debt (`docs/roadmap/2026-10-27-tech-debt.md`):** rows 15 (file and long-function caps: baseline 22 of 33) and 21
-   (procedural creature animation, row 3 above) are the open ones; the rest are done.
-9. **CI (D-351, D-382, D-383):** countable speed-run bars run as GitHub checks; a PR skips the 13 slow second-angle
+7. **Tech debt (`docs/roadmap/2026-10-27-tech-debt.md`):** rows 15 (file and long-function caps: baseline 22 of 33) and 21
+   (procedural creature animation, row 1 above) are the open ones; the rest are done.
+8. **CI (D-351, D-382, D-383):** countable speed-run bars run as GitHub checks; a PR skips the 13 slow second-angle
    suites (the `pr_skip` line of tools/ci_timings.txt), which run on main; no local suite runs, push and CI is the test.
    Open: the first push-to-main run after #412 proves the slow job.
-10. **Sound and music:** croc takes made ("Croc now, others later"); the Godzilla set (D-184) on the menu and as the three
-   city Covers; collapse voices (D-367). Open: layered music following the ruin (D-125), wider-city pacing waits for
-   balancing (D-366); every file CLEARED in `docs/LICENSING_REGISTER.md`; Suno only after his written spend yes.
-11. **Demo shell (M3 below):** textured surfaces (Flat surfaces programme), the graphics preview, load-screen art (about 12
+9. **Sound and music:** croc takes made ("Croc now, others later"); the Godzilla set (D-184) on the menu and as the three
+   city Covers; collapse voices (D-367); layered music and the menu theme (#423). Open: wider-city pacing waits for
+   balancing (D-366); Suno only after his written spend yes.
+10. **Demo shell (M3 below):** textured surfaces (Flat surfaces programme), the graphics preview, load-screen art (about 12
    staged 4K shots on one board, he picks), the demo end screen and feedback button, six languages plus Chinese.
 
 ## Playtest milestones (D-146, 2026-10-22)
