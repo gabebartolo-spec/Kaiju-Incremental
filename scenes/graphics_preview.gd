@@ -34,7 +34,7 @@ var _clock := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	add_theme_stylebox_override("panel", UiKit.panel().get_theme_stylebox("panel"))
+	add_theme_stylebox_override("panel", UiKit.panel_box())
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
 	add_child(col)
