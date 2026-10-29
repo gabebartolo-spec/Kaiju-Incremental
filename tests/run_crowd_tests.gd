@@ -3,7 +3,9 @@ extends "res://tests/lib/runner.gd"
 ## standing on nothing once the stand under them has gone, and the crowd thins over seconds
 ## instead of vanishing. Each test drives the sim's stadium (RampageSim.damage_chunks) and reads
 ## the StadiumCrowd the rampage built; "standing" is a fan still seated or running upright, "dying"
-## one that fell, or lies under the dust (StadiumCrowd.State).
+## one that fell, or lies under the dust (StadiumCrowd.State). Once the stadium carves (D-388) a
+## fan whose own cell of the stand has gone is on nothing too, though its chunk still stands;
+## player-effect fixture "fans_on_cells": that rule on (carving) and off (chunks only).
 ##   godot --headless --path . --script tests/run_crowd_tests.gd
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
@@ -37,6 +39,7 @@ func run_checks() -> void:
 	await _t("_check_stand_lost_under_running_fans")
 	await _t("_check_crowd_thins_when_the_stands_go")
 	await _t("_check_crowd_thins_when_it_flees")
+	await _t("_check_fans_on_cells")
 
 
 ## A fresh rampage with the stadium and its seated crowd, a few frames in.
@@ -97,9 +100,17 @@ func _dangling() -> Array[StadiumCrowd.Fan]:
 		if fan.state == StadiumCrowd.State.UP and along >= fan.run - 0.001:
 			continue  # stepping down the exit
 		var at := _stadium.frame.index(c)
-		if _built[at] > 0.0 and hp[at] <= 0.0:
+		if (_built[at] > 0.0 and hp[at] <= 0.0) or _off_cells(fan, p):
 			out.append(fan)
 	return out
+
+
+## A fan that stood on a cell of the carved stadium with no cell under its feet now.
+func _off_cells(fan: StadiumCrowd.Fan, at: Vector3) -> bool:
+	if fan.under < 0 or not _sim.carving.promoted(_index):
+		return false
+	var corner := Vector2(_stadium.x - _stadium.w * 0.5, _stadium.z - _stadium.d * 0.5)
+	return CrowdBuild.under(_sim.carving.frame(_index), at, corner, StadiumCrowd.FOOT) < 0
 
 
 ## Over `frames` frames: the most frames in a row any one fan was drawn standing on nothing, and
@@ -218,3 +229,31 @@ func _check_crowd_thins_when_it_flees() -> void:
 		)
 	)
 	await _end()
+
+
+## Player-effect fixture "fans_on_cells": the same blow on a stand with carving on and off. On:
+## fans whose cells went fall though their chunk still stands, and none is left on nothing; off:
+## only the fans on chunks that went fall.
+func _check_fans_on_cells() -> void:
+	for carve: bool in [true, false]:
+		if not await _begin():
+			return
+		_sim.carving.on = carve
+		var seated := _crowd.in_stands()
+		_sim.damage_chunks(_index, [_stand_chunk(seated / 2)] as Array[Vector3i], HUGE)
+		var seen := await _watch_dangling(30)
+		var hp := _stadium.frame.standing()
+		var on_cells := 0
+		for fan: StadiumCrowd.Fan in _crowd.fans:
+			var c := _chunk_at(fan.pos)
+			if fan.is_dead() and _stadium.frame.inside(c) and hp[_stadium.frame.index(c)] > 0.0:
+				on_cells += 1
+		var ok := on_cells > 0 if carve else on_cells == 0
+		_numbered(
+			ok and Num.i(seen["streak"]) <= GRACE,
+			(
+				"fans_on_cells %s: %d fell from their cells in a standing chunk; %d frames on nothing"
+				% ["on" if carve else "off", on_cells, seen["streak"]]
+			)
+		)
+		await _end()

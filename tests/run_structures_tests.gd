@@ -16,7 +16,6 @@ extends "res://tests/lib/runner.gd"
 
 ## Type -> why it is waiting (roadmap C, "Carve is universal").
 const KNOWN := {
-	"landmark": "landmarks break by chunks (Carving.takes skips them); roadmap C, after PR #209",
 	"bridge": "river bridges are a flat ground deck, not destructible; roadmap C, after PR #209",
 }
 ## The shared carve: the only sim scripts that may keep structure strength or send its losses.

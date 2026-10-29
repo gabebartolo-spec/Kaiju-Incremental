@@ -180,7 +180,7 @@ func _init(
 	var rail_from := RailLayout.add_pieces(buildings, city, rail_cfg)
 	grid = BuildingGrid.new(buildings)  # after the rail's pieces: they are buildings too
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
-	collapse = Collapse.new(self)
+	collapse = Collapse.new(self, tuning, Seeds.derive(rng, 0xFA11))
 	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
 	var flight_cfg: Dictionary = army["flight"]

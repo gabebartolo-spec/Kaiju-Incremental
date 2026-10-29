@@ -280,6 +280,12 @@ func digest() -> int:
 	return hash(cells)
 
 
+## Removes the cells of `part` (grid indices, all standing) and returns them as a "drop" event, as
+## settle() does (Carving brings a ring landmark's arc down with it).
+func take(part: PackedInt32Array) -> Dictionary:
+	return _take_all([part])[0]
+
+
 ## Removes the cells of each part and returns them as "drop" events (natively where loaded).
 func _take_all(parts: Array[PackedInt32Array]) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []

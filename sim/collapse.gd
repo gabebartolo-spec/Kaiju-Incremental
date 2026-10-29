@@ -10,10 +10,26 @@ var sim: RampageSim
 var toppled := 0
 var tallest_topple := 0
 var _toppled_ids: Dictionary = {}
+## b2-5 (D-387): the odds a topple goes toward its cut side, to either side of it, or away from
+## it (tuning destruction.fall_dirs), drawn from the run's own stream so a replay matches.
+var _odds := PackedFloat32Array([1.0, 0.0, 0.0, 0.0])
+var _rng: RandomNumberGenerator
 
 
-func _init(p_sim: RampageSim) -> void:
+func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
+	_rng = rng
+	var cfg: Dictionary = tuning.get("destruction", {})
+	var dirs: Dictionary = cfg.get("fall_dirs", {})
+	if not dirs.is_empty():
+		var side := Num.f(dirs["side"])
+		_odds = PackedFloat32Array([Num.f(dirs["cut"]), side, side, Num.f(dirs["away"])])
+
+
+## Every topple goes to its cut side (D-099's rule): for checks that measure something other
+## than the fall's direction (what a fall smashes, a walk's clearing, a ring's reach).
+func cut_only() -> void:
+	_odds = PackedFloat32Array([1.0, 0.0, 0.0, 0.0])
 
 
 ## Buildings in the arena with every chunk gone (the thanks screen's "buildings destroyed").
@@ -85,14 +101,17 @@ func _start_fall(index: int, b: RampageSim.Building, part: Dictionary, g: float)
 func _aim_topple(f: RampageSim.Fall, b: RampageSim.Building, part: Dictionary, low: float) -> void:
 	var dir: Vector2i = part["dir"]
 	var pivot: Vector3 = part["pivot"]
-	# D-099: it falls by its own physics, toward the side that was cut away (the support
-	# rule's dir), onto the kaiju if that is the side. A gutted drop has no rule dir: its
-	# whole base went, and the chew came from the kaiju's side, so it goes that way.
-	if dir == Vector2i.ZERO:
-		var carved := part.has("index")
-		var base: Rect2 = part["base"] if carved else _base(f.cells, roundi(low))
+	# D-099: its cut side is the side that was cut away (the support rule's dir). A gutted drop
+	# has no rule dir: its whole base went, and the chew came from the kaiju's side. b2-5
+	# (D-387): a landmark falls to its cut side; any other part draws cut, side or away.
+	var cut := dir
+	var carved := part.has("index")
+	var base: Rect2 = part["base"] if carved else _base(f.cells, roundi(low))
+	if cut == Vector2i.ZERO:
 		var centre := b.local_to_world(Vector3(base.get_center().x, low, base.get_center().y))
-		dir = _toward(Vector2(centre.x, centre.z) - sim.kaiju_pos)
+		cut = _toward(Vector2(centre.x, centre.z) - sim.kaiju_pos)
+	dir = cut if b.landmark != "" else _vary(cut)
+	if dir != part["dir"]:
 		pivot = _edge(base, low, dir)
 		if carved:
 			f.width = base.size.y if dir.x != 0 else base.size.x
@@ -154,6 +173,18 @@ static func _base(cells: Array[Vector3i], lowest: int) -> Rect2:
 			lo = Vector2(minf(lo.x, c.x), minf(lo.y, c.z))
 			hi = Vector2(maxf(hi.x, c.x + 1), maxf(hi.y, c.z + 1))
 	return Rect2(lo, hi - lo)
+
+
+## b2-5 (D-387): a topple's direction drawn from `cut` by the odds: cut, its left, its right or
+## away (one draw per topple, in the order the sim starts them).
+func _vary(cut: Vector2i) -> Vector2i:
+	var roll := _rng.randf()
+	var options: Array[Vector2i] = [cut, Vector2i(-cut.y, cut.x), Vector2i(cut.y, -cut.x), -cut]
+	for k: int in options.size():
+		roll -= _odds[k]
+		if roll < 0.0:
+			return options[k]
+	return cut
 
 
 ## The level direction (one of the four, like Structure's) from the tower's base to the kaiju;
