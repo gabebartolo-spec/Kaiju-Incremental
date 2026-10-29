@@ -21,6 +21,9 @@ const STAGES: Array[int] = [1, 2, 3]
 const ROAD_SEEDS := 20
 const FIT_SEEDS := 50
 const ASSET_SEEDS := 8
+## Stage cities (all stages, ASSET_SEEDS each) a Tripo filler and a hero must appear in.
+const POOL_FILLER_CITIES := 2
+const POOL_HERO_CITIES := 1
 const LANDMARK_SEEDS := 20
 ## Road rules that hold at every stage and seed of the full run (2026-10-26; road geometry
 ## brought arms, water, thin blocks and overlapping junction boxes, "close!", to zero; short
@@ -199,13 +202,40 @@ func _check_diagonal_fits() -> void:
 	)
 
 
-## Every layout asset (archetypes, facades, landmarks, signs) meets the bar on a few seeds.
+## Every layout asset (archetypes, facades, landmarks, signs) meets the bar on a few seeds at
+## every stage. A Tripo pool model is held over all stages together: in POOL_FILLER_CITIES of
+## the stage cities (a hero in POOL_HERO_CITIES), counted across stages and seeds (director
+## 2026-10-29: every Tripo model serves every stage; rare models may stay rare).
 func _check_layout_assets_held() -> void:
+	var pool_cities := {}
+	var pool_hero := {}
 	for tier: int in STAGES:
 		var opts := {"count": ASSET_SEEDS}
 		var result: Dictionary = await AssetAudit.stage(root, Content.tuning(), tier, opts)
-		var short := AssetAudit.short_of_bar(result, ASSET_SEEDS, false)
+		var short: Array[Dictionary] = []
+		for s: Dictionary in AssetAudit.short_of_bar(result, ASSET_SEEDS, false):
+			if not str(s["id"]).begins_with("pool:"):
+				short.append(s)
 		check(short.is_empty(), "stage %d: every layout asset meets its bar (%s)" % [tier, short])
+		var inv: Dictionary = result["inventory"]
+		var seen: Dictionary = result["seen"]
+		for id: String in inv:
+			var row: Dictionary = inv[id]
+			if id.begins_with("pool:") and row["allowed"]:
+				pool_cities[id] = Num.i(pool_cities.get(id, 0)) + Num.i(seen.get(id, 0))
+				pool_hero[id] = row["hero"]
+	var rare: Array[String] = []
+	for id: String in pool_cities:
+		var need := POOL_HERO_CITIES if pool_hero[id] else POOL_FILLER_CITIES
+		if Num.i(pool_cities[id]) < need:
+			rare.append("%s %d of %d" % [id, pool_cities[id], need])
+	check(
+		not pool_cities.is_empty() and rare.is_empty(),
+		(
+			"every Tripo model appears in some stage's cities (%d models; short %s)"
+			% [pool_cities.size(), rare]
+		)
+	)
 
 
 ## Every landmark's plaza stays clear of every street (tools/audit/landmark_clear_audit.gd; on
