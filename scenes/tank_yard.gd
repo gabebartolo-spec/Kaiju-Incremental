@@ -31,12 +31,12 @@ func update(delta: float, kaiju_at: Vector3, steps: int) -> void:
 	var flatten := steps % 10 == 0
 	var convoy := _sim.army_units.convoy
 	for tank: RampageSim.Tank in _sim.tanks:
-		if flatten:
+		if flatten and tank.height <= 0.0:
 			_city.crush(Vector3(tank.pos.x, 0.0, tank.pos.y), 1.4, true)
 		if not nodes.has(tank.id):
 			continue
 		var node: TankModel = nodes[tank.id]
-		node.position = Vector3(tank.pos.x, 0.0, tank.pos.y)
+		node.position = Vector3(tank.pos.x, tank.height, tank.pos.y)  # flung (TankFlight): in the air
 		var front := convoy.front(tank.id)  # the sim's hull pose: it pivots, then drives
 		if front != Vector2.ZERO:
 			node.rotation.y = atan2(-front.x, -front.y)

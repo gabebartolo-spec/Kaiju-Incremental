@@ -98,8 +98,8 @@
 		"fire_embers": {"line": "Embers leap the streets", "fmt": "%d"},
 		"firestorm": {"line": "Blasts start firestorms", "fmt": "%d"},
 		"eat_heal": {"hidden": true},
-		"throw_ricochet": {"hidden": true},
-		"throw_domino": {"hidden": true}
+		"throw_ricochet": {"line": "Flung tanks bounce on", "fmt": "%d"},
+		"throw_domino": {"line": "Flung tanks knock others flying", "fmt": "%d"}
 	},
 	"names": {"beam": "Thunder Beam"},
 	"news": {
@@ -144,7 +144,7 @@
 		}
 	},
 	"tree": {
-		"_note": "The upgrade tree's rings and pacing bars (ROADMAP E, R 16.1, R 1.1/1.4, b2-28). Every node of a species listed under species carries a ring (1 = the centre) and a kind: stat (a number goes up), verb (changes what the player does or sees), stage (an evolution). rings: in order from the centre, the growth stage each opens at and the node count it is meant to reach (about 14 / 16 / 18 / 10; D-135 cut the fourth body, so ring 4 is the adult's last climb). A ring is open (bought and shown in full) once the kaiju has reached its stage and owns a node of the ring before it; the next ring shows as shapes; evolutions always show. cost_rate: each level of a node costs this many times the level before (geometric, research 01 rec 1). pacing: the bars tools/pacing.gd and the tree suite check over the first window_hours of play (R 1.1): buys_per_visit after every rampage, at most max_runs_between_verbs runs between a new verb or stage, each evolution within evolve_tolerance of its target hour (evolve1 about 15 min, D-087; evolve2 about 1 h, research 16 rec 1), the first purchase within first_buy_seconds. income: the tree suite's stand-in for a rampage's pay at each stage (first -> last as that stage's levels are bought; run_seconds a rampage), from GitHub pacing run 40225039778 (main after #230); the real bot (tools/pacing.gd) measures it. Effect keys with no system yet (stat_text hides them): eat_heal (eating heals), throw_ricochet and throw_domino (thrown vehicles).",
+		"_note": "The upgrade tree's rings and pacing bars (ROADMAP E, R 16.1, R 1.1/1.4, b2-28). Every node of a species listed under species carries a ring (1 = the centre) and a kind: stat (a number goes up), verb (changes what the player does or sees), stage (an evolution). rings: in order from the centre, the growth stage each opens at and the node count it is meant to reach (about 14 / 16 / 18 / 10; D-135 cut the fourth body, so ring 4 is the adult's last climb). A ring is open (bought and shown in full) once the kaiju has reached its stage and owns a node of the ring before it; the next ring shows as shapes; evolutions always show. cost_rate: each level of a node costs this many times the level before (geometric, research 01 rec 1). pacing: the bars tools/pacing.gd and the tree suite check over the first window_hours of play (R 1.1): buys_per_visit after every rampage, at most max_runs_between_verbs runs between a new verb or stage, each evolution within evolve_tolerance of its target hour (evolve1 about 15 min, D-087; evolve2 about 1 h, research 16 rec 1), the first purchase within first_buy_seconds. income: the tree suite's stand-in for a rampage's pay at each stage (first -> last as that stage's levels are bought; run_seconds a rampage), from GitHub pacing run 40225039778 (main after #230); the real bot (tools/pacing.gd) measures it. Effect keys with no system yet (stat_text hides them): eat_heal (eating heals).",
 		"kinds": ["stat", "verb", "stage"],
 		"layout": {
 			"_note": "Layout A (D-275): polar rings, the baby's ring round the centre. node: each kind's box (canvas units at the default zoom, sized so the longest name fits two lines at 24 px: a stat smallest, a verb larger, an evolution the largest); ultimate_extra: the ultimate's taller box (its button line). Each ring's radius leaves every node in it node_gap of room on the circle and clears the ring inside by ring_gap; ring 1 sits at least centre_radius out.",
@@ -613,6 +613,24 @@
 		"threat_per_chunk": 0.0005,
 		"young_damage_mult": 2.0,
 		"shell_flight": 0.22,
+		"flight": {
+			"_note": "Tanks the reptilian sends flying (sim/tank_flight.gd; research 22 recs 2-4; director 2026-10-30 'Flight first, same PR' for Ricochet and Domino; numbers agent-set). The ram and the leap launch a tank at loft_deg so it lands on open ground where the old shove put it (no flight under min_distance). gravity in units/s2. A building column above the hull (+ clearance) is a wall: it carves wall_floors floors from the impact height, wall_damage x the tank's ground speed, falling off past wall_radius, and the tank drops there. bounces: free bounces before Ricochet (throw_ricochet adds one per level), off a wall at wall_restitution or off the ground (falling faster than min_bounce_speed) at ground_restitution, losing ground_friction of its forward speed. Domino (throw_domino = chain depth): a flying tank within strike_radius of a grounded one deals domino_damage and launches it domino_reach on along its way.",
+			"gravity": 30.0,
+			"loft_deg": 35.0,
+			"min_distance": 0.05,
+			"clearance": 0.1,
+			"wall_radius": 1.2,
+			"wall_damage": 1.0,
+			"wall_floors": 2,
+			"wall_restitution": 0.6,
+			"bounces": 0,
+			"min_bounce_speed": 3.0,
+			"ground_restitution": 0.45,
+			"ground_friction": 0.3,
+			"strike_radius": 1.5,
+			"domino_damage": 20.0,
+			"domino_reach": 6.0
+		},
 		"miss": {
 			"hit_near": 0.9,
 			"hit_far": 0.6,
