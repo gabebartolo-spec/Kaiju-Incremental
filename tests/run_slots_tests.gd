@@ -134,6 +134,7 @@ func _check_continue_picks_slot() -> void:
 	save["rubble"] = 321
 	save["specimen"] = 4
 	save["demo"] = Demo.enabled()
+	save.erase("seed")  # a save from before saves had a city seed
 	SaveFile.save_game(save, 2)
 	var main := await _main()
 	var title := _screen(main) as TitleScreen
@@ -165,6 +166,7 @@ func _check_continue_picks_slot() -> void:
 		tree != null and tree.rubble == 321 and SaveFile.slot == 2,
 		"clicking slot 2 continues slot 2's kaiju (rubble %s)" % (tree.rubble if tree else -1)
 	)
+	check(SaveFile.load_game(2).has("seed"), "a save without a city seed gets one when continued")
 	await _close(main)
 
 
@@ -184,9 +186,10 @@ func _check_new_in_empty_slot() -> void:
 		(
 			SaveFile.has_save(1)
 			and Num.i(SaveFile.load_game(1).get("specimen", 0)) == 1
+			and Num.i(SaveFile.load_game(1).get("seed", -1)) == SaveFile.pinned_seed
 			and Num.i(SaveFile.load_game(2).get("rubble", 0)) == 321
 		),
-		"the new kaiju is saved in slot 1 as K-01; slot 2 keeps its kaiju"
+		"the new kaiju is saved in slot 1 as K-01 with its city seed; slot 2 keeps its kaiju"
 	)
 	await _close(main)
 

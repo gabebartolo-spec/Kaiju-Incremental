@@ -44,6 +44,7 @@ func run_checks() -> void:
 	await _t("_check_planted_twin_cities")
 	await _t("_check_planted_zero_weight_asset")
 	await _t("_check_same_index_same_city")
+	await _t("_check_city_per_save")
 	await _t("_check_road_rules_held")
 	await _t("_check_diagonal_fits")
 	await _t("_check_lines_fit_clean")
@@ -159,6 +160,27 @@ func _check_same_index_same_city() -> void:
 			check(one == two, "stage %d, %s run 3 twice: the same layout hash" % [tier, mode])
 
 
+## The game's city (CitySeed) follows the save's own seed and the run index (D-263): the same
+## seed and run build the same city; another slot's seed, or the next run, builds another.
+func _check_city_per_save() -> void:
+	var base := Content.tuning()
+	for tier: int in STAGES:
+		var cfg: Dictionary = CitySeed.tuning(base, tier, 0, 0)["city"]
+		var plan := CityGen.map(cfg)
+		var a := {"layout": CitySeed.layout(base, tier, 11, 2), "plan": plan}
+		var twin := {"layout": CitySeed.layout(base, tier, 11, 2), "plan": plan}
+		var other := {"layout": CitySeed.layout(base, tier, 12, 2), "plan": plan}
+		var run := {"layout": CitySeed.layout(base, tier, 11, 3), "plan": plan}
+		check(
+			SeedAudit.layout_hash(a) == SeedAudit.layout_hash(twin),
+			"stage %d: save seed 11 run 2 twice builds the same city" % tier
+		)
+		var by_slot := Num.f(SeedAudit.compare(a, other)["lots"])
+		var by_run := Num.f(SeedAudit.compare(a, run)["lots"])
+		check(by_slot > 0.0, "stage %d: another save's seed, another city (%.2f)" % [tier, by_slot])
+		check(by_run > 0.0, "stage %d: the next run, another city (%.2f)" % [tier, by_run])
+
+
 ## The road rules main meets in every city of the full run still hold on a few seeds per stage.
 func _check_road_rules_held() -> void:
 	var base := Content.tuning()
@@ -259,7 +281,8 @@ func _check_landmarks_clear() -> void:
 	var city := Roads.city(base, 3, Roads.SHIPPED_SEED)
 	var plan := CityGen.map(city)
 	var x := Rail.avenue_x(city)  # the north-south avenue nearest the middle
-	plan["sites"] = [{"id": "planted", "rect": Rect2(x - 6.0, -20.0, 12.0, 8.0)}]
+	# South of the back street (the front north of it lays no grid streets, CityHarbour).
+	plan["sites"] = [{"id": "planted", "rect": Rect2(x - 6.0, 12.0, 12.0, 8.0)}]
 	var got := LandmarkClear.of_plan(plan)
 	check(
 		got.any(func(v: String) -> bool: return v.contains("on the avenue")),

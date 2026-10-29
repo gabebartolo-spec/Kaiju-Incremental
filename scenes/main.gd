@@ -119,13 +119,16 @@ func _new_game(n: int) -> void:
 
 
 func _on_species_chosen(species_id: String) -> void:
-	_save = SaveFile.new_save(species_id)
+	_save = SaveFile.new_save(species_id, SaveFile.fresh_seed())
 	_save["demo"] = Demo.enabled()  # a demo save never continues in the full game (D-145)
 	SaveSystem.save_game(_save)
 	_continue()
 
 
 func _continue() -> void:
+	if not _save.has("seed"):  # a save from before saves had a city seed draws its own now
+		_save["seed"] = SaveFile.fresh_seed()
+		SaveSystem.save_game(_save)
 	var levels: Dictionary = _save.get("levels", {})
 	_tree = UpgradeTree.new(GameData.upgrades, levels, str(_save.get("species", "")))
 	if Num.i(_save.get("runs", 0)) == 0:
@@ -158,8 +161,8 @@ func _start_rampage(endless := false) -> void:
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var tier := Num.i(stats["size"])
 	var runs := Num.i(_save.get("runs", 0))
-	# The run's city (CitySeed; the save has no seed of its own yet, so 0).
-	var layout := CitySeed.layout(Content.tuning(), tier, 0, runs)
+	# The run's city (CitySeed): the slot's own seed and the run index.
+	var layout := CitySeed.layout(Content.tuning(), tier, Num.i(_save.get("seed", 0)), runs)
 	_endless = endless
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
