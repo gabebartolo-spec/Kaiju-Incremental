@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-385 · Director · Tests guard behaviour and bugs, not balance numbers (rank 1 now)
+Q (audit of all 76 suites on fb5e3adbc: which checks freeze tuning or old measurements so polish turns CI red with
+nothing broken?): he picked "A: rank 1 now" (rank 2 as each check next breaks, rank 3 when convenient). Implementation
+and polish come before balance tuning. Rank 1 now: military parked-in-range floor over hand-picked seeds becomes "a
+tank that parks sits in the band"; motion gate steps-per-second bands go (footfall = clip stride and no slide stay),
+foot lift one range for every stage, knee jerk one shared ceiling; gait's young route pinned to 1 mm becomes a turn
+rule plus two runs match; pinned fingerprints (street, cells, landmark cells, destruction trace and island sizes)
+go, run-vs-run matches stay; menu checks by exact wording and pixel gaps become overlap / on-screen / reachable rules;
+species lists come from the data. Kept: slide, catch steps, knee pops, locked legs, NaN, overlaps, determinism, saves,
+text size and contrast. Report: the audit's REPORT_tests_too_strict.md. Replaces motion_gate.json's "never widen".
+
 ## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
 Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
 12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
@@ -379,18 +390,3 @@ Q (18:1x): speed tests during the day? A: "One block now, then none": the queued
 perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
 until D-333's start. Builders, Cascadeur, suites, captures and builds use the PC freely. D-299/D-313's window rules
 still govern every speed run that does start.
-
-## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
-His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
-Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
-(Recommended)": the camera stays at his back and turns slowly with him, as heavy as his turn; the intro pivots out
-behind him (D-325) and play starts right there, with no jump; the bay stays on the north edge (D-270). Lead's check
-of main the same day: the follow kept one fixed compass offset (tuning camera.offset, CameraFollow) and did not turn
-with him, so this is built, not restored. D-259's limited swing (about 60 deg) eases back to behind him. Every look
-approved from the fixed view gets one recheck capture.
-
-## 2026-10-27 · D-329 · Director · Tail whip: the automatic whip stays until the button lash is built
-Q: D-328 removes the automatic tail whip and moves its tree nodes to the button tail lash (D-280), but the lash is
-timed "After the render plan"; remove the whip now (no tail move until then) or wait? A: "Wait for the render plan".
-So: the automatic whip and its nodes (r_tail, r_shear) stay as they are until the D-280 lash is built after the
-render plan; then the whip goes and its nodes upgrade the lash. Changes D-328's tail line on timing only.

@@ -21,16 +21,6 @@ const FIXTURES: Array = [
 	["tiny", 50.5, 0.5, 1, 1, 2, 1, 0, {}],
 	["sign", 4.5, 2.5, 3, 3, 6, 1, 3, {}],
 ]
-## Per fixture: [cells, digest] (first 16 hex digits of the grid's SHA-256 with its dims).
-const PINNED := {
-	"office": [9227, "494795997a4e992a"],
-	"brick": [6126, "9df7f6fbfb45d315"],
-	"glass": [27213, "2ea7122061040817"],
-	"stone": [13385, "04da84b429e548bc"],
-	"party": [6210, "489e518ce47e14b0"],  # b2-22: party walls carry the facade
-	"tiny": [776, "8c0f4755ac5a6536"],
-	"sign": [10911, "1c39938e3ebe6249"],
-}
 ## City buildings compared with the view cell for cell.
 const CITY_SAMPLE := 40
 ## Materials that hang on by an edge or a corner (data/materials.json "fixture").
@@ -55,7 +45,7 @@ func run_checks() -> void:
 	await _t("_check_res_matches_view")
 	await _t("_check_grid_layout")
 	await _t("_check_deterministic")
-	await _t("_check_pinned")
+	await _t("_check_counts")
 	await _t("_check_fixtures_match_view")
 	await _t("_check_city_matches_view")
 	await _t("_check_no_clock_or_rng")
@@ -159,16 +149,12 @@ func _check_deterministic() -> void:
 	check(same, "every fixture builds the same grid twice")
 
 
-## Cell counts and digests pinned per fixture: a layout change shows up here.
-func _check_pinned() -> void:
-	var got := {}
+## Every fixture builds a grid with cells in it (no pinned count or digest: D-385; the view match
+## and the run-against-run check above guard the layout).
+func _check_counts() -> void:
 	for f: Array in FIXTURES:
 		var g := BuildingCells.new(_building(f), _party(f))
-		got[f[0]] = [g.count(), _digest(g)]
-	for f: Array in FIXTURES:
-		var want: Array = PINNED.get(f[0], [])
-		var have: Array = got[f[0]]
-		check(want == have, "%s pinned at %s (got %s)" % [f[0], want, have])
+		check(g.count() > 0, "%s has cells (%d)" % [f[0], g.count()])
 
 
 ## The fixtures (each archetype, party walls, a one-unit lot, a neon sign) are the view's

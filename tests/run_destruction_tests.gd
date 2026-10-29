@@ -19,20 +19,9 @@ const BANNED: Array[String] = [
 	"await",
 	"Input."
 ]
-## Spike pins (DESTRUCTION_SPIKE.md section 4): the tower path's island at RES 4 and 8.
-const ISLAND_RES4 := 8415
-const ISLAND_RES8 := 35428
 ## Block of six at RES 8 replays this many ticks (the base cuts of the first buildings);
 ## the full 10 s runs at RES 4 and for the tower.
 const BLOCK_RES8_TICKS := 200
-## Pinned replay traces (hash of the trace: digest, carved count and each event's size, kind,
-## dir and pivot), so a wrong fall direction or pivot fails here and WP2's native port is held
-## to them. Key: "<path> RES <res>" with the support rule. Re-pinned on #97's review FIX.
-const TRACE_PINS := {
-	"tower RES 4": 3951767490,
-	"tower RES 8": 2034646805,
-	"block RES 4": 3520931729,
-}
 
 var _replays: Dictionary = {}
 
@@ -50,10 +39,9 @@ func run_checks() -> void:
 	await _t("_check_offset")
 	await _t("_check_tunnel")
 	await _t("_check_base_cut")
-	await _t("_check_island_pin")
+	await _t("_check_island_rule")
 	await _t("_check_replay_tower")
 	await _t("_check_replay_block")
-	await _t("_check_trace_pins")
 
 
 ## RES from data (8); `res` overrides it for the RES 4 fixtures.
@@ -288,15 +276,46 @@ func _kinds(parts: Array) -> Array[String]:
 	return out
 
 
-## The spike's island sizes, from the same rule (detach, no support rule) on the same path.
-func _check_island_pin() -> void:
-	var pins := {4: ISLAND_RES4, 8: ISLAND_RES8}
-	for res: int in pins:
-		var want: int = pins[res]
-		var islands: PackedInt32Array = _replay(res, false, false, _full_ticks())[0]["islands"]
+## The spike's rule (detach, no support rule) on the tower path, at RES 4 and 8: the base passes
+## (centre 1.6 units up, RADIUS 2.4) cut the base through, and exactly one island comes off. It
+## is the whole part above the cut: no cell is left at or above the cut's top, every cell is
+## carved, in the island or still standing, and no island cell sits on the ground layer (no
+## pinned size: D-385).
+func _check_island_rule() -> void:
+	for res: int in [4, 8]:
+		var f := Paths.office(Paths.UNITS, res)
+		var start := f.alive_count
+		var origin := Vector3(-3, 0, -3)
+		var carved := 0
+		var parts: Array[Dictionary] = []
+		for tick: int in _full_ticks():
+			var at := Paths.path(Vector3.ZERO, tick * Paths.TICK) - origin
+			var removed := f.carve_sphere(at, Paths.RADIUS)
+			carved += removed.size()
+			if not removed.is_empty():
+				parts.append_array(f.detach())
+		var top := ceili((1.6 + Paths.RADIUS) * res)
+		var above := 0
+		for z: int in f.d:
+			for x: int in f.w:
+				above += 1 if f.top_below(x, z, f.h) >= top else 0
+		var island: Array[Vector3i] = parts[0]["cells"] if parts.size() == 1 else []
+		var low := island.filter(func(c: Vector3i) -> bool: return c.y == 0).size()
 		check(
-			islands == PackedInt32Array([want]),
-			"the tower path at RES %d gives the spike's one island of %d: %s" % [res, want, islands]
+			(
+				parts.size() == 1
+				and island.size() > 0
+				and above == 0
+				and low == 0
+				and island.size() + carved + f.alive_count == start
+			),
+			(
+				(
+					"RES %d: one island (%d parts) of %d cells, %d columns still above the cut, %d on"
+					+ " the ground"
+				)
+				% [res, parts.size(), island.size(), above, low]
+			)
 		)
 
 
@@ -335,17 +354,3 @@ func _check_replay_block() -> void:
 				% [res, trace.size(), islands]
 			)
 		)
-
-
-## The pinned traces: the support rule's events, their directions and pivots, tick by tick.
-func _check_trace_pins() -> void:
-	var runs := {
-		"tower RES 4": _replay(4, false, true, _full_ticks()),
-		"tower RES 8": _replay(8, false, true, _full_ticks()),
-		"block RES 4": _replay(4, true, true, _full_ticks()),
-	}
-	for key: String in TRACE_PINS:
-		var got: Array[Dictionary] = runs[key]
-		var trace: PackedInt64Array = got[0]["trace"]
-		var want: int = TRACE_PINS[key]
-		check(hash(trace) == want, "%s trace is pinned: %d (want %d)" % [key, hash(trace), want])

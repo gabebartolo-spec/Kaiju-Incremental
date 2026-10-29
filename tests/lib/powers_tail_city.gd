@@ -30,10 +30,12 @@ static func check(check: Callable) -> void:
 		t += dt
 		var move := Vector2(0, 1) if t < INLAND else DIRS[int((t - INLAND) / LEG) % DIRS.size()]
 		sim.step(dt, move, false, 0)
+	# Director 2026-10-30: the slower baby (#408) may not reach a building on this route; the
+	# sweep must still fire, and the powers suite's own set-ups check that it cuts.
 	check.call(
-		sim.powers.tail_sweeps > 0 and sim.powers.tail_cut > 0,
+		sim.powers.tail_sweeps > 0,
 		(
-			"in the stage-1 city the baby's tail sweep cuts buildings: %d sweeps, %d chunks cut"
+			"in the stage-1 city the baby's tail sweep fires: %d sweeps (%d chunks cut)"
 			% [sim.powers.tail_sweeps, sim.powers.tail_cut]
 		)
 	)
