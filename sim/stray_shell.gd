@@ -70,13 +70,14 @@ static func hit_buildings(
 		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
 		if near > 0.0 and sim.carving.takes(i):
 			sim.explosives.damaged(i)  # any damage arms a red barrel (comments #19)
-			sim.carving.hit(i, force, damage, floors)  # coats what it reaches too
+			sim.carving.hit(i, force, damage, b.local_floors(floors))  # coats what it reaches too
 			continue
 		if near <= 0.0 or b.frame.alive_count == 0:
 			continue
 		var cells: Array[Vector3i] = []
 		var amounts := PackedFloat32Array()
-		for y: int in range(maxi(0, floors.x), mini(floors.y, b.height)):
+		var local := b.local_floors(floors)
+		for y: int in range(maxi(0, local.x), mini(local.y, b.height)):
 			for x: int in b.w:
 				for z: int in b.d:
 					var c := Vector3i(x, y, z)

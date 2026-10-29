@@ -245,11 +245,12 @@ func _check_effect() -> void:
 	)
 
 
-## Whether the site's landmark stands on a designated spot (city "landmarks" "anchor", D-375).
+## Whether the site's landmark stands on a designated spot (a pool entry with a "size", drawn
+## into city "landmark_spots", or one given an "anchor": D-375).
 func _anchored(site: Dictionary) -> bool:
 	for spec: Dictionary in Content.section("city")["landmarks"]:
 		if str(spec["id"]) == str(site["id"]):
-			return spec.has("anchor")
+			return spec.has("anchor") or spec.has("size")
 	return false
 
 

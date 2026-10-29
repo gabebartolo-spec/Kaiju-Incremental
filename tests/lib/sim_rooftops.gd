@@ -116,17 +116,26 @@ func run() -> void:
 		)
 	)
 	# Its roof chunk gone (broken, dropped or toppled): the squad dies and pays biomass.
+	# The same city stepped with the roof standing: what the step pays elsewhere is not the squad's.
 	var roof := _one_squad(_new({}))
-	roof.kaiju_pos = Vector2(roof.arena_half, roof.arena_half)  # far off: no stomp lands
+	var twin := _one_squad(_new({}))
+	for each: RampageSim in [roof, twin]:
+		each.kaiju_pos = Vector2(each.arena_half, each.arena_half)  # far off: no stomp lands
 	var squad := roof.army_units.squads[0]
 	var before := roof.rubble
+	var twin_before := twin.rubble
 	roof.buildings[squad.building].frame.remove(squad.cell)
 	var died := _steps_counting(roof, DT, "rooftop_destroyed")
-	var paid := roof.rubble - before
+	_steps_counting(twin, DT, "rooftop_destroyed")
+	var elsewhere := twin.rubble - twin_before
+	var paid := roof.rubble - before - elsewhere
 	var want := Num.f(cfg["rooftop_rubble"][0]) * roof.stat("rubble_mult")
 	_check.call(
 		died == 1 and roof.army_units.squads.is_empty() and is_equal_approx(paid, want),
-		"a squad whose roof is gone dies and pays %.1f biomass (paid %.1f)" % [want, paid]
+		(
+			"a squad whose roof is gone dies and pays %.1f biomass (paid %.1f; %.2f elsewhere)"
+			% [want, paid, elsewhere]
+		)
 	)
 	_check.call(
 		Num.i(roof.result().get("rooftops", -1)) == 1,

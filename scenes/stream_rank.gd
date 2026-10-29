@@ -138,10 +138,10 @@ func _zone_of(dx: float, dz: float, far: float, reach: float) -> int:
 	return 1 if along >= _band_cos * c - _band_sin * s else 2
 
 
-## Building b's cost against the stream budget: its chunks; a viaduct piece is mostly air (0),
-## and a pool model (CityPool) costs only the chunks its model keeps.
+## Building b's cost against the stream budget: its chunks; a viaduct or bridge piece is mostly
+## air (0), and a pool model (CityPool) costs only the chunks its model keeps.
 static func chunks(b: RampageSim.Building) -> int:
-	if b.is_rail():
+	if b.is_span():
 		return 0
 	return b.frame.alive_count if b.model != "" else b.w * b.d * b.height
 

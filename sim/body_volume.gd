@@ -66,8 +66,8 @@ func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) 
 			var x1 := mini(b.w - 1, floori(centre.x + r - (b.x - b.w * 0.5)))
 			var z0 := maxi(0, floori(centre.y - r - (b.z - b.d * 0.5)))
 			var z1 := mini(b.d - 1, floori(centre.y + r - (b.z - b.d * 0.5)))
-			var y0 := maxi(0, floori(y_lo))
-			var y1 := mini(b.height - 1, ceili(y_hi) - 1)
+			var y0 := maxi(0, floori(y_lo) - b.base)  # local: a bridge piece is under the street
+			var y1 := mini(b.height - 1, ceili(y_hi) - 1 - b.base)
 			for x: int in range(x0, x1 + 1):
 				for z: int in range(z0, z1 + 1):
 					var p := b.chunk_world(Vector3i(x, 0, z))

@@ -14,6 +14,11 @@ const TOPPLE_STEPS := 30 * 60
 ## chew breaks those), so a body set down on top of them starts inside them. Seeds 3 and 8 have
 ## no office tower in the arena.
 const CHEW_SEEDS: Array[int] = [3, 8, 22]
+## The topple and swipe checks' city: one with a tall office tower in the arena (the usual city
+## lost its own when the bay-coast line fit moved the grid, roadmap 2).
+const TOPPLE_CITY := Vector2i(22, 0)
+## The chew's ways in, first that has clear ground: from the south face, then north, east, west.
+const CHEW_DIRS: Array[Vector2] = [Vector2(0, -1), Vector2(0, 1), Vector2(-1, 0), Vector2(1, 0)]
 
 var _check: Callable
 var _make: Callable
@@ -37,8 +42,12 @@ func run() -> void:
 ## D-091: "more than capable of tearing the roots out and toppling the large buildings". The baby
 ## chews straight into the base of the nearest tall tier-2 tower until it comes down.
 func _check_topple() -> void:
-	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
-	var b := sim.buildings[Fixture.nearest_tower(sim)]
+	var sim: RampageSim = _make_seeded.call("reptilian", {}, {}, TOPPLE_CITY)
+	var tower := Fixture.nearest_tower(sim)
+	_check.call(tower >= 0, "the topple city %s has a tall tier-2 tower" % TOPPLE_CITY)
+	if tower < 0:
+		return
+	var b := sim.buildings[tower]
 	var start := b.frame.alive_count
 	var chew := _chew_to_topple(sim)
 	var fall: RampageSim.Fall = chew["fall"]
@@ -106,7 +115,7 @@ func _check_chew_seeds() -> void:
 ## chew alone may never topple it (the pool city's office tower: the chew cuts a slot through its
 ## middle and walks out the far side while both flanks hold it up), which counts as later.
 func _check_swipe_undermines(swiped_steps: int) -> void:
-	var off: RampageSim = _make.call("reptilian", {}, 0, {})
+	var off: RampageSim = _make_seeded.call("reptilian", {}, {}, TOPPLE_CITY)
 	off.stats["swipe_damage"] = 0.0
 	var chew := _chew_to_topple(off)
 	var fell := chew["fall"] != null
@@ -123,8 +132,11 @@ func _check_swipe_undermines(swiped_steps: int) -> void:
 ## south face, with a building standing right against its far (north) side, chews the tower and
 ## leaves the building behind it whole (the chewed rows are the nearest standing ones per lane).
 func _check_swipe_occlusion() -> void:
-	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	var sim: RampageSim = _make_seeded.call("reptilian", {}, {}, TOPPLE_CITY)
 	var index := Fixture.nearest_of(sim, 2, Vector2i(Fixture.TOWER_FLOORS, Fixture.TOWER_SIDE), -1)
+	_check.call(index >= 0, "the swipe city %s has a tall tier-2 tower" % TOPPLE_CITY)
+	if index < 0:
+		return
 	var tower := sim.buildings[index]
 	var behind_index := -1
 	for i: int in sim.buildings.size():
@@ -132,6 +144,9 @@ func _check_swipe_occlusion() -> void:
 		if i != index and other.tier == 2 and other.landmark == "" and other.in_arena:
 			behind_index = i
 			break
+	_check.call(behind_index >= 0, "the swipe city has a second tier-2 building to stand behind")
+	if behind_index < 0:
+		return
 	var behind := sim.buildings[behind_index]
 	for other: RampageSim.Building in sim.buildings:
 		if other != tower and other != behind:
@@ -173,10 +188,16 @@ func _chew_to_topple(sim: RampageSim) -> Dictionary:
 		return out
 	out["tower"] = index
 	var b := sim.buildings[index]
-	var into := Vector2(0, -1)  # from the tower's south face, across its base
-	var face := Vector2(b.x, b.z + b.d * 0.5 + sim.body.length() * 0.6)
-	out["backed"] = Fixture.set_down_clear(sim, face, into)
-	if Num.f(out["backed"]) < 0.0:
+	# From the tower's south face across its base; else the first other face with clear ground.
+	var into := Vector2.ZERO
+	for dir: Vector2 in CHEW_DIRS:
+		var half := Vector2(b.w, b.d) * 0.5
+		var face := Vector2(b.x, b.z) - dir * (absf(dir.dot(half)) + sim.body.length() * 0.6)
+		out["backed"] = Fixture.set_down_clear(sim, face, dir)
+		if Num.f(out["backed"]) >= 0.0:
+			into = dir
+			break
+	if into == Vector2.ZERO:
 		return out
 	var steps := 0
 	var worst := 0

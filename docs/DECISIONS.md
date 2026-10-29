@@ -4,16 +4,41 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-394 · Director · The landmark pool's named entries
+His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
+ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
+stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".
+
+## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
+A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
+menu_fps 60, so the frame rate the preview shows is the real one; closing Settings restores the menu cap.
+
 ## 2026-10-30 · D-391 · Director · The roadmap moves to a Claude Doc
 A: "Yes, redirect it": the roadmap lives at https://claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q; `docs/ROADMAP.md`
 points there; the old file is frozen as `docs/archive/ROADMAP_2026-10.md` for detail agents cannot get from the doc.
+
+## 2026-10-30 · D-390 · Director · The baby roar's jaw is judged in the game, not on Cascadeur's mesh
+Q (10-30, after the lip slit and three weight fits left Cascadeur's mesh at 18-22 head flips on the baby roar, bar 6):
+"Accept game result". In the game the baby's mouth already opens as a slit (the bake's hinge rule, #356): at a 38 deg
+gape every parting is jaw|head1 along the mouth, none at the corner or throat, red mouth voxels shown. The mesh bar is
+dropped for the baby roar; no edge loops are added. Changes: roadmap row 1's baby jaw is done with #426.
+
+## 2026-10-30 · D-389 · Director · River bridges carve on cells
+Q (ROADMAP 4, "carve is universal"; river bridges were flat decks CityGround drew, never broken): they picked "Carve,
+spans drop" and "Keep deck, add piers". Each river bridge (CityRiver.bridges) is now a row of buildings, one per span
+(tuning bridge.span, sim/bridge_layout.gd, the railway's pattern): an asphalt deck at street level, a stone parapet
+each side, a pier to the riverbed at each end. A piece's floor 0 is the riverbed, bed floors under the street
+(Building.base), so a deck cut off its piers drops or tips into the river. CityGround keeps only the abutments; the
+Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks. The spread
+suite's "1.5x city razes a smaller share" check goes (he picked "Drop share check": with bridges breakable it read 40%
+vs 39%, a balance number under D-385); its bigger-city and replay checks stay.
 
 ## 2026-10-30 · D-388 · Director · Landmarks carve on cells
 Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
 Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
 ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
 section above the stub comes down as one topple over the stub's edge (rim outward, stands inward) before the support
-settle. Landmarks keep their cut side (D-387). River and bay bridges still render as decks, not carved buildings.
+settle. Landmarks keep their cut side (D-387). Bay bridges still render as decks (river bridges carve, D-389).
 
 ## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
 Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
@@ -370,21 +395,3 @@ run "Always on, like the croc" (replaces D-245's top-tier run unlock). The serpe
 through buildings around his height, but being that he is the shortest kaiju, that wont be many buildings. Snake can
 however clumb the buildings bigger than him and constrict-crush them"; asked, a bigger building at speed "Flows into a
 climb" (no slam) and constrict "Keep it at adulthood" (D-206 stands). Serpent work still waits on D-246.
-
-## 2026-10-27 · D-337 · Director · The croc's run is momentum: he crashes through small buildings, slams into big ones
-His words (19:4x), on hearing the croc has no run yet: "running wont have a sprint button, it should be momentum based,
-at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones". Asked:
-momentum "Always on" (from the first rampage, walking straight builds him into a run and turning bleeds it; tree nodes
-make it build faster and hit harder, and the old unlock node becomes a boost); a big building "Slam and stop" (a loud
-impact, a deep dent caved in at the contact, the building shudders, the camera shakes, his momentum is spent); small
-vs big "Relative to his size" (shorter than about his shoulder crashes, so each stage crashes through more); when
-"Now, one more builder" (ahead of D-310's order; it touches no debt or render file). Per D-335 the run and the slam
-stop are keyed in Cascadeur.
-
-## 2026-10-27 · D-336 · Director · One Cascadeur keyer and one rigger; no second Cascadeur copy
-His words (19:3x), on hearing that Cascadeur runs one copy at a time: "if only 1 builder can use casc at a time then
-we only need 1 casc builder otherwise the others are just twiddling their thumbs". Asked, he picked "1 keyer + 1
-rigger" and said "No" to testing a second Cascadeur copy. So: one builder (croc-claw) keys every move in turn (claw
-rake, walk first step, idle, run, turn B, then the young clips); one rigger (croc-young-casc) readies the young
-skeletons (D-335, bars S1-S5) and brings finished clips into the game; every Cascadeur job holds C:/kt/casc_lock.sh;
-croc-idle-run and croc-casc-s2 are not respawned.

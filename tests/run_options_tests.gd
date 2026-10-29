@@ -5,7 +5,8 @@ extends "res://tests/lib/runner.gd"
 ## flashing, rumble and gore by real clicks, each saved; held moves on TOGGLE latch the held
 ## button; Reduce flashing dims every flash reader and hides the fringe; the rumble thuds per
 ## growth stage, jolts on stomps and collapses and buzzes on the breath, and the toggle silences it;
-## both pages fit the 4K TV at every UI scale.
+## both pages fit the 4K TV at every UI scale; the graphics preview beside Settings redraws at each
+## GRAPHICS level clicked, at the player's frame cap, and the card with it fits the TV.
 ## Seeded by design: city seed 0, time stepped by frames; no random draw is read.
 ##   godot --headless --path . --script tests/run_options_tests.gd
 
@@ -34,6 +35,7 @@ func run_checks() -> void:
 	await _t("_check_held_toggle")
 	await _t("_check_rumble_rows")
 	await _t("_check_pages_fit")
+	await _t("_check_graphics_preview")
 	await _h("Options in play", func() -> void: await OptionsPlay.new(self, check).run())
 	KeyBinds.reset()
 
@@ -263,6 +265,43 @@ func _check_pages_fit() -> void:
 		await layout.fits_at_scales(page, name + " page")
 	_menu.queue_free()
 	await _frames(1)
+
+
+## Comment #90: GRAPHICS clicked steps the preview to the new level (its view, its particles), the
+## menu runs at the player's own cap while it is open, and Settings with it fits the TV.
+func _check_graphics_preview() -> void:
+	var before := PlayerSettings.graphics
+	_menu = SettingsMenu.new()
+	root.add_child(_menu)
+	await _frames(3)
+	var preview := GuiInput.find_script(_menu, GraphicsPreview) as GraphicsPreview
+	check(preview != null, "Settings shows the graphics preview")
+	if preview == null:
+		return
+	check(PlayerSettings.previewing, "the preview lifts the menu frame cap")
+	var port := preview.find_children("*", "SubViewport", true, false)[0] as SubViewport
+	var levels: Dictionary = Content.section("display")["graphics"]
+	for _i: int in levels.size():
+		var b := GuiInput.button(_menu, "< %s >" % PlayerSettings.graphics_level().to_upper())
+		await GuiInput.click(self, b)
+		await _frames(2)
+		var row := PlayerSettings.graphics_row()
+		var level := PlayerSettings.graphics_level()
+		check(
+			is_equal_approx(port.scaling_3d_scale, Num.f(row["scale"])),
+			"preview renders %s at its scale" % level
+		)
+		var ratio := Num.f(row["particles"])
+		for p: Node in port.find_children("*", "GPUParticles3D", true, false):
+			if not is_equal_approx((p as GPUParticles3D).amount_ratio, ratio):
+				check(false, "preview particles at %s's ratio" % level)
+				break
+	await FlowLayout.new(self, check).fits_at_scales(_menu, "Settings with the preview")
+	_menu.queue_free()
+	await _frames(1)
+	check(not PlayerSettings.previewing, "closing Settings restores the menu frame cap")
+	PlayerSettings.graphics = before
+	PlayerSettings.save()
 
 
 func _key(code: Key) -> InputEventKey:

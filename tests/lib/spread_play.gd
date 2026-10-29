@@ -19,8 +19,8 @@ const BRIDGE_SECONDS := 20.0
 
 
 ## Paired: the same young kaiju, bot and seeds, 1.5x on (the shipped city) vs off (the old
-## stage-1 city). On: a bigger city (more chunks) of which the run razes a smaller share, the same
-## result from the same seed twice.
+## stage-1 city). On: a bigger city (more chunks), the same result from the same seed twice. The
+## razed shares are printed, not checked (D-389: a balance number, D-385).
 static func paired(check: Callable) -> void:
 	var on_tuning := Content.tuning()
 	var off_tuning := _old(on_tuning)
@@ -49,13 +49,6 @@ static func paired(check: Callable) -> void:
 	check.call(
 		Num.i(on["chunks"]) > Num.i(off["chunks"]),
 		"paired: the 1.5x stage-1 city is bigger (%d vs %d chunks)" % [on["chunks"], off["chunks"]]
-	)
-	check.call(
-		Num.f(on["destruction"]) < Num.f(off["destruction"]),
-		(
-			"paired: the same young kaiju razes a smaller share of the 1.5x city (%.0f%% vs %.0f%%)"
-			% [Num.f(on["destruction"]) * 100.0, Num.f(off["destruction"]) * 100.0]
-		)
 	)
 
 

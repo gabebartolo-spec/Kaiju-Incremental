@@ -58,6 +58,9 @@
 		{"id": 55, "name": "hz_drum", "strength": 1.0, "debris": "pipe", "fixture": false, "finish": "metal"},
 		{"id": 56, "name": "heater", "strength": 1.0, "debris": "heater", "fixture": false, "finish": "metal"},
 		{"id": 57, "name": "heater_hi", "strength": 1.0, "debris": "heater_hi", "fixture": false, "finish": "metal"},
-		{"id": 58, "name": "solar", "strength": 1.0, "debris": "solar", "fixture": false, "finish": "glass"}
+		{"id": 58, "name": "solar", "strength": 1.0, "debris": "solar", "fixture": false, "finish": "glass"},
+		{"id": 59, "name": "bridge_deck", "strength": 1.0, "debris": "slab", "fixture": false, "finish": "rough"},
+		{"id": 60, "name": "bridge_parapet", "strength": 1.0, "debris": "slab", "fixture": false, "finish": "rough"},
+		{"id": 61, "name": "bridge_pier", "strength": 1.0, "debris": "slab", "fixture": false, "finish": "rough"}
 	]
 }
