@@ -4,6 +4,24 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test
+Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
+a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
+local Godot suite run to check a change before it goes up, not even the suites it touched. Replaces the last
+clause of the archived local-prepush decision ("builders still run locally only the suites they iterate on").
+Probes that measure something a fix needs still run locally.
+
+## 2026-10-29 · D-382 · Director · A pull request skips the slow second-angle suites; they run on main
+His words: "which of these, if any, can we remove, or is it necessary for us to run them all for EVERY patch? its a
+real bottleneck for dev time"; on the list: "Yes, write D-382". No suite is deleted. Thirteen slow suites that check the
+game from a second angle run on every push to main only (the `slow` job, 3 lanes, never blocking): streamview, load,
+counts, crowd, empty_space, roads, heliflight, skyline, city_audit, demoend, croc_standing, slowmo, results (4,365 s of
+8,802). Everything else, motion and smoke included, runs on every PR. The list is the `pr_skip` line of
+tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last green PR run took 18 min, shard 1
+alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
+plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
+suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
+
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
 row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
@@ -377,19 +395,3 @@ keep that timing or build it sooner? A: "WTF do you mean render items come with 
 stop fucking with me. the destructions ship with the demo, the destruction is the game". So: D-094's "after demo exe 2"
 is reversed; real carving and falling pieces ship in the demo, and render plan items 10 and 11 (the physics speed-ups,
 D-311) are built now as render priority 1 work, not parked. Corrects D-311's correction note.
-
-## 2026-10-27 · D-326 · Director · Never fade out the destruction; audit cuts and keeps
-Q: falling chunks of a toppling building fade out when they pass between the camera and the kaiju; keep or cut? A:
-"Cut. ive said a thousand times, its ok to obscure the kaiju, its not ok to block the camera, please stop asking me
-questions about this, please stop making buildings fade out, the destruction IS THE GAME, NEVER FADE OUT THE
-DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-through; it may hide the kaiju. Only a
-wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
-"Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
-screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
-
-## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
-Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
-a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
-add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
-reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
-each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.

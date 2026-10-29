@@ -151,7 +151,7 @@ static func _fill_row(
 			lot = Rect2i(r.position.x + shift, r.position.y + t, lot_deep, span)
 		t += span
 		var centre := Vector2(lot.position) + Vector2(lot.size) * 0.5
-		if _on_diagonal(plan, centre, Vector2(lot.size), cfg):
+		if on_diagonal(plan, centre, Vector2(lot.size), cfg):
 			continue  # cut by the diagonal avenue: the leftover corner is a plaza
 		(
 			out
@@ -171,7 +171,7 @@ static func _fill_row(
 
 
 ## Whether a footprint (centre, size) reaches into the diagonal avenue or its sidewalks.
-static func _on_diagonal(plan: Dictionary, centre: Vector2, size: Vector2, cfg: Dictionary) -> bool:
+static func on_diagonal(plan: Dictionary, centre: Vector2, size: Vector2, cfg: Dictionary) -> bool:
 	var diag: Dictionary = plan["diagonal"]
 	var dir: Vector2 = diag["dir"]
 	var normal := Vector2(-dir.y, dir.x)

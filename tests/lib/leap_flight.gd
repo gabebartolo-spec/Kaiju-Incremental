@@ -126,10 +126,18 @@ func _check_effect() -> void:
 		),
 		"croc.leap: a high arc onto a roof, nothing hit in flight (%s)" % [leapt]
 	)
+	var leap_chunks := 0
+	var walk_chunks := 0
+	for skip: int in FIXTURE_STARTS:
+		leap_chunks += Num.i(_run_city(true, skip)["chunks"])
+		walk_chunks += Num.i(_run_city(false, skip)["chunks"])
 	check(
-		Num.i(leapt["chunks"]) > Num.i(walked["chunks"]),
+		leap_chunks > walk_chunks,
 		(
-			"croc.leap: the leap breaks more of the city than walking the same seconds (%d vs %d)"
-			% [Num.i(leapt["chunks"]), Num.i(walked["chunks"])]
+			(
+				"croc.leap: the leap breaks more of the city than walking the same seconds, over %d"
+				+ " take-offs (%d vs %d)"
+			)
+			% [FIXTURE_STARTS, leap_chunks, walk_chunks]
 		)
 	)

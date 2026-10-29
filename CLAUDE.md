@@ -8,7 +8,7 @@ Shared rules: `~/.claude/CLAUDE.md`; this file holds only what is true for Kaiju
 ## Philosophy
 - **Designed by a person, developed with AI, never designed by AI.** **You are the disaster: every rampage must feel
   bigger than the last**; a system that does not change what the player sees, decides or remembers is cut.
-- A roadmap item is context, not authorisation: start only what your lead (or the director) assigns; when done,
+- A roadmap item is context, not authorisation: start only what the director assigns (no roles since 2026-10-29); when done,
   stop, report with evidence, recommend the next step.
 - Simplest viable option first (fewer systems, numbers, files). Challenge the director when a request conflicts with
   these rules or DESIGN.md: one paragraph, a better option, then do what he decides. Ask his judgement calls at once,
@@ -31,10 +31,11 @@ Shared rules: `~/.claude/CLAUDE.md`; this file holds only what is true for Kaiju
   alone on the PC (D-299). The focus and tool-gate hooks enforce these and their refusal says what to do.
 - Resolution (D-339, Kaiju only): 1080p is the baseline. Text, look and the 60 fps Medium bar are judged at 1080p;
   stills and clips for him are 1080p; 4K is checked at each playtest build. Replaces the rulebook's 4K-first check.
-- Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
+- Tests: CI is the test (D-383): lint locally, push, never run Godot suites locally to check a change.
+  `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`; remove
   when the PR merges; `tools/lint/worktrees.sh` flags merged and idle ones (D-053). Revert `.import` churn.
-- A decision goes into `docs/DECISIONS.md` in the PR that acts on it: the builder writes it, the lead checks the wording
-  (the lead owns it; any PR may carry it). Only the lead edits `docs/DESIGN.md`. `docs/STATUS.md` is generated
+- A decision goes into `docs/DECISIONS.md` in the PR that acts on it, when the director has ruled (any PR may carry it);
+  the same PR edits `docs/DESIGN.md` if the ruling changes what the game is. `docs/STATUS.md` is generated
   (`python tools/status.py`, never by hand) after merges. Main requires checks, so no direct push and no separate board
-  PR: pure log/status updates ride in the lead's next PR (docs-only, no Godot jobs).
+  PR: pure log/status updates ride in the next PR (docs-only, no Godot jobs).

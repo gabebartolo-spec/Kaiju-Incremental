@@ -24,7 +24,8 @@ const DIAGONAL := "diagonal"
 const MIN_LOT_M := 2.0  # CityLots' narrowest lot side: no block is cut thinner
 
 
-## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style.
+## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style
+## (CityPool's add a model).
 ## Blocks fill district by district, innermost first, so a district's lots draw the same
 ## numbers whichever stage is in play (only the stage's height caps change them). The river's
 ## blocks (CityRiver) still draw their lots and drop them, so every other building stays put;
@@ -44,6 +45,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 						lots = CityRiver.off_quay(plan, lots, cfg)
 					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
+	CityPool.place(out, rng, cfg, plan)  # lots take the pool's models (D-256), on their own stream
 	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, quay, out, cfg))  # + red barrels (#19)
 	return out
 

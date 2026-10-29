@@ -26,9 +26,12 @@ var rubble_colors: Dictionary = {}
 func _init(p_building: RampageSim.Building, base: Color) -> void:
 	super(p_building, base, {}, false)
 	var shape: Dictionary = Content.landmarks().get(b.landmark, {})
-	var model := _read(str(shape.get("kvox", "")))
-	if not model.frames.is_empty():
-		vox = model.frames[0]
+	if b.model != "":
+		vox = model_voxels(b)
+	else:
+		var model := _read(str(shape.get("kvox", "")))
+		if not model.frames.is_empty():
+			vox = model.frames[0]
 	var keys: Array = shape.get("ground", [])
 	for cell: Vector3i in vox.colors:
 		var c: Color = vox.colors[cell]
@@ -52,6 +55,59 @@ func face_mask(cell: Vector3i) -> int:
 	return Num.i(vox.flags.get(cell, 0))
 
 
+## A pool building's voxels (data/city_buildings.json, D-256): its baked model turned, mirrored and
+## stretched as placed (ModelVariant, the sim's LandmarkCells mapping) and drawn in its district's
+## palette shift `palette` ([hue degrees, saturation, value]). Made per call (a city's variants
+## would hold too much memory; BuildingView keeps the meshes).
+static func model_voxels(at: RampageSim.Building) -> VoxelBuilder:
+	var v := at.variant if not at.variant.is_empty() else ModelVariant.of({})
+	var book := Content.city_buildings()
+	var row := ModelVariant.row_of(at.model)
+	var out := VoxelBuilder.new()
+	var model := _read(str(row.get("kvox", "")))
+	if not model.frames.is_empty():
+		var base := model.frames[0]
+		var keys: Array[Vector3i] = []
+		keys.assign(base.colors.keys())
+		var xyz := PackedInt32Array()
+		xyz.resize(keys.size() * 3)
+		for i: int in keys.size():
+			xyz[i * 3] = keys[i].x
+			xyz[i * 3 + 1] = keys[i].y
+			xyz[i * 3 + 2] = keys[i].z
+		var turned := ModelVariant.cells(xyz, row, v, RES)
+		var cells: PackedInt32Array = turned["xyz"]
+		var src: PackedInt32Array = turned["src"]
+		var shift := _shift(book, row, at.palette)
+		var shade: Dictionary = {}
+		var table := ModelVariant.flag_table(v)
+		for i: int in src.size():
+			var from := keys[src[i]]
+			var c: Color = base.colors[from]
+			if not shade.has(c):
+				shade[c] = Color.from_hsv(
+					fposmod(c.h + shift.x / 360.0, 1.0),
+					clampf(c.s * shift.y, 0.0, 1.0),
+					clampf(c.v * shift.z, 0.0, 1.0)
+				)
+			var cell := Vector3i(cells[i * 3], cells[i * 3 + 1], cells[i * 3 + 2])
+			var shaded: Color = shade[c]
+			out.put_color(cell, shaded)
+			out.flags[cell] = table[Num.i(base.flags.get(from, 0)) & 63]
+	return out
+
+
+## The district's palette shift n as Vector3(hue degrees, saturation, value); none when missing.
+static func _shift(book: Dictionary, row: Dictionary, n: int) -> Vector3:
+	var districts: Dictionary = book.get("districts", {})
+	var district: Dictionary = districts.get(str(row.get("district", "")), {})
+	var shifts: Array = district.get("shifts", [])
+	if shifts.is_empty():
+		return Vector3(0.0, 1.0, 1.0)
+	var s: Array = shifts[posmod(n, shifts.size())]
+	return Vector3(Num.f(s[0]), Num.f(s[1]), Num.f(s[2]))
+
+
 ## A landmark's baked voxels by id (read once, shared with its views); empty if none.
 static func voxels(id: String) -> VoxelBuilder:
 	var shape: Dictionary = Content.landmarks().get(id, {})
@@ -61,8 +117,14 @@ static func voxels(id: String) -> VoxelBuilder:
 
 static func _read(path: String) -> Kvox:
 	_lock.lock()
+	var known: Kvox = _cache.get(path)
+	_lock.unlock()
+	if known != null:
+		return known
+	var read := Kvox.read(path)  # outside the lock: workers reading other models never wait
+	_lock.lock()
 	if not _cache.has(path):
-		_cache[path] = Kvox.read(path)
+		_cache[path] = read
 	var out: Kvox = _cache[path]
 	_lock.unlock()
 	return out

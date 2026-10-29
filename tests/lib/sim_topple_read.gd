@@ -34,6 +34,7 @@ func run() -> void:
 		_rampage(run, notes)
 	_check_gutted_topple(notes)
 	_check_falls_by_physics(notes)
+	_check_supports(notes)
 
 
 ## Every fall_start in a run, with the kaiju's position and the part's measures at that tick.
@@ -53,6 +54,7 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 		var hi := Vector2i(-1, -1)
 		var under := false
 		var count := 0
+		var support := ""  # a settle-time support's verdict
 		for c: Vector3i in cells:
 			if c.y == lowest:
 				var p := b.chunk_world(c)
@@ -72,6 +74,9 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 				# in the same step can take that support before this note is made.
 				var pivot: Vector3 = e["pivot"]
 				under = Num.f(e["drop"]) < pivot.y - 0.01
+				if e.get("under", false) == true:  # held at the settle: check the cell itself
+					support = _support(sim.carving.frame(Num.i(e["building"])), e, events)
+					under = under or support == "ok"
 			base = fine[2]
 			count = 1
 		(
@@ -80,6 +85,7 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 				{
 					"kind": str(e["kind"]),
 					"landmark": b.landmark != "",
+					"support": support,
 					"cells": cells.size(),
 					"height": size.x,
 					"span": size.y,
@@ -213,3 +219,48 @@ func _check_falls_by_physics(log: Array[Dictionary]) -> void:
 		onto > 0 and away > 0,
 		"seeded topples fall onto the kaiju (%d) as well as away from it (%d)" % [onto, away]
 	)
+
+
+## A carved part the sim found held at its settle (fall_start "under") names the cell that held
+## it ("support"): it must sit in a column of the part's lowest layer, below that layer, and be
+## solid that step (still in the grid, or carved or fallen in the same step's events). "ok", or
+## what is wrong with it.
+static func _support(f: VoxelFrame, e: Dictionary, events: Array[Dictionary]) -> String:
+	var s := Num.i(e.get("support", -1))
+	if s < 0:
+		return "no support cell"
+	var plan := f.w * f.d
+	var index: PackedInt32Array = e["index"]
+	var low := f.h
+	for i: int in index:
+		low = mini(low, i / plan)
+	var column := false
+	for i: int in index:
+		column = column or (i / plan == low and i % plan == s % plan)
+	if not column or s / plan >= low:
+		return "cell %d not under the part's lowest layer" % s
+	if f.cells[s] != VoxelFrame.EMPTY:
+		return "ok"
+	for other: Dictionary in events:
+		var kind := str(other["type"])
+		if (kind != "cells_carved" and kind != "fall_start") or other == e:
+			continue
+		if Num.i(other["building"]) == Num.i(e["building"]) and other.has("index"):
+			var gone: PackedInt32Array = other["index"]
+			if gone.has(s):
+				return "ok"
+	return "cell %d was not solid that step" % s
+
+
+## Every settle-time support a carved part names checks out (_support).
+func _check_supports(log: Array[Dictionary]) -> void:
+	var bad: Array[String] = []
+	var held := 0
+	for f: Dictionary in log:
+		var verdict := str(f["support"])
+		if verdict == "ok":
+			held += 1
+		elif verdict != "":
+			bad.append(verdict)
+	print("  carved parts held at their settle: %d checked, %d wrong" % [held, bad.size()])
+	_check.call(bad.is_empty(), "every settle-time support sits under its part: %s" % [bad])
