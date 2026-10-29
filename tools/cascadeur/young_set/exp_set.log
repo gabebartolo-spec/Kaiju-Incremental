@@ -1,21 +1,15 @@
-== idle 241 still
-{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/idle_fix1.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_idle_joints.fbx exists True in 2 s"}
+== walk 90 walk (walk_g9)
+{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/walk_g9.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_walk_joints.fbx exists True in 2 s"}
 FOOTIK ankle error before: max 0.0 cm, mean 0.0 cm
-CLIP idle (still) 241 frames at 30 fps from keyed 0..240; rest heads vs the file 0.001 m; worst game-joint error 0.058 m (jaw head); travel 0.00 m; end yaw 0.0 deg
-== walk 90 walk
-{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/walk_fix1.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_walk_joints.fbx exists True in 2 s"}
+CLIP walk (walk) 90 frames at 30 fps from keyed 0..89; rest heads vs the file 0.001 m; worst game-joint error 0.127 m (head1 tail); travel 36.69 m; end yaw 0.0 deg
+== turn_on_the_spot 109 still (turn_on_the_spot_g9)
+{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/turn_on_the_spot_g9.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_turn_on_the_spot_joints.fbx exists True in 3 s"}
 FOOTIK ankle error before: max 0.0 cm, mean 0.0 cm
-CLIP walk (walk) 90 frames at 30 fps from keyed 0..89; rest heads vs the file 0.001 m; worst game-joint error 0.377 m (arm_r2 tail); travel 36.65 m; end yaw 0.0 deg
-== turn_on_the_spot 109 still
-{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/turn_on_the_spot_fix1.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_turn_on_the_spot_joints.fbx exists True in 2 s"}
-FOOTIK ankle error before: max 0.2 cm, mean 0.1 cm
-CLIP turn_on_the_spot (still) 109 frames at 30 fps from keyed 0..108; rest heads vs the file 0.001 m; worst game-joint error 0.242 m (arm_r2 tail); travel 0.00 m; end yaw 0.0 deg
-== walk_turn_left 91 still
-{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/walk_turn_left_fix1.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_walk_turn_left_joints.fbx exists True in 2 s"}
+CLIP turn_on_the_spot (still) 109 frames at 30 fps from keyed 0..108; rest heads vs the file 0.001 m; worst game-joint error 0.169 m (arm_r1 head); travel 0.00 m; end yaw 0.0 deg
+== walk_turn_left 91 still (walk_turn_left_g11)
+{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/walk_turn_left_g11.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_walk_turn_left_joints.fbx exists True in 3 s"}
 FOOTIK ankle error before: max 0.0 cm, mean 0.0 cm
-CLIP walk_turn_left (still) 91 frames at 30 fps from keyed 0..90; rest heads vs the file 0.001 m; worst game-joint error 0.298 m (arm_l1 head); travel 0.00 m; end yaw 0.0 deg
-== walk_turn_right 91 still
-{"level": "Info", "text": "EXPORTED C:/kt/casc_drafts_1028/baby/walk_turn_right_fix1.casc -> C:/Users/DANTE/cascadeur_bridge/croc_new/claw/game_out/young/baby_walk_turn_right_joints.fbx exists True in 2 s"}
+CLIP walk_turn_left (still) 91 frames at 30 fps from keyed 0..90; rest heads vs the file 0.001 m; worst game-joint error 0.168 m (jaw tail); travel 0.00 m; end yaw 0.0 deg
+== walk_turn_right (first pass)
 FOOTIK ankle error before: max 0.1 cm, mean 0.0 cm
-CLIP walk_turn_right (still) 91 frames at 30 fps from keyed 0..90; rest heads vs the file 0.001 m; worst game-joint error 0.933 m (arm_r2 tail); travel 0.00 m; end yaw 0.0 deg
-EXIT 0
+CLIP walk_turn_right (still) 91 frames at 30 fps from keyed 0..90; rest heads vs the file 0.001 m; worst game-joint error 0.167 m (lid_up_l head); travel 0.00 m; end yaw 0.0 deg

@@ -5,11 +5,11 @@
 # into claw/game_out/young/reptilian_<STAGE>.kclip (a NEW file on the y7 skeleton; the lead reconciles the clip set).
 set -u
 H=C:/Users/DANTE/cascadeur_bridge/croc_new; C=$H/claw; D=$C/drafts; S=$1; CASC=$2; M=$3; FIRST=$4; N=$5; MODE=${6:-still}
-REPO="C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/casc-young-rise"; O=$C/game_out/young; mkdir -p $O
+REPO="C:/Users/DANTE/cascadeur_bridge/croc_new/claw/young_rise_tools"; O=$C/game_out/young; mkdir -p $O
 RB=C:/Users/DANTE/cascadeur_bridge/croc_young/work/y${S:0:1}7.blend
 FBX=$O/${S}_${M}_joints.fbx; BL=$O/${S}_${M}.blend; KC=$O/reptilian_${S}.kclip
 if [ -z "${SKIPCASC:-}" ]; then
-  echo "{\"casc\": \"$CASC\", \"fbx\": \"$FBX\"}" > $D/job_export.json
+  rm -f $FBX;   echo "{\"casc\": \"$CASC\", \"fbx\": \"$FBX\"}" > $D/job_export.json
   for i in $(seq 16); do bash C:/kt/wait_window.sh >/dev/null && break; done
   bash C:/kt/casc_lock.sh acquire keyer 5 || exit 1
   timeout 600 C:/Python314/python.exe -I C:/Users/DANTE/cascadeur_bridge/cs.py $D/job_export_joints.py 580 > $O/exp_${S}_$M.log 2>&1; rc=$?
