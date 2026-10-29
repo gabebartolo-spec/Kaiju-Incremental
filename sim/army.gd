@@ -94,10 +94,10 @@ func step(dt: float) -> void:
 		clear_dead()
 
 
-## Counts down a tank's reload; true once it may fire (never while flung, TankFlight).
+## Counts down a tank's reload; true once it may fire (never while flung or toppled, TankFlight).
 func _gun_ready(tank: RampageSim.Tank, dt: float) -> bool:
 	tank.cooldown -= dt
-	return tank.cooldown <= 0.0 and not tank.flying
+	return tank.cooldown <= 0.0 and not tank.flying and not tank.toppled
 
 
 ## One shell at the kaiju: a hit (StrayShell.chance) does the shot's damage over that chance, so

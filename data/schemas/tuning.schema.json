@@ -1598,12 +1598,16 @@
             "ground_friction": {"$ref": "#/$defs/num"},
             "strike_radius": {"$ref": "#/$defs/num"},
             "domino_damage": {"$ref": "#/$defs/num"},
-            "domino_reach": {"$ref": "#/$defs/num"}
+            "domino_reach": {"$ref": "#/$defs/num"},
+            "spin_turns_min": {"$ref": "#/$defs/num"},
+            "spin_turns_max": {"$ref": "#/$defs/num"},
+            "topple_deg": {"$ref": "#/$defs/num"}
           },
           "required": [
             "gravity", "loft_deg", "min_distance", "clearance", "wall_radius", "wall_damage",
             "wall_floors", "wall_restitution", "bounces", "min_bounce_speed", "ground_restitution",
-            "ground_friction", "strike_radius", "domino_damage", "domino_reach"
+            "ground_friction", "strike_radius", "domino_damage", "domino_reach", "spin_turns_min",
+            "spin_turns_max", "topple_deg"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false

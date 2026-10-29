@@ -10,8 +10,10 @@ extends RefCounted
 ## stopping, at wall_restitution / ground_restitution. Domino (throw_domino, per level) is chain
 ## depth: a flying tank that reaches a grounded one hurts it by domino_damage and launches it on
 ## along its own way, domino_reach out, one generation deeper. An airborne tank neither drives
-## nor fires (Convoy, Army skip it); a tank left on a roof falls when the roof goes. Numbers are
-## army.flight in data/tuning.json.
+## nor fires (Convoy, Army skip it); a tank left on a roof falls when the roof goes. It tumbles
+## (director 2026-10-30, "Seeded mix"): each launch spins it about an axis from this class's own
+## seeded stream; where it lands past topple_deg it rests on its side or roof, toppled for good
+## ("Lands as it falls"). Numbers are army.flight in data/tuning.json.
 
 var sim: RampageSim
 var cfg: Dictionary
@@ -19,11 +21,14 @@ var cfg: Dictionary
 var launched := 0
 var walls_hit := 0
 var knocked := 0
+var toppled := 0
+var _rng: RandomNumberGenerator
 
 
-func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
+func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = p_cfg
+	_rng = rng
 
 
 ## Sends `tank` flying along `dir` to land `distance` out on open ground; chain generation `gen`.
@@ -38,6 +43,8 @@ func launch(tank: RampageSim.Tank, dir: Vector2, distance: float, gen := 0) -> v
 	tank.flying = true
 	tank.bounces = 0
 	tank.gen = gen
+	tank.toppled = false
+	tank.spin = _spin(speed * sin(loft) * 2.0 / g)
 	launched += 1
 	(
 		sim
@@ -60,7 +67,8 @@ func step(dt: float) -> void:
 		if tank.flying:
 			_fly(tank, dt)
 		elif tank.height > 0.0 and sim.powers.column_top(tank.pos) < tank.height:
-			tank.vel = Vector3.ZERO  # its roof is gone: it falls
+			tank.vel = Vector3.ZERO  # its roof is gone: it falls, without a spin
+			tank.spin = Vector3.ZERO
 			tank.flying = true
 
 
@@ -75,6 +83,9 @@ func _fly(tank: RampageSim.Tank, dt: float) -> void:
 		next = tank.pos
 	tank.pos = next
 	tank.height = y
+	if tank.spin != Vector3.ZERO:
+		var turn := Basis(tank.spin.normalized(), tank.spin.length() * dt)
+		tank.tilt = (turn * tank.tilt).orthonormalized()
 	_strike(tank)
 	var ground := sim.powers.column_top(tank.pos)
 	if tank.height <= ground:
@@ -127,13 +138,48 @@ func _touch_down(tank: RampageSim.Tank) -> void:
 		tank.vel = Vector3(
 			tank.vel.x * keep, fall * Num.f(cfg["ground_restitution"]), tank.vel.z * keep
 		)
+		tank.spin *= keep
 		sim.events.append({"type": "tank_bounced", "tank": tank.id, "at": tank.pos})
 		return
 	tank.vel = Vector3.ZERO
 	tank.flying = false
+	_settle(tank)
 	sim.events.append(
-		{"type": "tank_landed", "tank": tank.id, "at": tank.pos, "height": tank.height}
+		{
+			"type": "tank_landed",
+			"tank": tank.id,
+			"at": tank.pos,
+			"height": tank.height,
+			"toppled": tank.toppled
+		}
 	)
+
+
+## A seeded tumble for a flight of `seconds`: a random axis (a mix of flip, roll and yaw) turned
+## spin_turns_min..max times over the flight.
+func _spin(seconds: float) -> Vector3:
+	var axis := Vector3(
+		_rng.randf_range(-1.0, 1.0), _rng.randf_range(-1.0, 1.0), _rng.randf_range(-1.0, 1.0)
+	)
+	var turns := _rng.randf_range(Num.f(cfg["spin_turns_min"]), Num.f(cfg["spin_turns_max"]))
+	if axis == Vector3.ZERO or seconds <= 0.0:
+		return Vector3.ZERO
+	return axis.normalized() * turns * TAU / seconds
+
+
+## The hull comes to rest as it fell: within topple_deg of upright it drops onto its tracks;
+## past it, onto its roof (upside down past the same angle) or else its side, toppled.
+func _settle(tank: RampageSim.Tank) -> void:
+	tank.spin = Vector3.ZERO
+	var up := tank.tilt * Vector3.UP
+	var lean := cos(deg_to_rad(Num.f(cfg["topple_deg"])))
+	if up.y >= lean:
+		tank.tilt = Basis.IDENTITY
+		return
+	var rest := Vector3.DOWN if up.y <= -lean else Vector3(up.x, 0.0, up.z).normalized()
+	tank.tilt = (Basis(Quaternion(up.normalized(), rest)) * tank.tilt).orthonormalized()
+	tank.toppled = true
+	toppled += 1
 
 
 func _bounce_left(tank: RampageSim.Tank) -> bool:

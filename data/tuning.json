@@ -614,7 +614,7 @@
 		"young_damage_mult": 2.0,
 		"shell_flight": 0.22,
 		"flight": {
-			"_note": "Tanks the reptilian sends flying (sim/tank_flight.gd; research 22 recs 2-4; director 2026-10-30 'Flight first, same PR' for Ricochet and Domino; numbers agent-set). The ram and the leap launch a tank at loft_deg so it lands on open ground where the old shove put it (no flight under min_distance). gravity in units/s2. A building column above the hull (+ clearance) is a wall: it carves wall_floors floors from the impact height, wall_damage x the tank's ground speed, falling off past wall_radius, and the tank drops there. bounces: free bounces before Ricochet (throw_ricochet adds one per level), off a wall at wall_restitution or off the ground (falling faster than min_bounce_speed) at ground_restitution, losing ground_friction of its forward speed. Domino (throw_domino = chain depth): a flying tank within strike_radius of a grounded one deals domino_damage and launches it domino_reach on along its way.",
+			"_note": "Tanks the reptilian sends flying (sim/tank_flight.gd; research 22 recs 2-4; director 2026-10-30 'Flight first, same PR' for Ricochet and Domino; numbers agent-set). The ram and the leap launch a tank at loft_deg so it lands on open ground where the old shove put it (no flight under min_distance). gravity in units/s2. A building column above the hull (+ clearance) is a wall: it carves wall_floors floors from the impact height, wall_damage x the tank's ground speed, falling off past wall_radius, and the tank drops there. bounces: free bounces before Ricochet (throw_ricochet adds one per level), off a wall at wall_restitution or off the ground (falling faster than min_bounce_speed) at ground_restitution, losing ground_friction of its forward speed. Domino (throw_domino = chain depth): a flying tank within strike_radius of a grounded one deals domino_damage and launches it domino_reach on along its way. Tumble (director 2026-10-30 'Seeded mix', 'Lands as it falls'): each launch spins the hull about a seeded axis, spin_turns_min..max turns over the flight; a landing within topple_deg of upright drops onto its tracks, past it the tank rests on its side or roof (toppled: never drives or fires again, not counted by endless's max_tanks).",
 			"gravity": 30.0,
 			"loft_deg": 35.0,
 			"min_distance": 0.05,
@@ -629,7 +629,10 @@
 			"ground_friction": 0.3,
 			"strike_radius": 1.5,
 			"domino_damage": 20.0,
-			"domino_reach": 6.0
+			"domino_reach": 6.0,
+			"spin_turns_min": 0.5,
+			"spin_turns_max": 1.5,
+			"topple_deg": 45.0
 		},
 		"miss": {
 			"hit_near": 0.9,

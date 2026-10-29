@@ -2,18 +2,23 @@ extends "res://tests/lib/leap_base.gd"
 ## Flung tanks (TankFlight; director 2026-10-30: real flung tanks first, with Ricochet and Domino in
 ## the same PR). A launched tank flies an arc and lands where the old shove put it; a building in
 ## the way is carved and stops it. Player-effect fixtures "croc.ricochet" and "croc.domino": the
-## same seeded throw with the node owned and not. Seeded: every sim is Seeds.make("army", 0)
+## same seeded throw with the node owned and not; "tank.topple": the same throw landing on its roof
+## and on its tracks. Seeded: every sim is Seeds.make("army", 0)
 ## (leap_base._croc) on a hand-made layout, the tanks hand-placed and held fire.
 
 ## The throw: from the origin, east, to land THROW out on open ground.
 const THROW := 12.0
 const EAST := Vector2(1.0, 0.0)
+const EAST_AXIS := Vector3(1.0, 0.0, 0.0)
 ## The wall: a WIDE x WIDE block TALL floors high, its west face WALL_AT east of the origin.
 const WALL_AT := 6.0
 const WIDE := 4
 const TALL := 6
 ## Seconds watched for a throw to settle.
 const WATCH_S := 4.0
+## Launches in the tumble mix, and seconds watched after a landing for the army's next move.
+const MIX := 16
+const AFTER_S := 6.0
 
 
 func suite_name() -> String:
@@ -26,6 +31,8 @@ func run_checks() -> void:
 	await _t("_check_ricochet")
 	await _t("_check_domino")
 	await _t("_check_leap_flings")
+	await _t("_check_tumble_mix")
+	await _t("_check_topple")
 	await _t("_check_replay")
 
 
@@ -127,7 +134,93 @@ func _check_replay() -> void:
 	var b := _throw_at_wall({"r_ricochet": 2})
 	var c := _throw_into_row({"r_domino": 2})
 	var d := _throw_into_row({"r_domino": 2})
-	check(a == b and c == d, "a replayed throw lands the same: %s / %s" % [a, c])
+	var e := _tumble_mix()
+	var f := _tumble_mix()
+	check(a == b and c == d and e == f, "a replayed throw lands the same: %s / %s / %s" % [a, c, e])
+
+
+## Director 2026-10-30 "Seeded mix": every launch tumbles about its own seeded axis, so of MIX
+## throws no two spin alike; "Lands as it falls": some come down on their tracks, some do not.
+func _check_tumble_mix() -> void:
+	var mix := _tumble_mix()
+	var axes: Array = mix["axes"]
+	var unique := {}
+	for axis: String in axes:
+		unique[axis] = true
+	check(unique.size() == MIX, "each of %d throws spins about its own axis: %s" % [MIX, axes])
+	check(
+		Num.f(mix["most"]) > 90.0, "a throw turns past its side in the air (%.0f deg)" % mix["most"]
+	)
+	var down := Num.i(mix["toppled"])
+	check(
+		down > 0 and down < MIX,
+		"some land toppled and some on their tracks (%d of %d toppled)" % [down, MIX]
+	)
+
+
+## Fixture "tank.topple": the same throw toward the kaiju, rolled half over (lands on its roof)
+## or not spun (lands on its tracks). Toppled, it never drives or fires again; upright, it does.
+func _check_topple() -> void:
+	var down := _throw_and_watch(true)
+	var up := _throw_and_watch(false)
+	check(
+		str(down["toppled"]) == "true" and str(up["toppled"]) == "false",
+		"rolled half over it lands on its roof, unspun on its tracks: %s / %s" % [down, up]
+	)
+	check(
+		Num.i(down["fired"]) == 0 and Num.f(down["moved"]) == 0.0,
+		"toppled, it neither fires nor drives: %s" % [down]
+	)
+	check(
+		Num.i(up["fired"]) > 0 and Num.f(up["moved"]) > 0.0,
+		"on its tracks the same tank fires and drives: %s" % [up]
+	)
+
+
+## MIX tanks thrown east side by side: each spin's axis, the most any turned off upright in the
+## air (degrees), and how many landed toppled.
+func _tumble_mix() -> Dictionary:
+	var sim := _croc({}, [])
+	var tanks: Array[RampageSim.Tank] = []
+	var axes: Array[String] = []
+	for i: int in MIX:
+		var tank := _tank(sim, 901 + i, Vector2(-30.0, -45.0 + 6.0 * i))
+		sim.flight.launch(tank, EAST, THROW)
+		axes.append(str(tank.spin.normalized().snappedf(0.01)))
+		tanks.append(tank)
+	var most := 0.0
+	for _n: int in roundi(WATCH_S / DT):
+		sim.step(DT, Vector2.ZERO, false, 0)
+		for tank: RampageSim.Tank in tanks:
+			if tank.flying:
+				most = maxf(most, rad_to_deg((tank.tilt * Vector3.UP).angle_to(Vector3.UP)))
+	return {"axes": axes, "most": snappedf(most, 0.1), "toppled": sim.flight.toppled}
+
+
+## A tank thrown THROW east to land short of the kaiju, rolled half over about its way (`roll`)
+## or not spun; then AFTER_S watched with its gun loaded: shots fired and how far it drove.
+func _throw_and_watch(roll: bool) -> Dictionary:
+	var sim := _croc({}, [])
+	var tank := _tank(sim, 901, sim.kaiju_pos - EAST * (THROW + 8.0))
+	sim.flight.launch(tank, EAST, THROW)
+	var seconds := 2.0 * tank.vel.y / Num.f(sim.flight.cfg["gravity"])
+	tank.spin = EAST_AXIS * PI / seconds if roll else Vector3.ZERO
+	for _n: int in roundi(WATCH_S / DT):
+		sim.step(DT, Vector2.ZERO, false, 0)
+		if not tank.flying:
+			break
+	var landed := tank.pos
+	tank.cooldown = 0.5
+	var fired := 0
+	for _n: int in roundi(AFTER_S / DT):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
+			if str(event["type"]) == "tank_fired":
+				fired += 1
+	return {
+		"toppled": tank.toppled,
+		"fired": fired,
+		"moved": snappedf(tank.pos.distance_to(landed), 0.01)
+	}
 
 
 ## Throws a tank from the origin east at the tower; where it ends and what it did.

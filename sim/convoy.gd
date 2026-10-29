@@ -105,7 +105,7 @@ func step(dt: float) -> void:
 	_refresh_costs(near)
 	_plans_left = Num.i(cfg["plans_per_step"])
 	for tank: RampageSim.Tank in sim.tanks:
-		if not tank.flying:  # in the air (TankFlight): it drives again once it lands
+		if not tank.flying and not tank.toppled:  # in the air, or on its roof (TankFlight)
 			_tend(tank, near, dt)
 	for id: int in routes.keys():
 		if not sim.tanks.any(func(t: RampageSim.Tank) -> bool: return t.id == id):
