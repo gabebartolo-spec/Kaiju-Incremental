@@ -74,6 +74,8 @@ func _check_rampages() -> void:
 			var edge_entries := box <= Num.f(sim.army["spawn_radius"])
 			var target := Vector2(INF, INF)
 			var steps := 0
+			var diag_was := {}  # DIAG
+			var diag_n := 0  # DIAG
 			while not sim.over:  # the game's own run length (run_seconds)
 				target = _autoplay(sim, steps, target)
 				steps += 1
@@ -102,6 +104,7 @@ func _check_rampages() -> void:
 					var head: Vector2 = heads[tank.id]
 					if _hull_in_building(tank.pos, head, grid):
 						inside += 1
+				var diag_now := {}  # DIAG
 				for tank: RampageSim.Tank in sim.tanks:
 					for other: RampageSim.Tank in sim.tanks:
 						if (
@@ -112,6 +115,18 @@ func _check_rampages() -> void:
 							var hw: Vector2 = heads[other.id]
 							if _tanks_touch(tank.pos, hu, other.pos, hw, sim.kaiju_pos):
 								overlaps += 1
+								var key := "%d,%d" % [tank.id, other.id]  # DIAG
+								diag_now[key] = true
+								if not diag_was.has(key) and diag_n < 12:
+									diag_n += 1
+									print(
+										"DIAG touch tier %d seed %d step %d kaiju %v kvel %v parts %s"
+										% [tier, seed, steps, sim.kaiju_pos,
+										sim.army_units.convoy.kaiju_vel,
+										_diag_parts(tank.pos, hu, other.pos, hw, sim.kaiju_pos)]
+									)
+									print("DIAG  A " + _diag_state(sim, tank, last.get(tank.id, tank.pos)))
+									print("DIAG  B " + _diag_state(sim, other, last.get(other.id, other.pos)))
 							closest = minf(closest, tank.pos.distance_to(other.pos))
 					var d := tank.pos.distance_to(sim.kaiju_pos)
 					var was: Vector2 = last.get(tank.id, Vector2(INF, INF))
@@ -144,6 +159,7 @@ func _check_rampages() -> void:
 							danger_t[tank.id] = 0.0
 					else:
 						danger_t[tank.id] = 0.0
+				diag_was = diag_now  # DIAG
 				last = {}
 				hulls_was = heads.duplicate()
 				for tank: RampageSim.Tank in sim.tanks:

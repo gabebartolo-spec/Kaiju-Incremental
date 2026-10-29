@@ -34,7 +34,6 @@ func _rampage(tier: int, seed: int) -> RampageSim:
 	var tuning := CityGrowth.tuning_for(Content.tuning(), tier)
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", seed))
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", seed))
-	sim.collapse.cut_only()  # the army as fitted, not where b2-5's mix drops the blocks
 	var ability: Dictionary = species["ability"]
 	sim.ability_type = str(ability["type"])
 	return sim
@@ -193,3 +192,28 @@ func _autoplay(sim: RampageSim, steps: int, target: Vector2) -> Vector2:
 	var held := RampageSim.HELD if steps % 30 < 15 else 0
 	sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE)
 	return target
+
+
+## DIAG (temporary): which parts touch, and each tank's drive state.
+static func _diag_parts(p: Vector2, u: Vector2, q: Vector2, w: Vector2, kaiju: Vector2) -> String:
+	var a := _drawn(p, u, kaiju)
+	var b := _drawn(q, w, kaiju)
+	var names := ["hull", "turret", "gun"]
+	var out := ""
+	for i: int in range(0, a.size(), 3):
+		for j: int in range(0, b.size(), 3):
+			if _boxes_touch(a[i], a[i + 1], a[i + 2], b[j], b[j + 1], b[j + 2]):
+				out += "%s-%s " % [names[i / 3], names[j / 3]]
+	return out
+
+
+static func _diag_state(sim: RampageSim, tank: RampageSim.Tank, was: Vector2) -> String:
+	var r: ConvoyRoute = sim.army_units.convoy.routes.get(tank.id)
+	var c := sim.army_units.convoy
+	if r == null:
+		return "id %d pos %v (no route)" % [tank.id, tank.pos]
+	return (
+		"id %d pos %v was %v front %v body %.2f danger %.2f retr %s rev %s path %d edge %d stuck %.2f yield %.2f give %d col %d goal %v"
+		% [tank.id, tank.pos, was, r.front, c.posts.to_body(tank.pos), c.danger(), r.retreating,
+		r.reversing, r.path.size(), r.edge, r.stuck_t, r.yield_t, r.give_to, r.column, r.goal]
+	)
