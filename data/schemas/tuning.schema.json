@@ -3281,6 +3281,13 @@
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             },
+            "theme": {
+              "type": "object",
+              "properties": {"file": {"$ref": "#/$defs/str"}, "db": {"$ref": "#/$defs/num"}, "loop_offset_s": {"$ref": "#/$defs/num"}},
+              "required": ["file", "db", "loop_offset_s"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
             "siren": {"$ref": "#/$defs/str"},
             "siren_db": {"$ref": "#/$defs/num"},
             "stomp": {
