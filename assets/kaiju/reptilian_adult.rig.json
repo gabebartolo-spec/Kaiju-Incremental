@@ -57,14 +57,14 @@
    ],
    "tail": [
     0.0,
-    269.94,
-    -339.82
+    261.45,
+    -301.59
    ],
    "physics": false
   },
   {
    "name": "head1",
-   "parent": "head0",
+   "parent": "neck2",
    "head": [
     0.0,
     269.94,
@@ -570,6 +570,36 @@
     38.23,
     208.77,
     -231.08
+   ],
+   "physics": false
+  },
+  {
+   "name": "neck1",
+   "parent": "head0",
+   "head": [
+    0.0,
+    261.45,
+    -301.59
+   ],
+   "tail": [
+    0.0,
+    273.34,
+    -322.83
+   ],
+   "physics": false
+  },
+  {
+   "name": "neck2",
+   "parent": "neck1",
+   "head": [
+    0.0,
+    273.34,
+    -322.83
+   ],
+   "tail": [
+    0.0,
+    269.94,
+    -339.82
    ],
    "physics": false
   }

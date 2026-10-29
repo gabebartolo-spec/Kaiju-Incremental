@@ -21,8 +21,9 @@ A foot is planted while its toe tip is within PLANT_UP of its rest height and mo
 r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
 turns (tail9-11) and the hind toes' (leg_x3), after the 27 r11 bones; the four eyelid bones (lid_lo_l/_r, lid_up_l/_r)
 follow (D-335 blinks), then the two collar bones (clavicle_l/_r, lead 2026-10-28 call A: the shrug of the Cascadeur
-rise; before, they folded into spine2 and the game's shoulder missed the keyed one by up to 2.04 m). A file of fewer
-bones is upgraded on the way: its clips get still tip, toe, lid and collar bones (each turned as its parent, which is
+rise; before, they folded into spine2 and the game's shoulder missed the keyed one by up to 2.04 m), then neck1 and neck2
+(roadmap row 3, the baby jaw: folded into head0 the neck bent as one bone and tore 75 baby head tris on the idle). A file
+of fewer bones is upgraded on the way: its clips get still tip, toe, lid, collar and neck bones (each turned as its parent, which is
 what the old fold did), so a clip not re-baked plays exactly as before.
 The adult's keyed clips so far (director-approved; sources in C:/Users/DANTE/cascadeur_bridge/croc_new/rig11/, keys
 croc_<move>_<tag>.casc), added to the Blender clips' file:
@@ -58,7 +59,7 @@ HELPER = lambda n: "_hlp" in n or "_tw" in n
 def game_bone(n):
     sd = "l" if n.endswith("_l") else "r"
     fixed = {"pelvis": "spine0", "lumbar0": "spine1", "lumbar1": "spine1", "chest": "spine2", "neck0": "head0",
-             "neck1": "head0", "neck2": "head0", "head": "head1", "jaw": "jaw"}
+             "neck1": "neck1", "neck2": "neck2", "head": "head1", "jaw": "jaw"}
     if n in fixed:
         return fixed[n]
     if n.startswith("lid_"):  # eyelids keep their rig names (croc_adult3_export.py)
@@ -82,12 +83,12 @@ skin = lambda p: G3 @ ((V(tuple(p)) - C) * S - V((0.0, ROOT_Y, 0.0)))
 deform = [b for b in ad.bones if b.use_deform and not HELPER(b.name)]
 # The rig's own game bones follow, in the order they were added, then by chain and number (rig_from_skin.py
 # extra_order and bone_names, so the rig.json and the clips list the bones in one order).
-LATER = ("lid_", "clavicle_")
+LATER = ("lid_", "clavicle_", "neck")
 EXTRA = lambda n: (next((i + 1 for i, p in enumerate(LATER) if n.startswith(p)), 0), n.rstrip("0123456789"),
                    int(n[len(n.rstrip("0123456789")):] or 0))
 GAME_BONES = BASE_BONES + sorted({game_bone(b.name) for b in deform} - set(BASE_BONES), key=EXTRA)
 first, last = {}, {}
-for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0; r12: the toe is leg_x3)
+for b in deform:  # parents first; a bone starting on the chain's end extends it (lumbar0..1 = spine1; r12: the toe is leg_x3)
     g = game_bone(b.name)
     first.setdefault(g, b)
     if g not in last or (b.parent is not None and b.parent.name == last[g].name
@@ -255,9 +256,9 @@ if MODE == "walk" and M > 2 * SEAM:
 
     def fk(qs, off, root=V((0.0, 0.0, 0.0))):  # world turns and heads, rebuilt from a clip frame as the game does
         wq, head = {}, {}
-        for b, g in enumerate(GAME_BONES):
+        for g in TOPO:  # parents first (head1 hangs from neck2, listed after it)
             pg = PARENT[g]
-            wq[g] = (wq[pg] @ qs[b]) if pg else qs[b]
+            wq[g] = (wq[pg] @ qs[IDX[g]]) if pg else qs[IDX[g]]
             head[g] = (head[pg] + wq[pg] @ (heads[g] - heads[pg])) if pg else off + heads["spine0"] + root
         return wq, head
 
