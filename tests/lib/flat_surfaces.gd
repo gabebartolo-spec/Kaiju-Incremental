@@ -27,7 +27,7 @@ const EXEMPT_GROUP := "vfx_exempt"
 ## "Flat surfaces programme".
 ## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
 ## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
-const KNOWN_FLAT_MAX := 15
+const KNOWN_FLAT_MAX := 14
 const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
 	"CitySkyline:std": "P3 lamp heads (glow)",
@@ -37,7 +37,6 @@ const KNOWN_FLAT: Dictionary = {
 	# P2 rooftops and building faces
 	"BuildingStream:shader:facade.gdshader": "P2 building faces",
 	"BuildingView:shader:voxel.gdshader": "P2 building faces",
-	"RooftopView:shader:voxel.gdshader": "P2 rooftops",
 	"RooftopView:std": "P2 rooftops",
 	# P3 trees, lamps, props, cars, people, aircraft, crowds, debris, the kaiju
 	"Aircraft:std": "P3 aircraft",
