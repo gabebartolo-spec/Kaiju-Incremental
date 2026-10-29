@@ -215,6 +215,7 @@ static func next_language() -> void:
 ## Switches every translated text (TranslationServer: data/i18n/strings.csv) to the language.
 static func apply_language() -> void:
 	TranslationServer.set_locale(language_code())
+	Settings.cjk_fallback(language_code())
 
 
 static func _codes() -> Array[String]:
