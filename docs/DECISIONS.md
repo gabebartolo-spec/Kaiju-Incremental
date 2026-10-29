@@ -389,21 +389,3 @@ run "Always on, like the croc" (replaces D-245's top-tier run unlock). The serpe
 through buildings around his height, but being that he is the shortest kaiju, that wont be many buildings. Snake can
 however clumb the buildings bigger than him and constrict-crush them"; asked, a bigger building at speed "Flows into a
 climb" (no slam) and constrict "Keep it at adulthood" (D-206 stands). Serpent work still waits on D-246.
-
-## 2026-10-27 · D-337 · Director · The croc's run is momentum: he crashes through small buildings, slams into big ones
-His words (19:4x), on hearing the croc has no run yet: "running wont have a sprint button, it should be momentum based,
-at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones". Asked:
-momentum "Always on" (from the first rampage, walking straight builds him into a run and turning bleeds it; tree nodes
-make it build faster and hit harder, and the old unlock node becomes a boost); a big building "Slam and stop" (a loud
-impact, a deep dent caved in at the contact, the building shudders, the camera shakes, his momentum is spent); small
-vs big "Relative to his size" (shorter than about his shoulder crashes, so each stage crashes through more); when
-"Now, one more builder" (ahead of D-310's order; it touches no debt or render file). Per D-335 the run and the slam
-stop are keyed in Cascadeur.
-
-## 2026-10-27 · D-336 · Director · One Cascadeur keyer and one rigger; no second Cascadeur copy
-His words (19:3x), on hearing that Cascadeur runs one copy at a time: "if only 1 builder can use casc at a time then
-we only need 1 casc builder otherwise the others are just twiddling their thumbs". Asked, he picked "1 keyer + 1
-rigger" and said "No" to testing a second Cascadeur copy. So: one builder (croc-claw) keys every move in turn (claw
-rake, walk first step, idle, run, turn B, then the young clips); one rigger (croc-young-casc) readies the young
-skeletons (D-335, bars S1-S5) and brings finished clips into the game; every Cascadeur job holds C:/kt/casc_lock.sh;
-croc-idle-run and croc-casc-s2 are not respawned.
