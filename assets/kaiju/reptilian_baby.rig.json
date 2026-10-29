@@ -57,14 +57,14 @@
    ],
    "tail": [
     0.0,
-    161.5,
-    -126.03
+    151.42,
+    -102.36
    ],
    "physics": false
   },
   {
    "name": "head1",
-   "parent": "head0",
+   "parent": "neck2",
    "head": [
     0.0,
     161.5,
@@ -79,7 +79,7 @@
   },
   {
    "name": "arm_l0",
-   "parent": "spine2",
+   "parent": "clavicle_l",
    "head": [
     -35.08,
     125.94,
@@ -169,7 +169,7 @@
   },
   {
    "name": "arm_r0",
-   "parent": "spine2",
+   "parent": "clavicle_r",
    "head": [
     35.08,
     125.94,
@@ -540,6 +540,66 @@
     23.78,
     187.54,
     -150.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "clavicle_l",
+   "parent": "spine2",
+   "head": [
+    -11.94,
+    127.36,
+    -98.32
+   ],
+   "tail": [
+    -35.08,
+    125.94,
+    -85.13
+   ],
+   "physics": false
+  },
+  {
+   "name": "clavicle_r",
+   "parent": "spine2",
+   "head": [
+    11.94,
+    127.36,
+    -98.32
+   ],
+   "tail": [
+    35.08,
+    125.94,
+    -85.13
+   ],
+   "physics": false
+  },
+  {
+   "name": "neck1",
+   "parent": "head0",
+   "head": [
+    0.0,
+    151.42,
+    -102.36
+   ],
+   "tail": [
+    0.0,
+    158.09,
+    -113.15
+   ],
+   "physics": false
+  },
+  {
+   "name": "neck2",
+   "parent": "neck1",
+   "head": [
+    0.0,
+    158.09,
+    -113.15
+   ],
+   "tail": [
+    0.0,
+    161.5,
+    -126.03
    ],
    "physics": false
   }

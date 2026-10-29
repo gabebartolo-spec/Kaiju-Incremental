@@ -130,7 +130,7 @@ skin = lambda p: GAME @ (norm(p) - ROOT)
 def game_bone(n):
     sd = "l" if n.endswith("_l") else "r"
     fixed = {"pelvis": "spine0", "lumbar0": "spine1", "lumbar1": "spine1", "chest": "spine2", "neck0": "head0",
-             "neck1": "head0", "neck2": "head0", "head": "head1", "jaw": "jaw"}
+             "neck1": "neck1", "neck2": "neck2", "head": "head1", "jaw": "jaw"}
     if n in fixed:
         return fixed[n]
     if n.startswith("lid_"):  # eyelids keep their rig names (lid_up_l, lid_lo_l, lid_up_r, lid_lo_r)

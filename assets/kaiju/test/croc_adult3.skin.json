@@ -182,7 +182,7 @@
   },
   {
    "name": "neck1",
-   "game": "head0",
+   "game": "neck1",
    "parent": "neck0",
    "head": [
     0.0,
@@ -217,7 +217,7 @@
   },
   {
    "name": "neck2",
-   "game": "head0",
+   "game": "neck2",
    "parent": "neck1",
    "head": [
     0.0,

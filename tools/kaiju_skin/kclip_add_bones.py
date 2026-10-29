@@ -6,7 +6,8 @@ way in). Lead 2026-10-28 call A: the croc's collar bones (clavicle_l/_r) left sp
     python tools/kaiju_skin/kclip_add_bones.py <x.kclip> <x.skin.json>
 
 The file's bones must be a prefix of the skin's (rig_from_skin.py bone_names); a rest head comes from the skin.json
-(the head of the game bone's first Blender bone, skin metres, as the clips' rest_heads_m)."""
+(the head of the game bone's first Blender bone, skin metres, as the clips' rest_heads_m), moved by the offset between
+the two frames at the first bone (the baby's skin.json origin is 5.2 m off the pelvis the clips stand on)."""
 import json
 import struct
 import sys
@@ -36,7 +37,10 @@ def upgrade(data, meta):
         gathers.setdefault(b["game"], []).append(b["name"])
     header["bones"], header["frame_bytes"] = names, fb + add * 8
     header["gathers"] = {g: gathers[g] for g in names}
-    header["rest_heads_m"].update({g: [round(c, 3) for c in first[g]["head"]] for g in names[len(old):]})
+    root = names[0]
+    shift = [c - s for c, s in zip(header["rest_heads_m"][root], first[root]["head"])]
+    for g in names[len(old):]:
+        header["rest_heads_m"][g] = [round(c + d, 3) for c, d in zip(first[g]["head"], shift)]
     head = json.dumps(header, separators=(",", ":")).encode()
     return data[:8] + struct.pack("<I", len(head)) + head + body, add
 

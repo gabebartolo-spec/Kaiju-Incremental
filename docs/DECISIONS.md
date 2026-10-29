@@ -17,6 +17,12 @@ menu_fps 60, so the frame rate the preview shows is the real one; closing Settin
 A: "Yes, redirect it": the roadmap lives at https://claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q; `docs/ROADMAP.md`
 points there; the old file is frozen as `docs/archive/ROADMAP_2026-10.md` for detail agents cannot get from the doc.
 
+## 2026-10-30 · D-390 · Director · The baby roar's jaw is judged in the game, not on Cascadeur's mesh
+Q (10-30, after the lip slit and three weight fits left Cascadeur's mesh at 18-22 head flips on the baby roar, bar 6):
+"Accept game result". In the game the baby's mouth already opens as a slit (the bake's hinge rule, #356): at a 38 deg
+gape every parting is jaw|head1 along the mouth, none at the corner or throat, red mouth voxels shown. The mesh bar is
+dropped for the baby roar; no edge loops are added. Changes: roadmap row 1's baby jaw is done with #426.
+
 ## 2026-10-30 · D-389 · Director · River bridges carve on cells
 Q (ROADMAP 4, "carve is universal"; river bridges were flat decks CityGround drew, never broken): they picked "Carve,
 spans drop" and "Keep deck, add piers". Each river bridge (CityRiver.bridges) is now a row of buildings, one per span

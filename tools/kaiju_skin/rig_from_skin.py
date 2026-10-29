@@ -39,8 +39,9 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
 
 # A skin's own game bones in the order they were added, so a file of the earlier bones stays a prefix of the new list:
 # the r12 tail tip and hind toes (D-307), then the eyelids (lid_*, D-335 blinks), then the collar bones (clavicle_l/_r,
-# lead 2026-10-28 call A: the Cascadeur rise's shrug, no longer folded into spine2).
-LATER = ("lid_", "clavicle_")
+# lead 2026-10-28 call A: the Cascadeur rise's shrug, no longer folded into spine2), then neck1 and neck2 (head0 is now
+# neck0 alone; roadmap row 3, the baby jaw: the folded neck bent as one bone and tore the baby's head skin).
+LATER = ("lid_", "clavicle_", "neck")
 
 
 def extra_order(name):
@@ -59,7 +60,7 @@ def bone_names(meta):
 
 def game_rig(meta, to_rig, height):
     """rig.json bones: each game bone runs from the head of its first Blender bone to the tail of
-    its last (a game bone may gather several: neck0 + neck1 = head0, meta + toe = leg_x2). Blender
+    its last (a game bone may gather several: lumbar0 + lumbar1 = spine1, meta + toe = leg_x2). Blender
     bones are listed parents first, so the first one met is the chain's root."""
     by_name = {b["name"]: b for b in meta["bones"]}
     first, last = {}, {}
@@ -84,14 +85,15 @@ def game_rig(meta, to_rig, height):
     return {"height": height, "type": "biped", "bones": bones}
 
 
-def split_mouth(owner, pts, line):
+def split_mouth(owner, pts, line, names):
     """The jaw: head voxels in front of the gape under the tooth line (see the module note). The neck's voxels in front
     of the gape count as the head's (the young croc rigs' neck weights reach under the jaw's back, croc-young-casc):
     in front of the gape every voxel is skull or jaw."""
     z0, y0, z1, y1 = line
-    head0, head1, jaw = GAME_BONES.index("head0"), GAME_BONES.index("head1"), GAME_BONES.index("jaw")
+    head1, jaw = GAME_BONES.index("head1"), GAME_BONES.index("jaw")
+    neck = [i for i, n in enumerate(names) if n == "head0" or n.startswith("neck")]
     at = y0 + (y1 - y0) * (pts[:, 2] - z0) / (z1 - z0)
-    zone = np.isin(owner, (head0, head1, jaw)) & (pts[:, 2] < z1 + 0.5)
+    zone = np.isin(owner, neck + [head1, jaw]) & (pts[:, 2] < z1 + 0.5)
     out = owner.copy()
     out[zone] = np.where(pts[zone, 1] < at[zone], jaw, head1)
     out[~zone & (owner == jaw)] = head1  # no jaw behind the gape
@@ -126,7 +128,7 @@ def main():
     owner = np.argmax(own, axis=1)
     if line:
         pts = (np.c_[cells, np.ones(len(cells))] @ m.T)[:, :3]
-        owner = split_mouth(owner, pts, line)
+        owner = split_mouth(owner, pts, line, names)
     rig = game_rig(meta, to_rig, height)
     # LF on every OS: the .vskin stamp hashes these bytes and git checks them out as LF.
     out = kvox_path.with_suffix(".rig.json")
