@@ -284,11 +284,13 @@ func _aim(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> Leg:
 
 
 ## The speed along `dir`: backing up rather than turning about in the road (setting r.reversing),
-## and out fast, then slow, when it is backing off the kaiju's body.
+## and out fast, then slow, when it is backing off the kaiju's body: fast until retreat_clear past
+## the danger line, so a kaiju following never pins it astride the line.
 func _speed(tank: RampageSim.Tank, r: ConvoyRoute, dir: Vector2) -> float:
 	var speed := Num.f(sim.army["speed"])
 	var behind := r.front.dot(dir) < (0.0 if r.retreating else -0.5)  # back off, never turn tail
-	var clear_of := r.retreating and posts.to_body(tank.pos) < danger()  # out fast, then slow
+	var out_to := danger() + Num.f(cfg["retreat_clear"])
+	var clear_of := r.retreating and posts.to_body(tank.pos) < out_to  # out fast, then slow
 	if behind and r.front != Vector2.ZERO:  # and back up rather than turn about in the road
 		r.reversing = true
 		return Num.f(cfg["retreat_speed"]) if clear_of else speed * Num.f(cfg["reverse"])
