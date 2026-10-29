@@ -1,10 +1,10 @@
 class_name SettingsMenu
 extends Control
 ## Settings: volume and sound-effects volume, camera motion, fullscreen (F11), UI scale for the
-## TV, and two pages it opens over itself: CONTROLS (rebinding, ControlsMenu) and ACCESSIBILITY
-## (AccessMenu). An overlay over whatever opened it (title or
-## pause); Back or cancel reports `closed`. Every change goes through PlayerSettings, which
-## applies and saves it.
+## TV, a live graphics preview beside the card (GraphicsPreview), and two pages it opens over
+## itself: CONTROLS (rebinding, ControlsMenu) and ACCESSIBILITY (AccessMenu). An overlay over
+## whatever opened it (title or pause); Back or cancel reports `closed`. Every change goes through
+## PlayerSettings, which applies and saves it.
 
 signal closed
 
@@ -66,9 +66,16 @@ func _card() -> VBoxContainer:
 	var centre := CenterContainer.new()
 	UiKit.full_rect(centre)
 	add_child(centre)
+	# The card and, beside it, the live graphics preview (comment #90).
+	var side := HBoxContainer.new()
+	side.add_theme_constant_override("separation", int(BUTTON_GAP))
+	centre.add_child(side)
 	var panel := UiKit.panel()
 	panel.custom_minimum_size = Vector2(980, 0)
-	centre.add_child(panel)
+	side.add_child(panel)
+	var preview := GraphicsPreview.new()
+	preview.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	side.add_child(preview)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)  # 6, not 10 or 14: it all fits at 125%
 	panel.add_child(col)

@@ -49,26 +49,32 @@ def planned() -> list[str]:
     return sorted(s for row in matrix["include"] for s in row["suites"].split())
 
 
-def last_run(pr: str) -> dict | None:
-    """The newest finished or cancelled tests.yml run of this pull request before this one."""
+def last_runs(pr: str) -> list[dict]:
+    """This pull request's finished or cancelled tests.yml runs before this one, newest first."""
     branch = json.loads(api(f"pulls/{pr}"))["head"]["ref"]
     runs = json.loads(api(f"actions/workflows/tests.yml/runs?event=pull_request&branch={branch}&per_page=20"))
     here = os.environ.get("GITHUB_RUN_ID", "")
     done = [r for r in runs["workflow_runs"] if str(r["id"]) != here and r["status"] == "completed"]
-    return max(done, key=lambda r: r["created_at"]) if done else None
+    return sorted(done, key=lambda r: r["created_at"], reverse=True)
 
 
-def earlier(run: dict) -> tuple[str, str, set[str]]:
-    """What that run tested (base, head) and every suite it passed or carried."""
+def earlier(run: dict) -> tuple[str, str, set[str], bool]:
+    """What that run tested (base, head), every suite it passed or carried, and whether any shard finished."""
     jobs = json.loads(api(f"actions/runs/{run['id']}/jobs?per_page=60"))["jobs"]
     passed: set[str] = set()
     tested = ("", "")
+    finished = False
     for job in jobs:
         if job["name"] != "plan" and not job["name"].startswith("shard "):
             continue
         if job["conclusion"] in (None, "skipped"):
             continue
-        log = api(f"actions/jobs/{job['id']}/logs")
+        try:
+            log = api(f"actions/jobs/{job['id']}/logs")
+        except RuntimeError:
+            if job["conclusion"] != "cancelled":
+                raise
+            continue  # cancelled before it wrote a log: it passed nothing
         if job["name"] == "plan":
             for kind, rest in MARK.findall(log):
                 words = (rest or "").split()
@@ -77,8 +83,9 @@ def earlier(run: dict) -> tuple[str, str, set[str]]:
                 elif kind == "CI-PASSED":
                     passed.update(words)
         else:
+            finished = finished or job["conclusion"] in ("success", "failure")
             passed.update(name for _, name in LINE.findall(log))
-    return tested[0], tested[1], passed
+    return tested[0], tested[1], passed, finished
 
 
 def changed(a: str, b: str) -> list[str]:
@@ -121,11 +128,14 @@ def closures(suites: set[str]) -> dict[str, set[str]]:
 def select(pr: str) -> tuple[list[str], list[str]]:
     """(suites to run, suites carried as passed); every suite when in doubt."""
     everything = planned()
-    run = last_run(pr)
-    if run is None:
-        return everything, []
-    base0, head0, passed = earlier(run)
-    if not base0:
+    # A run cancelled by the next push before any shard finished tested nothing, so look past it to the newest
+    # run whose shards finished (a run with a failed shard stops the search: its failures count).
+    base0, head0, passed = "", "", set()
+    for run in last_runs(pr):
+        base0, head0, passed, finished = earlier(run)
+        if finished or passed:
+            break
+    if not base0 or not passed:
         return everything, []
     paths = changed(base0, "HEAD^1") + changed(head0, "HEAD^2")
     paths = [p for p in paths if not p.startswith("docs/") and not p.endswith(".md")]
