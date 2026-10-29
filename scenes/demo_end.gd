@@ -80,10 +80,10 @@ func _ready() -> void:
 	viewport.add_child(_kaiju)
 	clip_roar = has_clip_roar(_kaiju)
 	var demo := Content.section("demo")
-	var headline := UiKit.label(str(demo["end_title"]), UiKit.SIZE_TITLE, UiKit.ACCENT)
+	var headline := UiKit.label(tr(str(demo["end_title"])), UiKit.SIZE_TITLE, UiKit.ACCENT)
 	headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(headline)
-	var line := UiKit.label(str(demo["end_line"]), UiKit.SIZE_HEAD, UiKit.TEXT)
+	var line := UiKit.label(tr(str(demo["end_line"])), UiKit.SIZE_HEAD, UiKit.TEXT)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(line)
 	col.add_child(_stats_grid())
@@ -91,10 +91,10 @@ func _ready() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 24)
 	col.add_child(row)
-	_button(row, "LEAVE FEEDBACK", UiKit.PANEL_EDGE).pressed.connect(_on_feedback)
-	var endless := _button(row, "TRY ENDLESS MODE", UiKit.ACCENT)
+	_button(row, tr("LEAVE FEEDBACK"), UiKit.PANEL_EDGE).pressed.connect(_on_feedback)
+	var endless := _button(row, tr("TRY ENDLESS MODE"), UiKit.ACCENT)
 	endless.pressed.connect(func() -> void: endless_pressed.emit())
-	_button(row, "KEEP PLAYING", UiKit.PANEL_EDGE).pressed.connect(
+	_button(row, tr("KEEP PLAYING"), UiKit.PANEL_EDGE).pressed.connect(
 		func() -> void: keep_pressed.emit()
 	)
 	endless.grab_focus.call_deferred()
@@ -108,7 +108,7 @@ func _stats_grid() -> GridContainer:
 	grid.add_theme_constant_override("h_separation", 40)
 	grid.add_theme_constant_override("v_separation", 6)
 	for row: PackedStringArray in Demo.rows(totals):
-		var name_label := UiKit.label(row[0], UiKit.SIZE_BODY, UiKit.MUTED)
+		var name_label := UiKit.label(_stat_name(row[0]), UiKit.SIZE_BODY, UiKit.MUTED)
 		grid.add_child(name_label)
 		var value := UiKit.label(row[1], UiKit.SIZE_HEAD, UiKit.TEXT)
 		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -116,6 +116,19 @@ func _stats_grid() -> GridContainer:
 		grid.add_child(value)
 		stat_values.append(row[1])
 	return grid
+
+
+## A Demo.rows() label in the player's language.
+func _stat_name(text: String) -> String:
+	var names := {
+		"Buildings destroyed": tr("Buildings destroyed"),
+		"People eaten": tr("People eaten"),
+		"People fled": tr("People fled"),
+		"Military destroyed": tr("Military destroyed"),
+		"Time played": tr("Time played"),
+		"Biomass earned": tr("Biomass earned"),
+	}
+	return str(names.get(text, text))
 
 
 func _on_feedback() -> void:

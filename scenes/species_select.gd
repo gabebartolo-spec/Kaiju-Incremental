@@ -74,7 +74,7 @@ func _ready() -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 16)
 	safe.add_child(col)
-	var title := UiKit.header("CHOOSE YOUR KAIJU")
+	var title := UiKit.header(tr("CHOOSE YOUR KAIJU"))
 	title.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(title)
 	var row := HBoxContainer.new()
@@ -90,7 +90,7 @@ func _ready() -> void:
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, BACK_GAP if _wide else BACK_GAP_NARROW)
 	col.add_child(gap)
-	var back := UiKit.button("BACK  (ESC / B)", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	var back := UiKit.button(tr("BACK  (ESC / B)"), UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	back.custom_minimum_size = Vector2(BACK_WIDTH, 0)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	back.pressed.connect(func() -> void: back_pressed.emit())
@@ -192,17 +192,18 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 6)
 	body.add_child(col)
-	col.add_child(UiKit.header(str(def["name"]).to_upper(), UiKit.SIZE_HEAD))
-	var blurb := UiKit.label(str(def["blurb"]), UiKit.SIZE_BODY, UiKit.TEXT)
+	col.add_child(UiKit.header(tr(str(def["name"])).to_upper(), UiKit.SIZE_HEAD))
+	var blurb := UiKit.label(tr(str(def["blurb"])), UiKit.SIZE_BODY, UiKit.TEXT)
 	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(blurb)
 	var ability: Dictionary = def["ability"]
-	var sig := UiKit.label("Signature: %s" % str(ability["name"]), UiKit.SIZE_BODY, UiKit.WARN)
+	var signature := tr("Signature: %s") % tr(str(ability["name"]))
+	var sig := UiKit.label(signature, UiKit.SIZE_BODY, UiKit.WARN)
 	sig.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(sig)
 	var stats: Dictionary = def["stats"]
 	col.add_child(_stat_grid(stats))
-	var pick := UiKit.button("CHOOSE", UiKit.SIZE_HEAD)
+	var pick := UiKit.button(tr("CHOOSE"), UiKit.SIZE_HEAD)
 	var id := str(def["id"])
 	pick.pressed.connect(func() -> void: chosen.emit(id))
 	col.add_child(pick)
@@ -244,6 +245,13 @@ func _preview(body: Container, def: Dictionary, size: Vector2i) -> void:
 	viewport.add_child(fill)
 
 
+func _stat_name(english: String) -> String:
+	var names := {
+		"Health": tr("Health"), "Speed": tr("Speed"), "Power": tr("Power"), "Reach": tr("Reach")
+	}
+	return str(names.get(english, tr(english)))
+
+
 ## The stat meters: one a row beside the preview; two a row when several cards share the screen.
 func _stat_grid(stats: Dictionary) -> GridContainer:
 	var grid := GridContainer.new()
@@ -254,7 +262,9 @@ func _stat_grid(stats: Dictionary) -> GridContainer:
 		var line := HBoxContainer.new()
 		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		line.add_theme_constant_override("separation", 12)
-		var name_label := UiKit.label(str(entry[0]), SIZE_STAT if _wide else SIZE_STAT_NARROW)
+		var name_label := UiKit.label(
+			_stat_name(str(entry[0])), SIZE_STAT if _wide else SIZE_STAT_NARROW
+		)
 		name_label.custom_minimum_size = Vector2(STAT_NAME_WIDTH if _wide else NARROW_STAT_NAME, 0)
 		line.add_child(name_label)
 		var share := Num.f(stats.get(str(entry[1]), 0.0)) / Num.f(entry[2])

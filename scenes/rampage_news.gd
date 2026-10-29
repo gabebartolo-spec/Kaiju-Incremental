@@ -38,14 +38,17 @@ static func line_for(event: Dictionary) -> String:
 	match kind:
 		"threat_up":
 			var levels: Dictionary = live["threat"]
-			return str(levels.get(str(Num.i(event["level"])), ""))
+			return TranslationServer.translate(str(levels.get(str(Num.i(event["level"])), "")))
 		"landmark_felled":
 			var lines: Dictionary = live["landmarks"]
-			return str(lines.get(str(event["landmark"]), lines["landmark"]))
+			return TranslationServer.translate(
+				str(lines.get(str(event["landmark"]), lines["landmark"]))
+			)
 		"towers_toppled":
-			return str(live["towers"]).replace("{n}", str(Num.i(event["count"])))
+			var towers := TranslationServer.translate(str(live["towers"]))
+			return towers.replace("{n}", str(Num.i(event["count"])))
 	var vip: Dictionary = live["vip"]
-	return str(vip.get(kind, ""))
+	return TranslationServer.translate(str(vip.get(kind, "")))
 
 
 ## Queues the news in this step's sim events (each step's list is read once).

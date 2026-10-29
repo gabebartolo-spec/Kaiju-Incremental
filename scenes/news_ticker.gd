@@ -52,7 +52,7 @@ func _init(lines: PackedStringArray, scroll := true) -> void:
 	tag_box.color = UiKit.BG
 	tag_box.size = Vector2(TAG_WIDTH, HEIGHT)
 	add_child(tag_box)
-	_tag = UiKit.label("BREAKING", UiKit.SIZE_HEAD, UiKit.ACCENT)
+	_tag = UiKit.label(tr("BREAKING"), UiKit.SIZE_HEAD, UiKit.ACCENT)
 	_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_tag.size = Vector2(TAG_WIDTH, HEIGHT)

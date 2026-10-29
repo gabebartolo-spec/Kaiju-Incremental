@@ -73,15 +73,9 @@ func _summary(save: Dictionary) -> String:
 	if not Demo.continues(save):
 		return ""
 	var runs := Num.i(save.get("runs", 0))
-	return (
-		"%s, %d rampage%s, %d biomass"
-		% [
-			str(GameData.species_def(str(save.get("species", "")))["name"]),
-			runs,
-			"" if runs == 1 else "s",
-			Num.i(save.get("rubble", 0)),
-		]
-	)
+	var line := tr("%s, %d rampage, %d biomass") if runs == 1 else tr("%s, %d rampages, %d biomass")
+	var who := tr(str(GameData.species_def(str(save.get("species", "")))["name"]))
+	return line % [who, runs, Num.i(save.get("rubble", 0))]
 
 
 ## DELETE confirmed on slot `n`: the file goes, the slot list shows it empty.
@@ -209,7 +203,7 @@ func _on_rampage_finished(result: Dictionary) -> void:
 		SaveSystem.save_game(_save)
 	var results := ResultsScreen.new(result, previous)
 	if _endless:
-		results.go_label = "BACK  >"
+		results.go_label = tr("BACK  >")
 	results.continued.connect(_show_tree)
 	_screen.add_child(results)
 

@@ -36,11 +36,12 @@ func _init(specimen: int) -> void:
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_theme_constant_override("separation", Num.i(UiKit.ui()["specimen_card"]["gap"]))
 	card.add_child(col)
-	var header := UiKit.header(fill(str(copy["title"]), specimen))
+	var header := UiKit.header(fill(tr(str(copy["title"])), specimen))
 	col.add_child(header)
 	title = header.get_child(0)
 	var halves: Array = copy["headline"]
-	col.add_child(_headline(fill(str(halves[0]), specimen), fill(str(halves[1]), specimen)))
+	var left := fill(tr(str(halves[0])), specimen)
+	col.add_child(_headline(left, fill(tr(str(halves[1])), specimen)))
 
 
 ## `text` with "{lost}" and "{next}" as two-digit specimen numbers (the one lost, `specimen`).

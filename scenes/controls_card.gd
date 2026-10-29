@@ -6,7 +6,6 @@ extends PanelContainer
 
 ## The first-run card lists only these (the full list stays in Settings > CONTROLS).
 const FIRST_RUN: Array[String] = ["Move", "Signature attack", "Leap"]
-const PROMPT := "PRESS ANY KEY"
 ## Extra room under the full controls list (px at 1080p).
 const BOTTOM_PAD := 20
 
@@ -26,27 +25,27 @@ func _init(p_compact: bool = false) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
-	col.add_child(UiKit.header("CONTROLS", UiKit.SIZE_HEAD))
+	col.add_child(UiKit.header(tr("CONTROLS"), UiKit.SIZE_HEAD))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 32)
 	grid.add_theme_constant_override("v_separation", 6)
 	col.add_child(grid)
-	for heading: String in ["", "KEYBOARD", "PAD"]:
+	for heading: String in ["", tr("KEYBOARD"), tr("PAD")]:
 		grid.add_child(UiKit.label(heading, UiKit.SIZE_BODY, UiKit.WARN))
 	for entry: Array in rows(compact):
-		var action := UiKit.label(str(entry[0]), UiKit.SIZE_BODY, UiKit.TEXT)
+		var action := UiKit.label(KeyBinds.shown(str(entry[0])), UiKit.SIZE_BODY, UiKit.TEXT)
 		action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(action)
-		grid.add_child(UiKit.label(str(entry[1]), UiKit.SIZE_BODY, UiKit.MUTED))
-		grid.add_child(UiKit.label(str(entry[2]), UiKit.SIZE_BODY, UiKit.MUTED))
+		grid.add_child(UiKit.label(KeyBinds.shown(str(entry[1])), UiKit.SIZE_BODY, UiKit.MUTED))
+		grid.add_child(UiKit.label(KeyBinds.shown(str(entry[2])), UiKit.SIZE_BODY, UiKit.MUTED))
 	if not compact:
 		var tail := Control.new()
 		tail.custom_minimum_size = Vector2(0, BOTTOM_PAD)
 		tail.name = "Tail"
 		col.add_child(tail)
 	if compact:
-		var prompt := UiKit.label(PROMPT, UiKit.SIZE_BODY, UiKit.ACCENT)
+		var prompt := UiKit.label(tr("PRESS ANY KEY"), UiKit.SIZE_BODY, UiKit.ACCENT)
 		prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(prompt)
 

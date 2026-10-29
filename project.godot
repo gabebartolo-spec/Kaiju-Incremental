@@ -22,6 +22,10 @@ SaveSystem="*res://autoload/save_system.gd"
 Settings="*res://autoload/settings.gd"
 Debug="*res://autoload/debug.gd"
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://data/i18n/strings.en.translation", "res://data/i18n/strings.es.translation", "res://data/i18n/strings.fr.translation", "res://data/i18n/strings.it.translation", "res://data/i18n/strings.de.translation", "res://data/i18n/strings.ru.translation", "res://data/i18n/strings.zh_CN.translation")
+
 [debug]
 
 gdscript/warnings/untyped_declaration=2

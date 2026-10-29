@@ -49,7 +49,7 @@ func _ready() -> void:
 	_add_choices(col)
 	_add_pages(col)
 
-	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
+	var back := UiKit.button(tr("BACK"), UiKit.SIZE_HEAD)
 	HazardBox.trim_height(back, BACK_MARGIN)
 	back.pressed.connect(close)
 	col.add_child(_gap(back, BLOCK_GAP))
@@ -79,7 +79,7 @@ func _card() -> VBoxContainer:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)  # 6, not 10 or 14: it all fits at 125%
 	panel.add_child(col)
-	var title := UiKit.label("SETTINGS", UiKit.SIZE_TITLE, UiKit.ACCENT)
+	var title := UiKit.label(tr("SETTINGS"), UiKit.SIZE_TITLE, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(title)
 	return col
@@ -87,15 +87,15 @@ func _card() -> VBoxContainer:
 
 ## The three 0-100% sliders: volume, sound effects, camera motion.
 func _add_sliders(col: Control) -> void:
-	_volume = _slider(col, "Volume", PlayerSettings.volume)
+	_volume = _slider(col, tr("Volume"), PlayerSettings.volume)
 	_volume.value_changed.connect(_on_volume)
 	_volume_text = _volume.get_parent().get_child(2)
-	effects = _slider(col, "Sound effects", PlayerSettings.sfx())
+	effects = _slider(col, tr("Sound effects"), PlayerSettings.sfx())
 	effects.value_changed.connect(
 		func(value: float) -> void: PlayerSettings.set_sfx_volume(value / 100.0)
 	)
 	_effects_text = effects.get_parent().get_child(2)
-	motion = _slider(col, "Camera motion", PlayerSettings.motion())
+	motion = _slider(col, tr("Camera motion"), PlayerSettings.motion())
 	motion.value_changed.connect(
 		func(value: float) -> void: PlayerSettings.set_camera_motion(value / 100.0)
 	)
@@ -107,17 +107,17 @@ func _add_choices(col: Control) -> void:
 	_fullscreen = _choice(func() -> void: PlayerSettings.set_fullscreen(not _is_full()))
 	_scale = _choice(func() -> void: PlayerSettings.next_ui_scale())
 	# One row for both screen settings, so the time-of-day row fits the TV at the largest UI scale.
-	_button_row(col, "Fullscreen and UI scale", [_fullscreen, _scale])
+	_button_row(col, tr("Fullscreen and UI scale"), [_fullscreen, _scale])
 	_fps = _choice(func() -> void: PlayerSettings.next_fps_cap())
 	_graphics = _choice(func() -> void: PlayerSettings.next_graphics())
 	# One row for both GPU settings, so the screen still fits the TV at the largest UI scale.
-	_button_row(col, "Graphics and FPS", [_graphics, _fps])
+	_button_row(col, tr("Graphics and FPS"), [_graphics, _fps])
 	# The time-of-day and weather buttons each span the sliders' column, edge to edge (D-145, D-155).
 	_time = _choice(func() -> void: PlayerSettings.next_time_of_day())
 	# Hidden while only one time may be played (D-359); restoring D-145 is editing data "play".
-	_button_row(col, "Time of day", [_time]).visible = TimeOfDay.has_choice()
+	_button_row(col, tr("Time of day"), [_time]).visible = TimeOfDay.has_choice()
 	_weather = _choice(func() -> void: PlayerSettings.next_weather())
-	_button_row(col, "Weather", [_weather])
+	_button_row(col, tr("Weather"), [_weather])
 
 
 ## A settings button (its text, "< value >", is set by _refresh) that does `on_press`; it takes
@@ -161,8 +161,8 @@ func _add_pages(col: Control) -> void:
 	var line := HBoxContainer.new()
 	line.add_theme_constant_override("separation", int(BUTTON_GAP))
 	var pages: Array[Array] = [
-		["CONTROLS", func() -> OptionsPage: return ControlsMenu.new()],
-		["ACCESSIBILITY", func() -> OptionsPage: return AccessMenu.new()],
+		[tr("CONTROLS"), func() -> OptionsPage: return ControlsMenu.new()],
+		[tr("ACCESSIBILITY"), func() -> OptionsPage: return AccessMenu.new()],
 	]
 	for entry: Array in pages:
 		var b := UiKit.button(str(entry[0]), UiKit.SIZE_BODY)
@@ -205,14 +205,30 @@ func _refresh() -> void:
 	_effects_text.text = "%d%%" % roundi(effects.value)
 	_motion_text.text = "%d%%" % roundi(motion.value)
 	# Every button steps its setting on press: "< value >" says so.
-	_fullscreen.text = _cycle("ON" if _is_full() else "OFF")
+	_fullscreen.text = _cycle(tr("ON") if _is_full() else tr("OFF"))
 	_scale.text = _cycle("%d%%" % roundi(PlayerSettings.ui_scale * 100.0))
 	_fps.text = _cycle(
-		"UNLIMITED" if PlayerSettings.cap() == 0 else "%d FPS" % PlayerSettings.cap()
+		tr("UNLIMITED") if PlayerSettings.cap() == 0 else tr("%d FPS") % PlayerSettings.cap()
 	)
-	_graphics.text = _cycle(PlayerSettings.graphics_level().to_upper())
-	_time.text = _cycle(TimeOfDay.label(PlayerSettings.time_of_day).to_upper())
-	_weather.text = _cycle(Weather.label(PlayerSettings.weather).to_upper())
+	_graphics.text = _cycle(_level_name(PlayerSettings.graphics_level()))
+	_time.text = _cycle(tr(TimeOfDay.label(PlayerSettings.time_of_day)).to_upper())
+	_weather.text = _cycle(tr(Weather.label(PlayerSettings.weather)).to_upper())
+
+
+## A graphics level's name as the button shows it (the levels are display "graphics" ids).
+func _level_name(level: String) -> String:
+	match level:
+		"potato":
+			return tr("POTATO")
+		"low":
+			return tr("LOW")
+		"medium":
+			return tr("MEDIUM")
+		"high":
+			return tr("HIGH")
+		"max":
+			return tr("MAX")
+	return level.to_upper()
 
 
 func _cycle(value: String) -> String:

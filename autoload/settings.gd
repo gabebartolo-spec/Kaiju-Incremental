@@ -39,6 +39,7 @@ func _ready() -> void:
 	KeyBinds.snapshot()  # the defaults, before the player's own bindings go on top
 	PlayerSettings.load_saved(OS.has_feature("template"))
 	PlayerSettings.apply()
+	PlayerSettings.apply_language()
 
 
 func _process(_delta: float) -> void:

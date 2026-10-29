@@ -26,6 +26,18 @@ const CONTROLS: Array[Array] = [
 	["Back", "Esc", "B"],
 ]
 
+## The languages the game is translated into (data/i18n/strings.csv columns), in the order the
+## Language button steps through them, each with its name as its own speakers write it.
+const LANGUAGES: Array[Array] = [
+	["en", "ENGLISH"],
+	["es", "ESPAÑOL"],
+	["fr", "FRANÇAIS"],
+	["it", "ITALIANO"],
+	["de", "DEUTSCH"],
+	["ru", "РУССКИЙ"],
+	["zh_CN", "简体中文"],
+]
+
 static var volume := 0.8
 ## The SFX bus volume (0..1); the default is tuning "sfx" default_volume.
 static var sfx_volume := -1.0
@@ -61,6 +73,9 @@ static var rumble := true
 ## Gore (D-259 "On by default, with a toggle"): false = reduced gore, splatter and blood mist
 ## become dust (the VFX reads gore_on()).
 static var gore := true
+## The game's language, a locale of LANGUAGES (D-392); "" = the system's language when the game
+## has it, else English.
+static var language := ""
 
 
 static func set_volume(value: float) -> void:
@@ -172,6 +187,45 @@ static func toggle_flashing() -> void:
 static func toggle_rumble() -> void:
 	rumble = not rumble
 	save()
+
+
+## The language in use: the player's, else the system's when the game has it, else English.
+static func language_code() -> String:
+	if _codes().has(language):
+		return language
+	var system := OS.get_locale()
+	for code: String in _codes():
+		# Any Chinese system gets Simplified Chinese, the only Chinese the game has.
+		var base := code.get_slice("_", 0)
+		if system == code or system.get_slice("_", 0) == base:
+			return code
+	return "en"
+
+
+## The name of the language in use, as its own speakers write it.
+static func language_name() -> String:
+	return str(LANGUAGES[_codes().find(language_code())][1])
+
+
+## Steps the language to the next of LANGUAGES (wrapping round) and switches the game to it.
+static func next_language() -> void:
+	var codes := _codes()
+	language = codes[(codes.find(language_code()) + 1) % codes.size()]
+	apply_language()
+	save()
+
+
+## Switches every translated text (TranslationServer: data/i18n/strings.csv) to the language.
+static func apply_language() -> void:
+	TranslationServer.set_locale(language_code())
+	CjkFont.attach(language_code())
+
+
+static func _codes() -> Array[String]:
+	var out: Array[String] = []
+	for row: Array in LANGUAGES:
+		out.append(str(row[0]))
+	return out
 
 
 static func toggle_gore() -> void:
@@ -297,6 +351,7 @@ static func save() -> void:
 	cfg.set_value("access", "reduce_flashing", reduce_flashing)
 	cfg.set_value("access", "rumble", rumble)
 	cfg.set_value("access", "gore", gore)
+	cfg.set_value("ui", "language", language)
 	KeyBinds.write(cfg)
 	cfg.save(PATH)
 
@@ -329,4 +384,5 @@ static func load_saved(start_full: bool) -> void:
 	reduce_flashing = cfg.get_value("access", "reduce_flashing", false) == true
 	rumble = cfg.get_value("access", "rumble", true) != false
 	gore = cfg.get_value("access", "gore", true) != false
+	language = str(cfg.get_value("ui", "language", ""))
 	KeyBinds.read(cfg)
