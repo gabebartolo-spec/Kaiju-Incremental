@@ -14,6 +14,9 @@ name: tests
 #     pushes to main only, in lanes like a shard, reported and never blocking (D-382).
 #   - Every test function must have run and made a check (tests/lib/functions_ran.gd); there is
 #     no floor file.
+#   - A pull request's re-push runs only the suites that failed or never ran last time plus every
+#     one whose code changed since (tools/ci_select_suites.py, director 2026-10-30); a change to
+#     data, assets, tools or this workflow runs them all. Main always runs them all.
 #
 # "test" is the required check on main: the last job, it passes when the plan, the preflight,
 # every shard and the extras job passed (or were skipped on purpose).
@@ -47,6 +50,7 @@ jobs:
       reason: ${{ steps.changes.outputs.reason }}
       shards: ${{ steps.shards.outputs.matrix }}
       slow: ${{ steps.shards.outputs.slow }}
+      only: ${{ steps.select.outputs.only }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,11 +101,32 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
 
+      # A re-push of a pull request: the suites that failed or never ran last time, plus every one whose code
+      # changed since; any doubt runs them all (only=ALL). Its CI-TESTED / CI-PASSED lines are what the next
+      # re-push reads back from this log.
+      - name: Pick the suites
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 tools/ci_select_suites.py "${{ github.event.pull_request.number }}"
+          else
+            echo "only=ALL" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Plan the shards from the measured times
         id: shards
+        env:
+          ONLY: ${{ steps.select.outputs.only }}
         run: |
-          bash tools/plan_ci_shards.sh
-          echo "matrix=$(bash tools/plan_ci_shards.sh --matrix)" >> "$GITHUB_OUTPUT"
+          if [ "$ONLY" = NONE ]; then
+            echo "No suite to re-run: every one passed last time and none of their code changed."
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+          else
+            bash tools/plan_ci_shards.sh
+            echo "matrix=$(bash tools/plan_ci_shards.sh --matrix)" >> "$GITHUB_OUTPUT"
+          fi
           echo "slow=$(bash tools/plan_ci_shards.sh --slow)" >> "$GITHUB_OUTPUT"
 
   # The native core (native/, GDExtension on godot-cpp): built for Linux once, cached on its
@@ -181,7 +206,7 @@ jobs:
   shard:
     name: shard ${{ matrix.shard }}
     needs: [plan, native]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.code == 'true' && needs.plan.outputs.only != 'NONE'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -322,6 +347,7 @@ jobs:
         env:
           PLAN: ${{ needs.plan.result }}
           CODE: ${{ needs.plan.outputs.code }}
+          ONLY: ${{ needs.plan.outputs.only }}
           REASON: ${{ needs.plan.outputs.reason }}
           PREFLIGHT: ${{ needs.preflight.result }}
           NATIVE: ${{ needs.native.result }}
@@ -343,7 +369,7 @@ jobs:
               echo "::error::the project does not import or compile (preflight: $PREFLIGHT); its log names the script"
               exit 1
             fi
-            if [ "$SHARDS" != success ]; then
+            if [ "$SHARDS" != success ] && ! { [ "$ONLY" = NONE ] && [ "$SHARDS" = skipped ]; }; then
               echo "::error::a test shard did not pass (shards: $SHARDS); the red shard's log names the suite and check"
               exit 1
             fi
