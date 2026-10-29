@@ -53,6 +53,12 @@ func _init(tree: SceneTree, tier: int, preset: String, buffered: bool = true) ->
 	_reach = street.tune("stomp_catch") * sim.body_scale()
 
 
+## Without the extension far people step every few frames (StreetLod, D-254); the native walk
+## steps everyone every frame, so a run compared with it steps everyone too.
+func step_everyone() -> void:
+	street._lod.far_every = 1
+
+
 ## One frame: the kaiju moves on, a stomp or a brace when due, then the street's own frame.
 func step() -> void:
 	sim.kaiju_pos = _start + _dir * WALK * DT * _frame

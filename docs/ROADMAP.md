@@ -36,7 +36,10 @@ record); nothing is appended as a log. D-310 order: debt fixes, then parked work
    (sea_z -80); his comments on the ground, umbrellas and the port board awaited. Next: re-fit the failing tests,
    push, merge on green; waves lapping (D-325 water on the bay sheet) after the water merge (#388).
 2. **Wider city (D-254, play area 1.5x):** PR #413 (play-area-1p5-land); squash-merges on green, then the play-area
-   worktrees and branches go.
+   worktrees and branches go. Then the bay-coast junction spacing (director 2026-10-29: "city-gen junction spacing
+   at the bay coast, fixed separately"): at stage 2 the diagonal crosses the young bay's coast road (z -60) 2-9 m from
+   a seeded north-south street on every map seed; CityLines lays the bay's pinned z-lines without the
+   diagonal-crossing rule the other z-lines get. Fix it in city-gen and remove city audit's _at_bay_coast exemption.
 3. **Croc animation, keyed in Cascadeur (D-199, D-302, D-362):** young croc walk and turns rebuilt (#405), adult eyelids
    and rise clips (#398), collar bones (#410), claw rake (#332), beam_jaw (#392), Colossus helper joints (#396).
    Open: the young croc thigh twitch before a foot lifts (director 2026-10-29, `docs/roadmap/2026-10-23-26-sections.md`
@@ -64,8 +67,8 @@ record); nothing is appended as a log. D-310 order: debt fixes, then parked work
    suites (the `pr_skip` line of tools/ci_timings.txt), which run on main; no local suite runs, push and CI is the test.
    Open: the first push-to-main run after #412 proves the slow job.
 10. **Sound and music:** croc takes made ("Croc now, others later"); the Godzilla set (D-184) on the menu and as the three
-   city Covers; collapse voices (D-367). Open: layered music following the ruin (D-125), wider-city pacing waits for
-   balancing (D-366); every file CLEARED in `docs/LICENSING_REGISTER.md`; Suno only after his written spend yes.
+   city Covers; collapse voices (D-367); layered music following the ruin (D-125, D-189 order) and the menu theme,
+   all CLEARED. Open: wider-city pacing waits for balancing (D-366); Suno only after his written spend yes.
 11. **Demo shell (M3 below):** textured surfaces (Flat surfaces programme), the graphics preview, load-screen art (about 12
    staged 4K shots on one board, he picks), the demo end screen and feedback button, six languages plus Chinese.
 

@@ -1477,6 +1477,7 @@
             "edge_gap": {"$ref": "#/$defs/num"},
             "band_depth": {"$ref": "#/$defs/num"},
             "retreat_speed": {"$ref": "#/$defs/num"},
+            "retreat_clear": {"$ref": "#/$defs/num"},
             "lookahead": {"$ref": "#/$defs/num"},
             "danger_cost": {"$ref": "#/$defs/num"},
             "held_cost": {"$ref": "#/$defs/num"},
@@ -1500,7 +1501,7 @@
           "required": [
             "column", "hull", "turret", "gun", "clear", "two_lanes", "follow", "entry_depth",
             "band", "standoff", "post_gap", "reserve", "danger", "edge_gap", "band_depth",
-            "retreat_speed", "lookahead", "danger_cost", "held_cost", "oncoming_cost",
+            "retreat_speed", "retreat_clear", "lookahead", "danger_cost", "held_cost", "oncoming_cost",
             "uturn_cost", "commit", "spread_deg", "cover", "street_cost", "replan",
             "plans_per_step", "search_margin", "stuck", "yield_cap", "reverse", "grid",
             "hull_turn", "pivot_deg", "skew_deg"
@@ -2073,9 +2074,16 @@
                 "required": ["sectors", "stub", "rim", "outer"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                 "additionalProperties": false
-              }
+              },
+              "min_ring": {"$ref": "#/$defs/num"},
+              "max_ring": {"$ref": "#/$defs/num"},
+              "far_from_rise": {"$ref": "#/$defs/bool"},
+              "place_order": {"$ref": "#/$defs/num"},
+              "rise_clear": {"$ref": "#/$defs/num"},
+              "kind": {"$ref": "#/$defs/str"},
+              "landing": {"$ref": "#/$defs/num"}
             },
-            "required": ["id", "anchor", "margin", "tier", "rubble_bonus"],
+            "required": ["id", "margin", "tier", "rubble_bonus"],
             "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
             "additionalProperties": false
           }
@@ -2186,6 +2194,7 @@
           "additionalProperties": false
         },
         "avenues": {"$ref": "#/$defs/num"},
+        "avenue_spawn_clear": {"$ref": "#/$defs/num"},
         "avenue_width": {"$ref": "#/$defs/num"},
         "street_width": {"$ref": "#/$defs/num"},
         "alley_width": {"$ref": "#/$defs/num"},
@@ -2350,7 +2359,23 @@
           "required": ["on", "strength", "energy", "reach"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
-        }
+        },
+        "spread": {
+          "type": "object",
+          "properties": {
+            "landmarks_per_ring": {"$ref": "#/$defs/num"},
+            "landmark_gap": {"$ref": "#/$defs/num"},
+            "spawn_clear": {"$ref": "#/$defs/num"},
+            "rise_slack": {"$ref": "#/$defs/num"},
+            "bridge_rows": {"$ref": "#/$defs/num"}
+          },
+          "required": ["landmarks_per_ring", "landmark_gap", "spawn_clear", "rise_slack", "bridge_rows"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "park_every": {"$ref": "#/$defs/num"},
+        "park_gap": {"$ref": "#/$defs/num"},
+        "park_town": {"$ref": "#/$defs/num"}
       },
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
@@ -2387,6 +2412,7 @@
           "type": "object",
           "properties": {
             "reserve_hero": {"$ref": "#/$defs/num"},
+            "hero_cut_after_s": {"$ref": "#/$defs/num"},
             "retrigger_ms": {"$ref": "#/$defs/num"},
             "default": {"$ref": "#/$defs/str"},
             "categories": {
@@ -2502,7 +2528,7 @@
               "additionalProperties": false
             }
           },
-          "required": ["reserve_hero", "retrigger_ms", "default", "categories", "sounds"],
+          "required": ["reserve_hero", "hero_cut_after_s", "retrigger_ms", "default", "categories", "sounds"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
@@ -3253,6 +3279,13 @@
               "type": "object",
               "properties": {"pitch": {"$ref": "#/$defs/num"}, "db": {"$ref": "#/$defs/num"}},
               "required": ["pitch", "db"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "theme": {
+              "type": "object",
+              "properties": {"file": {"$ref": "#/$defs/str"}, "db": {"$ref": "#/$defs/num"}, "loop_offset_s": {"$ref": "#/$defs/num"}},
+              "required": ["file", "db", "loop_offset_s"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             },
@@ -4618,7 +4651,8 @@
                   "max_height": {"$ref": "#/$defs/num"},
                   "tower_chance": {"$ref": "#/$defs/num"},
                   "fog_scale": {"$ref": "#/$defs/num"},
-                  "far_haze": {"$ref": "#/$defs/num"}
+                  "far_haze": {"$ref": "#/$defs/num"},
+                  "outer_cores": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}}
                 },
                 "required": ["half", "coast_z", "max_height"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -5178,13 +5212,17 @@
         "cops_per_blockade": {"$ref": "#/$defs/num"},
         "cop_hold_radius": {"$ref": "#/$defs/num"},
         "cop_fire_interval": {"$ref": "#/$defs/num"},
-        "max_police_cars": {"$ref": "#/$defs/num"}
+        "max_police_cars": {"$ref": "#/$defs/num"},
+        "far_radius": {"$ref": "#/$defs/num"},
+        "far_every": {"$ref": "#/$defs/num"},
+        "view_margin": {"$ref": "#/$defs/num"}
       },
       "required": [
         "person_voxel", "walk_speed", "run_speed", "panic_radius", "calm_radius", "stomp_catch",
         "fall_spill", "panic_per_scale", "panic_gawk", "cars", "drive_speed", "flee_speed",
         "car_gap", "blockade_interval", "blockade_distance", "max_blockades", "cops_per_blockade",
-        "cop_hold_radius", "cop_fire_interval", "max_police_cars"
+        "cop_hold_radius", "cop_fire_interval", "max_police_cars", "far_radius", "far_every",
+        "view_margin"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

@@ -133,6 +133,20 @@ static func gaps(cfg: Dictionary) -> Dictionary:
 	return out
 
 
+## Which x-line may be the inner avenue: one CityLineFit.avenue_fits_x allows, at least tuning city
+## "avenue_spawn_clear" off x = 0: that avenue carries the viaduct (Rail), and the kaiju sets off
+## from (0, half) on the south ring, so a viaduct closer holds up its first steps. Never a sea bay's
+## side street (`bay_x`): its quay deck would jut into an avenue's asphalt.
+static func _x_fits(
+	x_rule: Dictionary, xs: Array[float], cfg: Dictionary, bay_x: Array[float]
+) -> Callable:
+	var keep := Num.f(cfg["avenue_spawn_clear"])
+	return func(i: int) -> bool:
+		return (
+			absf(xs[i]) >= keep and not xs[i] in bay_x and CityLineFit.avenue_fits_x(x_rule, xs, i)
+		)
+
+
 ## Every district's ring lines and one or two lines through the first district are avenues; an
 ## inner avenue is a line `fits` allows (the diagonal crosses it clear of the grid at an
 ## avenue's width, CityLineFit), when there is one.
@@ -188,7 +202,7 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 	var xs := _lay(
 		streams, rings, outer, [gaps["long"], gaps["far_long"]], [inner_rule, x_rule], bay_x
 	)
-	var x_fits := func(i: int) -> bool: return CityLineFit.avenue_fits_x(x_rule, xs, i)
+	var x_fits := _x_fits(x_rule, xs, cfg, bay_x)
 	var avenues_x := avenues(rng, xs, rings, x_fits, cfg)
 	var avenue_at: Array[float] = []
 	avenue_at.assign(avenues_x.keys().map(func(i: int) -> float: return xs[i]))
