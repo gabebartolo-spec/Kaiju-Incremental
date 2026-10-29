@@ -58,9 +58,10 @@ func archetype() -> int:
 	return b.style % 4
 
 
-## World position of cell (0, 0, 0)'s centre column.
+## World position of cell (0, 0, 0)'s centre column (its floor 0's: under the street for a
+## bridge piece, Building.base).
 func origin() -> Vector3:
-	return Vector3(b.x - b.w * 0.5 + VOXEL * 0.5, 0.0, b.z - b.d * 0.5 + VOXEL * 0.5)
+	return Vector3(b.x - b.w * 0.5 + VOXEL * 0.5, float(b.base), b.z - b.d * 0.5 + VOXEL * 0.5)
 
 
 func _make_palette(base: Color) -> void:

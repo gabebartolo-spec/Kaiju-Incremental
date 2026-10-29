@@ -250,7 +250,7 @@ func _top_at(p: Vector2) -> int:
 		if b.frame.alive_count == 0:
 			continue
 		if absf(p.x - b.x) <= b.w * 0.5 and absf(p.y - b.z) <= b.d * 0.5:
-			top = maxi(top, b.height)
+			top = maxi(top, b.height + b.base)
 	return top
 
 

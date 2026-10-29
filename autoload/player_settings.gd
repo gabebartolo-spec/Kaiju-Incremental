@@ -38,6 +38,9 @@ static var ui_scale := 1.0
 static var fps_cap := -1
 ## True while a rampage is on screen (main.gd); menus and pause run at tuning menu_fps at most.
 static var in_play := false
+## The graphics preview is open (GraphicsPreview): menus run at the player's own cap, so the frame
+## rate it shows is the real one.
+static var previewing := false
 ## Graphics quality, a key of tuning "display" graphics; "" = graphics_default for this screen.
 static var graphics := ""
 ## True once the controls card has shown at the start of a rampage (b2-10: once, then the
@@ -226,7 +229,7 @@ static func apply_graphics(view: Viewport) -> void:
 ## menus or pause, so an idle screen does not spin the graphics card (director's playtest).
 static func frame_cap(paused: bool) -> int:
 	var menu := Num.i(Content.section("display")["menu_fps"])
-	if in_play and not paused:
+	if (in_play and not paused) or previewing:
 		return cap()
 	return menu if cap() == 0 else mini(cap(), menu)
 
