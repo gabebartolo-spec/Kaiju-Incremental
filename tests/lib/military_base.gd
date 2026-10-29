@@ -213,7 +213,10 @@ static func _diag_state(sim: RampageSim, tank: RampageSim.Tank, was: Vector2) ->
 	if r == null:
 		return "id %d pos %v (no route)" % [tank.id, tank.pos]
 	return (
-		"id %d pos %v was %v front %v body %.2f danger %.2f retr %s rev %s path %d edge %d stuck %.2f yield %.2f give %d col %d goal %v"
+		(
+			"id %d pos %v was %v front %v body %.2f danger %.2f retr %s rev %s"
+			+ " path %d edge %d stuck %.2f yield %.2f give %d col %d goal %v"
+		)
 		% [tank.id, tank.pos, was, r.front, c.posts.to_body(tank.pos), c.danger(), r.retreating,
 		r.reversing, r.path.size(), r.edge, r.stuck_t, r.yield_t, r.give_to, r.column, r.goal]
 	)
