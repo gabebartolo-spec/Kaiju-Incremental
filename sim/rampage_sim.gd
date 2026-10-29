@@ -359,22 +359,9 @@ static func falloff(distance: float, radius: float) -> float:
 	return clampf(1.0 - (distance - radius) / radius, 0.0, 1.0)
 
 
-## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach), every
-## tank, roof squad and helicopter it can reach, by damage x force(position, own radius), force
-## 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
+## An area blow on chunks, tanks, squads and helicopters (SimDamage.area).
 func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
-	var top := ceili(reach_height()) if y_hi < 0 else y_hi
-	StrayShell.hit_buildings(self, force, damage, Vector2i(y_lo, top))
-	for tank: Tank in tanks:
-		var k: float = force.call(tank.pos, TANK_RADIUS)
-		tank.hp -= damage * k
-		if k > 0.0 and not hit_coat.is_empty():
-			tank.coat_t = Num.f(hit_coat["seconds"])
-			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
-	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
-	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
-	rail.hit(force, damage)
-	vip.hit(force, damage)
+	SimDamage.area(self, force, damage, y_lo, y_hi)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.
@@ -390,26 +377,9 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 	return damage_cells(index, cells, amounts)
 
 
-## Damages chunks of one building, each by its own amount. A building that dwarfs the kaiju
-## takes less of each blow (Growth.dwarf_mult, D-091). Broken chunks pay rubble; then whatever
-## lost support starts to fall. Returns chunks broken. A carved building goes to Carving.
+## Damages chunks of one building, each by its own amount (SimDamage.cells). Returns chunks broken.
 func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
-	if not cells.is_empty():
-		explosives.damaged(index)  # a red barrel lights its fuse at any blow
-	if carving.takes(index):
-		return carving.apply(index, cells, amounts)
-	var b := buildings[index]
-	var mult := Growth.dwarf_mult(size_tier(), b.tier, city)
-	var broken: Array[Vector3i] = []
-	for n: int in cells.size():
-		if b.frame.damage(cells[n], amounts[n] * mult):
-			broken.append(cells[n])
-	if broken.is_empty():
-		return 0
-	pay(b, broken.size(), 1.0)
-	_events.append({"type": "chunks_broken", "building": index, "cells": broken})
-	collapse.settle(index)
-	return broken.size()
+	return SimDamage.cells(self, index, cells, amounts)
 
 
 func pay(b: Building, chunks: int, bonus: float) -> void:

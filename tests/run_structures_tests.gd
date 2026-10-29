@@ -23,6 +23,7 @@ const SHARED: Array[String] = [
 	"carving_cells.gd",
 	"collapse.gd",
 	"rampage_sim.gd",
+	"sim_damage.gd",  # rampage_sim's damage paths, split out for its line cap
 	"voxel_frame.gd",
 	"voxel_support.gd",
 	"cell_grid.gd",
