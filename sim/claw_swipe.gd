@@ -118,7 +118,8 @@ func _base_in_reach(
 	var lane_front: Dictionary = lanes[0]
 	var lane_owner: Dictionary = lanes[1]
 	var base: Array[Vector3i] = []
-	for y: int in range(floors.x, mini(floors.y, b.height)):
+	var local := b.local_floors(floors)
+	for y: int in range(maxi(0, local.x), mini(local.y, b.height)):
 		for x: int in b.w:
 			for z: int in b.d:
 				var c := Vector3i(x, y, z)

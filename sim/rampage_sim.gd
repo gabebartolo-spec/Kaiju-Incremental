@@ -31,23 +31,39 @@ class Building:
 	var pay_share := 1.0
 	## A piece of the railway's viaduct or station (RailLayout: {"piece", "station"}), else empty.
 	var rail: Dictionary = {}
+	## A piece of a river bridge (BridgeLayout: {"piece", "of", "x", "z"}), else empty.
+	var bridge: Dictionary = {}
+	## World floor of its local floor 0: a bridge piece stands on the riverbed, under the street.
+	var base := 0
 	## Chunks it stood with when the rampage began (RunTally reads a landmark's against it).
 	var start_chunks := 0
 
 	func is_rail() -> bool:
 		return not rail.is_empty()
 
-	## Kept meshed wherever the kaiju is (BuildingStream): a landmark, or the railway.
+	func is_bridge() -> bool:
+		return not bridge.is_empty()
+
+	## Over a street or the river, on no lot: a railway or a bridge piece.
+	func is_span() -> bool:
+		return is_rail() or is_bridge()
+
+	## Kept meshed wherever the kaiju is (BuildingStream): a landmark, the railway, a bridge.
 	func is_held() -> bool:
-		return landmark != "" or is_rail()
+		return landmark != "" or is_span()
+
+	## Its local floors for world floors (lo, past hi): a blow that reaches the street reaches a
+	## bridge piece down to its riverbed.
+	func local_floors(world: Vector2i) -> Vector2i:
+		return Vector2i(0 if world.x <= 0 else world.x - base, world.y - base)
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
-		return Vector3(x - w * 0.5 + c.x + 0.5, c.y + 0.5, z - d * 0.5 + c.z + 0.5)
+		return Vector3(x - w * 0.5 + c.x + 0.5, c.y + 0.5 + base, z - d * 0.5 + c.z + 0.5)
 
 	## World position of a local frame point (e.g. a pivot edge).
 	func local_to_world(p: Vector3) -> Vector3:
-		return Vector3(x - w * 0.5 + p.x, p.y, z - d * 0.5 + p.z)
+		return Vector3(x - w * 0.5 + p.x, p.y + base, z - d * 0.5 + p.z)
 
 
 ## A part of a building on its way down: dropping straight, or toppling over an edge.
@@ -165,6 +181,8 @@ func _init(
 		chunks_total += b.frame.alive_count if b.in_arena else 0
 	var rail_cfg: Dictionary = tuning["rail"]
 	var rail_from := RailLayout.add_pieces(buildings, city, rail_cfg)
+	var bridge_cfg: Dictionary = tuning["bridge"]
+	var bridges_from := BridgeLayout.add_pieces(buildings, city, bridge_cfg)
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self, tuning, Seeds.derive(rng, 0xFA11))
 	carving = Carving.new(self, tuning)
@@ -180,7 +198,7 @@ func _init(
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
 	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
-	for n: int in range(rail_from, buildings.size()):
+	for n: int in range(rail_from, bridges_from):
 		rail.add_piece(n)
 	news = RunNews.new(self, tuning)
 	death = DeathOverload.new(self, tuning, Seeds.derive(rng, 0xDEAD))
@@ -188,9 +206,9 @@ func _init(
 	strikes = Strikes.new(self, strike_cfg)
 
 
-## The buildings that stand on lots: all but the railway's pieces, which stand over a street.
+## The buildings that stand on lots: all but the railway's and the bridges' pieces (is_span).
 func lot_buildings() -> Array[Building]:
-	return buildings.filter(func(b: Building) -> bool: return not b.is_rail())
+	return buildings.filter(func(b: Building) -> bool: return not b.is_span())
 
 
 func stat(stat_name: String) -> float:

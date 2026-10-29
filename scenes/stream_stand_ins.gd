@@ -31,7 +31,7 @@ func build(colors: Array[Color]) -> MultiMeshInstance3D:
 	for n: int in _buildings.size():
 		var b := _buildings[n]
 		_multi.set_instance_transform(n, _box(n))
-		_alpha[n] = 0.0 if b.is_rail() else 1.0
+		_alpha[n] = 0.0 if b.is_span() else 1.0
 		_multi.set_instance_color(n, colors[n])
 		var tall := 1.0 if b.height > 18 else 0.0
 		var custom := Color(b.style % 4, 0.35, tall, fposmod(b.x * 0.37 + b.z * 0.11, 1.0))
@@ -50,7 +50,7 @@ func hide(n: int) -> void:
 
 ## Building n is a box again.
 func show(n: int) -> void:
-	_alpha[n] = 0.0 if _buildings[n].is_rail() else 1.0
+	_alpha[n] = 0.0 if _buildings[n].is_span() else 1.0
 	_multi.set_instance_transform(n, _box(n))
 
 
@@ -64,7 +64,7 @@ func alpha(n: int) -> float:
 ## than the building so the meshed walls in front of it stay solid while it dissolves.
 func fade(n: int, opacity: float) -> void:
 	var b := _buildings[n]
-	if _multi == null or b.is_rail():
+	if _multi == null or b.is_span():
 		return
 	_alpha[n] = opacity
 	var color := _colors[n]
@@ -78,7 +78,7 @@ func fade(n: int, opacity: float) -> void:
 
 func _box(n: int) -> Transform3D:
 	var b := _buildings[n]
-	if b.is_rail():  # a viaduct is no box: it stays meshed (BuildingStream holds it)
+	if b.is_span():  # a viaduct or bridge is no box: it stays meshed (BuildingStream holds it)
 		return Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
 	return Transform3D(
 		Basis.from_scale(Vector3(b.w, b.height, b.d)), Vector3(b.x, b.height * 0.5, b.z)

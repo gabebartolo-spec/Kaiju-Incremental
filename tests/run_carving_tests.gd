@@ -4,13 +4,15 @@ extends "res://tests/lib/runner.gd"
 ## wear adds up; VoxelSupport decides what drops and which way a tower topples (toward the cut,
 ## wherever the kaiju stands, then b2-5's seeded mix of cut, side or away, D-386); the chunk
 ## Structure is kept as a mirror that pays rubble as today. Includes the player-effect fixtures
-## "carving" (the same seeded rampage with carving on and off), "fall_dirs" (b2-5 on and off)
-## and "landmark_carve" (tests/lib/landmark_carve_check.gd).
+## "carving" (the same seeded rampage with carving on and off), "fall_dirs" (b2-5 on and off),
+## "landmark_carve" (tests/lib/landmark_carve_check.gd) and "bridge_carve"
+## (tests/lib/bridge_carve_check.gd).
 ## Seeded by design: one or two hand-placed buildings, Seeds "army" 0 (fall_dirs: 0..15),
 ## scripted input.
 ##   godot --headless --path . --script tests/run_carving_tests.gd
 
 const LandmarkCarveCheck := preload("res://tests/lib/landmark_carve_check.gd")
+const BridgeCarveCheck := preload("res://tests/lib/bridge_carve_check.gd")
 const DT := 1.0 / 15.0
 const BANNED: Array[String] = [
 	"Time.", "OS.", "randi", "randf", "randomize", "RandomNumberGenerator", "Node", "await"
@@ -30,6 +32,7 @@ func run_checks() -> void:
 	await _t("_check_topple_toward_cut")
 	await _t("_check_fall_dirs")
 	await _h("LandmarkCarveCheck", func() -> void: LandmarkCarveCheck.new(check, _sim).run())
+	await _h("BridgeCarveCheck", func() -> void: BridgeCarveCheck.new(check, _sim).run())
 	await _t("_check_wear")
 	await _t("_check_rubble_parity")
 	await _t("_check_replay")
