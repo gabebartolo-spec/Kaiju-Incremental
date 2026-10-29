@@ -18,8 +18,9 @@ const FRAMES := 600
 ## blocks, the diagonal mid-block and quay sheds by the bank change the plan and its lots;
 ## -> 9a649408e1b35f5d, the sea bay (D-377): its coast road and the streets it pins change the
 ## plan's south; -> d92dedfaeb729c86, Tripo pool D-256: models replace the procedural lots, so
-## the lots the people walk past differ; street life and its tuning untouched).
-const PINNED := "d92dedfaeb729c86"
+## the lots the people walk past differ; street life and its tuning untouched; -> bdd19cf7508bf884,
+## the fixed beachfront (D-381): its sand crowd joins the street's people).
+const PINNED := "bdd19cf7508bf884"
 ## Frames of the buffer tests: five seconds of the street, with stomps, a brace and a blockade.
 const BUFFER_FRAMES := 300
 const STRIDE := 12  # floats of a 3D transform in a MultiMesh buffer

@@ -95,7 +95,9 @@ func _ready() -> void:
 	_mms = StreetDraw.pools(self, _voxel, 0 if native else _capacity)
 	_counts.resize(_mms.size())
 	if native:
-		_draw = StreetDraw.new(self, _mms, _nodes, _capacity)
+		var bounds := _nodes.duplicate()
+		bounds.append_array(pos)  # the beach's people stand on the sand, off the pavements
+		_draw = StreetDraw.new(self, _mms, bounds, _capacity)
 		_walker = StreetWalk.new(self, _pavements) if StreetWalk.available() else null
 	police = Police.new(self, Seeds.make("police", 0))
 	add_child(police)
