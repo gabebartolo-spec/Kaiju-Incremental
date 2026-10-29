@@ -43,6 +43,7 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 		CityGrowth.layout(base, tier, Seeds.make("city", 0)),
 		Seeds.make("army", 0)
 	)
+	sim.emerge.start(sim)  # it rises from the sea bay, as every run does (D-373, scenes/rampage.gd)
 	_holder = Node3D.new()
 	tree.root.add_child(_holder)
 	var fx := Fx.new()

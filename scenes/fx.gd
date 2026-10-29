@@ -261,27 +261,28 @@ func shockwave(at: Vector3, radius: float, tail := false, foot := false) -> void
 			_slam_puff(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * SLAM_SIZE * 0.8)
 		return
 	var cfg: Dictionary = Content.section("fx")["shockwave"]
+	ring_of(at, radius, Num.f(cfg["foot_start"]) if foot else 0.0, _dust_tone())
+
+
+## shockwave's ring from `start` of its radius out in `tint` (on water: the intro's foam rings).
+func ring_of(at: Vector3, radius: float, start: float, tint: Color) -> void:
+	var cfg: Dictionary = Content.section("fx")["shockwave"]
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * radius * Num.f(cfg["radius_scale"]) * 2.4
 	var mat := ShaderMaterial.new()
 	mat.shader = SHOCKWAVE
-	mat.set_shader_parameter("tint", _dust_tone())
+	mat.set_shader_parameter("tint", tint)
 	mat.set_shader_parameter("peak", Num.f(cfg["alpha"]))
 	mat.set_shader_parameter("soft", Num.f(cfg["soft"]))
-	var start := Num.f(cfg["foot_start"]) if foot else 0.0  # a foot's ring starts outside it
 	mat.set_shader_parameter("progress", start)
 	plane.material = mat
 	quad.mesh = plane
 	quad.position = at + Vector3(0, 0.15, 0)
 	add_child(quad)
 	var tween := quad.create_tween()
-	tween.tween_method(
-		func(v: float) -> void: mat.set_shader_parameter("progress", v),
-		start,
-		1.0,
-		Num.f(cfg["seconds"]) * (1.0 - start)
-	)
+	var set_progress := func(v: float) -> void: mat.set_shader_parameter("progress", v)
+	tween.tween_method(set_progress, start, 1.0, Num.f(cfg["seconds"]) * (1.0 - start))
 	tween.tween_callback(quad.queue_free)
 
 

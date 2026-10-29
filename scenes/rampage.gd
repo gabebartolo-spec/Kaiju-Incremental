@@ -49,6 +49,8 @@ var shake := CameraShake.new()
 ## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
 var rumble: PadRumble
 var run_index := 0  # the run number (setup's p_run): it seeds each bolt
+## Main: the whole intro (the first run, the first after an evolution) or its short cut (RunIntro).
+var full_intro := true
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
@@ -77,6 +79,7 @@ var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
 var _reader := RunInput.new()  # this frame's presses (held move D-259, the rise's latch)
+var _rise: RampageRise  # the run's opening: the rise from the sea bay and the intro
 ## How far the stick pushed on the last sim step (the walk cycle's pace between steps).
 var _move_len := 0.0
 
@@ -92,8 +95,8 @@ func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], 
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", p_run))
 	sim.ability_type = str(ability["type"])
 	sim.army_units.taskforce.carried = city_seconds  # rampage time in this city so far (D-160)
-	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
-	sim.body.use_species(str(species["id"]))
+	sim.body.use_species(str(species["id"]))  # first: the rise is placed by the body's length
+	sim.emerge.start(sim, RampageRise.keyed(sim, str(species["id"])))  # from the bay, D-270
 	_fx_rng = Seeds.make("fx", p_run)
 	sfx = Sfx.new(Seeds.make("sfx", p_run))
 	_cues = PowerCues.new(sim, sfx)
@@ -155,7 +158,7 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
-	add_child(RiverView.new(sim, _city.fx))
+	_rise = RampageRise.new(self, _city.fx, _kaiju, full_intro)
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	_add_vehicles()
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
@@ -169,8 +172,8 @@ func _ready() -> void:
 	_ability.bind(self, _city, _kaiju)
 	_add_camera()
 	_start_sound()
-	_place_camera(1.0)
 	_add_overlays()
+	_place_camera(1.0)  # after the HUD: the intro hides it
 	if stages.overlay != null:
 		stages.overlay.queue_free()
 	is_loaded = true
@@ -206,27 +209,33 @@ func _physics_process(delta: float) -> void:
 	# Slow motion (LandmarkSlowmo, D-259) steps the sim by whole ticks, on fewer of them: a tick it
 	# sits out only draws (steps -1: the tanks' every-tenth-step crush must not repeat).
 	var dt := _slowmo.sim_dt(delta)
-	if dt > 0.0:
-		_step(dt)
-	else:
+	var ticks := _step(dt) if dt > 0.0 else 1
+	if dt <= 0.0:
 		_slowmo.sit_out(delta)
-	_present(delta, _steps if dt > 0.0 else -1)
+	_present(delta * ticks, _steps if dt > 0.0 else -1)  # the legs keep pace with the ticks run
 
 
-## One sim step of `dt` with this tick's presses (and any kept from ticks the slow motion sat out).
-func _step(dt: float) -> void:
+## This frame's sim ticks of `dt` and presses (more in the intro's short cut, RunIntro); ticks run.
+func _step(dt: float) -> int:
 	var now := _slowmo.merge(_reader.read(self, _steps, dt), dt)
+	_steps += 1
+	var wading := sim.emerge.risen() >= 1.0 and sim.emerge.active
 	var move: Vector2 = now["move"]
 	var signature: bool = now["signature"]
-	_steps += 1
+	var ran := _rise.run_ticks(func() -> void: _step_sim(dt, move, signature, now))
+	_move_len = 1.0 if wading else (0.0 if sim.body.dash.on() else move.length())
+	return ran
+
+
+func _step_sim(dt: float, move: Vector2, signature: bool, now: Dictionary) -> void:
 	var t0 := Time.get_ticks_usec()
 	var events := sim.step(dt, move, signature, RunInput.buttons(now))
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
-		_on_event(event)
+		if not _rise.on_event(event, _kaiju, _hud):  # the rise's own (RampageRise) first
+			_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_move_len = 0.0 if sim.body.dash.on() else move.length()
 
 
 ## One tick's drawing, stepped or not (`delta` is the tick's own, slowed by the time scale).
@@ -379,10 +388,12 @@ func _place_camera(delta: float) -> void:
 	_follow.step(
 		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
 	)
-	var hold := sim.body.dash.on() or _ability.leaping()
+	var hold := sim.body.dash.on() or _ability.leaping() or sim.emerge.active  # rise: no lead
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
-	_camera.position = _follow.eye()
 	var nod := shake.turn(sim.body_scale(), motion).y
 	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
-	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
+	var view := {"body": _kaiju_at, "eye": _follow.eye(), "aim": aim, "fov": camera_fov}
+	if sim.emerge.active:  # the run intro's shot, ending exactly on this camera (RunIntro)
+		view = _rise.shot(view, _follow, _hud)
+	RampageRise.aim_camera(_camera, view, _blasts.jitter() * motion)  # + a blast's shake
 	shake.apply(_camera, sim.body_scale(), motion)

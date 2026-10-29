@@ -3,7 +3,7 @@ and jaw layered in Blender, D-228) into the adult croc's .kclip (scenes/kaiju_cl
 tools/blender/motion_test.py clips_export()): per frame the 27 game bones' local turns, the pelvis offset, both toe tips
 and the planted bits, in the croc_adult3_export.py frame (turned to face -Y, 100 m tall, origin on the ground under the
 pelvis).
-    blender -b <move>.blend --python tools/blender/croc_adult3_clips.py -- <x.kclip> <name> <first> <frames> <mode>
+    blender -b <move>.blend --python tools/blender/croc_adult3_clips.py -- <x.kclip> <name> <first> <frames> <mode>         [<hit> <trail from> <trail to>]
 <first> and <frames> are keyed frames (30 fps), <first> counted from the blend's first frame. A missing <x.kclip> is
 started at 30 fps (header from the rig); an existing one keeps its fps (the Blender clips' 24): the keys are resampled to
 it (turns slerped, points blended between the two nearest keyed frames), and a clip of the same name is replaced. Modes:
@@ -12,12 +12,18 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
   in place and the game's step clock moves the body (header stride_m = that travel).
 - turn: a turn on the spot; the root yaw is the pelvis heading (stored per frame, the game turns the body by it) and is
   taken out of the pose. The mirrored turn is appended too (turn_left <-> turn_right).
+- layer: in place as keyed, played over the other clips on the arms and torso (ClipRake: the claw rake, D-185); its
+  entry carries "layer": true, the hit frame (the claw crosses the snout line, where the sim's rake lands) and the
+  trail's first and last frames (the streak, D-243), given as keyed frames from <first> and stored as clip frames.
+  The mirrored rake is appended too (rake_r <-> rake_l).
 A foot is planted while its toe tip is within PLANT_UP of its rest height and moves under PLANT_SLIDE to the next frame
 (world): from the keyed contact until the toe tip peels off (the walk's stance, as the game locks the toe tip).
 r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
 turns (tail9-11) and the hind toes' (leg_x3), after the 27 r11 bones; the four eyelid bones (lid_lo_l/_r, lid_up_l/_r)
-follow last (D-335 blinks). A file of fewer bones is upgraded on the way: its clips get still tip, toe and lid bones
-(each turned as its parent, which is what the old fold did), so a clip not re-baked plays exactly as before.
+follow (D-335 blinks), then the two collar bones (clavicle_l/_r, lead 2026-10-28 call A: the shrug of the Cascadeur
+rise; before, they folded into spine2 and the game's shoulder missed the keyed one by up to 2.04 m). A file of fewer
+bones is upgraded on the way: its clips get still tip, toe, lid and collar bones (each turned as its parent, which is
+what the old fold did), so a clip not re-baked plays exactly as before.
 The adult's keyed clips so far (director-approved; sources in C:/Users/DANTE/cascadeur_bridge/croc_new/rig11/, keys
 croc_<move>_<tag>.casc), added to the Blender clips' file:
     roar roar_intro/roar_c.blend 12 124 still | rise_bay roar_intro/rise_p.blend 0 120 still |
@@ -28,14 +34,16 @@ from mathutils import Matrix, Quaternion, Vector as V
 
 a = sys.argv[sys.argv.index("--") + 1:]
 OUT, NAME, FIRST, N, MODE = Path(a[0]), a[1], int(a[2]), int(a[3]), a[4]
-assert MODE in ("still", "walk", "turn"), MODE
+assert MODE in ("still", "walk", "turn", "layer"), MODE
+MARKS = [float(x) for x in a[5:8]]  # layer: hit, trail from, trail to (keyed frames from FIRST)
+assert MODE != "layer" or len(MARKS) == 3, "layer needs <hit> <trail from> <trail to>"
 KEYED_FPS = 30
 PLANT_UP = 0.1  # m (100 m model): toe tip height over its rest height that still counts as down
 PLANT_SLIDE = 0.5  # m a keyed frame: a planted toe tip holds still (the peel moves it 0.25, a swing metres)
 BASE_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
               "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [f"tail{i}" for i in range(9)] + ["jaw"]
 IDENTITY = struct.pack("<4h", 0, 0, 0, 32767)
-MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left"}
+MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "rake_r": "rake_l", "rake_l": "rake_r"}
 arm = bpy.data.objects["croc_rig"]; ad = arm.data
 mesh = bpy.data.objects["croc_mesh"]; me = mesh.data
 scene = bpy.context.scene
@@ -57,7 +65,7 @@ def game_bone(n):
         return n
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
-    return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
+    return {"clavicle": f"clavicle_{sd}", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
             "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}3"}[n[:-2]]
 
 
@@ -72,9 +80,11 @@ ROOT_Y = ((AW @ ad.bones["pelvis"].head_local).y - C.y) * S
 skin = lambda p: G3 @ ((V(tuple(p)) - C) * S - V((0.0, ROOT_Y, 0.0)))
 
 deform = [b for b in ad.bones if b.use_deform and not HELPER(b.name)]
-# The rig's own game bones follow, by chain then number (parents first; rig_from_skin.py bone_names, so the rig.json
-# and the clips list the bones in one order).
-EXTRA = lambda n: (n.startswith("lid_"), n.rstrip("0123456789"), int(n[len(n.rstrip("0123456789")):] or 0))
+# The rig's own game bones follow, in the order they were added, then by chain and number (rig_from_skin.py
+# extra_order and bone_names, so the rig.json and the clips list the bones in one order).
+LATER = ("lid_", "clavicle_")
+EXTRA = lambda n: (next((i + 1 for i, p in enumerate(LATER) if n.startswith(p)), 0), n.rstrip("0123456789"),
+                   int(n[len(n.rstrip("0123456789")):] or 0))
 GAME_BONES = BASE_BONES + sorted({game_bone(b.name) for b in deform} - set(BASE_BONES), key=EXTRA)
 first, last = {}, {}
 for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0; r12: the toe is leg_x3)
@@ -84,6 +94,8 @@ for b in deform:  # parents first; a bone starting on the chain's end extends it
                          and (b.head_local - last[g].tail_local).length < 1e-4):
         last[g] = b
 assert set(first) == set(GAME_BONES), set(GAME_BONES) ^ set(first)
+# GAME_BONES is not parents first (a collar bone follows the arm it carries): the FK below walks this order instead.
+TOPO = [game_bone(b.name) for b in deform if first[game_bone(b.name)] is b]
 heads = {g: skin(AW @ first[g].head_local) for g in GAME_BONES}
 REST_TOE = [skin(AW @ ad.bones[f"toe_{s}"].tail_local).y for s in ("l", "r")]
 
@@ -105,7 +117,7 @@ def world_pose():
 def fk_error(world, pelvis):
     """Worst distance (m) of a game bone's head or tail, rebuilt from the turns as the game does, from its Blender joint."""
     head, worst = {}, (0.0, "")
-    for g in GAME_BONES:  # parents first
+    for g in TOPO:  # parents first
         par = first[g].parent
         pg = game_bone(par.name) if par is not None else None
         h = head[g] = pelvis if pg is None else head[pg] + world[pg] @ (heads[g] - heads[pg])
@@ -242,7 +254,7 @@ def drop(name):
             o["first"] -= c["frames"]
 
 
-clips = [(NAME, frames)] + ([(MIRROR[NAME], [mirror(r) for r in frames])] if MODE == "turn" else [])
+clips = [(NAME, frames)] + ([(MIRROR[NAME], [mirror(r) for r in frames])] if MODE in ("turn", "layer") else [])
 for name, recs in clips:
     drop(name)
     start = sum(c["frames"] for c in header["clips"])
@@ -252,6 +264,10 @@ for name, recs in clips:
         jaw = GAME_BONES.index("jaw")
         entry["jaw_peak"] = max(range(M), key=lambda k: min(recs[k][0][jaw].angle, 2 * math.pi - recs[k][0][jaw].angle))
         entry["tail_slam"] = False
+    if MODE == "layer":
+        entry["layer"] = True
+        entry["hit"] = round(MARKS[0] / STEP, 2)
+        entry["trail"] = [round(MARKS[1] / STEP, 2), round(MARKS[2] / STEP, 2)]
     header["clips"].append(entry)
     body += pack(recs)
 if MODE == "walk":

@@ -33,19 +33,31 @@ const MIN_LOT_M := 2.0  # CityLots' narrowest lot side: no block is cut thinner
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
-	var quay: Array[Dictionary] = []  # the first district's built blocks by the bank (CityRiver)
+	var quay: Array[Dictionary] = []  # the built blocks by the start bank (CityRiver.on_quay)
+	var city_seed := rng.seed  # each block cuts its lots from its own seed (_block_rng)
 	for ring: int in districts(cfg).size() + 1:  # + 1: the real blocks past the last district
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
-				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
+				var lots := CityLots.fill_block(_block_rng(city_seed, block), plan, block, cfg, 1.0)
 				if str(block["use"]) == "built":
-					if ring == 0 and CityRiver.on_quay(plan, block, cfg):
+					if CityRiver.on_quay(plan, block, cfg):
 						quay.append(block)
 						lots = CityRiver.off_quay(plan, lots, cfg)
 					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
 	CityPool.place(out, rng, cfg, plan)  # lots take the pool's models (D-256), on their own stream
 	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, quay, out, cfg))  # + red barrels (#19)
+	return out
+
+
+## A block's own lot numbers, from the city's seed and where the block lies: the bay drops
+## different streets at each stage (CityHarbour.inside), so a shared draw in block order would
+## re-cut every block after the first difference; this way a block of the young city cuts the
+## same lots at every stage.
+static func _block_rng(city_seed: int, block: Dictionary) -> RandomNumberGenerator:
+	var rect: Rect2 = block["rect"]
+	var out := RandomNumberGenerator.new()
+	out.seed = hash([city_seed, snappedf(rect.position.x, 0.01), snappedf(rect.position.y, 0.01)])
 	return out
 
 
@@ -109,6 +121,7 @@ static func map(cfg: Dictionary) -> Dictionary:
 		"diagonal": diag,
 		"xs": xs,
 		"zs": zs,
+		"bay": CityHarbour.rect_of(cfg),  # the sea bay, laid first: no street enters it
 	}
 	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
 	# Which grid edges are alleys (CityAlleys): x-line i between zs[j] and zs[j+1] is
@@ -276,7 +289,7 @@ static func _node(plan: Dictionary, index: Dictionary, p: Vector2) -> int:
 static func _street(
 	plan: Dictionary, index: Dictionary, a: Vector2, b: Vector2, kind: String, cfg: Dictionary
 ) -> void:
-	if a.distance_to(b) < 0.01 or CitySites.cuts(plan, a, b):
+	if a.distance_to(b) < 0.01 or CitySites.cuts(plan, a, b) or CityHarbour.inside(plan, a, b):
 		return
 	var streets: Array[Dictionary] = plan["streets"]
 	(
@@ -346,6 +359,7 @@ static func _blocks(
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
 	CityRiver.mark(plan, zs, cfg)
+	CityHarbour.mark(plan, avenues_x, avenues_z, cfg)  # the sea bay's blocks
 	# One park per district: its biggest block between the towers and its ring. One plaza: the
 	# block at the heart of the first tower district.
 	var rings := districts(cfg)
@@ -358,9 +372,9 @@ static func _blocks(
 	var best_plaza := -1
 	var plaza_away := INF
 	for n: int in inner:
-		if str(blocks[n]["use"]) != "built":
-			continue  # the river (CityRiver)
 		var rect: Rect2 = blocks[n]["rect"]
+		if str(blocks[n]["use"]) != "built" or CityHarbour.in_any(cfg, rect):
+			continue  # the river (CityRiver), any stage's sea bay (CityHarbour)
 		var ring := Num.i(blocks[n]["district"])
 		var town := CityLots.town_share(rect.get_center(), cfg)
 		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]

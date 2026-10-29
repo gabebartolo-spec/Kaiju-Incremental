@@ -26,7 +26,7 @@ static func tag(
 	var kinds: Array = h["kinds"]
 	if want <= 0 or kinds.is_empty():
 		return
-	var spawn: Vector2 = plan.get("river_spawn", Vector2(INF, INF))
+	var spawn: Vector2 = plan.get("rise_spawn", Vector2(INF, INF))
 	var edge := half * Num.f(h["edge_share"])
 	var candidates: Array[int] = []
 	for i: int in out.size():

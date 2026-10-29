@@ -462,7 +462,7 @@
   },
   {
    "name": "clavicle_l",
-   "game": "spine2",
+   "game": "clavicle_l",
    "parent": "chest",
    "head": [
     -3.9948,
@@ -602,7 +602,7 @@
   },
   {
    "name": "clavicle_r",
-   "game": "spine2",
+   "game": "clavicle_r",
    "parent": "chest",
    "head": [
     3.9948,

@@ -175,7 +175,7 @@ func _check_city_places() -> void:
 			spots.size() >= want,
 			"stage %d has at least %d sites (%d)" % [stage, want, spots.size()]
 		)
-		var spawn: Vector2 = CityGen.map(cfg).get("river_spawn", Vector2(INF, INF))
+		var spawn: Vector2 = CityGen.map(cfg).get("rise_spawn", Vector2(INF, INF))
 		for a: int in spots.size():
 			check(spots[a].distance_to(spawn) >= Num.f(h["spawn_clear"]), "clear of the rise")
 			for b: int in range(a + 1, spots.size()):

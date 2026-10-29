@@ -24,7 +24,7 @@ const PARTS: Array[String] = ["hull", "turret", "barrel"]
 const CLIP_SPAWN := 44.0
 ## Where the kaiju stands: a crossing at the north end of the Behemoth city (the same spot as
 ## round 3's clip, so the critic compares like with like).
-const CLIP_AT := Vector2(5, -70)
+const CLIP_AT := Vector2(5, -50)  # south of the stage-2 bay's coast road (z -62, D-377)
 ## Mid-clip the kaiju strides east down the avenue at the tanks posted there (physics frames),
 ## so the take shows them fall back out of its reach and post again.
 const WALK_FRAMES := Vector2i(540, 780)
@@ -79,7 +79,7 @@ func _run() -> void:
 	_rampage.setup(
 		species, stats, CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0)), 1
 	)
-	_rampage.sim.kaiju_pos = CLIP_AT  # before the view is built, so it starts there
+	start_at(_rampage.sim)  # before the view is built, so it starts there
 	_rampage.scripted = _input
 	root.add_child(_rampage)
 	await physics_frame
@@ -348,6 +348,14 @@ func _aim(at: Vector2) -> void:
 func _input(sim: RampageSim) -> Dictionary:
 	sim.facing = Vector2(1, 0)
 	return {"move": walk(_frame)}
+
+
+## The kaiju starts on land at CLIP_AT: the rise from the sea bay (D-377) is not what the clip
+## plays, and holds the army back until it ends.
+static func start_at(sim: RampageSim) -> void:
+	sim.kaiju_pos = CLIP_AT
+	sim.emerge.active = false
+	sim.stand_y = 0.0
 
 
 ## The clip's move at physics frame `frame`.
