@@ -54,6 +54,7 @@ static func run(root: Node, check: Callable) -> void:
 	FlowSounds.regen(check, sfx)
 	FlowVoices.check_tail(check, sfx)
 	FlowVoices.check_burst(check, root)
+	FlowVoices.check_newest_cuts_oldest(check, root)
 	sfx.free()
 
 

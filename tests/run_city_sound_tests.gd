@@ -10,7 +10,8 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_city_sound_tests.gd
 
 const Run := preload("res://tests/lib/city_sound_run.gd")
-const SECONDS := 100.0
+## Long enough for the 1.5x city to reach its ruin (phase 0.96 at 120 s, leap-side 2026-10-28).
+const SECONDS := 120.0
 ## The panic beds must peak in the first share of the run and fall this far below the peak.
 const EARLY := 0.6
 const DROP_DB := 25.0

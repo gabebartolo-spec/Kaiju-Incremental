@@ -2,7 +2,7 @@ extends "res://tests/lib/runner.gd"
 ## Carving suite: the rampage on the fine destruction grid (Carving, D-094 WP7; D-097, D-099).
 ## A building's first hit promotes it; blows carve its cells by their force at each column and
 ## wear adds up; VoxelSupport decides what drops and which way a tower topples (toward the cut,
-## wherever the kaiju stands, then b2-5's seeded mix of cut, side or away, D-386); the chunk
+## wherever the kaiju stands, then b2-5's seeded mix of cut, side or away, D-387); the chunk
 ## Structure is kept as a mirror that pays rubble as today. Includes the player-effect fixtures
 ## "carving" (the same seeded rampage with carving on and off), "fall_dirs" (b2-5 on and off),
 ## "landmark_carve" (tests/lib/landmark_carve_check.gd) and "bridge_carve"
@@ -230,7 +230,7 @@ func _base_cut() -> Array[Vector3i]:
 	return cut
 
 
-## Player-effect fixture "fall_dirs" (b2-5, D-386: "buildings seem to ALWAYS collapse toward our
+## Player-effect fixture "fall_dirs" (b2-5, D-387: "buildings seem to ALWAYS collapse toward our
 ## kaiju ... make the collapse directions more varied"): the same tower cut on +x with the kaiju
 ## on that side, over 16 run seeds. On (data/tuning.json odds): it falls at least three ways,
 ## and to its cut in some runs only; off (cut only): always +x. A seed replays the same way.

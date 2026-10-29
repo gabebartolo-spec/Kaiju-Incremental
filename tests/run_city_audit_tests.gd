@@ -164,7 +164,8 @@ func _check_road_rules_held() -> void:
 	var base := Content.tuning()
 	for tier: int in STAGES:
 		for map_seed: int in Roads.seeds(ROAD_SEEDS):
-			var got := Roads.run(Roads.city(base, tier, map_seed))
+			var cfg := Roads.city(base, tier, map_seed)
+			var got := Roads.run(cfg)
 			var bad: Array[Dictionary] = []
 			for v: Dictionary in got["violations"]:
 				var rule := str(v["rule"])
@@ -267,8 +268,8 @@ func _check_landmarks_clear() -> void:
 
 
 ## No plan falls back on CityLineFit's fewest-breaks run (CityLines.fit_breaks 0) at any stage,
-## 50 map seeds (Roads.seeds); and the shipped seed under the pre-fix diagonal ((-6, 4) at 27
-## deg, which no run fits) is caught breaking rules.
+## 50 map seeds (Roads.seeds); and the shipped seed under the 1.5x city's pre-fit diagonal ((-9, 6)
+## at 27 deg, which tools/audit/diagonal_fit.gd found no run fits) is caught breaking rules.
 func _check_lines_fit_clean() -> void:
 	var base := Content.tuning()
 	for tier: int in STAGES:
@@ -285,7 +286,7 @@ func _check_lines_fit_clean() -> void:
 			)
 		)
 	var planted := Roads.city(base, 1, Roads.SHIPPED_SEED)
-	planted["diagonal_through"] = [-6, 4]
+	planted["diagonal_through"] = [-9, 6]
 	planted["diagonal_deg"] = 27
 	var got := CityLines.fit_breaks(planted)
-	check(got > 0, "a plan that cannot fit (pre-fix diagonal) is caught: %d rules broken" % got)
+	check(got > 0, "a plan that cannot fit (pre-fit diagonal) is caught: %d rules broken" % got)

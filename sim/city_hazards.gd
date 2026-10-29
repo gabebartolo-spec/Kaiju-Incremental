@@ -34,8 +34,8 @@ static func tag(
 		var at := Vector2(Num.f(e["x"]), Num.f(e["z"]))
 		if e.has("landmark") or e.has("model") or Num.i(e["h"]) > Num.i(h["max_height"]):
 			continue
-		if not CityBand.touches(at.x, at.y, Vector2(Num.f(e["w"]), Num.f(e["d"])), half):
-			continue
+		if maxf(absf(at.x), absf(at.y)) > half:
+			continue  # stands in play: a lot straddling the edge has its middle out of reach
 		if maxf(absf(at.x), absf(at.y)) < edge and i < quay_from:
 			continue
 		if spawn.x != INF and at.distance_to(spawn) < Num.f(h["spawn_clear"]):

@@ -36,7 +36,10 @@ record); nothing is appended as a log. D-310 order: debt fixes, then parked work
    (sea_z -80); his comments on the ground, umbrellas and the port board awaited. Next: re-fit the failing tests,
    push, merge on green; waves lapping (D-325 water on the bay sheet) after the water merge (#388).
 2. **Wider city (D-254, play area 1.5x):** PR #413 (play-area-1p5-land); squash-merges on green, then the play-area
-   worktrees and branches go.
+   worktrees and branches go. Then the bay-coast junction spacing (director 2026-10-29: "city-gen junction spacing
+   at the bay coast, fixed separately"): at stage 2 the diagonal crosses the young bay's coast road (z -60) 2-9 m from
+   a seeded north-south street on every map seed; CityLines lays the bay's pinned z-lines without the
+   diagonal-crossing rule the other z-lines get. Fix it in city-gen and remove city audit's _at_bay_coast exemption.
 3. **Croc animation, keyed in Cascadeur (D-199, D-302, D-362):** young croc walk and turns rebuilt (#405), adult eyelids
    and rise clips (#398), collar bones (#410), claw rake (#332), beam_jaw (#392), Colossus helper joints (#396).
    Open: the young croc thigh twitch before a foot lifts (director 2026-10-29, `docs/roadmap/2026-10-23-26-sections.md`

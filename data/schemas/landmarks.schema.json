@@ -35,9 +35,22 @@
           "required": ["chunks", "d", "h", "inside", "kvox", "w"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "bridge": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "h", "kvox", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
-      "required": ["stadium", "wheel"],
+      "required": ["stadium", "wheel", "bridge"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     }

@@ -59,3 +59,43 @@ static func check_burst(check: Callable, root: Node) -> void:
 	)
 	check.call(stolen == 0, "no hero voice is ever stolen (%d)" % stolen)
 	sfx.free()
+
+
+## Newest cuts oldest (the director 2026-10-28): a toppled tower while its category's voices are
+## all still ringing takes the oldest of them once it has played tuning "sfx" "voice_caps"
+## "hero_cut_after_s", never sooner and never another hero's (the 1.5x city's flow run played 0
+## of 171 landings: three collapses still rang 2.4 s on, run 40612967787).
+static func check_newest_cuts_oldest(check: Callable, root: Node) -> void:
+	var sfx := Sfx.new(Seeds.make("sfx", 0))
+	root.add_child(sfx)
+	sfx.live = true
+	sfx.play("roar")
+	var cap := sfx.voices.cap("collapse")
+	for _n: int in cap:
+		sfx.play("collapse")
+		sfx._process(0.1)
+	var full := sfx.voices.busy_in("collapse")
+	var before := sfx.played.count("collapse")
+	sfx.play("collapse")  # the oldest has played 0.3 s
+	var early := sfx.played.count("collapse") - before
+	sfx._process(1.0)
+	sfx.play("collapse")
+	var late := sfx.played.count("collapse") - before - early
+	(
+		check
+		. call(
+			full == cap and early == 0 and late == 1 and sfx.voices.busy_in("collapse") == cap,
+			(
+				(
+					"a topple with all %d collapse voices ringing cuts the oldest after 1 s, not at 0.3 s"
+					+ " (full %d, early %d, late %d)"
+				)
+				% [cap, full, early, late]
+			)
+		)
+	)
+	check.call(
+		sfx.voices.heroes_stolen == 0 and sfx.voices.busy_in("hero") > 0,
+		"the cut never takes another hero's voice (the roar still sounds)"
+	)
+	sfx.free()
