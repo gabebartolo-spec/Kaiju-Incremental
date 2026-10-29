@@ -1,8 +1,9 @@
 # Kaiju Incremental: design
 
-The one design document. Every agent reads it in full before work. It says what the game IS today; how and when
-things get built is `docs/ROADMAP.md`, why each ruling was made is `docs/DECISIONS.md` (D-n). Cap 200 lines. Edited
-only by the lead when the director rules; replace the old line, never append history. Quotes are the director's.
+The one design document: what the game IS today. A session reads the sections its task changes or relies on (CLAUDE.md);
+how and when things get built is `docs/ROADMAP.md`, why each ruling was made is `docs/DECISIONS.md` (D-n). Cap 200
+lines. Edited only when the director rules, in the PR that acts on it; replace the old line, never append history.
+Quotes are the director's.
 
 ## Visual pillars (director 2026-10-22/23)
 Every visual effect passes three equal tests: **beauty** ("visual beauty is equally important"), **consistency** (one look
