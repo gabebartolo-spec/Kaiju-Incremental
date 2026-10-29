@@ -18,6 +18,9 @@ every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach
 road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
 man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
 (volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
+The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
+stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
+wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1 (built in a later PR).
 
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river

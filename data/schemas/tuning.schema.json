@@ -2137,6 +2137,7 @@
               "properties": {
                 "voxel": {"$ref": "#/$defs/num"},
                 "spacing": {"$ref": "#/$defs/num"},
+                "from_east": {"$ref": "#/$defs/num"},
                 "from_water": {"$ref": "#/$defs/num"},
                 "from_edge": {"$ref": "#/$defs/num"},
                 "umbrella": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
@@ -2161,7 +2162,7 @@
                 },
                 "colors": {"type": "object", "additionalProperties": {"$ref": "#/$defs/str"}}
               },
-              "required": ["voxel", "spacing", "from_water", "from_edge", "umbrella", "lounger", "courts", "court", "court_shift", "court_clear", "net", "line_proud", "crowd", "colors"],
+              "required": ["voxel", "spacing", "from_east", "from_water", "from_edge", "umbrella", "lounger", "courts", "court", "court_shift", "court_clear", "net", "line_proud", "crowd", "colors"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             }

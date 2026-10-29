@@ -104,13 +104,19 @@ func _ready() -> void:
 	add_child(_props.leaf_field)
 	add_child(_props.bark_field)
 	add_child(LampPools.new(_lamp_spots))  # the lamps' pools on the ground, at night
+	_plant_beach()
+
+
+## The beach's umbrellas, loungers and courts (D-381), on their own PropField at the sand's height.
+func _plant_beach() -> void:
 	_beach = BeachProps.plant(self)
-	if _beach != null:
-		var sand := _beach.build(BeachProps.palette(plan), 37, 0.0)
-		sand.position.y = BeachProps.floor_y(plan)
-		add_child(sand)
-		add_child(_beach.leaf_field)  # in the tree, so they go with it (the beach has no trees)
-		add_child(_beach.bark_field)
+	if _beach == null:
+		return
+	var sand := _beach.build(BeachProps.palette(plan), 37, 0.0)
+	sand.position.y = BeachProps.floor_y(plan)
+	add_child(sand)
+	add_child(_beach.leaf_field)  # in the tree, so they go with it (the beach has no trees)
+	add_child(_beach.bark_field)
 
 
 ## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so

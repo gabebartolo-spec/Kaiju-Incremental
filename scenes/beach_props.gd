@@ -28,8 +28,8 @@ static func plant(decor: CityDecor) -> PropField:
 
 
 ## Each umbrella's pole (x, z) within `view` of the centre (|x|): a grid every spacing along and
-## across the sand, from_water past the waterline to from_edge short of the promenade, kept
-## court_clear off the courts. Empty with no beachfront.
+## across the sand, from_east in from the beach's east end, from_water past the waterline to
+## from_edge short of the promenade, kept court_clear off the courts. Empty with no beachfront.
 static func spots(plan: Dictionary, view: float) -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	if not plan.has("harbour"):
@@ -42,7 +42,7 @@ static func spots(plan: Dictionary, view: float) -> Array[Vector2]:
 	var near := courts(plan)
 	var clear: Array = cfg["court_clear"]
 	var keep := Vector2(Num.f(clear[0]), Num.f(clear[1]))
-	var x := Num.f(b["beach_east"]) - Num.f(cfg["from_water"])
+	var x := Num.f(b["beach_east"]) - Num.f(cfg["from_east"])
 	while x > rect.position.x:
 		var band := CityHarbour.bands(h, x)
 		var z := band[0] + Num.f(cfg["from_water"])
