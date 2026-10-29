@@ -1,5 +1,5 @@
 extends RefCounted
-## The rise bar (tests/lib/city_spawn_view.gd, D-382: his first beachfront hotel is down within
+## The rise bar (tests/lib/city_spawn_view.gd, D-384: his first beachfront hotel is down within
 ## DOWN_BY seconds of him standing up out of the sea) for each body the game really
 ## plays: the young croc in the stage 1 city, the Behemoth in the stage 2 city and the Colossus in
 ## the stage 3 city (a run's stats.size picks both, CityGrowth.tuning_for_stats), on every map seed.

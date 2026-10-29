@@ -42,6 +42,11 @@ static func facade_material(haze: float) -> ShaderMaterial:
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
 	mat.set_shader_parameter("haze_color", Look.color("fog_color"))
 	mat.set_shader_parameter("haze", haze)
+	# Windows filtered over the pixel once they are thinner than it (render_opt.facade_aa).
+	var cfg := Content.section("render_opt")
+	mat.set_shader_parameter("filter_windows", cfg.get("facade_aa", true) == true)
+	mat.set_shader_parameter("filter_start", Num.f(cfg["facade_aa_start"]))
+	mat.set_shader_parameter("filter_cells", Num.f(cfg["facade_aa_cells"]))
 	return WindowPalette.apply_common(mat)
 
 

@@ -33,6 +33,8 @@ uniform float bubble_cut = 0.0;
 // Half a voxel inside the face, in model space: the window's cell, the same in the baked shell,
 // the cell grid and a falling piece.
 varying vec3 v_window;
+// The face's normal in model space, for the window's half-open shift (window_hash).
+varying vec3 v_window_n;
 
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
@@ -40,6 +42,7 @@ vec3 srgb_to_linear(vec3 c) {
 
 void vertex() {
 	v_window = VERTEX - NORMAL * (window_voxel * 0.5);
+	v_window_n = NORMAL;
 	float state = texelFetch(alive, ivec2(int(UV2.x + 0.5), 0), 0).r;
 	if (state < 0.02 || UV2.y < 1.0 - state) {
 		VERTEX = vec3(0.0);
@@ -60,7 +63,7 @@ void fragment() {
 		if (window_tagged(COLOR.a)) {
 			lit = 1.0;
 			if (window_palette_on) {
-				vec4 w = window_pick(window_hash(v_window));
+				vec4 w = window_pick(window_hash(v_window, v_window_n));
 				albedo = w.rgb;
 				lit = w.a;
 			}

@@ -9,8 +9,9 @@ name: tests
 #   - The shards come from measured times (tools/ci_timings.txt, tools/plan_ci_shards.sh):
 #     no suite or shard list is kept by hand. A PR run targets 10-12 minutes (debt row 4, D-295).
 #     Each shard runs `lanes` suites at once on its 4 vCPUs (tools/run_tests.sh LANES).
-#   - Slow, noisy suites ("pr_skip" in tools/ci_timings.txt; none yet) run on pushes to main
-#     only, reported and never blocking.
+#   - The slow suites that check the game from a second angle ("pr_skip" in tools/ci_timings.txt:
+#     the stream, load, speed-run bars, crowd, city layout audits, helicopter flight, ...) run on
+#     pushes to main only, in lanes like a shard, reported and never blocking (D-382).
 #   - Every test function must have run and made a check (tests/lib/functions_ran.gd); there is
 #     no floor file.
 #
@@ -274,14 +275,14 @@ jobs:
           name: log-smoke
           path: ${{ runner.temp }}/log-smoke
 
-  # Slow suites (pr_skip; none yet): pushes to main only. CI runners vary in speed, so a red run is a
-  # prompt to look, never a stop.
+  # Slow suites (pr_skip): pushes to main only, about 4,400 s of suites in 3 lanes (a split suite as its
+  # parts). CI runners vary in speed, so a red run is a prompt to look, never a stop.
   slow:
     name: slow suites (main only)
-    needs: [plan, preflight]
+    needs: [plan, preflight, native]
     if: needs.plan.outputs.code == 'true' && github.event_name != 'pull_request' && needs.plan.outputs.slow != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -290,11 +291,25 @@ jobs:
       # run time. Cached by object id: an unchanged tree downloads nothing (debt row 8).
       - uses: ./.github/actions/lfs-files
       - uses: ./.github/actions/setup-godot
+      - name: Fetch the native library
+        uses: actions/download-artifact@v4
+        with:
+          name: native-linux
+          path: native/bin
 
       - name: Run the slow suites
         env:
+          KAIJU_NATIVE_REQUIRED: "1"
           SUITES: ${{ needs.plan.outputs.slow }}
+          LANES: "3"
         run: VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-slow
+          path: ${{ runner.temp }}/test-logs
 
   # The required check. Its name stays "test" so branch protection never changes.
   test:

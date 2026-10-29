@@ -3,7 +3,7 @@ extends RefCounted
 ## seem destructible?"): the city suite's spawn-view check, called from its D-062 loop for each
 ## stage and map_seed. Within the game camera's reach of where the kaiju rises (its ground
 ## distance behind the kaiju, CameraTuning.offset().z, plus a margin, scaled by body size like
-## the camera), no skyline stand-in stands. And the rise bar (D-382, director 2026-10-29: "Hotels
+## the camera), no skyline stand-in stands. And the rise bar (D-384, director 2026-10-29: "Hotels
 ## hit in 10 s"): from the moment he stands up out of the sea, his first beachfront hotel
 ## (CityHarbour's "front" blocks, D-381) is down within DOWN_BY seconds, the walk across the
 ## sand counted. Distances run from the nearer of the rise point (in the sea, CityHarbour) and the
@@ -12,7 +12,7 @@ extends RefCounted
 const MARGIN := 4.0  # past the camera's ground point: the bottom of the screen
 const DT := 1.0 / 30.0
 ## D-091: big buildings take longer to chew down, so the bar is time, not one stomp (D-131: 10 s
-## stays; D-382: counted to the first beachfront hotel down, from when he stands).
+## stays; D-384: counted to the first beachfront hotel down, from when he stands).
 const DOWN_BY := 10.0
 const WALK_LIMIT := 1000.0  # stops a walk that never finishes
 

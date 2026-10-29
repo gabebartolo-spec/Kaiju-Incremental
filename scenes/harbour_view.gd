@@ -73,7 +73,7 @@ static func _add(bands_out: Dictionary, band: String, rect: Rect2) -> void:
 
 ## The front's water: one sheet at the sea's level from the coast to the beach's furthest
 ## waterline and the port's quay (the sand, decks and pavement stand over its landward part),
-## glossy like the open sea past the coast.
+## on the water surface (WaterSurface) like the open sea past the coast.
 static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstance3D:
 	var b: Dictionary = plan["harbour"]
 	var rect: Rect2 = b["rect"]
@@ -96,14 +96,15 @@ static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstan
 		Vector2(x0, reach),
 	]:
 		st.add_vertex(Vector3(p.x, y, p.y))
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.12
-	mat.metallic_specular = 0.8
 	var mi := MeshInstance3D.new()
 	mi.mesh = st.commit()
-	mi.material_override = mat
+	mi.material_override = (
+		WaterSurface.material(rect, color, true, Num.i(cfg["map_seed"]))
+		if WaterSurface.on()
+		else WaterSurface.gloss(color)
+	)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.add_to_group(WaterSurface.GROUP)
 	return mi
 
 
