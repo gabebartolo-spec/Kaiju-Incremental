@@ -3842,6 +3842,7 @@
     "claw_fx": {
       "type": "object",
       "properties": {
+        "code_windup_s": {"$ref": "#/$defs/num"},
         "strike_s": {"$ref": "#/$defs/num"},
         "recover_s": {"$ref": "#/$defs/num"},
         "arm_up": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
@@ -3870,7 +3871,8 @@
         "puff": {"$ref": "#/$defs/num"}
       },
       "required": [
-        "strike_s", "recover_s", "arm_up", "arm_arc", "arc_at", "arm_settle", "settle_at",
+        "code_windup_s", "strike_s", "recover_s", "arm_up", "arm_arc", "arc_at", "arm_settle",
+        "settle_at",
         "slash_delay_s", "arm_across", "arm_reach_adult", "arm_reach_young", "fx_ref_scale",
         "fx_boost_max", "arc_reach", "arc_from_deg", "arc_to_deg", "arc_drop", "streaks",
         "streak_thick", "streak_gap", "streak_color", "segments", "sweep_s", "trail_s", "fade_s",

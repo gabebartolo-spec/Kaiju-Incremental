@@ -2,12 +2,13 @@ extends "res://tests/lib/runner.gd"
 ## Croc standing suite (D-047): the clip-driven croc titan, at every stage, does what the sim asks
 ## of a body that stands. Each sim stomp lifts one foot, alternating, and plants it inside the
 ## scene's wait for it (Rampage.STOMP_WAIT) at a stomp's weight, so the ring and cracks land under
-## a foot, and no foot slides; the claw rake swings the raking arm over the clip's pose, only it,
-## and it comes back to rest; with no rake called the arms match a calm kaiju's. Fixed 60 Hz
-## steps, no clock, no randomness.
+## a foot, and no foot slides; the claw rake swings the raking arm over the clip's pose and comes
+## back to rest, its streak only while it sweeps (CrocClawRake); with no rake called the arms
+## match a calm kaiju's. Fixed 60 Hz steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_standing_tests.gd
 
 const CrocStompCentre := preload("res://tests/lib/croc_stomp_centre.gd")
+const CrocClawRake := preload("res://tests/lib/croc_claw_rake.gd")
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
 ## Stomps on the sim's 0.7 s beat, and the footfall weight below which a step is not a stomp.
@@ -24,9 +25,10 @@ func run_checks() -> void:
 	await _t("_check_standing_stomp")
 	await _t("_check_stomp_shape")
 	await _t("_check_stomp_landing")
-	await _t("_check_claw_rake")
-	await _t("_check_claw_trail")
 	await _h("CrocStompCentre", func() -> void: await CrocStompCentre.new(self, check).run())
+	await _h(
+		"CrocClawRake", func() -> void: await CrocClawRake.new(self, check, _model, _step).run()
+	)
 
 
 func _model(stage: String) -> KaijuModel:
@@ -242,106 +244,6 @@ func _toe_height(rig: KaijuRig) -> float:
 		var tip := "leg_%s3" % side if rig.has_bone("leg_%s3" % side) else "leg_%s2" % side
 		top = maxf(top, rig.tail_world(tip).y - rig.global_position.y)
 	return top
-
-
-## The claw rake (a windup, then the swipe 0.3 s on) moves the raking arm and only that arm, and
-## it comes back to rest; with no rake called, nothing about the arms differs from a calm kaiju's.
-func _check_claw_rake() -> void:
-	for stage: String in STAGES:
-		await _rake_one(stage, -1.0)
-		await _rake_one(stage, 1.0)
-
-
-func _rake_one(stage: String, side: float) -> void:
-	var rake := _model(stage)
-	var calm := _model(stage)
-	var rig := _rig_of(rake)
-	var rig_calm := _rig_of(calm)
-	var finite := true
-	for i: int in 40:
-		finite = finite and _step(rake, rig) and _step(calm, rig_calm)
-	var before := _arm_gap(rig, rig_calm)
-	rake.tail_sweep(side, "claw_windup")
-	var gap: Array[float] = [0.0, 0.0]  # the widest the hands parted, by side of the body (-x, +x)
-	var end: Array[float] = [0.0, 0.0]
-	for f: int in 120:  # 2 s: the windup 0.3 s, then the rake; 0.7 s in all
-		if f == 18:
-			rake.tail_sweep(side, "claw")
-		finite = finite and _step(rake, rig) and _step(calm, rig_calm)
-		end = _arm_gap(rig, rig_calm)
-		for i: int in 2:
-			gap[i] = maxf(gap[i], end[i])
-	var hip := rake.hip_height()
-	var mine := 1 if side > 0.0 else 0
-	var tag := "%s claw rake, side %+d" % [stage, side]
-	check(
-		before[0] + before[1] < 0.0001 * hip,
-		"%s: before it, the arms match a calm kaiju's (%.5f)" % [tag, before[0]]
-	)
-	check(
-		gap[mine] > 0.3 * hip and gap[1 - mine] < 0.001 * hip and end[0] + end[1] < 0.001 * hip,
-		(
-			"%s: the raking arm swings (%.2f hip), the other holds (%.4f), and it is back at rest (%.4f)"
-			% [tag, gap[mine] / hip, gap[1 - mine] / hip, (end[0] + end[1]) / hip]
-		)
-	)
-	check(finite, "%s: no bone turns NaN or infinite" % tag)
-	rake.queue_free()
-	calm.queue_free()
-	await process_frame
-
-
-## The raking claw's streak is laid by the arm (ClawTrail): marks appear only on the swing frames
-## (not in the windup, not after), none lives past a few frames, and claw_arc says the arm draws it.
-func _check_claw_trail() -> void:
-	var kaiju := _model("adult")
-	var rig := _rig_of(kaiju)
-	var strike := Num.f(Content.section("claw_fx")["strike_s"])
-	var lift := Num.f(Content.section("powers")["swipe_windup"]) - strike * 0.5  # BipedSwing's lift_s
-	var life := Num.f(Content.section("claw_fx")["trail_s"])
-	for i: int in 40:
-		_step(kaiju, rig)
-	var gait: ClipGait = rig.gait
-	var arc := gait.swing.claw_arc(1.0)
-	var trailed: bool = arc.get("trailed", false)
-	check(trailed, "trail: the arm draws its own streak")
-	kaiju.tail_sweep(1.0, "claw_windup")
-	var first := -1
-	var last := -1
-	var peak := 0
-	for f: int in 60:
-		if f == 18:
-			kaiju.tail_sweep(1.0, "claw")
-		_step(kaiju, rig)
-		await process_frame  # a freed mark leaves the tree
-		var marks := 0
-		for n: Node in root.get_children():
-			marks += 1 if n is MeshInstance3D else 0
-		peak = maxi(peak, marks)
-		if marks > 0:
-			first = f if first < 0 else first
-			last = f
-	var swing_start := floori(lift / DT)
-	var swing_end := ceili((lift + strike * 1.3 + life) / DT) + 2
-	check(
-		first >= swing_start and last <= swing_end and peak > 0,
-		(
-			"trail: marks run from frame %d to %d (the swing is %d to %d), up to %d at once"
-			% [first, last, swing_start, swing_end, peak]
-		)
-	)
-	kaiju.queue_free()
-	await process_frame
-
-
-## How far apart the two rigs' hands are, by side of the body: [-x hand, +x hand] (world units).
-func _arm_gap(a: KaijuRig, b: KaijuRig) -> Array[float]:
-	var out: Array[float] = [0.0, 0.0]
-	for arm: String in ["l", "r"]:
-		if a.has_bone("arm_%s2" % arm):
-			var index := 1 if a.dir_of("arm_%s0" % arm).x > 0.0 else 0
-			out[index] = a.tail_world("arm_%s2" % arm).distance_to(b.tail_world("arm_%s2" % arm))
-	return out
 
 
 func _step(kaiju: KaijuModel, rig: KaijuRig) -> bool:

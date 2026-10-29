@@ -45,7 +45,10 @@ const ARM_ZETA := 0.9
 ## Claw rake (Claws, D-095; PR #89 motion review): on the sim's swipe_windup one arm swings up
 ## and out wide of the body, then on the swipe it rakes hard across the front to the far side
 ## (the sim's rake lands as it crosses the snout line) and hangs again; the arm reaches further
-## (scaled) for the rake, more on a young body. Poses and timings: the "claw_fx" tuning.
+## (scaled) for the rake, more on a young body. Poses and timings: the "claw_fx" tuning. The
+## code rake keeps its own short windup (claw_fx.code_windup_s): it waits out the rest of the
+## sim's longer one. A body whose clips carry the rake keyed in Cascadeur (the adult, D-185) plays
+## that instead (clip_rake, ClipRake): the sim's claw cues go to it and no arm is posed here.
 
 var rig: KaijuRig
 ## The pelvis's drop speed (hip heights/s) and how young the body is (0..1), set each frame.
@@ -55,6 +58,8 @@ var youth := 0.0
 var yaw_rate := 0.0
 ## A gait that poses the arms itself sets this, and the raking claw lays its streak from the arm.
 var trail: ClawTrail
+## A gait that plays the keyed rake sets this: the sim's claw cues go to it (ClipRake).
+var clip_rake: ClipRake
 var _straight: Array[float] = []
 var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone
 var _whip := 0.0  # 1 -> 0 over a tail whip
@@ -62,6 +67,7 @@ var _whip_side := 1.0
 var _arm_swing := Vector2.ZERO
 var _arm_brace := Vector2.ZERO
 var _rake_t := -1.0  # seconds into a claw rake; negative when none runs
+var _rake_wait := 0.0  # seconds before a cued code rake starts (the sim's windup is longer)
 var _rake_side := 1.0
 var _claw: Dictionary = _claw_timing()
 
@@ -89,25 +95,33 @@ func whip(side: float) -> void:
 	_whip_side = side
 
 
-## A species power's strike to one side (-1 left, +1 right): limb "claw_windup" lifts that arm,
-## "claw" rakes it (the rake crosses now, synced to the sim), anything else whips the tail.
+## A species power's strike to one side (-1 left, +1 right): limb "claw_windup" lifts that arm
+## (once the rest of the sim's windup is waited out), "claw" rakes it (the rake crosses now, synced
+## to the sim), anything else whips the tail. The keyed rake (clip_rake) takes both claw cues.
 func strike(limb: String, side: float) -> void:
-	if limb == "claw_windup":
-		_rake_t = 0.0
+	if clip_rake != null and limb in ["claw_windup", "claw"]:
+		clip_rake.cue(limb, side)
+	elif limb == "claw_windup":
+		_rake_wait = Num.f(_claw["wait_s"])
+		_rake_t = 0.0 if _rake_wait <= 0.0 else _rake_t
 		_rake_side = side
 	elif limb == "claw":
+		_rake_wait = 0.0
 		_rake_t = _rake_cross()
 		_rake_side = side
 	else:
 		whip(side)
 
 
-## The "claw_fx" tuning plus lift_s: the lift lasts until half a strike before the sim's rake
-## lands (powers.swipe_windup after its windup cue), so the arm crosses as the hits land.
+## The "claw_fx" tuning plus wait_s and lift_s: the code rake starts wait_s after the sim's windup
+## cue (the rest of powers.swipe_windup past its own code_windup_s) and lifts until half a strike
+## before the sim's rake lands, so the arm crosses as the hits land.
 static func _claw_timing() -> Dictionary:
 	var cfg: Dictionary = Content.section("claw_fx").duplicate()
 	var windup := Num.f(Content.section("powers")["swipe_windup"])
-	cfg["lift_s"] = maxf(0.05, windup - Num.f(cfg["strike_s"]) * 0.5)
+	var own := minf(windup, Num.f(cfg["code_windup_s"]))
+	cfg["wait_s"] = windup - own
+	cfg["lift_s"] = maxf(0.05, own - Num.f(cfg["strike_s"]) * 0.5)
 	return cfg
 
 
@@ -148,6 +162,11 @@ func whip_yaw(i: int) -> float:
 ## Runs a claw rake on by dt; it ends after the recovery (a gait that poses the arms itself calls
 ## this, then pose_rake()).
 func tick_rake(dt: float) -> void:
+	if _rake_wait > 0.0:
+		_rake_wait -= dt
+		if _rake_wait <= 0.0:  # the wait is out: the lift starts, as a cue with no wait does
+			_rake_wait = 0.0
+			_rake_t = 0.0
 	if _rake_t < 0.0:
 		return
 	_rake_t += dt
@@ -160,6 +179,9 @@ func tick_rake(dt: float) -> void:
 ## clip holds the arm, up and out, across the front, and back to where the clip holds it. Nothing
 ## is touched while no rake runs. The claw reach follows `youth`.
 func pose_rake(dt: float) -> void:
+	if clip_rake != null:
+		clip_rake.draw(dt)  # the keyed rake poses the arms; its hand lays the streak
+		return
 	if _rake_t < 0.0:
 		if trail != null:
 			trail.update(Vector3.ZERO, false, dt)  # the last marks fade

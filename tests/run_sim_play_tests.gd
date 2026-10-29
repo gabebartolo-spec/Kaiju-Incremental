@@ -7,6 +7,7 @@ extends "res://tests/lib/sim_suite.gd"
 
 const SaveScript := preload("res://autoload/save_file.gd")
 const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
+const SwipeWindupTicks := preload("res://tests/lib/swipe_windup_ticks.gd")
 
 
 func suite_name() -> String:
@@ -16,6 +17,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_save_migrate")
 	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
+	await _h("SwipeWindupTicks", func() -> void: SwipeWindupTicks.new(check).run())
 
 
 func _check_save_migrate() -> void:
