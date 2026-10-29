@@ -15,8 +15,13 @@ const STREAM_WAIT_MS := 120000
 ## Frames after the rampage before the broken still: the dust of the last falls clears.
 const AFTER := 150
 const SPECIES := "reptilian"
-## Upgrades of a typical run on reaching each city stage (stage 2 = after the first evolution).
-const LEVELS := [{"claws": 3, "hide": 2}, {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}]
+## Upgrades of a typical run on reaching each city stage (stage 2 = after the first evolution,
+## stage 3 = after the second: the spire and megatower spots, D-375).
+const LEVELS := [
+	{"claws": 3, "hide": 2},
+	{"claws": 5, "hide": 5, "rage": 3, "evolve1": 1},
+	{"claws": 8, "hide": 8, "rage": 5, "evolve1": 1, "evolve2": 1},
+]
 ## Sim time of the rampage into each landmark, and sim steps per drawn frame.
 const RAMPAGE_SECONDS := 9.0
 const STEPS_PER_FRAME := 3
