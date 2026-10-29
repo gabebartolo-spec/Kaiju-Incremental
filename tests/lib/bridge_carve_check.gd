@@ -6,6 +6,10 @@ extends RefCounted
 ## own cells (cells_carved) and the deck it cut off a pier falls as fine cells, from under the
 ## street (into the river). Off: no cells and no fine fall; the chunk Structure is as before.
 
+## Steps an untouched bridge stands through (the carving suite's step), the kaiju far off.
+const IDLE_STEPS := 30
+const DT := 1.0 / 15.0
+
 var _check: Callable
 var _make: Callable
 
@@ -17,6 +21,7 @@ func _init(p_check: Callable, make: Callable) -> void:
 
 
 func run() -> void:
+	_stands()
 	for carve: bool in [true, false]:
 		var sim: RampageSim = _make.call([] as Array[Dictionary], carve)
 		var n := _piece(sim)
@@ -71,3 +76,25 @@ static func _piece(sim: RampageSim) -> int:
 		if Num.i(b.bridge["piece"]) == 1:
 			break
 	return found
+
+
+## An untouched bridge stands: with the kaiju far off, no piece loses a chunk or pays.
+func _stands() -> void:
+	var sim: RampageSim = _make.call([] as Array[Dictionary], true)
+	sim.kaiju_pos = Vector2(sim.arena_half, sim.arena_half)
+	var before := sim.rubble
+	for i: int in IDLE_STEPS:
+		sim.step(DT, Vector2.ZERO, false)
+	var lost: Array[int] = []
+	for n: int in sim.buildings.size():
+		var b := sim.buildings[n]
+		if b.is_bridge() and b.frame.alive_count < b.start_chunks:
+			lost.append(n)
+	_check.call(
+		lost.is_empty(),
+		(
+			"bridge_carve: an untouched bridge stands (pieces that lost chunks: %s; paid %.2f)"
+			% [str(lost), sim.rubble - before]
+		)
+	)
+	sim.dispose()
