@@ -4,6 +4,15 @@ extends Node
 ## each frame (PlayerSettings.frame_cap: lower in menus and pause).
 
 const DEADZONE := 0.2
+## Our faces draw Latin and Cyrillic; Chinese falls back to the Noto Sans SC subset (D-392,
+## tools/fonts/subset_cjk.py). Loaded fonts are shared, so one fallback reaches every label.
+const FONTS: Array[String] = [
+	"res://assets/fonts/kaiju_block.ttf",
+	"res://assets/fonts/kaiju_claw.ttf",
+	"res://assets/fonts/kaiju_rubble.ttf",
+	"res://assets/fonts/kaiju_fault.ttf",
+]
+const CJK_FONT := "res://assets/fonts/kaiju_cjk.ttf"
 
 var _graphics := ""
 
@@ -39,6 +48,18 @@ func _ready() -> void:
 	KeyBinds.snapshot()  # the defaults, before the player's own bindings go on top
 	PlayerSettings.load_saved(OS.has_feature("template"))
 	PlayerSettings.apply()
+	PlayerSettings.apply_language()
+	_cjk_fallback()
+
+
+func _cjk_fallback() -> void:
+	var cjk: Font = load(CJK_FONT)
+	for path in FONTS:
+		var font: Font = load(path)
+		if not font.fallbacks.has(cjk):
+			var list := font.fallbacks
+			list.append(cjk)
+			font.fallbacks = list
 
 
 func _process(_delta: float) -> void:

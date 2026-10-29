@@ -6,6 +6,7 @@ extends OptionsPage
 ## saves. RESET brings the game's own bindings back. The rows nobody rebinds (fullscreen, menu
 ## confirm and back) are listed under them.
 
+## A binding's text while it waits, in English (the button shows it through tr()).
 const WAIT_KEYS := "PRESS A KEY"
 const WAIT_PAD := "PRESS A BUTTON"
 ## The Controls list rows (PlayerSettings.CONTROLS) shown as text: not rebindable here.
@@ -18,13 +19,13 @@ var waiting: Array = []
 
 
 func _init() -> void:
-	super("CONTROLS")
+	super(tr("CONTROLS"))
 
 
 func _build(col: VBoxContainer) -> void:
 	var heads: Array[Control] = [
-		UiKit.label("Keyboard", UiKit.SIZE_BODY, UiKit.MUTED),
-		UiKit.label("Pad", UiKit.SIZE_BODY, UiKit.MUTED),
+		UiKit.label(tr("Keyboard"), UiKit.SIZE_BODY, UiKit.MUTED),
+		UiKit.label(tr("Pad"), UiKit.SIZE_BODY, UiKit.MUTED),
 	]
 	row(col, "", heads)
 	for entry: Array in KeyBinds.actions():
@@ -36,22 +37,22 @@ func _build(col: VBoxContainer) -> void:
 			pad = choice(_wait.bind(action, KeyBinds.PAD))
 			binds[action][KeyBinds.PAD] = pad
 		else:  # made only here: a label built and then replaced was never freed (debt row 2)
-			pad = UiKit.label("Left stick", UiKit.SIZE_BODY, UiKit.MUTED)
-		row(col, str(entry[1]), [keys, pad])
+			pad = UiKit.label(KeyBinds.shown("Left stick"), UiKit.SIZE_BODY, UiKit.MUTED)
+		row(col, KeyBinds.shown(str(entry[1])), [keys, pad])
 	for entry: Array in PlayerSettings.CONTROLS:
 		if not FIXED.has(str(entry[0])):
 			continue
 		if entry.size() > 3 and not Demo.allows(str(entry[3])):
 			continue
 		var texts: Array[Control] = [
-			UiKit.label(str(entry[1]), UiKit.SIZE_BODY, UiKit.MUTED),
-			UiKit.label(str(entry[2]), UiKit.SIZE_BODY, UiKit.MUTED),
+			UiKit.label(KeyBinds.shown(str(entry[1])), UiKit.SIZE_BODY, UiKit.MUTED),
+			UiKit.label(KeyBinds.shown(str(entry[2])), UiKit.SIZE_BODY, UiKit.MUTED),
 		]
-		row(col, str(entry[0]), texts)
+		row(col, KeyBinds.shown(str(entry[0])), texts)
 
 
 func _foot_buttons() -> Array[Button]:
-	var reset := UiKit.button("RESET", UiKit.SIZE_HEAD)
+	var reset := UiKit.button(tr("RESET"), UiKit.SIZE_HEAD)
 	HazardBox.trim_height(reset, BACK_MARGIN)
 	reset.pressed.connect(
 		func() -> void:
@@ -87,6 +88,6 @@ func _refresh() -> void:
 		for slot: String in slots.keys():
 			var b: Button = slots[slot]
 			if waiting == [action, slot]:
-				b.text = WAIT_KEYS if slot == KeyBinds.KEYS else WAIT_PAD
+				b.text = tr("PRESS A KEY") if slot == KeyBinds.KEYS else tr("PRESS A BUTTON")
 			else:
 				b.text = KeyBinds.text(action, slot)

@@ -61,23 +61,27 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## The text on slot `info`'s plate.
 static func plate_text(info: Dictionary) -> String:
-	var head := "SLOT %d" % Num.i(info["slot"])
+	var head := TranslationServer.translate("SLOT %d") % Num.i(info["slot"])
 	if info.get("taken", false) != true:
-		return "%s\n%s" % [head, EMPTY]
+		return "%s\n%s" % [head, TranslationServer.translate(EMPTY)]
 	if info.get("readable", true) != true:
-		return "%s\n%s" % [head, UNREADABLE]
-	var line := str(info["summary"]) if info.get("continues", false) == true else LOCKED
+		return "%s\n%s" % [head, TranslationServer.translate(UNREADABLE)]
+	var line := (
+		str(info["summary"])
+		if info.get("continues", false) == true
+		else TranslationServer.translate(LOCKED)
+	)
 	return "%s - %s\n%s" % [head, str(info["specimen"]), line.to_upper()]
 
 
 func _show_list() -> void:
 	_clear()
 	_asking = false
-	_note(PICK_CONTINUE if mode == Mode.CONTINUE else PICK_NEW)
+	_note(tr(PICK_CONTINUE) if mode == Mode.CONTINUE else tr(PICK_NEW))
 	var plates: Array[Button] = []
 	for info: Dictionary in slots:
 		plates.append(_add_row(info))
-	var back := _button("BACK", UiKit.PANEL_EDGE, back_pressed.emit, self)
+	var back := _button(tr("BACK"), UiKit.PANEL_EDGE, back_pressed.emit, self)
 	back.custom_minimum_size = Vector2(0.0, BACK_HEIGHT)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var focus: Button = null
@@ -107,7 +111,7 @@ func _add_row(info: Dictionary) -> Button:
 	if plate.disabled:
 		plate.focus_mode = Control.FOCUS_NONE  # the pad steps over a slot it cannot pick
 	if taken:
-		var del := _button("DELETE", UiKit.PANEL_EDGE, _ask_delete.bind(info), row)
+		var del := _button(tr("DELETE"), UiKit.PANEL_EDGE, _ask_delete.bind(info), row)
 		del.name = "Delete%d" % n
 		del.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	else:
@@ -124,8 +128,8 @@ func _on_plate(info: Dictionary) -> void:
 		picked.emit(n)
 		return
 	_ask(
-		"Start over in slot %d? Your %s and every evolution are lost." % [n, _who(info)],
-		"YES, START OVER",
+		tr("Start over in slot %d? Your %s and every evolution are lost.") % [n, _who(info)],
+		tr("YES, START OVER"),
 		func() -> void: picked.emit(n)
 	)
 
@@ -133,8 +137,8 @@ func _on_plate(info: Dictionary) -> void:
 func _ask_delete(info: Dictionary) -> void:
 	var n := Num.i(info["slot"])
 	_ask(
-		"Delete slot %d? Your %s and every evolution are lost." % [n, _who(info)],
-		"YES, DELETE",
+		tr("Delete slot %d? Your %s and every evolution are lost.") % [n, _who(info)],
+		tr("YES, DELETE"),
 		func() -> void: delete_confirmed.emit(n)
 	)
 
@@ -144,15 +148,15 @@ func _ask(question: String, yes_text: String, yes: Callable) -> void:
 	_clear()
 	_asking = true
 	_note(question)
-	var keep := _button("KEEP MY KAIJU", UiKit.ACCENT, _show_list, self)
+	var keep := _button(tr("KEEP MY KAIJU"), UiKit.ACCENT, _show_list, self)
 	_button(yes_text, UiKit.BAD, yes, self)
 	keep.grab_focus.call_deferred()
 
 
 func _who(info: Dictionary) -> String:
 	if info.get("readable", true) != true:
-		return "unreadable save"
-	var species := str(info.get("species", ""))
+		return tr("unreadable save")
+	var species := tr(str(info.get("species", "")))
 	return "%s (%s)" % [species, str(info["specimen"])] if species != "" else str(info["specimen"])
 
 

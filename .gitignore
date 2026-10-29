@@ -26,3 +26,6 @@ native/.sconsign*
 *.pdb
 .sconsign.dblite
 native/src/*.obj
+
+# Godot builds these from data/i18n/strings.csv on import (D-392).
+data/i18n/*.translation

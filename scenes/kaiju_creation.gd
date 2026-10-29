@@ -131,7 +131,7 @@ func _add_overlay() -> void:
 	col.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	col.custom_minimum_size = Vector2(PANEL_WIDTH, 0)
 	safe.add_child(col)
-	col.add_child(UiKit.header("KAIJU CREATION", UiKit.SIZE_HEAD))
+	col.add_child(UiKit.header(tr("KAIJU CREATION"), UiKit.SIZE_HEAD))
 	# The panels sit low on the left, clear of the rack and the dish the camera frames.
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -140,7 +140,7 @@ func _add_overlay() -> void:
 	_rack_panel = _add_rack(col)
 	_dish_panel = _add_dish_panel(col)
 	_dish_panel.visible = false
-	col.add_child(UiKit.label(HINT, UiKit.SIZE_BODY, UiKit.MUTED))
+	col.add_child(UiKit.label(tr(HINT), UiKit.SIZE_BODY, UiKit.MUTED))
 
 
 ## The rack: one button per genome; a locked one greyed, out of the focus order, marked LOCKED.
@@ -150,12 +150,12 @@ func _add_rack(col: VBoxContainer) -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", LINE_GAP)
 	panel.add_child(box)
-	box.add_child(UiKit.label("PICK A GENOME", UiKit.SIZE_HEAD, UiKit.ACCENT))
+	box.add_child(UiKit.label(tr("PICK A GENOME"), UiKit.SIZE_HEAD, UiKit.ACCENT))
 	for i: int in _titans.size():
 		var titan := _titans[i]
-		var text := "%s GENOME" % str(titan["name"])
+		var text := tr("%s GENOME") % tr(str(titan["name"]))
 		if titan["locked"] == true:
-			text = "%s  -  LOCKED" % str(titan["name"])
+			text = tr("%s  -  LOCKED") % tr(str(titan["name"]))
 		var b := UiKit.button(text, UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 		b.disabled = titan["selectable"] != true
 		if b.disabled:
@@ -180,7 +180,7 @@ func _add_dish_panel(col: VBoxContainer) -> Control:
 	panel.add_child(box)
 	_dish_line = UiKit.label("", UiKit.SIZE_HEAD, UiKit.ACCENT)
 	box.add_child(_dish_line)
-	_inject = UiKit.button(INJECT_TEXT, UiKit.SIZE_BODY, UiKit.ACCENT)
+	_inject = UiKit.button(tr(INJECT_TEXT), UiKit.SIZE_BODY, UiKit.ACCENT)
 	_inject.pressed.connect(_on_inject)
 	box.add_child(_inject)
 	return panel
@@ -256,7 +256,7 @@ func _advance() -> void:
 	match step:
 		Step.PLACE:
 			_rack_panel.visible = false
-			_dish_line.text = "%s GENOME IN THE DISH" % str(_titans[_picked]["name"])
+			_dish_line.text = tr("%s GENOME IN THE DISH") % tr(str(_titans[_picked]["name"]))
 			_dish_panel.visible = true
 			_inject.grab_focus()
 			_begin(Step.DISH)

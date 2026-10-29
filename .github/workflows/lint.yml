@@ -45,7 +45,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install jsonschema (the data_schemas smoke test needs it; tests.yml pins the same)
-        run: pip install --quiet "jsonschema>=4.18,<5"
+        run: pip install --quiet "jsonschema>=4.18,<5" "fonttools>=4.40,<5"
       - name: Run project lints
         shell: bash
         run: |

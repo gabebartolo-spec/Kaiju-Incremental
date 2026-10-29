@@ -152,7 +152,7 @@ func _down(event: Dictionary) -> void:
 ## One line on the news strip along the bottom of the screen, from data, for a few seconds.
 func _headline(key: String, rank: String) -> void:
 	var lines: Dictionary = _cfg["headlines"]
-	var line := str(lines[key]).replace("{rank}", rank)
+	var line := tr(str(lines[key])).replace("{rank}", tr(rank))
 	if _strip != null:
 		_strip.queue_free()
 	_strip = NewsTicker.new(PackedStringArray([line]), false)

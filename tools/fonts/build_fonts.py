@@ -27,7 +27,7 @@ from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 
 sys.path.insert(0, os.path.dirname(__file__))
-from glyphs import GLYPHS  # noqa: E402
+from glyphs import ABOVE, GLYPHS  # noqa: E402
 
 UPM = 1000
 CELL = 70  # cap height = 10 cells = 700 units
@@ -97,18 +97,23 @@ def translate(p: pathops.Path, dx: float, dy: float) -> pathops.Path:
 class Skeleton:
     """One glyph's cell grid with helpers to find its cells and outer corners."""
 
-    def __init__(self, ch: str, rows: list[str]):
+    def __init__(self, ch: str, rows: list[str], top: int = 0):
         widths = {len(r) for r in rows}
         assert len(widths) == 1, f"{ch!r}: ragged rows {widths}"
         self.ch = ch
         self.rows = rows
+        self.top = top  # rows above the cap height (accents): they get negative row numbers
         self.w = widths.pop()
 
+    def row_range(self) -> range:
+        return range(-self.top, len(self.rows) - self.top)
+
     def filled(self, r: int, c: int) -> bool:
-        return 0 <= r < len(self.rows) and 0 <= c < self.w and self.rows[r][c] == "#"
+        rr = r + self.top
+        return 0 <= rr < len(self.rows) and 0 <= c < self.w and self.rows[rr][c] == "#"
 
     def cells(self) -> list[tuple[int, int]]:
-        return [(r, c) for r in range(len(self.rows)) for c in range(self.w) if self.filled(r, c)]
+        return [(r, c) for r in self.row_range() for c in range(self.w) if self.filled(r, c)]
 
     def corners(self) -> list[tuple[int, int, int, int]]:
         """Convex outer corners as (r, c, dx, dy): dx/dy = +1 right/up from the cell centre."""
@@ -282,9 +287,9 @@ STYLES = {
 
 
 def glyph_name(ch: str) -> str:
-    if ch.isalnum():
+    if ch.isascii() and ch.isalnum():
         return ch if ch.isalpha() else "digit" + ch
-    return "u%04X" % ord(ch)
+    return "u%04X" % ord(ch) if ch.isascii() else "uni%04X" % ord(ch)
 
 
 def to_ttglyph(path: pathops.Path, dx: float):
@@ -323,7 +328,7 @@ def contour_area(pts: list[tuple[int, int]]) -> float:
 def profiles(sk: Skeleton, sx: float) -> dict[int, tuple[float, float]]:
     """Per row: (left ink x, right ink x) in units, before the side bearing."""
     out = {}
-    for r in range(len(sk.rows)):
+    for r in sk.row_range():
         cols = [c for c in range(sk.w) if sk.filled(r, c)]
         if cols:
             out[r] = (cols[0] * CELL * sx, (cols[-1] + 1) * CELL * sx + 2 * BOLD)
@@ -354,7 +359,7 @@ def kerning(skels: dict[str, Skeleton], sx: float, adv: dict[str, int]) -> list[
 def build(key: str, out_dir: str) -> str:
     global BOLD
     family, stem, fn, sx, BOLD = STYLES[key]
-    skels = {ch: Skeleton(ch, rows) for ch, rows in GLYPHS.items()}
+    skels = {ch: Skeleton(ch, rows, ABOVE.get(ch, 0)) for ch, rows in GLYPHS.items()}
     order = [".notdef", "space"] + [glyph_name(ch) for ch in skels]
     glyphs = {}
     metrics = {}

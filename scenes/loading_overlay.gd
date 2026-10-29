@@ -29,7 +29,7 @@ func _ready() -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", GAP)
 	add_child(col)
-	var word := UiKit.header("INCOMING")
+	var word := UiKit.header(tr("INCOMING"))
 	word.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(word)
 	_bar = UiKit.bar(UiKit.ACCENT, int(BAR_SIZE.y), true)
@@ -39,7 +39,10 @@ func _ready() -> void:
 	_bar.value = _done
 	col.add_child(_bar)
 	var news: Array = UiKit.ui()["loading_news"]
-	var crawl := NewsTicker.new(PackedStringArray(news))
+	var lines := PackedStringArray()
+	for line: Variant in news:
+		lines.append(tr(str(line)))
+	var crawl := NewsTicker.new(lines)
 	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	crawl.offset_top = -NewsTicker.HEIGHT
 	add_child(crawl)

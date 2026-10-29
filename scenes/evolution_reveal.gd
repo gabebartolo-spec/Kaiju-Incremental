@@ -79,7 +79,7 @@ func _ready() -> void:
 	_viewport.own_world_3d = true
 	view.add_child(_viewport)
 	_camera = RevealStage.build(_viewport, scale_after, tower_floors)
-	_headline = UiKit.label("EVOLVING...", UiKit.SIZE_TITLE, UiKit.ACCENT)
+	_headline = UiKit.label(tr("EVOLVING..."), UiKit.SIZE_TITLE, UiKit.ACCENT)
 	_headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_headline)
 	lines = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
@@ -89,7 +89,7 @@ func _ready() -> void:
 	lines.text = "X" + String.chr(10) + "X"
 	lines.custom_minimum_size.y = lines.get_combined_minimum_size().y
 	lines.text = ""
-	skip_hint = UiKit.label("Enter / A to skip", SKIP_SIZE, UiKit.MUTED.lightened(0.45))
+	skip_hint = UiKit.label(tr("Enter / A to skip"), SKIP_SIZE, UiKit.MUTED.lightened(0.45))
 	skip_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(skip_hint)
 	_flash = ColorRect.new()
@@ -167,10 +167,11 @@ func _gui_input(event: InputEvent) -> void:
 
 
 ## True once the new stage is on screen.
-## An evolution node's display name: its data name after the "EVOLVE: "-style label, e.g.
-## "EVOLVE: Behemoth" -> "Behemoth" (D-051).
+## An evolution node's display name in the player's language: its data name after the
+## "EVOLVE: "-style label, e.g. "EVOLVE: Behemoth" -> "Behemoth" (D-051). A translation keeps the
+## label's colon (a Chinese full-width one counts too).
 static func title_of(def: Dictionary) -> String:
-	var full := str(def.get("name", ""))
+	var full := TranslationServer.translate(str(def.get("name", ""))).replace("\uff1a", ":")
 	return full.get_slice(":", full.get_slice_count(":") - 1).strip_edges()
 
 
@@ -198,13 +199,26 @@ func _swap() -> void:
 	_flash.color.a = 0.9
 	_headline.text = title.to_upper()
 	if title.is_empty():
-		_headline.text = "%s  %s" % [str(_species["name"]).to_upper(), stage_after.to_upper()]
+		var who := tr(str(_species["name"])).to_upper()
+		_headline.text = "%s  %s" % [who, _stage_name(stage_after).to_upper()]
 	var floors_before := roundi(KaijuModel.MODEL_HEIGHT * scale_before)
 	var floors_after := roundi(KaijuModel.MODEL_HEIGHT * scale_after)
 	lines.text = (
-		"Stands %d floors tall (was %d)\nTowers up to %d floors now fall to you"
+		tr("Stands %d floors tall (was %d)\nTowers up to %d floors now fall to you")
 		% [floors_after, floors_before, tower_floors]
 	)
+
+
+## A growth stage (KaijuModel.stage_for) as the headline names it.
+func _stage_name(stage: String) -> String:
+	match stage:
+		"baby":
+			return tr("baby")
+		"adolescent":
+			return tr("adolescent")
+		"adult":
+			return tr("adult")
+	return stage
 
 
 func _place_kaiju(stage: String, body_scale: float) -> void:

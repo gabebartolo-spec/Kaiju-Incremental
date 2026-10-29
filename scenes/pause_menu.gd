@@ -45,15 +45,17 @@ func _ready() -> void:
 	_col = VBoxContainer.new()
 	_col.add_theme_constant_override("separation", 16)
 	panel.add_child(_col)
-	_col.add_child(UiKit.header("PAUSED"))
-	_resume = _add("RESUME", UiKit.ACCENT, resume)
-	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
+	_col.add_child(UiKit.header(tr("PAUSED")))
+	_resume = _add(tr("RESUME"), UiKit.ACCENT, resume)
+	_add(tr("SETTINGS"), UiKit.PANEL_EDGE, _open_settings)
 	if photo.is_valid():
-		_photo = _add("PHOTO MODE", UiKit.PANEL_EDGE, _open_photo)
+		_photo = _add(tr("PHOTO MODE"), UiKit.PANEL_EDGE, _open_photo)
 	if sim != null:
-		_report = _add(str(Content.section("feedback")["label"]), UiKit.PANEL_EDGE, _open_report)
-	_add("END RAMPAGE", UiKit.PANEL_EDGE, _ask_end)
-	var note := UiKit.label("You keep the biomass", UiKit.SIZE_BODY, UiKit.MUTED)
+		_report = _add(
+			tr(str(Content.section("feedback")["label"])), UiKit.PANEL_EDGE, _open_report
+		)
+	_add(tr("END RAMPAGE"), UiKit.PANEL_EDGE, _ask_end)
+	var note := UiKit.label(tr("You keep the biomass"), UiKit.SIZE_BODY, UiKit.MUTED)
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(note)
 	_resume.grab_focus.call_deferred()
