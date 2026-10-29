@@ -101,6 +101,7 @@ func _dress() -> void:
 	if not _ground.is_empty():
 		var mi := MeshInstance3D.new()
 		mi.mesh = VoxelBuilder.baked(_ground, 0.0)
+		mi.mesh.surface_set_material(0, Look.voxel_detail_material(BuildingVoxels.VOXEL, 0.0))
 		add_child(mi)
 		_ground = []
 

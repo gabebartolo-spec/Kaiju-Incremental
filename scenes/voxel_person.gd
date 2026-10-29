@@ -77,10 +77,11 @@ static func rifleman(outfit: int, voxel: float) -> ArrayMesh:
 	_body(v, Pose.AIM, false)
 	v.box(Vector3i(-1, 8, -7), Vector3i(0, 8, -4), "gun")
 	v.box(Vector3i(-1, 9, -4), Vector3i(0, 9, -3), "gun")  # receiver against the hands
-	return _bake(v, ROOFTOP_OUTFITS[outfit], voxel)
+	return _bake(v, ROOFTOP_OUTFITS[outfit], voxel, true)
 
 
-static func _bake(v: VoxelBuilder, o: Dictionary, voxel: float) -> ArrayMesh:
+## detail: in the city's surface family (rooftop squads, flat surfaces P2).
+static func _bake(v: VoxelBuilder, o: Dictionary, voxel: float, detail := false) -> ArrayMesh:
 	var palette := {
 		"shirt": Color(str(o["shirt"])),
 		"pants": Color(str(o["pants"])),
@@ -91,7 +92,7 @@ static func _bake(v: VoxelBuilder, o: Dictionary, voxel: float) -> ArrayMesh:
 		"belt": Color("0e0e0e"),
 	}
 	# The body is symmetric about cell x = -0.5 and z = -0.5: centre it on the origin.
-	return v.bake(palette, voxel, Vector3(voxel * 0.5, 0, voxel * 0.5), 0.0)
+	return v.bake(palette, voxel, Vector3(voxel * 0.5, 0, voxel * 0.5), 0.0, detail)
 
 
 static func _body(v: VoxelBuilder, pose: int, cop: bool) -> void:
