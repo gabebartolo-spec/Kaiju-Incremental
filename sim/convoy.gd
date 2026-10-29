@@ -330,6 +330,7 @@ func _commit(tank: RampageSim.Tank, r: ConvoyRoute, leg: Leg) -> void:
 ## Held up, or no room to turn: it waits squared to its road, gives way, and re-plans when stuck.
 func _wait(tank: RampageSim.Tank, r: ConvoyRoute, blocker: RampageSim.Tank, dt: float) -> void:
 	hull.settle(tank, r, _rate(dt))
+	spacing.open_up(tank, r, _back(dt))  # standing held up, a gun can swing over it too
 	r.stuck_t += dt
 	spacing.give_way(tank, blocker, _back(dt))
 	if r.stuck_t >= Num.f(cfg["stuck"]) * (0.5 if r.retreating else 1.0):  # falling back: sooner

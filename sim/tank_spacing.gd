@@ -79,8 +79,9 @@ func _in_lane(tank: RampageSim.Tank, other: RampageSim.Tank, dir: Vector2) -> bo
 	return dir.dot(ahead) > 0.0 and absf(dir.cross(ahead)) < _half("hull").y * 2.0
 
 
-## A standing tank whose gun has swung over an older one's (the kaiju moved) steps along its own
-## hull away from it, `step` at a time, while that keeps it on the road and clear of others.
+## A standing tank (parked, or waiting held up) whose gun has swung over an older one's, or the
+## older one's over it (the kaiju moved), steps along its own hull away from it, `step` at a time,
+## while that keeps it on the road and clear of others.
 func open_up(tank: RampageSim.Tank, r: ConvoyRoute, step: float) -> void:
 	if r.front == Vector2.ZERO:
 		return
