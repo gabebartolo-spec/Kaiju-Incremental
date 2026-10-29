@@ -77,12 +77,12 @@ func _check_port() -> void:
 				key.append("%s@%.1f,%.1f/%d" % [e["model"], e["x"], e["z"], Num.i(e["facing"])])
 		var stage := Num.i(city["stage"])
 		last = maxi(last, stage)
-		var line := ",".join(key)
+		var line := ";".join(key)  # the keys hold commas
 		if by_stage.has(stage) and by_stage[stage] != line:
 			odd.append("stage %d seed %d" % [stage, city["seed"]])
 		by_stage[stage] = line
 	check(odd.is_empty(), "every city of a stage has the same port (not: %s)" % [odd])
-	var all := str(by_stage.get(last, "")).split(",", false).size()
+	var all := str(by_stage.get(last, "")).split(";", false).size()
 	check(
 		all == listed.size(), "the last stage stands all %d port models (%d)" % [listed.size(), all]
 	)
