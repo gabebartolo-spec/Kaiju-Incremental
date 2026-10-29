@@ -13,7 +13,9 @@ skill §6 and the `kaiju-godot-tests` skill: one runner per suite extending
 `tests/lib/runner.gd`; each test a `_check_*` method called through `await _t(...)`, so the
 suite line "K of M functions" fails one that never ran or made no check (no floors); a
 `SCRIPT ERROR` fails the suite; seeds pinned. Suites are found by filename and CI shards come
-from `tools/ci_timings.txt`, so a new suite needs only its file and a row below.
+from `tools/ci_timings.txt`, so a new suite needs only its file and a row below. Its `pr_skip`
+line names the slow second-angle suites a pull request skips: they run on every push to main
+(the "slow suites" job, never blocking); everything else runs on every PR.
 
 `tools/run_tests.sh --quick <suite>` skips the re-import for the local loop.
 
