@@ -1,5 +1,6 @@
 extends RefCounted
-## The smoke suite's octopus mantle probe (split out of run_smoke_tests.gd to keep files small).
+## PARKED (director 2026-10-29): the smoke suite's octopus mantle probe; the cephalopod is not in
+## the demo. Move back to tests/lib/ when work on it starts.
 
 
 ## The mantle voxels' node (which gait_radial scales to breathe) sizes the skin's mantle0 bone.

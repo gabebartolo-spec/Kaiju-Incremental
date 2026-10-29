@@ -1,8 +1,8 @@
-extends "res://tests/lib/powers_insect.gd"
-## Powers suite: the species branches (docs/SPECIES.md, D-035) for the reptilian and the
-## insectoid. Every branch node has a player-effect fixture: the same seeded, scripted scene
-## with the node owned and without it plays out visibly differently. Headless, no autoloads.
-## The cephalopod and the helicopters are in run_tentacles_tests.gd.
+extends "res://tests/lib/powers_base.gd"
+## Powers suite: the croc's branch (docs/SPECIES.md, D-035), the demo's species. Every branch
+## node has a player-effect fixture: the same seeded, scripted scene with the node owned and
+## without it plays out visibly differently. Headless, no autoloads. The insectoid's and the
+## cephalopod's are parked with them (tests/parked/, director 2026-10-29).
 ##   godot --headless --path . --script tests/run_powers_tests.gd
 
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")
@@ -25,10 +25,6 @@ func run_checks() -> void:
 	await _t("_check_momentum")
 	await _t("_check_shear")
 	await _t("_check_beam")
-	await _t("_check_scuttle")
-	await _t("_check_glide")
-	await _t("_check_climb")
-	await _t("_check_brood")
 	await _t("_check_streets")
 	await _t("_check_base_unchanged")
 	await _t("_check_levels")
@@ -36,7 +32,7 @@ func run_checks() -> void:
 
 func _check_branches() -> void:
 	var missing: Array[String] = []
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		var tree := UpgradeTree.new(Content.upgrades(), {}, species_id)
 		var own: Array[String] = []
 		var ultimate := ""
@@ -196,7 +192,7 @@ func _check_beam() -> void:
 ## no ram, no climb, no glide, no limbs or throws, no ultimate.
 func _check_base_unchanged() -> void:
 	var stray: Array[String] = []
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		var ring: Array[Dictionary] = [_b(5, 0, Vector3i(3, 3, 8)), _b(-5, 0, Vector3i(3, 3, 8))]
 		var sim := _sim(species_id, {}, ring, Vector2(0, 3))
 		var seen := {}
@@ -220,7 +216,7 @@ func _check_base_unchanged() -> void:
 	)
 
 
-## More levels of a node do more: a deeper tail cut, a faster scuttle, a longer glide.
+## More levels of a node do more: a deeper tail cut.
 func _check_levels() -> void:
 	var cut: Array[int] = []
 	for level: int in [1, 4]:
@@ -230,21 +226,32 @@ func _check_levels() -> void:
 		_run(sim, 0.4, NORTH)
 		_run(sim, 1.0, EAST)
 		cut.append(sim.powers.tail_cut)
-	var run: Array[float] = []
-	for level: int in [1, 4]:
-		var sim := _sim("insectoid", {"i_scuttle": level}, [], Vector2(0, 20))
+	check(cut[1] > cut[0], "a higher tail level cuts deeper: %d > %d" % [cut[1], cut[0]])
+
+
+## The building slow does not grow with the kaiju (lead review): a grown kaiju with no branch
+## node strides down a 4-wide street lined with blocks at full speed, past every block.
+func _check_streets() -> void:
+	var street: Array[Dictionary] = []
+	for n: int in 6:
+		for side: float in [-3.5, 3.5]:
+			street.append(_b(side, 34.0 - n * 8.0, Vector3i(3, 6, 4), 3))
+	var grown := {"claws": 5, "hide": 5, "rage": 1, "evolve1": 1, "evolve2": 1}
+	var slow: Array[String] = []
+	for levels: Dictionary in [{}, grown]:
+		var sim := _sim("reptilian", levels, street, Vector2(0, 40))
 		_run(sim, 2.0, NORTH)
-		run.append(20.0 - sim.kaiju_pos.y)
-	var glide: Array[float] = []
-	for level: int in [1, 3]:
-		var sim := _sim("insectoid", {"i_glide": level}, [], Vector2(0, 30))
-		sim.facing = NORTH
-		_run(sim, 4.0, NORTH, PRESS | HOLD)
-		glide.append(30.0 - sim.kaiju_pos.y)
+		var free := sim.stat("speed") * 2.0
+		if 40.0 - sim.kaiju_pos.y < free * 0.95:
+			slow.append("tier %d: %.1f of %.1f" % [sim.size_tier(), 40.0 - sim.kaiju_pos.y, free])
+	check(slow.is_empty(), "young and grown kaiju walk a city street at full speed: %s" % [slow])
+	# The street runs z 37 .. -9 (inside the arena's +-44.5); the kaiju starts at z 40.
+	var far := _sim("reptilian", grown, street, Vector2(0, 40))
+	_run(far, 11.0, NORTH)
 	check(
-		cut[1] > cut[0] and run[1] > run[0] * 1.2 and glide[1] > glide[0] + 3.0,
+		far.kaiju_pos.y < -10.0,
 		(
-			"higher levels do more: tail cut %d > %d, scuttle %.1f > %.1f, glide %.1f > %.1f"
-			% [cut[1], cut[0], run[1], run[0], glide[1], glide[0]]
+			"a tier-3 kaiju with no branch passes all six blocks in 11 s (at z %.0f, past -10)"
+			% far.kaiju_pos.y
 		)
 	)

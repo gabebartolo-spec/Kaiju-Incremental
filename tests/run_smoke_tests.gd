@@ -10,7 +10,6 @@ const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
 const VehiclesSolid := preload("res://tests/lib/smoke_vehicles_solid.gd")
 const BuildingsSolid := preload("res://tests/lib/smoke_buildings_solid.gd")
-const SmokeMantle := preload("res://tests/lib/smoke_mantle.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -113,7 +112,7 @@ func _check_main_scene() -> void:
 ## D-041: every rigged kaiju has a voxel skin baked from its current .kvox and .rig.json.
 func _check_skins_fresh() -> void:
 	var stale: Array[String] = []
-	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species: String in ["reptilian", "insectoid"]:  # the croc and the far skyline beast
 		for stage: String in ["baby", "adolescent", "adult"]:
 			var base := "res://assets/kaiju/%s_%s" % [species, stage]
 			if not FileAccess.file_exists(base + ".rig.json"):
@@ -136,8 +135,7 @@ func _check_voxel_skin() -> void:
 	var skinned: Array[String] = []
 	var leaks: Array[String] = []
 	var broken: Array[String] = []
-	var mantle_ok := false
-	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species: String in ["reptilian", "insectoid"]:  # the croc and the far skyline beast
 		var def: Dictionary = Content.species_def(species)
 		var colors: Dictionary = def["colors"]
 		var kaiju := KaijuModel.new(species, colors, "adult")
@@ -158,19 +156,14 @@ func _check_voxel_skin() -> void:
 				):
 					broken.append(species)
 					break
-			if species == "cephalopod":
-				mantle_ok = SmokeMantle.follows(kaiju, skin)
 		kaiju.queue_free()
 		await process_frame
-	check(
-		skinned.size() == 3, "all three adults draw as a voxel skin by default (got %s)" % [skinned]
-	)
+	check(skinned.size() == 2, "both adults draw as a voxel skin by default (got %s)" % [skinned])
 	check(leaks.is_empty(), "no rig voxels draw under a voxel skin (drawing: %s)" % [leaks])
 	check(
 		broken.is_empty(),
 		"the skin's bone matrices stay finite while walking (broken: %s)" % [broken]
 	)
-	check(mantle_ok, "the octopus mantle's breathing scale reaches its skin")
 	await _t("_check_skin_mouth")
 	VoxelSkin.show_rigid_voxels = true
 	var rex: Dictionary = Content.species_def("reptilian")
@@ -204,11 +197,10 @@ func _check_skin_mouth() -> void:
 	await process_frame
 
 
-## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it
+## The croc walks, curves, reverses hard and stands stomping the way the rampage drives it
 ## (sim speed, heading lerp, stomp beat); no planted foot may slide. Fixed 60 Hz steps, no clock.
 func _check_planted_feet() -> void:
-	for species: String in ["reptilian", "insectoid"]:
-		await _t("_check_feet_of", [species])
+	await _t("_check_feet_of", ["reptilian"])
 
 
 func _check_feet_of(species_id: String) -> void:

@@ -268,8 +268,8 @@ func _check_cancelled() -> void:
 	)
 
 
-## A stomp's tick while he stands lands 0.45 s on; walking, on the tick; the other species' stomps
-## are untouched. The stomp event carries the time.
+## A stomp's tick while he stands lands 0.45 s on; walking, on the tick. The stomp event carries
+## the time.
 func _check_standing_stomp() -> void:
 	var delay := Num.f(Content.section("strike")["stomp_standing"])
 	check(delay == 0.45, "a standing stomp lands 0.45 s after its tick (D-175)")
@@ -306,12 +306,6 @@ func _check_standing_stomp() -> void:
 			"walking, the stomp falls on its footfall with no delay (%d on a foot, %d late)"
 			% [feet, late]
 		)
-	)
-	var mantis := _sim("insectoid", {}, near, Vector2.ZERO)
-	var legs := _event(_watch(mantis, 0.2, Vector2.ZERO), "stomp")
-	check(
-		Num.f(legs.get("strike_in", -1.0)) == 0.0,
-		"the other species' standing stomp is unchanged: %s" % [legs]
 	)
 
 

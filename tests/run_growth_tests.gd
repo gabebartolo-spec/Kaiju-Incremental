@@ -278,7 +278,7 @@ func _check_cost_curve() -> void:
 			% [e1, young_total]
 		)
 	)
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		var total := 0
 		for def: Dictionary in Content.upgrades():
 			var owner := str(def.get("species", ""))
@@ -294,7 +294,7 @@ func _check_cost_curve() -> void:
 ## The early hook: two young rampages pay for the first species power, so the third rampage
 ## has it (D-035), for every species.
 func _check_early_hook() -> void:
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		var first := INF
 		for def: Dictionary in Content.upgrades():
 			if str(def.get("species", "")) == species_id:

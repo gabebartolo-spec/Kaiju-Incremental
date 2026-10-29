@@ -27,7 +27,7 @@ const TANK_WALK_FRAMES := 60 * 30
 ## CI runs this suite as two parts (tools/ci_timings.txt, tests/lib/functions_ran.gd): the demo
 ## walk is 40% of it, so part 2 gets these calls by name (259 s and 230 s of 490 s measured).
 const PART_TWO := "FlowScreens _check_rampage FlowStadium FlowStagedStart _check_powers"
-const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
+const SIGNATURE_SOUND := {"breath": "breath"}
 
 
 func suite_name() -> String:
@@ -55,30 +55,12 @@ func run_checks() -> void:
 	await _h("FlowStagedStart", func() -> void: await FlowStagedStart.run(self, check))
 	await _t("_check_warm_start")
 	await _t("_check_powers", ["reptilian", "breath", FlowUpgrades.UPGRADED])
-	await _t("_check_powers", ["insectoid", "leap", {}])
-	await _t("_check_powers", ["cephalopod", "lash", {}])
 	await _t(
 		"_check_branch_view",
 		[
 			"reptilian",
 			{"r_tail": 2, "r_momentum": 2, "r_beam": 1},
 			["tail_sweep", "beam_start", "coated", "heli_spawned", "heli_fired"] as Array[String],
-		]
-	)
-	await _t(
-		"_check_branch_view",
-		[
-			"insectoid",
-			{"i_glide": 1, "i_climb": 1, "i_brood": 1},
-			["glide_start", "eggs_laid", "brood_hatched", "brood_bite"] as Array[String],
-		]
-	)
-	await _t(
-		"_check_branch_view",
-		[
-			"cephalopod",
-			{"c_hydra": 2, "c_grab": 1, "c_ink": 1},
-			["limb", "grab", "throw_land", "ink"] as Array[String],
 		]
 	)
 	demo.demo_restore()
@@ -105,9 +87,9 @@ func _check_species_select() -> void:
 	check(buttons.size() == 3, "the species screen offers three choices, found %d" % buttons.size())
 	var picked: Array[String] = []
 	select.chosen.connect(func(id: String) -> void: picked.append(id))
-	var second: Button = buttons[1]
-	await GuiInput.click(self, second)
-	check(picked == ["insectoid"], "choosing the second card picks the insectoid: %s" % [picked])
+	var first: Button = buttons[0]
+	await GuiInput.click(self, first)
+	check(picked == ["reptilian"], "choosing the first card picks the croc: %s" % [picked])
 	select.queue_free()
 	await process_frame
 
@@ -157,7 +139,7 @@ func _check_upgrade_screen() -> void:
 
 func _check_rampage() -> void:
 	var rampage := Rampage.new()
-	var species := Content.species_def("cephalopod")
+	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
 	)
@@ -304,10 +286,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 				% [first, peak]
 			)
 		)
-	if levels.is_empty():
-		if species_id == "cephalopod":
-			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
-	else:
+	if not levels.is_empty():
 		for k: String in marks:
 			check(
 				played.has(k) or powers.played.has(k),

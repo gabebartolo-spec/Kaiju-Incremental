@@ -29,7 +29,7 @@ func _tree_text() -> void:
 	var small := 99
 	for size: Vector2i in [CANVAS, Vector2i(1536, 864)]:
 		t.root.size = size
-		for id: String in ["reptilian", "insectoid", "cephalopod"]:
+		for id: String in ["reptilian"]:
 			var tree := UpgradeTree.new(Content.upgrades(), {}, id)
 			var screen := UpgradeScreen.new()
 			screen.setup(tree, 400, Content.species_def(id), Content.section("kaiju"))

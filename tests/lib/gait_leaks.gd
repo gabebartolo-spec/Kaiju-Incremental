@@ -6,7 +6,7 @@ extends RefCounted
 ##    without KaijuRig's cut every freed rig kept its gait alive to the end of the run.
 ## Seeded by design: nothing here is random.
 
-const SPECIES: Array[String] = ["reptilian", "insectoid", "cephalopod"]
+const SPECIES: Array[String] = ["reptilian", "insectoid"]  # the croc and the far skyline beast
 
 
 static func check(check: Callable, root: Node) -> void:

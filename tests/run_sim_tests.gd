@@ -29,7 +29,6 @@ func run_checks() -> void:
 	await _t("_check_toughness")
 	await _t("_check_determinism")
 	await _t("_check_upgrade_effects")
-	await _t("_check_species_differ")
 	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
 	await _h(
@@ -252,27 +251,6 @@ func _check_upgrade_effects() -> void:
 ## What the held-heading bot destroys in `sim` (a share of the city).
 func _destroyed(sim: RampageSim) -> float:
 	return Num.f(_autoplay(sim, MAX_STEPS, 60, true)["destruction"])
-
-
-func _check_species_differ() -> void:
-	var results: Array[Dictionary] = []
-	for id: String in ["reptilian", "insectoid", "cephalopod"]:
-		results.append(_autoplay(_sim(id, {})))
-	check(
-		results[0] != results[1] and results[1] != results[2] and results[0] != results[2],
-		"each species plays out a different rampage: %s" % [results]
-	)
-	var leap := _sim("insectoid", {})
-	var before := leap.kaiju_pos
-	leap.step(DT, Vector2.ZERO, true)
-	var expected := Num.f(leap.city["leap_distance"]) * leap.body_scale()
-	check(
-		leap.kaiju_pos.distance_to(before) >= expected * 0.95,
-		"the insectoid's Leap Slam carries it its leap distance (%.1f)" % expected
-	)
-	var ring := _sim("cephalopod", {})
-	var reach_ok := ring.ability_reach() > ring.stomp_radius()
-	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
 
 
 ## Every look (data/looks.json) carries every key presentation reads, and the default exists.

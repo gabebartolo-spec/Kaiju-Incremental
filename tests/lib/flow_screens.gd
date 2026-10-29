@@ -208,7 +208,7 @@ func _check_results_compare() -> void:
 ## to adolescent, a bigger body, the tower it now topples); Enter skips it
 ## without buying again. Quit, relaunch, Continue: same tree.
 func _check_evolution_and_continue() -> void:
-	var save := SaveFile.new_save("insectoid")
+	var save := SaveFile.new_save("reptilian")
 	save["rubble"] = _evolve_cost() + LEFT_OVER
 	save["runs"] = 2
 	save["levels"] = {"claws": 1, "hide": 1, "rage": 1}
@@ -242,14 +242,14 @@ func _check_evolution_and_continue() -> void:
 	check.call(
 		bad.is_empty(), "the tree uses drawn arrows and keeps 'need' in the side panel: %s" % [bad]
 	)
-	var ultimate := tree.node_button("i_brood")
+	var ultimate := tree.node_button("r_beam")
 	check.call(
 		(
 			ultimate.role == "ultimate"
 			and ultimate.size.y > stride.size.y
 			and ultimate.text.contains("[E / Y]")
 		),
-		"the insectoid's Brood is its branch's capstone, bigger, with its button"
+		"the croc's beam is its branch's capstone, bigger, with its button"
 	)
 	await layout.fits_at_scales(tree, "evolution tree")
 	layout.listen(tree, "tree")
@@ -325,7 +325,7 @@ func _check_settings() -> void:
 
 
 func _evolve_cost() -> int:
-	return UpgradeTree.new(Content.upgrades(), {}, "insectoid").cost("evolve1")
+	return UpgradeTree.new(Content.upgrades(), {}, "reptilian").cost("evolve1")
 
 
 ## True when the HUD (its rings and the biomass figure) is not showing.

@@ -32,7 +32,7 @@ func _init(runner: SceneTree, check: Callable, make: Callable, autoplay: Callabl
 
 
 func run() -> void:
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		_sim_is_freed(species_id)
 	_registry_frees_a_dropped_sim()
 	await _game_frees_its_rampage()

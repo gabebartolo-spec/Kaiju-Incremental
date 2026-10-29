@@ -2,8 +2,7 @@ extends "res://tests/lib/powers_base.gd"
 ## Helicopter deaths suite (AirWing, D-140, D-141, D-145): a hard killing blow blows a helicopter
 ## apart in the air; a light one sends it spinning down, its crew sometimes bailing out, and the
 ## wreck smashes the building it lands on and the army below (never the kaiju) and sets it
-## burning with City Ablaze;
-## a grabbed one only leaves the sky; the falls draw their own seeded stream, so spawns replay as
+## burning with City Ablaze; the falls draw their own seeded stream, so spawns replay as
 ## before. Player-effect fixture "heli.deaths": the same downed helicopter breaks a building when
 ## it spins down onto it and breaks nothing when it is blown apart. Headless.
 ##   godot --headless --path . --script tests/run_helideaths_tests.gd
@@ -23,7 +22,6 @@ func run_checks() -> void:
 	await _t("_check_crash_crushes_army")
 	await _t("_check_crash_spares_kaiju")
 	await _t("_check_coat_kill")
-	await _t("_check_grabbed")
 	await _t("_check_topple")
 	await _t("_check_seeded")
 
@@ -223,18 +221,6 @@ func _check_coat_kill() -> void:
 		. map(func(e: Dictionary) -> String: return str(e.get("fate", "")))
 	)
 	check(fates == ["spin"], "a coat kill after a heavy hit spins it down: %s" % [fates])
-
-
-func _check_grabbed() -> void:
-	var sim := _scene({})
-	sim.air.helis[0].hp = 0.0
-	sim.events.clear()
-	sim.air.clear_dead(true)
-	var fates: Array = sim.events.map(func(e: Dictionary) -> String: return str(e.get("fate", "")))
-	check(
-		fates == ["grabbed"] and sim.air.falling.is_empty(),
-		"a helicopter a tentacle grabs only leaves the sky: %s" % [fates]
-	)
 
 
 ## A tower toppling through a helicopter knocks it spinning down; a short one does not.

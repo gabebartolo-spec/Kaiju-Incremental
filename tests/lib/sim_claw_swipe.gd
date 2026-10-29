@@ -1,7 +1,7 @@
 extends RefCounted
 ## The sim suite's claw swipe checks (Claws, D-095), split out to keep the runner small: five
-## levels of Claws make the young reptilian's swipe break clearly more, with the body on; the
-## other species keep Claws as a stomp upgrade (each run in its own city, _fixture_sim).
+## levels of Claws make the young reptilian's swipe break clearly more, with the body on (each
+## run in its own city, _fixture_sim).
 ## Includes the player-effect fixture "kaiju.swipe":
 ## the same seeded rampages with the swipe off destroy less of the city. Both swipe comparisons
 ## average FIXTURE_RUNS seeded run indices: one seed alone flips with chaos (PR #89: towers the
@@ -55,24 +55,6 @@ func run() -> void:
 		)
 	)
 	_check_fixture()
-	var bug: RampageSim = _make.call("insectoid", {"claws": 2}, 0, {})
-	var bug_base: RampageSim = _make.call("insectoid", {}, 0, {})
-	(
-		_check
-		. call(
-			(
-				bug.stat("swipe_damage") == 0.0
-				and is_equal_approx(bug.stat("stomp_damage") - bug_base.stat("stomp_damage"), 6.0)
-			),
-			(
-				"for the other species Claws stays a stomp upgrade: two levels add %s stomp power, %s swipe"
-				% [
-					bug.stat("stomp_damage") - bug_base.stat("stomp_damage"),
-					bug.stat("swipe_damage")
-				]
-			)
-		)
-	)
 
 
 ## "kaiju.swipe": the swipe on vs off over FIXTURE_RUNS seeded rampages, each in its own city
