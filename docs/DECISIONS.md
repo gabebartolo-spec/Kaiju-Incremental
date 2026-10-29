@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-387 · Director · The roadmap moves to a Claude Doc
+A: "Yes, redirect it": the roadmap lives at https://claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q; `docs/ROADMAP.md`
+points there; the old file is frozen as `docs/archive/ROADMAP_2026-10.md` for detail agents cannot get from the doc.
+
 ## 2026-10-30 · D-386 · Director · A PR re-push re-runs only failed, unrun or touched suites
 He approved: a pull request's re-push runs the suites that failed or never ran on its last run, plus every suite whose
 code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
