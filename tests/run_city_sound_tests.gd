@@ -201,7 +201,10 @@ func _check_music_stems_locked() -> void:
 		var streams := layers._streams()
 		check(not layers.placeholders.has(true), "%s: every stem has its music file" % row["id"])
 		check(
-			streams.all(func(s: AudioStream) -> bool: return s is AudioStreamOggVorbis and s.loop),
+			streams.all(
+				func(s: AudioStream) -> bool:
+					return s is AudioStreamOggVorbis and bool(s.get(&"loop"))
+			),
 			"%s: every stem file loops" % row["id"]
 		)
 		check(
