@@ -5,13 +5,56 @@ extends "res://tests/lib/sim_suite.gd"
 
 const DASH_BUTTON := 4  # Dash.BUTTON
 const FAR := 25.0  # a perch this far from the kaiju is inside every range
+const REACH := 40.0  # a perch this near the kaiju's start is in railgun range (45 m)
 
 
 ## A rampage at the adolescent city (size tier 2), the kaiju where the run puts it: on the ring
-## avenue at the south edge, with the street open to walk along.
+## avenue at the south edge, with the street open to walk along; unless no perch (`_roof`) stands
+## within REACH of it (the 1.5x city's stadium and wheel stand by that start), then on the clear
+## street junction whose nearest perch is closest to FAR away.
 func _adolescent(species: String = "reptilian", levels: Dictionary = {"evolve1": 1}) -> RampageSim:
 	var sim := _sim(species, levels, 0, CityGrowth.tuning_for(Content.tuning(), 2))
+	var perches := _perches(sim)
+	if _nearest(perches, sim.kaiju_pos) <= REACH:
+		return sim
+	var plan := CityGen.map(sim.city)
+	var nodes: Array[Vector2] = plan["nodes"]
+	var start := sim.kaiju_pos
+	var gap := INF
+	for st: Dictionary in plan["streets"]:
+		if str(st["kind"]) == CityGen.ALLEY:
+			continue
+		for end: String in ["from", "to"]:
+			var p := nodes[Num.i(st[end])]
+			var off := absf(_nearest(perches, p) - FAR)
+			if (
+				off < gap
+				and sim.clamp_to_arena(p) == p
+				and sim.body.inside(p, sim.body.heading).is_empty()
+			):
+				gap = off
+				start = p
+	sim.kaiju_pos = start
 	return sim
+
+
+## Where every perch (`_perch_cell` of a tall, whole roof in the arena) stands, on the ground.
+func _perches(sim: RampageSim) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	var tall := Num.i(sim.army_units.taskforce.cfg["perch_min_height"])
+	for b: RampageSim.Building in sim.buildings:
+		var top := _perch_cell(b)
+		if b.height >= tall and b.in_arena and b.frame != null and b.frame.alive(top):
+			var at := b.chunk_world(top)
+			out.append(Vector2(at.x, at.z))
+	return out
+
+
+func _nearest(points: Array[Vector2], p: Vector2) -> float:
+	var best := INF
+	for q: Vector2 in points:
+		best = minf(best, q.distance_to(p))
+	return best
 
 
 ## Lets the Taskforce spawn: the rampage time in the city already played (D-160), enough of the
@@ -91,18 +134,23 @@ func _face_free_way(sim: RampageSim) -> Vector2:
 	return way
 
 
-## The index of a tall building about `FAR` from the kaiju, for an agent to perch on: one in the
-## arena whose roof is whole at its centre (a beachfront hotel's stepped top may not be, D-381).
+## The index of a tall building whose perch (`_perch_cell`) stands about `FAR` from the kaiju, for
+## an agent to perch on: one in the arena whose roof is whole there (a beachfront hotel's stepped
+## top may not be, D-381). Measured from the perch itself, where the agent stands, not the lot's
+## middle (a Tripo model's cells need not centre on it).
 func _roof(sim: RampageSim, tf: Taskforce) -> int:
 	var best := -1
 	var gap := INF
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
-		var away := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
 		var tall := b.height >= Num.i(tf.cfg["perch_min_height"])
-		var top := Vector3i(b.w / 2, b.height - 1, b.d / 2)
+		var top := _perch_cell(b)
 		var whole := b.in_arena and b.frame != null and b.frame.alive(top)
-		if tall and whole and absf(away - FAR) < gap:
+		if not (tall and whole):
+			continue
+		var at := b.chunk_world(top)
+		var away := Vector2(at.x, at.z).distance_to(sim.kaiju_pos)
+		if absf(away - FAR) < gap:
 			best = i
 			gap = absf(away - FAR)
 	return best
