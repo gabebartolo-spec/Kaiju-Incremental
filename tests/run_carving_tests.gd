@@ -2,11 +2,15 @@ extends "res://tests/lib/runner.gd"
 ## Carving suite: the rampage on the fine destruction grid (Carving, D-094 WP7; D-097, D-099).
 ## A building's first hit promotes it; blows carve its cells by their force at each column and
 ## wear adds up; VoxelSupport decides what drops and which way a tower topples (toward the cut,
-## wherever the kaiju stands); the chunk Structure is kept as a mirror that pays rubble as today.
-## Includes the player-effect fixture "carving": the same seeded rampage with carving on and
-## off. Seeded by design: one or two hand-placed buildings, Seeds "army" 0, scripted input.
+## wherever the kaiju stands, then b2-5's seeded mix of cut, side or away, D-387); the chunk
+## Structure is kept as a mirror that pays rubble as today. Includes the player-effect fixtures
+## "carving" (the same seeded rampage with carving on and off), "fall_dirs" (b2-5 on and off)
+## and "landmark_carve" (tests/lib/landmark_carve_check.gd).
+## Seeded by design: one or two hand-placed buildings, Seeds "army" 0 (fall_dirs: 0..15),
+## scripted input.
 ##   godot --headless --path . --script tests/run_carving_tests.gd
 
+const LandmarkCarveCheck := preload("res://tests/lib/landmark_carve_check.gd")
 const DT := 1.0 / 15.0
 const BANNED: Array[String] = [
 	"Time.", "OS.", "randi", "randf", "randomize", "RandomNumberGenerator", "Node", "await"
@@ -24,24 +28,31 @@ func run_checks() -> void:
 	await _t("_check_effect")
 	await _t("_check_promote_once")
 	await _t("_check_topple_toward_cut")
+	await _t("_check_fall_dirs")
+	await _h("LandmarkCarveCheck", func() -> void: LandmarkCarveCheck.new(check, _sim).run())
 	await _t("_check_wear")
 	await _t("_check_rubble_parity")
 	await _t("_check_replay")
 
 
-## A tuning with carving switched on or off (everything else as data/tuning.json).
-func _tuning(carve: bool) -> Dictionary:
+## A tuning with carving switched on or off (everything else as data/tuning.json); `cut_only`
+## sets b2-5's fall odds to D-099's rule (every topple to its cut side).
+func _tuning(carve: bool, cut_only := false) -> Dictionary:
 	var tuning := Content.tuning().duplicate(true)
 	var cfg: Dictionary = tuning["destruction"]
 	cfg["carve"] = carve
+	if cut_only:
+		cfg["fall_dirs"] = {"cut": 1.0, "side": 0.0, "away": 0.0}
 	return tuning
 
 
-func _sim(layout: Array[Dictionary], carve: bool, species := "reptilian") -> RampageSim:
+func _sim(
+	layout: Array[Dictionary], carve: bool, species := "reptilian", cut_only := false
+) -> RampageSim:
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), Content.species_def(species), UpgradeTree.new(Content.upgrades())
 	)
-	var sim := RampageSim.new(stats, _tuning(carve), layout, Seeds.make("army", 0))
+	var sim := RampageSim.new(stats, _tuning(carve, cut_only), layout, Seeds.make("army", 0))
 	var ability: Dictionary = Content.species_def(species)["ability"]
 	sim.ability_type = str(ability["type"])
 	return sim
@@ -172,14 +183,11 @@ func _check_promote_once() -> void:
 
 
 ## D-099: cutting the tower's base on one side topples it toward the cut, wherever the kaiju
-## stands; the fall carries its fine cells for the view.
+## stands (b2-5's odds held at cut only); the fall carries its fine cells for the view.
 func _check_topple_toward_cut() -> void:
-	var cut: Array[Vector3i] = []
-	for x: int in [1, 2]:
-		for z: int in 3:
-			cut.append(Vector3i(x, 0, z))
+	var cut := _base_cut()
 	for side: float in [-12.0, 12.0]:
-		var sim := _sim([TOWER.duplicate()] as Array[Dictionary], true)
+		var sim := _sim([TOWER.duplicate()] as Array[Dictionary], true, "reptilian", true)
 		sim.kaiju_pos = Vector2(side, 0.0)
 		sim.damage_chunks(0, cut, 999.0)
 		var topples: Array[Dictionary] = []
@@ -208,6 +216,59 @@ func _check_topple_toward_cut() -> void:
 				% [index.size(), chunks.size()]
 			)
 		)
+
+
+## The tower's base cells on +x (the cut the topple checks make).
+func _base_cut() -> Array[Vector3i]:
+	var cut: Array[Vector3i] = []
+	for x: int in [1, 2]:
+		for z: int in 3:
+			cut.append(Vector3i(x, 0, z))
+	return cut
+
+
+## Player-effect fixture "fall_dirs" (b2-5, D-387: "buildings seem to ALWAYS collapse toward our
+## kaiju ... make the collapse directions more varied"): the same tower cut on +x with the kaiju
+## on that side, over 16 run seeds. On (data/tuning.json odds): it falls at least three ways,
+## and to its cut in some runs only; off (cut only): always +x. A seed replays the same way.
+func _check_fall_dirs() -> void:
+	for cut_only: bool in [false, true]:
+		var ways := {}
+		var cut_side := 0
+		var last := Vector2.ZERO
+		for run_seed: int in 16:
+			last = _fall_dir(cut_only, run_seed)
+			ways[last] = true
+			cut_side += 1 if last == Vector2(1, 0) else 0
+		var again := _fall_dir(cut_only, 15)
+		check(again == last, "fall_dirs: seed 15 falls the same way twice (%s, %s)" % [last, again])
+		if cut_only:
+			check(cut_side == 16, "fall_dirs off: every fall goes to its cut (%d of 16)" % cut_side)
+		else:
+			check(
+				ways.size() >= 3 and cut_side > 0 and cut_side < 16,
+				(
+					"fall_dirs on: falls go %d ways, %d of 16 to the cut: %s"
+					% [ways.size(), cut_side, ways.keys()]
+				)
+			)
+
+
+## The direction the +x-cut tower falls in a run with this seed (ZERO if it does not topple).
+func _fall_dir(cut_only: bool, run_seed: int) -> Vector2:
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"),
+		Content.species_def("reptilian"),
+		UpgradeTree.new(Content.upgrades())
+	)
+	var layout: Array[Dictionary] = [TOWER.duplicate()]
+	var sim := RampageSim.new(stats, _tuning(true, cut_only), layout, Seeds.make("army", run_seed))
+	sim.kaiju_pos = Vector2(12.0, 0.0)
+	sim.damage_chunks(0, _base_cut(), 999.0)
+	for e: Dictionary in _of(sim.events, "fall_start"):
+		if str(e["kind"]) == "topple":
+			return e["dir"]
+	return Vector2.ZERO
 
 
 ## Wear (the WP1 review's rule): a building that dwarfs the kaiju takes dwarf_mult of each

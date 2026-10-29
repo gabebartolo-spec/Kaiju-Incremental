@@ -74,6 +74,9 @@ func _structure() -> void:
 		UpgradeTree.new(Content.upgrades())
 	)
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	# The bonus is RampageSim.pay's, the carve's too; on cells a blow at the stadium's top also
+	# brings its arc down (D-388), so the six chunks are counted on the chunk path.
+	sim.carving.on = false
 	_check.call(
 		sim.chunks_total == w * d * h + marked,
 		"destruction counts only a landmark's real chunks: %d" % sim.chunks_total

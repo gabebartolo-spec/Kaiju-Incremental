@@ -175,6 +175,7 @@ func _check_topple_crush() -> void:
 		Content.section("kaiju"), Content.species_def("reptilian"), _tree()
 	)
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	sim.collapse.cut_only()  # it falls west, onto the low building (b2-5's mix aside)
 	var base: Array[Vector3i] = []
 	for x: int in 2:
 		for z: int in 3:

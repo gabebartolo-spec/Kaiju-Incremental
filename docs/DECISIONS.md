@@ -8,6 +8,21 @@ changes. The lead owns the wording; a decision goes in the PR that acts on it (a
 A: "Yes, redirect it": the roadmap lives at https://claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q; `docs/ROADMAP.md`
 points there; the old file is frozen as `docs/archive/ROADMAP_2026-10.md` for detail agents cannot get from the doc.
 
+## 2026-10-30 · D-388 · Director · Landmarks carve on cells
+Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
+Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
+ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
+section above the stub comes down as one topple over the stub's edge (rim outward, stands inward) before the support
+settle. Landmarks keep their cut side (D-387). River and bay bridges still render as decks, not carved buildings.
+
+## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
+Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
+every topple to its cut side, and a base eaten whole toward the kaiju, so most fell onto it): they picked "Seeded mix":
+each topple draws its direction from the run's seed, its cut side 40%, either side of that 25% each, away 10%
+(data/tuning.json destruction.fall_dirs). Replayable; some towers still land on the kaiju. Landmarks keep their cut
+side. Amends D-099 (the cut side is now the likeliest way, not the only one). Not chosen: mostly sideways, fully
+random, away mostly.
+
 ## 2026-10-30 · D-386 · Director · A PR re-push re-runs only failed, unrun or touched suites
 He approved: a pull request's re-push runs the suites that failed or never ran on its last run, plus every suite whose
 code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
@@ -373,26 +388,3 @@ rigger" and said "No" to testing a second Cascadeur copy. So: one builder (croc-
 rake, walk first step, idle, run, turn B, then the young clips); one rigger (croc-young-casc) readies the young
 skeletons (D-335, bars S1-S5) and brings finished clips into the game; every Cascadeur job holds C:/kt/casc_lock.sh;
 croc-idle-run and croc-casc-s2 are not respawned.
-
-## 2026-10-27 · D-335 · Director · Every croc stage is animated in Cascadeur; D-047's Blender clips are replaced
-His words (19:0x), on a plan to key the claw rake for the adult only while the baby and adolescent kept the code rake:
-"this is NOT correct, as ive said OVER AND OVER AGAIN, EVERY SINGLE ANIMATION MUST BE DONE IN CASC" (restates D-199,
-D-216 and D-247's "I want 100% of our animation done with Casc"). So: every move at every stage (baby, adolescent,
-adult) is keyed in Cascadeur (tail, jaw, tongue may be Blender, D-228); D-047's Blender-script clips and every code
-layer are defects to replace, never an exemption. Then "make sure their skeletons are ready for animation": the young
-skeletons get the adult's r12 treatment (D-307: same joint chains, bones added where missing, re-skinned, the r12
-Cascadeur rig) and pass chain, pivot, skin, rig and round-trip bars before any young clip is keyed.
-
-## 2026-10-27 · D-334 · Director · Render item 12: look B (glass and metal sheen) merges
-Q (18:5x, PR #319: baked voxel AO and material finish, flags on): A: "Yes, merge B (Recommended)": #319 merges with
-look B on by default (render plan item 12).
-
-## 2026-10-27 · D-333 · Director · The night's speed tests start when he says he is done for the day
-Q (18:1x): when do tonight's speed tests start? A: "When I say I'm done": the lead deletes `C:/kt/SPEED_DAY_HOLD` the
-moment he says he is done for the day, then runs `C:/kt/NIGHT_QUEUE.txt` one line at a time; if he says nothing, the
-hold ends at 01:00 (10-28).
-
-## 2026-10-27 · D-332 · Director · The lead restarts fresh at about 18:10
-Q (18:1x): when does the lead restart? A: "At ~18:10": a fresh lead session runs from its handoff; the old lead session
-hosts the builders it started until each one's step ends and reports them in `C:/kt/relay.md`; every role that ends is
-respawned fresh from its own handoff by the new lead, never while still hosted.
