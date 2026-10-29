@@ -166,7 +166,7 @@ func _init(
 	var rail_cfg: Dictionary = tuning["rail"]
 	var rail_from := RailLayout.add_pieces(buildings, city, rail_cfg)
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
-	collapse = Collapse.new(self)
+	collapse = Collapse.new(self, tuning, Seeds.derive(rng, 0xFA11))
 	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
 	explosives = Explosives.new(self, tuning, Seeds.derive(rng, 0xE7))

@@ -187,14 +187,16 @@ func _check_gutted_topple(log: Array[Dictionary]) -> void:
 
 
 ## D-099 (director 2026-10-20, "towers fall by real physics, toward the cut-away side, even onto
-## the kaiju"): every topple goes the way the support rule says (its cut_dir); a gutted drop, which
-## has no rule direction, goes toward the kaiju whose chew cut it. And at least one seeded topple
-## has its cut side facing the kaiju and falls toward it.
+## the kaiju") with b2-5 (D-386): every topple falls along one of the four level directions,
+## its cut side (cut_dir; a gutted drop's is toward the kaiju whose chew cut it), either side
+## of that, or away; the seeded mix sends some off their cut side. And seeded topples fall onto
+## the kaiju as well as away from it.
 func _check_falls_by_physics(log: Array[Dictionary]) -> void:
 	var wrong: Array[String] = []
 	var count := 0
 	var onto := 0
 	var away := 0
+	var off_cut := 0
 	for f: Dictionary in log:
 		if str(f["kind"]) != "topple":
 			continue
@@ -202,18 +204,26 @@ func _check_falls_by_physics(log: Array[Dictionary]) -> void:
 		var dir: Vector2 = f["dir"]
 		var cut: Vector2 = f["cut_dir"]
 		var to_part: Vector2 = f["to_part"]
-		if (
-			(cut != Vector2.ZERO and dir != cut)
-			or (cut == Vector2.ZERO and dir.dot(to_part) >= 0.0)
-		):
+		if cut == Vector2.ZERO:  # gutted: its cut side faces the kaiju
+			cut = (
+				Vector2(-signf(to_part.x), 0.0)
+				if absf(to_part.x) > absf(to_part.y)
+				else Vector2(0.0, -signf(to_part.y))
+			)
+		if absf(dir.x) + absf(dir.y) != 1.0 or absf(dir.x * dir.y) != 0.0:
 			wrong.append("dir %s cut %s kaiju->part %s" % [dir, cut, to_part.round()])
+		off_cut += 1 if dir != cut else 0
 		if dir.dot(to_part) < 0.0:
 			onto += 1
 		else:
 			away += 1
 	_check.call(
 		wrong.is_empty() and count > 0,
-		"all %d topples fall toward their cut side; not: %s" % [count, wrong]
+		"all %d topples fall along a level direction; not: %s" % [count, wrong]
+	)
+	_check.call(
+		off_cut > 0 or count < 4,
+		"b2-5: some of %d seeded topples fall off their cut side (%d)" % [count, off_cut]
 	)
 	_check.call(
 		onto > 0 and away > 0,

@@ -5250,12 +5250,22 @@
         "chunk_alive_share": {"$ref": "#/$defs/num"},
         "warm_margin": {"$ref": "#/$defs/num"},
         "warm_emerge_margin": {"$ref": "#/$defs/num"},
+        "fall_dirs": {
+          "type": "object",
+          "properties": {
+            "cut": {"$ref": "#/$defs/num"},
+            "side": {"$ref": "#/$defs/num"},
+            "away": {"$ref": "#/$defs/num"}
+          },
+          "required": ["cut", "side", "away"],
+          "additionalProperties": false
+        },
         "carve_view": {"$ref": "#/$defs/bool"},
         "view_upload_usec": {"$ref": "#/$defs/num"}
       },
       "required": [
         "res", "arc_shed_cells", "column_bay", "carve", "chunk_alive_share", "warm_margin",
-        "warm_emerge_margin", "carve_view", "view_upload_usec"
+        "warm_emerge_margin", "fall_dirs", "carve_view", "view_upload_usec"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
