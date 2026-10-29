@@ -94,15 +94,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 	var heads: Dictionary = {}
 	for d: Dictionary in defs:
 		heads[str(d["name"])] = _vec(d["head"]) * voxel
-	# Split the voxels by bone (the flags byte).
-	var per_bone: Dictionary = {}
-	for cell: Vector3i in vox.cells:
-		var index: int = vox.flags.get(cell, 0)
-		if not per_bone.has(index):
-			per_bone[index] = VoxelBuilder.new()
-		var part: VoxelBuilder = per_bone[index]
-		var color: Color = vox.colors[cell]
-		part.put_color(cell, color)
+	var per_bone := _split_by_bone(vox)
 	for i: int in defs.size():
 		var d: Dictionary = defs[i]
 		var bone_name := str(d["name"])
@@ -144,6 +136,19 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 			gait = RadialGait.new(self)
 		_:
 			gait = ClipGait.or_biped(self, spec.get("clips"))
+
+
+## The voxels split by bone (the flags byte): bone index -> VoxelBuilder.
+static func _split_by_bone(vox: VoxelBuilder) -> Dictionary:
+	var per_bone: Dictionary = {}
+	for cell: Vector3i in vox.cells:
+		var index: int = vox.flags.get(cell, 0)
+		if not per_bone.has(index):
+			per_bone[index] = VoxelBuilder.new()
+		var part: VoxelBuilder = per_bone[index]
+		var color: Color = vox.colors[cell]
+		part.put_color(cell, color)
+	return per_bone
 
 
 ## Shows a set of voxels (rig-space cells) on a bone, positioned relative to its rest head.
