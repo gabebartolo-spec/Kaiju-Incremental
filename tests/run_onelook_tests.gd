@@ -25,6 +25,7 @@ func run_checks() -> void:
 	await _t("_check_ground_kinds")
 	await _t("_check_wet_is_last")
 	await _t("_check_train_detail")
+	await _t("_check_baked_detail")
 	await _h("FlatSurfaces", func() -> void: await FlatSurfaces.run(self, check))
 	await _h("NightClip", func() -> void: await NightClip.run(self, check))
 
@@ -309,3 +310,26 @@ func _check_train_detail() -> void:
 		"a train car's %d cubes carry custom data" % mm.instance_count
 	)
 	car.free()
+
+
+## People and cars are baked meshes (no instances): they draw in the city's surface family with
+## the detail read from their own model-space vertices (flat surfaces P3). Off, they are the plain
+## voxel material: one flat colour per cube.
+func _check_baked_detail() -> void:
+	var voxel := Num.f(Content.section("street")["person_voxel"])
+	var meshes: Dictionary = {
+		"a person": VoxelPerson.mesh(0, 0, voxel),
+		"a car": TrafficMeshes.cars(TrafficMeshes.palette())[0],
+	}
+	for what: String in meshes:
+		var mat := (meshes[what] as ArrayMesh).surface_get_material(0) as ShaderMaterial
+		check(
+			mat != null and mat.shader == Look.VOXEL_DETAIL_SHADER
+			and bool(mat.get_shader_parameter("baked")),
+			"%s draws on voxel_detail.gdshader, baked" % what
+		)
+	var off := VoxelBuilder.new()
+	off.put(Vector3i.ZERO, "x")
+	var plain_mesh := off.bake({"x": Color.WHITE}, voxel, Vector3.ZERO, 0.0)
+	var plain := plain_mesh.surface_get_material(0) as ShaderMaterial
+	check(plain.shader == Look.VOXEL_SHADER, "a bake without detail keeps the plain voxel material")

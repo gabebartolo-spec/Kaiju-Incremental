@@ -91,6 +91,7 @@ static func _bake(v: VoxelBuilder, o: Dictionary, voxel: float) -> ArrayMesh:
 		"belt": Color("0e0e0e"),
 	}
 	# The body is symmetric about cell x = -0.5 and z = -0.5: centre it on the origin.
+	v.detail = true  # the city's surface family (flat surfaces P3)
 	return v.bake(palette, voxel, Vector3(voxel * 0.5, 0, voxel * 0.5), 0.0)
 
 

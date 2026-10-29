@@ -364,4 +364,5 @@ func _ball_mesh(voxel: float, glow: float) -> ArrayMesh:
 	var ball := Color(str(sport["ball"]))
 	ball.a = 0.0  # the glow flag (voxel.gdshader)
 	var shine := Color(1, 1, 1, 0)
+	v.detail = true  # the city's surface family (flat surfaces P3)
 	return v.bake({"ball": ball, "shine": shine}, voxel, Vector3.ZERO, glow)
