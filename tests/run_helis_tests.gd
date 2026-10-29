@@ -46,6 +46,9 @@ func _check_helicopters() -> void:
 	var diver := grown.air.spawn()
 	_face_away_from_camera(grown)
 	grown.time_left = 1.0e9  # the passes run longer than a short rampage
+	# nor does the one building's fall end it (city_fallen): it fell in pass 4 of 8 when the walk
+	# reached it, so the passes after it never flew
+	grown.chunks_total = 10000000
 	var swatted := false
 	for pass_n: int in PASSES:
 		# A swipe lands every 2 s, so each pass starts a little later in that rhythm (a pass is

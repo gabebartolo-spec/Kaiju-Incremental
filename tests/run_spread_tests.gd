@@ -68,8 +68,10 @@ func _check_halves() -> void:
 
 
 ## Landmarks a stage newly opens keep 0.4 x its width apart; a pair with an inner district's
-## landmark keeps 0.4 x the inner stage's width; each keeps 0.2 x its stage's width off the rise,
-## and the stadium at least its old distance.
+## landmark keeps 0.4 x the inner stage's width; each keeps 0.2 x its stage's width off the rise
+## (the bay's, plan "rise_spawn", D-377), and the stadium at least its old distance. Two
+## landmarks on designated spots ("anchor", D-375, D-380: spots fixed) are spaced by those spots,
+## not by the spread; a seeded one keeps its gap from them.
 func _check_landmarks() -> void:
 	var spread: Dictionary = Content.section("city")["spread"]
 	var rings := _rings()
@@ -77,7 +79,7 @@ func _check_landmarks() -> void:
 	var placed := 0
 	for map_seed: int in _seeds():
 		var plan := CityGen.map(_cfg(map_seed, 1))
-		var rise: Vector2 = plan["river_spawn"]
+		var rise: Vector2 = plan["rise_spawn"]
 		var sites: Array = plan["sites"]
 		placed += sites.size()
 		for a: int in sites.size():
@@ -97,6 +99,8 @@ func _check_landmarks() -> void:
 						)
 			for b: int in range(a + 1, sites.size()):
 				var other: Dictionary = sites[b]
+				if _anchored(site) and _anchored(other):
+					continue
 				var inner := mini(k, Num.i(other["district"]))
 				var gap := Num.f(spread["landmark_gap"]) * CitySpread.width(rings, inner)
 				if at.distance_to(_at(other)) < gap:
@@ -123,7 +127,7 @@ func _check_hazards() -> void:
 			base["city"]["map_seed"] = map_seed
 			var cfg := _cfg(map_seed, tier)
 			var half := CityGen.half_extent(cfg)
-			var rise: Vector2 = CityGen.map(cfg)["river_spawn"]
+			var rise: Vector2 = CityGen.map(cfg)["rise_spawn"]
 			var n := 0
 			for e: Dictionary in CityGrowth.layout(base, tier, Seeds.make("city", 0)):
 				if not e.has("hazard"):
@@ -212,26 +216,38 @@ func _check_seeded() -> void:
 
 
 ## Player-effect fixture (CitySpread): the seed moves what the player meets. Across the plans,
-## the landmarks stand in more than one district each and their sites differ, so a city
-## seed (per save, with the city blocks: D-263) changes where the big targets are.
+## the seeded landmarks stand in more than one district and their sites differ, so a city seed
+## (per save, with the city blocks: D-263) changes where the bridge is; the designated spots
+## stay put (D-375, D-380: spots fixed, the landmark in each rotates).
 func _check_effect() -> void:
 	var districts := {}
 	var layouts := {}
 	for map_seed: int in _seeds():
 		var plan := CityGen.map(_cfg(map_seed, 3))
-		layouts[_digest(plan)] = true
+		var seeded: Array[String] = []
 		for site: Dictionary in plan["sites"]:
-			districts["%s %d" % [site["id"], site["district"]]] = true
+			if not _anchored(site):
+				seeded.append("%s%s" % [site["id"], site["rect"]])
+				districts["%s %d" % [site["id"], site["district"]]] = true
+		layouts[",".join(seeded)] = true
 	check(
-		layouts.size() == SEEDS and districts.size() > 3,
+		layouts.size() == SEEDS and districts.size() > 1,
 		(
 			(
-				"each seed lays its own landmarks (%d layouts of %d), landmarks"
+				"the seed moves the seeded landmarks (%d layouts of %d), seeded landmarks"
 				+ " across districts: %s"
 			)
 			% [layouts.size(), SEEDS, districts.keys()]
 		)
 	)
+
+
+## Whether the site's landmark stands on a designated spot (city "landmarks" "anchor", D-375).
+func _anchored(site: Dictionary) -> bool:
+	for spec: Dictionary in Content.section("city")["landmarks"]:
+		if str(spec["id"]) == str(site["id"]):
+			return spec.has("anchor")
+	return false
 
 
 func _digest(plan: Dictionary) -> String:

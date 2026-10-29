@@ -91,14 +91,16 @@ func _face_free_way(sim: RampageSim) -> Vector2:
 	return way
 
 
-## The index of a tall building about `FAR` from the kaiju, for an agent to perch on.
+## The index of a tall building about `FAR` from the kaiju, for an agent to perch on: one inside
+## the arena (in the wider city the street start sits by the edge, where the nearest roof at `FAR`
+## can be a backdrop lot no agent stands on).
 func _roof(sim: RampageSim, tf: Taskforce) -> int:
 	var best := -1
 	var gap := INF
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
 		var away := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
-		if b.height >= Num.i(tf.cfg["perch_min_height"]) and absf(away - FAR) < gap:
+		if b.in_arena and b.height >= Num.i(tf.cfg["perch_min_height"]) and absf(away - FAR) < gap:
 			best = i
 			gap = absf(away - FAR)
 	return best
