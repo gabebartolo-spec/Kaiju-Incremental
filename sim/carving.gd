@@ -4,7 +4,10 @@ extends RefCounted
 ## included"; D-099 carved towers fall toward the cut side). A building's first hit promotes it
 ## (CellPromoter: its BuildingCells grid in a VoxelFrame); from then on every blow carves its
 ## cells, and VoxelFrame.settle() (VoxelSupport) decides what drops and what topples, and which
-## way. Part of RampageSim; landmarks stay on their chunk Structure until WP6.
+## way. Part of RampageSim. Landmarks carve too ("carve is universal", director 2026-10-26): their
+## grid is LandmarkCells (WP6), and a ring landmark's arc (the stadium) that has lost
+## arc_shed_cells cells brings its section above the stub down as one topple before the settle,
+## the chunk Structure's rule (Arcs) on cells.
 ##
 ## Wear: each grid column keeps, per floor, the sum of every blow that reached it (the force at
 ## that column, so a stomp's falloff carves a round crater); a cell breaks once its column's sum
@@ -37,6 +40,8 @@ class Grid:
 	var bd: int
 	var floors: int
 	var hp: float
+	## A ring landmark's grid (its arcs count what it loses, LandmarkCells.shed), else null.
+	var ring: LandmarkCells
 	## What the blow being worked out has broken: grid indices and their materials.
 	var removed := PackedInt32Array()
 	var mats := PackedByteArray()
@@ -87,8 +92,8 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 
 
 ## True when building n is carved rather than broken by chunks.
-func takes(n: int) -> bool:
-	return on and sim.buildings[n].landmark == ""
+func takes(_n: int) -> bool:
+	return on
 
 
 func promoted(n: int) -> bool:
@@ -208,12 +213,50 @@ func settle(n: int) -> Array[Dictionary]:
 	var g: Grid = grids[n]
 	var f := g.frame
 	var out: Array[Dictionary] = []
-	for part: Dictionary in f.settle():
+	for part: Dictionary in _shed(g) + f.settle():
 		var index: PackedInt32Array = part["index"]
+		_lost(g, index)
 		var info := CarvingCells.fallen(g, index)  # g.live loses its cells
 		cells_fallen += index.size()
 		out.append(CarvingCells.part_event(f, part, info, _deaths(n, g)))
 	return out
+
+
+## A ring landmark's arcs that lost arc_shed_cells cells (LandmarkCells.shed): each section above
+## the stub taken out of the grid as a topple over the stub's edge, the rim outward and the stands
+## inward, in settle()'s part shape.
+func _shed(g: Grid) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if g.ring == null:
+		return out
+	var f := g.frame
+	for section: Dictionary in g.ring.shed():
+		var index := PackedInt32Array()
+		for c: Vector3i in section["cells"]:
+			g.ring.clear_cell(c)
+			var i := f.index(c)
+			if f.cells[i] != VoxelFrame.EMPTY:
+				index.append(i)
+		if index.is_empty():
+			continue
+		var part := f.take(index)
+		var pivot: Vector3 = section["pivot"]
+		part["kind"] = "topple"
+		part["pivot"] = pivot / f.res
+		part["dir"] = section["dir"]
+		out.append(part)
+	return out
+
+
+## Cells that left grid g: a ring landmark's arcs count them (a cell already gone from its own
+## copy counts nothing).
+func _lost(g: Grid, index: PackedInt32Array) -> void:
+	if g.ring == null:
+		return
+	var f := g.frame
+	var plan := f.w * f.d
+	for i: int in index:
+		g.ring.clear_cell(Vector3i(i % f.w, i / plan, (i / f.w) % f.d) + f.offset)
 
 
 ## Building n's generated cells (made once; promotion takes them).
@@ -233,6 +276,8 @@ func _promote(n: int) -> Grid:
 	var f := VoxelFrame.new(Vector3i(b.w, b.height, b.d), cells.res, _materials)
 	f.adopt(cells.dims, cells.offset, cells.cells)
 	g.frame = f
+	if cells is LandmarkCells and (cells as LandmarkCells).arcs != null:
+		g.ring = cells
 	g.bw = b.w
 	g.bd = b.d
 	g.floors = b.height
@@ -305,6 +350,7 @@ func _finish(n: int, g: Grid) -> int:
 	if removed.is_empty():
 		return 0
 	cells_carved += removed.size()
+	_lost(g, removed)
 	sim.events.append({"type": "cells_carved", "building": n, "index": removed, "mats": mats})
 	var broken := _deaths(n, g)
 	if not broken.is_empty():

@@ -4,9 +4,16 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-388 · Director · Landmarks carve on cells
+Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
+Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
+ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
+section above the stub comes down as one topple over the stub's edge (rim outward, stands inward) before the support
+settle. Landmarks keep their cut side (D-387). River and bay bridges still render as decks, not carved buildings.
+
 ## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
 Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
-every topple to its cut side, and a base eaten whole toward the kaiju, so most fell onto it): he picked "Seeded mix":
+every topple to its cut side, and a base eaten whole toward the kaiju, so most fell onto it): they picked "Seeded mix":
 each topple draws its direction from the run's seed, its cut side 40%, either side of that 25% each, away 10%
 (data/tuning.json destruction.fall_dirs). Replayable; some towers still land on the kaiju. Landmarks keep their cut
 side. Amends D-099 (the cut side is now the likeliest way, not the only one). Not chosen: mostly sideways, fully

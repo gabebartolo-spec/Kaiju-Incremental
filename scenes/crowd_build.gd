@@ -161,6 +161,26 @@ static func hosts(fans: Array[StadiumCrowd.Fan], frame: Structure, corner: Vecto
 	return out
 
 
+## The grid index of the fine cell (Carving's VoxelFrame `f` of the stadium, corner `corner`)
+## that world point `at` stands on: the highest solid cell from just under it down `reach`
+## metres, or -1 when there is none (nothing under the feet, or outside the grid).
+static func under(f: VoxelFrame, at: Vector3, corner: Vector2, reach: float) -> int:
+	var c := Vector3i(
+		floori((at.x - corner.x) * f.res),
+		floori(at.y * f.res - 0.5),
+		floori((at.z - corner.y) * f.res)
+	)
+	c -= f.offset
+	if c.x < 0 or c.z < 0 or c.x >= f.w or c.z >= f.d:
+		return -1
+	var plan := f.w * f.d
+	var col := c.x + c.z * f.w
+	for y: int in range(mini(c.y, f.h - 1), maxi(-1, c.y - ceili(reach * f.res) - 1), -1):
+		if f.cells[col + y * plan] != VoxelFrame.EMPTY:
+			return col + y * plan
+	return -1
+
+
 ## The y of the highest standing chunk below chunk `c` (0: the ground) in `frame`, whose chunk
 ## health is `hp`: where a fan whose stand has gone lands.
 static func land(frame: Structure, hp: PackedFloat32Array, c: Vector3i) -> int:
