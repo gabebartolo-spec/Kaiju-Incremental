@@ -14,6 +14,8 @@ const TOPPLE_STEPS := 30 * 60
 ## chew breaks those), so a body set down on top of them starts inside them. Seeds 3 and 8 have
 ## no office tower in the arena.
 const CHEW_SEEDS: Array[int] = [3, 8, 22]
+## The chew's ways in, first that has clear ground: from the south face, then north, east, west.
+const CHEW_DIRS: Array[Vector2] = [Vector2(0, -1), Vector2(0, 1), Vector2(-1, 0), Vector2(1, 0)]
 
 var _check: Callable
 var _make: Callable
@@ -173,10 +175,16 @@ func _chew_to_topple(sim: RampageSim) -> Dictionary:
 		return out
 	out["tower"] = index
 	var b := sim.buildings[index]
-	var into := Vector2(0, -1)  # from the tower's south face, across its base
-	var face := Vector2(b.x, b.z + b.d * 0.5 + sim.body.length() * 0.6)
-	out["backed"] = Fixture.set_down_clear(sim, face, into)
-	if Num.f(out["backed"]) < 0.0:
+	# From the tower's south face across its base; else the first other face with clear ground.
+	var into := Vector2.ZERO
+	for dir: Vector2 in CHEW_DIRS:
+		var half := Vector2(b.w, b.d) * 0.5
+		var face := Vector2(b.x, b.z) - dir * (absf(dir.dot(half)) + sim.body.length() * 0.6)
+		out["backed"] = Fixture.set_down_clear(sim, face, dir)
+		if Num.f(out["backed"]) >= 0.0:
+			into = dir
+			break
+	if into == Vector2.ZERO:
 		return out
 	var steps := 0
 	var worst := 0
