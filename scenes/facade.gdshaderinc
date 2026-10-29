@@ -190,8 +190,8 @@ void fragment() {
 		} else {
 			facade_wall(at, v_top, wall, bseed, v_custom.y, style, albedo, emit);
 			// The thin dark seam between voxels, so the stand-ins share the voxel grain.
-			vec2 seam = fract(at * grain);
-			if (min(min(seam.x, seam.y), min(1.0 - seam.x, 1.0 - seam.y)) < 0.04) {
+			vec2 vseam = fract(at * grain);
+			if (min(min(vseam.x, vseam.y), min(1.0 - vseam.x, 1.0 - vseam.y)) < 0.04) {
 				albedo *= 0.8;
 			}
 		}
