@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-338 · Director · Momentum differs by titan: croc quickest, Komodo lumbering but hardest, serpent agile
+His words (19:5x): "i want the turning bleed to be light for the croc, he should be the most mobile and gather momentum
+the quickest / our komodo is lumbering / our serpent will be agile but not particularly fast or slow". Asked: the Komodo
+"Slow start, hardest hit" (slowest to build, turning bleeds him most, but rolling he crashes and slams hardest) and his
+run "Always on, like the croc" (replaces D-245's top-tier run unlock). The serpent, in his words: "snake will crash
+through buildings around his height, but being that he is the shortest kaiju, that wont be many buildings. Snake can
+however clumb the buildings bigger than him and constrict-crush them"; asked, a bigger building at speed "Flows into a
+climb" (no slam) and constrict "Keep it at adulthood" (D-206 stands). Serpent work still waits on D-246.
+
 ## 2026-10-27 · D-337 · Director · The croc's run is momentum: he crashes through small buildings, slams into big ones
 His words (19:4x), on hearing the croc has no run yet: "running wont have a sprint button, it should be momentum based,
 at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones". Asked:

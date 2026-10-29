@@ -1,6 +1,6 @@
 class_name TreeSpecimen
 extends SubViewportContainer
-## The kaiju himself at the empty centre of the tree's rings (D-395): his model at his current
+## The kaiju himself at the empty centre of the tree's rings (D-396): his model at his current
 ## stage turning slowly on a transparent plate, specimen_px canvas units tall, scaled with the
 ## camera. Rebuilt when he evolves. Tuning "tree" "skin" "fx" specimen_spin / specimen_px.
 

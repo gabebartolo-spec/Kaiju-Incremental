@@ -72,7 +72,7 @@ func _tree_text() -> void:
 	)
 
 
-## D-395, the fixture: with tree.skin.fx on, a buy sets the juice going (motes, a surge or a
+## D-396, the fixture: with tree.skin.fx on, a buy sets the juice going (motes, a surge or a
 ## flash playing; the kaiju at the centre), the cell fills toward its level and the counter counts
 ## down; with it off, the buy changes the state alone: nothing plays, the liquid and the counter
 ## jump, no specimen. Half a second of frames at 60 fps, delta-driven (no clock).

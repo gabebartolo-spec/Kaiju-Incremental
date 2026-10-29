@@ -334,7 +334,7 @@ def build_ui() -> None:
 
 
 def build_tree() -> None:
-    """The evolution tree's sounds (D-395, bio lab): a buy is glass ticked and Special K gurgling
+    """The evolution tree's sounds (D-396, bio lab): a buy is glass ticked and Special K gurgling
     up the cell with a soft rising sweep; a maxed node adds a bright three-note seal; a ring
     opening is a long glass ring and a low pressure hiss; an evolution is an electric snap over a
     sub boom with arcing crackle."""

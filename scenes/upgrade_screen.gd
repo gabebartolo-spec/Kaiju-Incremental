@@ -132,7 +132,7 @@ func _build_side() -> Control:
 	return side
 
 
-## The readout's head (D-395): the specimen line and its rule, then the node's name, role and words.
+## The readout's head (D-396): the specimen line and its rule, then the node's name, role and words.
 func _build_readout_head(info_col: VBoxContainer) -> void:
 	_specimen_label = UiKit.label("", UiKit.SIZE_BODY, UiKit.ACCENT)
 	_specimen_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

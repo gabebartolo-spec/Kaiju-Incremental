@@ -4,7 +4,7 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-10-30 · D-395 · Director · The tree screen is a bio lab, built in full
+## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
 Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
 changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,
 it needs a lot of vfx, sfx and beautiful UI design". So the screen is a specimen plate with glass cells that fill with
@@ -15,6 +15,9 @@ connector was not in the building session, so #445 ships the four tree sounds sy
 (0 credits); the 500 stay approved for replacing them from a session that has it. The kaiju himself, at his current
 stage, turns at the empty centre of the rings: "yes". Tuning `tree.skin` and `tree.skin.fx`; `fx.enabled` is the
 on/off switch the fixture flips.
+
+## 2026-10-30 · D-395 · Director · The feedback link is the Itch page
+His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's LEAVE FEEDBACK opens it (tuning demo.feedback_url); replaces the placeholder D-148 left.
 
 ## 2026-10-30 · D-394 · Director · The landmark pool's named entries
 His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
@@ -404,12 +407,3 @@ judged at 1080p, the most common screen on Steam; 4K stays supported and is chec
 target "60 fps at 1080p Medium" (replaces D-093/D-109's 60 fps at 4K), and stills "Switch to 1080p" (replaces D-304's
 4K stills; clips stay 1080p). Scope, asked: "Kaiju only" (his other games keep the rulebook's
 4K-first check); the project CLAUDE.md carries the Kaiju rule.
-
-## 2026-10-27 · D-338 · Director · Momentum differs by titan: croc quickest, Komodo lumbering but hardest, serpent agile
-His words (19:5x): "i want the turning bleed to be light for the croc, he should be the most mobile and gather momentum
-the quickest / our komodo is lumbering / our serpent will be agile but not particularly fast or slow". Asked: the Komodo
-"Slow start, hardest hit" (slowest to build, turning bleeds him most, but rolling he crashes and slams hardest) and his
-run "Always on, like the croc" (replaces D-245's top-tier run unlock). The serpent, in his words: "snake will crash
-through buildings around his height, but being that he is the shortest kaiju, that wont be many buildings. Snake can
-however clumb the buildings bigger than him and constrict-crush them"; asked, a bigger building at speed "Flows into a
-climb" (no slam) and constrict "Keep it at adulthood" (D-206 stands). Serpent work still waits on D-246.

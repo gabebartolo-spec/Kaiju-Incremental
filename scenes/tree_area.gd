@@ -25,7 +25,7 @@ var layout: TreeLayout
 var view: TreeView
 ## The juice (TreeFx): what is playing; drawn here under the nodes and by TreeFxLayer over them.
 var fx: TreeFx
-## The kaiju at the plate's centre (D-395), under the nodes.
+## The kaiju at the plate's centre (D-396), under the nodes.
 var specimen: TreeSpecimen
 var _species: Dictionary
 var _roles: Dictionary
