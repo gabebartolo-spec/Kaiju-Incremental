@@ -92,7 +92,10 @@ static func _bake(v: VoxelBuilder, o: Dictionary, voxel: float, detail := false)
 		"belt": Color("0e0e0e"),
 	}
 	# The body is symmetric about cell x = -0.5 and z = -0.5: centre it on the origin.
-	return v.bake(palette, voxel, Vector3(voxel * 0.5, 0, voxel * 0.5), 0.0, detail)
+	var mesh := v.bake(palette, voxel, Vector3(voxel * 0.5, 0, voxel * 0.5), 0.0)
+	if detail and mesh.get_surface_count() > 0:
+		mesh.surface_set_material(0, Look.voxel_detail_material(voxel, 0.0))
+	return mesh
 
 
 static func _body(v: VoxelBuilder, pose: int, cop: bool) -> void:

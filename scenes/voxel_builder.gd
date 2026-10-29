@@ -198,12 +198,8 @@ static func instance(
 ## One merged mesh (vertex colours, hidden faces culled) for a small model that moves as a
 ## whole: people and moving cars. palette as build(); `origin` offsets every cell. Main thread
 ## only: a worker calls bake_arrays() and hands them to baked() on the main thread.
-## detail: drawn in the city's surface family (Look.voxel_detail_material) at `voxel`'s grain.
-func bake(palette: Dictionary, voxel: float, origin: Vector3, glow: float, detail := false) -> ArrayMesh:
-	var mesh := baked(bake_arrays(palette, voxel, origin), glow)
-	if detail and mesh.get_surface_count() > 0:
-		mesh.surface_set_material(0, Look.voxel_detail_material(voxel, glow))
-	return mesh
+func bake(palette: Dictionary, voxel: float, origin: Vector3, glow: float) -> ArrayMesh:
+	return baked(bake_arrays(palette, voxel, origin), glow)
 
 
 ## bake()'s surface arrays ([] when there are no cells). Makes no resource: safe on a worker.
