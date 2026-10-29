@@ -38,7 +38,9 @@ man-made seawall, breakwater, piers and quay yard. The random map connects to it
 (volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
 The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
 stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
-wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1 (built in a later PR).
+wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1. Built (10-30) as pool models
+P01-P03 authored in code (tools/port/build_port.py, no Tripo spend), district "port", role "fixed": CityPort stands
+the same 4 cranes, 3 sheds and 29 stacks on the quay and yard in every city, where the real band reaches (stage 3).
 
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river

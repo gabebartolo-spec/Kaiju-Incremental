@@ -103,9 +103,23 @@
           "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "port": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
-      "required": ["bar_strip", "business", "chinatown", "docklands", "neon", "red_light", "residential"],
+      "required": ["bar_strip", "business", "chinatown", "docklands", "neon", "red_light", "residential", "port"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
@@ -1253,6 +1267,60 @@
           "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "P01": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "P02": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "P03": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
@@ -1260,7 +1328,7 @@
         "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24", "F25", "F26",
         "F27", "F28", "F29", "F31", "F32", "F33", "F34", "F35", "F36", "F37", "F38", "F39", "F40",
         "H01", "H02", "H03", "H04", "H05", "H06", "H07", "H08", "H09", "H10", "H11", "H12", "H13",
-        "H14", "H15", "H16", "H17", "H18", "H19", "H20", "H21", "H22"
+        "H14", "H15", "H16", "H17", "H18", "H19", "H20", "H21", "H22", "P01", "P02", "P03"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

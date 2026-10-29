@@ -46,6 +46,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
 	CityPool.place(out, rng, cfg, plan)  # lots take the pool's models (D-256), on their own stream
+	out.append_array(CityPort.entries(plan, cfg))  # the port's fixed cranes, stacks, sheds
 	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, quay, out, cfg))  # + red barrels (#19)
 	return out
 
