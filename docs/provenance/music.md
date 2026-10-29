@@ -60,5 +60,20 @@ for a human check once, which he completed) and downloaded as WAV with its stems
 bass, strings, brass, keyboard, percussion, synth, other, woodwinds, guitar, plus vocal stems that should be near
 silent). Files: C:/Users/DANTE/Downloads/kaiju_music/ (city*_C*a_*.wav, stems_city*_C*a/ and .zip). 8 of 20 monthly
 downloads used (R, G1-G4 unlocked, C1a, C2a, C3a). G4 was saved by the browser before his stop. His own Auto split
-of R (24 stems) is in the Suno workspace, not downloaded. Next: the lead's builder cuts the loops, sets the layers
-(D-125) and registers the files (docs/LICENSING_REGISTER.md: Suno Pro, commercial use).
+of R (24 stems) is in the Suno workspace, not downloaded. 
+
+Cut (2026-10-30, `tools/music/cut_loops.py --src C:/Users/DANTE/Downloads/kaiju_music`, no Suno credits): each city's
+stems are summed into four layers in D-189's order: low (Strings, Bass), drums (Drums, Percussion), brass (Brass,
+Woodwinds, Guitar), full (Keyboard, Synth, Other, both vocal stems). Every stem is in one layer, so the four add up to
+the whole take. One loop per city, found by `tools/music/find_loop.py` (spectral match at the seam), trimmed to the
+sample by waveform match and folded with a 0.25 s equal-power crossfade; all four layers share the same sample range
+and one gain (the full stack peaks at -1 dBFS). Vorbis q4, 48 kHz, Suno's comment tag kept in each file.
+
+| File | Source | Loop start | Length | Bars (bpm) | Gain |
+|---|---|---|---|---|---|
+| city_1_*.ogg | C1a 51ffbd31 | 44.71 s | 74.232 s | 21 (67.895) | -5.11 dB |
+| city_2_*.ogg | C2a d658bf8f | 103.72 s | 63.183 s | 17 (64.574, bar count approximate) | -2.75 dB |
+| city_3_*.ogg | C3a 88095979 | 54.91 s | 113.187 s | 32 (67.852) | -3.07 dB |
+| theme.ogg | R 798f3c13 | 90.62 s (loop_offset) | 45.87 s loop after a 90.62 s opening | - | none |
+
+Registered CLEARED in docs/LICENSING_REGISTER.md (Suno Pro, commercial use).
