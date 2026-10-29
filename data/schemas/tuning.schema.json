@@ -615,15 +615,15 @@
         },
         "throw_ricochet": {
           "type": "object",
-          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
-          "required": ["hidden"],
+          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
+          "required": ["line", "fmt"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
         "throw_domino": {
           "type": "object",
-          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
-          "required": ["hidden"],
+          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
+          "required": ["line", "fmt"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         }
@@ -1581,12 +1581,43 @@
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "flight": {
+          "type": "object",
+          "properties": {
+            "gravity": {"$ref": "#/$defs/num"},
+            "loft_deg": {"$ref": "#/$defs/num"},
+            "min_distance": {"$ref": "#/$defs/num"},
+            "clearance": {"$ref": "#/$defs/num"},
+            "wall_radius": {"$ref": "#/$defs/num"},
+            "wall_damage": {"$ref": "#/$defs/num"},
+            "wall_floors": {"$ref": "#/$defs/num"},
+            "wall_restitution": {"$ref": "#/$defs/num"},
+            "bounces": {"$ref": "#/$defs/num"},
+            "min_bounce_speed": {"$ref": "#/$defs/num"},
+            "ground_restitution": {"$ref": "#/$defs/num"},
+            "ground_friction": {"$ref": "#/$defs/num"},
+            "strike_radius": {"$ref": "#/$defs/num"},
+            "domino_damage": {"$ref": "#/$defs/num"},
+            "domino_reach": {"$ref": "#/$defs/num"},
+            "spin_turns_min": {"$ref": "#/$defs/num"},
+            "spin_turns_max": {"$ref": "#/$defs/num"},
+            "topple_deg": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "gravity", "loft_deg", "min_distance", "clearance", "wall_radius", "wall_damage",
+            "wall_floors", "wall_restitution", "bounces", "min_bounce_speed", "ground_restitution",
+            "ground_friction", "strike_radius", "domino_damage", "domino_reach", "spin_turns_min",
+            "spin_turns_max", "topple_deg"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
         "convoy", "start_interval", "min_interval", "tank_hp", "tank_damage", "min_damage",
         "fire_interval", "range", "speed", "tank_rubble", "spawn_radius", "escalation_per_chunk",
-        "threat_per_chunk", "young_damage_mult", "shell_flight", "miss", "rooftop"
+        "threat_per_chunk", "young_damage_mult", "shell_flight", "miss", "rooftop", "flight"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
