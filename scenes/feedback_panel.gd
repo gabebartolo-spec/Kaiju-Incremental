@@ -41,10 +41,10 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 16)
 	panel.add_child(col)
-	var title := UiKit.label(str(cfg["title"]), UiKit.SIZE_HEAD, UiKit.ACCENT)
+	var title := UiKit.label(tr(str(cfg["title"])), UiKit.SIZE_HEAD, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(title)
-	_prompt = UiKit.label(str(cfg["prompt"]), UiKit.SIZE_BODY, UiKit.MUTED)
+	_prompt = UiKit.label(tr(str(cfg["prompt"])), UiKit.SIZE_BODY, UiKit.MUTED)
 	col.add_child(_prompt)
 	box = _text_box(cfg)
 	col.add_child(box)
@@ -54,13 +54,13 @@ func _ready() -> void:
 	status.visible = false
 	col.add_child(status)
 	_write_row = _row(col)
-	_send_button = _button(_write_row, str(cfg["send"]), UiKit.ACCENT, _send)
-	var cancel := _button(_write_row, str(cfg["cancel"]), UiKit.PANEL_EDGE, _close)
+	_send_button = _button(_write_row, tr(str(cfg["send"])), UiKit.ACCENT, _send)
+	var cancel := _button(_write_row, tr(str(cfg["cancel"])), UiKit.PANEL_EDGE, _close)
 	for b: Button in [_send_button, cancel]:
 		b.focus_neighbor_top = b.get_path_to(box)  # a pad's up returns to the box
 	_done_row = _row(col)
-	_open = _button(_done_row, str(cfg["open_folder"]), UiKit.ACCENT, _open_folder)
-	_done = _button(_done_row, str(cfg["done"]), UiKit.PANEL_EDGE, _close)
+	_open = _button(_done_row, tr(str(cfg["open_folder"])), UiKit.ACCENT, _open_folder)
+	_done = _button(_done_row, tr(str(cfg["done"])), UiKit.PANEL_EDGE, _close)
 	_done_row.visible = false
 	box.grab_focus.call_deferred()
 
@@ -77,9 +77,9 @@ func _send() -> void:
 	var ok: bool = result["ok"]
 	report_path = str(result["path"])
 	if ok:
-		status.text = str(cfg["saved"]).replace("{path}", report_path)
+		status.text = tr(str(cfg["saved"])).replace("{path}", report_path)
 	else:
-		status.text = str(cfg["failed"]).replace("{error}", str(result["error"]))
+		status.text = tr(str(cfg["failed"])).replace("{error}", str(result["error"]))
 	status.add_theme_color_override("font_color", UiKit.GOOD if ok else UiKit.BAD)
 	status.visible = true
 	box.visible = false

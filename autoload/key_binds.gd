@@ -154,11 +154,51 @@ static func input_name(event: InputEvent) -> String:
 		return "Esc" if code == KEY_ESCAPE else OS.get_keycode_string(code)
 	if event is InputEventMouseButton:
 		var index := (event as InputEventMouseButton).button_index
-		return str(MOUSE_NAMES.get(index, "Mouse %d" % index))
+		if MOUSE_NAMES.has(index):
+			return shown(str(MOUSE_NAMES[index]))
+		return TranslationServer.translate("Mouse %d") % index
 	if event is InputEventJoypadButton:
 		var button := (event as InputEventJoypadButton).button_index
-		return str(PAD_NAMES.get(button, "Button %d" % button))
+		if PAD_NAMES.has(button):
+			return shown(str(PAD_NAMES[button]))
+		return TranslationServer.translate("Button %d") % button
 	return "-"
+
+
+## A name from ACTIONS, PlayerSettings.CONTROLS, MOUSE_NAMES or PAD_NAMES in the player's language
+## (the English text is the key, each written out here so tools/i18n/strings.py finds it). Key and
+## button names ("E", "Esc / P", "RB") have no entry and stay as they are.
+static func shown(text: String) -> String:
+	var names := {
+		"Move": TranslationServer.translate("Move"),
+		"Move up": TranslationServer.translate("Move up"),
+		"Move down": TranslationServer.translate("Move down"),
+		"Move left": TranslationServer.translate("Move left"),
+		"Move right": TranslationServer.translate("Move right"),
+		"Signature attack": TranslationServer.translate("Signature attack"),
+		"Stomp": TranslationServer.translate("Stomp"),
+		"Leap": TranslationServer.translate("Leap"),
+		"Ultimate": TranslationServer.translate("Ultimate"),
+		"Pause": TranslationServer.translate("Pause"),
+		"Glide (insectoid, hold)": TranslationServer.translate("Glide (insectoid, hold)"),
+		"Fullscreen": TranslationServer.translate("Fullscreen"),
+		"Confirm": TranslationServer.translate("Confirm"),
+		"Back": TranslationServer.translate("Back"),
+		"WASD / arrows": TranslationServer.translate("WASD / arrows"),
+		"Left stick": TranslationServer.translate("Left stick"),
+		"Hold Space": TranslationServer.translate("Hold Space"),
+		"Hold A": TranslationServer.translate("Hold A"),
+		"Left click": TranslationServer.translate("Left click"),
+		"Right click": TranslationServer.translate("Right click"),
+		"Middle click": TranslationServer.translate("Middle click"),
+		"Mouse 4": TranslationServer.translate("Mouse 4"),
+		"Mouse 5": TranslationServer.translate("Mouse 5"),
+		"D-pad up": TranslationServer.translate("D-pad up"),
+		"D-pad down": TranslationServer.translate("D-pad down"),
+		"D-pad left": TranslationServer.translate("D-pad left"),
+		"D-pad right": TranslationServer.translate("D-pad right"),
+	}
+	return str(names.get(text, text))
 
 
 ## The keyboard and pad text of a Controls list row `entry` ([name, keyboard, pad, ...]) with the

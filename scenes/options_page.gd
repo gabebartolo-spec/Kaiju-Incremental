@@ -48,7 +48,7 @@ func _ready() -> void:
 	foot.add_theme_constant_override("separation", int(BUTTON_GAP))
 	for b: Button in _foot_buttons():
 		foot.add_child(b)
-	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
+	var back := UiKit.button(tr("BACK"), UiKit.SIZE_HEAD)
 	HazardBox.trim_height(back, BACK_MARGIN)
 	back.pressed.connect(close)
 	foot.add_child(back)
@@ -128,4 +128,4 @@ static func gap(node: Control, top: int) -> Control:
 
 
 static func cycle(value: String) -> String:
-	return "< %s >" % value
+	return "< %s >" % TranslationServer.translate(value)

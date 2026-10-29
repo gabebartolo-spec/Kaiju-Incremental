@@ -56,7 +56,7 @@ var previous_best: Dictionary
 ## Frames since the count began; counting is done once every row has landed.
 var frame := 0
 ## The confirm button's text once the count is done ("CONTINUE  >" before the demo's thanks).
-var go_label := "EVOLVE  >"
+var go_label := tr("EVOLVE  >")
 ## The headline across the top (read by the tests and captures).
 var title: Label
 var _values: Array[Label] = []
@@ -87,7 +87,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
 	panel.add_child(col)
-	var strip := UiKit.header(headline(str(result.get("reason", ""))))
+	var strip := UiKit.header(_text(headline(str(result.get("reason", "")))))
 	title = strip.get_child(0) as Label
 	col.add_child(strip)
 	_verdict = UiKit.label(verdict(), UiKit.SIZE_HEAD, UiKit.WARN)
@@ -95,7 +95,7 @@ func _ready() -> void:
 	_verdict.modulate.a = 0.0
 	col.add_child(_verdict)
 	_add_groups(col)
-	_go = UiKit.button("EVOLVE", UiKit.SIZE_HEAD)
+	_go = UiKit.button(tr("EVOLVE"), UiKit.SIZE_HEAD)
 	_go.custom_minimum_size = Vector2(0, 80)
 	_go.pressed.connect(_on_go)
 	col.add_child(_go)
@@ -119,7 +119,7 @@ static func headline(reason: String) -> String:
 func _add_groups(col: VBoxContainer) -> void:
 	var sections: Dictionary[String, VBoxContainer] = {}
 	for group: Array in GROUPS:
-		sections[str(group[0])] = _section(str(group[1]), Num.i(group[2]))
+		sections[str(group[0])] = _section(_text(str(group[1])), Num.i(group[2]))
 	col.add_child(sections["biomass"])
 	var pair := HBoxContainer.new()
 	pair.add_theme_constant_override("separation", COLUMN_GAP)
@@ -147,7 +147,7 @@ func _section(heading: String, per_line: int) -> VBoxContainer:
 
 
 func _add_row(grid: GridContainer, row: Array) -> void:
-	var name_label := UiKit.label(str(row[1]), UiKit.SIZE_BODY, UiKit.MUTED)
+	var name_label := UiKit.label(_text(str(row[1])), UiKit.SIZE_BODY, UiKit.MUTED)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_child(name_label)
 	var value := UiKit.label(_shown(row, 0.0), UiKit.SIZE_HEAD, UiKit.TEXT)
@@ -183,11 +183,13 @@ static func news(r: Dictionary) -> PackedStringArray:
 		if done.has(stat) or value < Num.f(entry["min"]):
 			continue
 		done[stat] = true
-		lines.append(str(entry["line"]).replace("{n}", str(floori(value))))
+		lines.append(
+			TranslationServer.translate(str(entry["line"])).replace("{n}", str(floori(value)))
+		)
 	var endings: Dictionary = Content.section("results")["endings"]
 	var ending: Dictionary = endings.get(str(r.get("reason", "")), {})
 	if ending.has("close"):
-		lines.append(str(ending["close"]))
+		lines.append(TranslationServer.translate(str(ending["close"])))
 	return lines
 
 
@@ -212,17 +214,18 @@ func skip() -> void:
 func verdict() -> String:
 	var rubble := Num.f(result.get("rubble", 0))
 	if previous_best.is_empty():
-		return "YOUR FIRST RAMPAGE"
+		return tr("YOUR FIRST RAMPAGE")
 	var best := Num.f(previous_best.get("rubble", 0.0))
 	if rubble > best:
 		if best <= 0.0:
-			return "BIGGER THAN EVER"
-		return "BIGGER THAN LAST TIME  +%d%% BIOMASS" % roundi(100.0 * (rubble - best) / best)
+			return tr("BIGGER THAN EVER")
+		var more := roundi(100.0 * (rubble - best) / best)
+		return tr("BIGGER THAN LAST TIME  +%d%% BIOMASS") % more
 	# A record on another row beside "short of your best" would read as a contradiction.
 	for row: Array in ROWS:
 		if str(row[0]) != VERDICT_STAT and is_new_best(str(row[0])):
-			return "%d SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS" % ceili(best - rubble)
-	return "%d BIOMASS SHORT OF YOUR BEST" % ceili(best - rubble)
+			return tr("%d SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS") % ceili(best - rubble)
+	return tr("%d BIOMASS SHORT OF YOUR BEST") % ceili(best - rubble)
 
 
 ## True when this rampage beat the best before it on `key` (never on a first rampage, never on
@@ -263,15 +266,15 @@ func _show_frame() -> void:
 		var record := landed and is_new_best(str(row[0]))
 		_values[n].add_theme_color_override("font_color", UiKit.GOOD if record else UiKit.TEXT)
 		_badges[n].modulate.a = 1.0 if landed else 0.0
-		if record and str(row[0]) != VERDICT_STAT and _badges[n].text != STAMP_TEXT:
+		if record and str(row[0]) != VERDICT_STAT and _badges[n].text != _text(STAMP_TEXT):
 			_stamp(_badges[n])
 	_verdict.modulate.a = 0.0 if counting() else 1.0
-	_go.text = "SKIP" if counting() else go_label
+	_go.text = tr("SKIP") if counting() else go_label
 
 
 ## Turns a row's best badge into the NEW RECORD stamp: alert red, boxed, tilted.
 func _stamp(badge: Label) -> void:
-	badge.text = STAMP_TEXT
+	badge.text = _text(STAMP_TEXT)
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.add_theme_color_override("font_color", UiKit.ALERT)
 	var box := UiKit.box(Color(0, 0, 0, 0), UiKit.ALERT, STAMP_BORDER)
@@ -288,10 +291,32 @@ func _shown(row: Array, value: float) -> String:
 		"pct":
 			return "%d%%" % floori(value * 100.0)
 		"storeys":
-			return "%d STOREYS" % floori(value) if floori(value) != 1 else "1 STOREY"
+			return tr("%d STOREYS") % floori(value) if floori(value) != 1 else tr("1 STOREY")
 		"combo":
 			return "x%.1f" % value
 	return "%d" % floori(value)
+
+
+## A ROWS label, a GROUPS heading, an ending's headline or the stamp in the player's language.
+func _text(english: String) -> String:
+	var names := {
+		"Biomass earned": tr("Biomass earned"),
+		"Best combo": tr("Best combo"),
+		"Towers toppled": tr("Towers toppled"),
+		"Tallest tower toppled": tr("Tallest tower toppled"),
+		"City destroyed": tr("City destroyed"),
+		"Landmarks felled": tr("Landmarks felled"),
+		"People eaten": tr("People eaten"),
+		"Tanks": tr("Tanks"),
+		"Helicopters": tr("Helicopters"),
+		"Agents": tr("Agents"),
+		"BIOMASS": tr("BIOMASS"),
+		"DESTRUCTION": tr("DESTRUCTION"),
+		"BODY COUNT": tr("BODY COUNT"),
+		"RAMPAGE REPORT": tr("RAMPAGE REPORT"),
+		"NEW RECORD": tr("NEW RECORD"),
+	}
+	return str(names.get(english, tr(english)))
 
 
 ## Every row shows the best before this rampage (none at all on a first rampage, none for a stat
@@ -301,4 +326,4 @@ func _best_text(row: Array) -> String:
 	var key := str(row[0])
 	if previous_best.is_empty() or key == VERDICT_STAT or not result.has(key):
 		return ""
-	return "best " + _shown(row, Num.f(previous_best.get(key, 0.0)))
+	return tr("best %s") % _shown(row, Num.f(previous_best.get(key, 0.0)))

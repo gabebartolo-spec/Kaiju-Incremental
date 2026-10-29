@@ -137,13 +137,29 @@ func rings_bottom() -> float:
 
 
 ## Biomass, one boxless outlined figure in the bottom right (b2-10).
+## A HEADLINES line in the player's language.
+func _beat(english: String) -> String:
+	var lines := {
+		"BROUGHT DOWN": tr("BROUGHT DOWN"),
+		"The army got you this time": tr("The army got you this time"),
+		"TIME UP": tr("TIME UP"),
+		"Your rage is spent": tr("Your rage is spent"),
+		"THE CITY HAS FALLEN": tr("THE CITY HAS FALLEN"),
+		"Nothing left standing": tr("Nothing left standing"),
+		"RAMPAGE ENDED": tr("RAMPAGE ENDED"),
+		"You called it off": tr("You called it off"),
+		"RAMPAGE OVER": tr("RAMPAGE OVER"),
+	}
+	return str(lines.get(english, english))
+
+
 func _build_biomass() -> Control:
 	var col := VBoxContainer.new()
 	col.size_flags_vertical = Control.SIZE_SHRINK_END
 	col.size_flags_horizontal = Control.SIZE_SHRINK_END
 	col.add_theme_constant_override("separation", 0)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var word := UiKit.label("BIOMASS", UiKit.SIZE_BODY, UiKit.TEXT)
+	var word := UiKit.label(tr("BIOMASS"), UiKit.SIZE_BODY, UiKit.TEXT)
 	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	col.add_child(word)
 	biomass = UiKit.label("0", Num.i(_hud["biomass_size"]), UiKit.ACCENT)
@@ -302,10 +318,10 @@ func show_end_beat(reason: String) -> void:
 	col.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	top.add_child(col)
 	var lines: Array = HEADLINES.get(reason, ["RAMPAGE OVER", ""])
-	headline = UiKit.label(str(lines[0]), BEAT_SIZE, UiKit.ACCENT)
+	headline = UiKit.label(_beat(str(lines[0])), BEAT_SIZE, UiKit.ACCENT)
 	headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(headline)
-	var sub := UiKit.label(str(lines[1]), UiKit.SIZE_HEAD, UiKit.TEXT)
+	var sub := UiKit.label(_beat(str(lines[1])), UiKit.SIZE_HEAD, UiKit.TEXT)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(sub)
 	headline.pivot_offset = headline.get_combined_minimum_size() * 0.5

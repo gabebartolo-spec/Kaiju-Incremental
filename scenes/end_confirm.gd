@@ -24,18 +24,18 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 16)
 	panel.add_child(col)
-	var title := UiKit.label(str(cfg["end_title"]), UiKit.SIZE_HEAD, UiKit.ACCENT)
+	var title := UiKit.label(tr(str(cfg["end_title"])), UiKit.SIZE_HEAD, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(title)
-	var line := UiKit.label(str(cfg["end_line"]), UiKit.SIZE_BODY, UiKit.MUTED)
+	var line := UiKit.label(tr(str(cfg["end_line"])), UiKit.SIZE_BODY, UiKit.MUTED)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(line)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_child(row)
-	keep = _button(row, str(cfg["end_keep"]), UiKit.ACCENT, _close)
-	yes = _button(row, str(cfg["end_yes"]), UiKit.PANEL_EDGE, confirmed.emit)
+	keep = _button(row, tr(str(cfg["end_keep"])), UiKit.ACCENT, _close)
+	yes = _button(row, tr(str(cfg["end_yes"])), UiKit.PANEL_EDGE, confirmed.emit)
 	keep.grab_focus.call_deferred()
 
 

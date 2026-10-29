@@ -152,16 +152,32 @@ func _build_hint() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)
 	hint.add_child(col)
-	col.add_child(UiKit.header("PHOTO MODE", UiKit.SIZE_HEAD))
+	col.add_child(UiKit.header(tr("PHOTO MODE"), UiKit.SIZE_HEAD))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 28)
 	grid.add_theme_constant_override("v_separation", 4)
 	col.add_child(grid)
 	for row: Array in hint_rows():
-		grid.add_child(UiKit.label(str(row[0]), UiKit.SIZE_BODY, UiKit.TEXT))
-		grid.add_child(UiKit.label(str(row[1]), UiKit.SIZE_BODY, UiKit.MUTED))
-		grid.add_child(UiKit.label(str(row[2]), UiKit.SIZE_BODY, UiKit.MUTED))
+		grid.add_child(UiKit.label(_shown(str(row[0])), UiKit.SIZE_BODY, UiKit.TEXT))
+		grid.add_child(UiKit.label(_shown(str(row[1])), UiKit.SIZE_BODY, UiKit.MUTED))
+		grid.add_child(UiKit.label(_shown(str(row[2])), UiKit.SIZE_BODY, UiKit.MUTED))
+
+
+## A hint row's text in the player's language: HINT_ROWS's own words, else KeyBinds's names.
+func _shown(text: String) -> String:
+	match text:
+		"Look":
+			return tr("Look")
+		"Drag mouse":
+			return tr("Drag mouse")
+		"Right stick":
+			return tr("Right stick")
+		"Up / down":
+			return tr("Up / down")
+		"Hide this":
+			return tr("Hide this")
+	return KeyBinds.shown(text)
 
 
 ## The card's rows: the Controls list's Move row with the player's keys, then HINT_ROWS.

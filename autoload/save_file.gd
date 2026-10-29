@@ -158,7 +158,7 @@ static func fresh_seed() -> int:
 
 ## The specimen's name, e.g. "SPECIMEN K-01" (the number goes up when the kaiju dies).
 static func specimen_name(save: Dictionary) -> String:
-	return "SPECIMEN K-%02d" % Num.i(save.get("specimen", 1))
+	return TranslationServer.translate("SPECIMEN K-%02d") % Num.i(save.get("specimen", 1))
 
 
 ## After a rampage `result`: every death (DEATHS, Endless too) makes the next rise a new

@@ -190,14 +190,25 @@ func _add_sky() -> void:
 func _add_broadcast_frame() -> void:
 	var news := Content.section("news")
 	var title_lines: Array = news.get("title", [])
-	var lines := PackedStringArray(title_lines)
+	var lines := PackedStringArray()
+	for line: Variant in title_lines:
+		lines.append(tr(str(line)))
 	if summary != "":
-		var who := summary.get_slice(",", 0).to_upper()
-		lines.insert(0, str(news.get("at_large", "")).replace("{species}", who))
+		var who := _latest_species().to_upper()
+		lines.insert(0, tr(str(news.get("at_large", ""))).replace("{species}", who))
 	_crawl = NewsTicker.new(lines)
 	_crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	_crawl.offset_top = -NewsTicker.HEIGHT
 	add_child(_crawl)
+
+
+## The species of the slot played last, in the player's language (the summary's first part
+## when the slots don't say).
+func _latest_species() -> String:
+	for info: Dictionary in slots:
+		if Num.i(info.get("slot", 0)) == latest_slot and str(info.get("species", "")) != "":
+			return tr(str(info["species"]))
+	return summary.get_slice(",", 0)
 
 
 func _show_main() -> void:
@@ -207,15 +218,15 @@ func _show_main() -> void:
 	row.add_theme_constant_override("separation", ROW_GAP)
 	_buttons.add_child(row)
 	if summary != "":
-		var label := "CONTINUE GAME\n%s" % summary.to_upper()
+		var label := tr("CONTINUE GAME\n%s") % summary.to_upper()
 		var cont := _add(label, UiKit.ACCENT, show_slots.bind(SlotList.Mode.CONTINUE), row)
 		cont.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cont.size_flags_stretch_ratio = CONTINUE_SHARE
-		new_button = _add("NEW KAIJU?", UiKit.PANEL_EDGE, _on_new, row)
+		new_button = _add(tr("NEW KAIJU?"), UiKit.PANEL_EDGE, _on_new, row)
 		new_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_wire_focus(cont, new_button)
 	else:
-		new_button = _add("NEW KAIJU", UiKit.ACCENT, _on_new, row)
+		new_button = _add(tr("NEW KAIJU"), UiKit.ACCENT, _on_new, row)
 		new_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		new_button.custom_minimum_size = Vector2(
 			_buttons.custom_minimum_size.x * ALONE_SHARE, ALONE_HEIGHT
@@ -255,7 +266,7 @@ func _add_corner_buttons() -> void:
 	add_child(_corners)
 	_gear = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE, false)
 	_gear.name = "Gear"
-	_gear.tooltip_text = "SETTINGS"
+	_gear.tooltip_text = tr("SETTINGS")
 	_gear.custom_minimum_size = Vector2(GEAR_SIZE, GEAR_SIZE)
 	_gear.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	_gear.offset_left = GEAR_CORNER
@@ -272,7 +283,7 @@ func _add_corner_buttons() -> void:
 	_gear.add_child(icon)
 	_gear.pressed.connect(_open_settings)
 	_corners.add_child(_gear)
-	_exit = UiKit.button(EXIT_TEXT, UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	_exit = UiKit.button(tr(EXIT_TEXT), UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	_exit.name = "Exit"
 	_exit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_exit.grow_horizontal = Control.GROW_DIRECTION_BEGIN

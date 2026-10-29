@@ -41,7 +41,7 @@ var _name := ""
 func _init(p_id: String, p_role: String, p_name: String) -> void:
 	id = p_id
 	role = p_role
-	_name = p_name
+	_name = TranslationServer.translate(p_name)
 	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
@@ -90,7 +90,9 @@ func _show_text(tree: UpgradeTree, rubble: int) -> void:
 		text = SHAPE_TEXT
 		return
 	var price := short_price(tree.cost(id))
-	var status: String = {"maxed": "MAXED", "locked": "", "buy": "BUY " + price, "poor": price}[state]
+	var status: String = {
+		"maxed": tr("MAXED"), "locked": "", "buy": tr("BUY %s") % price, "poor": price
+	}[state]
 	var tag := "\n[E / Y]" if role == "ultimate" else ""
 	text = "%s\n%d/%d %s%s" % [_name, tree.level(id), tree.max_level(id), status, tag]
 

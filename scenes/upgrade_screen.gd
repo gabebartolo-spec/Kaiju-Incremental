@@ -82,12 +82,12 @@ func _add_header(col: Control) -> void:
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 24)
 	col.add_child(header)
-	var title := UiKit.label("EVOLUTION TREE", 48, UiKit.ACCENT)
+	var title := UiKit.label(tr("EVOLUTION TREE"), 48, UiKit.ACCENT)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	_rubble_label = UiKit.label("", UiKit.SIZE_HEAD, UiKit.WARN)
 	header.add_child(_rubble_label)
-	var menu := UiKit.button("MENU", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	var menu := UiKit.button(tr("MENU"), UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	menu.pressed.connect(func() -> void: menu_pressed.emit())
 	header.add_child(menu)
 
@@ -125,7 +125,7 @@ func _build_side() -> Control:
 	_info_status = UiKit.label("", UiKit.SIZE_BODY, UiKit.TEXT)
 	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_status)
-	var go := UiKit.button("RAMPAGE  >", UiKit.SIZE_HEAD)
+	var go := UiKit.button(tr("RAMPAGE  >"), UiKit.SIZE_HEAD)
 	go.custom_minimum_size = Vector2(0, 80)
 	go.pressed.connect(func() -> void: start_pressed.emit())
 	side.add_child(go)
@@ -138,7 +138,7 @@ func _build_side() -> Control:
 func _add_endless(side: Control) -> void:
 	if not endless_unlocked:
 		return
-	var endless := UiKit.button("ENDLESS MODE", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	var endless := UiKit.button(tr("ENDLESS MODE"), UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	endless.custom_minimum_size = Vector2(0, 64)
 	endless.pressed.connect(func() -> void: endless_pressed.emit())
 	side.add_child(endless)
@@ -190,26 +190,31 @@ func _select(id: String) -> void:
 		_show_shape()
 		return
 	var def: Dictionary = tree.defs[id]
-	_info_title.text = str(def["name"])
+	_info_title.text = tr(str(def["name"]))
 	var role := role_of(id)
 	_info_role.text = {
 		"plain": "",
 		"branch": "",
-		"evolve": "EVOLUTION",
-		"ultimate": "ULTIMATE",
+		"evolve": tr("EVOLUTION"),
+		"ultimate": tr("ULTIMATE"),
 	}[role]
 	_info_body.clear()
-	_info_body.append_text(UpgradeTree.desc_for(def, str(species["id"])))
+	_info_body.append_text(tr(UpgradeTree.desc_for(def, str(species["id"]))))
 	var stats := UpgradeTree.run_stats(base_stats, species, tree)
 	var steps := 0 if tree.is_maxed(id) else 1
 	if role == "evolve" and steps > 0:
 		var stage := KaijuModel.stage_for(Num.i(stats.get("size", 1)) + 1)
-		_info_body.append_text("\nGrows into the %s." % stage)
+		_info_body.append_text("\n" + _grows_into(stage))
 		# No-break spaces keep "fall to you." together when the line wraps (no orphan "you").
-		_info_body.append_text("\nTowers one tier taller now fall%sto%syou." % [NBSP, NBSP])
+		_info_body.append_text(
+			"\n" + tr("Towers one tier taller now fall%sto%syou.") % [NBSP, NBSP]
+		)
 	if role == "ultimate":
 		_info_body.append_text(
-			"\nPress E / pad Y in a rampage; recharges in %ds." % roundi(_ultimate_cooldown)
+			(
+				"\n"
+				+ tr("Press E / pad Y in a rampage; recharges in %ds.") % roundi(_ultimate_cooldown)
+			)
 		)
 	_show_stats(UpgradeTree.effects_for(def, str(species["id"])), stats, steps)
 	_info_status.text = _status_line(id)
@@ -229,10 +234,19 @@ func _show_shape() -> void:
 	_info_status.text = ""
 
 
+func _grows_into(stage: String) -> String:
+	match stage:
+		"baby":
+			return tr("Grows into the baby.")
+		"adolescent":
+			return tr("Grows into the adolescent.")
+	return tr("Grows into the adult.")
+
+
 func _status_line(id: String) -> String:
-	var head := "Level %d / %d   " % [tree.level(id), tree.max_level(id)]
+	var head := tr("Level %d / %d") % [tree.level(id), tree.max_level(id)] + "   "
 	if tree.is_maxed(id):
-		return head + "MAXED"
+		return head + tr("MAXED")
 	if not tree.is_unlocked(id):
 		var def: Dictionary = tree.defs[id]
 		var names: Array[String] = []
@@ -240,15 +254,17 @@ func _status_line(id: String) -> String:
 		for req: String in requires:
 			if tree.level(req) < 1:
 				var req_def: Dictionary = tree.defs[req]
-				names.append(str(req_def["name"]))
+				names.append(tr(str(req_def["name"])))
 		# Owned from an older save in a ring that is not open yet: nothing named to buy first.
-		return head + ("Needs: " + ", ".join(names) if not names.is_empty() else "Not yet")
+		if names.is_empty():
+			return head + tr("Not yet")
+		return head + tr("Needs: %s") % ", ".join(names)
 	# Three short lines, so no wrap ever leaves a dash or a lone word at a line end.
 	var nl := String.chr(10)
-	var have := ("Cost %d" + nl + "You have %d biomass" + nl) % [tree.cost(id), rubble]
+	var have := (tr("Cost %d") + nl + tr("You have %d biomass") + nl) % [tree.cost(id), rubble]
 	if tree.can_buy(id, rubble):
-		return head + have + "Enter / pad A to buy"
-	return head + have + "%d more needed" % (tree.cost(id) - rubble)
+		return head + have + tr("Enter / pad A to buy")
+	return head + have + tr("%d more needed") % (tree.cost(id) - rubble)
 
 
 ## Only the stats this node changes, each in plain words from data (D-077): the words, then
@@ -263,7 +279,9 @@ func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
 		if entry.get("hidden", false):
 			continue
 		var now := Num.f(stats.get(stat, 0.0))
-		var line := UiKit.label(str(entry.get("line", stat)) + ":", UiKit.SIZE_BODY, UiKit.MUTED)
+		var line := UiKit.label(
+			tr("%s:") % tr(str(entry.get("line", stat))), UiKit.SIZE_BODY, UiKit.MUTED
+		)
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_info_stats.add_child(line)
 		# The values under the words; the "now" column is one fixed width, so arrows line up.
@@ -287,7 +305,7 @@ func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
 ## A stat's value as its data line formats it ("inv" shows 1 / value, a rate), with its unit.
 func _fmt(entry: Dictionary, value: float, with_unit: bool) -> String:
 	var fmt := str(entry.get("fmt", "%.1f"))
-	var unit := str(entry.get("unit", "")) if with_unit else ""
+	var unit := tr(str(entry.get("unit", ""))) if with_unit else ""
 	if fmt == "inv":
 		return ("%.1f" % (1.0 / maxf(0.1, value))) + unit
 	if fmt.contains("%d"):
@@ -296,7 +314,7 @@ func _fmt(entry: Dictionary, value: float, with_unit: bool) -> String:
 
 
 func _refresh() -> void:
-	_rubble_label.text = "BIOMASS  %d" % rubble
+	_rubble_label.text = tr("BIOMASS  %d") % rubble
 	for id: String in tree.order:
 		node_button(id).show_state(tree, rubble)
 	_area.queue_redraw()
