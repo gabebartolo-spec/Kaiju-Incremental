@@ -1,6 +1,8 @@
 class_name DiagonalParking
 extends RefCounted
-## Cars parked along both kerbs of the diagonal avenue inside the playable city, turned to it
+## Cars parked along both kerbs of the diagonal avenue, turned to it, as far as grid parking
+## reaches (the arena and what the camera shows past its edge, city.view_beyond: a sliver there
+## is bare without them, map_seed 98765 stage 2)
 ## (D-062: no empty ground; a sliver of block wholly inside the diagonal carries no pavement and
 ## no walkers, so its parked row is what there is to smash). They are Traffic's cars, drawn
 ## turned to the avenue and parked for good, flattened by a stomp or a tank like any other.
@@ -19,12 +21,12 @@ static func park(traffic: Traffic, sim: RampageSim) -> void:
 	var cfg := sim.city
 	var plan := CityGen.map(cfg)
 	var water := CityRiver.channels(plan, cfg)
-	var half := CityGen.half_extent(cfg)
+	var reach_to := sim.arena_half + Num.f(cfg["view_beyond"])  # as CityDecor's parked cars
 	var props := _props_near(traffic)
 	var reach := Num.f(cfg["street_tree_car_clear"])
 	var fits := func(p: Vector2, dir: Vector2) -> bool:
 		return (
-			maxf(absf(p.x), absf(p.y)) <= half
+			maxf(absf(p.x), absf(p.y)) <= reach_to
 			and _clear(plan, p, water)
 			and _off_props(props, p, dir, reach)
 		)
