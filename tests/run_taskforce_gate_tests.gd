@@ -101,6 +101,7 @@ func _check_ice_walk() -> void:
 	for iced: bool in [false, true]:
 		var sim := _adolescent()
 		_open(sim)
+		_street_start(sim)
 		var way := _face_free_way(sim)
 		if iced:
 			sim.army_units.taskforce.frost.frost_left = 4.0
@@ -217,6 +218,7 @@ func _check_squad_dash() -> void:
 	for dashes: bool in [true, false]:
 		var sim := _adolescent()
 		sim.time_left = 1.0e9
+		_street_start(sim, true)
 		var way := _face_free_way(sim)
 		sim.army_units.taskforce.squad_sizes.append(4)
 		for _n: int in 4:

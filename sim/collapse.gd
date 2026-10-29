@@ -10,7 +10,7 @@ var sim: RampageSim
 var toppled := 0
 var tallest_topple := 0
 var _toppled_ids: Dictionary = {}
-## b2-5 (D-386): the odds a topple goes toward its cut side, to either side of it, or away from
+## b2-5 (D-387): the odds a topple goes toward its cut side, to either side of it, or away from
 ## it (tuning destruction.fall_dirs), drawn from the run's own stream so a replay matches.
 var _odds := PackedFloat32Array([1.0, 0.0, 0.0, 0.0])
 var _rng: RandomNumberGenerator
@@ -103,7 +103,7 @@ func _aim_topple(f: RampageSim.Fall, b: RampageSim.Building, part: Dictionary, l
 	var pivot: Vector3 = part["pivot"]
 	# D-099: its cut side is the side that was cut away (the support rule's dir). A gutted drop
 	# has no rule dir: its whole base went, and the chew came from the kaiju's side. b2-5
-	# (D-386): a landmark falls to its cut side; any other part draws cut, side or away.
+	# (D-387): a landmark falls to its cut side; any other part draws cut, side or away.
 	var cut := dir
 	var carved := part.has("index")
 	var base: Rect2 = part["base"] if carved else _base(f.cells, roundi(low))
@@ -175,7 +175,7 @@ static func _base(cells: Array[Vector3i], lowest: int) -> Rect2:
 	return Rect2(lo, hi - lo)
 
 
-## b2-5 (D-386): a topple's direction drawn from `cut` by the odds: cut, its left, its right or
+## b2-5 (D-387): a topple's direction drawn from `cut` by the odds: cut, its left, its right or
 ## away (one draw per topple, in the order the sim starts them).
 func _vary(cut: Vector2i) -> Vector2i:
 	var roll := _rng.randf()
@@ -286,6 +286,15 @@ func _width_across(b: RampageSim.Building, cells: Array[Vector3i], across: Vecto
 	return hi - lo + 1.0
 
 
+## The buildings that may reach the strip, in index order (BuildingGrid, D-254: never the whole
+## city).
+func _near_strip(start: Vector2, finish: Vector2, half_width: float) -> PackedInt32Array:
+	var reach := Vector2.ONE * (half_width + sim.grid.pad)
+	var lo := Vector2(minf(start.x, finish.x), minf(start.y, finish.y)) - reach
+	var hi := Vector2(maxf(start.x, finish.x), maxf(start.y, finish.y)) + reach
+	return sim.grid.in_rect(lo, hi)
+
+
 ## Everything inside the strip a toppled tower lands on is smashed: chunks of other buildings
 ## up to a few floors high, and tanks.
 func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) -> void:
@@ -297,7 +306,7 @@ func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) 
 		var t := rel.dot(along)
 		var side := absf(rel.dot(Vector2(-along.y, along.x)))
 		return t >= -r and t <= length + r and side <= half_width + r
-	for i: int in sim.buildings.size():
+	for i: int in _near_strip(start, finish, half_width):
 		if i == own:
 			continue
 		var b := sim.buildings[i]

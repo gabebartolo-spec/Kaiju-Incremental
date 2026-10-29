@@ -12,6 +12,7 @@
 #   tools/plan_ci_shards.sh            # print the plan
 #   tools/plan_ci_shards.sh --matrix   # the GitHub matrix as JSON (tests.yml plan job)
 #   tools/plan_ci_shards.sh --slow     # the "pr_skip" suites (a split one as its parts): pushes to main only
+#   ONLY="sim city" tools/plan_ci_shards.sh --matrix   # only these (a pull request's re-push, tools/ci_select_suites.py)
 #
 # Re-measure at least weekly and after adding a slow suite, from the shard logs of real CI runs:
 #   python tools/ci_retime.py
@@ -64,7 +65,13 @@ done
 for named in $(awk '$1 == "split" {print $2}' "$TIMINGS" 2> /dev/null); do
 	if [ ! -e "tests/run_${named}_tests.gd" ]; then echo "ERROR: split $named: no tests/run_${named}_tests.gd" >&2; exit 1; fi
 done
-if [ -z "$rows" ]; then
+if [ -n "${ONLY:-}" ] && [ "$ONLY" != ALL ]; then
+	# ONLY: the suites a pull request's re-push runs (tools/ci_select_suites.py), a split one as its parts.
+	rows=$(printf '%s' "$rows" | awk -v only=" $ONLY " 'index(only, " " $1 " ")')$'
+'
+fi
+if [ -z "${rows//$'
+'/}" ]; then
 	echo "ERROR: no tests/run_*_tests.gd suites" >&2
 	exit 1
 fi

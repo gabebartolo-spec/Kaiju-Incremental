@@ -187,7 +187,7 @@ func _check_gutted_topple(log: Array[Dictionary]) -> void:
 
 
 ## D-099 (director 2026-10-20, "towers fall by real physics, toward the cut-away side, even onto
-## the kaiju") with b2-5 (D-386): every topple falls along one of the four level directions,
+## the kaiju") with b2-5 (D-387): every topple falls along one of the four level directions,
 ## its cut side (cut_dir; a gutted drop's is toward the kaiju whose chew cut it), either side
 ## of that, or away; the seeded mix sends some off their cut side. And seeded topples fall onto
 ## the kaiju as well as away from it.

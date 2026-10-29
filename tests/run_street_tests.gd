@@ -12,7 +12,7 @@ const FRAMES := 600
 const BUFFER_FRAMES := 300
 const STRIDE := 12  # floats of a 3D transform in a MultiMesh buffer
 ## Frames of the native walk check: long enough for officers to hold, flee and leave.
-const WALK_FRAMES := 1500
+const WALK_FRAMES := 1800
 
 
 func suite_name() -> String:
@@ -153,6 +153,7 @@ func _check_buffers_byte_equal() -> void:
 		return
 	var on := Replay.new(self, 1, "high", true)
 	var off := Replay.new(self, 1, "high", false)
+	off.step_everyone()
 	var wrong := 0
 	var first := ""
 	for f: int in BUFFER_FRAMES:
@@ -250,14 +251,15 @@ func _check_people_bounds() -> void:
 ## With the extension the civilians walk natively (KaijuWalk, item 7), and every frame the street
 ## is the GDScript loop's: people, random streams and totals, through stomps, braces, a blockade
 ## and officers that run far enough to leave. The replay's straight line never reaches a
-## blockade, so the kaiju turns toward the first officer's post (measured: the blockade breaks at
-## frame ~480 and the first officer leaves at ~1085 of WALK_FRAMES).
+## blockade, so the kaiju turns toward the first officer's post (measured on the 1.5x city with
+## the sea bay: the first officer is out at frame 353 and the first leaves at 1598 of WALK_FRAMES).
 func _check_walk_native() -> void:
 	if not StreetDraw.available():
 		check(true, "skipped: no native library")
 		return
 	var on := Replay.new(self, 1, "high", true)
 	var off := Replay.new(self, 1, "high", false)
+	off.step_everyone()
 	check(on.street._walker != null, "the extension walks the street (KaijuWalk is registered)")
 	var differ := -1
 	var seen := {}

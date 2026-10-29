@@ -13,7 +13,7 @@ static func next_cold(
 	var reach := maxf(2.0 * sim.stomp_radius(), sim.ability_reach()) + margin
 	var best := -1
 	var best_d := INF
-	for n: int in buildings.size():
+	for n: int in sim.grid.around(sim.kaiju_pos, reach + 2.0 * sim.grid.pad):
 		if carving.promoted(n) or not carving.takes(n):
 			continue
 		var b := buildings[n]
