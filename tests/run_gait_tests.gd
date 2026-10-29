@@ -22,13 +22,14 @@ const MAX_HAND_OVER := 3.0
 const OFF_AXIS := 0.2
 const MAX_SLIDE := 1.0
 ## The young croc after each leg of its route, as the base gave it (x, z, heading degrees), and how
-## far it may differ (units, degrees): none to speak of, the sim is seeded.
+## far it may differ (units, degrees): none to speak of, the sim is seeded. Re-measured at the young
+## speed 0.5 (director 2026-10-29: "keep 0.5"; the base's 0.6 ended leg 1 at z 20.2967).
 const YOUNG_TOL := 0.001
 const YOUNG_LEGS: Array[Vector3] = [
-	Vector3(0.0, 20.2967, 0.0),
-	Vector3(1.1186, 27.0072, 180.0),
-	Vector3(-4.4536, 28.1186, -90.0),
-	Vector3(-3.1870, 23.2611, 30.001),
+	Vector3(0.0, 21.9139, 0.0),
+	Vector3(0.9321, 27.5060, 180.0),
+	Vector3(-3.7113, 28.4322, -90.0),
+	Vector3(-2.6559, 24.3843, 30.001),
 ]
 
 

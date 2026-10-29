@@ -33,7 +33,11 @@ const MIN_PARKED_IN_RANGE := 20
 ## Re-probed for road geometry (#243: bigger blocks), seeds 0-23: tank-steps in range 2 (3),
 ## 5 (3), 6 (17), 15 (17), 22 (5), all in the band, none elsewhere; seeds 2, 6, 15 and 22 give
 ## 42 against the bar of 20.
-const RAMPAGE_SEEDS: Array[int] = [2, 6, 15, 22]
+## Re-probed when the young croc slowed (speed_mult 0.5, director 2026-10-29) and the baby's
+## stomp point moved with his new rig, seeds 0-23, all tiers: tank-steps in range 1 (24), 5 (116),
+## 6 (10), 8 (25), 10 (28), 13 (3), 14 (3), none elsewhere; seeds 1, 5, 8 and 10 give 193 against
+## the bar of 20 (77 without seed 5).
+const RAMPAGE_SEEDS: Array[int] = [1, 5, 8, 10]
 
 
 func suite_name() -> String:
