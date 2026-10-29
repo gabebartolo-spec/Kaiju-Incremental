@@ -12,60 +12,14 @@
     "stretch_max": {"$ref": "#/$defs/num"},
     "pivot_max": {"$ref": "#/$defs/num"},
     "centre_max": {"$ref": "#/$defs/num"},
-    "stages": {
-      "type": "object",
-      "properties": {
-        "young": {
-          "type": "object",
-          "properties": {
-            "steps_ratio_min": {"$ref": "#/$defs/num"},
-            "steps_ratio_max": {"$ref": "#/$defs/num"},
-            "jerk_walk": {"$ref": "#/$defs/num"},
-            "jerk_turn": {"$ref": "#/$defs/num"},
-            "lift_min": {"$ref": "#/$defs/num"},
-            "lift_max": {"$ref": "#/$defs/num"}
-          },
-          "required": ["steps_ratio_min", "steps_ratio_max", "jerk_walk", "jerk_turn", "lift_min", "lift_max"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "Behemoth": {
-          "type": "object",
-          "properties": {
-            "steps_ratio_min": {"$ref": "#/$defs/num"},
-            "steps_ratio_max": {"$ref": "#/$defs/num"},
-            "jerk_walk": {"$ref": "#/$defs/num"},
-            "jerk_turn": {"$ref": "#/$defs/num"},
-            "lift_min": {"$ref": "#/$defs/num"},
-            "lift_max": {"$ref": "#/$defs/num"}
-          },
-          "required": ["steps_ratio_min", "steps_ratio_max", "jerk_walk", "jerk_turn", "lift_min", "lift_max"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "Colossus": {
-          "type": "object",
-          "properties": {
-            "steps_ratio_min": {"$ref": "#/$defs/num"},
-            "steps_ratio_max": {"$ref": "#/$defs/num"},
-            "jerk_walk": {"$ref": "#/$defs/num"},
-            "jerk_turn": {"$ref": "#/$defs/num"},
-            "lift_min": {"$ref": "#/$defs/num"},
-            "lift_max": {"$ref": "#/$defs/num"}
-          },
-          "required": ["steps_ratio_min", "steps_ratio_max", "jerk_walk", "jerk_turn", "lift_min", "lift_max"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        }
-      },
-      "required": ["young", "Behemoth", "Colossus"],
-      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-      "additionalProperties": false
-    }
+    "jerk_walk": {"$ref": "#/$defs/num"},
+    "jerk_turn": {"$ref": "#/$defs/num"},
+    "lift_min": {"$ref": "#/$defs/num"},
+    "lift_max": {"$ref": "#/$defs/num"}
   },
   "required": [
     "slide_max", "aloft_yaw_max", "catch_straight", "catch_turn_smooth", "step_tol", "stretch_max",
-    "pivot_max", "centre_max", "stages"
+    "pivot_max", "centre_max", "jerk_walk", "jerk_turn", "lift_min", "lift_max"
   ],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,

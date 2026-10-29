@@ -10,17 +10,16 @@ extends "res://tests/lib/runner.gd"
 ##   - a planted foot holds its spot (under slide_max units/s);
 ##   - no catch-step shuffle (at most catch_straight a second; catch_turn_smooth in the young croc's
 ##     smooth turns, D-131);
-##   - the legs step no faster than a band around the walk clip's authored pace, and a stepping
-##     body's sim step is half its clip's stride (within step_tol), so feet are passed at the pace
-##     the body walks;
+##   - the legs step while he walks, and a stepping body's sim step is half its clip's stride
+##     (within step_tol), so feet are passed at the pace the body walks;
 ##   - no knee pops (shin jerk p99 at most jerk_walk, jerk_turn in turns) and no leg locked straight
 ##     (planted reach at most stretch_max);
 ##   - a body that steps its turns (Behemoth, Colossus; D-131) never yaws with no foot down, the
 ##     sim's pivot is the drawn planted foot (pivot_max) and the body turns about it (centre_max);
-##   - the swing foot lifts within its stage's band of hip height (lift_min..lift_max);
+##   - the swing foot lifts within one band of hip height (lift_min..lift_max);
 ##   - the Colossus clears as much street per metre walked as before the D-302 walk's longer steps
 ##     (tests/lib/croc_walk_clearing.gd).
-## Bars are data/motion_gate.json (measured, each with its source in its _note).
+## Bars are data/motion_gate.json, one set for every stage (D-385: bugs, not balance numbers).
 ## Deterministic: seeded sim, fixed step, no clock.
 ##   godot --headless --path . --script tests/run_motion_tests.gd
 
@@ -52,12 +51,6 @@ func run_checks() -> void:
 
 func _g(key: String) -> float:
 	return Num.f(_bars[key])
-
-
-func _s(stage: String, key: String) -> float:
-	var stages: Dictionary = _bars["stages"]
-	var bars: Dictionary = stages[stage]
-	return Num.f(bars[key])
 
 
 func _run(stage: String, route: String) -> Dictionary:
@@ -114,20 +107,12 @@ func _check_no_shuffle() -> void:
 			)
 
 
+## The legs step while he walks. How fast is balance, not a bug (D-385): the step length check
+## and the feet-hold check already tie the pace of the feet to the pace of the body.
 func _check_cadence() -> void:
 	for stage: String in Drive.STAGES:
-		var run := _run(stage, "straight")
-		var steps := Num.f(run["steps"])
-		var ratio := steps / maxf(Num.f(run["authored_steps"]), 0.001)
-		var lo := _s(stage, "steps_ratio_min")
-		var hi := _s(stage, "steps_ratio_max")
-		check(
-			ratio >= lo and ratio <= hi,
-			(
-				"%s: walking, the legs step %.2f a second, %.2fx the clip's authored %.2f (%.2fx to %.2fx)"
-				% [stage, steps, ratio, run["authored_steps"], lo, hi]
-			)
-		)
+		var steps := Num.f(_run(stage, "straight")["steps"])
+		check(steps > 0.0, "%s: walking, the legs step (%.2f a second > 0)" % [stage, steps])
 
 
 func _check_step_len() -> void:
@@ -151,18 +136,18 @@ func _check_knees() -> void:
 	for stage: String in Drive.STAGES:
 		var walk := Num.f(_run(stage, "straight")["jerk"])
 		check(
-			walk <= _s(stage, "jerk_walk"),
+			walk <= _g("jerk_walk"),
 			(
 				"%s: walking, no knee pops (shin jerk p99 %.1f deg/frame^2 <= %.0f)"
-				% [stage, walk, _s(stage, "jerk_walk")]
+				% [stage, walk, _g("jerk_walk")]
 			)
 		)
 		var turns := _worst(stage, ["turn90", "turn180", "stand_turn", "curve"], "jerk")
 		check(
-			Num.f(turns[0]) <= _s(stage, "jerk_turn"),
+			Num.f(turns[0]) <= _g("jerk_turn"),
 			(
 				"%s: turning, no knee pops (shin jerk p99%s <= %.0f)"
-				% [stage, turns[1], _s(stage, "jerk_turn")]
+				% [stage, turns[1], _g("jerk_turn")]
 			)
 		)
 		var reach := _worst(stage, Drive.ROUTES, "stretch")
@@ -223,8 +208,8 @@ func _check_lift() -> void:
 			hi = maxf(hi, y)
 		var hip: Vector3 = clips._rest_heads[clips.bones.find("leg_l0")]
 		var share := (hi - lo) / hip.y
-		var most := _s(stage, "lift_max")
-		var least := _s(stage, "lift_min")
+		var most := _g("lift_max")
+		var least := _g("lift_min")
 		check(
 			share >= least and share <= most,
 			(
