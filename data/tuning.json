@@ -187,13 +187,13 @@
 		"slots": 3
 	},
 	"demo": {
-		"_note": "D-050/D-145/D-152/D-156. The thanks screen appears when the final upgrade is bought (every node of the species' tree owned, Demo.complete). feedback_url is the invite-only Itch page's comments (D-148): PLACEHOLDER until the page exists. military_keys are the result counters that count as military destroyed. endless: the Endless mode the final upgrade unlocks (Endless): its own rows, never read by normal mode (balance is decided by normal mode). start_share and share_per_second: the extra escalation as a share of the city chunk total (at the start, and gained a second), with no cap so the army keeps worsening; max_tanks alive at once; regrow_interval seconds between regrowth passes, regrow_share_per_minute of the flattened buildings regrown a minute (about 5%, PLACEHOLDER for the director to judge at M3); regrow_clear units the kaiju must be away.",
+		"_note": "D-050/D-145/D-152/D-156. The thanks screen appears when the final upgrade is bought (every node of the species' tree owned, Demo.complete). feedback_url is the invite-only Itch page (D-148). military_keys are the result counters that count as military destroyed. endless: the Endless mode the final upgrade unlocks (Endless): its own rows, never read by normal mode (balance is decided by normal mode). start_share and share_per_second: the extra escalation as a share of the city chunk total (at the start, and gained a second), with no cap so the army keeps worsening; max_tanks alive at once; regrow_interval seconds between regrowth passes, regrow_share_per_minute of the flattened buildings regrown a minute (about 5%, PLACEHOLDER for the director to judge at M3); regrow_clear units the kaiju must be away.",
 		"enabled": true,
 		"species": ["reptilian"],
 		"thanks_size": 3,
 		"end_title": "THANKS FOR PLAYING",
 		"end_line": "Nothing is left to evolve",
-		"feedback_url": "https://PLACEHOLDER.itch.io/kaiju-evolution",
+		"feedback_url": "https://veniceissinking.itch.io/kaiju",
 		"military_keys": ["tanks", "helis", "rooftops", "agents"],
 		"endless": {
 			"start_share": 0.25,

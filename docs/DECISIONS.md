@@ -4,6 +4,9 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-395 · Director · The feedback link is the Itch page
+His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's LEAVE FEEDBACK opens it (tuning demo.feedback_url); replaces the placeholder D-148 left.
+
 ## 2026-10-30 · D-394 · Director · The landmark pool's named entries
 His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
 ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
