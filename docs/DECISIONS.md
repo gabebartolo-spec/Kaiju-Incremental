@@ -392,18 +392,3 @@ to him.
 ## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
 On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
 (Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
-
-## 2026-10-27 · D-340 · Director · One Godot window on the GPU at a time (rule replaced by D-376)
-His words (22:0x): "having 2 godot open is cooking the GPU, you gotta do a better jop managing it". Cause: the rules
-allowed up to 3 captures at once and up to 2 Godot processes per agent, and nothing counted windows PC-wide, so two
-builders' clips rendered together. Rule: every windowed Godot run (capture, clip, still, speed run) takes the one
-PC-wide slot, `bash C:/kt/gpu_slot.sh <command>`, which waits its turn; the focus-guard hook refuses a windowed run
-outside it. Headless runs (tests, imports) take no slot. Replaces the capture counts in the rulebook and CLAUDE.md.
-
-## 2026-10-27 · D-339 · Director · 1080p is the baseline, not 4K
-His words (19:5x): "you know we dont need to work as 4k as the baseline just because i am using a 4k tv. most players
-probably wont be running it at this resolution". Asked, he picked: "1080p first" (text, readability and the look are
-judged at 1080p, the most common screen on Steam; 4K stays supported and is checked at each playtest build), the speed
-target "60 fps at 1080p Medium" (replaces D-093/D-109's 60 fps at 4K), and stills "Switch to 1080p" (replaces D-304's
-4K stills; clips stay 1080p). Scope, asked: "Kaiju only" (his other games keep the rulebook's
-4K-first check); the project CLAUDE.md carries the Kaiju rule.
