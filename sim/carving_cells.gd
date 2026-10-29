@@ -160,6 +160,24 @@ static func part_event(
 		Vector2(base.size) / f.res
 	)
 	event["gutted"] = not under and span.y > mini(base.size.x, base.size.y)
+	event["under"] = under
+	if under:  # the cell it stands on, for the readers that check what held it
+		event["support"] = support(f, index, lo.y)
 	if str(part["kind"]) != "topple":
 		event["drop"] = drop(f, index)
 	return event
+
+
+## The grid index of the cell that holds up an island whose lowest layer is `low`: the top cell
+## under the first of its lowest cells that has one (VoxelFrame.column_top), or -1.
+static func support(f: VoxelFrame, index: PackedInt32Array, low: int) -> int:
+	var plan := f.w * f.d
+	for i: int in index:
+		if i / plan != low:
+			continue
+		var x := i % f.w
+		var z := (i / f.w) % f.d
+		var y := f.column_top(x, z, low)
+		if y >= 0:
+			return x + z * f.w + y * plan
+	return -1

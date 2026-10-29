@@ -18,6 +18,12 @@ class Building:
 	## A landmark's id (data/landmarks.json) or ""; rubble_bonus multiplies what its chunks pay.
 	var landmark := ""
 	var rubble_bonus := 1.0
+	## A pool building's model id (data/city_buildings.json, D-256) or "": drawn and carved from
+	## its baked model like a landmark, but otherwise an ordinary building. variant: ModelVariant's
+	## facing, mirror and stretch; palette: which of its district's shifts it is drawn in.
+	var model := ""
+	var variant: Dictionary = {}
+	var palette := 0
 	var hazard := ""  # an explosive site's kind (CityHazards), or ""
 	## False past the arena's edge (CityBand): it breaks and pays, but never counts to the fall.
 	var in_arena := true

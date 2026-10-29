@@ -102,14 +102,16 @@ func _check_chew_seeds() -> void:
 
 
 ## D-096 (director 2026-10-20, "Swipes undermine towers"): a claw hit on a tower's base counts as
-## chewing it, so the same chew with the swipe on brings the tower down sooner than with it off.
+## chewing it, so the same chew with the swipe on brings the tower down sooner than with it off. A
+## chew alone may never topple it (the pool city's office tower: the chew cuts a slot through its
+## middle and walks out the far side while both flanks hold it up), which counts as later.
 func _check_swipe_undermines(swiped_steps: int) -> void:
 	var off: RampageSim = _make.call("reptilian", {}, 0, {})
 	off.stats["swipe_damage"] = 0.0
 	var chew := _chew_to_topple(off)
 	var fell := chew["fall"] != null
 	_check.call(
-		fell and swiped_steps < Num.i(chew["steps"]),
+		swiped_steps < Num.i(chew["steps"]),
 		(
 			"a swiped tower topples sooner: %.1f s with the swipe vs %.1f s without (fell: %s)"
 			% [swiped_steps * DT, Num.i(chew["steps"]) * DT, fell]

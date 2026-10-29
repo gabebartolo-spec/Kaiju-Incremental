@@ -20,7 +20,8 @@ const FRAMES := 600
 ## landmarks change the stage-1 plan; the native walk the replay runs is untouched;
 ## -> 9841a2be615dcf7a, re-pinned on the merge with main 10-28, CI 40647230489, replays equal;
 ## main's sea bay (D-377) pinned 9a649408e1b35f5d on the old city -> 0529f1dc3a5467f7, the bay's
-## streets on the 1.5x plan (young coast z -60), merged 10-29, replays equal).
+## streets on the 1.5x plan (young coast z -60), merged 10-29, replays equal; main's Tripo pool
+## D-256 pinned d92dedfaeb729c86 on the old city -> 0529f1dc3a5467f7, models replace the lots).
 const PINNED := "0529f1dc3a5467f7"
 ## Frames of the buffer tests: five seconds of the street, with stomps, a brace and a blockade.
 const BUFFER_FRAMES := 300

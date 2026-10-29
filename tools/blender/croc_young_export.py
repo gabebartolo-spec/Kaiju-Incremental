@@ -6,8 +6,8 @@ assets/kaiju/test/croctitan_<stage>.skinw in order (game -> blend: bx = -gz, by 
 the skin's height, minus the bbox centre), plus the lower-lid flaps. So the positions, the faces (.skinf) and the
 kvox cell map stay as they are; this writes the new bones and weights:
 - <out>/croctitan_<stage>.skin.json: the rig's deform bones in hierarchy order, game frame (head, tail, basis), with
-  their game bone (the adult croc_adult3_export.py names: lumbar0+1 -> spine1, neck0-2 -> head0, clavicle -> spine2,
-  toe -> leg_x3, tail00-11 -> tail0-11, lids keep their names); tail0-8 are the spring tail ("physics").
+  their game bone (the adult croc_adult3_export.py names: lumbar0+1 -> spine1, neck0-2 -> head0,
+  toe -> leg_x3, tail00-11 -> tail0-11, lids and clavicles keep their names); tail0-8 are the spring tail ("physics").
 - <out>/croctitan_<stage>.skinw: the same positions, top-4 weights per vertex (normalised), bone indices into that list.
 The lower-lid flaps (rigid shells hidden inside the head at rest) are left out, as for the adult; the skin.json's
 "lid_flaps" block (LID_FLAPS) is how tools/kaiju_skin/lid_flaps.py builds them in voxels instead.
@@ -78,7 +78,7 @@ def game_bone(n):
         return n
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
-    return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
+    return {"clavicle": f"clavicle_{sd}", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
             "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}3"}[n[:-2]]
 
 AW = arm.matrix_world

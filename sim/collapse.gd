@@ -118,6 +118,8 @@ func _fall_event(f: RampageSim.Fall, part: Dictionary, index: int) -> Dictionary
 	if part.has("index"):
 		event["index"] = part["index"]
 		event["mats"] = part["mats"]
+		event["under"] = part.get("under", false)  # what held it at the settle
+		event["support"] = part.get("support", -1)
 	if f.kind == "topple":  # where it will land, so the street knows who is under it
 		var strip := _strip(f)
 		event["to"] = strip[1]
