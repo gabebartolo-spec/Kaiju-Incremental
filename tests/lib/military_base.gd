@@ -34,7 +34,6 @@ func _rampage(tier: int, seed: int) -> RampageSim:
 	var tuning := CityGrowth.tuning_for(Content.tuning(), tier)
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", seed))
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", seed))
-	sim.collapse.cut_only()  # the army as fitted, not where b2-5's mix drops the blocks
 	var ability: Dictionary = species["ability"]
 	sim.ability_type = str(ability["type"])
 	return sim
