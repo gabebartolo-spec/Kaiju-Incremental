@@ -91,7 +91,8 @@ static func landmarks(
 ## with a "size") in seeded order, each into a free spot of its size ("landmark_spots"; its own
 ## "spot" only, if it names one); an entry with no free spot sits this run out, a spot with no
 ## entry left stays plain city. Returns the drawn entries, each with its spot's "anchor" and
-## "spot" set (an entry given its own "anchor", a test's, skips the draw). Its own stream (map_seed), so the draw never shifts the spread's order.
+## "spot" set (an entry given its own "anchor", a test's, skips the draw). Its own stream
+## (map_seed), so the draw never shifts the spread's order.
 static func spot_draws(cfg: Dictionary) -> Array[Dictionary]:
 	var spots: Dictionary = cfg.get("landmark_spots", {})
 	var shapes: Dictionary = cfg.get("landmark_shapes", {})
