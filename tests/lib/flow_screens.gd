@@ -286,6 +286,8 @@ func _check_evolution_and_continue() -> void:
 		),
 		"branch nodes and evolutions are marked as such"
 	)
+	tree.show_node("evolve1")  # the view opens on the newest buyable node
+	await _frames(1)
 	await GuiInput.click(t, tree.node_button("evolve1"))
 	await _frames(2)
 	var reveal := GuiInput.find_script(tree, EvolutionReveal) as EvolutionReveal

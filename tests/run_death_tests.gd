@@ -299,7 +299,7 @@ func _check_replay() -> void:
 ## Bought nodes ride the save: three bought, saved, loaded: the node 3 ring.
 func _check_nodes_saved() -> void:
 	var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
-	for id: String in ["claws", "hide", "rage", "evolve1", "sig_power", "sig_recharge"]:
+	for id: String in ["claws", "hide", "rage", "evolve1", "sig_power", "evolve2"]:
 		tree.levels[id] = 1
 	var bought := 0
 	for id: String in ["death_blast1", "death_blast2", "death_blast3"]:

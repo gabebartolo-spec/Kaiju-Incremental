@@ -107,7 +107,10 @@ func _check_species_select() -> void:
 func _check_upgrade_screen() -> void:
 	var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
 	var screen := UpgradeScreen.new()
-	screen.setup(tree, 30, Content.species_def("reptilian"), Content.section("kaiju"))
+	var left := 30  # under level 2's price: the second press buzzes
+	screen.setup(
+		tree, tree.cost("claws") + left, Content.species_def("reptilian"), Content.section("kaiju")
+	)
 	root.add_child(screen)
 	await process_frame
 	var buttons := screen.find_children("*", "Button", true, false)
@@ -130,11 +133,13 @@ func _check_upgrade_screen() -> void:
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:
+		screen.show_node("claws")  # the view opens on the newest buyable node
+		await process_frame
 		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)
 		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])
-		check(  # 15 at the species' price (cost_mult, D-167)
-			tree.level("claws") == 1 and screen.rubble == 30 - roundi(15 * tree.cost_mult),
+		check(  # level 1 at the species' price (cost_mult, D-167)
+			tree.level("claws") == 1 and screen.rubble == left,
 			"pressing Sharpened Claws buys it at its price (rubble %d)" % screen.rubble
 		)
 		Sfx.ui_played.clear()

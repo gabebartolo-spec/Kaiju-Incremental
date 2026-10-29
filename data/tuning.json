@@ -96,7 +96,10 @@
 		"fire_rate": {"line": "Fires spread faster", "fmt": "%.1f"},
 		"fire_wind": {"line": "Fire runs with the wind", "fmt": "%.1f"},
 		"fire_embers": {"line": "Embers leap the streets", "fmt": "%d"},
-		"firestorm": {"line": "Blasts start firestorms", "fmt": "%d"}
+		"firestorm": {"line": "Blasts start firestorms", "fmt": "%d"},
+		"eat_heal": {"hidden": true},
+		"throw_ricochet": {"hidden": true},
+		"throw_domino": {"hidden": true}
 	},
 	"names": {"beam": "Thunder Beam"},
 	"news": {
@@ -138,6 +141,44 @@
 			"time": {"headline": "FINAL STRIKE FELLS KAIJU", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"},
 			"defeated": {"headline": "ARMY TAKES DOWN KAIJU", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"},
 			"ended": {"headline": "KAIJU COLLAPSES MID-RAMPAGE", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"}
+		}
+	},
+	"tree": {
+		"_note": "The upgrade tree's rings and pacing bars (ROADMAP E, R 16.1, R 1.1/1.4, b2-28). Every node of a species listed under species carries a ring (1 = the centre) and a kind: stat (a number goes up), verb (changes what the player does or sees), stage (an evolution). rings: in order from the centre, the growth stage each opens at and the node count it is meant to reach (about 14 / 16 / 18 / 10; D-135 cut the fourth body, so ring 4 is the adult's last climb). A ring is open (bought and shown in full) once the kaiju has reached its stage and owns a node of the ring before it; the next ring shows as shapes; evolutions always show. cost_rate: each level of a node costs this many times the level before (geometric, research 01 rec 1). pacing: the bars tools/pacing.gd and the tree suite check over the first window_hours of play (R 1.1): buys_per_visit after every rampage, at most max_runs_between_verbs runs between a new verb or stage, each evolution within evolve_tolerance of its target hour (evolve1 about 15 min, D-087; evolve2 about 1 h, research 16 rec 1), the first purchase within first_buy_seconds. income: the tree suite's stand-in for a rampage's pay at each stage (first -> last as that stage's levels are bought; run_seconds a rampage), from GitHub pacing run 40225039778 (main after #230); the real bot (tools/pacing.gd) measures it. Effect keys with no system yet (stat_text hides them): eat_heal (eating heals), throw_ricochet and throw_domino (thrown vehicles).",
+		"kinds": ["stat", "verb", "stage"],
+		"layout": {
+			"_note": "Layout A (D-275): polar rings, the baby's ring round the centre. node: each kind's box (canvas units at the default zoom, sized so the longest name fits two lines at 24 px: a stat smallest, a verb larger, an evolution the largest); ultimate_extra: the ultimate's taller box (its button line). Each ring's radius leaves every node in it node_gap of room on the circle and clears the ring inside by ring_gap; ring 1 sits at least centre_radius out.",
+			"node": {"stat": [190, 110], "verb": [210, 120], "stage": [240, 140]},
+			"ultimate_extra": 30,
+			"node_gap": 24,
+			"ring_gap": 60,
+			"centre_radius": 300
+		},
+		"view": {
+			"_note": "The tree's camera (D-275: zoom out and pan easily). Zoom runs from the default (1, text 24 px at 1080p) out to the whole tree on screen, filling fit_margin of the view. wheel_step: zoom per mouse-wheel notch, toward the cursor; zoom_per_second: the pad triggers' zoom rate at full squeeze; pan_per_second: view pixels a second for WASD, the arrows and the right stick at full tilt; deadzone: stick and trigger travel ignored.",
+			"wheel_step": 1.15,
+			"zoom_per_second": 2.5,
+			"pan_per_second": 1100.0,
+			"deadzone": 0.2,
+			"fit_margin": 0.95
+		},
+		"cost_rate": [1.07, 1.15],
+		"species": {
+			"reptilian": {"rings": [{"stage": 1, "target": 14}, {"stage": 2, "target": 16}, {"stage": 3, "target": 18}, {"stage": 3, "target": 10}]}
+		},
+		"pacing": {
+			"window_hours": 1.0,
+			"buys_per_visit": [1, 4],
+			"max_runs_between_verbs": 5,
+			"first_buy_seconds": 60.0,
+			"evolve_hours": {"evolve1": 0.25, "evolve2": 1.0},
+			"evolve_tolerance": 0.2,
+			"tree_seconds": 20.0,
+			"income": [
+				{"first": 206, "last": 676, "run_seconds": 48.0},
+				{"first": 3254, "last": 11615, "run_seconds": 64.5},
+				{"first": 39174, "last": 36127, "run_seconds": 59.0}
+			]
 		}
 	},
 	"save": {
