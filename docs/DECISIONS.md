@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-394 · Director · The landmark pool's named entries
+His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
+ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
+stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".
+
 ## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
 A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
 menu_fps 60, so the frame rate the preview shows is the real one; closing Settings restores the menu cap.
@@ -384,13 +389,3 @@ run "Always on, like the croc" (replaces D-245's top-tier run unlock). The serpe
 through buildings around his height, but being that he is the shortest kaiju, that wont be many buildings. Snake can
 however clumb the buildings bigger than him and constrict-crush them"; asked, a bigger building at speed "Flows into a
 climb" (no slam) and constrict "Keep it at adulthood" (D-206 stands). Serpent work still waits on D-246.
-
-## 2026-10-27 · D-337 · Director · The croc's run is momentum: he crashes through small buildings, slams into big ones
-His words (19:4x), on hearing the croc has no run yet: "running wont have a sprint button, it should be momentum based,
-at high momentum he can crash right through smaller buildings, and collide with a bang into bigger ones". Asked:
-momentum "Always on" (from the first rampage, walking straight builds him into a run and turning bleeds it; tree nodes
-make it build faster and hit harder, and the old unlock node becomes a boost); a big building "Slam and stop" (a loud
-impact, a deep dent caved in at the contact, the building shudders, the camera shakes, his momentum is spent); small
-vs big "Relative to his size" (shorter than about his shoulder crashes, so each stage crashes through more); when
-"Now, one more builder" (ahead of D-310's order; it touches no debt or render file). Per D-335 the run and the slam
-stop are keyed in Cascadeur.

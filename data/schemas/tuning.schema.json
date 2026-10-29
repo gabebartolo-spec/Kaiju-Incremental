@@ -2105,6 +2105,7 @@
           "additionalProperties": false
         },
         "zebra_junctions": {"$ref": "#/$defs/num"},
+        "landmark_spots": {"type": "object", "patternProperties": {"^_": {"$ref": "#/$defs/str"}}, "additionalProperties": {"type": "object", "properties": {"at": {"type": "array", "items": {"$ref": "#/$defs/num"}}, "size": {"$ref": "#/$defs/str"}}, "required": ["at", "size"], "additionalProperties": false}},
         "landmarks": {
           "type": "array",
           "items": {
@@ -2115,6 +2116,8 @@
               "margin": {"$ref": "#/$defs/num"},
               "tier": {"$ref": "#/$defs/num"},
               "rubble_bonus": {"$ref": "#/$defs/num"},
+              "size": {"$ref": "#/$defs/str"},
+              "spot": {"$ref": "#/$defs/str"},
               "arcs": {
                 "type": "object",
                 "properties": {
