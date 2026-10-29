@@ -121,11 +121,12 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
 			_voxels[bone_name] = per_bone[i]
-	# Parented once every bone exists: a rig.json lists bones added later (the croc's collar bones) after the
-	# bones they carry (rig_from_skin.py extra_order), so the list is not parents first.
+	# Parented once every bone exists: a rig.json lists bones added later (the croc's collar
+	# bones) after the bones they carry (rig_from_skin.py extra_order), so it is not parents first.
 	for bone_name: String in _parent:
 		var parent: Node3D = _bones.get(_parent[bone_name], self)
-		parent.add_child(_bones[bone_name])
+		var child: Node3D = _bones[bone_name]
+		parent.add_child(child)
 	var bands := RigJoints.overlap(self)
 	for bone_name: String in _voxels:
 		var part: VoxelBuilder = _voxels[bone_name]
