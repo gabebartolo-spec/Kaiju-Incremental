@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-390 · Director · The baby roar's jaw is judged in the game, not on Cascadeur's mesh
+Q (10-30, after the lip slit and three weight fits left Cascadeur's mesh at 18-22 head flips on the baby roar, bar 6):
+"Accept game result". In the game the baby's mouth already opens as a slit (the bake's hinge rule, #356): at a 38 deg
+gape every parting is jaw|head1 along the mouth, none at the corner or throat, red mouth voxels shown. The mesh bar is
+dropped for the baby roar; no edge loops are added. Changes: roadmap row 1's baby jaw is done with #426.
+
 ## 2026-10-30 · D-386 · Director · A PR re-push re-runs only failed, unrun or touched suites
 He approved: a pull request's re-push runs the suites that failed or never ran on its last run, plus every suite whose
 code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
@@ -387,14 +393,3 @@ look B on by default (render plan item 12).
 Q (18:1x): when do tonight's speed tests start? A: "When I say I'm done": the lead deletes `C:/kt/SPEED_DAY_HOLD` the
 moment he says he is done for the day, then runs `C:/kt/NIGHT_QUEUE.txt` one line at a time; if he says nothing, the
 hold ends at 01:00 (10-28).
-
-## 2026-10-27 · D-332 · Director · The lead restarts fresh at about 18:10
-Q (18:1x): when does the lead restart? A: "At ~18:10": a fresh lead session runs from its handoff; the old lead session
-hosts the builders it started until each one's step ends and reports them in `C:/kt/relay.md`; every role that ends is
-respawned fresh from its own handoff by the new lead, never while still hosted.
-
-## 2026-10-27 · D-331 · Director · One block of speed tests now, then none in the day
-Q (18:1x): speed tests during the day? A: "One block now, then none": the queued block (perf-p4b, perf-p2b-native,
-perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
-until D-333's start. Builders, Cascadeur, suites, captures and builds use the PC freely. D-299/D-313's window rules
-still govern every speed run that does start.

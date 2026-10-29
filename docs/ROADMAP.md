@@ -32,9 +32,9 @@ owner is whichever session takes it and reports to him. The director decides; a 
 Each row: what, where it stands, next. A row leaves this list when its PR merges (its decision and PR number are the
 record); nothing is appended as a log. D-310 order: debt fixes, then parked work; creature animation runs alongside (D-354).
 1. **Croc animation, keyed in Cascadeur (D-199, D-302, D-362):** young croc walk and turns rebuilt (#405), adult eyelids
-   and rise clips (#398), collar bones (#410), claw rake (#332), beam_jaw (#392), Colossus helper joints (#396).
-   Open: the 29 FIX clips of the grown
-   croc verdicts; the baby jaw (neck0-2 split into game bones); the Komodo and serpent clips wait with their species.
+   and rise clips (#398), collar bones (#410), claw rake (#332), beam_jaw (#392), Colossus helper joints (#396),
+   baby neck bones and jaw (#426, D-390). Open: the 29 FIX clips of the grown croc verdicts; the Komodo and serpent
+   clips wait with their species.
 2. **Bay-coast junction spacing (director 2026-10-29, after #413):** at stage 2 the diagonal crosses the young bay's coast road (z -60) 2-9 m from a seeded north-south street on every map seed; CityLines lays the bay's pinned z-lines without the diagonal-crossing rule the other z-lines get. Fix it in city-gen and remove city audit's _at_bay_coast exemption.
 3. **Destruction (D-327, in the demo):** stage 1 (carved buildings drawn from the sim's cells, #328) and stage 2 (native
    carve colliders, merged falling islands; render items 10 and 11, #381) are on main. Open: landmarks carve on cells and
