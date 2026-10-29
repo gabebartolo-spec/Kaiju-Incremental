@@ -5,15 +5,18 @@ extends Node
 ## big one as the body breaks the surface, and a last one as it steps out. Rings from the
 ## existing Fx, tinted like spray; presentation only.
 
-const SURFACE_AT := 0.45  # how far risen the head breaks the surface
 const RING := 5.0  # ring radius per body scale
 
 var _sim: RampageSim
 var _fx: Fx
 var _beat := 0  # splashes made so far
+var _ahead := 0.0
 
 
-func _init(sim: RampageSim, fx: Fx) -> void:
+## ahead: how far the head's crown stands ahead of the hips (world units): the opening and break
+## rings ring where the head comes up; the last, as it steps out, round the body.
+func _init(sim: RampageSim, fx: Fx, ahead: float) -> void:
+	_ahead = ahead
 	_sim = sim
 	_fx = fx
 
@@ -21,15 +24,19 @@ func _init(sim: RampageSim, fx: Fx) -> void:
 func _process(_delta: float) -> void:
 	var emerge := _sim.emerge
 	if _beat == 0 and emerge.active:
-		_splash(0.6, false)
-	elif _beat == 1 and emerge.risen() >= SURFACE_AT:
-		_splash(1.4, true)
+		_splash(0.6)
+	elif _beat == 1 and emerge.surfaced:  # the head breaks the surface
+		_splash(1.4)
 	elif _beat == 2 and not emerge.active:
-		_splash(1.0, false)
+		_splash(1.0)
 
 
-func _splash(size: float, tail: bool) -> void:
+func _splash(size: float) -> void:
 	_beat += 1
-	var water := -Num.f(_sim.city.get("river_depth", 0.0))
-	var at := Vector3(_sim.kaiju_pos.x, maxf(_sim.stand_y, water) + 0.02, _sim.kaiju_pos.y)
-	_fx.shockwave(at, RING * _sim.body_scale() * size, tail)
+	var water := _sim.emerge.water_y()
+	var p := _sim.kaiju_pos + (_sim.facing * _ahead if _beat < 3 else Vector2.ZERO)
+	var at := Vector3(p.x, maxf(_sim.stand_y, water) + 0.02, p.y)
+	# A foam ring on the water, never the street's dust puffs (they popped in at the break).
+	var spray: Dictionary = Content.section("intro")["water"]
+	var foam := IntroWater.foam(spray)
+	_fx.ring_of(at, RING * _sim.body_scale() * size, 0.0, foam)

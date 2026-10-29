@@ -3,12 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## WaterSurface sheets (scenes/water.gdshader), on by default: the river's waves ride its current
 ## along each channel, the bay has a swell, each takes its deep colour from the look; with tuning
 ## water.on false the glossy sheet it replaced is back (player-effect fixture "water.surface").
-## The kaiju wades knee-deep (lead 2026-10-27: emerge.wade_depth x body scale), so the waterline
-## shows on his body, and climbs out over the quay no later than from the surface (D-131's shore
-## bar): player-effect fixture "water.waterline" (the same seeded start knee-deep vs at the
-## surface, at every stage).
-## Seeded by design: the default map_seed, Seeds "army" 0; the rise and the wade have no
-## randomness, and no check reads the clock.
+## The knee-deep river wade it shipped with left when the run start moved to the sea bay (D-377).
+## Seeded by design: the default map_seed; no check reads the clock.
 ##   godot --headless --path . --script tests/run_water_tests.gd
 
 const DT := 1.0 / 30.0
@@ -24,16 +20,12 @@ func run_checks() -> void:
 	await _t("_check_default_on")
 	await _t("_check_surface_on")
 	await _t("_check_surface_off")
-	await _t("_check_waterline")
-	await _t("_check_wade_replays")
 
 
 func _check_default_on() -> void:
 	var raw: Variant = Content.section("water").get("on", false)
 	var on: bool = raw is bool and raw == true
 	check(on, "tuning water.on defaults to true (the water surface is in the game)")
-	var knee := Num.f(Content.section("emerge").get("wade_depth", 0.0))
-	check(knee > 0.0, "tuning emerge.wade_depth is above 0 (he wades knee-deep): %.2f" % knee)
 
 
 func _check_surface_on() -> void:
@@ -102,46 +94,6 @@ func _check_surface_off() -> void:
 	_free_sheets(sheets)
 
 
-## Player-effect fixture "water.waterline": the same seeded start at each stage, knee-deep
-## (the shipped wade_depth) vs at the surface (0). Knee-deep his feet stand wade_depth x body
-## scale under the river's surface once he has risen, so the water meets his legs; at the
-## surface they stand on it. Either way he is on the bank no later than from the surface.
-func _check_waterline() -> void:
-	var knee := Num.f(Content.section("emerge")["wade_depth"])
-	for stage: int in STAGES:
-		var deep := _rise(stage, knee)
-		var flat := _rise(stage, 0.0)
-		var scale := Num.f(deep["scale"])
-		var under := Num.f(deep["surface"]) - Num.f(deep["wading"])
-		var flat_under := Num.f(flat["surface"]) - Num.f(flat["wading"])
-		check(
-			absf(under - knee * scale) < EPS and absf(flat_under) < EPS,
-			(
-				"stage %d: risen, feet %.2f m under the river (%.2f x body scale %.2f); at the surface %.2f"
-				% [stage, under, knee, scale, flat_under]
-			)
-		)
-		var deep_at := Num.f(deep["at"])
-		var flat_at := Num.f(flat["at"])
-		var both := Num.i(deep["emerged"]) == 1 and Num.i(flat["emerged"]) == 1
-		check(
-			both and deep_at <= flat_at + EPS,
-			(
-				"stage %d: knee-deep he is on the bank after %.2f s, from the surface %.2f s (no later)"
-				% [stage, deep_at, flat_at]
-			)
-		)
-		var landed: bool = deep["landed"]
-		check(landed, "stage %d: knee-deep he ends on his feet on the street" % stage)
-
-
-func _check_wade_replays() -> void:
-	var knee := Num.f(Content.section("emerge")["wade_depth"])
-	var a: PackedFloat32Array = _rise(2, knee)["trace"]
-	var b: PackedFloat32Array = _rise(2, knee)["trace"]
-	check(a == b, "the same seeded start wades the same (stand height trace)")
-
-
 ## The city's water sheets with the surface on or off (a stage-1 CityGround), in the tree.
 func _sheets(on: bool) -> Array[MeshInstance3D]:
 	Content.section("water")["on"] = on
@@ -159,47 +111,3 @@ func _sheets(on: bool) -> Array[MeshInstance3D]:
 func _free_sheets(sheets: Array[MeshInstance3D]) -> void:
 	if not sheets.is_empty():
 		sheets[0].get_parent().free()
-
-
-## One river start at `stage` with emerge.wade_depth `knee`: the surface and his feet once
-## risen, when he emerged, whether he ended on the street, and the stand height every tick.
-func _rise(stage: int, knee: float) -> Dictionary:
-	var tuning := CityGrowth.tuning_for(Content.tuning(), stage)
-	tuning["emerge"]["wade_depth"] = knee
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"),
-		Content.species_def("reptilian"),
-		UpgradeTree.new(Content.upgrades())
-	)
-	stats["size"] = stage
-	var none: Array[Dictionary] = []
-	var sim := RampageSim.new(stats, tuning, none, Seeds.make("army", 0))
-	sim.emerge.start(sim)
-	var rise := Num.f(tuning["emerge"]["rise_seconds"])
-	var limit := Num.f(tuning["emerge"]["max_seconds"]) + 1.0
-	var surface := -Num.f(sim.city.get("river_depth", 0.0))
-	var wading := INF
-	var at := INF
-	var emerged := 0
-	var waited := 0.0
-	var trace := PackedFloat32Array()
-	while waited < limit:
-		var before := sim.events.size()
-		sim.emerge.step(sim, DT)
-		waited += DT
-		trace.append(sim.stand_y)
-		if wading == INF and waited >= rise:
-			wading = sim.stand_y
-		for event: Dictionary in sim.events.slice(before):
-			if str(event["type"]) == "kaiju_emerged":
-				emerged += 1
-				at = minf(at, waited)
-	return {
-		"surface": surface,
-		"wading": wading,
-		"scale": sim.body_scale(),
-		"emerged": emerged,
-		"at": at,
-		"landed": emerged > 0 and sim.stand_y == 0.0,
-		"trace": trace,
-	}

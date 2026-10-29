@@ -2,7 +2,7 @@ extends "res://tests/lib/powers_insect.gd"
 ## Powers suite: the species branches (docs/SPECIES.md, D-035) for the reptilian and the
 ## insectoid. Every branch node has a player-effect fixture: the same seeded, scripted scene
 ## with the node owned and without it plays out visibly differently. Headless, no autoloads.
-## The cephalopod and the helicopters are in run_tentacles_tests.gd.
+## The helicopters are in run_helis_tests.gd; the cephalopod is parked (tests/parked/).
 ##   godot --headless --path . --script tests/run_powers_tests.gd
 
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")

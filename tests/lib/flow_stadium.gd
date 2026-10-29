@@ -20,7 +20,10 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
 	)
-	var layout := CityGrowth.layout(Content.tuning(), 1, Seeds.make("city", 0))
+	# Stage 2: the stadium stands on the west landmark spot, outside the baby's band (lead call A,
+	# director "idc" 2026-10-29), so stage 1 has none.
+	stats["size"] = 2  # the stage-2 city and band to match (Rampage reads the stage from stats)
+	var layout := CityGrowth.layout(Content.tuning(), 2, Seeds.make("city", 0))
 	rampage.setup(species, stats, layout, 0)
 	tree.root.add_child(rampage)
 	await tree.process_frame

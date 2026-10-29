@@ -3,7 +3,7 @@ extends RefCounted
 ## The raking claw's streak, drawn from the arm itself (BipedSwing.pose_rake): while the arm swings
 ## down and across, a short mark is laid between where each claw tine was last frame and where it
 ## is now, so the streak follows the arm's real arc from the first swing frame and each piece is
-## gone a few frames later (trail_s). Three tines stacked up the claw, in ClawSlash's colour family.
+## faded out trail_s later (~0.25 s, D-243). Three tines stacked up the claw, ClawSlash's colours.
 ## Presentation only. "claw_fx" tuning: streaks, streak_thick, streak_gap, trail_s.
 
 var _rig: Node3D

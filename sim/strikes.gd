@@ -54,8 +54,8 @@ func stomp_delay(on_foot: bool) -> float:
 
 
 ## A stomp's foot comes down on `centre` after `wait` seconds (at once when 0).
-func stomp(centre: Vector2, wait: float) -> void:
-	_begin(STOMP, wait, centre)
+func stomp(centre: Vector2, wait: float, blows := 1) -> void:
+	_begin(STOMP, wait, centre, blows)
 
 
 ## Whether a strike of this kind is still to land.
@@ -77,37 +77,40 @@ func step(dt: float) -> void:
 		pending.erase(strike)
 		if Num.i(strike["tier"]) == sim.size_tier():
 			var centre: Vector2 = strike.get("centre", Vector2.ZERO)
-			_land(str(strike["kind"]), centre)
+			_land(str(strike["kind"]), centre, Num.i(strike.get("blows", 1)))
 
 
-func _begin(kind: String, wait: float, centre := Vector2.ZERO) -> void:
+func _begin(kind: String, wait: float, centre := Vector2.ZERO, blows := 1) -> void:
 	if wait <= 0.0:
-		_land(kind, centre)
+		_land(kind, centre, blows)
 		return
-	pending.append({"kind": kind, "left": wait, "tier": sim.size_tier(), "centre": centre})
+	pending.append(
+		{"kind": kind, "left": wait, "tier": sim.size_tier(), "centre": centre, "blows": blows}
+	)
 	if kind != STOMP:  # the stomp event itself carries its time
 		sim.events.append({"type": "strike_windup", "kind": kind, "strike_in": wait})
 
 
-func _land(kind: String, centre: Vector2) -> void:
+func _land(kind: String, centre: Vector2, blows: int) -> void:
 	match kind:
 		BREATH:
 			BreathCone.breathe(sim, sim.ability_reach(), sim.stat("ability_damage"))
 		BEAM:
 			sim.powers.start_beam()
 		STOMP:
-			_land_stomp(centre)
+			_land_stomp(centre, blows)
 
 
-## The foot comes down: full force within the stomp radius, fading to nothing at twice it.
-func _land_stomp(centre: Vector2) -> void:
+## The foot comes down with `blows` stomps' force: full within the stomp radius, fading to
+## nothing at twice it.
+func _land_stomp(centre: Vector2, blows: int) -> void:
 	if sim.airborne:
 		return
 	var radius := sim.stomp_radius()
 	sim.hit_area(
 		func(p: Vector2, r: float) -> float:
 			return RampageSim.falloff(p.distance_to(centre) - r, radius),
-		sim.stat("stomp_damage") * sim.powers.hit_mult(),
+		sim.stat("stomp_damage") * sim.powers.hit_mult() * blows,
 		maxi(0, floori(sim.stand_y) - Num.i(sim.powers_cfg["climb_dig"])),
 		ceili(sim.reach_top())
 	)

@@ -40,6 +40,8 @@ static func find(
 		var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
 		if _crosses_diagonal(plan, outer, cfg):
 			continue
+		if CityHarbour.in_any(cfg, outer):
+			continue  # never in a stage's sea bay (CityHarbour): kept out when chosen
 		var x0 := xs[i.x] + _inset(av_x, i.x, cfg)
 		var z0 := zs[j.x] + _inset(av_z, j.x, cfg)
 		var x1 := xs[i.y + 1] - _inset(av_x, i.y + 1, cfg)
