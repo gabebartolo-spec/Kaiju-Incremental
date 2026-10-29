@@ -18,6 +18,7 @@ const MAX_PUFFS_PER_CRUSH := 1  # each puff is a particle node: one per stomp ke
 var sim: RampageSim
 var traffic: Traffic
 var police: Police
+var beach_people := 0  # how many of the people BeachCrowd put on the sand
 ## Everyone in the street, person i at index i of every array (a removal moves the last one in).
 var pos := PackedVector2Array()
 var heading := PackedVector2Array()
@@ -88,7 +89,9 @@ func _ready() -> void:
 	for n: int in per_lot * sim.lot_buildings().size():
 		_spawn_civilian(n % maxi(1, blocks))
 	var view := sim.arena_half + Num.f(sim.city["view_beyond"])
+	var street_people := pos.size()
 	BeachCrowd.gather(self, CityGen.map(sim.city), view, _beach_rng)
+	beach_people = pos.size() - street_people
 	_capacity = pos.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	_capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
 	var native := people_buffers and StreetDraw.available()
