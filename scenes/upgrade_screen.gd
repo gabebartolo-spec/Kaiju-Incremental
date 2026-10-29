@@ -2,9 +2,8 @@ class_name UpgradeScreen
 extends Control
 ## The evolution tree between rampages. Spend rubble on nodes, see what each changes in play
 ## (each stat now, an arrow, after the next level), then start the next rampage. TreeArea lays
-## the nodes out by their data `pos` to fill the screen; the species' own branch sits on a band
-## of its own, ending in its ultimate (D-040) as the capstone. Reads the tree; buying goes
-## through it.
+## the nodes out on polar rings, the baby's ring at the centre, under a camera that zooms and
+## pans (D-275); it opens on the newest node you can buy. Reads the tree; buying goes through it.
 
 signal start_pressed
 signal bought(id: String)
@@ -60,10 +59,7 @@ func _ready() -> void:
 	body.add_theme_constant_override("separation", 24)
 	col.add_child(body)
 	_area = TreeArea.new()
-	var roles: Dictionary = {}
-	for id: String in tree.order:
-		roles[id] = role_of(id)
-	_area.setup(tree, species, roles)
+	_area.setup(tree, species, _roles())
 	_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_area.node_pressed.connect(_on_node_pressed)
 	_area.node_selected.connect(_select)
@@ -71,6 +67,14 @@ func _ready() -> void:
 	body.add_child(_build_side())
 	_selected = tree.order[0]
 	_refresh()
+	_area.centre_on(newest_buyable())
+
+
+func _roles() -> Dictionary:
+	var roles: Dictionary = {}
+	for id: String in tree.order:
+		roles[id] = role_of(id)
+	return roles
 
 
 ## The title, the rubble counter and the MENU button across the top.
@@ -140,24 +144,33 @@ func _add_endless(side: Control) -> void:
 	side.add_child(endless)
 
 
-## "ultimate": a species node nothing else needs (its branch's capstone); "evolve": grows the
-## kaiju a size; "branch": the rest of the species branch; "plain": the shared tree.
+## "ultimate": the species' ultimate (data "ultimate", its own button, D-040); "evolve": grows the
+## kaiju a size; "branch": the rest of the species' own nodes; "plain": the shared tree.
 func role_of(id: String) -> String:
 	var def: Dictionary = tree.defs[id]
 	var effects: Dictionary = def.get("effects", {})
 	if effects.has("size"):
 		return "evolve"
-	if str(def.get("species", "")) == "":
-		return "plain"
-	var pos: Array = def["pos"]
-	if Num.i(pos[1]) < TreeArea.BRANCH_ROW:
-		return "branch"  # a capstone sits on the species row; a leaf above it is only a branch end
-	for other: String in tree.order:
-		var other_def: Dictionary = tree.defs[other]
-		var requires: Array = other_def.get("requires", [])
-		if requires.has(id):
-			return "branch"
-	return "ultimate"
+	if def.get("ultimate", false) == true:
+		return "ultimate"
+	return "plain" if str(def.get("species", "")) == "" else "branch"
+
+
+## The node the tree opens on (D-275): the one that can be bought now in the outermost ring, the
+## last in data order (the newest to open); else the outermost one still to buy; else the first.
+func newest_buyable() -> String:
+	var best := ""
+	var fallback := ""
+	for id: String in tree.order:
+		if tree.can_buy(id, rubble):
+			if best == "" or tree.ring(id) >= tree.ring(best):
+				best = id
+		elif tree.is_unlocked(id) and not tree.is_maxed(id):
+			if fallback == "" or tree.ring(id) >= tree.ring(fallback):
+				fallback = id
+	if best != "":
+		return best
+	return fallback if fallback != "" else tree.order[0]
 
 
 func _on_node_pressed(id: String) -> void:
@@ -173,6 +186,9 @@ func _on_node_pressed(id: String) -> void:
 
 func _select(id: String) -> void:
 	_selected = id
+	if node_button(id).shape_only:
+		_show_shape()
+		return
 	var def: Dictionary = tree.defs[id]
 	_info_title.text = str(def["name"])
 	var role := role_of(id)
@@ -204,6 +220,15 @@ func _select(id: String) -> void:
 	_info_status.add_theme_color_override("font_color", tint)
 
 
+## A node in the next ring out keeps its secret: the panel shows its shape's "?" and nothing else.
+func _show_shape() -> void:
+	_info_title.text = UpgradeNode.SHAPE_TEXT
+	_info_role.text = ""
+	_info_body.clear()
+	_show_stats({}, {}, 0)
+	_info_status.text = ""
+
+
 func _status_line(id: String) -> String:
 	var head := "Level %d / %d   " % [tree.level(id), tree.max_level(id)]
 	if tree.is_maxed(id):
@@ -216,7 +241,8 @@ func _status_line(id: String) -> String:
 			if tree.level(req) < 1:
 				var req_def: Dictionary = tree.defs[req]
 				names.append(str(req_def["name"]))
-		return head + "Needs: " + ", ".join(names)
+		# Owned from an older save in a ring that is not open yet: nothing named to buy first.
+		return head + ("Needs: " + ", ".join(names) if not names.is_empty() else "Not yet")
 	# Three short lines, so no wrap ever leaves a dash or a lone word at a line end.
 	var nl := String.chr(10)
 	var have := ("Cost %d" + nl + "You have %d biomass" + nl) % [tree.cost(id), rubble]

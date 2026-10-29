@@ -58,7 +58,11 @@
               "squeeze": {"$ref": "#/$defs/num"},
               "throw_damage": {"$ref": "#/$defs/num"},
               "ink_dps": {"$ref": "#/$defs/num"},
-              "death_blast": {"$ref": "#/$defs/num"}
+              "death_blast": {"$ref": "#/$defs/num"},
+              "tail_auto": {"$ref": "#/$defs/num"},
+              "eat_heal": {"$ref": "#/$defs/num"},
+              "throw_ricochet": {"$ref": "#/$defs/num"},
+              "throw_domino": {"$ref": "#/$defs/num"}
             },
             "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
             "additionalProperties": false
@@ -79,13 +83,24 @@
                 "required": ["stomp_damage"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                 "additionalProperties": false
+              },
+              "reptilian": {
+                "type": "object",
+                "properties": {"stomp_interval": {"$ref": "#/$defs/num"}, "stomp_speed": {"$ref": "#/$defs/num"}},
+                "required": ["stomp_interval", "stomp_speed"],
+                "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                "additionalProperties": false
               }
             },
-            "required": ["insectoid", "cephalopod"],
+            "required": [],
             "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
             "additionalProperties": false
           },
-          "species": {"$ref": "#/$defs/str"}
+          "species": {"$ref": "#/$defs/str"},
+          "ring": {"$ref": "#/$defs/num"},
+          "kind": {"$ref": "#/$defs/str"},
+          "source": {"$ref": "#/$defs/str"},
+          "ultimate": {"$ref": "#/$defs/bool"}
         },
         "required": ["id", "name", "desc", "pos", "max_level", "cost", "requires", "effects"],
         "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

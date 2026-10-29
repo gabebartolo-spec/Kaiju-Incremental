@@ -605,6 +605,41 @@
           "required": ["line", "fmt"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "stomp_speed": {
+          "type": "object",
+          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
+          "required": ["hidden"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "tail_auto": {
+          "type": "object",
+          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
+          "required": ["hidden"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "eat_heal": {
+          "type": "object",
+          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
+          "required": ["hidden"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "throw_ricochet": {
+          "type": "object",
+          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
+          "required": ["hidden"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "throw_domino": {
+          "type": "object",
+          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
+          "required": ["hidden"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
@@ -613,7 +648,7 @@
         "swipe_damage", "swipe_width", "tail_damage", "tail_reach", "tail_floors", "momentum",
         "beam_dps", "glide_seconds", "climb", "brood_count", "limbs", "squeeze", "throw_damage",
         "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
-        "death_blast"
+        "death_blast", "stomp_speed", "tail_auto", "eat_heal", "throw_ricochet", "throw_domino"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -5584,6 +5619,116 @@
       "required": ["sound", "shudder", "shudder_s", "shudder_hz"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
+    },
+    "tree": {
+      "type": "object",
+      "properties": {
+        "kinds": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+        "layout": {
+          "type": "object",
+          "properties": {
+            "node": {
+              "type": "object",
+              "properties": {
+                "stat": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "verb": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "stage": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+              },
+              "required": ["stat", "verb", "stage"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "ultimate_extra": {"$ref": "#/$defs/num"},
+            "node_gap": {"$ref": "#/$defs/num"},
+            "ring_gap": {"$ref": "#/$defs/num"},
+            "centre_radius": {"$ref": "#/$defs/num"}
+          },
+          "required": ["node", "ultimate_extra", "node_gap", "ring_gap", "centre_radius"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "view": {
+          "type": "object",
+          "properties": {
+            "wheel_step": {"$ref": "#/$defs/num"},
+            "zoom_per_second": {"$ref": "#/$defs/num"},
+            "pan_per_second": {"$ref": "#/$defs/num"},
+            "deadzone": {"$ref": "#/$defs/num"},
+            "fit_margin": {"$ref": "#/$defs/num"}
+          },
+          "required": ["wheel_step", "zoom_per_second", "pan_per_second", "deadzone", "fit_margin"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "cost_rate": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "species": {
+          "type": "object",
+          "properties": {
+            "reptilian": {
+              "type": "object",
+              "properties": {
+                "rings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {"stage": {"$ref": "#/$defs/num"}, "target": {"$ref": "#/$defs/num"}},
+                    "required": ["stage", "target"],
+                    "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["rings"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": ["reptilian"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "pacing": {
+          "type": "object",
+          "properties": {
+            "window_hours": {"$ref": "#/$defs/num"},
+            "buys_per_visit": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "max_runs_between_verbs": {"$ref": "#/$defs/num"},
+            "first_buy_seconds": {"$ref": "#/$defs/num"},
+            "evolve_hours": {
+              "type": "object",
+              "properties": {"evolve1": {"$ref": "#/$defs/num"}, "evolve2": {"$ref": "#/$defs/num"}},
+              "required": ["evolve1", "evolve2"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "evolve_tolerance": {"$ref": "#/$defs/num"},
+            "tree_seconds": {"$ref": "#/$defs/num"},
+            "income": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "first": {"$ref": "#/$defs/num"},
+                  "last": {"$ref": "#/$defs/num"},
+                  "run_seconds": {"$ref": "#/$defs/num"}
+                },
+                "required": ["first", "last", "run_seconds"],
+                "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "window_hours", "buys_per_visit", "max_runs_between_verbs", "first_buy_seconds",
+            "evolve_hours", "evolve_tolerance", "tree_seconds", "income"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
+      },
+      "required": ["kinds", "layout", "view", "cost_rate", "species", "pacing"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
     }
   },
   "required": [
@@ -5594,7 +5739,7 @@
     "slowmo", "camera_shake", "accessibility", "photo_mode", "rumble", "post_fx", "topple_fx",
     "skyline_rampage", "arena_edge", "body", "contact", "growth", "fx", "landmark_burst",
     "carve_physics", "crowd", "street", "vehicles", "destruction", "lights", "rain", "render_opt",
-    "death", "slam_fx"
+    "death", "slam_fx", "tree"
   ],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,
