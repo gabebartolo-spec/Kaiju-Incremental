@@ -76,8 +76,7 @@ func step(dt: float) -> void:
 			tank.coat_t -= dt
 			tank.hp -= tank.coat_dps * dt
 			coated = true
-		tank.cooldown -= dt
-		if tank.cooldown > 0.0:
+		if not _gun_ready(tank, dt):
 			continue
 		# range is measured to the body line, as the tank's post is (FiringPosts.aim_point)
 		var aim := convoy.posts.aim_point(tank.pos, at_head)
@@ -93,6 +92,12 @@ func step(dt: float) -> void:
 			shoot(tank, dist, reach)
 	if _step_squads(dt) or coated:
 		clear_dead()
+
+
+## Counts down a tank's reload; true once it may fire (never while flung or toppled, TankFlight).
+func _gun_ready(tank: RampageSim.Tank, dt: float) -> bool:
+	tank.cooldown -= dt
+	return tank.cooldown <= 0.0 and not tank.flying and not tank.toppled
 
 
 ## One shell at the kaiju: a hit (StrayShell.chance) does the shot's damage over that chance, so

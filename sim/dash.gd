@@ -279,18 +279,17 @@ func _land() -> void:
 	sim.hit_area(force, Num.f(_stage["damage"]) * sim.powers.hit_mult(), 0, top)
 
 
-## Every tank the ring reaches slides outward from the centre by `fling` x its force (a tank under
-## the feet goes straight along the leap).
+## Every tank the ring reaches is sent flying (TankFlight) outward from the centre, to land `fling`
+## x its force out (a tank under the feet goes straight along the leap).
 func _fling(centre: Vector2, force: Callable, fling: float) -> void:
 	for tank: RampageSim.Tank in sim.tanks:
 		var k := Num.f(force.call(tank.pos, RampageSim.TANK_RADIUS))
-		if k <= 0.0:
+		if k <= 0.0 or tank.flying:
 			continue
 		var out := tank.pos - centre
 		out = dir if out.length() < 0.01 else out.normalized()
-		var was := tank.pos
-		tank.pos = sim.clamp_to_arena(tank.pos + out * fling * k)
-		sim.events.append({"type": "tank_flung", "tank": tank.id, "from": was, "to": tank.pos})
+		sim.events.append({"type": "tank_flung", "tank": tank.id, "from": tank.pos})
+		sim.flight.launch(tank, out, fling * k)
 
 
 ## The stage's leap numbers (the kaiju's size tier; empty with no leap).

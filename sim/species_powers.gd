@@ -177,7 +177,8 @@ func _tail_sweep(side: float) -> void:
 	tail_cut += sim.chunks_destroyed - before
 
 
-## With the momentum node the reptilian rams what is in front of it and knocks tanks away.
+## With the momentum node the reptilian rams what is in front of it and knocks tanks flying
+## (TankFlight), to land knockback x momentum ahead.
 func _ram(dt: float) -> void:
 	_ram_cd -= dt
 	if sim.stat("momentum") <= 0.0 or momentum < Num.f(cfg["ram_min"]) or _ram_cd > 0.0:
@@ -190,8 +191,8 @@ func _ram(dt: float) -> void:
 		var to := p - centre
 		return 1.0 if to.length() <= radius + r and to.dot(ahead) >= -r else 0.0
 	for tank: RampageSim.Tank in sim.tanks:
-		if front.call(tank.pos, RampageSim.TANK_RADIUS) > 0.0:
-			tank.pos += ahead * Num.f(cfg["knockback"]) * momentum
+		if not tank.flying and front.call(tank.pos, RampageSim.TANK_RADIUS) > 0.0:
+			sim.flight.launch(tank, ahead, Num.f(cfg["knockback"]) * momentum)
 	sim.hit_area(front, sim.stat("stomp_damage") * sim.stat("momentum") * momentum)
 
 

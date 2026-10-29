@@ -35,6 +35,9 @@ const DEATHS: Array[String] = ["defeated", "time", "ended"]
 
 ## The slot the game is playing (1-based); main.gd sets it when a slot is picked.
 static var slot := 1
+## When >= 0, every fresh_seed() is this (tests/lib/runner.gd pins 0, so a new kaiju made through
+## the lab plays the same cities in every test run). -1 in the game: each new save draws its own.
+static var pinned_seed := -1
 
 
 ## How many save slots there are (data/tuning.json "save" "slots").
@@ -123,11 +126,13 @@ static func latest_slot(keep: Callable) -> int:
 	return best
 
 
-## A fresh save for a new kaiju of `species_id`: specimen K-01.
-static func new_save(species_id: String) -> Dictionary:
+## A fresh save for a new kaiju of `species_id`: specimen K-01. `city_seed` is the slot's own city
+## seed (CitySeed, D-263 "Different per save"): main.gd draws it with fresh_seed(); 0 elsewhere.
+static func new_save(species_id: String, city_seed: int = 0) -> Dictionary:
 	return {
 		"version": VERSION,
 		"species": species_id,
+		"seed": city_seed,
 		"rubble": 0,
 		"levels": {},
 		"runs": 0,
@@ -139,6 +144,16 @@ static func new_save(species_id: String) -> Dictionary:
 		"specimen": 1,
 		"lab_card": false,
 	}
+
+
+## A new save's city seed: random per save, or pinned_seed when a test pins it. A save without
+## one (made before saves had seeds) gets one the first time it is played (main.gd).
+static func fresh_seed() -> int:
+	if pinned_seed >= 0:
+		return pinned_seed
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return rng.randi()
 
 
 ## The specimen's name, e.g. "SPECIMEN K-01" (the number goes up when the kaiju dies).

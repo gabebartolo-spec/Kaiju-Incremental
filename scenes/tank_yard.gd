@@ -6,6 +6,8 @@ extends RefCounted
 
 ## Tank id -> TankModel (Rampage's `_tank_nodes`; the captures and flow checks read it).
 var nodes: Dictionary
+## Tank id -> the hull's heading (radians), kept apart from its tumble (TankFlight tilt).
+var _yaw: Dictionary
 var _owner: Rampage
 var _sim: RampageSim
 var _city: CityView
@@ -31,16 +33,18 @@ func update(delta: float, kaiju_at: Vector3, steps: int) -> void:
 	var flatten := steps % 10 == 0
 	var convoy := _sim.army_units.convoy
 	for tank: RampageSim.Tank in _sim.tanks:
-		if flatten:
+		if flatten and tank.height <= 0.0:
 			_city.crush(Vector3(tank.pos.x, 0.0, tank.pos.y), 1.4, true)
 		if not nodes.has(tank.id):
 			continue
 		var node: TankModel = nodes[tank.id]
-		node.position = Vector3(tank.pos.x, 0.0, tank.pos.y)
+		node.position = Vector3(tank.pos.x, tank.height, tank.pos.y)  # flung (TankFlight): in the air
 		var front := convoy.front(tank.id)  # the sim's hull pose: it pivots, then drives
 		if front != Vector2.ZERO:
-			node.rotation.y = atan2(-front.x, -front.y)
-		node.aim(kaiju_at + Vector3(0, 2.0 * _sim.body_scale(), 0), delta)
+			_yaw[tank.id] = atan2(-front.x, -front.y)
+		node.basis = tank.tilt * Basis(Vector3.UP, Num.f(_yaw.get(tank.id, 0.0)))  # its tumble on top
+		if not tank.flying and not tank.toppled:
+			node.aim(kaiju_at + Vector3(0, 2.0 * _sim.body_scale(), 0), delta)
 
 
 ## A tank event (Rampage hands over all four): spawned and destroyed tanks come and go; a fired
@@ -83,4 +87,5 @@ func destroy(id: int, pos: Vector3) -> void:
 		var node: Node3D = nodes[id]
 		node.queue_free()
 		nodes.erase(id)
+	_yaw.erase(id)
 	TankFx.wreck(_city, pos)
