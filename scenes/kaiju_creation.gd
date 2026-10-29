@@ -3,9 +3,10 @@ extends Control
 ## Kaiju Creation, the new-game opening (D-207): a lab close-up on a petri dish (CreationLab).
 ## Pick a genome from the rack (CreationRack: the croc lit, the Komodo and serpent greyed and
 ## locked), it is poured into the dish; inject Special K (the kaiju juice), the kaiju genome
-## takes the reptile genome over, the camera rushes into the dish to black and an egg cracks;
-## then `created` hands
-## the species to Main, whose first run opens with the river rise. Presentation only: the sim
+## takes the reptile genome over, the camera rushes into the dish to black and an egg cracks
+## (a crack, a pause, a couple more cracks: tuning "creation" "cracks"; the director 2026-10-26),
+## then `created` hands the species to Main, whose first run opens with the rise from the sea bay
+## (the pause, then the roar as the head breaks the water). Presentation only: the sim
 ## never sees it. Paced in fixed physics ticks (tuning "creation" "timing"), so captures and
 ## tests see the same frames on any screen. Keyboard, pad and mouse; Esc / B goes back until the
 ## injection.
@@ -244,6 +245,8 @@ func _physics_process(_delta: float) -> void:
 		Step.ZOOM:
 			lab.zoom(t)
 			_black.color.a = smoothstep(_black_from, 1.0, t)
+		Step.BLACK:
+			_cracks_due()
 	_white.color.a = lab.flash * PlayerSettings.flash_scale()  # Reduce flashing (D-259)
 	if _tick >= Num.i(_ticks[step]):
 		_advance()
@@ -263,19 +266,28 @@ func _advance() -> void:
 			_begin(Step.ZOOM)
 		Step.ZOOM:
 			_black.color.a = 1.0
-			_crack()
 			_begin(Step.BLACK)
+			_cracks_due()
 		Step.BLACK:
 			_begin(Step.DONE)
 			created.emit(str(_titans[_picked]["species"]))
 
 
-## The egg crack in the black (tuning "creation" "crack_sound").
-func _crack() -> void:
+## The egg's cracks in the black (tuning "creation" "cracks", each a cut of "crack_sound": from
+## from_s for len_s, at_s seconds into the black), each on the tick it falls due.
+func _cracks_due() -> void:
 	var cfg := Content.section("creation")
+	var played := cues.count(str(cfg["crack_sound"]))
+	var cracks: Array = cfg["cracks"]
+	if played >= cracks.size():
+		return
+	var next: Dictionary = cracks[played]
+	if _tick < roundi(Num.f(next["at_s"]) * Engine.physics_ticks_per_second):
+		return
 	var crack := _play(str(cfg["crack_sound"]))
 	if crack != null:
-		crack.play(Num.f(cfg["crack_from_s"]))
+		crack.play(Num.f(next["from_s"]))
+		get_tree().create_timer(Num.f(next["len_s"])).timeout.connect(crack.queue_free)
 
 
 static func _sounds() -> Dictionary:

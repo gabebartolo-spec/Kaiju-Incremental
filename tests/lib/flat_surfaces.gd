@@ -21,21 +21,19 @@ const DEATH_FRAMES := 600
 ## Nodes in this group are visual effects, exempt from the rule.
 const EXEMPT_GROUP := "vfx_exempt"
 
-## Types still flat, by phase. P1 water; P2 rooftops (flat black stripe, window panels); P3 trees,
+## Types still flat, by phase. P2 rooftops (flat black stripe, window panels); P3 trees,
 ## lamps, cars, people, gondolas; the sky belongs to the atmosphere lead. Delete lines as they are
 ## fixed; never add one. One row per entry (surface, owner, phase, next step) in docs/ROADMAP.md,
 ## "Flat surfaces programme".
 ## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
 ## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
-const KNOWN_FLAT_MAX := 21
+const KNOWN_FLAT_MAX := 20
 const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
 	"CitySkyline:std": "P3 lamp heads (glow)",
 	"CitySkyline:shader:facade.gdshader": "P2 far towers and roof gear, P3 lattice tower",
 	# facade_far.gdshader's twin with the engine fog (FarHaze, city far_fog on; comment #37)
 	"CitySkyline:shader:facade_far_fogged.gdshader": "P2 far towers, P3 lattice tower",
-	# P1 water
-	"CityGround:std": "P1 water (river and bay sheets)",
 	# P2 rooftops and building faces
 	"BuildingStream:shader:facade.gdshader": "P2 building faces",
 	"BuildingView:shader:voxel.gdshader": "P2 building faces",
@@ -188,6 +186,16 @@ static func _add_ruins(rampage: Rampage) -> void:
 	yard._add(Ruin.chunk(voxels, Vector3(1, 1, 1), 5))
 
 
+## Every landmark's view, built now, so the scan covers them wherever the kaiju starts (it rises
+## from the bay, D-373, and the stream meshes the buildings nearest it first).
+static func _add_landmarks(rampage: Rampage) -> void:
+	var city: CityView = rampage._city
+	var stream: BuildingStream = city.get("_stream")
+	for n: int in rampage.sim.buildings.size():
+		if rampage.sim.buildings[n].landmark != "":
+			stream.view(n)
+
+
 ## Runs the real sim until the first train is on the viaduct (rail.first_s after the kaiju's rise
 ## from the river) and its cars are drawn, so the trains are in the scan (debt row 25: the cars
 ## rendered flat and a scan 30 frames in never saw one). True when RailView holds a train's cars.
@@ -229,6 +237,7 @@ static func run(tree: SceneTree, check_fn: Callable) -> void:
 		rampage._city.ruins().get_child_count() >= 3,
 		"the rubble field (heap, strip, chunk) is in the scan"
 	)
+	_add_landmarks(rampage)
 	var found := scan(rampage)
 	var fresh: Array[String] = []
 	for type: String in found:

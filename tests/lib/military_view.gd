@@ -144,8 +144,6 @@ func _view_run(run: int) -> Dictionary:
 	var rampage := _view_scene(run)
 	root.add_child(rampage)
 	await physics_frame
-	while rampage.sim.emerge.active:  # the river rise holds the sim back (D-083)
-		await physics_frame
 	_clip_overrides(rampage.sim)
 	var roads := _roads(rampage.sim)
 	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0, "closest": INF, "on_car": 0}
@@ -302,7 +300,7 @@ func _view_scene(run: int) -> Rampage:
 	var rampage := Rampage.new()
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	rampage.setup(species, stats, layout, run)
-	rampage.sim.kaiju_pos = Clip.CLIP_AT
+	Clip.start_at(rampage.sim)
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	return rampage
 

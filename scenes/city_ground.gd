@@ -2,9 +2,9 @@ class_name CityGround
 extends Node3D
 ## The ground of the street plan (CityGen.map): asphalt streets, raised pavement blocks, the
 ## park lawn, the plaza, parking lots with painted bays, the diagonal avenue laid across the
-## blocks, quiet road paint, the river the kaiju rises from (CityRiver; its cross streets are
-## the bridges), and the bay with its quay to the north. Flat boxes in a
-## few MultiMeshes; presentation only.
+## blocks, quiet road paint, the river (CityRiver; its cross streets are the bridges), the sea
+## with its quay to the north, and the sea bay the kaiju rises from (CityHarbour, HarbourView).
+## Flat boxes in a few MultiMeshes; presentation only.
 
 const PAVE_TOP := 0.1  # blocks stand a kerb above the street
 const DIAG_TOP := 0.003  # the diagonal avenue, at street level (DiagonalPaving kerbs it)
@@ -35,6 +35,7 @@ var diagonal_pieces: Array[PackedVector2Array] = []
 var bay: MeshInstance3D
 var _slabs: Array[Dictionary] = []
 var _paint: Array[Transform3D] = []
+var _basin: Array[Rect2] = []  # the sea bay's water (CityHarbour.basin): no land or pavement
 
 
 func _init(p_cfg: Dictionary) -> void:
@@ -50,13 +51,16 @@ func _ready() -> void:
 	# Land: asphalt under everything south of the quay, darker beyond the drawn streets, open
 	# where the river runs.
 	var channels := CityRiver.channels(plan, cfg)
+	_basin = CityHarbour.basin(plan)
 	for land: Rect2 in GroundKit.cut([Rect2(-FAR, coast, FAR * 2.0, FAR)], channels):
 		_of(GroundKit.K_ASPHALT, land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
 	for land: Rect2 in GroundKit.cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
 		_of(GroundKit.K_ASPHALT, land, Vector2(0.001, 0.4), asphalt)
 	for block: Dictionary in plan["blocks"]:
 		_block(block, asphalt, pavement)
-	_roads(channels, asphalt)
+	var wet := channels.duplicate()
+	wet.append_array(_basin)
+	_roads(wet, asphalt)
 	_river(channels, asphalt, pavement.lightened(0.12))
 	_diagonal(asphalt)
 	_markings()
@@ -70,6 +74,7 @@ func _ready() -> void:
 	add_child(_build_paint())
 	bay = _water()
 	add_child(bay)
+	_harbour(pavement)
 
 
 ## One block's pavement, and what stands on it (lawn, plaza, parking bays).
@@ -80,7 +85,7 @@ func _block(block: Dictionary, asphalt: Color, pavement: Color) -> void:
 	# The block's pavement reaches out over its sidewalks (and meets across an alley); a sliver
 	# too thin to build on is a kerbed pavement island, never open asphalt (roads suite R4).
 	var walk := CityGen.pavement(block, cfg)
-	if str(block["use"]) != "river" and DiagonalPaving.cuts(plan, block, cfg):
+	if not str(block["use"]) in ["river", "harbour"] and DiagonalPaving.cuts(plan, block, cfg):
 		cut_blocks.append(block)
 		return
 	var kerb := Vector2(PAVE_TOP, 0.3)
@@ -102,8 +107,8 @@ func _block(block: Dictionary, asphalt: Color, pavement: Color) -> void:
 			var bay := rect.grow(-0.6)
 			_of(GroundKit.K_ASPHALT, bay, kerb + Vector2(0.01, 0.0), asphalt.lightened(0.06))
 			_parking_bays(bay)
-		"river":
-			pass  # its water and quays: _river
+		"river", "harbour":
+			pass  # its water and quays: _river, _harbour
 		_:
 			_of(GroundKit.K_PAVEMENT, walk, kerb, pavement)
 
@@ -113,9 +118,10 @@ func _face(rect: Rect2, y: Vector2, color: Color, water_y: float) -> void:
 	_slab(rect, y, color, GroundKit.kind(GroundKit.K_CONCRETE, water_y))
 
 
-## A slab of a surface kind (GroundKit.K_*).
+## A slab of a surface kind (GroundKit.K_*), with the sea bay cut out of it.
 func _of(kind: int, rect: Rect2, y: Vector2, color: Color) -> void:
-	_slab(rect, y, color, GroundKit.kind(kind))
+	for dry: Rect2 in GroundKit.cut([rect], _basin):
+		_slab(dry, y, color, GroundKit.kind(kind))
 
 
 ## The streets as slabs of their own over the land (so the lanes, tracks and kerbs of
@@ -211,18 +217,29 @@ func _parking_bays(rect: Rect2) -> void:
 
 ## The quay: a concrete edge where the city meets the bay.
 func _quay(pavement: Color) -> void:
+	var wet := GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
+	for edge: Rect2 in GroundKit.cut([Rect2(-FAR, coast, FAR * 2.0, 3.0)], _basin):
+		_slab(edge, Vector2(PAVE_TOP + 0.3, 1.6), pavement.darkened(0.15), wet)
+	for lip: Rect2 in GroundKit.cut([Rect2(-FAR, coast - 0.4, FAR * 2.0, 0.4)], _basin):
+		_slab(lip, Vector2(PAVE_TOP + 0.7, 1.0), pavement.darkened(0.3), wet)
+
+
+## The sea bay (CityHarbour): its water and sand beach (HarbourView), a quay deck down each
+## straight side, as the coast's quay, and the promenade's pavement along the coast road.
+func _harbour(pavement: Color) -> void:
+	if not plan.has("harbour"):
+		return
+	var sea := CityHarbour.sea(cfg)
+	for deck: Rect2 in HarbourView.quays(plan):
+		_face(deck, Vector2(PAVE_TOP + 0.3, 1.6), pavement.darkened(0.15), sea)
 	_slab(
-		Rect2(-FAR, coast, FAR * 2.0, 3.0),
-		Vector2(PAVE_TOP + 0.3, 1.6),
-		pavement.darkened(0.15),
-		GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
+		HarbourView.promenade(plan, cfg),
+		Vector2(PAVE_TOP, 0.3),
+		pavement,
+		GroundKit.kind(GroundKit.K_PAVEMENT)
 	)
-	_slab(
-		Rect2(-FAR, coast - 0.4, FAR * 2.0, 0.4),
-		Vector2(PAVE_TOP + 0.7, 1.0),
-		pavement.darkened(0.3),
-		GroundKit.kind(GroundKit.K_CONCRETE, WATER_Y)
-	)
+	add_child(HarbourView.water(plan, cfg, Look.color("water")))
+	add_child(HarbourView.beach(plan, cfg, Look.color("sand")))
 
 
 ## The ground's material, its river level set.
@@ -245,10 +262,13 @@ func _build_paint() -> MultiMeshInstance3D:
 	return GroundKit.paint_instances(_paint, mat)
 
 
-## The bay: dark, glossy water reaching to the horizon north of the quay.
+## The bay: dark water reaching to the horizon north of the quay, with a gentle swell.
 func _water() -> MeshInstance3D:
 	return _sheet(
-		Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0), WATER_Y, Look.color("water")
+		Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0),
+		WATER_Y,
+		Look.color("water"),
+		true
 	)
 
 
@@ -361,18 +381,6 @@ static func _area(poly: PackedVector2Array) -> float:
 	return absf(out) * 0.5
 
 
-## Glossy water of `color` over rect (x, z) at height y.
-func _sheet(rect: Rect2, y: float, color: Color) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = rect.size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.12
-	mat.metallic_specular = 0.8
-	plane.material = mat
-	mi.mesh = plane
-	var mid := rect.get_center()
-	mi.position = Vector3(mid.x, y, mid.y)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mi
+## Water (WaterSurface) over rect (x, z) at height y, `color` where it is deep; bay: the open water.
+func _sheet(rect: Rect2, y: float, color: Color, bay := false) -> MeshInstance3D:
+	return WaterSurface.sheet(rect, y, color, bay, Num.i(cfg["map_seed"]))

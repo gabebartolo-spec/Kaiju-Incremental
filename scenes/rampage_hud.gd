@@ -66,6 +66,13 @@ func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> vo
 	_hud = UiKit.ui()["hud"]
 
 
+## The HUD comes up over `seconds` (the run intro's hand-over: no pop on one frame).
+func fade_in(seconds: float) -> void:
+	visible = true
+	_widgets.modulate.a = 0.0
+	create_tween().tween_property(_widgets, "modulate:a", 1.0, seconds)
+
+
 ## The sim's result plus what only the view counts: the civilians it crushed and those who fled.
 func result() -> Dictionary:
 	return sim.result().merged(HudCounts.of(street))
@@ -116,15 +123,7 @@ func _lifted(part: Control, figure: bool) -> Control:
 
 ## How far the biomass number's visible bottom (outline included) sits above its box's bottom (px).
 func figure_gap() -> float:
-	var size := Num.i(_hud["biomass_size"])
-	var font := ThemeDB.fallback_font
-	var face := UiKit.font_for(size)
-	if face != null:
-		font = face
-	else:
-		var themed := biomass.get_theme_font("font") if biomass != null else null
-		font = themed if themed != null else ThemeDB.fallback_font
-	return font.get_descent(size) - UiKit.outline_px(size)
+	return HudFigure.gap(Num.i(_hud["biomass_size"]), biomass)
 
 
 ## Where the biomass number's visible bottom is on screen (y), and the rings' (the ui suite).

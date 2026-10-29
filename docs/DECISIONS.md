@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
+Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
+row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
+Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
+Stadium-driven tests (flow, crowd) play the stage-2 city.
+
 ## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
 His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
 the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not

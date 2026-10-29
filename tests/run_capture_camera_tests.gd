@@ -12,6 +12,8 @@ const SPECIES := "reptilian"
 const MAX_M := 0.5
 const MAX_DEG := 0.5
 const SETTLE_FRAMES := 240
+## The most frames the run's rise (the intro's shot, not the camera at rest) may take.
+const RISE_FRAMES := 1200
 ## Camera numbers a tool must take from CameraTuning instead.
 const STALE := ["Vector3(0, 27, 19)", "fov = 55"]
 
@@ -44,6 +46,10 @@ func _compare(levels: Dictionary, tier: int, label: String) -> void:
 	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
+	for _i: int in RISE_FRAMES:  # the rise from the bay (the adult's keyed clip runs ~5 s)
+		if not rampage.sim.emerge.active:
+			break
+		await process_frame
 	for _i: int in SETTLE_FRAMES:
 		await process_frame
 	var motion := PlayerSettings.camera_motion

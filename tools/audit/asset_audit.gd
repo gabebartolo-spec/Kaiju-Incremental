@@ -50,8 +50,10 @@ static func inventory(cfg: Dictionary) -> Dictionary:
 	for spec: Dictionary in cfg.get("landmarks", []):
 		listed.append(str(spec["id"]))
 	var shapes: Dictionary = cfg.get("landmark_shapes", {})
+	var past := _past_edge(cfg)
 	for id: String in shapes:
-		out["landmark:" + id] = {"kind": "landmark", "hero": true, "allowed": id in listed}
+		var allowed := id in listed and not id in past
+		out["landmark:" + id] = {"kind": "landmark", "hero": true, "allowed": allowed}
 	var book: Dictionary = cfg.get(POOL_KEY, {})
 	var pool: Dictionary = book.get("pool", {})
 	for id: String in pool:
@@ -71,6 +73,20 @@ static func inventory(cfg: Dictionary) -> Dictionary:
 	for i: int in VoxelPerson.COP:
 		out["civilian:%d" % i] = {"kind": "civilian", "hero": false, "allowed": true}
 	out["sign:neon"] = {"kind": "sign", "hero": false, "allowed": true}
+	return out
+
+
+## The landmarks whose site this stage's plan places past its edge (D-380: the baby's city shows
+## the east spot only): not due at this stage. A landmark with no site at all stays due, so a
+## footprint that stops fitting still fails the bar.
+static func _past_edge(cfg: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	var plan := CityGen.map(cfg)
+	var sites: Array = plan.get("sites", [])
+	for block: Dictionary in plan["blocks"]:
+		if block.has("site") and str(block["use"]) == "outer":
+			var site: Dictionary = sites[Num.i(block["site"])]
+			out.append(str(site["id"]))
 	return out
 
 

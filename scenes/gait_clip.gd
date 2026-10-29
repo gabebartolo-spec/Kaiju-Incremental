@@ -45,7 +45,7 @@ const NECK_SHARE := 0.4
 static var off := false
 
 var clips: KaijuClips
-## The clip playing ("idle", "walk", "turn_left", "turn_right" or "roar") and its time (frames).
+## The clip playing ("idle", "walk", a turn, "roar", "rise_bay": RampageRise.rise) and its frame.
 var state := "idle"
 var clip_time := 0.0
 ## Walk cycles travelled so far (distance / stride), for tests and captures, and walk clip frames
@@ -67,9 +67,8 @@ var _path: SwingPath  # a lifted foot's way to its clip path
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 ## The body's world yaw and each foot's flat heading (FootHold.foot_yaw) when it went down, and the
-## turn (rad) its toes are held to: a planted foot keeps its world yaw while the body turns over it
-## and, up to FootHold.ROLL_HOLD_MAX, while a splayed foot rolls over the stance; it swings back to
-## the clip's in the air.
+## turn (rad) its toes are held to: a planted foot keeps its world yaw while the body turns over
+## it and, up to FootHold.ROLL_HOLD_MAX, while a splayed foot rolls; back to the clip's in the air.
 var _plant_yaw: Array[float] = [0.0, 0.0]
 var _plant_heading: Array[float] = [0.0, 0.0]
 var _yaw_fix: Array[float] = [0.0, 0.0]
@@ -126,7 +125,8 @@ func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
-	_choose(dt)
+	if state != KaijuModel.RISE_CLIP or _roar_queued:  # the rise's frame is set (RampageRise)
+		_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():

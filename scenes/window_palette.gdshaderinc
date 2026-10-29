@@ -32,9 +32,10 @@ uint window_mix(uint v) {
 }
 
 // The lit window a point inside a window voxel falls in, as a world grid cell
-// (WindowPalette.window_key), hashed (WindowPalette.window_hash).
-uint window_hash(vec3 cell_point) {
-	vec3 at = cell_point - vec3(window_voxel * 0.5);
+// (WindowPalette.window_key), hashed (WindowPalette.window_hash). n: the face's normal; the
+// half-open shift runs along the face only, so the point never sits on a unit edge.
+uint window_hash(vec3 cell_point, vec3 n) {
+	vec3 at = cell_point - (vec3(1.0) - abs(n)) * vec3(window_voxel * 0.5);
 	vec2 u = at.y < 1.0 ? vec2(1.0) : window_unit;
 	vec3 grid = vec3((at.x - window_align.x) / u.x, at.y / u.y, (at.z - window_align.y) / u.x);
 	ivec3 k = ivec3(floor(grid));

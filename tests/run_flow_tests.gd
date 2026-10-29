@@ -260,7 +260,9 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
-		if frames == TANK_WALK_FRAMES and not levels.is_empty() and not played.has("deflect"):
+		# Every 2 s from then on: the bay start holds the army back, the first tank may come later.
+		var walk := frames >= TANK_WALK_FRAMES and frames % 120 == 0
+		if walk and not levels.is_empty() and not played.has("deflect"):
 			FlowTanks.walk_to_nearest(rampage.sim)
 		jets = maxi(jets, FlowBreath.jets(rampage))
 		FlowBreath.track_scorch_glow(rampage, scorch_glow)

@@ -17,6 +17,7 @@ extends SceneTree
 ##     --start=<m> begins that many metres along the drift, so a tower passes mid-clip)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const Probe := preload("res://tools/capture/window_bars_probe.gd")
 const SPECIES := "reptilian"
 const SETTLE_FRAMES := 6
 const FRAME_RATE := 60.0  # the --fixed-fps of a clip
@@ -129,6 +130,7 @@ func _make_port() -> void:
 	_eye = Camera3D.new()
 	_port.add_child(_eye)
 	root.add_child(_port)
+	RenderingServer.viewport_set_measure_render_time(_port.get_viewport_rid(), true)
 	_eye.current = true
 	_far = FarDepth.new(_eye)  # the far blur, as the rampage's camera has it
 
@@ -211,6 +213,30 @@ func _apply(variant: String, view: BuildingView, index: int) -> Callable:
 				var fixed := view._shell.mesh
 				view._shell.mesh = _without_balcony_walls(view)
 				undo.append(func() -> void: view._shell.mesh = fixed)
+			"backmagenta":
+				# Diagnostic: the baked shells' back faces glow magenta, to tell a back face from a hole.
+				undo.append(
+					Probe.patch_baked(
+						root,
+						"ALBEDO = albedo * inside;",
+						"ALBEDO = vec3(0.0); EMISSION = vec3(4.0, 0.0, 4.0);"
+					)
+				)
+			"cullback":
+				undo.append(
+					Probe.patch_baked(root, "render_mode cull_disabled;", "render_mode cull_back;")
+				)
+			"bgred":
+				# Diagnostic: a solid red background, to tell a pixel no surface shaded from a dark one.
+				var mode := _env.background_mode
+				var colour := _env.background_color
+				_env.background_mode = Environment.BG_COLOR
+				_env.background_color = Color(1.0, 0.0, 0.0)
+				undo.append(
+					func() -> void:
+						_env.background_mode = mode
+						_env.background_color = colour
+				)
 			"hardshadow":
 				var old := _sun.light_angular_distance
 				_sun.light_angular_distance = 0.0
@@ -220,6 +246,16 @@ func _apply(variant: String, view: BuildingView, index: int) -> Callable:
 						_sun.light_angular_distance = old
 						_sun.shadow_blur = 1.5
 				)
+			"facadeplain", "aaoff", "aaon":
+				# The stand-in and skyline facades: no window pattern (the cause test), or the window
+				# filter (render_opt.facade_aa) forced off or on.
+				var param := "plain" if part == "facadeplain" else "filter_windows"
+				var value := part != "aaoff"
+				for mat: ShaderMaterial in Probe.facade_mats(root):
+					var was: Variant = mat.get_shader_parameter(param)
+					mat.set_shader_parameter(param, value)
+					undo.append(func() -> void: mat.set_shader_parameter(param, was))
+				print("  %s: %d facade materials" % [part, Probe.facade_mats(root).size()])
 			_:
 				printerr("unknown variant part ", part)
 	return func() -> void:
@@ -301,6 +337,7 @@ func _building(n: int, scale: float, variant: String) -> void:
 		step = _sim.stat("speed") / FRAME_RATE
 		print("walking pace %.2f m/s = %.4f m per frame" % [_sim.stat("speed"), step])
 	var rect := Rect2i()
+	var gpu_ms: Array[float] = []
 	for f: int in Num.i(_opt["frames"]):
 		_kaiju.position = at + Vector3(0, 0, Num.f(_opt["start"]) + step * f)
 		_kaiju.animate(0.0, 0.0)
@@ -311,6 +348,9 @@ func _building(n: int, scale: float, variant: String) -> void:
 		for _i: int in SETTLE_FRAMES if f == 0 else 1:
 			await process_frame
 		var shot := _port.get_texture().get_image()
+		gpu_ms.append(
+			RenderingServer.viewport_get_measured_render_time_gpu(_port.get_viewport_rid())
+		)
 		if f == 0:
 			rect = _rect(b)
 			print(
@@ -324,6 +364,8 @@ func _building(n: int, scale: float, variant: String) -> void:
 			shot.save_png(dir.path_join("full%03d.png" % f))
 		else:
 			shot.get_region(rect).save_png(dir.path_join("f%03d.png" % f))
+	gpu_ms.sort()
+	print("%s gpu ms: median %.2f" % [variant, gpu_ms[gpu_ms.size() >> 1]])
 	undo.call()
 
 

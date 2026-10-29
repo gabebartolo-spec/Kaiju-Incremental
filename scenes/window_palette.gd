@@ -21,7 +21,10 @@ const MIX_A := 2146121005
 const MIX_B := 2221713035
 const MASK := 0xFFFFFFFF
 ## Half-open lit units: a point is moved this share of a voxel toward the building's min corner
-## first, so a window's edge on a pier or mullion line never reads as the next unit.
+## first, along the face only, so a window's edge on a pier or mullion line never reads as the
+## next unit. Never along the face's normal: that would put a min-side face (-x, -z) exactly on a
+## unit edge, where the pixels' interpolated positions fall either side and the window breaks
+## into flashing stripes while the camera moves.
 const EDGE := 0.5
 
 
@@ -101,7 +104,7 @@ static func align_of(b: RampageSim.Building, unit: Vector2) -> Vector2:
 ## for a standing building); n: the face's outward normal.
 static func window_key(p: Vector3, n: Vector3, align: Vector2, unit: Vector2) -> Vector3i:
 	var voxel := BuildingVoxels.VOXEL
-	var at := p - n * (voxel * 0.5) - Vector3.ONE * (voxel * EDGE)
+	var at := p - n * (voxel * 0.5) - (Vector3.ONE - n.abs()) * (voxel * EDGE)
 	var u := Vector2.ONE if at.y < 1.0 else unit
 	return Vector3i(
 		floori((at.x - align.x) / u.x), floori(at.y / u.y), floori((at.z - align.y) / u.x)

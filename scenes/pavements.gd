@@ -27,8 +27,8 @@ func _init(sim: RampageSim) -> void:
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		var use := str(block["use"])
-		if use in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
-			continue  # past the edge, or the river (CityRiver): no one walks on the water
+		if use in ["outer", "river", "harbour"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
+			continue  # past the edge, the river or the sea bay: no one walks on the water
 		# The pavement line, the same distance in from the kerb as round every other block.
 		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
 		var size := ring.size * 0.5

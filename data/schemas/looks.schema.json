@@ -230,6 +230,7 @@
           "asphalt": {"$ref": "#/$defs/str"},
           "lot": {"$ref": "#/$defs/str"},
           "water": {"$ref": "#/$defs/str"},
+          "sand": {"$ref": "#/$defs/str"},
           "river": {"$ref": "#/$defs/str"},
           "ambient_color": {"$ref": "#/$defs/hex6"},
           "lamp_energy": {"$ref": "#/$defs/num"},
@@ -241,7 +242,9 @@
           "finish_specular": {"$ref": "#/$defs/finish"},
           "agx_contrast": {"$ref": "#/$defs/num"},
           "post_contrast": {"$ref": "#/$defs/num"},
-          "deband": {"$ref": "#/$defs/bool"}
+          "deband": {"$ref": "#/$defs/bool"},
+          "water_shallow": {"$ref": "#/$defs/hex6"},
+          "water_foam": {"$ref": "#/$defs/hex6"}
         },
         "required": [
           "id", "label", "name", "sky_top", "sky_horizon", "ambient", "sun_color", "sun_energy",

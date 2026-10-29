@@ -1,8 +1,9 @@
 extends "res://tests/lib/powers_base.gd"
 ## Powers suite: the croc's branch (docs/SPECIES.md, D-035), the demo's species. Every branch
 ## node has a player-effect fixture: the same seeded, scripted scene with the node owned and
-## without it plays out visibly differently. Headless, no autoloads. The insectoid's and the
-## cephalopod's are parked with them (tests/parked/, director 2026-10-29).
+## without it plays out visibly differently. Headless, no autoloads. The helicopters are in
+## run_helis_tests.gd; the insectoid's and the cephalopod's are parked with them (tests/parked/,
+## director 2026-10-29).
 ##   godot --headless --path . --script tests/run_powers_tests.gd
 
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")
