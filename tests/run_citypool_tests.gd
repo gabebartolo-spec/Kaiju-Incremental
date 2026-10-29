@@ -3,7 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## city (CityPool) and broken through the one carve path (D-253). Over 3 stages x 20 city seeds:
 ## every baked model appears, heroes in at least 10% of the cities and each filler in at least
 ## 25%; no filler above 5% of the buildings in any sampled game-camera view; no two touching
-## copies alike; no overlap with buildings, roads or water. Every model carves. The tallest is
+## copies alike; no overlap with buildings, roads or water. The port (CityPort) stands the same in
+## every city of a stage, all of it by the last stage. Every model carves. The tallest is
 ## about 2x the adult croc (D-257). Player-effect fixture "city_pool": the pool on vs off.
 ## Seeded by design: city seeds 0..19 per stage, Seeds "army" 0.
 ##   godot --headless --path . --script tests/run_citypool_tests.gd
@@ -29,6 +30,7 @@ func run_checks() -> void:
 		"_check_appears",
 		"_check_overlaps",
 		"_check_twins",
+		"_check_port",
 		"_check_view_share",
 		"_check_effect",
 		"_check_every_model_carves",
@@ -44,7 +46,8 @@ func _pool() -> Dictionary:
 	return pool
 
 
-## Every row is well formed (the pool's schema): name, a known district, hero or filler, storeys;
+## Every row is well formed (the pool's schema): name, a known district, hero, filler or fixed,
+## storeys;
 ## once baked, w, d, h, one chunk layer per floor of w x d, a kvox that exists, stretch_floor.
 func _check_schema() -> void:
 	var book := Content.city_buildings()
@@ -58,6 +61,31 @@ func _check_schema() -> void:
 	for row: Dictionary in _pool().values():
 		baked += int(row.has("w"))
 	check(baked == _pool().size(), "every row is baked (%d of %d)" % [baked, _pool().size()])
+
+
+## The port (D-381, CityPort): every city of a stage stands the same port models at the same spots
+## and turns, and the last stage's band holds every one city "harbour" "port" lists.
+func _check_port() -> void:
+	var listed: Array = Content.tuning()["city"]["harbour"]["port"]["at"]
+	var by_stage: Dictionary = {}
+	var odd: Array[String] = []
+	var last := 0
+	for city: Dictionary in _cities.cities:
+		var key: Array[String] = []
+		for e: Dictionary in city["layout"]:
+			if e.get("fixed", false):
+				key.append("%s@%.1f,%.1f/%d" % [e["model"], e["x"], e["z"], Num.i(e["facing"])])
+		var stage := Num.i(city["stage"])
+		last = maxi(last, stage)
+		var line := ";".join(key)  # the keys hold commas
+		if by_stage.has(stage) and by_stage[stage] != line:
+			odd.append("stage %d seed %d" % [stage, city["seed"]])
+		by_stage[stage] = line
+	check(odd.is_empty(), "every city of a stage has the same port (not: %s)" % [odd])
+	var all := str(by_stage.get(last, "")).split(";", false).size()
+	check(
+		all == listed.size(), "the last stage stands all %d port models (%d)" % [listed.size(), all]
+	)
 
 
 ## Four quarter turns bring a cell and its face bits home; a turn swaps the footprint; a stretch

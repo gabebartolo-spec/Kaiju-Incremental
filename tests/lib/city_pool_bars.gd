@@ -3,7 +3,7 @@ extends RefCounted
 ## view shares, carving and the croc's height. Pure functions over sampled cities
 ## (tests/lib/city_pool_cities.gd). Seeded by design.
 
-const ROLES: Array[String] = ["hero", "filler"]
+const ROLES: Array[String] = ["hero", "filler", "fixed"]  # fixed: the port (CityPort)
 const HERO_SHARE := 0.10
 const FILLER_SHARE := 0.2  # 0.25 in D-256; the fixed front (#411) left F13 at 22%: tune later
 ## A game-camera view's ground footprint at the baby's zoom (metres, across x depth), scaled by
@@ -76,6 +76,8 @@ static func appearances(cities: Array[Dictionary], book: Dictionary) -> Dictiona
 		var hero := str(row["role"]) == "hero"
 		if share == 0.0:
 			missing.append(id)
+		elif str(row["role"]) == "fixed":
+			continue  # the port stands in every city its band reaches: no share to hold
 		elif hero and share < HERO_SHARE:
 			heroes.append("%s %.0f%%" % [id, share * 100.0])
 		elif not hero and share < FILLER_SHARE:
@@ -110,7 +112,8 @@ static func overlaps(cities: Array[Dictionary]) -> Dictionary:
 					out["buildings"] += 1
 			for w: Rect2 in water:
 				out["water"] += int(r.intersects(w))
-			out["roads"] += int(_on_road(blocks, r))
+			if not layout[i].get("fixed", false):  # the port stands on the front's quay and yard
+				out["roads"] += int(_on_road(blocks, r))
 	return out
 
 
@@ -166,13 +169,14 @@ static func _file_blocks(plan: Dictionary) -> Dictionary:
 	return {"rects": rects, "index": index}
 
 
-## Touching pool pairs with the same look (model and variant) or the same model.
+## Touching pool pairs with the same look (model and variant) or the same model (the port's fixed
+## models aside).
 static func twins(cities: Array[Dictionary]) -> Dictionary:
 	var out := {"look": 0, "model": 0}
 	for city: Dictionary in cities:
 		var pooled: Array[Dictionary] = []
 		for e: Dictionary in city["layout"]:
-			if e.has("model"):
+			if e.has("model") and not e.get("fixed", false):  # the port repeats its stacks
 				pooled.append(e)
 		for i: int in pooled.size():
 			for j: int in range(i + 1, pooled.size()):
