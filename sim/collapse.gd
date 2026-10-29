@@ -26,6 +26,12 @@ func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) ->
 		_odds = PackedFloat32Array([Num.f(dirs["cut"]), side, side, Num.f(dirs["away"])])
 
 
+## Every topple goes to its cut side (D-099's rule): for checks that measure something other
+## than the fall's direction (what a fall smashes, a walk's clearing, a ring's reach).
+func cut_only() -> void:
+	_odds = PackedFloat32Array([1.0, 0.0, 0.0, 0.0])
+
+
 ## Buildings in the arena with every chunk gone (the thanks screen's "buildings destroyed").
 func destroyed_buildings() -> int:
 	var n := 0
