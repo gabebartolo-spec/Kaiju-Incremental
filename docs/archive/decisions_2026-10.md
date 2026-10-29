@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-331 · Director · One block of speed tests now, then none in the day
+Q (18:1x): speed tests during the day? A: "One block now, then none": the queued block (perf-p4b, perf-p2b-native,
+perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
+until D-333's start. Builders, Cascadeur, suites, captures and builds use the PC freely. D-299/D-313's window rules
+still govern every speed run that does start.
+
 ## 2026-10-27 · D-330 · Director · The game camera stays behind him and turns with him
 His words: "the camera is not locked directionally, it follows the kaiju from behind"; "the maps are random".
 Q: "Should the game camera turn to stay behind him as he turns, the way you described?" A: "Yes, follow behind
