@@ -2,12 +2,9 @@ class_name CityView
 extends Node3D
 ## The voxel city and its effects: sky and light, ground, buildings (BuildingView: voxels by
 ## structural chunk), falling sections, physics debris, fires, dust and sparks (Fx), rings,
-## flames and floating text. Draws only; RampageSim decides what breaks and what falls.
+## flames. Draws only; RampageSim decides what breaks and what falls.
 
 const DEBRIS_PER_CHUNK := 8
-const DEBRIS_PER_LANDING := 160
-const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
-const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
 ## Staged (stages.on): _ready builds in stages, one per frame, while the owner draws its loading
 ## screen between them (b2-30: building the whole city in one call froze the screen for seconds).
@@ -19,16 +16,15 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
-## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the fade keeps
-## them in sight beside the sim's own points (R 19.4: a tower over the drawn head or chest fades).
-var drawn_sight := PackedVector3Array()
 ## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
 var blast_break: BlastBreak
+## Draws carved buildings from their own fine cells (destruction plan stage 1; null until built).
+var carve: CityCarve
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
-var _fade: BuildingFade
-var _fall_fade := FallFade.new()
-var _falling: Dictionary = {}
+var _bubble: CameraBubble
+var _falls: CityFalls
+var _falling: Dictionary = {}  # _falls.falling (tests and tools read it)
 var _ruins: RuinYard
 var _topple: ToppleFx
 var _decor: CityDecor
@@ -44,6 +40,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator, with_decor: bool = tru
 	sim = p_sim
 	_rng = rng
 	_with_decor = with_decor
+	SmokeSoft.apply()  # smoke and dust melt into what they meet (render plan item 13)
 
 
 func _ready() -> void:
@@ -53,23 +50,8 @@ func _ready() -> void:
 	_build_ground()
 	if not await stages.next(self):
 		return
-	var colors: Array[Color] = []
-	for b: RampageSim.Building in sim.buildings:
-		colors.append(_base_color(b))
-	_stream = BuildingStream.new(sim, colors)
-	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
-	add_child(_stream)
-	_fade = BuildingFade.new(sim.buildings, _stream.built)
-	fx = Fx.new()
-	add_child(fx)
-	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
-	add_child(_debris)
-	_ruins = RuinYard.new(sim, _stream.view)
-	add_child(_ruins)
-	_topple = ToppleFx.new(self, _rng)
-	add_child(_topple)
-	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
-	Fire.prewarm(self)
+	_build_buildings()
+	_add_layers()
 	if not await stages.next(self):
 		return
 	if _with_decor:
@@ -91,10 +73,31 @@ func _ready() -> void:
 	is_loaded = true
 
 
+## The effect layers: dust and sparks, debris, ruins, topples, falls and the light pool.
+func _add_layers() -> void:
+	fx = Fx.new()
+	add_child(fx)
+	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
+	add_child(_debris)
+	_ruins = RuinYard.new(sim, _stream.view)
+	add_child(_ruins)
+	_topple = ToppleFx.new(self, _rng)
+	add_child(_topple)
+	_falls = CityFalls.new(self, _stream, _topple, _rng)
+	_falling = _falls.falling
+	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
+	Fire.prewarm(self)
+
+
 ## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one
 ## is built.
 func regrow(index: int) -> void:
+	carve.forget(index)
 	_stream.regrow(index)
+
+
+func building(index: int) -> BuildingView:  # built now if it waits (SlamView shudders it)
+	return _stream.view(index)
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife;
@@ -128,24 +131,35 @@ func crush_all(spots: Array[Vector3]) -> void:
 func _process(delta: float) -> void:
 	if not is_loaded:
 		return
-	_animate_falls(delta)
+	_falls.animate(delta)
 	var camera := get_viewport().get_camera_3d()
-	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
+	if camera != null:
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var sight := BuildingFade.sight_of(sim, camera.global_position) + drawn_sight
-		_fade.update(camera.global_position, sight, delta)
-		_fall_fade.update(falling_pieces(), camera.global_position, sight, delta)  # toppling too
+		# Only what the camera itself runs into is cut away, never the destruction (D-283, D-326).
+		var frame := FrameShare.of(camera, get_viewport().get_visible_rect().size)
+		_bubble.update(frame, feet, CameraBubble.field(sim), delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
 
 
-## The sections falling now (FallFade; the capture tools read them).
+## The sections falling now (the capture tools and tests read them). They are never faded or
+## cut (D-326).
 func falling_pieces() -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	for f: Dictionary in _falling.values():
 		out.append(f["node"])
 	return out
+
+
+## The buildings (streamed in), their fine-grid views and the camera bubble.
+func _build_buildings() -> void:
+	_stream = BuildingStream.new(sim, BuildingColors.of(sim))
+	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
+	add_child(_stream)
+	carve = CityCarve.new(sim, _stream)
+	add_child(carve)  # after the stream: its views have meshed this frame when it takes them
+	_bubble = CameraBubble.new(sim.buildings, _stream.built)
 
 
 ## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
@@ -163,11 +177,6 @@ func _build_ground() -> void:
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
 		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
-
-
-func _base_color(b: RampageSim.Building) -> Color:
-	var styles := Look.styles()
-	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
@@ -200,95 +209,25 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	_broke(index, cells)
 
 
-## A section starts to fall: lift its voxels into a piece that topples or drops.
+## The sim's fine-grid events (cells_promoted, cells_carved, fall_start): CityCarve draws the
+## carved building from its cells; a section starts to fall.
+func on_cells(event: Dictionary) -> void:
+	if str(event["type"]) == "fall_start":
+		fall_start(event)
+	else:
+		carve.on_event(event)
+
+
+## A section starts to fall (CityFalls): its piece topples or drops.
 func fall_start(event: Dictionary) -> void:
-	var index := Num.i(event["building"])
+	_falls.start(event)
 	var cells: Array[Vector3i] = event["cells"]
-	var pivot: Vector3 = event["pivot"]
-	_stream.expect_fall(event)  # a topple's landing strip is meshed before it lands
-	var piece := _stream.view(index).lift_piece(cells, pivot)
-	if LandmarkBurst.bursts(sim, event):  # a landmark's section bursts where it stands
-		piece = LandmarkBurst.new(piece, self, event)
-	add_child(piece)
-	_falling[Num.i(event["id"])] = {
-		"node": piece,
-		"kind": str(event["kind"]),
-		"dir": event["dir"],
-		"drop": Num.f(event["drop"]),
-		"duration": maxf(0.05, Num.f(event["duration"])),
-		"t": 0.0,
-	}
-	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
-	_broke(index, cells)
-	if street != null:  # the people under it freeze; its landing crushes the same reach
-		street.brace_fall(event, DROP_REACH)
-
-
-## Gravity drives it: the angle (topple) or the drop grows with the square of time.
-func _animate_falls(delta: float) -> void:
-	for id: int in _falling:
-		var f: Dictionary = _falling[id]
-		var node: Node3D = f["node"]
-		f["t"] = Num.f(f["t"]) + delta
-		var k := clampf(Num.f(f["t"]) / Num.f(f["duration"]), 0.0, 1.0)
-		if str(f["kind"]) == "topple":
-			_topple.pose(f, delta)
-		else:
-			node.position.y = (
-				node.position.y - (Num.f(f["drop"]) * k * k - Num.f(f.get("dropped", 0.0)))
-			)
-			f["dropped"] = Num.f(f["drop"]) * k * k
+	_broke(Num.i(event["building"]), cells)
 
 
 ## A section hit the ground (or what was below it): it bursts into debris and dust.
 func fall_land(event: Dictionary) -> void:
-	var id := Num.i(event["id"])
-	if not _falling.has(id):
-		return
-	var f: Dictionary = _falling[id]
-	_falling.erase(id)
-	var node: Node3D = f["node"]
-	var parts: Array = node.get_meta("parts", [])
-	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
-		_topple_land(node, event)
-		return
-	var landed: Array[Vector3] = []
-	for n: int in mini(parts.size(), DEBRIS_PER_LANDING):
-		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
-		var pos: Vector3 = part["pos"]
-		var pivot: Vector3 = node.get_meta("pivot")
-		var at := node.global_transform * (pos - pivot)
-		landed.append(at)
-		var color: Color = part["color"]
-		debris(at, color, Vector3.UP)
-	if sim.buildings[Num.i(event["building"])].landmark != "":
-		LandmarkBurst.retire(node, true)
-	else:
-		_topple.crumble(node)  # crumbles into the street over a moment, never a one-frame pop
-	if not landed.is_empty():
-		fx.dust(landed[0], 1.5)
-		var b := sim.buildings[Num.i(event["building"])]
-		if street != null and b.landmark == "":  # came down round its own (not a ring's) walls
-			var spill := Num.f(street.tune("fall_spill"))
-			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH + spill)
-
-
-## A tower came down across the street: it breaks up and leaves a rubble strip (ToppleFx); what
-## the strip covers is crushed.
-func _topple_land(node: Node3D, event: Dictionary) -> void:
-	_topple.land(node, event, _stream.view(Num.i(event["building"])).voxels)
-	var from: Vector2 = event["from"]
-	var to: Vector2 = event["to"]
-	var width := Num.f(event["width"])
-	var a := Vector3(from.x, 0, from.y)
-	var b := Vector3(to.x, 0, to.y)
-	var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
-	var spill := Num.f(street.tune("fall_spill")) if street != null else 0.0
-	var spots: Array[Vector3] = []
-	for i: int in steps + 1:
-		var at := a.lerp(b, float(i) / steps)
-		spots.append(Vector3(at.x, at.z, width * 0.6 + spill))
-	crush_all(spots)
+	_falls.land(event)
 
 
 ## The ruins of the rampage (ToppleFx builds its rubble strips through it).
@@ -380,21 +319,3 @@ func ring(centre: Vector3, radius: float, color: Color, seconds: float) -> void:
 	tween.tween_property(mi, "scale", Vector3(radius, 0.3, radius), seconds)
 	tween.tween_property(mat, "albedo_color:a", 0.0, seconds)
 	tween.chain().tween_callback(mi.queue_free)
-
-
-func float_text(text: String, pos: Vector3, color: Color) -> void:
-	var l := Label3D.new()
-	l.text = text
-	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.font_size = 96
-	l.outline_size = 24
-	l.modulate = color
-	l.no_depth_test = true
-	l.add_to_group(FLOAT_TEXT)
-	l.position = pos
-	add_child(l)
-	var tween := l.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(l, "position", pos + Vector3(0, 3, 0), 1.0)
-	tween.tween_property(l, "modulate:a", 0.0, 1.0).set_delay(0.4)
-	tween.chain().tween_callback(l.queue_free)

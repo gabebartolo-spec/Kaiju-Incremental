@@ -18,6 +18,8 @@ const KERB := 0.05  # the least step from asphalt up to its pavement that reads 
 const FLAT := 0.005  # the greatest height step two joined road pieces may have (m)
 const ZEBRA_SIZE := Vector2(0.3, 1.2)  # RoadPaint._zebra's stripe (across, along)
 const ZEBRA_OFF := 0.9  # RoadPaint.marks: a zebra's centre past the crossing's kerb line
+const STOP_REACH := 3.5  # a stop line's farthest centre past the junction box, zebra counted
+const SHORT_SPAN := 4.0  # R7: a road with a slanted end this short (dash pitches) may be bare
 const PERPENDICULAR := 0.999  # |sin| of a crossing whose junction box an edge runs through
 
 
@@ -158,6 +160,99 @@ static func r5_paint(ground: RoadGround, paint: Array[Transform3D]) -> Array[Str
 	return out
 
 
+## R7 (director 2026-10-28: "all roads must have road lines when appropriate"): every road in view
+## wide enough for two lanes (road_paint.two_lane_min), long enough for a dash, carries its centre
+## line, and every end of it that meets a road square to it carries a stop line across its
+## approaching lane, unless a slanted crossing's asphalt lies where the stop line would.
+static func r7_markings(ground: RoadGround, paint: Array[Transform3D]) -> Array[String]:
+	var out: Array[String] = []
+	var rp: Dictionary = ground.cfg["road_paint"]
+	var centre := {}  # road -> true when a centre line stripe lies on it
+	var stops := {}  # Vector2i(road, end) -> true
+	var all := RoadNet.arms(ground)
+	for stripe: Transform3D in paint:
+		var c := Vector2(stripe.origin.x, stripe.origin.z)
+		var long := Vector2(stripe.basis.z.x, stripe.basis.z.z).normalized()
+		for r: int in ground.roads_at(c, -1.0):
+			var road := ground.roads[r]
+			var dir: Vector2 = road["dir"]
+			var a: Vector2 = road["a"]
+			var across := absf((c - a).cross(dir))
+			if absf(dir.cross(long)) < 0.01:
+				var inside := Num.f(rp["double_gap"]) * 0.5 + Num.f(rp["line_width"])
+				if across <= inside:
+					centre[r] = true
+			elif absf(dir.cross(long)) >= PERPENDICULAR:
+				var along := (c - a).dot(dir)
+				for end: int in 2:
+					var from := along if end == 0 else Num.f(road["length"]) - along
+					var box := _box(ground, all, Num.i(road["from"] if end == 0 else road["to"]), r)
+					if box > 0.0 and from >= box and from <= box + STOP_REACH:
+						stops[Vector2i(r, end)] = true
+	for r: int in ground.roads.size():
+		if not _shown(ground, r):
+			continue
+		var road := ground.roads[r]
+		var half := Num.f(road["half"])
+		if half * 2.0 < Num.f(rp["two_lane_min"]):
+			continue
+		var start: Vector2 = road["a"]
+		var gap := half + Num.f(rp["dash_clear"])
+		var span := Num.f(road["length"]) - 2.0 * gap
+		# A short road between a slanted crossing's long mouth and the next is left bare.
+		var short := (
+			span < SHORT_SPAN * Num.f(rp["dash_pitch"]) and _slanted_end(ground, all, road, r)
+		)
+		if span > Num.f(rp["dash_pitch"]) and not short and not centre.has(r):
+			out.append("R7 %s at %s has no centre line" % [road["kind"], RoadGround.where(start)])
+		if str(road["kind"]) == CityGen.DIAGONAL:
+			continue
+		for end: int in 2:
+			var node := Num.i(road["from"] if end == 0 else road["to"])
+			var box := _box(ground, all, node, r)
+			var covered := stops.has(Vector2i(r, end)) or _slanted_there(ground, road, end, box, rp)
+			if box > 0.0 and not covered:
+				out.append(
+					(
+						"R7 %s at %s has no stop line at its %s end"
+						% [road["kind"], RoadGround.where(start), "first" if end == 0 else "last"]
+					)
+				)
+	return out
+
+
+## True when a road not square or parallel to road r meets it at either end.
+static func _slanted_end(ground: RoadGround, all: Dictionary, road: Dictionary, r: int) -> bool:
+	var own: Vector2 = ground.roads[r]["dir"]
+	for node: int in [Num.i(road["from"]), Num.i(road["to"])]:
+		for arm: Dictionary in all.get(node, []):
+			var other: Vector2 = arm["dir"]
+			var turn := absf(own.cross(other))
+			if turn > 0.01 and turn < PERPENDICULAR:
+				return true
+	return false
+
+
+## True when a slanted road's asphalt lies where the stop line of road's `end` would be.
+static func _slanted_there(
+	ground: RoadGround, road: Dictionary, end: int, box: float, rp: Dictionary
+) -> bool:
+	var dir: Vector2 = road["dir"]
+	var toward := dir if end == 0 else -dir
+	var node: Vector2 = road["a"] if end == 0 else road["b"]
+	var side := Vector2(toward.y, -toward.x)
+	var thick := Num.f(rp["stop_width"])
+	var at := node + toward * (box + Num.f(rp["stop_gap"]) + thick * 0.5)
+	for off: float in [Num.f(rp["stop_inset"]), Num.f(road["half"])]:
+		for ahead: float in [-1.0, 1.0]:
+			var corner := at + side * off + toward * thick * 0.5 * ahead
+			for other: int in ground.roads_at(corner, -1.0):
+				var d: Vector2 = ground.roads[other]["dir"]
+				if absf(d.cross(dir)) < PERPENDICULAR and absf(d.cross(dir)) > 0.01:
+					return true
+	return false
+
+
 ## The node where an avenue along x crosses one along z, nearest the centre (-1 if none).
 static func central_junction(ground: RoadGround) -> int:
 	var nodes: Array[Vector2] = ground.plan["nodes"]
@@ -181,13 +276,20 @@ static func _stripe_fault(ground: RoadGround, stripe: Transform3D) -> String:
 	var c := Vector2(stripe.origin.x, stripe.origin.z)
 	var long := Vector2(stripe.basis.z.x, stripe.basis.z.z) * 0.5
 	var wide := Vector2(stripe.basis.x.x, stripe.basis.x.z) * 0.5
+	var stop := false  # a stop line: square across the road under its middle
+	for r: int in ground.roads_at(c, -1.0):
+		var under: Vector2 = ground.roads[r]["dir"]
+		stop = stop or absf(under.cross(long.normalized())) >= PERPENDICULAR
 	for corner: Vector2 in [c + long + wide, c + long - wide, c - long + wide, c - long - wide]:
 		var under: Dictionary = ground.at(corner)
 		if not str(under["kind"]) in [RoadGround.ROAD, RoadGround.DECK]:
 			return "R5 paint off the road at %s (on %s)" % [RoadGround.where(corner), under["kind"]]
 		for r: int in ground.roads_at(corner, -1.0):
 			var dir: Vector2 = ground.roads[r]["dir"]
-			if absf(dir.cross(long.normalized())) > 1.0 - PERPENDICULAR:
+			var turn := absf(dir.cross(long.normalized()))
+			# A stop line lies square across its own road, so only a road not square to it is a fault.
+			var bad := turn < PERPENDICULAR if stop else turn > 1.0 - PERPENDICULAR
+			if bad:
 				return (
 					"R5 paint inside the junction at %s (a stripe %s, on the %s's asphalt)"
 					% [RoadGround.where(corner), RoadGround.where(c), ground.roads[r]["kind"]]

@@ -8,10 +8,11 @@ extends SceneTree
 ##   the whole run is recorded; trim from the "risen at drawn frame" line + skip*60)
 ##   --route=idle|record|replay  --route-file=<json>  --face=x,z,steps  --cam=x,y,z
 ##   --fire=x,z,at,size  (a ground fire the capture lights, the same in both)
-##   --set=key=value,...  (look overrides)   --tune=section.key=value  (a tuning.json number)
+##   --set=key=value,...  (look; true/false ok)   --tune=section.key=value  (a tuning.json number)
 ##   --graphics=potato|low|medium|high|max   --frames=N  (print the mean frame time after N frames)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const SLOW_MS := 33.4  # a frame under 30 fps (destruction plan stage 1, speed bar d)
 ## What --today zeroes: every number phase 1 added to the look (the keys that make a pair differ).
 const PHASE_ONE_KEYS: Array[String] = [
 	"far_blur_amount",
@@ -45,6 +46,8 @@ var _fire_done := true
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
@@ -71,11 +74,17 @@ func _initialize() -> void:
 		elif arg.begins_with("--set="):
 			for pair: String in arg.substr(6).split(","):
 				var kv := pair.split("=")
-				_sets[kv[0]] = float(kv[1]) if kv[1].is_valid_float() else kv[1]
-		elif arg.begins_with("--tune="):  # --tune=camera.fade_opacity=1 (a tuning.json number)
+				if kv[1] in ["true", "false"]:  # a look switch such as deband
+					_sets[kv[0]] = kv[1] == "true"
+				else:
+					_sets[kv[0]] = float(kv[1]) if kv[1].is_valid_float() else kv[1]
+		elif arg.begins_with("--tune="):  # --tune=camera.bubble_radius=12 (a tuning.json number)
 			var tv := arg.substr(7).split("=")
-			var path := tv[0].split(".")
-			Content.section(path[0])[path[1]] = float(tv[1])
+			var path := tv[0].split(".")  # any depth: display.graphics.medium.fsr_sharpness=0.1
+			var table: Dictionary = Content.section(path[0])
+			for i: int in range(1, path.size() - 1):
+				table = table[path[i]]
+			table[path[path.size() - 1]] = float(tv[1])
 		elif arg == "--today":
 			_today = true
 		elif arg == "--calm":
@@ -195,11 +204,16 @@ func _bench_frames(rampage: Rampage, city: CityView) -> void:
 		await process_frame
 		frames += 1
 	var times: Array[float] = []
+	var gpu: Array[float] = []
+	var vp: RID = root.get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
+	CellView.worst_usec = 0  # the fine-grid views' costliest frame, from here on
 	var last := Time.get_ticks_usec()
 	for i: int in _bench:
 		await process_frame
 		var now := Time.get_ticks_usec()
 		times.append(float(now - last) / 1000.0)
+		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
 		last = now
 		_maybe_fire(city, 99999)
 	times.sort()
@@ -217,6 +231,45 @@ func _bench_frames(rampage: Rampage, city: CityView) -> void:
 				times.size(),
 				_today,
 				_graphics
+			]
+		)
+	)
+	gpu.sort()
+	var gsum := 0.0
+	for g: float in gpu:
+		gsum += g
+	print(
+		(
+			"ONEL gpu ms mean %.3f median %.3f p95 %.3f max %.3f (n=%d)"
+			% [
+				gsum / gpu.size(),
+				gpu[gpu.size() / 2],
+				gpu[int(gpu.size() * 0.95)],
+				gpu[gpu.size() - 1],
+				gpu.size()
+			]
+		)
+	)
+	_carve_line(city, times)
+
+
+## The fine-grid views' share (destruction plan stage 1, speed bar d): frames over SLOW_MS, the
+## most main-thread time one frame spent on them, the most frames a falling piece waited to show.
+func _carve_line(city: CityView, times: Array[float]) -> void:
+	var slow := 0
+	for t: float in times:
+		slow += int(t > SLOW_MS)
+	var carve := city.carve
+	print(
+		(
+			"ONEL carve slow_frames %d worst_main_ms %.2f worst_wait %d shown %d unseen %d on %s"
+			% [
+				slow,
+				CellView.worst_usec / 1000.0,
+				carve.worst_wait,
+				carve.shown,
+				carve.unseen,
+				carve.on
 			]
 		)
 	)
@@ -247,7 +300,7 @@ func _scripted(sim: RampageSim) -> Dictionary:
 		if _target.x != INF and to.length() >= sim.stomp_radius() * 0.5:
 			move = to.normalized()
 		var sig := sim.ability_ready_in <= 0.0
-		var held := _steps % Rampage.AUTOPLAY_GLIDE_CYCLE < Rampage.AUTOPLAY_GLIDE_HELD
+		var held := _steps % RunInput.AUTOPLAY_GLIDE_CYCLE < RunInput.AUTOPLAY_GLIDE_HELD
 		input = {"move": move, "signature": sig, "held": held, "ultimate": true}
 		_route.append([move.x, move.y, 1.0 if sig else 0.0, 1.0 if held else 0.0, 1.0])
 	_steps += 1

@@ -44,6 +44,8 @@ var _after := 0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": _out, "run": 1, "only": "", "after": 0})
 	_out = str(a["out"])
 	_only = str(a["only"]).split(",", false)
@@ -82,7 +84,7 @@ func _run(run: int) -> void:
 		func(_p: Vector3) -> void: city.fire(_feet() + FAR_SPOT * bs, 1.5),
 		FAR_SPOT
 	)
-	await _shot("explosion_wreck", 6, func(p: Vector3) -> void: TankFx.wreck(city, p, 0.0))
+	await _shot("explosion_wreck", 6, func(p: Vector3) -> void: TankFx.wreck(city, p))
 	await _shot("dust_cloud", 25, func(p: Vector3) -> void: fx.dust(p, 2.0 * bs))
 	await _shot(
 		"dust_topple",

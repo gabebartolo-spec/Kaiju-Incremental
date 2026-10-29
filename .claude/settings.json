@@ -60,6 +60,30 @@
   "deniedMcpServers": [
     {
       "serverName": "comfy-mcp"
+    },
+    {
+      "serverName": "visualize"
+    },
+    {
+      "serverName": "scheduled-tasks"
+    },
+    {
+      "serverName": "terminal"
+    },
+    {
+      "serverName": "mcp-registry"
+    },
+    {
+      "serverName": "Blender"
+    },
+    {
+      "serverName": "claude-in-chrome"
+    },
+    {
+      "serverName": "computer-use"
+    },
+    {
+      "serverName": "local-models"
     }
   ]
 }

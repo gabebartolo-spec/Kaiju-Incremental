@@ -8,6 +8,9 @@ extends SceneTree
 ##   --scene=swipe   two swipes across a facade: carved-cell debris, nothing falls
 ##   --scene=block   six towers cut at the base at once (drops and topples), the city-wide cap
 ##   --seconds=N  --out=<dir>  --markers (show the blow sphere; off by default)
+##   --settle=S  at S seconds pause, draw every remesh, save one <scene>_settled.png and quit
+##   (the deterministic pixel A/B; no timeline stills)  --no-shots (a speed run)
+##   --off=island_merged,native_colliders (render_opt flags off: the A/B)
 ## CI: tools/capture/ci_capture.sh --movie capture_carve_physics.gd -- --scene=tower --out=<dir>
 @warning_ignore_start("integer_division")
 
@@ -16,6 +19,7 @@ const VIEW_STUB := preload("res://tools/capture/carve_view_stub.gd")
 const STAGE := preload("res://tools/capture/carve_stage.gd")
 const RES := 8
 const SHOT_EVERY := 15  # frames between timeline stills
+const SETTLE_FRAMES := 12  # frames drawn, paused, before the settled still
 const CROP := Vector2i(320, 180)  # crop round an event, saved at 2x
 const MAX_EVENT_SHOTS := 8
 const SUNK := 0.03  # a piece reaching this far below the road counts as sunk into it
@@ -25,6 +29,9 @@ var _scene := "tower"
 var _out := "user://carve_physics"
 var _seconds := 0.0
 var _markers := false  # --markers: show the blow sphere (a test overlay, off by default)
+var _shots := true  # --no-shots: no stills (a speed run: a 4K save is a slow frame)
+var _seeded := 0  # --settle: particle systems seeded so far (_pin_seed)
+var _settle := 0.0  # --settle=S: the settled frame at S seconds (0: none)
 var _phys: CarvePhysics
 var _grids: Array[VoxelFrame] = []
 var _views: Array[VIEW_STUB] = []
@@ -34,7 +41,17 @@ var _frame := 0
 var _queue: Array[Dictionary] = []  # event shots waiting for the next drawn frame
 var _event_shots := 0
 var _stats := {
-	"live": [], "all": [], "wall": [], "phys": [], "proc": [], "sim": [], "gpu": [], "break": []
+	"live": [],
+	"all": [],
+	"wall": [],
+	"phys": [],
+	"proc": [],
+	"sim": [],
+	"gpu": [],
+	"break": [],
+	"draws": [],
+	"isl_draws": [],
+	"swap": []
 }
 var _last_us := 0
 var _last_live_t := 0.0  # the last time any live piece or island body was still moving
@@ -46,6 +63,8 @@ var _front: Array[float] = []  # fracture-front height spreads of every staged b
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--scene="):
 			_scene = arg.substr(8)
@@ -55,45 +74,30 @@ func _initialize() -> void:
 			_markers = true
 		elif arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()
+		elif arg.begins_with("--settle="):
+			_settle = arg.substr(9).to_float()
+			_shots = false
+		elif arg == "--no-shots":
+			_shots = false
+		elif arg.begins_with("--off="):
+			for key: String in arg.substr(6).split(","):
+				Content.section("render_opt")[key] = false
 	if _seconds <= 0.0:
 		_seconds = {"tower": 9.0, "swipe": 6.0, "block": 10.0}.get(_scene, 9.0)
 	DirAccess.make_dir_recursive_absolute(_out)
+	if _settle > 0.0:  # dust is GPU particles, randomly seeded: pin each one in the order made
+		node_added.connect(_pin_seed)
 	_setup()
 	process_frame.connect(_on_frame)
 
 
-## Building n's footprint centre, size in units, and its blow's path (a centre at time t, or
-## null when the blow is done).
-func _layout() -> Array[Dictionary]:
-	match _scene:
-		"swipe":
-			return [{"at": Vector3.ZERO, "units": Vector3i(6, 12, 6), "radius": 1.3, "delay": 0.0}]
-		"block":
-			var out: Array[Dictionary] = []
-			for n: int in 6:
-				var at := Vector3((n % 3 - 1) * 9.0, 0.0, (n / 3 - 0.5) * 10.0)
-				var units := Vector3i(6, 12 + (n * 5) % 9, 6)
-				out.append({"at": at, "units": units, "radius": 2.4, "delay": n * 0.3, "n": n})
-			return out
-	return [{"at": Vector3.ZERO, "units": Vector3i(6, 16, 6), "radius": 2.4, "delay": 0.0}]
-
-
-func _path(b: Dictionary, t: float) -> Variant:
-	var c: Vector3 = b["at"]
-	if _scene == "swipe":
-		if t < 2.0:
-			return c + Vector3(lerpf(-5.0, 5.0, t / 2.0), 7.0, -3.3)
-		if t < 4.0:
-			var k := (t - 2.0) / 2.0
-			return c + Vector3(lerpf(5.0, -5.0, k), lerpf(9.5, 4.0, k), -3.2)
-		return null
-	# A base cut in two passes; the second stops short on towers that should topple.
-	var stop := 1.0 if _scene == "tower" or Num.i(b.get("n", 0)) % 2 == 1 else 6.0
-	if t < 1.6:
-		return c + Vector3(lerpf(-6.0, 1.0, t / 1.6), 1.6, -1.6)
-	if t < 3.2:
-		return c + Vector3(lerpf(-6.0, stop, (t - 1.6) / 1.6), 1.6, 1.6)
-	return null
+## A settled still compares across runs: every particle system gets a seed from its add order.
+func _pin_seed(node: Node) -> void:
+	if node is GPUParticles3D:
+		var p: GPUParticles3D = node
+		p.use_fixed_seed = true
+		p.seed = _seeded
+		_seeded += 1
 
 
 func _setup() -> void:
@@ -107,7 +111,7 @@ func _setup() -> void:
 	_phys.fx = fx
 	_world.add_child(_phys)
 	_phys.spawned.connect(func(chunk: IslandBody) -> void: chunk.broke.connect(_on_broke))
-	var layout := _layout()
+	var layout := STAGE.layout(_scene)
 	for n: int in layout.size():
 		var b := layout[n]
 		var units: Vector3i = b["units"]
@@ -136,26 +140,32 @@ func _setup() -> void:
 
 
 func _on_frame() -> void:
+	if paused:  # the settled frame is being drawn: nothing moves
+		return
 	_frame += 1
 	var t := _frame / 30.0
 	var t0 := Time.get_ticks_usec()
-	var layout := _layout()
+	var layout := STAGE.layout(_scene)
 	for n: int in layout.size():
 		_blow(n, layout[n], t - Num.f(layout[n]["delay"]))
 	var sim_ms := (Time.get_ticks_usec() - t0) / 1000.0
 	_record(sim_ms)
 	var headless := DisplayServer.get_name() == "headless"
-	if not headless and (_frame % SHOT_EVERY == 0 or not _queue.is_empty()):
+	if _shots and not headless and (_frame % SHOT_EVERY == 0 or not _queue.is_empty()):
 		await RenderingServer.frame_post_draw
 		_shoot(t)
-	if t >= _seconds:
+	if _settle > 0.0 and t >= _settle and not paused:
+		var still := _out.path_join(_scene + "_settled.png")
+		await STAGE.settled_shot(self, _phys, still, SETTLE_FRAMES)
+		quit()
+	elif t >= _seconds:
 		_report()
 		quit()
 
 
 func _blow(n: int, b: Dictionary, t: float) -> void:
 	var sphere := _spheres[n]
-	var at: Variant = _path(b, t) if t >= 0.0 else null
+	var at: Variant = STAGE.path(_scene, b, t) if t >= 0.0 else null
 	sphere.visible = _markers and at != null
 	if at == null:
 		return
@@ -174,7 +184,7 @@ func _blow(n: int, b: Dictionary, t: float) -> void:
 	for k: int in removed.size():
 		mats[k] = before[removed[k]]
 	var cut := {"cells": removed, "mats": mats}
-	var ahead: Variant = _path(b, t + 1.0 / 30.0)
+	var ahead: Variant = STAGE.path(_scene, b, t + 1.0 / 30.0)
 	cut["push"] = Vector3.ZERO
 	if ahead != null:
 		var next: Vector3 = ahead
@@ -255,8 +265,10 @@ func _record(sim_ms: float) -> void:
 	_push("wall", (now - _last_us) / 1000.0 if _last_us > 0 else 0.0)
 	_last_us = now
 	_push("gpu", RenderingServer.viewport_get_measured_render_time_gpu(vp))
+	STAGE.record_render(_phys, _stats)
 	if _frame % 30 == 0:
 		_enclosed.append(_phys.enclosed(ENCLOSED))
+		print("STATE %d %s" % [_frame / 30, STAGE.state_digest(_phys)])
 		print(
 			(
 				(
@@ -351,6 +363,7 @@ func _report() -> void:
 		)
 	)
 	print("  INSIDE buildings per second %s, culled indoors %d" % [_enclosed, _phys.culled()])
+	print("  COLLIDER worst rebuild %.2f ms" % STAGE.worst_collider_ms(_phys))
 	var live_speed := _phys.live_speed()
 	print(
 		(
@@ -360,3 +373,5 @@ func _report() -> void:
 	)
 	STAGE.print_holds(_holds)
 	STAGE.print_stats(_stats)
+	var wall: Array = _stats["wall"]
+	STAGE.print_slow(wall)

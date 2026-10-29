@@ -16,24 +16,24 @@ const WALK_S := 3.0
 ## SLOWEST_TURN_S.
 const SWINGS := [0.0, 0.25, 0.5, 0.75]
 const SWING_NEAR := 0.1
-const SLOWEST_TURN_S := 1.4
+const SLOWEST_TURN_S := 1.95
 const TURN_S := 3.0
-## The adult's 90 deg turn takes this long (s): lumbering, not a swivel, "but not TOO slow".
-const MIN_TURN_S := 1.0
-const MAX_TURN_S := 1.25
+## The adult's 90 deg turn takes this long (s): heavy and slow, a U-turn about 3 s (D-187, "Heavier,
+## slower"; was 1.0-1.25 s, slowest 1.4, when a U-turn took 1.8 s). The sim's trapezoid yaw (the
+## stage's uturn_s) makes it the same from every place in a step: 1.73 s measured.
+const MIN_TURN_S := 1.55
+const MAX_TURN_S := 1.9
 ## Distinct footfalls (alternating feet; a foot re-stepping after itself is a shuffle) in it.
 const MIN_STEPS := 3
 ## The baby's smooth 90 deg turn (D-131), measured 2026-10-21 at its pre-stepped rates (turn-weight
 ## d24fe80e), and the share it may move.
 const BABY_TURN_S := 0.60
 const BABY_SHARE := 0.1
-## Each footfall turns the body a slice, a smooth bell (the motion critic's bar: no frame-to-frame
-## change in yaw rate over 25% of its peak) that rises and falls inside the step: at least this
-## share of the turn's yaw comes in the SLICE_S seconds after a footfall (a swivel spreads it over
-## all of it; a step is 0.3 s at the turn's cadence), and the yaw rate never jumps by more than
-## MAX_JUMP.
-const SLICE_SHARE := 0.8
-const SLICE_S := 0.24
+## The yaw is spread evenly over the steps (D-187; it was squeezed into a bell after each footfall,
+## at least 80% of it in the 0.24 s after one, which a slow turn spread over a 0.55 s step cannot
+## do): no step turns the body more than MAX_STEP_YAW degrees, and the yaw rate never jumps by more
+## than MAX_JUMP of its peak in one frame (the motion critic's bar).
+const MAX_STEP_YAW := 40.0
 const MAX_JUMP := 0.25
 ## The turn is made when the yaw still to turn is under this (rad, about 1 deg).
 const LANDED := 0.02
@@ -79,10 +79,10 @@ static func check(check: Callable, root: Node) -> void:
 		"the body yaws only with a foot down (%d frames with both feet up == 0)" % adult["aloft"]
 	)
 	check.call(
-		adult["sliced"] >= SLICE_SHARE,
+		adult["step_yaw"] <= MAX_STEP_YAW,
 		(
-			"the yaw comes in slices at the footfalls (%.0f%% in the %.2f s after one >= %.0f%%)"
-			% [adult["sliced"] * 100, SLICE_S, SLICE_SHARE * 100]
+			"the yaw is spread over the steps, at most %.0f deg of it in one (<= %.0f)"
+			% [adult["step_yaw"], MAX_STEP_YAW]
 		)
 	)
 	check.call(
@@ -137,9 +137,9 @@ static func _adult(root: Node) -> Dictionary:
 		var skate: Vector2 = one["skate"]
 		out["skate_walk"] = maxf(Num.f(out.get("skate_walk", 0.0)), skate.x)
 		out["skate_turn"] = maxf(Num.f(out.get("skate_turn", 0.0)), skate.y)
-		for key: String in ["drift", "foot_yaw", "jump", "aloft"]:
+		for key: String in ["drift", "foot_yaw", "jump", "aloft", "step_yaw"]:
 			out[key] = maxf(Num.f(out.get(key, 0.0)), Num.f(one[key]))
-		for key: String in ["steps", "sliced"]:
+		for key: String in ["steps"]:
 			out[key] = Num.f(out.get(key, 0.0)) + Num.f(one[key]) / SWINGS.size()
 	out["took"] = total / SWINGS.size()
 	return out
@@ -201,7 +201,7 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 			down = down or leg.planted
 			drift = maxf(drift, _drift(kaiju, leg, lock, i) if t > 1.5 else 0.0)
 			foot_yaw = maxf(foot_yaw, _foot_yaw(kaiju, leg, toe_yaw, i) if t > 1.5 else 0.0)
-			toes.append(kaiju._rig.tail_world(leg.names[2]))
+			toes.append(kaiju._rig.tail_world(leg.tip))
 		if t >= turn_t:
 			yaws.append(Vector2(t, dyaw))
 		if t >= turn_t and landed == INF:
@@ -216,23 +216,28 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 		if at >= turn_t and at <= landed and str(fall["side"]) != side:
 			steps += 1
 			side = str(fall["side"])
-	var total := 0.0
-	var near := 0.0
 	var peak := 0.0
 	var jump := 0.0
 	for n: int in yaws.size():
 		peak = maxf(peak, yaws[n].y)
 		jump = maxf(jump, absf(yaws[n].y - yaws[n - 1].y) if n > 0 else 0.0)
+	var cuts: Array[float] = []  # the footfalls inside the turn
+	for fall: Dictionary in falls:
+		var at: float = fall["t"]
+		if at > turn_t and at < landed:
+			cuts.append(at)
+	var step_yaw := 0.0
+	var turned := 0.0
+	var next := 0
 	for y: Vector2 in yaws:
 		if y.x > landed:
 			break
-		total += y.y
-		for fall: Dictionary in falls:
-			var fell: float = fall["t"]
-			var dt_after := y.x - fell
-			if dt_after >= 0.0 and dt_after <= SLICE_S:
-				near += y.y
-				break
+		if next < cuts.size() and y.x >= cuts[next]:
+			step_yaw = maxf(step_yaw, turned)
+			turned = 0.0
+			next += 1
+		turned += y.y
+	step_yaw = maxf(step_yaw, turned)
 	return {
 		"took": landed - turn_t,
 		"steps": steps,
@@ -241,13 +246,13 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 		"foot_yaw": foot_yaw,
 		"skate": _skate(toes, turn_t, landed),
 		"jump": jump / maxf(peak, 0.0001),
-		"sliced": near / maxf(total, 0.0001)
+		"step_yaw": rad_to_deg(step_yaw)
 	}
 
 
 ## How far (cm, flat) leg `i`'s foot has moved since it went down (0 while it is up).
 static func _drift(kaiju: KaijuModel, leg: BipedGait.Leg, lock: Array[Vector3], i: int) -> float:
-	var at := kaiju._rig.tail_world(leg.names[2])
+	var at := kaiju._rig.tail_world(leg.tip)
 	if not leg.planted:
 		lock[i] = Vector3.INF
 		return 0.0
@@ -261,7 +266,7 @@ static func _foot_yaw(kaiju: KaijuModel, leg: BipedGait.Leg, since: Array[float]
 	if not leg.planted:
 		since[i] = INF
 		return 0.0
-	var toes := kaiju._rig.tail_world(leg.names[2]) - kaiju._rig.bone(leg.names[2]).global_position
+	var toes := kaiju._rig.tail_world(leg.tip) - kaiju._rig.bone(leg.names[2]).global_position
 	var yaw := atan2(toes.x, toes.z)
 	if since[i] == INF:
 		since[i] = yaw

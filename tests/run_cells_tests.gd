@@ -1,4 +1,4 @@
-extends "res://tests/lib/runner.gd"
+extends "res://tests/lib/cells_base.gd"
 ## Cells suite: the sim's fine destruction grid of a building (BuildingCells, D-094 WP3) is the
 ## grid the view draws (BuildingVoxels) cell for cell, the same every time, from data (materials
 ## and RES), with no clock or RNG; and a building gets its grid only on its first hit
@@ -24,10 +24,10 @@ const FIXTURES: Array = [
 ## Per fixture: [cells, digest] (first 16 hex digits of the grid's SHA-256 with its dims).
 const PINNED := {
 	"office": [9227, "494795997a4e992a"],
-	"brick": [6674, "ac8dcb1ff799745a"],
+	"brick": [6126, "9df7f6fbfb45d315"],
 	"glass": [27213, "2ea7122061040817"],
 	"stone": [13385, "04da84b429e548bc"],
-	"party": [6674, "6c9f344bc615d940"],  # b2-22: party walls carry the facade
+	"party": [6210, "489e518ce47e14b0"],  # b2-22: party walls carry the facade
 	"tiny": [776, "8c0f4755ac5a6536"],
 	"sign": [10911, "1c39938e3ebe6249"],
 }
@@ -36,20 +36,6 @@ const CITY_SAMPLE := 40
 ## Materials that hang on by an edge or a corner (data/materials.json "fixture").
 const FIXTURES_EXPECTED: Array[String] = [
 	"window", "mullion", "glass", "shop", "sign_frame", "neon0", "neon1", "neon2", "neon3"
-]
-## Text that must not appear in the module (comments stripped): RNG, clock, engine, view.
-const FORBIDDEN: Array[String] = [
-	"randi(",
-	"randf(",
-	"randomize(",
-	"RandomNumberGenerator",
-	"Seeds.",
-	"Time.",
-	"OS.",
-	"Engine.",
-	"Look.",
-	"Node",
-	"await ",
 ]
 const MODULES: Array[String] = [
 	"res://sim/building_cells.gd",
@@ -80,99 +66,6 @@ func run_checks() -> void:
 	)
 	await _t("_check_lit_is_a_look")
 	await _h("RuinRubble", func() -> void: RuinRubble.run(check, FIXTURES, _building))
-
-
-## The view with no window lit: every voxel carries its material's palette key.
-class UnlitVoxels:
-	extends BuildingVoxels
-
-	func _lit_share() -> float:
-		return 0.0
-
-
-func _building(f: Array) -> RampageSim.Building:
-	var b := RampageSim.Building.new()
-	b.x = f[1]
-	b.z = f[2]
-	b.w = f[3]
-	b.d = f[4]
-	b.height = f[5]
-	b.tier = f[6]
-	b.style = f[7]
-	b.frame = Structure.new(b.w, b.d, b.height, 1.0)
-	return b
-
-
-func _party(f: Array) -> Dictionary:
-	var party: Dictionary = f[8]
-	return party
-
-
-func _digest(g: BuildingCells) -> String:
-	var ctx := HashingContext.new()
-	ctx.start(HashingContext.HASH_SHA256)
-	ctx.update(var_to_bytes([g.dims, g.offset]))
-	ctx.update(g.cells)
-	return ctx.finish().hex_encode().substr(0, 16)
-
-
-## Mismatched cells between the unlit view's voxels and the sim grid (0 = the same grid): each
-## view voxel's palette key is exactly its sim cell's material name.
-func _mismatches(b: RampageSim.Building, party: Dictionary) -> int:
-	var g := BuildingCells.new(b, party)
-	var vox := UnlitVoxels.new(b, Color.GRAY, party)
-	var ids := BuildingCells.material_ids()
-	var bad := absi(g.count() - vox.vox.cells.size())
-	for cell: Vector3i in vox.vox.cells:
-		if g.at(cell) != Num.i(ids.get(str(vox.vox.cells[cell]), -1)):
-			bad += 1
-	return bad
-
-
-## [cells where the lit view is not the unlit one, of them not a lit pane over a window,
-## mullion, glass or shop cell]; the two views must hold the same cells.
-func _lit_changes(b: RampageSim.Building, party: Dictionary) -> Array[int]:
-	var lit := BuildingVoxels.new(b, Color.GRAY, party).vox.cells
-	var unlit := UnlitVoxels.new(b, Color.GRAY, party).vox.cells
-	var changed := 0
-	var bad := absi(lit.size() - unlit.size())
-	for cell: Vector3i in unlit:
-		var was := str(unlit[cell])
-		var now := str(lit.get(cell, ""))
-		if now == was:
-			continue
-		changed += 1
-		var pane := now == "lit" and was in ["window", "mullion", "glass"]
-		if not pane and not (now == "shop_lit" and was == "shop"):
-			bad += 1
-	return [changed, bad]
-
-
-## The structural chunk (one sim unit, one floor) a building-local cell is in.
-func _chunk(cell: Vector3i, r: int) -> Vector3i:
-	return Vector3i(floori(float(cell.x) / r), floori(float(cell.y) / r), floori(float(cell.z) / r))
-
-
-## Chunks (one sim unit, one floor) holding any cell in one grid and none in the other.
-func _chunk_mismatches(b: RampageSim.Building, party: Dictionary) -> int:
-	var g := BuildingCells.new(b, party)
-	var vox := BuildingVoxels.new(b, Color.GRAY, party)
-	var r := g.res
-	var view := {}
-	for cell: Vector3i in vox.vox.cells:
-		view[_chunk(cell, r)] = 1
-	var sim := {}
-	for i: int in g.cells.size():
-		if g.cells[i] != 0:
-			var plan := g.dims.x * g.dims.z
-			var c := Vector3i(i % g.dims.x, i / plan, (i / g.dims.x) % g.dims.z) + g.offset
-			sim[_chunk(c, r)] = 1
-	var bad := 0
-	for c: Vector3i in view:
-		bad += 0 if sim.has(c) else 1
-	for c: Vector3i in sim:
-		bad += 0 if view.has(c) else 1
-	return bad
 
 
 ## data/materials.json: unique ids 1..255 (0 is empty), unique names, a strength above zero, a
@@ -323,17 +216,6 @@ func _check_city_matches_view() -> void:
 		"the sample has %d buildings of all four archetypes" % compared
 	)
 	check(bad == 0, "the city sample matches the view cell for cell (%d cells off)" % bad)
-
-
-## Lines of `text` holding a forbidden call, comments stripped.
-func _forbidden(text: String) -> Array[String]:
-	var hits: Array[String] = []
-	for line: String in text.split("\n"):
-		var code := line.get_slice("#", 0)
-		for token: String in FORBIDDEN:
-			if code.contains(token):
-				hits.append("%s: %s" % [token, line.strip_edges()])
-	return hits
 
 
 ## No clock, RNG, engine or view in the generator: the grep proves itself on a bad line first.

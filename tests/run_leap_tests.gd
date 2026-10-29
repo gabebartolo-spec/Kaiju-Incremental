@@ -1,4 +1,4 @@
-extends "res://tests/lib/runner.gd"
+extends "res://tests/lib/leap_flight.gd"
 ## The croc's leap on the dash button (Dash, D-259 "a leap that lands on a building and crushes it
 ## with a shockwave (replaces the dash)"): it aims at the standing building ahead in reach (else the
 ## full reach), crouches, flies its stage's flight time and lands; nothing breaks before the contact
@@ -7,15 +7,6 @@ extends "res://tests/lib/runner.gd"
 ## coat shatters, and the same seed replays the same leap. Player-effect fixture "croc.leap": the
 ## same seeded rampage with the leap pressed and with it walked breaks a different city.
 ## Seeded by design: every sim is Seeds.make("army", 0); the fixture city is Seeds.make("city", 0).
-
-const DT := 1.0 / 60.0
-const BUTTON := 4  # Dash.BUTTON
-## The growth steps: the young croc, Behemoth, Colossus (the leap's three stages).
-const STAGES := {"young": {}, "Behemoth": {"evolve1": 1}, "Colossus": {"evolve1": 1, "evolve2": 1}}
-## The fixture: seconds walked before the press, then seconds watched after it.
-const FIXTURE_LEAD_S := 1.0
-const FIXTURE_WATCH_S := 4.0
-const FIXTURE_MAX_N := 600
 
 
 func suite_name() -> String:
@@ -26,55 +17,15 @@ func run_checks() -> void:
 	await _t("_check_aims_ahead")
 	await _t("_check_open_ground")
 	await _t("_check_tower_wall")
+	await _t("_check_shoulder_measured")
+	await _t("_check_low_roof")
+	await _t("_check_tall_side")
 	await _t("_check_nowhere_to_land")
 	await _t("_check_phases")
 	await _t("_check_ring_and_fling")
 	await _t("_check_cooldown_and_frost")
 	await _t("_check_replay")
 	await _t("_check_effect")
-
-
-## The reptilian at `levels`, as Rampage builds it, standing at (0, 30) facing north, on `layout`
-## plus a small block far behind it, so the run is not over for want of a city.
-func _croc(levels: Dictionary, p_layout: Array[Dictionary]) -> RampageSim:
-	var layout := p_layout.duplicate()
-	layout.append(_block(Vector2(38.0, 38.0), 2, 2))
-	var def := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), def, tree)
-	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
-	sim.ability_type = "cone"
-	sim.body.use_species("reptilian")
-	sim.time_left = 1.0e9
-	sim.kaiju_pos = Vector2(0.0, 30.0)
-	return sim
-
-
-## A building of `w` x `w` cells, `h` floors, centred at `at`.
-func _block(at: Vector2, w: int, h: int) -> Dictionary:
-	return {"x": at.x, "z": at.y, "w": w, "d": w, "h": h, "tier": 1, "style": 0}
-
-
-## Where the feet of a croc at (0, 30) facing north land on a building centre `ahead` units on.
-func _ahead(sim: RampageSim, ahead: float) -> Vector2:
-	return Vector2(0.0, 30.0 - sim.body.feet_ahead() - ahead)
-
-
-## Steps the sim until the leap is over (at most 5 s), returning every event on the way.
-func _finish(sim: RampageSim, stick: Vector2 = Vector2.ZERO) -> Array[Dictionary]:
-	var seen: Array[Dictionary] = []
-	for _n: int in roundi(5.0 / DT):
-		if not sim.body.dash.on():
-			break
-		seen.append_array(sim.step(DT, stick, false, 0))
-	return seen
-
-
-func _first(events: Array[Dictionary], kind: String) -> Dictionary:
-	for event: Dictionary in events:
-		if str(event["type"]) == kind:
-			return event
-	return {}
 
 
 ## The leap picks the standing building ahead in reach (not one off to the side, not one beyond
@@ -160,6 +111,106 @@ func _check_tower_wall() -> void:
 	check(left < before, "the tower is chewed, slowly (%d of %d chunks left)" % [left, before])
 
 
+## D-361: at every growth stage the data's shoulder (the roof height a leap may land on, as a share
+## of the body's drawn height) is the drawn model's: its shoulder joint over its height.
+func _check_shoulder_measured() -> void:
+	for stage: String in STAGES:
+		var levels: Dictionary = STAGES[stage]
+		var sim := _croc(levels, [])
+		var got := Num.f(_stage(sim).get("shoulder", 0.0))
+		var want := _rig_shoulder(sim)
+		check(
+			want > 0.0 and absf(got - want) <= 0.005,
+			"%s: the leap's shoulder is the model's (data %.3f, rig %.3f)" % [stage, got, want]
+		)
+
+
+## D-361: at every growth stage a roof at his shoulder or lower is still landed on, feet on it.
+func _check_low_roof() -> void:
+	for stage: String in STAGES:
+		var levels: Dictionary = STAGES[stage]
+		var probe := _croc(levels, [])
+		var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
+		var ahead := _ahead(probe, reach * 0.6)
+		var low := _block(ahead, 4, maxi(2, floori(_shoulder_y(probe))))
+		var sim := _croc(levels, [low])
+		var leap := _first(sim.step(DT, Vector2.ZERO, false, BUTTON), "leap")
+		_finish(sim)
+		var feet := sim.kaiju_pos + sim.facing * sim.body.feet_ahead()
+		check(
+			(
+				Num.i(leap.get("building", -2)) == 0
+				and Num.f(leap.get("roof", 0.0)) == Num.f(low["h"])
+				and sim.body.dash.arc.land_y == Num.f(low["h"])
+				and feet.distance_to(ahead) < 0.05
+			),
+			(
+				"%s: a %d-high roof (shoulder %.2f) is landed on, feet %.2f off its centre: %s"
+				% [stage, Num.i(low["h"]), _shoulder_y(probe), feet.distance_to(ahead), leap]
+			)
+		)
+
+
+## D-361 ("Tall ones: hit the side"): at every growth stage a target taller than his shoulder
+## takes the leap in its side: the arc never rises over it or comes down on its roof, the body
+## carves into its side in flight (below its roof; a carved tower may then come down, Collapse),
+## and the feet come down on the street at its foot, where the landing's smash and ring hit it.
+func _check_tall_side() -> void:
+	for stage: String in STAGES:
+		var levels: Dictionary = STAGES[stage]
+		var probe := _croc(levels, [])
+		var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
+		var tall := _block(_ahead(probe, reach * 0.6), 6, ceili(_shoulder_y(probe) * 2.0))
+		var sim := _croc(levels, [tall])
+		var b := sim.buildings[0]
+		var before := b.frame.alive_count
+		var leap := _first(sim.step(DT, Vector2.ZERO, false, BUTTON), "leap")
+		var watched := _watch_leap(sim, b)
+		var apex := Num.f(watched["apex"])
+		var flown := Num.i(watched["flown"])
+		var side := Num.i(watched["side"])
+		var land: Dictionary = watched["land"]
+		var at: Vector2 = land.get("at", Vector2.INF)
+		var step := Num.f(sim.body.dash.cfg["landing_step"])
+		check(
+			(
+				Num.i(leap.get("building", -2)) == 0
+				and Num.f(leap.get("roof", -1.0)) == 0.0
+				and sim.body.dash.arc.land_y == 0.0
+				and apex < float(b.height)
+			),
+			(
+				"%s: a %d-high tower (shoulder %.2f) is never landed on: roof %.1f, apex %.2f"
+				% [stage, b.height, _shoulder_y(probe), Num.f(leap.get("roof", -1.0)), apex]
+			)
+		)
+		check(
+			side > 0,
+			(
+				"%s: the body carves its side in flight (%d chunks, %d below its roof)"
+				% [stage, flown, side]
+			)
+		)
+		check(
+			not _inside(b, at) and _gap(b, at) <= step + 0.01 and sim.body.dash.height() == 0.0,
+			(
+				"%s: the feet land on the street at its foot (%.2f from its wall)"
+				% [stage, _gap(b, at)]
+			)
+		)
+		check(
+			(
+				Num.i(land.get("building", -2)) == 0
+				and _gap(b, at) < Num.f(land.get("radius", 0.0))
+				and (b.frame.alive_count < before - flown or b.frame.alive_count == 0)
+			),
+			(
+				"%s: the landing's smash and ring hit it (ring %.2f, %d of %d left)"
+				% [stage, Num.f(land.get("radius", 0.0)), b.frame.alive_count, before]
+			)
+		)
+
+
 ## A press with nowhere to land but where it stands starts no leap (no cooldown, no count): facing
 ## out at the arena's edge, and with its snout at the wall of a tower it may not land on (D-091).
 func _check_nowhere_to_land() -> void:
@@ -209,183 +260,3 @@ func _check_open_ground() -> void:
 		absf(flown - reach) < 0.05 and sim.body.dash.landings == 1,
 		"over open ground it lands at full reach (%.2f of %.2f)" % [flown, reach]
 	)
-
-
-## Per stage: the crouch, flight, settle and recovery last the data's seconds; the body is in the
-## air exactly the flight time, high in the middle and on the ground at both ends, and a stick held
-## sideways through it moves nothing.
-func _check_phases() -> void:
-	for stage: String in STAGES:
-		var levels: Dictionary = STAGES[stage]
-		var sim := _croc(levels, [])
-		var data := _stage(sim)
-		var seen := {}
-		var apex := 0.0
-		var steps := 1
-		var blows := 0  # stomps and claw rakes during the leap
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, BUTTON):
-			blows += 1 if str(event["type"]) in ["stomp", "swipe", "swipe_windup"] else 0
-		var air_from := sim.kaiju_pos
-		while sim.body.dash.on() and steps < roundi(6.0 / DT):
-			var phase := sim.body.dash.phase()
-			seen[phase] = Num.i(seen.get(phase, 0)) + 1
-			apex = maxf(apex, sim.body.dash.height())
-			for event: Dictionary in sim.step(DT, Vector2(1, 0), false, 0):  # pushed east
-				var kind := str(event["type"])
-				blows += (
-					1 if kind in ["stomp", "swipe", "swipe_windup"] and sim.body.dash.on() else 0
-				)
-			steps += 1
-		check(blows == 0, "%s: no stomp or claw from crouch to recovery (%d)" % [stage, blows])
-		var sideways := absf(sim.kaiju_pos.x - air_from.x)
-		for phase: String in Dash.PHASES:
-			var want := Num.f(data[phase + "_s"])
-			var got := Num.i(seen.get(phase, 0)) * DT
-			check(
-				absf(got - want) <= DT * 1.01,
-				"%s: the %s lasts %.3f s (data %.3f s)" % [stage, phase, got, want]
-			)
-		var top := sim.body.dash.arc.top  # over open ground: the clearance above the street
-		check(
-			apex > top * 0.95 and apex <= top + 0.001 and sim.body.dash.height() == 0.0,
-			"%s: the body rises %.2f (apex %.2f) and is down after" % [stage, apex, top]
-		)
-		check(sideways < 0.001, "%s: the stick moves nothing in a leap (%.3f)" % [stage, sideways])
-
-
-## The ring: a tank inside it is flung outward and hurt; one past twice its radius is untouched.
-func _check_ring_and_fling() -> void:
-	var sim := _croc({}, [])
-	var ring := Num.f(_stage(sim)["ring"]) * sim.body_scale()
-	var reach := Num.f(_stage(sim)["reach"]) * sim.body_scale()
-	var centre := Vector2(0.0, 30.0 - sim.body.feet_ahead() - reach)
-	var near := _tank(sim, 901, centre + Vector2(ring * 0.5, 0.0))
-	var far := _tank(sim, 902, centre + Vector2(-ring * 2.5, 0.0))
-	sim.step(DT, Vector2.ZERO, false, BUTTON)
-	var events := _finish(sim)
-	var land := _first(events, "leap_land")
-	var flung := {}
-	for event: Dictionary in events:
-		if str(event["type"]) == "tank_flung":
-			flung[Num.i(event["tank"])] = event
-	var out := near.pos.distance_to(centre)
-	var at: Vector2 = land.get("at", Vector2.INF)
-	check(at.distance_to(centre) < 0.05, "the ring is centred under the feet: %s" % [land])
-	check(
-		flung.has(901) and out > ring * 0.5 + 1.0 and near.hp < 1000.0,
-		(
-			"a tank in the ring is flung out to %.1f (from %.1f) and hurt (hp %.0f)"
-			% [out, ring * 0.5, near.hp]
-		)
-	)
-	check(
-		not flung.has(902) and far.hp == 1000.0,
-		"a tank past twice the ring is untouched (hp %.0f)" % far.hp
-	)
-
-
-func _tank(sim: RampageSim, id: int, at: Vector2) -> RampageSim.Tank:
-	var tank := RampageSim.Tank.new()
-	tank.id = id
-	tank.pos = at
-	tank.hp = 1000.0
-	tank.cooldown = 1.0e9
-	sim.tanks.append(tank)
-	return tank
-
-
-## A second press inside the cooldown does nothing; after it, it leaps again. A leap shatters frost.
-func _check_cooldown_and_frost() -> void:
-	var sim := _croc({}, [])
-	var frost := sim.army_units.taskforce.frost
-	frost.frost_left = 3.0
-	var events := sim.step(DT, Vector2.ZERO, false, BUTTON)
-	events.append_array(sim.step(DT, Vector2.ZERO, false, 0))
-	var cracked := _first(events, "frost_cracked")
-	check(
-		frost.frost_left == 0.0 and not cracked.is_empty(),
-		"the leap shatters the frost: %s" % [cracked]
-	)
-	_finish(sim)
-	sim.step(DT, Vector2.ZERO, false, BUTTON)
-	check(
-		sim.body.dash.dashes == 1,
-		"a press inside the cooldown is ignored (%d)" % sim.body.dash.dashes
-	)
-	for _n: int in roundi(Num.f(_stage(sim)["cooldown"]) / DT):
-		sim.step(DT, Vector2.ZERO, false, 0)
-	sim.step(DT, Vector2.ZERO, false, BUTTON)
-	check(
-		sim.body.dash.dashes == 2, "after the cooldown it leaps again (%d)" % sim.body.dash.dashes
-	)
-
-
-## The same seed and presses replay the same leap through the seeded city.
-func _check_replay() -> void:
-	var a := _run_city(true)
-	var b := _run_city(true)
-	check(a == b, "the same seeded leap replays identically (%s)" % [a])
-
-
-## Player-effect fixture "croc.leap": the same seeded rampage, the button pressed vs walked.
-func _check_effect() -> void:
-	var leapt := _run_city(true)
-	var walked := _run_city(false)
-	check(
-		Num.i(leapt["landings"]) == 1 and Num.i(walked["landings"]) == 0,
-		"croc.leap: one landing with the button, none without (%s / %s)" % [leapt, walked]
-	)
-	check(
-		(
-			Num.i(leapt["in_flight"]) == 0
-			and Num.i(leapt["blocked"]) == 0
-			and Num.f(leapt["roof"]) > 0.0
-		),
-		"croc.leap: a high arc onto a roof, nothing hit in flight (%s)" % [leapt]
-	)
-	check(
-		Num.i(leapt["chunks"]) > Num.i(walked["chunks"]),
-		(
-			"croc.leap: the leap breaks more of the city than walking the same seconds (%d vs %d)"
-			% [Num.i(leapt["chunks"]), Num.i(walked["chunks"])]
-		)
-	)
-
-
-## The croc walks north into the seeded city FIXTURE_LEAD_S and on until a roof it can land on is
-## ahead (at most FIXTURE_MAX_N steps), then (with `leap`) presses the button,
-## and is watched FIXTURE_WATCH_S with the stick held north.
-func _run_city(leap: bool) -> Dictionary:
-	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
-	var sim := _croc({}, layout)
-	sim.kaiju_pos = Vector2(0.0, CityGen.half_extent(sim.city))
-	var north := Vector2(0, -1)
-	for _n: int in roundi(FIXTURE_LEAD_S / DT):
-		sim.step(DT, north, false, 0)
-	var more := 0  # walks on until a roof it can land on is ahead (a tower is _check_tower_wall's)
-	while Num.f(sim.body.dash.aim_at(sim.kaiju_pos, north)["roof"]) <= 0.0 and more < FIXTURE_MAX_N:
-		sim.step(DT, north, false, 0)
-		more += 1
-	sim.step(DT, north, false, BUTTON if leap else 0)
-	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
-	for _n: int in roundi(FIXTURE_WATCH_S / DT):
-		var flying := sim.body.dash.phase() == "flight"
-		var was := sim.body.broken
-		sim.step(DT, north, false, 0)
-		if flying and sim.body.dash.phase() == "flight":
-			in_flight += sim.body.broken - was
-			in_flight += sim.body.inside(sim.kaiju_pos, sim.body.heading).size()
-	return {
-		"in_flight": in_flight,
-		"roof": sim.body.dash.arc.land_y,
-		"blocked": sim.body.dash.arc.blocked,
-		"landings": sim.body.dash.landings,
-		"chunks": sim.chunks_destroyed,
-		"rubble": snappedf(sim.rubble, 0.001),
-		"at": sim.kaiju_pos.snapped(Vector2(0.001, 0.001)),
-	}
-
-
-func _stage(sim: RampageSim) -> Dictionary:
-	var stages: Array = sim.body.dash.cfg["stages"]["reptilian"]
-	return stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]

@@ -21,27 +21,31 @@ const AVENUE := "avenue"
 const STREET := "street"
 const ALLEY := "alley"
 const DIAGONAL := "diagonal"
+const MIN_LOT_M := 2.0  # CityLots' narrowest lot side: no block is cut thinner
 
 
-## The playable city's buildings: x, z (centre), w, d, h, tier, style (CityPool's add a model).
-## Blocks fill district by district, innermost first, so a district's lots draw the same numbers
-## whichever stage is in play (only its height caps change them). The river's blocks (CityRiver)
-## still draw their lots and drop them; its quay sheds come last, from their own numbers.
+## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style
+## (CityPool's add a model).
+## Blocks fill district by district, innermost first, so a district's lots draw the same
+## numbers whichever stage is in play (only the stage's height caps change them). The river's
+## blocks (CityRiver) still draw their lots and drop them, so every other building stays put;
+## its quay sheds come last, from their own numbers, in place of the lots by the bank.
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
-	var bare: Array[Dictionary] = []  # the first district's built blocks too thin for a lot
+	var quay: Array[Dictionary] = []  # the first district's built blocks by the bank (CityRiver)
 	for ring: int in districts(cfg).size() + 1:  # + 1: the real blocks past the last district
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
 				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
 				if str(block["use"]) == "built":
+					if ring == 0 and CityRiver.on_quay(plan, block, cfg):
+						quay.append(block)
+						lots = CityRiver.off_quay(plan, lots, cfg)
 					out.append_array(lots)
-					if lots.is_empty() and ring == 0:
-						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
 	CityPool.place(out, rng, cfg, plan)  # lots take the pool's models (D-256), on their own stream
-	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, bare, cfg))  # + red barrels (#19)
+	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, quay, out, cfg))  # + red barrels (#19)
 	return out
 
 
@@ -91,31 +95,18 @@ static func map(cfg: Dictionary) -> Dictionary:
 	var rings := districts(cfg)
 	var full := rings[rings.size() - 1]
 	var outer := Num.f(cfg["outer_half"])
-	# Long blocks one way, short the other (Manhattan): x-lines far apart, z-lines close.
-	var long: Array = cfg["block_long"]
-	var short: Array = cfg["block_short"]
-	var xs := CityLines.across(rng, rings[0], Num.i(long[0]), Num.i(long[1]))
-	var zs := CityLines.across(rng, rings[0], Num.i(short[0]), Num.i(short[1]))
-	# Each later district's streets, out to its own ring avenue, draw from their own stream.
-	var grow := RandomNumberGenerator.new()
-	grow.seed = Num.i(cfg["map_seed"]) + 2
-	for k: int in range(1, rings.size()):
-		CityLines.ring(grow, xs, rings[k - 1], rings[k], Num.i(long[0]), Num.i(long[1]))
-		CityLines.ring(grow, zs, rings[k - 1], rings[k], Num.i(short[0]), Num.i(short[1]))
-	# The outskirts draw from their own stream, so tuning them never reshuffles the city.
-	var far := RandomNumberGenerator.new()
-	far.seed = Num.i(cfg["map_seed"]) + 1
-	# ...and their blocks vary far more than the city's, so the outskirts are no even grid.
-	CityLines.extend(far, xs, outer, Num.i(long[0]) - 6, Num.i(long[1]) + 14)
-	CityLines.extend(far, zs, outer, Num.i(short[0]) - 2, Num.i(short[1]) + 12)
-	var avenues_x := _avenues(rng, xs, rings, cfg)
-	var avenues_z := _avenues(rng, zs, rings, cfg)
+	var diag := _diagonal(cfg)
+	var lines := CityLines.draw(rng, cfg, diag)
+	var xs: Array[float] = lines["xs"]
+	var zs: Array[float] = lines["zs"]
+	var avenues_x: Dictionary = lines["avenues_x"]
+	var avenues_z: Dictionary = lines["avenues_z"]
 	var plan := {
 		"nodes": [] as Array[Vector2],
 		"streets": [] as Array[Dictionary],
 		"blocks": [] as Array[Dictionary],
 		"sidewalk": Num.f(cfg["sidewalk"]),
-		"diagonal": _diagonal(cfg),
+		"diagonal": diag,
 		"xs": xs,
 		"zs": zs,
 	}
@@ -125,9 +116,26 @@ static func map(cfg: Dictionary) -> Dictionary:
 	var alleys := CityAlleys.lay(rng, plan, [avenues_x, avenues_z], cfg)
 	var alley_x: Dictionary = alleys["x"]
 	var alley_z: Dictionary = alleys["z"]
-	var diag: Dictionary = plan["diagonal"]
 	var index := {}
-	# x-lines (streets running along z), split at every crossing and where the diagonal crosses.
+	_lay_streets(plan, index, lines, [alley_x, alley_z], cfg)
+	_lay_diagonal(plan, index, diag, xs, zs, outer, cfg)
+	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
+	return plan
+
+
+## Every grid street, split at each crossing and where the diagonal crosses: x-lines (running
+## along z) first, then z-lines. alleys: [alley_x, alley_z].
+static func _lay_streets(
+	plan: Dictionary, index: Dictionary, lines: Dictionary, alleys: Array, cfg: Dictionary
+) -> void:
+	var xs: Array[float] = lines["xs"]
+	var zs: Array[float] = lines["zs"]
+	var outer := Num.f(cfg["outer_half"])
+	var diag: Dictionary = plan["diagonal"]
+	var avenues_x: Dictionary = lines["avenues_x"]
+	var avenues_z: Dictionary = lines["avenues_z"]
+	var alley_x: Dictionary = alleys[0]
+	var alley_z: Dictionary = alleys[1]
 	for i: int in xs.size():
 		var stops: Array[float] = []
 		stops.assign(zs)
@@ -154,7 +162,18 @@ static func map(cfg: Dictionary) -> Dictionary:
 			if alley_z.has(Vector2i(j, i)):
 				kind = ALLEY
 			_street(plan, index, Vector2(stops[k], zs[j]), Vector2(stops[k + 1], zs[j]), kind, cfg)
-	# The diagonal avenue, crossing to crossing.
+
+
+## The diagonal avenue, crossing to crossing.
+static func _lay_diagonal(
+	plan: Dictionary,
+	index: Dictionary,
+	diag: Dictionary,
+	xs: Array[float],
+	zs: Array[float],
+	outer: float,
+	cfg: Dictionary
+) -> void:
 	var along: Array[Vector2] = []
 	for x: float in xs:
 		var z := _diag_at_x(diag, x)
@@ -167,29 +186,11 @@ static func map(cfg: Dictionary) -> Dictionary:
 	along.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
-	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
-	return plan
 
 
-## Every district's ring lines and one or two lines through the first district are avenues.
-static func _avenues(
-	rng: RandomNumberGenerator, lines: Array[float], rings: Array[float], cfg: Dictionary
-) -> Dictionary:
-	var out := {}
-	var inner: Array[int] = []
-	for i: int in lines.size():
-		var ring := false
-		for h: float in rings:
-			ring = ring or is_equal_approx(absf(lines[i]), h)
-		if ring:
-			out[i] = true
-		elif absf(lines[i]) < rings[0]:
-			inner.append(i)
-	for n: int in mini(Num.i(cfg["avenues"]), inner.size()):
-		var pick := inner[rng.randi_range(0, inner.size() - 1)]
-		inner.erase(pick)
-		out[pick] = true
-	return out
+## The diagonal avenue of cfg: {at, dir} (city.diagonal_through, city.diagonal_deg).
+static func diagonal_of(cfg: Dictionary) -> Dictionary:
+	return _diagonal(cfg)
 
 
 ## The diagonal avenue: a point it passes and its direction (unit, ground plane).

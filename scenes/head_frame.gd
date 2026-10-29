@@ -5,8 +5,7 @@ extends RefCounted
 ## least camera.safe_top of the frame below its top edge. When it would ride higher, the aim tilts
 ## up just enough, critically damped (Damped) over camera.head_rise_s going up and
 ## camera.head_settle_s coming back, so the aim never jumps (motion critic round 2). The camera
-## never moves or zooms for it, so the kaiju's size holds. sight() gives the fade the drawn body's
-## own points (every bone's centre, the corners of the head, jaw and spine) to keep in view.
+## never moves or zooms for it, so the kaiju's size holds.
 ## Presentation only.
 
 ## How far up the aim is tilted now (radians).
@@ -54,22 +53,6 @@ func points() -> PackedVector3Array:
 		var at := _rig.bone(bone).global_transform
 		for i: int in 8:
 			out.append(at * box.get_endpoint(i))
-	return out
-
-
-## The drawn body's points the building fade keeps in sight (empty for an unrigged body): each
-## bone's box centre, and the corners of the head, jaw and spine boxes (the torso and head the
-## player must see; the sim's sight points sit a body radius or two ahead of the hips, short of
-## the snout).
-func sight() -> PackedVector3Array:
-	var out := PackedVector3Array()
-	for bone: String in _boxes:
-		var box: AABB = _boxes[bone]
-		var at := _rig.bone(bone).global_transform
-		out.append(at * box.get_center())
-		if bone.begins_with("head") or bone.begins_with("jaw") or bone.begins_with("spine"):
-			for i: int in 8:
-				out.append(at * box.get_endpoint(i))
 	return out
 
 

@@ -5,11 +5,13 @@ extends "res://tests/lib/military_view.gd"
 ## on generated cities (RAMPAGE_SEEDS), at the young and Behemoth stages (and the Colossus city,
 ## where tanks enter round the kaiju, D-039, D-135), and the clip's scene through the game camera.
 ## The helicopters are today's (their flight is its own branch, claude/heli-flight). Helpers: the
-## clumsy army's strays (MilitaryStray) and a boxed-in tank's bounded yield (MilitaryYield).
+## clumsy army's strays (MilitaryStray), a boxed-in tank's bounded yield (MilitaryYield) and the
+## reach measured to the body (MilitaryReach).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 
 const MilitaryStray := preload("res://tests/lib/military_stray.gd")
 const MilitaryYield := preload("res://tests/lib/military_yield.gd")
+const MilitaryReach := preload("res://tests/lib/military_reach.gd")
 
 ## Parked-in-range tank-steps the rampages must see before their standoff share means anything.
 const MIN_PARKED_IN_RANGE := 20
@@ -28,7 +30,10 @@ const MIN_PARKED_IN_RANGE := 20
 ## Re-probed for the road-network PR (no alleys on the river banks moved the plans), Behemoth
 ## seeds 0-35: tank-steps in range 0 (7), 8 (5), 10 (7), 14 (9), 25 (4), 35 (18), none elsewhere;
 ## seeds 0, 10, 14 and 35 give 41 against the bar of 20 (the same 2x margin).
-const RAMPAGE_SEEDS: Array[int] = [0, 10, 14, 35]
+## Re-probed for road geometry (#243: bigger blocks), seeds 0-23: tank-steps in range 2 (3),
+## 5 (3), 6 (17), 15 (17), 22 (5), all in the band, none elsewhere; seeds 2, 6, 15 and 22 give
+## 42 against the bar of 20.
+const RAMPAGE_SEEDS: Array[int] = [2, 6, 15, 22]
 
 
 func suite_name() -> String:
@@ -40,6 +45,7 @@ func run_checks() -> void:
 	await _t("_check_rampages")
 	await _h("MilitaryStray", func() -> void: MilitaryStray.new(check, _rampage, _autoplay).run())
 	await _h("MilitaryYield", func() -> void: MilitaryYield.new(check, _rampage).run())
+	await _h("MilitaryReach", func() -> void: MilitaryReach.new(check, _rampage).run())
 	await _t("_check_standoff_held")
 	await _t("_check_pivot_beside_parked")
 	await _t("_check_rubble")

@@ -1,5 +1,5 @@
 class_name CarvePhysics
-extends Node3D
+extends CarvePhysicsStats
 ## The physics the player sees when buildings are carved (D-094, option A, WP5). It reads the
 ## sim's carve and settle events and never writes back: what fell, where and what it crushed
 ## are the sim's; the tumbling, breaking and settling here are cosmetic (Teardown's split).
@@ -17,12 +17,8 @@ extends Node3D
 signal spawned(island: IslandBody)
 
 var fx: Fx
-var _cfg: Dictionary
 var _rng := RandomNumberGenerator.new()
-var _sites: Dictionary = {}  # key -> CarveSite
-var _debris: Dictionary = {}  # key -> CarveDebris
 var _colliders: Dictionary = {}  # key -> CarveCollider
-var _islands: Array[IslandBody] = []
 var _dust_at: Dictionary = {}  # key -> clock of its last carve dust
 var _clock := 0.0  # presentation seconds, for dust spacing only
 var _gravity := 1.0  # the sim's fall gravity over the engine's
@@ -43,7 +39,7 @@ func add_site(site: CarveSite, grid: PackedByteArray) -> void:
 	_sites[site.key] = site
 	var collider := CarveCollider.new(site)
 	add_child(collider)
-	collider.build(grid)
+	collider.build(grid, true)  # over the next ticks: a first hit never hitches (item 10)
 	_colliders[site.key] = collider
 	var debris := CarveDebris.new()
 	debris.site = site
@@ -153,143 +149,9 @@ func _split(key: int, parts: Array[Dictionary], parent: IslandBody) -> void:
 		spawned.emit(chunk)
 
 
-func live_bodies() -> int:
-	var n := 0
-	for island: IslandBody in _islands:
-		if not island.settled_now:
-			n += 1
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.live()
-	return n
-
-
-## Every Jolt body this view holds (live, fading, islands and static rubble colliders).
-func all_bodies() -> int:
-	var n := _islands.size()
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.bodies() + d.static_bodies()
-	return n
-
-
-func rubble_pieces() -> int:
-	var n := 0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.rubble()
-	return n
-
-
-## The lowest point of any debris piece or rubble, city-wide (a ground check for captures).
-func lowest_point() -> float:
-	var low := INF
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		low = minf(low, d.lowest_point())
-	return low
-
-
-## Live pieces reaching more than `depth` below the ground, city-wide.
-func sunk(depth: float) -> int:
-	var n := 0
-	var y := Num.f(_cfg["ground_y"]) - depth
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.sunk(y)
-	return n
-
-
-## Pieces lifted out of the road so far and the deepest lift, city-wide: [count, depth].
-func raised() -> Array:
-	var n := 0
-	var deepest := 0.0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.raised
-		deepest = maxf(deepest, d.max_raise)
-	return [n, deepest]
-
-
-## Horizontal skid of settled pieces, in their own widths (captures):
-## [max, mean, count, over 5 widths].
-func skid() -> Array:
-	var worst := 0.0
-	var total := 0.0
-	var n := 0
-	var over := 0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		over += d.skid_over
-		worst = maxf(worst, d.skid_max)
-		total += d.skid_sum
-		n += d.skid_n
-	return [worst, total / maxi(1, n), n, over]
-
-
-## The most rubble pieces any one building holds.
-func rubble_max() -> int:
-	var most := 0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		most = maxi(most, d.rubble())
-	return most
-
-
-## Rubble pieces dropped past rubble_cap so far, city-wide.
-func rubble_dropped() -> int:
-	var n := 0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.dropped()
-	return n
-
-
-## Pieces that vanished at full size in one frame so far, city-wide (should stay 0).
-func vanished() -> int:
-	var n := 0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.vanished()
-	return n
-
-
-## Pieces faded out because they lay indoors, city-wide (captures).
-func culled() -> int:
-	var n := 0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		n += d.culled
-	return n
-
-
-## Pieces whose centre lies inside a building's box shrunk by `margin` and above the street
-## by `margin` (captures: debris left hovering inside a glass tower).
-func enclosed(margin: float) -> int:
-	var n := 0
-	for key: int in _debris:
-		var s: CarveSite = _sites[key]
-		var box := AABB(s.origin, Vector3(s.size) / s.res).grow(-margin)
-		var d: CarveDebris = _debris[key]
-		n += d.inside(box)
-	return n
-
-
-## The fastest live piece's speed, city-wide.
-func live_speed() -> float:
-	var fastest := 0.0
-	for key: int in _debris:
-		var d: CarveDebris = _debris[key]
-		fastest = maxf(fastest, d.fastest())
-	return fastest
-
-
-func islands() -> Array[IslandBody]:
-	return _islands
-
-
 func _physics_process(delta: float) -> void:
 	_clock += delta
+	IslandMesh.reap(false)  # remeshes of islands already gone
 	var over := live_bodies() - int(GraphicsPresets.cap("debris_live"))
 	if over > 0:
 		var live := maxi(1, live_bodies())
@@ -305,6 +167,11 @@ func _physics_process(delta: float) -> void:
 		for key: int in _debris:
 			var d: CarveDebris = _debris[key]
 			d.trim_static(floori(float(d.static_bodies()) * cap / statics))
+
+
+## The islands left before it (children exit first): wait on any remesh still running.
+func _exit_tree() -> void:
+	IslandMesh.reap(true)
 
 
 ## An island broke on impact: its bricks fly as half-brick pieces in their own colours; rubble

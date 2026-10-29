@@ -3,8 +3,14 @@
 // grid (4 cells per floor: slab line, two window rows, lintel), so from the street they read
 // as the same voxel city. Lit windows glow. Instance colour = wall colour (sRGB); custom data
 // x = archetype (0..3), y = share of windows lit, z = beacon on the roof (1), w = seed.
-// facade.gdshader takes the engine's fog; facade_far.gdshader fades by its own gentler haze,
-// so far silhouettes and their lights stay readable through the blue hour.
+// facade.gdshader takes the engine's fog; facade_far.gdshader fades by its own gentler haze and
+// height fog (far_haze.gdshaderinc) and no engine fog; facade_far_fogged.gdshader takes both, the
+// far city in the same air as the bay (FarHaze, on by default). Lit windows take the playable
+// buildings' window palette (WindowPalette): the same colours and shares, picked per lit facade
+// window here (an exact per-window match across the stream swap is impossible).
+
+#include "res://scenes/window_palette.gdshaderinc"
+#include "res://scenes/dither.gdshaderinc"
 
 uniform vec3 roof_color : source_color = vec3(0.43, 0.42, 0.40);
 uniform vec3 window_color : source_color = vec3(0.17, 0.23, 0.27);
@@ -13,6 +19,9 @@ uniform float glow = 1.3;
 uniform vec3 haze_color : source_color = vec3(0.30, 0.45, 0.50);
 uniform float haze = 0.0;
 uniform float haze_start = 120.0;
+#ifdef FAR_HAZE
+#include "res://scenes/far_haze.gdshaderinc"
+#endif
 uniform float blackout = 0.0;  // share of window blocks dark (a power cut: whole floors at a time)
 uniform float grain = 4.0;  // facade cells per world unit (4 = the playable voxels)
 uniform bool plain = false;  // just the instance colour (concrete, hills)
@@ -40,6 +49,10 @@ void vertex() {
 }
 
 void fragment() {
+	// A box dissolving out as its mesh arrives (StreamDissolve): instance alpha is its opacity.
+	if (COLOR.a < 0.999 && dither(FRAGCOORD.xy) > COLOR.a) {
+		discard;
+	}
 	vec3 wall = srgb_to_linear(COLOR.rgb);
 	vec3 albedo = wall;
 	vec3 emit = vec3(0.0);
@@ -97,8 +110,16 @@ void fragment() {
 			bool dark = hash3(vec3(floor(cell / 14.0), floor(y4 / 12.0), seed * 17.0 + 5.0)) < blackout;
 			if (lit < v_custom.y && !dark) {
 				vec3 l = lit_color;
+				float gain = 1.0;
+				if (window_palette_on) {
+					uint h = window_mix(uint(int(seed * 65536.0)) ^ 40503u);
+					h = window_mix(h ^ uint(int(floor(cell / 2.0))));
+					vec4 w = window_pick(window_mix(h ^ uint(int(floor(y4 / 4.0)))));
+					l = w.rgb;
+					gain = w.a;
+				}
 				albedo = l;
-				emit = l * glow;
+				emit = l * glow * gain;
 			}
 		} else {
 			albedo = wall * jitter;
@@ -112,8 +133,7 @@ void fragment() {
 	ROUGHNESS = 0.9;
 #ifdef FAR_HAZE
 	// The far skyline fades by its own curve; lights burn through it more than walls do.
-	float dist = length(v_world - CAMERA_POSITION_WORLD);
-	float f = clamp(1.0 - exp(-max(dist - haze_start, 0.0) * haze), 0.0, 0.94);
+	float f = far_haze(length(v_world - CAMERA_POSITION_WORLD), v_world.y);
 	ALBEDO = albedo * (1.0 - f);
 	EMISSION = emit * (1.0 - f * 0.6) + haze_color * f;
 #else

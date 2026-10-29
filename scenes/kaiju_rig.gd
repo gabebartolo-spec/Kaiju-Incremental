@@ -192,6 +192,8 @@ func _collect_chains(defs: Array) -> void:
 				if children.size() != 1:
 					break
 				walk = str(children[0])
+				if not _is_physics(defs, walk):
+					break  # a run of physics bones ends at a plain one (the adult croc's clip-only tail tip)
 				chain.names.append(walk)
 			for _n: String in chain.names:
 				chain.drive.append(Basis.IDENTITY)
@@ -209,6 +211,16 @@ func _is_physics(defs: Array, bone_name: String) -> bool:
 static func _vec(v: Variant) -> Vector3:
 	var a: Array = v
 	return Vector3(Num.f(a[0]), Num.f(a[1]), Num.f(a[2]))
+
+
+## The gait and the helpers it builds hold each other (HexapodUpper.gait, BipedHead.gait,
+## LegReach.gait), and the engine frees a reference-counted object only once nothing counts it, so
+## every rig that was freed kept its gait alive to the end of the run (the leaked instances at
+## exit, debt row 2). Cut the rings as the rig is deleted (SimTeardown, as RampageSim.dispose
+## does for the sim).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and gait != null:
+		SimTeardown.cut(gait)
 
 
 func roar() -> void:
@@ -292,14 +304,15 @@ func pose_basis(bone_name: String, b: Basis, offset: Vector3 = Vector3.ZERO) -> 
 	node.transform = Transform3D(rest.basis * b, rest.origin + offset)
 
 
-## Turns a bone (from its rest pose under its current parent) so its head->tail points from -> to.
-func aim(bone_name: String, from: Vector3, to: Vector3) -> void:
+## Turns a bone (from its rest pose under its current parent) so its head->tail points from -> to
+## (or, given `rest_dir`, so that rest vector does: a foot aimed by its toe tip past a toe bone).
+func aim(bone_name: String, from: Vector3, to: Vector3, rest_dir := Vector3.ZERO) -> void:
 	var node: Node3D = _bones[bone_name]
 	var parent := node.get_parent() as Node3D
 	var rest: Transform3D = _rest[bone_name]
 	var rest_world := parent.global_transform * rest
 	var want := to - from
-	var have := rest_world.basis * dir_of(bone_name)
+	var have := rest_world.basis * (dir_of(bone_name) if rest_dir == Vector3.ZERO else rest_dir)
 	if want.length() < 0.0001 or have.length() < 0.0001:
 		return
 	var turn := Quaternion(have.normalized(), want.normalized())

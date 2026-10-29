@@ -1,13 +1,16 @@
 class_name AbilityFx
 extends Node3D
 ## The look of every unlockable power, presentation only (D-026). Each signature attack has its
-## own shape: Atomic Breath a plasma beam that runs out to what it hits, flares there and
-## scorches the street, Leap Slam a trail through the air and a glowing crater, Tentacle Lash
+## own shape: Lightning Breath a forked bolt that runs out to what it hits, lights the street
+## there and scorches it, Leap Slam a trail through the air and a glowing crater, Tentacle Lash
 ## two streaks whipping round with the tentacle tips, spray, debris and gouges. Upgrades show
 ## too: Signature Power brightens the attack, heavy stomps crack the street molten, Signature
 ## Recharge pulses at the feet and lights the body, Regeneration shimmers green over the hide,
 ## Armoured Scales throw shells off in a spark burst and a metallic flash. Nothing here hides the
 ## kaiju (D-025): glows are additive and thin, marks are decals that skip the kaiju's layer.
+
+## A stroke of the breath's bolt landed (its number, where): the camera shakes.
+signal breath_stroke(index: int, at: Vector3)
 
 const SWEEP := preload("res://scenes/sweep.gdshader")
 const RIM := preload("res://scenes/rim.gdshader")
@@ -17,6 +20,8 @@ const INK := Color("2a1620")
 ## How much the breath's strike sparks' lifetimes vary (0 = all die together).
 const SPARK_LIFE_SPREAD := 0.6
 const MOLTEN := Color("ff7a2a")
+## How long the prewarm's bolt lives (before its first stroke, so it kicks nothing).
+const PREWARM_BOLT := 0.05
 const WATER := Color(0.85, 0.95, 1.0)
 
 ## Every effect played, in order ("breath", "leap", "lash", "cracks", "ready", "deflect",
@@ -24,6 +29,8 @@ const WATER := Color(0.85, 0.95, 1.0)
 var played: Array[String] = []
 ## Atomic Breath's half angle this run (radians).
 var cone_half_angle := 0.0
+## The run's index (Rampage sets it): with the breath count it seeds each breath's bolt.
+var seed_index := 0
 ## Where the next breath's hit cone starts (the kaiju's feet); set before breath().
 var cone_origin := Vector3.ZERO
 var _city: CityView
@@ -40,6 +47,7 @@ var _healing := false
 var _beam: BreathBeam
 var _was_ready := true  # Signature Recharge: the ability was ready last step
 var _warming := false  # the prewarm's emitters' materials are kept compiled (ShaderKeep)
+var _breaths := 0  # breaths so far this run (the bolt's presentation seed)
 
 
 ## tint: the species' eye colour; body_scale: the kaiju's size this run; cone: Atomic
@@ -51,6 +59,7 @@ func _init(city: CityView, tint: Color, body_scale: float, cone: float) -> void:
 	cone_half_angle = cone
 	_tune = Content.section("fx")
 	_beam = BreathBeam.new(tint, body_scale, _tune)
+	_beam.rig.stroked.connect(breath_stroke.emit)
 	add_child(_beam)
 
 
@@ -75,6 +84,12 @@ func _ready() -> void:
 	ready_pulse(away, away)
 	deflect(away, Vector3.UP)
 	_warming = false
+	_beam.rig.play(PREWARM_BOLT, _beam.rng)  # a few frames out of sight: its shader compiles now
+	_breaths = 0
+	for mat: ShaderMaterial in _beam.rig.materials():
+		_city.fx.keep.hold("bolt_%d" % mat.get_instance_id(), mat)
+	_beam.rig.fx = _city.fx
+	_beam.rig.blocker = _first_hit
 	played.clear()
 
 
@@ -113,9 +128,9 @@ func power(value: float, base: float) -> float:
 	return clampf(value / maxf(base, 0.001), 1.0, Num.f(_tune["power_max"]))
 
 
-## Atomic Breath: a white-hot core (BreathBeam) from the mouth along `span` (mouth to the
-## street at full reach) that stops on the first standing wall it meets, a flame curtain on
-## the cone's far arc, a flare and a light on what it hits, and a scorched wedge on the street.
+## Lightning Breath: a forked bolt (BreathBeam) from the mouth along `span` (mouth to the street
+## at full reach) that stops on the first standing wall it meets, branches across the cone, two
+## lights and sparks on what it hits, and a scorched wedge on the street.
 func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -> void:
 	played.append("breath")
 	var hit := mouth + span * _first_hit(mouth, span)
@@ -123,8 +138,10 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 	_beam.power = strength
 	_beam.cone_origin = cone_origin
 	_beam.follow = _body
+	_beam.rng = Seeds.make("breath_bolt", seed_index * BoltRig.SEEDS_PER_RUN + _breaths)
+	_breaths += 1
 	_beam.fire(mouth, hit, span, half_angle)
-	# The struck face: hot sparks (BreathBeam carries the flashes and the light).
+	# The struck face: hot sparks (the bolt carries the flashes, the lights and the strokes' own).
 	var burst := FxParticles.sparks(_tint)
 	burst.direction = -dir + Vector3.UP * 0.4
 	burst.lifetime_randomness = SPARK_LIFE_SPREAD  # die out over time, not all on one frame
@@ -138,7 +155,7 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 		"soot_in": Num.f(_tune["scorch_soot_in"]),
 		"glow_in": Num.f(_tune["scorch_glow_in"]),
 		"half_angle": half_angle,
-		"energy": 3.0 + strength,
+		"energy": (3.0 + strength) * Num.f(_tune["scorch_glow_mult"]),
 		"tint": _tint,
 	}
 	var feet := Vector3(cone_origin.x, target.y - 0.5, cone_origin.z)
@@ -258,14 +275,7 @@ func deflect(at: Vector3, away: Vector3, kaiju: Node3D = null, from := Vector3.Z
 ## Fraction of `span` from `from` at which the line first meets a standing chunk (1: none).
 func _first_hit(from: Vector3, span: Vector3) -> float:
 	var steps := maxi(4, ceili(span.length() / 0.5))
-	var to := from + span
-	var near: Array[RampageSim.Building] = []  # b2-3: every building at every step was 20 ms
-	for b: RampageSim.Building in _city.sim.buildings:
-		var x0 := b.x - b.w * 0.5
-		var z0 := b.z - b.d * 0.5
-		if x0 <= maxf(from.x, to.x) and x0 + b.w >= minf(from.x, to.x):
-			if z0 <= maxf(from.z, to.z) and z0 + b.d >= minf(from.z, to.z):
-				near.append(b)
+	var near := _near_line(from, from + span)  # b2-3: every building at every step was 20 ms
 	for i: int in range(1, steps + 1):
 		var t := float(i) / steps
 		var p := from + span * t
@@ -277,6 +287,18 @@ func _first_hit(from: Vector3, span: Vector3) -> float:
 			if b.frame.top_below(floori(lx), floori(lz), b.height) + 1 > p.y:
 				return t
 	return 1.0
+
+
+## The buildings whose footprint overlaps the box from `from` to `to` (ground plane).
+func _near_line(from: Vector3, to: Vector3) -> Array[RampageSim.Building]:
+	var near: Array[RampageSim.Building] = []
+	for b: RampageSim.Building in _city.sim.buildings:
+		var x0 := b.x - b.w * 0.5
+		var z0 := b.z - b.d * 0.5
+		if x0 <= maxf(from.x, to.x) and x0 + b.w >= minf(from.x, to.x):
+			if z0 <= maxf(from.z, to.z) and z0 + b.d >= minf(from.z, to.z):
+				near.append(b)
+	return near
 
 
 func _flare(at: Vector3, size: float, tint: Color, seconds: float) -> ShaderMaterial:

@@ -17,7 +17,8 @@ const TURN_PAD := 6
 const TURN_SETTLE := 24
 ## How fast a lifted foot's toes swing back to the clip's yaw after the body turned over them (1/s).
 const FOOT_YAW_DECAY := 12.0
-## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
+## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam; a clip file
+## that names its own (KaijuClips.jaw_peak: the adult's Cascadeur roar) wins.
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
 ## The roar's tail slam lands when the tip stops falling: watched from ROAR_SLAM_FRAME (motion_test:
@@ -83,6 +84,7 @@ var _feet_primed := false
 var _slam_low := Vector3(0, INF, 0)
 var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
+var _spring_tail := 0  # tail bones the turns bend (spring chain; the r12 tip plays clips only)
 var _look := 0.0  # the head's look-ahead into the turn (rad)
 
 
@@ -104,13 +106,16 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 		_turn_span[turn] = clips.yaw_span(turn)
 	_steps = ClipSteps.new(clips)
 	_path = SwingPath.new(_steps.swing_frames)
-	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
-	var tail_bones := 0
+	var peak := clips.jaw_peak("roar", ROAR_PEAK_FRAME)
+	_jaw_peak = clips.pose_at("roar", peak).turns[clips.bones.find("jaw")]
+	var springs: Array[String] = []
+	for chain: KaijuRig.SpringChain in rig.chains:
+		springs.append_array(chain.names)
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
-			tail_bones += 1
 			_tail_tip = bone_name
-	_tail = ClipTail.new(tail_bones)
+			_spring_tail += 1 if springs.has(bone_name) else 0
+	_tail = ClipTail.new(_spring_tail)
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)
 	swing.trail = ClawTrail.new(rig)
@@ -233,7 +238,7 @@ func _walk_entry() -> float:
 		var cost := 0.0
 		for i: int in mini(legs.size(), 2):
 			if pose.planted[i]:
-				var now := to_rig * rig.tail_world(legs[i].names[2])
+				var now := to_rig * rig.tail_world(legs[i].tip)
 				cost += (clips.to_rig(pose.feet[i]) - now).length()
 		if cost < best_cost:
 			best_cost = cost
@@ -261,7 +266,7 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		var q := pose.turns[i]
 		if bone_name == "jaw" and _jaw_hold > 0.0:
 			q = q.slerp(_jaw_peak, smoothstep(0.0, 1.0, _jaw_hold))  # the maw held open (the beam)
-		elif bone_name.begins_with("tail"):
+		elif bone_name.begins_with("tail") and bone_name.to_int() < _spring_tail:
 			var i_tail := bone_name.to_int()
 			var bend := swing.whip_yaw(i_tail) + _tail.bend(i_tail)
 			q = Quaternion(Vector3.UP, bend) * q
@@ -282,9 +287,10 @@ func _look_ahead(dt: float) -> void:
 			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
 
 
-## The roar's tail slam lands as a heavy footfall where the tip meets the street.
+## The roar's tail slam lands as a heavy footfall where the tip meets the street (only for a roar
+## keyed with one: the adult's Cascadeur roar arches its tail up, KaijuClips.slams).
 func _slam_tail(roar_was: float) -> void:
-	if state != "roar":
+	if state != "roar" or not clips.slams("roar"):
 		return
 	if roar_was < 0.0 or clip_time < roar_was:  # a new roar
 		_slam_low = Vector3(0, INF, 0)
@@ -335,7 +341,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	if planted and _was_planted[i] and _overreached(leg, _lock[i], clip_toe):
 		_stomp.restep(i)  # the body got away from this foot: step after it
 		planted = false
-	var target := clip_toe + _lag[i]
+	var target := _path.down(i, clip_toe + _lag[i])
 	if _stomp.catching(i):
 		var k := _stomp.advance(i, dt)
 		_lag[i] *= 1.0 - smoothstep(0.0, 1.0, k)
@@ -348,7 +354,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	else:
 		_stomp.forget(i)
 		if _was_planted[i]:
-			_path.lift(i, walk_frames, clip_toe, _lock[i])
+			_path.lift(self, i, clip_toe, _lock[i])
 		target = _path.target(self, i, dt, clip_toe)
 		_lag[i] = _path.lag[i]
 	leg.planted = planted
@@ -389,5 +395,5 @@ func _overreached(leg: BipedGait.Leg, lock: Vector3, clip_toe: Vector3) -> bool:
 	if (lock - clip_toe).length() > RESTEP_GAP * stride():
 		return true
 	var hip := rig.bone(leg.names[0]).global_position
-	var ankle := lock + (rig.bone(leg.names[2]).global_position - rig.tail_world(leg.names[2]))
+	var ankle := lock + (rig.bone(leg.names[2]).global_position - rig.tail_world(leg.tip))
 	return (ankle - hip).length() > RESTEP_REACH * (leg.l1 + leg.l2) * s

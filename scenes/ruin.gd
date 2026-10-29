@@ -12,11 +12,28 @@ const SALTS := 997
 const RUBBLE := preload("res://scenes/rubble.gdshader")
 
 
-## Builds the ruin for a building whose palette and footprint come from `voxels`.
+## Builds the ruin for a building whose palette and footprint come from `voxels`. Main thread;
+## a worker builds build_plan() and the main thread make()s it (RuinYard).
 static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMeshInstance3D:
-	return rubbled(
-		heap(voxels, rng).build(rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin())
-	)
+	return make(build_plan(voxels, rng))
+
+
+## build()'s heap as plain data (safe on a worker thread).
+static func build_plan(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> Dictionary:
+	return plan(heap(voxels, rng), rubble_palette(voxels), 2.0, voxels.origin())
+
+
+## A heap's cubes as plain data: the MultiMesh buffer (VoxelBuilder.pack) and their glow.
+static func plan(
+	vox: VoxelBuilder, palette: Dictionary, glow: float, origin: Vector3
+) -> Dictionary:
+	return {"buffer": vox.pack(palette, BuildingVoxels.VOXEL, origin), "glow": glow}
+
+
+## The drawn heap of a plan, in rubble's look. Main thread only.
+static func make(p: Dictionary) -> MultiMeshInstance3D:
+	var buffer: PackedFloat32Array = p["buffer"]
+	return rubbled(VoxelBuilder.instance(buffer, BuildingVoxels.VOXEL, Num.f(p["glow"])))
 
 
 ## The ruin's cells (tests read them; build() draws them).
@@ -51,6 +68,7 @@ static func heap(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> VoxelBui
 ## cubes. Every heap builds its own cube mesh (Look.voxel_mesh), so the city's material is
 ## untouched.
 static func rubbled(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:
+	ThreadCheck.main_only("Ruin.rubbled")
 	var mat := ShaderMaterial.new()
 	mat.shader = RUBBLE
 	GroundKit.apply_look(mat, Num.i(Content.section("city")["map_seed"]))
@@ -77,8 +95,15 @@ static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
 static func strip(
 	voxels: BuildingVoxels, from: Vector3, to: Vector3, width: float, cfg: Dictionary = {}
 ) -> MultiMeshInstance3D:
+	return make(strip_plan(voxels, from, to, width, cfg))
+
+
+## strip()'s heap as plain data (safe on a worker thread).
+static func strip_plan(
+	voxels: BuildingVoxels, from: Vector3, to: Vector3, width: float, cfg: Dictionary = {}
+) -> Dictionary:
 	if voxels is LandmarkVoxels:  # a ragged heap against the stub, in the model's colours
-		return LandmarkRubble.heap(voxels as LandmarkVoxels, from, to, width)
+		return LandmarkRubble.heap_plan(voxels as LandmarkVoxels, from, to, width)
 	var vox := VoxelBuilder.new()
 	var keys: Array[String] = ["wall", "wall", "wall", "pillar", "trim", "slab", "window", "char"]
 	var along := to - from
@@ -113,13 +138,18 @@ static func strip(
 		for key: String in palette:
 			var c: Color = palette[key]
 			palette[key] = Color(c.lerp(tint, Num.f(cfg["rubble_tint_mix"])), c.a)
-	return rubbled(vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO))
+	return plan(vox, palette, 1.0, Vector3.ZERO)
 
 
 ## One big wall chunk thrown from a toppled tower: a lump of the building's own facade voxels
 ## (its wall and window colours, shaded like every other voxel), `size` sim units wide, centred
 ## on the node's origin. Replaces the flat-coloured boxes that read as untextured placeholders.
 static func chunk(voxels: BuildingVoxels, size: Vector3, salt: int) -> MultiMeshInstance3D:
+	return make(chunk_plan(voxels, size, salt))
+
+
+## chunk()'s cubes as plain data (safe on a worker thread).
+static func chunk_plan(voxels: BuildingVoxels, size: Vector3, salt: int) -> Dictionary:
 	var vox := VoxelBuilder.new()
 	var palette := rubble_palette(voxels)
 	var n := Vector3i((size * RES).round())
@@ -139,4 +169,4 @@ static func chunk(voxels: BuildingVoxels, size: Vector3, salt: int) -> MultiMesh
 				vox.put(Vector3i(x, y, z), key)
 	vox.salt = salt
 	var centre := -Vector3(n) * 0.5 * BuildingVoxels.VOXEL
-	return rubbled(vox.build(palette, BuildingVoxels.VOXEL, 1.0, centre))
+	return plan(vox, palette, 1.0, centre)

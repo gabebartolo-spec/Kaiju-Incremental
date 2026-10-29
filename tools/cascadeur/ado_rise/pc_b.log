@@ -1,0 +1,22 @@
+== adolescent_rise_pc_b (free 6882 MB)
+{"level": "Info", "text": "SAVED C:/kt/casc_drafts_1028/adolescent/rise_pc_b.casc frames 31 in 3 s"}
+{"level": "Info", "text": "NOTOPENED C:/kt/casc_drafts_1028/adolescent/rise_pc_b.casc (RAM) tabs 5 -> 5"}
+casc_lock: held by keyer
+dump rc=0
+casc_lock: released
+{"level": "Info", "text": "CDUMP ado_pc_b NF 31 verts 5514 corners 31335 weights 11785 joints 41 in 6 s"}
+-11,15,88,-25,45,-9,0,-0.7,-20     back 25.69 | low belly +6.59 sh +12.37 legs -1.59 tail +6.72 head +17.65 | tris head 0 leg_l 7 leg_r 6 | knee 58/58
+-11,40,88,-25,45,-9,0,-0.7,-20     back 25.69 | low belly +6.46 sh +12.37 legs -5.23 tail +6.72 head +17.65 | tris head 0 leg_l 9 leg_r 9 | knee 58/58
+-11,15,105,-25,45,-9,0,-0.7,-20    back 25.69 | low belly +8.02 sh +12.37 legs +2.16 tail +6.72 head +17.65 | tris head 0 leg_l 5 leg_r 5 | knee 45/45
+-11,40,105,-25,45,-9,0,-0.7,-20    back 25.69 | low belly +6.83 sh +12.37 legs -2.01 tail +6.72 head +17.65 | tris head 0 leg_l 5 leg_r 6 | knee 45/45
+-13,15,88,-25,45,-9,0,-0.7,-20     back 24.14 | low belly +5.03 sh +10.81 legs -3.14 tail +5.16 head +16.09 | tris head 0 leg_l 7 leg_r 6 | knee 58/58
+-13,40,88,-25,45,-9,0,-0.7,-20     back 24.14 | low belly +4.91 sh +10.81 legs -6.79 tail +5.16 head +16.09 | tris head 0 leg_l 9 leg_r 9 | knee 58/58
+-13,15,105,-25,45,-9,0,-0.7,-20    back 24.14 | low belly +6.47 sh +10.81 legs +0.61 tail +5.16 head +16.09 | tris head 0 leg_l 5 leg_r 5 | knee 45/45
+-13,40,105,-25,45,-9,0,-0.7,-20    back 24.14 | low belly +5.27 sh +10.81 legs -3.57 tail +5.16 head +16.09 | tris head 0 leg_l 5 leg_r 6 | knee 45/45
+-15,15,88,-25,45,-9,0,-0.7,-20     back 22.58 | low belly +3.48 sh +9.26 legs -4.69 tail +3.61 head +14.54 | tris head 0 leg_l 7 leg_r 6 | knee 58/58
+-15,40,88,-25,45,-9,0,-0.7,-20     back 22.58 | low belly +3.36 sh +9.26 legs -8.34 tail +3.61 head +14.54 | tris head 0 leg_l 9 leg_r 9 | knee 58/58
+-15,15,105,-25,45,-9,0,-0.7,-20    back 22.58 | low belly +4.91 sh +9.26 legs -0.94 tail +3.61 head +14.54 | tris head 0 leg_l 5 leg_r 5 | knee 45/45
+-15,40,105,-25,45,-9,0,-0.7,-20    back 22.58 | low belly +3.72 sh +9.26 legs -5.12 tail +3.61 head +14.54 | tris head 0 leg_l 5 leg_r 6 | knee 45/45
+-13,15,88,-60,45,-9,0,-0.7,0       back 24.14 | low belly +5.02 sh +10.81 legs +1.94 tail +6.60 head +16.09 | tris head 0 leg_l 7 leg_r 6 | knee 58/58
+-13,40,88,-60,45,-9,0,-0.7,-10     back 24.14 | low belly +4.90 sh +10.81 legs -2.47 tail +6.47 head +16.09 | tris head 0 leg_l 9 leg_r 9 | knee 58/58
+-15,40,105,-60,45,-9,0,-0.7,-30    back 22.58 | low belly +3.73 sh +9.26 legs +0.12 tail -0.05 head +14.54 | tris head 0 leg_l 5 leg_r 6 | knee 45/45

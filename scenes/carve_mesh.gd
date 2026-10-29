@@ -3,7 +3,10 @@ extends RefCounted
 ## Meshes a set of grid cells as voxel cubes: only the faces that border a cell outside `solid`
 ## are drawn, each wound clockwise from outside with its outward normal (the destruction spike's
 ## first clip had inverted normals: faces vanished from outside). Colours by material, with a
-## faint per-cell shade so a flat wall reads as voxels. Shared by island bodies and captures.
+## faint per-cell shade so a flat wall reads as voxels, darkened at each corner by the baked
+## voxel AO (VoxelAO, the look's strength; a StandardMaterial3D cannot read it from UV). Shared
+## by island bodies and captures. The faces build on a worker as well (IslandMesh): only
+## to_mesh() and material() touch a render resource.
 
 ## Face order: -x, +x, -y, +y, -z, +z.
 const STEPS: Array[Vector3i] = [
@@ -43,13 +46,67 @@ const CORNERS: Array[Vector3] = [
 	Vector3(0, 1, 1),
 ]
 const ORDER: Array[int] = [0, 2, 1, 0, 3, 2]
+## ORDER split along the other diagonal (corners 1-3), when that one is brighter (VoxelAO).
+const ORDER_FLIPPED: Array[int] = [0, 3, 1, 1, 3, 2]
 const SHADE_MIN := 0.9  # the darkest a cell is shaded, of its material colour
 
 static var _material: StandardMaterial3D
+## Per face, per corner: the steps from the face's air cell to the corner's two side cells and
+## its corner cell (VoxelAO's rule, in this mesher's own corner order).
+static var _ao_steps: Array = _make_ao_steps()
+
+
+## The faces being built: the grid they test against and their arrays (a holder: packed arrays
+## copy on write). strength: the look's AO strength (VoxelAO.strength(), read on the main thread).
+class Faces:
+	var site: CarveSite
+	var solid: PackedByteArray
+	var size: float
+	var strength: float
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var colors := PackedColorArray()
+
+	func _init(p_site: CarveSite, p_solid: PackedByteArray, p_strength: float) -> void:
+		site = p_site
+		solid = p_solid
+		size = 1.0 / site.res
+		strength = p_strength
+
+	## Face f of cell c (corner at p), coloured col and shaded by its corners' AO.
+	func add(c: Vector3i, f: int, p: Vector3, col: Color) -> void:
+		var shade: Array[float] = [1.0, 1.0, 1.0, 1.0]
+		var order := ORDER
+		if strength > 0.0:
+			var lv := _levels(c + STEPS[f], f)
+			for q: int in 4:
+				shade[q] = lerpf(1.0, VoxelAO.LEVEL_VALUE[lv[q]], strength)
+			if lv[1] + lv[3] > lv[0] + lv[2]:
+				order = ORDER_FLIPPED
+		var n := Vector3(STEPS[f])
+		for v: int in order:
+			var k := shade[v]
+			verts.append(p + CORNERS[f * 4 + v] * size)
+			normals.append(n)
+			colors.append(Color(col.r * k, col.g * k, col.b * k))
+
+	func _levels(air: Vector3i, f: int) -> Array[int]:
+		var out: Array[int] = []
+		for q: int in 4:
+			var steps: Array = CarveMesh._ao_steps[f][q]
+			var s1: Vector3i = steps[0]
+			var s2: Vector3i = steps[1]
+			var c: Vector3i = steps[2]
+			out.append(VoxelAO.level(blocks(air + s1), blocks(air + s2), blocks(air + c)))
+		return out
+
+	func blocks(q: Vector3i) -> bool:
+		return site.inside(q) and solid[site.index(q)] != 0
 
 
 ## One shared vertex-coloured material for every carved mesh.
 static func material() -> StandardMaterial3D:
+	ThreadCheck.main_only("CarveMesh.material")
 	if _material == null:
 		_material = StandardMaterial3D.new()
 		_material.vertex_color_use_as_albedo = true
@@ -77,33 +134,43 @@ static func build_at(
 ) -> ArrayMesh:
 	var mats: PackedByteArray = src[0]
 	var solid: PackedByteArray = src[1]
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var colors := PackedColorArray()
-	var s := 1.0 / site.res
+	var out := Faces.new(site, solid, VoxelAO.strength())
+	add_cells(out, cells, mats, offset)
+	return to_mesh(out)
+
+
+## Adds the faces of `cells` (indices), coloured by `mats` (parallel), placed relative to
+## `offset` (world), to `out`: a face where the neighbour is outside the grid or not solid.
+static func add_cells(
+	out: Faces, cells: PackedInt32Array, mats: PackedByteArray, offset: Vector3
+) -> void:
+	var site := out.site
 	var base := site.origin - offset
 	for k: int in cells.size():
 		var c := site.cell(cells[k])
-		var col := site.color(mats[k])
-		var shade := SHADE_MIN + (1.0 - SHADE_MIN) * posmod(c.x * 7 + c.y * 13 + c.z * 3, 5) / 4.0
-		col = Color(col.r * shade, col.g * shade, col.b * shade)
-		var p := base + Vector3(c) * s
+		var col := shaded(site, c, mats[k])
+		var p := base + Vector3(c) * out.size
 		for f: int in 6:
-			var q := c + STEPS[f]
-			if site.inside(q) and solid[site.index(q)] != 0:
-				continue
-			var n := Vector3(STEPS[f])
-			for v: int in ORDER:
-				verts.append(p + CORNERS[f * 4 + v] * s)
-				normals.append(n)
-				colors.append(col)
-	if verts.is_empty():
+			if not out.blocks(c + STEPS[f]):
+				out.add(c, f, p, col)
+
+
+## Cell c's colour: its material's, with the faint per-cell shade.
+static func shaded(site: CarveSite, c: Vector3i, m: int) -> Color:
+	var col := site.color(m)
+	var shade := SHADE_MIN + (1.0 - SHADE_MIN) * posmod(c.x * 7 + c.y * 13 + c.z * 3, 5) / 4.0
+	return Color(col.r * shade, col.g * shade, col.b * shade)
+
+
+## The mesh of the faces in `out` (main thread), null when there are none.
+static func to_mesh(out: Faces) -> ArrayMesh:
+	if out.verts.is_empty():
 		return null
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_VERTEX] = out.verts
+	arrays[Mesh.ARRAY_NORMAL] = out.normals
+	arrays[Mesh.ARRAY_COLOR] = out.colors
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	mesh.surface_set_material(0, material())
@@ -134,3 +201,21 @@ static func span(site: CarveSite, cells: PackedInt32Array, ks: PackedInt32Array)
 		hi = hi.max(c)
 	var s := 1.0 / site.res
 	return AABB(site.origin + Vector3(lo) * s, Vector3(hi - lo + Vector3i.ONE) * s)
+
+
+## _ao_steps: a corner's sides step along the face's two in-plane axes towards the corner.
+static func _make_ao_steps() -> Array:
+	var out := []
+	for f: int in 6:
+		var per := []
+		for q: int in 4:
+			var o := CORNERS[f * 4 + q] * 2.0 - Vector3.ONE  # -1 or +1 on every axis
+			var side: Array[Vector3i] = []
+			for axis: int in 3:
+				if STEPS[f][axis] == 0:
+					var step := Vector3i.ZERO
+					step[axis] = int(o[axis])
+					side.append(step)
+			per.append([side[0], side[1], side[0] + side[1]])
+		out.append(per)
+	return out

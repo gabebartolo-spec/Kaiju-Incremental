@@ -40,7 +40,15 @@ window/vsync/vsync_mode=2
 
 [shader_globals]
 
+bubble_radius={
+"type": "float",
+"value": 0.0
+}
 smoke_focus={
+"type": "float",
+"value": 0.0
+}
+smoke_soft_m={
 "type": "float",
 "value": 0.0
 }

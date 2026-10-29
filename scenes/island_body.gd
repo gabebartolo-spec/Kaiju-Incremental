@@ -1,7 +1,9 @@
 class_name IslandBody
 extends RigidBody3D
 ## A part of a building that lost its support, as one Jolt body: its own cells in their own
-## materials, a mesh and a box per brick (one sim unit). A topple first follows the sim's turn
+## materials, a box per brick (one sim unit) and a mesh per brick, or with render_opt.island_merged
+## (render plan item 11, on) one merged mesh for them all (IslandMesh) and the boxes added straight
+## to the body's RID. A topple first follows the sim's turn
 ## about its pivot (kinematic, FallMotion's curve) for about a second, then is let go with the
 ## speed it had, so the hand-over has no jump. On each hard impact only the bricks near its
 ## lowest point break off (destruction spike clip r2: the whole island shattering on its first
@@ -23,6 +25,8 @@ signal split(parts: Array[Dictionary])
 signal settled
 signal released
 
+static var _boxes: Dictionary = {}  # merged: Vector4i(box size in cells, res) -> BoxShape3D
+
 var site: CarveSite
 ## The look of the bricks (the building's material; null: vertex colours), kept on remeshes.
 var cell_material: Material:
@@ -30,9 +34,12 @@ var cell_material: Material:
 		cell_material = m
 		for mi: MeshInstance3D in _meshes.values():
 			mi.material_override = m
+		if _view != null:
+			_view.material = m
 var cells: PackedInt32Array
 var mats: PackedByteArray
 var settled_now := false
+var merged := true  # render_opt.island_merged: IslandMesh draws the cells, shapes on the RID
 var last_break_us := 0  # how long the last break took (meshing and colliders), for benches
 ## Per staged break, the spread (standard deviation, world units) of the heights of the bricks
 ## left bordering the break: near 0 the fracture front is a plane, which reads as a staircase on
@@ -43,6 +50,8 @@ var _solid := PackedByteArray()  # site-sized, 1 where this island still owns a 
 var _bricks: Dictionary = {}  # brick -> PackedInt32Array of positions in `cells`
 var _meshes: Dictionary = {}  # brick -> MeshInstance3D
 var _shapes: Dictionary = {}  # brick -> CollisionShape3D
+var _view: IslandMesh  # merged: the cells' one mesh and patch
+var _shape_keys: Array[Vector3i] = []  # merged: the brick of each of the body's shapes, in order
 var _spans: Dictionary = {}  # brick -> world AABB of its cells at spawn (a brick never shrinks)
 var _com := Vector3.ZERO  # world centre of mass at spawn = the body's origin at spawn
 var _follow := {}  # pivot, dir, duration, until, t (empty: not following)
@@ -74,8 +83,14 @@ func _init(
 	_com /= maxi(1, cells.size())
 	position = _com
 	_bricks = CarveMesh.bricks(site, cells)
+	merged = Content.section("render_opt").get("island_merged", true) == true
+	if merged:
+		_view = IslandMesh.new(site, VoxelAO.strength())
+		add_child(_view)
+		_view.build_now([cells, mats, _solid], _bricks, _com)
 	for key: Vector3i in _bricks:
-		_mesh_brick(key)
+		if not merged:
+			_mesh_brick(key)
 		_shape_brick(key)
 	_mass()
 	continuous_cd = true
@@ -91,6 +106,12 @@ func follow(pivot: Vector3, dir: Vector2, duration: float, seconds: float) -> vo
 	_follow["t"] = 0.0
 	freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
 	freeze = true
+
+
+## Blocks until a running remesh is drawn (a capture's settled frame; tests).
+func finish_mesh() -> void:
+	if _view != null:
+		_view.finish()
 
 
 func cell_count() -> int:
@@ -127,8 +148,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_cooldown = maxf(0.0, _cooldown - delta)
 	var v := linear_velocity
-	var speed := Num.f(_cfg["break_speed"])
-	var hit := _hit(v, speed)
+	var hit := IslandFracture.hard_hit(_recent, v, _clock, _cfg)
 	hit = _contact_hit if hit == Vector3.ZERO else hit  # the contact step, not once speed bleeds
 	_contact_hit = Vector3.ZERO
 	if _cooldown == 0.0 and hit.length() > 0.0:
@@ -142,25 +162,6 @@ func _physics_process(delta: float) -> void:
 			_settle()
 	else:
 		_still = 0.0
-
-
-## The velocity the body had just before a hard hit, or ZERO: the fastest recent velocity above
-## `speed` that the body has since lost more than break_jolt of. Looking back break_window
-## seconds, not one step, catches a slab that lands on a pile and slows over several steps.
-func _hit(v: Vector3, speed: float) -> Vector3:
-	var window := Num.f(_cfg["break_window"])
-	_recent.append(Vector4(v.x, v.y, v.z, _clock))
-	while _recent[0].w < _clock - window:
-		_recent.pop_front()
-	var out := Vector3.ZERO
-	var worst := speed * Num.f(_cfg["break_jolt"])
-	for r: Vector4 in _recent:
-		var old := Vector3(r.x, r.y, r.z)
-		var lost := (old - v).length()
-		if old.length() > speed and lost > worst:
-			worst = lost
-			out = old
-	return out
 
 
 ## The kinematic turn: the angle grows with the square of time, as FallMotion and the sim's
@@ -218,63 +219,23 @@ func _start_break(v: Vector3) -> void:
 	keys.sort_custom(
 		func(a: Vector3i, b: Vector3i) -> bool: return Num.f(centre[a]) < Num.f(centre[b])
 	)
-	if not whole:
-		_note_front(keys, centre)
+	if not whole:  # the height spread of the bricks left bordering the break (see front_spreads)
+		var spread := IslandFracture.front_spread(keys, _bricks, centre)
+		if spread >= 0.0:
+			front_spreads.append(spread)
 	_stage = {"keys": keys, "v": v, "done": 0, "t": 0.0}
 	_step_stage(0.0)
 
 
-## Splits the island along its bricks into chunks of about split_chunk bricks (each brick joins
-## the nearest of seeded seed bricks); a lone brick breaks into half-brick pieces. The chunks keep
-## piece_keep of the speed before the hit, spread from the centre at up to split_spread and spin
-## by up to split_spin: they tumble apart where the slab hit, then settle or break on their own.
+## Splits the island along its bricks into seeded chunks that tumble apart where the slab hit
+## (see IslandSplit); a lone brick breaks into half-brick pieces.
 func _split(v: Vector3) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash([_seed, cells.size(), _bricks.size()])
-	var groups := IslandFracture.group_bricks(_bricks.keys(), rng, Num.f(_cfg["split_chunk"]))
-	var xf := global_transform
-	var keep := v * Num.f(_cfg["piece_keep"])
-	var spread := Num.f(_cfg["split_spread"])
-	var spin := Num.f(_cfg["split_spin"])
-	var parts: Array[Dictionary] = []
-	var pieces: Array[Dictionary] = []
-	for group: Array in groups:
-		if group.size() == 1:
-			var lone: Vector3i = group[0]
-			_pieces_of(lone, xf, v, pieces)
-			continue
-		var own := PackedInt32Array()
-		var own_mats := PackedByteArray()
-		var com := Vector3.ZERO
-		for key: Vector3i in group:
-			var ks: PackedInt32Array = _bricks[key]
-			for k: int in ks:
-				own.append(cells[k])
-				own_mats.append(mats[k])
-				com += site.world(site.cell(cells[k]))
-		com /= own.size()
-		var at := xf * (com - _com)
-		var out := at - global_position
-		out.y = 0.0
-		out = out.normalized() * spread * rng.randf_range(0.5, 1.0)
-		var w := Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1))
-		(
-			parts
-			. append(
-				{
-					"cells": own,
-					"mats": own_mats,
-					"xf": Transform3D(xf.basis, at),
-					"v": keep + out + angular_velocity.cross(at - global_position),
-					"w": angular_velocity + w * spin,
-					"layers": [collision_layer, collision_mask],
-				}
-			)
-		)
+	var plan := IslandSplit.new(self, _bricks, _com)
+	plan.run(hash([_seed, cells.size(), _bricks.size()]), v, _cfg)
 	_settle_out()
-	split.emit(parts)
-	if not pieces.is_empty():
-		broke.emit(pieces, global_position)
+	split.emit(plan.parts)
+	if not plan.pieces.is_empty():
+		broke.emit(plan.pieces, global_position)
 	queue_free()
 
 
@@ -285,13 +246,6 @@ func _settle_out() -> void:
 	collision_layer = 0
 	collision_mask = 0
 	freeze = true
-
-
-## Records the height spread of the bricks that will border this break (see front_spreads).
-func _note_front(keys: Array[Vector3i], centre: Dictionary) -> void:
-	var spread := IslandFracture.front_spread(keys, _bricks, centre)
-	if spread >= 0.0:
-		front_spreads.append(spread)
 
 
 ## Lets go the next share of the staged bricks; the last share frees an emptied island.
@@ -305,36 +259,56 @@ func _step_stage(delta: float) -> void:
 	var upto := keys.size() if share >= 1.0 else ceili(share * keys.size())
 	if upto <= done:
 		return
-	var xf := global_transform
-	var v: Vector3 = _stage["v"]
 	var pieces: Array[Dictionary] = []
-	var at := Vector3.ZERO
-	var low := INF
-	for k: int in range(done, upto):
-		var key := keys[k]
-		_pieces_of(key, xf, v, pieces)
-		var here := xf * (_brick_span(key).get_center() - _com)
-		at += here
-		low = minf(low, here.y)
-		_drop_brick(key)
-	at /= upto - done
-	at.y = low
-	var touched := {}
-	for k: int in range(done, upto):
-		for step: Vector3i in CarveMesh.STEPS:
-			if _bricks.has(keys[k] + step):
-				touched[keys[k] + step] = true
-	for key: Vector3i in touched:
-		_mesh_brick(key)
+	var at := _let_go(keys, done, upto, pieces)
 	_stage["done"] = upto
 	if upto >= keys.size():
 		_stage = {}
+		if merged and not _bricks.is_empty():  # the whole island meshed again, on a worker
+			_view.remesh([cells, mats, _solid], _bricks, _com)
 	last_break_us = Time.get_ticks_usec() - t0
 	broke.emit(pieces, at)
 	if _bricks.is_empty():
 		queue_free()
 		return
 	_mass()
+
+
+## Lets go the bricks `keys[done..upto)` as pieces (into `pieces`) and redraws what they leave;
+## returns the impact point (their mean, at the lowest of them).
+func _let_go(keys: Array[Vector3i], done: int, upto: int, pieces: Array[Dictionary]) -> Vector3:
+	var xf := global_transform
+	var v: Vector3 = _stage["v"]
+	var at := Vector3.ZERO
+	var low := INF
+	var lists := {}
+	for k: int in range(done, upto):
+		var key := keys[k]
+		_pieces_of(key, xf, v, pieces)
+		var here := xf * (_brick_span(key).get_center() - _com)
+		at += here
+		low = minf(low, here.y)
+		lists[key] = _bricks[key]
+		_drop_brick(key)
+	at /= upto - done
+	at.y = low
+	_redraw(lists)
+	return at
+
+
+## What dropping `lists` (brick -> positions in cells) left, drawn again: merged, the view hides
+## them and patches the faces they laid bare; else every brick next to one is meshed again.
+func _redraw(lists: Dictionary) -> void:
+	if merged:
+		_view.dropped(lists, [cells, mats, _solid], _bricks, _com)
+		return
+	var touched := {}
+	for key: Vector3i in lists:
+		for step: Vector3i in CarveMesh.STEPS:
+			if _bricks.has(key + step):
+				touched[key + step] = true
+	for key: Vector3i in touched:
+		_mesh_brick(key)
 
 
 ## Half-brick pieces round this brick's cells, each in its first material.
@@ -349,6 +323,10 @@ func _drop_brick(key: Vector3i) -> void:
 		_solid[cells[k]] = 0
 	_bricks.erase(key)
 	_spans.erase(key)
+	var i := _shape_keys.find(key)
+	if i >= 0:
+		PhysicsServer3D.body_remove_shape(get_rid(), i)
+		_shape_keys.remove_at(i)
 	for table: Dictionary in [_meshes, _shapes]:
 		if table.has(key):
 			var node: Node = table[key]
@@ -383,6 +361,11 @@ func _mesh_brick(key: Vector3i) -> void:
 
 func _shape_brick(key: Vector3i) -> void:
 	var box := _brick_span(key)
+	if merged:
+		var at := Transform3D(Basis(), box.get_center() - _com)
+		PhysicsServer3D.body_add_shape(get_rid(), _box_shape(box.size).get_rid(), at)
+		_shape_keys.append(key)
+		return
 	var shape := CollisionShape3D.new()
 	var b := BoxShape3D.new()
 	b.size = box.size
@@ -390,6 +373,18 @@ func _shape_brick(key: Vector3i) -> void:
 	shape.position = box.get_center() - _com
 	add_child(shape)
 	_shapes[key] = shape
+
+
+## The shared box shape `size` (world) a side on this site's grid.
+func _box_shape(size: Vector3) -> BoxShape3D:
+	var n := Vector3i((size * site.res).round())
+	var tag := Vector4i(n.x, n.y, n.z, site.res)
+	var shape: BoxShape3D = _boxes.get(tag)
+	if shape == null:
+		shape = BoxShape3D.new()
+		shape.size = size
+		_boxes[tag] = shape
+	return shape
 
 
 func _mass() -> void:

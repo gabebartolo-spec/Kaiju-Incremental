@@ -3,9 +3,10 @@ extends RefCounted
 ## Which time of day a rampage plays (D-145, director 2026-10-22: "the time of day will be
 ## randomised each run (a toggle available in the options menu to set a fixed time if players
 ## prefer)", "random but cannot do the same time of day twice in a row"). The times are
-## data/looks.json "times" "order"; the player's setting is "" (Random, the default) or one of
-## them. A random pick draws from its own seeded stream by run number and leaves out the time
-## the last run played, so a save replays the same sequence. Pure: no Node, no clock.
+## data/looks.json "times" "play" (a subset of "order", D-359); the player's setting is "" (Random,
+## the default) or one of them. A random pick draws from its own seeded stream by run number and
+## leaves out the time the last run played, so a save replays the same sequence. Pure: no Node, no
+## clock.
 
 ## The setting that means a random time.
 const RANDOM := ""
@@ -14,7 +15,7 @@ const RANDOM := ""
 ## The time of day for run number `run_index`: `setting` when it names a time, else a seeded pick
 ## from the others than `last` (the last run's; "" or unknown leaves all of them in).
 static func pick(run_index: int, last: String, setting: String) -> String:
-	var all: Array = Content.times()
+	var all: Array = Content.play_times()
 	if all.has(setting):
 		return setting
 	var pool: Array = all.filter(func(id: Variant) -> bool: return str(id) != last)
@@ -27,7 +28,7 @@ static func pick(run_index: int, last: String, setting: String) -> String:
 ## The settings in the order the options button steps through: Random first, then each time.
 static func settings() -> Array[String]:
 	var out: Array[String] = [RANDOM]
-	for id: Variant in Content.times():
+	for id: Variant in Content.play_times():
 		out.append(str(id))
 	return out
 
@@ -47,6 +48,12 @@ static func label(setting: String) -> String:
 	return str(labels[setting])
 
 
-## `setting` as the options file should keep it: a known time or Random.
+## `setting` as the options file should keep it: a playable time or Random
+## (an old "night" is Random).
 static func clean(setting: String) -> String:
-	return setting if Content.times().has(setting) else RANDOM
+	return setting if Content.play_times().has(setting) else RANDOM
+
+
+## Whether the options menu has a choice to offer: more than one time may be played (D-359).
+static func has_choice() -> bool:
+	return Content.play_times().size() > 1

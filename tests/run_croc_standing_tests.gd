@@ -238,8 +238,9 @@ func _check_stomp_landing() -> void:
 ## Highest toe above the street (world units).
 func _toe_height(rig: KaijuRig) -> float:
 	var top := 0.0
-	for leg_name: String in ["leg_l2", "leg_r2"]:
-		top = maxf(top, rig.tail_world(leg_name).y - rig.global_position.y)
+	for side: String in ["l", "r"]:
+		var tip := "leg_%s3" % side if rig.has_bone("leg_%s3" % side) else "leg_%s2" % side
+		top = maxf(top, rig.tail_world(tip).y - rig.global_position.y)
 	return top
 
 

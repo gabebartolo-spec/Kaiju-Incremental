@@ -1,0 +1,1281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "data/city_buildings.json",
+  "type": "object",
+  "properties": {
+    "districts": {
+      "type": "object",
+      "properties": {
+        "bar_strip": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "business": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "chinatown": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "docklands": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "neon": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "red_light": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "residential": {
+          "type": "object",
+          "properties": {
+            "bright": {"$ref": "#/$defs/num"},
+            "dark": {"$ref": "#/$defs/num"},
+            "mix": {"$ref": "#/$defs/num"},
+            "palette": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "shifts": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
+            "town": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+          },
+          "required": ["bright", "dark", "mix", "palette", "shifts", "town"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
+      },
+      "required": ["bar_strip", "business", "chinatown", "docklands", "neon", "red_light", "residential"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "min_floors": {"$ref": "#/$defs/num"},
+    "placement": {
+      "type": "object",
+      "properties": {
+        "big_chance": {"$ref": "#/$defs/num"},
+        "big_side": {"$ref": "#/$defs/num"},
+        "fill_slack": {"$ref": "#/$defs/num"},
+        "height_fit": {"$ref": "#/$defs/num"},
+        "height_fit_min": {"$ref": "#/$defs/num"},
+        "hero_chance": {"$ref": "#/$defs/num"},
+        "hero_rise": {"$ref": "#/$defs/num"},
+        "max_stretch": {"$ref": "#/$defs/num"},
+        "on": {"$ref": "#/$defs/bool"},
+        "patch_m": {"$ref": "#/$defs/num"},
+        "reuse_m": {"$ref": "#/$defs/num"},
+        "share": {"$ref": "#/$defs/num"}
+      },
+      "required": [
+        "big_chance", "big_side", "fill_slack", "height_fit", "height_fit_min", "hero_chance",
+        "hero_rise", "max_stretch", "on", "patch_m", "reuse_m", "share"
+      ],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "pool": {
+      "type": "object",
+      "properties": {
+        "F01": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F02": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F03": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F04": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F05": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F06": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F07": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F08": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F09": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F10": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F11": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F12": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F13": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F14": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F15": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F16": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F17": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F18": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F19": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F20": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F21": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F22": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F23": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F24": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F25": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F26": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F27": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F28": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F29": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F31": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F32": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F33": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "floors": {"$ref": "#/$defs/num"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "chunks", "d", "district", "floors", "h", "kvox", "name", "role", "storeys",
+            "stretch_floor", "w"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F34": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F35": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F36": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F37": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F38": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F39": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "F40": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H01": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H02": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H03": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H04": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H05": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H06": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H07": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H08": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H09": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H10": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "floors": {"$ref": "#/$defs/num"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "chunks", "d", "district", "floors", "h", "kvox", "name", "role", "storeys",
+            "stretch_floor", "w"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H11": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "floors": {"$ref": "#/$defs/num"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "chunks", "d", "district", "floors", "h", "kvox", "name", "role", "storeys",
+            "stretch_floor", "w"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H12": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "floors": {"$ref": "#/$defs/num"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "chunks", "d", "district", "floors", "h", "kvox", "name", "role", "storeys",
+            "stretch_floor", "w"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H13": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "floors": {"$ref": "#/$defs/num"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "chunks", "d", "district", "floors", "h", "kvox", "name", "role", "storeys",
+            "stretch_floor", "w"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H14": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H15": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H16": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H17": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H18": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H19": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H20": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H21": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "H22": {
+          "type": "object",
+          "properties": {
+            "chunks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+            "d": {"$ref": "#/$defs/num"},
+            "district": {"$ref": "#/$defs/str"},
+            "h": {"$ref": "#/$defs/num"},
+            "kvox": {"$ref": "#/$defs/str"},
+            "name": {"$ref": "#/$defs/str"},
+            "role": {"$ref": "#/$defs/str"},
+            "storeys": {"$ref": "#/$defs/num"},
+            "stretch_floor": {"$ref": "#/$defs/num"},
+            "w": {"$ref": "#/$defs/num"}
+          },
+          "required": ["chunks", "d", "district", "h", "kvox", "name", "role", "storeys", "stretch_floor", "w"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13",
+        "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24", "F25", "F26",
+        "F27", "F28", "F29", "F31", "F32", "F33", "F34", "F35", "F36", "F37", "F38", "F39", "F40",
+        "H01", "H02", "H03", "H04", "H05", "H06", "H07", "H08", "H09", "H10", "H11", "H12", "H13",
+        "H14", "H15", "H16", "H17", "H18", "H19", "H20", "H21", "H22"
+      ],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "tallest_floors": {"$ref": "#/$defs/num"},
+    "tallest_storeys": {"$ref": "#/$defs/num"}
+  },
+  "required": ["districts", "min_floors", "placement", "pool", "tallest_floors", "tallest_storeys"],
+  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+  "additionalProperties": false,
+  "$defs": {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"}
+  }
+}
