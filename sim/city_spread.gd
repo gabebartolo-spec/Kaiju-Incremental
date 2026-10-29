@@ -21,6 +21,7 @@ extends RefCounted
 ## stadium, then the bridge, which only the river's far bank takes), the rest after them.
 
 const LANDMARK_STREAM := "city_spread"
+const DRAW_STREAM := "landmark_draw"
 
 
 ## The growth stage (1 = the young city) in which district `ring` first lies in the play area.
@@ -50,8 +51,9 @@ static func landmarks(
 	]
 	var pool: Array = []
 	for spec: Dictionary in cfg.get("landmarks", []):
-		if shapes.has(str(spec["id"])):
+		if shapes.has(str(spec["id"])) and (spec.has("anchor") or not spec.has("size")):
 			pool.append(spec)
+	pool.append_array(spot_draws(cfg))
 	_shuffle(pool, rng)
 	pool = _in_place_order(pool)
 	var per_ring := Num.i(spread.get("landmarks_per_ring", 0))
@@ -82,6 +84,41 @@ static func landmarks(
 				out.append(site)
 				taken[k] += 1
 				break
+	return out
+
+
+## The pool's draw into the designated spots (D-375): the sized pool entries (city "landmarks"
+## with a "size") in seeded order, each into a free spot of its size ("landmark_spots"; its own
+## "spot" only, if it names one); an entry with no free spot sits this run out, a spot with no
+## entry left stays plain city. Returns the drawn entries, each with its spot's "anchor" and
+## "spot" set (an entry given its own "anchor", a test's, skips the draw). Its own stream (map_seed), so the draw never shifts the spread's order.
+static func spot_draws(cfg: Dictionary) -> Array[Dictionary]:
+	var spots: Dictionary = cfg.get("landmark_spots", {})
+	var shapes: Dictionary = cfg.get("landmark_shapes", {})
+	var rng := Seeds.make(DRAW_STREAM, Num.i(cfg["map_seed"]))
+	var pool: Array = []
+	for spec: Dictionary in cfg.get("landmarks", []):
+		if spec.has("size") and not spec.has("anchor") and shapes.has(str(spec["id"])):
+			pool.append(spec)
+	_shuffle(pool, rng)
+	var free: Array = []
+	for id: String in spots:
+		if not id.begins_with("_"):
+			free.append(id)
+	free.sort()
+	_shuffle(free, rng)
+	var out: Array[Dictionary] = []
+	for spec: Dictionary in pool:
+		for id: String in free:
+			var spot: Dictionary = spots[id]
+			if str(spot["size"]) != str(spec["size"]) or str(spec.get("spot", id)) != id:
+				continue
+			var drawn := spec.duplicate()
+			drawn["anchor"] = spot["at"]
+			drawn["spot"] = id
+			out.append(drawn)
+			free.erase(id)
+			break
 	return out
 
 

@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-392 · Director · The landmark pool's named entries
+His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
+ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
+stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task.
+
 ## 2026-10-30 · D-391 · Director · The roadmap moves to a Claude Doc
 A: "Yes, redirect it": the roadmap lives at https://claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q; `docs/ROADMAP.md`
 points there; the old file is frozen as `docs/archive/ROADMAP_2026-10.md` for detail agents cannot get from the doc.

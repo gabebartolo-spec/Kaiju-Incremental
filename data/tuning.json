@@ -732,13 +732,18 @@
 		"zebra_junctions": 1,
 		"landmarks": [
 			{
-				"_note": "Designated spots (D-375: landmarks drawn into designated spots, stadium west, wheel east, inside stage 2's reach; D-380): an \"anchor\" pins a landmark's spot (CitySpread.landmarks), off every stage's sea bay (CityHarbour) and south past the river row, past the baby's edge and real in the Behemoth's band (tests/lib/city_stadium_far.gd). The wider city (D-254, 1.5x) scales main's stopgap spots [-25, 80] and [38, 70] by 1.5. A spec with no anchor (the bridge) is spread by map_seed.",
-				"id": "stadium", "anchor": [-37.5, 120], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
+				"_note": "The landmark pool (D-375): an entry with a \"size\" (medium, big, biggest) is drawn each run into a designated spot of that size (city.landmark_spots, CitySpread.spot_draws); \"spot\" names the only spot it may take (stadium west, wheel east). An entry with no size (the bridge) is spread by map_seed.",
+				"id": "stadium", "size": "medium", "spot": "west", "margin": 0, "tier": 1, "rubble_bonus": 1.5,
 				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
-			{"id": "wheel", "anchor": [57, 105], "margin": 2, "tier": 2, "rubble_bonus": 1.5},
-			{"id": "bridge", "kind": "bridge", "place_order": 2, "min_ring": 1, "landing": 4, "margin": 0, "tier": 2, "rubble_bonus": 1.5}
+			{"id": "wheel", "size": "medium", "spot": "east", "margin": 2, "tier": 2, "rubble_bonus": 1.5},
+			{"id": "bridge", "kind": "bridge", "place_order": 2, "min_ring": 1, "landing": 4, "margin": 0, "tier": 2, "rubble_bonus": 1.5},
+			{"id": "spire", "size": "big", "margin": 2, "tier": 3, "rubble_bonus": 1.75},
+			{"id": "megatower", "size": "biggest", "margin": 2, "tier": 3, "rubble_bonus": 2.0}
 		],
+		"landmark_spots": {"_note": "Designated landmark spots (D-375, D-380): fixed on every street plan, the landmark in each drawn per run from the pool entries of its size (medium near the beach, big the next ring, biggest the outer ring: each stage reaches something bigger); at = [x, z], or the nearest cell of its district that fits. A spot no entry is left for stays plain city. west and east: off every stage's sea bay (CityHarbour), south past the river row, inside stage 2's reach (D-271); stage 1 shows the east one only (D-380; tests/lib/city_stadium_far.gd). big and biggest: district 2 (stage 3), south off the bay; the city has no ring past it yet, so biggest sits at its far edge.", "west": {"at": [-37.5, 120], "size": "medium"}, "east": {"at": [57, 105], "size": "medium"},
+			"big": {"at": [-140, 160], "size": "big"},
+			"biggest": {"at": [150, 200], "size": "biggest"}},
 		"spread": {"_note": "CitySpread (D-254): landmarks spread by map_seed. landmarks_per_ring = most landmarks a district takes; a landmark's min_ring = the first district it may stand in (the stadium, the wheel and the bridge never in the young city: b2-21, D-270 'South, past the river', the river), max_ring the last (the stadium reachable from stage 2: D-271 'The stage-2 stadium bar stands'); place_order = the order landmarks place in, lowest first, none after every ordered one (the most constrained first: the stadium, then the bridge, which only the river's far bank takes); far_from_rise = it takes the fitting cell of its district farthest from the kaiju's rise (the stadium: b2-21 'as far away from our spawn spot as possible'); landmark_gap = share of a stage's play-area width that the landmarks it newly opens keep apart (a pair with an inner district's site keeps the inner stage's share: lead call 2026-10-26); spawn_clear = share of the width kept off the kaiju's rise (a landmark's own rise_clear m when more: the stadium, b2-21; rise_slack m covers the rise's exact spot); bridge_rows = rows of blocks the bridge's inlet takes past the river", "landmarks_per_ring": 3, "landmark_gap": 0.4, "spawn_clear": 0.2, "rise_slack": 6.0, "bridge_rows": 2},
 		"coverage_cell": 10,
 		"view_beyond": 30,
