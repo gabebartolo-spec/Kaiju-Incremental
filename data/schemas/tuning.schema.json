@@ -1881,7 +1881,21 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "markings_beyond": {"$ref": "#/$defs/num"},
+        "road_paint": {
+          "type": "object",
+          "properties": {
+            "two_lane_min": {"$ref": "#/$defs/num"}, "double_min": {"$ref": "#/$defs/num"},
+            "lane_width": {"$ref": "#/$defs/num"}, "dash_length": {"$ref": "#/$defs/num"},
+            "dash_pitch": {"$ref": "#/$defs/num"}, "dash_clear": {"$ref": "#/$defs/num"},
+            "line_width": {"$ref": "#/$defs/num"}, "double_gap": {"$ref": "#/$defs/num"},
+            "solid_step": {"$ref": "#/$defs/num"}, "edge_inset": {"$ref": "#/$defs/num"},
+            "stop_width": {"$ref": "#/$defs/num"}, "stop_gap": {"$ref": "#/$defs/num"},
+            "stop_inset": {"$ref": "#/$defs/num"}
+          },
+          "required": ["two_lane_min", "double_min", "lane_width", "dash_length", "dash_pitch", "dash_clear", "line_width", "double_gap", "solid_step", "edge_inset", "stop_width", "stop_gap", "stop_inset"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "zebra_junctions": {"$ref": "#/$defs/num"},
         "landmarks": {
           "type": "array",
@@ -2096,7 +2110,7 @@
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
         "outer_half", "outer_cores", "coast_z", "bay_width", "far_haze", "far_tower_cap",
-        "fog_scale", "load_chunks", "stream_chunks", "stand_in_fade_s", "stream_view", "markings_beyond",
+        "fog_scale", "load_chunks", "stream_chunks", "stand_in_fade_s", "stream_view", "road_paint",
         "zebra_junctions", "landmarks", "coverage_cell", "view_beyond", "parked_chance",
         "parked_chance_beyond", "parked_gap", "lane_stop_chance", "diagonal_parked_lane",
         "river_quay", "traffic_island", "car_colors", "street_tree_gap", "street_tree_clear",

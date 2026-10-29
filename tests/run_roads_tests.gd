@@ -14,6 +14,7 @@ extends "res://tests/lib/runner.gd"
 ##   R5 lane paint stops at junction edges; zebras only at the central junction (D-054)
 ##   R6 two road pieces that meet make one surface (no height step); its look across a seam is
 ##      measured at the game camera by tools/capture/capture_road_seams.gd
+##   R7 every road wide enough for two lanes has its centre line and a stop line at each junction
 ## Seeded by design: the street plan is fixed by city.map_seed; the 20 seeds are listed here.
 ##   godot --headless --path . --script tests/run_roads_tests.gd
 
@@ -65,6 +66,7 @@ func run_checks() -> void:
 	await _t("_check_r4_kerbed_pavement")
 	await _t("_check_r5_paint_stops_at_junctions")
 	await _t("_check_r6_one_surface")
+	await _t("_check_r7_road_paint_everywhere")
 
 
 func _build() -> void:
@@ -167,4 +169,12 @@ func _check_r6_one_surface() -> void:
 	_each(
 		"R6 road pieces that meet make one surface",
 		func(g: RoadGround, _paint: Array[Transform3D]) -> Array[String]: return Edges.r6_seams(g)
+	)
+
+
+func _check_r7_road_paint_everywhere() -> void:
+	_each(
+		"R7 every two-lane road has its centre line and a stop line at each junction",
+		func(g: RoadGround, paint: Array[Transform3D]) -> Array[String]:
+			return Edges.r7_markings(g, paint)
 	)

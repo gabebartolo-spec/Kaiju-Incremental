@@ -15,6 +15,8 @@ const VERSION := 2
 const HEADER_BYTES := 26
 ## Bytes a cube takes in a .vskin: cell x y z (s16 each), colour, bone flags, three bones, weight.
 const CELL_BYTES := 15
+## Bytes a filler vertex takes (position, colour, three bones, weight): VoxelSkinFill.
+const FILL_VERTEX_BYTES := 20
 ## Generous bounds: the shaders move every vertex away from where the engine thinks it is.
 ## A cell's centre sits half a voxel up from its corner (VoxelBuilder's lift).
 const HALF_UP := Vector3(0, 0.5, 0)
@@ -49,6 +51,8 @@ var _overload_set := false
 var _tight := false
 var _slack := 1.0
 var _reach: VoxelSkinReach
+## D-374 corrective joints after the rig's bones (none for most kaiju): VoxelSkinHelpers.
+var _helpers: VoxelSkinHelpers
 
 
 ## Puts the skin on a rig built from <base> (KaijuModel does this); null when show_rigid_voxels is
@@ -85,14 +89,32 @@ static func load_for(rig: KaijuRig, base: String) -> VoxelSkin:
 		push_warning("VoxelSkin: unreadable " + path)
 		return null
 	var count_bones := raw.decode_u16(16)
-	if count_bones != rig.bone_names().size() or count_bones > MAX_BONES:
+	var helpers := VoxelSkinHelpers.read(raw, _filler_end(raw))
+	var rig_bones := count_bones - helpers.count
+	if (
+		rig_bones != rig.bone_names().size()
+		or count_bones > MAX_BONES
+		or not helpers.fits(rig_bones)
+	):
 		push_warning(
 			"VoxelSkin: %s is stale (bones changed): rerun tools/kaiju_skin/bake_all.sh" % path
 		)
 		return null
 	var skin := VoxelSkin.new()
+	skin._helpers = helpers
 	skin._setup(rig, raw)
 	return skin
+
+
+## Byte offset just past raw's filler block (where an optional helper block starts).
+static func _filler_end(raw: PackedByteArray) -> int:
+	var at := HEADER_BYTES + raw.decode_u32(22) * CELL_BYTES
+	if at + 4 > raw.size():
+		return raw.size()
+	at += 4 + raw.decode_u32(at) * FILL_VERTEX_BYTES
+	if at + 4 > raw.size():
+		return raw.size()
+	return at + 4 + raw.decode_u32(at) * 4
 
 
 ## The first 8 bytes of SHA-256 over <base>.kvox, <base>.rig.json and, when skin_weights.json lists
@@ -166,7 +188,9 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		var node := rig.bone(bone_name)
 		_nodes.append(node)
 		_binds.append(_to_rig(node).affine_inverse())
-	_reach = VoxelSkinReach.new(_nodes.size())
+	if _helpers == null:
+		_helpers = VoxelSkinHelpers.new()
+	_reach = VoxelSkinReach.new(_nodes.size() + _helpers.count)
 	var cfg: Dictionary = Content.section("render_opt")
 	_tight = Num.i(cfg["kaiju_tight_bounds"]) != 0
 	_slack = maxf(1.0, Num.f(cfg["kaiju_bounds_slack"]))
@@ -174,7 +198,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	var voxel := raw.decode_float(18)
 	var cells := raw.decode_u32(22)
 	var tune: Dictionary = Content.section("fx")["hide_hit"]
-	hits.setup(_nodes.size(), voxel, Num.i(tune["max_wounds"]))
+	hits.setup(_nodes.size() + _helpers.count, voxel, Num.i(tune["max_wounds"]))
 	var mm := _cube_multimesh(raw, cells, voxel, three)
 	var corner := HALF_DIAGONAL * voxel * Look.value("voxel_inset") * (1.0 + MAX_GROW)
 	_reach.measure_cubes(raw, cells, voxel, corner)
@@ -262,6 +286,10 @@ func sync() -> void:
 		pose[i] = Projection(t)
 		if _tight:
 			_reach.add(i, t)
+	_helpers.add_poses(pose, _nodes.size())
+	if _tight:
+		for k: int in _helpers.count:
+			_reach.add(_nodes.size() + k, Transform3D(pose[_nodes.size() + k]))
 	if _tight and _reach.has_box():
 		_set_bounds(_reach.box(_slack))
 	_cubes.set_shader_parameter("bones", pose)

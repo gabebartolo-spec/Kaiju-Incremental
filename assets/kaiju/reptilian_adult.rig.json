@@ -482,6 +482,66 @@
     424.78
    ],
    "physics": false
+  },
+  {
+   "name": "lid_lo_l",
+   "parent": "head1",
+   "head": [
+    -3.03,
+    272.55,
+    -351.97
+   ],
+   "tail": [
+    -10.39,
+    271.42,
+    -356.06
+   ],
+   "physics": false
+  },
+  {
+   "name": "lid_lo_r",
+   "parent": "head1",
+   "head": [
+    19.26,
+    271.07,
+    -347.39
+   ],
+   "tail": [
+    27.04,
+    269.13,
+    -350.19
+   ],
+   "physics": false
+  },
+  {
+   "name": "lid_up_l",
+   "parent": "head1",
+   "head": [
+    -3.03,
+    272.55,
+    -351.97
+   ],
+   "tail": [
+    -10.39,
+    271.42,
+    -356.06
+   ],
+   "physics": false
+  },
+  {
+   "name": "lid_up_r",
+   "parent": "head1",
+   "head": [
+    19.26,
+    271.07,
+    -347.39
+   ],
+   "tail": [
+    27.04,
+    269.13,
+    -350.19
+   ],
+   "physics": false
   }
  ]
 }

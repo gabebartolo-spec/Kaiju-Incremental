@@ -4,6 +4,4 @@ scenes/gait_biped.gd::_step_feet 98 48
 scenes/gait_clip.gd::_choose 33 18
 scenes/kaiju_rig.gd::_build 54 13
 scenes/rampage.gd::_ready 52 8
-sim/collapse.gd::_crush_strip 31 13
-sim/collapse.gd::settle 75 19
 sim/structure.gd::_grounded 28 14
