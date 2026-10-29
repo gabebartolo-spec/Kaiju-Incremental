@@ -61,6 +61,7 @@ var _walker: StreetWalk = null  # the same, with the extension's walk
 var _capacity := 0
 var _clock := 0.0
 var _sport_rng: RandomNumberGenerator
+var _lod: StreetLod  # far people step less often, people out of view are not drawn (D-254)
 var _beach_rng := Seeds.make("beach_crowd", 0)  # its own stream: the street's draws stay the same
 var _beach_held := true  # the beach's people wait for him (BeachCrowd) until his head is out
 
@@ -80,6 +81,7 @@ func _init(
 func _ready() -> void:
 	traffic = Traffic.new(sim, Seeds.make("traffic", 0))
 	add_child(traffic)
+	_lod = StreetLod.new(_cfg)
 	_pavements = Pavements.new(sim)  # the walkable graph
 	_pavements.rng = _rng
 	_nodes = _pavements.nodes
@@ -193,8 +195,7 @@ func panicking() -> int:
 	return n
 
 
-## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat.
-## by_tank: a tank rolled over them, not the kaiju (counted in run_over too).
+## Everyone within `radius` of `at` is crushed, cars go flat; by_tank: a tank did it (run_over).
 func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
 	var spot: Array[Vector3] = [Vector3(at.x, at.z, radius)]
 	crush_all(spot, by_tank)
@@ -284,6 +285,7 @@ func _process(delta: float) -> void:
 		BeachCrowd.release(self, _clock, _beach_rng)
 	var kaiju := sim.kaiju_pos
 	traffic.update(delta)
+	_lod.update(get_viewport().get_camera_3d())
 	police.update(delta, kaiju)
 	_walk(delta, kaiju)
 	_draw_people()
@@ -293,8 +295,7 @@ func _process(delta: float) -> void:
 	frames += 1
 
 
-## Everyone's step this frame, last index first (a removal moves the last in); officers go to
-## Police. Tuning reads and the panic radius are taken once (the same values: the same math).
+## Everyone's step this frame, last first (a removal moves the last in); officers go to Police.
 func _walk(delta: float, kaiju: Vector2) -> void:
 	var panic := _panic_radius()
 	var calm := panic * Num.f(_cfg["calm_radius"]) / Num.f(_cfg["panic_radius"])
@@ -304,26 +305,25 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 	if _walker != null:  # render plan item 7: every civilian's step in one native call
 		_walker.frame(delta, kaiju, PackedFloat64Array([_clock, panic, calm, gawk, run, walk]))
 		return
+	# Without the extension, far people step every few frames (StreetLod, D-254).
+	var speeds := PackedFloat64Array([walk, run])
 	for i: int in range(pos.size() - 1, -1, -1):
 		if cop[i] == 1:
-			var officer := officers[i]
-			if police.update_cop(officer, delta, kaiju):
-				remove(i)
-			else:
-				pos[i] = officer.pos
-				heading[i] = officer.heading
+			_walk_cop(i, delta, kaiju)
 			continue
 		if pinned_until[i] > _clock:
 			continue
 		var at := pos[i]
+		var dt := _step_time(i, at, kaiju, delta)
+		if dt < 0.0:  # a far person's frame off
+			continue
 		var d := at.distance_to(kaiju)
 		if fleeing[i] == 0 and d < panic:
 			_startle(i, at, kaiju, gawk)
 		elif fleeing[i] == 1 and d > calm:
 			fleeing[i] = 0
-		var running := fleeing[i] == 1
 		var to := _nodes[to_node[i]] - at
-		var step := (run if running else walk) * pace[i] * delta
+		var step := speeds[fleeing[i]] * pace[i] * dt  # fleeing 1: running
 		if to.length() > step:
 			var dir := to.normalized()
 			heading[i] = dir
@@ -333,6 +333,27 @@ func _walk(delta: float, kaiju: Vector2) -> void:
 		var next := _pavements.next_corner(to_node[i], from_node[i], kaiju, fleeing[i] == 1)
 		from_node[i] = to_node[i]
 		to_node[i] = next
+
+
+## Person i's step time this frame (StreetLod, D-254): far from the kaiju and the camera, one step
+## every far_every frames covering them all, -1 on the frames between.
+func _step_time(i: int, at: Vector2, kaiju: Vector2, delta: float) -> float:
+	var far2 := _lod.far2
+	if at.distance_squared_to(kaiju) <= far2 or at.distance_squared_to(_lod.cam) <= far2:
+		return delta
+	if (i + _lod.tick) % _lod.far_every != 0:
+		return -1.0
+	return delta * _lod.far_every
+
+
+## Officer i takes its police step (Police.update_cop), or leaves when its job is done.
+func _walk_cop(i: int, delta: float, kaiju: Vector2) -> void:
+	var officer := officers[i]
+	if police.update_cop(officer, delta, kaiju):
+		remove(i)
+	else:
+		pos[i] = officer.pos
+		heading[i] = officer.heading
 
 
 ## Person i sees the kaiju: a moment (gawk) facing it, then runs; one walking toward it turns.
@@ -347,8 +368,7 @@ func _startle(i: int, at: Vector2, kaiju: Vector2, gawk: float) -> void:
 		to_node[i] = swap
 
 
-## How near the kaiju comes before people run: panic_per_scale x body scale, at most
-## panic_radius (an adult's): a young kaiju is noticed late, so it reaches the street's people.
+## How near the kaiju comes before people run: panic_per_scale x body scale, at most panic_radius.
 func _panic_radius() -> float:
 	var r := Num.f(_cfg["panic_per_scale"]) * sim.body_scale()
 	return minf(Num.f(_cfg["panic_radius"]), r)
@@ -373,17 +393,4 @@ func _draw_people() -> void:
 	if _draw != null:  # render plan item 7: every civilian in one native call
 		_draw.frame(_clock)
 		return
-	_counts.fill(0)
-	for i: int in pos.size():
-		var bucket := outfit[i] * VoxelPerson.POSES + pose(i)
-		if _counts[bucket] >= _capacity:
-			continue
-		var look := heading[i]
-		var at := pos[i] + Vector2(-look.y, look.x) * side[i]
-		var basis := Basis(Vector3.UP, atan2(-look.x, -look.y))
-		_mms[bucket].set_instance_transform(
-			_counts[bucket], Transform3D(basis, Vector3(at.x, 0, at.y))
-		)
-		_counts[bucket] += 1
-	for i: int in _mms.size():
-		_mms[i].visible_instance_count = _counts[i]
+	_lod.draw(self, _mms, _counts, _capacity)  # without the extension: those in view (D-254)

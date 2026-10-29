@@ -69,6 +69,7 @@ func _check_railgun_hit() -> void:
 func _check_railgun_dodge() -> void:
 	var late := _adolescent()
 	_open(late)
+	_street_start(late)  # the 1.5x city sets the bare start in the ring's lots
 	var way := _face_free_way(late)  # settled on a clear way, so a step needs no turn
 	check(way != Vector2.ZERO, "the kaiju has a clear way to step")
 	_perched(late, true)
@@ -107,6 +108,7 @@ func _check_railgun_dodge() -> void:
 
 func _check_frost() -> void:
 	var sim := _adolescent()
+	_street_start(sim)
 	_open(sim)
 	var way := _face_free_way(sim)
 	var frost := sim.army_units.taskforce.frost
@@ -174,6 +176,11 @@ func _check_frost() -> void:
 	)
 	var walled := _adolescent()  # a leap pressed facing the wall ahead shatters it at the press
 	_open(walled)
+	_street_start(walled)
+	for n: int in 16:  # faces a way the leap has somewhere to land
+		walled.facing = Vector2.from_angle(n * TAU / 16.0)
+		if walled.body.dash.can_leap():
+			break
 	var cold := walled.army_units.taskforce.frost
 	cold.launch(4, Vector3.ZERO)
 	_run(walled, Num.f(cold.cfg["flight_s"]) + 0.1)

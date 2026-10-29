@@ -98,7 +98,8 @@ func block_radius() -> float:
 ## Any standing street-level chunk whose square the circle (pos, radius) overlaps (one a crash
 ## takes, Momentum.crashes_column, does not hold the body).
 func blocked(pos: Vector2, radius: float) -> bool:
-	for b: RampageSim.Building in sim.buildings:
+	for i: int in sim.grid.around(pos, radius):
+		var b := sim.buildings[i]
 		if b.frame.alive_count == 0:
 			continue
 		if absf(b.x - pos.x) > b.w * 0.5 + radius or absf(b.z - pos.y) > b.d * 0.5 + radius:
@@ -221,7 +222,8 @@ func _climb(dt: float) -> void:
 
 ## Height (floors) of the standing top of the building column at pos, 0 on the street.
 func column_top(pos: Vector2) -> float:
-	for b: RampageSim.Building in sim.buildings:
+	for i: int in sim.grid.around(pos, 0.0):
+		var b := sim.buildings[i]
 		var lx := floori(pos.x - (b.x - b.w * 0.5))
 		var lz := floori(pos.y - (b.z - b.d * 0.5))
 		if lx >= 0 and lz >= 0 and lx < b.w and lz < b.d:

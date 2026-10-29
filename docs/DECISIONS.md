@@ -4,13 +4,19 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-10-30 · D-386 · Director · b2-5: topples fall in a seeded mix of directions
+## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
 Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
 every topple to its cut side, and a base eaten whole toward the kaiju, so most fell onto it): he picked "Seeded mix":
 each topple draws its direction from the run's seed, its cut side 40%, either side of that 25% each, away 10%
 (data/tuning.json destruction.fall_dirs). Replayable; some towers still land on the kaiju. Landmarks keep their cut
 side. Amends D-099 (the cut side is now the likeliest way, not the only one). Not chosen: mostly sideways, fully
 random, away mostly.
+
+## 2026-10-30 · D-386 · Director · A PR re-push re-runs only failed, unrun or touched suites
+He approved: a pull request's re-push runs the suites that failed or never ran on its last run, plus every suite whose
+code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
+closure, autoloads included); any other changed file or any doubt runs everything. Main still runs everything: a
+main push reuses only a PR run that tested every suite. Why: re-testing passed suites cost an hour per fix.
 
 ## 2026-10-30 · D-385 · Director · Tests guard behaviour and bugs, not balance numbers (rank 1 now)
 Q (audit of all 76 suites on fb5e3adbc: which checks freeze tuning or old measurements so polish turns CI red with

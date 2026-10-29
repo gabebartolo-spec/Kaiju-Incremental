@@ -39,13 +39,15 @@ static func pins(cfg: Dictionary) -> Dictionary:
 	return {"x": xs, "z": zs}
 
 
-## True when the street from a to b enters the front (any part strictly within plan["bay"]): it
-## is never laid. The back street lies on its edge and is laid.
+## True when the street from a to b enters the front (any part within plan["bay"]): it is never
+## laid. The back street lies on its south edge and is laid; a grid line on its west, north or
+## east edge is not (the 1.5x city's outermost x-line falls on the east edge).
 static func inside(plan: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var bay: Rect2 = plan.get("bay", Rect2())
 	# Any part of the line inside (not only its middle): a long segment can cross the bay's corner
-	# with its middle outside. Streets along the bay's edge stay (the -0.01 inset).
-	return bay.has_area() and bay.grow(-0.01).intersects(Rect2(a.min(b), (b - a).abs()), true)
+	# with its middle outside. Only the south edge is inset (-0.01): the back street stays.
+	var front := bay.grow_individual(0.01, 0.01, 0.01, -0.01)
+	return bay.has_area() and front.intersects(Rect2(a.min(b), (b - a).abs()), true)
 
 
 ## True when the street from a to b lies on the front's edge or inside it (CityAlleys: never an

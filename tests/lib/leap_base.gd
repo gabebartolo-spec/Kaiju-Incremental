@@ -144,7 +144,8 @@ func _watch_leap(sim: RampageSim, b: RampageSim.Building) -> Dictionary:
 
 ## The first take-off (building order, then FIXTURE_SHARES; one per building, past `skip` such
 ## buildings) short of a building in the arena, along `dir`, from which the leap aims at that
-## building's roof and the take-off is clear (_clear_roof_ahead); where the croc stands if none.
+## building's roof and the take-off is clear (_clear_roof_ahead) and so is the landing
+## (_clear_landing); where the croc stands if none.
 func _city_start(sim: RampageSim, dir: Vector2, skip := 0) -> Vector2:
 	var home := sim.kaiju_pos
 	var reach := Num.f(_stage(sim)["reach"]) * sim.body_scale()
@@ -156,7 +157,11 @@ func _city_start(sim: RampageSim, dir: Vector2, skip := 0) -> Vector2:
 				continue
 			sim.kaiju_pos = at
 			var aim := sim.body.dash.aim_at(at, dir)
-			if Num.i(aim["building"]) == i and _clear_roof_ahead(sim, dir):
+			if (
+				Num.i(aim["building"]) == i
+				and _clear_roof_ahead(sim, dir)
+				and _clear_landing(sim, aim, dir)
+			):
 				if skip == 0:
 					return at
 				skip -= 1
@@ -197,6 +202,24 @@ func _in_discs(sim: RampageSim, b: RampageSim.Building, pose: Vector2, dir: Vect
 		if gap.length() < Num.f(d[1]) * s:
 			return true
 	return false
+
+
+## True when the body landing at `aim`'s spot on its roof overlaps no other standing building
+## taller than that roof: the 1.5x city sets low roofs beside taller ones, and the flight's last
+## frame carves such a neighbour (leap-side 2026-10-28: seed 0's h2 roof beside an h3).
+func _clear_landing(sim: RampageSim, aim: Dictionary, dir: Vector2) -> bool:
+	var to: Vector2 = aim["to"]
+	var roof := Num.f(aim["roof"])
+	var s := sim.body_scale()
+	for d: Array in sim.body.discs():
+		var c := to + dir * Num.f(d[0]) * s
+		for j: int in sim.buildings.size():
+			var b := sim.buildings[j]
+			if j == Num.i(aim["building"]) or b.frame.alive_count == 0 or b.height <= roof:
+				continue
+			if _gap(b, c) < Num.f(d[1]) * s:
+				return false
+	return true
 
 
 ## The drawn model's shoulder as a share of its height at the sim's growth stage: the shoulder
