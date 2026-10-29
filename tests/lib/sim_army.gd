@@ -21,6 +21,13 @@ func _init(p_check: Callable, make: Callable) -> void:
 func run() -> void:
 	var soft: RampageSim = _make.call("reptilian", {}, 0, {})
 	var armoured: RampageSim = _make.call("reptilian", {"hide": 1, "scales": 4}, 0, {})
+	# Every shell hits (StrayShell's odds at 1): a miss's landing draws from the army's stream as
+	# many times as it takes to find a standing building, so carving (D-388) set the two runs'
+	# shots apart; with no misses both meet the same shots and only the scales differ.
+	for sim: RampageSim in [soft, armoured]:
+		var miss: Dictionary = sim.army["miss"]
+		miss["hit_near"] = 1.0
+		miss["hit_far"] = 1.0
 	for i: int in ARRIVE_STEPS:
 		soft.step(DT, Vector2.ZERO, false)
 		armoured.step(DT, Vector2.ZERO, false)

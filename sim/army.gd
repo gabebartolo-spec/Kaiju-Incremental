@@ -232,21 +232,13 @@ func _by_tier(key: String) -> float:
 	return Num.f(list[clampi(sim.size_tier() - 1, 0, list.size() - 1)])
 
 
-## Squads take some of the roofs min_height floors and up, each with `chance`, visited in a
-## seeded order so they spread over the whole city, up to the size tier's cap. A squad keeps
-## off the corner where a roof's stair hut stands.
+## Squads take some of the arena's roofs min_height floors and up, each with `chance`, visited in
+## a seeded order so they spread over the whole arena, up to the size tier's cap (a backdrop lot
+## past the arena is out of the kaiju's reach, so a squad there never fires). A squad keeps off
+## the corner where a roof's stair hut stands.
 func _place_squads(rng: RandomNumberGenerator) -> void:
 	var cap := roundi(_by_tier("max_by_tier"))
-	var tall: Array[int] = []
-	for i: int in sim.buildings.size():
-		if sim.buildings[i].height >= Num.i(rooftop["min_height"]):
-			tall.append(i)
-	for n: int in range(tall.size() - 1, 0, -1):  # Fisher-Yates on the army's own stream
-		var k := rng.randi_range(0, n)
-		var swap := tall[n]
-		tall[n] = tall[k]
-		tall[k] = swap
-	for i: int in tall:
+	for i: int in _tall_roofs(rng):
 		if squads.size() >= cap:
 			break
 		if rng.randf() >= Num.f(rooftop["chance"]):
@@ -269,6 +261,22 @@ func _place_squads(rng: RandomNumberGenerator) -> void:
 		squad.pos = Vector2(at.x, at.z)
 		squad.cooldown = rng.randf() * Num.f(rooftop["fire_interval"])
 		squads.append(squad)
+
+
+## The arena's buildings min_height floors and up, in a seeded order (Fisher-Yates on the army's
+## own stream).
+func _tall_roofs(rng: RandomNumberGenerator) -> Array[int]:
+	var tall: Array[int] = []
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.in_arena and b.height >= Num.i(rooftop["min_height"]):
+			tall.append(i)
+	for n: int in range(tall.size() - 1, 0, -1):
+		var k := rng.randi_range(0, n)
+		var swap := tall[n]
+		tall[n] = tall[k]
+		tall[k] = swap
+	return tall
 
 
 ## An attack on floors y_lo..y_hi-1 kills every squad whose roof floor it reaches and whose

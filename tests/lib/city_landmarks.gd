@@ -74,6 +74,9 @@ func _structure() -> void:
 		UpgradeTree.new(Content.upgrades())
 	)
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	# The bonus is RampageSim.pay's, the carve's too; on cells a blow at the stadium's top also
+	# brings its arc down (D-388), so the six chunks are counted on the chunk path.
+	sim.carving.on = false
 	_check.call(
 		sim.chunks_total == w * d * h + marked,
 		"destruction counts only a landmark's real chunks: %d" % sim.chunks_total
@@ -199,14 +202,12 @@ func _sites() -> void:
 				if other != e and _footprint(other).intersects(foot):
 					touching += 1
 		ids.sort()
-		# By spot, not by landmark: the spots are fixed, the landmark in each rotates (director
-		# 2026-10-29). Stage 1 shows the east spot only (the west one sits south of the river row,
-		# ~0.5 m past the baby's band); both from the Behemoth (lead call A, director "idc").
+		# Every landmark the spread placed (CitySpread, D-254) in the districts this stage's city
+		# holds: its own and the next (the real band past its edge).
 		var want: Array[String] = []
-		for spec: Dictionary in Content.section("city")["landmarks"]:
-			var east := Num.f(spec["anchor"][0]) > 0.0
-			if tier > 1 or east:
-				want.append(str(spec["id"]))
+		for site: Dictionary in plan["sites"]:
+			if Num.i(site["district"]) <= tier:
+				want.append(str(site["id"]))
 		want.sort()
 		(
 			_check

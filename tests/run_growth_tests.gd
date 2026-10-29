@@ -26,6 +26,11 @@ const COLOSSUS := {
 	"sig_recharge": 4,
 	"evolve2": 1
 }
+## The growth-off run's clock (s): long enough that this Colossus flattens the young city (the
+## 1.5x stage-1 city, D-254, takes it about 98 s); growth on keeps the real clock and must reach
+## it. A Colossus never plays the young city, so the fixture sets its own clock and no game data
+## changes (director 2026-10-26).
+const FIXTURE_CLOCK := 110.0
 
 
 func suite_name() -> String:
@@ -185,7 +190,7 @@ func _check_defences() -> void:
 ## at least GROWTH_MARGIN (a share of the city) less, earns more and leaves city standing: growth on
 ## vs off changes the city and the outcome. Seeded by design: army seed 1.
 func _check_growth_matters() -> void:
-	var off := _play(Content.tuning(), _layout(1), COLOSSUS)
+	var off := _play(Content.tuning(), _layout(1), COLOSSUS, FIXTURE_CLOCK)
 	var on := _play(_tuning(3), _layout(3), COLOSSUS)
 	check(
 		Num.i(on["chunks"]) > Num.i(off["chunks"]) * 4,
@@ -212,19 +217,18 @@ func _check_growth_matters() -> void:
 			]
 		)
 	)
-	check(
-		Num.i(on["rubble"]) > Num.i(off["rubble"]) and Num.f(on["destruction"]) < 1.0,
-		(
-			"growth on: more rubble (%d vs %d) and city left to destroy (%.0f%%)"
-			% [on["rubble"], off["rubble"], Num.f(on["destruction"]) * 100.0]
-		)
-	)
+	# No rubble on-vs-off check (director 2026-10-29: rubble scaling is balance, tuned later).
 
 
-func _play(tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary) -> Dictionary:
+## clock > 0 replaces the run's clock (s) for a fixture that sets its own.
+func _play(
+	tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary, clock := 0.0
+) -> Dictionary:
 	var species := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
+	if clock > 0.0:
+		stats["run_seconds"] = clock
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 1))
 	var ability: Dictionary = species["ability"]
 	sim.ability_type = str(ability["type"])
