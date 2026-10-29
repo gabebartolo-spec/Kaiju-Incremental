@@ -32,9 +32,13 @@ static func escalation(sim: RampageSim) -> int:
 	return floori(Num.f(sim.chunks_total) * share)
 
 
-## True when the army may not field another tank (endless caps those alive at once).
+## True when the army may not field another tank (endless caps those alive at once; a toppled
+## one is out of the fight and does not count, TankFlight).
 static func tanks_full(sim: RampageSim) -> bool:
-	return sim.endless != null and sim.tanks.size() >= Num.i(cfg()["max_tanks"])
+	if sim.endless == null:
+		return false
+	var fighting := sim.tanks.filter(func(t: RampageSim.Tank) -> bool: return not t.toppled)
+	return fighting.size() >= Num.i(cfg()["max_tanks"])
 
 
 ## Why `sim` ends now, or "": endless ignores the clock and the city's fall.

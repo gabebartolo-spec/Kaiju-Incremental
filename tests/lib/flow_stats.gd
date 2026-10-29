@@ -14,7 +14,10 @@ static func plain(runner: SceneTree, check: Callable, screen: UpgradeScreen) -> 
 	var wrong: Array[String] = []
 	var buy_rows: Dictionary = {}
 	for id: String in screen.tree.order:
-		screen.node_button(id).grab_focus()
+		var button := screen.node_button(id)
+		if button.shape_only or not button.visible:
+			continue  # a "?" or hidden node names no stats until it is revealed
+		button.grab_focus()
 		await runner.process_frame
 		var shown := _side_text(screen)
 		buy_rows[_buy_row(screen)] = id

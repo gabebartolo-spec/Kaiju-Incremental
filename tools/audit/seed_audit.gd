@@ -9,9 +9,9 @@ extends RefCounted
 ##             the other, over all pieces in either (0 same plan .. 1 nothing shared)
 ## Bars (D-261's city blocks brief): every pair of indices differs on >= LOTS_BAR of its lots;
 ## the same index twice gives a byte-identical layout (hash).
-## Two ways of choosing a run's city are measured: "game", the game's own (CitySeed: what a
-## player gets today), and "seeded", the map seed and the building stream both varied, which is
-## what the generator alone can do once runs are seeded.
+## Two ways of choosing a run's city are measured: "game", the game's own (CitySeed, save seed 0: a
+## player's run after run), and "seeded", the map seed and the building stream both varied, which is
+## what the generator can do once the street plan is shuffled too (D-261).
 
 const Roads := preload("res://tools/audit/road_audit.gd")
 const LOTS_BAR := 0.5

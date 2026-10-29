@@ -605,6 +605,27 @@
           "required": ["line", "fmt"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "eat_heal": {
+          "type": "object",
+          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
+          "required": ["hidden"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "throw_ricochet": {
+          "type": "object",
+          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
+          "required": ["line", "fmt"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "throw_domino": {
+          "type": "object",
+          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
+          "required": ["line", "fmt"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
@@ -613,7 +634,7 @@
         "swipe_damage", "swipe_width", "tail_damage", "tail_reach", "tail_floors", "momentum",
         "beam_dps", "glide_seconds", "climb", "brood_count", "limbs", "squeeze", "throw_damage",
         "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
-        "death_blast"
+        "death_blast", "eat_heal", "throw_ricochet", "throw_domino"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1560,12 +1581,43 @@
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "flight": {
+          "type": "object",
+          "properties": {
+            "gravity": {"$ref": "#/$defs/num"},
+            "loft_deg": {"$ref": "#/$defs/num"},
+            "min_distance": {"$ref": "#/$defs/num"},
+            "clearance": {"$ref": "#/$defs/num"},
+            "wall_radius": {"$ref": "#/$defs/num"},
+            "wall_damage": {"$ref": "#/$defs/num"},
+            "wall_floors": {"$ref": "#/$defs/num"},
+            "wall_restitution": {"$ref": "#/$defs/num"},
+            "bounces": {"$ref": "#/$defs/num"},
+            "min_bounce_speed": {"$ref": "#/$defs/num"},
+            "ground_restitution": {"$ref": "#/$defs/num"},
+            "ground_friction": {"$ref": "#/$defs/num"},
+            "strike_radius": {"$ref": "#/$defs/num"},
+            "domino_damage": {"$ref": "#/$defs/num"},
+            "domino_reach": {"$ref": "#/$defs/num"},
+            "spin_turns_min": {"$ref": "#/$defs/num"},
+            "spin_turns_max": {"$ref": "#/$defs/num"},
+            "topple_deg": {"$ref": "#/$defs/num"}
+          },
+          "required": [
+            "gravity", "loft_deg", "min_distance", "clearance", "wall_radius", "wall_damage",
+            "wall_floors", "wall_restitution", "bounces", "min_bounce_speed", "ground_restitution",
+            "ground_friction", "strike_radius", "domino_damage", "domino_reach", "spin_turns_min",
+            "spin_turns_max", "topple_deg"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
         "convoy", "start_interval", "min_interval", "tank_hp", "tank_damage", "min_damage",
         "fire_interval", "range", "speed", "tank_rubble", "spawn_radius", "escalation_per_chunk",
-        "threat_per_chunk", "young_damage_mult", "shell_flight", "miss", "rooftop"
+        "threat_per_chunk", "young_damage_mult", "shell_flight", "miss", "rooftop", "flight"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -5617,6 +5669,116 @@
       "required": ["bed", "slab", "parapet", "span", "pier", "abutment", "tier"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
+    },
+    "tree": {
+      "type": "object",
+      "properties": {
+        "kinds": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+        "layout": {
+          "type": "object",
+          "properties": {
+            "node": {
+              "type": "object",
+              "properties": {
+                "stat": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "verb": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "stage": {"type": "array", "items": {"$ref": "#/$defs/num"}}
+              },
+              "required": ["stat", "verb", "stage"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "ultimate_extra": {"$ref": "#/$defs/num"},
+            "node_gap": {"$ref": "#/$defs/num"},
+            "ring_gap": {"$ref": "#/$defs/num"},
+            "centre_radius": {"$ref": "#/$defs/num"}
+          },
+          "required": ["node", "ultimate_extra", "node_gap", "ring_gap", "centre_radius"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "view": {
+          "type": "object",
+          "properties": {
+            "wheel_step": {"$ref": "#/$defs/num"},
+            "zoom_per_second": {"$ref": "#/$defs/num"},
+            "pan_per_second": {"$ref": "#/$defs/num"},
+            "deadzone": {"$ref": "#/$defs/num"},
+            "fit_margin": {"$ref": "#/$defs/num"}
+          },
+          "required": ["wheel_step", "zoom_per_second", "pan_per_second", "deadzone", "fit_margin"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "cost_rate": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+        "species": {
+          "type": "object",
+          "properties": {
+            "reptilian": {
+              "type": "object",
+              "properties": {
+                "rings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {"stage": {"$ref": "#/$defs/num"}, "target": {"$ref": "#/$defs/num"}},
+                    "required": ["stage", "target"],
+                    "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["rings"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            }
+          },
+          "required": ["reptilian"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "pacing": {
+          "type": "object",
+          "properties": {
+            "window_hours": {"$ref": "#/$defs/num"},
+            "buys_per_visit": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "max_runs_between_verbs": {"$ref": "#/$defs/num"},
+            "first_buy_seconds": {"$ref": "#/$defs/num"},
+            "evolve_hours": {
+              "type": "object",
+              "properties": {"evolve1": {"$ref": "#/$defs/num"}, "evolve2": {"$ref": "#/$defs/num"}},
+              "required": ["evolve1", "evolve2"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "evolve_tolerance": {"$ref": "#/$defs/num"},
+            "tree_seconds": {"$ref": "#/$defs/num"},
+            "income": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "first": {"$ref": "#/$defs/num"},
+                  "last": {"$ref": "#/$defs/num"},
+                  "run_seconds": {"$ref": "#/$defs/num"}
+                },
+                "required": ["first", "last", "run_seconds"],
+                "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "window_hours", "buys_per_visit", "max_runs_between_verbs", "first_buy_seconds",
+            "evolve_hours", "evolve_tolerance", "tree_seconds", "income"
+          ],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
+      },
+      "required": ["kinds", "layout", "view", "cost_rate", "species", "pacing"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
     }
   },
   "required": [
@@ -5627,7 +5789,7 @@
     "slowmo", "camera_shake", "accessibility", "photo_mode", "rumble", "post_fx", "topple_fx",
     "skyline_rampage", "arena_edge", "body", "contact", "growth", "fx", "landmark_burst",
     "carve_physics", "crowd", "street", "vehicles", "destruction", "lights", "rain", "render_opt",
-    "death", "slam_fx", "bridge"
+    "death", "slam_fx", "bridge", "tree"
   ],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,
