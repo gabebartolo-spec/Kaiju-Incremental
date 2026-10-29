@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test
+Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
+a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
+local Godot suite run to check a change before it goes up, not even the suites it touched. Replaces the last
+clause of the archived local-prepush decision ("builders still run locally only the suites they iterate on").
+Probes that measure something a fix needs still run locally.
+
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
 row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
@@ -386,10 +393,3 @@ DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-th
 wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
 "Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
 screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
-
-## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
-Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
-a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
-add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
-reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
-each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
