@@ -17,8 +17,8 @@ const FRAMES := 600
 ## pavements the people walk, differ at stage 1; -> e451a8ed2f5a4ead, road geometry #243: bigger
 ## blocks, the diagonal mid-block and quay sheds by the bank change the plan and its lots;
 ## -> 9a649408e1b35f5d, the sea bay (D-377): its coast road and the streets it pins change the
-## plan's south; -> d92dedfaeb729c86, Tripo pool D-256: models replace the procedural lots, so the lots
-## the people walk past differ; street life and its tuning untouched).
+## plan's south; -> d92dedfaeb729c86, Tripo pool D-256: models replace the procedural lots, so
+## the lots the people walk past differ; street life and its tuning untouched).
 const PINNED := "d92dedfaeb729c86"
 ## Frames of the buffer tests: five seconds of the street, with stomps, a brace and a blockade.
 const BUFFER_FRAMES := 300
