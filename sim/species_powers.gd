@@ -228,7 +228,7 @@ func column_top(pos: Vector2) -> float:
 		var lx := floori(pos.x - (b.x - b.w * 0.5))
 		var lz := floori(pos.y - (b.z - b.d * 0.5))
 		if lx >= 0 and lz >= 0 and lx < b.w and lz < b.d:
-			return float(b.frame.top_below(lx, lz, b.height) + 1)
+			return float(maxi(0, b.frame.top_below(lx, lz, b.height) + 1 + b.base))
 	return 0.0
 
 

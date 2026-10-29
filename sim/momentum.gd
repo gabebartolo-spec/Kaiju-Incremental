@@ -91,7 +91,7 @@ func crash_height() -> float:
 ## Whether a crash takes column (x, z) of building b now: he has the momentum and it stands under
 ## his crash height.
 func crashes_column(b: RampageSim.Building, x: int, z: int) -> bool:
-	return crashing() and b.frame.top_below(x, z, b.height) + 1 < crash_height()
+	return crashing() and b.frame.top_below(x, z, b.height) + 1 + b.base < crash_height()
 
 
 ## Whether he crashes through building b where the body touches `cells`.
@@ -103,7 +103,7 @@ func crashes(b: RampageSim.Building, cells: Array[Vector3i]) -> bool:
 static func standing(b: RampageSim.Building, cells: Array[Vector3i]) -> int:
 	var top := 0
 	for c: Vector3i in cells:
-		top = maxi(top, b.frame.top_below(c.x, c.z, b.height) + 1)
+		top = maxi(top, b.frame.top_below(c.x, c.z, b.height) + 1 + b.base)
 	return top
 
 

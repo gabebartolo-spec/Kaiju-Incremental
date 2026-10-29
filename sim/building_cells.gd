@@ -29,6 +29,10 @@ func _init(p_building: RampageSim.Building, party: Dictionary = {}) -> void:
 		var laid: Dictionary = RailLayout.laid(b, Content.section("rail"), res)[0]
 		_pack(laid, ids)
 		return
+	if b.is_bridge():  # a river bridge's piece: BridgeLayout's deck, parapets and piers
+		var deck: Dictionary = BridgeLayout.laid(b, Content.section("bridge"), res)[0]
+		_pack(deck, ids)
+		return
 	if BuildingCellsNative.fill(self, ids, party):
 		return
 	_pack(BuildingLayout.new(b, res, party).cells, ids)

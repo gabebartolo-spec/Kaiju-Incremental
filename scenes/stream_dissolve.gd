@@ -22,7 +22,7 @@ func _init(buildings: Array[RampageSim.Building], city: Dictionary) -> void:
 ## Building n's mesh arrived: it dithers in over its box when `soft`, else the box goes now.
 func dissolve(n: int, view: BuildingView, soft: bool) -> void:
 	_end(n)
-	if not soft or _seconds <= 0.0 or _buildings[n].is_rail():
+	if not soft or _seconds <= 0.0 or _buildings[n].is_span():
 		hide(n)
 		return
 	_age[n] = 0.0
@@ -36,7 +36,7 @@ func dissolve(n: int, view: BuildingView, soft: bool) -> void:
 func leave(n: int, view: BuildingView, soft: bool) -> void:
 	var seen := _seconds - Num.f(_age.get(n, 0.0)) if _age.has(n) else 0.0
 	_end(n)
-	if not soft or _seconds <= 0.0 or _buildings[n].is_rail():
+	if not soft or _seconds <= 0.0 or _buildings[n].is_span():
 		_drop(view)
 		show(n)
 		return

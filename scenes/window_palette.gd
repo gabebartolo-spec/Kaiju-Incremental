@@ -87,7 +87,7 @@ static func apply_common(mat: ShaderMaterial) -> ShaderMaterial:
 
 ## (bays, floors) one lit window spans above the ground floor (BuildingLayout's lit rolls).
 static func unit_of(b: RampageSim.Building) -> Vector2:
-	var plain := b.landmark == "" and b.hazard == "" and not b.is_rail()
+	var plain := b.landmark == "" and b.hazard == "" and not b.is_span()
 	if plain and b.style % 4 == BuildingLayout.GLASS:  # BuildingVoxels.archetype()
 		return Vector2(2.0, 0.5)  # BuildingLayout._lit_panel: two bays by half a floor
 	return Vector2.ONE

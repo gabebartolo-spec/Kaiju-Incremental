@@ -159,7 +159,7 @@ static func check_rail_clear(tier: int, map_seed: int, check_fn: Callable) -> vo
 	var bank: Vector2 = plan.get("rise_bank", spawn)
 	var hits: Array[Vector2] = []
 	for b: RampageSim.Building in sim.buildings:
-		if not b.is_rail():
+		if not b.is_span():
 			continue
 		var r := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
 		var crossed := false
