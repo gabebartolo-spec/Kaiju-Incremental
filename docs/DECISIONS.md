@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-382 · Director · A pull request skips the slow second-angle suites; they run on main
+His words: "which of these, if any, can we remove, or is it necessary for us to run them all for EVERY patch? its a
+real bottleneck for dev time"; on the list: "Yes, write D-382". No suite is deleted. Thirteen slow suites that check the
+game from a second angle run on every push to main only (the `slow` job, 3 lanes, never blocking): streamview, load,
+counts, crowd, empty_space, roads, heliflight, skyline, city_audit, demoend, croc_standing, slowmo, results (4,365 s of
+8,802). Everything else, motion and smoke included, runs on every PR. The list is the `pr_skip` line of
+tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last green PR run took 18 min, shard 1
+alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
+plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
+suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
+
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
 row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
@@ -386,10 +397,3 @@ DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-th
 wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
 "Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
 screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
-
-## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
-Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
-a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
-add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
-reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
-each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
