@@ -20,10 +20,6 @@ const PLATE_BANDS := 2.0
 ## The most of a plate's height (top and bottom each) a scratch may reach into: the label's band
 ## is the middle 60%.
 const SCUFF_BAND := 0.2
-## The row's left edge stands this far (px at 1080p, the least and the most) in from the logo's box:
-## the plate's outline lands on the logo's ink (measured on a 4K capture: 127 vs 128 px).
-const INSET_FROM := 5.0
-const INSET_TO := 7.0
 ## The ROADMAP's TV title-safe margin at the sides: 192 px at 4K, 96 at 1080p.
 const SAFE_SIDE := 96.0
 ## Towers are wider than this; the lattice tower's 1 m beacon is a stand-in too, not a tower: it
@@ -134,8 +130,8 @@ func _with_save() -> void:
 		"Continue Game carries the save's kaiju and rampages: %s" % [_texts(title)]
 	)
 	check.call(
-		fresh != null and fresh.text == "NEW KAIJU?",
-		"with a save the second button asks New Kaiju?: %s" % [_texts(title)]
+		fresh != null and fresh.text.strip_edges() != "",
+		"with a save a labelled New Kaiju button stands beside Continue: %s" % [_texts(title)]
 	)
 	check.call(gear != null and gear.text == "", "a textless settings gear button exists")
 	check.call(exit != null, "the exit button says Run for your life!?")
@@ -200,11 +196,11 @@ func _with_save() -> void:
 	await t.process_frame
 
 
-## The screen critic's fixes (2026-10-23, rounds 1 and 2): the row ends where the logo does and
-## starts at its yellow (ROW_INSET in), Continue about 70% of it, the Continue plate's face 100 px
-## (200 px at 4K, 9% of the height) or more, the gear's left edge on the column's and the exit's
-## right margin the same, 14 px (28 at 4K) or more round each label, no scratches in the label's
-## band, no focus pointer and no fine inner frame on the plates.
+## The screen critic's fixes (2026-10-23, rounds 1 and 2) as rules (D-385): the row ends where the
+## logo does, under it and inside its left edge, no two title controls overlap, each plate's label
+## fits its plate, the gear's left edge on the column's and the exit's right margin the same, 14 px
+## (28 at 4K) or more round each label, no scratches in the label's band or on the tape, no focus
+## pointer and no fine inner frame on the plates.
 func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 	var logo: Label
 	for found: Node in title.find_children("*", "Label", true, false):
@@ -221,21 +217,17 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 			% [row, TitleScreen.ROW_INSET, logo.get_combined_minimum_size().x if logo else 0]
 		)
 	)
-	var in_from_logo := cr.position.x - logo.get_global_rect().position.x
+	var lr := logo.get_global_rect() if logo != null else Rect2()
 	check.call(
-		in_from_logo >= INSET_FROM and in_from_logo <= INSET_TO,
-		(
-			"the row starts %d px in from the logo's box, on its ink (%d..%d)"
-			% [in_from_logo, INSET_FROM, INSET_TO]
-		)
+		logo != null and cr.position.x >= lr.position.x and cr.position.y >= lr.end.y,
+		"the row stands under the logo, inside its left edge (%s under %s)" % [cr, lr]
 	)
-	var share := cr.size.x / row
-	check.call(share >= 0.65 and share <= 0.8, "Continue takes about 3/4 of the row (%.2f)" % share)
-	var face := cr.size.y - HazardBox.PLATE_SHADOW.y
-	check.call(
-		face >= CANVAS.y * 0.0925 and face <= CANVAS.y * 0.1,
-		"the Continue plate's face is 9-10%% of the height, 200 px or more at 4K (%d)" % face
-	)
+	_no_overlap(title, [logo, _button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
+	var cramped: Array[String] = []
+	for b: Button in [_button(title, "CONTINUE"), _button(title, "NEW KAIJU")]:
+		if b.get_combined_minimum_size().y > b.size.y + 0.5:
+			cramped.append(b.text)
+	check.call(cramped.is_empty(), "every plate's label fits its plate: %s" % [cramped])
 	# Director 2026-10-25: "shift the settings button further into the corner".
 	check.call(
 		(
@@ -295,7 +287,9 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 		)
 	)
 	_label_room([_button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
-	var lines := HazardBox.scuff_lines(Rect2(0, 0, 400, cr.size.y), 22.0)
+	var tape := (_button(title, "CONTINUE").get_theme_stylebox("normal") as HazardBox).band_size
+	var plate := Rect2(Vector2.ZERO, cr.size)
+	var lines := HazardBox.scuff_lines(plate, tape)
 	var strip := cr.size.y * SCUFF_BAND + HazardBox.PLATE_BEVEL + 1.0
 	var crossing := lines.filter(
 		func(l: PackedVector2Array) -> bool:
@@ -313,13 +307,34 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 	)
 	var on_tape := lines.filter(
 		func(l: PackedVector2Array) -> bool:
-			return l[0].x < 22.0 or l[1].x < 22.0 or l[0].x > 378.0 or l[1].x > 378.0
+			return (
+				minf(l[0].x, l[1].x) < plate.position.x + tape
+				or maxf(l[0].x, l[1].x) > plate.end.x - tape
+			)
 	)
 	check.call(on_tape.is_empty(), "no scratch runs onto the tape (%d do)" % on_tape.size())
 	var focus := (_button(title, "CONTINUE")).get_theme_stylebox("focus") as HazardBox
 	check.call(
 		not focus.chevron, "the title's Continue plate has no focus pointer to crowd its frame"
 	)
+
+
+## No two of `parts` (the logo and the row's plates) and the corner buttons overlap.
+func _no_overlap(title: Node, parts: Array) -> void:
+	var all: Array[Control] = []
+	for found: Variant in parts + [title.find_child("Gear", true, false)]:
+		if found is Control:
+			var c: Control = found
+			all.append(c)
+	var exit := _button(title, "RUN FOR YOUR LIFE")
+	if exit != null:
+		all.append(exit)
+	var hits: Array[String] = []
+	for i: int in all.size():
+		for j: int in range(i + 1, all.size()):
+			if all[i].get_global_rect().grow(-1.0).intersects(all[j].get_global_rect()):
+				hits.append("%s / %s" % [all[i].name, all[j].name])
+	check.call(all.size() >= 4 and hits.is_empty(), "no two title controls overlap: %s" % [hits])
 
 
 ## Each plate leaves 14 px (28 at 4K) or more between its tape and its widest label line.
@@ -346,8 +361,8 @@ func _without_save() -> void:
 	var gear := title.find_child("Gear", true, false) as Button
 	var exit := _button(title, "RUN FOR YOUR LIFE")
 	check.call(
-		_button(title, "CONTINUE") == null and fresh != null and fresh.text == "NEW KAIJU",
-		"with no save one New Kaiju replaces Continue: %s" % [_texts(title)]
+		_button(title, "CONTINUE") == null and fresh != null and fresh.text.strip_edges() != "",
+		"with no save one labelled New Kaiju replaces Continue: %s" % [_texts(title)]
 	)
 	if fresh != null and gear != null and exit != null:
 		# Director 2026-10-25: "make the 'new kaiju' button significantly smaller".

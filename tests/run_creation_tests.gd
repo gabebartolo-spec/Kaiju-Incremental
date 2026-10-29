@@ -244,28 +244,48 @@ func _check_trip_reaches_every_vial() -> void:
 		await _frames(1)
 
 
-## The rack's data: croc, Komodo, serpent in order, the croc unlocked; a titan unlocked in the
-## save reads unlocked (the replay for each new titan), but only a titan with a species to play
-## can be picked.
+## The rack's data (D-385: read from tuning "creation" "titans", not a frozen list): every titan
+## in data order; on a fresh save the croc is unlocked and every other titan locked; a titan
+## unlocked in the save reads unlocked (the replay for each new titan), but only a titan with a
+## species to play can be picked.
 func _check_rack_reads_save() -> void:
 	check(ResourceLoader.exists(RACK_SCRIPT), "the rack's rules live in %s" % RACK_SCRIPT)
 	if not ResourceLoader.exists(RACK_SCRIPT):
 		return
 	var rack: GDScript = load(RACK_SCRIPT)
+	var cfg := Content.section("creation")
 	var fresh: Array = rack.call("titans", {})
+	var want: Array[String] = []
+	for row: Dictionary in cfg["titans"]:
+		want.append(str(row["id"]))
 	var ids: Array[String] = []
-	var locked: Array[bool] = []
+	var open: Array[String] = []
+	var first_locked := {}
 	for t: Dictionary in fresh:
 		ids.append(str(t["id"]))
-		locked.append(t["locked"] == true)
-	check(ids == ["croc", "komodo", "serpent"], "the rack holds croc, Komodo, serpent: %s" % [ids])
-	check(locked == [false, true, true], "a new player has the croc only: %s" % [locked])
-	var later: Array = rack.call("titans", {"titans_unlocked": ["komodo"]})
-	var komodo: Dictionary = later[1]
-	var shown: bool = komodo["locked"] == false and komodo["selectable"] == false
+		if t["locked"] == false:
+			open.append(str(t["id"]))
+		elif first_locked.is_empty():
+			first_locked = t
+	check(ids == want, "the rack holds every titan in the data, in order: %s" % [ids])
+	check(open == ["croc"], "a new player has the croc only, the rest locked: %s" % [open])
+	if first_locked.is_empty():
+		return
+	var id := str(first_locked["id"])
+	var species := str(first_locked["species"])
+	var later: Array = rack.call("titans", {str(cfg["save_key"]): [id]})
+	var opened: Dictionary = later[ids.find(id)]
+	var playable := (
+		species != ""
+		and Demo.allows(species)
+		and str(Content.species_def(species)["id"]) == species
+	)
 	check(
-		shown,
-		"a Komodo unlocked in the save reads unlocked, yet has no titan to play yet: %s" % [komodo]
+		opened["locked"] == false and opened["selectable"] == playable,
+		(
+			"a %s unlocked in the save reads unlocked, pickable only with a species to play: %s"
+			% [id, opened]
+		)
 	)
 
 

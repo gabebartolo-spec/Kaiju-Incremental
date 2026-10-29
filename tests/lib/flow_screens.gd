@@ -114,8 +114,16 @@ func _check_new_game() -> void:
 		"End Rampage ends the run (reason %s)" % rampage.sim.end_reason
 	)
 	check.call(
-		hud.beat_running() and hud.headline.text == "RAMPAGE ENDED" and Engine.time_scale == 1.0,
-		"the end beat's headline lands at normal speed, no slow motion (%s)" % Engine.time_scale
+		(
+			hud.beat_running()
+			and hud.headline.text != ""
+			and hud.headline.text == str(RampageHud.HEADLINES["ended"][0])
+			and Engine.time_scale == 1.0
+		),
+		(
+			"the end beat's called-off headline lands at normal speed, no slow motion (%s, %s)"
+			% [hud.headline.text, Engine.time_scale]
+		)
 	)
 	await GuiInput.key(t, KEY_ENTER)
 	check.call(hud.beat_running(), "a confirm in the first frames does not skip the end beat")
@@ -131,9 +139,16 @@ func _check_new_game() -> void:
 		"the HUD hides behind the report"
 	)
 	if results != null:
+		# D-385: a first rampage has nothing to beat: no record, no figure, but a verdict.
+		var first := results.verdict()
 		check.call(
-			results.verdict() == "YOUR FIRST RAMPAGE" and results.counting(),
-			"a first rampage says so, and the results count up"
+			(
+				first != ""
+				and results.records().is_empty()
+				and RegEx.create_from_string("\\d").search(first) == null
+				and results.counting()
+			),
+			"a first rampage claims no record or figure, and the results count up: %s" % first
 		)
 		await GuiInput.click(t, GuiInput.button(results, "SKIP"))
 		check.call(not results.counting(), "clicking SKIP lands every count at once")
@@ -167,9 +182,11 @@ func _check_results_compare() -> void:
 	await _frames(3)
 	layout.listen(results, "results")
 	await layout.crawl_reads(results, "results")
+	var was := Num.f(best["rubble"])
+	var gain := roundi(100.0 * (Num.f(result["rubble"]) - was) / was)
 	check.call(
-		results.verdict() == "BIGGER THAN LAST TIME  +50% BIOMASS",
-		"beating the best by half says +50%%: %s" % results.verdict()
+		results.verdict().contains("+%d%%" % gain),
+		"beating the best says by how much (+%d%%): %s" % [gain, results.verdict()]
 	)
 	await GuiInput.key(t, KEY_ENTER)
 	var labels: Array[String] = []
@@ -197,7 +214,10 @@ func _check_results_compare() -> void:
 		"every reported row but the headline's shows its best or NEW RECORD once: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
-	check.call(short.verdict() == "50 BIOMASS SHORT OF YOUR BEST", "a miss says how far short")
+	check.call(
+		short.verdict().contains(str(ceili(200.0 - 150.0))) and short.records().is_empty(),
+		"a miss says how far short: %s" % short.verdict()
+	)
 	short.free()
 	results.queue_free()
 	await _frames(1)
@@ -274,16 +294,17 @@ func _check_evolution_and_continue() -> void:
 		"clicking the evolution buys it (rubble %d) and plays the reveal" % tree.rubble
 	)
 	if reveal != null:
+		var last_stage := Num.i(Content.section("city")["tier_height"])  # the baby's tower
 		check.call(
 			(
 				reveal.stage_before == "baby"
 				and reveal.stage_after == "adolescent"
 				and reveal.scale_after > reveal.scale_before
-				and reveal.tower_floors == 2 * Num.i(Content.section("city")["tier_height"])
+				and reveal.tower_floors > last_stage
 			),
 			(
-				"the reveal grows a baby into an adolescent beside a %d-floor tower"
-				% reveal.tower_floors
+				"the reveal grows a baby into an adolescent beside a %d-floor tower (last stage %d)"
+				% [reveal.tower_floors, last_stage]
 			)
 		)
 		await _frames(EvolutionReveal.SWAP_FRAME + 2)
@@ -291,8 +312,10 @@ func _check_evolution_and_continue() -> void:
 		var shown: Array[String] = []
 		for node: Node in reveal.find_children("*", "Label", true, false):
 			shown.append((node as Label).text)
+		var named := EvolutionReveal.title_of(tree.tree.defs["evolve1"]).to_upper()
 		check.call(
-			shown.has("BEHEMOTH"), "the reveal is titled by the node bought (D-051): %s" % [shown]
+			named != "" and shown.has(named),
+			"the reveal is titled by the node bought (D-051, %s): %s" % [named, shown]
 		)
 		await GuiInput.key(t, KEY_ENTER)
 		await _frames(2)

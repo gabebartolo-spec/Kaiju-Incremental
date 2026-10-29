@@ -84,12 +84,22 @@ func _check_species_select() -> void:
 	var buttons := select.find_children("*", "Button", true, false).filter(
 		func(b: Node) -> bool: return (b as Button).text == "CHOOSE"
 	)
-	check(buttons.size() == 3, "the species screen offers three choices, found %d" % buttons.size())
+	# D-385: the cards are the playable species in the data, in data order.
+	var ids: Array[String] = []
+	for def: Dictionary in Demo.species():
+		ids.append(str(def["id"]))
+	check(
+		ids.has("reptilian") and buttons.size() == ids.size(),
+		"the species screen offers a card per playable species %s, found %d" % [ids, buttons.size()]
+	)
+	if buttons.is_empty():
+		select.queue_free()
+		return
 	var picked: Array[String] = []
 	select.chosen.connect(func(id: String) -> void: picked.append(id))
 	var first: Button = buttons[0]
 	await GuiInput.click(self, first)
-	check(picked == ["reptilian"], "choosing the first card picks the croc: %s" % [picked])
+	check(picked == ids.slice(0, 1), "choosing the first card picks %s: %s" % [ids[0], picked])
 	select.queue_free()
 	await process_frame
 
