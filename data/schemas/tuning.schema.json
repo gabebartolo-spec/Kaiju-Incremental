@@ -1994,6 +1994,52 @@
             }
           },
           "additionalProperties": false
+        },
+        "lap": {
+          "type": "object",
+          "properties": {
+            "height": {
+              "$ref": "#/$defs/num"
+            },
+            "length": {
+              "$ref": "#/$defs/num"
+            },
+            "period": {
+              "$ref": "#/$defs/num"
+            },
+            "dir": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/num"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "row": {
+              "$ref": "#/$defs/num"
+            },
+            "column": {
+              "$ref": "#/$defs/num"
+            },
+            "fade": {
+              "$ref": "#/$defs/num"
+            }
+          },
+          "required": [
+            "height",
+            "length",
+            "period",
+            "dir",
+            "row",
+            "column",
+            "fade"
+          ],
+          "patternProperties": {
+            "^_": {
+              "$ref": "#/$defs/str"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2011,7 +2057,8 @@
         "night_glow",
         "day_glow",
         "river",
-        "bay"
+        "bay",
+        "lap"
       ],
       "patternProperties": {
         "^_": {

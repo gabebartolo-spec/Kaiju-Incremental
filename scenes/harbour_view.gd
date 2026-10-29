@@ -73,7 +73,9 @@ static func _add(bands_out: Dictionary, band: String, rect: Rect2) -> void:
 
 ## The front's water: one sheet at the sea's level from the coast to the beach's furthest
 ## waterline and the port's quay (the sand, decks and pavement stand over its landward part),
-## on the water surface (WaterSurface) like the open sea past the coast.
+## on the water surface (WaterSurface) like the open sea past the coast. It is cut into rows
+## and columns (tuning water.lap) so the lapping wavelets lift it; their lift (vertex red) fades
+## in over water.lap.fade from the coast, so it meets the open sea's flat sheet there.
 static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstance3D:
 	var b: Dictionary = plan["harbour"]
 	var rect: Rect2 = b["rect"]
@@ -81,28 +83,32 @@ static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstan
 	var reach := Num.f(b["quay_z"])
 	for p: Vector2 in CityHarbour.arc(plan, cfg):
 		reach = maxf(reach, p.y)
-	var x0 := rect.position.x
-	var x1 := rect.end.x
+	var lap: Dictionary = Content.section("water")["lap"]
+	var cols := ceili(rect.size.x / Num.f(lap["column"]))
+	var rows := ceili((reach - mouth) / Num.f(lap["row"]))
+	var fade := Num.f(lap["fade"])
 	var y := CityHarbour.sea(cfg)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_normal(Vector3.UP)
-	for p: Vector2 in [
-		Vector2(x0, mouth),
-		Vector2(x1, mouth),
-		Vector2(x1, reach),
-		Vector2(x0, mouth),
-		Vector2(x1, reach),
-		Vector2(x0, reach),
-	]:
-		st.add_vertex(Vector3(p.x, y, p.y))
+	for r: int in rows + 1:
+		var z := lerpf(mouth, reach, float(r) / rows)
+		st.set_color(Color(clampf((z - mouth) / fade, 0.0, 1.0), 0.0, 0.0))
+		for c: int in cols + 1:
+			st.add_vertex(Vector3(lerpf(rect.position.x, rect.end.x, float(c) / cols), y, z))
+	for r: int in rows:
+		for c: int in cols:
+			var q := r * (cols + 1) + c
+			for k: int in [q, q + 1, q + cols + 2, q, q + cols + 2, q + cols + 1]:
+				st.add_index(k)
 	var mi := MeshInstance3D.new()
 	mi.mesh = st.commit()
-	mi.material_override = (
-		WaterSurface.material(rect, color, true, Num.i(cfg["map_seed"]))
-		if WaterSurface.on()
-		else WaterSurface.gloss(color)
-	)
+	if WaterSurface.on():
+		var mat := WaterSurface.material(rect, color, true, Num.i(cfg["map_seed"]))
+		WaterSurface.lap(mat)
+		mi.material_override = mat
+	else:
+		mi.material_override = WaterSurface.gloss(color)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.add_to_group(WaterSurface.GROUP)
 	return mi
