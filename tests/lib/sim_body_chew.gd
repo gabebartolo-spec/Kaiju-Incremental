@@ -132,8 +132,11 @@ func _check_swipe_undermines(swiped_steps: int) -> void:
 ## south face, with a building standing right against its far (north) side, chews the tower and
 ## leaves the building behind it whole (the chewed rows are the nearest standing ones per lane).
 func _check_swipe_occlusion() -> void:
-	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	var sim: RampageSim = _make_seeded.call("reptilian", {}, {}, TOPPLE_CITY)
 	var index := Fixture.nearest_of(sim, 2, Vector2i(Fixture.TOWER_FLOORS, Fixture.TOWER_SIDE), -1)
+	_check.call(index >= 0, "the swipe city %s has a tall tier-2 tower" % TOPPLE_CITY)
+	if index < 0:
+		return
 	var tower := sim.buildings[index]
 	var behind_index := -1
 	for i: int in sim.buildings.size():
@@ -141,6 +144,9 @@ func _check_swipe_occlusion() -> void:
 		if i != index and other.tier == 2 and other.landmark == "" and other.in_arena:
 			behind_index = i
 			break
+	_check.call(behind_index >= 0, "the swipe city has a second tier-2 building to stand behind")
+	if behind_index < 0:
+		return
 	var behind := sim.buildings[behind_index]
 	for other: RampageSim.Building in sim.buildings:
 		if other != tower and other != behind:
