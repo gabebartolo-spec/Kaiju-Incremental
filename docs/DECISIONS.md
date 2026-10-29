@@ -7,7 +7,7 @@ changes. The lead owns the wording; a decision goes in the PR that acts on it (a
 ## 2026-10-30 · D-394 · Director · The landmark pool's named entries
 His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
 ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
-stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task.
+stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".
 
 ## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
 A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
