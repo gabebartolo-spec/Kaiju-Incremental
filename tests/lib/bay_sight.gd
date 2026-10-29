@@ -1,11 +1,11 @@
 extends RefCounted
 ## What the sea bay's own ground hides of the rise (comment #27 "Nothing in the foreground hides
-## the rise"): the beach and sea floor (CityHarbour.floor_at), the street round the bay, and the
-## quay walls down its two flanks (HarbourView.quays), as solid ground a sight line can strike,
+## the rise"): the beach and sea floor (CityHarbour.floor_at), the street round the front, and the
+## port's decks, piers and seawall (HarbourView.quays), as solid ground a sight line can strike,
 ## for the run intro's shot.
 
 const STEP := 0.2
-const QUAY_TOP := 0.4  # a flank quay wall's top over the street (CityGround._harbour)
+const QUAY_TOP := 0.4  # a port deck's top over the street (CityGround._harbour)
 ## Where the head, neck and shoulders are: shares of the way from the body's centre to the head
 ## along its facing, and drops (share of its height) below its top.
 const HEAD := [1.0, 0.0]

@@ -131,13 +131,14 @@ static func _clear(site: Dictionary, placed: Array[Dictionary]) -> bool:
 	return true
 
 
-## Roughly where the kaiju rises: the middle of the stage's sea bay's coast road (CityHarbour,
-## D-373; the exact spot lies a few metres out in the water, which rise_slack covers), else the
+## Roughly where the kaiju rises: the fixed beachfront's waterline at its rise_x (CityHarbour,
+## D-381; the exact spot lies a few metres out in the water, which rise_slack covers), else the
 ## middle of the river's row on the city's axis. INF with neither.
 static func rise_estimate(zs: Array[float], cfg: Dictionary) -> Vector2:
-	var bay := CityHarbour.row(cfg)
-	if not bay.is_empty():
-		return Vector2(0.0, Num.f(bay[1]))
+	if cfg.has("harbour"):
+		var h: Dictionary = cfg["harbour"]
+		var x := Num.f(h["rise_x"])
+		return Vector2(x, CityHarbour.shore_at(h, x))
 	var row := CityRiver.river_row(zs, cfg)
 	if row < 0:
 		return Vector2(INF, INF)

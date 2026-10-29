@@ -88,10 +88,9 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	_next = Num.f(cfg["first_s"])
 
 
-## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan;
-## never one inside the sea bay's width (CityHarbour.rect_of: it ends at the coast road, and the
-## line would run up to the beach the kaiju wades out on). With none outside it, the bay's west
-## side street (the young city: its one inner avenue is inside the bay).
+## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan
+## (none: the middle). The fixed front (D-381) spans the whole width north of the back street, so
+## every avenue ends there and the line with it (RailLayout.ends), short of the beach.
 static func avenue_x(city: Dictionary) -> float:
 	var key := "%s:%s" % [city["map_seed"], city["half"]]
 	if _x_cache.has(key):
@@ -99,19 +98,16 @@ static func avenue_x(city: Dictionary) -> float:
 	var half := CityGen.half_extent(city)
 	var plan := CityGen.map(city)
 	var nodes: Array = plan["nodes"]
-	var bay := CityHarbour.rect_of(city)
 	var best := INF
 	for street: Dictionary in plan["streets"]:
 		var a: Vector2 = nodes[Num.i(street["from"])]
 		var b: Vector2 = nodes[Num.i(street["to"])]
 		if str(street["kind"]) != CityGen.AVENUE or absf(a.x - b.x) > 0.01:
 			continue
-		if a.x > bay.position.x + 0.01 and a.x < bay.end.x - 0.01:
-			continue
 		if absf(a.x) < half - 1.0 and absf(a.x) < absf(best):
 			best = a.x
 	if best == INF:
-		best = bay.position.x if bay.has_area() else 0.0
+		best = 0.0
 	_x_cache[key] = best
 	return best
 

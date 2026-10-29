@@ -13,30 +13,9 @@ const MilitaryStray := preload("res://tests/lib/military_stray.gd")
 const MilitaryYield := preload("res://tests/lib/military_yield.gd")
 const MilitaryReach := preload("res://tests/lib/military_reach.gd")
 
-## Parked-in-range tank-steps the rampages must see before their standoff share means anything.
-const MIN_PARKED_IN_RANGE := 20
-## The rampages' city and army seeds, pinned so the autoplay lingers where tanks take posts:
-## since the body turns on arcs (turn-weight) seeds 0-2 saw none; a probe of seeds 0-11 found
-## tanks parked in range only at the Behemoth tier, most on seeds 4 (26) and 8 (66). Re-probed
-## after look-options' city changes (2026-10-21): Behemoth seeds 2 (25), 4 (6) and 8 (6), all in
-## the band; seed 0 saw none. Re-probed seeds 0-11 when bigger bodies turned slower (turn-step,
-## 2026-10-21): seeds 2, 4, 8 fell to 5 in all; Behemoth seeds 3 (27), 6 (73), 9 (54), 10 (31).
-## Re-probed for D-135 (wider cities, army.spawn_radius per stage): the old seeds 3, 6, 9 park only
-## 5 tank-steps in range on the shipped data, and in seeds 0-70 at the Behemoth only seeds 3 (5),
-## 11 (16), 15 (20), 25 (13), 42 (7) and 17 (2) park any, so a tank standing in range is rare.
-## Seeds 3, 11, 15 and 25 give 38 tank-steps on Windows against the bar of 20; CI (Linux) read 16
-## where Windows read 21 on the earlier pin (float drift, the same seeds repeat exactly on one
-## machine), so the margin is about 1.9x.
-## Re-probed for the road-network PR (no alleys on the river banks moved the plans), Behemoth
-## seeds 0-35: tank-steps in range 0 (7), 8 (5), 10 (7), 14 (9), 25 (4), 35 (18), none elsewhere;
-## seeds 0, 10, 14 and 35 give 41 against the bar of 20 (the same 2x margin).
-## Re-probed for road geometry (#243: bigger blocks), seeds 0-23: tank-steps in range 2 (3),
-## 5 (3), 6 (17), 15 (17), 22 (5), all in the band, none elsewhere; seeds 2, 6, 15 and 22 give
-## 42 against the bar of 20.
-## Re-probed for the Tripo pool (#409, 2026-10-29: models replace procedural lots) on main's sea
-## bay, seeds 0-29 at tiers 1-3: tank-steps in range 0 (24), 1 (7), 5 (48), 6 (100), 8 (34),
-## 10 (41), 17 (56), 21 (114), 28 (86), none elsewhere; seeds 0, 1, 10 and 12 give 72 against
-## the bar of 20.
+## The rampages' city and army seeds. Any seeds do: the standoff rule below holds for whatever
+## tanks park in range, and _check_standoff_held forces parking, so these are never re-picked to
+## make tanks linger (D-385).
 const RAMPAGE_SEEDS: Array[int] = [0, 1, 10, 12]
 
 
@@ -60,8 +39,8 @@ func run_checks() -> void:
 ## standoff in its firing band, never up close, and none waits inside the danger radius (those
 ## beyond range are in reserve); tanks enter by road from outside the
 ## playable edge (in a city smaller than the spawn radius). Tanks take posts in range during
-## the rampages too, and there are at least MIN_PARKED_IN_RANGE such tank-steps, so the standoff
-## and danger bars never pass on nothing.
+## the rampages too, whenever the autoplay lingers; _check_standoff_held forces parking so the
+## standoff rule never passes on nothing (D-385: no count of parked tanks here).
 func _check_rampages() -> void:
 	var off_road := 0
 	var inside := 0
@@ -223,14 +202,7 @@ func _check_rampages() -> void:
 	)
 	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
-		parked_in_band + parked_close >= MIN_PARKED_IN_RANGE,
-		(
-			"the rampages see tanks parked in range: %d tank-steps (at least %d to judge standoff)"
-			% [parked_in_band + parked_close, MIN_PARKED_IN_RANGE]
-		)
-	)
-	check(
-		parked_in_band > 0 and standoff >= 0.95 and longest_in_danger <= 1.0,
+		(parked_in_band + parked_close == 0 or standoff >= 0.95) and longest_in_danger <= 1.0,
 		(
 			(
 				"tanks hold standoff: %.0f%% of %d parked-in-range tank-steps sit in the firing"

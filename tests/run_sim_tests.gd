@@ -29,7 +29,6 @@ func run_checks() -> void:
 	await _t("_check_toughness")
 	await _t("_check_determinism")
 	await _t("_check_upgrade_effects")
-	await _t("_check_species_differ")
 	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
 	await _h(
@@ -42,18 +41,28 @@ func run_checks() -> void:
 	await _t("_check_growth")
 
 
+## D-385: the species come from data/species.json; each one loads whole, and the croc's is there.
 func _check_data() -> void:
-	check(
-		Content.species().size() == 3,
-		"three species are defined, not %d" % Content.species().size()
-	)
 	var ids: Array[String] = []
+	var broken: Array[String] = []
 	for def: Dictionary in Content.species():
-		ids.append(str(def["id"]))
+		var id := str(def.get("id", ""))
+		var whole: bool = (
+			id != ""
+			and not ids.has(id)
+			and str(def.get("name", "")) != ""
+			and def.get("stats") is Dictionary
+			and def.get("colors") is Dictionary
+			and Content.species_def(id) == def
+		)
+		if not whole:
+			broken.append(id)
+		ids.append(id)
 	check(
-		ids == ["reptilian", "insectoid", "cephalopod"],
-		"the species are reptilian, insectoid, cephalopod: %s" % [ids]
+		not ids.is_empty() and broken.is_empty(),
+		"every species in the data loads with a unique id, name, stats and colours: %s" % [broken]
 	)
+	check(ids.has("reptilian"), "the reptilian (the croc) is in the data: %s" % [ids])
 	var tree := _tree()
 	var dangling: Array[String] = []
 	for id: String in tree.order:
@@ -252,27 +261,6 @@ func _check_upgrade_effects() -> void:
 ## What the held-heading bot destroys in `sim` (a share of the city).
 func _destroyed(sim: RampageSim) -> float:
 	return Num.f(_autoplay(sim, MAX_STEPS, 60, true)["destruction"])
-
-
-func _check_species_differ() -> void:
-	var results: Array[Dictionary] = []
-	for id: String in ["reptilian", "insectoid", "cephalopod"]:
-		results.append(_autoplay(_sim(id, {})))
-	check(
-		results[0] != results[1] and results[1] != results[2] and results[0] != results[2],
-		"each species plays out a different rampage: %s" % [results]
-	)
-	var leap := _sim("insectoid", {})
-	var before := leap.kaiju_pos
-	leap.step(DT, Vector2.ZERO, true)
-	var expected := Num.f(leap.city["leap_distance"]) * leap.body_scale()
-	check(
-		leap.kaiju_pos.distance_to(before) >= expected * 0.95,
-		"the insectoid's Leap Slam carries it its leap distance (%.1f)" % expected
-	)
-	var ring := _sim("cephalopod", {})
-	var reach_ok := ring.ability_reach() > ring.stomp_radius()
-	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
 
 
 ## Every look (data/looks.json) carries every key presentation reads, and the default exists.

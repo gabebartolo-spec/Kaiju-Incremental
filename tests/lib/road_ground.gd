@@ -25,6 +25,7 @@ const LOT_RISE := 0.01  # CityGround: the car park over the pavement
 const DECK_TOP := 0.001  # CityGround: a deck's top, level with the land
 const LAND_TOP := 0.001  # CityGround: the asphalt land's top
 const QUAY_RISE := 0.3  # CityGround._harbour: a bay quay's deck over the pavement
+const FRONT_ROAD := -2  # the beachfront's beach road and side streets (D-381), not grid streets
 
 var plan: Dictionary
 var cfg: Dictionary
@@ -39,6 +40,7 @@ var _block_hash := {}  # Vector2i -> Array[int]
 var _road_hash := {}  # Vector2i -> Array[int]
 var _coast: float
 var _diag_deck: Dictionary
+var _front := {}  # HarbourView.bands, once
 
 
 func _init(p_plan: Dictionary, p_cfg: Dictionary) -> void:
@@ -76,17 +78,25 @@ func at(p: Vector2) -> Dictionary:
 	return _is(ROAD if road >= 0 else BARE, LAND_TOP, road)
 
 
-## The sea bay's ground at p (CityGround._harbour), {} outside it: a raised quay deck down each
-## side, the promenade's pavement at its city end, its water and sand between them.
+## The beachfront's ground at p (CityGround._harbour), {} outside it: the port's raised decks,
+## the promenade, pavement and yard, the beach road and side streets (FRONT_ROAD), its water
+## and sand.
 func _in_bay(p: Vector2) -> Dictionary:
 	for quay: Rect2 in HarbourView.quays(plan):
 		if quay.has_point(p):
 			return _is(PAVE, CityGround.PAVE_TOP + QUAY_RISE)
 	for bay: Rect2 in CityHarbour.basin(plan):
-		if bay.has_point(p):
-			if HarbourView.promenade(plan, cfg).has_point(p):
-				return _is(PAVE, CityGround.PAVE_TOP)
-			return _is(WATER, CityHarbour.sea(cfg))
+		if not bay.has_point(p):
+			continue
+		if _front.is_empty():
+			_front = HarbourView.bands(plan, cfg)
+		for band: String in ["promenade", "pavement", "yard", "road", "side"]:
+			for r: Rect2 in _front[band]:
+				if r.has_point(p):
+					if band in ["road", "side"]:
+						return _is(ROAD, LAND_TOP, FRONT_ROAD)
+					return _is(PAVE, CityGround.PAVE_TOP)
+		return _is(WATER, CityHarbour.sea(cfg))
 	return {}
 
 

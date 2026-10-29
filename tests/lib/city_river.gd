@@ -6,6 +6,7 @@ extends RefCounted
 ## waits while it rises and wades out; then the sim says "kaiju_emerged" once, with the kaiju
 ## standing on land inside the arena, out of the water.
 
+const Harbour := preload("res://tests/lib/city_harbour.gd")
 const DT := 1.0 / 30.0
 ## Parked cars keep this far off the channel's edge (CityDecor's water margin): their bodies
 ## clear the quay walls whichever way they face.
@@ -20,15 +21,15 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		if str(block["use"]) == "river":
 			var rect: Rect2 = block["rect"]
 			rivers.append(rect)
-	# The river's blocks and the sea bay the kaiju rises in (CityHarbour.basin).
-	var wet: Array[Rect2] = rivers.duplicate()
-	wet.append_array(CityHarbour.basin(plan))
+	# The river's blocks and the front's water the kaiju rises in (CityHarbour.holds).
 	var built := 0
 	for b: RampageSim.Building in sim.lot_buildings():
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		for rect: Rect2 in wet:
+		for rect: Rect2 in rivers:
 			if rect.intersects(foot):
 				built += 1
+		if Harbour.wet_at(plan, foot):
+			built += 1
 	var in_river := CityHarbour.holds(plan, spawn)
 	var stage_one: Dictionary = CityGrowth.tuning_for(_with_seed(map_seed), 1)["city"]
 	var same: bool = CityGen.map(stage_one).get("river", Vector2.ZERO) == plan.get("river")
@@ -96,8 +97,8 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 ## from the west end of the street grid to the east, bridges in every gap along it and none
 ## over solid ground, no building standing in the channel (a landmark's site in the river row
 ## included), no parked car within CAR_CLEAR of the water or its quay walls (its centre half a
-## car length further), and a building within city "quay" "reach" of where the kaiju steps out
-## (no empty space at the landing).
+## car length further). What he meets on landing is the rise bar's (city_spawn_view.gd, D-384:
+## the beachfront's sand lies between the water and the first hotel, D-381).
 static func check_look(
 	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check_fn: Callable
 ) -> void:
@@ -134,24 +135,18 @@ static func check_look(
 		for channel: Rect2 in channels:
 			if channel.grow(CAR_CLEAR + CityDecor.CAR_HALF.y).has_point(car.get_center()):
 				in_water += 1
-	var bank: Vector2 = plan.get("rise_bank", Vector2(INF, INF))
-	var landing := sim.clamp_to_arena(bank)
-	var reach := Num.f(sim.city["quay"]["reach"])
-	var near := 0
 	var wet := 0
 	for b: RampageSim.Building in sim.lot_buildings():
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		if landing.clamp(foot.position, foot.end).distance_to(landing) <= reach:
-			near += 1
 		if not channels.is_empty() and channels[0].intersects(foot):
 			wet += 1
 	check_fn.call(
-		whole and covered and bridged and in_water == 0 and near > 0 and wet == 0,
+		whole and covered and bridged and in_water == 0 and wet == 0,
 		(
 			(
 				"stage %d, map_seed %d: river look (%d river blocks in %d channel(s) spanning them:"
 				+ " %s, %d bridges, all over water: %s, %d buildings in the channel, %d cars on"
-				+ " the water or its quays, %d buildings within %.0f m of the landing %s)"
+				+ " the water or its quays)"
 			)
 			% [
 				tier,
@@ -162,10 +157,7 @@ static func check_look(
 				bridges.size(),
 				bridged,
 				wet,
-				in_water,
-				near,
-				reach,
-				landing
+				in_water
 			]
 		)
 	)

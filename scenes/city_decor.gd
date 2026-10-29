@@ -37,6 +37,7 @@ var _lamp_spots: Array[Vector2] = []
 var _park_trees: Array[Vector2] = []
 var _kerb := TreeSpots.new()  # the street trees' kerb spots (CityGreenery.kerb_spots)
 var _trees: CityTrees  # the park, plaza ring and diagonal trees
+var _beach: PropField  # the beachfront's umbrellas and courts (BeachProps), or null
 
 
 ## Parked and moving car paints (city.car_colors), each light enough to read against the
@@ -103,6 +104,19 @@ func _ready() -> void:
 	add_child(_props.leaf_field)
 	add_child(_props.bark_field)
 	add_child(LampPools.new(_lamp_spots))  # the lamps' pools on the ground, at night
+	_plant_beach()
+
+
+## The beach's umbrellas, loungers and courts (D-381), on their own PropField at the sand's height.
+func _plant_beach() -> void:
+	_beach = BeachProps.plant(self)
+	if _beach == null:
+		return
+	var sand := _beach.build(BeachProps.palette(plan), 37, 0.0)
+	sand.position.y = BeachProps.floor_y(plan)
+	add_child(sand)
+	add_child(_beach.leaf_field)  # in the tree, so they go with it (the beach has no trees)
+	add_child(_beach.bark_field)
 
 
 ## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so
@@ -116,6 +130,8 @@ func _process(_delta: float) -> void:
 	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
 		var body := _kaiju.global_transform
 		_props.crush_box(body, _foot)
+		if _beach != null:
+			_beach.crush_box(body, _foot)
 		var into := body.affine_inverse()
 		for lamp: PooledLight in _lamps.duplicate():
 			var local := into * Vector3(lamp.position.x, body.origin.y, lamp.position.z)
@@ -142,6 +158,8 @@ func _found_kaiju() -> bool:
 func crush(at: Vector3, radius: float) -> void:
 	if trampling:
 		_props.crush(at, radius)
+		if _beach != null:
+			_beach.crush(at, radius)
 	for lamp: PooledLight in _lamps.duplicate():
 		if Vector2(lamp.position.x - at.x, lamp.position.z - at.z).length() <= radius:
 			_lamps.erase(lamp)

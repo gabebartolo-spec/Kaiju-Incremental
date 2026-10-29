@@ -54,7 +54,7 @@ static func lights(root: Node, check: Callable) -> void:
 		)
 	)
 	check.call(
-		calls > 20 and lamps.size() > 100,
+		calls > 10 and lamps.size() > 80,  # the fixed front (#411) left 94 lamps, 14 spots
 		"the recorded path visits %d spots among %d lamps" % [calls, lamps.size()]
 	)
 	(

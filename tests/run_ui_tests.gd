@@ -95,7 +95,7 @@ func _check_tooltip_width() -> void:
 	var window := root.size
 	root.size = CANVAS
 	var widths: Dictionary = {}
-	for id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for id: String in ["reptilian"]:
 		var tree := UpgradeTree.new(Content.upgrades(), {}, id)
 		var screen := UpgradeScreen.new()
 		screen.setup(tree, 30, Content.species_def(id), Content.section("kaiju"))
@@ -358,20 +358,23 @@ func _outside(view: SubViewportContainer) -> Array[String]:
 
 
 ## Critic r1 item 8: the line under the title never says "short of your best" while a row beside
-## it carries a NEW BEST tag; with no records it still says how far short.
+## it carries a NEW BEST tag; with no records it still says how far short. D-385: the verdict is
+## read for what it says (the shortfall and the record), not its exact words.
 func _check_results_verdict() -> void:
 	var mixed := ResultsScreen.new({"rubble": 10, "toppled": 5}, {"rubble": 69.0, "toppled": 2.0})
 	var plain := ResultsScreen.new({"rubble": 10, "toppled": 1}, {"rubble": 69.0, "toppled": 2.0})
+	var short := str(ceili(69.0 - 10.0))
 	check(
 		(
 			mixed.is_new_best("toppled")
-			and mixed.verdict() == "59 SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS"
+			and mixed.verdict().contains(short)
+			and mixed.verdict().to_upper().contains("RECORD")
 		),
-		"with a record on the table the verdict says so: %s" % mixed.verdict()
+		"with a record on the table the verdict says so, and the shortfall: %s" % mixed.verdict()
 	)
 	check(
-		plain.verdict() == "59 BIOMASS SHORT OF YOUR BEST",
-		"with no record it says how far short: %s" % plain.verdict()
+		plain.verdict().contains(short) and not plain.verdict().to_upper().contains("RECORD"),
+		"with no record it says how far short, and claims none: %s" % plain.verdict()
 	)
 	mixed.free()
 	plain.free()

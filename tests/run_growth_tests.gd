@@ -61,7 +61,8 @@ func _layout(tier: int) -> Array[Dictionary]:
 	return CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 
 
-## Every evolution opens a bigger city with taller towers: more ground, buildings and chunks.
+## Every evolution opens a bigger city with taller towers: more ground, buildings and chunks
+## (the tallest off the fixed beachfront and not a landmark: both stand the same at every stage).
 func _check_stages_grow() -> void:
 	var stages := CityGrowth.stage_count(Content.tuning())
 	check(stages == 3, "one growth stage per body, young to Colossus (%d, D-135)" % stages)
@@ -82,9 +83,11 @@ func _check_stages_grow() -> void:
 		var layout := _layout(tier)
 		var chunks := 0
 		var tallest := 0
+		var front := CityHarbour.rect_of(cfg)  # its hotels stand the same at every stage (D-381)
 		for e: Dictionary in layout:
 			chunks += Num.i(e["w"]) * Num.i(e["d"]) * Num.i(e["h"])
-			tallest = maxi(tallest, Num.i(e["h"]))
+			if not (e.has("landmark") or front.has_point(Vector2(Num.f(e["x"]), Num.f(e["z"])))):
+				tallest = maxi(tallest, Num.i(e["h"]))
 		var now := {
 			"half": Num.f(cfg["half"]),
 			"buildings": layout.size(),
@@ -275,7 +278,7 @@ func _check_cost_curve() -> void:
 			% [e1, young_total]
 		)
 	)
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		var total := 0
 		for def: Dictionary in Content.upgrades():
 			var owner := str(def.get("species", ""))
@@ -291,7 +294,7 @@ func _check_cost_curve() -> void:
 ## The early hook: two young rampages pay for the first species power, so the third rampage
 ## has it (D-035), for every species.
 func _check_early_hook() -> void:
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		var first := INF
 		for def: Dictionary in Content.upgrades():
 			if str(def.get("species", "")) == species_id:

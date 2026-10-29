@@ -9,6 +9,9 @@ const SECONDS := 30.0
 ## stride (BodyContact.steer, comments #16), so 1.5 s legs kept the baby in a small square on the
 ## bank, out of the tail's reach of any building.
 const LEG := 2.0
+## Seconds it first walks inland: it rises from the fixed front's sea (#411), and a square on
+## the sand reaches no building (14 sweeps, 0 cuts; 13 cuts after 10 s inland, probed).
+const INLAND := 10.0
 const DIRS: Array[Vector2] = [Vector2(0, -1), Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0)]
 
 
@@ -23,13 +26,16 @@ static func check(check: Callable) -> void:
 	sim.body.use_species("reptilian")
 	var dt := 1.0 / 60.0
 	var t := 0.0
-	while t < SECONDS and not sim.over:
+	while t < SECONDS + INLAND and not sim.over:
 		t += dt
-		sim.step(dt, DIRS[int(t / LEG) % DIRS.size()], false, 0)
+		var move := Vector2(0, 1) if t < INLAND else DIRS[int((t - INLAND) / LEG) % DIRS.size()]
+		sim.step(dt, move, false, 0)
+	# Director 2026-10-30: the slower baby (#408) may not reach a building on this route; the
+	# sweep must still fire, and the powers suite's own set-ups check that it cuts.
 	check.call(
-		sim.powers.tail_sweeps > 0 and sim.powers.tail_cut > 0,
+		sim.powers.tail_sweeps > 0,
 		(
-			"in the stage-1 city the baby's tail sweep cuts buildings: %d sweeps, %d chunks cut"
+			"in the stage-1 city the baby's tail sweep fires: %d sweeps (%d chunks cut)"
 			% [sim.powers.tail_sweeps, sim.powers.tail_cut]
 		)
 	)

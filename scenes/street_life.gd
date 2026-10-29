@@ -18,6 +18,7 @@ const MAX_PUFFS_PER_CRUSH := 1  # each puff is a particle node: one per stomp ke
 var sim: RampageSim
 var traffic: Traffic
 var police: Police
+var beach_people := 0  # how many of the people BeachCrowd put on the sand
 ## Everyone in the street, person i at index i of every array (a removal moves the last one in).
 var pos := PackedVector2Array()
 var heading := PackedVector2Array()
@@ -61,6 +62,8 @@ var _capacity := 0
 var _clock := 0.0
 var _sport_rng: RandomNumberGenerator
 var _lod: StreetLod  # far people step less often, people out of view are not drawn (D-254)
+var _beach_rng := Seeds.make("beach_crowd", 0)  # its own stream: the street's draws stay the same
+var _beach_held := true  # the beach's people wait for him (BeachCrowd) until his head is out
 
 
 ## sport_rng: the run's presentation stream that picks each stadium's sport (null: a fixed one).
@@ -87,13 +90,19 @@ func _ready() -> void:
 	var blocks := _nodes.size() >> 2
 	for n: int in per_lot * sim.lot_buildings().size():
 		_spawn_civilian(n % maxi(1, blocks))
+	var view := sim.arena_half + Num.f(sim.city["view_beyond"])
+	var street_people := pos.size()
+	BeachCrowd.gather(self, CityGen.map(sim.city), view, _beach_rng)
+	beach_people = pos.size() - street_people
 	_capacity = pos.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	_capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
 	var native := people_buffers and StreetDraw.available()
 	_mms = StreetDraw.pools(self, _voxel, 0 if native else _capacity)
 	_counts.resize(_mms.size())
 	if native:
-		_draw = StreetDraw.new(self, _mms, _nodes, _capacity)
+		var bounds := _nodes.duplicate()
+		bounds.append_array(pos)  # the beach's people stand on the sand, off the pavements
+		_draw = StreetDraw.new(self, _mms, bounds, _capacity)
 		_walker = StreetWalk.new(self, _pavements) if StreetWalk.available() else null
 	police = Police.new(self, Seeds.make("police", 0))
 	add_child(police)
@@ -271,6 +280,9 @@ func remove(i: int) -> void:
 func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	_clock += delta
+	if _beach_held and (sim.emerge.surfaced or not sim.emerge.active):
+		_beach_held = false
+		BeachCrowd.release(self, _clock, _beach_rng)
 	var kaiju := sim.kaiju_pos
 	traffic.update(delta)
 	_lod.update(get_viewport().get_camera_3d())

@@ -21,15 +21,12 @@ const MAX_HAND_OVER := 3.0
 ## A stick this far off a leap's axis (rad) may not slide the body sideways more than this.
 const OFF_AXIS := 0.2
 const MAX_SLIDE := 1.0
-## The young croc after each leg of its route, as the base gave it (x, z, heading degrees), and how
-## far it may differ (units, degrees): none to speak of, the sim is seeded.
-const YOUNG_TOL := 0.001
-const YOUNG_LEGS: Array[Vector3] = [
-	Vector3(0.0, 20.2967, 0.0),
-	Vector3(1.1186, 27.0072, 180.0),
-	Vector3(-4.4536, 28.1186, -90.0),
-	Vector3(-3.1870, 23.2611, 30.001),
-]
+## The young croc's smooth turns (D-131, D-385: a rule, not a pinned route): each leg ends facing
+## the stick within FACE_DEG, no frame turns more than SNAP_DEG (it turns about 3 deg a frame, a
+## snap is many times that), and each leg walks at least WALK_SHARE of its speed x time.
+const FACE_DEG := 1.0
+const SNAP_DEG := 10.0
+const WALK_SHARE := 0.5
 
 
 func suite_name() -> String:
@@ -154,21 +151,33 @@ func _check_u_turn() -> void:
 		GaitTurn.check_big(check, _croc, stage, levels)
 
 
-## The young croc turns smoothly (D-131) exactly as the base turned it: where it stands and which
-## way it faces after each leg of GaitTurn.YOUNG_ROUTE (base: claude/look-options 77d677ba).
+## The young croc turns smoothly (D-131) through GaitTurn.YOUNG_ROUTE, and two runs match.
 func _check_young_turn() -> void:
 	var legs := GaitTurn.young_legs(_croc({}))
+	var speed := _croc({}).stat("speed")
 	for n: int in legs.size():
-		var pin: Vector3 = YOUNG_LEGS[n]
-		var got: Vector3 = legs[n]
-		var turned := absf(angle_difference(deg_to_rad(got.z), deg_to_rad(pin.z)))
+		var leg: Dictionary = legs[n]
+		var off := absf(
+			angle_difference(deg_to_rad(Num.f(leg["heading"])), deg_to_rad(Num.f(leg["stick"])))
+		)
 		check(
+			rad_to_deg(off) <= FACE_DEG,
 			(
-				Vector2(got.x, got.y).distance_to(Vector2(pin.x, pin.y)) < YOUNG_TOL
-				and rad_to_deg(turned) < YOUNG_TOL
-			),
-			(
-				"young croc leg %d ends at (%.4f, %.4f) facing %.3f deg (the base: (%.4f, %.4f) %.3f)"
-				% [n + 1, got.x, got.y, got.z, pin.x, pin.y, pin.z]
+				"young croc leg %d ends facing %.2f deg, the stick %.2f (within %.0f)"
+				% [n + 1, leg["heading"], leg["stick"], FACE_DEG]
 			)
 		)
+		check(
+			Num.f(leg["snap"]) <= SNAP_DEG,
+			(
+				"young croc leg %d turns smoothly (most in one frame %.2f deg <= %.0f)"
+				% [n + 1, leg["snap"], SNAP_DEG]
+			)
+		)
+		var least := WALK_SHARE * speed * Num.f(leg["seconds"])
+		check(
+			Num.f(leg["path"]) >= least,
+			"young croc leg %d walks %.2f units (>= %.2f)" % [n + 1, leg["path"], least]
+		)
+	var again := GaitTurn.young_legs(_croc({}))
+	check(again == legs, "young croc: two runs of the same seed walk the same route")

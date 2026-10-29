@@ -32,9 +32,6 @@ const ROAD_RULES_HELD: Array[String] = [
 	"stub", "zero", "split", "angle", "kerb", "arms", "water", "thin", "close!"
 ]
 const STUB_M := 4.0  # the planted dead end: shorter than any block
-## Metres around the diagonal's crossing of the young bay's coast road where "close!" is exempt
-## (_at_bay_coast; the junctions seen there sit 2-9 m from it, stage 2, every seed).
-const BAY_COAST_EXEMPT := 12.0
 
 
 func suite_name() -> String:
@@ -174,7 +171,7 @@ func _check_road_rules_held() -> void:
 				var rule := str(v["rule"])
 				if rule == "close" and str(v["note"]).contains("overlap"):
 					rule = "close!"  # junction boxes overlap (Roads.by_rule)
-				if rule in ROAD_RULES_HELD and not (rule == "close!" and _at_bay_coast(v, cfg)):
+				if rule in ROAD_RULES_HELD:
 					bad.append(v)
 			check(
 				bad.is_empty(),
@@ -183,19 +180,6 @@ func _check_road_rules_held() -> void:
 					% [tier, map_seed, "/".join(ROAD_RULES_HELD), bad.slice(0, 4)]
 				)
 			)
-
-
-## True for a junction within BAY_COAST_EXEMPT m of where the diagonal crosses the young bay's
-## coast road (city "harbour" "bays"[0]): exempt (director 2026-10-29: city-gen junction spacing
-## at the bay coast, fixed separately; ROADMAP Engineering upkeep).
-func _at_bay_coast(v: Dictionary, cfg: Dictionary) -> bool:
-	var coast := Num.f(cfg["harbour"]["bays"][0][1])
-	var diag := CityGen.diagonal_of(cfg)
-	var at: Vector2 = diag["at"]
-	var dir: Vector2 = diag["dir"]
-	var crossing := at + dir * ((coast - at.y) / dir.y)
-	var junction: Vector2 = v["at"]
-	return junction.distance_to(crossing) <= BAY_COAST_EXEMPT
 
 
 ## The shipped diagonal fits its rings (CityLineFit.x_runs_fit; tools/audit/diagonal_fit.gd

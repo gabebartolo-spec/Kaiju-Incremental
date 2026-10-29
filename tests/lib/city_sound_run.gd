@@ -6,6 +6,7 @@ extends RefCounted
 ## longer to ruin than one rampage's clock (its pacing waits for balancing, D-366), so the run
 ## plays on a clock no run can end and the army cannot end it either. Every `SAMPLE_EVERY`
 ## frames it records the phase and each bed's level, so a test can read how the sound went.
+## The kaiju is kept at full health (the fixed front's roofs killed him short of the ruin, #411).
 ## Seeds "city", "army" and "civilians" 0.
 
 const DT := 1.0 / 60.0
@@ -61,7 +62,7 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 
 ## One frame: the scripted player moves, the street lives, the driver follows.
 func step() -> void:
-	sim.hp = sim.max_hp  # nor the army
+	sim.hp = sim.max_hp  # the sound waits for the ruined city, not a fight: he never falls
 	if _frame % 15 == 0:
 		_target = sim.nearest_standing(sim.kaiju_pos)
 	var move := Vector2.ZERO

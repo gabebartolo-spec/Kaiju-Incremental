@@ -10,7 +10,6 @@ const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
 const VehiclesSolid := preload("res://tests/lib/smoke_vehicles_solid.gd")
 const BuildingsSolid := preload("res://tests/lib/smoke_buildings_solid.gd")
-const SmokeMantle := preload("res://tests/lib/smoke_mantle.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -110,10 +109,26 @@ func _check_main_scene() -> void:
 	await process_frame
 
 
-## D-041: every rigged kaiju has a voxel skin baked from its current .kvox and .rig.json.
+## The species the game draws (D-385, read from data): every playable one (Demo.species(), so a
+## parked species is left out, #416) and the far skyline beast's (tuning "skyline_rampage").
+func _drawn_species() -> Array[String]:
+	var out: Array[String] = []
+	for def: Dictionary in Demo.species():
+		out.append(str(def["id"]))
+	var far := Content.section("skyline_rampage")
+	var beast := str(far.get("species", ""))
+	if far.get("on", false) == true and beast != "" and not out.has(beast):
+		out.append(beast)
+	return out
+
+
+## D-041: every rigged kaiju the game draws has a voxel skin baked from its current .kvox and
+## .rig.json.
 func _check_skins_fresh() -> void:
 	var stale: Array[String] = []
-	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+	var drawn := _drawn_species()
+	check(not drawn.is_empty(), "the data names at least one species to draw")
+	for species: String in drawn:
 		for stage: String in ["baby", "adolescent", "adult"]:
 			var base := "res://assets/kaiju/%s_%s" % [species, stage]
 			if not FileAccess.file_exists(base + ".rig.json"):
@@ -136,8 +151,8 @@ func _check_voxel_skin() -> void:
 	var skinned: Array[String] = []
 	var leaks: Array[String] = []
 	var broken: Array[String] = []
-	var mantle_ok := false
-	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+	var drawn := _drawn_species()
+	for species: String in drawn:
 		var def: Dictionary = Content.species_def(species)
 		var colors: Dictionary = def["colors"]
 		var kaiju := KaijuModel.new(species, colors, "adult")
@@ -158,24 +173,25 @@ func _check_voxel_skin() -> void:
 				):
 					broken.append(species)
 					break
-			if species == "cephalopod":
-				mantle_ok = SmokeMantle.follows(kaiju, skin)
 		kaiju.queue_free()
 		await process_frame
 	check(
-		skinned.size() == 3, "all three adults draw as a voxel skin by default (got %s)" % [skinned]
+		not drawn.is_empty() and skinned.size() == drawn.size(),
+		"every drawn adult (%s) draws as a voxel skin by default (got %s)" % [drawn, skinned]
 	)
 	check(leaks.is_empty(), "no rig voxels draw under a voxel skin (drawing: %s)" % [leaks])
 	check(
 		broken.is_empty(),
 		"the skin's bone matrices stay finite while walking (broken: %s)" % [broken]
 	)
-	check(mantle_ok, "the octopus mantle's breathing scale reaches its skin")
 	await _t("_check_skin_mouth")
 	VoxelSkin.show_rigid_voxels = true
-	var rex: Dictionary = Content.species_def("reptilian")
-	var rex_colors: Dictionary = rex["colors"]
-	var rigid := KaijuModel.new("reptilian", rex_colors, "adult")
+	var first := str(Content.species()[0]["id"])
+	if not drawn.is_empty():
+		first = drawn[0]
+	var first_def: Dictionary = Content.species_def(first)
+	var first_colors: Dictionary = first_def["colors"]
+	var rigid := KaijuModel.new(first, first_colors, "adult")
 	var none := rigid.find_children("VoxelSkin", "VoxelSkin", true, false).is_empty()
 	check(none, "the debug flag draws the rigid voxels instead (no skin)")
 	rigid.free()
@@ -204,11 +220,10 @@ func _check_skin_mouth() -> void:
 	await process_frame
 
 
-## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it
+## The croc walks, curves, reverses hard and stands stomping the way the rampage drives it
 ## (sim speed, heading lerp, stomp beat); no planted foot may slide. Fixed 60 Hz steps, no clock.
 func _check_planted_feet() -> void:
-	for species: String in ["reptilian", "insectoid"]:
-		await _t("_check_feet_of", [species])
+	await _t("_check_feet_of", ["reptilian"])
 
 
 func _check_feet_of(species_id: String) -> void:

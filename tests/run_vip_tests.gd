@@ -1,10 +1,9 @@
 extends "res://tests/lib/vip_base.gd"
 ## Leader's escape helicopter suite (VipHeli, D-149): it lifts off once a rampage inside its
 ## window, flies one lap then runs for the edge in about 15 s, every kill method brings it down
-## (breath, Thunder Beam, a toppling tower, a tentacle's grab, a thrown tank), an escape pays
-## nothing, and the payout is about a city block. Player-effect fixture "vip.payout": the same
-## rampage with the leader shot down is richer by exactly the payout than with it left to
-## escape. Headless.
+## (breath, Thunder Beam, a toppling tower), an escape pays nothing, and the payout is about a
+## city block. Player-effect fixture "vip.payout": the same rampage with the leader shot down is
+## richer by exactly the payout than with it left to escape. Headless.
 ##   godot --headless --path . --script tests/run_vip_tests.gd
 
 
@@ -19,8 +18,6 @@ func run_checks() -> void:
 	await _t("_check_breath")
 	await _t("_check_beam")
 	await _t("_check_topple")
-	await _t("_check_grab")
-	await _t("_check_thrown")
 	await _t("_check_burning")
 	await _t("_check_escape")
 	await _t("_check_payout_matters")
@@ -182,44 +179,6 @@ func _check_topple() -> void:
 		outcomes == ["killed", "gone"],
 		"a toppling tower brings it down at lift-off (and not once it is away): %s" % [outcomes]
 	)
-
-
-func _check_grab() -> void:
-	var sim := _flying("cephalopod", {"c_grab": 1})
-	sim.facing = EAST
-	sim.vip.pos = sim.kaiju_pos + Vector2(3.0, 0.0)
-	sim.vip.flight_t = 0.0
-	var rubble := sim.rubble
-	var seen := _run(sim, 0.3, Vector2.ZERO)
-	check(
-		sim.vip.state == "killed" and seen.has("grab") and sim.rubble > rubble + 1.0,
-		"a tentacle that grabs it low pays out (%s %s)" % [sim.vip.state, seen.keys()]
-	)
-	var high := _flying("cephalopod", {"c_grab": 1})
-	high.vip.pos = high.kaiju_pos + Vector2(3.0, 0.0)
-	high.vip.flight_t = Num.f(Content.section("vip")["climb_seconds"])
-	_run(high, 0.3, Vector2.ZERO)
-	check(high.vip.flying(), "...but not once it has climbed out of reach")
-
-
-func _check_thrown() -> void:
-	var sim := _flying("cephalopod", {"c_grab": 1})
-	sim.facing = EAST
-	var tank := RampageSim.Tank.new()
-	tank.id = 900
-	tank.hp = 200.0
-	tank.cooldown = 99.0
-	tank.pos = KAIJU_AT + Vector2(0.0, 3.0)
-	sim.tanks.append(tank)
-	sim.vip.pos = Vector2(40.0, 0.0)  # clear of the grab
-	_run(sim, 0.1, Vector2.ZERO)
-	check(sim.powers.tentacles.thrown.size() == 1, "a limb has the tank in the air")
-	var throw: Tentacles.Thrown = sim.powers.tentacles.thrown[0]
-	var mid := throw.from.lerp(throw.to, 0.5)
-	sim.vip.pos = mid + Vector2(0.0, 1.0)
-	sim.vip.flight_t = 0.0
-	sim.step(DT, Vector2.ZERO, false)
-	check(sim.vip.state == "killed", "a tank thrown across its path brings it down")
 
 
 func _check_burning() -> void:

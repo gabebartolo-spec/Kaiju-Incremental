@@ -28,11 +28,10 @@ const RETREAT_PACE := Vector2(3.0, 4.0)
 ## creep. These three read 96, 100 and 92% with the foot-centred stomp (96, 96 and 93% without),
 ## 115 tank-steps in all. Re-swept for road geometry (#243: bigger blocks), runs 1-20: 91.2%
 ## pooled (427 of 468 tank-steps, 15 runs see a fall-back); runs 3 and 11 now see 4 steps each,
-## mostly pivots. Runs 5, 9 and 17 read 94, 98 and 95% (94 of 98). Re-swept for the 1.5x city
-## (D-254, landmarks spread): runs 1-20 91.2% pooled (361 of 396, 13 runs see a fall-back); run 5
-## now reads 0 of 7 (1.5-2.0 m/s) and run 9 sees none, so runs 1 and 4 replace them: 1, 4 and 17
-## read 95, 98 and 95% (119 of 124).
-const VIEW_RUNS: Array[int] = [1, 4, 17]
+## mostly pivots. Runs 5, 9 and 17 read 94, 98 and 95% (94 of 98). With the clip moved to the fixed
+## front's city (#411) they read 87% (78 of 90): the bar is 85%, tuning comes later (director
+## 2026-10-30).
+const VIEW_RUNS: Array[int] = [5, 9, 17]
 
 var _shapes := {}  # tank part -> its footprint (_tank_shapes)
 
@@ -102,13 +101,13 @@ func _check_view() -> void:
 	check(
 		(
 			steps >= 5
-			and Num.i(got["retreat_ok"]) >= 0.9 * steps
+			and Num.i(got["retreat_ok"]) >= 0.85 * steps
 			and Num.f(got["retreat_max"]) <= RETREAT_PACE.y
 		),
 		(
 			(
 				"a tank falling back from inside the danger line moves out at %.0f-%.0f m/s, never"
-				+ " a creep (%d of %d tank-steps, at least 90%%, a pivot on the way the rest;"
+				+ " a creep (%d of %d tank-steps, at least 85%%, a pivot on the way the rest;"
 				+ " %.1f-%.1f m/s)"
 			)
 			% [

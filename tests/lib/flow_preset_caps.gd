@@ -65,6 +65,7 @@ static func _potato_reaches(tree: SceneTree, row: Dictionary, check_fn: Callable
 		ratios[(p as GPUParticles3D).amount_ratio] = true
 	var people := city.street.civilians()
 	var want_people := Num.i(row["civilians"]) * rampage.sim.lot_buildings().size()
+	want_people += city.street.beach_people  # the fixed front's sand crowd (#411), not per lot
 	check_fn.call(
 		(
 			city._debris._cap == Num.i(row["debris_pool"])
