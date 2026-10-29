@@ -23,6 +23,7 @@ const WALL := 1
 const GUARD_EXEMPT := {
 	"bake_colossus.gd": "bakes the kaiju model to PNGs",
 	"capture_title.gd": "the title screen",
+	"capture_tree.gd": "the evolution tree screen",
 	"font_board.gd": "a font board",
 }
 ## What a guarded tool's _initialize starts with.
