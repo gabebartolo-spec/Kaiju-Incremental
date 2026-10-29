@@ -4,7 +4,7 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-10-30 · D-387 · Director · Landmarks carve on cells
+## 2026-10-30 · D-388 · Director · Landmarks carve on cells
 Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
 Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
 ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
