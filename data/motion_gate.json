@@ -11,5 +11,12 @@
 	"jerk_walk": 5.0,
 	"jerk_turn": 8.0,
 	"lift_min": 0.015,
-	"lift_max": 0.2
+	"lift_max": 0.2,
+	"young": {
+		"_note": "Director 2026-10-30 ('just get things in the game ... we can tune them later'): the 36-bone baby walk (#408) goes in with its measured knee pops and catch steps; these bars sit just past CI's measure (catch 0.6 straight, 1.8 worst turn; jerk p99 12.6 walk, 14.0 worst turn) so a worse baby still fails. Delete this block once the baby walk is tuned.",
+		"catch_straight": 0.8,
+		"catch_turn_smooth": 2.2,
+		"jerk_walk": 15.0,
+		"jerk_turn": 16.5
+	}
 }

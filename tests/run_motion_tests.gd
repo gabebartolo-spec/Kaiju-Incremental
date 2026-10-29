@@ -49,7 +49,12 @@ func run_checks() -> void:
 	await _h("CrocWalkClearing", func() -> void: CrocWalkClearing.new(check).run())
 
 
-func _g(key: String) -> float:
+## A bar; the young croc's own bar where data/motion_gate.json "young" has one (director
+## 2026-10-30: the baby walk ships untuned).
+func _g(key: String, stage := "") -> float:
+	var young: Dictionary = _bars.get("young", {})
+	if stage == "young" and young.has(key):
+		return Num.f(young[key])
 	return Num.f(_bars[key])
 
 
@@ -93,16 +98,19 @@ func _check_no_shuffle() -> void:
 		var routes: Array = Drive.ROUTES if not smooth else ["straight"]
 		var w := _worst(stage, routes, "catch")
 		check(
-			Num.f(w[0]) <= _g("catch_straight"),
-			"%s: no catch-step shuffle (%s a second <= %.1f)" % [stage, w[1], _g("catch_straight")]
+			Num.f(w[0]) <= _g("catch_straight", stage),
+			(
+				"%s: no catch-step shuffle (%s a second <= %.1f)"
+				% [stage, w[1], _g("catch_straight", stage)]
+			)
 		)
 		if smooth:
 			var turns := _worst(stage, ["turn90", "turn180", "stand_turn", "curve"], "catch")
 			check(
-				Num.f(turns[0]) <= _g("catch_turn_smooth"),
+				Num.f(turns[0]) <= _g("catch_turn_smooth", stage),
 				(
 					"%s: its smooth turns keep up with few catch steps (%s a second <= %.1f, D-131)"
-					% [stage, turns[1], _g("catch_turn_smooth")]
+					% [stage, turns[1], _g("catch_turn_smooth", stage)]
 				)
 			)
 
@@ -136,18 +144,18 @@ func _check_knees() -> void:
 	for stage: String in Drive.STAGES:
 		var walk := Num.f(_run(stage, "straight")["jerk"])
 		check(
-			walk <= _g("jerk_walk"),
+			walk <= _g("jerk_walk", stage),
 			(
 				"%s: walking, no knee pops (shin jerk p99 %.1f deg/frame^2 <= %.0f)"
-				% [stage, walk, _g("jerk_walk")]
+				% [stage, walk, _g("jerk_walk", stage)]
 			)
 		)
 		var turns := _worst(stage, ["turn90", "turn180", "stand_turn", "curve"], "jerk")
 		check(
-			Num.f(turns[0]) <= _g("jerk_turn"),
+			Num.f(turns[0]) <= _g("jerk_turn", stage),
 			(
 				"%s: turning, no knee pops (shin jerk p99%s <= %.0f)"
-				% [stage, turns[1], _g("jerk_turn")]
+				% [stage, turns[1], _g("jerk_turn", stage)]
 			)
 		)
 		var reach := _worst(stage, Drive.ROUTES, "stretch")

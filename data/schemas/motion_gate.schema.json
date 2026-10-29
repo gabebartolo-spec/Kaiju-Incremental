@@ -15,7 +15,18 @@
     "jerk_walk": {"$ref": "#/$defs/num"},
     "jerk_turn": {"$ref": "#/$defs/num"},
     "lift_min": {"$ref": "#/$defs/num"},
-    "lift_max": {"$ref": "#/$defs/num"}
+    "lift_max": {"$ref": "#/$defs/num"},
+    "young": {
+      "type": "object",
+      "properties": {
+        "catch_straight": {"$ref": "#/$defs/num"},
+        "catch_turn_smooth": {"$ref": "#/$defs/num"},
+        "jerk_walk": {"$ref": "#/$defs/num"},
+        "jerk_turn": {"$ref": "#/$defs/num"}
+      },
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    }
   },
   "required": [
     "slide_max", "aloft_yaw_max", "catch_straight", "catch_turn_smooth", "step_tol", "stretch_max",
