@@ -31,7 +31,8 @@ Shared rules: `~/.claude/CLAUDE.md`; this file holds only what is true for Kaiju
   alone on the PC (D-299). The focus and tool-gate hooks enforce these and their refusal says what to do.
 - Resolution (D-339, Kaiju only): 1080p is the baseline. Text, look and the 60 fps Medium bar are judged at 1080p;
   stills and clips for him are 1080p; 4K is checked at each playtest build. Replaces the rulebook's 4K-first check.
-- Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
+- Tests: CI is the test (D-383): lint locally, push, never run Godot suites locally to check a change.
+  `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`; remove
   when the PR merges; `tools/lint/worktrees.sh` flags merged and idle ones (D-053). Revert `.import` churn.
 - A decision goes into `docs/DECISIONS.md` in the PR that acts on it: the builder writes it, the lead checks the wording

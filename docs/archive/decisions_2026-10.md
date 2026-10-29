@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-326 · Director · Never fade out the destruction; audit cuts and keeps
+Q: falling chunks of a toppling building fade out when they pass between the camera and the kaiju; keep or cut? A:
+"Cut. ive said a thousand times, its ok to obscure the kaiju, its not ok to block the camera, please stop asking me
+questions about this, please stop making buildings fade out, the destruction IS THE GAME, NEVER FADE OUT THE
+DESTRUCTION". So: no falling, toppling or broken piece ever fades or goes see-through; it may hide the kaiju. Only a
+wall that fills the frame at the camera is handled, by the D-283 bubble. Never asked again. Same batch: the sound duck
+"Keep, not stomps" (roars, big collapses and barrel blasts still duck the mix; footsteps do not); the barrel-blast white
+screen flash "Cut" (ring and delayed boom stay, his #19/#20); low health "Vignette only" (the red edge band goes, D-142).
+
 ## 2026-10-27 · D-325 · Director · Intro camera behind the kaiju; real, textured water with physics now
 Intro clip (#245): "the scene is fine but the camera needs to pivot out to be BEHIND our kaiju". Then: "water is still
 a textureless, depthless colour so it looks like hes floating in a void, we desperately need to beautify our water and
