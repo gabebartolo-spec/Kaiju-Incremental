@@ -11,6 +11,8 @@ export() (skin.json/.skinw format) on the rig itself.
   lid_lo_l/_r the lower-lid flaps), listed after every other game bone (rig_from_skin.py bone_names). The lower-lid
   flaps (rigid shells hidden inside the head at rest) are still left out of every file, so the game mesh is r10's;
   the skin.json's "lid_flaps" block (LID_FLAPS) is how tools/kaiju_skin/lid_flaps.py builds them in voxels instead.
+- Collar bones (lead 2026-10-28 call A): clavicle_l/_r are game bones of their own (they folded into spine2, so the
+  game's shoulder missed the Cascadeur rise's shrug by up to 2.04 m), listed after the lids; the arms hang from them.
 - <out>/croc_adult3_landmarks.json: motion_test landmarks at the r10 joints (so its clips' game bones rest on them).
 The repo keeps the landmarks as assets/kaiju/test/croc_adult3_landmarks.json (motion_test.py <it> <glb> <out> clips).
 blender -b croc_adult3_rig_r11.blend --python tools/blender/croc_adult3_export.py -- <out_dir> [height_vox=320]"""
@@ -135,7 +137,7 @@ def game_bone(n):
         return n
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
-    return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
+    return {"clavicle": f"clavicle_{sd}", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
             "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}3"}[n[:-2]]
 
 bones = []

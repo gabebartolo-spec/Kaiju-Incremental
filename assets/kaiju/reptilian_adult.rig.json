@@ -79,7 +79,7 @@
   },
   {
    "name": "arm_l0",
-   "parent": "spine2",
+   "parent": "clavicle_l",
    "head": [
     -38.23,
     208.77,
@@ -169,7 +169,7 @@
   },
   {
    "name": "arm_r0",
-   "parent": "spine2",
+   "parent": "clavicle_r",
    "head": [
     38.23,
     208.77,
@@ -540,6 +540,36 @@
     27.04,
     269.13,
     -350.19
+   ],
+   "physics": false
+  },
+  {
+   "name": "clavicle_l",
+   "parent": "spine2",
+   "head": [
+    -12.74,
+    231.71,
+    -212.39
+   ],
+   "tail": [
+    -38.23,
+    208.77,
+    -231.08
+   ],
+   "physics": false
+  },
+  {
+   "name": "clavicle_r",
+   "parent": "spine2",
+   "head": [
+    12.74,
+    231.71,
+    -212.39
+   ],
+   "tail": [
+    38.23,
+    208.77,
+    -231.08
    ],
    "physics": false
   }
