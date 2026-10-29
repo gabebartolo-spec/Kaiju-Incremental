@@ -53,6 +53,10 @@ func fits_at_scales(screen: Control, what: String) -> void:
 				crawls.append((node as Control).get_global_rect())
 		for node: Node in screen.find_children("*", "Button", true, false):
 			var b: Button = node
+			# A tree node panned or zoomed out of the map's view (D-275) is clipped away, not
+			# shown: the map's own rect is checked; nodes in view are checked in full.
+			if b is UpgradeNode and not _in_map_view(b):
+				continue
 			var name := b.text.get_slice(String.chr(10), 0)
 			var at := " at %d%%" % roundi(scale * 100.0)
 			if b.is_visible_in_tree() and not view.encloses(b.get_global_rect()):
@@ -109,6 +113,14 @@ func fits_at_scales(screen: Control, what: String) -> void:
 			)
 		)
 	)
+
+
+## True when the tree node sits wholly inside the map area that clips it (TreeArea).
+static func _in_map_view(b: Button) -> bool:
+	var area := b.get_parent() as Control
+	if area == null or not area.clip_contents:
+		return true
+	return area.get_global_rect().encloses(b.get_global_rect())
 
 
 ## The reveal measures against the new stage's city (D-039): the Colossus topples size x tier

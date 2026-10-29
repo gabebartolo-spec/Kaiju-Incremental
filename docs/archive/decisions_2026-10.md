@@ -2,6 +2,24 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-335 · Director · Every croc stage is animated in Cascadeur; D-047's Blender clips are replaced
+His words (19:0x), on a plan to key the claw rake for the adult only while the baby and adolescent kept the code rake:
+"this is NOT correct, as ive said OVER AND OVER AGAIN, EVERY SINGLE ANIMATION MUST BE DONE IN CASC" (restates D-199,
+D-216 and D-247's "I want 100% of our animation done with Casc"). So: every move at every stage (baby, adolescent,
+adult) is keyed in Cascadeur (tail, jaw, tongue may be Blender, D-228); D-047's Blender-script clips and every code
+layer are defects to replace, never an exemption. Then "make sure their skeletons are ready for animation": the young
+skeletons get the adult's r12 treatment (D-307: same joint chains, bones added where missing, re-skinned, the r12
+Cascadeur rig) and pass chain, pivot, skin, rig and round-trip bars before any young clip is keyed.
+
+## 2026-10-27 · D-334 · Director · Render item 12: look B (glass and metal sheen) merges
+Q (18:5x, PR #319: baked voxel AO and material finish, flags on): A: "Yes, merge B (Recommended)": #319 merges with
+look B on by default (render plan item 12).
+
+## 2026-10-27 · D-333 · Director · The night's speed tests start when he says he is done for the day
+Q (18:1x): when do tonight's speed tests start? A: "When I say I'm done": the lead deletes `C:/kt/SPEED_DAY_HOLD` the
+moment he says he is done for the day, then runs `C:/kt/NIGHT_QUEUE.txt` one line at a time; if he says nothing, the
+hold ends at 01:00 (10-28).
+
 ## 2026-10-27 · D-332 · Director · The lead restarts fresh at about 18:10
 Q (18:1x): when does the lead restart? A: "At ~18:10": a fresh lead session runs from its handoff; the old lead session
 hosts the builders it started until each one's step ends and reports them in `C:/kt/relay.md`; every role that ends is

@@ -60,6 +60,7 @@ func _walk(map_seed: int, step_len: float) -> Dictionary:
 	stats["size"] = float(ADULT + 1)
 	var layout := CityGen.generate(Seeds.make("city", map_seed), Content.section("city"))
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", map_seed))
+	sim.collapse.cut_only()  # the step is the only change: b2-5's fall mix held still
 	sim.body.use_species("reptilian")
 	sim.hp = HERO_HP
 	sim.max_hp = HERO_HP

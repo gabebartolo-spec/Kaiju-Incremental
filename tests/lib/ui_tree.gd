@@ -1,8 +1,8 @@
 extends RefCounted
 ## The UI suite's tree checks (tests/run_ui_tests.gd): every species' evolution tree at the
 ## 100% canvas and the 125% one (1536x864): node text 24 px or more that reads and fits, the
-## locked outline at 4.5:1, and no node straddling the species band (critic r1 item 4, r2 item 4;
-## the band's caption went in the director cleanup, #162).
+## locked outline at 4.5:1; the map (D-275) opens at the default zoom on the newest node you can
+## buy, and the side panel's text is the nodes' size or more (critic r1 item 4, r2 item 4).
 
 const CANVAS := Vector2i(1920, 1080)
 
@@ -71,8 +71,9 @@ func _tree_text() -> void:
 	)
 
 
-## Critic r2 item 4: the species band starts below the row above it (no node straddles it) and the
-## side panel's text is the nodes' size or more. At 100% and 125%.
+## The map opens at the default zoom (text 24 px at 1080p, nodes unscaled) centred, as near as the
+## clamps allow, on the newest node you can buy (D-275); the side panel's text is the nodes' size
+## or more (critic r2 item 4). At 100% and 125%.
 func _tree_layout() -> void:
 	var window := t.root.size
 	var bad: Array[String] = []
@@ -86,17 +87,22 @@ func _tree_layout() -> void:
 		await t.process_frame
 		await t.process_frame
 		var area: TreeArea = screen.get("_area")
-		var band: ColorRect = area.get("_band")
-		for node: String in tree.order:
-			var b := screen.node_button(node)
-			var r := Rect2(b.position, b.size)
-			var starts_above := r.position.y < band.position.y and r.end.y > band.position.y
-			if starts_above:
-				bad.append("%s straddles the band at %s" % [node, size])
+		var newest := screen.newest_buyable()
+		var want := TreeView.new(area.layout.bounds, area.size, area.view.fit_margin)
+		var newest_at: Vector2 = area.layout.centres[newest]
+		want.look_at(newest_at)
+		if not is_equal_approx(area.view.zoom, TreeView.DEFAULT_ZOOM):
+			bad.append("opens at zoom %.2f at %s" % [area.view.zoom, size])
+		if area.view.centre.distance_to(want.centre) > 1.0:
+			bad.append("opens on %s not %s at %s" % [area.view.centre, newest, size])
+		if not tree.can_buy(newest, 400):
+			bad.append("%s is not buyable with 400 at %s" % [newest, size])
 		var info: RichTextLabel = screen.get("_info_body")
 		body = mini(body, info.get_theme_font_size("normal_font_size"))
 		screen.queue_free()
 		await t.process_frame
 	t.root.size = window
-	check.call(bad.is_empty(), "no node straddles the species band: %s" % [bad.slice(0, 8)])
+	check.call(
+		bad.is_empty(), "the map opens at the default zoom on the newest buyable node: %s" % [bad]
+	)
 	check.call(body >= 24, "the side panel text is 24 px or more (%d)" % body)

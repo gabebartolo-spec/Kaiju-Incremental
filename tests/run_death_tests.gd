@@ -53,6 +53,7 @@ func _sim(blast_nodes: int, tree_levels: Dictionary = {}) -> RampageSim:
 	if tree_levels.is_empty():
 		stats["death_blast"] = blast_nodes
 	var sim := RampageSim.new(stats, Content.tuning(), _layout(), Seeds.make("army", 0))
+	sim.collapse.cut_only()  # the ring's reach, not where b2-5's mix sends its edge's topples
 	sim.ability_type = "leap"
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2.ZERO
@@ -299,7 +300,7 @@ func _check_replay() -> void:
 ## Bought nodes ride the save: three bought, saved, loaded: the node 3 ring.
 func _check_nodes_saved() -> void:
 	var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
-	for id: String in ["claws", "hide", "rage", "evolve1", "sig_power", "sig_recharge"]:
+	for id: String in ["claws", "hide", "rage", "evolve1", "sig_power", "evolve2"]:
 		tree.levels[id] = 1
 	var bought := 0
 	for id: String in ["death_blast1", "death_blast2", "death_blast3"]:

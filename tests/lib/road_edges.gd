@@ -170,6 +170,7 @@ static func r7_markings(ground: RoadGround, paint: Array[Transform3D]) -> Array[
 	var centre := {}  # road -> true when a centre line stripe lies on it
 	var stops := {}  # Vector2i(road, end) -> true
 	var all := RoadNet.arms(ground)
+	var zebras := RoadPaint.new(ground.plan, ground.cfg, ground._coast).zebra_junctions()
 	for stripe: Transform3D in paint:
 		var c := Vector2(stripe.origin.x, stripe.origin.z)
 		var long := Vector2(stripe.basis.z.x, stripe.basis.z.z).normalized()
@@ -210,7 +211,13 @@ static func r7_markings(ground: RoadGround, paint: Array[Transform3D]) -> Array[
 		for end: int in 2:
 			var node := Num.i(road["from"] if end == 0 else road["to"])
 			var box := _box(ground, all, node, r)
-			var covered := stops.has(Vector2i(r, end)) or _slanted_there(ground, road, end, box, rp)
+			# A zebra junction's stop line sits past its zebra (RoadPaint._junction_end).
+			var reach := (
+				box + (RoadPaint.ZEBRA_OFF + RoadPaint.ZEBRA_HALF if zebras.has(node) else 0.0)
+			)
+			var covered := (
+				stops.has(Vector2i(r, end)) or _slanted_there(ground, road, end, reach, rp)
+			)
 			if box > 0.0 and not covered:
 				out.append(
 					(
