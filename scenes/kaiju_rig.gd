@@ -94,15 +94,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 	var heads: Dictionary = {}
 	for d: Dictionary in defs:
 		heads[str(d["name"])] = _vec(d["head"]) * voxel
-	# Split the voxels by bone (the flags byte).
-	var per_bone: Dictionary = {}
-	for cell: Vector3i in vox.cells:
-		var index: int = vox.flags.get(cell, 0)
-		if not per_bone.has(index):
-			per_bone[index] = VoxelBuilder.new()
-		var part: VoxelBuilder = per_bone[index]
-		var color: Color = vox.colors[cell]
-		part.put_color(cell, color)
+	var per_bone := _split_by_bone(vox)
 	for i: int in defs.size():
 		var d: Dictionary = defs[i]
 		var bone_name := str(d["name"])
@@ -110,10 +102,8 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		var node := Node3D.new()
 		node.name = bone_name
 		var head: Vector3 = heads[bone_name]
-		var parent: Node3D = _bones.get(parent_name, self)
 		var parent_head: Vector3 = heads.get(parent_name, Vector3.ZERO)
 		node.position = head - parent_head
-		parent.add_child(node)
 		_bones[bone_name] = node
 		_rest[bone_name] = node.transform
 		_head[bone_name] = head
@@ -123,6 +113,12 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
 			_voxels[bone_name] = per_bone[i]
+	# Parented once every bone exists: a rig.json lists bones added later (the croc's collar
+	# bones) after the bones they carry (rig_from_skin.py extra_order), so it is not parents first.
+	for bone_name: String in _parent:
+		var parent: Node3D = _bones.get(_parent[bone_name], self)
+		var child: Node3D = _bones[bone_name]
+		parent.add_child(child)
 	var bands := RigJoints.overlap(self)
 	for bone_name: String in _voxels:
 		var part: VoxelBuilder = _voxels[bone_name]
@@ -140,6 +136,19 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 			gait = RadialGait.new(self)
 		_:
 			gait = ClipGait.or_biped(self, spec.get("clips"))
+
+
+## The voxels split by bone (the flags byte): bone index -> VoxelBuilder.
+static func _split_by_bone(vox: VoxelBuilder) -> Dictionary:
+	var per_bone: Dictionary = {}
+	for cell: Vector3i in vox.cells:
+		var index: int = vox.flags.get(cell, 0)
+		if not per_bone.has(index):
+			per_bone[index] = VoxelBuilder.new()
+		var part: VoxelBuilder = per_bone[index]
+		var color: Color = vox.colors[cell]
+		part.put_color(cell, color)
+	return per_bone
 
 
 ## Shows a set of voxels (rig-space cells) on a bone, positioned relative to its rest head.

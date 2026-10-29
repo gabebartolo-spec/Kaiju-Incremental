@@ -20,8 +20,10 @@ A foot is planted while its toe tip is within PLANT_UP of its rest height and mo
 (world): from the keyed contact until the toe tip peels off (the walk's stance, as the game locks the toe tip).
 r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
 turns (tail9-11) and the hind toes' (leg_x3), after the 27 r11 bones; the four eyelid bones (lid_lo_l/_r, lid_up_l/_r)
-follow last (D-335 blinks). A file of fewer bones is upgraded on the way: its clips get still tip, toe and lid bones
-(each turned as its parent, which is what the old fold did), so a clip not re-baked plays exactly as before.
+follow (D-335 blinks), then the two collar bones (clavicle_l/_r, lead 2026-10-28 call A: the shrug of the Cascadeur
+rise; before, they folded into spine2 and the game's shoulder missed the keyed one by up to 2.04 m). A file of fewer
+bones is upgraded on the way: its clips get still tip, toe, lid and collar bones (each turned as its parent, which is
+what the old fold did), so a clip not re-baked plays exactly as before.
 The adult's keyed clips so far (director-approved; sources in C:/Users/DANTE/cascadeur_bridge/croc_new/rig11/, keys
 croc_<move>_<tag>.casc), added to the Blender clips' file:
     roar roar_intro/roar_c.blend 12 124 still | rise_bay roar_intro/rise_p.blend 0 120 still |
@@ -63,7 +65,7 @@ def game_bone(n):
         return n
     if n.startswith("tail"):
         return f"tail{int(n[4:])}"
-    return {"clavicle": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
+    return {"clavicle": f"clavicle_{sd}", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
             "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "foot": f"leg_{sd}2", "toe": f"leg_{sd}3"}[n[:-2]]
 
 
@@ -78,9 +80,11 @@ ROOT_Y = ((AW @ ad.bones["pelvis"].head_local).y - C.y) * S
 skin = lambda p: G3 @ ((V(tuple(p)) - C) * S - V((0.0, ROOT_Y, 0.0)))
 
 deform = [b for b in ad.bones if b.use_deform and not HELPER(b.name)]
-# The rig's own game bones follow, by chain then number (parents first; rig_from_skin.py bone_names, so the rig.json
-# and the clips list the bones in one order).
-EXTRA = lambda n: (n.startswith("lid_"), n.rstrip("0123456789"), int(n[len(n.rstrip("0123456789")):] or 0))
+# The rig's own game bones follow, in the order they were added, then by chain and number (rig_from_skin.py
+# extra_order and bone_names, so the rig.json and the clips list the bones in one order).
+LATER = ("lid_", "clavicle_")
+EXTRA = lambda n: (next((i + 1 for i, p in enumerate(LATER) if n.startswith(p)), 0), n.rstrip("0123456789"),
+                   int(n[len(n.rstrip("0123456789")):] or 0))
 GAME_BONES = BASE_BONES + sorted({game_bone(b.name) for b in deform} - set(BASE_BONES), key=EXTRA)
 first, last = {}, {}
 for b in deform:  # parents first; a bone starting on the chain's end extends it (neck0..2 = head0; r12: the toe is leg_x3)
@@ -90,6 +94,8 @@ for b in deform:  # parents first; a bone starting on the chain's end extends it
                          and (b.head_local - last[g].tail_local).length < 1e-4):
         last[g] = b
 assert set(first) == set(GAME_BONES), set(GAME_BONES) ^ set(first)
+# GAME_BONES is not parents first (a collar bone follows the arm it carries): the FK below walks this order instead.
+TOPO = [game_bone(b.name) for b in deform if first[game_bone(b.name)] is b]
 heads = {g: skin(AW @ first[g].head_local) for g in GAME_BONES}
 REST_TOE = [skin(AW @ ad.bones[f"toe_{s}"].tail_local).y for s in ("l", "r")]
 
@@ -111,7 +117,7 @@ def world_pose():
 def fk_error(world, pelvis):
     """Worst distance (m) of a game bone's head or tail, rebuilt from the turns as the game does, from its Blender joint."""
     head, worst = {}, (0.0, "")
-    for g in GAME_BONES:  # parents first
+    for g in TOPO:  # parents first
         par = first[g].parent
         pg = game_bone(par.name) if par is not None else None
         h = head[g] = pelvis if pg is None else head[pg] + world[pg] @ (heads[g] - heads[pg])
