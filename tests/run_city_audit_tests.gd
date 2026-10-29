@@ -259,7 +259,8 @@ func _check_landmarks_clear() -> void:
 	var city := Roads.city(base, 3, Roads.SHIPPED_SEED)
 	var plan := CityGen.map(city)
 	var x := Rail.avenue_x(city)  # the north-south avenue nearest the middle
-	plan["sites"] = [{"id": "planted", "rect": Rect2(x - 6.0, -20.0, 12.0, 8.0)}]
+	# South of the back street (the front north of it lays no grid streets, CityHarbour).
+	plan["sites"] = [{"id": "planted", "rect": Rect2(x - 6.0, 12.0, 12.0, 8.0)}]
 	var got := LandmarkClear.of_plan(plan)
 	check(
 		got.any(func(v: String) -> bool: return v.contains("on the avenue")),
