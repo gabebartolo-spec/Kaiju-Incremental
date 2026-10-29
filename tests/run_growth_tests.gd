@@ -94,7 +94,8 @@ func _check_stages_grow() -> void:
 
 
 ## An evolution adds districts round the one the kaiju knows: the street plan is the same at
-## every stage, and every lot of the young city stands where it stood (only taller or not).
+## every stage. The buildings on it are not kept: the city is randomised and every Tripo model
+## serves every stage (director 2026-10-29).
 func _check_districts_kept() -> void:
 	var young := Content.section("city")
 	var adult: Dictionary = _tuning(3)["city"]
@@ -102,14 +103,6 @@ func _check_districts_kept() -> void:
 	var adult_plan := CityGen.map(adult)
 	var same: bool = young_plan["xs"] == adult_plan["xs"] and young_plan["zs"] == adult_plan["zs"]
 	check(same, "the street plan is the same at every stage")
-	var footprints := {}
-	for e: Dictionary in _layout(3):
-		footprints[Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))] = true
-	var moved := 0
-	for e: Dictionary in _layout(1):
-		if not footprints.has(Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))):
-			moved += 1
-	check(moved == 0, "every lot of the young city is still there at Colossus (%d moved)" % moved)
 
 
 ## The edges still read (D-024) at every size: the bay lies past the north ring with room for

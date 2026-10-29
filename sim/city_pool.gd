@@ -17,6 +17,7 @@ extends RefCounted
 const SALT := 0x7095
 ## The side of the squares the lots are filed under for the block pass (metres).
 const INDEX_CELL := 8.0
+const EPS := 1e-6  # two districts this close behind their share tie
 
 
 ## The pool's baked rows by id (empty when the pool is off or missing).
@@ -57,12 +58,14 @@ static func place(
 	var book: Dictionary = cfg["building_pool"]
 	var ctx := {
 		"cfg": cfg,
+		"plan": plan,
 		"book": book,
 		"pl": book["placement"],
 		"r": Seeds.derive(rng, SALT),
 		"used": {},
 		"count": {},
 		"patches": {},
+		"given": {},
 		"gone": {},
 		"index": _index(entries),
 		"by": CityPoolPick.by_kind(book),
@@ -142,6 +145,10 @@ static func _block(entries: Array[Dictionary], block: Dictionary, ctx: Dictionar
 	if placed.is_empty():
 		return {}
 	var spot := _corner(rect, placed, pick)
+	var plan: Dictionary = ctx["plan"]
+	var cfg: Dictionary = ctx["cfg"]
+	if CityLots.on_diagonal(plan, spot.get_center(), spot.size, cfg):
+		return {}  # a block the diagonal avenue cuts: its corner may lie in the street
 	placed["x"] = spot.get_center().x
 	placed["z"] = spot.get_center().y
 	CityPoolPick.count(str(placed["model"]), spot.get_center(), ctx)
@@ -200,7 +207,10 @@ static func _filler(lot: Dictionary, ctx: Dictionary) -> Dictionary:
 
 
 ## The district style round `at`: drawn once per patch among those whose town range holds the
-## patch's town share (CityLots.town_share), "residential" when none does.
+## patch's town share (CityLots.town_share), "residential" when none does: the one furthest
+## behind its share (patches it has so far per model it holds; ties drawn), so every model, not
+## every district, gets a like share of every city (director 2026-10-29: every Tripo model serves
+## every stage, and the young city has few patches).
 static func _district(at: Vector2, ctx: Dictionary) -> String:
 	var book: Dictionary = ctx["book"]
 	var size := Num.f(ctx["pl"]["patch_m"])
@@ -213,14 +223,32 @@ static func _district(at: Vector2, ctx: Dictionary) -> String:
 	var districts: Dictionary = book["districts"]
 	var names: Array = districts.keys()
 	names.sort()
-	var allowed: Array[String] = []
+	var by: Dictionary = ctx["by"]
+	var given: Dictionary = ctx["given"]
+	var r: RandomNumberGenerator = ctx["r"]
+	var roll := r.randi()
+	var pick := "residential"
+	var behind := INF
+	var ties: Array[String] = []
 	for name: Variant in names:
 		var district: Dictionary = districts[name]
 		var span: Array = district["town"]
-		if town >= Num.f(span[0]) and town <= Num.f(span[1]):
-			allowed.append(str(name))
-	var r: RandomNumberGenerator = ctx["r"]
-	var pick := "residential" if allowed.is_empty() else allowed[r.randi() % allowed.size()]
+		if town < Num.f(span[0]) or town > Num.f(span[1]):
+			continue
+		var heroes: Array = by.get("%s|hero" % name, [])
+		var fillers: Array = by.get("%s|filler" % name, [])
+		var models := heroes.size() + fillers.size()
+		if models == 0:
+			continue
+		var share := Num.f(given.get(name, 0)) / models
+		if share < behind - EPS:
+			behind = share
+			ties.clear()
+		if share < behind + EPS:
+			ties.append(str(name))
+	if not ties.is_empty():
+		pick = ties[roll % ties.size()]
+		given[pick] = Num.i(given.get(pick, 0)) + 1
 	patches[patch] = pick
 	return pick
 

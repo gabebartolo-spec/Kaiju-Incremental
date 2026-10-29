@@ -131,7 +131,7 @@ func _check_planted_zero_weight_asset() -> void:
 	var city: Dictionary = base["city"]
 	var book: Dictionary = city.get("building_pool", {})
 	var pool: Dictionary = book.get("pool", {})
-	pool["planted_giant"] = {"role": "filler", "w": 999, "d": 999}
+	pool["planted_giant"] = {"district": "residential", "role": "filler", "w": 999, "d": 999}
 	book["pool"] = pool
 	city["building_pool"] = book
 	var result: Dictionary = await AssetAudit.stage(root, base, 1, {"count": 2})

@@ -35,6 +35,8 @@ var _seed := 0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args(
 		{"out": _out, "district": "", "clip": false, "seconds": _seconds, "seed": _seed}
 	)

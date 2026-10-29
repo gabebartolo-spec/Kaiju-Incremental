@@ -121,9 +121,9 @@ func _counts_as_destruction() -> void:
 	var sim: RampageSim = _make.call(2, 0)
 	var after := Num.i(sim.air.cfg["after_chunks"])
 	var target := -1
-	for i: int in sim.buildings.size():
+	for i: int in sim.buildings.size():  # a tier-1 building: one shell breaks its chunks
 		var b := sim.buildings[i]
-		if b.in_arena and b.frame.alive_count > 0 and b.height >= 2:
+		if b.in_arena and b.frame.alive_count > 0 and b.height >= 2 and b.tier == 1:
 			target = i
 			break
 	var b := sim.buildings[target]

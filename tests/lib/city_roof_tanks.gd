@@ -253,7 +253,7 @@ static func _sample(tier: int, map_seed: int) -> Array[RampageSim.Building]:
 	)
 	var brick: Array[RampageSim.Building] = []
 	for b: RampageSim.Building in sim.lot_buildings():
-		if b.style % 4 == BuildingLayout.BRICK:
+		if b.style % 4 == BuildingLayout.BRICK and b.model == "":  # a pool model has its own roof
 			brick.append(b)
 	brick.sort_custom(_smaller)
 	var picked: Array[RampageSim.Building] = []

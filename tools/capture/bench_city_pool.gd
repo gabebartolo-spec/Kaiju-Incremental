@@ -11,6 +11,8 @@ var _seeds := 10
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	_seeds = Num.i(Kit.args({"seeds": _seeds})["seeds"])
 	_run.call_deferred()
 

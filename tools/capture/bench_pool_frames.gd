@@ -22,6 +22,8 @@ var _hold := -1.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args(
 		{"preset": "", "rounds": _rounds, "seconds": _seconds, "window": _window, "hold": _hold}
 	)

@@ -20,6 +20,8 @@ var _window := 5.0
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"rounds": _rounds, "seconds": _seconds, "window": _window})
 	_rounds = Num.i(a["rounds"])
 	_seconds = Num.f(a["seconds"])
