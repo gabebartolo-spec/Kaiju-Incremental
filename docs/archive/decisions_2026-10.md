@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-332 · Director · The lead restarts fresh at about 18:10
+Q (18:1x): when does the lead restart? A: "At ~18:10": a fresh lead session runs from its handoff; the old lead session
+hosts the builders it started until each one's step ends and reports them in `C:/kt/relay.md`; every role that ends is
+respawned fresh from its own handoff by the new lead, never while still hosted.
+
 ## 2026-10-27 · D-331 · Director · One block of speed tests now, then none in the day
 Q (18:1x): speed tests during the day? A: "One block now, then none": the queued block (perf-p4b, perf-p2b-native,
 perf-p3b) runs now; after it no speed run starts in the day (`C:/kt/SPEED_DAY_HOLD`, refused by the tool-gate hook)
