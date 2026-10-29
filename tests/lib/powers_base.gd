@@ -1,5 +1,5 @@
 extends "res://tests/lib/runner.gd"
-## Shared scene-building for the power suites (run_powers_tests, run_tentacles_tests): a kaiju
+## Shared scene-building for the power suites (run_powers_tests, run_helis_tests): a kaiju
 ## with chosen branch levels in a small hand-made layout, stepped with fixed input.
 
 const DT := 1.0 / 30.0

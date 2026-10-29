@@ -1,4 +1,7 @@
 extends "res://tests/lib/powers_base.gd"
+## PARKED (director 2026-10-29): the cephalopod and insectoid are not in the demo, so this suite
+## is not run (tests/parked/ is outside tools/run_tests.sh). Its croc checks moved to
+## run_helis_tests.gd. Move it back to tests/ when work on them starts.
 ## Tentacles suite: the cephalopod's branch (hydra limbs, squeeze, grab and throw, corrosive
 ## ink), the helicopters (D-037), and a full-branch replay for every species. Player-effect
 ## fixtures as in run_powers_tests.gd. Headless, no autoloads.
