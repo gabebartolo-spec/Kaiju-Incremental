@@ -53,7 +53,7 @@
 		{"id": "r_front", "species": "reptilian", "name": "Fire Front", "desc": "Fire runs with the wind: buildings downwind catch much faster.", "pos": [4, 4], "max_level": 2, "ring": 2, "kind": "verb",
 			"cost": [4767, 5101], "source": "D-126 \"Disaster headlines\": Fire Front", "requires": ["r_alarm"], "effects": {"fire_wind": 1.0}},
 		{"id": "r_embers", "species": "reptilian", "name": "Ember Rain", "desc": "Embers leap across the streets to the next block.", "pos": [5, 4], "max_level": 2, "ring": 2, "kind": "verb",
-			"cost": [5882, 6298], "source": "D-126 \"Disaster headlines\": Ember Rain", "requires": ["r_front"], "effects": {"fire_embers": 1}},
+			"cost": [5600, 5993], "source": "D-126 \"Disaster headlines\": Ember Rain", "requires": ["r_front"], "effects": {"fire_embers": 1}},
 		{"id": "r_firestorm", "species": "reptilian", "name": "Firestorm", "desc": "Explosive sites you set off start big fires.", "pos": [6, 4], "max_level": 1, "ring": 3, "kind": "verb",
 			"cost": [8420], "source": "D-126 \"Disaster headlines\": Firestorm", "requires": ["r_embers"], "effects": {"firestorm": 1}},
 		{"id": "r_gorge", "species": "reptilian", "name": "Gorge", "desc": "What you eat heals you.", "pos": [3, 0], "max_level": 1, "ring": 2, "kind": "verb",
