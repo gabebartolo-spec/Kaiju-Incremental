@@ -344,6 +344,8 @@ static func _blocks(
 			var roll := rng.randf()
 			if CitySites.covers(plan, i, j):
 				continue  # one of a landmark's merged cells
+			if not rect.has_area():
+				continue  # two bays' pinned lines closer than their kerbs: only street between them
 			if city and CityLots.town_share(rect.get_center(), cfg) < 0.2:
 				if roll < Num.f(cfg["parking_chance"]):
 					use = "parking"
