@@ -269,7 +269,7 @@
 		"tail_turn_decay": 1.5,
 		"tail_cooldown": 1.2,
 		"swipe_interval": 2.0,
-		"swipe_windup": 0.3,
+		"swipe_windup": 1.15,
 		"swipe_near": 4.0,
 		"swipe_far": 13.0,
 		"swipe_top": 7.0,
@@ -1229,6 +1229,7 @@
 		"shudder_hz": 11.0
 	},
 	"claw_fx": {
+		"code_windup_s": 0.3,
 		"strike_s": 0.12,
 		"recover_s": 0.26,
 		"arm_up": [[1.0, 0.9, 0.2], [0.9, 0.95, 0.05], [0.6, 0.85, -0.3]],
@@ -1252,7 +1253,7 @@
 		"streak_color": "ffd9a0",
 		"segments": 10,
 		"sweep_s": 0.05,
-		"trail_s": 0.07,
+		"trail_s": 0.25,
 		"fade_s": 0.07,
 		"puff": 1.6
 	},

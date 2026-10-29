@@ -14,7 +14,7 @@ extends SceneTree
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const ADULT_LEVELS := 2  ## Kit.STAGE_LEVELS: the Colossus
 const CROP := Vector2i(560, 420)
-## Seconds into a rake (BipedSwing._rake_t) where the arm is across the front: shot mid-swing.
+## Seconds into a rake (_rake_clock) where the arm is across the front: shot mid-swing.
 const RAKE_MID := 0.33
 ## ... and where it is lifted up and out wide of the body (the arm shows beside the chest).
 const RAKE_LIFT := 0.2
@@ -86,7 +86,7 @@ func _run() -> void:
 			if _log:
 				print("stomp %d landed: %d street rings alive" % [stomps, _rings(rampage)])
 			wait = STOMP_SHOT_DELAY if stomps <= STOMP_SHOTS else -1
-		var rake_t := gait.swing._rake_t
+		var rake_t := _rake_clock(gait)
 		var arms := gait.rig.bone("arm_l0").global_position
 		arms = (arms + gait.rig.bone("arm_r0").global_position) * 0.5
 		if not lifted and rake_t > RAKE_LIFT and rake_t < RAKE_MID:
@@ -115,7 +115,18 @@ func _log_camera(rampage: Rampage, gait: ClipGait, at: float) -> void:
 	if moved > LOG_MOVE or rampage._step_dip > LOG_DIP or rampage.shake.trauma > LOG_DIP:
 		var line := "t=%.2f cam_moved=%.3f " % [at, moved]
 		line += "dip=%.3f trauma=%.3f" % [rampage._step_dip, rampage.shake.trauma]
-		print(line, " rake_t=%.2f stomps=%d" % [gait.swing._rake_t, rampage.stomp_ring_at.size()])
+		print(line, " rake_t=%.2f stomps=%d" % [_rake_clock(gait), rampage.stomp_ring_at.size()])
+
+
+## Seconds into the rake on the code rake's clock (BipedSwing._rake_t: RAKE_LIFT lifted, RAKE_MID
+## across the front); the keyed rake (ClipRake) is put on it by its hit frame. -1 while none runs.
+func _rake_clock(gait: ClipGait) -> float:
+	var rake := gait.rake
+	if not rake.on:
+		return gait.swing._rake_t
+	if rake.weight() <= 0.0:
+		return -1.0
+	return RAKE_MID + (rake.clip_time - rake.clips.hit_frame(rake.clip)) / rake.clips.fps
 
 
 ## Street rings (Fx.shockwave planes) alive now.
