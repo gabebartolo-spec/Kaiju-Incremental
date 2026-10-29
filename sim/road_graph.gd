@@ -45,8 +45,9 @@ func drivable(p: Vector2, front: Vector2) -> bool:
 
 ## The way in for a column on `bearing`: the road entry at the city's edge on that side, or, in
 ## a city grown past the spawn radius, the road crossing nearest spawn_radius from the kaiju
-## (D-039); never a stub too short for a hull.
-func pick_entry(bearing: float, kaiju: Vector2, spawn_radius: float) -> int:
+## (D-039); never a stub too short for a hull, nor one within `keep_out` of the kaiju (a bearing
+## out over the sea bay would otherwise pick the coast road beside it).
+func pick_entry(bearing: float, kaiju: Vector2, spawn_radius: float, keep_out := 0.0) -> int:
 	var dir := Vector2.from_angle(bearing)
 	var edge := box <= spawn_radius
 	var aim := dir * box * 2.0 if edge else kaiju + dir * spawn_radius
@@ -56,7 +57,9 @@ func pick_entry(bearing: float, kaiju: Vector2, spawn_radius: float) -> int:
 	var best_d := INF
 	for n: int in pool:
 		var d := nodes[n].distance_squared_to(aim)
-		if d < best_d and not links[n].is_empty() and fits(n):
+		if d >= best_d or nodes[n].distance_to(kaiju) < keep_out:
+			continue
+		if not links[n].is_empty() and fits(n):
 			best_d = d
 			best = n
 	return best

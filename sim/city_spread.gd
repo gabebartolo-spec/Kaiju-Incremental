@@ -86,9 +86,13 @@ static func landmarks(
 	return out
 
 
-## Roughly where the kaiju rises (CityRiver.mark fixes it once the blocks are laid): the middle
-## of the river's row on the city's axis. INF without a river.
+## Roughly where the kaiju rises: the middle of the stage's sea bay's coast road (CityHarbour,
+## D-373; the exact spot lies a few metres out in the water, which rise_slack covers), else the
+## middle of the river's row on the city's axis. INF with neither.
 static func rise_estimate(zs: Array[float], cfg: Dictionary) -> Vector2:
+	var bay := CityHarbour.row(cfg)
+	if not bay.is_empty():
+		return Vector2(0.0, Num.f(bay[1]))
 	var row := CityRiver.river_row(zs, cfg)
 	if row < 0:
 		return Vector2(INF, INF)

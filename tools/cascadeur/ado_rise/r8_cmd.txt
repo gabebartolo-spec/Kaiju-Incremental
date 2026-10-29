@@ -1,0 +1,1 @@
+python ado_rise.py r8 NFR=180 KN0=105 FL0=15 AN0=-60 H0=0 PPK=9 YP=-4 FD1=78 FD0=64 TOEFLOOR=1 TSC=0 TLP=-2 RABP=1 NSPLIT=0.3333 Y0=-17.7 TOEFLAT=60,68 TUP=20 TP0=-23 KFLOOR=45.2 PLIFT=rise/plift_r8.json  # plift.py plift_r8.json first; then cfg casc -> y8, out _y8

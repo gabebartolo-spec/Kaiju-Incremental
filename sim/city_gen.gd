@@ -32,18 +32,30 @@ const MIN_LOT_M := 2.0  # CityLots' narrowest lot side: no block is cut thinner
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
-	var quay: Array[Dictionary] = []  # the first district's built blocks by the bank (CityRiver)
+	var quay: Array[Dictionary] = []  # the built blocks by the start bank (CityRiver.on_quay)
+	var city_seed := rng.seed  # each block cuts its lots from its own seed (_block_rng)
 	for ring: int in districts(cfg).size() + 1:  # + 1: the real blocks past the last district
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
-				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
+				var lots := CityLots.fill_block(_block_rng(city_seed, block), plan, block, cfg, 1.0)
 				if str(block["use"]) == "built":
-					if ring == 0 and CityRiver.on_quay(plan, block, cfg):
+					if CityRiver.on_quay(plan, block, cfg):
 						quay.append(block)
 						lots = CityRiver.off_quay(plan, lots, cfg)
 					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
 	CityHazards.tag(out, plan, cfg, CityRiver.sheds(plan, quay, out, cfg))  # + red barrels (#19)
+	return out
+
+
+## A block's own lot numbers, from the city's seed and where the block lies: the bay drops
+## different streets at each stage (CityHarbour.inside), so a shared draw in block order would
+## re-cut every block after the first difference; this way a block of the young city cuts the
+## same lots at every stage.
+static func _block_rng(city_seed: int, block: Dictionary) -> RandomNumberGenerator:
+	var rect: Rect2 = block["rect"]
+	var out := RandomNumberGenerator.new()
+	out.seed = hash([city_seed, snappedf(rect.position.x, 0.01), snappedf(rect.position.y, 0.01)])
 	return out
 
 
@@ -107,6 +119,7 @@ static func map(cfg: Dictionary) -> Dictionary:
 		"diagonal": diag,
 		"xs": xs,
 		"zs": zs,
+		"bay": CityHarbour.rect_of(cfg),  # the sea bay, laid first: no street enters it
 	}
 	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
 	# Which grid edges are alleys (CityAlleys): x-line i between zs[j] and zs[j+1] is
@@ -115,7 +128,25 @@ static func map(cfg: Dictionary) -> Dictionary:
 	var alley_x: Dictionary = alleys["x"]
 	var alley_z: Dictionary = alleys["z"]
 	var index := {}
-	# x-lines (streets running along z), split at every crossing and where the diagonal crosses.
+	_lay_streets(plan, index, lines, [alley_x, alley_z], cfg)
+	_lay_diagonal(plan, index, diag, xs, zs, outer, cfg)
+	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
+	return plan
+
+
+## Every grid street, split at each crossing and where the diagonal crosses: x-lines (running
+## along z) first, then z-lines. alleys: [alley_x, alley_z].
+static func _lay_streets(
+	plan: Dictionary, index: Dictionary, lines: Dictionary, alleys: Array, cfg: Dictionary
+) -> void:
+	var xs: Array[float] = lines["xs"]
+	var zs: Array[float] = lines["zs"]
+	var outer := Num.f(cfg["outer_half"])
+	var diag: Dictionary = plan["diagonal"]
+	var avenues_x: Dictionary = lines["avenues_x"]
+	var avenues_z: Dictionary = lines["avenues_z"]
+	var alley_x: Dictionary = alleys[0]
+	var alley_z: Dictionary = alleys[1]
 	for i: int in xs.size():
 		var stops: Array[float] = []
 		stops.assign(zs)
@@ -142,7 +173,18 @@ static func map(cfg: Dictionary) -> Dictionary:
 			if alley_z.has(Vector2i(j, i)):
 				kind = ALLEY
 			_street(plan, index, Vector2(stops[k], zs[j]), Vector2(stops[k + 1], zs[j]), kind, cfg)
-	# The diagonal avenue, crossing to crossing.
+
+
+## The diagonal avenue, crossing to crossing.
+static func _lay_diagonal(
+	plan: Dictionary,
+	index: Dictionary,
+	diag: Dictionary,
+	xs: Array[float],
+	zs: Array[float],
+	outer: float,
+	cfg: Dictionary
+) -> void:
 	var along: Array[Vector2] = []
 	for x: float in xs:
 		var z := _diag_at_x(diag, x)
@@ -155,8 +197,6 @@ static func map(cfg: Dictionary) -> Dictionary:
 	along.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
-	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
-	return plan
 
 
 ## The diagonal avenue of cfg: {at, dir} (city.diagonal_through, city.diagonal_deg).
@@ -247,7 +287,7 @@ static func _node(plan: Dictionary, index: Dictionary, p: Vector2) -> int:
 static func _street(
 	plan: Dictionary, index: Dictionary, a: Vector2, b: Vector2, kind: String, cfg: Dictionary
 ) -> void:
-	if a.distance_to(b) < 0.01 or CitySites.cuts(plan, a, b):
+	if a.distance_to(b) < 0.01 or CitySites.cuts(plan, a, b) or CityHarbour.inside(plan, a, b):
 		return
 	var streets: Array[Dictionary] = plan["streets"]
 	(
@@ -317,5 +357,6 @@ static func _blocks(
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
 	CityRiver.mark(plan, zs, cfg)
+	CityHarbour.mark(plan, avenues_x, avenues_z, cfg)  # the sea bay's blocks
 	CityParks.pick(plan, inner, cfg)
 	CityBand.hold_back(plan, inner, cfg)

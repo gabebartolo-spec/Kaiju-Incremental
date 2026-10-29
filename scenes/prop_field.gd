@@ -29,6 +29,8 @@ var bark_field := DebrisField.new(Seeds.make("tree_bark"), 60)
 var stumps: Array[Vector3] = []  # trees crushed since the owner last drained this (earth puffs)
 ## Debris to throw since the owner last drained this: [position, colour, away] each.
 var debris: Array[Array] = []
+## Ground rects (x, z) where no prop is ever added (the river's bay, CityDecor).
+var keep_out: Array[Rect2] = []
 var _rng := Seeds.make("tree_burst")  # where in its crown each leaf starts, and its spread
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
@@ -43,6 +45,9 @@ func _init(p_voxel: float) -> void:
 ## Each prop is built into the shared builder offset by its own cell origin. fells: a tree,
 ## crushed to a stump and debris rather than flattened.
 func add(at: Vector3, shape: Callable, fells := false) -> void:
+	for r: Rect2 in keep_out:
+		if r.has_point(Vector2(at.x, at.z)):
+			return
 	var local := VoxelBuilder.new()
 	shape.call(local)
 	var offset := Vector3i((at / voxel).round())

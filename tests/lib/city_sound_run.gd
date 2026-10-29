@@ -46,6 +46,7 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 		Seeds.make("army", 0)
 	)
 	sim.time_left = 1.0e9  # the ruin, not the clock, is what the sound waits for (D-366)
+	sim.emerge.start(sim)  # it rises from the sea bay, as every run does (D-373, scenes/rampage.gd)
 	_holder = Node3D.new()
 	tree.root.add_child(_holder)
 	var fx := Fx.new()

@@ -20,7 +20,8 @@ static func find(
 
 
 ## The site a landmark of `shape` would take round `anchor` (x, z), or {} where it cannot: it
-## fits between ring avenues, stays out of the river's row and clear of the diagonal.
+## fits between ring avenues, stays out of the river's row and every stage's sea bay and clear of
+## the diagonal.
 ## axes: [along x, along z], each {lines, rings, avenues, cfg}.
 static func site_at(
 	plan: Dictionary, spec: Dictionary, shape: Dictionary, anchor: Vector2, axes: Array
@@ -39,8 +40,8 @@ static func site_at(
 	if river >= 0 and j.x <= river + 1 and j.y >= river:
 		return {}  # never in the river's row (CityRiver) nor its far bank, where inlets open
 	var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
-	if _crosses_diagonal(plan, outer, cfg):
-		return {}
+	if _crosses_diagonal(plan, outer, cfg) or CityHarbour.in_any(cfg, outer):
+		return {}  # never across the diagonal nor in any stage's sea bay (CityHarbour)
 	return _site(spec, shape, i, j, outer, axes)
 
 
@@ -68,7 +69,7 @@ static func bridge_at(
 		return {}
 	var j := Vector2i(river + 1, river + rows)
 	var outer := Rect2(xs[i.x], zs[river], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[river])
-	if _crosses_diagonal(plan, outer, cfg):
+	if _crosses_diagonal(plan, outer, cfg) or CityHarbour.in_any(cfg, outer):
 		return {}
 	return _site(spec, shape, i, j, outer, axes)
 
@@ -193,24 +194,36 @@ static func _span(axis: Dictionary, v: float, need: float) -> Vector2i:
 		return Vector2i(-1, -1)
 	var b := a
 	while lines[b + 1] - lines[a] - _inset(avenues, a, cfg) - _inset(avenues, b + 1, cfg) < need:
-		var low_ok := a > 0 and _may_swallow(axis, a)
-		var high_ok := b + 2 < lines.size() and _may_swallow(axis, b + 1)
-		if not low_ok and not high_ok:
+		var grow := _grow_side(axis, v, a, b)
+		if grow == 0:
 			return Vector2i(-1, -1)
-		if low_ok and (not high_ok or v - lines[a] < lines[b + 1] - v):
+		if grow < 0:
 			a -= 1
 		else:
 			b += 1
 	return Vector2i(a, b)
 
 
-## The grid cell of `lines` holding v (-1 if none).
+## The index of the grid cell holding v (the last, if lines overlap), -1 if none.
 static func _cell_of(lines: Array[float], v: float) -> int:
 	var a := -1
 	for k: int in lines.size() - 1:
 		if v >= lines[k] and v < lines[k + 1]:
 			a = k
 	return a
+
+
+## Which side the run a..b grows on: -1 low, +1 high, 0 neither (ring streets, avenues and the
+## edge stop it).
+static func _grow_side(axis: Dictionary, v: float, a: int, b: int) -> int:
+	var lines: Array[float] = axis["lines"]
+	var low_ok := a > 0 and _may_swallow(axis, a)
+	var high_ok := b + 2 < lines.size() and _may_swallow(axis, b + 1)
+	if not low_ok and not high_ok:
+		return 0
+	if low_ok and (not high_ok or v - lines[a] < lines[b + 1] - v):
+		return -1
+	return 1
 
 
 ## Whether a plaza may grow past street line k: not a ring street, not an avenue.

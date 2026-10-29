@@ -14,6 +14,11 @@ const RACK_SCRIPT := "res://scenes/creation_rack.gd"
 const STEP_CAP := 60 * 20
 ## Ticks the sequence after the injection may differ from its data timings by.
 const TICK_SLACK := 3
+## The egg's beats (director 2026-10-26: "a crack, a few moments pause before a couple more
+## cracks, another pause, then ROARR"): a pause is at least PAUSE_S of quiet; the couple's
+## cracks come closer together than that.
+const PAUSE_S := 0.6
+const CRACKS := 3
 
 
 func suite_name() -> String:
@@ -25,6 +30,7 @@ func run_checks() -> void:
 	await _t("_check_new_game_opens_lab")
 	await _t("_check_rack_reads_save")
 	await _t("_check_trip_reaches_every_vial")
+	await _t("_check_crack_pause_roar")
 	SaveFile.delete_save()
 
 
@@ -159,7 +165,7 @@ func _wait_inject(lab: Node) -> Button:
 
 
 ## Pad A injects; the screen turns black, the egg crack is heard in the black, and the run starts
-## on the data's timings with the kaiju rising from the river.
+## on the data's timings with the kaiju rising from the sea bay.
 func _sequence_ok(main: Node, lab: Node) -> void:
 	var cues: Array = lab.get("cues")
 	var timing: Dictionary = Content.section("creation")["timing"]
@@ -174,7 +180,7 @@ func _sequence_ok(main: Node, lab: Node) -> void:
 			crack_black = Num.f(lab.call("black")) >= 0.99
 		await physics_frame
 		ticks += 1
-	check(cues.has("egg_crack"), "the egg crack cue plays: %s" % [cues])
+	check(cues.count("egg_crack") == CRACKS, "the egg cracks %d times: %s" % [CRACKS, cues])
 	check(crack_black, "the egg crack is heard over a black screen")
 	check(
 		absi(ticks - want) <= TICK_SLACK,
@@ -188,7 +194,7 @@ func _sequence_ok(main: Node, lab: Node) -> void:
 	if rampage == null:
 		return
 	await rampage.wait_loaded()
-	check(rampage.sim.emerge.active, "the first run opens with the baby rising from the river")
+	check(rampage.sim.emerge.active, "the first run opens with the baby rising from the sea bay")
 	var save := SaveFile.load_game()
 	check(
 		str(save.get("species", "")) == "reptilian" and Num.i(save.get("runs", -1)) == 0,
@@ -261,3 +267,55 @@ func _check_rack_reads_save() -> void:
 		shown,
 		"a Komodo unlocked in the save reads unlocked, yet has no titan to play yet: %s" % [komodo]
 	)
+
+
+## The egg's beats run crack, pause, two more cracks, pause, then the roar (tuning "creation"
+## "cracks" and "black_s", then the run's rise to its "surface_break", where the intro roars):
+## each crack inside the black, quiet for PAUSE_S after the first, the next two closer together
+## than a pause, and quiet for PAUSE_S again from the last crack's end to the roar.
+func _check_crack_pause_roar() -> void:
+	var cfg := Content.section("creation")
+	var cracks: Array = cfg["cracks"]
+	var black := Num.f(cfg["timing"]["black_s"])
+	var at: Array[float] = []
+	var ends: Array[float] = []
+	for c: Dictionary in cracks:
+		at.append(Num.f(c["at_s"]))
+		ends.append(Num.f(c["at_s"]) + Num.f(c["len_s"]))
+	var roar := black + _surface_s()
+	var last_end := Num.f(ends.max())
+	var ok: bool = cracks.size() == CRACKS and last_end <= black
+	ok = ok and at[1] - ends[0] >= PAUSE_S and at[2] - at[1] < PAUSE_S
+	ok = ok and roar - ends[2] >= PAUSE_S
+	check(
+		ok,
+		(
+			(
+				"the egg: cracks at %s s (each ending by %s s) in the %.2f s black, then the roar at"
+				+ " %.2f s (pauses of at least %.1f s round the couple)"
+			)
+			% [at, ends, black, roar, PAUSE_S]
+		)
+	)
+
+
+## Seconds from a run's start to its head breaking the water (the stage-1 city, the young kaiju).
+func _surface_s() -> float:
+	var tuning := CityGrowth.tuning_for(Content.tuning(), 1)
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"),
+		Content.species_def("reptilian"),
+		UpgradeTree.new(Content.upgrades())
+	)
+	var none: Array[Dictionary] = []
+	var sim := RampageSim.new(stats, tuning, none, Seeds.make("army", 0))
+	sim.body.use_species("reptilian")
+	sim.emerge.start(sim)
+	var dt := 1.0 / Engine.physics_ticks_per_second
+	var t := 0.0
+	while sim.emerge.active:
+		t += dt
+		for e: Dictionary in sim.step(dt, Vector2.ZERO, false):
+			if str(e["type"]) == "surface_break":
+				return t
+	return INF

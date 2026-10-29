@@ -2,6 +2,73 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
+Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
+military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
+(#301 stays). Far city at night: "Fog + reflection" (both far-city PRs; the glow is re-measured with #301's window
+colours). Facade carve (#288): "impossible to tell from the clip, but ship and ill test in play".
+
+## 2026-10-27 · D-323 · Director · Kaiju death: jagged stone chunks replace the cubes; the 0.2 s wait stays
+On #240's clip: "you didnt change the blocks that i said i hated. you just changed their colour, but the bllocks are
+stupid and look bad". Q: what should fly out of his body? A: "Jagged stone chunks" (irregular broken rock in his
+hide's texture, many sizes, tumbling with dust; keeps D-294's shards first). Blast wait 0.2 s: "Keep 0.2 s".
+
+## 2026-10-27 · D-322 · Director · Interview batch 1: roar and solid vehicles kept; window flicker not solved
+Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be a question, no other choice makes any
+sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
+solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
+measure the flicker in motion first).
+
+## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
+Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
+add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.
+
+## 2026-10-27 · D-319 · Director · A finished change runs its full test check on GitHub first
+Q (after "whats the point of having so many helpers if most of them are waiting half a day to work"): where should a
+finished change run its full test check before it goes up for merge? A: "On GitHub first (Recommended)". So: the
+local full prepush stops being the gate. A builder runs the cheap local gates (no Godot), pushes, and GitHub runs every
+shard on the branch (`C:/kt/gh_check.sh`, one lead watcher); the PR is ready only after that passes, so no red PR
+shows. Builders still run locally only the suites they iterate on. Replaces the local-prepush gate (D-186 stands).
+
+## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
+Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
+copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
+file name (never overwrite his file), then restart Cascadeur and reopen the copy. Narrows the never-restart rule.
+
+## 2026-10-27 · D-317 · Director · Tonight: keep the 6 GB memory floor, drop the 85% CPU cap
+Q: the PC rule (nothing new under 6 GB free RAM or above 85% CPU), tonight? A: "Keep memory floor, drop CPU cap
+(Recommended)". So: the RAM floor (freeze guard) stays; the CPU cap is off for the night shift.
+
+## 2026-10-27 · D-316 · Director · Export a playable build at the end of the shift
+Q: export a build at the end of the shift? A: "Yes, in the usual build folder (Recommended)". So: a demo .exe from
+main in the fixed build folder before he wakes, with a short note of what merged overnight.
+
+## 2026-10-27 · D-315 · Director · No usage cap tonight
+Q: weekly limit 17% used; how much may tonight use? A: "Whatever the work needs (Recommended)". No usage stop tonight.
+
+## 2026-10-27 · D-314 · Director · Opus at high effort for the hardest builds tonight
+Q: Opus high for the hardest builds (new engine code, kaiju posing, tail and toe skeleton)? A: "Yes, hardest builds
+only (Recommended)". So: Opus high only for P2a, P3a, P3c, P4c and the r21 rig work; everything else stays as is.
+
+## 2026-10-27 · D-313 · Director · Speed runs keep the PC to themselves tonight
+Q: keep D-299's ~3 min sole-PC turns tonight? A: "Keep it (Recommended)". D-299 stands through the night shift.
+
+## 2026-10-27 · D-312 · Director · Item 15: the speed savings buy a quieter, cooler PC
+Q: what should the headroom buy at Medium? A: "A quieter, cooler PC (Recommended)". So: same look at 60 fps with the
+GPU working less (D-093's reason for Medium); no render-scale rise. Closes render plan item 15.
+
+## 2026-10-27 · D-311 · Director · Render plan items 10 and 11 build tonight, last in the plan
+Q (06:2x): items 10 (native collider rebuild, no freeze on big stomps) and 11 (no stutter when a tower starts to fall),
+parked until after the demo by D-094, build them tonight? A: "Yes, last in the plan (Recommended)". So: both go in
+after every other render-plan item, each proved by a D-299 speed check. Reverses D-094's "after demo exe 2" for these two.
+Correction (lead, 06:18, director away): not built. The question described both wrongly: the code they speed up (carve physics) runs only in a capture tool, never in the shipped game (checked on main b0fe3687; the baseline measured 0 ms there), so neither changes what the player sees. Back to him at the next interview (D-094 option A, full-game destruction, would bring them back).
+
+## 2026-10-27 · D-310 · Director · Parked work starts tonight, after the debt fixes
+Q (06:1x): work parked until the render plan is done (D-276: roads, play area, camera bubble, rubble, stomp rework,
+Tripo buildings), start it tonight? A: "yes, but not before the debt fixes". So: parked items start tonight once every
+D-295 debt row is done (merged), in the set order (roads #243, then play area #241, then intro #245, then the rest).
+Refines D-276.
+
 ## 2026-10-27 · D-309 · Director · Up to 1,000 more Tripo credits tonight, any task
 Q (06:1x): Tripo credits tonight? A: "Up to 1,000 more, any task". So: on top of D-297's vehicle budget (600, 260 used
 at 05:3x), up to 1,000 more credits may be spent tonight on any outstanding Tripo task (vehicles, buildings,

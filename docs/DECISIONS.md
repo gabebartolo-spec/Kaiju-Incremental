@@ -4,6 +4,73 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
+Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
+row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
+Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
+Stadium-driven tests (flow, crowd) play the stage-2 city.
+
+## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
+His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
+the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not
+practice"). On skills: "can we delete all our skills, i dont think we need them"; Q: what should happen to the
+skills? A: "Delete all outright". So: RULEBOOK.md no longer loads; `~/.claude/memory-shared` moved to
+`~/.claude-archive/memory-shared-2026-10-29` and the stop hook no longer asks for lessons; the 14 personal skills in
+`~/.claude/skills` are deleted (app-synced Anthropic skills untouched). `~/.claude/CLAUDE.md` keeps "straight to me",
+no spend, end-with-state and write-concisely. Replaces D-378's rulebook and skill mentions.
+
+## 2026-10-29 · D-378 · Director · Sessions boot on a small core; history is searched, not read at start
+His words (~03:0x): "90% of them are pointless. really we could cull almost everything. no wonder our context is always
+so high". Q: how hard to cut startup reading? A: "Core only (Recommended)". A session boots on its handoff, the CLAUDE.md
+files, the rulebook and the DESIGN sections its task touches. Handoffs hold current state only, max 80 lines; their
+history moves to `~/.claude/handoffs/kaiju/archive/`. The co-lead playbook, roadmap chapters and archives are grepped when
+a task needs the why, never boot reading. Nothing is deleted. Changes: RULEBOOK (Session start, Context), kaiju-handoff
+and game-studio-lead skills; lead handoff cut from 253 to ~60 lines.
+
+## 2026-10-28 · D-377 · Director · The bay is a fixed block on the north edge; the city is laid around it
+His words (~23:5x), after the cut-in bay kept leaving stubs and slivers: "instead of just throwing shit at the wall and seeing
+what sticks why dont u make an implementation plan for the beach front"; "if its easier the bay can always be in the same
+positon on the map, fixed location". Q: the plan (`C:/kt/beach_plan/PLAN.md`)? A: "Go (Recommended)". The bay is a
+rectangle of whole blocks centred on the north edge, one size per stage in data; streets are pinned to its sides and a
+coast road runs along its south side; the crescent sand, water and quays are drawn inside it; landmarks, parks and plazas
+are never placed in it; the rise is at the bay centre. Player bars stay. Serves D-270, D-373; the beachfront pieces (D-277)
+take fixed spots from it.
+
+## 2026-10-28 · D-376 · Director · Windowed Godot runs start by GPU load check, not one at a time (replaces D-340's rule)
+His words (10-28 ~22:1x): "that wasnt something i told you to codify though, it was something specific for that time, i
+never told you to make it a rule". Q: what replaces it? A: "Load check (Recommended)". `C:/kt/gpu_slot.sh` admits a
+window when under 3 Godot windows are open, >=3 GB video memory free, GPU use <85%, <80 C, 20 s after the last start
+(logged in `C:/kt/gpu_slot.log`); gq runs up to 3 window jobs. D-340's "don't cook the GPU" aim stands.
+
+## 2026-10-28 · D-375 · Director · Landmarks are drawn at random from a pool into designated spots, tiered by stage
+His words (10-28 ~21:xx), on the stadium placement clash between D-270 ("south, past the river") and D-271 (reachable
+from stage 2) once the bay moved the start: "so i want maps to be randomised as you know, but if we need to make certain
+constants like stadium is west, wheel is east, thats ok, as long as the rest of the city is random"; "as long as you are
+also considering that landmarks will be picked at random from a pool of many"; "so the stadium and wheel are no
+certainty to appear"; "we can have designated landmark spots though". Q: tier the spots by stage? A: "Tier per stage
+(Recommended)". So: each street plan keeps a few designated landmark spots; each run fills every spot with a random
+landmark from a large pool, drawn from the tier that spot's stage reaches (near the beach medium, stadium and wheel
+size; the next ring big, spire size; the outer ring the biggest, megatower size), so every stage still reaches something
+bigger. The stadium and wheel are two pool entries, not certain to appear; when drawn, the stadium takes the west spot
+and the wheel the east one, inside stage 2's reach. Everything else stays random per seed (D-263). Replaces D-071's fixed
+four in order and D-270's "south, past the river with the Ferris wheel"; D-271's reach holds.
+
+## 2026-10-28 · D-374 · Director · The Colossus rig gets hip and knee helper joints; every skeleton is checked over its full move range
+His words (10-28 ~18:4x), on the knee/thigh crumple in charge, emerge, hlt, run, slam and leap, which skin weights alone
+cannot fix: "add the joints, i asked you to make sure the skeletons were ready for animation, you failed, do your job
+properly do not do lazy work". So: corrective helper joints at the hip and knee keep the big poses (no smaller-swing pose
+bar); the young croc and Behemoth skeletons get the same full-range check and fix now; the Colossus drafts are
+retargeted onto the new rig in Cascadeur (D-199).
+
+## 2026-10-28 · D-373 · Director · The river intro is dropped; the beach start ships straight onto main
+His words (10-28 ~18:2x): "im sick of seeing runs start in the river. when will our beach front patch hit the godot
+runs?"; "why would river intro - a scene we nixed and dont require any further build - go before our planned ship?";
+"we already spoke about this today ... we arent using the river intro". So: PR #245 (branch claude/intro-port, the kaiju
+rising from the river) is never landed and is never a dependency for anything; the D-310 queue slot "river intro #245"
+is removed. Runs start in the crescent sea bay on the north edge and walk up the beach (D-270); the bay, beach and quays
+from claude/intro-bay are ported straight onto main (builder beach-start), rising on the approved rise clip until the
+keyed rise_bay clip exists (D-199). Never ask him about the river intro or the river for the intro again.
+
 ## 2026-10-28 · D-372 · Director · Render item 15 (Medium GPU p95 bar) is parked for now
 The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
 runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
@@ -206,7 +273,7 @@ to him.
 On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
 (Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
 
-## 2026-10-27 · D-340 · Director · One Godot window on the GPU at a time
+## 2026-10-27 · D-340 · Director · One Godot window on the GPU at a time (rule replaced by D-376)
 His words (22:0x): "having 2 godot open is cooking the GPU, you gotta do a better jop managing it". Cause: the rules
 allowed up to 3 captures at once and up to 2 Godot processes per agent, and nothing counted windows PC-wide, so two
 builders' clips rendered together. Rule: every windowed Godot run (capture, clip, still, speed run) takes the one
@@ -326,70 +393,3 @@ a textureless, depthless colour so it looks like hes floating in a void, we desp
 add real physics to it like ive said a dozen times" (his #12 10-20, D-122, D-244, D-245: swell, ripples, currents,
 reflections, whitecaps in storms, his wake, splashes and floating debris, moss on quay walls; looks only, reviewed after
 each step). So: water is built now, starting with the surface (texture and depth), not parked behind other work.
-
-## 2026-10-27 · D-324 · Director · Looks: Tripo vehicles recoloured; smoke, walls, windows, far city, facade kept
-Tripo tank, gunship and governor's helicopter: "yes they look good but recolour them to be less TAN and more generic
-military colour". Soft smoke (P4b): "Keep it". Building walls: "B: soft corners" (P4a on). Lit windows: "B: lived-in"
-(#301 stays). Far city at night: "Fog + reflection" (both far-city PRs; the glow is re-measured with #301's window
-colours). Facade carve (#288): "impossible to tell from the clip, but ship and ill test in play".
-
-## 2026-10-27 · D-323 · Director · Kaiju death: jagged stone chunks replace the cubes; the 0.2 s wait stays
-On #240's clip: "you didnt change the blocks that i said i hated. you just changed their colour, but the bllocks are
-stupid and look bad". Q: what should fly out of his body? A: "Jagged stone chunks" (irregular broken rock in his
-hide's texture, many sizes, tumbling with dust; keeps D-294's shards first). Blast wait 0.2 s: "Keep 0.2 s".
-
-## 2026-10-27 · D-322 · Director · Interview batch 1: roar and solid vehicles kept; window flicker not solved
-Roar (#276): "Keep it". Vehicles always solid (#279): "keep it. shouldnt even be a question, no other choice makes any
-sense" (a fix that carries out his own ruling is never put to him as keep or revert). Window bars (#274, D-303): "didnt
-solve the issue, theres still flashing/stuttering lit windows" (second miss on his 10-26 comment; method changes:
-measure the flicker in motion first).
-
-## 2026-10-27 · D-320 · Director · He adds the Windows Defender exclusions for the game folders himself
-Q: will you exclude the game folders from Defender scanning (agents cannot change security settings)? A: "Yes, I'll
-add them (Recommended)". Folders given: the repo, `Kaiju-Incremental-wt`, `C:\kt`. Agents never change it themselves.
-
-## 2026-10-27 · D-319 · Director · A finished change runs its full test check on GitHub first
-Q (after "whats the point of having so many helpers if most of them are waiting half a day to work"): where should a
-finished change run its full test check before it goes up for merge? A: "On GitHub first (Recommended)". So: the
-local full prepush stops being the gate. A builder runs the cheap local gates (no Godot), pushes, and GitHub runs every
-shard on the branch (`C:/kt/gh_check.sh`, one lead watcher); the PR is ready only after that passes, so no red PR
-shows. Builders still run locally only the suites they iterate on. Replaces the local-prepush gate (D-186 stands).
-
-## 2026-10-27 · D-318 · Director · If Cascadeur freezes: save Dracorex as a copy, then restart
-Q: if Cascadeur freezes while his Dracorex scene is open, may the lead save Dracorex as a copy and restart? A: "Yes,
-copy first, then restart (Recommended)". So: only on a real freeze (no response for 10 min, PID 22276), Save As a new
-file name (never overwrite his file), then restart Cascadeur and reopen the copy. Narrows the never-restart rule.
-
-## 2026-10-27 · D-317 · Director · Tonight: keep the 6 GB memory floor, drop the 85% CPU cap
-Q: the PC rule (nothing new under 6 GB free RAM or above 85% CPU), tonight? A: "Keep memory floor, drop CPU cap
-(Recommended)". So: the RAM floor (freeze guard) stays; the CPU cap is off for the night shift.
-
-## 2026-10-27 · D-316 · Director · Export a playable build at the end of the shift
-Q: export a build at the end of the shift? A: "Yes, in the usual build folder (Recommended)". So: a demo .exe from
-main in the fixed build folder before he wakes, with a short note of what merged overnight.
-
-## 2026-10-27 · D-315 · Director · No usage cap tonight
-Q: weekly limit 17% used; how much may tonight use? A: "Whatever the work needs (Recommended)". No usage stop tonight.
-
-## 2026-10-27 · D-314 · Director · Opus at high effort for the hardest builds tonight
-Q: Opus high for the hardest builds (new engine code, kaiju posing, tail and toe skeleton)? A: "Yes, hardest builds
-only (Recommended)". So: Opus high only for P2a, P3a, P3c, P4c and the r21 rig work; everything else stays as is.
-
-## 2026-10-27 · D-313 · Director · Speed runs keep the PC to themselves tonight
-Q: keep D-299's ~3 min sole-PC turns tonight? A: "Keep it (Recommended)". D-299 stands through the night shift.
-
-## 2026-10-27 · D-312 · Director · Item 15: the speed savings buy a quieter, cooler PC
-Q: what should the headroom buy at Medium? A: "A quieter, cooler PC (Recommended)". So: same look at 60 fps with the
-GPU working less (D-093's reason for Medium); no render-scale rise. Closes render plan item 15.
-
-## 2026-10-27 · D-311 · Director · Render plan items 10 and 11 build tonight, last in the plan
-Q (06:2x): items 10 (native collider rebuild, no freeze on big stomps) and 11 (no stutter when a tower starts to fall),
-parked until after the demo by D-094, build them tonight? A: "Yes, last in the plan (Recommended)". So: both go in
-after every other render-plan item, each proved by a D-299 speed check. Reverses D-094's "after demo exe 2" for these two.
-Correction (lead, 06:18, director away): not built. The question described both wrongly: the code they speed up (carve physics) runs only in a capture tool, never in the shipped game (checked on main b0fe3687; the baseline measured 0 ms there), so neither changes what the player sees. Back to him at the next interview (D-094 option A, full-game destruction, would bring them back).
-
-## 2026-10-27 · D-310 · Director · Parked work starts tonight, after the debt fixes
-Q (06:1x): work parked until the render plan is done (D-276: roads, play area, camera bubble, rubble, stomp rework,
-Tripo buildings), start it tonight? A: "yes, but not before the debt fixes". So: parked items start tonight once every
-D-295 debt row is done (merged), in the set order (roads #243, then play area #241, then intro #245, then the rest).
-Refines D-276.

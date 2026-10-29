@@ -162,22 +162,38 @@ func _city_start(sim: RampageSim, dir: Vector2) -> Vector2:
 	return home
 
 
-## True when a roof the croc can land on (D-361: at its shoulder or lower) is ahead along `dir`
-## and no standing building lies within its body's discs: LeapArc skips those at take-off (it
-## stands among them) and the flight carves them (D-268), so a leap there is not a clear arc.
+## True when a roof the croc can land on (D-361: at its shoulder or lower) is ahead along `dir`,
+## no standing building lies within its body's discs (LeapArc skips those at take-off: it stands
+## among them, and the flight carves them, D-268) and none taller than that roof lies within them
+## where it lands (no arc lands on the roof clear of it): else a leap there is not a clear arc.
 func _clear_roof_ahead(sim: RampageSim, dir: Vector2) -> bool:
-	if Num.f(sim.body.dash.aim_at(sim.kaiju_pos, dir)["roof"]) <= 0.0:
+	var aim := sim.body.dash.aim_at(sim.kaiju_pos, dir)
+	var roof := Num.f(aim["roof"])
+	if roof <= 0.0:
 		return false
+	var landed: Vector2 = aim["to"]
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.frame.alive_count == 0:
+			continue
+		if _in_discs(sim, b, sim.kaiju_pos, dir):
+			return false
+		if i != Num.i(aim["building"]) and b.height > roof and _in_discs(sim, b, landed, dir):
+			return false
+	return true
+
+
+## True when building `b`'s footprint lies within the body's discs at `pose` along `dir`.
+func _in_discs(sim: RampageSim, b: RampageSim.Building, pose: Vector2, dir: Vector2) -> bool:
 	var s := sim.body_scale()
 	for d: Array in sim.body.discs():
-		var c := sim.kaiju_pos + dir * Num.f(d[0]) * s
-		for b: RampageSim.Building in sim.buildings:
-			var gap := Vector2(
-				maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
-			)
-			if b.frame.alive_count > 0 and gap.length() < Num.f(d[1]) * s:
-				return false
-	return true
+		var c := pose + dir * Num.f(d[0]) * s
+		var gap := Vector2(
+			maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
+		)
+		if gap.length() < Num.f(d[1]) * s:
+			return true
+	return false
 
 
 ## True when the body landing at `aim`'s spot on its roof overlaps no other standing building

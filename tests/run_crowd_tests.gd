@@ -45,7 +45,9 @@ func _begin() -> bool:
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
 	)
-	var layout := CityGrowth.layout(Content.tuning(), 1, Seeds.make("city", 0))
+	# Stage 2: the stadium spot is outside the baby's band (lead call A), so stage 1 has none.
+	stats["size"] = 2
+	var layout := CityGrowth.layout(Content.tuning(), 2, Seeds.make("city", 0))
 	_rampage = Rampage.new()
 	_rampage.setup(species, stats, layout, 0)
 	root.add_child(_rampage)

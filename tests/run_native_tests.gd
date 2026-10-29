@@ -6,8 +6,11 @@ extends "res://tests/lib/runner.gd"
 ## into a failure. It also holds the tool guard (tools/capture/native_guard.gd, tech debt row 14):
 ## the library has every class and method native/src binds, the guard names what is missing, and
 ## every bench and capture tool starts by refusing to run without the library.
+## And render plan item 10 (tests/lib/carve_colliders.gd): the native collider boxes equal
+## CarveCollider's GDScript ones, and a rebuild keeps its region's body.
 ##   godot --headless --path . --script tests/run_native_tests.gd
 
+const CarveColliders := preload("res://tests/lib/carve_colliders.gd")
 const RES := 4
 const UNITS := Vector3i(6, 12, 6)
 const EMPTY := 0
@@ -38,6 +41,7 @@ func run_checks() -> void:
 	await _t("_check_guard_reads_the_sources")
 	await _t("_check_guard_names_what_is_missing")
 	await _t("_check_tools_start_with_the_guard")
+	await _h("CarveColliders", func() -> void: CarveColliders.new(check).run())
 	if _available:
 		await _t("_check_library_complete")
 		await _t("_check_set_grid")

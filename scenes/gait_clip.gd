@@ -45,7 +45,7 @@ const NECK_SHARE := 0.4
 static var off := false
 
 var clips: KaijuClips
-## The clip playing ("idle", "walk", "turn_left", "turn_right" or "roar") and its time (frames).
+## The clip playing ("idle", "walk", a turn, "roar", "rise_bay": RampageRise.rise) and its frame.
 var state := "idle"
 var clip_time := 0.0
 ## Walk cycles travelled so far (distance / stride), for tests and captures, and walk clip frames
@@ -55,6 +55,7 @@ var walk_frames := 0.0
 ## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
 var tail_shown := 0.0
+var rake: ClipRake  # the claw rake keyed in Cascadeur, over the clips (D-185)
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
@@ -66,9 +67,8 @@ var _path: SwingPath  # a lifted foot's way to its clip path
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 ## The body's world yaw and each foot's flat heading (FootHold.foot_yaw) when it went down, and the
-## turn (rad) its toes are held to: a planted foot keeps its world yaw while the body turns over it
-## and, up to FootHold.ROLL_HOLD_MAX, while a splayed foot rolls over the stance; it swings back to
-## the clip's in the air.
+## turn (rad) its toes are held to: a planted foot keeps its world yaw while the body turns over
+## it and, up to FootHold.ROLL_HOLD_MAX, while a splayed foot rolls; back to the clip's in the air.
 var _plant_yaw: Array[float] = [0.0, 0.0]
 var _plant_heading: Array[float] = [0.0, 0.0]
 var _yaw_fix: Array[float] = [0.0, 0.0]
@@ -118,19 +118,20 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_tail = ClipTail.new(_spring_tail)
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)
-	swing.trail = ClawTrail.new(rig)
+	rake = ClipRake.new(rig, clips, swing)  # and the claw's streak (ClawTrail)
 
 
 func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
-	_choose(dt)
+	if state != KaijuModel.RISE_CLIP or _roar_queued:  # the rise's frame is set (RampageRise)
+		_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
-	_apply(pose, dt)
+	_apply(rake.layer(pose, dt), dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
@@ -273,7 +274,7 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		var offset := pose.offset * clips.rig_scale + drop if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
 	swing.youth = clampf((ADULT_SCALE - s) / (ADULT_SCALE - BABY_SCALE), 0.0, 1.0)
-	swing.pose_rake(dt)  # the claw rake, over the clip's arms
+	swing.pose_rake(dt)  # the code claw rake over the clip's arms, or the keyed rake's streak
 
 
 ## Turns the neck and skull about the world's up into the turn still to make (after the clip).

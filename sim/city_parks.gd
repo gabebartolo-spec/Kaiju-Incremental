@@ -12,7 +12,7 @@ extends RefCounted
 static func pick(plan: Dictionary, inner: Array[int], cfg: Dictionary) -> void:
 	var blocks: Array[Dictionary] = plan["blocks"]
 	var rings := CityGen.districts(cfg)
-	var by_ring := _by_ring(blocks, inner, rings)
+	var by_ring := _by_ring(blocks, inner, rings, cfg)
 	var plaza := _plaza(blocks, inner, cfg)  # before any block turns to park
 	var parks: Array[int] = []
 	for k: int in rings.size():
@@ -30,14 +30,16 @@ static func pick(plan: Dictionary, inner: Array[int], cfg: Dictionary) -> void:
 ## The built blocks a district may turn to park, per district: the first district's away from
 ## its edge (its ring stays built), every later one's whole (a later district is one ring of
 ## blocks deep).
-static func _by_ring(blocks: Array[Dictionary], inner: Array[int], rings: Array[float]) -> Array:
+static func _by_ring(
+	blocks: Array[Dictionary], inner: Array[int], rings: Array[float], cfg: Dictionary
+) -> Array:
 	var by_ring: Array = []
 	for k: int in rings.size():
 		by_ring.append([])
 	for n: int in inner:
-		if str(blocks[n]["use"]) != "built":
-			continue  # the river (CityRiver)
 		var rect: Rect2 = blocks[n]["rect"]
+		if str(blocks[n]["use"]) != "built" or CityHarbour.in_any(cfg, rect):
+			continue  # the river (CityRiver), any stage's sea bay (CityHarbour)
 		var ring := Num.i(blocks[n]["district"])
 		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]
 		if edge < 0.75 or ring > 0:
@@ -85,9 +87,9 @@ static func _plaza(blocks: Array[Dictionary], inner: Array[int], cfg: Dictionary
 	var best := -1
 	var away := INF
 	for n: int in inner:
-		if str(blocks[n]["use"]) != "built":
-			continue
 		var rect: Rect2 = blocks[n]["rect"]
+		if str(blocks[n]["use"]) != "built" or CityHarbour.in_any(cfg, rect):
+			continue
 		var d := rect.get_center().distance_to(Vector2(heart.x, heart.y))
 		if d < away:
 			best = n

@@ -27,6 +27,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bake  # noqa: E402
+import lid_flaps  # noqa: E402
 
 # The game's biped bones, in rig.json order (each voxel's flags byte is an index into the list). A skin may add bones
 # of its own (the adult croc r12's tail tip, D-307): they follow these (bone_names).
@@ -36,9 +37,10 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
 
 
 def extra_order(name):
-    """Sort key of a skin's own game bones: by chain, then by number (tail9 before tail10: parents first)."""
+    """Sort key of a skin's own game bones: by chain, then by number (tail9 before tail10: parents first); the eyelids
+    (lid_*, D-335 blinks) last, so a file of the earlier bones stays a prefix of the new list."""
     stem = name.rstrip("0123456789")
-    return stem, int(name[len(stem):] or 0)
+    return name.startswith("lid_"), stem, int(name[len(stem):] or 0)
 
 
 def bone_names(meta):
@@ -75,11 +77,13 @@ def game_rig(meta, to_rig, height):
 
 
 def split_mouth(owner, pts, line):
-    """The jaw: head voxels in front of the gape under the tooth line (see the module note)."""
+    """The jaw: head voxels in front of the gape under the tooth line (see the module note). The neck's voxels in front
+    of the gape count as the head's (the young croc rigs' neck weights reach under the jaw's back, croc-young-casc):
+    in front of the gape every voxel is skull or jaw."""
     z0, y0, z1, y1 = line
-    head1, jaw = GAME_BONES.index("head1"), GAME_BONES.index("jaw")
+    head0, head1, jaw = GAME_BONES.index("head0"), GAME_BONES.index("head1"), GAME_BONES.index("jaw")
     at = y0 + (y1 - y0) * (pts[:, 2] - z0) / (z1 - z0)
-    zone = np.isin(owner, (head1, jaw)) & (pts[:, 2] < z1 + 0.5)
+    zone = np.isin(owner, (head0, head1, jaw)) & (pts[:, 2] < z1 + 0.5)
     out = owner.copy()
     out[zone] = np.where(pts[zone, 1] < at[zone], jaw, head1)
     out[~zone & (owner == jaw)] = head1  # no jaw behind the gape
@@ -96,10 +100,18 @@ def main():
     to_rig = lambda p: (inv @ np.r_[p, 1.0])[:3] + 0.5
     data = bytearray(kvox_path.read_bytes())
     height = struct.unpack_from("<H", data, 12)[0]
-    cells, _, _ = bake.read_kvox(kvox_path)
+    cells, rgb, before = bake.read_kvox(kvox_path)
     names = bone_names(meta)
+    # The lower-lid voxels an earlier run added (only they are ever given to a lid_lo bone; a rig_voxel .kvox has none)
+    # go before the skin is sampled, so a rerun rebuilds them.
+    kept = ~np.isin(before, lid_flaps.lid_bones(names))
+    cells, rgb = cells[kept], rgb[kept]
     w, gap = bake.sample_skin(meta_path, cells, names)
-    owner = np.argmax(w, axis=1)
+    own = w.copy()
+    for i in (i for i, n in enumerate(names) if n.startswith("lid_")):  # an eyelid moves its skin by the weights
+        own[:, names.index("head1")] += own[:, i]  # (bake.py); the voxel stays a part of the head
+        own[:, i] = 0.0
+    owner = np.argmax(own, axis=1)
     if line:
         pts = (np.c_[cells, np.ones(len(cells))] @ m.T)[:, :3]
         owner = split_mouth(owner, pts, line)
@@ -107,14 +119,12 @@ def main():
     # LF on every OS: the .vskin stamp hashes these bytes and git checks them out as LF.
     out = kvox_path.with_suffix(".rig.json")
     out.write_text(json.dumps(rig, indent=1), encoding="utf-8", newline="\n")
-    flags = 18 + 10 * np.arange(len(cells)) + 9  # v2: voxels from byte 18, 10 bytes, flags last
-    for off, bone in zip(flags, owner):
-        data[off] = int(bone)
-    kvox_path.write_bytes(bytes(data))
+    lid_flaps.write_kvox(kvox_path, data, cells, rgb, owner)
+    lids = lid_flaps.apply(kvox_path, meta, names)  # the lid flaps, made fresh from the rigged voxels
     counts = np.bincount(owner, minlength=len(names))
     print(f"rigged {kvox_path.name} from {meta_path.name}: {len(cells)} voxels; gap to skin median "
           f"{np.median(gap):.2f} m, p95 {np.percentile(gap, 95):.2f} m; {len(names)} bones; jaw {counts[names.index('jaw')]} "
-          f"voxels; fewest {names[int(np.argmin(counts))]} {counts.min()}")
+          f"voxels; fewest {names[int(np.argmin(counts))]} {counts.min()}; {lids}")
 
 
 if __name__ == "__main__":

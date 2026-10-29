@@ -110,8 +110,25 @@ func _check_districts_kept() -> void:
 	var footprints := {}
 	for e: Dictionary in _layout(3):
 		footprints[Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))] = true
+	# The Colossus's bay is wider and deeper than the baby's (city "harbour" "bays", D-377): the
+	# young lots it covers are sea at that stage, not moved. The blocks by the baby's landing
+	# give their lots to its quay sheds (CityRiver.off_quay); the landing moves with the bay.
+	var sea := CityHarbour.rect_of(adult)
+	var quays: Array[Rect2] = []
+	for block: Dictionary in young_plan["blocks"]:
+		if str(block["use"]) == "built" and CityRiver.on_quay(young_plan, block, young):
+			var rect: Rect2 = block["rect"]
+			quays.append(rect)
 	var moved := 0
 	for e: Dictionary in _layout(1):
+		var foot := Rect2(
+			Num.f(e["x"]) - Num.f(e["w"]) * 0.5,
+			Num.f(e["z"]) - Num.f(e["d"]) * 0.5,
+			Num.f(e["w"]),
+			Num.f(e["d"])
+		)
+		if sea.intersects(foot) or quays.any(func(q: Rect2) -> bool: return q.intersects(foot)):
+			continue
 		if not footprints.has(Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))):
 			moved += 1
 	check(moved == 0, "every lot of the young city is still there at Colossus (%d moved)" % moved)
