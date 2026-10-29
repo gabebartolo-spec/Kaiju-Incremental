@@ -317,20 +317,15 @@ func _check_train_detail() -> void:
 ## voxel material: one flat colour per cube.
 func _check_baked_detail() -> void:
 	var voxel := Num.f(Content.section("street")["person_voxel"])
-	var meshes: Dictionary = {
-		"a person": VoxelPerson.mesh(0, 0, voxel),
-		"a car": TrafficMeshes.cars(TrafficMeshes.palette())[0],
-	}
-	for what: String in meshes:
-		var mat := (meshes[what] as ArrayMesh).surface_get_material(0) as ShaderMaterial
-		check(
-			(
-				mat != null
-				and mat.shader == Look.VOXEL_DETAIL_SHADER
-				and mat.get_shader_parameter("baked") == true
-			),
-			"%s draws on voxel_detail.gdshader, baked" % what
-		)
+	var meshes: Array[ArrayMesh] = [
+		VoxelPerson.mesh(0, 0, voxel), TrafficMeshes.cars(TrafficMeshes.palette())[0]
+	]
+	var names: Array[String] = ["a person", "a car"]
+	for i: int in meshes.size():
+		var mat := meshes[i].surface_get_material(0) as ShaderMaterial
+		var on := mat != null and mat.shader == Look.VOXEL_DETAIL_SHADER
+		var baked: bool = on and mat.get_shader_parameter("baked") == true
+		check(baked, "%s draws on voxel_detail.gdshader, baked" % names[i])
 	var off := VoxelBuilder.new()
 	off.put(Vector3i.ZERO, "x")
 	var plain_mesh := off.bake({"x": Color.WHITE}, voxel, Vector3.ZERO, 0.0)
