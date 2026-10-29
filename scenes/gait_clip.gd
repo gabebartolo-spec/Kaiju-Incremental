@@ -38,6 +38,10 @@ const TAIL_SLAM_STRENGTH := 1.6
 ## adolescent's long legs, nearly straight at heel strike, re-stepped on every plant (PR #54).
 const RESTEP_GAP := 0.3
 const RESTEP_REACH := 1.0
+## A clip that keys the leg nearly straight (the 36-bone baby stands at 0.999) holds its foot this
+## much further (fraction of the leg's length) past its own keyed reach: at 1.0 alone both feet
+## tripped together as he set off and stepped forward at once (director 2026-10-29).
+const RESTEP_SLACK := 0.05
 ## The head looks into a turn before the body makes it (director comments #16): it eases (1/s)
 ## toward the yaw still to turn (KaijuGait.turn_ahead), at most HEAD_LEAD_MAX (rad), the neck
 ## taking NECK_SHARE of it and the skull the rest, on top of the clip's pose.
@@ -77,6 +81,9 @@ var _plant_yaw: Array[float] = [0.0, 0.0]
 var _plant_heading: Array[float] = [0.0, 0.0]
 var _yaw_fix: Array[float] = [0.0, 0.0]
 var _was_planted: Array[bool] = [false, false]
+## A foot still down where it stood when the walk set off holds there until the clip lifts it (no
+## catch step), so the legs set off one at a time, not both at once (director 2026-10-29).
+var _set_off: Array[bool] = [false, false]
 var _stomp := ClipStomp.new()  # catch steps, and the standing stomp
 var _jaw_hold := 0.0
 var _jaw_peak := Quaternion.IDENTITY
@@ -142,7 +149,10 @@ func update(delta: float) -> void:
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
-		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
+		var to := pose
+		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), to, smoothstep(0.0, 1.0, _blend))
+		for i: int in 2:  # the new clip's lifted foot lifts at once: held down, it caught up later
+			pose.planted[i] = pose.planted[i] and to.planted[i]
 	_apply(rake.layer(pose, dt), dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
@@ -227,6 +237,8 @@ func _walk_clock(dt: float) -> void:
 func _go(next: String, at: float) -> void:
 	if state == "walk" and next == "idle":
 		_stomp.settle()  # the weight settles as he stops
+	var setting_off := next == "walk" and state != "walk"
+	_set_off = [setting_off, setting_off]
 	_from = state
 	_from_time = clip_time
 	_blend = 0.0
@@ -240,8 +252,10 @@ func _walk_start() -> float:
 	return _steps.frame_at(step_phase) if step_phase != INF else _walk_entry()
 
 
-## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
-## (rig space), so the first stance does not overreach.
+## The walk frame to start from: the one whose feet stand nearest where the feet are now (rig
+## space), so the first stance does not overreach. Every foot counts, lifted or not: counting only
+## the planted ones chose a frame with one foot in the air, near its far end (it costs half), and
+## the young croc set off with both feet catching up at once (director 2026-10-29).
 func _walk_entry() -> float:
 	var best := 0.0
 	var best_cost := INF
@@ -250,9 +264,8 @@ func _walk_entry() -> float:
 		var pose := clips.pose_at("walk", t)
 		var cost := 0.0
 		for i: int in mini(legs.size(), 2):
-			if pose.planted[i]:
-				var now := to_rig * rig.tail_world(legs[i].tip)
-				cost += (clips.to_rig(pose.feet[i]) - now).length()
+			var now := to_rig * rig.tail_world(legs[i].tip)
+			cost += (clips.to_rig(pose.feet[i]) - now).length()
 		if cost < best_cost:
 			best_cost = cost
 			best = t
@@ -353,7 +366,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	var leg := legs[i]
 	var clip_toe := rig.global_transform * _stepped(clips.to_rig(pose.feet[i]))
 	var planted := pose.planted[i] and not _stomp.catching(i)
-	if planted and _was_planted[i] and _overreached(leg, _lock[i], clip_toe):
+	if planted and _was_planted[i] and not _set_off[i] and _overreached(leg, _lock[i], clip_toe):
 		_stomp.restep(i)  # the body got away from this foot: step after it
 		planted = false
 	var target := _path.down(i, clip_toe + _lag[i])
@@ -374,6 +387,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 		_lag[i] = _path.lag[i]
 	leg.planted = planted
 	_was_planted[i] = planted
+	_set_off[i] = _set_off[i] and planted
 	return target
 
 
@@ -410,5 +424,7 @@ func _overreached(leg: BipedGait.Leg, lock: Vector3, clip_toe: Vector3) -> bool:
 	if (lock - clip_toe).length() > RESTEP_GAP * stride():
 		return true
 	var hip := rig.bone(leg.names[0]).global_position
-	var ankle := lock + (rig.bone(leg.names[2]).global_position - rig.tail_world(leg.tip))
-	return (ankle - hip).length() > RESTEP_REACH * (leg.l1 + leg.l2) * s
+	var to_ankle := rig.bone(leg.names[2]).global_position - rig.tail_world(leg.tip)
+	var length := (leg.l1 + leg.l2) * s
+	var keyed := (clip_toe + to_ankle - hip).length()
+	return (lock + to_ankle - hip).length() > maxf(RESTEP_REACH * length, keyed + RESTEP_SLACK * length)
