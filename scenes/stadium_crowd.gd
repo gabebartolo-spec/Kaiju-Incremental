@@ -16,7 +16,10 @@ extends Node3D
 ## once; the bob, the standing, the run, the exit and the fall are all crowd.gdshader's (the fall
 ## through each fan's custom data). This script places fans with the shader's formula only when
 ## it needs to (a blow, a fallen chunk), says when a fan starts to fall and counts who is still
-## in view. Presentation only (a fan's death feeds no biomass); tuning in data/tuning.json "crowd".
+## in view. Once the stadium carves on cells (D-387) a fan stands on the fine cell under its feet,
+## not on its chunk: when a blow or a fallen arc takes that cell the fan falls to what still stands
+## below it, though the chunk (which only goes at half its cells) still stands. Presentation only
+## (a fan's death feeds no biomass); tuning in data/tuning.json "crowd".
 
 enum State { SEATED, UP, DYING, GONE }
 
@@ -28,6 +31,8 @@ const GOLDEN := 0.6180339887
 const TOPPLE := 0.25
 ## Graves are kept in buckets of this many seconds, counted once their time has passed.
 const BUCKET := 0.25
+## Metres under a fan's feet a cell of the stand must be within for the fan to be standing on it.
+const FOOT := 1.0
 
 ## Frame-time checks: false and the match seats no crowd.
 static var enabled := true
@@ -43,6 +48,7 @@ class Fan:
 	var run := 0.0  # metres from its seat to the back of the stands
 	var out_at := 0.0  # seconds after the panic it is through an exit
 	var gone_at := 0.0  # crowd time its body is out of sight, once it falls
+	var under := -1  # the fine cell its seat stands on, once the stadium carves (else -1)
 
 	## Killed, or falling, or lying among the debris, or gone.
 	func is_dead() -> bool:
@@ -93,6 +99,12 @@ var _shrink := 0.5
 ## Bodies by the bucket of the time they are out of sight: index -> Array[Fan].
 var _graves: Dictionary = {}
 var _grave_next := 0
+## The stadium's fine grid once it carves (Carving), else null; the seated fans by the chunk that
+## owns the cell under them (Carving.Grid.chunk), and each chunk's cells left when last looked.
+var _cells: Carving.Grid
+var _on_cells: Dictionary = {}
+var _live := PackedInt32Array()
+var _fine_alive := -1
 
 
 ## index: the stadium's building. kits: the match's two kits. rng: the run's presentation stream.
@@ -182,6 +194,7 @@ func _process(delta: float) -> void:
 	_clock += delta
 	_mat.set_shader_parameter("clock", _clock)
 	var frame := _sim.buildings[_index].frame
+	_lose_cells()
 	if frame.alive_count != _alive:
 		_alive = frame.alive_count
 		_puffs = 0
@@ -197,7 +210,7 @@ func _process(delta: float) -> void:
 				fan.state = State.GONE
 				_left -= 1
 				escaped += 1
-		if _alive < _whole:
+		if _alive < _whole or _cells != null:
 			_sweep(frame)
 	_bury()
 
@@ -242,6 +255,10 @@ func _sweep(frame: Structure) -> void:
 		var p := running_at(fan)
 		if Vector2(p.x - fan.pos.x, p.z - fan.pos.z).length() >= fan.run:
 			continue  # stepping down the exit: out of sight in a moment
+		if _cells != null and CrowdBuild.under(_cells.frame, p, _corner, FOOT) < 0:
+			if fan.under >= 0:
+				_fall_to_cells(fan, p)
+				continue
 		var c := _chunk(p)
 		if not frame.inside(c):
 			continue
@@ -249,6 +266,62 @@ func _sweep(frame: Structure) -> void:
 		if _built[at] > 0.0 and hp[at] <= 0.0:
 			_down(frame, hp, fan, p)
 	_sweep_at = i
+
+
+## The stadium carves: on its first look each seated fan is put on the fine cell under its
+## seat; after that, whenever the grid loses cells, every seated fan in a chunk that lost some
+## whose cell has gone falls (the frame it went, as with chunks).
+func _lose_cells() -> void:
+	if _cells == null:
+		if not _sim.carving.promoted(_index):
+			return
+		_cells = _sim.carving.grids[_index]
+		_seat_on_cells()
+	var f := _cells.frame
+	if f.alive_count == _fine_alive:
+		return
+	_fine_alive = f.alive_count
+	_puffs = 0
+	for ch: int in _on_cells.keys():
+		if _cells.live[ch] == _live[ch]:
+			continue
+		_live[ch] = _cells.live[ch]
+		var left: Array = []
+		for fan: Fan in _on_cells[ch]:
+			if fan.state != State.SEATED and not (fan.state == State.UP and _since <= fan.leaves):
+				continue
+			if f.cells[fan.under] == VoxelFrame.EMPTY:
+				_fall_to_cells(fan, fan.pos)
+			else:
+				left.append(fan)
+		if left.is_empty():
+			_on_cells.erase(ch)
+		else:
+			_on_cells[ch] = left
+
+
+func _seat_on_cells() -> void:
+	var f := _cells.frame
+	_live = _cells.live.duplicate()
+	for fan: Fan in fans:
+		if fan.is_dead():
+			continue
+		fan.under = CrowdBuild.under(f, fan.pos, _corner, FOOT)
+		if fan.under < 0:
+			continue
+		var ch := _cells.chunk(fan.under)
+		var seated: Array = _on_cells.get(ch, [])
+		seated.append(fan)
+		_on_cells[ch] = seated
+
+
+## A fan whose cell has gone from under it at `at` falls to the cells still below, or the ground.
+func _fall_to_cells(fan: Fan, at: Vector3) -> void:
+	var f := _cells.frame
+	var below := CrowdBuild.under(f, at, _corner, at.y + 1.0)
+	var land := float(below / (f.w * f.d) + 1 + f.offset.y) / f.res if below >= 0 else 0.0
+	_die(fan, at, minf(land, at.y))
+	fallen += 1
 
 
 ## A fan's stand has gone from under it at `at`: it falls to what stands below, or the ground.
