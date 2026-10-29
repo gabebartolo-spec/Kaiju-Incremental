@@ -4,6 +4,18 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-395 · Director · The tree screen is a bio lab, built in full
+Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
+changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,
+it needs a lot of vfx, sfx and beautiful UI design". So the screen is a specimen plate with glass cells that fill with
+Special K, tubes that surge and bubble, motes from the biomass counter, a rim flare when a ring opens, lightning on an
+evolution, a scanner sweep, a lab readout for the side panel, and its own sounds. "go straight to the build" (no mockup
+board); "500 credits sure": ElevenLabs sound effects up to 500 credits for this screen (precedent D-237). The ElevenLabs
+connector was not in the building session, so #445 ships the four tree sounds synthesised in `tools/sfx/build_sfx.py`
+(0 credits); the 500 stay approved for replacing them from a session that has it. The kaiju himself, at his current
+stage, turns at the empty centre of the rings: "yes". Tuning `tree.skin` and `tree.skin.fx`; `fx.enabled` is the
+on/off switch the fixture flips.
+
 ## 2026-10-30 · D-394 · Director · The landmark pool's named entries
 His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
 ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the

@@ -57,6 +57,11 @@ var band_size := 20.0
 var tape_on := Color("ffcc00")
 var tape_off := Color("111114")
 var dashed := false
+## A share (0..1) of the box filled from the bottom with `liquid_color`, a bright meniscus on top
+## (the tree's glass cells hold Special K up to their level).
+var liquid := 0.0
+var liquid_color := Color("6a2bd6")
+var liquid_top := Color("c79bff")
 var ring := false
 var ring_color := Color("ffcc00")
 ## A plate in focus (or pressed) is outlined in this, thicker: no fine inner frame (it turns to
@@ -107,6 +112,14 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 		rect = _draw_plate(to_canvas_item, rect)
 	else:
 		RenderingServer.canvas_item_add_rect(to_canvas_item, rect, fill)
+		if liquid > 0.0:
+			var depth := rect.size.y * clampf(liquid, 0.0, 1.0)
+			var pool := Rect2(
+				Vector2(rect.position.x, rect.end.y - depth), Vector2(rect.size.x, depth)
+			)
+			RenderingServer.canvas_item_add_rect(to_canvas_item, pool, liquid_color)
+			var top := Rect2(pool.position, Vector2(rect.size.x, minf(2.0, depth)))
+			RenderingServer.canvas_item_add_rect(to_canvas_item, top, liquid_top)
 		_draw_band(to_canvas_item, rect)
 		frame(to_canvas_item, rect, edge, border, dashed)
 	if corners:
