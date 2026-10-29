@@ -92,18 +92,24 @@ func _face_free_way(sim: RampageSim) -> Vector2:
 
 
 ## The index of a tall building about `FAR` from the kaiju, for an agent to perch on: one inside
-## the arena (in the wider city the street start sits by the edge, where the nearest roof at `FAR`
-## can be a backdrop lot no agent stands on).
+## the arena whose roof cell under the perch (`_perch_cell`) stands (a Tripo lot's frame can be
+## hollow there, and a backdrop lot by the wider city's edge is out of the kaiju's reach).
 func _roof(sim: RampageSim, tf: Taskforce) -> int:
 	var best := -1
 	var gap := INF
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
 		var away := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
-		if b.in_arena and b.height >= Num.i(tf.cfg["perch_min_height"]) and absf(away - FAR) < gap:
+		var ok := b.in_arena and b.height >= Num.i(tf.cfg["perch_min_height"])
+		if ok and b.frame.alive(_perch_cell(b)) and absf(away - FAR) < gap:
 			best = i
 			gap = absf(away - FAR)
 	return best
+
+
+## The roof cell a test agent perches on: the middle of the top floor.
+func _perch_cell(b: RampageSim.Building) -> Vector3i:
+	return Vector3i(b.w / 2, b.height - 1, b.d / 2)
 
 
 ## A perched agent with nothing else to do but what a test wants: its railgun ready or not,
@@ -111,8 +117,7 @@ func _roof(sim: RampageSim, tf: Taskforce) -> int:
 func _perched(sim: RampageSim, rail_ready: bool) -> Taskforce.Agent:
 	var tf := sim.army_units.taskforce
 	var i := _roof(sim, tf)
-	var b := sim.buildings[i]
-	var agent := tf.place_agent(i, Vector3i(b.w / 2, b.height - 1, b.d / 2))
+	var agent := tf.place_agent(i, _perch_cell(sim.buildings[i]))
 	agent.rail_cd = 0.0 if rail_ready else 1.0e9
 	agent.frost_cd = 1.0e9
 	agent.wait = 1.0e9

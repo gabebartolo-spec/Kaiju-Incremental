@@ -44,14 +44,15 @@ static func rect_of(cfg: Dictionary) -> Rect2:
 ## True when `rect` reaches into any stage's bay (CityGen and CitySites keep landmarks, parks
 ## and plazas out of every one, so the plan's picks are the same at every stage).
 static func in_any(cfg: Dictionary, rect: Rect2) -> bool:
-	if not cfg.has("harbour"):
-		return false
+	var inner := rect.grow(-0.01)  # touching a bay's edge is not reaching into it
+	if not cfg.has("harbour") or not inner.has_area():
+		return false  # a sliver block narrower than the margin reaches nowhere
 	var top := -Num.f(cfg["outer_half"]) - 1.0
 	for at: Array in cfg["harbour"]["bays"]:
 		var half := Num.f(at[0])
 		if Num.f(at[1]) <= top:
 			continue  # an older stage's bay lies past this young city's north edge
-		if Rect2(-half, top, half * 2.0, Num.f(at[1]) - top).intersects(rect.grow(-0.01)):
+		if Rect2(-half, top, half * 2.0, Num.f(at[1]) - top).intersects(inner):
 			return true
 	return false
 

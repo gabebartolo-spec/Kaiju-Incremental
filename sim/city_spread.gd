@@ -36,7 +36,8 @@ static func width(rings: Array[float], ring: int) -> float:
 ## The landmark sites: the pool (city "landmarks") in seeded order, each into a seeded district
 ## from its "min_ring" on with room left (spread "landmarks_per_ring"), at the first seeded cell
 ## of that district where it fits and keeps its distances. A landmark no district can take is
-## left out. A spec with an "anchor" [x, z] stands there instead (no spread). Specs place in
+## left out. A spec with an "anchor" [x, z] stands there instead (no spread). Anchored specs place
+## first (their spots are fixed, so a seeded one keeps its gap from them, D-375, D-380), then
 ## "place_order" (lowest first; none = after every ordered one), seeded order among equals.
 static func landmarks(
 	plan: Dictionary, rings: Array[float], avenues: Array, cfg: Dictionary
@@ -215,12 +216,14 @@ static func _landmark_ok(
 	return true
 
 
-## The pool sorted by "place_order" (none = last); equal orders keep their (seeded) order.
+## The pool with the anchored specs first, then by "place_order" (none = last); equal orders keep
+## their (seeded) order.
 static func _in_place_order(pool: Array) -> Array:
 	var keyed: Array = []
 	for n: int in pool.size():
 		var spec: Dictionary = pool[n]
-		keyed.append([-Num.f(spec.get("place_order", INF)), n, spec])
+		var key := INF if spec.has("anchor") else -Num.f(spec.get("place_order", INF))
+		keyed.append([key, n, spec])
 	keyed.sort_custom(_farther)
 	var out: Array = []
 	for row: Array in keyed:
