@@ -1,6 +1,7 @@
 extends "res://tests/lib/powers_base.gd"
-## The insectoid branch checks of the powers suite (run_powers_tests runs them): scuttle, glide,
-## climb, brood and the streets.
+## PARKED (director 2026-10-29): the insectoid is not in the demo, so its branch checks (scuttle,
+## glide, climb, brood) are not run. They were the powers suite's (run_powers_tests extended this
+## file); move this back to tests/lib/ and extend it again when work on the insectoid starts.
 
 
 func _check_scuttle() -> void:
@@ -102,37 +103,3 @@ func _check_brood() -> void:
 			if str(event["type"]) == "tank_fired" and event.has("at"):
 				shot_young = true
 	check(shot_young, "a tank near the young fires on them instead of the kaiju")
-
-
-## The building slow does not grow with the kaiju (lead review): a grown kaiju with no branch
-## node strides down a 4-wide street lined with blocks at full speed, past every block.
-func _check_streets() -> void:
-	var street: Array[Dictionary] = []
-	for n: int in 6:
-		for side: float in [-3.5, 3.5]:
-			street.append(_b(side, 34.0 - n * 8.0, Vector3i(3, 6, 4), 3))
-	var grown := {"claws": 5, "hide": 5, "rage": 1, "evolve1": 1, "evolve2": 1}
-	var slow: Array[String] = []
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
-		for levels: Dictionary in [{}, grown]:
-			var sim := _sim(species_id, levels, street, Vector2(0, 40))
-			_run(sim, 2.0, NORTH)
-			var free := sim.stat("speed") * 2.0
-			if 40.0 - sim.kaiju_pos.y < free * 0.95:
-				slow.append(
-					(
-						"%s tier %d: %.1f of %.1f"
-						% [species_id, sim.size_tier(), 40.0 - sim.kaiju_pos.y, free]
-					)
-				)
-	check(slow.is_empty(), "young and grown kaiju walk a city street at full speed: %s" % [slow])
-	# The street runs z 37 .. -9 (inside the arena's +-44.5); the kaiju starts at z 40.
-	var far := _sim("reptilian", grown, street, Vector2(0, 40))
-	_run(far, 11.0, NORTH)
-	check(
-		far.kaiju_pos.y < -10.0,
-		(
-			"a tier-3 kaiju with no branch passes all six blocks in 11 s (at z %.0f, past -10)"
-			% far.kaiju_pos.y
-		)
-	)

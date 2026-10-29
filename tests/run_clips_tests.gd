@@ -139,8 +139,8 @@ func _pose_gap(a: KaijuClips.Pose, b: KaijuClips.Pose) -> Vector2:
 	return Vector2(turn, move)
 
 
-## The croc titan moves by clips at every stage; the other species keep their procedural gaits;
-## clips baked for one skeleton are refused by another.
+## The croc titan moves by clips at every stage; clips baked for one skeleton are refused by
+## another.
 func _check_who_uses_clips() -> void:
 	var adult := _model("reptilian", "adult")
 	var rig := _rig_of(adult)
@@ -151,12 +151,6 @@ func _check_who_uses_clips() -> void:
 		_rig_of(baby).gait is ClipGait and _rig_of(young).gait is ClipGait,
 		"the croc titan baby and adolescent move by their clips"
 	)
-	var mantis := _model("insectoid", "adult")
-	var octopus := _model("cephalopod", "adult")
-	check(
-		_rig_of(mantis).gait is HexapodGait and _rig_of(octopus).gait is RadialGait,
-		"the mantis and the octopus keep their procedural gaits"
-	)
 	var clips := KaijuClips.read(CLIPS)
 	var bones_match := clips.fit(rig).is_empty()
 	var refused := not clips.fit(_rig_of(baby)).is_empty()
@@ -164,7 +158,7 @@ func _check_who_uses_clips() -> void:
 		bones_match and refused,
 		"the clips fit the croc titan's rig and are refused by another skeleton"
 	)
-	for kaiju: KaijuModel in [adult, baby, young, mantis, octopus]:
+	for kaiju: KaijuModel in [adult, baby, young]:
 		kaiju.queue_free()
 	await process_frame
 

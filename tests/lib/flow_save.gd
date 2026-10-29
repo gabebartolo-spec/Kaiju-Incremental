@@ -9,7 +9,7 @@ extends RefCounted
 static func migration(check: Callable) -> void:
 	var v1 := {
 		"version": 1,
-		"species": "cephalopod",
+		"species": "reptilian",
 		"rubble": 42,
 		"levels": {"claws": 2},
 		"runs": 3,

@@ -95,7 +95,7 @@ func _check_tooltip_width() -> void:
 	var window := root.size
 	root.size = CANVAS
 	var widths: Dictionary = {}
-	for id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for id: String in ["reptilian"]:
 		var tree := UpgradeTree.new(Content.upgrades(), {}, id)
 		var screen := UpgradeScreen.new()
 		screen.setup(tree, 30, Content.species_def(id), Content.section("kaiju"))
