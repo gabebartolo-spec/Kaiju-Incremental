@@ -4,8 +4,8 @@ extends Control
 ## the centre (TreeLayout), seen through a camera that zooms and pans (TreeView). Zoom: the mouse
 ## wheel (toward the cursor) and the pad triggers, from the default (text 24 px at 1080p) out to
 ## the whole tree on screen. Pan: drag with the left button, WASD or the arrows, the pad's right
-## stick; the tree never leaves the screen. Lines join each shown node to what it needs. Rates:
-## tuning "tree" "view".
+## stick; the tree never leaves the screen. Glass tubes join each shown node to what it needs.
+## Rates: tuning "tree" "view". Look: a bio-lab specimen plate, tuning "tree" "skin".
 
 signal node_pressed(id: String)
 signal node_selected(id: String)
@@ -26,6 +26,7 @@ var view: TreeView
 var _species: Dictionary
 var _roles: Dictionary
 var _cfg: Dictionary
+var _skin: Dictionary
 var _dragging := false
 ## A tree point to centre on once the area has its size (centre_on before the first layout).
 var _pending := Vector2.ZERO
@@ -44,6 +45,7 @@ func _ready() -> void:
 	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_cfg = Content.section("tree")["view"]
+	_skin = Content.section("tree")["skin"]
 	var ultimates: Array[String] = []
 	for id: String in tree.order:
 		if str(_roles[id]) == "ultimate":
@@ -161,18 +163,56 @@ static func _held(keys: Array[Key]) -> bool:
 	return false
 
 
-## Links join shown nodes only: nothing leads into a ring that is not shown yet (R 1.4).
+## The plate under the nodes: its fill, a graticule and a dish rim round each ring, all moving
+## with the camera. Tubes join shown nodes only: nothing leads into a ring that is not shown yet
+## (R 1.4); a tube runs with Special K once the node it leads from is owned.
 func _draw() -> void:
+	draw_rect(Rect2(Vector2.ZERO, size), _colour("plate"))
+	_draw_grid()
+	var origin := view.to_screen(Vector2.ZERO)
+	var rim := _colour("rim")
+	var rim_width := maxf(LINK_MIN_WIDTH, Num.f(_skin["rim_width"]) * view.zoom)
+	# Each rim sits halfway across the gap outside its ring's band.
+	var gap := Num.f(Content.section("tree")["layout"]["ring_gap"]) * 0.5
+	for r: int in layout.radii.size():
+		var reach := (layout.radii[r] + layout.half_depth[r] + gap) * view.zoom
+		draw_arc(origin, reach, 0.0, TAU, 128, rim, rim_width, true)
 	var width := maxf(LINK_MIN_WIDTH, LINK_WIDTH * view.zoom)
-	for id: String in tree.order:
-		var def: Dictionary = tree.defs[id]
-		var requires: Array = def.get("requires", [])
-		for req: String in requires:
-			if not buttons.has(req) or not _shown(id) or not _shown(req):
-				continue
-			var owned := tree.level(req) > 0
-			var colour := UiKit.GOOD if owned else UiKit.LOCKED
-			draw_line(_centre(req), _centre(id), colour, width, true)
+	var tube_width := width + Num.f(_skin["tube_extra"]) * view.zoom
+	for pass_core: bool in [false, true]:
+		for id: String in tree.order:
+			var def: Dictionary = tree.defs[id]
+			var requires: Array = def.get("requires", [])
+			for req: String in requires:
+				if not buttons.has(req) or not _shown(id) or not _shown(req):
+					continue
+				if not pass_core:
+					draw_line(_centre(req), _centre(id), _colour("tube"), tube_width, true)
+					continue
+				var colour := _colour("juice") if tree.level(req) > 0 else _colour("empty")
+				draw_line(_centre(req), _centre(id), colour, width, true)
+
+
+## The plate's graticule: lines every grid_step canvas units, over the part of the plate in view.
+func _draw_grid() -> void:
+	var step := Num.f(_skin["grid_step"])
+	var colour := _colour("grid")
+	var low := view.to_tree(Vector2.ZERO)
+	var high := view.to_tree(size)
+	var x := floorf(low.x / step) * step
+	while x <= high.x:
+		var sx := view.to_screen(Vector2(x, 0.0)).x
+		draw_line(Vector2(sx, 0.0), Vector2(sx, size.y), colour, 1.0)
+		x += step
+	var y := floorf(low.y / step) * step
+	while y <= high.y:
+		var sy := view.to_screen(Vector2(0.0, y)).y
+		draw_line(Vector2(0.0, sy), Vector2(size.x, sy), colour, 1.0)
+		y += step
+
+
+func _colour(key: String) -> Color:
+	return Color(str(_skin[key]))
 
 
 func _shown(id: String) -> bool:

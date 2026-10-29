@@ -1,9 +1,10 @@
 class_name UpgradeNode
 extends Button
-## One node of the evolution tree. Its look says at a glance what it is and whether you can
-## have it: green and "BUY n" when affordable, the price dimmed when not (the side panel says how
-## much is missing), a dashed outline when locked, hazard yellow when maxed; evolutions in alert
-## red, the species' ultimate under a band of hazard tape and taller as its branch's capstone.
+## One node of the evolution tree, a glass cell on the bio-lab plate (tuning "tree" "skin"). Its
+## look says at a glance what it is and whether you can have it: bio green and "BUY n" when
+## affordable, the price dimmed when not (the side panel says how much is missing), a dashed
+## outline when locked, full of Special K violet when maxed; evolutions in alert red, the species'
+## ultimate under a band of hazard tape and taller as its branch's capstone.
 
 ## Text size range: the largest that fits the node's width, never below FONT_MIN (at 4K and the
 ## largest UI scale FONT_MIN still clears the TV's 28 px cap-height bar).
@@ -12,12 +13,6 @@ const FONT_MIN := 18
 const PAD := 2
 ## The thickest border each kind of node draws (focused): its text keeps clear of it.
 const MAX_BORDER := {"plain": 5, "branch": 5, "evolve": 5, "ultimate": 8}
-const FILL := {
-	"maxed": Color("3a3010"), "buy": Color("1e3a1b"), "poor": UiKit.PANEL, "locked": Color("111114")
-}
-const EDGE := {
-	"maxed": UiKit.ACCENT, "buy": UiKit.GOOD, "poor": UiKit.PANEL_EDGE, "locked": UiKit.LOCKED
-}
 const EVOLVE_FILL := Color("3a0d0b")
 ## The ultimate's band of hazard tape across its top (px, inside its thickest border).
 const ULTIMATE_BAND := 8.0
@@ -105,8 +100,9 @@ static func short_price(price: int) -> String:
 ## Redraws the node from the tree and the rubble in hand.
 func show_state(tree: UpgradeTree, rubble: int) -> void:
 	_show_text(tree, rubble)
-	var fill: Color = FILL[state]
-	var edge: Color = EDGE[state]
+	var skin: Dictionary = Content.section("tree")["skin"]
+	var fill := Color(str(skin["fill"][state]))
+	var edge := Color(str(skin["edge"][state]))
 	# A verb (changes what you do or see) draws heavier than a stat (R 16.4).
 	var width := VERB_BORDER if tree.kind(id) == "verb" else 3
 	if role == "evolve" and state != "maxed":

@@ -5713,6 +5713,25 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
+        "skin": {
+          "type": "object",
+          "properties": {
+            "plate": {"$ref": "#/$defs/str"},
+            "grid": {"$ref": "#/$defs/str"},
+            "grid_step": {"$ref": "#/$defs/num"},
+            "rim": {"$ref": "#/$defs/str"},
+            "rim_width": {"$ref": "#/$defs/num"},
+            "tube": {"$ref": "#/$defs/str"},
+            "tube_extra": {"$ref": "#/$defs/num"},
+            "juice": {"$ref": "#/$defs/str"},
+            "empty": {"$ref": "#/$defs/str"},
+            "fill": {"type": "object", "properties": {"buy": {"$ref": "#/$defs/str"}, "poor": {"$ref": "#/$defs/str"}, "maxed": {"$ref": "#/$defs/str"}, "locked": {"$ref": "#/$defs/str"}}, "required": ["buy", "poor", "maxed", "locked"], "additionalProperties": false},
+            "edge": {"type": "object", "properties": {"buy": {"$ref": "#/$defs/str"}, "poor": {"$ref": "#/$defs/str"}, "maxed": {"$ref": "#/$defs/str"}, "locked": {"$ref": "#/$defs/str"}}, "required": ["buy", "poor", "maxed", "locked"], "additionalProperties": false}
+          },
+          "required": ["plate", "grid", "grid_step", "rim", "rim_width", "tube", "tube_extra", "juice", "empty", "fill", "edge"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "cost_rate": {"type": "array", "items": {"$ref": "#/$defs/num"}},
         "species": {
           "type": "object",
@@ -5779,7 +5798,7 @@
           "additionalProperties": false
         }
       },
-      "required": ["kinds", "layout", "view", "cost_rate", "species", "pacing"],
+      "required": ["kinds", "layout", "view", "skin", "cost_rate", "species", "pacing"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     }

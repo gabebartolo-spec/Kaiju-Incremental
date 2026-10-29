@@ -162,6 +162,20 @@
 			"deadzone": 0.2,
 			"fit_margin": 0.95
 		},
+		"skin": {
+			"_note": "The tree screen's bio-lab look (director 2026-10-30, 'bio lab aesthetic'; the Kaiju Creation lab's palette, creation.lab.colors). The map is a specimen plate: plate fill, a graticule of grid lines every grid canvas units (grid colour), a dish rim (rim colour, rim_width px) round each ring. Links are glass tubes: tube colour tube_extra px wider than the core, the core filled with Special K (juice) once the node it leads from is owned, else empty (empty). Nodes are glass cells: fill and edge by state (buy, poor, maxed, locked); evolutions keep alert red and the ultimate its hazard tape (D-236: hazard stripes on lab props).",
+			"plate": "06110f",
+			"grid": "0f2a26",
+			"grid_step": 60.0,
+			"rim": "1c4a44",
+			"rim_width": 3.0,
+			"tube": "24423e",
+			"tube_extra": 4.0,
+			"juice": "8a3dff",
+			"empty": "16302c",
+			"fill": {"buy": "0f3a2a", "poor": "0d1c1b", "maxed": "2a1450", "locked": "0a1312"},
+			"edge": {"buy": "5dffa8", "poor": "4f8c86", "maxed": "b98aff", "locked": "7c8a88"}
+		},
 		"cost_rate": [1.07, 1.15],
 		"species": {
 			"reptilian": {"rings": [{"stage": 1, "target": 14}, {"stage": 2, "target": 16}, {"stage": 3, "target": 18}, {"stage": 3, "target": 10}]}
