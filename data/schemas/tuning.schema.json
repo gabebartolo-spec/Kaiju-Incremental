@@ -606,20 +606,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "stomp_speed": {
-          "type": "object",
-          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
-          "required": ["hidden"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "tail_auto": {
-          "type": "object",
-          "properties": {"hidden": {"$ref": "#/$defs/bool"}},
-          "required": ["hidden"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "eat_heal": {
           "type": "object",
           "properties": {"hidden": {"$ref": "#/$defs/bool"}},
@@ -648,7 +634,7 @@
         "swipe_damage", "swipe_width", "tail_damage", "tail_reach", "tail_floors", "momentum",
         "beam_dps", "glide_seconds", "climb", "brood_count", "limbs", "squeeze", "throw_damage",
         "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
-        "death_blast", "stomp_speed", "tail_auto", "eat_heal", "throw_ricochet", "throw_domino"
+        "death_blast", "eat_heal", "throw_ricochet", "throw_domino"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

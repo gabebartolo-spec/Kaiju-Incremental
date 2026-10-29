@@ -59,7 +59,6 @@
               "throw_damage": {"$ref": "#/$defs/num"},
               "ink_dps": {"$ref": "#/$defs/num"},
               "death_blast": {"$ref": "#/$defs/num"},
-              "tail_auto": {"$ref": "#/$defs/num"},
               "eat_heal": {"$ref": "#/$defs/num"},
               "throw_ricochet": {"$ref": "#/$defs/num"},
               "throw_domino": {"$ref": "#/$defs/num"}
@@ -81,13 +80,6 @@
                 "type": "object",
                 "properties": {"stomp_damage": {"$ref": "#/$defs/num"}},
                 "required": ["stomp_damage"],
-                "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-                "additionalProperties": false
-              },
-              "reptilian": {
-                "type": "object",
-                "properties": {"stomp_interval": {"$ref": "#/$defs/num"}, "stomp_speed": {"$ref": "#/$defs/num"}},
-                "required": ["stomp_interval", "stomp_speed"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                 "additionalProperties": false
               }
