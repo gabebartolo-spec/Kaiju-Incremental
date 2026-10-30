@@ -46,6 +46,7 @@ func run_checks() -> void:
 	_native = ClassDB.class_exists("KaijuMesher")
 	await _t("_check_native_loaded")
 	await _t("_check_matches_baked_view")
+	await _t("_check_merge_cuts_quads")
 	await _t("_check_no_face_hidden_by_a_hidden_slab")
 	await _t("_check_balcony_rail_takes_the_sill_tone")
 	await _t("_check_closed_surface_after_carves")
@@ -109,8 +110,8 @@ func _check_matches_baked_view() -> void:
 		var cells := BuildingCells.new(b, _party(f))
 		var m := CellMesher.new(voxels, cells, false)
 		var old := {}
-		CellFaces.mesh_faces(baked.shell, old)
-		CellFaces.mesh_faces(baked.slabs, old)
+		CellFaces.shown_faces(baked.shell, voxels, old)
+		CellFaces.shown_faces(baked.slabs, voxels, old)
 		var now := CellFaces.cell_faces(m, m.drawn(cells.cells))
 		var missing := 0
 		var recoloured := 0
@@ -163,6 +164,33 @@ func _check_matches_baked_view() -> void:
 				% [f[0], extra, balcony, stray]
 			)
 		)
+
+
+## Merging flat-lit faces (perf, 2026-10-31): the baked view draws each wall as few large quads
+## instead of one per voxel face, and every voxel face still shows (the check above): the GPU
+## draws under half the triangles for the same picture.
+func _check_merge_cuts_quads() -> void:
+	var quads := 0
+	var faces := 0
+	for f: Array in FIXTURES:
+		var b := CellFixture.building(f)
+		var voxels := BuildingVoxels.new(b, Color("8a7f72"), _party(f))
+		var baked := BuildingMesher.new(voxels)
+		var shown := {}
+		CellFaces.shown_faces(baked.shell, voxels, shown)
+		CellFaces.shown_faces(baked.slabs, voxels, shown)
+		faces += shown.size()
+		for mesh: ArrayMesh in [baked.shell, baked.slabs]:
+			if mesh.get_surface_count() > 0:
+				var verts: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+				quads += verts.size() / 4
+	check(
+		quads * 2 < faces,
+		(
+			"merged quads draw every voxel face at under half the quads (%d quads, %d faces)"
+			% [quads, faces]
+		)
+	)
 
 
 ## The director's "flickering horizontal black bars across the windows" (2026-10-27): a wall cell

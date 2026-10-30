@@ -59,6 +59,32 @@ static func mesh_faces(mesh: ArrayMesh, into: Dictionary) -> void:
 		)
 
 
+## Face key -> colour of a baked mesh as building_baked.gdshader shows it: each merged quad split
+## back into its voxel faces, each in its cell's Look.jitter of the quad's base colour.
+static func shown_faces(mesh: ArrayMesh, voxels: BuildingVoxels, into: Dictionary) -> void:
+	if mesh == null or mesh.get_surface_count() == 0:
+		return
+	var a := mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
+	var colors: PackedColorArray = a[Mesh.ARRAY_COLOR]
+	var size := BuildingVoxels.VOXEL
+	var lift := voxels.origin() + Vector3(0, size * 0.5, 0)
+	for q: int in range(0, verts.size(), 4):
+		var u := verts[q + 1] - verts[q]
+		var v := verts[q + 3] - verts[q]
+		var nu := roundi(u.length() / size)
+		var nv := roundi(v.length() / size)
+		var n := normals[q]
+		for i: int in nu:
+			for j: int in nv:
+				var corner := verts[q] + u * (float(i) / nu) + v * (float(j) / nv)
+				var mid := corner + (u / nu + v / nv) * 0.5
+				var cell := Vector3i(((mid - n * size * 0.5 - lift) / size).round())
+				var c := Look.jitter(colors[q], cell, voxels.b.style).clamp()
+				into[[Vector3i((corner * 64.0).round()), Vector3i(n)]] = c
+
+
 static func cell_faces(m: CellMesher, cells: PackedByteArray) -> Dictionary:
 	var out := {}
 	for r: Vector3i in m.all_regions():

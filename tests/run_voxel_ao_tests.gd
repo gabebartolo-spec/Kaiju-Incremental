@@ -11,6 +11,7 @@ extends "res://tests/lib/runner.gd"
 
 const CellFaces := preload("res://tests/lib/cell_faces.gd")
 const AoFaces := preload("res://tests/lib/ao_faces.gd")
+const ShaderHash := preload("res://tests/lib/shader_hash.gd")
 ## [name, x, z, w, d, floors, tier, style]: an office and a curtain-wall glass tower.
 const FIXTURES: Array = [
 	["office", 10.5, 4.5, 3, 3, 6, 2, 0],
@@ -31,6 +32,7 @@ func run_checks() -> void:
 	await _t("_check_baked_agrees_with_cells")
 	await _t("_check_materials_have_finish")
 	await _t("_check_look_reaches_material")
+	await _t("_check_shader_hash_matches")
 
 
 func _building(f: Array) -> RampageSim.Building:
@@ -235,3 +237,22 @@ func _check_look_reaches_material() -> void:
 		"off: AO strength 0, light affect 0, finish off (%s)" % [off]
 	)
 	view.free()
+
+
+## The shader recomputes colour jitter and the bite hash per voxel; its murmur3 port matches
+## GDScript hash() bit for bit, so a merged wall shows the same colours and bites as before.
+func _check_shader_hash_matches() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var bad := 0
+	for n: int in 20000:
+		var c := Vector3i(
+			rng.randi_range(-300, 3000), rng.randi_range(-5, 900), rng.randi_range(-300, 3000)
+		)
+		var salt := rng.randi_range(0, 40)
+		var k := Vector3i(c.x >> 1, c.y >> 1, c.z >> 1) * 7 + Vector3i(salt, 3, 11)
+		if ShaderHash.jitter(c, salt) % 1000 != absi(hash(Vector4i(c.x, c.y, c.z, salt))) % 1000:
+			bad += 1
+		if ShaderHash.bite(k) % 997 != absi(hash(k)) % 997:
+			bad += 1
+	check(bad == 0, "the shader's hash equals hash() on 40000 cells (%d differ)" % bad)

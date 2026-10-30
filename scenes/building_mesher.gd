@@ -4,9 +4,12 @@ extends RefCounted
 ## The building's hollow inside counts as solid while it stands, so the inner faces of its
 ## walls are never drawn; the floor slabs bake into a second mesh that is shown only once the
 ## building is broken open; a slab proud of the walls (a balcony floor) is in neither mesh, so a
-## first blow changes only what it breaks (D-289). Every vertex carries its structural chunk and
-## a per-voxel hash (UV2) for building_baked.gdshader, its corner AO and material finish (UV,
-## VoxelAO), and a few voxels per chunk are kept as samples for the debris a broken chunk throws.
+## first blow changes only what it breaks (D-289). Every vertex carries its structural chunk (UV2.x)
+## for building_baked.gdshader, its corner AO and material finish (UV, VoxelAO) and its voxel's
+## palette colour; faces of one chunk, colour and finish whose four AO corners are all one level
+## merge into one quad (greedy, per plane), and the shader rebuilds each voxel's colour jitter and
+## bite hash from the fragment's cell (voxel_merged), so the look stays per voxel. A few voxels
+## per chunk are kept as samples for the debris a broken chunk throws.
 ## The bake is pure data, safe on a worker thread; the meshes are made on the main thread (shell,
 ## slabs).
 
@@ -53,7 +56,14 @@ var _face_u: Array[Vector3] = []
 var _face_v: Array[Vector3] = []
 var _rings: Array = []
 var _color: Color
+var _base: Color
 var _tag: Vector2
+# Only while baking: per (direction, depth) plane, Vector2i(v, u) -> merge id; per merge id its
+# [chunk, colour, finish, AO table entry]; per direction the axes of its normal, u and v.
+var _planes: Dictionary = {}
+var _merge_ids: Dictionary = {}
+var _merge_info: Array = []
+var _axes: Array[Vector3i] = []
 var _finish_class := 0
 var _verts := PackedVector3Array()
 var _normals := PackedVector3Array()
@@ -120,6 +130,11 @@ func _begin() -> void:
 		_face_u.append(u)
 		_face_v.append(nf.cross(u.normalized()) * half)
 		_rings.append(VoxelAO.ring_of(d))
+		_axes.append(Vector3i(_axis(nf), _axis(u), _axis(_face_v[-1])))
+
+
+static func _axis(v: Vector3) -> int:
+	return 0 if v.x != 0.0 else (1 if v.y != 0.0 else 2)
 
 
 func _end() -> void:
@@ -128,6 +143,7 @@ func _end() -> void:
 	_face_u.clear()
 	_face_v.clear()
 	_rings.clear()
+	_axes.clear()
 
 
 ## The cells that hide a shell face while the building stands: all of them but the floor slabs
@@ -162,10 +178,84 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool, all: Dictionary) -> Ar
 		_start_cell(cell)
 		for k: int in NEIGHBOURS.size():
 			if mask & (1 << k) != 0:
-				_quad(centre, k, VoxelAO.table(_ring_bits(cell + NEIGHBOURS[k], k, hollow)))
+				var ao := VoxelAO.table(_ring_bits(cell + NEIGHBOURS[k], k, hollow))
+				if _flat(ao):
+					_queue(cell, k, ao)
+				else:
+					_quad(centre, k, ao, Vector3.ONE)
 		if hollow_is_solid:
 			_sample(chunk_index(cell), centre, _color)
+	_merge(origin)
 	return _arrays()
+
+
+## Whether a face's four AO corners are one level (it can merge with its like).
+static func _flat(ao: int) -> bool:
+	return (ao & 255) == (ao & 3) * 0x55
+
+
+## Holds a flat face for _merge, keyed by what must match for two faces to merge.
+func _queue(cell: Vector3i, k: int, ao: int) -> void:
+	var key := [_tag.x, _base, _finish_class, ao]
+	var id: int = _merge_ids.get(key, -1)
+	if id < 0:
+		id = _merge_info.size()
+		_merge_ids[key] = id
+		_merge_info.append(key)
+	var ax := _axes[k]
+	var plane := Vector2i(k, cell[ax.x])
+	if not _planes.has(plane):
+		_planes[plane] = {}
+	var faces: Dictionary = _planes[plane]
+	faces[Vector2i(cell[ax.z], cell[ax.y])] = id
+
+
+## Greedy merge of the queued faces, plane by plane: a face grows along u while the next face
+## matches, then along v while the whole row does; each rectangle is one quad.
+func _merge(origin: Vector3) -> void:
+	for plane: Vector2i in _planes:
+		var k := plane.x
+		var ax := _axes[k]
+		var faces: Dictionary = _planes[plane]
+		var order: Array = faces.keys()
+		order.sort()
+		for p: Vector2i in order:
+			if not faces.has(p):
+				continue
+			var id: int = faces[p]
+			var nu := 1
+			while faces.get(Vector2i(p.x, p.y + nu), -1) == id:
+				nu += 1
+			var nv := 1
+			while _row_matches(faces, Vector2i(p.x + nv, p.y), nu, id):
+				nv += 1
+			for j: int in nv:
+				for i: int in nu:
+					faces.erase(Vector2i(p.x + j, p.y + i))
+			var mid := Vector3.ZERO
+			mid[ax.x] = plane.y
+			mid[ax.y] = p.y + (nu - 1) * 0.5
+			mid[ax.z] = p.x + (nv - 1) * 0.5
+			var span := Vector3.ONE
+			span[ax.y] = nu
+			span[ax.z] = nv
+			var info: Array = _merge_info[id]
+			var chunk: int = info[0]
+			_tag = Vector2(chunk, 0.0)
+			_base = info[1]
+			_finish_class = info[2]
+			var face_ao: int = info[3]
+			_quad(origin + mid * BuildingVoxels.VOXEL, k, face_ao, span)
+	_planes = {}
+	_merge_ids = {}
+	_merge_info = []
+
+
+func _row_matches(faces: Dictionary, start: Vector2i, n: int, id: int) -> bool:
+	for i: int in n:
+		if faces.get(Vector2i(start.x, start.y + i), -1) != id:
+			return false
+	return true
 
 
 ## Whether a face towards n is hidden: a voxel, the ground, or (hollow) the building's inside.
@@ -188,12 +278,11 @@ func _start_cell(cell: Vector3i) -> void:
 	var base: Color = _v.palette.get(key, Color.MAGENTA)
 	if key == VoxelBuilder.DIRECT:
 		base = _v.vox.colors[cell]
-	var salt := _v.b.style
-	_color = Look.jitter(base, cell, salt)
-	# Bites come out in clumps of 2x2x2 voxels, not single-voxel confetti.
-	var clump := Vector3i(cell.x >> 1, cell.y >> 1, cell.z >> 1)
-	var h := float(absi(hash(clump * 7 + Vector3i(salt, 3, 11))) % 997) / 997.0
-	_tag = Vector2(chunk_index(cell), h)
+	# The mesh keeps the palette colour: building_baked.gdshader jitters it per voxel and bites in
+	# clumps of 2x2x2 voxels (voxel_merged). The jittered colour is the debris sample's.
+	_base = base
+	_color = Look.jitter(base, cell, _v.b.style)
+	_tag = Vector2(chunk_index(cell), 0.0)
 	_finish_class = Num.i(_finish.get(key, 0))
 
 
@@ -207,17 +296,18 @@ func _ring_bits(air: Vector3i, k: int, hollow: bool) -> int:
 	return bits
 
 
-## One face of the cell centred at `centre`; ao: its VoxelAO.table entry.
-func _quad(centre: Vector3, k: int, ao: int) -> void:
+## One face centred on `centre` (a cell's centre, or a merged run's middle); ao: its
+## VoxelAO.table entry; span: how many voxels it covers along each axis.
+func _quad(centre: Vector3, k: int, ao: int, span: Vector3) -> void:
 	var at := _verts.size()
 	var nf := Vector3(NEIGHBOURS[k])
-	var u := _face_u[k]
-	var v := _face_v[k]
+	var u := _face_u[k] * span
+	var v := _face_v[k] * span
 	var c := centre + nf * (BuildingVoxels.VOXEL * 0.5)
 	_verts.append_array([c - u - v, c + u - v, c + u + v, c - u + v])
 	for q: int in 4:
 		_normals.append(nf)
-		_colors.append(_color)
+		_colors.append(_base)
 		_uv.append(VoxelAO.uv(ao, q, _finish_class))
 		_uv2.append(_tag)
 	var split := VoxelAO.SPLIT_13 if (ao & VoxelAO.FLIP) != 0 else VoxelAO.SPLIT_02
