@@ -1987,6 +1987,21 @@
 		"blast_floors": 64,
 		"look": {"crackle": 2.2, "crackle_share": 0.18, "crackle_hz": 14.0, "stone": "8a8780", "stone_vary": 0.18, "stone_keep": 0.25, "light_energy": 6.0, "light_range": 18.0, "burst_light": 40.0, "burst_s": 0.5, "debris_max": 3000, "chunks": ["res://assets/death/chunk_0.obj", "res://assets/death/chunk_1.obj", "res://assets/death/chunk_2.obj", "res://assets/death/chunk_3.obj", "res://assets/death/chunk_4.obj", "res://assets/death/chunk_5.obj", "res://assets/death/chunk_6.obj", "res://assets/death/chunk_7.obj"], "debris_size": [0.8, 4.8], "shard_size": [0.6, 1.5], "size_skew": 2.0, "debris_spin": [2.0, 9.0], "trail": {"amount": 24, "life": 1.2, "size": 1.4, "rise": 0.6, "alpha": 0.35}, "debris_speed": [6.0, 18.0], "debris_up": [4.0, 14.0], "gravity": 30.0, "debris_s": 2.5, "shard_arc": 6.0, "crush_radius": 1.6, "burst_trauma": 0.8, "shard_trauma": 0.12}
 	},
+	"boats": {
+		"_note": "D-404 boats (BoatView): the Tripo harbour mix voxelised by tools/boats/bake.sh at real size (voxel sim units a cell, the street props' cube; metres_tall each, a sim unit is metres_per_unit m); draft: share of the height under water. Moored at the piers (pier_spacing a slot, pier_fill of slots taken, pier_gap off the deck), bay of them at anchor in the bay, river of them on the river (river_bank: share of its half-width off the middle). Each rocks rock_deg at rock_hz and bobs bob; the kaiju within wake_radius rocks it up to wake_rock_deg more and pushes it away at flee_push (units/s^2, drag a second), its wake fading over wake_fade_s; within capsize_radius it rolls over in capsize_s and sinks over sink_s.",
+		"voxel": 0.0625, "metres_per_unit": 3.0,
+		"models": {
+			"B01": {"metres_tall": 11.8, "draft": 0.12},
+			"B02": {"metres_tall": 16.5, "draft": 0.12},
+			"B03": {"metres_tall": 15.6, "draft": 0.06},
+			"B04": {"metres_tall": 3.6, "draft": 0.25}
+		},
+		"mix": {"B01": 3.0, "B02": 2.0, "B03": 3.0, "B04": 4.0},
+		"pier_spacing": 9.0, "pier_fill": 0.6, "pier_gap": 1.4, "bay": 6, "river": 5, "river_bank": 0.45, "spacing": 7.0,
+		"rock_deg": 2.5, "rock_hz": [0.12, 0.25], "bob": 0.04,
+		"wake_radius": 30.0, "wake_rock_deg": 22.0, "wake_fade_s": 4.0, "flee_push": 6.0, "drag": 0.5,
+		"capsize_radius": 6.0, "capsize_s": 2.5, "sink_s": 8.0
+	},
 	"wildlife": {
 		"_note": "Sky and sea life (WildlifeView; director comments 63, 66, 71; DESIGN atmosphere): spectacle only. Gulls: flocks x per_flock circling (radius m, speed rad/s, height m over the sea) round centres at area_x and the coast + area_z. Pigeons: flocks x per_flock on roofs at least min_height tall; scattered, they wheel (radius, speed) wheel_lift over their roof. A roar (leap, ultimate, ability) scatters every bird within roar_radius of the kaiju, a section landing those within fall_radius: flee_speed and flee_up m/s for flee_seconds, then gulls settle back at settle per second. span: wingtip to wingtip m; flap_rate rad/s; flap_lift: tip lift share. Whale: surfacings per run, the first after first s, then gap s apart; rises from depth m under the sea over rise_seconds, spouts, swims at swim m/s for stay s, dives over dive_seconds, and dives at once on a roar; length, width, hump m.",
 		"roar_radius": 140.0, "fall_radius": 60.0, "flee_speed": [14.0, 22.0], "flee_up": [5.0, 10.0], "flee_seconds": [2.5, 4.0], "settle": 0.8, "flap_lift": 0.6,
