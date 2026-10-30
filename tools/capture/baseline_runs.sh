@@ -4,6 +4,8 @@
 # Every other Godot command line on the PC is logged at the start and end of each run.
 #   GODOT=<console exe> ROUTE=<route.json> OUT=<dir> tools/capture/baseline_runs.sh bench|ablate
 # bench:  runs A (night clear) and B (dusk rain) at Medium and High, twice each, ABAB.
+# presets: run A (night clear) at every preset, Potato to Max, at RES (default 1920x1080 and 3840x2160),
+#          twice each; Potato runs gl_compatibility, as the game does after its restart (R 18.6).
 # ablate: tools/capture/ablate.gd rows on run A at Medium, twice each.
 # Needs the off-screen no_focus override.cfg in the project folder (see Kit.window_ok).
 set -u
@@ -19,7 +21,8 @@ gpu_busy() {  # his game, another windowed Godot or another builder's bench wind
   nvidia-smi --query-compute-apps=process_name --format=csv,noheader 2>/dev/null | grep -qi "League" && return 0
   others | grep -v -- "--headless" | grep . >/dev/null && return 0
   # HELD_BY=gq: run as a gq speed job, whose dispatcher holds BENCH_WINDOW_gq for this run (not another's)
-  ls /c/kt/BENCH_WINDOW* 2>/dev/null | grep -v "BENCH_WINDOW_perf-p0" | grep -v "BENCH_WINDOW_${HELD_BY:-perf-p0}$" \n    | grep . >/dev/null && return 0
+  ls /c/kt/BENCH_WINDOW* 2>/dev/null | grep -v "BENCH_WINDOW_perf-p0" | grep -v "BENCH_WINDOW_${HELD_BY:-perf-p0}$" \
+    | grep . >/dev/null && return 0
   return 1
 }
 wait_free() {  # take the bench window only when nothing else holds it; check twice, 20 s apart
@@ -37,10 +40,12 @@ godot_run() {  # label, script, args...
   local label="$1" script="$2"
   if [ -n "${ONLY:-}" ] && ! echo " $ONLY " | grep -q " $label "; then return 0; fi
   shift 2
+  local res="${RES_NOW:-3840x2160}" renderer=()
+  case " $* " in *" --graphics=potato "*) renderer=(--rendering-method gl_compatibility) ;; esac
   bash "$ENGINE_SLOT" || return 3
   wait_free
   echo "=== $label start $(date +%T); other Godot processes:"; others | cut -c1-220
-  APPDATA="$OUT/appdata_$label" timeout 1500 "$GODOT" --path . --resolution 3840x2160 --windowed \
+  APPDATA="$OUT/appdata_$label" timeout 1500 "$GODOT" --path . --resolution "$res" --windowed "${renderer[@]}" \
     --fixed-fps 60 --disable-vsync --script "$script" -- "$@" 2>&1 | tee "$OUT/$label.log" \
     | grep -E "BENCH|ABLATE|SCRIPT ERROR|NVIDIA|refusing"
   rm -f "$WINDOW"
@@ -55,6 +60,16 @@ case "${1:-bench}" in
         set -- $cfg
         godot_run "${1}_${4}_$pass" tools/capture/bench_frames.gd --route-file="$ROUTE" \
           --time="$2" --weather="$3" --graphics="$4" --out="$OUT" --label="${1}_${4}_$pass"
+      done
+    done ;;
+  presets)
+    for RES_NOW in ${RES:-1920x1080 3840x2160}; do
+      for pass in 1 2; do
+        for preset in potato low medium high max; do
+          label="A_${preset}_${RES_NOW##*x}p_$pass"
+          godot_run "$label" tools/capture/bench_frames.gd --route-file="$ROUTE" \
+            --time=night --weather=clear --graphics="$preset" --res="$RES_NOW" --out="$OUT" --label="$label"
+        done
       done
     done ;;
   ablate)
