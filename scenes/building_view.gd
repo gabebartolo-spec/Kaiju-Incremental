@@ -91,8 +91,8 @@ func _dress() -> void:
 		return
 	ThreadCheck.main_only("BuildingView._dress")
 	_alive_tex = ImageTexture.create_from_image(_alive)
-	_shell_mat = _material(_alive_tex)
-	_slab_mat = _material(_alive_tex)
+	_shell_mat = _material(_alive_tex, true)
+	_slab_mat = _material(_alive_tex, true)
 	_shell = _instance(mesher.shell, _shell_mat)
 	add_child(_shell)
 	_slabs = _instance(mesher.slabs, _slab_mat)
@@ -219,11 +219,22 @@ func show_cells() -> void:
 	fine = true
 
 
-func _material(tex: Texture2D) -> ShaderMaterial:
+## merged: the mesh is BuildingMesher's (merged faces: the shader jitters and bites per voxel);
+## false for the cell grid, which bakes both per vertex.
+func _material(tex: Texture2D, merged := false) -> ShaderMaterial:
 	ThreadCheck.main_only("BuildingView._material")
 	var mat := ShaderMaterial.new()
 	mat.shader = SHADER
 	mat.set_shader_parameter("alive", tex)
+	if merged:
+		var voxel := BuildingVoxels.VOXEL
+		mat.set_shader_parameter("voxel_merged", true)
+		mat.set_shader_parameter("voxel_size", voxel)
+		mat.set_shader_parameter("voxel_salt", b.style)
+		mat.set_shader_parameter("color_noise", Look.value("color_noise"))
+		# BuildingVoxels.origin() of this building, as BuildingMesher._bake's cell centres.
+		var origin := Vector3(b.x - b.w * 0.5 + voxel * 0.5, float(b.base) + voxel * 0.5, b.z - b.d * 0.5 + voxel * 0.5)
+		mat.set_shader_parameter("voxel_origin", origin)
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
 	var shape: Dictionary = Content.landmarks().get(b.landmark, {})
 	mat.set_shader_parameter("inside", Num.f(shape.get("inside", 0.12)))  # cut faces' shade
@@ -338,7 +349,7 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 	piece.position = pivot
 	var tex := ImageTexture.create_from_image(piece_alive)
 	for mesh: ArrayMesh in [mesher.shell, mesher.slabs]:
-		var mi := _instance(mesh, _material(tex))
+		var mi := _instance(mesh, _material(tex, true))
 		mi.position = -pivot  # the meshes are baked in world space
 		piece.add_child(mi)
 	piece.set_meta("parts", parts)
