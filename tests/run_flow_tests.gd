@@ -175,7 +175,7 @@ func _check_rampage() -> void:
 		"the city fills with civilians and moving cars",
 	)
 	if street != null:
-		_check_jams(street.traffic)
+		_jams_hold(street.traffic)
 	var frames := 0
 	var words := 0
 	while not rampage.sim.over and frames < RAMPAGE_FRAMES:
@@ -373,7 +373,7 @@ func _street_life(node: Node) -> StreetLife:
 
 ## Traffic jams (DESIGN D-255): behind a live car a car queues for jam_queue_s, so lines back up;
 ## behind a wreck it turns round after jam_wreck_s. Before the fix every car gave up after 2.5 s.
-func _check_jams(traffic: Traffic) -> void:
+func _jams_hold(traffic: Traffic) -> void:
 	var cfg := Content.section("street")
 	var me := Traffic.Car.new()
 	me.pos = Vector2(-500, -500)

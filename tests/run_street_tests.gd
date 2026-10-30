@@ -301,17 +301,21 @@ func _check_rubble_press() -> void:
 	mm.use_colors = true
 	mm.mesh = BoxMesh.new()
 	mm.instance_count = 2
-	mm.set_instance_transform(0, Transform3D(Basis(), Vector3(0, 1, 0)))
-	mm.set_instance_transform(1, Transform3D(Basis(), Vector3(10, 1, 0)))
+	# Rows of 12 basis/origin floats and 4 colour floats, set as a buffer: a headless run reads
+	# a buffer back but not per-instance transforms.
+	var rows := PackedFloat32Array()
+	for x: float in [0.0, 10.0]:
+		rows.append_array([1, 0, 0, x, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1])
+	mm.buffer = rows
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	yard.add_child(mmi)
 	yard.press(Vector3.ZERO, 2.0, 0.35)
-	var under := mm.get_instance_transform(0)
-	var away := mm.get_instance_transform(1)
+	var buf := mm.buffer
 	yard.queue_free()
+	var whole := buf.size() == rows.size()
 	check(
-		is_equal_approx(under.origin.y, 0.35) and is_equal_approx(under.basis.y.y, 0.35),
-		"rubble under a foot is pressed to 35%% of its height (%.2f)" % under.origin.y,
+		whole and is_equal_approx(buf[7], 0.35) and is_equal_approx(buf[5], 0.35),
+		"rubble under a foot is pressed to 35%% of its height (%.2f)" % (buf[7] if whole else -1.0),
 	)
-	check(is_equal_approx(away.origin.y, 1.0), "rubble out of reach is untouched")
+	check(whole and is_equal_approx(buf[23], 1.0), "rubble out of reach is untouched")
