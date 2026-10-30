@@ -2,9 +2,12 @@ class_name DebrisField
 extends Node3D
 ## Physics debris: real rigid fragments thrown from breaking floors and landing towers, mostly
 ## small, in the building's own colours; they fall heavily, settle on the street, then crumble.
-## Meshes and materials are shared by size and colour. Oldest pieces go first past the cap.
+## Pieces are drawn by one MultiMesh per size (the colour rides on each instance), so a big
+## collapse costs a few draw calls, not one per piece. Oldest pieces go first past the cap.
 
 const SPAWN_PER_FRAME := 30
+const SHRINK_SECONDS := 0.8  # a piece shrinks away over this long once its time is up
+const SHRINK_MIN := 0.01  # a shrinking piece's last scale
 
 var size_scale := 1.0  # pieces are this many times the building's size (trees: bigger, to read)
 var lift := -1.0  # toward white before shading; below 0, the look's debris_lift
@@ -15,8 +18,15 @@ var _queue: Array[Array] = []
 var _head := 0  # _queue[_head:] are pending; the oldest are dropped past _cap
 var _cap: int
 var _bodies: Array[RigidBody3D] = []
-var _meshes: Dictionary = {}
-var _materials: Dictionary = {}
+var _views := PackedInt32Array()  # which MultiMesh (in _meshes) draws each piece
+var _colors := PackedColorArray()  # each piece's sRGB colour
+var _ends := PackedFloat32Array()  # when each piece starts to shrink (seconds on _clock)
+var _clock := 0.0
+var _sizes: Dictionary = {}  # snapped size -> its index in _meshes
+var _meshes: Array[MultiMesh] = []  # one per piece size
+## Each mesh's instance data as last drawn (CarveRubble.pack layout; a test reads it).
+var _bufs: Array[PackedFloat32Array] = []
+var _material: ShaderMaterial
 
 
 func _init(rng: RandomNumberGenerator, cap: int) -> void:
@@ -24,7 +34,8 @@ func _init(rng: RandomNumberGenerator, cap: int) -> void:
 	_cap = cap
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_clock += delta
 	for _n: int in mini(SPAWN_PER_FRAME, pending()):
 		var item: Array = _queue[_head]
 		_head += 1
@@ -36,8 +47,9 @@ func _process(_delta: float) -> void:
 		_head = _queue.size() - _cap
 	_compact()
 	while _bodies.size() > _cap:
-		var old: RigidBody3D = _bodies.pop_front()
-		old.queue_free()
+		_forget(0)
+	_age_out()
+	_draw()
 
 
 ## A real physics fragment: mostly small, in the building's own colours, thrown out and
@@ -76,13 +88,8 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
 	box_shape.size = Vector3.ONE * size
 	shape.shape = box_shape
 	body.add_child(shape)
-	var mi := MeshInstance3D.new()
-	mi.mesh = _mesh(size)
 	var whiten := lift if lift >= 0.0 else Look.value("debris_lift")
-	mi.material_override = _material(Color(color, 1.0).lightened(whiten))
-	if not shadows:
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	body.add_child(mi)
+	var view := _view(snappedf(size, 0.02))
 	body.position = pos
 	add_child(body)
 	var spread := Vector3(
@@ -93,31 +100,74 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
 		_rng.randf_range(-6, 6), _rng.randf_range(-6, 6), _rng.randf_range(-6, 6)
 	)
 	_bodies.append(body)
-	var tween := mi.create_tween()
-	tween.tween_interval(_rng.randf_range(5.0, 8.0))
-	tween.tween_property(mi, "scale", Vector3.ONE * 0.01, 0.8)
-	tween.tween_callback(func() -> void: _forget(body))
+	_views.append(view)
+	_colors.append(Color(color, 1.0).lightened(whiten))
+	_ends.append(_clock + _rng.randf_range(5.0, 8.0))
 
 
-func _mesh(size: float) -> BoxMesh:
-	var key := snappedf(size, 0.02)
-	if not _meshes.has(key):
-		var mesh := BoxMesh.new()
-		mesh.size = Vector3.ONE * key * 0.95
-		_meshes[key] = mesh
-	var out: BoxMesh = _meshes[key]
+## Pieces whose time is up and fully shrunk are gone.
+func _age_out() -> void:
+	var k := _bodies.size() - 1
+	while k >= 0:
+		if _clock >= _ends[k] + SHRINK_SECONDS:
+			_forget(k)
+		k -= 1
+
+
+## Every live piece into its size's MultiMesh, shrinking over SHRINK_SECONDS once its time is up.
+func _draw() -> void:
+	var counts := PackedInt32Array()
+	counts.resize(_meshes.size())
+	for view: int in _views:
+		counts[view] += 1
+	for view: int in _meshes.size():  # capacity grows by doubling; the tail stays zeros
+		var mm := _meshes[view]
+		if mm.instance_count < counts[view]:
+			mm.instance_count = nearest_po2(counts[view])
+			_bufs[view].resize(mm.instance_count * CarveRubble.FLOATS)
+		mm.visible_instance_count = counts[view]
+		counts[view] = 0
+	for k: int in _bodies.size():
+		var view := _views[k]
+		var t := clampf((_clock - _ends[k]) / SHRINK_SECONDS, 0.0, 1.0)
+		var xf := _bodies[k].global_transform
+		xf.basis = xf.basis.scaled_local(Vector3.ONE * lerpf(1.0, SHRINK_MIN, t))
+		CarveRubble.pack(_bufs[view], counts[view] * CarveRubble.FLOATS, xf, _colors[k])
+		counts[view] += 1
+	for view: int in _meshes.size():
+		if counts[view] > 0:
+			_meshes[view].buffer = _bufs[view]
+
+
+## The index of the MultiMesh drawing pieces of snapped size `key` (made on first use).
+func _view(key: float) -> int:
+	ThreadCheck.main_only("DebrisField._view")
+	if not _sizes.has(key):
+		if _material == null:
+			_material = Look.plain_detail_material(Color.WHITE, 0.0)  # colour per instance
+		var box := BoxMesh.new()
+		box.size = Vector3.ONE * key * 0.95
+		box.material = _material
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = box
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.top_level = true
+		if not shadows:
+			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mmi)
+		_sizes[key] = _meshes.size()
+		_meshes.append(mm)
+		_bufs.append(PackedFloat32Array())
+	var out: int = _sizes[key]
 	return out
 
 
-func _material(color: Color) -> ShaderMaterial:
-	ThreadCheck.main_only("DebrisField._material")
-	var key := color.to_html(false)
-	if not _materials.has(key):
-		_materials[key] = Look.plain_detail_material(color, 0.0)  # flat surfaces P3
-	var out: ShaderMaterial = _materials[key]
-	return out
-
-
-func _forget(body: RigidBody3D) -> void:
-	_bodies.erase(body)
-	body.queue_free()
+func _forget(k: int) -> void:
+	_bodies[k].queue_free()
+	_bodies.remove_at(k)
+	_views.remove_at(k)
+	_colors.remove_at(k)
+	_ends.remove_at(k)
