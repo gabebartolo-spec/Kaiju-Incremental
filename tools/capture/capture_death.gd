@@ -7,6 +7,7 @@ extends SceneTree
 ## needs the untracked off-screen override.cfg to make the window borderless at 3840x2160
 ## (window/size/borderless, window_width_override, window_height_override): a bordered window is
 ## clamped to the screen and the movie comes out 1920x1080.
+## --timeup ends the run on time's up instead of a kill: the AIRSTRIKE jet run first (D-405).
 ## --key presses a key a second into the rise (before "film from"), as a player would, so the
 ## first-run Controls card is gone from the clip.
 ## --measure=<dir> instead of a clip: measures his stone (DeathMeasure). The mean luminance of the
@@ -45,6 +46,7 @@ var _seconds := 6.5
 var _time := "noon"
 var _key := false
 var _measure := ""
+var _timeup := false
 
 
 func _initialize() -> void:
@@ -61,6 +63,8 @@ func _initialize() -> void:
 			_seconds = arg.substr(10).to_float()
 		elif arg.begins_with("--time="):
 			_time = arg.substr(7)
+		elif arg == "--timeup":
+			_timeup = true
 		elif arg == "--key":
 			_key = true
 		elif arg.begins_with("--measure="):
@@ -100,7 +104,10 @@ func _run() -> void:
 	var lead := roundi(LEAD_IN * Engine.max_fps) if Engine.max_fps > 0 else 15
 	print("film from frame %d" % maxi(0, Engine.get_frames_drawn() - lead))
 	walking[0] = false
-	sim.hp = -sim.max_hp
+	if _timeup:
+		sim.time_left = 0.0
+	else:
+		sim.hp = -sim.max_hp
 	if _measure != "":
 		await DeathMeasure.new(self, rampage, _measure).run()
 		quit()
@@ -111,9 +118,10 @@ func _run() -> void:
 		await physics_frame
 	print(
 		(
-			"died: nodes %d, blast %.1f, shards %d, chunks shards %d blast %d, over %s (%s)"
+			"died: nodes %d, bombs chunks %d, blast %.1f, shards %d, chunks shards %d blast %d, over %s (%s)"
 			% [
 				_nodes,
+				sim.death.strike.chunks,
 				sim.death.blast_radius,
 				sim.death.shards.size(),
 				sim.death.shard_chunks,

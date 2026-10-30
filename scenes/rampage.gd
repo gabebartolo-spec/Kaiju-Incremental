@@ -155,7 +155,22 @@ func _ready() -> void:
 	if not await stages.next(self):
 		return
 	ability_fx.attach_body(_kaiju)
-	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
+	_add_powers(Color(str(colors["eye"])))
+	_add_camera()
+	_start_sound()
+	_add_overlays()
+	_place_camera(1.0)  # after the HUD: the intro hides it
+	if stages.overlay != null:
+		stages.overlay.queue_free()
+	is_loaded = true
+	loaded.emit()
+	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
+
+
+## The powers, the rise, the blasts and the vehicles; the kaiju put under the river with its
+## grip finder, footfalls and ability bound.
+func _add_powers(eye: Color) -> void:
+	_powers = PowersView.new(sim, _city, _kaiju, eye)
 	add_child(_powers)
 	_rise = RampageRise.new(self, _city.fx, _kaiju, full_intro)
 	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
@@ -169,15 +184,6 @@ func _ready() -> void:
 	)
 	_kaiju.foot_planted.connect(_on_footfall)
 	_ability.bind(self, _city, _kaiju)
-	_add_camera()
-	_start_sound()
-	_add_overlays()
-	_place_camera(1.0)  # after the HUD: the intro hides it
-	if stages.overlay != null:
-		stages.overlay.queue_free()
-	is_loaded = true
-	loaded.emit()
-	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
 
 func _add_camera() -> void:
@@ -343,33 +349,14 @@ func _power(stat_name: String) -> float:
 	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
 
 
-## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
-## was waiting for this foot), so what you hear lands with what you see.
+## Every footfall kicks a little dust, nudges the camera and sounds a step (RampageFootfall).
 func _on_footfall(side: String, strength: float, at: Vector3) -> void:
-	var stomped := _stomp_wait > 0.0 and side != "tail" and _stomp_side in ["", side]
-	if stomped:
-		_land_stomp(side, at)
-	sfx.footstep(strength)
-	var size := sim.body_scale() * (0.2 + strength)
-	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
-		_city.footfall(at, FOOTFALL_DUST * size, sim.body_scale())
-	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
-	_city.fx.shockwave(at, ring, side == "tail", stomped)
-	var dip := FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
-	_step_dip = maxf(_step_dip, dip)
+	RampageFootfall.footfall(self, side, strength, at)
 
 
-## The waiting stomp lands under the foot that delivers it: cracks (if heavy enough), the street
-## crushed around that foot, one dust ripple. Sound is released by the same footfall (Sfx.footstep).
+## The waiting stomp lands under the foot that delivers it (RampageFootfall.land_stomp).
 func _land_stomp(side: String, at: Vector3) -> void:
-	_stomp_wait = 0.0
-	rumble.stomp()
-	var heavy := _power("stomp_damage")
-	sfx.stomp(heavy, _land.landed(side, ability_fx.stomp_cracks(at, _stomp_radius, heavy)))
-	var street := _city.street  # the foot lands wider than its ring (stomp_catch)
-	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
-	_city.crush(at, _stomp_radius + catch)
-	stomp_ring_at.append(at)
+	RampageFootfall.land_stomp(self, side, at)
 
 
 ## The sound hears the world: the sfx its camera, helicopters and street; CitySound (D-155) the sim
@@ -379,22 +366,6 @@ func _start_sound() -> void:
 	add_child(CitySound.new(sim, _city.street, sfx))
 
 
+## The gameplay camera this frame (RampageCamera.place).
 func _place_camera(delta: float) -> void:
-	var zoom := CameraTuning.zoom(sim.body_scale())
-	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
-	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip
-	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
-	# and its dart bursts ahead of the camera.
-	_follow.step(
-		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
-	)
-	_follow.turn_with(sim.facing, not sim.emerge.active, delta)  # D-330, D-259
-	var hold := sim.body.dash.on() or _ability.leaping() or sim.emerge.active  # rise: no lead
-	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
-	var nod := shake.turn(sim.body_scale(), motion).y
-	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
-	var view := {"body": _kaiju_at, "eye": _follow.eye(), "aim": aim, "fov": camera_fov}
-	if sim.emerge.active:  # the run intro's shot, ending exactly on this camera (RunIntro)
-		view = _rise.shot(view, _follow, _hud)
-	RampageRise.aim_camera(_camera, RunIntro.above_water(sim, view), _blasts.jitter() * motion)
-	shake.apply(_camera, sim.body_scale(), motion)
+	RampageCamera.place(self, delta)

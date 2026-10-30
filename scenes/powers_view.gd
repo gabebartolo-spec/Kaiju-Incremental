@@ -36,6 +36,7 @@ var _vip: VipView  # the leader's escape helicopter (D-149)
 var _wrecks: HeliWreck
 var _young: Dictionary = {}
 var _thunder: ThunderBeam
+var _strike: AirstrikeView  # time's up: the jet run (D-263)
 var _dust_t := 0.0
 var _climbing := false
 var _glow_mats: Dictionary = {}
@@ -58,6 +59,8 @@ func _ready() -> void:
 	_thunder = ThunderBeam.new(sim, _kaiju, _tint, rampage.run_index)
 	add_child(_thunder)
 	_thunder.wire(rampage, _city.fx)
+	_strike = AirstrikeView.new(rampage.sfx)
+	add_child(_strike)
 
 
 func _hook(method: String, args: Array) -> void:
@@ -110,7 +113,9 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	var bs := sim.body_scale()
 	var kind := str(event["type"])
 	# The lightning's charge-up, the Thunder Beam.
-	if kind in ["strike_windup", "beam_start", "beam_end"]:
+	if _strike.on_event(event):
+		pass
+	elif kind in ["strike_windup", "beam_start", "beam_end"]:
 		if not _thunder.on_event(event, kaiju_at):
 			return false
 	elif not PowerSplash.play(_city, event, kaiju_at, bs) and not _acted(kind, event, kaiju_at, bs):

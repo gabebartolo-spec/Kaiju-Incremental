@@ -1739,9 +1739,10 @@
               "properties": {
                 "fuel_silo": {"$ref": "#/$defs/num"},
                 "fireworks_factory": {"$ref": "#/$defs/num"},
-                "chem_lab": {"$ref": "#/$defs/num"}
+                "chem_lab": {"$ref": "#/$defs/num"},
+                "airstrike": {"$ref": "#/$defs/num"}
               },
-              "required": ["fuel_silo", "fireworks_factory", "chem_lab"],
+              "required": ["fuel_silo", "fireworks_factory", "chem_lab", "airstrike"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             },
@@ -1802,8 +1803,8 @@
         },
         "fire": {
           "type": "object",
-          "properties": {"size": {"$ref": "#/$defs/num"}, "seconds": {"$ref": "#/$defs/num"}},
-          "required": ["size", "seconds"],
+          "properties": {"size": {"$ref": "#/$defs/num"}, "seconds": {"$ref": "#/$defs/num"}, "water_seconds": {"$ref": "#/$defs/num"}},
+          "required": ["size", "seconds", "water_seconds"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
@@ -5699,6 +5700,8 @@
           "additionalProperties": false
         },
         "heli_height": {"$ref": "#/$defs/num"},
+        "jet_height": {"$ref": "#/$defs/num"},
+        "jet_spacing": {"$ref": "#/$defs/num"},
         "main_rotor_spin": {"$ref": "#/$defs/num"},
         "tail_rotor_spin": {"$ref": "#/$defs/num"},
         "heli_turn": {"$ref": "#/$defs/num"},
@@ -5734,7 +5737,7 @@
       },
       "required": [
         "tank_height", "turret_turn", "gun_elevation", "recoil", "recoil_seconds", "hull_turn",
-        "tank_beacon", "heli_height", "main_rotor_spin", "tail_rotor_spin", "heli_turn", "heli_lights",
+        "tank_beacon", "heli_height", "jet_height", "jet_spacing", "main_rotor_spin", "tail_rotor_spin", "heli_turn", "heli_lights",
         "vip_dark", "vip_glow", "vip_band"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -5993,6 +5996,25 @@
         "blast_s": {"$ref": "#/$defs/num"},
         "blast_damage": {"$ref": "#/$defs/num"},
         "blast_floors": {"$ref": "#/$defs/num"},
+        "airstrike": {
+          "type": "object",
+          "properties": {
+            "_note": {"$ref": "#/$defs/str"},
+            "jets": {"$ref": "#/$defs/num"},
+            "run_length": {"$ref": "#/$defs/num"},
+            "pass_s": {"$ref": "#/$defs/num"},
+            "altitude": {"$ref": "#/$defs/num"},
+            "bombs": {"$ref": "#/$defs/num"},
+            "bomb_span": {"$ref": "#/$defs/num"},
+            "fall_s": {"$ref": "#/$defs/num"},
+            "radius": {"$ref": "#/$defs/num"},
+            "damage": {"$ref": "#/$defs/num"},
+            "floors": {"$ref": "#/$defs/num"},
+            "death_after_s": {"$ref": "#/$defs/num"}
+          },
+          "required": ["jets", "run_length", "pass_s", "altitude", "bombs", "bomb_span", "fall_s", "radius", "damage", "floors", "death_after_s"],
+          "additionalProperties": false
+        },
         "look": {
           "type": "object",
           "properties": {
@@ -6049,7 +6071,7 @@
         "reasons", "stagger_s", "stagger_clip", "stone_s", "settle_s", "cell", "shards",
         "throw_min", "throw_max", "throw_jitter_deg", "flight_s", "shard_radius", "shard_damage",
         "shard_floors", "fallback_disc", "per_node", "blast_after_s", "blast_s", "blast_damage",
-        "blast_floors", "look"
+        "blast_floors", "airstrike", "look"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

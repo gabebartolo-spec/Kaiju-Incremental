@@ -107,7 +107,7 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 		last_clip = gait.clip_time
 		var toes: Array[Vector3] = []
 		for i: int in 2:
-			var leg: BipedGait.Leg = gait.legs[i]
+			var leg: BipedLeg = gait.legs[i]
 			var toe := rig.tail_world(leg.tip)
 			var catching := gait._stomp.catching(i)
 			if warm and catching and not was_catch[i] and not gait._stomp._stomping[i]:

@@ -56,7 +56,43 @@ func marks() -> Array[Transform3D]:
 		for i: int in 2:
 			var arm := [nodes[ends[i]], dir if i == 0 else -dir, width]
 			_junction_end(arm, [crossing, near, ends[i]], zebras)
+	if plan.has("harbour"):
+		_harbour()
 	return paint
+
+
+## The beachfront's own roads (CityHarbour, HarbourView; director 2026-10-31, the beach had none):
+## the curved beach road gets its centre line chord by chord (a double solid line, as a grid road
+## that wide), each side street a dashed one from the beach road's far kerb to the back street's
+## kerb, and a stop line across its approaching lane at both ends.
+func _harbour() -> void:
+	var b: Dictionary = plan["harbour"]
+	var h: Dictionary = b["h"]
+	var rect: Rect2 = b["rect"]
+	var road := Num.f(h["road"])
+	var centre := func(x: float) -> Vector2:
+		var at := CityHarbour.bands(h, x)
+		return Vector2(x, (at[2] + at[3]) * 0.5)
+	var style := [CityGround.PAINT, []]
+	var x := rect.position.x
+	while x < rect.end.x - 0.001:
+		var a: Vector2 = centre.call(x)
+		var c: Vector2 = centre.call(minf(x + HarbourView.COLUMN, rect.end.x))
+		var dir := (c - a).normalized()
+		var side := Vector2(-dir.y, dir.x)
+		for s: float in [-1.0, 1.0]:
+			var mid := (a + c) * 0.5 + side * s * Num.f(rp["double_gap"]) * 0.5
+			_stripe(mid, dir, Vector2(Num.f(rp["line_width"]), a.distance_to(c)), CityGround.PAINT)
+		x += HarbourView.COLUMN
+	var bay: Rect2 = plan["bay"]
+	var width := CityGen.width_of(CityGen.STREET, cfg)
+	var sides: Array[float] = b["sides"]
+	for sx: float in sides:
+		var kerb := CityHarbour.bands(h, sx)[3]
+		_dashes([Vector2(sx, kerb), Vector2(0.0, 1.0), rect.end.y - kerb, 0.0], style)
+		var near: Vector2 = centre.call(sx)
+		_stop_line([near, Vector2(0.0, 1.0), width], road * 0.5, [])
+		_stop_line([Vector2(sx, bay.end.y), Vector2(0.0, -1.0), width], bay.end.y - rect.end.y, [])
 
 
 ## The paint at one end of a road: a stop line, and a zebra at the zebra junctions.

@@ -24,6 +24,7 @@ func run_checks() -> void:
 	await _t("_check_shards_first")
 	await _t("_check_blast_steps")
 	await _t("_check_deaths_and_falls")
+	await _t("_check_airstrike")
 	await _t("_check_replay")
 	await _t("_check_nodes_saved")
 	await _t("_check_chunks_jagged")
@@ -274,6 +275,25 @@ func _check_deaths_and_falls() -> void:
 		fallen.over and fallen.end_reason == "city_fallen" and not fallen.death.active(),
 		"the city's fall ends the run at once, no death: %s" % [_of(first, "run_over")]
 	)
+
+
+## Time's up is the jet run (director 2026-10-31): the airstrike first, its bombs land on the
+## city through the normal destruction path, then his death; killed or ended skips it.
+func _check_airstrike() -> void:
+	var timed := _sim(0)
+	timed.time_left = 0.0
+	var events := _die_by(timed, func() -> void: pass)
+	var cfg: Dictionary = Content.section("death")["airstrike"]
+	var strike := _index(events, "airstrike")
+	check(strike >= 0 and strike < _index(events, "death_begin"), "the jets come before his death")
+	check(
+		_of(events, "airstrike_bomb").size() == Num.i(cfg["bombs"]),
+		"every bomb lands: %d" % _of(events, "airstrike_bomb").size()
+	)
+	check(_index(events, "airstrike_bomb") < _index(events, "death_begin"), "the bombs land first")
+	check(timed.death.strike.chunks > 0, "the bombs break the city: %d" % timed.death.strike.chunks)
+	var killed := _sim(0)
+	check(_of(_die(killed), "airstrike").is_empty(), "a kill has no jet run")
 
 
 func _die_by(sim: RampageSim, each: Callable) -> Array[Dictionary]:

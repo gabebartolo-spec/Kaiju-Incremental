@@ -8,7 +8,7 @@ TranslationServer.translate("...") with a string literal, in scenes/ and autoloa
 string is the key, tr("%d STOREYS") % n, never the formatted result), or when it is one of the
 DATA_FIELDS of a data file.
 
-    python tools/i18n/strings.py           # check: every text has a row, every row every language
+    python tools/i18n/strings.py           # check: every text has a row, every row its English
     python tools/i18n/strings.py --update  # add new texts (languages empty), drop rows no longer used
 
 Exit 0 when the table is complete, 1 otherwise.
@@ -24,6 +24,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TABLE = os.path.join(ROOT, "data", "i18n", "strings.csv")
 LANGUAGES = ["en", "es", "fr", "it", "de", "ru", "zh_CN"]
+## The languages the check requires: the demo ships in English only (D-406); the rest stay as columns.
+CHECKED = ["en"]
 ## data file -> the keys whose string values the player reads (at any depth).
 DATA_FIELDS: dict[str, list[str]] = {
     "species.json": ["name", "blurb"],
@@ -104,7 +106,7 @@ def main() -> int:
     bad = [f"missing row: {k!r}" for k in sorted(wanted - rows.keys())]
     bad += [f"unused row: {k!r}" for k in sorted(rows.keys() - wanted)]
     for key in sorted(rows.keys() & wanted):
-        for lang in LANGUAGES:
+        for lang in CHECKED:
             if not rows[key].get(lang, "").strip():
                 bad.append(f"no {lang} for {key!r}")
             elif sorted(PLACEHOLDER.findall(rows[key][lang])) != sorted(PLACEHOLDER.findall(key)):
