@@ -25,10 +25,10 @@ func _adult() -> RampageSim:
 	return sim
 
 
-## Presses the signature every step for `seconds`: whether the breath wound up.
+## Presses the breath (its own button, D-399) every step for `seconds`: whether it wound up.
 func _breathes(sim: RampageSim, seconds: float) -> bool:
 	for _n: int in roundi(seconds / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, true):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.BREATH):
 			if str(event["type"]) == "strike_windup" and str(event["kind"]) == Strikes.BREATH:
 				return true
 	return false
