@@ -28,6 +28,11 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 	check.call(
 		_paint_is(olive, gunship_paint), "the gunship's wreck chunks are olive: %s" % [olive]
 	)
+	var debris: HeliDebris = rampage._powers._wrecks._debris
+	check.call(
+		_shared(debris),
+		"every wreck chunk draws the one shared box mesh, one material per colour (draw batching)"
+	)
 	# The leader's helicopter shot down the same way.
 	var view: VipView = rampage.find_children("*", "VipView", true, false)[0]
 	sim.vip._spawn_at = 0.0
@@ -69,12 +74,28 @@ static func _chunks(debris: HeliDebris) -> Array[Color]:
 		var box := node as MeshInstance3D
 		if box == null or not box.mesh is BoxMesh:
 			continue
-		var mat := (box.mesh as BoxMesh).material as StandardMaterial3D
+		var mat := box.material_override as StandardMaterial3D
 		var colour := mat.albedo_color
 		if colour in [HeliDebris.CHARCOAL, HeliDebris.SCORCH] or out.has(colour):
 			continue
 		out.append(colour)
 	return out
+
+
+## True when all the wreck's chunks share one mesh and every chunk of a colour one material.
+static func _shared(debris: HeliDebris) -> bool:
+	var meshes := {}
+	var mats := {}
+	for node: Node in debris.get_children():
+		var box := node as MeshInstance3D
+		if box == null or not box.mesh is BoxMesh:
+			continue
+		meshes[box.mesh] = true
+		var mat := box.material_override as StandardMaterial3D
+		if mats.get(mat.albedo_color, mat) != mat:
+			return false
+		mats[mat.albedo_color] = mat
+	return meshes.size() == 1
 
 
 ## Every distinct paint chunk is one of the helicopter's `paint` tones, and each tone is thrown.
