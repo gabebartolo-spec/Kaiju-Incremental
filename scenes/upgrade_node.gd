@@ -1,9 +1,10 @@
 class_name UpgradeNode
 extends Button
-## One node of the evolution tree. Its look says at a glance what it is and whether you can
-## have it: green and "BUY n" when affordable, the price dimmed when not (the side panel says how
-## much is missing), a dashed outline when locked, hazard yellow when maxed; evolutions in alert
-## red, the species' ultimate under a band of hazard tape and taller as its branch's capstone.
+## One node of the evolution tree, a glass cell on the bio-lab plate (tuning "tree" "skin"). Its
+## look says at a glance what it is and whether you can have it: bio green and "BUY n" when
+## affordable, the price dimmed when not (the side panel says how much is missing), a dashed
+## outline when locked, full of Special K violet when maxed; evolutions in alert red, the species'
+## ultimate under a band of hazard tape and taller as its branch's capstone.
 
 ## Text size range: the largest that fits the node's width, never below FONT_MIN (at 4K and the
 ## largest UI scale FONT_MIN still clears the TV's 28 px cap-height bar).
@@ -12,12 +13,6 @@ const FONT_MIN := 18
 const PAD := 2
 ## The thickest border each kind of node draws (focused): its text keeps clear of it.
 const MAX_BORDER := {"plain": 5, "branch": 5, "evolve": 5, "ultimate": 8}
-const FILL := {
-	"maxed": Color("3a3010"), "buy": Color("1e3a1b"), "poor": UiKit.PANEL, "locked": Color("111114")
-}
-const EDGE := {
-	"maxed": UiKit.ACCENT, "buy": UiKit.GOOD, "poor": UiKit.PANEL_EDGE, "locked": UiKit.LOCKED
-}
 const EVOLVE_FILL := Color("3a0d0b")
 ## The ultimate's band of hazard tape across its top (px, inside its thickest border).
 const ULTIMATE_BAND := 8.0
@@ -33,9 +28,12 @@ var id: String
 ## "plain", "branch" (species branch), "evolve" (grows the kaiju) or "ultimate" (capstone).
 var role := "plain"
 var state := "locked"
+## The share of the cell filled with Special K, eased toward level / max (tuning fx fill_s).
+var liquid := 0.0
 ## True while the node is in the next ring out: shown as a shape only.
 var shape_only := false
 var _name := ""
+var _liquid_tween: Tween
 
 
 func _init(p_id: String, p_role: String, p_name: String) -> void:
@@ -105,8 +103,10 @@ static func short_price(price: int) -> String:
 ## Redraws the node from the tree and the rubble in hand.
 func show_state(tree: UpgradeTree, rubble: int) -> void:
 	_show_text(tree, rubble)
-	var fill: Color = FILL[state]
-	var edge: Color = EDGE[state]
+	var skin: Dictionary = Content.section("tree")["skin"]
+	var fill := Color(str(skin["fill"][state]))
+	var edge := Color(str(skin["edge"][state]))
+	_settle_liquid(tree, skin)
 	# A verb (changes what you do or see) draws heavier than a stat (R 16.4).
 	var width := VERB_BORDER if tree.kind(id) == "verb" else 3
 	if role == "evolve" and state != "maxed":
@@ -117,7 +117,11 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 		edge = UiKit.ACCENT if state != "locked" else UiKit.ACCENT.darkened(0.55)
 		width = 6
 	for look: String in ["normal", "hover", "focus", "pressed"]:
-		add_theme_stylebox_override(look, _look(look, fill, edge, width))
+		var style := _look(look, fill, edge, width)
+		style.liquid = liquid if not shape_only else 0.0
+		style.liquid_color = Color(str(skin["liquid"]))
+		style.liquid_top = Color(str(skin["liquid_top"]))
+		add_theme_stylebox_override(look, style)
 	# Locked and unaffordable read as dimmed, but stay well above 4.5:1 on their fills.
 	var font := UiKit.TEXT if state in ["buy", "maxed"] else UiKit.MUTED.lightened(0.25)
 	for key: String in ["font_color", "font_hover_color", "font_focus_color"]:
@@ -155,3 +159,27 @@ func _look(look: String, fill: Color, edge: Color, width: int) -> HazardBox:
 	# The border is drawn inside the box: keep the text clear of the thickest one.
 	style.set_content_margin_all(PAD + Num.f(MAX_BORDER[role]))
 	return style
+
+
+## The liquid rises to the node's level over fill_s (at once with the fx off or off the tree).
+func _settle_liquid(tree: UpgradeTree, skin: Dictionary) -> void:
+	var want := float(tree.level(id)) / maxf(1.0, float(tree.max_level(id)))
+	var fx: Dictionary = skin["fx"]
+	if is_equal_approx(want, liquid):
+		return
+	if _liquid_tween != null:
+		_liquid_tween.kill()
+	if fx["enabled"] != true or not is_inside_tree():
+		liquid = want
+		return
+	_liquid_tween = create_tween()
+	_liquid_tween.tween_method(_set_liquid, liquid, want, Num.f(fx["fill_s"]))
+
+
+func _set_liquid(value: float) -> void:
+	liquid = value
+	for look: String in ["normal", "hover", "focus", "pressed"]:
+		var style := get_theme_stylebox(look) as HazardBox
+		if style != null:
+			style.liquid = value
+			style.emit_changed()

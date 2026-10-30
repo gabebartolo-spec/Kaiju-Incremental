@@ -24,6 +24,11 @@ var base_stats: Dictionary
 var side_panel: Control
 var _area: TreeArea
 var _rubble_label: Label
+## The biomass the counter shows: it counts down to `rubble` after a buy (tuning fx fill_s).
+var _rubble_shown := -1
+var _rubble_tween: Tween
+## The readout's header: the specimen's species and growth stage.
+var _specimen_label: Label
 var _info_title: Label
 var _info_role: Label
 var _info_body: RichTextLabel
@@ -103,14 +108,7 @@ func _build_side() -> Control:
 	side.add_child(info)
 	var info_col := VBoxContainer.new()
 	info.add_child(info_col)
-	_info_title = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
-	_info_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info_col.add_child(_info_title)
-	_info_role = UiKit.label("", UiKit.SIZE_BODY, UiKit.WARN)
-	_info_role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info_col.add_child(_info_role)
-	_info_body = UiKit.rich(UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.2))
-	info_col.add_child(_info_body)
+	_build_readout_head(info_col)
 	# The node's stats sit half a line below its words, in columns: the arrows line up (D-077).
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, UiKit.SIZE_BODY / 2.0)
@@ -132,6 +130,25 @@ func _build_side() -> Control:
 	_add_endless(side)
 	go.grab_focus.call_deferred()
 	return side
+
+
+## The readout's head (D-396): the specimen line and its rule, then the node's name, role and words.
+func _build_readout_head(info_col: VBoxContainer) -> void:
+	_specimen_label = UiKit.label("", UiKit.SIZE_BODY, UiKit.ACCENT)
+	_specimen_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info_col.add_child(_specimen_label)
+	var rule := ColorRect.new()
+	rule.color = Color(UiKit.ACCENT, 0.5)
+	rule.custom_minimum_size = Vector2(0, 2)
+	info_col.add_child(rule)
+	_info_title = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
+	_info_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info_col.add_child(_info_title)
+	_info_role = UiKit.label("", UiKit.SIZE_BODY, UiKit.WARN)
+	_info_role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info_col.add_child(_info_role)
+	_info_body = UiKit.rich(UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.2))
+	info_col.add_child(_info_body)
 
 
 ## The final upgrade unlocks Endless mode (D-156): its button sits under RAMPAGE.
@@ -174,14 +191,44 @@ func newest_buyable() -> String:
 
 
 func _on_node_pressed(id: String) -> void:
+	var rings_open := _rings_open()
 	var price := tree.buy(id, rubble)
-	Sfx.ui("ui_confirm" if price > 0 else "ui_deny")
-	if price > 0:
+	if price <= 0:
+		Sfx.ui("ui_deny")
+	else:
 		rubble -= price
+		_play_bought(id, rings_open)
 		bought.emit(id)
 		get_node("/root/EventBus").emit_signal("upgrade_bought", id)
 	_select(id)
 	_refresh()
+
+
+## The juice and sound of a buy: motes from the biomass counter into the node, Special K down its
+## tubes; a rim flare when a ring opens; bolts and the evolution strike on a stage node.
+func _play_bought(id: String, rings_before: int) -> void:
+	var from := _rubble_label.get_global_rect().get_center() - _area.get_global_position()
+	_area.play_buy(id, from)
+	if tree.kind(id) == "stage":
+		_area.play_evolve(id)
+		Sfx.ui("tree_evolve")
+	elif tree.is_maxed(id):
+		Sfx.ui("tree_maxed")
+	else:
+		Sfx.ui("tree_buy")
+	var rings_after := _rings_open()
+	if rings_after > rings_before:
+		_area.play_ring_open(rings_after)
+		Sfx.ui("tree_ring_open")
+
+
+## The outermost open ring (1-based, as UpgradeTree.ring).
+func _rings_open() -> int:
+	var n := 0
+	for r: int in range(1, tree.rings.size() + 1):
+		if tree.ring_open(r):
+			n = r
+	return n
 
 
 func _select(id: String) -> void:
@@ -314,12 +361,34 @@ func _fmt(entry: Dictionary, value: float, with_unit: bool) -> String:
 
 
 func _refresh() -> void:
-	_rubble_label.text = tr("BIOMASS  %d") % rubble
+	_show_rubble()
 	for id: String in tree.order:
 		node_button(id).show_state(tree, rubble)
+	var stage := tree.stage()
+	_specimen_label.text = (
+		tr("SPECIMEN  %s   STAGE %d / %d") % [tr(str(species["name"])).to_upper(), stage, 3]
+	)
+	_area.show_specimen(KaijuModel.stage_for(stage))
 	_area.queue_redraw()
 	if _selected != "":
 		_select(_selected)
+
+
+## The counter counts down to the new biomass over fill_s (at once with the fx off or first time).
+func _show_rubble() -> void:
+	var fx: Dictionary = Content.section("tree")["skin"]["fx"]
+	if _rubble_tween != null:
+		_rubble_tween.kill()
+	if _rubble_shown < 0 or fx["enabled"] != true or not is_inside_tree():
+		_set_rubble_shown(rubble)
+		return
+	_rubble_tween = create_tween()
+	_rubble_tween.tween_method(_set_rubble_shown, _rubble_shown, rubble, Num.f(fx["fill_s"]))
+
+
+func _set_rubble_shown(value: int) -> void:
+	_rubble_shown = value
+	_rubble_label.text = tr("BIOMASS  %d") % value
 
 
 ## Pans the tree so a node sits in the middle of the view.

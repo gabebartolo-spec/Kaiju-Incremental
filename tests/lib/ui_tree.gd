@@ -18,6 +18,7 @@ func _init(runner: SceneTree, p_check: Callable) -> void:
 func run() -> void:
 	await _tree_text()
 	await _tree_layout()
+	await _tree_fx()
 
 
 ## Critic r1 item 4: tree node text is 24 px or more at 1080p, every state's text, the locked
@@ -68,6 +69,69 @@ func _tree_text() -> void:
 			"the locked outline colour reads 4.5:1 on the screen (%.1f)"
 			% UiKit.contrast(UiKit.LOCKED, UiKit.BG)
 		)
+	)
+
+
+## D-396, the fixture: with tree.skin.fx on, a buy sets the juice going (motes, a surge or a
+## flash playing; the kaiju at the centre), the cell fills toward its level and the counter counts
+## down; with it off, the buy changes the state alone: nothing plays, the liquid and the counter
+## jump, no specimen. Half a second of frames at 60 fps, delta-driven (no clock).
+func _tree_fx() -> void:
+	var fx: Dictionary = Content.section("tree")["skin"]["fx"]
+	var was: Variant = fx["enabled"]
+	var seen: Dictionary = {}
+	for on: bool in [true, false]:
+		fx["enabled"] = on
+		var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
+		var screen := UpgradeScreen.new()
+		screen.setup(tree, 400, Content.species_def("reptilian"), Content.section("kaiju"))
+		t.root.add_child(screen)
+		await t.process_frame
+		await t.process_frame
+		var area: TreeArea = screen.get("_area")
+		var id := screen.newest_buyable()
+		var counter: Label = screen.get("_rubble_label")
+		screen.node_button(id).pressed.emit()
+		await t.process_frame
+		var playing := area.fx.busy()
+		var liquid_at_once := screen.node_button(id).liquid
+		var counter_at_once := counter.text
+		for i: int in 30:
+			area.fx.advance(1.0 / 60.0)
+			await t.process_frame
+		seen[on] = {
+			"playing": playing,
+			"liquid_jumped": is_equal_approx(liquid_at_once, 1.0 / float(tree.max_level(id))),
+			"counter_jumped": counter_at_once == tr("BIOMASS  %d") % screen.rubble,
+			"liquid_rising": screen.node_button(id).liquid > 0.0,
+			"specimen": area.specimen != null,
+			"bought": tree.level(id) == 1,
+		}
+		screen.queue_free()
+		await t.process_frame
+	fx["enabled"] = was
+	var on_s: Dictionary = seen[true]
+	var off_s: Dictionary = seen[false]
+	check.call(
+		(
+			on_s["playing"]
+			and on_s["liquid_rising"]
+			and on_s["specimen"]
+			and not on_s["liquid_jumped"]
+			and not on_s["counter_jumped"]
+			and on_s["bought"]
+		),
+		"tree fx on: a buy plays juice, fills the cell, counts the biomass down: %s" % [on_s]
+	)
+	check.call(
+		(
+			not off_s["playing"]
+			and off_s["liquid_jumped"]
+			and off_s["counter_jumped"]
+			and not off_s["specimen"]
+			and off_s["bought"]
+		),
+		"tree fx off: the buy alone, nothing plays, no specimen: %s" % [off_s]
 	)
 
 
