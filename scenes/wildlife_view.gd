@@ -272,9 +272,10 @@ func _build_whale() -> void:
 	var shape := SphereMesh.new()
 	shape.radius = 0.5
 	shape.height = 1.0
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color.html(str(w["color"]))
-	mat.roughness = Num.f(w["roughness"])
+	var mat := ShaderMaterial.new()
+	mat.shader = SHADER
+	mat.set_shader_parameter("color", Color.html(str(w["color"])))
+	mat.set_shader_parameter("roughness_value", Num.f(w["roughness"]))
 	shape.material = mat
 	_whale_body.mesh = shape
 	_whale_body.scale = Vector3(Num.f(w["width"]), Num.f(w["hump"]) * 2.0, Num.f(w["length"]))
