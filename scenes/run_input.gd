@@ -3,7 +3,7 @@ extends RefCounted
 ## One physics frame's input for Rampage (moved out of it, unchanged): the player's actions, or a
 ## capture's scripted input, or autoplay's walk; then the InputLatch, which keeps a tap made while
 ## the rise from the river holds the sim back for its first live tick. Returns {"move",
-## "signature", "held", "ultimate", "dash"}.
+## "signature", "held", "ultimate", "breath", "dash"}.
 
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
 const AUTOPLAY_GLIDE_CYCLE := 90
@@ -25,32 +25,37 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 	var signature := Input.is_action_just_pressed("signature")
 	var held := held_button.read(Input.is_action_pressed("signature"), signature)
 	var ultimate := Input.is_action_just_pressed("ultimate")
+	var breath := Input.is_action_just_pressed("breath")
 	var dash := Input.is_action_just_pressed("dash")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
+	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "breath", "dash"}
 		var input: Dictionary = scripted.call(sim)
 		dash = input.get("dash", false)
 		move = input.get("move", Vector2.ZERO)
 		signature = input.get("signature", false)
 		held = input.get("held", false)
 		ultimate = input.get("ultimate", false)
+		breath = input.get("breath", false)
 	elif autoplay:
 		move = _walk.move(sim, steps)
 		signature = signature_on and sim.ability_ready_in <= 0.0
 		held = signature_on and steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
 		ultimate = signature_on
+		breath = signature_on and sim.breath_ready_in <= 0.0
 	# The sim ignores input while it rises from the river: a tap before the handover is kept.
-	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
+	var now := {"signature": signature, "ultimate": ultimate, "breath": breath, "dash": dash}
 	now = _latch.through(sim.emerge.active, now, delta)
 	now["move"] = move
 	now["held"] = held
 	return now
 
 
-## The sim's button bits (Dash.BUTTON, RampageSim.HELD, RampageSim.ULTIMATE) for read's presses.
+## The sim's button bits (Dash.BUTTON, RampageSim.HELD/ULTIMATE/BREATH) for read's presses.
 static func buttons(now: Dictionary) -> int:
 	var dash: bool = now["dash"]
 	var held: bool = now["held"]
 	var ultimate: bool = now["ultimate"]
+	var breath: bool = now.get("breath", false)
 	var out := Dash.BUTTON if dash else 0
 	out |= RampageSim.HELD if held else 0
+	out |= RampageSim.BREATH if breath else 0
 	return out | (RampageSim.ULTIMATE if ultimate else 0)

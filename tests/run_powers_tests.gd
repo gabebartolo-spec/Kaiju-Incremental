@@ -63,19 +63,24 @@ func _check_branches() -> void:
 	)
 
 
-## Tail Sweep: walking north past a building's east side and turning hard east swings the tail
-## back through it; a band of floors is cut and the floors above it drop.
+## The tail lash (D-280, D-397): the signature button whips the tail through the half ring
+## behind him; a building behind him is cut and its upper floors drop. No press, no lash; the
+## tail nodes make it cut deeper (D-328); the breath fires from its own button.
 func _check_tail() -> void:
 	var results: Array[Dictionary] = []
-	for levels: Dictionary in [{"claws": 1}, {"claws": 1, "r_tail": 1}]:
-		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(2.2, 1.5))
-		var seen := _run(sim, 0.4, NORTH)
-		seen.merge(_run(sim, 1.0, EAST), true)
+	for run: Dictionary in [
+		{"levels": {}, "press": 0},
+		{"levels": {}, "press": PRESS},
+		{"levels": {"r_tail": 4}, "press": PRESS},
+	]:
+		var levels: Dictionary = run["levels"]
+		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
+		var seen := _run(sim, 1.0, Vector2.ZERO, Num.i(run["press"]))
 		results.append({"alive": _alive(sim, 0), "sweeps": sim.powers.tail_sweeps, "seen": seen})
 	check(
-		Num.i(results[0]["sweeps"]) == 0 and Num.i(results[1]["sweeps"]) >= 1,
+		Num.i(results[0]["sweeps"]) == 0 and Num.i(results[1]["sweeps"]) == 1,
 		(
-			"a hard turn sweeps the tail only with Tail Sweep (%d vs %d)"
+			"the tail lashes only on the signature button (%d unpressed vs %d pressed)"
 			% [Num.i(results[0]["sweeps"]), Num.i(results[1]["sweeps"])]
 		)
 	)
@@ -83,8 +88,28 @@ func _check_tail() -> void:
 	check(
 		Num.i(results[1]["alive"]) < Num.i(results[0]["alive"]) and seen_with.has("fall_start"),
 		(
-			"the tail cuts the building and its upper floors drop (%d vs %d chunks standing)"
+			"the lash cuts the building behind him and its upper floors drop (%d vs %d chunks standing)"
 			% [Num.i(results[1]["alive"]), Num.i(results[0]["alive"])]
+		)
+	)
+	check(
+		Num.i(results[2]["alive"]) < Num.i(results[1]["alive"]),
+		(
+			"Tail Sweep upgrades the lash: it cuts more (%d vs %d chunks standing)"
+			% [Num.i(results[2]["alive"]), Num.i(results[1]["alive"])]
+		)
+	)
+	var croc := _sim("reptilian", {}, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
+	var cones := 0
+	for i: int in roundi(1.0 / DT):
+		var flags := RampageSim.BREATH if i == 0 else 0
+		for event: Dictionary in croc.step(DT, Vector2.ZERO, false, flags):
+			cones += 1 if str(event.get("kind", "")) == "cone" else 0
+	check(
+		cones == 1 and croc.powers.tail_sweeps == 0,
+		(
+			"the breath fires from its own button, not the lash's (%d cones, %d lashes)"
+			% [cones, croc.powers.tail_sweeps]
 		)
 	)
 

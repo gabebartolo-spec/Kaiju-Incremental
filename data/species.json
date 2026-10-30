@@ -6,9 +6,9 @@
 			"blurb": "Balanced brawler. Tough hide, heavy stomps.",
 			"cost_mult": 1.13,
 			"ability": {
-				"type": "cone",
-				"name": "{beam}",
-				"hint": "Burns everything in front of you."
+				"type": "lash",
+				"name": "Tail Lash",
+				"hint": "Your tail flattens everything behind and beside you."
 			},
 			"stats": {
 				"hp": 120,

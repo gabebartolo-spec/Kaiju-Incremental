@@ -1,7 +1,8 @@
 extends RefCounted
-## Tail Sweep in the real stage-1 city (build 2 note 2: "tail swipe doesnt seem to be
-## occuring?"): a baby reptilian with Tail Sweep, walking the streets with hard 90-degree turns
-## for 30 s after it rises from the river, cuts buildings with its tail. It used to sweep 27
+## The tail lash in the real stage-1 city (build 2 note 2: "tail swipe doesnt seem to be
+## occuring?"; the lash on the button since D-397): a baby reptilian walking the streets with
+## hard 90-degree turns for 30 s after it rises from the river, pressing the signature at each
+## turn, lashes its tail. It used to sweep 27
 ## times and cut nothing: its reach (3.1 m) ended short of its own tail tip and the street.
 
 const SECONDS := 30.0
@@ -16,12 +17,12 @@ const DIRS: Array[Vector2] = [Vector2(0, -1), Vector2(1, 0), Vector2(0, 1), Vect
 
 
 static func check(check: Callable) -> void:
-	var tree := UpgradeTree.new(Content.upgrades(), {"claws": 1, "r_tail": 1}, "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), {"claws": 1}, "reptilian")
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var layout := CityGrowth.layout(Content.tuning(), 1, Seeds.make("city", 0))
 	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
-	sim.ability_type = "cone"
+	sim.ability_type = "lash"
 	sim.emerge.start(sim)
 	sim.body.use_species("reptilian")
 	var dt := 1.0 / 60.0
@@ -29,13 +30,14 @@ static func check(check: Callable) -> void:
 	while t < SECONDS + INLAND and not sim.over:
 		t += dt
 		var move := Vector2(0, 1) if t < INLAND else DIRS[int((t - INLAND) / LEG) % DIRS.size()]
-		sim.step(dt, move, false, 0)
+		var turn := t >= INLAND and fmod(t - INLAND, LEG) < dt  # the press on each turn
+		sim.step(dt, move, turn, 0)
 	# Director 2026-10-30: the slower baby (#408) may not reach a building on this route; the
 	# sweep must still fire, and the powers suite's own set-ups check that it cuts.
 	check.call(
 		sim.powers.tail_sweeps > 0,
 		(
-			"in the stage-1 city the baby's tail sweep fires: %d sweeps (%d chunks cut)"
+			"in the stage-1 city the baby's tail lash fires: %d sweeps (%d chunks cut)"
 			% [sim.powers.tail_sweeps, sim.powers.tail_cut]
 		)
 	)

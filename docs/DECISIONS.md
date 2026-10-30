@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-397 · Director · The tail lash takes the signature button; the breath gets Q / pad X
+Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
+button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
+already shares). Where is the ring? "Behind-and-around" (the half ring behind and beside him). The automatic whip goes
+and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328). Animation: "Cascadeur clip first",
+for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
+procedural whip stands in only on the branch.
+
 ## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
 Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
 changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,

@@ -1,13 +1,16 @@
 class_name SignatureStrike
 extends RefCounted
-## The kaiju's signature move as simulation: the breath's cone, Leap Slam's jump and landing, or
-## the stomp ring. Part of RampageSim (step() fires it); split out to keep files small. Pure.
+## The kaiju's signature move as simulation: the croc's tail lash, the breath's cone, Leap
+## Slam's jump and landing, or the stomp ring. Part of RampageSim (step() fires it); split out
+## to keep files small. Pure.
 
 
 static func fire(sim: RampageSim) -> void:
 	var reach := sim.ability_reach()
 	var damage := sim.stat("ability_damage")
 	match sim.ability_type:
+		"lash":
+			sim.powers.lash()
 		"cone":
 			sim.strikes.breath()  # the cone burns at the strike, where he faces then (D-166)
 		"leap":

@@ -237,7 +237,9 @@ func refresh() -> void:
 	if gain >= Num.f(_hud["biomass_pop_gain"]):
 		_pop_biomass()
 	# The sim's own floor on the cooldown (rampage_sim.gd), so the ring matches the button.
-	breath_ring.set_ratio(1.0 - sim.ability_ready_in / maxf(0.5, sim.stat("ability_cooldown")))
+	# The croc's breath has its own button (D-397): the ring follows that cooldown.
+	var breath_in := sim.breath_ready_in if sim.ability_type == "lash" else sim.ability_ready_in
+	breath_ring.set_ratio(1.0 - breath_in / maxf(0.5, sim.stat("ability_cooldown")))
 	ultimate_ring.modulate.a = 1.0 if sim.powers.has_ultimate() else 0.0
 	var ult_cd := Num.f(sim.powers_cfg["ultimate_cooldown"])
 	ultimate_ring.set_ratio(1.0 - sim.ultimate_ready_in / maxf(0.001, ult_cd))

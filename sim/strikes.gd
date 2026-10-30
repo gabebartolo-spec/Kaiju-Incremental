@@ -48,7 +48,7 @@ func beam() -> void:
 ## Seconds from a stomp's tick to its damage: the reptilian's standing stomp lifts and plants a
 ## foot (`stomp_standing`); a walking stomp, and every other body's, lands on its tick.
 func stomp_delay(on_foot: bool) -> float:
-	if on_foot or sim.ability_type != "cone":
+	if on_foot or sim.ability_type != "lash":  # the croc (its signature is the lash)
 		return 0.0
 	return Num.f(cfg["stomp_standing"])
 
