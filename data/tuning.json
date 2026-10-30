@@ -751,11 +751,11 @@
 		"night_glow": 3.5,
 		"day_glow": 0.0,
 		"river": {"wave_length": 4.0, "wave_slope": 0.2, "ripple_length": 0.8, "ripple_slope": 0.18, "flow": 0.6, "swell_length": 0.0, "swell_slope": 0.0},
-		"bay": {"wave_length": 9.0, "wave_slope": 0.2, "ripple_length": 1.1, "ripple_slope": 0.18, "flow": 0.0, "swell_length": 38.0, "swell_slope": 0.035},
+		"bay": {"wave_length": 14.0, "wave_slope": 0.07, "ripple_length": 1.6, "ripple_slope": 0.06, "flow": 0.0, "swell_length": 38.0, "swell_slope": 0.035},
 		"lap": {"_note": "Gentle wavelets lapping the beach (director 2026-10-29). height m (0 = off), length m, period s, dir = landward travel (x, z); the beach sheet is cut into rows row m deep and columns column m wide, and the lift fades in over fade m from the shoreline so the sheet meets the flat open sea.", "height": 0.1, "length": 8.0, "period": 6.0, "dir": [0, 1], "row": 0.5, "column": 3.0, "fade": 12.0}
 	},
 	"emerge": {"_note": "Emergence. keyed_surface_seconds: a body with a keyed rise clip (the adult's rise_bay, D-270) breaks the water this far into the clip, measured by tools/capture/probe_rise.gd (the head crown passes crouch_back + seabed_clear over the sea floor at the adult's scale).", "hold_seconds": 0.8, "rise_seconds": 1.0, "wade_seconds": 1.0, "depth": 0.6, "max_seconds": 3.0, "keyed_surface_seconds": 1.4, "input_latch_seconds": 0.2},
-	"intro": {"yaw_deg": 45.0, "distance": 12.0, "height": 2.5, "clearance": 1.5, "push_in": 0.3, "fov": 45.0, "aim_ahead": 8.8, "aim_height": 0.5, "aim_head": 0.75, "aim_soft": 1.5, "pull_from_seconds": 1.6, "short_seconds": 1.5, "short_lead_seconds": 0.15, "skip_ticks": 8, "hud_fade_seconds": 0.2, "aim_fade_seconds": 0.2,
+	"intro": {"yaw_deg": 45.0, "distance": 12.0, "height": 2.5, "clearance": 1.5, "push_in": 0.3, "fov": 45.0, "aim_ahead": 8.8, "aim_height": 0.5, "aim_head": 0.75, "aim_soft": 1.5, "pull_from_seconds": 1.6, "short_seconds": 1.5, "short_lead_seconds": 0.15, "full_lead_seconds": 1.0, "skip_ticks": 8, "hud_fade_seconds": 0.2, "aim_fade_seconds": 0.2,
 		"water": {"ripple_seconds": 0.2, "ripple_radius": 4.0, "ripple_grow": 0.8, "fount_from_seconds": 0.1, "fount_after_seconds": 0.4, "fount_start": 0.5, "fount_amount": 260, "fount_speed": 14.0, "fount_spread": 10.0, "burst_amount": 260, "burst_speed": 14.0, "burst_spread": 30.0, "gravity": 9.8, "life": 1.0, "drop": 0.2, "drop_min": 0.35, "width": 0.35, "colors": ["f6fbff", "c4d9e6", "8ea8ba"]}},
 	"city": {
 		"map_seed": 7301,

@@ -1937,6 +1937,7 @@
         "pull_from_seconds": {"$ref": "#/$defs/num"},
         "short_seconds": {"$ref": "#/$defs/num"},
         "short_lead_seconds": {"$ref": "#/$defs/num"},
+        "full_lead_seconds": {"$ref": "#/$defs/num"},
         "skip_ticks": {"$ref": "#/$defs/num"},
         "hud_fade_seconds": {"$ref": "#/$defs/num"},
         "aim_fade_seconds": {"$ref": "#/$defs/num"},
@@ -1974,7 +1975,7 @@
       },
       "required": [
         "yaw_deg", "distance", "height", "clearance", "push_in", "fov", "aim_ahead", "aim_height",
-        "aim_head", "aim_soft", "pull_from_seconds", "short_seconds", "short_lead_seconds",
+        "aim_head", "aim_soft", "pull_from_seconds", "short_seconds", "short_lead_seconds", "full_lead_seconds",
         "skip_ticks", "hud_fade_seconds", "aim_fade_seconds", "water"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

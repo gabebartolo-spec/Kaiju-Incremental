@@ -31,11 +31,16 @@ func _init(sim: RampageSim, p_full: bool) -> void:
 	_sim = sim
 	full = p_full
 	_cfg = Content.section("intro")
-	if full or not sim.emerge.active:
+	if not sim.emerge.active:
 		return
 	var tps := float(Engine.physics_ticks_per_second)
-	var from := maxf(0.0, sim.emerge.break_at(sim) - Num.f(_cfg["short_lead_seconds"]))
+	# The whole intro opens "full_lead_seconds" before the head breaks (director 2026-10-31: a
+	# second of water is enough; the keyed clip's still crouch before it was dead air).
+	var lead := Num.f(_cfg["full_lead_seconds" if full else "short_lead_seconds"])
+	var from := maxf(0.0, sim.emerge.break_at(sim) - lead)
 	_first_ticks = maxi(1, roundi(from * tps))
+	if full:
+		return
 	# A whole number of ticks every frame: an uneven 1-2-1 cadence stuttered the body and camera.
 	_rate = maxf(1.0, ceilf((sim.emerge.total() - from) / Num.f(_cfg["short_seconds"])))
 
@@ -114,7 +119,26 @@ static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
 	eye.y = lerpf(_low_eye(sim, cfg, crown.x, front), rest_eye.y, up)
 	var head_aim := _head_aim(sim, view, head_at, water)
 	var fov := lerpf(Num.f(cfg["fov"]), Num.f(view["fov"]), w)
-	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}
+	# The aim stays on the head until the pull-out's end (director 2026-10-31: "the camera shouldnt
+	# lock onto the kaiju until AFTER the scene is complete"); the follow aim is under the water.
+	var wa := w * w * w
+	return {"eye": eye, "aim": head_aim.lerp(rest_aim, wa), "fov": fov}
+
+
+## `view` ({eye, aim, fov}) with its eye at least "clearance" (per body scale) over the sea: the
+## gameplay camera follows the body, which is under the water until it wades out, so the
+## pull-out onto it went under the surface (director 2026-10-31: "the camera should never go
+## under the water"). The handover stays exact: both cameras are lifted the same way.
+static func above_water(sim: RampageSim, view: Dictionary) -> Dictionary:
+	var eye: Vector3 = view["eye"]
+	var floor_y := (
+		sim.emerge.water_y() + Num.f(Content.section("intro")["clearance"]) * sim.body_scale()
+	)
+	if eye.y >= floor_y:
+		return view
+	var out := view.duplicate()
+	out["eye"] = Vector3(eye.x, floor_y, eye.z)
+	return out
 
 
 ## Where the water shot looks: the drawn head's middle (view "head_box"), or without one the

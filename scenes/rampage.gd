@@ -396,5 +396,5 @@ func _place_camera(delta: float) -> void:
 	var view := {"body": _kaiju_at, "eye": _follow.eye(), "aim": aim, "fov": camera_fov}
 	if sim.emerge.active:  # the run intro's shot, ending exactly on this camera (RunIntro)
 		view = _rise.shot(view, _follow, _hud)
-	RampageRise.aim_camera(_camera, view, _blasts.jitter() * motion)  # + a blast's shake
+	RampageRise.aim_camera(_camera, RunIntro.above_water(sim, view), _blasts.jitter() * motion)
 	shake.apply(_camera, sim.body_scale(), motion)

@@ -44,6 +44,20 @@ static func run(tree: SceneTree, check: Callable) -> void:
 			)
 		)
 	)
+	var lead_cap := roundi(Num.f(cfg["full_lead_seconds"]) * FPS) + 2
+	(
+		check
+		. call(
+			Num.i(full["broke"]) <= lead_cap,
+			(
+				(
+					"the whole intro's head breaks the water on frame %d (<= %d: about a second of water"
+					+ " first, director 2026-10-31)"
+				)
+				% [full["broke"], lead_cap]
+			)
+		)
+	)
 	for r: Dictionary in [full, short]:
 		(
 			check
