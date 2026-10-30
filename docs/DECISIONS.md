@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-397 · Director · The rise bar is removed
+His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
+the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
+check. Replaces D-384 (and the 10 s rise bar it carried from D-131).
+
 ## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
 Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
 changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,
