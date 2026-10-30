@@ -25,14 +25,8 @@ func _init(sim: RampageSim, trees: Array[Vector2] = []) -> void:
 	var box := Vector3(Num.f(size[0]), Num.f(size[1]), Num.f(size[0]))
 	var mesh := BoxMesh.new()
 	mesh.size = box
-	var mat := StandardMaterial3D.new()
-	var color := Color(str(cfg["color"]))
-	mat.albedo_color = color
-	mat.emission_enabled = true
-	mat.emission = color
-	mat.emission_energy_multiplier = Num.f(cfg["glow"])  # still reads at night, never shines
-	mat.roughness = 0.8
-	mesh.material = mat
+	# Still reads at night, never shines; the city's surface family (flat surfaces P3).
+	mesh.material = Look.plain_detail_material(Color(str(cfg["color"])), Num.f(cfg["glow"]))
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.mesh = mesh

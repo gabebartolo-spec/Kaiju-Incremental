@@ -21,29 +21,16 @@ const DEATH_FRAMES := 600
 ## Nodes in this group are visual effects, exempt from the rule.
 const EXEMPT_GROUP := "vfx_exempt"
 
-## Types still flat, by phase. P2 rooftops (flat black stripe, window panels); P3 trees,
+## Types still flat, by phase (P2 rooftops and building faces done 2026-10-30); P3 trees,
 ## lamps, cars, people, gondolas; the sky belongs to the atmosphere lead. Delete lines as they are
 ## fixed; never add one. One row per entry (surface, owner, phase, next step) in docs/ROADMAP.md,
 ## "Flat surfaces programme".
 ## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
 ## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
-const KNOWN_FLAT_MAX := 14
+const KNOWN_FLAT_MAX := 3
 const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
-	"CitySkyline:std": "P3 lamp heads (glow)",
-	"CitySkyline:shader:facade.gdshader": "P2 far towers and roof gear, P3 lattice tower",
-	# facade_far.gdshader's twin with the engine fog (FarHaze, city far_fog on; comment #37)
-	"CitySkyline:shader:facade_far_fogged.gdshader": "P2 far towers, P3 lattice tower",
-	# P2 rooftops and building faces
-	"BuildingStream:shader:facade.gdshader": "P2 building faces",
-	"BuildingView:shader:voxel.gdshader": "P2 building faces",
-	"RooftopView:std": "P2 rooftops",
 	# P3 trees, lamps, props, cars, people, aircraft, crowds, debris, the kaiju
-	"Aircraft:std": "P3 aircraft",
-	"DebrisField:std": "P3 debris chunks",
-	"StadiumMatch:std": "P3 stadium",
-	"StadiumCrowd:shader:crowd.gdshader": "P3 crowd",
-	"ArenaEdge:std": "P3 arena bollards",
 	"KaijuRig:shader:voxel.gdshader": "P3 the kaiju's own skin pipeline",
 	"VoxelSkin:shader:voxel_skin.gdshader": "P3 the kaiju's own skin pipeline",
 	"VoxelSkin:shader:voxel_skin_fill.gdshader": "P3 the kaiju's own skin pipeline",

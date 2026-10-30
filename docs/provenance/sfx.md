@@ -18,7 +18,6 @@ Sources:
 | collapse.ogg (a building part lands) | Kenney `explosionCrunch_000` pitched 0.6 + `lowFrequency_explosion_001` + synth sub thump + Kenney `impactGlass_heavy_000/001/002` pitched 0.85, low-passed at 6 kHz (windows) + synth rumble (low-passed brown noise) + synth debris rain (low-passed crackle) + Kenney `impactMining_001/002/003` pitched 0.45, low-passed at 2.5 kHz (falling chunks). High-passed at 30 Hz. Added 2026-10-18 (D-050). |
 | roar.ogg (croc titan roar: demo end card, evolution reveal) | synth band-passed inhale (0-0.34 s), then from 0.32 s a 1.7 s synth bellow timed to the biped head's lunge. The bellow is a 38-52 Hz buzz with 28 harmonics and a half-rate rasp, through throat formants at 280, 650 and 1300-950 Hz, plus a breath hiss. Under it: Kenney `lowFrequency_explosion_000` pitched 0.5 and low-passed at 400 Hz, and a synth sub thump. Then a 2.5 s synth echo tail (convolved with dark decaying noise). High-passed at 28 Hz; 99% of the energy is below 500 Hz. Added 2026-10-18 (D-050). |
 | ui_click.ogg, ui_confirm.ogg, ui_deny.ogg (menus: every button; buying an upgrade; can't buy) | synth only: band-passed noise tick + 420 Hz body; two-note chime (C5 then G5) over a synth sub thump; a 110 Hz buzz, low-passed at 1.5 kHz. Added 2026-10-18 (D-050). |
-| tree_buy.ogg, tree_maxed.ogg, tree_ring_open.ogg, tree_evolve.ogg (evolution tree, D-396: a node bought; a node maxed; a ring opening; an evolution) | synth only: glass tick (band-passed noise at 3.4 kHz) + liquid gurgle (noise band-passed on a 9 Hz wobble) + a 180-420 Hz rising tone; the same under a three-note chime (E5 G#5 B5); a struck glass dish (decaying partials 523-3170 Hz) over a pressure hiss and a 70-45 Hz thump; an electric snap (4.2 kHz) over a 120-38 Hz sub boom with arcing crackle. Added 2026-10-30. |
 | tank_fire.ogg (a tank's cannon) | synth muzzle crack (band-passed noise) + Kenney `explosionCrunch_001` pitched 0.75 + `lowFrequency_explosion_001` + synth thump + synth echo tail. Added 2026-10-18 (D-050). |
 | shell_hit.ogg (a shell hits the unarmoured kaiju) | Kenney `impactPunch_heavy_001` pitched 0.7 + `impactMetal_light_002` pitched 0.8 + synth thump + synth grit crackle. Added 2026-10-18 (D-050). |
 | heli_rotor.ogg (seamless 2 s loop) | synth only: 19 Hz main-blade slap (pulsed low-passed noise), 76 Hz tail-rotor buzz (band-passed noise), turbine whine (2.4/3.6 kHz sines), 57 Hz hum; the 0.5 s overrun is crossfaded into the start. Added 2026-10-18 (D-050). |
@@ -117,3 +116,19 @@ start; one-shots get a 30 ms tail fade. Raw takes stay outside the repo.
 | egg_crack.ogg | reptile eggshell cracking in a dark silent space, wet split | dzPIKVrsf1UuA4XhFoqT / fBEUQq7cS0sNhNzPF7db | 2 s | -20 dB |
 
 (History lists a sound's two takes without saying which one became "a", so both ids are given per file.)
+
+## Evolution tree sounds (2026-10-30, D-396; 500 credits approved)
+
+Generated in ElevenLabs Sound Effects in the built-in browser on the director's paid Starter plan (model
+eleven_text_to_sound_v3, prompt influence 0.5, fixed duration, prompt auto-improve off, Explore sharing off). One
+generation per sound (4 takes each), 88 credits. Picks by measurement (least dead air), for the director to change.
+Processing (`C:\Users\DANTE\Documents\KAIJU\tree_sfx_raw\process.py`, outside the repo, raw takes beside it): the
+lab chain above (mono 44.1 kHz, loud-part RMS to the target, 5 ms / 80 ms limiter at -1.5 dBFS, 30 ms tail fade),
+Vorbis. Replaces the synthesised versions from #445 (`build_tree()` removed from `tools/sfx/build_sfx.py`).
+
+| File | Prompt | Length | Credits | Take (of 4) | Loud RMS |
+|---|---|---|---|---|---|
+| tree_buy.ogg | bio lab: a glass vial ticks into place and bright green liquid gurgles up a glass tube, soft rising bubbly sweep, clean, no music | 1 s | 12 | buy_4 | -20 dB |
+| tree_maxed.ogg | bio lab: a glass vial ticks into place and green liquid gurgles up a tube, then a bright three-note glass chime rings out, satisfying completion seal, clean, no music | 1.5 s | 20 | maxed_3 | -18 dB |
+| tree_ring_open.ogg | bio lab: a heavy glass containment ring unlocks, a long resonant struck-glass ring with a low pressurised hiss of gas venting, clean, no music | 2 s | 28 | ring_3 | -20 dB |
+| tree_evolve.ogg | a violent electric snap, then a deep sub-bass boom, with crackling tesla arcs fading out, creature mutation power surge, no music | 2 s | 28 | evolve_3 | -15 dB |

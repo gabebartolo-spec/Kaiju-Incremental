@@ -61,6 +61,15 @@ static func voxel_detail_material(size: float, glow: float, baked: bool) -> Shad
 	return mat
 
 
+## voxel_detail_material for a plain mesh of one colour (no vertex colours): detail from its own
+## vertices, `color` sRGB, `self_light` a faint glow of its own colour.
+static func plain_detail_material(color: Color, self_light: float) -> ShaderMaterial:
+	var mat := voxel_detail_material(BuildingVoxels.VOXEL, 0.0, true)
+	mat.set_shader_parameter("tint", color)
+	mat.set_shader_parameter("self_light", self_light)
+	return mat
+
+
 ## Deterministic brightness jitter per cell, so surfaces read as built from blocks.
 static func jitter(base: Color, cell: Vector3i, salt: int) -> Color:
 	var amount := value("color_noise")

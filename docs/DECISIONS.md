@@ -4,13 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-10-30 · D-397 · Director · The tail lash takes the signature button; the breath gets Q / pad X
+## 2026-10-30 · D-398 · Director · The tail lash takes the signature button; the breath gets Q / pad X
 Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
 button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
 already shares). Where is the ring? "Behind-and-around" (the half ring behind and beside him). The automatic whip goes
 and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328). Animation: "Cascadeur clip first",
 for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
 procedural whip stands in only on the branch.
+
+## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
+"Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
+rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
 
 ## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
 Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
@@ -391,8 +395,3 @@ On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog
 ## 2026-10-27 · D-343 · Director · The croc's first step from standing gets a keyed walk-start
 Asked how the young croc should start walking from a stand: "Key a walk-start (Recommended)": a Cascadeur
 stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before turn-skate B.
-
-## 2026-10-27 · D-342 · Director · Slow motion: the slowdown is too brief
-On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
-the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
-to him.

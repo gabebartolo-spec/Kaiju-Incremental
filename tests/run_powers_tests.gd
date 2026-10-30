@@ -63,7 +63,7 @@ func _check_branches() -> void:
 	)
 
 
-## The tail lash (D-280, D-397): the signature button whips the tail through the half ring
+## The tail lash (D-280, D-398): the signature button whips the tail through the half ring
 ## behind him; a building behind him is cut and its upper floors drop. No press, no lash; the
 ## tail nodes make it cut deeper (D-328); the breath fires from its own button.
 func _check_tail() -> void:
