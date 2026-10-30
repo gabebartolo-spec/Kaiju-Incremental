@@ -340,6 +340,7 @@ TIME UP,TIME UP,SE ACABÓ EL TIEMPO,TEMPS ÉCOULÉ,TEMPO SCADUTO,ZEIT UM,ВРЕ�
 TOGGLE,TOGGLE,ALTERNAR,BASCULER,ATTIVA,UMSCHALTEN,ПЕРЕКЛ.,切换
 TOURISTS TOLD: 'THE LANDMARKS ARE CLOSED',TOURISTS TOLD: 'THE LANDMARKS ARE CLOSED',AVISO A TURISTAS: 'LOS MONUMENTOS ESTÁN CERRADOS',AUX TOURISTES : « LES MONUMENTS SONT FERMÉS »,AI TURISTI: 'I MONUMENTI SONO CHIUSI',TOURISTEN ERFAHREN: 'WAHRZEICHEN GESCHLOSSEN',ТУРИСТАМ СООБЩИЛИ: «ДОСТОПРИМЕЧАТЕЛЬНОСТИ ЗАКРЫТЫ»,游客被告知：“地标已关闭”
 TRY ENDLESS MODE,TRY ENDLESS MODE,PRUEBA EL MODO INFINITO,ESSAYEZ LE MODE SANS FIN,PROVA LA MODALITÀ INFINITA,ENDLOSMODUS TESTEN,ПОПРОБУЙ БЕСКОНЕЧНЫЙ РЕЖИМ,试试无尽模式
+Tail Lash,Tail Lash,Latigazo de cola,Coup de fouet caudal,Frustata di coda,Schwanzpeitsche,Хлёст хвостом,尾鞭
 Tail Sweep,Tail Sweep,Barrido de cola,Balayage de queue,Colpo di coda,Schwanzfeger,Удар хвостом,甩尾
 Tail cuts through more floors,Tail cuts through more floors,La cola corta más pisos,La queue tranche plus d'étages,La coda taglia più piani,Schwanz schneidet mehr Etagen,Хвост срезает больше этажей,尾巴切穿更多楼层
 Tail hits devastatingly hard.,Tail hits devastatingly hard.,Coletazos devastadores.,Coups de queue dévastateurs.,Colpi di coda devastanti.,Schwanz trifft verheerend.,Хвост бьёт сокрушительно.,尾击威力毁天灭地。
@@ -363,7 +364,6 @@ Time played,Time played,Tiempo jugado,Temps de jeu,Tempo di gioco,Spielzeit,Вр
 Titan Hide,Titan Hide,Piel de titán,Cuir de titan,Pelle titanica,Titanenhaut,Шкура титана,泰坦之皮
 Towers one tier taller now fall%sto%syou.,Towers one tier taller now fall%sto%syou.,Ya caen%sante%sti torres un nivel más altas.,Les tours d'un palier de plus%stombent%sdésormais.,Ora abbatti%storri di%sun livello più alte.,Türme eine Stufe höher fallen jetzt%szu%sdir.,Башни на ярус выше%sтеперь%sпадают.,再高一级的高楼现在也会%s被%s你推倒。
 Towers toppled,Towers toppled,Torres derribadas,Tours abattues,Torri abbattute,Türme gestürzt,Повалено башен,推倒高楼
-"Turn hard and your tail whips behind you, cutting a band of floors out of whatever it hits so the floors above drop.","Turn hard and your tail whips behind you, cutting a band of floors out of whatever it hits so the floors above drop.","Gira en seco y tu cola azota detrás, arrancando una franja de pisos a lo que golpea para que caigan los de arriba.","Tournez sec et votre queue fouette derrière vous, tranchant des étages entiers : ceux du dessus s'écroulent.","Gira di scatto e la coda frusta alle tue spalle, tranciando una fascia di piani di ciò che colpisce e facendo crollare quelli sopra.","Dreh scharf und dein Schwanz peitscht hinter dir, schneidet Etagen aus allem, was er trifft – die oberen stürzen.","Резко развернись, и хвост хлестнёт позади, вырезая полосу этажей, и всё выше обрушится.",急转时尾巴在身后横扫，削掉所击建筑的一段楼层，让上方楼层坠落。
 ULTIMATE,ULTIMATE,DEFINITIVO,ULTIME,SUPREMA,ULTIMATIV,УЛЬТА,终极技
 ULTIMATE: Brood,ULTIMATE: Brood,DEFINITIVO: Prole,ULTIME : Couvée,SUPREMA: Covata,ULTIMATIV: Brut,УЛЬТА: Выводок,终极技：孵群
 ULTIMATE: Corrosive Ink,ULTIMATE: Corrosive Ink,DEFINITIVO: Tinta corrosiva,ULTIME : Encre corrosive,SUPREMA: Inchiostro corrosivo,ULTIMATIV: Ätztinte,УЛЬТА: Едкие чернила,终极技：腐蚀墨汁
@@ -401,12 +401,12 @@ Your rage is spent,Your rage is spent,Tu furia se ha agotado,Votre rage est épu
 Your signature attack covers more ground.,Your signature attack covers more ground.,Tu ataque de firma cubre más terreno.,Votre attaque signature couvre plus de terrain.,L'attacco firma copre più area.,Dein Signaturangriff deckt mehr Fläche ab.,Коронная атака накрывает большую площадь.,你的招牌攻击覆盖更大范围。
 Your signature attack hits harder.,Your signature attack hits harder.,Tu ataque de firma golpea más fuerte.,Votre attaque signature frappe plus fort.,L'attacco firma colpisce più forte.,Dein Signaturangriff trifft härter.,Коронная атака бьёт сильнее.,你的招牌攻击更猛。
 Your signature attack hits much harder.,Your signature attack hits much harder.,Tu ataque de firma golpea mucho más.,Votre attaque signature frappe bien plus fort.,Il tuo attacco firma colpisce molto più forte.,Dein Signaturangriff trifft viel härter.,Твоя коронная атака бьёт намного сильнее.,你的招牌攻击猛得多。
+"Your tail lash hits harder, cutting deeper into whatever stands behind you.","Your tail lash hits harder, cutting deeper into whatever stands behind you.","Tu latigazo de cola golpea más fuerte y corta más hondo lo que tengas detrás.","Votre coup de queue frappe plus fort et tranche plus profond ce qui se trouve derrière vous.","La frustata di coda colpisce più forte e taglia più a fondo ciò che hai alle spalle.","Deine Schwanzpeitsche trifft härter und schneidet tiefer in alles hinter dir.","Хлёст хвостом бьёт сильнее и глубже режет всё, что позади тебя.",尾鞭更猛，身后的一切被削得更多。
 adolescent,adolescent,adolescente,adolescent,adolescente,Jungtier,подросток,少年体
 adult,adult,adulto,adulte,adulto,Erwachsen,взрослый,成体
 baby,baby,cría,bébé,cucciolo,Baby,детёныш,幼体
 best %s,best %s,récord %s,record %s,record %s,Rekord %s,рекорд %s,最佳 %s
 unreadable save,unreadable save,partida ilegible,sauvegarde illisible,salvataggio illeggibile,Spielstand unlesbar,повреждённое сохранение,存档无法读取
-{beam},{beam},{beam},{beam},{beam},{beam},{beam},{beam}
 {beam} burns hotter,{beam} burns hotter,{beam} quema más,{beam} brûle plus fort,{beam} brucia di più,{beam} brennt heißer,{beam}: жар сильнее,{beam}燃烧更炽烈
 {beam} burns hotter.,{beam} burns hotter.,{beam} quema más.,{beam} brûle plus fort.,{beam} brucia di più.,{beam} brennt heißer.,{beam} жжёт сильнее.,{beam}更加炽热。
 {n} TOWERS DOWN AND COUNTING,{n} TOWERS DOWN AND COUNTING,{n} TORRES CAÍDAS Y SUMANDO,"{n} TOURS À TERRE, ET ÇA CONTINUE",{n} TORRI ABBATTUTE E NON È FINITA,{n} TÜRME GEFALLEN – TENDENZ STEIGEND,"БАШЕН ПОВАЛЕНО: {n}, И ЭТО НЕ ВСЁ",已倒塌 {n} 座高楼，还在增加

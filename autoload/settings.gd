@@ -16,6 +16,7 @@ func _ready() -> void:
 	_axis_action("move_down", [KEY_S, KEY_DOWN], JOY_AXIS_LEFT_Y, 1.0)
 	_button_action("signature", [KEY_SPACE], JOY_BUTTON_A)
 	_button_action("ultimate", [KEY_E], JOY_BUTTON_Y)
+	_button_action("breath", [KEY_Q], JOY_BUTTON_X)  # the lash took the signature (D-280)
 	_button_action("dash", [KEY_SHIFT], JOY_BUTTON_B)
 	_button_action("pause", [KEY_ESCAPE, KEY_P], JOY_BUTTON_START)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)

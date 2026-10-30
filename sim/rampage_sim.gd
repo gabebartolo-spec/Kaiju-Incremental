@@ -104,6 +104,8 @@ class Tank:
 ## step() button flags.
 const HELD := 1
 const ULTIMATE := 2
+## The breath's own button (D-280: the lash took the signature; Q / pad X).
+const BREATH := 4
 ## A tank's footprint radius for area hits.
 const TANK_RADIUS := 0.6
 
@@ -128,6 +130,8 @@ var chunks_total := 0
 var falls: Array[Fall] = []
 var tanks_destroyed := 0
 var ability_ready_in := 0.0
+## The breath's cooldown when it has its own button (a lash species).
+var breath_ready_in := 0.0
 var over := false
 var end_reason := ""
 ## Seconds the rampage has run, and the demo's Endless mode (Endless), null in a normal run.
@@ -172,7 +176,7 @@ var _rng: RandomNumberGenerator
 var _events: Array[Dictionary] = []
 
 
-## Set ability_type ("cone", "leap" or "ring") before the first step.
+## Set ability_type ("lash", "cone", "leap" or "ring") before the first step.
 func _init(
 	p_stats: Dictionary, tuning: Dictionary, layout: Array[Dictionary], rng: RandomNumberGenerator
 ) -> void:
@@ -274,7 +278,8 @@ func result() -> Dictionary:
 	return out
 
 
-## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
+## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/BREATH and
+## Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
@@ -294,14 +299,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	body.step(dt, buttons & Dash.BUTTON != 0)
 	strikes.step(dt)
 	stomp.step(dt)
-	ability_ready_in = maxf(0.0, ability_ready_in - dt)
-	if signature_pressed and ability_ready_in <= 0.0:
-		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
-		SignatureStrike.fire(self)
-	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
-	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
-		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
-		powers.ultimate()
+	SignatureStrike.step_buttons(self, dt, signature_pressed, buttons)
 	powers.step(dt, signature_held)
 	brood.step(dt)
 	collapse.step(dt)

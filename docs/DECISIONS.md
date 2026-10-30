@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-401 · Director · The tail lash takes the signature button; the breath gets Q / pad X
+Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
+button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
+already shares). Where is the ring? "Behind-and-around" (the half ring behind and beside him). The automatic whip goes
+and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328). Animation: "Cascadeur clip first",
+for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
+procedural whip stands in until they land. Amended the same day: "Merge now" (the lash merges with the
+procedural whip; the clips follow).
+
 ## 2026-10-30 · D-400 · Director · The 20 Tripo street props ship, at half the buildings' cube
 His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~19 cm)". Every prop is its baked
 `.kvox` (`tools/street_props/bake.sh`) at voxel 0.0625, half the buildings' 0.125: pavement furniture along every
@@ -387,13 +396,3 @@ count, a barrel tower on legs with a cone roof.
 "Keyed moves only (Recommended)". A keyed move reaches him as its .casc opened in a new tab of his Cascadeur
 (C:/kt/casc_view_template.py: never saved, no other tab touched). How a move plays in the game still comes as one
 ~6 s game-camera clip.
-
-## 2026-10-27 · D-346 · Director · The one-window GPU slot covers Godot only
-Asked whether Blender renders and bakes should also wait for the one GPU slot (D-340): "Godot only (Recommended)".
-Godot windows (clips, stills, captures, speed runs) take turns; Blender and other GPU jobs keep sharing the card by
-VRAM budget, so asset work keeps its pace.
-
-## 2026-10-27 · D-345 · Director · Trees on rooftops are a bug: they go to streets and parks
-He asked about the far-city noon still: "why are there so many trees on top of buildings is that a bug?" (trees stand
-on low roofs, one on a tall roof among the antennas). No decision asks for rooftop trees. He picked "Yes, find and fix
-(Recommended)": find why trees are placed there, move them to streets and parks, and send him a still.

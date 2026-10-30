@@ -40,10 +40,13 @@ func _init(sim: RampageSim, tint: Color) -> void:
 	material_override = _material
 
 
-## True while the reticle shows: a cone breath, ready to fire, the run going.
+## True while the reticle shows: a cone breath (the signature, or the lash species' own button),
+## ready to fire, the run going.
 func showing() -> bool:
-	var ready := _sim.ability_ready_in <= 0.0 and not _sim.over
-	return _sim.ability_type == "cone" and ready and not _sim.emerge.active  # none in the intro
+	var own := _sim.ability_type == "lash"
+	var ready := (_sim.breath_ready_in if own else _sim.ability_ready_in) <= 0.0 and not _sim.over
+	# none in the intro
+	return (own or _sim.ability_type == "cone") and ready and not _sim.emerge.active
 
 
 ## The cone as drawn (as BreathCone.of(): origin, dir, reach, half_angle), for the flow suite.

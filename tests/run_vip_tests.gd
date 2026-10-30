@@ -127,7 +127,7 @@ func _check_breath() -> void:
 	var sim := _flying()
 	sim.vip.pos = sim.kaiju_pos + Vector2(5.0, 0.0)
 	var rubble := sim.rubble
-	var seen := _held_run(sim, sim.strikes.breath_delay() + 0.2, Vector2(5.0, 0.0), PRESS)
+	var seen := _held_run(sim, sim.strikes.breath_delay() + 0.2, Vector2(5.0, 0.0), BREATH_KEY)
 	check(
 		sim.vip.state == "killed" and Num.i(seen.get("vip_killed", 0)) == 1,
 		"the breath brings the leader down at the strike (%s)" % sim.vip.state
@@ -135,7 +135,9 @@ func _check_breath() -> void:
 	check(sim.rubble > rubble + sim.vip.payout * 0.99, "...and pays the payout")
 	var miss := _flying()
 	miss.vip.pos = Vector2(-30.0, 30.0)
-	_held_run(miss, miss.strikes.breath_delay() + 0.2, Vector2(-30.0, 30.0) - miss.kaiju_pos, PRESS)
+	_held_run(
+		miss, miss.strikes.breath_delay() + 0.2, Vector2(-30.0, 30.0) - miss.kaiju_pos, BREATH_KEY
+	)
 	check(miss.vip.flying(), "a breath that misses leaves it flying")
 
 
@@ -220,9 +222,9 @@ func _check_payout_matters() -> void:
 		var sim := _flying()
 		if shoot:
 			sim.vip.pos = sim.kaiju_pos + Vector2(5.0, 0.0)
-			sim.step(DT, Vector2.ZERO, true)
+			sim.step(DT, Vector2.ZERO, false, RampageSim.BREATH)
 		else:
-			sim.step(DT, Vector2.ZERO, true)  # the same breath, at an empty sky
+			sim.step(DT, Vector2.ZERO, false, RampageSim.BREATH)  # the same breath, at an empty sky
 		_run(sim, 30.0, Vector2.ZERO)
 		results.append(sim)
 	var gap := results[0].rubble - results[1].rubble

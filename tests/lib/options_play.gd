@@ -74,6 +74,7 @@ func _rebound_key() -> void:
 		rampage._reader.held_button.read(false, false),
 		"held moves on TOGGLE: after R is let go the held move stays on"
 	)
+	await _press(KEY_Q)  # the croc's breath has its own button (D-401)
 	var waited := 0
 	while not sent.has(_row(Content.section("rumble")["breath"])) and waited < 240:
 		await t.physics_frame  # the breath lands after its wind-up (Strikes), then it buzzes

@@ -38,7 +38,7 @@
 			"cost": [20800, 22300, 23861, 25532, 27320], "source": "agent-added, no decision", "requires": ["evolve2"], "effects": {"stomp_damage": 14}},
 		{"id": "adrenaline", "name": "Adrenaline", "desc": "Rampages last much longer.", "pos": [6, 3], "max_level": 3, "ring": 3, "kind": "stat",
 			"cost": [21200, 22700, 24300], "source": "ch 2026-10-26 #1, Q1 run length: \"60 s up to 3 min\" (timer nodes)", "requires": ["evolve2"], "effects": {"run_seconds": 10}},
-		{"id": "r_tail", "species": "reptilian", "name": "Tail Sweep", "desc": "Turn hard and your tail whips behind you, cutting a band of floors out of whatever it hits so the floors above drop.", "pos": [1, 5], "max_level": 4, "ring": 1, "kind": "verb",
+		{"id": "r_tail", "species": "reptilian", "name": "Tail Sweep", "desc": "Your tail lash hits harder, cutting deeper into whatever stands behind you.", "pos": [1, 5], "max_level": 4, "ring": 1, "kind": "verb",
 			"cost": [80, 86, 93, 100], "source": "ch 2026-10-26 #6, Q7 tail whip: \"Automatic, from a tree node\"; D-202 \"the crocs tail whip still in the game\"", "requires": ["claws"], "effects": {"tail_damage": 10}},
 		{"id": "r_momentum", "species": "reptilian", "name": "Momentum", "desc": "Your charge builds faster and hits harder: knock tanks flying and ram what you hit.", "pos": [2, 5], "max_level": 4, "ring": 1, "kind": "verb",
 			"cost": [136, 146, 157, 168], "source": "agent-added before the audit (D-037 era species power); no decision found", "requires": ["r_tail"], "effects": {"momentum": 0.5}},

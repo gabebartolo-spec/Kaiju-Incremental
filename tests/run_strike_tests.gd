@@ -48,8 +48,9 @@ func _breath_sim(levels: Dictionary, way: Vector2 = NORTH) -> RampageSim:
 	return sim
 
 
-## Steps `seconds` (PRESS / ULT pressed on the first step); every event with the seconds since the
-## watch began, and per step the chunks broken, the walk-speed multiplier and the two cooldowns.
+## Steps `seconds` (PRESS / ULT / BREATH_KEY on the first step); every event with the seconds
+## since the watch began, and per step the chunks broken, the walk-speed multiplier and the two
+## cooldowns.
 func _watch(sim: RampageSim, seconds: float, move: Vector2, buttons: int = 0) -> Dictionary:
 	var out := {"events": [], "chunks": [], "speed": [], "ready": [], "ult": []}
 	for i: int in roundi(seconds / DT):
@@ -58,6 +59,8 @@ func _watch(sim: RampageSim, seconds: float, move: Vector2, buttons: int = 0) ->
 			flags |= RampageSim.ULTIMATE
 		if i == 0 and buttons & DASH_FLAG:
 			flags |= DASH
+		if i == 0 and buttons & BREATH_KEY:
+			flags |= RampageSim.BREATH
 		for event: Dictionary in sim.step(DT, move, i == 0 and buttons & PRESS != 0, flags):
 			var events: Array = out["events"]
 			events.append({"t": i * DT, "event": event})
@@ -66,7 +69,7 @@ func _watch(sim: RampageSim, seconds: float, move: Vector2, buttons: int = 0) ->
 		var speed: Array = out["speed"]
 		speed.append(sim.powers.speed_mult())
 		var ready: Array = out["ready"]
-		ready.append(sim.ability_ready_in)
+		ready.append(sim.breath_ready_in if sim.ability_type == "lash" else sim.ability_ready_in)
 		var ult: Array = out["ult"]
 		ult.append(sim.ultimate_ready_in)
 	return out
@@ -109,7 +112,7 @@ func _check_breath_delay() -> void:
 	for tier: int in TIERS.size():
 		var delay := Num.f(delays[tier])
 		var sim := _breath_sim(TIERS[tier])
-		var seen := _watch(sim, 2.5, Vector2.ZERO, PRESS)
+		var seen := _watch(sim, 2.5, Vector2.ZERO, BREATH_KEY)
 		var windup := _event(seen, "strike_windup")
 		check(
 			(
@@ -163,7 +166,7 @@ func _check_breath_aim() -> void:
 	sim.facing = NORTH
 	var north := _alive(sim, 0)
 	var east := _alive(sim, 1)
-	_watch(sim, 0.1, Vector2.ZERO, PRESS)
+	_watch(sim, 0.1, Vector2.ZERO, BREATH_KEY)
 	sim.facing = EAST
 	_watch(sim, 2.0, Vector2.ZERO)
 	check(
@@ -234,7 +237,7 @@ func _check_beam_delay() -> void:
 ## legs again.
 func _check_cancelled() -> void:
 	var ended := _breath_sim({})
-	_watch(ended, 0.1, Vector2.ZERO, PRESS)
+	_watch(ended, 0.1, Vector2.ZERO, BREATH_KEY)
 	ended.end("ended")
 	var late := _watch(ended, 2.0, Vector2.ZERO)
 	check(
@@ -245,7 +248,7 @@ func _check_cancelled() -> void:
 		)
 	)
 	var grown := _breath_sim({})
-	_watch(grown, 0.1, Vector2.ZERO, PRESS)
+	_watch(grown, 0.1, Vector2.ZERO, BREATH_KEY)
 	grown.stats["size"] = float(grown.size_tier() + 1)
 	var after := _watch(grown, 2.0, Vector2.ZERO)
 	check(
@@ -335,7 +338,7 @@ func _check_replay() -> void:
 ## When the strike events came in a breath run and a beam run.
 func _trace() -> String:
 	var out := PackedStringArray()
-	var breath := _watch(_breath_sim({"evolve1": 1}), 2.0, Vector2.ZERO, PRESS)
+	var breath := _watch(_breath_sim({"evolve1": 1}), 2.0, Vector2.ZERO, BREATH_KEY)
 	var line: Array[Dictionary] = [_b(0, -6, Vector3i(3, 3, 4))]
 	var beam := _watch(_croc({"r_beam": 1}, line, Vector2.ZERO), 3.0, Vector2.ZERO, ULT)
 	for seen: Dictionary in [breath, beam]:

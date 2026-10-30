@@ -299,7 +299,7 @@ func _breath_lights(levels: Dictionary) -> bool:
 	sim.stats["ability_damage"] = 0.0  # the block must stand to catch: this watches the fire
 	var seen := {}
 	for i: int in roundi(3.0 / DT):  # held down: the press counts once it has risen and is ready
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, true, 0):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.BREATH):
 			seen[str(event["type"])] = true
 	return seen.has("ability") and seen.has("fire_burning")
 

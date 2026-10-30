@@ -3,7 +3,8 @@ extends RefCounted
 ## The species branches of the upgrade tree as simulation (docs/SPECIES.md): each power is
 ## off until its node is bought (its stat is 0) and grows with every level. Part of
 ## RampageSim; split out to keep files small. Pure and seeded.
-##   Reptilian: tail sweep on a hard turn, Atomic Beam; momentum is always on (Momentum, D-337).
+##   Reptilian: the tail lash on the signature (D-280, D-328), Atomic Beam; momentum is always
+##   on (Momentum, D-337).
 ##   Insectoid: glide after a leap while the button is held, climbing (Brood is in Brood).
 ##   Cephalopod: squeezing through gaps, Corrosive Ink (limbs, grab and throw: Tentacles).
 ## Shared: buildings block the body (slow it) unless a power says otherwise, and coatings
@@ -36,8 +37,6 @@ var fire: FireSpread
 ## Chunks broken by tail sweeps themselves (not what falls after).
 var tail_cut := 0
 var _rng: RandomNumberGenerator
-var _turn := 0.0
-var _tail_cd := 0.0
 var _ram_cd := 0.0
 var _glide_armed := false
 
@@ -135,12 +134,6 @@ func turn_toward(from: Vector2, to: Vector2, dt: float) -> Vector2:
 func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 	var turn := absf(old_facing.angle_to(sim.facing)) if moving else 0.0
 	run.build(dt, turn, moving)
-	_turn = _turn * exp(-Num.f(cfg["tail_turn_decay"]) * dt) + turn
-	_tail_cd -= dt
-	if sim.stat("tail_damage") > 0.0 and _turn >= Num.f(cfg["tail_turn_rad"]) and _tail_cd <= 0.0:
-		_tail_cd = Num.f(cfg["tail_cooldown"])
-		_turn = 0.0
-		_tail_sweep(signf(old_facing.cross(sim.facing)))
 	_climb(dt)
 	_ram(dt)
 	swipe.step(dt)
@@ -151,9 +144,12 @@ func hit_mult() -> float:
 	return 1.0 + sim.stat("momentum") * momentum
 
 
-## The tail whips through the arc behind and beside the body, cutting a band of floors above
-## the ground floor at full force (no falloff): what stands above the cut drops.
-func _tail_sweep(side: float) -> void:
+## The tail lash (D-280): mid-stride, the tail whips through the half ring behind and beside
+## the body (D-329: "Behind-and-around"), flattening the street and the floors up to the cut at
+## full force (no falloff): what stands above the cut drops. The tail nodes upgrade it (D-328).
+## Lashes alternate sides so the whip reads left, then right.
+func lash() -> void:
+	var side := 1.0 if tail_sweeps % 2 == 0 else -1.0
 	tail_sweeps += 1
 	var reach := (Num.f(cfg["tail_reach"]) + sim.stat("tail_reach")) * _bs()
 	var centre := sim.kaiju_pos
@@ -170,7 +166,7 @@ func _tail_sweep(side: float) -> void:
 			if to.length() > reach + r:
 				return 0.0
 			return 1.0 if to.length() <= r or ahead.dot(to.normalized()) <= arc else 0.0,
-		sim.stat("tail_damage"),
+		Num.f(cfg["lash_damage"]) + sim.stat("tail_damage"),
 		lo,
 		lo + floors
 	)

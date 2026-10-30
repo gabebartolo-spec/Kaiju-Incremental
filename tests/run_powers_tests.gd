@@ -63,19 +63,27 @@ func _check_branches() -> void:
 	)
 
 
-## Tail Sweep: walking north past a building's east side and turning hard east swings the tail
-## back through it; a band of floors is cut and the floors above it drop.
+## The tail lash (D-280, D-401): the signature button whips the tail through the half ring
+## behind him; a building behind him is cut and its upper floors drop. No press, no lash; the
+## tail nodes make it cut deeper (D-328); the breath fires from its own button.
 func _check_tail() -> void:
 	var results: Array[Dictionary] = []
-	for levels: Dictionary in [{"claws": 1}, {"claws": 1, "r_tail": 1}]:
-		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(2.2, 1.5))
-		var seen := _run(sim, 0.4, NORTH)
-		seen.merge(_run(sim, 1.0, EAST), true)
-		results.append({"alive": _alive(sim, 0), "sweeps": sim.powers.tail_sweeps, "seen": seen})
+	for run: Dictionary in [
+		{"levels": {}, "press": 0},
+		{"levels": {}, "press": PRESS},
+		{"levels": {"r_tail": 4}, "press": PRESS},
+	]:
+		var levels: Dictionary = run["levels"]
+		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
+		var seen := _run(sim, 1.0, Vector2.ZERO, Num.i(run["press"]))
+		var cut := sim.powers.tail_cut
+		results.append(
+			{"alive": _alive(sim, 0), "sweeps": sim.powers.tail_sweeps, "seen": seen, "cut": cut}
+		)
 	check(
-		Num.i(results[0]["sweeps"]) == 0 and Num.i(results[1]["sweeps"]) >= 1,
+		Num.i(results[0]["sweeps"]) == 0 and Num.i(results[1]["sweeps"]) == 1,
 		(
-			"a hard turn sweeps the tail only with Tail Sweep (%d vs %d)"
+			"the tail lashes only on the signature button (%d unpressed vs %d pressed)"
 			% [Num.i(results[0]["sweeps"]), Num.i(results[1]["sweeps"])]
 		)
 	)
@@ -83,8 +91,28 @@ func _check_tail() -> void:
 	check(
 		Num.i(results[1]["alive"]) < Num.i(results[0]["alive"]) and seen_with.has("fall_start"),
 		(
-			"the tail cuts the building and its upper floors drop (%d vs %d chunks standing)"
+			"the lash cuts the building behind him and its upper floors drop (%d vs %d chunks standing)"
 			% [Num.i(results[1]["alive"]), Num.i(results[0]["alive"])]
+		)
+	)
+	check(
+		Num.i(results[2]["cut"]) > Num.i(results[1]["cut"]),
+		(
+			"Tail Sweep upgrades the lash: it cuts more (%d vs %d chunks)"
+			% [Num.i(results[2]["cut"]), Num.i(results[1]["cut"])]
+		)
+	)
+	var croc := _sim("reptilian", {}, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
+	var cones := 0
+	for i: int in roundi(1.0 / DT):
+		var flags := RampageSim.BREATH if i == 0 else 0
+		for event: Dictionary in croc.step(DT, Vector2.ZERO, false, flags):
+			cones += 1 if str(event.get("kind", "")) == "cone" else 0
+	check(
+		cones == 1 and croc.powers.tail_sweeps == 0,
+		(
+			"the breath fires from its own button, not the lash's (%d cones, %d lashes)"
+			% [cones, croc.powers.tail_sweeps]
 		)
 	)
 
@@ -130,13 +158,12 @@ func _check_momentum() -> void:
 	)
 
 
-## Shearing Tail: the same sweep through a taller building cuts more chunks.
+## Shearing Tail: the same lash through a taller building cuts more chunks.
 func _check_shear() -> void:
 	var cut: Array[int] = []
 	for levels: Dictionary in [{"r_tail": 1}, {"r_tail": 1, "r_shear": 2}]:
-		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 14))], Vector2(2.2, 1.5))
-		_run(sim, 0.4, NORTH)
-		_run(sim, 1.5, EAST)
+		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 14))], Vector2(0, -3.5))
+		_run(sim, 1.0, Vector2.ZERO, PRESS)
 		cut.append(sim.powers.tail_cut)
 	check(
 		cut[1] > cut[0],
@@ -189,8 +216,9 @@ func _check_beam() -> void:
 	)
 
 
-## A kaiju with no branch node bought plays exactly as before the branches existed: no tail,
-## no ram, no climb, no glide, no limbs or throws, no ultimate.
+## A kaiju with no branch node bought plays exactly as before the branches existed (the lash is
+## his signature, D-401, so it is not a branch power): no ram, no climb, no glide, no limbs or
+## throws, no ultimate.
 func _check_base_unchanged() -> void:
 	var stray: Array[String] = []
 	for species_id: String in ["reptilian"]:
@@ -206,7 +234,7 @@ func _check_base_unchanged() -> void:
 				stray.append("%s lift/mult" % species_id)
 				break
 		for kind: String in [
-			"tail_sweep", "glide_start", "beam_start", "eggs_laid", "limb", "grab", "ink", "coated"
+			"glide_start", "beam_start", "eggs_laid", "limb", "grab", "ink", "coated"
 		]:
 			if seen.has(kind):
 				stray.append("%s %s" % [species_id, kind])
@@ -222,10 +250,9 @@ func _check_levels() -> void:
 	var cut: Array[int] = []
 	for level: int in [1, 4]:
 		var sim := _sim(
-			"reptilian", {"r_tail": level}, [_b(0, 0, Vector3i(3, 3, 8), 2)], Vector2(2.2, 1.5)
+			"reptilian", {"r_tail": level}, [_b(0, 0, Vector3i(3, 3, 8), 2)], Vector2(0, -3.5)
 		)
-		_run(sim, 0.4, NORTH)
-		_run(sim, 1.0, EAST)
+		_run(sim, 1.0, Vector2.ZERO, PRESS)
 		cut.append(sim.powers.tail_cut)
 	check(cut[1] > cut[0], "a higher tail level cuts deeper: %d > %d" % [cut[1], cut[0]])
 
