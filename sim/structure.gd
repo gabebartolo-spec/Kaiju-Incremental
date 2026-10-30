@@ -140,22 +140,26 @@ func _grounded() -> PackedByteArray:
 	while not frontier.is_empty():
 		var i := frontier[frontier.size() - 1]
 		frontier.resize(frontier.size() - 1)
-		var x := i % w
-		var z := (i / w) % d
-		var y := i / plan
-		var next: Array[int] = [
-			i - 1 if x > 0 else -1,
-			i + 1 if x < w - 1 else -1,
-			i - w if z > 0 else -1,
-			i + w if z < d - 1 else -1,
-			i - plan if y > 0 else -1,
-			i + plan if y < h - 1 else -1,
-		]
-		for n: int in next:
+		for n: int in _neighbours(i, plan):
 			if n >= 0 and seen[n] == 0 and _hp[n] > 0.0:
 				seen[n] = 1
 				frontier.append(n)
 	return seen
+
+
+## Chunk index i's six face neighbours (plan: w x d); -1 past an edge.
+func _neighbours(i: int, plan: int) -> Array[int]:
+	var x := i % w
+	var z := (i / w) % d
+	var y := i / plan
+	return [
+		i - 1 if x > 0 else -1,
+		i + 1 if x < w - 1 else -1,
+		i - w if z > 0 else -1,
+		i + w if z < d - 1 else -1,
+		i - plan if y > 0 else -1,
+		i + plan if y < h - 1 else -1,
+	]
 
 
 ## The raw chunk strengths, by index() (Arcs counts over them without a call per chunk).

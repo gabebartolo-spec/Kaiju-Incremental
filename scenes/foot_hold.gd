@@ -16,7 +16,7 @@ func _init(p_rig: KaijuRig) -> void:
 ## Which way leg's foot points in the world, flat (rad, 0 = facing -Z): ankle to toe tip as the clip
 ## poses it. A splayed foot (the adult croc's) swings its flat heading as it rolls over the stance,
 ## so a planted foot holds this heading, not only the body's turn.
-func foot_yaw(leg: BipedGait.Leg) -> float:
+func foot_yaw(leg: BipedLeg) -> float:
 	var toes := _rig.tail_world(leg.tip) - _rig.bone(leg.names[2]).global_position
 	return atan2(-toes.x, -toes.z)
 
@@ -25,14 +25,14 @@ func foot_yaw(leg: BipedGait.Leg) -> float:
 ## (`plant_heading`), the body's turn and the foot's own roll alike. The roll was capped at 0.08
 ## rad while a leg out of reach slid its toe; LegReach now peels the heel up instead, and the tall
 ## walk's foot (r13f) swings 16 deg at toe-off (step-turn smoke).
-func hold(plant_heading: float, leg: BipedGait.Leg) -> float:
+func hold(plant_heading: float, leg: BipedLeg) -> float:
 	return wrapf(plant_heading - foot_yaw(leg), -PI, PI)
 
 
 ## The most of a foot's yaw hold (`fix`, rad) the leg can reach, at body scale `s`: the ankle stays
 ## within the leg's length of the hip with the toe on `toe` (bisected; the foot turns only as far
 ## as the leg allows).
-func held(leg: BipedGait.Leg, s: float, toe: Vector3, fix: float) -> float:
+func held(leg: BipedLeg, s: float, toe: Vector3, fix: float) -> float:
 	var hip := _rig.bone(leg.names[0]).global_position
 	var ankle_now := _rig.bone(leg.names[2]).global_position
 	var off := _rig.tail_world(leg.tip) - ankle_now

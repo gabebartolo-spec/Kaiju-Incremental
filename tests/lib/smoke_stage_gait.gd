@@ -77,8 +77,8 @@ static func _curve(check: Callable, root: Node, stage: String) -> void:
 		_drive(sim, kaiju, way)
 		var dyaw := wrapf(gait.body_yaw - last_yaw, -PI, PI)
 		last_yaw = gait.body_yaw
-		var left: BipedGait.Leg = gait.legs[0]
-		var right: BipedGait.Leg = gait.legs[1]
+		var left: BipedLeg = gait.legs[0]
+		var right: BipedLeg = gait.legs[1]
 		if t >= WARM_S and absf(dyaw) > STILL_YAW and not (left.planted or right.planted):
 			aloft += absf(rad_to_deg(dyaw))
 	var steps := sim.body.stepping()

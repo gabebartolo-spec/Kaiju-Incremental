@@ -173,7 +173,9 @@ func leap(phase: String, t: float, settle_share: float) -> void:
 ## Standing, a sim stomp lifts a foot for the ring and cracks (ClipStomp; keyed r13f stomps play as
 ## clips, the next from the last one's tail); walking, turning or roaring, the clips deliver it.
 func stomp() -> void:
-	var keyed := _stomp.stomp(state == "idle" or ClipStomp.KEYED.has(state), clips.has_clip("stomp_l"))
+	var keyed := _stomp.stomp(
+		state == "idle" or ClipStomp.KEYED.has(state), clips.has_clip("stomp_l")
+	)
 	if not keyed.is_empty():
 		_go(keyed, 0.0)
 
@@ -194,31 +196,7 @@ func stride() -> float:
 
 
 func _choose(dt: float) -> void:
-	var moving := speed >= STAND_SPEED * hip_height * s
-	var done := not clips.loops(state) and clip_time >= clips.frames_of(state) - 1
-	var settle := "walk" if moving else "idle"
-	if _roar_queued:
-		_roar_queued = false
-		_go("roar", 0.0)
-	elif _stomp.holds(state):
-		if done:
-			_go(settle, _walk_start() if moving else 0.0)
-	elif state.begins_with("turn"):
-		var span: Vector2 = _turn_span[state]
-		if moving or clip_time >= span.y + TURN_SETTLE:
-			_go(settle, _walk_start() if moving else 0.0)
-	elif moving:
-		if state != "walk":
-			_go("walk", _walk_start())
-	else:
-		var err := wrapf(model_yaw - body_yaw, -PI, PI)
-		if absf(err) > TURN_TRIGGER:
-			var turn := "turn_left" if err > 0.0 else "turn_right"
-			var span: Vector2 = _turn_span[turn]
-			_turn_from = body_yaw
-			_go(turn, maxf(0.0, span.x - TURN_PAD))
-		elif _stomp.leaves(state, done):
-			_go("idle", 0.0)
+	ClipChoice.pick(self)
 	if state == "walk":
 		_walk_clock(dt)
 	else:
