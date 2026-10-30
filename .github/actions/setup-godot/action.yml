@@ -1,6 +1,9 @@
 name: Set up Godot
 description: Downloads (cached) the Linux Godot used by the test jobs to ~/godot/godot.
 inputs:
+  save-cache:
+    description: "false: restore the cache but never save it (jobs that run code from an arbitrary ref, e.g. pacing.yml)"
+    default: "true"
   version:
     description: Godot version
     default: "4.7.2"
@@ -8,14 +11,22 @@ runs:
   using: composite
   steps:
     - name: Cache Godot
-      id: godot-cache
+      id: godot-cache-rw
+      if: inputs.save-cache == 'true'
       uses: actions/cache@v4
+      with:
+        path: ~/godot
+        key: godot-${{ inputs.version }}-linux-x86_64
+    - name: Cache Godot (restore only)
+      id: godot-cache-ro
+      if: inputs.save-cache != 'true'
+      uses: actions/cache/restore@v4
       with:
         path: ~/godot
         key: godot-${{ inputs.version }}-linux-x86_64
 
     - name: Download Godot ${{ inputs.version }}
-      if: steps.godot-cache.outputs.cache-hit != 'true'
+      if: (steps.godot-cache-rw.outputs.cache-hit || steps.godot-cache-ro.outputs.cache-hit) != 'true'
       shell: bash
       env:
         GODOT_VERSION: ${{ inputs.version }}

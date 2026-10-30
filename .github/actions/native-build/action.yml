@@ -3,17 +3,29 @@ description: >
   The Linux GDExtension (native/, godot-cpp) at native/bin, from the cache when its sources and the
   pinned godot-cpp commit are unchanged. Needs a checkout with submodules. One definition of the
   cache key, shared by tests.yml (PRs read it) and native-cache.yml (base branches save it).
+inputs:
+  save-cache:
+    description: "false: restore the cache but never save it (jobs that run code from an arbitrary ref, e.g. pacing.yml)"
+    default: "true"
 runs:
   using: composite
   steps:
     - name: Cache the built library
-      id: native-cache
+      id: native-cache-rw
+      if: inputs.save-cache == 'true'
       uses: actions/cache@v4
       with:
         path: native/bin
         key: native-linux-${{ hashFiles('native/src/**', 'native/SConstruct', 'native/kaiju_carve.gdextension', '.gitmodules') }}-${{ hashFiles('.git/modules/native/godot-cpp/HEAD') }}
+    - name: Cache the built library (restore only)
+      id: native-cache-ro
+      if: inputs.save-cache != 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: native/bin
+        key: native-linux-${{ hashFiles('native/src/**', 'native/SConstruct', 'native/kaiju_carve.gdextension', '.gitmodules') }}-${{ hashFiles('.git/modules/native/godot-cpp/HEAD') }}
     - name: Build the extension (Linux x86_64, debug)
-      if: steps.native-cache.outputs.cache-hit != 'true'
+      if: (steps.native-cache-rw.outputs.cache-hit || steps.native-cache-ro.outputs.cache-hit) != 'true'
       shell: bash
       run: |
         python3 -m pip install --user scons
