@@ -48,7 +48,8 @@ func step(dt: float) -> void:
 		if Num.f(grenade[0]) > 0.0:
 			flying.append(grenade)
 		else:
-			_cloud(grenade[1])
+			var landed: Vector2 = grenade[1]
+			_cloud(landed)
 	grenades = flying
 	var standing: Array[Array] = []
 	for cloud: Array in clouds:

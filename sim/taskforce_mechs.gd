@@ -202,8 +202,5 @@ func _kill(mech: Mech, kind: String) -> void:
 		{"type": "mech_died", "mech": mech.id, "kind": kind, "x": mech.pos.x, "z": mech.pos.y}
 	)
 	_blast(
-		mech.pos,
-		Num.f(cfg["death_radius"]),
-		Num.f(cfg["death_damage"]),
-		Num.i(cfg["death_floors"])
+		mech.pos, Num.f(cfg["death_radius"]), Num.f(cfg["death_damage"]), Num.i(cfg["death_floors"])
 	)
