@@ -5,10 +5,11 @@ extends "res://tests/lib/runner.gd"
 const DT := 1.0 / 30.0
 const NORTH := Vector2(0, -1)
 const EAST := Vector2(1, 0)
-## _run button flags.
+## _run button flags (BREATH_KEY: the croc's breath button).
 const PRESS := 1
 const HOLD := 2
 const ULT := 4
+const BREATH_KEY := 16  # the croc's breath button (D-399), on the first step
 
 
 ## A building entry for a hand-made layout.
@@ -43,6 +44,8 @@ func _run(sim: RampageSim, seconds: float, move: Vector2, buttons: int = 0) -> D
 		var flags := RampageSim.HELD if buttons & HOLD else 0
 		if i == 0 and buttons & ULT:
 			flags |= RampageSim.ULTIMATE
+		if i == 0 and buttons & BREATH_KEY:
+			flags |= RampageSim.BREATH
 		for event: Dictionary in sim.step(DT, move, i == 0 and buttons & PRESS != 0, flags):
 			var kind := str(event["type"])
 			seen[kind] = Num.i(seen.get(kind, 0)) + 1
@@ -57,6 +60,8 @@ func _held_run(sim: RampageSim, seconds: float, offset: Vector2, buttons: int) -
 		if sim.vip.flying():
 			sim.vip.pos = sim.kaiju_pos + offset
 		var flags := RampageSim.ULTIMATE if i == 0 and buttons & ULT else 0
+		if i == 0 and buttons & BREATH_KEY:
+			flags |= RampageSim.BREATH
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, i == 0 and buttons & PRESS != 0, flags):
 			var kind := str(event["type"])
 			seen[kind] = Num.i(seen.get(kind, 0)) + 1

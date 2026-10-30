@@ -76,7 +76,10 @@ func _check_tail() -> void:
 		var levels: Dictionary = run["levels"]
 		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
 		var seen := _run(sim, 1.0, Vector2.ZERO, Num.i(run["press"]))
-		results.append({"alive": _alive(sim, 0), "sweeps": sim.powers.tail_sweeps, "seen": seen})
+		var cut := sim.powers.tail_cut
+		results.append(
+			{"alive": _alive(sim, 0), "sweeps": sim.powers.tail_sweeps, "seen": seen, "cut": cut}
+		)
 	check(
 		Num.i(results[0]["sweeps"]) == 0 and Num.i(results[1]["sweeps"]) == 1,
 		(
@@ -93,10 +96,10 @@ func _check_tail() -> void:
 		)
 	)
 	check(
-		Num.i(results[2]["alive"]) < Num.i(results[1]["alive"]),
+		Num.i(results[2]["cut"]) > Num.i(results[1]["cut"]),
 		(
-			"Tail Sweep upgrades the lash: it cuts more (%d vs %d chunks standing)"
-			% [Num.i(results[2]["alive"]), Num.i(results[1]["alive"])]
+			"Tail Sweep upgrades the lash: it cuts more (%d vs %d chunks)"
+			% [Num.i(results[2]["cut"]), Num.i(results[1]["cut"])]
 		)
 	)
 	var croc := _sim("reptilian", {}, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
@@ -155,13 +158,12 @@ func _check_momentum() -> void:
 	)
 
 
-## Shearing Tail: the same sweep through a taller building cuts more chunks.
+## Shearing Tail: the same lash through a taller building cuts more chunks.
 func _check_shear() -> void:
 	var cut: Array[int] = []
 	for levels: Dictionary in [{"r_tail": 1}, {"r_tail": 1, "r_shear": 2}]:
-		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 14))], Vector2(2.2, 1.5))
-		_run(sim, 0.4, NORTH)
-		_run(sim, 1.5, EAST)
+		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 14))], Vector2(0, -3.5))
+		_run(sim, 1.0, Vector2.ZERO, PRESS)
 		cut.append(sim.powers.tail_cut)
 	check(
 		cut[1] > cut[0],
@@ -214,8 +216,9 @@ func _check_beam() -> void:
 	)
 
 
-## A kaiju with no branch node bought plays exactly as before the branches existed: no tail,
-## no ram, no climb, no glide, no limbs or throws, no ultimate.
+## A kaiju with no branch node bought plays exactly as before the branches existed (the lash is
+## his signature, D-399, so it is not a branch power): no ram, no climb, no glide, no limbs or
+## throws, no ultimate.
 func _check_base_unchanged() -> void:
 	var stray: Array[String] = []
 	for species_id: String in ["reptilian"]:
@@ -231,7 +234,7 @@ func _check_base_unchanged() -> void:
 				stray.append("%s lift/mult" % species_id)
 				break
 		for kind: String in [
-			"tail_sweep", "glide_start", "beam_start", "eggs_laid", "limb", "grab", "ink", "coated"
+			"glide_start", "beam_start", "eggs_laid", "limb", "grab", "ink", "coated"
 		]:
 			if seen.has(kind):
 				stray.append("%s %s" % [species_id, kind])
@@ -247,10 +250,9 @@ func _check_levels() -> void:
 	var cut: Array[int] = []
 	for level: int in [1, 4]:
 		var sim := _sim(
-			"reptilian", {"r_tail": level}, [_b(0, 0, Vector3i(3, 3, 8), 2)], Vector2(2.2, 1.5)
+			"reptilian", {"r_tail": level}, [_b(0, 0, Vector3i(3, 3, 8), 2)], Vector2(0, -3.5)
 		)
-		_run(sim, 0.4, NORTH)
-		_run(sim, 1.0, EAST)
+		_run(sim, 1.0, Vector2.ZERO, PRESS)
 		cut.append(sim.powers.tail_cut)
 	check(cut[1] > cut[0], "a higher tail level cuts deeper: %d > %d" % [cut[1], cut[0]])
 
