@@ -1,5 +1,5 @@
 extends RefCounted
-## The Tripo street props (D-266, D-399): with city.street_props on, the city's pavements carry
+## The Tripo street props (D-266, D-400): with city.street_props on, the city's pavements carry
 ## furniture, its crossings traffic lights, its lamps the lamp model and some of its cars Tripo
 ## cars; off (no weights, no signal or lamp id), none stand and the decor's own lamps and cars
 ## take their place. Each prop flattens under the kaiju like any other.

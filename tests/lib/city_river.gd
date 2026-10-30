@@ -97,8 +97,7 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 ## from the west end of the street grid to the east, bridges in every gap along it and none
 ## over solid ground, no building standing in the channel (a landmark's site in the river row
 ## included), no parked car within CAR_CLEAR of the water or its quay walls (its centre half a
-## car length further). What he meets on landing is the rise bar's (city_spawn_view.gd, D-384:
-## the beachfront's sand lies between the water and the first hotel, D-381).
+## car length further).
 static func check_look(
 	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check_fn: Callable
 ) -> void:

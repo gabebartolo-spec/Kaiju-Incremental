@@ -20,6 +20,7 @@ var street: StreetLife
 var blast_break: BlastBreak
 ## Draws carved buildings from their own fine cells (destruction plan stage 1; null until built).
 var carve: CityCarve
+var wildlife: WildlifeView  # gulls, pigeons and the whale (null without decor)
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _bubble: CameraBubble
@@ -177,6 +178,7 @@ func _build_ground() -> void:
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
 		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
+		wildlife = WildlifeView.attach(self, sim)
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.

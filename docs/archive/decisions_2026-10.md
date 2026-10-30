@@ -2,7 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
-<<<<<<< HEAD
+## 2026-10-27 · D-344 · Director · Far-city reflection look approved (D-324)
+On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog + reflection"): "Looks right, merge
+(Recommended)". The branch claude/far-city-reflect opens READY after #330 and merges on green.
+
 ## 2026-10-27 · D-343 · Director · The croc's first step from standing gets a keyed walk-start
 Asked how the young croc should start walking from a stand: "Key a walk-start (Recommended)": a Cascadeur
 stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before turn-skate B.
@@ -11,11 +14,10 @@ stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before t
 On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
 the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
 to him.
-=======
+
 ## 2026-10-30 · D-397 · Director · Tripo spend for the adult-city Taskforce
 "you can spend up to 2000 credits" (Tripo, this session: gas soldier and walking mech models, obsidian with electric
 blue highlights, D-143).
->>>>>>> 5345418385a8c244795c3d57db276cafb8353265
 
 ## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
 On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
