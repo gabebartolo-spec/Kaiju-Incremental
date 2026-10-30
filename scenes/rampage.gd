@@ -295,6 +295,7 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	_blasts.on_event(event, _kaiju_at)
 	rumble.on_event(event)
+	WildlifeView.feed(_city.wildlife, event, _kaiju_at)  # birds scatter, the whale dives
 	match str(event["type"]):
 		"stomp":
 			_land.lift(_kaiju, str(event.get("side", "")))
