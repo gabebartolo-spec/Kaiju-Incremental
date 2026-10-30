@@ -33,6 +33,7 @@ func run_checks() -> void:
 	await _t("_check_arcs_small_hit")
 	await _t("_check_arcs_all")
 	await _t("_check_promotion")
+	await _t("_check_clear_chunk_rows")
 	await _t("_check_no_clock_or_rng")
 
 
@@ -322,6 +323,33 @@ func _check_promotion() -> void:
 	var wheel := p.on_hit(2, _landmark("wheel")) as LandmarkCells
 	check(wheel != null and wheel.arcs == null, "the wheel gets a grid without arcs")
 	check(wheel.shed().is_empty(), "a landmark without arcs never sheds")
+
+
+## clear_chunk's row clear (the 1.3 s wheel promote, docs/research/2026-10-31-cpu-profile.md)
+## empties exactly the cells the old per-cell clear did, edge and out-of-grid chunks included.
+func _check_clear_chunk_rows() -> void:
+	var fast := LandmarkCells.new(_landmark("wheel"))
+	var slow := LandmarkCells.new(_landmark("wheel"))
+	var lo := (Vector3i.ZERO + slow.offset) / slow.res - Vector3i.ONE
+	var hi := (slow.dims + slow.offset) / slow.res + Vector3i.ONE
+	var n := 0
+	for y: int in range(lo.y, hi.y + 1):
+		for z: int in range(lo.z, hi.z + 1):
+			for x: int in range(lo.x, hi.x + 1):
+				if (x + y + z) % 3 != 0:
+					continue
+				fast.clear_chunk(Vector3i(x, y, z))
+				var base := Vector3i(x, y, z) * slow.res
+				for cy: int in slow.res:
+					for cz: int in slow.res:
+						for cx: int in slow.res:
+							slow.clear_cell(base + Vector3i(cx, cy, cz))
+				n += 1
+	check(
+		n > 0 and fast.count() < LandmarkCells.new(_landmark("wheel")).count(),
+		"the row clear empties cells (%d chunks)" % n
+	)
+	check(fast.cells == slow.cells, "the row clear matches the per-cell clear cell for cell")
 
 
 func _check_no_clock_or_rng() -> void:
