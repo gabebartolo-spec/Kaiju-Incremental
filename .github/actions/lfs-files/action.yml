@@ -5,6 +5,10 @@ description: >
   run on a tree whose LFS files did not change downloads nothing; GitHub's free LFS bandwidth is 1 GiB a
   month and the objects are about 50 MB (debt row 8, D-295). A changed object restores the nearest older
   cache and downloads only what is new.
+inputs:
+  save-cache:
+    description: "false: restore the cache but never save it (jobs that run code from an arbitrary ref, e.g. pacing.yml)"
+    default: "true"
 runs:
   using: composite
   steps:
@@ -15,8 +19,17 @@ runs:
         echo "LFS objects in this commit: $(wc -l < .lfs-assets-id)"
 
     - name: Restore the LFS objects
-      id: lfs-cache
+      id: lfs-cache-rw
+      if: inputs.save-cache == 'true'
       uses: actions/cache@v4
+      with:
+        path: .git/lfs
+        key: lfs-${{ hashFiles('.lfs-assets-id') }}
+        restore-keys: lfs-
+    - name: Restore the LFS objects (restore only)
+      id: lfs-cache-ro
+      if: inputs.save-cache != 'true'
+      uses: actions/cache/restore@v4
       with:
         path: .git/lfs
         key: lfs-${{ hashFiles('.lfs-assets-id') }}
@@ -27,7 +40,7 @@ runs:
       run: |
         total=$(wc -l < .lfs-assets-id)
         have=$(find .git/lfs/objects -type f 2>/dev/null | wc -l)
-        echo "LFS: cache-hit=${{ steps.lfs-cache.outputs.cache-hit }}, $have object(s) restored from the cache, $total needed"
+        echo "LFS: cache-hit=${{ (steps.lfs-cache-rw.outputs.cache-hit || steps.lfs-cache-ro.outputs.cache-hit) }}, $have object(s) restored from the cache, $total needed"
         git lfs pull
         # Drop objects an older cache held that this commit no longer uses (keeps the cache small).
         git lfs prune --no-verify-remote > /dev/null 2>&1 || true
