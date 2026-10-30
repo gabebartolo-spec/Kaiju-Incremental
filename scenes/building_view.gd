@@ -100,7 +100,7 @@ func _dress() -> void:
 	add_child(_slabs)
 	if not _ground.is_empty():
 		var mi := MeshInstance3D.new()
-		mi.mesh = VoxelBuilder.baked(_ground, 0.0)
+		mi.mesh = VoxelBuilder.baked(_ground, 0.0, BuildingVoxels.VOXEL)  # the city's surface family
 		add_child(mi)
 		_ground = []
 
