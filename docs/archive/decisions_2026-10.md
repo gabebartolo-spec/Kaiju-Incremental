@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-353 · Director · Team: the Cascadeur keyer plus 4 builders
+Replaces D-296. Asked "be honest, would this actually be any slower if we did it with just you and no subagents? maybe 1
+subagent for CI and thats it?". Lead's numbers: 85 merges on 10-27 (no builder limit) against 29 and 33 the two days
+before; costs: collisions (#332 vs #338), 10 open PRs against the cap of 3, the lead relaying instead of checking work.
+Then "what do YOU think, im asking here"; the lead recommended the keyer plus 4. Picked "Yes, keyer + 4 (Recommended)":
+the Cascadeur keyer plus 4 builders (the rigger is one of the 4, D-336), at most 3 open PRs. Running builders finish
+their current task and are not replaced. The lead counts in-game progress on 10-28 and reports it.
+
 ## 2026-10-27 · D-352 · Director · Roof tanks: mostly white solar water heaters, some short wooden towers
 Changes D-348. On the wooden towers: "idk, the rooftanks look massive, and why are the brown"; "i prefer rooftanks like
 the attached image" (a white tank lying on its side on a metal frame above two dark solar panels; reference only,
