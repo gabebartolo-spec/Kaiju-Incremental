@@ -21,7 +21,7 @@ consent (D-400), balance 5,240 after. At time's up three jets cross the screen t
 (FinalStrike, death.airstrike), then he dies as before. The subline "The army ran out of patience" is the lead's
 wording, for the director.
 
-## 2026-10-31 · D-405 · Director · Rubble casts no shadows
+## 2026-10-31 · D-408 · Director · Rubble casts no shadows
 "Ship shadows off", after 1080p stills on vs off (bulldozer frames 1800 and 2600). Rubble heaps, strips and thrown
 chunks (RuinYard) stop casting shadows: data/tuning.json destruction.ruin_shadows = 0. Peak ruin: GPU p50 22.0 ->
 21.2 ms, shadow draws 2,442 -> 2,123 (docs/research/2026-10-31-cpu-profile.md).

@@ -1891,7 +1891,7 @@
 		"chunk_alive_share": 0.5,
 		"warm_margin": 3,
 		"warm_emerge_margin": 12,
-		"_ruin_shadows": "D-405 (off). 1: rubble heaps, strips and thrown chunks (RuinYard) cast shadows; 0: they do not (2,518 casters at bulldozer frame 2600, docs/research/2026-10-31-cpu-profile.md).",
+		"_ruin_shadows": "D-408 (off). 1: rubble heaps, strips and thrown chunks (RuinYard) cast shadows; 0: they do not (2,518 casters at bulldozer frame 2600, docs/research/2026-10-31-cpu-profile.md).",
 		"ruin_shadows": 0,
 		"_fall_dirs": "b2-5 (D-387): the odds a toppling part (not a landmark's) falls toward its cut side (the side the support rule tips it, or the kaiju's for a base eaten whole), to each side of that, or away from it; cut + 2 x side + away = 1. Drawn from the run's seed, one draw per topple.",
 		"fall_dirs": {"cut": 0.4, "side": 0.25, "away": 0.1},
