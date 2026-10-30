@@ -25,7 +25,7 @@ func _adult() -> RampageSim:
 	return sim
 
 
-## Presses the breath (its own button, D-399) every step for `seconds`: whether it wound up.
+## Presses the breath (its own button, D-400) every step for `seconds`: whether it wound up.
 func _breathes(sim: RampageSim, seconds: float) -> bool:
 	for _n: int in roundi(seconds / DT):
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, RampageSim.BREATH):

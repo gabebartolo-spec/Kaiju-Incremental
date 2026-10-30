@@ -4,7 +4,7 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-10-30 · D-399 · Director · The tail lash takes the signature button; the breath gets Q / pad X
+## 2026-10-30 · D-400 · Director · The tail lash takes the signature button; the breath gets Q / pad X
 Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
 button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
 already shares). Where is the ring? "Behind-and-around" (the half ring behind and beside him). The automatic whip goes
@@ -12,6 +12,10 @@ and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328
 for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
 procedural whip stands in until they land. Amended the same day: "Merge now" (the lash merges with the
 procedural whip; the clips follow).
+## 2026-10-30 · D-399 · Director · The rise bar is removed
+His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
+the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
+check. Replaces D-384 (and the 10 s rise bar it carried from D-131).
 
 ## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
 Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
@@ -394,7 +398,3 @@ VRAM budget, so asset work keeps its pace.
 He asked about the far-city noon still: "why are there so many trees on top of buildings is that a bug?" (trees stand
 on low roofs, one on a tall roof among the antennas). No decision asks for rooftop trees. He picked "Yes, find and fix
 (Recommended)": find why trees are placed there, move them to streets and parks, and send him a still.
-
-## 2026-10-27 · D-344 · Director · Far-city reflection look approved (D-324)
-On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog + reflection"): "Looks right, merge
-(Recommended)". The branch claude/far-city-reflect opens READY after #330 and merges on green.

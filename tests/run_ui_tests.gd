@@ -172,7 +172,7 @@ func _skin_box(model: KaijuModel, table: Node3D) -> AABB:
 
 ## Critic r1 item 1: with one species the card is wide (about 55% of the screen), the kaiju
 ## preview twice the old 390 px, one stat per row at 32 px or more, every meter cell 12 px or wider,
-## and a gap above BACK; D-399: the signature reads the species' ability name (Tail Lash).
+## and a gap above BACK; D-400: the signature reads the species' ability name (Tail Lash).
 func _check_species_card() -> void:
 	var window := root.size
 	root.size = CANVAS

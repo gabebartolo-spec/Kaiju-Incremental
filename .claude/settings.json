@@ -57,6 +57,50 @@
       "Bash(gh repo edit *)"
     ]
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/push_gate_hook.py\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/roadmap_due_hook.py\" merged"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*__(update|batch)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/roadmap_due_hook.py\" updated"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/roadmap_due_hook.py\" stop"
+          }
+        ]
+      }
+    ]
+  },
   "deniedMcpServers": [
     {
       "serverName": "comfy-mcp"
