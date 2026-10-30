@@ -31,6 +31,8 @@ const WALK_SHARE := 0.5
 ## croc still sets off at once (well inside YOUNG_OFF_S).
 const WALK_OFF_S := 1.3
 const YOUNG_OFF_S := 0.3
+## The ramp is done at 0.98 of full stride; the last 2% is the slow stride_ease tail, not the set-off.
+const FULL_STRIDE := 0.98
 
 
 func suite_name() -> String:
@@ -166,7 +168,7 @@ func _check_walk_start() -> void:
 			sim.step(DT, sim.facing, false, 0)
 			if n + 1 == 36:  # 0.6 s
 				at_half = sim.body.stride
-			if full_at < 0.0 and sim.body.stride >= 0.999:
+			if full_at < 0.0 and sim.body.stride >= FULL_STRIDE:
 				full_at = float(n + 1) * DT
 		if stage == "young":
 			check(
