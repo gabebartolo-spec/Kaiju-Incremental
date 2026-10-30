@@ -7,7 +7,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_wildlife_tests.gd
 
 const DT := 1.0 / 15.0
-const TOWERS := [
+const TOWERS: Array[Dictionary] = [
 	{"x": 0.0, "z": 0.0, "w": 4, "d": 4, "h": 20, "tier": 1, "style": 0},
 	{"x": 12.0, "z": 6.0, "w": 4, "d": 4, "h": 16, "tier": 1, "style": 0},
 ]
