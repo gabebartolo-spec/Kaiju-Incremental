@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-400 · Director · The 20 Tripo street props ship, at half the buildings' cube
+His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~19 cm)". Every prop is its baked
+`.kvox` (`tools/street_props/bake.sh`) at voxel 0.0625, half the buildings' 0.125: pavement furniture along every
+playable street, a traffic light at each lit crossing, the lamp model on every streetlight, Tripo cars among the
+parked and stopped ones (the decor's own car keeps the rest). All crushable. Tuning `city.street_props`. His
+1,500-credit Tripo consent (10-30) stays in reserve: this ships with 0 credits spent.
+
 ## 2026-10-30 · D-399 · Director · The rise bar is removed
 His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
 the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
@@ -390,11 +397,3 @@ VRAM budget, so asset work keeps its pace.
 He asked about the far-city noon still: "why are there so many trees on top of buildings is that a bug?" (trees stand
 on low roofs, one on a tall roof among the antennas). No decision asks for rooftop trees. He picked "Yes, find and fix
 (Recommended)": find why trees are placed there, move them to streets and parks, and send him a still.
-
-## 2026-10-27 · D-344 · Director · Far-city reflection look approved (D-324)
-On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog + reflection"): "Looks right, merge
-(Recommended)". The branch claude/far-city-reflect opens READY after #330 and merges on green.
-
-## 2026-10-27 · D-343 · Director · The croc's first step from standing gets a keyed walk-start
-Asked how the young croc should start walking from a stand: "Key a walk-start (Recommended)": a Cascadeur
-stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before turn-skate B.
