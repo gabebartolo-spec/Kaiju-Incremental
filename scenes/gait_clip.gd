@@ -86,6 +86,7 @@ var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
 var _spring_tail := 0  # tail bones the turns bend (spring chain; the r12 tip plays clips only)
 var _look := 0.0  # the head's look-ahead into the turn (rad)
+var _leap: ClipLeap
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -120,19 +121,17 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_tail = ClipTail.new(_spring_tail)
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)
+	_leap = ClipLeap.new(clips)
 	rake = ClipRake.new(rig, clips, swing)  # and the claw's streak (ClawTrail)
 
 
 func update(delta: float) -> void:
-	var held := body_yaw if _started else INF
-	track(delta)
-	if held != INF and state == "idle" and speed < STAND_SPEED * hip_height * s:
-		body_yaw = rotate_toward(held, model_yaw, IDLE_CREEP * delta)
-		_body_yaw_v = 0.0
-		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
+	_creep(delta)
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
-	if state != KaijuModel.RISE_CLIP or _roar_queued:  # the rise's frame is set (RampageRise)
+	if _leap.on:  # the sim's leap sets the frame (leap); a roar waits for the landing
+		_blend = minf(1.0, _blend + dt / BLEND_SECONDS)
+	elif state != KaijuModel.RISE_CLIP or _roar_queued:  # the rise's frame is set (RampageRise)
 		_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
@@ -141,6 +140,7 @@ func update(delta: float) -> void:
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), to, smoothstep(0.0, 1.0, _blend))
 		for i: int in 2:  # the new clip's lifted foot lifts at once: held down, it caught up later
 			pose.planted[i] = pose.planted[i] and to.planted[i]
+	pose = _leap.grounded(pose)  # (and the leap's hold ends with this frame)
 	_apply(rake.layer(pose, dt), dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
@@ -148,15 +148,34 @@ func update(delta: float) -> void:
 	_measure_slide()
 
 
+## Standing, the body creeps round to the heading.
+func _creep(delta: float) -> void:
+	var held := body_yaw if _started else INF
+	track(delta)
+	if held != INF and state == "idle" and speed < STAND_SPEED * hip_height * s:
+		body_yaw = rotate_toward(held, model_yaw, IDLE_CREEP * delta)
+		_body_yaw_v = 0.0
+		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
+
+
 ## A roar starts at once, from whatever the kaiju is doing, and plays to its end.
 func roar() -> void:
 	_roar_queued = true
 
 
-## Standing, a sim stomp lifts a foot and drives it down for the ring and cracks (ClipStomp);
-## walking or turning, the clip footfalls deliver it; roaring, the feet stay planted.
+## The leap clip on the sim's Dash phase, t 0..1 through it (KaijuModel.leap, ClipLeap).
+func leap(phase: String, t: float, settle_share: float) -> void:
+	if _leap.playable() and state != ClipLeap.CLIP:
+		_go(ClipLeap.CLIP, 0.0)
+	clip_time = _leap.frame(phase, t, settle_share) if _leap.playable() else clip_time
+
+
+## Standing, a sim stomp lifts a foot for the ring and cracks (ClipStomp; keyed r13f stomps play as
+## clips, the next from the last one's tail); walking, turning or roaring, the clips deliver it.
 func stomp() -> void:
-	_stomp.stomp(state == "idle")
+	var keyed := _stomp.stomp(state == "idle" or ClipStomp.KEYED.has(state), clips.has_clip("stomp_l"))
+	if not keyed.is_empty():
+		_go(keyed, 0.0)
 
 
 ## The foot the next standing stomp lifts (the sim chose it: its damage is centred under that foot).
@@ -181,7 +200,7 @@ func _choose(dt: float) -> void:
 	if _roar_queued:
 		_roar_queued = false
 		_go("roar", 0.0)
-	elif state == "roar":
+	elif _stomp.holds(state):
 		if done:
 			_go(settle, _walk_start() if moving else 0.0)
 	elif state.begins_with("turn"):
@@ -198,7 +217,7 @@ func _choose(dt: float) -> void:
 			var span: Vector2 = _turn_span[turn]
 			_turn_from = body_yaw
 			_go(turn, maxf(0.0, span.x - TURN_PAD))
-		elif state != "idle":
+		elif _stomp.leaves(state, done):
 			_go("idle", 0.0)
 	if state == "walk":
 		_walk_clock(dt)
@@ -282,8 +301,7 @@ func _look_ahead(dt: float) -> void:
 			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
 
 
-## The roar's tail slam lands as a heavy footfall where the tip meets the street (only for a roar
-## keyed with one: the adult's Cascadeur roar arches its tail up, KaijuClips.slams).
+## A roar keyed with a tail slam (KaijuClips.slams) lands it as a heavy footfall at the tip.
 func _slam_tail(roar_was: float) -> void:
 	if state != "roar" or not clips.slams("roar"):
 		return
@@ -309,9 +327,8 @@ func _swing_tail(dt: float) -> void:
 	tail_shown = _tail.shown
 
 
-## Planted feet hold their spot in the world; a lifted foot follows its clip path, starting from
-## where it left the ground. The body sinks if a leg would lock straight, then the legs are
-## re-solved to reach (two-bone IK, LegReach).
+## Planted feet hold their spot in the world; a lifted foot follows its clip path from where it
+## left the ground. The body sinks if a leg would lock straight; legs re-solve (IK, LegReach).
 func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var targets: Array[Vector3] = []
 	var fixes: Array[float] = []  # each foot's yaw: a planted one held, a lifted one easing back
@@ -327,8 +344,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	_feet_primed = true
 
 
-## Where foot i's toe goes this frame (world), and whether it is down (leg.planted): a catch step,
-## a planted foot's lock, or its path through the air.
+## Foot i's toe this frame (world; down: leg.planted): a catch step, its lock, or its air path.
 func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	var leg := legs[i]
 	var clip_toe := rig.global_transform * _stepped(clips.to_rig(pose.feet[i]))
@@ -373,10 +389,9 @@ func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
 	return _lock[i]
 
 
-## A foot spot of the clip with its fore-aft travel shortened to the step the sim takes (a quick
-## step in a turn is a short one, ClipSteps.shortened); a body that turns smoothly (the young
-## croc, D-131) bends it onto the curve it walks (ClipSteps.curved: its wide-set planted feet
-## stayed straight and were re-stepped every plant on a held curve, motion gate 2.2 a second).
+## A clip foot spot, its fore-aft travel shortened to the sim's step (ClipSteps.shortened); a smooth
+## turner (young croc, D-131) bends it onto its curve (ClipSteps.curved: straight wide-set feet
+## were re-stepped every plant on a held curve, motion gate 2.2 a second).
 func _stepped(toe: Vector3) -> Vector3:
 	if state != "walk":
 		return toe

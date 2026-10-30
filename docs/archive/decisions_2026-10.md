@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-351 · Director · Countable speed-run bars move to GitHub checks
+Speed runs need his PC to themselves (D-299), so tonight's queue is about 3.5 h. Asked how to clear that bottleneck:
+"Count on GitHub (Recommended)". Bars that can be counted on a pinned seed (draw calls, pieces, nodes) become GitHub
+checks that run any time and in parallel; only millisecond bars stay on his PC (builder bench-counts). Not picked: the
+card's own timer, renting cloud GPUs (no spend), a spare bench PC. Start time "[No preference]": runs start 01:00.
+
 ## 2026-10-27 · D-350 · Director · The camera bubble comes forward
 Asked about the dot fade still on main: "Bring the bubble forward". #238 resumes now, ahead of D-283's "after the
 render plan" timing and its place in D-310's order. Which buildings (22:50, replaces D-283's agent wording "between

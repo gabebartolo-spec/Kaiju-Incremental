@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
+Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
+stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).
+Asked: change the take or the checks? "Change the checks": lift > 0.3 hip, toe and body within 0.03 hip, no
+variation bar (one take plays the same each time). Landing inside STOMP_WAIT and alternating feet stay.
+
 ## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
 His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
 moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
@@ -391,9 +397,3 @@ the attached image" (a white tank lying on its side on a metal frame above two d
 C:/kt/reference/roof_tank/); "i mean keep SOME of the wooden towers, but mix it up with the white ones". Picked "Mostly
 white (Recommended)": same spots and count, about 3 in 4 roofs a white heater, 1 in 4 a wooden tower; and "About 1.5
 storeys (Recommended)": a wooden tower is half today's height, so it sits on the roof instead of looming.
-
-## 2026-10-27 · D-351 · Director · Countable speed-run bars move to GitHub checks
-Speed runs need his PC to themselves (D-299), so tonight's queue is about 3.5 h. Asked how to clear that bottleneck:
-"Count on GitHub (Recommended)". Bars that can be counted on a pinned seed (draw calls, pieces, nodes) become GitHub
-checks that run any time and in parallel; only millisecond bars stay on his PC (builder bench-counts). Not picked: the
-card's own timer, renting cloud GPUs (no spend), a spare bench PC. Start time "[No preference]": runs start 01:00.
