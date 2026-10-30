@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-407 · Director · Colour-blind cues move to after the demo
+"push colour blind fixes to after demo". The check found #229's options carry no colour-blind setting; the threat
+meter (#234) already reads by segment count. The colour-blind pass is a post-demo roadmap row, not a demo gate.
+
 ## 2026-10-31 · D-406 · Director · The demo ships in English only; only English is checked
 His words (10-31): "remove the chinese test checks, we only going to ship the demo with English", then "remove checks
 for all languages other than english". strings.py checks only the en column (CHECKED); check_i18n.sh no longer runs
@@ -389,11 +393,3 @@ Asked for a plan to finish the render plan and the debt list ("make a plan to fi
 whether the Cascadeur animation row (debt row 21, 31 of 40 moves to key) holds back the parked work (roads, wider city,
 river intro, D-310): picked "Run alongside (Recommended)". The parked queue opens once every other debt row is merged;
 the keyer and rigger keep keying the whole time. Plan: C:/Users/DANTE/.claude/plans/dapper-percolating-lake.md.
-
-## 2026-10-27 · D-353 · Director · Team: the Cascadeur keyer plus 4 builders
-Replaces D-296. Asked "be honest, would this actually be any slower if we did it with just you and no subagents? maybe 1
-subagent for CI and thats it?". Lead's numbers: 85 merges on 10-27 (no builder limit) against 29 and 33 the two days
-before; costs: collisions (#332 vs #338), 10 open PRs against the cap of 3, the lead relaying instead of checking work.
-Then "what do YOU think, im asking here"; the lead recommended the keyer plus 4. Picked "Yes, keyer + 4 (Recommended)":
-the Cascadeur keyer plus 4 builders (the rigger is one of the 4, D-336), at most 3 open PRs. Running builders finish
-their current task and are not replaced. The lead counts in-game progress on 10-28 and reports it.

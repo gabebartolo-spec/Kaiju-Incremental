@@ -15,6 +15,9 @@ extends "res://tests/lib/runner.gd"
 ##   R6 two road pieces that meet make one surface (no height step); its look across a seam is
 ##      measured at the game camera by tools/capture/capture_road_seams.gd
 ##   R7 every road wide enough for two lanes has its centre line and a stop line at each junction
+##   R8 the beachfront's roads carry their lines too (director 2026-10-31: the beach road and the
+##      side streets had none): the beach road's centre line along its whole curve, each side
+##      street's dashes and a stop line at both ends
 ## Seeded by design: the street plan is fixed by city.map_seed; the 20 seeds are listed here.
 ##   godot --headless --path . --script tests/run_roads_tests.gd
 
@@ -67,6 +70,7 @@ func run_checks() -> void:
 	await _t("_check_r5_paint_stops_at_junctions")
 	await _t("_check_r6_one_surface")
 	await _t("_check_r7_road_paint_everywhere")
+	await _t("_check_r8_beachfront_paint")
 
 
 func _build() -> void:
@@ -178,3 +182,61 @@ func _check_r7_road_paint_everywhere() -> void:
 		func(g: RoadGround, paint: Array[Transform3D]) -> Array[String]:
 			return Edges.r7_markings(g, paint)
 	)
+
+
+func _check_r8_beachfront_paint() -> void:
+	_each(
+		"R8 the beach road and every side street carry their lines",
+		func(g: RoadGround, paint: Array[Transform3D]) -> Array[String]:
+			return _beachfront(g.plan, paint)
+	)
+
+
+## R8: every metre of the beach road has its centre line over it (a stripe within half the double
+## gap plus a line of the road's centre); every side street has dashes down its middle and a
+## stripe square across it near each end (its stop lines).
+static func _beachfront(plan: Dictionary, paint: Array[Transform3D]) -> Array[String]:
+	var out: Array[String] = []
+	if not plan.has("harbour"):
+		return out
+	var b: Dictionary = plan["harbour"]
+	var h: Dictionary = b["h"]
+	var rect: Rect2 = b["rect"]
+	var bare := 0
+	var x := rect.position.x + 0.5
+	while x < rect.end.x:
+		var at := CityHarbour.bands(h, x)
+		var mid := (at[2] + at[3]) * 0.5
+		var hit := paint.any(
+			func(t: Transform3D) -> bool:
+				return absf(t.origin.x - x) <= 0.6 and absf(t.origin.z - mid) <= 0.3
+		)
+		if not hit:
+			bare += 1
+			if bare <= SHOWN:
+				out.append("beach road bare at (%.0f, %.0f)" % [x, mid])
+		x += 1.0
+	var sides: Array[float] = b["sides"]
+	for sx: float in sides:
+		var kerb := CityHarbour.bands(h, sx)[3]
+		var dashes := paint.filter(
+			func(t: Transform3D) -> bool:
+				return (
+					absf(t.origin.x - sx) < 0.01
+					and t.origin.z > kerb
+					and t.origin.z < rect.end.y
+				)
+		)
+		var stops := paint.filter(
+			func(t: Transform3D) -> bool:
+				return (
+					absf(t.origin.x - sx) < 3.0
+					and t.origin.z > kerb - 0.1
+					and absf(t.basis.z.normalized().z) < 0.01
+				)
+		)
+		if dashes.is_empty():
+			out.append("side street at x %.0f has no centre line" % sx)
+		if stops.size() < 2:
+			out.append("side street at x %.0f has %d stop lines, not 2" % [sx, stops.size()])
+	return out
