@@ -19,6 +19,7 @@ const DEFAULTS := {
 	"tune": "",
 	"levels": "",  # extra upgrade levels, "r_beam=1,r_shear=1": the body the route runs with
 	"beam-at": 0,  # >0: the ultimate fires on this route step only (the beam scenario), not every time
+	"res": "3840x2160",  # the window and viewport size measured (1920x1080 for the 1080p bar, D-339)
 }
 
 var rampage: Rampage
@@ -68,7 +69,9 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 	PlayerSettings.graphics = str(a["graphics"])
 	if DisplayServer.get_name() != "headless":  # a bordered window is clamped under the taskbar
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
-		DisplayServer.window_set_size(Vector2i(3840, 2160))
+		var wh := str(a["res"]).split("x")
+		var res := Vector2i(int(wh[0]), int(wh[1]))
+		DisplayServer.window_set_size(res)
 		DisplayServer.window_set_position(Vector2i(0, 0))  # on screen: the director watches the runs
 		await tree.process_frame
 		await tree.process_frame
@@ -81,8 +84,8 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 				]
 			)
 		)
-		if tree.root.size != Vector2i(3840, 2160):
-			printerr("BENCH viewport is not 3840x2160: refusing to measure")
+		if tree.root.size != res:
+			printerr("BENCH viewport is not %s: refusing to measure" % a["res"])
 			return false
 	for pair: String in str(a["tune"]).split(",", false):
 		var tv := pair.split("=")  # section.key[.key...]=value (a number, or text)
