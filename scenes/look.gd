@@ -6,6 +6,10 @@ extends RefCounted
 const VOXEL_SHADER := preload("res://scenes/voxel.gdshader")
 ## The voxel material in the city's surface family, for a model that moves as a whole (a train car).
 const VOXEL_DETAIL_SHADER := preload("res://scenes/voxel_detail.gdshader")
+## The voxel material with the kaiju's hide grain, for the voxels a kaiju rig puts on its bones.
+const VOXEL_HIDE_SHADER := preload("res://scenes/voxel_hide.gdshader")
+## hide_grain.gdshaderinc's uniforms and the look keys (kaiju_hide_*) they read.
+const HIDE_KEYS: Array[String] = ["crevice", "crevice_width", "tone", "fleck", "fleck_dark", "seed"]
 
 
 static func value(key: String) -> float:
@@ -58,6 +62,27 @@ static func voxel_detail_material(size: float, glow: float, baked: bool) -> Shad
 	mat.set_shader_parameter("glow", glow)
 	mat.set_shader_parameter("voxel", size)
 	mat.set_shader_parameter("baked", baked)
+	return mat
+
+
+## D-398: the kaiju's own hide grain (hide_grain.gdshaderinc) on `mat`, for cells `voxel` wide:
+## scutes kaiju_hide_cell_voxels cells wide. kaiju_hide_on false leaves the hide flat (the
+## grain's crevices, tone and flecks at 0).
+static func hide_grain(mat: ShaderMaterial, voxel: float) -> void:
+	var on: bool = Content.look().get("kaiju_hide_on", false) == true
+	mat.set_shader_parameter("hide_cell", voxel * value("kaiju_hide_cell_voxels"))
+	for key: String in HIDE_KEYS:
+		var amount := value("kaiju_hide_" + key)
+		mat.set_shader_parameter("hide_" + key, amount if on or key.ends_with("_width") else 0.0)
+
+
+## The voxel material with the hide grain (voxel_hide.gdshader) for a kaiju rig's bone voxels.
+static func hide_material(voxel: float, glow: float) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = VOXEL_HIDE_SHADER
+	mat.set_shader_parameter("glow", glow)
+	mat.set_shader_parameter("roughness_value", value("kaiju_roughness"))
+	hide_grain(mat, voxel)
 	return mat
 
 

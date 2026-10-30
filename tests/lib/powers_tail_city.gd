@@ -1,6 +1,6 @@
 extends RefCounted
 ## The tail lash in the real stage-1 city (build 2 note 2: "tail swipe doesnt seem to be
-## occuring?"; the lash on the button since D-398): a baby reptilian walking the streets with
+## occuring?"; the lash on the button since D-399): a baby reptilian walking the streets with
 ## hard 90-degree turns for 30 s after it rises from the river, pressing the signature at each
 ## turn, lashes its tail. It used to sweep 27
 ## times and cut nothing: its reach (3.1 m) ended short of its own tail tip and the street.
