@@ -45,6 +45,7 @@ func _aircraft() -> void:
 		mesh.material = red if i % 2 == 0 else white
 		light.mesh = mesh
 		light.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		light.add_to_group("vfx_exempt")  # a blinking light, not a surface (director 2026-10-30)
 		plane.add_child(light)
 		add_child(plane)
 		_planes.append(plane)
