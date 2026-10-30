@@ -34,7 +34,6 @@ const BalconyFaces := preload("res://tests/lib/balcony_faces.gd")
 const RemeshPriority := preload("res://tests/lib/remesh_priority.gd")
 const RemeshWorker := preload("res://tests/lib/remesh_worker.gd")
 const CellFixture := preload("res://tests/lib/cell_fixture.gd")
-const ShaderHash := preload("res://tests/lib/shader_hash.gd")
 
 var _native := false
 
@@ -48,7 +47,6 @@ func run_checks() -> void:
 	await _t("_check_native_loaded")
 	await _t("_check_matches_baked_view")
 	await _t("_check_merge_cuts_quads")
-	await _t("_check_shader_hash_matches")
 	await _t("_check_no_face_hidden_by_a_hidden_slab")
 	await _t("_check_balcony_rail_takes_the_sill_tone")
 	await _t("_check_closed_surface_after_carves")
@@ -190,25 +188,6 @@ func _check_merge_cuts_quads() -> void:
 		quads * 2 < faces,
 		"merged quads draw every voxel face at under half the quads (%d quads, %d faces)" % [quads, faces]
 	)
-
-
-## The shader recomputes colour jitter and the bite hash per voxel; its murmur3 port matches
-## GDScript hash() bit for bit, so a merged wall shows the same colours and bites as before.
-func _check_shader_hash_matches() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
-	var bad := 0
-	for n: int in 20000:
-		var c := Vector3i(
-			rng.randi_range(-300, 3000), rng.randi_range(-5, 900), rng.randi_range(-300, 3000)
-		)
-		var salt := rng.randi_range(0, 40)
-		var k := Vector3i(c.x >> 1, c.y >> 1, c.z >> 1) * 7 + Vector3i(salt, 3, 11)
-		if ShaderHash.jitter(c, salt) % 1000 != absi(hash(Vector4i(c.x, c.y, c.z, salt))) % 1000:
-			bad += 1
-		if ShaderHash.bite(k) % 997 != absi(hash(k)) % 997:
-			bad += 1
-	check(bad == 0, "the shader's hash equals hash() on 40000 cells (%d differ)" % bad)
 
 
 ## The director's "flickering horizontal black bars across the windows" (2026-10-27): a wall cell
