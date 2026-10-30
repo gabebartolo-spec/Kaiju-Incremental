@@ -6,8 +6,10 @@ extends RefCounted
 
 static func place(r: Rampage, delta: float) -> void:
 	var zoom := CameraTuning.zoom(r.sim.body_scale())
-	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on
-	# screen and its dart bursts ahead of the camera.
+	r._step_dip = move_toward(
+		r._step_dip, 0.0, delta * Rampage.DIP_RECOVER * r._step_dip + delta * 0.05
+	)
+	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
 	r._follow.step(
