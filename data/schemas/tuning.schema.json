@@ -1567,9 +1567,9 @@
           "required": [
             "column", "hull", "turret", "gun", "clear", "two_lanes", "follow", "entry_depth",
             "band", "standoff", "post_gap", "reserve", "danger", "edge_gap", "band_depth",
-            "retreat_speed", "retreat_clear", "lookahead", "danger_cost", "held_cost", "oncoming_cost",
-            "uturn_cost", "commit", "spread_deg", "cover", "street_cost", "replan",
-            "plans_per_step", "search_margin", "stuck", "yield_cap", "reverse", "grid",
+            "retreat_speed", "retreat_clear", "lookahead", "danger_cost", "held_cost",
+            "oncoming_cost", "uturn_cost", "commit", "spread_deg", "cover", "street_cost",
+            "replan", "plans_per_step", "search_margin", "stuck", "yield_cap", "reverse", "grid",
             "hull_turn", "pivot_deg", "skew_deg"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -2150,7 +2150,16 @@
           "additionalProperties": false
         },
         "zebra_junctions": {"$ref": "#/$defs/num"},
-        "landmark_spots": {"type": "object", "patternProperties": {"^_": {"$ref": "#/$defs/str"}}, "additionalProperties": {"type": "object", "properties": {"at": {"type": "array", "items": {"$ref": "#/$defs/num"}}, "size": {"$ref": "#/$defs/str"}}, "required": ["at", "size"], "additionalProperties": false}},
+        "landmark_spots": {
+          "type": "object",
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": {
+            "type": "object",
+            "properties": {"at": {"type": "array", "items": {"$ref": "#/$defs/num"}}, "size": {"$ref": "#/$defs/str"}},
+            "required": ["at", "size"],
+            "additionalProperties": false
+          }
+        },
         "landmarks": {
           "type": "array",
           "items": {
@@ -2475,7 +2484,308 @@
         },
         "park_every": {"$ref": "#/$defs/num"},
         "park_gap": {"$ref": "#/$defs/num"},
-        "park_town": {"$ref": "#/$defs/num"}
+        "park_town": {"$ref": "#/$defs/num"},
+        "street_props": {
+          "type": "object",
+          "properties": {
+            "voxel": {"$ref": "#/$defs/num"},
+            "metres_per_unit": {"$ref": "#/$defs/num"},
+            "models": {
+              "type": "object",
+              "properties": {
+                "P01": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P02": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P03": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P04": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P05": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P06": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P07": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P08": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P09": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P10": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P11": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P12": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P13": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P14": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P15": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P16": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P17": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P18": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P19": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                },
+                "P20": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"$ref": "#/$defs/str"},
+                    "metres": {"$ref": "#/$defs/num"},
+                    "yaw": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["name", "metres", "yaw"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", "P10", "P11", "P12",
+                "P13", "P14", "P15", "P16", "P17", "P18", "P19", "P20"
+              ],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "kerb": {
+              "type": "object",
+              "properties": {
+                "gap": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "inset": {"$ref": "#/$defs/num"},
+                "clear": {"$ref": "#/$defs/num"},
+                "weights": {
+                  "type": "object",
+                  "properties": {
+                    "P02": {"$ref": "#/$defs/num"},
+                    "P04": {"$ref": "#/$defs/num"},
+                    "P06": {"$ref": "#/$defs/num"},
+                    "P07": {"$ref": "#/$defs/num"},
+                    "P08": {"$ref": "#/$defs/num"},
+                    "P09": {"$ref": "#/$defs/num"},
+                    "P10": {"$ref": "#/$defs/num"},
+                    "P11": {"$ref": "#/$defs/num"},
+                    "P12": {"$ref": "#/$defs/num"},
+                    "P18": {"$ref": "#/$defs/num"},
+                    "P19": {"$ref": "#/$defs/num"},
+                    "P20": {"$ref": "#/$defs/num"}
+                  },
+                  "required": ["P02", "P04", "P06", "P07", "P08", "P09", "P10", "P11", "P12", "P18", "P19", "P20"],
+                  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                  "additionalProperties": false
+                }
+              },
+              "required": ["gap", "inset", "clear", "weights"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "parked": {
+              "type": "object",
+              "properties": {
+                "code": {"$ref": "#/$defs/num"},
+                "P13": {"$ref": "#/$defs/num"},
+                "P14": {"$ref": "#/$defs/num"},
+                "P17": {"$ref": "#/$defs/num"}
+              },
+              "required": ["code", "P13", "P14", "P17"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "lane": {
+              "type": "object",
+              "properties": {
+                "code": {"$ref": "#/$defs/num"},
+                "P05": {"$ref": "#/$defs/num"},
+                "P13": {"$ref": "#/$defs/num"},
+                "P14": {"$ref": "#/$defs/num"},
+                "P15": {"$ref": "#/$defs/num"},
+                "P16": {"$ref": "#/$defs/num"},
+                "P17": {"$ref": "#/$defs/num"}
+              },
+              "required": ["code", "P05", "P13", "P14", "P15", "P16", "P17"],
+              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+              "additionalProperties": false
+            },
+            "signals": {"$ref": "#/$defs/str"},
+            "lamps": {"$ref": "#/$defs/str"}
+          },
+          "required": ["voxel", "metres_per_unit", "models", "kerb", "parked", "lane", "signals", "lamps"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        }
       },
       "required": [
         "map_seed", "hazards", "half", "districts", "district_lot_grow", "arena_margin",
@@ -2497,7 +2807,8 @@
         "pencil_height", "yard_chance", "min_height", "max_height", "tier_height",
         "size_scale_per_tier", "young_scale", "growth_per_level", "leap_distance",
         "cone_half_angle_deg", "breath_snout_ahead", "chunk_hp", "dwarf_exp", "chunk_rubble",
-        "kaiju_height", "impact_damage", "fall_gravity", "topple_bonus", "far_fog", "far_reflect"
+        "kaiju_height", "impact_damage", "fall_gravity", "topple_bonus", "far_fog", "far_reflect",
+        "street_props"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -2781,11 +3092,10 @@
           },
           "required": [
             "roar", "egg_crack", "ui_click", "ui_confirm", "ui_deny", "tank_fire", "shell_hit",
-            "tree_buy", "tree_maxed", "tree_ring_open", "tree_evolve",
-            "rifle", "rifle_far", "heli_rotor", "heli_gun", "heli_crash", "crowd_panic",
-            "footstep", "stomp_crack", "collapse", "stomp", "breath", "leap_whoosh", "leap_land",
-            "lash", "ready", "deflect", "regen_loop", "thunder_beam", "thunder_beam_loop",
-            "thunder_beam_end"
+            "tree_buy", "tree_maxed", "tree_ring_open", "tree_evolve", "rifle", "rifle_far",
+            "heli_rotor", "heli_gun", "heli_crash", "crowd_panic", "footstep", "stomp_crack",
+            "collapse", "stomp", "breath", "leap_whoosh", "leap_land", "lash", "ready", "deflect",
+            "regen_loop", "thunder_beam", "thunder_beam_loop", "thunder_beam_end"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -3389,7 +3699,11 @@
             },
             "theme": {
               "type": "object",
-              "properties": {"file": {"$ref": "#/$defs/str"}, "db": {"$ref": "#/$defs/num"}, "loop_offset_s": {"$ref": "#/$defs/num"}},
+              "properties": {
+                "file": {"$ref": "#/$defs/str"},
+                "db": {"$ref": "#/$defs/num"},
+                "loop_offset_s": {"$ref": "#/$defs/num"}
+              },
               "required": ["file", "db", "loop_offset_s"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
@@ -4229,9 +4543,9 @@
             "siren_far", "footstep", "footstep_1", "footstep_2", "footstep_3", "blast_crack",
             "blast_body", "blast_rumble", "sonic_boom", "fireworks_crackle", "chem_hiss",
             "ui_click", "ui_confirm", "ui_deny", "lab_room", "lab_screens", "lab_latch", "lab_arm",
-            "tree_buy", "tree_maxed", "tree_ring_open", "tree_evolve",
-            "lab_drawup", "lab_dispense", "lab_strike", "lab_crackle", "lab_overload", "lab_dive",
-            "egg_crack", "thunder_beam", "thunder_beam_loop", "thunder_beam_end"
+            "tree_buy", "tree_maxed", "tree_ring_open", "tree_evolve", "lab_drawup",
+            "lab_dispense", "lab_strike", "lab_crackle", "lab_overload", "lab_dive", "egg_crack",
+            "thunder_beam", "thunder_beam_loop", "thunder_beam_end"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -5787,8 +6101,28 @@
             "tube_extra": {"$ref": "#/$defs/num"},
             "juice": {"$ref": "#/$defs/str"},
             "empty": {"$ref": "#/$defs/str"},
-            "fill": {"type": "object", "properties": {"buy": {"$ref": "#/$defs/str"}, "poor": {"$ref": "#/$defs/str"}, "maxed": {"$ref": "#/$defs/str"}, "locked": {"$ref": "#/$defs/str"}}, "required": ["buy", "poor", "maxed", "locked"], "additionalProperties": false},
-            "edge": {"type": "object", "properties": {"buy": {"$ref": "#/$defs/str"}, "poor": {"$ref": "#/$defs/str"}, "maxed": {"$ref": "#/$defs/str"}, "locked": {"$ref": "#/$defs/str"}}, "required": ["buy", "poor", "maxed", "locked"], "additionalProperties": false},
+            "fill": {
+              "type": "object",
+              "properties": {
+                "buy": {"$ref": "#/$defs/str"},
+                "poor": {"$ref": "#/$defs/str"},
+                "maxed": {"$ref": "#/$defs/str"},
+                "locked": {"$ref": "#/$defs/str"}
+              },
+              "required": ["buy", "poor", "maxed", "locked"],
+              "additionalProperties": false
+            },
+            "edge": {
+              "type": "object",
+              "properties": {
+                "buy": {"$ref": "#/$defs/str"},
+                "poor": {"$ref": "#/$defs/str"},
+                "maxed": {"$ref": "#/$defs/str"},
+                "locked": {"$ref": "#/$defs/str"}
+              },
+              "required": ["buy", "poor", "maxed", "locked"],
+              "additionalProperties": false
+            },
             "liquid": {"$ref": "#/$defs/str"},
             "liquid_top": {"$ref": "#/$defs/str"},
             "fx": {
@@ -5822,12 +6156,21 @@
                 "bolt_count": {"$ref": "#/$defs/int"},
                 "bolt_segments": {"$ref": "#/$defs/int"}
               },
-              "required": ["enabled", "fill_s", "surge_s", "glow_px", "mote_s", "mote_spread_s", "mote_bow", "mote_px", "flash_s", "bubbles_per_100px", "bubble_speed", "bubble_px", "scan_px", "scan_period_s", "scan_alpha", "breath_alpha", "breath_period_s", "ring_open_s", "ring_open_width", "bolt_jitter", "bolt_s", "flash_alpha", "specimen_spin", "specimen_px", "mote_count", "bolt_count", "bolt_segments"],
+              "required": [
+                "enabled", "fill_s", "surge_s", "glow_px", "mote_s", "mote_spread_s", "mote_bow",
+                "mote_px", "flash_s", "bubbles_per_100px", "bubble_speed", "bubble_px", "scan_px",
+                "scan_period_s", "scan_alpha", "breath_alpha", "breath_period_s", "ring_open_s",
+                "ring_open_width", "bolt_jitter", "bolt_s", "flash_alpha", "specimen_spin",
+                "specimen_px", "mote_count", "bolt_count", "bolt_segments"
+              ],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             }
           },
-          "required": ["plate", "grid", "grid_step", "rim", "rim_width", "tube", "tube_extra", "juice", "empty", "fill", "edge", "liquid", "liquid_top", "fx"],
+          "required": [
+            "plate", "grid", "grid_step", "rim", "rim_width", "tube", "tube_extra", "juice",
+            "empty", "fill", "edge", "liquid", "liquid_top", "fx"
+          ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },

@@ -36,7 +36,7 @@ static func fire(sim: RampageSim) -> void:
 			)
 
 
-## The signature, the croc's breath button (D-400) and the ultimate, each on its own cooldown.
+## The signature, the croc's breath button (D-401) and the ultimate, each on its own cooldown.
 static func step_buttons(sim: RampageSim, dt: float, signature_pressed: bool, buttons: int) -> void:
 	sim.ability_ready_in = maxf(0.0, sim.ability_ready_in - dt)
 	var lash := sim.ability_type == "lash"

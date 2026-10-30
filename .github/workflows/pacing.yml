@@ -122,10 +122,15 @@ jobs:
           ref: ${{ inputs.ref }} # empty on a push: the pushed commit
           submodules: true # the native core's godot-cpp, as in tests.yml
       # The sim reads the landmark voxel models (LFS since debt row 8); cached by object id.
+      # All three caches are restore-only here: this job runs code from any ref (the `ref` input or a
+      # pacing-run branch), so it must never write a cache that main's tests would then restore.
       - uses: ./.github/actions/lfs-files
+        with: { save-cache: "false" }
       # The same native library the tests use, from the cache when native/ is unchanged.
       - uses: ./.github/actions/native-build
+        with: { save-cache: "false" }
       - uses: ./.github/actions/setup-godot
+        with: { save-cache: "false" }
 
       # The class cache the script run needs (as the tests.yml preflight does it).
       - name: Import the project

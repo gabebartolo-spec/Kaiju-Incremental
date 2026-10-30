@@ -92,7 +92,7 @@ func _lock() -> void:
 	var hold := Num.f(cfg["hold"])
 	sim.ability_ready_in = maxf(sim.ability_ready_in, hold)
 	sim.ultimate_ready_in = maxf(sim.ultimate_ready_in, hold)
-	sim.breath_ready_in = maxf(sim.breath_ready_in, hold)  # the croc's own breath button (D-400)
+	sim.breath_ready_in = maxf(sim.breath_ready_in, hold)  # the croc's own breath button (D-401)
 	if sim.powers.beam_left > 0.0:
 		sim.powers.beam_left = 0.0
 		sim.events.append({"type": "beam_end"})

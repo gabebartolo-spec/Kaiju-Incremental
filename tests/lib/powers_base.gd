@@ -9,7 +9,7 @@ const EAST := Vector2(1, 0)
 const PRESS := 1
 const HOLD := 2
 const ULT := 4
-const BREATH_KEY := 16  # the croc's breath button (D-400), on the first step
+const BREATH_KEY := 16  # the croc's breath button (D-401), on the first step
 
 
 ## A building entry for a hand-made layout.

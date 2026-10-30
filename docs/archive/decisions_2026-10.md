@@ -2,6 +2,16 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-346 · Director · The one-window GPU slot covers Godot only
+Asked whether Blender renders and bakes should also wait for the one GPU slot (D-340): "Godot only (Recommended)".
+Godot windows (clips, stills, captures, speed runs) take turns; Blender and other GPU jobs keep sharing the card by
+VRAM budget, so asset work keeps its pace.
+
+## 2026-10-27 · D-345 · Director · Trees on rooftops are a bug: they go to streets and parks
+He asked about the far-city noon still: "why are there so many trees on top of buildings is that a bug?" (trees stand
+on low roofs, one on a tall roof among the antennas). No decision asks for rooftop trees. He picked "Yes, find and fix
+(Recommended)": find why trees are placed there, move them to streets and parks, and send him a still.
+
 ## 2026-10-27 · D-344 · Director · Far-city reflection look approved (D-324)
 On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog + reflection"): "Looks right, merge
 (Recommended)". The branch claude/far-city-reflect opens READY after #330 and merges on green.

@@ -63,7 +63,7 @@ func _check_branches() -> void:
 	)
 
 
-## The tail lash (D-280, D-400): the signature button whips the tail through the half ring
+## The tail lash (D-280, D-401): the signature button whips the tail through the half ring
 ## behind him; a building behind him is cut and its upper floors drop. No press, no lash; the
 ## tail nodes make it cut deeper (D-328); the breath fires from its own button.
 func _check_tail() -> void:
@@ -217,7 +217,7 @@ func _check_beam() -> void:
 
 
 ## A kaiju with no branch node bought plays exactly as before the branches existed (the lash is
-## his signature, D-400, so it is not a branch power): no ram, no climb, no glide, no limbs or
+## his signature, D-401, so it is not a branch power): no ram, no climb, no glide, no limbs or
 ## throws, no ultimate.
 func _check_base_unchanged() -> void:
 	var stray: Array[String] = []
