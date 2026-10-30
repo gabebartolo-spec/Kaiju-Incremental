@@ -61,7 +61,8 @@ func pick(weights: Dictionary) -> String:
 ## A car at p along its street: a Tripo car by city.street_props.parked (lane: .lane, with the
 ## big vehicles); false when the draw is the decor's own car.
 func vehicle(p: Vector2, dir: Vector2, lane: bool) -> bool:
-	var id := pick(_cfg["lane" if lane else "parked"])
+	var weights: Dictionary = _cfg["lane" if lane else "parked"]
+	var id := pick(weights)
 	if id == "code":
 		return false
 	return put(id, p, dir if _rng.randf() < 0.5 else -dir)
@@ -81,7 +82,8 @@ func kerb(a: Vector2, b: Vector2, width: float, clear_of: Callable) -> void:
 		var t := _rng.randf_range(Num.f(gap[0]), Num.f(gap[1])) * 0.5 + clear
 		while t < length - clear:
 			var p := a + dir * t + side * kerb_side * (width * 0.5 + Num.f(cfg["inset"]))
-			var id := pick(cfg["weights"])
+			var weights: Dictionary = cfg["weights"]
+			var id := pick(weights)
 			if clear_of.call(p, clear) and not _crowded(p, clear):
 				put(id, p, -side * kerb_side)
 			t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
@@ -112,4 +114,5 @@ static func _turned(cells: VoxelBuilder, turns: int, v: VoxelBuilder) -> void:
 		var c := cell
 		for _i: int in turns:
 			c = Vector3i(c.z, c.y, -c.x)
-		v.put_color(c, cells.colors[cell])
+		var color: Color = cells.colors[cell]
+		v.put_color(c, color)

@@ -123,7 +123,8 @@ func build(palette: Dictionary, salt: int, glow: float) -> Node3D:
 static func _copy(from: VoxelBuilder, cell: Vector3i, to: VoxelBuilder, at: Vector3i) -> void:
 	var key := from.key_at(cell)
 	if key == VoxelBuilder.DIRECT:
-		to.put_color(at, from.colors[cell])
+		var color: Color = from.colors[cell]
+		to.put_color(at, color)
 	else:
 		to.put(at, key)
 
