@@ -5,10 +5,6 @@ extends RefCounted
 
 ## How far a leg may stretch (fraction of its length) to hold a planted foot's yaw.
 const HELD_REACH := LegReach.REACH_MAX + 0.01  # the body sinks to REACH_MAX first (LegReach)
-## The most (rad) a planted foot's own roll is held on top of the body's turn: a splayed foot (the
-## adult croc's) swings its flat heading about 9 deg as it rolls to toe-off; held whole, the leg
-## runs out of reach there and the toe slides (motion gate slide_max).
-const ROLL_HOLD_MAX := 0.08
 
 var _rig: KaijuRig
 
@@ -17,13 +13,7 @@ func _init(p_rig: KaijuRig) -> void:
 	_rig = p_rig
 
 
-## The rig's yaw in the world (rad, 0 = facing -Z).
-func rig_yaw() -> float:
-	var fwd := -_rig.global_transform.basis.z
-	return atan2(-fwd.x, -fwd.z)
-
-
-## Which way leg's foot points in the world, flat (rad, as rig_yaw): ankle to toe tip as the clip
+## Which way leg's foot points in the world, flat (rad, 0 = facing -Z): ankle to toe tip as the clip
 ## poses it. A splayed foot (the adult croc's) swings its flat heading as it rolls over the stance,
 ## so a planted foot holds this heading, not only the body's turn.
 func foot_yaw(leg: BipedGait.Leg) -> float:
@@ -31,12 +21,12 @@ func foot_yaw(leg: BipedGait.Leg) -> float:
 	return atan2(-toes.x, -toes.z)
 
 
-## The turn (rad) that holds a planted foot: the body's turn since it went down (rig yaw then,
-## `plant_yaw`) and, up to ROLL_HOLD_MAX, its own heading's swing since then (`plant_heading`).
-func hold(plant_yaw: float, plant_heading: float, leg: BipedGait.Leg) -> float:
-	var body := wrapf(plant_yaw - rig_yaw(), -PI, PI)
-	var whole := wrapf(plant_heading - foot_yaw(leg), -PI, PI)
-	return body + clampf(wrapf(whole - body, -PI, PI), -ROLL_HOLD_MAX, ROLL_HOLD_MAX)
+## The turn (rad) that holds a planted foot: its heading's whole swing since it went down
+## (`plant_heading`), the body's turn and the foot's own roll alike. The roll was capped at 0.08 rad
+## while a leg out of reach slid its toe; LegReach now peels the heel up instead, and the tall walk's
+## foot (r13f) swings 16 deg at toe-off (step-turn smoke).
+func hold(plant_heading: float, leg: BipedGait.Leg) -> float:
+	return wrapf(plant_heading - foot_yaw(leg), -PI, PI)
 
 
 ## The most of a foot's yaw hold (`fix`, rad) the leg can reach, at body scale `s`: the ankle stays
