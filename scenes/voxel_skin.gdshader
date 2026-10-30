@@ -11,6 +11,8 @@ shader_type spatial;
 #include "res://scenes/stone_body.gdshaderinc"
 // Render plan item 14 (tuning render_opt.kaiju_three_faces): each cube drawn as three faces.
 #include "res://scenes/voxel_three_faces.gdshaderinc"
+// D-398: the kaiju's own hide grain, at the point's rest position (rides the bones).
+#include "res://scenes/hide_grain.gdshaderinc"
 
 uniform mat4 bones[128];
 // The cubes' own node back to skin (rig) space, so the shader can read each instance's centre.
@@ -93,7 +95,7 @@ float cube_hash(vec3 p) {
 }
 
 void fragment() {
-	vec3 albedo = srgb_to_linear(tint);
+	vec3 albedo = srgb_to_linear(tint) * hide_grain(rest_pos);
 	float n = cube_hash(floor(rest * 64.0));
 	float stoned = 0.0;
 	if (stone > 0.0) {

@@ -1,14 +1,17 @@
 extends "res://tests/lib/runner.gd"
 ## D-374 corrective helper joints (scenes/voxel_skin_helpers.gd): the Colossus's skin carries its
-## hip, knee, web, ankle and belly helpers per leg by default, a helper's pose matches the
-## reference maths (tools/kaiju_skin/skin_helpers.py pose(), numbers below from it), a helper sits
-## still at rest, and a skin without a helper block has none.
+## hip, knee, web, ankle and belly helpers per leg by default (the young croc four a leg), a
+## helper's pose matches the reference maths (tools/kaiju_skin/skin_helpers.py pose(), numbers
+## below from it), a helper sits still at rest, and a skin without a helper block has none.
 ##   godot --headless --path . --script tests/run_skin_helpers_tests.gd
 ## Seeded by design: fixed poses, no clock.
 
 ## The Colossus: five helpers a leg (tools/blender/croc_adult3_helpers.json).
 const COLOSSUS := "res://assets/kaiju/reptilian_adult"
 const COLOSSUS_HELPERS := 10
+## The young croc: hip, knee, ankle and belly a leg (tools/blender/croctitan_baby_helpers.json).
+const YOUNG := "res://assets/kaiju/reptilian_baby"
+const YOUNG_HELPERS := 8
 ## A skin with no helpers.
 const PLAIN := "res://assets/kaiju/insectoid_adult"
 ## Matrix entries agree to this (float32 file values against float64 reference).
@@ -21,6 +24,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_colossus_has_helpers")
+	await _t("_check_young_croc_has_helpers")
 	await _t("_check_reference_maths")
 	await _t("_check_still_at_rest")
 	await _t("_check_plain_skin_has_none")
@@ -62,6 +66,10 @@ func _check_colossus_has_helpers() -> void:
 			)
 		check(finite, "every helper pose is finite while the Colossus walks")
 	kaiju.queue_free()
+
+
+func _check_young_croc_has_helpers() -> void:
+	check(_helpers_of(YOUNG).count == YOUNG_HELPERS, "the young croc skin carries 8 helper joints")
 
 
 ## One helper (frac 0.4, centre (1, 2, 3), push (0.5, -0.2, 0.1), push-per-turn rows

@@ -178,6 +178,7 @@ func _cube_material(voxel: float, tune: Dictionary) -> ShaderMaterial:
 	mat.set_shader_parameter("wound_tint", Color(str(tune["wound_tint"])).srgb_to_linear())
 	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
 	mat.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
+	Look.hide_grain(mat, voxel)
 	return mat
 
 
@@ -209,6 +210,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	_fill_node = VoxelSkinFill.node(raw, HEADER_BYTES + cells * CELL_BYTES, _reach)
 	if _fill_node != null:
 		_fill = _fill_node.material_override as ShaderMaterial
+		Look.hide_grain(_fill, voxel)
 		add_child(_fill_node)
 	_hide_rig_voxels()
 
