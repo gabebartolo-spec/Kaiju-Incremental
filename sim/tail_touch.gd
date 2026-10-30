@@ -59,11 +59,15 @@ func step(dt: float) -> void:
 	var from := _sim.kaiju_pos if _last_pos.x == INF else _last_pos
 	var from_lay := _lay if _last_pos.x == INF else _last_lay
 	_volume.lift = lift
-	var hits := _volume.touched(from, from_lay, _sim.kaiju_pos, _lay)
+	_break(_volume.touched(from, from_lay, _sim.kaiju_pos, _lay))
+	_last_pos = _sim.kaiju_pos
+	_last_lay = _lay
+
+
+## Breaks every chunk the sweep touched, outright.
+func _break(hits: Dictionary) -> void:
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
 			cells.append(c)
 		broken += _sim.damage_chunks(index, cells, INF)
-	_last_pos = _sim.kaiju_pos
-	_last_lay = _lay

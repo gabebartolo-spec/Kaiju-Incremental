@@ -218,7 +218,7 @@ func _init(
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
-	tail = TailTouch.new(self, tuning["contact"])
+	tail = TailTouch.new(self, tuning["contact"] as Dictionary)
 	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
 	for n: int in range(rail_from, bridges_from):
 		rail.add_piece(n)
