@@ -5,5 +5,6 @@ spend it on an evolution tree, come back bigger. Godot 4.7.2. See `docs/DESIGN.m
 
 - Play: open the folder in Godot 4.7.2 and press F5. WASD / left stick to move, Space / A for the
   signature attack, F11 fullscreen.
-- Tests: `GODOT=<godot console exe> tools/run_tests.sh` (smoke, sim, flow + harness self-test).
+- Tests: `GODOT=<godot console exe> tools/run_tests.sh` (every suite + harness self-test); before a push,
+  `python tools/run_touched.py` runs the suites nearest the change (D-403).
 - Captures: `tools/capture/capture_screens.gd` (needs an untracked no-focus `override.cfg`).

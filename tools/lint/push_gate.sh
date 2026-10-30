@@ -2,7 +2,7 @@
 # push_gate.sh: the seconds-long CI checks every push passes first (director 2026-10-30: "sessions keep failing
 # CI in predictable ways"). Run by the PreToolUse hook in .claude/settings.json on any `git push`; a fail blocks
 # the push and the session reads why. Covers what went red most: doc line caps and gdformat/gdlint (lint.yml),
-# the repo checks and the Python lints prepush step 2 runs. No Godot (D-383): import and suites stay in CI.
+# the repo checks and the Python lints prepush step 2 runs. No Godot here: the touched suites are tools/run_touched.py (D-403).
 # The selftests run only when tools/lint/ changed (they take minutes on Windows).
 #   bash tools/lint/push_gate.sh          # changed files against origin/main
 set -u
