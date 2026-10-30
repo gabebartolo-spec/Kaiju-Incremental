@@ -19,6 +19,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_branches")
 	await _t("_check_tail")
+	await _t("_check_tail_touch")
 	await _h("TailCity", func() -> void: TailCity.check(check))
 	await _h("TurnWeight", func() -> void: TurnWeight.check(check, _sim))
 	await _h("Bolt", func() -> void: Bolt.check(check))
@@ -113,6 +114,31 @@ func _check_tail() -> void:
 		(
 			"the breath fires from its own button, not the lash's (%d cones, %d lashes)"
 			% [cones, croc.powers.tail_sweeps]
+		)
+	)
+
+
+## The tail carves whatever it touches in ordinary play (director 2026-10-30: "it doesnt work
+## most the time and the tail just clips through"): a building beside the drawn tail, just past
+## the thin rigid tail discs, is cut by the tail with no press; with TailTouch off it is not.
+func _check_tail_touch() -> void:
+	var alive: Array[int] = []
+	for on: bool in [false, true]:
+		var probe := _sim("reptilian", {}, [], Vector2.ZERO)
+		var bs := probe.body_scale()
+		var edge := 1.3 * bs  # past the tail disc (0.9 less skin), inside it padded (+0.8)
+		var at := Vector2(edge + 1.0, 6.0 * bs)  # beside the tail, behind him (he faces north)
+		var sim := _sim("reptilian", {}, [_b(at.x, at.y, Vector3i(2, 2, 2))], Vector2.ZERO)
+		sim.body.use_species("reptilian")
+		if not on:
+			sim.tail.on = false
+		_run(sim, 0.5, Vector2.ZERO)
+		alive.append(_alive(sim, 0))
+	check(
+		alive[1] < alive[0],
+		(
+			"the tail carves the building it touches with no press (%d vs %d chunks standing)"
+			% [alive[1], alive[0]]
 		)
 	)
 

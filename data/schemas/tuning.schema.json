@@ -4934,6 +4934,17 @@
     "contact": {
       "type": "object",
       "properties": {
+        "tail": {
+          "type": "object",
+          "properties": {
+            "_note": {"type": "string"},
+            "from": {"$ref": "#/$defs/num"},
+            "pad": {"$ref": "#/$defs/num"},
+            "follow": {"$ref": "#/$defs/num"}
+          },
+          "required": ["from", "pad", "follow"],
+          "additionalProperties": false
+        },
         "skin": {"$ref": "#/$defs/num"},
         "sample": {"$ref": "#/$defs/num"},
         "turn_rate": {"$ref": "#/$defs/num"},
