@@ -8,15 +8,12 @@ extends RefCounted
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FocusOrder := preload("res://tests/lib/focus_order.gd")
+const TitleLayout := preload("res://tests/lib/ui_title_layout.gd")
 const CANVAS := Vector2i(1920, 1080)
 const SUMMARY := "Reptilian, 7 rampages"
 ## The ticker along the bottom edge, and how far the corner buttons may stand from the screen's.
 const TICKER := 56.0
 const CORNER_MAX := 120.0
-## Room each side of a label (px at 1080p; 28 at 4K) and the tape bands on a plate (two).
-const LABEL_ROOM := 14.0
-const NEWLINE := "\n"
-const PLATE_BANDS := 2.0
 ## The most of a plate's height (top and bottom each) a scratch may reach into: the label's band
 ## is the middle 60%.
 const SCUFF_BAND := 0.2
@@ -222,7 +219,9 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 		logo != null and cr.position.x >= lr.position.x and cr.position.y >= lr.end.y,
 		"the row stands under the logo, inside its left edge (%s under %s)" % [cr, lr]
 	)
-	_no_overlap(title, [logo, _button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
+	TitleLayout.no_overlap(
+		check, title, [logo, _button(title, "CONTINUE"), _button(title, "NEW KAIJU")]
+	)
 	var cramped: Array[String] = []
 	for b: Button in [_button(title, "CONTINUE"), _button(title, "NEW KAIJU")]:
 		if b.get_combined_minimum_size().y > b.size.y + 0.5:
@@ -286,7 +285,7 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 			)
 		)
 	)
-	_label_room([_button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
+	TitleLayout.label_room(check, [_button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
 	var tape := (_button(title, "CONTINUE").get_theme_stylebox("normal") as HazardBox).band_size
 	var plate := Rect2(Vector2.ZERO, cr.size)
 	var lines := HazardBox.scuff_lines(plate, tape)
@@ -317,42 +316,6 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 	check.call(
 		not focus.chevron, "the title's Continue plate has no focus pointer to crowd its frame"
 	)
-
-
-## No two of `parts` (the logo and the row's plates) and the corner buttons overlap.
-func _no_overlap(title: Node, parts: Array) -> void:
-	var all: Array[Control] = []
-	for found: Variant in parts + [title.find_child("Gear", true, false)]:
-		if found is Control:
-			var c: Control = found
-			all.append(c)
-	var exit := _button(title, "RUN FOR YOUR LIFE")
-	if exit != null:
-		all.append(exit)
-	var hits: Array[String] = []
-	for i: int in all.size():
-		for j: int in range(i + 1, all.size()):
-			if all[i].get_global_rect().grow(-1.0).intersects(all[j].get_global_rect()):
-				hits.append("%s / %s" % [all[i].name, all[j].name])
-	check.call(all.size() >= 4 and hits.is_empty(), "no two title controls overlap: %s" % [hits])
-
-
-## Each plate leaves 14 px (28 at 4K) or more between its tape and its widest label line.
-func _label_room(buttons: Array) -> void:
-	var tight: Array[String] = []
-	for found: Variant in buttons:
-		var b: Button = found
-		var box := b.get_theme_stylebox("normal") as HazardBox
-		var font := b.get_theme_font("font")
-		var size := b.get_theme_font_size("font_size")
-		var widest := 0.0
-		for line: String in b.text.split(NEWLINE):
-			widest = maxf(widest, font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x)
-		var face := b.size.x - HazardBox.PLATE_SHADOW.x
-		var room := (face - PLATE_BANDS * box.band_size - widest) / 2.0
-		if room < LABEL_ROOM:
-			tight.append("%s %.1f px" % [b.text, room])
-	check.call(tight.is_empty(), "every title label has 14 px or more each side: %s" % [tight])
 
 
 func _without_save() -> void:

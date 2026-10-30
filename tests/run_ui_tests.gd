@@ -16,6 +16,7 @@ const UiFeedback := preload("res://tests/lib/ui_feedback.gd")
 const UiFeedbackPad := preload("res://tests/lib/ui_feedback_pad.gd")
 const UiEndConfirm := preload("res://tests/lib/ui_end_confirm.gd")
 const UiReport := preload("res://tests/lib/ui_report.gd")
+const UiPause := preload("res://tests/lib/ui_pause.gd")
 
 ## The UI canvas (project.godot, D-027): every check measures in its logical pixels.
 const CANVAS := Vector2i(1920, 1080)
@@ -38,8 +39,8 @@ func run_checks() -> void:
 	await _t("_check_species_centred")
 	await _t("_check_species_card")
 	await _t("_check_no_atomic")
-	await _t("_check_pause")
-	await _t("_check_hover_focus")
+	await _h("UiPause.pause", func() -> void: await UiPause.pause(self, check))
+	await _h("UiPause.hover_focus", func() -> void: await UiPause.hover_focus(self, check))
 	await _t("_check_reveal_frame")
 	await _t("_check_results_verdict")
 	await _h("TreeChecks", func() -> void: await TreeChecks.new(self, check).run())
@@ -240,59 +241,6 @@ func _check_no_atomic() -> void:
 			if line.to_lower().contains("atomic"):
 				hits.append("%s: %s" % [file, line.strip_edges().left(60)])
 	check(hits.is_empty(), "no visible string says atomic: %s" % [hits])
-
-
-## Critic r1 item 5: every pause button's label clears its edges by 40 px or more, the End
-## Rampage button says only "END RAMPAGE", with its note on a line of its own.
-func _check_pause() -> void:
-	var window := root.size
-	root.size = CANVAS
-	var menu := PauseMenu.new()
-	root.add_child(menu)
-	await process_frame
-	await process_frame
-	var tight: Array[String] = []
-	var names: Array[String] = []
-	for node: Node in menu.find_children("*", "Button", true, false):
-		var b: Button = node
-		names.append(b.text)
-		if b.size.x - b.get_minimum_size().x < 40.0:
-			tight.append("%s (%.0f of %.0f)" % [b.text, b.get_minimum_size().x, b.size.x])
-	var notes: Array[String] = []
-	for node: Node in menu.find_children("*", "Label", true, false):
-		notes.append((node as Label).text)
-	check(tight.is_empty(), "pause labels clear their button edges by 40 px: %s" % [tight])
-	check(names.has("END RAMPAGE"), "the End Rampage button says END RAMPAGE: %s" % [names])
-	check(
-		notes.any(func(t: String) -> bool: return t.to_lower().contains("biomass")),
-		"a small note line says the biomass is kept: %s" % [notes]
-	)
-	menu.free()
-	await process_frame
-	root.size = window
-
-
-## Director 2026-10-22: the mouse and the keyboard share one highlight, so two buttons are never
-## lit at once (the title showed CONTINUE focused and SETTINGS hovered, both yellow).
-func _check_hover_focus() -> void:
-	var box := VBoxContainer.new()
-	var first := UiKit.button("FIRST")
-	var second := UiKit.button("SECOND")
-	box.add_child(first)
-	box.add_child(second)
-	root.add_child(box)
-	await process_frame
-	first.grab_focus()
-	second.mouse_entered.emit()
-	check(second.has_focus() and not first.has_focus(), "hovering a button moves the focus onto it")
-	var off := UiKit.button("OFF")
-	off.disabled = true
-	box.add_child(off)
-	await process_frame
-	off.mouse_entered.emit()
-	check(second.has_focus(), "hovering a disabled button leaves the focus where it was")
-	box.free()
-	await process_frame
 
 
 ## Critic r1 item 7: the reveal's 3D view sits in a hazard frame, the skip prompt is 25% bigger

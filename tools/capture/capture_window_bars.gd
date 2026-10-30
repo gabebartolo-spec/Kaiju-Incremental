@@ -211,7 +211,7 @@ func _apply(variant: String, view: BuildingView, index: int) -> Callable:
 			"main":
 				# The shell as origin/main bakes it: no wall face behind a balcony slab.
 				var fixed := view._shell.mesh
-				view._shell.mesh = _without_balcony_walls(view)
+				view._shell.mesh = Probe.without_balcony_walls(view)
 				undo.append(func() -> void: view._shell.mesh = fixed)
 			"backmagenta":
 				# Diagnostic: the baked shells' back faces glow magenta, to tell a back face from a hole.
@@ -261,65 +261,6 @@ func _apply(variant: String, view: BuildingView, index: int) -> Callable:
 	return func() -> void:
 		for u: Callable in undo:
 			u.call()
-
-
-## The view's shell mesh without the wall faces that look at a balcony slab (a slab outside the
-## hollow): what BuildingMesher baked before the fix, face for face.
-func _without_balcony_walls(view: BuildingView) -> ArrayMesh:
-	var voxels := view.voxels
-	var cells: Dictionary = voxels.vox.cells
-	var res := BuildingVoxels.RES
-	var w := view.b.w * res
-	var d := view.b.d * res
-	var h := view.b.height * res
-	var half := BuildingVoxels.VOXEL * 0.5
-	var skip := {}
-	for cell: Vector3i in cells:
-		if cells[cell] == "slab":
-			continue
-		for dir: Vector3i in BuildingMesher.NEIGHBOURS:
-			var o := cell + dir
-			var inside := o.x >= 1 and o.x <= w - 2 and o.z >= 1 and o.z <= d - 2
-			inside = inside and o.y >= 0 and o.y < h - 1
-			if cells.get(o, "") == "slab" and not inside:
-				var at := (
-					voxels.origin() + Vector3(0, half, 0) + Vector3(cell) * BuildingVoxels.VOXEL
-				)
-				skip[Vector3i(((at + Vector3(dir) * half) * 1024.0).round())] = true
-	var src := view.mesher.shell.surface_get_arrays(0)
-	var verts: PackedVector3Array = src[Mesh.ARRAY_VERTEX]
-	var normals: PackedVector3Array = src[Mesh.ARRAY_NORMAL]
-	var colors: PackedColorArray = src[Mesh.ARRAY_COLOR]
-	var uv2: PackedVector2Array = src[Mesh.ARRAY_TEX_UV2]
-	var nv := PackedVector3Array()
-	var nn := PackedVector3Array()
-	var nc := PackedColorArray()
-	var nu := PackedVector2Array()
-	var index := PackedInt32Array()
-	var dropped := 0
-	for q: int in range(0, verts.size(), 4):
-		var centre := (verts[q] + verts[q + 1] + verts[q + 2] + verts[q + 3]) * 0.25
-		if skip.has(Vector3i((centre * 1024.0).round())):
-			dropped += 1
-			continue
-		var at := nv.size()
-		for k: int in 4:
-			nv.append(verts[q + k])
-			nn.append(normals[q + k])
-			nc.append(colors[q + k])
-			nu.append(uv2[q + k])
-		index.append_array([at, at + 2, at + 1, at, at + 3, at + 2])
-	print("  main shell: dropped %d wall faces behind balcony slabs" % dropped)
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = nv
-	arrays[Mesh.ARRAY_NORMAL] = nn
-	arrays[Mesh.ARRAY_COLOR] = nc
-	arrays[Mesh.ARRAY_TEX_UV2] = nu
-	arrays[Mesh.ARRAY_INDEX] = index
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return mesh
 
 
 func _building(n: int, scale: float, variant: String) -> void:

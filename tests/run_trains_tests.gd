@@ -8,6 +8,7 @@ extends "res://tests/lib/powers_base.gd"
 ##   godot --headless --path . --script tests/run_trains_tests.gd
 
 const RailProbe := preload("res://tests/lib/rail_probe.gd")
+const TrainsFalls := preload("res://tests/lib/trains_falls.gd")
 const AWAY := Vector2(-30, -30)
 
 
@@ -25,8 +26,13 @@ func run_checks() -> void:
 	await _t("_check_pieces_are_buildings")
 	await _t("_check_contact_like_buildings")
 	await _t("_check_walk_through_carves")
-	await _t("_check_cut_span_falls")
-	await _t("_check_falling_building_damages_track")
+	await _h(
+		"TrainsFalls.cut_span_falls", func() -> void: TrainsFalls.cut_span_falls(check, _scene)
+	)
+	await _h(
+		"TrainsFalls.falling_building",
+		func() -> void: TrainsFalls.falling_building_damages_track(check, _scene)
+	)
 	await _t("_check_break_under_train_derails")
 
 
@@ -317,59 +323,6 @@ func _check_walk_through_carves() -> void:
 	var hit := _stand_at(Vector2(rail.centre_x(), rail.point(rail.station_s(1), 1).y), 0.7)
 	check(not hit.rail.station_standing, "railway.carve: the station breaks when walked through")
 	check(_scene().rail.station_standing, "the station stands untouched")
-
-
-## Bar 3: a span cut through at both ends falls as an island and breaks when it lands (its
-## chunks pay as rubble); the track over it is broken.
-func _check_cut_span_falls() -> void:
-	var sim := _scene()
-	var rail := sim.rail
-	var n := RailProbe.piece_at(sim, rail.point(rail.length * 0.75, 1).y)
-	var b := sim.buildings[n]
-	var cut: Array[Vector3i] = []
-	for z: int in [1, roundi(Num.f(rail.cfg["bay_length"])) - 1]:
-		for x: int in b.w:
-			for y: int in range(1, b.height):
-				cut.append(Vector3i(x, y, z))
-	var amounts := PackedFloat32Array()
-	amounts.resize(cut.size())
-	amounts.fill(INF)
-	var rubble := sim.rubble
-	sim.damage_cells(n, cut, amounts)
-	var dropped := 0
-	var landed := false
-	for falling: RampageSim.Fall in sim.falls:
-		dropped += int(
-			falling.building == n and falling.kind == "drop" and not falling.cells.is_empty()
-		)
-	var paid := sim.rubble
-	for _i: int in roundi(3.0 / DT):
-		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
-			if str(event["type"]) == "fall_land" and Num.i(event["building"]) == n:
-				landed = landed or event["scrap"] == false
-	check(dropped >= 1, "railway.carve: the cut span falls as an island: %d" % dropped)
-	check(
-		landed and sim.rubble > paid,
-		"railway.carve: it breaks when it lands: %.2f > %.2f" % [sim.rubble, paid]
-	)
-	check(paid > rubble, "railway.carve: the cut pays: %.2f > %.2f" % [paid, rubble])
-	check(not rail.broken().is_empty(), "railway.carve: the cut breaks the track")
-
-
-## A tower toppling onto the viaduct carves the deck where it lands, as it does any building.
-func _check_falling_building_damages_track() -> void:
-	var sim := _scene()
-	var rail := sim.rail
-	var mid := rail.point(rail.length * 0.75, 1).y
-	var n := RailProbe.piece_at(sim, mid)
-	var x := rail.centre_x()
-	sim.collapse._crush_strip(Vector2(x - 8.0, mid), Vector2(x + 8.0, mid), 1.5, -1)
-	sim.step(DT, Vector2.ZERO, false, 0)
-	var g: Carving.Grid = sim.carving.grids.get(n, null)
-	check(
-		g != null and sim.carving.cells_carved > 0, "railway.carve: a toppled tower carves the deck"
-	)
-	check(not rail.broken().is_empty(), "railway.carve: the track under its strip is broken")
 
 
 ## The deck going from under a running train derails it.
