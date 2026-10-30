@@ -55,7 +55,7 @@ func _init(p_building: RampageSim.Building) -> void:
 		var base := -lo.x - lo.z * dims.x - lo.y * plane
 		for i: int in mats.size():
 			cells[base + xyz[i * 3] + xyz[i * 3 + 2] * dims.x + xyz[i * 3 + 1] * plane] = mats[i]
-	for i: int in (mats.size() if arcs != null else 0):
+	for i: int in mats.size() if arcs != null else 0:
 		var c := Vector3i(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2])
 		cells[index(c - offset)] = mats[i]
 		var g := arc_of(c)
