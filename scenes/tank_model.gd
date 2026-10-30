@@ -3,7 +3,8 @@ extends Node3D
 ## The main battle tank (D-297, D-309): a Tripo model cut into hull, turret and gun
 ## (assets/vehicles/tank*), voxelized per part with the texture's own colours, facing -Z, the
 ## node's origin under the hull's centre. The turret turns and the gun elevates about their
-## real hinges (tank.parts.json); fire() kicks the gun back. Presentation only.
+## real hinges (tank.parts.json); fire() kicks the gun back. At night (the street lamps lit) an
+## amber beacon flashes on the turret roof (vehicles.tank_beacon). Presentation only.
 
 const BASE := "res://assets/vehicles/tank"
 ## Hull paint (the model's mean colour, military olive), for wreck debris.
@@ -15,6 +16,8 @@ var _cfg: Dictionary
 var _barrel_rest := Vector3.ZERO
 var _muzzle := Vector3.ZERO  # in the barrel's space
 var _kick := 0.0  # recoil, 1 at the shot, easing back to 0
+var _beacon: MeshInstance3D  # null by day
+var _clock := 0.0
 
 
 func _init() -> void:
@@ -26,11 +29,32 @@ func _init() -> void:
 	_barrel = parts.hinge("barrel", _turret, parts.pivot("turret"), 3)
 	_barrel_rest = _barrel.position
 	_muzzle = Vector3(0, 0, parts.front("barrel") - parts.pivot("barrel").z)
+	if Look.value("lamp_energy") > 0.0:
+		_add_beacon()
 
 
 func _process(delta: float) -> void:
+	if _beacon != null:
+		_clock += delta
+		var beacon: Dictionary = _cfg["tank_beacon"]
+		_beacon.visible = fposmod(_clock, Num.f(beacon["period"])) < Num.f(beacon["on"])
 	_kick = maxf(0.0, _kick - delta / Num.f(_cfg["recoil_seconds"]))
 	_barrel.position = _barrel_rest + Vector3(0, 0, Num.f(_cfg["recoil"]) * _kick * _kick)
+
+
+## The night beacon: an emissive ball on the turret's roof, on its own beat (a seeded start).
+func _add_beacon() -> void:
+	var beacon: Dictionary = _cfg["tank_beacon"]
+	var ball := SphereMesh.new()
+	ball.radius = Num.f(beacon["size"])
+	ball.height = ball.radius * 2.0
+	ball.material = CityView.glow(Color(str(beacon["color"])), Num.f(beacon["energy"]))
+	_beacon = MeshInstance3D.new()
+	_beacon.mesh = ball
+	_beacon.position = Vector3(0, Num.f(_cfg["tank_height"]) + ball.radius, 0)
+	_beacon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_beacon)  # the node stands on the ground: the roof is tank_height up
+	_clock = fposmod(float(get_instance_id()) * 0.37, Num.f(beacon["period"]))
 
 
 ## Turns the turret and elevates the gun toward `target` (world space), at most `turn_rate`
