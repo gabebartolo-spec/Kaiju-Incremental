@@ -1853,6 +1853,7 @@
 		"recoil": 0.3,
 		"recoil_seconds": 0.45,
 		"hull_turn": 3.0,
+		"tank_beacon": {"_note": "A flashing amber beacon on every tank's turret roof whenever the street lamps are lit (director 2026-10-30: tanks cannot be seen at night): an emissive ball (bloom does the glow), size radius, energy emission strength, on for `on` of every `period` seconds, each tank on its own beat. Placeholders for the director.", "color": "ffa21a", "size": 0.2, "energy": 18.0, "period": 0.8, "on": 0.35},
 		"heli_height": 2.75,
 		"main_rotor_spin": 28.0,
 		"tail_rotor_spin": 45.0,

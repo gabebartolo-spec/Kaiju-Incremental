@@ -5667,6 +5667,19 @@
         "recoil": {"$ref": "#/$defs/num"},
         "recoil_seconds": {"$ref": "#/$defs/num"},
         "hull_turn": {"$ref": "#/$defs/num"},
+        "tank_beacon": {
+          "type": "object",
+          "properties": {
+            "color": {"$ref": "#/$defs/str"},
+            "size": {"$ref": "#/$defs/num"},
+            "energy": {"$ref": "#/$defs/num"},
+            "period": {"$ref": "#/$defs/num"},
+            "on": {"$ref": "#/$defs/num"}
+          },
+          "required": ["color", "size", "energy", "period", "on"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "heli_height": {"$ref": "#/$defs/num"},
         "main_rotor_spin": {"$ref": "#/$defs/num"},
         "tail_rotor_spin": {"$ref": "#/$defs/num"},
@@ -5703,7 +5716,7 @@
       },
       "required": [
         "tank_height", "turret_turn", "gun_elevation", "recoil", "recoil_seconds", "hull_turn",
-        "heli_height", "main_rotor_spin", "tail_rotor_spin", "heli_turn", "heli_lights",
+        "tank_beacon", "heli_height", "main_rotor_spin", "tail_rotor_spin", "heli_turn", "heli_lights",
         "vip_dark", "vip_glow", "vip_band"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
