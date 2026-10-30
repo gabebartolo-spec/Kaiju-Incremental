@@ -66,10 +66,21 @@ const COLUMNS: Array[String] = [
 	"nodes",
 	"sim_step_ms",
 	"street_ms",
+	"phys_span_ms",
+	"proc_span_ms",
+	"draw_span_ms",
 ]
 
 var _a: Dictionary
 var _lib := Lib.new()
+## The frame's CPU phases off the engine's own signals (Performance's TIME_PROCESS and
+## TIME_PHYSICS_PROCESS read above wall, so unusable): physics steps (first physics_frame to
+## process_frame), process (to frame_pre_draw), draw (to frame_post_draw). Each row holds the
+## previous frame's spans, the last ones complete when its process_frame fires.
+var _t_phys := 0
+var _t_proc := 0
+var _t_pre := 0
+var _spans := Vector3.ZERO
 
 
 func _initialize() -> void:
@@ -97,6 +108,10 @@ func _run() -> void:
 	var rampage := _lib.rampage
 	var city := _lib.city
 	Kit.measure_on(self)
+	physics_frame.connect(_physics_started)
+	process_frame.connect(func() -> void: _t_proc = Time.get_ticks_usec())
+	RenderingServer.frame_pre_draw.connect(func() -> void: _t_pre = Time.get_ticks_usec())
+	RenderingServer.frame_post_draw.connect(_frame_drawn)
 	print(
 		(
 			"BENCH start frames_drawn=%d size=%s gpu=%s"
@@ -190,6 +205,9 @@ func _run() -> void:
 			Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
 			sim_step,
 			street_ms,
+			_spans.x,
+			_spans.y,
+			_spans.z,
 		]
 		for c: int in COLUMNS.size():
 			row[c] = Num.f(v[c])
@@ -212,6 +230,17 @@ func _run() -> void:
 
 
 ## [draw calls, primitives, objects] of one render pass kind this frame.
+func _physics_started() -> void:
+	if _t_phys == 0:
+		_t_phys = Time.get_ticks_usec()
+
+
+func _frame_drawn() -> void:
+	var phys := (_t_proc - _t_phys) / 1000.0 if _t_phys > 0 else 0.0
+	_spans = Vector3(phys, (_t_pre - _t_proc) / 1000.0, (Time.get_ticks_usec() - _t_pre) / 1000.0)
+	_t_phys = 0
+
+
 func _info(vp: RID, kind: RenderingServer.ViewportRenderInfoType) -> Array:
 	return [
 		RenderingServer.viewport_get_render_info(
