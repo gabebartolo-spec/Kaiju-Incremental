@@ -205,7 +205,12 @@ func _check_rampage() -> void:
 		)
 	)
 	check(
-		roofs != null and roofs.shots > 0 and rampage.sfx.played.has("rifle"),
+		(
+			roofs != null
+			and roofs.shots > 0
+			# near or far: the tail flattens the nearest roofs, so a run may hear only far ones
+			and (rampage.sfx.played.has("rifle") or rampage.sfx.played.has("rifle_far"))
+		),
 		"rooftop squads open fire with the rifle cue (%d volleys)" % [roofs.shots if roofs else -1]
 	)
 	FlowRifleSounds.check_distance(check, rampage.sfx)
