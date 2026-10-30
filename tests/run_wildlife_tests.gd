@@ -46,11 +46,20 @@ func _step(view: WildlifeView, seconds: float) -> void:
 		view._process(DT)
 
 
+## The flock's bird positions (the view's own state: headless CI keeps no MultiMesh buffer).
+func _positions(view: WildlifeView, kind: String) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	for flock: Dictionary in view._flocks:
+		if flock["kind"] == kind:
+			for bird: Dictionary in flock["birds"]:
+				out.append(bird["pos"])
+	return out
+
+
 func _pigeon_heights(view: WildlifeView) -> Array[float]:
 	var out: Array[float] = []
-	var mm := view.pigeons.multimesh
-	for i: int in mm.instance_count:
-		out.append(mm.get_instance_transform(i).origin.y)
+	for pos: Vector3 in _positions(view, "pigeon"):
+		out.append(pos.y)
 	return out
 
 
@@ -91,7 +100,11 @@ func _check_far_roar_leaves_them() -> void:
 func _check_whale_surfaces_and_dives() -> void:
 	var view := _view()
 	var w: Dictionary = Content.section("wildlife")["whale"]
-	_step(view, Num.f(w["first"][1]) + Num.f(w["rise_seconds"]) * 0.5)
+	var waited := 0.0
+	while view.whale_state() == "wait" and waited < Num.f(w["first"][1]) + DT:
+		_step(view, DT)
+		waited += DT
+	_step(view, Num.f(w["rise_seconds"]) * 0.5)
 	check(
 		view.surfacings == 1 and view.whale.visible and view.whale_state() == "rise",
 		"the whale surfaces first within %.0f s (%s)" % [Num.f(w["first"][1]), view.whale_state()]
@@ -114,14 +127,11 @@ func _check_seeded() -> void:
 	var b := _view()
 	_step(a, 30.0)
 	_step(b, 30.0)
-	var same := true
-	for i: int in a.gulls.multimesh.instance_count:
-		same = (
-			same
-			and a.gulls.multimesh.get_instance_transform(i).is_equal_approx(
-				b.gulls.multimesh.get_instance_transform(i)
-			)
-		)
+	var pa := _positions(a, "gull")
+	var pb := _positions(b, "gull")
+	var same := pa.size() > 0 and pa.size() == pb.size()
+	for i: int in mini(pa.size(), pb.size()):
+		same = same and pa[i].is_equal_approx(pb[i])
 	check(same, "the same seed flies the same gulls")
 	a.get_parent().queue_free()
 	b.get_parent().queue_free()
