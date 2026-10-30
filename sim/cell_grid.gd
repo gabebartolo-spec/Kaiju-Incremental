@@ -48,8 +48,14 @@ func count() -> int:
 
 ## Empties every cell of a structural chunk (one sim unit, one floor) that is gone.
 func clear_chunk(chunk: Vector3i) -> void:
-	# Row by row on the flat index: a landmark's promote clears thousands of chunks in one step
-	# (the wheel took 1.75 s through clear_cell, docs/research/2026-10-31-cpu-profile.md).
+	_clear_rows(chunk)
+
+
+## Empties a chunk's cells and returns how many were standing. Row by row on the flat index: a
+## landmark's promote clears thousands of chunks in one step (the wheel took 1.75 s through
+## clear_cell, docs/research/2026-10-31-cpu-profile.md).
+func _clear_rows(chunk: Vector3i) -> int:
+	var lost := 0
 	var lo := chunk * res - offset
 	var x0 := maxi(lo.x, 0)
 	var x1 := mini(lo.x + res, dims.x)
@@ -57,7 +63,10 @@ func clear_chunk(chunk: Vector3i) -> void:
 		for z: int in range(maxi(lo.z, 0), mini(lo.z + res, dims.z)):
 			var row := z * dims.x + y * dims.x * dims.z
 			for x: int in range(x0, x1):
-				cells[row + x] = 0
+				if cells[row + x] != 0:
+					cells[row + x] = 0
+					lost += 1
+	return lost
 
 
 ## Empties one building-local cell (a no-op outside the grid or on an empty cell).

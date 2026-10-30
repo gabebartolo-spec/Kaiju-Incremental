@@ -84,6 +84,14 @@ func clear_cell(local: Vector3i) -> void:
 		_live[g] -= 1
 
 
+## Empties a chunk; its arc's standing count follows (a chunk is one plan column, so one arc).
+func clear_chunk(chunk: Vector3i) -> void:
+	var lost := _clear_rows(chunk)
+	var g := arc_of(chunk * res)
+	if g >= 0:
+		_live[g] -= lost
+
+
 ## Takes the standing arcs as the baseline: what the chunk Structure already shed (and
 ## CellPromoter has emptied) is not a new loss.
 func rebase() -> void:
