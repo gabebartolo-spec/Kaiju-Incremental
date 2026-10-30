@@ -126,8 +126,12 @@ func step(dt: float) -> void:
 	if phase == Phase.STONE and t >= stone_at + Num.f(cfg["stone_s"]):
 		_shatter()
 		return
-	if phase != Phase.SHATTER:
-		return
+	if phase == Phase.SHATTER:
+		_step_shatter(dt)
+
+
+## After the shatter: shards land as they come down, the blast front runs, then the run ends.
+func _step_shatter(dt: float) -> void:
 	since_shatter += dt
 	for s: Shard in shards:
 		if not s.landed and since_shatter >= s.t:
