@@ -543,7 +543,7 @@
 		"clear_lead_deg": 40.0
 	},
 	"vip": {
-		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds, then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). hp = the air wing's hp x hp_mult; radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
+		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds (setting off sideways so the circle curls away from the kaiju, lap_jitter_deg of seeded wobble), then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). hp = the air wing's hp x hp_mult; radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
 		"window": [0.12, 0.5],
 		"ranks": ["MAYOR", "GOVERNOR", "PRESIDENT"],
 		"payout": [62.0, 63.0, 101.0],
@@ -556,6 +556,7 @@
 		"climb_seconds": 8.0,
 		"circle_radius": 12.0,
 		"circle_seconds": 6.0,
+		"lap_jitter_deg": 30.0,
 		"window_seconds": 15.0,
 		"escape_cap": 2.0,
 		"exit_margin": 6.0,
@@ -1421,7 +1422,7 @@
 		"dip": 0.05, "dip_attack": 0.04, "dip_s": 0.2,
 		"kick_deg": 0.8, "crack_fade_s": 0.12
 	},
-	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "bubble_radius": 17.0, "bubble_max": 3, "bubble_seconds": 0.1, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0, "turn_follow": 1.2, "swing_deg": 60.0, "swing_return": 1.5, "swing_deg_per_s": 120.0, "swing_mouse_deg_per_px": 0.25},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "bubble_radius": 17.0, "bubble_core": 6.0, "bubble_max": 4, "bubble_seconds": 0.1, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0, "turn_follow": 1.2, "swing_deg": 60.0, "swing_return": 1.5, "swing_deg_per_s": 120.0, "swing_mouse_deg_per_px": 0.25},
 	"slowmo": {
 		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The scale is the director's (\"looks good\"); the length follows D-342 (director 2026-10-27 on the first clip, hold 0.5 s + ease 0.25 s: \"the slowdown is too brief\"), now 1.5 s held + 0.5 s eased. The director tunes these at playtest.",
 		"scale": 0.35,
@@ -1539,6 +1540,7 @@
 	"arena_edge": {"out": 1.0, "spacing": 1.3, "size": [0.35, 1.1], "color": "e07a28", "glow": 0.5, "tree_clear": 0.6},
 	"body": {"speed_mult": 1.0, "hp_mult": 1.0},
 	"contact": {
+		"tail": {"_note": "TailTouch (director 2026-10-30: the tail carves whatever it touches): body discs with offset <= from are the tail; each widened by pad (design units) to the drawn tail and its spring sway; the tail lies along a heading that follows the body's at follow /s, so a turn swings it wide.", "from": -2.0, "pad": 0.8, "follow": 4.0},
 		"_note": "bodies[species][stage].stomp_foot = [ahead, across] at body scale 1: where a stomp's foot comes down against kaiju_pos (design units ahead along the heading, and out to the left foot; the right foot mirrors it). The sim's stomp damages around that point (RampageSim._stomp), the point the drawn ring lands on (measured with tools/capture/probe_stomp_foot.gd). No entry: the stomp is centred on kaiju_pos.",
 		"skin": 0.15,
 		"sample": 0.5,
@@ -1853,6 +1855,7 @@
 		"recoil": 0.3,
 		"recoil_seconds": 0.45,
 		"hull_turn": 3.0,
+		"tank_beacon": {"_note": "A flashing amber beacon on every tank's turret roof whenever the street lamps are lit (director 2026-10-30: tanks cannot be seen at night): an emissive ball (bloom does the glow), size radius, energy emission strength, on for `on` of every `period` seconds, each tank on its own beat. Placeholders for the director.", "color": "ffa21a", "size": 0.2, "energy": 18.0, "period": 0.8, "on": 0.35},
 		"heli_height": 2.75,
 		"main_rotor_spin": 28.0,
 		"tail_rotor_spin": 45.0,

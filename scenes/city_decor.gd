@@ -301,7 +301,7 @@ func _lamp(p: Vector2, toward: Vector2) -> void:
 	var light := PooledLight.new("lamp")
 	light.light_color = Color("ffd59a")
 	light.set_energy(Look.value("lamp_energy"))
-	light.omni_range = 6.0
+	light.omni_range = 9.0  # reaches the road's middle (director 2026-10-30: roads too dark)
 	light.position = Vector3(p.x + arm.x * 0.5, 2.4, p.y + arm.y * 0.5)
 	add_child(light)
 	_lamps.append(light)

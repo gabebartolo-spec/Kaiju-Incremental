@@ -50,8 +50,8 @@
 			"fog_color": "0c1428",
 			"fog_density": 0.005,
 			"window_lit": 0.55,
-			"ground_night_floor": 0.6,
-			"ground_lamp_pool": 0.35,
+			"ground_night_floor": 0.9,
+			"ground_lamp_pool": 0.6,
 			"lamp_energy": 4.0
 		},
 		"morning": {

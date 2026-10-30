@@ -10,13 +10,16 @@ extends RefCounted
 ## broken pieces, rubble, vehicles and the kaiju draw whole and may hide him ("its ok to obscure
 ## the kaiju, its not ok to block the camera", D-326; vehicles D-290). No screen door anywhere.
 ##
-## The sphere's far edge stays the field's radius short of the kaiju on the ground: while the
-## camera is nearer than bubble_radius plus that, the radius shrinks to fit. A building's cut opens
-## from the camera outward over camera.bubble_seconds and closes back when the sphere leaves it
-## (the run's first frame starts open); one the field reaches or the kaiju damages is whole at
-## once. The shaders read the global `bubble_radius`, each building its own `bubble_cut`. Only the
-## buildings whose footprint meets the square round the camera are tested (a grid of footprints,
-## built once: the walls never move). Presentation only.
+## The sphere's far edge stays the field's radius short of the kaiju on the ground: while the camera
+## is nearer than bubble_radius plus that, the radius shrinks to fit. A building's cut opens from
+## the camera outward over camera.bubble_seconds and closes back when the sphere leaves it (the
+## run's first frame starts open); one the field reaches or the kaiju damages is whole at once. The
+## core (director 2026-10-30: "sometimes a building still blocks the camera"): whatever standing
+## building comes within camera.bubble_core of the camera is cut at once, damaged or in the field or
+## not, before any other; the sphere never shrinks below the core. The shaders read the global
+## `bubble_radius`, each building its own `bubble_cut`. Only the buildings whose footprint meets the
+## square round the camera are tested (a grid of footprints, built once: the walls never move).
+## Presentation only.
 
 ## Side of a grid cell of the footprint index (metres).
 const CELL := 32.0
@@ -50,8 +53,9 @@ static func field(sim: RampageSim) -> float:
 ## `field`: camera.bubble_radius, less while its far edge would come within the field on the ground.
 static func radius_for(eye: Vector3, kaiju: Vector3, p_field: float) -> float:
 	var flat := Vector2(eye.x, eye.z).distance_to(Vector2(kaiju.x, kaiju.z))
-	var size := Num.f(Content.section("camera")["bubble_radius"])
-	return clampf(flat - p_field, 0.0, size)
+	var cfg := Content.section("camera")
+	var size := Num.f(cfg["bubble_radius"])
+	return maxf(clampf(flat - p_field, 0.0, size), Num.f(cfg["bubble_core"]))
 
 
 ## Whether building b's footprint lies within the destruction `field` of a kaiju at `kaiju`: its
@@ -105,10 +109,13 @@ func update(frame: FrameShare, kaiju: Vector3, p_field: float, delta: float) -> 
 		on[n] = true
 		if not _open.has(n):
 			_open[n] = 1.0 if first else 0.0
+	var core := Num.f(_cfg["bubble_core"])
 	for n: int in _open.keys():
 		var b := _buildings[n]
 		var next := move_toward(Num.f(_open[n]), 1.0 if on.has(n) else 0.0, step)
-		if damaged(b) or in_field(b, kaiju, p_field):
+		if reach(frame.eye(), b) < core:
+			next = 1.0  # in the camera's core: always cut, at once
+		elif damaged(b) or in_field(b, kaiju, p_field):
 			next = 0.0  # the destruction is never cut, not even while a cut closes
 		var view: BuildingView = _views.call(n)
 		if view != null:  # every frame while it is cut: a view streamed in late gets it too
@@ -120,17 +127,21 @@ func update(frame: FrameShare, kaiju: Vector3, p_field: float, delta: float) -> 
 
 
 ## The standing buildings a sphere of `p_radius` round the camera drawing `frame` reaches, at
-## most camera.bubble_max of them: those covering the most of its view first (the nearest first
-## between equals); none in the field of a kaiju at `kaiju`, none damaged.
+## most camera.bubble_max of them: every standing one within the core first, then those covering
+## the most of its view (the nearest first between equals); outside the core none in the field of a
+## kaiju at `kaiju`, none damaged.
 func picked(frame: FrameShare, kaiju: Vector3, p_field: float, p_radius: float) -> PackedInt32Array:
 	var found: Array[Vector3] = []  # (minus the share of the view, distance from the eye, index)
 	if p_radius <= 0.0:
 		return PackedInt32Array()
 	var eye := frame.eye()
+	var core := Num.f(_cfg["bubble_core"])
 	for n: int in _near(eye, p_radius):
 		var b := _buildings[n]
 		var gap := reach(eye, b)
-		if gap < p_radius and not damaged(b) and not in_field(b, kaiju, p_field):
+		if gap < core and b.frame != null and b.frame.alive_count > 0:
+			found.append(Vector3(-INF, gap, n))  # the core: before any share of the view
+		elif gap < p_radius and not damaged(b) and not in_field(b, kaiju, p_field):
 			found.append(Vector3(-frame.share_of(box(b)), gap, n))
 	found.sort()
 	var out := PackedInt32Array()

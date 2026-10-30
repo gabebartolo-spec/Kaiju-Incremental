@@ -1,6 +1,7 @@
 # Seconds per suite on a CI runner (mean of 6 runs: 40864679206, 40862960121, 40860825466, 40859394521, 40858722457, 40853817749), 2026-10-29.
 # Nobody edits this per PR: a new suite counts as DEFAULT_SECS until the next re-measure (python tools/ci_retime.py, at least weekly).
 # tools/plan_ci_shards.sh packs the suites into shards x lanes bins; each shard runs its lanes at once (tools/run_tests.sh LANES).
+# pr_skip (D-382) and engine (D-403: a scene, camera or capture) suites run on main only; a pull request runs the rest.
 shards 5
 lanes 3
 split streamview 10
@@ -89,3 +90,4 @@ native 1
 voxel_support 1
 soft_smoke 0
 pr_skip streamview load counts crowd empty_space roads heliflight skyline city_audit demoend croc_standing slowmo results
+engine camera_frame camera capture_camera carve_debris city creation fire flow onelook options photo slots threat timeofday ui weather

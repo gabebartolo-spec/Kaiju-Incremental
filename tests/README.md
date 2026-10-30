@@ -5,6 +5,7 @@ One command runs everything CI runs (import, every suite, the harness self-test)
 ```sh
 GODOT=/path/to/godot_console tools/run_tests.sh            # everything
 GODOT=/path/to/godot_console tools/run_tests.sh smoke      # some suites
+GODOT=/path/to/godot_console python tools/run_touched.py   # before a push: the suites nearest the change (D-403)
 ```
 
 Every run gets its own user data (APPDATA and the XDG dirs point at a temp dir), so two
@@ -14,8 +15,10 @@ skill §6 and the `kaiju-godot-tests` skill: one runner per suite extending
 suite line "K of M functions" fails one that never ran or made no check (no floors); a
 `SCRIPT ERROR` fails the suite; seeds pinned. Suites are found by filename and CI shards come
 from `tools/ci_timings.txt`, so a new suite needs only its file and a row below. Its `pr_skip`
-line names the slow second-angle suites a pull request skips: they run on every push to main
-(the "slow suites" job, never blocking); everything else runs on every PR.
+line names the slow second-angle suites (D-382) and its `engine` line the suites that need a
+scene, camera or capture (D-403); a pull request skips both, and they run on every push to main
+(the "slow suites" job, never blocking). A PR runs the lints, the compile preflight and the sim
+suites; a new suite counts as sim until it is added to `engine`.
 
 `tools/run_tests.sh --quick <suite>` skips the re-import for the local loop.
 

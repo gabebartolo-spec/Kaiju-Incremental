@@ -2,15 +2,15 @@ class_name VipHeli
 extends RefCounted
 ## The leader's escape helicopter (D-149): once a rampage, at a seeded moment, the city's leader
 ## (Mayor, Governor or President by city) lifts off a mid-rise roof and flees. It climbs while it
-## flies one smooth lap round the pad (a banked circle at its own speed, never pinned to the
-## kaiju, D-183), then runs straight for the map edge so that the whole flight takes about
-## `window_seconds`. Bringing it down pays `payout` (about a city block's worth, Tuning "vip");
-## letting it reach the edge costs only that payout.
-## How it dies: any area attack that reaches its height (the breath, the Thunder Beam, ink and limbs
-## reach the sky; a stomp or claw only while it is still low over the roofs), a toppling tower
-## sweeping its height, a tank or car in flight (thrown), or a grab while it is low (a tentacle).
-## It falls like any gunship (AirWing's fates and wreck), under its own id. Own file and own
-## seeded stream, so it never shifts the army's or the air wing's draws. Part of RampageSim.
+## flies one smooth lap beside the pad, curling away from the kaiju (a banked circle at its own
+## speed, never pinned to the kaiju, D-183; never through it, director 2026-10-30), then runs
+## straight for the map edge so that the whole flight takes about `window_seconds`. Bringing it down
+## pays `payout` (about a city block's worth, Tuning "vip"); letting it reach the edge costs only
+## that payout. How it dies: any area attack that reaches its height (the breath, the Thunder Beam,
+## ink and limbs reach the sky; a stomp or claw only while it is still low over the roofs), a
+## toppling tower sweeping its height, a tank or car in flight (thrown), or a grab while it is low
+## (a tentacle). It falls like any gunship (AirWing's fates and wreck), under its own id. Own file
+## and own seeded stream, so it never shifts the army's or the air wing's draws. Part of RampageSim.
 
 ## Its id among the sky's helicopters: far above AirWing's own counter.
 const ID := 1000000
@@ -145,7 +145,10 @@ func _lift_off() -> void:
 	var b := sim.buildings[pad]
 	_roof = minf(float(b.height), Num.f(cfg["altitude"]) - 1.0)
 	pos = Vector2(b.x, b.z)
-	heading = _rng.randf() * TAU
+	# The lap curls away from the kaiju (director 2026-10-30: it flew straight into the kaiju every
+	# time; it is something to chase): it sets off sideways, its circle's centre beyond the pad.
+	var away := (pos - sim.kaiju_pos).angle()
+	heading = away - PI * 0.5 + (_rng.randf() - 0.5) * deg_to_rad(Num.f(cfg["lap_jitter_deg"]))
 	_hp = Num.f(sim.air.cfg["hp"]) * Num.f(cfg["hp_mult"])
 	state = "flying"
 	sim.events.append({"type": "vip_spawned", "heli": ID, "rank": rank, "x": pos.x, "z": pos.y})

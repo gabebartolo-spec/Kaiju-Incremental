@@ -4,11 +4,22 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-10-31 · D-403 · Director · Boats are Tripo models, up to 300 credits
+## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
 His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
 moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
 consent of 10-30 (D-400). Generated 10-31: trawler, tug, yacht, launch, 260 credits
 (provenance C:/Users/DANTE/cascadeur_bridge/city_boats/provenance.md). Spectacle only: nothing reaches the sim.
+
+## 2026-10-31 · D-403 · Director · Touched suites run locally; a PR runs lints and the sim suites; engine suites go to main
+"im sick of the CI purgatory". Three rulings. (1) Relaxes D-383: before a push, run the suites nearest the change
+locally, `python tools/run_touched.py` (walks back from each changed file to the first suites that reach it; `--all`
+for every suite that reaches it, `--engine` adds touched engine suites). (2) The suites are split: 21 that need the
+full engine (a scene, camera or capture; the `engine` line of tools/ci_timings.txt, picked by a .tscn, Camera3D,
+viewport or texture read in the runner or its tests/lib helpers) and the sim suites (the rest). (3) A pull request runs
+the lints, the compile preflight, the native build and the sim shards (heaviest ~322 s); the engine suites join the
+D-382 slow job on main, and the harness self-test and engine log smoke block `test` on main only. A new suite counts as
+sim until it is added to `engine`; moving one is a decision here. Changes: tools/ci_timings.txt,
+tools/plan_ci_shards.sh, tools/ci_retime.py, tools/run_touched.py, .github/workflows/tests.yml, CLAUDE.md.
 
 ## 2026-10-30 · D-402 · Director · Grown railgun locks last longer, so the eased walk-off still dodges
 With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
@@ -135,7 +146,7 @@ stands up out of the sea to his first beachfront hotel down; the walk across the
 and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
 landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
 
-## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test
+## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test (relaxed by D-403)
 Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
 a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
 local Godot suite run to check a change before it goes up, not even the suites it touched. Replaces the last
@@ -147,7 +158,7 @@ His words: "which of these, if any, can we remove, or is it necessary for us to 
 real bottleneck for dev time"; on the list: "Yes, write D-382". No suite is deleted. Thirteen slow suites that check the
 game from a second angle run on every push to main only (the `slow` job, 3 lanes, never blocking): streamview, load,
 counts, crowd, empty_space, roads, heliflight, skyline, city_audit, demoend, croc_standing, slowmo, results (4,365 s of
-8,802). Everything else, motion and smoke included, runs on every PR. The list is the `pr_skip` line of
+8,802). Everything else, motion and smoke included, runs on every PR (until D-403: engine suites moved to main too). The list is the `pr_skip` line of
 tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last green PR run took 18 min, shard 1
 alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
 plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
@@ -386,14 +397,3 @@ Speed runs need his PC to themselves (D-299), so tonight's queue is about 3.5 h.
 "Count on GitHub (Recommended)". Bars that can be counted on a pinned seed (draw calls, pieces, nodes) become GitHub
 checks that run any time and in parallel; only millisecond bars stay on his PC (builder bench-counts). Not picked: the
 card's own timer, renting cloud GPUs (no spend), a spare bench PC. Start time "[No preference]": runs start 01:00.
-
-## 2026-10-27 · D-350 · Director · The camera bubble comes forward
-Asked about the dot fade still on main: "Bring the bubble forward". #238 resumes now, ahead of D-283's "after the
-render plan" timing and its place in D-310's order. Which buildings (22:50, replaces D-283's agent wording "between
-camera and kaiju"): "its the ones that the camera itself phases through ... foreground buildings which are nowhere near
-the field of destruction"; never "inside buildings adjacent to the kaiju". A sphere around the camera only; zero cuts in
-the kaiju's destruction field; pieces, rubble and vehicles never (D-326); shadows kept. Removes the biomass numbers (D-284).
-
-## 2026-10-27 · D-349 · Director · After the walk-start, the keyer keys the young croc walk
-Asked what the one keyer keys after the walk-start (D-343): "Young croc walk", ahead of the grown croc's run. Order:
-walk-start, young croc walk, run, slam-stop, turn-skate B.
