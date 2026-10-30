@@ -7,7 +7,8 @@ changes. The lead owns the wording; a decision goes in the PR that acts on it (a
 ## 2026-10-31 · D-403 · Director · Boats are Tripo models, up to 300 credits
 His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
 moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
-consent of 10-30 (D-400). Spectacle only: nothing reaches the sim.
+consent of 10-30 (D-400). Generated 10-31: trawler, tug, yacht, launch, 260 credits
+(provenance C:/Users/DANTE/cascadeur_bridge/city_boats/provenance.md). Spectacle only: nothing reaches the sim.
 
 ## 2026-10-30 · D-402 · Director · Grown railgun locks last longer, so the eased walk-off still dodges
 With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
