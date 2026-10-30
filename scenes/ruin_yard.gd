@@ -51,6 +51,8 @@ func _attach(plan: Dictionary, ready := Callable()) -> void:
 
 
 func _add(mmi: MultiMeshInstance3D, ready := Callable()) -> void:
+	if Num.i(Content.section("destruction").get("ruin_shadows", 1)) == 0:
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mmi)
 	if ready.is_valid():
 		ready.call(mmi)

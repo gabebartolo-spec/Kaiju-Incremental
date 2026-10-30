@@ -5750,6 +5750,7 @@
         "chunk_alive_share": {"$ref": "#/$defs/num"},
         "warm_margin": {"$ref": "#/$defs/num"},
         "warm_emerge_margin": {"$ref": "#/$defs/num"},
+        "ruin_shadows": {"$ref": "#/$defs/num"},
         "fall_dirs": {
           "type": "object",
           "properties": {
