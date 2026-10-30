@@ -87,7 +87,10 @@ func _check_flight() -> void:
 		nearest = minf(nearest, sim.vip.pos.distance_to(sim.kaiju_pos))
 	check(
 		nearest >= start_gap - 0.5,
-		"its lap curls away, never toward the kaiju (nearest %.1f m, pad %.1f m)" % [nearest, start_gap]
+		(
+			"its lap curls away, never toward the kaiju (nearest %.1f m, pad %.1f m)"
+			% [nearest, start_gap]
+		)
 	)
 	check(
 		absf(t - Num.f(vip["window_seconds"])) <= 3.0,
