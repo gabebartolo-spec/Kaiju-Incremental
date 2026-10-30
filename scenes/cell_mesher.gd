@@ -17,6 +17,11 @@ const REGION := 16
 ## Look ids past the materials table (bytes in `looks`): the windows the view draws lit.
 const LIT := 254
 const SHOP_LIT := 255
+## Look ids for a model's own colours (a landmark's or a pool building's DIRECT voxels): its
+## material ids (landmark_wall...) have no palette colour, so each colour, quantised, gets a slot.
+const FIRST_COLOR := 64
+## Colour quantisation steps per channel for those slots.
+const COLOR_STEPS := 16.0
 const NEIGHBOURS: Array[Vector3i] = BuildingMesher.NEIGHBOURS
 
 var dims: Vector3i
@@ -42,6 +47,10 @@ var finish: PackedByteArray
 var _corners: Array[PackedVector3Array] = []
 ## Per NEIGHBOURS direction, the 8 cells round a face's air cell (VoxelAO.ring_of).
 var _rings: Array = []
+## Colour slot (FIRST_COLOR..) -> the material id its first cell had (for its finish).
+var _slot_material: Dictionary = {}
+## Quantised colour -> its slot.
+var _slot_of: Dictionary = {}
 
 
 ## One region's arrays while the oracle meshes it (a holder: packed arrays copy on write).
@@ -74,6 +83,8 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 		_corners.append(PackedVector3Array([c - u - v, c + u - v, c + u + v, c - u + v]))
 		_rings.append(VoxelAO.ring_of(d))
 	finish = VoxelAO.finish_by_look(LIT, SHOP_LIT)
+	for slot: int in _slot_material:
+		finish[slot] = finish[Num.i(_slot_material[slot])]
 	if use_native and ClassDB.class_exists("KaijuMesher"):
 		_start_native()
 
@@ -105,6 +116,38 @@ func _read_looks(voxels: BuildingVoxels, cells: CellGrid) -> void:
 			looks[i] = SHOP_LIT
 		elif key == "slab" and not foot.has_point(Vector2i(local.x, local.z)):
 			hidden.append(i)
+		elif key == VoxelBuilder.DIRECT:
+			var c: Color = voxels.vox.colors[local]
+			looks[i] = _color_slot(c, looks[i])
+
+
+## The look id drawing colour `c` (a model's own voxel colour): a new slot per quantised colour,
+## the nearest one once the slots run out. material: the cell's material id (its finish).
+func _color_slot(c: Color, material: int) -> int:
+	var q := Color(
+		roundf(c.r * COLOR_STEPS) / COLOR_STEPS,
+		roundf(c.g * COLOR_STEPS) / COLOR_STEPS,
+		roundf(c.b * COLOR_STEPS) / COLOR_STEPS,
+		c.a
+	)
+	if _slot_of.has(q):
+		return Num.i(_slot_of[q])
+	var next := FIRST_COLOR + _slot_material.size()
+	if next < LIT:
+		palette[next] = q
+		_slot_material[next] = material
+		_slot_of[q] = next
+		return next
+	var best := FIRST_COLOR
+	var best_d := INF
+	for slot: int in _slot_material:
+		var p := palette[slot]
+		var d := Vector4(p.r - q.r, p.g - q.g, p.b - q.b, p.a - q.a).length_squared()
+		if d < best_d:
+			best = slot
+			best_d = d
+	_slot_of[q] = best
+	return best
 
 
 ## The native mesher, set up as this one; a library older than item 12 has no AO, so the oracle

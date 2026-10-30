@@ -118,10 +118,14 @@ static func game_camera(tree: SceneTree) -> Camera3D:
 ## CameraTuning's offset x zoom for `body_scale`; the aim is CameraFollow's, tilted up by
 ## HeadFrame (settled) when the head would ride too high. FOV is CameraTuning's. A rampage places
 ## its own camera: tools showing play instantiate Rampage and read game_camera.
-static func place_game_camera(cam: Camera3D, kaiju: KaijuModel, body_scale: float) -> void:
+## `facing` is the sim's (D-330: the game camera stays behind it); the default is the spawn facing.
+static func place_game_camera(
+	cam: Camera3D, kaiju: KaijuModel, body_scale: float, facing := Vector2(0.0, -1.0)
+) -> void:
 	var follow := CameraFollow.new(
 		kaiju.focus(), CameraTuning.offset() * CameraTuning.zoom(body_scale)
 	)
+	follow.step_yaw(facing, 0.0, true)
 	cam.fov = CameraTuning.fov()
 	cam.position = follow.eye()
 	cam.look_at(follow.aim(kaiju, body_scale, Vector2(cam.fov, 0.0), HEAD_SETTLE_S))
