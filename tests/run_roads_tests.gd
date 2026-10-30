@@ -222,9 +222,7 @@ static func _beachfront(plan: Dictionary, paint: Array[Transform3D]) -> Array[St
 		var dashes := paint.filter(
 			func(t: Transform3D) -> bool:
 				return (
-					absf(t.origin.x - sx) < 0.01
-					and t.origin.z > kerb
-					and t.origin.z < rect.end.y
+					absf(t.origin.x - sx) < 0.01 and t.origin.z > kerb and t.origin.z < rect.end.y
 				)
 		)
 		var stops := paint.filter(
