@@ -13,10 +13,11 @@ extends RefCounted
 ## blast_after_s after the last shard lands. The run ends (RampageSim.end) settle_s after the front
 ## (or the last shard), so the results wait for the burst. Part of RampageSim; pure: one derived
 ## stream, no clock.
+## Time's up runs the jets' final strike first (FinalStrike, D-263), then his death.
 ## Events: death_begin {reason}, death_stone, death_shatter {shards, centre, blast}, death_shard
 ## {id, x, z}, death_blast {radius, x, z} (the front starts), then run_over.
 
-enum Phase { NONE, STAGGER, STONE, SHATTER }
+enum Phase { NONE, STRIKE, STAGGER, STONE, SHATTER }
 
 
 ## One piece of him in the air: from (world), to (ground point), landing `t` s after the shatter.
@@ -48,6 +49,8 @@ var landing_end := 0.0
 ## What the shards and the front broke (chunks), for tests and the results.
 var shard_chunks := 0
 var blast_chunks := 0
+## The jets' run at time's up.
+var strike: FinalStrike
 
 var _rng: RandomNumberGenerator
 
@@ -56,6 +59,8 @@ func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) ->
 	sim = p_sim
 	cfg = tuning["death"]
 	_rng = rng
+	var strike_cfg: Dictionary = cfg["airstrike"]
+	strike = FinalStrike.new(sim, strike_cfg)
 
 
 ## True for an ending that is his death (the rest end at once: the city fell).
@@ -75,10 +80,18 @@ func begin(why: String) -> bool:
 	if active():
 		return true
 	reason = why
+	if why == "time":
+		phase = Phase.STRIKE
+		strike.start(_rng)
+		return true
+	_stagger()
+	return true
+
+
+func _stagger() -> void:
 	phase = Phase.STAGGER
 	t = 0.0
-	sim.events.append({"type": "death_begin", "reason": why})
-	return true
+	sim.events.append({"type": "death_begin", "reason": reason})
 
 
 ## True when the kaiju takes no step of his own: the run is over, or he is dying and this runs the
@@ -101,6 +114,10 @@ func holds(dt: float) -> bool:
 
 ## One step of the sequence.
 func step(dt: float) -> void:
+	if phase == Phase.STRIKE:
+		if strike.step(dt):
+			_stagger()
+		return
 	t += dt
 	var stone_at := Num.f(cfg["stagger_s"])
 	if phase == Phase.STAGGER and t >= stone_at:

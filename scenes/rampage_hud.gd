@@ -12,7 +12,7 @@ signal beat_done(result: Dictionary)
 ## Reason: headline, line under it.
 const HEADLINES := {
 	"defeated": ["BROUGHT DOWN", "The army got you this time"],
-	"time": ["TIME UP", "Your rage is spent"],
+	"time": ["AIRSTRIKE", "The army ran out of patience"],
 	"city_fallen": ["THE CITY HAS FALLEN", "Nothing left standing"],
 	"ended": ["RAMPAGE ENDED", "You called it off"],
 }
@@ -142,8 +142,8 @@ func _beat(english: String) -> String:
 	var lines := {
 		"BROUGHT DOWN": tr("BROUGHT DOWN"),
 		"The army got you this time": tr("The army got you this time"),
-		"TIME UP": tr("TIME UP"),
-		"Your rage is spent": tr("Your rage is spent"),
+		"AIRSTRIKE": tr("AIRSTRIKE"),
+		"The army ran out of patience": tr("The army ran out of patience"),
 		"THE CITY HAS FALLEN": tr("THE CITY HAS FALLEN"),
 		"Nothing left standing": tr("Nothing left standing"),
 		"RAMPAGE ENDED": tr("RAMPAGE ENDED"),
