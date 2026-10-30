@@ -31,7 +31,7 @@ const WALK_SHARE := 0.5
 ## croc still sets off at once (well inside YOUNG_OFF_S).
 const WALK_OFF_S := 1.3
 const YOUNG_OFF_S := 0.3
-## The ramp is done at 0.98 of full stride; the last 2% is the slow stride_ease tail, not the set-off.
+## The ramp is done at 0.98 of full stride; the last 2% is the stride_ease tail, not the set-off.
 const FULL_STRIDE := 0.98
 
 
