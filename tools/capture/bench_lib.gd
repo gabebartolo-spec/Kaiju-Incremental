@@ -5,6 +5,14 @@ extends RefCounted
 ## the route's tally of what it did, and percentiles. Tools only; no game code.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+## The bulldozer re-picks its building this often (steps), and a building's standing chunks count
+## half at this distance (units): big blocks near the path win over the nearest shed.
+const BULLDOZE_REPICK := 30
+const BULLDOZE_FALLOFF := 25.0
+## The bulldozer's camera swings this far each side of its rest (degrees) over this many steps, so
+## the stream keeps loading new views as a player panning would.
+const BULLDOZE_SWING_DEG := 40.0
+const BULLDOZE_SWING_STEPS := 600
 
 ## What the user args set, for both tools (Kit.args takes each default's type).
 const DEFAULTS := {
@@ -12,7 +20,7 @@ const DEFAULTS := {
 	"time": "night",
 	"weather": "clear",
 	"graphics": "medium",
-	"route": "replay",
+	"route": "replay",  # or "bulldozer": no file, the kaiju ploughs the biggest blocks (_bulldoze)
 	"route-file": "",
 	"vsync": false,
 	"set": "",
@@ -31,6 +39,9 @@ var tally := {"stomps": 0, "swipes": 0, "breaths": 0, "beams": 0, "falls": 0}
 var _beam_at := 0
 var _breath_ready := 0.0
 var _ult_ready := 0.0  # the beam seconds left on the last step
+var _bulldozer := false
+var _target := -1  # the building the bulldozer heads for (index into sim.buildings)
+var _camera_rest := Vector3.ZERO  # the game's camera offset, swung around it by the bulldozer
 
 
 ## Percentile `p` (0..1) of a sorted array (nearest rank).
@@ -123,6 +134,7 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 			child.set_physics_process(false)
 			child.set_process(false)
 			(child as BreathAim).visible = false
+	_bulldozer = str(a["route"]) == "bulldozer"
 	if str(a["route"]) == "replay":
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(str(a["route-file"])))
 		if not parsed is Array:
@@ -142,6 +154,8 @@ func _scripted(sim: RampageSim) -> Dictionary:
 	if sim.emerge.active:
 		return {}
 	_tally(sim)
+	if _bulldozer:
+		return _bulldoze(sim)
 	var at: Array = route[mini(steps, route.size() - 1)]
 	var ultimate := Num.f(at[4]) > 0.5
 	if _beam_at > 0:
@@ -153,6 +167,47 @@ func _scripted(sim: RampageSim) -> Dictionary:
 		"held": Num.f(at[3]) > 0.5,
 		"ultimate": ultimate,
 	}
+
+
+## A destruction-heavy route read live off the sim (deterministic, so every run is the same): walk
+## at the building with the most standing chunks near the path, every power the moment it is ready,
+## the glide on autoplay's cycle, the ultimate held (owned with --levels=r_beam=1).
+func _bulldoze(sim: RampageSim) -> Dictionary:
+	var lost := _target < 0 or sim.buildings[_target].frame.alive_count == 0
+	if lost or steps % BULLDOZE_REPICK == 0:
+		_target = _biggest_near(sim)
+	steps += 1
+	if _camera_rest == Vector3.ZERO:
+		_camera_rest = rampage.camera_rest
+	var swing := sin(TAU * steps / float(BULLDOZE_SWING_STEPS)) * deg_to_rad(BULLDOZE_SWING_DEG)
+	rampage.camera_rest = _camera_rest.rotated(Vector3.UP, swing)
+	var move := Vector2.ZERO
+	if _target >= 0:
+		var b: RampageSim.Building = sim.buildings[_target]
+		var to := Vector2(b.x, b.z) - sim.kaiju_pos
+		if to.length() >= sim.stomp_radius() * 0.5:
+			move = to.normalized()
+	return {
+		"move": move,
+		"signature": sim.ability_ready_in <= 0.0,
+		"held": steps % RunInput.AUTOPLAY_GLIDE_CYCLE < RunInput.AUTOPLAY_GLIDE_HELD,
+		"ultimate": true,
+	}
+
+
+func _biggest_near(sim: RampageSim) -> int:
+	var best := -1
+	var best_score := 0.0
+	for i: int in sim.buildings.size():
+		var b: RampageSim.Building = sim.buildings[i]
+		if b.frame.alive_count == 0 or not b.in_arena:
+			continue
+		var d := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
+		var score := b.frame.alive_count / (1.0 + d / BULLDOZE_FALLOFF)
+		if score > best_score:
+			best_score = score
+			best = i
+	return best
 
 
 func _tally(sim: RampageSim) -> void:
