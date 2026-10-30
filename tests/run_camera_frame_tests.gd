@@ -179,8 +179,9 @@ func _check_bubble() -> void:
 		is_equal_approx(near, size * 0.5),
 		"nearer, it shrinks so its far edge stays the field's radius from him (%.1f m)" % near
 	)
+	var core := Num.f(Content.section("camera")["bubble_core"])
 	var inside := CameraBubble.radius_for(Vector3(0, 20, field * 0.5), Vector3.ZERO, field)
-	check(inside == 0.0, "a camera inside the field has no bubble")
+	check(inside == core, "a camera inside the field keeps the core (%.1f m)" % inside)
 	var eye := Vector3(0, 20, 40)
 	var dirs := [Vector3.LEFT, Vector3.RIGHT, Vector3.UP, Vector3.DOWN, Vector3.BACK]
 	dirs.append(Vector3.FORWARD)
@@ -210,29 +211,30 @@ func _check_bubble_picks() -> void:
 	var most := Num.i(Content.section("camera")["bubble_max"])
 	var picked := bubble.picked(_frame_at(eye), Vector3.ZERO, field, r)
 	check(
-		picked == PackedInt32Array([0, 3, 4]) and most == 3,
+		picked == PackedInt32Array([0, 2, 4, 3]) and most == 4,
 		(
 			(
-				"it picks the %d covering the most of the view (the wall before the nearer slim"
-				+ " ones), not the one 2 m past it nor the field's (%s)"
+				"it picks the %d: the core's three (the field's one too) first, then the wall"
+				+ " covering the most of the view, not the one 2 m past it (%s)"
 			)
 			% [most, str(picked)]
 		)
 	)
 	bubble.update(_frame_at(eye), Vector3.ZERO, field, FRAME)
 	check(bubble.cut(0) == 1.0 and bubble.cut(3) == 1.0, "the first frame's cuts start open")
-	check(bubble.cut(2) == 0.0, "the building in the field is whole with the camera against it")
+	check(bubble.cut(2) == 1.0, "the field's building is cut with the camera inside it (the core)")
+	city[3].frame.remove(Vector3i.ZERO)
 	city[0].frame.remove(Vector3i.ZERO)
 	bubble.update(_frame_at(eye), Vector3.ZERO, field, FRAME)
+	check(bubble.cut(3) == 0.0, "a building outside the core that loses a chunk is whole at once")
+	check(bubble.cut(0) == 1.0, "one the camera is inside stays cut, damaged or not")
 	var step := FRAME / Num.f(Content.section("camera")["bubble_seconds"])
-	check(bubble.cut(0) == 0.0, "a building that loses a chunk is whole at once")
-	check(is_equal_approx(bubble.cut(5), step), "the next one in eases open (%.3f)" % bubble.cut(5))
 	var away := _frame_at(Vector3(0, 10, 400))
 	bubble.update(away, Vector3.ZERO, field, FRAME)
-	check(is_equal_approx(bubble.cut(3), 1.0 - step), "one the sphere leaves eases closed")
+	check(is_equal_approx(bubble.cut(0), 1.0 - step), "one the sphere leaves eases closed")
 	for _i: int in ceili(1.0 / step):
 		bubble.update(away, Vector3.ZERO, field, FRAME)
-	check(bubble.cut(3) == 0.0 and bubble.cut(5) == 0.0, "and is whole once closed")
+	check(bubble.cut(0) == 0.0 and bubble.cut(2) == 0.0, "and is whole once closed")
 
 
 ## The game camera's frame from `eye` looking at the kaiju at the origin.
