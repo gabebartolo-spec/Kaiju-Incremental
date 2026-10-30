@@ -27,6 +27,8 @@ var longest_hold := 0.0
 var snout := 0.0
 ## The dash button's leap (Dash): the body crouches, flies and lands on what is ahead.
 var dash: Dash
+## The swinging tail (TailTouch): it breaks what it touches, whatever its size.
+var tail: TailTouch
 ## Steps walked so far (0 at the first step; an integer is a footfall, even the left foot, odd the
 ## right): the sim's step clock, which the legs follow (ClipGait) and which opens the yaw slices.
 var phase := 0.0
@@ -76,6 +78,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	_walk_off_s = Num.f(cfg["walk_off_s"])  # a sim with no species body keeps the default
 	dash = Dash.new(self, cfg)
 	_volume = BodyVolume.new(sim, cfg)
+	tail = TailTouch.new(sim, cfg)
 
 
 ## Picks the body volume for a species at the sim's size tier (call after setting the species).
@@ -86,12 +89,14 @@ func use_species(species_id: String) -> void:
 	dash.use_species(species_id)
 	_discs = []
 	_volume.discs = _discs
+	tail.use_discs(_discs)
 	_stomp_foot = Vector2.ZERO  # a body without an entry stomps at kaiju_pos, never a stale foot
 	_stage = {}
 	if not stages.is_empty():
 		_stage = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
 		_discs = _stage["discs"]
 		_volume.discs = _discs
+		tail.use_discs(_discs)
 		snout = Num.f(_stage["snout"])
 		_step_len = Num.f(_stage.get("step_len", cfg["step_len"]))
 		_uturn_s = Num.f(_stage.get("uturn_s", 0.0))
@@ -329,11 +334,13 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	_volume.lift = dash.height()  # a leap's flight breaks what its body passes through
 	if not active() or (sim.airborne and not dash.on()):
 		_last_pos = Vector2(INF, INF)
+		tail.reset()
 		return
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
 	var from_heading := heading if _last_pos.x == INF else _last_heading
 	_volume.step_s = dt
 	broken += _volume.sweep(from, from_heading, sim.kaiju_pos, heading)
+	tail.step(dt, heading, _volume.lift)
 	held = not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
 	longest_hold = maxf(longest_hold, _hold_s)
