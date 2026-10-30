@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-342 · Director · Slow motion: the slowdown is too brief
+On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
+the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
+to him.
+
+## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
+On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
+(Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
+
 ## 2026-10-27 · D-340 · Director · One Godot window on the GPU at a time (rule replaced by D-376)
 His words (22:0x): "having 2 godot open is cooking the GPU, you gotta do a better jop managing it". Cause: the rules
 allowed up to 3 captures at once and up to 2 Godot processes per agent, and nothing counted windows PC-wide, so two

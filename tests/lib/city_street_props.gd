@@ -26,7 +26,8 @@ static func check(root: Node, check_fn: Callable) -> void:
 		"street props: their cells draw only when on"
 	)
 	var group: Dictionary = on._street.field._groups[0]
-	on.crush(group["at"], 0.5)
+	var at: Vector3 = group["at"]
+	on.crush(at, 0.5)
 	check_fn.call(group.get("crushed", false), "street props: a prop flattens when crushed")
 	on.get_parent().queue_free()
 	off.get_parent().queue_free()

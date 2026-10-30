@@ -394,12 +394,3 @@ On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog
 ## 2026-10-27 · D-343 · Director · The croc's first step from standing gets a keyed walk-start
 Asked how the young croc should start walking from a stand: "Key a walk-start (Recommended)": a Cascadeur
 stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before turn-skate B.
-
-## 2026-10-27 · D-342 · Director · Slow motion: the slowdown is too brief
-On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
-the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
-to him.
-
-## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
-On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
-(Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
