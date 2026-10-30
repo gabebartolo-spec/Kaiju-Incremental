@@ -90,10 +90,8 @@ func _check_mech_bombs() -> void:
 		"nothing lands before the warning is up"
 	)
 	var bomb := _first(_run(still, 0.4, "mech_bomb"), "mech_bomb")
-	check(
-		bomb.get("hit", false) == true and still.hp < hp,
-		"standing on the ring, the bomb hurts him (on)"
-	)
+	var bomb_hit: bool = bomb.get("hit", false)
+	check(bomb_hit and still.hp < hp, "standing on the ring, the bomb hurts him (on)")
 	var moved := _adult()
 	var walker := moved.army_units.taskforce.mechs.place(moved.kaiju_pos + Vector2(10.0, 0.0), -1)
 	walker.volley_cd = 0.0
@@ -101,10 +99,8 @@ func _check_mech_bombs() -> void:
 	moved.army_units.taskforce.mechs.bombs.resize(1)  # only the ring on his feet
 	moved.kaiju_pos += Vector2(0.0, 10.0)  # stepped clear of the ring on his feet
 	var miss := _first(_run(moved, 2.0, "mech_bomb"), "mech_bomb")
-	check(
-		not miss.is_empty() and miss.get("hit", true) == false,
-		"stepping off the ring dodges it (off)"
-	)
+	var miss_hit: bool = miss.get("hit", true)
+	check(not miss.is_empty() and not miss_hit, "stepping off the ring dodges it (off)")
 
 
 func _check_mech_stomp() -> void:
