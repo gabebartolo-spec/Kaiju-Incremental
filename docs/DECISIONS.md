@@ -396,7 +396,3 @@ stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before t
 On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
 the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
 to him.
-
-## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
-On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
-(Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
