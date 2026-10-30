@@ -38,6 +38,7 @@ var _park_trees: Array[Vector2] = []
 var _kerb := TreeSpots.new()  # the street trees' kerb spots (CityGreenery.kerb_spots)
 var _trees: CityTrees  # the park, plaza ring and diagonal trees
 var _beach: PropField  # the beachfront's umbrellas and courts (BeachProps), or null
+var _street: StreetProps  # the Tripo street props (D-266)
 
 
 ## Parked and moving car paints (city.car_colors), each light enough to read against the
@@ -53,6 +54,7 @@ static func car_colors() -> Array[Color]:
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	_rng = rng
+	_street = StreetProps.new(p_sim.city, rng.seed)
 	plan = CityGen.map(sim.city)
 	_half = CityGen.half_extent(sim.city)
 	_paints = car_colors().size()
@@ -103,12 +105,14 @@ func _ready() -> void:
 	add_child(_fx)
 	add_child(_props.leaf_field)
 	add_child(_props.bark_field)
-	add_child(LampPools.new(_lamp_spots))  # the lamps' pools on the ground, at night
 	_plant_beach()
 
 
-## The beach's umbrellas, loungers and courts (D-381), on their own PropField at the sand's height.
+## The street props' and the beach's own PropFields: the Tripo street props, the lamps' pools and
+## the beach's umbrellas, loungers and courts (D-381) at the sand's height.
 func _plant_beach() -> void:
+	add_child(_street.build(41))  # the Tripo street props (D-266) first, then the sand's
+	add_child(LampPools.new(_lamp_spots))  # the lamps' pools on the ground, at night
 	_beach = BeachProps.plant(self)
 	if _beach == null:
 		return
@@ -130,6 +134,7 @@ func _process(_delta: float) -> void:
 	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
 		var body := _kaiju.global_transform
 		_props.crush_box(body, _foot)
+		_street.field.crush_box(body, _foot)
 		if _beach != null:
 			_beach.crush_box(body, _foot)
 		var into := body.affine_inverse()
@@ -158,6 +163,7 @@ func _found_kaiju() -> bool:
 func crush(at: Vector3, radius: float) -> void:
 	if trampling:
 		_props.crush(at, radius)
+		_street.field.crush(at, radius)
 		if _beach != null:
 			_beach.crush(at, radius)
 	for lamp: PooledLight in _lamps.duplicate():
@@ -209,9 +215,9 @@ func _streets() -> void:
 		for end: int in [Num.i(street["from"]), Num.i(street["to"])]:
 			if not lit_nodes.has(end) and kind != CityGen.DIAGONAL:
 				lit_nodes[end] = true
-				var corner := nodes[end] + (dir + side) * (width * 0.5 + 0.7)
-				_lamp(corner, -(dir + side))
+				_light_crossing(nodes[end], dir + side, width)
 		_kerb_lamps(a, b, width)
+		_street.kerb(a, b, width, _pavement_free)
 
 
 ## One kerb's (-1 or 1) parked and stopped cars along the street a..b. `street` is [width,
@@ -230,16 +236,21 @@ func _park_kerb(kerb: float, a: Vector2, b: Vector2, street: Array) -> void:
 		t = length * 0.5
 	while t < length - CROSSING_CLEAR or is_equal_approx(t, length * 0.5):
 		var lane := width * 0.5 - 0.6
-		if _rng.randf() < Num.f(odds[2]):
+		var stopped := _rng.randf() < Num.f(odds[2])
+		if stopped:
 			lane = width * 0.25  # stopped in the traffic lane
 		var p := a + dir * t + side * kerb * lane
-		_try_car(p, along_x, playable, Num.f(odds[0] if playable else odds[1]))
+		_try_car(p, dir, street, stopped)
 		t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
 
 
-## A car at p in one of the paints, parked when the odds (`chance`) allow and it is off the
+## A car at p in one of the paints, parked when the street's odds allow and it is off the
 ## playable diagonal, in view, off the buildings and clear of the street trees.
-func _try_car(p: Vector2, along_x: bool, playable: bool, chance: float) -> void:
+func _try_car(p: Vector2, dir: Vector2, street: Array, stopped: bool) -> void:
+	var playable: bool = street[1]
+	var odds: Array = street[2]
+	var chance := Num.f(odds[0] if playable else odds[1])
+	var along_x := absf(dir.x) > 0.5
 	var color := "car%d" % _rng.randi_range(0, _paints - 1)
 	var on_diagonal := (
 		playable
@@ -252,7 +263,8 @@ func _try_car(p: Vector2, along_x: bool, playable: bool, chance: float) -> void:
 	var half := Vector2(CAR_HALF.y, CAR_HALF.x) if along_x else CAR_HALF
 	var body := Rect2(p - half, half * 2.0)
 	if _rng.randf() < chance and not on_diagonal and seen and _clear_of_trees(body):
-		_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: car(v, color, along_x))
+		if not _street.vehicle(p, dir, stopped):
+			_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: car(v, color, along_x))
 		cars.append(body)
 
 
@@ -282,7 +294,8 @@ func _lamp(p: Vector2, toward: Vector2) -> void:
 		return
 	var arm := Vector2i(roundi(signf(toward.x)), roundi(signf(toward.y)))
 	_lamp_spots.append(p)
-	_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _streetlight(v, arm))
+	if not _street.put(str(sim.city["street_props"]["lamps"]), p, _arm_face(toward)):
+		_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _streetlight(v, arm))
 	var light := PooledLight.new("lamp")
 	light.light_color = Color("ffd59a")
 	light.set_energy(Look.value("lamp_energy"))
@@ -290,6 +303,30 @@ func _lamp(p: Vector2, toward: Vector2) -> void:
 	light.position = Vector3(p.x + arm.x * 0.5, 2.4, p.y + arm.y * 0.5)
 	add_child(light)
 	_lamps.append(light)
+
+
+## A crossing's corner lamp, its arm toward the crossing, and a traffic light across from it.
+func _light_crossing(node: Vector2, corner: Vector2, width: float) -> void:
+	_lamp(node + corner * (width * 0.5 + 0.7), -corner)
+	var across := node - corner * (width * 0.5 + 0.7)
+	if not _on_building(across):
+		_street.put(str(sim.city["street_props"]["signals"]), across, _arm_face(corner))
+
+
+## The front a lamp or signal model faces so its arm (the model's -X) reaches toward `toward`.
+static func _arm_face(toward: Vector2) -> Vector2:
+	return Vector2(-toward.y, toward.x)
+
+
+## Whether a pavement prop may stand at p: in the city, off the buildings and water, `apart`
+## clear of every lamp and street tree.
+func _pavement_free(p: Vector2, apart: float) -> bool:
+	if not _inside(p) or _on_building(p) or _kerb.crowded(p, apart):
+		return false
+	for lamp: Vector2 in _lamp_spots:
+		if lamp.distance_to(p) < apart:
+			return false
+	return true
 
 
 ## The park, the plaza and the parking lots.

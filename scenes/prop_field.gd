@@ -54,7 +54,7 @@ func add(at: Vector3, shape: Callable, fells := false) -> void:
 	offset.y = 0
 	var before := vox.cells.size()
 	for cell: Vector3i in local.cells:
-		vox.put(cell + offset, local.key_at(cell))
+		_copy(local, cell, vox, cell + offset)
 	_groups.append(
 		{
 			"at": at,
@@ -104,7 +104,7 @@ func build(palette: Dictionary, salt: int, glow: float) -> Node3D:
 			var local: VoxelBuilder = _groups[n]["local"]
 			var offset: Vector3i = _groups[n]["offset"]
 			for cell: Vector3i in local.cells:
-				tile.put(cell + offset, local.key_at(cell))
+				_copy(local, cell, tile, cell + offset)
 		var mmi := tile.build(palette, voxel, glow, Vector3.ZERO)
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(mmi)
@@ -117,6 +117,15 @@ func build(palette: Dictionary, salt: int, glow: float) -> Node3D:
 		for n: int in members:
 			_index(_groups[n], index_of, tile, _tiles.size() - 1)
 	return holder
+
+
+## One cell from `from` into `to` at `at`: its palette key, or its own colour (a baked model's).
+static func _copy(from: VoxelBuilder, cell: Vector3i, to: VoxelBuilder, at: Vector3i) -> void:
+	var key := from.key_at(cell)
+	if key == VoxelBuilder.DIRECT:
+		to.put_color(at, from.colors[cell])
+	else:
+		to.put(at, key)
 
 
 func _index(group: Dictionary, index_of: Dictionary, tile: VoxelBuilder, at_tile: int) -> void:

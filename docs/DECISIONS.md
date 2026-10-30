@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-398 · Director · The 20 Tripo street props ship, at half the buildings' cube
+His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~19 cm)". Every prop is its baked
+`.kvox` (`tools/street_props/bake.sh`) at voxel 0.0625, half the buildings' 0.125: pavement furniture along every
+playable street, a traffic light at each lit crossing, the lamp model on every streetlight, Tripo cars among the
+parked and stopped ones (the decor's own car keeps the rest). All crushable. Tuning `city.street_props`. His
+1,500-credit Tripo consent (10-30) stays in reserve: this ships with 0 credits spent.
+
 ## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
 "Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
 rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
