@@ -20,6 +20,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_follow_keeps_distance")
 	await _t("_check_turns_behind")
+	await _t("_check_swing")
 	await _t("_check_head_room")
 	await _t("_check_damped")
 	await _t("_check_bubble")
@@ -62,6 +63,22 @@ func _check_turns_behind() -> void:
 	var eye := follow.eye()
 	check(eye.x < -offset.z * 0.99 and absf(eye.z) < 0.5, "on: the eye sits behind him, %s" % eye)
 	check(fixed.eye().z > offset.z * 0.99, "off: the fixed offset stays at his side")
+
+
+## D-259: a long swing stops at swing_deg off behind him; let go, it eases back behind him.
+## Without step_swing the eye never leaves behind him.
+func _check_swing() -> void:
+	var offset := Vector3(0, 16, 30)
+	var follow := CameraFollow.new(Vector3.ZERO, offset)
+	for _i: int in 120:
+		follow.step_swing(0.05, FRAME)
+	var limit := deg_to_rad(Num.f(Content.section("camera")["swing_deg"]))
+	check(is_equal_approx(follow.swing, limit), "on: the swing stops at its limit")
+	check(follow.eye().x > 1.0, "on: the eye has swung off behind him, %s" % follow.eye())
+	for _i: int in 600:
+		follow.step_swing(0.0, FRAME)
+	check(absf(follow.swing) < 0.01, "let go, it eases back behind him (%.3f)" % follow.swing)
+	check(CameraFollow.new(Vector3.ZERO, offset).eye().x == 0.0, "off: the eye stays behind him")
 
 
 ## An adult croc seen close from its front: without the tilt its highest drawn point is inside the

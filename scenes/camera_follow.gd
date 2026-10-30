@@ -14,7 +14,9 @@ extends RefCounted
 ## many frames, never in one (motion critic round 2). HeadFrame then tilts the aim up when the
 ## drawn head would ride into the frame's top margin. D-330: the offset is held in the camera's
 ## own frame and turned by `yaw`, which eases (camera.turn_follow /s) to sit behind his facing,
-## so the camera stays at his back and turns with him, as heavy as his turn. Presentation only.
+## so the camera stays at his back and turns with him, as heavy as his turn. D-259: the player
+## swings it (`swing`, up to camera.swing_deg either way) and it eases back behind him at
+## camera.swing_return /s once let go. Presentation only.
 
 ## How fast the offset catches up with its rest (1/s).
 const OFFSET_FOLLOW := 5.0
@@ -27,6 +29,8 @@ var lead := Vector3.ZERO
 ## The camera's turn round the body (radians about +y; 0 = the offset as tuned, behind a body
 ## facing -z).
 var yaw := 0.0
+## The player's swing off behind him (radians, within camera.swing_deg).
+var swing := 0.0
 ## The scale of the body framed (the acceleration cap grows with it), as of step_lead.
 var framed_scale := 1.0
 ## The head-room tilt (set on the first aim, for the kaiju it frames).
@@ -72,7 +76,7 @@ func step_lead(at: Vector3, body_scale: float, hold: bool, delta: float) -> void
 		if hold:
 			target = lead
 		elif _moving_for >= Num.f(_cfg["lead_hold"]):
-			var dir := v.normalized().rotated(Vector3.UP, -yaw)  # in the camera's frame
+			var dir := v.normalized().rotated(Vector3.UP, -yaw - swing)  # in the camera's frame
 			var toward := 1.0 + (Num.f(_cfg["lead_toward_camera"]) - 1.0) * maxf(0.0, dir.z)
 			target = dir * CameraTuning.lead(body_scale) * toward
 			target.z *= Num.f(_cfg["lead_depth_share"])
@@ -94,12 +98,33 @@ func step_yaw(facing: Vector2, delta: float, snap := false) -> void:
 	_yaw_set = true
 
 
+## Swings by `turn` radians (the player's look this frame); with none, eases back behind him.
+func step_swing(turn: float, delta: float) -> void:
+	var limit := deg_to_rad(Num.f(_cfg["swing_deg"]))
+	if turn != 0.0:
+		swing = clampf(swing + turn, -limit, limit)
+	else:
+		swing -= swing * minf(1.0, delta * Num.f(_cfg["swing_return"]))
+
+
+## The player's swing this frame (radians, + turns the camera to his left as seen from behind):
+## the right stick, or a mouse drag with any button held, the same keys as PhotoMode's look.
+static func player_turn(delta: float) -> float:
+	var cam: Dictionary = Content.section("camera")
+	var stick := Input.get_axis("photo_look_left", "photo_look_right")
+	var turn := -stick * deg_to_rad(Num.f(cam["swing_deg_per_s"])) * delta
+	if Input.get_mouse_button_mask() != 0:
+		var px := Input.get_last_mouse_velocity().x * delta
+		turn -= px * deg_to_rad(Num.f(cam["swing_mouse_deg_per_px"]))
+	return turn
+
+
 func eye() -> Vector3:
 	return focus + _turned(offset) + lead
 
 
 func _turned(v: Vector3) -> Vector3:
-	return v.rotated(Vector3.UP, yaw)
+	return v.rotated(Vector3.UP, yaw + swing)
 
 
 func look_at(body_scale: float) -> Vector3:
