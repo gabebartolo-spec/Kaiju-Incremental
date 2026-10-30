@@ -163,6 +163,7 @@ func _pool(mesh: Mesh, count: int, colored := false) -> MultiMesh:
 	mmi.multimesh = mm
 	if colored:
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.add_to_group("vfx_exempt")  # muzzle flashes and tracers are effects, not surfaces
 	add_child(mmi)
 	return mm
 
