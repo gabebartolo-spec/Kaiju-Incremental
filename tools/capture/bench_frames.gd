@@ -87,7 +87,9 @@ func _initialize() -> void:
 	if not NativeGuard.ok(self):
 		return
 	var defaults := Lib.DEFAULTS.duplicate()
-	defaults.merge({"shots": "", "frames": 3600, "warmup": 120, "out": "user://bench", "label": "run"})
+	defaults.merge(
+		{"shots": "", "frames": 3600, "warmup": 120, "out": "user://bench", "label": "run"}
+	)
 	_a = Kit.args(defaults)
 	if not Kit.window_ok():
 		quit(1)
