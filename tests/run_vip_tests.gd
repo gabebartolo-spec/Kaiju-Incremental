@@ -73,6 +73,8 @@ func _check_flight() -> void:
 	var lap_done := 0.0
 	var t := 0.0
 	var reached := 0.0
+	var start_gap := pad.distance_to(sim.kaiju_pos)
+	var nearest := INF
 	while sim.vip.flying() and t < 40.0:
 		sim.step(DT, Vector2.ZERO, false)
 		t += DT
@@ -82,6 +84,14 @@ func _check_flight() -> void:
 		if lap_done == 0.0 and sim.vip._turned >= TAU:
 			lap_done = t
 		reached = maxf(reached, sim.vip.altitude())
+		nearest = minf(nearest, sim.vip.pos.distance_to(sim.kaiju_pos))
+	check(
+		nearest >= start_gap - 0.5,
+		(
+			"its lap curls away, never toward the kaiju (nearest %.1f m, pad %.1f m)"
+			% [nearest, start_gap]
+		)
+	)
 	check(
 		absf(t - Num.f(vip["window_seconds"])) <= 3.0,
 		"it is gone about %.0f s after lift-off (%.1f s)" % [Num.f(vip["window_seconds"]), t]

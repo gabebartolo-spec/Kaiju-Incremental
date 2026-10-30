@@ -1329,6 +1329,7 @@
         "climb_seconds": {"$ref": "#/$defs/num"},
         "circle_radius": {"$ref": "#/$defs/num"},
         "circle_seconds": {"$ref": "#/$defs/num"},
+        "lap_jitter_deg": {"$ref": "#/$defs/num"},
         "window_seconds": {"$ref": "#/$defs/num"},
         "escape_cap": {"$ref": "#/$defs/num"},
         "exit_margin": {"$ref": "#/$defs/num"},
@@ -1385,7 +1386,7 @@
       },
       "required": [
         "window", "ranks", "payout", "hp_mult", "radius", "altitude", "pad_height", "pad_range",
-        "liftoff_seconds", "climb_seconds", "circle_radius", "circle_seconds", "window_seconds",
+        "liftoff_seconds", "climb_seconds", "circle_radius", "circle_seconds", "lap_jitter_deg", "window_seconds",
         "escape_cap", "exit_margin", "exit_spread_deg", "turn_limit", "accel", "throw_pass",
         "throw_ceiling", "rotor_pitch", "rotor_db", "headline_seconds", "killed_seconds",
         "slide_seconds", "headlines", "rotor_unit", "beacon", "look"
