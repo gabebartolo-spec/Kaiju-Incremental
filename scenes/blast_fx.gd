@@ -90,6 +90,8 @@ func on_event(event: Dictionary, focus: Vector3) -> bool:
 			_arm(Num.i(event["building"]), Num.f(event["fuse"]))
 		"explosion":
 			_explode(str(event["kind"]), event, focus)
+		"airstrike_bomb":
+			_bomb(event, focus)
 		"firework_burst":
 			_burst(_at(event))
 		"toxic_cloud":
@@ -194,6 +196,29 @@ func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	var trauma: Dictionary = _c("shake")["trauma"]
 	_add_kick(Num.f(trauma[kind]), at, focus)
 	_sound(kind, at)
+
+
+## A bomb from the time's-up jet run (FinalStrike): the barrels' blast on open ground, no site of
+## its own, so the burst is a radius-wide box on the street; trauma kind "airstrike".
+func _bomb(event: Dictionary, focus: Vector3) -> void:
+	drawn["airstrike"] = Num.i(drawn.get("airstrike", 0)) + 1
+	var radius := Num.f(event["radius"])
+	var at := _at(event)
+	var half := Vector3(radius, radius, radius) * 0.5
+	var high := at + Vector3(0, half.y, 0)
+	BlastParts.core(self, high, half, radius, _c("core"))
+	BlastParts.fireball(self, high, half, radius, _c("fireball"))
+	var reach := BlastShock.reach(radius * 2.0, radius, _c("shock"))
+	BlastShock.ground(_city.fx, at, reach, _c("shock"))
+	_city.blast_break.blew(at, reach)
+	var fire: Dictionary = _c("fire")
+	# In the bay the fire fizzles out at once (director 2026-10-31: no fire survives the water).
+	var wet := _sim.emerge.wet(Vector2(at.x, at.z))
+	var burn := Num.f(fire["water_seconds"]) if wet else Num.f(fire["seconds"])
+	_city.fire(at, Num.f(fire["size"]) * radius / 5.0, burn)
+	_flash(high, Color(str(_c("flash")["color"])), Num.f(_c("flash")["energy"]) * radius / 5.0)
+	_add_kick(Num.f(_c("shake")["trauma"]["airstrike"]), at, focus)
+	_sound("fuel_silo", at)
 
 
 ## The site's skin thrown out of its whole box, outward and up, in its own colours: the first

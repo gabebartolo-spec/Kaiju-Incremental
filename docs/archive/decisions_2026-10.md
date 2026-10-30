@@ -2,6 +2,19 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-352 · Director · Roof tanks: mostly white solar water heaters, some short wooden towers
+Changes D-348. On the wooden towers: "idk, the rooftanks look massive, and why are the brown"; "i prefer rooftanks like
+the attached image" (a white tank lying on its side on a metal frame above two dark solar panels; reference only,
+C:/kt/reference/roof_tank/); "i mean keep SOME of the wooden towers, but mix it up with the white ones". Picked "Mostly
+white (Recommended)": same spots and count, about 3 in 4 roofs a white heater, 1 in 4 a wooden tower; and "About 1.5
+storeys (Recommended)": a wooden tower is half today's height, so it sits on the roof instead of looming.
+
+## 2026-10-27 · D-351 · Director · Countable speed-run bars move to GitHub checks
+Speed runs need his PC to themselves (D-299), so tonight's queue is about 3.5 h. Asked how to clear that bottleneck:
+"Count on GitHub (Recommended)". Bars that can be counted on a pinned seed (draw calls, pieces, nodes) become GitHub
+checks that run any time and in parallel; only millisecond bars stay on his PC (builder bench-counts). Not picked: the
+card's own timer, renting cloud GPUs (no spend), a spare bench PC. Start time "[No preference]": runs start 01:00.
+
 ## 2026-10-27 · D-350 · Director · The camera bubble comes forward
 Asked about the dot fade still on main: "Bring the bubble forward". #238 resumes now, ahead of D-283's "after the
 render plan" timing and its place in D-310's order. Which buildings (22:50, replaces D-283's agent wording "between

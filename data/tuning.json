@@ -718,13 +718,13 @@
 	},
 	"blast_fx": {
 		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake.trauma: how hard each kind of blast kicks the camera (times 1 - distance/reach from the kaiju); kick = ONE kick of units x that, thrown up and away from the blast and easing out (squared) over kick.seconds, never a shake back and forth (clip critic round 6); no screen flash (director 2026-10-27: cut), no hit-stop and no screen-bending ripple any more. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay; every blast cracks once, crack_db over the mix with no distance fade (round 7: the third blast's crack barely cleared the bed), body and rumble sit tail_db under it. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; fireball.top_scale x reach_scale = how far the ball reaches (round 2, 7), speed_scale = start speed in radii/s (round 6: 2-3x the footprint), build_seconds = it spawns over that long (a few frames, not one), fireball = a sudden tall burst of Fire's own flames (Fire.FLAME_CUBE voxels at Fire.FLAME_SCALE, its ember shader at its own heat, its colours and ramp: a bigger blast is more flames, never bigger cubes): amount of them at blast radius 5, spawned over burst_seconds, living seconds, up on a spread (degrees) with gravity lift up like Fire's, speed_scale radii a second, damped to stop top_scale site heights up; fire = the real Fire left at the site afterwards (size x radius/5; seconds 0: it stays burning like any other until the fire cap puts the oldest out) which brings the game's own smoke (D-151, VFX lead 2026-10-23); shock.ring = the game's dust shockwave out to the blast's reach plus puffs Fx.dust round its rim; cloud = the chem gas as the game's soft smoke tinted shades, puff = its size range, shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
-		"shake": {"trauma": {"fuel_silo": 0.9, "fireworks_factory": 0.6, "chem_lab": 0.6}, "reach": 70.0},
+		"shake": {"trauma": {"fuel_silo": 0.9, "fireworks_factory": 0.6, "chem_lab": 0.6, "airstrike": 0.7}, "reach": 70.0},
 		"flash": {"energy": 14.0, "seconds": 0.3, "max_live": 3, "color": "ffb468", "chem_color": "b4ff8a"},
 		"core": {"amount": 50, "seconds": 0.15, "throw": 0.5, "size": 0.22, "full_radius": 5.0},
 		"kick": {"units": 1.6, "seconds": 0.15},
 		"site_rubble": 2.0,
 		"fireball": {"seconds": 2.0, "amount": 1100, "spread": 15.0, "burst_seconds": 0.3, "top_scale": 3.5, "speed_scale": 13.0, "lift": 2.5},
-		"fire": {"size": 2.0, "seconds": 0.0},
+		"fire": {"size": 2.0, "seconds": 0.0, "water_seconds": 0.6},
 		"shock": {
 			"ring": {"footprint_scale": 3.0, "puffs": 12, "puff_size": 2.5, "height": 0.3}},
 		"break": {"slices": 4, "window_frames": 3, "per_chunk": 8, "push": 3.2, "up": 3.0},
@@ -1857,6 +1857,8 @@
 		"hull_turn": 3.0,
 		"tank_beacon": {"_note": "A flashing amber beacon on every tank's turret roof whenever the street lamps are lit (director 2026-10-30: tanks cannot be seen at night): an emissive ball (bloom does the glow), size radius, energy emission strength, on for `on` of every `period` seconds, each tank on its own beat. Placeholders for the director.", "color": "ffa21a", "size": 0.2, "energy": 18.0, "period": 0.8, "on": 0.35},
 		"heli_height": 2.75,
+		"jet_height": 1.6,
+		"jet_spacing": 6.0,
 		"main_rotor_spin": 28.0,
 		"tail_rotor_spin": 45.0,
 		"heli_turn": 3.0,
@@ -1985,6 +1987,7 @@
 		"blast_s": 0.6,
 		"blast_damage": 600.0,
 		"blast_floors": 64,
+		"airstrike": {"_note": "Time's up (D-263, director 2026-10-31 \"Jet run\", FinalStrike): jets jets fly one run_length run across the screen through him in pass_s at altitude, dropping bombs bombs evenly over bomb_span centred on him, each landing fall_s after the lead jet passes its point: damage within radius on the bottom floors floors. His death starts death_after_s after the last bomb. Placeholders, flagged for tuning.", "jets": 3, "run_length": 400.0, "pass_s": 3.0, "altitude": 40.0, "bombs": 9, "bomb_span": 60.0, "fall_s": 0.6, "radius": 6.0, "damage": 300.0, "floors": 12, "death_after_s": 0.5},
 		"look": {"crackle": 2.2, "crackle_share": 0.18, "crackle_hz": 14.0, "stone": "8a8780", "stone_vary": 0.18, "stone_keep": 0.25, "light_energy": 6.0, "light_range": 18.0, "burst_light": 40.0, "burst_s": 0.5, "debris_max": 3000, "chunks": ["res://assets/death/chunk_0.obj", "res://assets/death/chunk_1.obj", "res://assets/death/chunk_2.obj", "res://assets/death/chunk_3.obj", "res://assets/death/chunk_4.obj", "res://assets/death/chunk_5.obj", "res://assets/death/chunk_6.obj", "res://assets/death/chunk_7.obj"], "debris_size": [0.8, 4.8], "shard_size": [0.6, 1.5], "size_skew": 2.0, "debris_spin": [2.0, 9.0], "trail": {"amount": 24, "life": 1.2, "size": 1.4, "rise": 0.6, "alpha": 0.35}, "debris_speed": [6.0, 18.0], "debris_up": [4.0, 14.0], "gravity": 30.0, "debris_s": 2.5, "shard_arc": 6.0, "crush_radius": 1.6, "burst_trauma": 0.8, "shard_trauma": 0.12}
 	},
 	"boats": {
