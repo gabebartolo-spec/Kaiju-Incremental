@@ -56,7 +56,7 @@ if printf '%s\n' "$changed" | grep -qvE '\.(md|gd|uid|py|sh|json|yml|cfg|txt|tsc
 	run tools/lint/check_lfs.sh bash tools/lint/check_lfs.sh
 fi
 # check_i18n reads the Chinese font, which stays an LFS pointer unless pulled (CI pulls it).
-if ! head -c 40 assets/fonts/kaiju_cjk.ttf | grep -q '^version https://git-lfs'; then run tools/lint/check_i18n.sh bash tools/lint/check_i18n.sh; fi
+run tools/lint/check_i18n.sh bash tools/lint/check_i18n.sh
 if printf '%s\n' "$changed" | grep -q '^tools/lint/'; then run "tools/lint/run_all.sh (tools/lint changed)" bash tools/lint/run_all.sh; fi
 
 if [ "${#failed[@]}" -gt 0 ]; then

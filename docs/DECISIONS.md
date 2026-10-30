@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-406 · Director · The demo ships in English only; only English is checked
+His words (10-31): "remove the chinese test checks, we only going to ship the demo with English", then "remove checks
+for all languages other than english". strings.py checks only the en column (CHECKED); check_i18n.sh no longer runs
+subset_cjk.py --check and lint.yml no longer fetches kaiju_cjk.ttf. The seven columns stay in the table.
+
 ## 2026-10-31 · D-405 · Director · Time's up is an AIRSTRIKE: a jet run of Tripo olive jets
 His words (10-31), on "killed by the final strike": "i hate the copy, all deaths are from the final strike technically
 so its just meaningless babble, change it". Picked headline "AIRSTRIKE", strike "Jet run" (D-263's railgun volley is
