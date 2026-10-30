@@ -7,7 +7,12 @@ const AT: Array[int] = [600, 1800, 2600]
 const TOP := 12
 
 
-static func at(root: Node, frame: int) -> void:
+## Census frames, and stills of the frames listed in --shots (--shots=1800,2600).
+static func at(root: Node, frame: int, args: Dictionary) -> void:
+	if str(frame) in str(args.get("shots", "")).split(",", false):
+		root.get_viewport().get_texture().get_image().save_png(
+			str(args["out"]).path_join("%s_f%d.png" % [args["label"], frame])
+		)
 	if frame in AT:
 		run(root, frame)
 
