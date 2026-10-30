@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-397 · Director · The kaiju gets his own hide grain
+Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
+(`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest
+space so it rides the bones; seeded). Numbers in `data/looks.json` `kaiju_hide_*`; `kaiju_hide_on` is the on/off
+switch the onelook check flips. The look itself is his call on the stills before it lands.
+
 ## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
 Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
 changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,
