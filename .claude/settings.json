@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/push_gate_hook.py\"",
+            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$d/tools/lint\" ] || d=\"$(git rev-parse --show-toplevel)\"; python \"$d/tools/lint/push_gate_hook.py\"",
             "timeout": 300
           }
         ]
@@ -76,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/roadmap_due_hook.py\" merged"
+            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$d/tools/lint\" ] || d=\"$(git rev-parse --show-toplevel)\"; python \"$d/tools/lint/roadmap_due_hook.py\" merged"
           }
         ]
       },
@@ -85,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/roadmap_due_hook.py\" updated"
+            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$d/tools/lint\" ] || d=\"$(git rev-parse --show-toplevel)\"; python \"$d/tools/lint/roadmap_due_hook.py\" updated"
           }
         ]
       }
@@ -95,7 +95,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/tools/lint/roadmap_due_hook.py\" stop"
+            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$d/tools/lint\" ] || d=\"$(git rev-parse --show-toplevel)\"; python \"$d/tools/lint/roadmap_due_hook.py\" stop"
           }
         ]
       }
