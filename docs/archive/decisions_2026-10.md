@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-347 · Director · Keyed Cascadeur moves come as the .casc, not a clip
+"rather than taking a clip of an animation itd be easier to just show me the casc file so i can inspect it"; scope
+"Keyed moves only (Recommended)". A keyed move reaches him as its .casc opened in a new tab of his Cascadeur
+(C:/kt/casc_view_template.py: never saved, no other tab touched). How a move plays in the game still comes as one
+~6 s game-camera clip.
+
 ## 2026-10-27 · D-346 · Director · The one-window GPU slot covers Godot only
 Asked whether Blender renders and bakes should also wait for the one GPU slot (D-340): "Godot only (Recommended)".
 Godot windows (clips, stills, captures, speed runs) take turns; Blender and other GPU jobs keep sharing the card by
