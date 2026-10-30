@@ -109,15 +109,12 @@ func _mesh(size: float) -> BoxMesh:
 	return out
 
 
-func _material(color: Color) -> StandardMaterial3D:
+func _material(color: Color) -> ShaderMaterial:
 	ThreadCheck.main_only("DebrisField._material")
 	var key := color.to_html(false)
 	if not _materials.has(key):
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = color
-		mat.roughness = 0.95
-		_materials[key] = mat
-	var out: StandardMaterial3D = _materials[key]
+		_materials[key] = Look.plain_detail_material(color, 0.0)  # flat surfaces P3
+	var out: ShaderMaterial = _materials[key]
 	return out
 
 
