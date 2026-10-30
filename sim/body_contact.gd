@@ -60,6 +60,7 @@ var _real_turn := false  # a turn begun at smooth_below or more is under way: it
 var _landing := false  # a real turn near its end keeps its slow landing, not a correction's pace
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
+var _walk_off_s := 0.0  # seconds a set-off from a stand ramps to full stride: the stage's own (D-355)
 var _uturn_s := 0.0  # seconds a stepped U-turn takes: the stage's own (D-187), 0 if smooth
 var _turn_steps := 0.0  # steps a stepped U-turn is made in: the stage's own
 var _turn_slow := 0.0  # the stride at an about-face (share of full): the stage's own
@@ -87,12 +88,14 @@ func use_species(species_id: String) -> void:
 	_volume.discs = _discs
 	_stomp_foot = Vector2.ZERO  # a body without an entry stomps at kaiju_pos, never a stale foot
 	_stage = {}
+	_walk_off_s = Num.f(cfg["walk_off_s"])
 	if not stages.is_empty():
 		_stage = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
 		_discs = _stage["discs"]
 		_volume.discs = _discs
 		snout = Num.f(_stage["snout"])
 		_step_len = Num.f(_stage.get("step_len", cfg["step_len"]))
+		_walk_off_s = Num.f(_stage.get("walk_off_s", cfg["walk_off_s"]))
 		_uturn_s = Num.f(_stage.get("uturn_s", 0.0))
 		_turn_steps = Num.f(_stage.get("turn_steps", 0.0))
 		_turn_slow = Num.f(_stage.get("turn_slow", cfg["turn_slow"]))
@@ -147,12 +150,13 @@ func steer(dt: float, want: Vector2) -> float:
 	var stepped := _steps_this_turn()
 	var slow_pow := Num.f(_stage.get("turn_slow_pow", 1.0))
 	var keep := lerpf(1.0, _turn_slow, pow(absf(turn_left) / PI, slow_pow if stepped else 1.0))
-	# Sets off at full pace at once, but ramped over walk_off_s, not one frame (the motion critic,
-	# 2026-10-22: "the walk start jumps to full speed"); after it the stride eases to the push.
+	# Sets off ramped over the stage's walk_off_s, not one frame (the motion critic, 2026-10-22: "the
+	# walk start jumps to full speed"); the grown croc eases in over ~1.3 s (D-355). After it the
+	# stride eases to the push.
 	_walked_s += dt
-	var launching := _walked_s < Num.f(cfg["walk_off_s"])
+	var launching := _walked_s < _walk_off_s
 	var ease := 1.0 if launching else minf(1.0, Num.f(cfg["stride_ease"]) * dt)
-	stride = minf(lerpf(stride, want.length() * keep, ease), stride + dt / Num.f(cfg["walk_off_s"]))
+	stride = minf(lerpf(stride, want.length() * keep, ease), stride + dt / _walk_off_s)
 	var pace := _pace(dt, stepped)  # (top turn speed, its acceleration)
 	var aim := signf(turn_left) * minf(pace.x, sqrt(2.0 * pace.y * absf(turn_left)))
 	_spin = move_toward(_spin, aim, pace.y * dt)

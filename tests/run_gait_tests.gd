@@ -27,6 +27,10 @@ const MAX_SLIDE := 1.0
 const FACE_DEG := 1.0
 const SNAP_DEG := 10.0
 const WALK_SHARE := 0.5
+## D-355: from a stand the grown croc reaches full stride in about WALK_OFF_S, evenly; the young
+## croc still sets off at once (well inside YOUNG_OFF_S).
+const WALK_OFF_S := 1.3
+const YOUNG_OFF_S := 0.3
 
 
 func suite_name() -> String:
@@ -37,6 +41,7 @@ func run_checks() -> void:
 	await _t("_check_hand_over")
 	await _t("_check_dash")
 	await _t("_check_straight")
+	await _t("_check_walk_start")
 	await _t("_check_u_turn")
 	await _t("_check_young_turn")
 	await _h("Leaks", func() -> void: await Leaks.check(check, root))
@@ -140,6 +145,39 @@ func _check_straight() -> void:
 			(
 				"%s: straight on, the croc walks %.2f units a second (the stage's speed %.2f)"
 				% [stage, speed, top]
+			)
+		)
+
+
+## D-355: the grown croc eases into his walk over about 1.3 s from a stand: under half his stride
+## at 0.6 s, full by 1.35 s and never sooner than 1.25 s; the young croc sets off at once.
+func _check_walk_start() -> void:
+	var forms := {"young": {}}
+	forms.merge(STAGES)
+	for stage: String in forms:
+		var sim := _croc(forms[stage])
+		sim.kaiju_pos = Vector2(0.0, 30.0)
+		for _n: int in 30:
+			sim.step(DT, Vector2.ZERO, false, 0)
+		var full_at := -1.0
+		var at_half := 0.0
+		for n: int in 120:
+			sim.step(DT, sim.facing, false, 0)
+			if n + 1 == 36:  # 0.6 s
+				at_half = sim.body.stride
+			if full_at < 0.0 and sim.body.stride >= 0.999:
+				full_at = float(n + 1) * DT
+		if stage == "young":
+			check(
+				full_at > 0.0 and full_at <= YOUNG_OFF_S,
+				"young: sets off at once, full stride at %.2f s (bar <= %.2f)" % [full_at, YOUNG_OFF_S]
+			)
+			continue
+		check(
+			absf(full_at - WALK_OFF_S) <= 0.05 and at_half < 0.5,
+			(
+				"%s: eases in, full stride at %.2f s (D-355 %.2f), %.2f of it at 0.6 s (bar < 0.5)"
+				% [stage, full_at, WALK_OFF_S, at_half]
 			)
 		)
 
