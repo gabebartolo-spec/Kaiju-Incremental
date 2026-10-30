@@ -112,6 +112,12 @@ func ground_at(p: Vector2) -> float:
 	return CityHarbour.floor_at(_plan, _city, p)
 
 
+## Whether p lies in the sea bay's water (CityHarbour.holds): once risen, the kaiju never walks
+## or lands there (director 2026-10-31: it walked on the water, cracking it).
+func wet(p: Vector2) -> bool:
+	return CityHarbour.holds(_plan, p)
+
+
 ## The sea's surface (world y) the kaiju rises through.
 func water_y() -> float:
 	return _sea

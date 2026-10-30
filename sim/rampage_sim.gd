@@ -295,7 +295,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
 	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
 		var speed := stat("speed") * powers.speed_mult() * stride
-		kaiju_pos = clamp_to_arena(kaiju_pos + body.heading * speed * dt)
+		kaiju_pos = ashore(kaiju_pos, clamp_to_arena(kaiju_pos + body.heading * speed * dt))
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
@@ -338,6 +338,15 @@ func end(reason: String, now := false) -> void:
 
 func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
+
+
+## A step from `from` to `to` kept out of the sea bay's water (Emergence.wet): into it, the step
+## slides along the shore on whichever axis stays dry, else it stands.
+func ashore(from: Vector2, to: Vector2) -> Vector2:
+	for p: Vector2 in [to, Vector2(to.x, from.y), Vector2(from.x, to.y)]:
+		if not emerge.wet(p):
+			return p
+	return from
 
 
 ## The tanks: the flung ones fly (TankFlight), then the army drives and fires the rest.

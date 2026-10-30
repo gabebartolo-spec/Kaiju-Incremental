@@ -21,6 +21,7 @@ func run_checks() -> void:
 	await _t("_check_low_roof")
 	await _t("_check_tall_side")
 	await _t("_check_nowhere_to_land")
+	await _t("_check_no_water")
 	await _t("_check_phases")
 	await _t("_check_ring_and_fling")
 	await _t("_check_cooldown_and_frost")
@@ -246,6 +247,58 @@ func _check_nowhere_to_land() -> void:
 			% sim.body.dash.dashes
 		)
 	)
+
+
+## Director 2026-10-31 ("sometimes the kaiju can walk on water, even leaving crack fissures"):
+## risen, it never walks or leaps into the sea bay's water (Emergence.wet); facing the bay from the
+## shore, a walk stops at the water's edge and a leap comes down on dry land.
+func _check_no_water() -> void:
+	var probe := _croc({}, [])
+	var shore := _shore(probe)
+	check(shore.size() == 2, "the arena has sea bay water by its shore (%s)" % [shore])
+	if shore.size() != 2:
+		return
+	var dry: Vector2 = shore[0]
+	var out: Vector2 = shore[1]
+	var walker := _facing(dry, out)
+	var wet := 0
+	for _n: int in roundi(4.0 / DT):
+		walker.step(DT, out, false, 0)
+		wet += int(walker.emerge.wet(walker.kaiju_pos))
+	check(wet == 0, "walking at the bay it never steps into the water (%d wet steps)" % wet)
+	var leaper := _facing(dry, out)
+	leaper.step(DT, Vector2.ZERO, false, BUTTON)
+	_finish(leaper)
+	check(
+		not leaper.emerge.wet(leaper.kaiju_pos),
+		"a leap out over the bay lands on dry land (%s)" % [leaper.kaiju_pos]
+	)
+
+
+## A dry spot in the arena a step from the sea bay's water and the way out to it ([] with none).
+func _shore(sim: RampageSim) -> Array:
+	var step := 2.0
+	var x := -sim.arena_half
+	while x <= sim.arena_half:
+		var z := -sim.arena_half
+		while z <= sim.arena_half:
+			var p := Vector2(x, z)
+			if not sim.emerge.wet(p):
+				for out: Vector2 in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+					if sim.emerge.wet(p + out * step) and sim.emerge.wet(p + out * step * 4.0):
+						return [p, out]
+			z += step
+		x += step
+	return []
+
+
+## A croc on open ground at `at`, facing `out`.
+func _facing(at: Vector2, out: Vector2) -> RampageSim:
+	var sim := _croc({}, [])
+	sim.kaiju_pos = at
+	sim.facing = out
+	sim.body.heading = out
+	return sim
 
 
 ## With nothing standing ahead in reach, the leap flies its full reach along the facing.

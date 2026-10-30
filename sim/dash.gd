@@ -173,8 +173,8 @@ func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 		var b := sim.buildings[best]
 		land = Vector2(b.x, b.z)
 		roof = float(b.height)
-	var to := sim.clamp_to_arena(land - ahead * body.feet_ahead())
 	var step := Num.f(cfg["landing_step"])
+	var to := _dry(sim.clamp_to_arena(land - ahead * body.feet_ahead()), at, step)
 	var side := false
 	if best >= 0 and (_dwarfs(best) or _in_tower(to, ahead, roof)):
 		roof = 0.0
@@ -186,6 +186,14 @@ func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 		while to != at and _feet_in(best, to, ahead):
 			to = to.move_toward(at, step)
 	return {"building": best, "to": to, "roof": roof, "side": side}
+
+
+## `to` pulled back toward `at` by `step` until it is out of the sea bay's water (Emergence.wet): a
+## leap never lands in the bay, only short of it on dry land.
+func _dry(to: Vector2, at: Vector2, step: float) -> Vector2:
+	while to != at and sim.emerge.wet(to):
+		to = to.move_toward(at, step)
+	return to
 
 
 ## The highest roof a leap lands on (world units above the street): the shoulder of the body at
