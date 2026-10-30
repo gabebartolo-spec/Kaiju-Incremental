@@ -1834,7 +1834,7 @@
 		"cars": 36,
 		"drive_speed": 3.5,
 		"flee_speed": 7.0,
-		"car_gap": 1.9,
+		"car_gap": 1.9, "jam_wreck_s": 2.5, "jam_queue_s": 20.0,
 		"blockade_interval": 9.0,
 		"blockade_distance": 20.0,
 		"max_blockades": 2,
