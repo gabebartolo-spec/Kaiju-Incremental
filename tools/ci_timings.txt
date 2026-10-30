@@ -5,7 +5,7 @@
 shards 5
 lanes 3
 split streamview 10
-split flow 4
+split flow 6
 load 535
 sim 322
 city 321
