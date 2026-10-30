@@ -388,8 +388,7 @@ func _place_camera(delta: float) -> void:
 	_follow.step(
 		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
 	)
-	_follow.step_yaw(sim.facing, delta)  # D-330: turns to stay behind him
-	_follow.step_swing(0.0 if sim.emerge.active else CameraFollow.player_turn(delta), delta)  # D-259
+	_follow.turn_with(sim.facing, 0.0 if sim.emerge.active else CameraFollow.player_turn(delta), delta)
 	var hold := sim.body.dash.on() or _ability.leaping() or sim.emerge.active  # rise: no lead
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	var nod := shake.turn(sim.body_scale(), motion).y

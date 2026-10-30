@@ -98,6 +98,12 @@ func step_yaw(facing: Vector2, delta: float, snap := false) -> void:
 	_yaw_set = true
 
 
+## D-330 and D-259 in one step: behind a body facing `facing`, swung by the player's `turn`.
+func turn_with(facing: Vector2, turn: float, delta: float) -> void:
+	step_yaw(facing, delta)
+	step_swing(turn, delta)
+
+
 ## Swings by `turn` radians (the player's look this frame); with none, eases back behind him.
 func step_swing(turn: float, delta: float) -> void:
 	var limit := deg_to_rad(Num.f(_cfg["swing_deg"]))
