@@ -56,4 +56,5 @@ static func police(palette: Dictionary) -> Array[ArrayMesh]:
 static func _bake(v: VoxelBuilder, palette: Dictionary) -> ArrayMesh:
 	# Car cells span z -3..2: shift half a cell so the car's middle sits on its position.
 	var voxel := CityDecor.PROP_VOXEL
+	v.detail = true  # the city's surface family (flat surfaces P3)
 	return v.bake(palette, voxel, Vector3(0, 0, voxel * 0.5), LIGHT_GLOW)

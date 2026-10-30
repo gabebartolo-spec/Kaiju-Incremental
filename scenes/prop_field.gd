@@ -98,6 +98,7 @@ func build(palette: Dictionary, salt: int, glow: float) -> Node3D:
 	for key: Vector2i in by_tile:
 		var tile := VoxelBuilder.new()
 		tile.salt = salt
+		tile.detail = true  # the city's surface family (flat surfaces P3)
 		var members: Array = by_tile[key]
 		for n: int in members:
 			var local: VoxelBuilder = _groups[n]["local"]

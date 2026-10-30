@@ -98,6 +98,18 @@ for v in me.vertices:
             W[v.index, NAMES.index(n)] += q.weight
 W = W[keep]
 assert (W.sum(1) > 0).all(), "unweighted skin vertex"
+# --- D-374 corrective helper joints (Behemoth, croc-young-casc 10-30), as croc_adult3_export.py: weighted after the bones
+# (.skinw index len(NAMES) + k); rows keyed by rig vertex index (flaps in), so they map through keep
+HP = Path(__file__).with_name(f"{STEM}_helpers.json")
+HELPERS = json.loads(HP.read_text(encoding="utf-8")) if HP.exists() else {"helpers": [], "verts": {}}
+COLS = NAMES + [h["name"] for h in HELPERS["helpers"]]
+W = np.c_[W, np.zeros((len(W), len(HELPERS["helpers"])))]
+new_of = {int(o): n for n, o in enumerate(keep)}
+for o, row in HELPERS["verts"].items():
+    n = new_of[int(o)]; W[n] = 0.0
+    for b, w in row.items():
+        W[n, COLS.index(b)] = w
+print("HELPERS", len(HELPERS["helpers"]), "rows", len(HELPERS["verts"]))
 top_i = np.argsort(-W, axis=1)[:, :4]
 top = np.take_along_axis(W, top_i, axis=1)
 top /= np.maximum(1e-9, top.sum(1, keepdims=True))
@@ -105,11 +117,13 @@ idx = top_i.astype(np.uint8); idx[top <= 0] = 255; top[top <= 0] = 0
 rec = np.zeros(n0, dtype=[("p", "<f4", 3), ("b", "u1", 4), ("w", "<f4", 4)])
 rec["p"], rec["b"], rec["w"] = G.astype(np.float32), idx, top.astype(np.float32)
 with open(OUT / f"{STEM}.skinw", "wb") as f:
-    f.write(b"KSKW" + np.array([1, n0], "<u4").tobytes() + np.array([len(NAMES)], "<u2").tobytes())
+    f.write(b"KSKW" + np.array([1, n0], "<u4").tobytes() + np.array([len(COLS)], "<u2").tobytes())
     f.write(rec.tobytes())
 doc = json.loads(SRC.with_suffix(".skin.json").read_text(encoding="utf-8"))
 doc.update({"source": f"{STEM} (croc-young-casc rig: the adult r12 joints + eyelids)", "bones": bones,
             "vertex_count": int(n0), "weights_file": f"{STEM}.skinw", "lid_flaps": LID_FLAPS[STAGE]})
+if HELPERS["helpers"]:
+    doc["helpers"] = HELPERS["helpers"]
 (OUT / f"{STEM}.skin.json").write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
 print(f"EXPORT {STEM}: {len(NAMES)} bones -> {len(set(b['game'] for b in bones))} game bones, max infl "
       f"{int((top > 0).sum(1).max())}, weight change from the rig {np.abs(top.sum(1) - 1).max():.1e}")

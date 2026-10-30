@@ -137,7 +137,10 @@ func _check_upgrade_screen() -> void:
 		await process_frame
 		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)
-		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])
+		check(
+			Sfx.ui_played == ["tree_buy"],
+			"a purchase plays the tree buy (D-396): %s" % [Sfx.ui_played]
+		)
 		check(  # level 1 at the species' price (cost_mult, D-167)
 			tree.level("claws") == 1 and screen.rubble == left,
 			"pressing Sharpened Claws buys it at its price (rubble %d)" % screen.rubble
