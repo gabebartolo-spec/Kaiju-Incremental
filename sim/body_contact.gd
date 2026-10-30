@@ -322,7 +322,7 @@ func walked(distance: float, dt: float) -> void:
 			footfall_now = true
 
 
-## Carries a leap (dash_pressed: this step's button), faces the body to sim.facing, breaks what it hit.
+## Carries a leap (dash_pressed: this step's button), faces sim.facing, breaks what it hit.
 func step(dt: float, dash_pressed: bool = false) -> void:
 	dash.step(dt, dash_pressed)
 	_face(dt)
