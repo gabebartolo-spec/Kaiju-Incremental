@@ -1464,13 +1464,59 @@
           "required": ["radius", "wall_range"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "gas": {
+          "type": "object",
+          "properties": {
+            "share_by_tier": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "cooldown": {"$ref": "#/$defs/num"},
+            "first_charge": {"$ref": "#/$defs/num"},
+            "range": {"$ref": "#/$defs/num"},
+            "flight_s": {"$ref": "#/$defs/num"},
+            "seconds": {"$ref": "#/$defs/num"},
+            "streets": {"$ref": "#/$defs/num"},
+            "hold": {"$ref": "#/$defs/num"}
+          },
+          "required": ["share_by_tier", "cooldown", "first_charge", "range", "flight_s", "seconds", "streets", "hold"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
+        "mechs": {
+          "type": "object",
+          "properties": {
+            "max_by_tier": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "first_delay": {"$ref": "#/$defs/num"},
+            "start_interval": {"$ref": "#/$defs/num"},
+            "min_interval": {"$ref": "#/$defs/num"},
+            "escalation_per_chunk": {"$ref": "#/$defs/num"},
+            "speed": {"$ref": "#/$defs/num"},
+            "standoff": {"$ref": "#/$defs/num"},
+            "range": {"$ref": "#/$defs/num"},
+            "volley_cooldown": {"$ref": "#/$defs/num"},
+            "first_charge": {"$ref": "#/$defs/num"},
+            "bombs": {"$ref": "#/$defs/num"},
+            "spread": {"$ref": "#/$defs/num"},
+            "warn": {"$ref": "#/$defs/num"},
+            "bomb_radius": {"$ref": "#/$defs/num"},
+            "bomb_share": {"$ref": "#/$defs/num"},
+            "bomb_damage": {"$ref": "#/$defs/num"},
+            "bomb_floors": {"$ref": "#/$defs/num"},
+            "radius": {"$ref": "#/$defs/num"},
+            "death_radius": {"$ref": "#/$defs/num"},
+            "death_damage": {"$ref": "#/$defs/num"},
+            "death_floors": {"$ref": "#/$defs/num"},
+            "rubble_share": {"$ref": "#/$defs/num"}
+          },
+          "required": ["max_by_tier", "first_delay", "start_interval", "min_interval", "escalation_per_chunk", "speed", "standoff", "range", "volley_cooldown", "first_charge", "bombs", "spread", "warn", "bomb_radius", "bomb_share", "bomb_damage", "bomb_floors", "radius", "death_radius", "death_damage", "death_floors", "rubble_share"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
         "max_by_tier", "first_arrival", "hover_seconds", "min_flight_s", "start_interval",
         "min_interval", "escalation_per_chunk", "squad_size", "squad_spacing", "edge_inset",
         "jet_speed", "jet_height", "hop_speed_share", "hop_arc", "perch_min_height", "perch_range",
-        "perch_seconds", "perch_tries", "perch_fallback", "rubble_share", "railgun", "frost",
+        "perch_seconds", "perch_tries", "perch_fallback", "rubble_share", "railgun", "frost", "gas", "mechs",
         "swat"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -4280,13 +4326,19 @@
         "head_rise_s": {"$ref": "#/$defs/num"},
         "head_settle_s": {"$ref": "#/$defs/num"},
         "follow_s": {"$ref": "#/$defs/num"},
-        "follow_accel": {"$ref": "#/$defs/num"}
+        "follow_accel": {"$ref": "#/$defs/num"},
+        "turn_follow": {"$ref": "#/$defs/num"},
+        "swing_deg": {"$ref": "#/$defs/num"},
+        "swing_return": {"$ref": "#/$defs/num"},
+        "swing_deg_per_s": {"$ref": "#/$defs/num"},
+        "swing_mouse_deg_per_px": {"$ref": "#/$defs/num"}
       },
       "required": [
         "offset", "fov", "zoom_base", "zoom_per_scale", "lead_base", "lead_per_scale", "lead_hold",
         "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_radius",
         "bubble_max", "bubble_seconds", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
-        "follow_s", "follow_accel"
+        "follow_s", "follow_accel", "turn_follow",
+        "swing_deg", "swing_return", "swing_deg_per_s", "swing_mouse_deg_per_px"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

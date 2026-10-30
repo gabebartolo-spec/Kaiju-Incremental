@@ -240,7 +240,7 @@
 		"end_title": "THANKS FOR PLAYING",
 		"end_line": "Nothing is left to evolve",
 		"feedback_url": "https://veniceissinking.itch.io/kaiju",
-		"military_keys": ["tanks", "helis", "rooftops", "agents"],
+		"military_keys": ["tanks", "helis", "rooftops", "agents", "mechs"],
 		"endless": {
 			"start_share": 0.25,
 			"share_per_second": 0.004,
@@ -603,7 +603,11 @@
 		"rubble_share": 1.0,
 		"railgun": {"aim_seconds": 2.0, "lock_seconds_by_stage": [0.6, 0.75, 1.0], "share": 0.08, "cooldown": 12.0, "first_charge": 0.5, "range": 45.0, "hit_radius": 1.5, "hop_after": 0.8, "squad_gap": 0.6},
 		"frost": {"cooldown": 10.0, "first_charge": 0.5, "range": 38.0, "flight_s": 1.2, "radius": 1.5, "seconds": 4.0, "slow_mult": 0.5},
-		"swat": {"radius": 0.8, "wall_range": 30.0}
+		"swat": {"radius": 0.8, "wall_range": 30.0},
+		"_gas": "Gas soldiers (TaskforceGas; D-143, D-145, D-152). share_by_tier = the chance each arriving agent is a gas soldier per size tier (young, adolescent, adult: adult city only, D-143); a gas soldier throws gas in place of frost on its own cooldown (first_charge as frost), range, flight_s. The cloud: seconds 8 and about one street wide (D-152), streets = its width in the city's street widths; while the kaiju stands in it his specials (signature, ultimate, a running Thunder Beam) are locked, the dash and physical attacks are not, and it does no damage (D-145); hold = how far from ready it keeps the specials each step. PLACEHOLDER except seconds and streets.",
+		"gas": {"share_by_tier": [0.0, 0.0, 0.3], "cooldown": 12.0, "first_charge": 0.5, "range": 38.0, "flight_s": 1.2, "seconds": 8.0, "streets": 1.0, "hold": 0.1},
+		"_mechs": "Walking mechs (TaskforceMechs; D-143, D-145, D-152), adult city only: max_by_tier alive at once per size tier (3-4 at a time, D-143); the first first_delay seconds after the Taskforce joins a rampage, then every start_interval less escalation_per_chunk x chunks destroyed (never under min_interval). They walk the tanks' roads at speed and stop standoff from the kaiju; within range a volley every volley_cooldown (first_charge as the agents'): bombs electric-blue target rings, one on his feet and the rest within spread of him, landing warn 1.5 s later (D-143); a ring that still holds him (bomb_radius) costs bomb_share of max health, and every bomb breaks the city (bomb_damage to bomb_floors floors, D-145). radius = its body for the kaiju's blows: any blow that reaches it kills it (one stomp or swipe, D-152), so does a toppled tower; it blows up (death_radius, death_damage, death_floors, D-145) and pays rubble_share of a tank. PLACEHOLDER except max_by_tier and warn.",
+		"mechs": {"max_by_tier": [0, 0, 4], "first_delay": 10.0, "start_interval": 14.0, "min_interval": 6.0, "escalation_per_chunk": 0.002, "speed": 3.0, "standoff": 16.0, "range": 30.0, "volley_cooldown": 7.0, "first_charge": 0.5, "bombs": 3, "spread": 4.0, "warn": 1.5, "bomb_radius": 2.0, "bomb_share": 0.03, "bomb_damage": 40.0, "bomb_floors": 3, "radius": 1.0, "death_radius": 3.0, "death_damage": 60.0, "death_floors": 3, "rubble_share": 1.5}
 	},
 	"army": {
 		"convoy": {
@@ -1417,7 +1421,7 @@
 		"dip": 0.05, "dip_attack": 0.04, "dip_s": 0.2,
 		"kick_deg": 0.8, "crack_fade_s": 0.12
 	},
-	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "bubble_radius": 17.0, "bubble_max": 3, "bubble_seconds": 0.1, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead_base": 1.93, "lead_per_scale": 1.97, "lead_hold": 0.3, "lead_ease": 1.75, "lead_toward_camera": 1.3, "lead_moving": 0.5, "lead_depth_share": 0.0, "bubble_radius": 17.0, "bubble_max": 3, "bubble_seconds": 0.1, "safe_top": 0.12, "safe_centre": 0.6, "head_rise_s": 0.06, "head_settle_s": 0.6, "follow_s": 0.3, "follow_accel": 400.0, "turn_follow": 1.2, "swing_deg": 60.0, "swing_return": 1.5, "swing_deg_per_s": 120.0, "swing_mouse_deg_per_px": 0.25},
 	"slowmo": {
 		"_note": "LandmarkSlowmo (D-259: slow motion \"Only when a landmark falls\"; the VIP kill and the end beat have none, D-243): when the sim reports landmark_felled the world slows to scale for hold_s real seconds, then eases back to normal speed over ease_s; a second fall while it plays restarts the clock, never stacks. Presentation only: the sim still steps whole ticks, just fewer a second. The scale is the director's (\"looks good\"); the length follows D-342 (director 2026-10-27 on the first clip, hold 0.5 s + ease 0.25 s: \"the slowdown is too brief\"), now 1.5 s held + 0.5 s eased. The director tunes these at playtest.",
 		"scale": 0.35,

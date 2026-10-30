@@ -60,7 +60,7 @@ func _compare(levels: Dictionary, tier: int, label: String) -> void:
 	check(game == rampage._camera, "%s: Kit.game_camera is the rampage's own camera" % label)
 	var rig := Camera3D.new()
 	root.add_child(rig)
-	Kit.place_game_camera(rig, rampage._kaiju, rampage.sim.body_scale())
+	Kit.place_game_camera(rig, rampage._kaiju, rampage.sim.body_scale(), rampage.sim.facing)
 	var moved := rig.global_position.distance_to(game.global_position)
 	var turned := rad_to_deg((-rig.global_basis.z).angle_to(-game.global_basis.z))
 	var fov := absf(rig.fov - game.fov)

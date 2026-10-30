@@ -5,7 +5,8 @@ extends RefCounted
 ## MeshInstance3D and MultiMeshInstance3D surface and its override material, and fails
 ##   - a StandardMaterial3D with no albedo texture and no detail texture;
 ##   - a missing material (the engine's flat white);
-##   - a ShaderMaterial whose shader neither samples a texture nor includes surface_detail.
+##   - a ShaderMaterial whose shader neither samples a texture nor includes surface_detail (or, for
+##     the kaiju, his own hide grain: D-398).
 ## Visual-effect families (fire, smoke, rain, particles, sky, light shafts, UI) are exempt by node
 ## group (EXEMPT_GROUP) or by being a GPU/CPU particle or a node under a Control.
 ##
@@ -16,38 +17,21 @@ extends RefCounted
 
 const ChunkCheck := preload("res://tests/lib/chunk_check.gd")
 const DETAIL_INCLUDE := "surface_detail.gdshaderinc"
+## The kaiju's own hide grain (D-398): counts as textured like the city's surface family.
+const HIDE_INCLUDE := "hide_grain.gdshaderinc"
 ## Physics frames his death may take to reach the burst (about 3.2 s in data at 60 fps, with room).
 const DEATH_FRAMES := 600
 ## Nodes in this group are visual effects, exempt from the rule.
 const EXEMPT_GROUP := "vfx_exempt"
 
-## Types still flat, by phase. P2 rooftops (flat black stripe, window panels); P3 trees,
+## Types still flat, by phase (P2 rooftops and building faces done 2026-10-30); P3 trees,
 ## lamps, cars, people, gondolas; the sky belongs to the atmosphere lead. Delete lines as they are
 ## fixed; never add one. One row per entry (surface, owner, phase, next step) in docs/ROADMAP.md,
 ## "Flat surfaces programme".
 ## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
 ## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
-const KNOWN_FLAT_MAX := 14
-const KNOWN_FLAT: Dictionary = {
-	# P0 (this phase; each is deleted when its surface is textured)
-	"CitySkyline:std": "P3 lamp heads (glow)",
-	"CitySkyline:shader:facade.gdshader": "P2 far towers and roof gear, P3 lattice tower",
-	# facade_far.gdshader's twin with the engine fog (FarHaze, city far_fog on; comment #37)
-	"CitySkyline:shader:facade_far_fogged.gdshader": "P2 far towers, P3 lattice tower",
-	# P2 rooftops and building faces
-	"BuildingStream:shader:facade.gdshader": "P2 building faces",
-	"BuildingView:shader:voxel.gdshader": "P2 building faces",
-	"RooftopView:std": "P2 rooftops",
-	# P3 trees, lamps, props, cars, people, aircraft, crowds, debris, the kaiju
-	"Aircraft:std": "P3 aircraft",
-	"DebrisField:std": "P3 debris chunks",
-	"StadiumMatch:std": "P3 stadium",
-	"StadiumCrowd:shader:crowd.gdshader": "P3 crowd",
-	"ArenaEdge:std": "P3 arena bollards",
-	"KaijuRig:shader:voxel.gdshader": "P3 the kaiju's own skin pipeline",
-	"VoxelSkin:shader:voxel_skin.gdshader": "P3 the kaiju's own skin pipeline",
-	"VoxelSkin:shader:voxel_skin_fill.gdshader": "P3 the kaiju's own skin pipeline",
-}
+const KNOWN_FLAT_MAX := 0
+const KNOWN_FLAT: Dictionary = {}
 ## Effect families exempt by owner class (their nodes carry no group; VFX never reads as a
 ## surface): fire and smoke keepers, shockwaves, the breath beam, the claw sweep, the aim wedge, the
 ## flash of a shot landing on the hide (HideHit, under a tenth of a second).
@@ -139,7 +123,7 @@ static func _flat_kind(m: Material) -> String:
 		if shader == null:
 			return "shader:none"
 		var code := _with_includes(shader.code)
-		if code.contains(DETAIL_INCLUDE) or _samples_texture(code):
+		if code.contains(DETAIL_INCLUDE) or code.contains(HIDE_INCLUDE) or _samples_texture(code):
 			return ""
 		return "shader:" + shader.resource_path.get_file()
 	return ""  # a procedural or other special material: not a flat colour block

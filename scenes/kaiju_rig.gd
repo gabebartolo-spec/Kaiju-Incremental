@@ -159,6 +159,7 @@ func attach_voxels(
 	part.inset = inset
 	var head: Vector3 = _head[bone_name]
 	var mmi := part.build({}, _voxel, _glow, -head)
+	(mmi.multimesh.mesh as PrimitiveMesh).material = Look.hide_material(_voxel, _glow)
 	mmi.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 	var holder: Node3D = under if under != null else bone(bone_name)
 	holder.add_child(mmi)

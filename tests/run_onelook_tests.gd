@@ -26,6 +26,7 @@ func run_checks() -> void:
 	await _t("_check_wet_is_last")
 	await _t("_check_train_detail")
 	await _t("_check_baked_detail")
+	await _t("_check_hide_grain")
 	await _h("FlatSurfaces", func() -> void: await FlatSurfaces.run(self, check))
 	await _h("NightClip", func() -> void: await NightClip.run(self, check))
 
@@ -331,3 +332,41 @@ func _check_baked_detail() -> void:
 	var plain_mesh := off.bake({"x": Color.WHITE}, voxel, Vector3.ZERO, 0.0)
 	var plain := plain_mesh.surface_get_material(0) as ShaderMaterial
 	check(plain.shader == Look.VOXEL_SHADER, "a bake without detail keeps the plain voxel material")
+
+
+## D-398: the kaiju draws his own hide grain (hide_grain.gdshaderinc) on his cubes, his filler and
+## his rig's bone voxels; kaiju_hide_on false leaves the hide flat (crevices, tone and flecks 0).
+func _check_hide_grain() -> void:
+	Content.set_time("dusk")
+	var look := Content.look()
+	var saved: Variant = look.get("kaiju_hide_on")
+	var voxel := 0.5
+	var skin := VoxelSkin.new()
+	var tune: Dictionary = Content.section("fx")["hide_hit"]
+	for on: bool in [true, false]:
+		look["kaiju_hide_on"] = on
+		var mats: Array[ShaderMaterial] = [
+			skin._cube_material(voxel, tune), Look.hide_material(voxel, 1.5)
+		]
+		var fill := ShaderMaterial.new()
+		fill.shader = VoxelSkinFill.FILL_SHADER
+		Look.hide_grain(fill, voxel)
+		mats.append(fill)
+		for mat: ShaderMaterial in mats:
+			var file := mat.shader.resource_path.get_file()
+			var code := mat.shader.code
+			check(code.contains(FlatSurfaces.HIDE_INCLUDE), "%s includes the hide grain" % file)
+			var cell: float = mat.get_shader_parameter("hide_cell")
+			var crevice: float = mat.get_shader_parameter("hide_crevice")
+			var tone: float = mat.get_shader_parameter("hide_tone")
+			var want := Look.value("kaiju_hide_crevice") if on else 0.0
+			check(
+				is_equal_approx(cell, voxel * Look.value("kaiju_hide_cell_voxels")),
+				"%s scutes are kaiju_hide_cell_voxels of a voxel wide" % file
+			)
+			check(
+				is_equal_approx(crevice, want) and (tone > 0.0) == on,
+				"%s hide grain %s: crevice %.2f tone %.2f" % [file, on, crevice, tone]
+			)
+	look["kaiju_hide_on"] = saved
+	skin.free()
