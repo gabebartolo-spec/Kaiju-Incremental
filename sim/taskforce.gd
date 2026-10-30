@@ -10,10 +10,12 @@ extends RefCounted
 ## squad and a squad lands at most 2 hits in a second (D-166). It also launches frost grenades at
 ## the kaiju's feet (TaskforceFrost). An agent dies when the roof chunk it clings to goes (broken,
 ## dropped or toppled) or when a claw swipe swats it out of the air mid-hop; each kill pays
-## biomass. Part of Army; pure and seeded from its own stream; numbers in data/tuning.json
-## "taskforce".
+## biomass. In the adult city some agents are gas soldiers, who throw gas (TaskforceGas) in place
+## of frost, and walking mechs come up the roads (TaskforceMechs). Part of Army; pure and seeded
+## from its own stream; numbers in data/tuning.json "taskforce".
 ## Presentation reads the agents and the events (taskforce_deployed, railgun_aim, railgun_locked,
-## railgun_hit, railgun_missed, frost_launched, frost_hit, frost_cracked, agent_died).
+## railgun_hit, railgun_missed, frost_launched, frost_hit, frost_cracked, agent_died; the gas and
+## mech events are in their own files).
 
 const ARRIVE := 0  # jetpacking in from the map edge
 const HOP := 1  # grappling and jetting to another roof
@@ -24,6 +26,7 @@ const AIM := 3  # on a roof chunk: the railgun's aiming line is up
 class Agent:
 	var id: int
 	var squad: int
+	var gas := false  # a gas soldier: throws gas, not frost
 	var state := ARRIVE
 	var pos := Vector2.ZERO  # on the ground plane (x, z)
 	var y := 0.0  # its height above the ground
@@ -50,6 +53,8 @@ var cfg: Dictionary
 var frost: TaskforceFrost
 var perch: TaskforcePerch
 var volley: TaskforceVolley
+var gas: TaskforceGas
+var mechs: TaskforceMechs
 var agents: Array[Agent] = []
 ## Agents killed this run, and each squad's size as it arrived.
 var kills := 0
@@ -73,6 +78,10 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	perch = TaskforcePerch.new(sim, cfg, rng)
 	var rail: Dictionary = cfg["railgun"]
 	volley = TaskforceVolley.new(sim, rail)
+	var gas_cfg: Dictionary = cfg["gas"]
+	gas = TaskforceGas.new(sim, gas_cfg)
+	var mech_cfg: Dictionary = cfg["mechs"]
+	mechs = TaskforceMechs.new(sim, mech_cfg, Seeds.derive(rng, 0x3EC4))
 
 
 ## How many may be alive at once: none in the young city, the same from the adolescent city on.
@@ -94,12 +103,15 @@ func city_seconds() -> float:
 
 func step(dt: float) -> void:
 	played += dt if cap() > 0 else 0.0
-	if cap() > 0 and carried >= Num.f(_first()["city_seconds"]):
+	var open := cap() > 0 and carried >= Num.f(_first()["city_seconds"])
+	if open:
 		_timer -= dt
 		if _timer <= 0.0 and cap() - agents.size() >= _squad_min():
 			_timer = interval()
 			spawn_squad()
 	frost.step(dt)
+	gas.step(dt)
+	mechs.step(dt, open)
 	_cool_down(dt)
 	volley.tick(dt, agents)
 	var fallen: Array[Agent] = []
@@ -136,6 +148,7 @@ func spawn_squad() -> void:
 	for n: int in size:
 		var at := edge + along * (n - (size - 1) * 0.5)
 		var agent := _new_agent(squad, at, Num.f(cfg["jet_height"]))
+		agent.gas = _rng.randf() < _gas_share()
 		_hop_to(agent, ARRIVE, Num.f(cfg["jet_speed"]))
 	if squad == 0:
 		sim.events.append({"type": "taskforce_deployed", "x": edge.x, "z": edge.y, "agents": size})
@@ -278,11 +291,26 @@ func _perched(agent: Agent, dt: float) -> void:
 	if volley.ready(agent, dt) and dist <= Num.f(_rail()["range"]):
 		if not volley.busy(agent.squad):  # else it holds until its squad's volley is over (D-178)
 			volley.open(agent, agents, dt)
-	elif agent.frost_cd <= 0.0 and frost.reaches(dist):
-		agent.frost_cd = Num.f(frost.cfg["cooldown"])
-		frost.launch(agent.id, agent.muzzle())
+	elif agent.frost_cd <= 0.0 and _throws(agent, dist):
+		if agent.gas:
+			agent.frost_cd = Num.f(gas.cfg["cooldown"])
+			gas.launch(agent.id, agent.muzzle())
+		else:
+			agent.frost_cd = Num.f(frost.cfg["cooldown"])
+			frost.launch(agent.id, agent.muzzle())
 	elif agent.wait <= 0.0:
 		_hop_to(agent, HOP, Num.f(cfg["jet_speed"]) * Num.f(cfg["hop_speed_share"]))
+
+
+## Whether the agent's grenade (gas or frost) reaches the kaiju `dist` away.
+func _throws(agent: Agent, dist: float) -> bool:
+	return gas.reaches(dist) if agent.gas else frost.reaches(dist)
+
+
+## The share of a squad's agents that are gas soldiers in this city (none before the adult city).
+func _gas_share() -> float:
+	var by_tier: Array = gas.cfg["share_by_tier"]
+	return Num.f(by_tier[clampi(sim.size_tier() - 1, 0, by_tier.size() - 1)])
 
 
 ## What a kill pays: `rubble_share` of a tank's biomass in this city (D-152: about a tank's worth).

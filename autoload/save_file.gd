@@ -27,6 +27,7 @@ const BEST_KEYS: Array[String] = [
 	"tanks",
 	"helis",
 	"agents",
+	"mechs",
 ]
 
 ## The rampage ends that count as the kaiju's death: killed, time's up (D-263) and End rampage
