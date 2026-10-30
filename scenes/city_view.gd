@@ -232,6 +232,13 @@ func fall_land(event: Dictionary) -> void:
 	_falls.land(event)
 
 
+## A foot came down: its dust, and the rubble under it pressed flatter (D-245).
+func footfall(at: Vector3, dust: float, body_scale: float) -> void:
+	fx.footfall(at + Vector3(0, 0.2, 0), dust)
+	var street := Content.section("street")
+	_ruins.press(at, Num.f(street["rubble_press"]) * body_scale, Num.f(street["rubble_keep"]))
+
+
 ## The ruins of the rampage (ToppleFx builds its rubble strips through it).
 func ruins() -> RuinYard:
 	return _ruins

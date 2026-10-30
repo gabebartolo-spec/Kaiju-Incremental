@@ -5639,6 +5639,8 @@
         "car_gap": {"$ref": "#/$defs/num"},
         "jam_wreck_s": {"$ref": "#/$defs/num"},
         "jam_queue_s": {"$ref": "#/$defs/num"},
+        "rubble_press": {"$ref": "#/$defs/num"},
+        "rubble_keep": {"$ref": "#/$defs/num"},
         "blockade_interval": {"$ref": "#/$defs/num"},
         "blockade_distance": {"$ref": "#/$defs/num"},
         "max_blockades": {"$ref": "#/$defs/num"},
@@ -5653,7 +5655,7 @@
       "required": [
         "person_voxel", "walk_speed", "run_speed", "panic_radius", "calm_radius", "stomp_catch",
         "fall_spill", "panic_per_scale", "panic_gawk", "cars", "drive_speed", "flee_speed",
-        "car_gap", "jam_wreck_s", "jam_queue_s", "blockade_interval", "blockade_distance", "max_blockades", "cops_per_blockade",
+        "car_gap", "jam_wreck_s", "jam_queue_s", "rubble_press", "rubble_keep", "blockade_interval", "blockade_distance", "max_blockades", "cops_per_blockade",
         "cop_hold_radius", "cop_fire_interval", "max_police_cars", "far_radius", "far_every",
         "view_margin"
       ],

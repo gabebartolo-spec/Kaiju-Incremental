@@ -56,6 +56,35 @@ func _add(mmi: MultiMeshInstance3D, ready := Callable()) -> void:
 		ready.call(mmi)
 
 
+## A foot came down at `at` (world): every rubble voxel within radius of it (flat, in xz) is
+## pressed toward the ground to keep only the share `keep` of its height and thickness, for good
+## (DESIGN: his feet crunch rubble flatter, D-245). Heaps, strips and chunks alike.
+func press(at: Vector3, radius: float, keep: float) -> void:
+	for child: Node in get_children():
+		var mmi := child as MultiMeshInstance3D
+		if mmi == null or mmi.multimesh == null:
+			continue
+		var mm := mmi.multimesh
+		var local := mmi.to_local(at)
+		var reach := radius / maxf(mmi.global_basis.get_scale().x, 0.001)
+		var box := mm.get_aabb().grow(reach)
+		if not box.has_point(Vector3(local.x, box.position.y, local.z)):
+			continue
+		var stride := VoxelBuilder.DETAIL_STRIDE if mm.use_custom_data else VoxelBuilder.STRIDE
+		var buf := mm.buffer
+		var pressed := false
+		for o in range(0, buf.size(), stride):
+			var dx := buf[o + 3] - local.x
+			var dz := buf[o + 11] - local.z
+			if dx * dx + dz * dz > reach * reach or buf[o + 7] <= local.y:
+				continue
+			buf[o + 7] = local.y + (buf[o + 7] - local.y) * keep
+			buf[o + 5] *= keep
+			pressed = true
+		if pressed:
+			mm.buffer = buf
+
+
 ## Never leave the scene while a ruin is still being built on another thread.
 func _exit_tree() -> void:
 	for task: int in _tasks:
