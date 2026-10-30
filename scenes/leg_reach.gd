@@ -76,6 +76,9 @@ func reach(gait: BipedGait, i: int, toe: Vector3, yaw_fix: float) -> void:
 		_rig.set_world_basis(leg.names[2], foot_basis)
 		return
 	var hip := _rig.bone(leg.names[0]).global_position
+	var peel := _toe_off(hip, toe, ankle, REACH_MAX * (leg.l1 + leg.l2) * s)
+	ankle = toe + peel * (ankle - toe)
+	foot_basis = Basis(peel) * foot_basis
 	var knee_now := _rig.bone(leg.names[1]).global_position
 	var rest := _rig.global_transform.basis.orthonormalized() * _rest_pole[i]
 	var pole := knee_now - (hip + ankle_now) * 0.5 + rest * POLE_REST * (leg.l1 + leg.l2) * s
@@ -83,3 +86,24 @@ func reach(gait: BipedGait, i: int, toe: Vector3, yaw_fix: float) -> void:
 	_rig.aim(leg.names[0], hip, knee)
 	_rig.aim(leg.names[1], knee, ankle)
 	_rig.set_world_basis(leg.names[2], foot_basis)
+
+
+## The turn about the toe that brings an ankle out of reach (further than `most` from the hip) back
+## in: the heel peels up and the toe stays on its spot, as a trailing foot does at toe-off. The tall
+## walk (r13f) keys the trailing leg straight, and once the body had sunk all it may (SINK_MAX) the
+## toe was dragged off its lock instead (drift 0.26 on setting off). Identity when in reach.
+static func _toe_off(hip: Vector3, toe: Vector3, ankle: Vector3, most: float) -> Quaternion:
+	var foot := ankle - toe
+	var to_hip := hip - toe
+	var f := foot.length()
+	var d := to_hip.length()
+	if (ankle - hip).length() <= most or f < 0.0001 or d < 0.0001:
+		return Quaternion.IDENTITY
+	var axis := foot.cross(to_hip)
+	if axis.length() < 0.0001:
+		return Quaternion.IDENTITY
+	# The ankle's angle off the toe->hip line at which it is `most` from the hip (0 when even that
+	# is too far: the foot points straight at the hip).
+	var cos_want := clampf((f * f + d * d - most * most) / (2.0 * f * d), -1.0, 1.0)
+	var turn := foot.angle_to(to_hip) - acos(cos_want)
+	return Quaternion(axis.normalized(), maxf(turn, 0.0))

@@ -16,6 +16,8 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
   entry carries "layer": true, the hit frame (the claw crosses the snout line, where the sim's rake lands) and the
   trail's first and last frames (the streak, D-243), given as keyed frames from <first> and stored as clip frames.
   The mirrored rake is appended too (rake_r <-> rake_l).
+- move: a one-shot that travels and turns as keyed (walk start, leap, slam stop, walking turns): the pelvis's flat travel
+  from the first frame (root, per frame) and its heading (yaw) are taken out of the pose, so the sim moves the body.
 A foot is planted while its toe tip is within PLANT_UP of its rest height and moves under PLANT_SLIDE to the next frame
 (world): from the keyed contact until the toe tip peels off (the walk's stance, as the game locks the toe tip).
 r12 (D-307): every rig tail joint is its own game bone (croc_adult3_export.py), so the clips carry the tail tip's own
@@ -35,11 +37,13 @@ from mathutils import Matrix, Quaternion, Vector as V
 
 a = sys.argv[sys.argv.index("--") + 1:]
 OUT, NAME, FIRST, N, MODE = Path(a[0]), a[1], int(a[2]), int(a[3]), a[4]
-assert MODE in ("still", "walk", "turn", "layer"), MODE
+assert MODE in ("still", "walk", "turn", "layer", "move"), MODE
 MARKS = [float(x) for x in a[5:8]]  # layer: hit, trail from, trail to (keyed frames from FIRST)
 assert MODE != "layer" or len(MARKS) == 3, "layer needs <hit> <trail from> <trail to>"
 KEYED_FPS = 30
-PLANT_UP = 0.1  # m (100 m model): toe tip height over its rest height that still counts as down
+# m (100 m model): toe tip height over its rest height that still counts as down. The tall3 walk (r13f) rolls the
+# trailing toe up to 0.69 m off before the other foot lands, so 0.1 left 7 frames a step with no foot down.
+PLANT_UP = 0.75
 PLANT_SLIDE = 0.5  # m a keyed frame: a planted toe tip holds still (the peel moves it 0.25, a swing metres)
 BASE_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
               "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [f"tail{i}" for i in range(9)] + ["jaw"]
@@ -203,7 +207,10 @@ for i in range(M):
         slide = (raw[i + 2][2][s] - raw[i + 1][2][s]).xz.length
         planted.append(up < PLANT_UP and slide < PLANT_SLIDE * STEP)
     root = travel * (i / M)
-    yaw = heading(world["spine0"]) - yaw0 if MODE == "turn" else 0.0
+    if MODE == "move":  # the keyed travel itself, flat, from the clip's first frame
+        root = pelvis - raw[1][1]
+        root.y = 0.0
+    yaw = heading(world["spine0"]) - yaw0 if MODE in ("turn", "move") else 0.0
     yaw = math.atan2(math.sin(yaw), math.cos(yaw))
     inv = Quaternion((0.0, 1.0, 0.0), -yaw)
     quats = []
@@ -421,6 +428,8 @@ for name, recs in clips:
     body += pack(recs)
 if MODE == "walk":
     header["stride_m"] = round(travel.length / cycles, 4)
+if MODE == "move":
+    travel = frames[-1][5]
 hb = json.dumps(header, separators=(",", ":")).encode()
 OUT.write_bytes(b"KCLP" + struct.pack("<II", 1, len(hb)) + hb + bytes(body))
 print(f"CLIP {NAME} ({MODE}) {M} frames at {header['fps']} fps from keyed {FIRST}..{FIRST + N - 1}; rest heads vs "
