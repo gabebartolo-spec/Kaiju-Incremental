@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-354 · Director · Creature animation runs alongside the parked work
+Asked for a plan to finish the render plan and the debt list ("make a plan to finish the render plan, debt fixes"). Asked
+whether the Cascadeur animation row (debt row 21, 31 of 40 moves to key) holds back the parked work (roads, wider city,
+river intro, D-310): picked "Run alongside (Recommended)". The parked queue opens once every other debt row is merged;
+the keyer and rigger keep keying the whole time. Plan: C:/Users/DANTE/.claude/plans/dapper-percolating-lake.md.
+
 ## 2026-10-27 · D-353 · Director · Team: the Cascadeur keyer plus 4 builders
 Replaces D-296. Asked "be honest, would this actually be any slower if we did it with just you and no subagents? maybe 1
 subagent for CI and thats it?". Lead's numbers: 85 merges on 10-27 (no builder limit) against 29 and 33 the two days

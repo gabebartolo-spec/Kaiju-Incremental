@@ -42,4 +42,6 @@ func on_event(event: Dictionary) -> void:
 func update(kaiju: KaijuModel) -> void:
 	var dash := _rampage.sim.body.dash
 	if dash.on():
-		kaiju.leap(dash.phase(), dash.phase_t())
+		var settle := dash.phase_seconds("settle")
+		var share := settle / maxf(0.001, settle + dash.phase_seconds("recover"))
+		kaiju.leap(dash.phase(), dash.phase_t(), share)

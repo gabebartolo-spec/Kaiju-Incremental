@@ -14,6 +14,9 @@ extends RefCounted
 ## A catch step: its seconds, and its lift in hip heights.
 const RESTEP_SECONDS := 0.25
 const RESTEP_LIFT := 0.06
+## The stomps keyed in Cascadeur (r13f), left foot and right: a gait with them plays one standing
+## (its own lift, plant and body dip) instead of lifting the foot here.
+const KEYED: Array[String] = ["stomp_l", "stomp_r"]
 ## A stomp's weight as a footfall at the smallest body (an adult's is 1).
 const WEIGHT_MIN := 0.4
 ## The weight settling as he stops walking: the body sinks SETTLE_DIP hip heights over SETTLE_IN
@@ -30,6 +33,7 @@ var lifted := -1
 var _span: Array[float] = [RESTEP_SECONDS, RESTEP_SECONDS]
 var _lift: Array[float] = [1.0, 1.0]  # this step's share of the full stomp lift
 var _stomping: Array[bool] = [false, false]
+var _keyed: Array[bool] = [false, false]  # a keyed stomp's foot, still to land
 var _next := 0  # the foot that stomps next
 var _count := 0  # stomps begun, the hash's input
 var _since := INF  # seconds since a stomp landed (the body's dip)
@@ -39,6 +43,21 @@ var _cfg := Content.section("clip_stomp")
 
 func catching(i: int) -> bool:
 	return left[i] > 0.0
+
+
+## A keyed stomp's foot is still to land (its clip holds until then).
+func pending() -> bool:
+	return _keyed[0] or _keyed[1]
+
+
+## The clip in `state` plays to its end: a roar, or a keyed stomp whose foot is still to land.
+func holds(state: String) -> bool:
+	return state == "roar" or (KEYED.has(state) and pending())
+
+
+## Standing, `state` gives way to the idle: a landed keyed stomp's tail only once `done`.
+func leaves(state: String, done: bool) -> bool:
+	return state != "idle" and (done or not KEYED.has(state))
 
 
 ## He stops walking: the body's weight settles (dip()).
@@ -52,25 +71,30 @@ func restep(i: int) -> void:
 
 
 ## A sim stomp: standing, the next foot in turn lifts. A stomp already in the air delivers this one
-## too, and a foot busy with a catch step is skipped.
-func stomp(standing: bool) -> void:
+## too, and a foot busy with a catch step is skipped. With the keyed stomps (`keyed`) the foot is
+## left to its clip, returned for the gait to play; else "".
+func stomp(standing: bool, keyed: bool) -> String:
 	lifted = -1
 	if not standing:
-		return
+		return ""
 	for i: int in 2:
-		if _stomping[i] and left[i] > 0.0:
-			return
+		if (_stomping[i] and left[i] > 0.0) or _keyed[i]:
+			return ""
 	for turn: int in 2:
 		var i := (_next + turn) % 2
 		if left[i] <= 0.0:
 			_next = 1 - i
 			_count += 1
+			lifted = i
+			if keyed:
+				_keyed[i] = true
+				return KEYED[i]
 			var vary := Num.f(_cfg["vary"])
 			_start(
 				i, Num.f(_cfg["seconds"]) * (1.0 + vary * _hashed(0)), 1.0 + vary * _hashed(1), true
 			)
-			lifted = i
-			return
+			return ""
+	return ""
 
 
 ## The sim names the foot that stomps next ("left" or "right"; anything else leaves it be).
@@ -102,14 +126,16 @@ func rise(i: int, k: float) -> float:
 ## at body scale s, BipedGait's, and it starts the body's dip), and the step is over.
 func landing(i: int, plain: float, s: float) -> float:
 	var weight := plain
-	if _stomping[i]:
+	if _stomping[i] or _keyed[i]:
 		weight = clampf(sqrt(s / BipedGait.ADULT_SCALE), WEIGHT_MIN, 1.0)
-		_since = 0.0
+		_since = 0.0 if _stomping[i] else _since  # a keyed stomp dips the body itself
 	_stomping[i] = false
+	_keyed[i] = false
 	return weight
 
 
-## Foot i is not coming down now (the clip has it in the air): a stomp that was waiting is over.
+## Foot i is not coming down now (the clip has it in the air): a stomp that was waiting is over (a
+## keyed one is in the air on its clip).
 func forget(i: int) -> void:
 	_stomping[i] = false
 
