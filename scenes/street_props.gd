@@ -9,12 +9,10 @@ extends RefCounted
 
 const DIR := "res://assets/street_props/%s.kvox"
 
-## Parsed models per id (the first pose's cells): every city shares one read.
-static var _models: Dictionary = {}
-
 var field: PropField
 var placed: Dictionary = {}  # id -> how many stand in this city (tests, the report)
 var _cfg: Dictionary
+var _models: Dictionary = {}  # parsed models per id (the first pose's cells): one read a city
 var _rng := RandomNumberGenerator.new()
 var _spots: Array[Vector2] = []  # every placed prop's base (spacing)
 
@@ -26,7 +24,7 @@ func _init(city: Dictionary, decor_seed: int) -> void:
 
 
 ## A prop's cells (prop-local, front to -Z), or null when its .kvox is missing.
-static func model(id: String) -> VoxelBuilder:
+func model(id: String) -> VoxelBuilder:
 	if not _models.has(id):
 		var read := Kvox.read(DIR % id)
 		_models[id] = read.frames[0] if not read.frames.is_empty() else null
