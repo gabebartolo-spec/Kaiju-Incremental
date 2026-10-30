@@ -10,15 +10,16 @@ extends RefCounted
 ## broken pieces, rubble, vehicles and the kaiju draw whole and may hide him ("its ok to obscure
 ## the kaiju, its not ok to block the camera", D-326; vehicles D-290). No screen door anywhere.
 ##
-## The sphere's far edge stays the field's radius short of the kaiju on the ground: while the
-## camera is nearer than bubble_radius plus that, the radius shrinks to fit. A building's cut opens
-## from the camera outward over camera.bubble_seconds and closes back when the sphere leaves it
-## (the run's first frame starts open); one the field reaches or the kaiju damages is whole at
-## once. The core (director 2026-10-30: "sometimes a building still blocks the camera"): whatever
-## standing building comes within camera.bubble_core of the camera is cut at once, damaged or in
-## the field or not, before any other; the sphere never shrinks below the core. The shaders read the global `bubble_radius`, each building its own `bubble_cut`. Only the
-## buildings whose footprint meets the square round the camera are tested (a grid of footprints,
-## built once: the walls never move). Presentation only.
+## The sphere's far edge stays the field's radius short of the kaiju on the ground: while the camera
+## is nearer than bubble_radius plus that, the radius shrinks to fit. A building's cut opens from
+## the camera outward over camera.bubble_seconds and closes back when the sphere leaves it (the
+## run's first frame starts open); one the field reaches or the kaiju damages is whole at once. The
+## core (director 2026-10-30: "sometimes a building still blocks the camera"): whatever standing
+## building comes within camera.bubble_core of the camera is cut at once, damaged or in the field or
+## not, before any other; the sphere never shrinks below the core. The shaders read the global
+## `bubble_radius`, each building its own `bubble_cut`. Only the buildings whose footprint meets the
+## square round the camera are tested (a grid of footprints, built once: the walls never move).
+## Presentation only.
 
 ## Side of a grid cell of the footprint index (metres).
 const CELL := 32.0

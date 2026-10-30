@@ -231,10 +231,10 @@ func _check_bubble_picks() -> void:
 	var step := FRAME / Num.f(Content.section("camera")["bubble_seconds"])
 	var away := _frame_at(Vector3(0, 10, 400))
 	bubble.update(away, Vector3.ZERO, field, FRAME)
-	check(is_equal_approx(bubble.cut(0), 1.0 - step), "one the sphere leaves eases closed")
+	check(is_equal_approx(bubble.cut(4), 1.0 - step), "one the sphere leaves eases closed")
 	for _i: int in ceili(1.0 / step):
 		bubble.update(away, Vector3.ZERO, field, FRAME)
-	check(bubble.cut(0) == 0.0 and bubble.cut(2) == 0.0, "and is whole once closed")
+	check(bubble.cut(4) == 0.0 and bubble.cut(0) == 0.0, "and is whole once closed")
 
 
 ## The game camera's frame from `eye` looking at the kaiju at the origin.
