@@ -97,28 +97,27 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 	var per_bone := _split_by_bone(vox)
 	for i: int in defs.size():
 		var d: Dictionary = defs[i]
-		var bone_name := str(d["name"])
-		var parent_name := str(d["parent"]) if d["parent"] != null else ""
-		var node := Node3D.new()
-		node.name = bone_name
-		var head: Vector3 = heads[bone_name]
-		var parent_head: Vector3 = heads.get(parent_name, Vector3.ZERO)
-		node.position = head - parent_head
-		_bones[bone_name] = node
-		_rest[bone_name] = node.transform
-		_head[bone_name] = head
-		_parent[bone_name] = parent_name
-		bone_close[bone_name] = Num.f(d.get("close", 0.0))
-		bone_snarl[bone_name] = d.get("snarl", false) == true
-		_dir[bone_name] = _vec(d["tail"]) * voxel - head
-		if per_bone.has(i):
-			_voxels[bone_name] = per_bone[i]
+		_add_bone(d, heads, per_bone.get(i))
 	# Parented once every bone exists: a rig.json lists bones added later (the croc's collar
 	# bones) after the bones they carry (rig_from_skin.py extra_order), so it is not parents first.
 	for bone_name: String in _parent:
 		var parent: Node3D = _bones.get(_parent[bone_name], self)
 		var child: Node3D = _bones[bone_name]
 		parent.add_child(child)
+	_skin(vox, voxel)
+	_relax_arms()
+	chains = RigChains.collect(defs)
+	match body_plan:
+		"hexapod":
+			gait = HexapodGait.new(self)
+		"radial":
+			gait = RadialGait.new(self)
+		_:
+			gait = ClipGait.or_biped(self, spec.get("clips"))
+
+
+## Each bone's voxels and the joint bands over its overlaps; the rig's height in world units.
+func _skin(vox: VoxelBuilder, voxel: float) -> void:
 	var bands := RigJoints.overlap(self)
 	for bone_name: String in _voxels:
 		var part: VoxelBuilder = _voxels[bone_name]
@@ -127,15 +126,26 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		var band: VoxelBuilder = bands[bone_name]
 		attach_voxels(bone_name, band, null, JOINT_INSET)
 	height_units = vox.height_hint * voxel if vox.height_hint > 0 else 10.0
-	_relax_arms()
-	_collect_chains(defs)
-	match body_plan:
-		"hexapod":
-			gait = HexapodGait.new(self)
-		"radial":
-			gait = RadialGait.new(self)
-		_:
-			gait = ClipGait.or_biped(self, spec.get("clips"))
+
+
+## One bone of rig.json `d` (heads: every bone's head, rig units), with its voxels when it has any.
+func _add_bone(d: Dictionary, heads: Dictionary, part: Variant) -> void:
+	var bone_name := str(d["name"])
+	var parent_name := str(d["parent"]) if d["parent"] != null else ""
+	var node := Node3D.new()
+	node.name = bone_name
+	var head: Vector3 = heads[bone_name]
+	var parent_head: Vector3 = heads.get(parent_name, Vector3.ZERO)
+	node.position = head - parent_head
+	_bones[bone_name] = node
+	_rest[bone_name] = node.transform
+	_head[bone_name] = head
+	_parent[bone_name] = parent_name
+	bone_close[bone_name] = Num.f(d.get("close", 0.0))
+	bone_snarl[bone_name] = d.get("snarl", false) == true
+	_dir[bone_name] = _vec(d["tail"]) * _voxel - head
+	if part != null:
+		_voxels[bone_name] = part
 
 
 ## The voxels split by bone (the flags byte): bone index -> VoxelBuilder.
@@ -181,41 +191,6 @@ func _relax_arms() -> void:
 		var b: Basis = bases[n]
 		_rest[n] = Transform3D(b, rest_of(n).origin)
 		bone(n).transform = rest_of(n)
-
-
-func _collect_chains(defs: Array) -> void:
-	var by_parent: Dictionary = {}
-	for d: Dictionary in defs:
-		var parent := str(d["parent"]) if d["parent"] != null else ""
-		by_parent[parent] = by_parent.get(parent, []) + [str(d["name"])]
-	for d: Dictionary in defs:
-		var bone_name := str(d["name"])
-		var parent := str(d["parent"]) if d["parent"] != null else ""
-		var is_physics: bool = d["physics"]
-		var starts_chain := is_physics and not _is_physics(defs, parent)
-		if starts_chain:
-			var chain := SpringChain.new()
-			chain.names.append(bone_name)
-			var walk := bone_name
-			while by_parent.has(walk):
-				var children: Array = by_parent[walk]
-				if children.size() != 1:
-					break
-				walk = str(children[0])
-				if not _is_physics(defs, walk):
-					break  # a run of physics bones ends at a plain one (the adult croc's clip-only tail tip)
-				chain.names.append(walk)
-			for _n: String in chain.names:
-				chain.drive.append(Basis.IDENTITY)
-			chains.append(chain)
-
-
-func _is_physics(defs: Array, bone_name: String) -> bool:
-	for d: Dictionary in defs:
-		if str(d["name"]) == bone_name:
-			var p: bool = d["physics"]
-			return p
-	return false
 
 
 static func _vec(v: Variant) -> Vector3:

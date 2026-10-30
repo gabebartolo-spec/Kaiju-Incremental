@@ -242,7 +242,7 @@ func _slide(kaiju: KaijuModel, planted_at: Array[Vector3]) -> float:
 	var gait: ClipGait = kaiju._rig.gait
 	var worst := 0.0
 	for i: int in mini(2, gait.legs.size()):
-		var leg: BipedGait.Leg = gait.legs[i]
+		var leg: BipedLeg = gait.legs[i]
 		var at := kaiju._rig.tail_world(leg.tip)  # the toe tip the gait locks, as capture_motion
 		if not leg.planted:
 			planted_at[i] = Vector3.INF

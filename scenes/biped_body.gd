@@ -128,7 +128,7 @@ func _pose_in_reach(dt: float, root: Transform3D, euler: Vector3, offset: Vector
 	var h := g.hip_height
 	g.rig.pose("spine0", euler, offset)
 	var need := 0.0
-	for leg: BipedGait.Leg in g.legs:
+	for leg: BipedLeg in g.legs:
 		if leg.planted:
 			need = maxf(need, reach_drop(leg, root) / g.s)
 	need = minf(need, MAX_SINK * h)
@@ -177,17 +177,17 @@ func _stumble(dt: float, speed_k: float) -> void:
 
 ## A trip's catch: the foot on that side (-1 left, +1 right) swings out fast to catch the body.
 func catch_step(side: float) -> void:
-	for leg: BipedGait.Leg in g.legs:
+	for leg: BipedLeg in g.legs:
 		if not leg.planted:
 			return  # mid-stride: no room for a catch without two feet landing together
-	for leg: BipedGait.Leg in g.legs:
+	for leg: BipedLeg in g.legs:
 		if leg.side == side and leg.planted:
 			g._lift_foot(leg, BipedGait.CATCH_SECONDS * sqrt(g.s), BipedGait.LIFT_SLOW)
 			leg.last_cycle = roundi(g._phase - leg.offset)
 
 
 ## How far (world units) the pelvis must sink for a planted foot's ankle to be in reach.
-func reach_drop(leg: BipedGait.Leg, root: Transform3D) -> float:
+func reach_drop(leg: BipedLeg, root: Transform3D) -> float:
 	var d := g.rig.bone(leg.names[0]).global_position - g._ankle(leg, root)
 	var reach := (leg.l1 + leg.l2) * g.s * 0.995
 	if d.length() <= reach:
