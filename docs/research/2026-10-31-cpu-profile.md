@@ -46,7 +46,22 @@ Over 16.7 ms: 99.7% of frames. Over 33.4 ms: 59–69%.
    timers there.
 
 ## Next (the director's call)
-- Find the 1.3 s sim step at frame 2042 (deterministic, cheap to replay).
 - Time process per system (kaiju model, debris, HUD, city view) to name the 7 ms.
 - Draw: about 5,000 draw calls at p50 (2,400 visible + 2,600 shadow); shadow casters are the first lever to test.
 - Raw CSVs: C:/kt/bulldozer/fix1080_r1.csv and fix1080_r2.csv (not in git).
+
+## The 1.3 s step (found and fixed)
+Route frame 2042 is the first hit on the Ferris wheel landmark. `CellPromoter.on_hit` builds its fine grid
+(LandmarkCells, 75 ms) and then empties every chunk the frame has lost, one cell at a time through
+`clear_cell` (1,753 ms in the probe run). The pool models pay the same cost on their first hit (frame 286: 150 ms,
+frame 2607: 169 ms). `CellGrid.clear_chunk` now zeroes each row by flat index.
+
+| sim.step ms | before | after |
+|---|---|---|
+| frame 2042 (wheel) | 1,326 | 118 |
+| frame 2607 | 169 | under 72 |
+| frame 286 | 151 | under 72 |
+| worst wall frame | 1,347 | 238 |
+
+The route is unchanged: same tally and 25,147 chunks. The 118 ms left is mostly the grid build; spreading
+it across frames or building it at load is the next lever if it shows in play.
