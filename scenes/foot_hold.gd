@@ -22,9 +22,9 @@ func foot_yaw(leg: BipedGait.Leg) -> float:
 
 
 ## The turn (rad) that holds a planted foot: its heading's whole swing since it went down
-## (`plant_heading`), the body's turn and the foot's own roll alike. The roll was capped at 0.08 rad
-## while a leg out of reach slid its toe; LegReach now peels the heel up instead, and the tall walk's
-## foot (r13f) swings 16 deg at toe-off (step-turn smoke).
+## (`plant_heading`), the body's turn and the foot's own roll alike. The roll was capped at 0.08
+## rad while a leg out of reach slid its toe; LegReach now peels the heel up instead, and the tall
+## walk's foot (r13f) swings 16 deg at toe-off (step-turn smoke).
 func hold(plant_heading: float, leg: BipedGait.Leg) -> float:
 	return wrapf(plant_heading - foot_yaw(leg), -PI, PI)
 
