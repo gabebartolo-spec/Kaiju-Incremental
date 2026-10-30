@@ -84,8 +84,7 @@ var _rise: RampageRise  # the run's opening: the rise from the sea bay and the i
 var _move_len := 0.0
 
 
-## stats: final run stats; layout: CityGrowth.layout for stats.size; p_run seeds the army and
-## picks the time of day.
+## stats: final run stats; layout: CityGrowth.layout for stats.size; p_run: army seed, time of day.
 func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], p_run: int) -> void:
 	species = p_species
 	run_index = p_run
