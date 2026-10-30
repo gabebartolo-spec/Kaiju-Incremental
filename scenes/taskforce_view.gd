@@ -68,7 +68,8 @@ func _draw_marks() -> void:
 		var at: Vector2 = bomb[1]
 		n = _mark(n, Vector3(at.x, 0.05, at.y), Vector3(ring, 1.0, ring), false)
 	while _marks.size() > n:
-		_marks.pop_back().queue_free()
+		var gone: MeshInstance3D = _marks.pop_back()
+		gone.queue_free()
 
 
 func _mark(n: int, at: Vector3, size: Vector3, cloud: bool) -> int:
