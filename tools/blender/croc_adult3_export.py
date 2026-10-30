@@ -68,9 +68,11 @@ for pb in arm.pose.bones:
     else:
         HELP[pb.name] = {par.name: 1.0}
 print("FOLD", {h: {b: round(w, 3) for b, w in m.items()} for h, m in HELP.items()})
+HJ = json.loads((Path(__file__).with_name("croc_adult3_helpers.json")).read_text(encoding="utf-8"))
+HELPERS = HJ["helpers"]; HNAMES = [h["name"] for h in HELPERS]
 order = []
 def visit(b):
-    if b.name not in HELP and b.use_deform:
+    if b.name not in HELP and b.name not in HNAMES and b.use_deform:
         order.append(b)
     for c in b.children:
         visit(c)
@@ -79,16 +81,22 @@ for b in ad.bones:
         visit(b)
 NAMES = [b.name for b in order]
 gnames = [g.name for g in mesh.vertex_groups]
-W = np.zeros((len(me.vertices), len(NAMES)))
+# r13f (Colossus thigh, 10-31): a blend whose mesh carries the hlp_* groups itself (the dense thigh, its weights final in
+# Cascadeur) is taken as is: those groups fill the helper columns and the hip / helper json rows are not applied.
+OWN = any(g.name in HNAMES for g in mesh.vertex_groups)
+W = np.zeros((len(me.vertices), len(NAMES) + len(HELPERS)))
 for v in me.vertices:
     for x in v.groups:
         n = gnames[x.group]
+        if n in HNAMES:
+            W[v.index, len(NAMES) + HNAMES.index(n)] += x.weight
+            continue
         for b, f in (HELP[n].items() if n in HELP else ((n, 1.0),)):
             if b in NAMES:
                 W[v.index, NAMES.index(b)] += x.weight * f
 
 # --- r12m hip seam (croc-young-casc 10-28): the fixed folded rows replace the r11 ones (flipped tris per leg 16-30 -> <= 7)
-HIP = json.loads((Path(__file__).with_name("croc_adult3_hip_r12m.json")).read_text(encoding="utf-8"))["verts"]
+HIP = {} if OWN else json.loads((Path(__file__).with_name("croc_adult3_hip_r12m.json")).read_text(encoding="utf-8"))["verts"]
 new_of = {o: n for n, o in enumerate(KEPT)}; nhip = 0
 for o, row in HIP.items():
     n = new_of.get(int(o))
@@ -102,10 +110,8 @@ print("HIP r12m rows", nhip, "of", len(HIP))
 
 # --- D-374 corrective helper joints (croc-young-casc 10-28): hip, knee, web, ankle and belly per leg, weighted after the
 # bones (.skinw index len(NAMES) + k); the game poses them from their two bones (scenes/voxel_skin_helpers.gd)
-HJ = json.loads((Path(__file__).with_name("croc_adult3_helpers.json")).read_text(encoding="utf-8"))
-HELPERS = HJ["helpers"]; COLS = NAMES + [h["name"] for h in HELPERS]
-W = np.c_[W, np.zeros((len(W), len(HELPERS)))]; nhel = 0
-for o, row in HJ["verts"].items():
+COLS = NAMES + HNAMES; nhel = 0
+for o, row in ({} if OWN else HJ["verts"]).items():
     n = new_of.get(int(o))
     if n is None:
         continue
@@ -113,7 +119,7 @@ for o, row in HJ["verts"].items():
     for b, w in row.items():
         W[n, COLS.index(b)] = w
     nhel += 1
-print("HELPERS", len(HELPERS), "rows", nhel, "of", len(HJ["verts"]))
+print("HELPERS", len(HELPERS), "rows", nhel, "of", len(HJ["verts"]), "own groups" if OWN else "")
 
 # --- frames ---------------------------------------------------------------------------------------------
 MW = R @ mesh.matrix_world
