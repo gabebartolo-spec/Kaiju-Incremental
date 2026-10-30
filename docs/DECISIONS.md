@@ -397,7 +397,3 @@ the kaiju's destruction field; pieces, rubble and vehicles never (D-326); shadow
 ## 2026-10-27 · D-349 · Director · After the walk-start, the keyer keys the young croc walk
 Asked what the one keyer keys after the walk-start (D-343): "Young croc walk", ahead of the grown croc's run. Order:
 walk-start, young croc walk, run, slam-stop, turn-skate B.
-
-## 2026-10-27 · D-348 · Director · Rooftop water tanks become wooden water towers
-The brown roof "trees" (D-345) are the rooftop water tanks. Picked "Wooden water towers (Recommended)": same spots and
-count, a barrel tower on legs with a cone roof.
