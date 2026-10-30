@@ -112,6 +112,8 @@ func _ready() -> void:
 ## the beach's umbrellas, loungers and courts (D-381) at the sand's height.
 func _plant_beach() -> void:
 	add_child(_street.build(41))  # the Tripo street props (D-266) first, then the sand's
+	add_child(_street.field.leaf_field)  # in the tree, so they go with it (no trees here)
+	add_child(_street.field.bark_field)
 	add_child(LampPools.new(_lamp_spots))  # the lamps' pools on the ground, at night
 	_beach = BeachProps.plant(self)
 	if _beach == null:
