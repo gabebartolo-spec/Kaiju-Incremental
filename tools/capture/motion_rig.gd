@@ -18,7 +18,7 @@ static func trace_feet(kaiju: KaijuModel, t: float, into: PackedStringArray) -> 
 	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
 		var rig := node as KaijuRig
 		if rig.gait is BipedGait:
-			for leg: BipedGait.Leg in (rig.gait as BipedGait).legs:
+			for leg: BipedLeg in (rig.gait as BipedGait).legs:
 				var p := rig.tail_world(leg.tip)
 				into.append("%.4f,%s,%d,%.4f,%.4f" % [t, leg.names[0], int(leg.planted), p.x, p.z])
 		elif rig.gait is HexapodGait:
