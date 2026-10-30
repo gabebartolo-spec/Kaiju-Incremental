@@ -12,6 +12,10 @@ name: tests
 #   - The slow suites that check the game from a second angle ("pr_skip" in tools/ci_timings.txt:
 #     the stream, load, speed-run bars, crowd, city layout audits, helicopter flight, ...) run on
 #     pushes to main only, in lanes like a shard, reported and never blocking (D-382).
+#   - A pull request runs the lints, the compile preflight and the sim suites only (D-403). The engine suites
+#     ("engine" in tools/ci_timings.txt: a scene, camera or capture), the harness self-test and the engine log
+#     smoke run on pushes to main: the engine suites in the slow job, the other two blocking `test` there.
+#     Before pushing, run the suites nearest the change locally: python tools/run_touched.py.
 #   - Every test function must have run and made a check (tests/lib/functions_ran.gd); there is
 #     no floor file.
 #   - A pull request's re-push runs only the suites that failed or never ran last time plus every
@@ -244,7 +248,7 @@ jobs:
   extras:
     name: harness self-test
     needs: [plan]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.code == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -272,7 +276,7 @@ jobs:
   log_smoke:
     name: engine log smoke
     needs: [plan, preflight, native]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.code == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -300,14 +304,14 @@ jobs:
           name: log-smoke
           path: ${{ runner.temp }}/log-smoke
 
-  # Slow suites (pr_skip): pushes to main only, about 4,400 s of suites in 3 lanes (a split suite as its
+  # Slow suites (pr_skip) and engine suites (engine, D-403): pushes to main only, about 5,400 s of suites in 3 lanes (a split suite as its
   # parts). CI runners vary in speed, so a red run is a prompt to look, never a stop.
   slow:
     name: slow suites (main only)
     needs: [plan, preflight, native]
     if: needs.plan.outputs.code == 'true' && github.event_name != 'pull_request' && needs.plan.outputs.slow != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -354,6 +358,7 @@ jobs:
           SHARDS: ${{ needs.shard.result }}
           EXTRAS: ${{ needs.extras.result }}
           LOG_SMOKE: ${{ needs.log_smoke.result }}
+          EVENT: ${{ github.event_name }}
         run: |
           echo "plan=$PLAN code=$CODE preflight=$PREFLIGHT shards=$SHARDS extras=$EXTRAS log_smoke=$LOG_SMOKE"
           if [ "$PLAN" != success ]; then
@@ -372,6 +377,11 @@ jobs:
             if [ "$SHARDS" != success ] && ! { [ "$ONLY" = NONE ] && [ "$SHARDS" = skipped ]; }; then
               echo "::error::a test shard did not pass (shards: $SHARDS); the red shard's log names the suite and check"
               exit 1
+            fi
+            # A pull request skips the harness self-test and the log smoke (D-403); main runs both.
+            if [ "$EVENT" = pull_request ]; then
+              echo "Pull request: lints, preflight and sim suites only; the engine suites, harness self-test and log smoke run on main."
+              exit 0
             fi
             if [ "$EXTRAS" != success ]; then
               echo "::error::the harness self-test job did not pass (extras: $EXTRAS); its log names what failed"

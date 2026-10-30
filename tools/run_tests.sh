@@ -304,8 +304,8 @@ fi
 # TIMINGS_FILE: write each suite's seconds for tools/plan_ci_shards.sh, keeping its
 # "shards <n>" line. Re-measure at least weekly and after adding a slow suite.
 if [ -n "${TIMINGS_FILE:-}" ] && [ "${#timings[@]}" -gt 0 ]; then
-	# the plan's own lines (shards, lanes, split, pr_skip) stay; a suite line is a measurement
-	plan_lines=$(grep -E "^(shards|lanes|split|pr_skip)[[:space:]]" "$TIMINGS_FILE" 2> /dev/null || echo "shards 1")
+	# the plan's own lines (shards, lanes, split, pr_skip, engine) stay; a suite line is a measurement
+	plan_lines=$(grep -E "^(shards|lanes|split|pr_skip|engine)[[:space:]]" "$TIMINGS_FILE" 2> /dev/null || echo "shards 1")
 	{
 		echo "# Seconds per suite from tools/run_tests.sh (TIMINGS_FILE=...), $(date +%F)."
 		echo "# tools/plan_ci_shards.sh splits the suites across shards from these."

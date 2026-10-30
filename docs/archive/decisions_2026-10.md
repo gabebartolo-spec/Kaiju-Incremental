@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-349 · Director · After the walk-start, the keyer keys the young croc walk
+Asked what the one keyer keys after the walk-start (D-343): "Young croc walk", ahead of the grown croc's run. Order:
+walk-start, young croc walk, run, slam-stop, turn-skate B.
+
+## 2026-10-27 · D-348 · Director · Rooftop water tanks become wooden water towers
+The brown roof "trees" (D-345) are the rooftop water tanks. Picked "Wooden water towers (Recommended)": same spots and
+count, a barrel tower on legs with a cone roof.
+
 ## 2026-10-27 · D-347 · Director · Keyed Cascadeur moves come as the .casc, not a clip
 "rather than taking a clip of an animation itd be easier to just show me the casc file so i can inspect it"; scope
 "Keyed moves only (Recommended)". A keyed move reaches him as its .casc opened in a new tab of his Cascadeur

@@ -4,7 +4,7 @@
 The sequential and lane times a suite takes on a GitHub runner are in the shard logs of past tests.yml runs
 ("pass  sim  166s  ..."). This reads the last N successful runs (default 6) of tests.yml on main and on
 pull requests, averages each suite's seconds, and rewrites the suite lines of tools/ci_timings.txt; the
-"shards", "lanes", "split" and "pr_skip" lines and the comment header are kept (the header's run ids are updated).
+"shards", "lanes", "split", "pr_skip" and "engine" lines and the comment header are kept (the header's run ids are updated).
 Needs the gh CLI, logged in. Run at least weekly and after adding a slow suite (debt row 4, D-295):
 
     python tools/ci_retime.py            # last 6 successful runs
@@ -72,7 +72,7 @@ def main(argv: list[str]) -> int:
     keep = []
     if os.path.exists(TIMINGS):
         with open(TIMINGS, encoding="utf-8") as f:
-            keep = [ln.rstrip("\n") for ln in f if re.match(r"(shards|lanes|split|pr_skip)\s", ln)]
+            keep = [ln.rstrip("\n") for ln in f if re.match(r"(shards|lanes|split|pr_skip|engine)\s", ln)]
     # only suites that still have a runner
     have = {n[len("run_") : -len("_tests.gd")] for n in os.listdir(os.path.join(ROOT, "tests")) if re.match(r"run_.*_tests\.gd$", n)}
     rows = sorted(((s, round(sum(v) / len(v))) for s, v in secs.items() if s.split("@")[0] in have), key=lambda r: (-r[1], r[0]))
@@ -80,6 +80,7 @@ def main(argv: list[str]) -> int:
         f"# Seconds per suite on a CI runner (mean of {len(used)} runs: {', '.join(used)}), {datetime.date.today()}.",
         "# Nobody edits this per PR: a new suite counts as DEFAULT_SECS until the next re-measure (python tools/ci_retime.py, at least weekly).",
         "# tools/plan_ci_shards.sh packs the suites into shards x lanes bins; each shard runs its lanes at once (tools/run_tests.sh LANES).",
+        "# pr_skip (D-382) and engine (D-403: a scene, camera or capture) suites run on main only; a pull request runs the rest.",
     ]
     with open(TIMINGS, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(head + keep + [f"{s} {t}" for s, t in rows]) + "\n")

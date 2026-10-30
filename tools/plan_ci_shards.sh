@@ -11,7 +11,7 @@
 #
 #   tools/plan_ci_shards.sh            # print the plan
 #   tools/plan_ci_shards.sh --matrix   # the GitHub matrix as JSON (tests.yml plan job)
-#   tools/plan_ci_shards.sh --slow     # the "pr_skip" suites (a split one as its parts): pushes to main only
+#   tools/plan_ci_shards.sh --slow     # the "pr_skip" and "engine" suites (a split one as its parts): pushes to main only
 #   ONLY="sim city" tools/plan_ci_shards.sh --matrix   # only these (a pull request's re-push, tools/ci_select_suites.py)
 #
 # Re-measure at least weekly and after adding a slow suite, from the shard logs of real CI runs:
@@ -22,7 +22,8 @@ cd "$(dirname "$0")/.." || exit 1
 TIMINGS="${CI_TIMINGS:-tools/ci_timings.txt}"
 DEFAULT_SECS="${DEFAULT_SECS:-60}"
 
-skip=" $(awk '$1 == "pr_skip" {for (i = 2; i <= NF; i++) printf "%s ", $i}' "$TIMINGS" 2> /dev/null)"
+# pr_skip: slow second-angle suites (D-382); engine: scene, camera and capture suites (D-403). Both run on main only.
+skip=" $(awk '$1 == "pr_skip" || $1 == "engine" {for (i = 2; i <= NF; i++) printf "%s ", $i}' "$TIMINGS" 2> /dev/null)"
 if [ "$mode" = "--slow" ]; then
 	# A split suite goes to the slow job as its parts too: whole, it would pass run_tests.sh's SUITE_TIMEOUT.
 	slow=""
