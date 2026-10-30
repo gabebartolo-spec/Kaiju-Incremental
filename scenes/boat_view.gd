@@ -12,7 +12,9 @@ const DIR := "res://assets/boats/%s.kvox"
 
 ## Boats rolled over so far (the boat suite reads it).
 var capsized := 0
-var boats: Array[Dictionary] = []  # {"where" (pier, bay, river), "node", "pos", "vel", "yaw", "y", "phase", "hz", "wake", "roll", "flip", "sunk"}
+## {"where" (pier, bay, river), "node", "pos", "vel", "yaw", "y", "phase", "hz", "wake", "flip",
+## "sunk", "plan", "sea", "water"}
+var boats: Array[Dictionary] = []
 var _cfg: Dictionary
 var _sim: RampageSim
 var _rng: RandomNumberGenerator
@@ -76,8 +78,9 @@ func step(delta: float, kaiju: Vector2) -> void:
 func _wet(boat: Dictionary, p: Vector2) -> bool:
 	var water: Array = boat["water"]
 	var plan: Dictionary = boat["plan"]
-	return water.any(func(r: Rect2) -> bool: return r.has_point(p)) or (
-		boat["sea"] == true and CityHarbour.holds(plan, p)
+	return (
+		water.any(func(r: Rect2) -> bool: return r.has_point(p))
+		or (boat["sea"] == true and CityHarbour.holds(plan, p))
 	)
 
 
@@ -104,7 +107,8 @@ func _pose(boat: Dictionary, delta: float) -> void:
 	var pos: Vector2 = boat["pos"]
 	var bob := sin(phase * 1.3) * Num.f(_cfg["bob"]) * (1.0 + 3.0 * wake)
 	node.position = Vector3(pos.x, Num.f(boat["y"]) + bob - sink * Num.f(boat["height"]), pos.y)
-	node.basis = Basis(Vector3.UP, Num.f(boat["yaw"])) * Basis(Vector3.BACK, roll) * Basis(Vector3.RIGHT, pitch)
+	var turn := Basis(Vector3.UP, Num.f(boat["yaw"]))
+	node.basis = turn * Basis(Vector3.BACK, roll) * Basis(Vector3.RIGHT, pitch)
 
 
 ## Boats moored alongside the port's finger piers, bow along the pier.
@@ -126,10 +130,12 @@ func _moor_piers(plan: Dictionary) -> void:
 				var p := (
 					Vector2(c.x + side * (pier.size.x * 0.5 + gap), pier.position.y + u * length)
 					if along_z
-					else Vector2(pier.position.x + u * length, c.y + side * (pier.size.y * 0.5 + gap))
+					else Vector2(
+						pier.position.x + u * length, c.y + side * (pier.size.y * 0.5 + gap)
+					)
 				)
 				if CityHarbour.holds(plan, p):
-					_add(_pick(), p, 0.0 if along_z else PI * 0.5, plan, true, [])["where"] = "pier"
+					_add(_pick(), p, 0.0 if along_z else PI * 0.5, _sea(plan))["where"] = "pier"
 
 
 ## Boats at anchor out in the bay he rises from, headings at random.
@@ -144,7 +150,7 @@ func _moor_bay(plan: Dictionary) -> void:
 			break
 		var p := rect.position + Vector2(_rng.randf(), _rng.randf()) * rect.size
 		if CityHarbour.holds(plan, p) and _clear(p):
-			_add(_pick(), p, _rng.randf() * TAU, plan, true, [])["where"] = "bay"
+			_add(_pick(), p, _rng.randf() * TAU, _sea(plan))["where"] = "bay"
 			want -= 1
 
 
@@ -165,10 +171,15 @@ func _moor_river(plan: Dictionary) -> void:
 			river.get_center().y + side * river.size.y * Num.f(_cfg["river_bank"])
 		)
 		if _clear(p):
-			var b := _add(_pick(), p, PI * 0.5 if _rng.randf() < 0.5 else -PI * 0.5, plan, false, channels)
+			var yaw := PI * 0.5 if _rng.randf() < 0.5 else -PI * 0.5
+			var b := _add(_pick(), p, yaw, {"plan": plan, "sea": false, "water": channels})
 			b["y"] = y - Num.f(b["draft"])
 			b["where"] = "river"
 			want -= 1
+
+
+func _sea(plan: Dictionary) -> Dictionary:
+	return {"plan": plan, "sea": true, "water": []}
 
 
 ## Whether p is far enough from every boat already moored.
@@ -202,7 +213,9 @@ func _model(id: String) -> VoxelBuilder:
 	return _models[id]
 
 
-func _add(id: String, p: Vector2, yaw: float, plan: Dictionary, sea: bool, water: Array) -> Dictionary:
+## A boat of model `id` at p heading `yaw`; home: {"plan", "sea" (holds by the harbour), "water"
+## (the rects it may also float in)}.
+func _add(id: String, p: Vector2, yaw: float, home: Dictionary) -> Dictionary:
 	var row: Dictionary = _cfg["models"][id]
 	var voxel := Num.f(_cfg["voxel"])
 	var holder := Node3D.new()
@@ -215,11 +228,21 @@ func _add(id: String, p: Vector2, yaw: float, plan: Dictionary, sea: bool, water
 		height = Num.f(row["metres_tall"]) / Num.f(_cfg["metres_per_unit"])
 	var draft := height * Num.f(row["draft"])
 	var boat := {
-		"id": id, "node": holder, "pos": p, "vel": Vector2.ZERO, "yaw": yaw,
-		"y": CityHarbour.sea(_sim.city) - draft, "draft": draft, "height": height,
-		"phase": _rng.randf() * TAU, "hz": _rng.randf_range(_range(0), _range(1)),
-		"wake": 0.0, "flip": 0.0, "sunk": false, "plan": plan, "sea": sea, "water": water,
+		"id": id,
+		"node": holder,
+		"pos": p,
+		"vel": Vector2.ZERO,
+		"yaw": yaw,
+		"y": CityHarbour.sea(_sim.city) - draft,
+		"draft": draft,
+		"height": height,
+		"phase": _rng.randf() * TAU,
+		"hz": _rng.randf_range(_range(0), _range(1)),
+		"wake": 0.0,
+		"flip": 0.0,
+		"sunk": false,
 	}
+	boat.merge(home)
 	boats.append(boat)
 	_pose(boat, 0.0)
 	return boat

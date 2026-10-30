@@ -83,7 +83,8 @@ func _check_far_kaiju_leaves_them() -> void:
 			moved += 1
 	check(moved == 0, "no kaiju near: no boat drifts (%d moved)" % moved)
 	check(max_roll > 0.001, "no kaiju near: the boats still rock on the swell")
-	check(max_roll < deg_to_rad(Num.f(Content.section("boats")["rock_deg"]) + 1.0), "the swell's rock stays gentle")
+	var gentle := deg_to_rad(Num.f(Content.section("boats")["rock_deg"]) + 1.0)
+	check(max_roll < gentle, "the swell's rock stays gentle")
 	check(view.capsized == 0, "no kaiju near: none capsizes")
 
 
@@ -118,5 +119,7 @@ func _check_seeded() -> void:
 	var b := _view()
 	var same := a.boats.size() == b.boats.size()
 	for i: int in mini(a.boats.size(), b.boats.size()):
-		same = same and a.boats[i]["id"] == b.boats[i]["id"] and a.boats[i]["pos"] == b.boats[i]["pos"]
+		same = (
+			same and a.boats[i]["id"] == b.boats[i]["id"] and a.boats[i]["pos"] == b.boats[i]["pos"]
+		)
 	check(same and a.boats.size() > 0, "the same seed moors the same boats (%d)" % a.boats.size())
