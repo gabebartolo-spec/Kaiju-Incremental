@@ -198,7 +198,6 @@ func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	_sound(kind, at)
 
 
-
 ## A bomb from the time's-up jet run (FinalStrike): the barrels' blast on open ground, no site of
 ## its own, so the burst is a radius-wide box on the street; trauma kind "airstrike".
 func _bomb(event: Dictionary, focus: Vector3) -> void:
@@ -220,6 +219,7 @@ func _bomb(event: Dictionary, focus: Vector3) -> void:
 	_flash(high, Color(str(_c("flash")["color"])), Num.f(_c("flash")["energy"]) * radius / 5.0)
 	_add_kick(Num.f(_c("shake")["trauma"]["airstrike"]), at, focus)
 	_sound("fuel_silo", at)
+
 
 ## The site's skin thrown out of its whole box, outward and up, in its own colours: the first
 ## pieces off, before its broken floors (BlastBreak) follow.

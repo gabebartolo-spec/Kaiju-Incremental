@@ -277,7 +277,6 @@ func _check_deaths_and_falls() -> void:
 	)
 
 
-
 ## Time's up is the jet run (director 2026-10-31): the airstrike first, its bombs land on the
 ## city through the normal destruction path, then his death; killed or ended skips it.
 func _check_airstrike() -> void:
