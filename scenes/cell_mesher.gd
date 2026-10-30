@@ -84,7 +84,7 @@ func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> 
 		_rings.append(VoxelAO.ring_of(d))
 	finish = VoxelAO.finish_by_look(LIT, SHOP_LIT)
 	for slot: int in _slot_material:
-		finish[slot] = finish[_slot_material[slot]]
+		finish[slot] = finish[Num.i(_slot_material[slot])]
 	if use_native and ClassDB.class_exists("KaijuMesher"):
 		_start_native()
 
@@ -117,7 +117,8 @@ func _read_looks(voxels: BuildingVoxels, cells: CellGrid) -> void:
 		elif key == "slab" and not foot.has_point(Vector2i(local.x, local.z)):
 			hidden.append(i)
 		elif key == VoxelBuilder.DIRECT:
-			looks[i] = _color_slot(voxels.vox.colors[local], looks[i])
+			var c: Color = voxels.vox.colors[local]
+			looks[i] = _color_slot(c, looks[i])
 
 
 ## The look id drawing colour `c` (a model's own voxel colour): a new slot per quantised colour,
@@ -130,7 +131,7 @@ func _color_slot(c: Color, material: int) -> int:
 		c.a
 	)
 	if _slot_of.has(q):
-		return _slot_of[q]
+		return Num.i(_slot_of[q])
 	var next := FIRST_COLOR + _slot_material.size()
 	if next < LIT:
 		palette[next] = q
