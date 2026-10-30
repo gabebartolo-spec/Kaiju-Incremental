@@ -65,3 +65,14 @@ frame 2607: 169 ms). `CellGrid.clear_chunk` now zeroes each row by flat index.
 
 The route is unchanged: same tally and 25,147 chunks. The 118 ms left is mostly the grid build; spreading
 it across frames or building it at load is the next lever if it shows in play.
+
+## The three follow-ups (run three_r1, same route, same tally, 25,147 chunks)
+- **The wheel's first hit:** its grid build fills on the flat index and the landmark models are read at city
+  load (`LandmarkCells.preload_models`, 160 ms there). Build 35 -> 4 ms headless; frame 2042's sim.step
+  118 -> 84 ms. What is left at 2042 is the rest of the promotion (chunk clears, the native frame).
+- **Process time, by count (BENCH_CENSUS):** cell_view.gd is most of the processing nodes (97 -> 260 over the
+  route), then fire.gd (24-73). Each idle cell view's _process is two early-outs, so the count alone does not
+  explain ~7 ms: the next step is timing them, and the engine's own process work (animation, skeleton).
+- **Shadow casters:** 4,123 -> 5,485 visible over the route. The rubble yard (ruin_yard.gd) grows from 1,098
+  to 2,518 and is the largest; then cell_view (~1,700), debris (450, its cap), fx_pool (110-260). Rubble
+  without shadows is a visual change: the director's call.

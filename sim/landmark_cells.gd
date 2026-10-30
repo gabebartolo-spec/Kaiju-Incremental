@@ -38,12 +38,11 @@ func _init(p_building: RampageSim.Building) -> void:
 	var model := _model(b.landmark) if b.model == "" else model_of(b)
 	var xyz: PackedInt32Array = model["xyz"]
 	var mats: PackedByteArray = model["mats"]
-	var lo := Vector3i.ZERO
-	var hi := Vector3i(b.w * res - 1, b.height * res - 1, b.d * res - 1)
-	for i: int in mats.size():
-		var c := Vector3i(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2])
-		lo = lo.min(c)
-		hi = hi.max(c)
+	var box := _bounds(model)
+	var box_lo: Vector3i = box[0]
+	var box_hi: Vector3i = box[1]
+	var lo := box_lo.min(Vector3i.ZERO)
+	var hi := box_hi.max(Vector3i(b.w * res - 1, b.height * res - 1, b.d * res - 1))
 	offset = lo
 	dims = hi - lo + Vector3i.ONE
 	cells = PackedByteArray()
@@ -51,7 +50,12 @@ func _init(p_building: RampageSim.Building) -> void:
 	var arc_n := arcs.arc_count() if arcs != null else 0
 	_live.resize(arc_n)
 	_members.resize(arc_n)
-	for i: int in mats.size():
+	if arcs == null:  # no arcs to count: fill on the flat index (the wheel has 61k cells)
+		var plane := dims.x * dims.z
+		var base := -lo.x - lo.z * dims.x - lo.y * plane
+		for i: int in mats.size():
+			cells[base + xyz[i * 3] + xyz[i * 3 + 2] * dims.x + xyz[i * 3 + 1] * plane] = mats[i]
+	for i: int in (mats.size() if arcs != null else 0):
 		var c := Vector3i(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2])
 		cells[index(c - offset)] = mats[i]
 		var g := arc_of(c)
@@ -178,6 +182,27 @@ static func model_of(building: RampageSim.Building) -> Dictionary:
 			picked[i] = mats[src[i]]
 		out = {"xyz": turned["xyz"], "mats": picked}
 	return out
+
+
+## The model's [lowest, highest] cell, kept in the model (a landmark's is read once).
+static func _bounds(model: Dictionary) -> Array:
+	if model.has("box"):
+		return model["box"]
+	var xyz: PackedInt32Array = model["xyz"]
+	var lo := Vector3i.ZERO
+	var hi := Vector3i.ZERO
+	for i: int in xyz.size() / 3:
+		var c := Vector3i(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2])
+		lo = c if i == 0 else lo.min(c)
+		hi = c if i == 0 else hi.max(c)
+	model["box"] = [lo, hi]
+	return model["box"]
+
+
+## Reads every landmark's model now (at city load), so no first hit pays for the file.
+static func preload_models() -> void:
+	for id: String in Content.landmarks():
+		_bounds(_model(id))
 
 
 ## The landmark's model as cells, read once: {"xyz": x, y, z per voxel, "mats": material ids}.
