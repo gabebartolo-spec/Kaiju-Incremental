@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-27 · D-342 · Director · Slow motion: the slowdown is too brief
+On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
+the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
+to him.
+
 ## 2026-10-30 · D-397 · Director · Tripo spend for the adult-city Taskforce
 "you can spend up to 2000 credits" (Tripo, this session: gas soldier and walking mech models, obsidian with electric
 blue highlights, D-143).

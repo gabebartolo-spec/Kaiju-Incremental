@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-399 · Director · The rise bar is removed
+His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
+the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
+check. Replaces D-384 (and the 10 s rise bar it carried from D-131).
+
 ## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
 Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
 (`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest
@@ -393,8 +398,3 @@ On the far-city reflection stills (the far skyline's glow in the bay, D-324 "Fog
 ## 2026-10-27 · D-343 · Director · The croc's first step from standing gets a keyed walk-start
 Asked how the young croc should start walking from a stand: "Key a walk-start (Recommended)": a Cascadeur
 stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before turn-skate B.
-
-## 2026-10-27 · D-342 · Director · Slow motion: the slowdown is too brief
-On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
-the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
-to him.
