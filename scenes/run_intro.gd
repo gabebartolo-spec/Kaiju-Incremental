@@ -119,7 +119,26 @@ static func shot(sim: RampageSim, view: Dictionary, frac: float) -> Dictionary:
 	eye.y = lerpf(_low_eye(sim, cfg, crown.x, front), rest_eye.y, up)
 	var head_aim := _head_aim(sim, view, head_at, water)
 	var fov := lerpf(Num.f(cfg["fov"]), Num.f(view["fov"]), w)
-	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}
+	# The aim stays on the head until the pull-out's end (director 2026-10-31: "the camera shouldnt
+	# lock onto the kaiju until AFTER the scene is complete"); the follow aim is under the water.
+	var wa := w * w * w
+	return {"eye": eye, "aim": head_aim.lerp(rest_aim, wa), "fov": fov}
+
+
+## `view` ({eye, aim, fov}) with its eye at least "clearance" (per body scale) over the sea: the
+## gameplay camera follows the body, which is under the water until it wades out, so the
+## pull-out onto it went under the surface (director 2026-10-31: "the camera should never go
+## under the water"). The handover stays exact: both cameras are lifted the same way.
+static func above_water(sim: RampageSim, view: Dictionary) -> Dictionary:
+	var eye: Vector3 = view["eye"]
+	var floor_y := (
+		sim.emerge.water_y() + Num.f(Content.section("intro")["clearance"]) * sim.body_scale()
+	)
+	if eye.y >= floor_y:
+		return view
+	var out := view.duplicate()
+	out["eye"] = Vector3(eye.x, floor_y, eye.z)
+	return out
 
 
 ## Where the water shot looks: the drawn head's middle (view "head_box"), or without one the
