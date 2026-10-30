@@ -27,12 +27,10 @@ const EXEMPT_GROUP := "vfx_exempt"
 ## "Flat surfaces programme".
 ## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
 ## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
-const KNOWN_FLAT_MAX := 5
+const KNOWN_FLAT_MAX := 3
 const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
-	"CitySkyline:std": "P3 lamp heads (glow)",
 	# P3 trees, lamps, props, cars, people, aircraft, crowds, debris, the kaiju
-	"Aircraft:std": "P3 aircraft",
 	"KaijuRig:shader:voxel.gdshader": "P3 the kaiju's own skin pipeline",
 	"VoxelSkin:shader:voxel_skin.gdshader": "P3 the kaiju's own skin pipeline",
 	"VoxelSkin:shader:voxel_skin_fill.gdshader": "P3 the kaiju's own skin pipeline",
