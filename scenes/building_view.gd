@@ -234,7 +234,9 @@ func _material(tex: Texture2D, merged := false) -> ShaderMaterial:
 		mat.set_shader_parameter("color_noise", Look.value("color_noise"))
 		# BuildingVoxels.origin() of this building, as BuildingMesher._bake's cell centres.
 		var origin := Vector3(
-			b.x - b.w * 0.5 + voxel * 0.5, float(b.base) + voxel * 0.5, b.z - b.d * 0.5 + voxel * 0.5
+			b.x - b.w * 0.5 + voxel * 0.5,
+			float(b.base) + voxel * 0.5,
+			b.z - b.d * 0.5 + voxel * 0.5
 		)
 		mat.set_shader_parameter("voxel_origin", origin)
 	mat.set_shader_parameter("glow", Look.value("window_glow"))

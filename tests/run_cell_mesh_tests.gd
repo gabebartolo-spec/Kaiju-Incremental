@@ -186,7 +186,10 @@ func _check_merge_cuts_quads() -> void:
 				quads += verts.size() / 4
 	check(
 		quads * 2 < faces,
-		"merged quads draw every voxel face at under half the quads (%d quads, %d faces)" % [quads, faces]
+		(
+			"merged quads draw every voxel face at under half the quads (%d quads, %d faces)"
+			% [quads, faces]
+		)
 	)
 
 
