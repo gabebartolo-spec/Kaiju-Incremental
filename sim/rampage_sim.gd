@@ -299,20 +299,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	body.step(dt, buttons & Dash.BUTTON != 0)
 	strikes.step(dt)
 	stomp.step(dt)
-	ability_ready_in = maxf(0.0, ability_ready_in - dt)
-	var lash := ability_type == "lash"
-	if signature_pressed and ability_ready_in <= 0.0:
-		var cd := Num.f(powers_cfg["lash_cooldown"]) if lash else stat("ability_cooldown")
-		ability_ready_in = maxf(0.5, cd)
-		SignatureStrike.fire(self)
-	breath_ready_in = maxf(0.0, breath_ready_in - dt)
-	if lash and buttons & BREATH != 0 and breath_ready_in <= 0.0:
-		breath_ready_in = maxf(0.5, stat("ability_cooldown"))
-		strikes.breath()  # the cone burns at the strike, where he faces then (D-166)
-	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
-	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
-		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
-		powers.ultimate()
+	SignatureStrike.step_buttons(self, dt, signature_pressed, buttons)
 	powers.step(dt, signature_held)
 	brood.step(dt)
 	collapse.step(dt)
