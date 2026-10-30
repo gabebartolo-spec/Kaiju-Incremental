@@ -131,7 +131,7 @@ func _check_tail_touch() -> void:
 		var sim := _sim("reptilian", {}, [_b(at.x, at.y, Vector3i(2, 2, 2))], Vector2.ZERO)
 		sim.body.use_species("reptilian")
 		if not on:
-			sim.body.tail.use_discs([])
+			sim.tail.on = false
 		_run(sim, 0.5, Vector2.ZERO)
 		alive.append(_alive(sim, 0))
 	check(

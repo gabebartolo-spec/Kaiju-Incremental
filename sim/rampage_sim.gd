@@ -157,6 +157,7 @@ var emerge: Emergence  # the rise from the river that starts a game's run (D-083
 var death: DeathOverload  # how he dies: stagger, stone, shatter
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
+var tail: TailTouch  # the swinging tail: breaks every building it touches, whatever its size
 var news: RunNews  # the big moments (threat level, landmarks, tower totals) as HUD events
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
@@ -217,6 +218,7 @@ func _init(
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
+	tail = TailTouch.new(self, tuning["contact"])
 	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
 	for n: int in range(rail_from, bridges_from):
 		rail.add_piece(n)
@@ -297,6 +299,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
+	tail.step(dt)
 	strikes.step(dt)
 	stomp.step(dt)
 	SignatureStrike.step_buttons(self, dt, signature_pressed, buttons)

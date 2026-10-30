@@ -224,6 +224,7 @@ func _contact_side_by_side() -> Array:
 		var sim := _sim("reptilian", {}, [twin], AWAY)
 		sim.body.use_species("reptilian")
 		sim.stats["stomp_damage"] = 0.0
+		sim.tail.on = false  # the body's own rule, side by side (the tail has its own suite)
 		var m := sim.rail.pieces[probe.rail.pieces.find(n)] if target == 0 else 0
 		var b := sim.buildings[m]
 		sim.kaiju_pos = Vector2(b.x, b.z)

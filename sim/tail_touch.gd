@@ -7,16 +7,20 @@ extends RefCounted
 ## only chews a building that dwarfs him, while the drawn tail is a spring chain that swings wide
 ## on a turn. Here the tail discs (offset at or behind tail_from) are laid along a heading that
 ## lags the body's at `follow` /s, widened by `pad`, swept between steps, and break every standing
-## chunk they touch outright, whatever its size. Part of BodyContact; pure, no randomness.
+## chunk they touch outright, whatever its size. Part of RampageSim, stepped after BodyContact
+## (whose discs and pose it reads); pure, no randomness.
 
+## Chunks the tail has broken this rampage.
+var broken := 0
+## Off: the tail breaks nothing (the on-vs-off fixtures).
+var on := true
 var _sim: RampageSim
 var _cfg: Dictionary
 var _volume: BodyVolume
 var _lay := Vector2.ZERO  # the heading the tail lies along (lags the body's)
 var _last_pos := Vector2(INF, INF)
 var _last_lay := Vector2.ZERO
-## Chunks the tail has broken this rampage.
-var broken := 0
+var _from_discs: Array = []  # the body discs the tail's were taken from
 
 
 func _init(sim: RampageSim, contact_cfg: Dictionary) -> void:
@@ -37,9 +41,18 @@ func use_discs(discs: Array) -> void:
 	_last_pos = Vector2(INF, INF)
 
 
-func step(dt: float, heading: Vector2, lift: float) -> void:
+func step(dt: float) -> void:
+	var body := _sim.body
+	if not body.active() or (_sim.airborne and not body.dash.on()) or not on:
+		_last_pos = Vector2(INF, INF)  # off the ground with the body: it starts afresh after
+		return
+	if not is_same(body._discs, _from_discs):  # a new species or stage
+		_from_discs = body._discs
+		use_discs(_from_discs)
 	if _volume.discs.is_empty():
 		return
+	var heading := body.heading
+	var lift := body.dash.height()
 	if _lay == Vector2.ZERO or _last_pos.x == INF:
 		_lay = heading
 	_lay = _lay.slerp(heading, 1.0 - exp(-Num.f(_cfg["follow"]) * dt)).normalized()
@@ -54,8 +67,3 @@ func step(dt: float, heading: Vector2, lift: float) -> void:
 		broken += _sim.damage_chunks(index, cells, INF)
 	_last_pos = _sim.kaiju_pos
 	_last_lay = _lay
-
-
-## The tail is off the ground with the body (a leap's top, the river): it starts afresh after.
-func reset() -> void:
-	_last_pos = Vector2(INF, INF)
