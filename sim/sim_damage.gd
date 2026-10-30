@@ -5,8 +5,8 @@ extends RefCounted
 
 
 ## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach), every
-## tank, roof squad and helicopter it can reach, by damage x force(position, own radius), force
-## 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
+## tank, roof squad, walking mech and helicopter it can reach, by damage x force(position, own
+## radius), force 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
 static func area(sim: RampageSim, force: Callable, damage: float, y_lo: int, y_hi: int) -> void:
 	var top := ceili(sim.reach_height()) if y_hi < 0 else y_hi
 	StrayShell.hit_buildings(sim, force, damage, Vector2i(y_lo, top))
@@ -17,6 +17,7 @@ static func area(sim: RampageSim, force: Callable, damage: float, y_lo: int, y_h
 			tank.coat_t = Num.f(sim.hit_coat["seconds"])
 			tank.coat_dps = Num.f(sim.hit_coat["dps"]) * Num.f(sim.powers_cfg["ink_unit_mult"])
 	sim.army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
+	sim.army_units.taskforce.mechs.hit(force, damage)  # one blow that reaches a mech kills it
 	sim.air.hit(force, damage, sim.hit_air or sim.reach_top() >= sim.air.altitude())
 	sim.rail.hit(force, damage)
 	sim.vip.hit(force, damage)

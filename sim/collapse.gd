@@ -296,7 +296,7 @@ func _near_strip(start: Vector2, finish: Vector2, half_width: float) -> PackedIn
 
 
 ## Everything inside the strip a toppled tower lands on is smashed: chunks of other buildings
-## up to a few floors high, and tanks.
+## up to a few floors high, tanks and walking mechs.
 func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) -> void:
 	var impact := Num.f(sim.city["impact_damage"])
 	var along := (finish - start).normalized()
@@ -320,6 +320,7 @@ func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) 
 		if struck:
 			tank.hp = 0.0
 	sim.army_units.clear_dead()
+	sim.army_units.taskforce.mechs.crush(in_strip)
 
 
 ## The standing chunks of b a few floors up that lie inside the strip (in_strip: Callable(p, r)).

@@ -392,3 +392,7 @@ to him.
 ## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
 On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
 (Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.
+
+## 2026-10-30 · D-397 · Director · Tripo spend for the adult-city Taskforce
+"you can spend up to 2000 credits" (Tripo, this session: gas soldier and walking mech models, obsidian with electric
+blue highlights, D-143).

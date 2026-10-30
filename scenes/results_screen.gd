@@ -21,6 +21,7 @@ const ROWS: Array[Array] = [
 	["tanks", "Tanks", "int", "body"],
 	["helis", "Helicopters", "int", "body"],
 	["agents", "Agents", "int", "body"],
+	["mechs", "Mechs", "int", "body"],
 ]
 ## Group id, heading, rows per line: biomass across the top, then the tally beside the body count.
 const GROUPS: Array[Array] = [
