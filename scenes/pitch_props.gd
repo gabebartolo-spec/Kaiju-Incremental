@@ -38,6 +38,7 @@ static func mesh(sport: Dictionary, half: Vector2, voxel: float) -> ArrayMesh:
 		"post": Color(str(sport["post_color"])),
 		"strip": Color(str(sport.get("strip", sport["line"]))),
 	}
+	v.detail = true  # the city's surface family (flat surfaces P3)
 	return v.bake(palette, voxel, Vector3.ZERO, 0.0)
 
 

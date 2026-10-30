@@ -80,6 +80,7 @@ func _ready() -> void:
 	var flash_mmi := MultiMeshInstance3D.new()
 	flash_mmi.multimesh = _flash_mm
 	flash_mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	flash_mmi.add_to_group("vfx_exempt")  # muzzle flashes are an effect, not a surface
 	add_child(flash_mmi)
 
 

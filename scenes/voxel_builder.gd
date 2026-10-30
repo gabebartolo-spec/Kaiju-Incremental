@@ -198,8 +198,9 @@ static func instance(
 ## One merged mesh (vertex colours, hidden faces culled) for a small model that moves as a
 ## whole: people and moving cars. palette as build(); `origin` offsets every cell. Main thread
 ## only: a worker calls bake_arrays() and hands them to baked() on the main thread.
+## With `detail` the mesh draws in the city's surface family, the detail riding with the model.
 func bake(palette: Dictionary, voxel: float, origin: Vector3, glow: float) -> ArrayMesh:
-	return baked(bake_arrays(palette, voxel, origin), glow)
+	return baked(bake_arrays(palette, voxel, origin), glow, voxel if detail else 0.0)
 
 
 ## bake()'s surface arrays ([] when there are no cells). Makes no resource: safe on a worker.
@@ -220,14 +221,18 @@ func bake_arrays(palette: Dictionary, voxel: float, origin: Vector3) -> Array:
 	return st.commit_to_arrays()
 
 
-## The mesh of bake_arrays() output, in the voxel material glowing at `glow`. Main thread only.
-static func baked(arrays: Array, glow: float) -> ArrayMesh:
+## The mesh of bake_arrays() output, in the voxel material glowing at `glow`; detail_voxel above 0:
+## in the city's surface family (Look.voxel_detail_material) for cells that wide. Main thread only.
+static func baked(arrays: Array, glow: float, detail_voxel := 0.0) -> ArrayMesh:
 	ThreadCheck.main_only("VoxelBuilder.baked")
 	var mesh := ArrayMesh.new()
 	if arrays.is_empty():
 		return mesh
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, Look.voxel_material(glow))
+	if detail_voxel > 0.0:
+		mesh.surface_set_material(0, Look.voxel_detail_material(detail_voxel, glow, true))
+	else:
+		mesh.surface_set_material(0, Look.voxel_material(glow))
 	return mesh
 
 
