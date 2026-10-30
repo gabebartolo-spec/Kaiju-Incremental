@@ -99,15 +99,6 @@ bool KaijuMesher::setup(const Vector3i &p_dims, const Vector3i &p_offset, const 
 	return true;
 }
 
-// Godot's Variant hash of a Vector4i (GDScript hash()).
-static inline uint32_t hash_vector4i(int32_t x, int32_t y, int32_t z, int32_t w) {
-	uint32_t h = hash_murmur3_one_32(uint32_t(x));
-	h = hash_murmur3_one_32(uint32_t(y), h);
-	h = hash_murmur3_one_32(uint32_t(z), h);
-	h = hash_murmur3_one_32(uint32_t(w), h);
-	return hash_fmix32(h);
-}
-
 // A region's arrays while it is meshed.
 struct RegionArrays {
 	std::vector<Vector3> verts;
@@ -138,21 +129,26 @@ static Array pack(const RegionArrays &a) {
 	return out;
 }
 
+// Per DIRS direction: (normal axis, u axis, v axis) of its plane (CellMesher.AXES).
+static const int AXES[6][3] = { { 0, 1, 2 }, { 0, 1, 2 }, { 1, 0, 2 }, { 1, 0, 2 }, { 2, 0, 1 }, { 2, 0, 1 } };
+
+static inline int plane_at(int k, int d, int u, int v) {
+	return ((k * REGION + d) * REGION + v) * REGION + u;
+}
+
+// CellMesher.mesh_region_gd, byte for byte: flat-lit faces (all four AO corners alike) are merged per
+// plane into larger quads of one look; the rest are drawn one per cell side. Colours are the look's
+// palette colour (building_baked.gdshader jitters per voxel).
 Array KaijuMesher::mesh_region(const PackedByteArray &p_cells, const Vector3i &p_region) const {
 	RegionArrays out;
 	if (!ready || p_cells.size() != looks.size()) {
 		return pack(out);
 	}
-	std::vector<Vector3> &verts = out.verts;
-	std::vector<Vector3> &normals = out.normals;
-	std::vector<Color> &colors = out.colors;
-	std::vector<int32_t> &index = out.index;
-	std::vector<Vector2> &uv = out.uv;
-	verts.reserve(4096);
-	normals.reserve(4096);
-	colors.reserve(4096);
-	index.reserve(6144);
-	uv.reserve(4096);
+	out.verts.reserve(2048);
+	out.normals.reserve(2048);
+	out.colors.reserve(2048);
+	out.index.reserve(3072);
+	out.uv.reserve(2048);
 	const uint8_t *g = p_cells.ptr();
 	const uint8_t *lk = looks.ptr();
 	const Color *pal = palette.ptr();
@@ -166,49 +162,73 @@ Array KaijuMesher::mesh_region(const PackedByteArray &p_cells, const Vector3i &p
 		if (x < 0 || y < 0 || z < 0 || x >= w || y >= h || z >= d) return true;
 		return g[x + z * int64_t(w) + y * plan] == 0;
 	};
+	// One face of direction k centred on `centre`, spanning `span` cells (CellMesher._face).
+	auto face = [&](const Vector3 &centre, int k, int look, int ao, const Vector3 &span) {
+		const int at = int(out.verts.size());
+		const Vector3 nf(DIRS[k][0], DIRS[k][1], DIRS[k][2]);
+		const float finish_class = fin ? float(fin[look]) : 0.0f;
+		for (int q = 0; q < 4; q++) {
+			out.verts.push_back(centre + corners[k][q] * span);
+			out.normals.push_back(nf);
+			out.colors.push_back(pal[look]);
+			out.uv.push_back(Vector2(LEVEL_VALUE[(ao >> (q * 2)) & 3], finish_class));
+		}
+		const int *split = (ao & FLIP) ? SPLIT_13 : SPLIT_02;
+		for (int s = 0; s < 6; s++) {
+			out.index.push_back(at + split[s]);
+		}
+	};
+	std::vector<int32_t> planes(size_t(6) * REGION * REGION * REGION, -1);
 	for (int y = y0; y < y1; y++)
 		for (int z = z0; z < z1; z++)
 			for (int x = x0; x < x1; x++) {
 				const int64_t i = x + z * int64_t(w) + y * plan;
 				if (!g[i]) continue;
-				const Vector3 centre = origin + Vector3(float(x), float(y), float(z)) * voxel;
-				const float finish_class = fin ? float(fin[lk[i]]) : 0.0f;
-				Color color;
-				bool coloured = false;
+				const int l[3] = { x - x0, y - y0, z - z0 };
 				for (int k = 0; k < 6; k++) {
 					const int ax = x + DIRS[k][0], ay = y + DIRS[k][1], az = z + DIRS[k][2];
 					if (!open(ax, ay, az)) continue;
-					if (!coloured) {
-						// Look.jitter: t in [-1, 1) from the cell's hash, brightness * (1 + t * noise).
-						const Color base = pal[lk[i]];
-						color = base;
-						if (noise > 0.0) {
-							const uint32_t hv = hash_vector4i(x + offset.x, y + offset.y, z + offset.z, int32_t(salt));
-							const double t = double(int64_t(hv) % 1000) / 1000.0 * 2.0 - 1.0;
-							color = Color(float(double(base.r) * (1.0 + t * noise)), float(double(base.g) * (1.0 + t * noise)),
-									float(double(base.b) * (1.0 + t * noise)), base.a);
-						}
-						coloured = true;
-					}
 					int bits = 0;
 					for (int s = 0; s < 8; s++) {
 						const Vector3i &st = ring[k][s];
 						if (!open(ax + st.x, ay + st.y, az + st.z)) bits |= 1 << s;
 					}
 					const int ao = ao_table[bits];
-					const int at = int(verts.size());
-					const Vector3 nf(DIRS[k][0], DIRS[k][1], DIRS[k][2]);
-					for (int q = 0; q < 4; q++) {
-						verts.push_back(centre + corners[k][q]);
-						normals.push_back(nf);
-						colors.push_back(color);
-						uv.push_back(Vector2(LEVEL_VALUE[(ao >> (q * 2)) & 3], finish_class));
-					}
-					const int *split = (ao & FLIP) ? SPLIT_13 : SPLIT_02;
-					for (int s = 0; s < 6; s++) {
-						index.push_back(at + split[s]);
+					if ((ao & 255) == (ao & 3) * 0x55) {
+						planes[plane_at(k, l[AXES[k][0]], l[AXES[k][1]], l[AXES[k][2]])] = int32_t(lk[i]) * 1024 + ao;
+					} else {
+						face(origin + Vector3(float(x), float(y), float(z)) * voxel, k, lk[i], ao, Vector3(1, 1, 1));
 					}
 				}
 			}
+	// CellMesher._merge: from the lowest (v, u) still free, a run along u of one key, grown along v
+	// while every row matches.
+	for (int k = 0; k < 6; k++)
+		for (int dd = 0; dd < REGION; dd++)
+			for (int v = 0; v < REGION; v++)
+				for (int u = 0; u < REGION; u++) {
+					const int32_t key = planes[plane_at(k, dd, u, v)];
+					if (key < 0) continue;
+					int nu = 1;
+					while (u + nu < REGION && planes[plane_at(k, dd, u + nu, v)] == key) nu++;
+					int nv = 1;
+					for (;;) {
+						if (v + nv >= REGION) break;
+						bool row = true;
+						for (int i = 0; i < nu && row; i++) row = planes[plane_at(k, dd, u + i, v + nv)] == key;
+						if (!row) break;
+						nv++;
+					}
+					for (int j = 0; j < nv; j++)
+						for (int i = 0; i < nu; i++) planes[plane_at(k, dd, u + i, v + j)] = -1;
+					Vector3 mid(float(x0), float(y0), float(z0));
+					mid[AXES[k][0]] = float(double(mid[AXES[k][0]]) + dd);
+					mid[AXES[k][1]] = float(double(mid[AXES[k][1]]) + (u + (nu - 1) * 0.5));
+					mid[AXES[k][2]] = float(double(mid[AXES[k][2]]) + (v + (nv - 1) * 0.5));
+					Vector3 span(1, 1, 1);
+					span[AXES[k][1]] = float(nu);
+					span[AXES[k][2]] = float(nv);
+					face(origin + mid * voxel, k, key >> 10, key & 1023, span);
+				}
 	return pack(out);
 }
