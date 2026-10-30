@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
+"Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
+rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
+
 ## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
 Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
 changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,

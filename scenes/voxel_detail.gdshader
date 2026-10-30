@@ -20,6 +20,8 @@ uniform float voxel = 0.125;
 uniform float tone_drift = 0.3;
 // A baked mesh (VERTEX is the model-space point) instead of a MultiMesh of cubes.
 uniform bool baked = false;
+// A plain mesh with no vertex colours (debris, bollards, tunnel mouths) takes its sRGB colour here.
+uniform vec4 tint : source_color = vec4(1.0);
 
 varying vec3 local_pos;
 varying vec3 local_normal;
@@ -32,7 +34,7 @@ void vertex() {
 }
 
 void fragment() {
-	vec3 base = sd_srgb(COLOR.rgb);
+	vec3 base = sd_srgb(COLOR.rgb) * tint.rgb;
 	vec3 q = local_pos - local_normal * 0.001;
 	vec2 pc = sd_cell(sd_plane(q, local_normal));
 	vec3 albedo = base * (1.0 + (sd_fbm(pc, 4.0) - 0.5) * tone_drift);

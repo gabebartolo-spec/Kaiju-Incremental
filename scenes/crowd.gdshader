@@ -9,6 +9,8 @@ shader_type spatial;
 // stand went, or a blow) falls from where it is to the height StadiumCrowd gives it, goes over,
 // lies there a while and shrinks away under the dust (custom data, set once when it dies).
 
+#include "res://scenes/surface_detail.gdshaderinc"
+
 uniform float bob = 0.05;
 uniform vec2 bob_hz = vec2(1.2, 2.4);
 uniform float roughness_value = 0.9;
@@ -24,6 +26,9 @@ uniform float clock = 0.0;
 uniform float fall_g = 30.0;
 uniform float shrink = 0.5;
 uniform float topple = 0.25;
+
+// The fan's own model-space point, for the city's block grain (flat surfaces P3): it rides with the fan.
+varying vec3 fan_pos;
 
 // How far a fan at `rel` (from the middle) runs straight out to normalised radius exit_r.
 float run_out(vec2 rel) {
@@ -46,6 +51,7 @@ void vertex() {
 	// z the height it lands at, w how long it lies there. It keeps the place it fell from.
 	bool dying = INSTANCE_CUSTOM.x > 0.5;
 	float ft = dying ? INSTANCE_CUSTOM.y : flee_t;
+	fan_pos = VERTEX;
 	vec3 local = VERTEX;
 	vec3 off = vec3(0.0);  // in world axes: the model matrix only turns
 	bool out_of_sight = false;
@@ -90,6 +96,6 @@ void vertex() {
 }
 
 void fragment() {
-	ALBEDO = srgb_to_linear(COLOR.rgb);
+	ALBEDO = srgb_to_linear(COLOR.rgb) * sd_grain(fan_pos, -VERTEX.z);
 	ROUGHNESS = roughness_value;
 }
