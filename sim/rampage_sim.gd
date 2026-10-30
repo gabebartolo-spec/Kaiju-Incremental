@@ -203,29 +203,7 @@ func _init(
 	var bridges_from := BridgeLayout.add_pieces(buildings, city, bridge_cfg)
 	grid = BuildingGrid.new(buildings)  # after the rail's and bridges' pieces: buildings too
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
-	collapse = Collapse.new(self, tuning, Seeds.derive(rng, 0xFA11))
-	carving = Carving.new(self, tuning)
-	army_units = Army.new(self, rng)
-	var flight_cfg: Dictionary = army["flight"]
-	flight = TankFlight.new(self, flight_cfg, Seeds.derive(rng, 0xF117))
-	explosives = Explosives.new(self, tuning, Seeds.derive(rng, 0xE7))
-	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
-	var air_cfg: Dictionary = tuning["air"]
-	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
-	var vip_cfg: Dictionary = tuning["vip"]
-	vip = VipHeli.new(self, vip_cfg, Seeds.derive(rng, 0x71B))
-	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
-	stomp = RampageStomp.new(self)
-	emerge = Emergence.new(city, tuning)
-	body = BodyContact.new(self, tuning)
-	tail = TailTouch.new(self, body.cfg)
-	rail = Rail.new(self, tuning, Seeds.derive(rng, 0x7A11))
-	for n: int in range(rail_from, bridges_from):
-		rail.add_piece(n)
-	news = RunNews.new(self, tuning)
-	death = DeathOverload.new(self, tuning, Seeds.derive(rng, 0xDEAD))
-	var strike_cfg: Dictionary = tuning["strike"]
-	strikes = Strikes.new(self, strike_cfg)
+	RampageSimParts.make(self, tuning, rng, Vector2i(rail_from, bridges_from))
 
 
 ## The buildings that stand on lots: all but the railway's and the bridges' pieces (is_span).

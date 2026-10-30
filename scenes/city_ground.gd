@@ -61,7 +61,7 @@ func _ready() -> void:
 	var wet := channels.duplicate()
 	wet.append_array(_basin)
 	_roads(wet, asphalt)
-	_river(channels, asphalt, pavement.lightened(0.12))
+	GroundRiver.river(self, channels, asphalt, pavement.lightened(0.12))
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)
@@ -280,64 +280,11 @@ func _water() -> MeshInstance3D:
 	)
 
 
-## The river (CityRiver): a channel sunk city "river_depth" below the street, glossy water
-## bluer and lighter than the bay's between stone quay walls, running on under its bridges:
-## a deck at street level with a parapet along each side for every street that crosses it.
-func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
-	var depth := Num.f(cfg.get("river_depth", 0.0))
-	var bridges := CityRiver.bridges(plan, cfg)
-	var wall := Vector2(PAVE_TOP, depth + 0.5)
-	for channel: Rect2 in channels:
-		add_child(_sheet(channel, -depth, Look.color("river")))
-		var x0 := channel.position.x
-		var z0 := channel.position.y
-		var banks: Array[Rect2] = [
-			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
-			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
-		]
-		# No wall where a bridge's inlet opens off the river (or the river into the inlet).
-		var open: Array[Rect2] = []
-		open.assign(bridges)
-		for other: Rect2 in channels:
-			if other != channel:
-				open.append(other.grow(RIVER_QUAY))
-		var diagonal := DiagonalPaving.band(plan, cfg, 0.0)
-		for side: Rect2 in GroundKit.cut(banks, open):
-			if DiagonalPaving.pieces(side, diagonal).size() == 1 and _whole(side, diagonal):
-				_face(side, wall, stone, -depth)
-			else:
-				cut_walls.append(side)
-		_face(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone, -depth)
-		_face(
-			Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y), wall, stone, -depth
-		)
-	var over := CityRiver.diagonal_deck(plan, cfg)
-	if not over.is_empty():
-		_diagonal_deck(over, channels[0], [asphalt, stone])
-	for deck: Rect2 in bridges:
-		_bridge(deck, channels, stone)
-
-
 ## A cross street's bridge: the bank walls carried on under it. Its deck, parapets and piers are a
 ## structure in the city's buildings (BridgeLayout, D-389: they carve, and a span cut off its
 ## piers drops into the river), drawn by BridgeVoxels.
 func _bridge(deck: Rect2, channels: Array[Rect2], stone: Color) -> void:
-	_abutments(deck, channels, Num.f(cfg.get("river_depth", 0.0)), stone)
-
-
-## The bank walls carried on under a bridge deck, from its underside down to the channel floor, so
-## nothing under it shows the clear colour behind (a pale slit at the deck's sides).
-func _abutments(deck: Rect2, channels: Array[Rect2], depth: float, stone: Color) -> void:
-	for channel: Rect2 in channels:
-		if not channel.intersects(deck):
-			continue
-		for z: float in [channel.position.y, channel.end.y - RIVER_QUAY]:
-			_face(
-				Rect2(deck.position.x, z, deck.size.x, RIVER_QUAY),
-				Vector2(-0.4, depth),
-				stone,
-				-depth
-			)
+	GroundRiver.abutments(self, deck, channels, Num.f(cfg.get("river_depth", 0.0)), stone)
 
 
 ## The diagonal's bridge (CityRiver.diagonal_deck): its deck at the avenue's level with a parapet

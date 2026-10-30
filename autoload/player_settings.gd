@@ -190,27 +190,19 @@ static func toggle_rumble() -> void:
 	save()
 
 
-## The language in use: the player's, else the system's when the game has it, else English.
+## The language in use: the player's, else the system's, else English (SettingsLanguage.code).
 static func language_code() -> String:
-	if _codes().has(language):
-		return language
-	var system := OS.get_locale()
-	for code: String in _codes():
-		# Any Chinese system gets Simplified Chinese, the only Chinese the game has.
-		var base := code.get_slice("_", 0)
-		if system == code or system.get_slice("_", 0) == base:
-			return code
-	return "en"
+	return SettingsLanguage.code()
 
 
-## The name of the language in use, as its own speakers write it.
+## The name of the language in use, as its own speakers write it (SettingsLanguage.shown_name).
 static func language_name() -> String:
-	return str(LANGUAGES[_codes().find(language_code())][1])
+	return SettingsLanguage.shown_name()
 
 
 ## Steps the language to the next of LANGUAGES (wrapping round) and switches the game to it.
 static func next_language() -> void:
-	var codes := _codes()
+	var codes := SettingsLanguage.codes()
 	language = codes[(codes.find(language_code()) + 1) % codes.size()]
 	apply_language()
 	save()
@@ -220,13 +212,6 @@ static func next_language() -> void:
 static func apply_language() -> void:
 	TranslationServer.set_locale(language_code())
 	CjkFont.attach(language_code())
-
-
-static func _codes() -> Array[String]:
-	var out: Array[String] = []
-	for row: Array in LANGUAGES:
-		out.append(str(row[0]))
-	return out
 
 
 static func toggle_gore() -> void:

@@ -146,7 +146,7 @@ func steer(dt: float, want: Vector2) -> float:
 		_plant_both()
 		_standing = false
 	turn_left = sim.facing.angle_to(want)
-	var stepped := _steps_this_turn()
+	var stepped := BodyTurnPace.steps_this_turn(self)
 	var slow_pow := Num.f(_stage.get("turn_slow_pow", 1.0))
 	var keep := lerpf(1.0, _turn_slow, pow(absf(turn_left) / PI, slow_pow if stepped else 1.0))
 	# Sets off over the stage's walk_off_s (motion critic 10-22; grown ~1.3 s, D-355), then eases.
@@ -154,7 +154,7 @@ func steer(dt: float, want: Vector2) -> float:
 	var launching := _walked_s < _walk_off_s
 	var ease := 1.0 if launching else minf(1.0, Num.f(cfg["stride_ease"]) * dt)
 	stride = minf(lerpf(stride, want.length() * keep, ease), stride + dt / _walk_off_s)
-	var pace := _pace(dt, stepped)  # (top turn speed, its acceleration)
+	var pace := BodyTurnPace.pace(self, dt, stepped)  # (top turn speed, its acceleration)
 	var aim := signf(turn_left) * minf(pace.x, sqrt(2.0 * pace.y * absf(turn_left)))
 	_spin = move_toward(_spin, aim, pace.y * dt)
 	var turn := _spin * dt
@@ -185,50 +185,6 @@ func _stand(dt: float) -> void:
 ## Both feet down where they stand when the body sets off (or after a dash or leap).
 func _plant_both() -> void:
 	_feet = [_foot_at(_pivot.x, 1.0), _foot_at(_pivot.x - _step_len, -1.0)]
-
-
-## True when this turn is made in steps: a real turn (begun at smooth_below or more, kept until it
-## is made) by a body that turns in steps; a smaller course correction turns smoothly (D-130).
-func _steps_this_turn() -> bool:
-	if absf(turn_left) >= Num.f(cfg["smooth_below"]):
-		_real_turn = true
-		_landing = false
-	elif _real_turn and absf(turn_left) <= Num.f(cfg["turn_min"]):
-		_real_turn = false  # the turn is made: the next small one is a correction
-		_landing = _spin != 0.0
-	if _landing and (_spin == 0.0 or absf(turn_left) > 2.0 * Num.f(cfg["turn_min"])):
-		_landing = false
-	return turns_in_steps() and (_real_turn or _landing)
-
-
-## How fast the body may turn now, Vector2(top rad/s, rad/s^2); eases in a stepped turn's cadence.
-func _pace(dt: float, stepped: bool) -> Vector2:
-	var top := lerpf(_rate("turn_rate_still"), _rate("turn_rate"), stride)
-	var accel := Num.f(cfg["turn_accel"])
-	if sim.powers.beam_left > 0.0:  # the beam follows the stick at its own pace, whatever the size
-		top = maxf(top, sim.powers.beam_turn_rate())
-	var cadence := 0.0
-	if stepped and _uturn_s > 0.0:
-		top = _turn_peak()
-		accel = top / (Num.f(cfg["turn_ramp"]) * _turn_time())  # up to speed in the ramp's share
-		if absf(turn_left) > Num.f(cfg["turn_min"]):
-			cadence = _turn_steps / _uturn_s
-	_cadence = move_toward(_cadence, cadence, Num.f(cfg["cadence_ease"]) * dt)
-	return Vector2(top, accel)
-
-
-## A stepped turn's top yaw rate (rad/s): the U-turn's half circle in _turn_time() as a trapezoid
-## (speeding up and slowing over turn_ramp of it each), so 1 / (1 - turn_ramp) of the mean rate.
-func _turn_peak() -> float:
-	return PI / (_turn_time() * (1.0 - Num.f(cfg["turn_ramp"])))
-
-
-## Seconds a U-turn takes until the body is exactly on the new way: uturn_s is the time to come
-## within turn_land_deg of it (what a player sees as turned); the slowing ramp takes a bit more.
-func _turn_time() -> float:
-	var ramp := Num.f(cfg["turn_ramp"])
-	var land := deg_to_rad(Num.f(cfg["turn_land_deg"]))
-	return _uturn_s / (1.0 - sqrt(2.0 * land * ramp * (1.0 - ramp) / PI))
 
 
 ## A turn swings the body about the foot that is down (since `was`): that foot stays put. Only the
@@ -365,7 +321,8 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 func _face(dt: float) -> void:
 	var most := _rate("turn_rate_still")
 	if turns_in_steps() and _uturn_s > 0.0:
-		most = maxf(most, _turn_peak())  # as quick as the stepped turn the facing is making
+		# as quick as the stepped turn the facing is making
+		most = maxf(most, BodyTurnPace.turn_peak(self))
 	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most * dt, most * dt))
 
 
