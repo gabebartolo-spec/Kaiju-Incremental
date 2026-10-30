@@ -2,8 +2,8 @@ class_name TaskforceGas
 extends RefCounted
 ## The Taskforce's gas grenades (D-143, D-145, D-152): a gas soldier throws one at the kaiju's feet
 ## and a blue-black cloud about one street wide stands where it lands for `seconds`. While the
-## kaiju stands in a cloud his special powers are locked (the signature and the ultimate cannot be
-## pressed and a running Thunder Beam stops); the dash and every physical attack still work, and
+## kaiju stands in a cloud his special powers are locked (the signature, the breath and the
+## ultimate cannot be pressed and a running Thunder Beam stops); the dash and every physical attack still work, and
 ## the cloud does no damage. Part of Taskforce; pure. Events: gas_launched, gas_cloud, gas_cleared,
 ## gas_lock (on: true / false).
 
@@ -91,6 +91,7 @@ func _lock() -> void:
 	var hold := Num.f(cfg["hold"])
 	sim.ability_ready_in = maxf(sim.ability_ready_in, hold)
 	sim.ultimate_ready_in = maxf(sim.ultimate_ready_in, hold)
+	sim.breath_ready_in = maxf(sim.breath_ready_in, hold)  # the croc's own breath button (D-400)
 	if sim.powers.beam_left > 0.0:
 		sim.powers.beam_left = 0.0
 		sim.events.append({"type": "beam_end"})
