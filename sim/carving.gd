@@ -84,6 +84,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	warm_margin = Num.f(cfg.get("warm_margin", 3.0))
 	warm_emerge_margin = Num.f(cfg.get("warm_emerge_margin", warm_margin))
 	_materials = Content.materials()
+	LandmarkCells.preload_models(on)  # a landmark's first hit then only builds its grid
 	_strength.resize(256)
 	for m: Dictionary in _materials:
 		var s := Num.f(m.get("strength", 1.0))

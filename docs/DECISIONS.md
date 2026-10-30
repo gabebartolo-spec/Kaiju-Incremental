@@ -10,6 +10,23 @@ stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip of
 Asked: change the take or the checks? "Change the checks": lift > 0.3 hip, toe and body within 0.03 hip, no
 variation bar (one take plays the same each time). Landing inside STOMP_WAIT and alternating feet stay.
 
+## 2026-10-31 · D-407 · Director · Colour-blind cues move to after the demo
+"push colour blind fixes to after demo". The check found #229's options carry no colour-blind setting; the threat
+meter (#234) already reads by segment count. The colour-blind pass is a post-demo roadmap row, not a demo gate.
+
+## 2026-10-31 · D-406 · Director · The demo ships in English only; only English is checked
+His words (10-31): "remove the chinese test checks, we only going to ship the demo with English", then "remove checks
+for all languages other than english". strings.py checks only the en column (CHECKED); check_i18n.sh no longer runs
+subset_cjk.py --check and lint.yml no longer fetches kaiju_cjk.ttf. The seven columns stay in the table.
+
+## 2026-10-31 · D-405 · Director · Time's up is an AIRSTRIKE: a jet run of Tripo olive jets
+His words (10-31), on "killed by the final strike": "i hate the copy, all deaths are from the final strike technically
+so its just meaningless babble, change it". Picked headline "AIRSTRIKE", strike "Jet run" (D-263's railgun volley is
+dropped), jet model "Tripo, olive drab": J01, task 7536acba-0e5f-45dd-9f08-e06a93959859, 65 credits from the 1,500-credit
+consent (D-400), balance 5,240 after. At time's up three jets cross the screen through him and carpet-bomb his street
+(FinalStrike, death.airstrike), then he dies as before. The subline "The army ran out of patience" is the lead's
+wording, for the director.
+
 ## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
 His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
 moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
@@ -376,24 +393,3 @@ For the keyed walk-start (D-343). Asked whether the croc may take about 1.3 s to
 (today about 0.13 s): picked "Ease in, ~1.3 s (Recommended)". The sim's set-off changes (walk_off_s and the step clock),
 and the keyed walk-start plays over it. A ~6 s clip goes to him before it ships. Not picked: the body trailing the sim
 (a ~30% surge) or a quick 0.4 s first step (the defect he named).
-
-## 2026-10-27 · D-354 · Director · Creature animation runs alongside the parked work
-Asked for a plan to finish the render plan and the debt list ("make a plan to finish the render plan, debt fixes"). Asked
-whether the Cascadeur animation row (debt row 21, 31 of 40 moves to key) holds back the parked work (roads, wider city,
-river intro, D-310): picked "Run alongside (Recommended)". The parked queue opens once every other debt row is merged;
-the keyer and rigger keep keying the whole time. Plan: C:/Users/DANTE/.claude/plans/dapper-percolating-lake.md.
-
-## 2026-10-27 · D-353 · Director · Team: the Cascadeur keyer plus 4 builders
-Replaces D-296. Asked "be honest, would this actually be any slower if we did it with just you and no subagents? maybe 1
-subagent for CI and thats it?". Lead's numbers: 85 merges on 10-27 (no builder limit) against 29 and 33 the two days
-before; costs: collisions (#332 vs #338), 10 open PRs against the cap of 3, the lead relaying instead of checking work.
-Then "what do YOU think, im asking here"; the lead recommended the keyer plus 4. Picked "Yes, keyer + 4 (Recommended)":
-the Cascadeur keyer plus 4 builders (the rigger is one of the 4, D-336), at most 3 open PRs. Running builders finish
-their current task and are not replaced. The lead counts in-game progress on 10-28 and reports it.
-
-## 2026-10-27 · D-352 · Director · Roof tanks: mostly white solar water heaters, some short wooden towers
-Changes D-348. On the wooden towers: "idk, the rooftanks look massive, and why are the brown"; "i prefer rooftanks like
-the attached image" (a white tank lying on its side on a metal frame above two dark solar panels; reference only,
-C:/kt/reference/roof_tank/); "i mean keep SOME of the wooden towers, but mix it up with the white ones". Picked "Mostly
-white (Recommended)": same spots and count, about 3 in 4 roofs a white heater, 1 in 4 a wooden tower; and "About 1.5
-storeys (Recommended)": a wooden tower is half today's height, so it sits on the roof instead of looming.

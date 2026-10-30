@@ -170,6 +170,7 @@ func _run() -> void:
 		if debris != null:
 			var live_bodies: Array = debris.get("_bodies")
 			debris_live += live_bodies.size()
+		BenchCensus.at(root, i)
 		if i % IDLE_SCAN == 0:
 			for node: Node in Lib.nodes_of(self, "IslandBody"):
 				break_max = maxi(break_max, Num.i(node.get("last_break_us")))
