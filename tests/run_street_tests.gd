@@ -27,6 +27,7 @@ func run_checks() -> void:
 	await _t("_check_buckets_resize")
 	await _t("_check_people_bounds")
 	await _t("_check_walk_native")
+	await _t("_check_rubble_press")
 
 
 ## The buffer checks run the native buckets (KaijuBuckets, item 7): without the library they skip,
@@ -288,3 +289,33 @@ func _check_walk_native() -> void:
 	)
 	on.finish()
 	off.finish()
+
+
+## His feet crunch rubble flatter (D-245): a footfall presses the rubble voxels under it toward
+## the ground for good and leaves voxels outside its reach alone.
+func _check_rubble_press() -> void:
+	var yard := RuinYard.new(null, Callable())
+	root.add_child(yard)
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = BoxMesh.new()
+	mm.instance_count = 2
+	# Rows of 12 basis/origin floats and 4 colour floats, set as a buffer: a headless run reads
+	# a buffer back but not per-instance transforms.
+	var rows := PackedFloat32Array()
+	for x: float in [0.0, 10.0]:
+		rows.append_array([1, 0, 0, x, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1])
+	mm.buffer = rows
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	yard.add_child(mmi)
+	yard.press(Vector3.ZERO, 2.0, 0.35)
+	var buf := mm.buffer
+	yard.queue_free()
+	var whole := buf.size() == rows.size()
+	check(
+		whole and is_equal_approx(buf[7], 0.35) and is_equal_approx(buf[5], 0.35),
+		"rubble under a foot is pressed to 35%% of its height (%.2f)" % (buf[7] if whole else -1.0),
+	)
+	check(whole and is_equal_approx(buf[23], 1.0), "rubble out of reach is untouched")

@@ -10,7 +10,6 @@ extends TrafficNet
 const ACCEL := 6.0
 const BRAKE := 12.0
 const BACK_SPEED := 0.6  # backing away, as a share of flee speed
-const UTURN_AFTER := 2.5  # seconds stuck behind something before turning round
 const LANE_HALF := 0.6  # how far sideways another car still counts as in my lane
 const ARRIVE_SECONDS := 1.4
 const FLASH_HZ := 4.0
@@ -210,10 +209,11 @@ func _drive(car: Car, delta: float, kaiju: Vector2) -> void:
 			car.braking = false
 			_turn_back(car, true)
 		return
-	if _blocked(car):
+	var wait := _blocked(car)
+	if wait >= 0.0:
 		target = 0.0
 		car.blocked += delta
-		if car.blocked > UTURN_AFTER:
+		if car.blocked > wait:
 			_turn_back(car, false)
 	else:
 		car.blocked = 0.0
@@ -243,7 +243,9 @@ func _turn_back(car: Car, backing: bool) -> void:
 	car.blocked = 0.0
 
 
-func _blocked(car: Car) -> bool:
+## How long to sit before turning round, or -1 when the lane ahead is clear. Behind a wreck or
+## a parked cruiser a car soon gives up; behind a live car it queues, so jams back up the street.
+func _blocked(car: Car) -> float:
 	var dir := car.dir
 	var gap := Num.f(_cfg["car_gap"])
 	for other: Car in cars:
@@ -252,11 +254,11 @@ func _blocked(car: Car) -> bool:
 		var rel := other.pos - car.pos
 		var ahead := rel.dot(dir)
 		if ahead > 0.0 and ahead < gap and absf(rel.cross(dir)) < LANE_HALF:
-			return true
+			var dead := other.crushed or other.parked
+			return Num.f(_cfg["jam_wreck_s"]) if dead else Num.f(_cfg["jam_queue_s"])
 	if TankKeepOut.in_lane(sim, car, dir):  # a tank: no waiting it out, turn round at once
-		car.blocked = maxf(car.blocked, UTURN_AFTER)
-		return true
-	return false
+		return 0.0
+	return -1.0
 
 
 ## The crossing to drive to next from car.node: a legal lane at random, or, fleeing, any

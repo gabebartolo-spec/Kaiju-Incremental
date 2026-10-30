@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
+His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
+moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
+consent of 10-30 (D-400). Generated 10-31: trawler, tug, yacht, launch, 260 credits
+(provenance C:/Users/DANTE/cascadeur_bridge/city_boats/provenance.md). Spectacle only: nothing reaches the sim.
+
 ## 2026-10-31 · D-403 · Director · Touched suites run locally; a PR runs lints and the sim suites; engine suites go to main
 "im sick of the CI purgatory". Three rulings. (1) Relaxes D-383: before a push, run the suites nearest the change
 locally, `python tools/run_touched.py` (walks back from each changed file to the first suites that reach it; `--all`
@@ -391,10 +397,3 @@ Speed runs need his PC to themselves (D-299), so tonight's queue is about 3.5 h.
 "Count on GitHub (Recommended)". Bars that can be counted on a pinned seed (draw calls, pieces, nodes) become GitHub
 checks that run any time and in parallel; only millisecond bars stay on his PC (builder bench-counts). Not picked: the
 card's own timer, renting cloud GPUs (no spend), a spare bench PC. Start time "[No preference]": runs start 01:00.
-
-## 2026-10-27 · D-350 · Director · The camera bubble comes forward
-Asked about the dot fade still on main: "Bring the bubble forward". #238 resumes now, ahead of D-283's "after the
-render plan" timing and its place in D-310's order. Which buildings (22:50, replaces D-283's agent wording "between
-camera and kaiju"): "its the ones that the camera itself phases through ... foreground buildings which are nowhere near
-the field of destruction"; never "inside buildings adjacent to the kaiju". A sphere around the camera only; zero cuts in
-the kaiju's destruction field; pieces, rubble and vehicles never (D-326); shadows kept. Removes the biomass numbers (D-284).
