@@ -91,7 +91,7 @@ func _check_mech_bombs() -> void:
 	)
 	var bomb := _first(_run(still, 0.4, "mech_bomb"), "mech_bomb")
 	check(
-		bool(bomb.get("hit", false)) and still.hp < hp,
+		bomb.get("hit", false) == true and still.hp < hp,
 		"standing on the ring, the bomb hurts him (on)"
 	)
 	var moved := _adult()
@@ -102,7 +102,7 @@ func _check_mech_bombs() -> void:
 	moved.kaiju_pos += Vector2(0.0, 10.0)  # stepped clear of the ring on his feet
 	var miss := _first(_run(moved, 2.0, "mech_bomb"), "mech_bomb")
 	check(
-		not miss.is_empty() and not bool(miss.get("hit", true)),
+		not miss.is_empty() and miss.get("hit", true) == false,
 		"stepping off the ring dodges it (off)"
 	)
 
