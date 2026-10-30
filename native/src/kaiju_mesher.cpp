@@ -221,7 +221,7 @@ Array KaijuMesher::mesh_region(const PackedByteArray &p_cells, const Vector3i &p
 					}
 					for (int j = 0; j < nv; j++)
 						for (int i = 0; i < nu; i++) planes[plane_at(k, dd, u + i, v + j)] = -1;
-					Vector3 mid(float(x0), float(y0), float(z0));
+					Vector3 mid{float(x0), float(y0), float(z0)};
 					mid[AXES[k][0]] = float(double(mid[AXES[k][0]]) + dd);
 					mid[AXES[k][1]] = float(double(mid[AXES[k][1]]) + (u + (nu - 1) * 0.5));
 					mid[AXES[k][2]] = float(double(mid[AXES[k][2]]) + (v + (nv - 1) * 0.5));
