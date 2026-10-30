@@ -1,17 +1,14 @@
 class_name CellMesher
 extends RefCounted
-## Meshes a building from its fine destruction grid (BuildingCells, D-094 WP4) one REGION^3
-## block of cells at a time, so a carve rebuilds only the blocks it touched. A face is drawn
-## wherever a cell meets air (an empty cell or the grid's edge; never the ground under y = 0),
-## so the inside of a carved hole is real, outward-lit surface: the walls' inner faces and the
-## floor slabs are drawn as solid, not as the dark backs of the shell (BuildingMesher's
-## standing-building trick). Colours are today's look: BuildingVoxels' palette, its lit-window
-## roll (the cells it drew "lit" or "shop_lit") and Look.jitter per cell, so an uncarved
-## building looks as its baked BuildingView does. Every corner carries its AO and the cell's
-## material finish in UV (VoxelAO; a solid neighbour or the ground shades it, off-grid is air).
-## Two paths give the same bytes: the native KaijuMesher (native/, WP2's extension) when it is
-## loaded, and the GDScript below, the oracle the native suite holds it to. Pure data: safe on a
-## worker thread once set up.
+## Meshes a building from its fine destruction grid (BuildingCells, D-094 WP4) one REGION^3 block
+## of cells at a time, so a carve rebuilds only the blocks it touched. A face is drawn wherever a
+## cell meets air (an empty cell or the grid's edge; never the ground under y = 0), so a carved
+## hole's inside is real, outward-lit surface (not the shell's dark backs, BuildingMesher's trick).
+## Colours: BuildingVoxels' palette and lit-window roll ("lit"/"shop_lit"); building_baked.gdshader
+## adds Look.jitter per voxel, so an uncarved building looks as its baked BuildingView does. Every
+## corner carries its AO and the cell's finish in UV (VoxelAO; a solid neighbour or the ground
+## shades it, off-grid is air). Native KaijuMesher (native/) and the GDScript oracle below give
+## the same bytes. Pure data: safe on a worker thread once set up.
 
 const REGION := 16
 ## Look ids past the materials table (bytes in `looks`): the windows the view draws lit.
@@ -23,6 +20,15 @@ const FIRST_COLOR := 64
 ## Colour quantisation steps per channel for those slots.
 const COLOR_STEPS := 16.0
 const NEIGHBOURS: Array[Vector3i] = BuildingMesher.NEIGHBOURS
+## Per NEIGHBOURS direction: (normal axis, u axis, v axis) of its plane.
+const AXES: Array[Vector3i] = [
+	Vector3i(0, 1, 2),
+	Vector3i(0, 1, 2),
+	Vector3i(1, 0, 2),
+	Vector3i(1, 0, 2),
+	Vector3i(2, 0, 1),
+	Vector3i(2, 0, 1)
+]
 
 var dims: Vector3i
 ## Building-local cell (BuildingVoxels' coordinates) of grid cell (0, 0, 0).
@@ -60,6 +66,8 @@ class _Out:
 	var colors := PackedColorArray()
 	var index := PackedInt32Array()
 	var uv := PackedVector2Array()
+	var lo: Vector3i
+	var planes := PackedInt32Array()
 
 
 ## voxels: the building's view voxels (its palette and lit roll); cells: its grid. use_native:
@@ -214,46 +222,102 @@ func mesh_region(cells: PackedByteArray, r: Vector3i) -> Array:
 	return mesh_region_gd(cells, r)
 
 
-## The GDScript oracle of mesh_region.
+## The GDScript oracle of mesh_region. Faces with flat AO (all four corners alike) are merged
+## per plane into larger quads of one look (_merge); the rest are drawn one per cell side.
 func mesh_region_gd(cells: PackedByteArray, r: Vector3i) -> Array:
 	var out := _Out.new()
-	var lo := r * REGION
-	var hi := (lo + Vector3i.ONE * REGION).min(dims)
+	out.lo = r * REGION
+	var hi := (out.lo + Vector3i.ONE * REGION).min(dims)
 	var plan := dims.x * dims.z
-	for y: int in range(lo.y, hi.y):
-		for z: int in range(lo.z, hi.z):
-			for x: int in range(lo.x, hi.x):
+	out.planes.resize(NEIGHBOURS.size() * REGION * REGION * REGION)
+	out.planes.fill(-1)
+	for y: int in range(out.lo.y, hi.y):
+		for z: int in range(out.lo.z, hi.z):
+			for x: int in range(out.lo.x, hi.x):
 				var i := x + z * dims.x + y * plan
 				if cells[i] != 0:
 					_cell_faces(cells, Vector3i(x, y, z), i, out)
+	_merge(out)
 	return [out.verts, out.normals, out.colors, out.index, out.uv]
 
 
-## The faces of solid grid cell c (index i) that meet air, into `out`.
+## The faces of solid grid cell c (index i) that meet air: a flat-lit face goes into `planes`
+## (its merge key, look * 1024 + AO entry), any other straight into `out`.
 func _cell_faces(cells: PackedByteArray, c: Vector3i, i: int, out: _Out) -> void:
-	var centre := origin + Vector3(c) * voxel
-	var color := Color.BLACK
-	var coloured := false
-	var fin := finish[looks[i]]
 	for k: int in NEIGHBOURS.size():
 		var air := c + NEIGHBOURS[k]
 		if not _open(cells, air):
 			continue
-		if not coloured:
-			color = Look.jitter(palette[looks[i]], c + offset, salt)
-			coloured = true
 		var ao := VoxelAO.table(_ring_bits(cells, air, k))
-		var at := out.verts.size()
-		var corners := _corners[k]
-		var nf := Vector3(NEIGHBOURS[k])
-		for q: int in 4:
-			out.verts.append(centre + corners[q])
-			out.normals.append(nf)
-			out.colors.append(color)
-			out.uv.append(VoxelAO.uv(ao, q, fin))
-		var split := VoxelAO.SPLIT_13 if (ao & VoxelAO.FLIP) != 0 else VoxelAO.SPLIT_02
-		for s: int in split:
-			out.index.append(at + s)
+		if (ao & 255) == (ao & 3) * 0x55:
+			var l := c - out.lo
+			var ax: Vector3i = AXES[k]
+			out.planes[_plane_at(k, l[ax.x], l[ax.y], l[ax.z])] = looks[i] * 1024 + ao
+		else:
+			_face(out, k, looks[i] * 1024 + ao, AABB(origin + Vector3(c) * voxel, Vector3.ONE))
+
+
+## Index in mesh_region_gd's planes of direction k, depth d along its normal, u and v across.
+static func _plane_at(k: int, d: int, u: int, v: int) -> int:
+	return ((k * REGION + d) * REGION + v) * REGION + u
+
+
+## Greedy merge of each plane's flat faces: from the lowest (v, u) still free, a run along u of one
+## key, grown along v while every row matches; one quad each.
+func _merge(out: _Out) -> void:
+	var planes := out.planes
+	for k: int in NEIGHBOURS.size():
+		var ax: Vector3i = AXES[k]
+		for d: int in REGION:
+			for v: int in REGION:
+				for u: int in REGION:
+					var key := planes[_plane_at(k, d, u, v)]
+					if key < 0:
+						continue
+					var nu := 1
+					while u + nu < REGION and planes[_plane_at(k, d, u + nu, v)] == key:
+						nu += 1
+					var nv := 1
+					while v + nv < REGION and _row_is(planes, _plane_at(k, d, u, v + nv), nu, key):
+						nv += 1
+					for j: int in nv:
+						for i: int in nu:
+							planes[_plane_at(k, d, u + i, v + j)] = -1
+					var mid := Vector3(out.lo)
+					mid[ax.x] += d
+					mid[ax.y] += u + (nu - 1) * 0.5
+					mid[ax.z] += v + (nv - 1) * 0.5
+					var span := Vector3.ONE
+					span[ax.y] = nu
+					span[ax.z] = nv
+					_face(out, k, key, AABB(origin + mid * voxel, span))
+
+
+## Whether the n plane cells from index `at` along u all hold `key`.
+static func _row_is(planes: PackedInt32Array, at: int, n: int, key: int) -> bool:
+	for i: int in n:
+		if planes[at + i] != key:
+			return false
+	return true
+
+
+## One face of direction k round box (a cell, or a merged run), key look * 1024 + AO entry;
+## in the look's palette colour (building_baked.gdshader jitters it per voxel).
+func _face(out: _Out, k: int, key: int, box: AABB) -> void:
+	var look := key >> 10
+	var ao := key & 1023
+	var at := out.verts.size()
+	var corners := _corners[k]
+	var nf := Vector3(NEIGHBOURS[k])
+	var fin := finish[look]
+	for q: int in 4:
+		out.verts.append(box.position + corners[q] * box.size)
+		out.normals.append(nf)
+		out.colors.append(palette[look])
+		out.uv.append(VoxelAO.uv(ao, q, fin))
+	var split := VoxelAO.SPLIT_13 if (ao & VoxelAO.FLIP) != 0 else VoxelAO.SPLIT_02
+	for s: int in split:
+		out.index.append(at + s)
 
 
 ## Which of the 8 cells round a face's air cell are solid or ground (VoxelAO.ring_of's bits).
@@ -303,19 +367,15 @@ func can_pack() -> bool:
 	return native != null and native.has_method("pack_surface")
 
 
-## A region's arrays as a mesh from the native packed surface (null when it has no face): the
-## bytes to_mesh's add_surface_from_arrays packs, handed to ArrayMesh._set_surfaces, which makes
-## the mesh with RenderingServer.mesh_create_from_surfaces. Under a real renderer that runs on the
-## calling thread, upload included, so a worker can call this (CellView); the dummy renderer
-## queues it with an allocator that is not thread-safe, so headless calls it on the main thread
-## only (tests). Needs can_pack().
+## A region's arrays as a mesh from the native packed surface (null when it has no face), via
+## ArrayMesh._set_surfaces (RenderingServer.mesh_create_from_surfaces): a real renderer builds it on
+## the calling thread, so a worker may call this (CellView); the dummy renderer's allocator is not
+## thread-safe, so headless calls it on the main thread only (tests). Needs can_pack().
 func packed_mesh(arrays: Array) -> ArrayMesh:
 	var surface: Dictionary = native.call("pack_surface", arrays)
 	if surface.is_empty():
 		return null
-	# An ArrayMesh with no RID yet: _set_surfaces makes it with mesh_create_from_surfaces, which a
-	# RenderingDevice renderer builds on the calling thread by design (async resource creation); no
-	# material. CellView's worker_mesh gate (not headless, a RenderingDevice) keeps others on main.
+	# No RID yet: _set_surfaces makes one; CellView's worker_mesh gate keeps non-RD renderers on main.
 	var mesh := ArrayMesh.new()  # thread-ok: RenderingDevice only, gated in CellView (above)
 	mesh.call("_set_surfaces", [surface])
 	return mesh

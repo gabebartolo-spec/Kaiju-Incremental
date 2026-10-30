@@ -59,17 +59,28 @@ static func mesh_faces(mesh: ArrayMesh, into: Dictionary) -> void:
 		)
 
 
-## Face key -> colour of a baked mesh as building_baked.gdshader shows it: each merged quad split
-## back into its voxel faces, each in its cell's Look.jitter of the quad's base colour.
+## Face key -> colour of a baked mesh as building_baked.gdshader shows it (shown()).
 static func shown_faces(mesh: ArrayMesh, voxels: BuildingVoxels, into: Dictionary) -> void:
 	if mesh == null or mesh.get_surface_count() == 0:
 		return
 	var a := mesh.surface_get_arrays(0)
-	var verts: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
-	var normals: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
-	var colors: PackedColorArray = a[Mesh.ARRAY_COLOR]
+	var lift := voxels.origin() + Vector3(0, BuildingVoxels.VOXEL * 0.5, 0)
+	shown(
+		[a[Mesh.ARRAY_VERTEX], a[Mesh.ARRAY_NORMAL], a[Mesh.ARRAY_COLOR]],
+		lift,
+		voxels.b.style,
+		into
+	)
+
+
+## Face key -> colour of merged-face arrays as building_baked.gdshader shows them: each quad split
+## back into its voxel faces, each in its cell's Look.jitter of the quad's palette colour. lift:
+## the world centre of building-local cell (0, 0, 0); salt: the building's style.
+static func shown(arrays: Array, lift: Vector3, salt: int, into: Dictionary) -> void:
+	var verts: PackedVector3Array = arrays[0]
+	var normals: PackedVector3Array = arrays[1]
+	var colors: PackedColorArray = arrays[2]
 	var size := BuildingVoxels.VOXEL
-	var lift := voxels.origin() + Vector3(0, size * 0.5, 0)
 	for q: int in range(0, verts.size(), 4):
 		var u := verts[q + 1] - verts[q]
 		var v := verts[q + 3] - verts[q]
@@ -81,14 +92,16 @@ static func shown_faces(mesh: ArrayMesh, voxels: BuildingVoxels, into: Dictionar
 				var corner := verts[q] + u * (float(i) / nu) + v * (float(j) / nv)
 				var mid := corner + (u / nu + v / nv) * 0.5
 				var cell := Vector3i(((mid - n * size * 0.5 - lift) / size).round())
-				var c := Look.jitter(colors[q], cell, voxels.b.style).clamp()
+				var c := Look.jitter(colors[q], cell, salt).clamp()
 				into[[Vector3i((corner * 64.0).round()), Vector3i(n)]] = c
 
 
+## A grid's faces as the view shows them (merged quads split, jittered per voxel).
 static func cell_faces(m: CellMesher, cells: PackedByteArray) -> Dictionary:
 	var out := {}
+	var lift := m.origin - Vector3(m.offset) * m.voxel
 	for r: Vector3i in m.all_regions():
-		faces(m.mesh_region(cells, r), out)
+		shown(m.mesh_region(cells, r), lift, m.salt, out)
 	return out
 
 

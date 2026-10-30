@@ -194,7 +194,7 @@ func cells_material() -> ShaderMaterial:
 	_dress()
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
-	return _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
+	return _material(ImageTexture.create_from_image(whole), true)  # every face in chunk 0, standing
 
 
 ## Adds the fine-grid view, hidden: the baked meshes draw on until show_cells. From now on its
@@ -219,8 +219,8 @@ func show_cells() -> void:
 	fine = true
 
 
-## merged: the mesh is BuildingMesher's (merged faces: the shader jitters and bites per voxel);
-## false for the cell grid, which bakes both per vertex.
+## merged: the mesh has merged faces (BuildingMesher, CellMesher): the shader jitters and bites
+## per voxel.
 func _material(tex: Texture2D, merged := false) -> ShaderMaterial:
 	ThreadCheck.main_only("BuildingView._material")
 	var mat := ShaderMaterial.new()
