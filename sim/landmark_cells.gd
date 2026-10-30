@@ -200,7 +200,9 @@ static func _bounds(model: Dictionary) -> Array:
 
 
 ## Reads every landmark's model now (at city load), so no first hit pays for the file.
-static func preload_models() -> void:
+static func preload_models(carving: bool) -> void:
+	if not carving:
+		return
 	for id: String in Content.landmarks():
 		_bounds(_model(id))
 
