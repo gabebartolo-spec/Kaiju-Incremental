@@ -41,7 +41,7 @@ static func measure(
 				mark.call(r.position + r.size * Vector2(float(i) / nx, float(j) / nz), into)
 	for bld: RampageSim.Building in sim.buildings:
 		cover.call(Rect2(bld.x - bld.w * 0.5, bld.z - bld.d * 0.5, bld.w, bld.d), full)
-	for g: Dictionary in decor._props._groups:
+	for g: Dictionary in decor._props._groups + decor._street.field._groups:
 		var at: Vector3 = g["at"]
 		mark.call(Vector2(at.x, at.z), full)
 	for car: Traffic.Car in street.traffic.cars:
