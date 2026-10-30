@@ -10,7 +10,8 @@ button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (
 already shares). Where is the ring? "Behind-and-around" (the half ring behind and beside him). The automatic whip goes
 and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328). Animation: "Cascadeur clip first",
 for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
-procedural whip stands in only on the branch.
+procedural whip stands in until they land. Amended the same day: "Merge now" (the lash merges with the
+procedural whip; the clips follow).
 
 ## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
 Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
