@@ -333,54 +333,6 @@ def build_ui() -> None:
     save("ui_deny", lowpass(buzz, 1500), -8.0)
 
 
-def build_tree() -> None:
-    """The evolution tree's sounds (D-396, bio lab): a buy is glass ticked and Special K gurgling
-    up the cell with a soft rising sweep; a maxed node adds a bright three-note seal; a ring
-    opening is a long glass ring and a low pressure hiss; an evolution is an electric snap over a
-    sub boom with arcing crackle."""
-    reseed("build_tree")
-    # tree_buy: glass tick, liquid gurgle (bubbling band-passed noise), a rising tone 180 -> 420 Hz.
-    n = seconds(0.6)
-    t = np.arange(n) / RATE
-    tick = bandpass(noise(seconds(0.05)), np.full(seconds(0.05), 3400.0), 2.5) * env(seconds(0.05), 0.0003, 0.01)
-    gurgle = bandpass(noise(n), 300.0 + 600.0 * (0.5 + 0.5 * np.sin(2 * np.pi * 9.0 * t)), 1.2) * hump(n, 0.25)
-    rise = tone(180.0 + 240.0 * np.clip(t / 0.45, 0, 1), 6, 0.5) * hump(n, 0.3)
-    x = np.zeros(n)
-    place(x, tick, 0.0, 1.2)
-    x += gurgle * 0.9 + rise * 0.5
-    save("tree_buy", lowpass(x, 6000), -5.0)
-    # tree_maxed: the buy, then a three-note chime (E5 G#5 B5) with a glassy second harmonic.
-    m = seconds(1.0)
-    x = np.zeros(m)
-    place(x, gurgle * 0.7 + rise * 0.4, 0.0, 1.0)
-    for i, f in enumerate([659.0, 831.0, 988.0]):
-        k = seconds(0.45)
-        tt = np.arange(k) / RATE
-        note = (np.sin(2 * np.pi * f * tt) + 0.4 * np.sin(2 * np.pi * 2 * f * tt)) * env(k, 0.003, 0.14)
-        place(x, note, 0.12 + i * 0.09, 0.55)
-    save("tree_maxed", x, -4.0)
-    # tree_ring_open: a struck glass dish (decaying partials) over a slow pressure hiss.
-    k = seconds(1.8)
-    tt = np.arange(k) / RATE
-    ring = np.zeros(k)
-    for f, g, d in [(1046.0, 1.0, 0.7), (2090.0, 0.5, 0.45), (3170.0, 0.3, 0.3), (523.0, 0.4, 0.9)]:
-        ring += g * np.sin(2 * np.pi * f * tt) * np.exp(-tt / d)
-    hiss = lowpass(noise(k), 2500) * hump(k, 0.4) * 0.35
-    x = ring * env(k, 0.002, 0.8) + hiss
-    place(x, thump(0.5, 70, 45), 0.0, 0.4)
-    save("tree_ring_open", x, -4.0)
-    # tree_evolve: electric snap, sub boom, arcing crackle tail.
-    k = seconds(1.6)
-    snap = bandpass(noise(seconds(0.06)), np.full(seconds(0.06), 4200.0), 1.2) * env(seconds(0.06), 0.0002, 0.015)
-    boom = thump(1.2, 120, 38)
-    arcs = bandpass(crackle(k, 160.0, 0.5), np.full(k, 2800.0), 1.0)
-    x = np.zeros(k)
-    place(x, snap, 0.0, 1.5)
-    place(x, boom, 0.01, 1.0)
-    x += arcs * 0.5
-    save("tree_evolve", highpass(x, 30), -2.0)
-
-
 def build_army() -> None:
     """The army (D-050): a tank's cannon, a shell slamming into the kaiju's hide, and the
     attack helicopter's rotor as a seamless loop the game fades in and out."""
@@ -684,7 +636,6 @@ def main() -> None:
     build_collapse()
     build_roar()
     build_ui()
-    build_tree()
     build_crowd()
     build_rifle()
     build_army()

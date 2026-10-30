@@ -1,4 +1,4 @@
-// D-397: the kaiju's own hide grain (not the city's block grain): small scutes with dark crevices
+// D-398: the kaiju's own hide grain (not the city's block grain): small scutes with dark crevices
 // between them, a tone shift scute to scute and a few pale or dark flecks. Sampled at a point in
 // the hide's rest space (rides the bones: never swims), seeded, the same every frame. Numbers from
 // data/looks.json kaiju_hide_* (Look.hide_params). The flat-surface test counts this include as

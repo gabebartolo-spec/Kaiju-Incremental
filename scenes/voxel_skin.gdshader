@@ -11,7 +11,7 @@ shader_type spatial;
 #include "res://scenes/stone_body.gdshaderinc"
 // Render plan item 14 (tuning render_opt.kaiju_three_faces): each cube drawn as three faces.
 #include "res://scenes/voxel_three_faces.gdshaderinc"
-// D-397: the kaiju's own hide grain, at the point's rest position (rides the bones).
+// D-398: the kaiju's own hide grain, at the point's rest position (rides the bones).
 #include "res://scenes/hide_grain.gdshaderinc"
 
 uniform mat4 bones[128];

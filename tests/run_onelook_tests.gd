@@ -334,7 +334,7 @@ func _check_baked_detail() -> void:
 	check(plain.shader == Look.VOXEL_SHADER, "a bake without detail keeps the plain voxel material")
 
 
-## D-397: the kaiju draws his own hide grain (hide_grain.gdshaderinc) on his cubes, his filler and
+## D-398: the kaiju draws his own hide grain (hide_grain.gdshaderinc) on his cubes, his filler and
 ## his rig's bone voxels; kaiju_hide_on false leaves the hide flat (crevices, tone and flecks 0).
 func _check_hide_grain() -> void:
 	Content.set_time("dusk")

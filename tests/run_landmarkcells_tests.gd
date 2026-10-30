@@ -26,6 +26,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_materials")
 	await _t("_check_matches_view")
+	await _t("_check_carve_colours")
 	await _t("_check_deterministic")
 	await _t("_check_no_islands")
 	await _t("_check_arcs_foot_hit")
@@ -108,6 +109,31 @@ func _check_matches_view() -> void:
 ## VoxelSupport's real rule. The raw shell was not (stadium 157 loose parts / 49,443 cells, wheel
 ## 56 / 53,348, joined only by an edge or corner); `bake.py --connect` adds the missing cells to
 ## the baked file, which the view and the sim both read.
+## Carved, a landmark draws in its model's own colours (CellMesher's colour slots), never the
+## magenta of a material id without a palette colour (its landmark_* classes: the purple
+## buildings, 2026-10-30). Off (the material ids as looks) every cell would be magenta.
+func _check_carve_colours() -> void:
+	var b := _landmark("stadium")
+	var g := LandmarkCells.new(b)
+	var view := LandmarkVoxels.new(b, Color.GRAY)
+	var mesher := CellMesher.new(view, g, false)
+	var magenta := 0
+	var far := 0
+	var drawn := 0
+	for i: int in mesher.looks.size():
+		if mesher.looks[i] == 0:
+			continue
+		drawn += 1
+		var c := mesher.palette[mesher.looks[i]]
+		magenta += 1 if c == Color.MAGENTA else 0
+		var want: Color = view.vox.colors.get(L.cell(g, i), c)
+		far += 1 if Vector3(c.r - want.r, c.g - want.g, c.b - want.b).length() > 0.2 else 0
+	check(
+		drawn > 10000 and magenta == 0 and far == 0,
+		"carved stadium: %d cells, %d magenta, %d off its own colour" % [drawn, magenta, far]
+	)
+
+
 func _check_no_islands() -> void:
 	for id: String in ["stadium", "wheel"]:
 		var g := LandmarkCells.new(_landmark(id))

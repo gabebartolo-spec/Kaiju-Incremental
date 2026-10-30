@@ -166,10 +166,7 @@ func _add_mouths() -> void:
 	var size: Array = _cfg["mouth"]
 	var box := BoxMesh.new()
 	box.size = Vector3(Num.f(size[0]), Num.f(size[1]), Num.f(size[2]))
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = MOUTH_COLOR
-	mat.roughness = 1.0
-	box.material = mat
+	box.material = Look.plain_detail_material(MOUTH_COLOR, 0.0)  # flat surfaces P3
 	for k: int in count:
 		var out := Vector2.from_angle((k + 0.5) * TAU / count)
 		var edge := _centre + out * _half

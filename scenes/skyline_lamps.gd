@@ -43,4 +43,5 @@ static func heads(lamps: Array[Vector3]) -> MultiMeshInstance3D:
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mmi.add_to_group("vfx_exempt")  # lamp heads are lights, not surfaces (director 2026-10-30)
 	return mmi

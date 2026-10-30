@@ -6,7 +6,7 @@ shader_type spatial;
 // a stretched patch reads as cube faces instead of a streaked sheet (lead review, PR #15).
 
 #include "res://scenes/stone_body.gdshaderinc"
-// D-397: the hide grain, at the rest position (rides the bones), as on the cubes.
+// D-398: the hide grain, at the rest position (rides the bones), as on the cubes.
 #include "res://scenes/hide_grain.gdshaderinc"
 
 uniform mat4 bones[128];

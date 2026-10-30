@@ -6,7 +6,7 @@ extends RefCounted
 ##   - a StandardMaterial3D with no albedo texture and no detail texture;
 ##   - a missing material (the engine's flat white);
 ##   - a ShaderMaterial whose shader neither samples a texture nor includes surface_detail (or, for
-##     the kaiju, his own hide grain: D-397).
+##     the kaiju, his own hide grain: D-398).
 ## Visual-effect families (fire, smoke, rain, particles, sky, light shafts, UI) are exempt by node
 ## group (EXEMPT_GROUP) or by being a GPU/CPU particle or a node under a Control.
 ##
@@ -17,7 +17,7 @@ extends RefCounted
 
 const ChunkCheck := preload("res://tests/lib/chunk_check.gd")
 const DETAIL_INCLUDE := "surface_detail.gdshaderinc"
-## The kaiju's own hide grain (D-397): counts as textured like the city's surface family.
+## The kaiju's own hide grain (D-398): counts as textured like the city's surface family.
 const HIDE_INCLUDE := "hide_grain.gdshaderinc"
 ## Physics frames his death may take to reach the burst (about 3.2 s in data at 60 fps, with room).
 const DEATH_FRAMES := 600
@@ -30,17 +30,8 @@ const EXEMPT_GROUP := "vfx_exempt"
 ## "Flat surfaces programme".
 ## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
 ## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
-const KNOWN_FLAT_MAX := 6
-const KNOWN_FLAT: Dictionary = {
-	# P0 (this phase; each is deleted when its surface is textured)
-	"CitySkyline:std": "P3 lamp heads (glow)",
-	# P3 trees, lamps, props, cars, people, aircraft, crowds, debris
-	"Aircraft:std": "P3 aircraft",
-	"DebrisField:std": "P3 debris chunks",
-	"StadiumMatch:std": "P3 stadium",
-	"StadiumCrowd:shader:crowd.gdshader": "P3 crowd",
-	"ArenaEdge:std": "P3 arena bollards",
-}
+const KNOWN_FLAT_MAX := 0
+const KNOWN_FLAT: Dictionary = {}
 ## Effect families exempt by owner class (their nodes carry no group; VFX never reads as a
 ## surface): fire and smoke keepers, shockwaves, the breath beam, the claw sweep, the aim wedge, the
 ## flash of a shot landing on the hide (HideHit, under a tenth of a second).

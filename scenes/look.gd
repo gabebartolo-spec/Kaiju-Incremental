@@ -65,7 +65,7 @@ static func voxel_detail_material(size: float, glow: float, baked: bool) -> Shad
 	return mat
 
 
-## D-397: the kaiju's own hide grain (hide_grain.gdshaderinc) on `mat`, for cells `voxel` wide:
+## D-398: the kaiju's own hide grain (hide_grain.gdshaderinc) on `mat`, for cells `voxel` wide:
 ## scutes kaiju_hide_cell_voxels cells wide. kaiju_hide_on false leaves the hide flat (the
 ## grain's crevices, tone and flecks at 0).
 static func hide_grain(mat: ShaderMaterial, voxel: float) -> void:
@@ -83,6 +83,15 @@ static func hide_material(voxel: float, glow: float) -> ShaderMaterial:
 	mat.set_shader_parameter("glow", glow)
 	mat.set_shader_parameter("roughness_value", value("kaiju_roughness"))
 	hide_grain(mat, voxel)
+	return mat
+
+
+## voxel_detail_material for a plain mesh of one colour (no vertex colours): detail from its own
+## vertices, `color` sRGB, `self_light` a faint glow of its own colour.
+static func plain_detail_material(color: Color, self_light: float) -> ShaderMaterial:
+	var mat := voxel_detail_material(BuildingVoxels.VOXEL, 0.0, true)
+	mat.set_shader_parameter("tint", color)
+	mat.set_shader_parameter("self_light", self_light)
 	return mat
 
 
