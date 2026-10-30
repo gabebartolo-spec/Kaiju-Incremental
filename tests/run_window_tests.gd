@@ -4,11 +4,13 @@ extends "res://tests/lib/runner.gd"
 ## promoted to the cell grid (the shader's pick, redone on the CPU by WindowPalette, on the baked
 ## shell's window faces equals the pick on the cell meshes' faces of the same cells); the shader
 ## holds the replica's hash; the stand-in and skyline facades box-filter their windows
-## (render_opt.facade_aa, tests/lib/facade_filter.gd).
+## (render_opt.facade_aa, tests/lib/facade_filter.gd); a stand-in's lit window holds whole
+## (tests/lib/facade_flat.gd).
 ## Seeded by design: fixed buildings, a fixed hash; no RNG.
 ##   godot --headless --path . --script tests/run_window_tests.gd
 
 const FacadeFilter := preload("res://tests/lib/facade_filter.gd")
+const FacadeFlat := preload("res://tests/lib/facade_flat.gd")
 
 ## Each fixture: [name, x, z, w, d, floors, tier, style] (as the cell mesh suite's).
 const FIXTURES: Array = [
@@ -28,6 +30,7 @@ func run_checks() -> void:
 	await _t("_check_window_shader_is_the_replica")
 	await _t("_check_window_key_off_unit_edges")
 	await _t("_check_facade_windows_filtered")
+	await _t("_check_facade_windows_hold_whole")
 
 
 func _building(f: Array) -> RampageSim.Building:
@@ -205,3 +208,8 @@ func _check_window_key_off_unit_edges() -> void:
 ## Window filtering on the stand-in and skyline facades (tests/lib/facade_filter.gd).
 func _check_facade_windows_filtered() -> void:
 	FacadeFilter.new(check).run()
+
+
+## A stand-in's lit window holds whole (tests/lib/facade_flat.gd).
+func _check_facade_windows_hold_whole() -> void:
+	FacadeFlat.new(check).run()

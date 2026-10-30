@@ -251,10 +251,11 @@ func roar() -> void:
 
 ## The leap's pose hook (Dash phases "crouch", "flight", "settle", "recover"; t 0..1 through it):
 ## a gait with a leap clip plays it there (the Cascadeur clip, K2); without one the body holds its
-## standing pose, as the rampage stops the legs through a leap. No procedural pose.
-func leap(phase: String, t: float) -> void:
+## standing pose, as the rampage stops the legs through a leap. No procedural pose. settle_share:
+## the settle's share of the settle and recover's seconds.
+func leap(phase: String, t: float, settle_share := 0.5) -> void:
 	if _rig != null and _rig.gait.has_method("leap"):
-		_rig.gait.call("leap", phase, t)
+		_rig.gait.call("leap", phase, t, settle_share)
 
 
 func _lit(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:

@@ -287,91 +287,12 @@ func _process(delta: float) -> void:
 	traffic.update(delta)
 	_lod.update(get_viewport().get_camera_3d())
 	police.update(delta, kaiju)
-	_walk(delta, kaiju)
+	StreetSteps.walk(self, delta, kaiju)
 	_draw_people()
 	var spent := Time.get_ticks_usec() - t0
 	worst_usec = maxi(worst_usec, spent)
 	total_usec += spent
 	frames += 1
-
-
-## Everyone's step this frame, last first (a removal moves the last in); officers go to Police.
-func _walk(delta: float, kaiju: Vector2) -> void:
-	var panic := _panic_radius()
-	var calm := panic * Num.f(_cfg["calm_radius"]) / Num.f(_cfg["panic_radius"])
-	var gawk := Num.f(_cfg["panic_gawk"])
-	var run := Num.f(_cfg["run_speed"])
-	var walk := Num.f(_cfg["walk_speed"])
-	if _walker != null:  # render plan item 7: every civilian's step in one native call
-		_walker.frame(delta, kaiju, PackedFloat64Array([_clock, panic, calm, gawk, run, walk]))
-		return
-	# Without the extension, far people step every few frames (StreetLod, D-254).
-	var speeds := PackedFloat64Array([walk, run])
-	for i: int in range(pos.size() - 1, -1, -1):
-		if cop[i] == 1:
-			_walk_cop(i, delta, kaiju)
-			continue
-		if pinned_until[i] > _clock:
-			continue
-		var at := pos[i]
-		var dt := _step_time(i, at, kaiju, delta)
-		if dt < 0.0:  # a far person's frame off
-			continue
-		var d := at.distance_to(kaiju)
-		if fleeing[i] == 0 and d < panic:
-			_startle(i, at, kaiju, gawk)
-		elif fleeing[i] == 1 and d > calm:
-			fleeing[i] = 0
-		var to := _nodes[to_node[i]] - at
-		var step := speeds[fleeing[i]] * pace[i] * dt  # fleeing 1: running
-		if to.length() > step:
-			var dir := to.normalized()
-			heading[i] = dir
-			pos[i] = at + dir * step
-			continue
-		pos[i] = _nodes[to_node[i]]
-		var next := _pavements.next_corner(to_node[i], from_node[i], kaiju, fleeing[i] == 1)
-		from_node[i] = to_node[i]
-		to_node[i] = next
-
-
-## Person i's step time this frame (StreetLod, D-254): far from the kaiju and the camera, one step
-## every far_every frames covering them all, -1 on the frames between.
-func _step_time(i: int, at: Vector2, kaiju: Vector2, delta: float) -> float:
-	var far2 := _lod.far2
-	if at.distance_squared_to(kaiju) <= far2 or at.distance_squared_to(_lod.cam) <= far2:
-		return delta
-	if (i + _lod.tick) % _lod.far_every != 0:
-		return -1.0
-	return delta * _lod.far_every
-
-
-## Officer i takes its police step (Police.update_cop), or leaves when its job is done.
-func _walk_cop(i: int, delta: float, kaiju: Vector2) -> void:
-	var officer := officers[i]
-	if police.update_cop(officer, delta, kaiju):
-		remove(i)
-	else:
-		pos[i] = officer.pos
-		heading[i] = officer.heading
-
-
-## Person i sees the kaiju: a moment (gawk) facing it, then runs; one walking toward it turns.
-func _startle(i: int, at: Vector2, kaiju: Vector2, gawk: float) -> void:
-	fleeing[i] = 1
-	fled += 1
-	pinned_until[i] = _clock + gawk
-	heading[i] = (kaiju - at).normalized()
-	if (_nodes[to_node[i]] - at).dot(kaiju - at) > 0.0:
-		var swap := from_node[i]
-		from_node[i] = to_node[i]
-		to_node[i] = swap
-
-
-## How near the kaiju comes before people run: panic_per_scale x body scale, at most panic_radius.
-func _panic_radius() -> float:
-	var r := Num.f(_cfg["panic_per_scale"]) * sim.body_scale()
-	return minf(Num.f(_cfg["panic_radius"]), r)
 
 
 ## A person's pose: standing (gawking or frozen), aiming (an officer holding), else a stride.

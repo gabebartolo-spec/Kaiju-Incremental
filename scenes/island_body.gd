@@ -25,8 +25,6 @@ signal split(parts: Array[Dictionary])
 signal settled
 signal released
 
-static var _boxes: Dictionary = {}  # merged: Vector4i(box size in cells, res) -> BoxShape3D
-
 var site: CarveSite
 ## The look of the bricks (the building's material; null: vertex colours), kept on remeshes.
 var cell_material: Material:
@@ -90,8 +88,8 @@ func _init(
 		_view.build_now([cells, mats, _solid], _bricks, _com)
 	for key: Vector3i in _bricks:
 		if not merged:
-			_mesh_brick(key)
-		_shape_brick(key)
+			IslandBricks.mesh_brick(self, key)
+		IslandBricks.shape_brick(self, key)
 	_mass()
 	continuous_cd = true
 	contact_monitor = true
@@ -203,7 +201,7 @@ func _start_break(v: Vector3) -> void:
 	var centre := {}
 	var low := INF
 	for key: Vector3i in _bricks:
-		var y := (xf * (_brick_span(key).get_center() - _com)).y
+		var y := (xf * (IslandBricks.brick_span(self, key).get_center() - _com)).y
 		centre[key] = y
 		low = minf(low, y)
 	var whole := _bricks.size() < Num.i(_cfg["break_whole_bricks"])
@@ -285,11 +283,11 @@ func _let_go(keys: Array[Vector3i], done: int, upto: int, pieces: Array[Dictiona
 	for k: int in range(done, upto):
 		var key := keys[k]
 		_pieces_of(key, xf, v, pieces)
-		var here := xf * (_brick_span(key).get_center() - _com)
+		var here := xf * (IslandBricks.brick_span(self, key).get_center() - _com)
 		at += here
 		low = minf(low, here.y)
 		lists[key] = _bricks[key]
-		_drop_brick(key)
+		IslandBricks.drop_brick(self, key)
 	at /= upto - done
 	at.y = low
 	_redraw(lists)
@@ -308,83 +306,13 @@ func _redraw(lists: Dictionary) -> void:
 			if _bricks.has(key + step):
 				touched[key + step] = true
 	for key: Vector3i in touched:
-		_mesh_brick(key)
+		IslandBricks.mesh_brick(self, key)
 
 
 ## Half-brick pieces round this brick's cells, each in its first material.
 func _pieces_of(key: Vector3i, xf: Transform3D, v: Vector3, out: Array[Dictionary]) -> void:
 	var own: PackedInt32Array = _bricks[key]
 	IslandFracture.pieces_of(site, cells, mats, own, [xf, _com, v], out)
-
-
-func _drop_brick(key: Vector3i) -> void:
-	var own: PackedInt32Array = _bricks[key]
-	for k: int in own:
-		_solid[cells[k]] = 0
-	_bricks.erase(key)
-	_spans.erase(key)
-	var i := _shape_keys.find(key)
-	if i >= 0:
-		PhysicsServer3D.body_remove_shape(get_rid(), i)
-		_shape_keys.remove_at(i)
-	for table: Dictionary in [_meshes, _shapes]:
-		if table.has(key):
-			var node: Node = table[key]
-			node.queue_free()
-			table.erase(key)
-
-
-func _brick_span(key: Vector3i) -> AABB:
-	if not _spans.has(key):
-		var ks: PackedInt32Array = _bricks[key]
-		_spans[key] = CarveMesh.span(site, cells, ks)
-	var out: AABB = _spans[key]
-	return out
-
-
-func _mesh_brick(key: Vector3i) -> void:
-	var ks: PackedInt32Array = _bricks[key]
-	var own := PackedInt32Array()
-	var own_mats := PackedByteArray()
-	for k: int in ks:
-		own.append(cells[k])
-		own_mats.append(mats[k])
-	var mesh := CarveMesh.build_at(site, own, [own_mats, _solid], _com)
-	var mi: MeshInstance3D = _meshes.get(key)
-	if mi == null:
-		mi = MeshInstance3D.new()
-		add_child(mi)
-		_meshes[key] = mi
-	mi.mesh = mesh
-	mi.material_override = cell_material
-
-
-func _shape_brick(key: Vector3i) -> void:
-	var box := _brick_span(key)
-	if merged:
-		var at := Transform3D(Basis(), box.get_center() - _com)
-		PhysicsServer3D.body_add_shape(get_rid(), _box_shape(box.size).get_rid(), at)
-		_shape_keys.append(key)
-		return
-	var shape := CollisionShape3D.new()
-	var b := BoxShape3D.new()
-	b.size = box.size
-	shape.shape = b
-	shape.position = box.get_center() - _com
-	add_child(shape)
-	_shapes[key] = shape
-
-
-## The shared box shape `size` (world) a side on this site's grid.
-func _box_shape(size: Vector3) -> BoxShape3D:
-	var n := Vector3i((size * site.res).round())
-	var tag := Vector4i(n.x, n.y, n.z, site.res)
-	var shape: BoxShape3D = _boxes.get(tag)
-	if shape == null:
-		shape = BoxShape3D.new()
-		shape.size = size
-		_boxes[tag] = shape
-	return shape
 
 
 func _mass() -> void:

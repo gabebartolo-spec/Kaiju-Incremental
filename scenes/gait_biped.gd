@@ -52,33 +52,7 @@ const BABY_SCALE := 0.5
 ## Footfall ids for KaijuRig.foot_planted, and a stage's share of a full adult step.
 const SIDES := {-1.0: "left", 1.0: "right"}
 
-
-class Leg:
-	var names: Array[String] = []
-	var tip := ""  ## the bone whose tail is the toe tip: leg_x3 when the rig has one, else the foot
-	var foot_dir := Vector3.ZERO  ## rest vector from the ankle to the toe tip, rig space (the foot)
-	var side := 1.0  ## -1 left (-x), +1 right
-	var offset := 0.0  ## phase offset in the stride
-	var home := Vector3.ZERO  ## rig space, on the ground
-	var l1 := 0.0
-	var l2 := 0.0
-	var foot := Vector3.ZERO  ## world
-	var planted := true
-	var lift_from := Vector3.ZERO
-	var t := 0.0
-	var swing_time := 0.4
-	var lift := 0.2
-	var stomping := false
-	var last_cycle := -1
-	var tilt := 0.0
-	var walking := false  ## this swing is a walk step (its pace follows the stride)
-	var down_for := 0.0  ## seconds since it planted
-	## Foot-slide meter: where the foot was planted, worst drift during this stance (world units).
-	var plant_at := Vector3.ZERO
-	var drift := 0.0
-
-
-var legs: Array[Leg] = []
+var legs: Array[BipedLeg] = []
 var head: BipedHead
 var swing: BipedSwing
 var body: BipedBody
@@ -101,22 +75,10 @@ func _init(p_rig: KaijuRig) -> void:
 	super(p_rig)
 	var hips := 0.0
 	for side: String in ["l", "r"]:
-		var leg := Leg.new()
-		for i: int in 3:
-			leg.names.append("leg_%s%d" % [side, i])
-		if not rig.has_bone(leg.names[2]):
-			continue
-		leg.side = -1.0 if side == "l" else 1.0
-		leg.offset = 0.0 if side == "l" else 0.5
-		leg.l1 = rig.dir_of(leg.names[0]).length()
-		leg.l2 = rig.dir_of(leg.names[1]).length()
-		leg.tip = "leg_%s3" % side if rig.has_bone("leg_%s3" % side) else leg.names[2]
-		var toe := rig.head_of(leg.tip) + rig.dir_of(leg.tip)
-		leg.foot_dir = toe - rig.head_of(leg.names[2])
-		var hip := rig.head_of(leg.names[0])
-		leg.home = Vector3(toe.x * TRACK_NARROWING, 0.0, hip.z - 0.06 * hip.y)
-		hips += rig.head_of(leg.names[0]).y
-		legs.append(leg)
+		var leg := BipedLeg.build(rig, side, TRACK_NARROWING)
+		if leg != null:
+			hips += rig.head_of(leg.names[0]).y
+			legs.append(leg)
 	hip_height = hips / maxf(1.0, legs.size())
 	head = BipedHead.new(self)
 	swing = BipedSwing.new(rig)
@@ -155,7 +117,7 @@ func stomp() -> void:
 	if _stomp_times.size() > 3:
 		_stomp_times.pop_front()
 	var stomping := false
-	for leg: Leg in legs:
+	for leg: BipedLeg in legs:
 		if leg.stomping and not leg.planted:
 			leg.t = 1.0
 			stomping = true
@@ -176,82 +138,110 @@ func roar() -> void:
 
 
 func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
-	var ground := root.origin.y
 	if legs.size() < 2:
 		return
 	if legs[0].foot == Vector3.ZERO and legs[1].foot == Vector3.ZERO:
-		for leg: Leg in legs:
+		for leg: BipedLeg in legs:
 			leg.foot = (root * leg.home)
 			leg.plant_at = leg.foot
-	var swinging := false
-	for leg: Leg in legs:
-		swinging = swinging or not leg.planted
+	var swinging := legs.any(func(leg: BipedLeg) -> bool: return not leg.planted)
 	if not standing and _was_standing and not swinging:
-		# Setting off: the foot furthest behind the direction of travel steps first.
-		var first := legs[0]
-		for leg: Leg in legs:
-			if (leg.foot - root.origin).dot(velocity) < (first.foot - root.origin).dot(velocity):
-				first = leg
-		_phase = first.offset + 0.001 + ceilf(_phase)
-		for leg: Leg in legs:
-			leg.last_cycle = -999
+		_set_off(root)
 	_was_standing = standing
 	if not standing or swinging:
 		_phase += dt / maxf(_cycle, 0.2)
-	var stance_time := _cycle * (1.0 - _swing)
-	# A planted foot left out of reach (a sudden turn or burst) steps now rather than slide;
-	# if the other foot is still in the air, that one hurries down first.
+	var hurry := _step_out_of_reach(dt, root)
+	if not standing:
+		_walk_slots()
+	else:
+		_stand_still(dt, root, swinging)
+	_fly_feet(dt, root, standing, hurry)
+
+
+## Setting off: the foot furthest behind the direction of travel steps first.
+func _set_off(root: Transform3D) -> void:
+	var first := legs[0]
+	for leg: BipedLeg in legs:
+		if (leg.foot - root.origin).dot(velocity) < (first.foot - root.origin).dot(velocity):
+			first = leg
+	_phase = first.offset + 0.001 + ceilf(_phase)
+	for leg: BipedLeg in legs:
+		leg.last_cycle = -999
+
+
+## A planted foot left out of reach (a sudden turn or burst) steps now rather than slide; if the
+## other foot is still in the air, that one hurries down first: the hurry for the feet in flight.
+func _step_out_of_reach(dt: float, root: Transform3D) -> float:
 	var hurry := 1.0
-	for leg: Leg in legs:
+	for leg: BipedLeg in legs:
 		if leg.planted:
 			leg.down_for += dt
 		var settled := leg.down_for > MIN_STANCE * _cycle
-		if leg.planted and _stretch(leg, root) > (REACH_STEP if settled else REACH_HOP):
-			var other_left := 0.0  # seconds until the other foot lands, if it is in the air
-			for o: Leg in legs:
-				if o != leg and not o.planted:
-					other_left = maxf(other_left, (1.0 - o.t) * o.swing_time)
-			if other_left == 0.0 or _stretch(leg, root) > REACH_HOP:
-				# A hard turn may need both feet up: then it lands well after the other (no pop).
-				var swing := minf(_cycle * _swing, SETTLE_SECONDS * sqrt(s))
-				_lift_foot(leg, maxf(swing, other_left + PLANT_GAP), LIFT_SLOW)
-				leg.walking = false
-				leg.last_cycle = roundi(_phase - leg.offset)  # this counts as its next stride slot
-			else:
-				hurry = 2.5
-	# Walking: each leg swings once per stride, in its slot.
-	if not standing:
-		for leg: Leg in legs:
-			var p := _phase - leg.offset
-			var cycle := floori(p)
-			var local := p - cycle
-			if leg.planted and local < _swing and cycle != leg.last_cycle:
-				_lift_foot(leg, _cycle * _swing, lerpf(LIFT_SLOW, LIFT_FAST, speed_k()))
-				_jitter = 1.0 + rng.randf_range(-STRIDE_JITTER, STRIDE_JITTER)
-				leg.walking = true
-				leg.last_cycle = cycle
-				leg.t = local / _swing
-	else:
-		_settle_cool -= dt
-		if _roar_waiting and not swinging:
-			_roar_waiting = false
-			head.roar()
-		var roaring := _roar_waiting or head.roar_open() > 0.0 or head.roar_lean() != 0.0
-		# While the sim stomps on a beat, its stomp steps square the feet up: no extra settle step.
-		var stomps_live := _stomp_times.size() > 1 and time - _stomp_times[-1] < STOMP_LIVE
-		if not roaring:  # roaring, the feet stay planted and still
-			_plan_stomp()
-		if not swinging and _settle_cool <= 0.0 and not roaring and not stomps_live:
-			var worst: Leg = null
-			var worst_d := SETTLE_DISTANCE * hip_height * s
-			for leg: Leg in legs:
-				var d := _flat(leg.foot - (root * leg.home)).length()
-				if d > worst_d:
-					worst_d = d
-					worst = leg
-			if worst != null:
-				_lift_foot(worst, SETTLE_SECONDS * sqrt(s), LIFT_SLOW)
-	for leg: Leg in legs:
+		if not leg.planted or _stretch(leg, root) <= (REACH_STEP if settled else REACH_HOP):
+			continue
+		var other_left := 0.0  # seconds until the other foot lands, if it is in the air
+		for o: BipedLeg in legs:
+			if o != leg and not o.planted:
+				other_left = maxf(other_left, (1.0 - o.t) * o.swing_time)
+		if other_left == 0.0 or _stretch(leg, root) > REACH_HOP:
+			# A hard turn may need both feet up: then it lands well after the other (no pop).
+			var swing := minf(_cycle * _swing, SETTLE_SECONDS * sqrt(s))
+			_lift_foot(leg, maxf(swing, other_left + PLANT_GAP), LIFT_SLOW)
+			leg.walking = false
+			leg.last_cycle = roundi(_phase - leg.offset)  # this counts as its next stride slot
+		else:
+			hurry = 2.5
+	return hurry
+
+
+## Walking: each leg swings once per stride, in its slot.
+func _walk_slots() -> void:
+	for leg: BipedLeg in legs:
+		var p := _phase - leg.offset
+		var cycle := floori(p)
+		var local := p - cycle
+		if leg.planted and local < _swing and cycle != leg.last_cycle:
+			_lift_foot(leg, _cycle * _swing, lerpf(LIFT_SLOW, LIFT_FAST, speed_k()))
+			_jitter = 1.0 + rng.randf_range(-STRIDE_JITTER, STRIDE_JITTER)
+			leg.walking = true
+			leg.last_cycle = cycle
+			leg.t = local / _swing
+
+
+## Standing: a waiting roar once both feet are down, the sim's stomps, else one settle step for the
+## foot furthest from home.
+func _stand_still(dt: float, root: Transform3D, swinging: bool) -> void:
+	_settle_cool -= dt
+	if _roar_waiting and not swinging:
+		_roar_waiting = false
+		head.roar()
+	var roaring := _roar_waiting or head.roar_open() > 0.0 or head.roar_lean() != 0.0
+	# While the sim stomps on a beat, its stomp steps square the feet up: no extra settle step.
+	var stomps_live := _stomp_times.size() > 1 and time - _stomp_times[-1] < STOMP_LIVE
+	if not roaring:  # roaring, the feet stay planted and still
+		_plan_stomp()
+	if not swinging and _settle_cool <= 0.0 and not roaring and not stomps_live:
+		_settle_step(root)
+
+
+## The foot furthest from home (past SETTLE_DISTANCE) takes one settle step.
+func _settle_step(root: Transform3D) -> void:
+	var worst: BipedLeg = null
+	var worst_d := SETTLE_DISTANCE * hip_height * s
+	for leg: BipedLeg in legs:
+		var d := _flat(leg.foot - (root * leg.home)).length()
+		if d > worst_d:
+			worst_d = d
+			worst = leg
+	if worst != null:
+		_lift_foot(worst, SETTLE_SECONDS * sqrt(s), LIFT_SLOW)
+
+
+## Each foot in the air arcs toward its landing (ahead by the travel left), and plants on arrival.
+func _fly_feet(dt: float, root: Transform3D, standing: bool, hurry: float) -> void:
+	var ground := root.origin.y
+	var stance_time := _cycle * (1.0 - _swing)
+	for leg: BipedLeg in legs:
 		if leg.planted:
 			leg.foot.y = ground
 			continue
@@ -277,7 +267,7 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 
 ## Pulls a landing spot in so the leg reaches it comfortably from the hip, even while the body
 ## hangs back on the next plant.
-func _within_reach(leg: Leg, land: Vector3, root: Transform3D) -> Vector3:
+func _within_reach(leg: BipedLeg, land: Vector3, root: Transform3D) -> Vector3:
 	var fwd := -root.basis.z.normalized()
 	var hip := rig.bone(leg.names[0]).global_position - fwd * body.hold_back()
 	var ankle := land + (_ankle(leg, root) - leg.foot)
@@ -292,12 +282,12 @@ func _within_reach(leg: Leg, land: Vector3, root: Transform3D) -> Vector3:
 
 
 ## How far a planted foot's ankle is from its hip, as a share of the leg's reach.
-func _stretch(leg: Leg, root: Transform3D) -> float:
+func _stretch(leg: BipedLeg, root: Transform3D) -> float:
 	var hip := rig.bone(leg.names[0]).global_position
 	return (hip - _ankle(leg, root)).length() / ((leg.l1 + leg.l2) * s)
 
 
-func _lift_foot(leg: Leg, seconds: float, lift: float) -> void:
+func _lift_foot(leg: BipedLeg, seconds: float, lift: float) -> void:
 	leg.planted = false
 	leg.stomping = false
 	leg.walking = false
@@ -307,7 +297,7 @@ func _lift_foot(leg: Leg, seconds: float, lift: float) -> void:
 	leg.lift = lift
 
 
-func _plant(leg: Leg, standing: bool) -> void:
+func _plant(leg: BipedLeg, standing: bool) -> void:
 	leg.planted = true
 	leg.down_for = 0.0
 	leg.plant_at = leg.foot
@@ -339,7 +329,7 @@ func _plan_stomp() -> void:
 	var windup := minf(0.3, interval * 0.55)
 	if time < next - windup:
 		return
-	for leg: Leg in legs:
+	for leg: BipedLeg in legs:
 		if not leg.planted:
 			return
 	_stomp_planned = next
@@ -360,34 +350,19 @@ func speed_k() -> float:
 # --- legs ----------------------------------------------------------------------------------------
 
 
-func _ankle(leg: Leg, root: Transform3D) -> Vector3:
+func _ankle(leg: BipedLeg, root: Transform3D) -> Vector3:
 	var right := root.basis.x.normalized()
 	var up := (root.basis * -leg.foot_dir).normalized()  # the foot, toe tip -> ankle
 	return leg.foot + up.rotated(right, leg.tilt) * leg.foot_dir.length() * s
 
 
 func _solve_legs(root: Transform3D) -> void:
-	var fwd := -root.basis.z.normalized()
-	var right := root.basis.x.normalized()
-	for leg: Leg in legs:
-		var hip := rig.bone(leg.names[0]).global_position
-		var behind := (hip - leg.foot).dot(fwd) / (hip_height * s)
-		if leg.planted:
-			# The heel rises as the body passes over the toes.
-			leg.tilt = lerpf(leg.tilt, -clampf(behind * 0.4, -0.1, 0.25), 0.35)
-		else:
-			var fold := sin(PI * clampf(leg.t, 0.0, 1.0))
-			leg.tilt = lerpf(leg.tilt, -0.3 * fold + 0.06 * leg.t, 0.5)
-		var ankle := _ankle(leg, root)
-		var pole := fwd + right * leg.side * 0.2
-		var knee := KaijuGait.solve_knee(hip, ankle, leg.l1 * s, leg.l2 * s, pole)
-		rig.aim(leg.names[0], hip, knee)
-		rig.aim(leg.names[1], knee, ankle)
-		rig.aim(leg.names[2], ankle, leg.foot, leg.foot_dir)
+	for leg: BipedLeg in legs:
+		leg.solve(self, root)
 
 
 func _measure_slide() -> void:
-	for leg: Leg in legs:
+	for leg: BipedLeg in legs:
 		if not leg.planted:
 			continue
 		var at := rig.tail_world(leg.tip)
@@ -395,5 +370,5 @@ func _measure_slide() -> void:
 		max_drift = maxf(max_drift, leg.drift)
 
 
-func _stray(leg: Leg) -> float:
+func _stray(leg: BipedLeg) -> float:
 	return _flat(leg.foot - rig.global_transform * leg.home).length()

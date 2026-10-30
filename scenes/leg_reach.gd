@@ -30,7 +30,7 @@ var _rest_pole: Array[Vector3] = []  # each leg's knee side at rest (rig space, 
 func _init(gait: BipedGait) -> void:
 	_rig = gait.rig
 	_root = _rig.bone_names()[0]
-	for leg: BipedGait.Leg in gait.legs:
+	for leg: BipedLeg in gait.legs:
 		var hip := _rig.head_of(leg.names[0])
 		var knee := _rig.head_of(leg.names[1])
 		var line := (_rig.head_of(leg.names[2]) - hip).normalized()
@@ -45,7 +45,7 @@ func lower_body(gait: BipedGait, toes: Array[Vector3], yaws: Array[float], dt: f
 	var s := gait.s
 	var need := 0.0
 	for i: int in toes.size():
-		var leg: BipedGait.Leg = gait.legs[i]
+		var leg: BipedLeg = gait.legs[i]
 		var foot := _rig.bone(leg.names[2])
 		var toe_off := _rig.tail_world(leg.tip) - foot.global_position
 		var ankle := toes[i] - Basis(Vector3.UP, yaws[i]) * toe_off  # the foot turned as it will be
@@ -65,7 +65,7 @@ func lower_body(gait: BipedGait, toes: Array[Vector3], yaws: Array[float], dt: f
 ## Puts the toe at `toe` (two-bone IK) with the foot turned about the world's up by `yaw_fix`; the
 ## knee bends to the clip knee's side, or its rest side when the clip's knee is straight.
 func reach(gait: BipedGait, i: int, toe: Vector3, yaw_fix: float) -> void:
-	var leg: BipedGait.Leg = gait.legs[i]
+	var leg: BipedLeg = gait.legs[i]
 	var s := gait.s
 	var foot := _rig.bone(leg.names[2])
 	var ankle_now := foot.global_position

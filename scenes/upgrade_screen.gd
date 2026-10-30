@@ -263,8 +263,8 @@ func _select(id: String) -> void:
 				+ tr("Press E / pad Y in a rampage; recharges in %ds.") % roundi(_ultimate_cooldown)
 			)
 		)
-	_show_stats(UpgradeTree.effects_for(def, str(species["id"])), stats, steps)
-	_info_status.text = _status_line(id)
+	UpgradeReadout.show_stats(self, UpgradeTree.effects_for(def, str(species["id"])), stats, steps)
+	_info_status.text = UpgradeReadout.status_line(self, id)
 	var b := node_button(id)
 	var tint: Color = {"buy": UiKit.GOOD, "poor": UiKit.BAD, "maxed": UiKit.WARN}.get(
 		b.state, UiKit.MUTED
@@ -277,7 +277,7 @@ func _show_shape() -> void:
 	_info_title.text = UpgradeNode.SHAPE_TEXT
 	_info_role.text = ""
 	_info_body.clear()
-	_show_stats({}, {}, 0)
+	UpgradeReadout.show_stats(self, {}, {}, 0)
 	_info_status.text = ""
 
 
@@ -288,65 +288,6 @@ func _grows_into(stage: String) -> String:
 		"adolescent":
 			return tr("Grows into the adolescent.")
 	return tr("Grows into the adult.")
-
-
-func _status_line(id: String) -> String:
-	var head := tr("Level %d / %d") % [tree.level(id), tree.max_level(id)] + "   "
-	if tree.is_maxed(id):
-		return head + tr("MAXED")
-	if not tree.is_unlocked(id):
-		var def: Dictionary = tree.defs[id]
-		var names: Array[String] = []
-		var requires: Array = def.get("requires", [])
-		for req: String in requires:
-			if tree.level(req) < 1:
-				var req_def: Dictionary = tree.defs[req]
-				names.append(tr(str(req_def["name"])))
-		# Owned from an older save in a ring that is not open yet: nothing named to buy first.
-		if names.is_empty():
-			return head + tr("Not yet")
-		return head + tr("Needs: %s") % ", ".join(names)
-	# Three short lines, so no wrap ever leaves a dash or a lone word at a line end.
-	var nl := String.chr(10)
-	var have := (tr("Cost %d") + nl + tr("You have %d biomass") + nl) % [tree.cost(id), rubble]
-	if tree.can_buy(id, rubble):
-		return head + have + tr("Enter / pad A to buy")
-	return head + have + tr("%d more needed") % (tree.cost(id) - rubble)
-
-
-## Only the stats this node changes, each in plain words from data (D-077): the words, then
-## "13  ->  16" under them, the new value brighter than the old and the unit written once.
-func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
-	for child: Node in _info_stats.get_children():
-		_info_stats.remove_child(child)
-		child.queue_free()
-	var words: Dictionary = Content.section("stat_text")
-	for stat: String in effects:
-		var entry: Dictionary = words.get(stat, {})
-		if entry.get("hidden", false):
-			continue
-		var now := Num.f(stats.get(stat, 0.0))
-		var line := UiKit.label(
-			tr("%s:") % tr(str(entry.get("line", stat))), UiKit.SIZE_BODY, UiKit.MUTED
-		)
-		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_info_stats.add_child(line)
-		# The values under the words; the "now" column is one fixed width, so arrows line up.
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		_info_stats.add_child(row)
-		var was := UiKit.label(_fmt(entry, now, steps == 0), UiKit.SIZE_BODY, UiKit.MUTED)
-		was.custom_minimum_size = Vector2(NOW_WIDTH, 0)
-		row.add_child(was)
-		if steps > 0:
-			var arrow := TextureRect.new()
-			arrow.texture = UiKit.arrow()
-			arrow.modulate = UiKit.GOOD
-			arrow.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-			row.add_child(arrow)
-			var after := _fmt(entry, now + Num.f(effects[stat]), true)
-			row.add_child(UiKit.label(after, UiKit.SIZE_BODY, UiKit.TEXT))
-	_info_stats.visible = _info_stats.get_child_count() > 0
 
 
 ## A stat's value as its data line formats it ("inv" shows 1 / value, a rate), with its unit.

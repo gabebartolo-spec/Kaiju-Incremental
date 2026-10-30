@@ -42,8 +42,10 @@ uniform float filter_cells = 6.0;
 
 varying vec3 v_world;
 varying vec3 v_normal;
-varying vec4 v_custom;
-varying float v_top;
+// Flat: one value per box. Interpolated, the seed wobbles by a rounding error across a wall and
+// the window hashes (seed in, chaos out) re-roll per pixel row: lit windows flashed dark bars.
+varying flat vec4 v_custom;
+varying flat float v_top;
 
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));

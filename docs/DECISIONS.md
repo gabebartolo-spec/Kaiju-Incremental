@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
+Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
+stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).
+Asked: change the take or the checks? "Change the checks": lift > 0.3 hip, toe and body within 0.03 hip, no
+variation bar (one take plays the same each time). Landing inside STOMP_WAIT and alternating feet stay.
+
 ## 2026-10-31 · D-407 · Director · Colour-blind cues move to after the demo
 "push colour blind fixes to after demo". The check found #229's options carry no colour-blind setting; the threat
 meter (#234) already reads by segment count. The colour-blind pass is a post-demo roadmap row, not a demo gate.
@@ -20,6 +26,11 @@ dropped), jet model "Tripo, olive drab": J01, task 7536acba-0e5f-45dd-9f08-e06a9
 consent (D-400), balance 5,240 after. At time's up three jets cross the screen through him and carpet-bomb his street
 (FinalStrike, death.airstrike), then he dies as before. The subline "The army ran out of patience" is the lead's
 wording, for the director.
+
+## 2026-10-31 · D-408 · Director · Rubble casts no shadows
+"Ship shadows off", after 1080p stills on vs off (bulldozer frames 1800 and 2600). Rubble heaps, strips and thrown
+chunks (RuinYard) stop casting shadows: data/tuning.json destruction.ruin_shadows = 0. Peak ruin: GPU p50 22.0 ->
+21.2 ms, shadow draws 2,442 -> 2,123 (docs/research/2026-10-31-cpu-profile.md).
 
 ## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
 His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
@@ -387,9 +398,3 @@ For the keyed walk-start (D-343). Asked whether the croc may take about 1.3 s to
 (today about 0.13 s): picked "Ease in, ~1.3 s (Recommended)". The sim's set-off changes (walk_off_s and the step clock),
 and the keyed walk-start plays over it. A ~6 s clip goes to him before it ships. Not picked: the body trailing the sim
 (a ~30% surge) or a quick 0.4 s first step (the defect he named).
-
-## 2026-10-27 · D-354 · Director · Creature animation runs alongside the parked work
-Asked for a plan to finish the render plan and the debt list ("make a plan to finish the render plan, debt fixes"). Asked
-whether the Cascadeur animation row (debt row 21, 31 of 40 moves to key) holds back the parked work (roads, wider city,
-river intro, D-310): picked "Run alongside (Recommended)". The parked queue opens once every other debt row is merged;
-the keyer and rigger keep keying the whole time. Plan: C:/Users/DANTE/.claude/plans/dapper-percolating-lake.md.

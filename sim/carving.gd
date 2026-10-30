@@ -124,7 +124,7 @@ func warm(emerging: bool = false) -> void:
 			return
 	var n := _warming
 	if _warm_stage == 0:
-		_cells_of(n)
+		CarvingPromote.cells_of(self, n)
 	elif _warm_stage == 1:
 		_promote(n)
 	elif _warm_stage == 2 and not frame(n).settled_once:
@@ -260,54 +260,9 @@ func _lost(g: Grid, index: PackedInt32Array) -> void:
 		g.ring.clear_cell(Vector3i(i % f.w, i / plan, (i / f.w) % f.d) + f.offset)
 
 
-## Building n's generated cells (made once; promotion takes them).
-func _cells_of(n: int) -> CellGrid:
-	if _party.is_empty():
-		_party = PartyWalls.of(sim.buildings)
-	return promoter.on_hit(n, sim.buildings[n], _party[n])
-
-
-## Building n's grid, made on its first hit (a cells_promoted event for the view).
+## Building n's grid, made on its first hit (CarvingPromote.promote).
 func _promote(n: int) -> Grid:
-	if grids.has(n):
-		return grids[n]
-	var b := sim.buildings[n]
-	var cells := _cells_of(n)
-	var g := Grid.new()
-	var f := VoxelFrame.new(Vector3i(b.w, b.height, b.d), cells.res, _materials)
-	f.adopt(cells.dims, cells.offset, cells.cells)
-	g.frame = f
-	if cells is LandmarkCells and (cells as LandmarkCells).arcs != null:
-		g.ring = cells
-	g.bw = b.w
-	g.bd = b.d
-	g.floors = b.height
-	g.hp = b.frame.max_hp
-	g.cx = _owners(f.w, f.offset.x, f.res, b.w)
-	g.cz = _owners(f.d, f.offset.z, f.res, b.d)
-	g.fy = _owners(f.h, f.offset.y, f.res, b.height)
-	g.wear.resize(f.w * f.d * b.height)
-	var chunks := b.w * b.d * b.height
-	g.full = CarvingCells.counts(g, chunks)
-	g.dead.resize(chunks)
-	g.live = g.full.duplicate()
-	for ci: int in chunks:
-		g.dead[ci] = int(not b.frame.alive(_chunk_cell(g, ci)))
-	grids[n] = g
-	(
-		sim
-		. events
-		. append(
-			{
-				"type": "cells_promoted",
-				"building": n,
-				"dims": cells.dims,
-				"offset": cells.offset,
-				"cells": f.alive_count,
-			}
-		)
-	)
-	return g
+	return CarvingPromote.promote(self, n)
 
 
 ## By material id, the blow (in chunk_hp) that breaks a cell of it; and the weakest of them.
@@ -389,12 +344,3 @@ static func _span(c: int, count: int, offset: int, size: int, res: int) -> Vecto
 	var lo := 0 if c == 0 else c * res - offset
 	var hi := size if c == count - 1 else (c + 1) * res - offset
 	return Vector2i(clampi(lo, 0, size), clampi(hi, 0, size))
-
-
-## Grid coordinate along one axis -> the chunk that owns it (clamped to the building).
-static func _owners(size: int, offset: int, res: int, count: int) -> PackedInt32Array:
-	var out := PackedInt32Array()
-	out.resize(size)
-	for g: int in size:
-		out[g] = clampi(floori(float(g + offset) / res), 0, count - 1)
-	return out

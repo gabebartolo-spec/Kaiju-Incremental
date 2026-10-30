@@ -18,6 +18,7 @@ const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const FlowStagedStart := preload("res://tests/lib/flow_staged_start.gd")
 const FlowUpgrades := preload("res://tests/lib/flow_upgrades.gd")
 const FlowWarmStart := preload("res://tests/lib/flow_warm_start.gd")
+const FlowStreet := preload("res://tests/lib/flow_street.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const WORDS_EVERY := 10  # frames between counts of text in the world (a number lived 1 s)
 const POWER_FRAMES := 60 * 45
@@ -169,13 +170,13 @@ func _check_rampage() -> void:
 	rampage.finished.connect(func(r: Dictionary) -> void: results.append(r))
 	root.add_child(rampage)
 	await process_frame
-	var street := _street_life(rampage)
+	var street := FlowStreet.street_life(rampage)
 	check(
 		street != null and street.civilians() > 100 and street.traffic.cars.size() > 20,
 		"the city fills with civilians and moving cars",
 	)
 	if street != null:
-		_jams_hold(street.traffic)
+		FlowStreet.jams_hold(check, street.traffic)
 	var frames := 0
 	var words := 0
 	while not rampage.sim.over and frames < RAMPAGE_FRAMES:
@@ -363,38 +364,3 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 	FlowHeliSounds.check_heard(check, rampage, view, species_id)
 	rampage.queue_free()
 	await process_frame
-
-
-func _street_life(node: Node) -> StreetLife:
-	if node is StreetLife:
-		var found: StreetLife = node
-		return found
-	for child: Node in node.get_children():
-		var hit := _street_life(child)
-		if hit != null:
-			return hit
-	return null
-
-
-## Traffic jams (DESIGN D-255): behind a live car a car queues for jam_queue_s, so lines back up;
-## behind a wreck it turns round after jam_wreck_s. Before the fix every car gave up after 2.5 s.
-func _jams_hold(traffic: Traffic) -> void:
-	var cfg := Content.section("street")
-	var me := Traffic.Car.new()
-	me.pos = Vector2(-500, -500)
-	me.dir = Vector2(0, -1)
-	var ahead := Traffic.Car.new()
-	ahead.pos = me.pos + me.dir * Num.f(cfg["car_gap"]) * 0.5
-	var saved := traffic.cars
-	traffic.cars = [me, ahead]
-	var queue := traffic._blocked(me)
-	ahead.crushed = true
-	var wreck := traffic._blocked(me)
-	traffic.cars = saved
-	check(
-		queue == Num.f(cfg["jam_queue_s"]) and wreck == Num.f(cfg["jam_wreck_s"]) and queue > wreck,
-		(
-			"a car queues behind a live car (%.1f s) and turns round at a wreck (%.1f s)"
-			% [queue, wreck]
-		),
-	)
