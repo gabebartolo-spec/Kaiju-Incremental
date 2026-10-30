@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-402 · Director · Grown railgun locks last longer, so the eased walk-off still dodges
+With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
+what gives: "Longer grown lock (Recommended)". `taskforce.railgun.lock_seconds_by_stage` 0.6 / 0.75 / 1.0 becomes
+0.6 / 1.0 / 1.3; the ease stays 1.3 s. The dodge test waits the stage's lock, not a fixed second.
+
 ## 2026-10-30 · D-401 · Director · The tail lash takes the signature button; the breath gets Q / pad X
 Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
 button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
@@ -390,9 +395,3 @@ walk-start, young croc walk, run, slam-stop, turn-skate B.
 ## 2026-10-27 · D-348 · Director · Rooftop water tanks become wooden water towers
 The brown roof "trees" (D-345) are the rooftop water tanks. Picked "Wooden water towers (Recommended)": same spots and
 count, a barrel tower on legs with a cone roof.
-
-## 2026-10-27 · D-347 · Director · Keyed Cascadeur moves come as the .casc, not a clip
-"rather than taking a clip of an animation itd be easier to just show me the casc file so i can inspect it"; scope
-"Keyed moves only (Recommended)". A keyed move reaches him as its .casc opened in a new tab of his Cascadeur
-(C:/kt/casc_view_template.py: never saved, no other tab touched). How a move plays in the game still comes as one
-~6 s game-camera clip.

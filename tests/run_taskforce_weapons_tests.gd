@@ -76,7 +76,8 @@ func _check_railgun_dodge() -> void:
 	var locked := _first(_run(late, 4.0, "railgun_locked"), "railgun_locked")
 	check(not locked.is_empty(), "the aiming line locks shortly before the shot")
 	var from := late.kaiju_pos
-	var after := _run(late, 1.0, "", way)  # a late step, after the lock
+	# A late step after the lock, until just past the stage's lock (D-402: grown walk-offs ease in)
+	var after := _run(late, late.army_units.taskforce.volley.lock_seconds() + 0.25, "", way)
 	check(
 		_first(after, "railgun_hit").is_empty() and not _first(after, "railgun_missed").is_empty(),
 		"a step after the lock dodges the shot: %s" % [_types(after)]
