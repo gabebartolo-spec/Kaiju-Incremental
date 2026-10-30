@@ -73,6 +73,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	_last_heading = heading
 	_step_len = Num.f(cfg["step_len"])
 	_turn_slow = Num.f(cfg["turn_slow"])
+	_walk_off_s = Num.f(cfg["walk_off_s"])  # a sim with no species body keeps the default
 	dash = Dash.new(self, cfg)
 	_volume = BodyVolume.new(sim, cfg)
 
@@ -148,8 +149,7 @@ func steer(dt: float, want: Vector2) -> float:
 	var stepped := _steps_this_turn()
 	var slow_pow := Num.f(_stage.get("turn_slow_pow", 1.0))
 	var keep := lerpf(1.0, _turn_slow, pow(absf(turn_left) / PI, slow_pow if stepped else 1.0))
-	# Sets off ramped over the stage's walk_off_s, not in one frame (motion critic 2026-10-22; the
-	# grown croc ~1.3 s, D-355); after it the stride eases to the push.
+	# Sets off over the stage's walk_off_s (motion critic 10-22; grown ~1.3 s, D-355), then eases.
 	_walked_s += dt
 	var launching := _walked_s < _walk_off_s
 	var ease := 1.0 if launching else minf(1.0, Num.f(cfg["stride_ease"]) * dt)

@@ -155,7 +155,8 @@ func _check_walk_start() -> void:
 	var forms := {"young": {}}
 	forms.merge(STAGES)
 	for stage: String in forms:
-		var sim := _croc(forms[stage])
+		var levels: Dictionary = forms[stage]
+		var sim := _croc(levels)
 		sim.kaiju_pos = Vector2(0.0, 30.0)
 		for _n: int in 30:
 			sim.step(DT, Vector2.ZERO, false, 0)
@@ -170,7 +171,10 @@ func _check_walk_start() -> void:
 		if stage == "young":
 			check(
 				full_at > 0.0 and full_at <= YOUNG_OFF_S,
-				"young: sets off at once, full stride at %.2f s (bar <= %.2f)" % [full_at, YOUNG_OFF_S]
+				(
+					"young: sets off at once, full stride at %.2f s (bar <= %.2f)"
+					% [full_at, YOUNG_OFF_S]
+				)
 			)
 			continue
 		check(
