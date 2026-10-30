@@ -3,14 +3,14 @@ extends RefCounted
 ## The leader's escape helicopter (D-149): once a rampage, at a seeded moment, the city's leader
 ## (Mayor, Governor or President by city) lifts off a mid-rise roof and flees. It climbs while it
 ## flies one smooth lap beside the pad, curling away from the kaiju (a banked circle at its own
-## speed, never pinned to the kaiju, D-183; never through it, director 2026-10-30), then runs straight for the map edge so that the whole flight takes about
-## `window_seconds`. Bringing it down pays `payout` (about a city block's worth, Tuning "vip");
-## letting it reach the edge costs only that payout.
-## How it dies: any area attack that reaches its height (the breath, the Thunder Beam, ink and limbs
-## reach the sky; a stomp or claw only while it is still low over the roofs), a toppling tower
-## sweeping its height, a tank or car in flight (thrown), or a grab while it is low (a tentacle).
-## It falls like any gunship (AirWing's fates and wreck), under its own id. Own file and own
-## seeded stream, so it never shifts the army's or the air wing's draws. Part of RampageSim.
+## speed, never pinned to the kaiju, D-183; never through it, director 2026-10-30), then runs
+## straight for the map edge so that the whole flight takes about `window_seconds`. Bringing it down
+## pays `payout` (about a city block's worth, Tuning "vip"); letting it reach the edge costs only
+## that payout. How it dies: any area attack that reaches its height (the breath, the Thunder Beam,
+## ink and limbs reach the sky; a stomp or claw only while it is still low over the roofs), a
+## toppling tower sweeping its height, a tank or car in flight (thrown), or a grab while it is low
+## (a tentacle). It falls like any gunship (AirWing's fates and wreck), under its own id. Own file
+## and own seeded stream, so it never shifts the army's or the air wing's draws. Part of RampageSim.
 
 ## Its id among the sky's helicopters: far above AirWing's own counter.
 const ID := 1000000
