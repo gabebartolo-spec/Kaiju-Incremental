@@ -279,6 +279,10 @@ func _build_whale() -> void:
 	_whale_body.mesh = shape
 	_whale_body.scale = Vector3(Num.f(w["width"]), Num.f(w["hump"]) * 2.0, Num.f(w["length"]))
 	whale.add_child(_whale_body)
+	_build_spout(w)
+
+
+func _build_spout(w: Dictionary) -> void:
 	var s: Dictionary = w["spout"]
 	_spout = CPUParticles3D.new()
 	_spout.emitting = false
@@ -315,17 +319,7 @@ func _move_whale(delta: float) -> void:
 		"wait":
 			if _whale_t < 0.0:
 				return
-			if _whale_left <= 0:
-				_whale_state = "gone"
-				return
-			var coast := Num.f(_sim.city["coast_z"])
-			whale.position = Vector3(_range(w["area_x"]), low, coast + _range(w["area_z"]))
-			whale.rotation.y = _rng.randf() * TAU
-			whale.visible = true
-			_whale_state = "rise"
-			_whale_t = 0.0
-			_whale_left -= 1
-			surfacings += 1
+			_surface(w, low)
 		"rise":
 			var k := clampf(_whale_t / Num.f(w["rise_seconds"]), 0.0, 1.0)
 			whale.position.y = lerpf(low, high, k)
@@ -345,6 +339,20 @@ func _move_whale(delta: float) -> void:
 				whale.visible = false
 				_whale_state = "wait"
 				_whale_t = -_range(w["gap"])
+
+
+func _surface(w: Dictionary, low: float) -> void:
+	if _whale_left <= 0:
+		_whale_state = "gone"
+		return
+	var coast := Num.f(_sim.city["coast_z"])
+	whale.position = Vector3(_range(w["area_x"]), low, coast + _range(w["area_z"]))
+	whale.rotation.y = _rng.randf() * TAU
+	whale.visible = true
+	_whale_state = "rise"
+	_whale_t = 0.0
+	_whale_left -= 1
+	surfacings += 1
 
 
 func _range(pair: Variant) -> float:
