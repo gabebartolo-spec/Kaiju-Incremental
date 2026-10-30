@@ -4326,13 +4326,19 @@
         "head_rise_s": {"$ref": "#/$defs/num"},
         "head_settle_s": {"$ref": "#/$defs/num"},
         "follow_s": {"$ref": "#/$defs/num"},
-        "follow_accel": {"$ref": "#/$defs/num"}
+        "follow_accel": {"$ref": "#/$defs/num"},
+        "turn_follow": {"$ref": "#/$defs/num"},
+        "swing_deg": {"$ref": "#/$defs/num"},
+        "swing_return": {"$ref": "#/$defs/num"},
+        "swing_deg_per_s": {"$ref": "#/$defs/num"},
+        "swing_mouse_deg_per_px": {"$ref": "#/$defs/num"}
       },
       "required": [
         "offset", "fov", "zoom_base", "zoom_per_scale", "lead_base", "lead_per_scale", "lead_hold",
         "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_radius",
         "bubble_max", "bubble_seconds", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
-        "follow_s", "follow_accel"
+        "follow_s", "follow_accel", "turn_follow",
+        "swing_deg", "swing_return", "swing_deg_per_s", "swing_mouse_deg_per_px"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

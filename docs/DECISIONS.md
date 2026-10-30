@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
+Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
+(`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest
+space so it rides the bones; seeded). Numbers in `data/looks.json` `kaiju_hide_*`; `kaiju_hide_on` is the on/off
+switch the onelook check flips. The look itself is his call on the stills before it lands.
+
 ## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
 "Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
 rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
@@ -392,7 +398,3 @@ stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before t
 On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
 the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
 to him.
-
-## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
-On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it
-(Recommended)". Merged cea476e8. The chunks' size, spin and trail numbers are agent-added, no decision.

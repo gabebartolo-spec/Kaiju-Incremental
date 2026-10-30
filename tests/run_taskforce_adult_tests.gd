@@ -97,7 +97,9 @@ func _check_mech_bombs() -> void:
 	walker.volley_cd = 0.0
 	_run(moved, 0.1, "mech_volley")
 	moved.army_units.taskforce.mechs.bombs.resize(1)  # only the ring on his feet
-	moved.kaiju_pos += Vector2(0.0, 10.0)  # stepped clear of the ring on his feet
+	# he stepped clear of it (the ring set 10 m off his feet: the sim may hold his own position)
+	var ring: Array = moved.army_units.taskforce.mechs.bombs[0]
+	ring[1] = moved.kaiju_pos + Vector2(0.0, 10.0)
 	var miss := _first(_run(moved, 2.0, "mech_bomb"), "mech_bomb")
 	var miss_hit: bool = miss.get("hit", true)
 	check(not miss.is_empty() and not miss_hit, "stepping off the ring dodges it (off)")

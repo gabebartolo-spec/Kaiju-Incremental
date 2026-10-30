@@ -6,6 +6,8 @@ shader_type spatial;
 // a stretched patch reads as cube faces instead of a streaked sheet (lead review, PR #15).
 
 #include "res://scenes/stone_body.gdshaderinc"
+// D-398: the hide grain, at the rest position (rides the bones), as on the cubes.
+#include "res://scenes/hide_grain.gdshaderinc"
 
 uniform mat4 bones[128];
 uniform float roughness_value = 0.9;
@@ -47,7 +49,7 @@ void fragment() {
 	} else {
 		NORMAL = axis_z * sign(d.z);
 	}
-	vec3 albedo = srgb_to_linear(COLOR.rgb);
+	vec3 albedo = srgb_to_linear(COLOR.rgb) * hide_grain(rest);
 	if (stone > 0.0) {
 		float n = fract(sin(dot(floor(rest * 64.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
 		float stoned = step(rest.y / body_top, stone * 1.1 - 0.05 + (n - 0.5) * 0.1);
