@@ -6,7 +6,7 @@ extends Node
 ## dry column sits at the still water, under the sand, and the sheet is never faded: the
 ## waterline is wherever the sheet passes under the sand, a smooth line that climbs and slides
 ## back with every wave (director 2026-10-31: fading on depth left splotches). Each splash the
-## sim reports (a stomp, the rise) throws a burst of cube spray, the intro's droplets
+## sim reports (a stomp, the rise) throws a burst of spray, the intro's droplets
 ## (tuning intro.water), sized by the splash. Presentation only: it reads the sim, never writes.
 
 var _sim: RampageSim
@@ -126,7 +126,7 @@ func _stirred(n: int) -> bool:
 	return was and not now
 
 
-## A burst of cube spray thrown up from `at`, `size` metres across.
+## A burst of spray thrown up from `at`, `size` metres across.
 func _spray(at: Vector3, size: float) -> void:
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
@@ -145,19 +145,9 @@ func _spray(at: Vector3, size: float) -> void:
 	var hues: Array = _cfg["colors"]
 	mat.color_initial_ramp = IntroWater.tones(hues, false)
 	mat.color_ramp = IntroWater.tones(["ffffffff", "ffffff00"], true)
-	var cube := SphereMesh.new()  # round drops: a cube read as debris, not water
-	cube.radius = Num.f(_cfg["drop"]) * maxf(0.5, size * 0.3) * 0.5
-	cube.height = cube.radius * 2.0
-	cube.radial_segments = 8
-	cube.rings = 4
-	var look := StandardMaterial3D.new()
-	look.vertex_color_use_as_albedo = true
-	look.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	look.roughness = 0.35
-	cube.material = look
 	var p := GPUParticles3D.new()
 	p.process_material = mat
-	p.draw_pass_1 = cube
+	p.draw_pass_1 = IntroWater.puff(Num.f(_cfg["drop"]) * maxf(0.5, size * 0.3))
 	p.amount = clampi(roundi(size * size * 40.0), 40, roundi(Num.f(_cfg["burst_amount"])))
 	p.lifetime = Num.f(_cfg["life"])
 	p.one_shot = true
