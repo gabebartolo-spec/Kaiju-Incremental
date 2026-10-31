@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-427 · Director · Load screen: 12 graded dusk stills, random each load
+His shot list for load-screen art: "get caps of the powers / destruction / the city from panoramic angles / all three
+kaiju forms / then edit the photos to be more epic", then "remove the ui from the screencaps". Shown the board of 12
+(tools/capture/capture_load_art.gd: paused dusk rampage, staged cameras, no UI; graded for bloom, split tone,
+contrast and vignette), he picked "All 12", grade "Keep as is" and "Random each load". The loading overlay shows one
+4K still (assets/loading) behind INCOMING and the meter, never the same twice in a row (comment #92, D-140, D-359).
+The band sits just above the crawl so the kaiju in mid-frame stays in view.
+
 ## 2026-10-31 · D-426 · Director · The whole bay is water: native step, open mouth, swell lifts the sheet
 On the sea lying flat except one rectangle of waves round the kaiju (the sim stepped only an 80 m window by him,
 walled at its edge): "investigate why all the water is flat except for this rectangle then fix it so all water is
