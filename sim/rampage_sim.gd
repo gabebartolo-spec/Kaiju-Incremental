@@ -175,6 +175,7 @@ var brood: Brood
 var stomp: RampageStomp
 var strikes: Strikes  # the reptilian's big attacks, a beat after the press (D-166)
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
+var water: WaterSim  # the bay and the river as a liquid the body and its blows push about
 var death: DeathOverload  # how he dies: stagger, stone, shatter
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
@@ -281,11 +282,11 @@ func result() -> Dictionary:
 	return out
 
 
-## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/BREATH and
-## Dash.BUTTON).
+## Advances the rampage by dt (move, signature pressed, buttons HELD/ULTIMATE/BREATH/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
+	water.step(self, dt, _events)  # the liquid moves under every frame, the rise and death too
 	if death.holds(dt) or emerge.step(self, dt):
 		return _events
 	time_left -= dt

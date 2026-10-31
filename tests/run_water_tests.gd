@@ -20,6 +20,8 @@ func run_checks() -> void:
 	await _t("_check_default_on")
 	await _t("_check_surface_on")
 	await _t("_check_surface_off")
+	await _t("_check_liquid_wave")
+	await _t("_check_liquid_settles")
 
 
 func _check_default_on() -> void:
@@ -56,7 +58,7 @@ func _check_surface_on() -> void:
 			var size: Vector2 = (mi.mesh as PlaneMesh).size
 			var long := Vector2.RIGHT if size.x >= size.y else Vector2.DOWN
 			var along := flow.length() > 0.0 and absf(flow.normalized().dot(long)) > 0.999
-			rivers += int(along and deep.is_equal_approx(Look.color("river")))
+			rivers += int(along and deep.is_equal_approx(Look.color("water")))
 		shaded -= int(mat.render_priority != WaterSurface.PRIORITY)
 		var foam: Color = mat.get_shader_parameter("foam_color")
 		shaded -= int(not foam.is_equal_approx(Look.color("water_foam")))
@@ -74,7 +76,7 @@ func _check_surface_on() -> void:
 	check(
 		rivers == channels.size(),
 		(
-			"each river channel flows along its length in the look's river colour (%d of %d)"
+			"each river channel flows along its length in the look's one water colour (%d of %d)"
 			% [rivers, channels.size()]
 		)
 	)
@@ -121,3 +123,60 @@ func _material(mi: MeshInstance3D) -> Material:
 func _free_sheets(sheets: Array[MeshInstance3D]) -> void:
 	if not sheets.is_empty():
 		sheets[0].get_parent().free()
+
+
+## The liquid (WaterSim, director 2026-10-31 "make the water a real physical thing"): a stomp's
+## worth thrown out of the bay's shelf makes a crater and a ring wave that reaches water 9 m off,
+## and the water it moves is all still there.
+func _check_liquid_wave() -> void:
+	var w := _liquid()
+	var bay: WaterSim.Basin = w.basins[0]
+	var p := _shelf_point(w)
+	var before := _volume(bay)
+	var off := p + Vector2(9.0, 0.0)
+	check(w.disturb(p, 40.0, 1.5), "a push into the bay's shelf water is taken")
+	var dip := bay.rest - w.surface_at(p)
+	check(dip > 0.1, "it leaves a crater (%.2f under the still water)" % dip)
+	var peak := 0.0
+	for n: int in 90:
+		w._flow(bay, DT)
+		peak = maxf(peak, w.surface_at(off) - bay.rest)
+	check(peak > 0.02, "a wave reaches water 9 m off within 3 s (it rose %.3f m)" % peak)
+	var lost := _volume(bay) - before
+	check(absf(lost) < 0.5, "no water made or lost (%.3f m3 out of %.0f)" % [lost, before])
+
+
+## Friction takes the waves down and the window sleeps: still water costs nothing.
+func _check_liquid_settles() -> void:
+	var w := _liquid()
+	var bay: WaterSim.Basin = w.basins[0]
+	w.disturb(_shelf_point(w), 40.0, 1.5)
+	var n := 0
+	while bay.active.has_area() and n < 1800:
+		w._flow(bay, DT)
+		n += 1
+	var still := "the bay is still again within 60 s of a stomp (%.1f s)" % (n * DT)
+	check(not bay.active.has_area(), still)
+
+
+func _liquid() -> WaterSim:
+	return WaterSim.new(Content.section("city"), {"water_sim": Content.section("water_sim")})
+
+
+## A point on the bay's flat shelf, clear of the rise's hollow.
+func _shelf_point(w: WaterSim) -> Vector2:
+	var cfg := Content.section("city")
+	var bay: WaterSim.Basin = w.basins[0]
+	for k: int in bay.nx * bay.nz:
+		var c := Vector2i(k % bay.nx, k / bay.nx)
+		var p := bay.centre(c)
+		if c.x > bay.nx / 4 and absf(bay.floor_y[k] - CityHarbour.shelf_floor(cfg)) < 0.01:
+			return p
+	return bay.centre(Vector2i(bay.nx / 4, 2))
+
+
+func _volume(b: WaterSim.Basin) -> float:
+	var out := 0.0
+	for k: int in b.nx * b.nz:
+		out += b.depth[k]
+	return out * b.cell * b.cell

@@ -3,15 +3,15 @@ extends RefCounted
 ## The river on the city ground (CityGround): its channel and the bridges' stone abutments.
 
 
-## The river (CityRiver): a channel sunk city "river_depth" below the street, glossy water
-## bluer and lighter than the bay's between stone quay walls, running on under its bridges:
+## The river (CityRiver): a channel sunk city "river_depth" below the street, water the same
+## colour as the sea's between stone quay walls, running on under its bridges:
 ## a deck at street level with a parapet along each side for every street that crosses it.
 static func river(g: CityGround, channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 	var depth := Num.f(g.cfg.get("river_depth", 0.0))
 	var bridges := CityRiver.bridges(g.plan, g.cfg)
 	var wall := Vector2(CityGround.PAVE_TOP, depth + 0.5)
 	for channel: Rect2 in channels:
-		g.add_child(g._sheet(channel, -depth, Look.color("river")))
+		g.add_child(g._sheet(channel, -depth, Look.color("water")))
 		var x0 := channel.position.x
 		var z0 := channel.position.y
 		var banks: Array[Rect2] = [

@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
+Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
+fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim
+(sim/water_sim.gd, 2 m cells, seeded) carries every wave; his body displaces it, stomps and the rise throw splashes.
+Water never floods the city. The painted swash is removed ("Yes, remove it"): the waterline is where the sheet passes
+under the sand, with a wet sand band above it. On a sand bar he chose "Steeper near shore": the seabed drops 1.2 m in
+the first 10 m, then to wading depth 2.5 m by 40 m. Final shoreline: "Yes, ship it".
 ## 2026-10-31 · D-413 · Director · Boats slow enough to catch; rock that shows
 "Retune, then reclip", then "Yes, ship it" on the 1080p dusk river clip. A boat fled his wake at up to ~8.8 u/s, he
 walks ~2.5, so none ever capsized in play. data/tuning.json boats: flee_push 6 -> 2, drag 0.5 -> 1.0 (top speed

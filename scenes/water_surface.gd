@@ -1,13 +1,14 @@
 class_name WaterSurface
 extends RefCounted
-## The city's water surface (D-244, D-245; D-325 step 1, "the surface"): every river channel and
-## the bay drawn with water.gdshader, one look for both (depth colour, a foam line where anything
-## meets it, two scales of moving normal detail, Fresnel, the sky's reflection kept); the river's
-## waves ride its current along the channel, the bay has a gentle swell. Its waves run with the
-## run's wind (Fire.WIND), as the rain and the smoke lean. Numbers: tuning "water"; colours: the
-## look's "river" and "water" (the deep colour of each), "water_shallow" and "water_foam".
-## Presentation only: nothing reads it back. Tuning water.on false draws the glossy sheet it
-## replaced (captures compare the two).
+## The city's water surface (D-244, D-245; D-325 step 1, "the surface"): every river channel and the
+## bay drawn with water.gdshader, one look for both (depth colour, a foam line where anything meets
+## it, two scales of moving normal detail, Fresnel, the sky's reflection kept); the river's waves
+## ride its current along the channel, the bay has a gentle swell. Its waves run with the run's wind
+## (Fire.WIND), as the rain and the smoke lean. Numbers: tuning "water"; colours: the look's "water"
+## (one colour for the river, the bay and the open sea; director 2026-10-31) and "water_foam". The
+## bay's swell rolls landward (tuning water.lap dir), so its waves run to the shore. Presentation
+## only: nothing reads it back. Tuning water.on false draws the glossy sheet it replaced (captures
+## compare the two).
 
 const SHADER := preload("res://scenes/water.gdshader")
 ## Every sheet is in this group (a capture masks the water by it).
@@ -32,6 +33,10 @@ static func sheet(rect: Rect2, y: float, deep: Color, bay: bool, seed: int) -> M
 	var mi := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = rect.size
+	# cut into the liquid's cells, so its waves (WaterView) can lift the sheet
+	var cell := Num.f(Content.section("water_sim")["cell"])
+	plane.subdivide_width = ceili(rect.size.x / cell)
+	plane.subdivide_depth = ceili(rect.size.y / cell)
 	plane.material = material(rect, deep, bay, seed) if on() else gloss(deep)
 	mi.mesh = plane
 	var mid := rect.get_center()
@@ -50,7 +55,7 @@ static func material(rect: Rect2, deep: Color, bay: bool, seed: int) -> ShaderMa
 	mat.shader = SHADER
 	mat.render_priority = PRIORITY
 	mat.set_shader_parameter("deep_color", deep)
-	mat.set_shader_parameter("shallow_color", Look.color("water_shallow"))
+	mat.set_shader_parameter("shallow_color", deep)
 	mat.set_shader_parameter("foam_color", Look.color("water_foam"))
 	for key: String in ["absorb", "murk", "foam_depth", "foam", "rough_near", "rough_far"]:
 		mat.set_shader_parameter(key, Num.f(cfg[key]))
@@ -66,6 +71,10 @@ static func material(rect: Rect2, deep: Color, bay: bool, seed: int) -> ShaderMa
 	mat.set_shader_parameter("swell_slope", Num.f(kind.get("swell_slope", 0.0)))
 	var wind := Vector2(Fire.WIND.x, Fire.WIND.z).normalized()
 	mat.set_shader_parameter("wind", wind)
+	var landward: Array = cfg["lap"]["dir"]
+	mat.set_shader_parameter(
+		"swell_dir", Vector2(Num.f(landward[0]), Num.f(landward[1])).normalized()
+	)
 	var along := Vector2.RIGHT if rect.size.x >= rect.size.y else Vector2.DOWN
 	mat.set_shader_parameter("flow", along * Num.f(kind.get("flow", 0.0)))
 	mat.set_shader_parameter("seed", float(seed % 1000))

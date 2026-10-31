@@ -23,6 +23,7 @@ static func make(
 	s.brood = Brood.new(s, Seeds.derive(rng, 0xB0))
 	s.stomp = RampageStomp.new(s)
 	s.emerge = Emergence.new(s.city, tuning)
+	s.water = WaterSim.new(s.city, tuning)
 	s.body = BodyContact.new(s, tuning)
 	s.tail = TailTouch.new(s, s.body.cfg)
 	s.rail = Rail.new(s, tuning, Seeds.derive(rng, 0x7A11))

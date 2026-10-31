@@ -5,7 +5,8 @@ shader_type spatial;
 //    wind waves (six directional waves on the deep-water dispersion w^2 = g k, each a sharp-crested
 //    exp(sin) profile; Finch, GPU Gems 1 ch. 1; Acerola, "How Games Fake Water") and fine ripples
 //    (two octaves of gradient noise drifting apart); on the river both ride its current;
-//  - on the bay a long gentle swell (normals only);
+//  - on the bay a long swell rolling toward the shore (`swell_dir`; director 2026-10-31: "natural
+//    waves rolling toward the shore"), its crests a lighter band of the body colour (normals only);
 //  - on the beach's sea, waves lapping the shore (director 2026-10-29: "gentle waves lapping against
 //    the shore"): low wavelets run landward (`lap_dir`) and lift the surface itself, so the waterline
 //    and its foam climb the sloping sand and slide back down (the sheet is cut into rows for it; its
@@ -38,6 +39,7 @@ uniform float ripple_slope = 0.12;
 uniform float swell_length = 0.0;  // the bay's swell (m); 0 = none (the river)
 uniform float swell_slope = 0.03;
 uniform vec2 wind = vec2(0.6, -0.8);  // where the waves run (unit, x z)
+uniform vec2 swell_dir = vec2(0.0, 1.0);  // where the swell rolls: landward (unit, x z)
 uniform vec2 flow = vec2(0.0);  // the current (m/s, x z)
 uniform float rough_near = 0.05;
 uniform float rough_far = 0.25;
@@ -54,6 +56,14 @@ uniform float lap_height = 0.0;  // the lapping wavelets' height (m); 0 = none (
 uniform float lap_length = 8.0;  // their spacing (m)
 uniform float lap_period = 6.0;  // seconds between one reaching the sand and the next
 uniform vec2 lap_dir = vec2(0.0, 1.0);  // landward (unit, x z)
+// The liquid (WaterSim, drawn by WaterView): its surface's lift over the still water per cell (m),
+// a dry cell far under; the sheet takes the lift and its slope, so the sim's waves are what shows.
+uniform sampler2D sim_height : filter_linear, repeat_disable;
+uniform vec2 sim_origin = vec2(0.0);
+uniform vec2 sim_size = vec2(1.0);
+uniform float sim_on = 0.0;
+uniform float whitecap_slope = 0.35;  // a sim crest this steep (or this high, m) breaks white
+uniform float whitecap_lift = 0.5;
 
 const float GRAVITY = 9.81;
 const int WAVES = 6;
@@ -112,13 +122,13 @@ vec2 turn(vec2 d, float a) {
 
 // A set of directional waves round the wind: (height, dh/dx, dh/dz). fp is the pixel's footprint
 // (m); lost gathers the slope variance the faded waves give up.
-vec3 wave_set(vec2 p, float t, float fp, float len0, float slope0, int count, float spread, float salt, inout float lost) {
+vec3 wave_set(vec2 p, float t, float fp, vec2 dir, float len0, float slope0, int count, float spread, float salt, inout float lost) {
 	vec3 sum = vec3(0.0);
 	float len = len0;
 	float s = slope0;
 	for (int i = 0; i < count; i++) {
 		float fi = float(i) + salt;
-		vec2 d = turn(wind, (wh(fi) - 0.5) * spread);
+		vec2 d = turn(dir, (wh(fi) - 0.5) * spread);
 		float k = TAU / len;
 		float ph = k * dot(d, p) - sqrt(GRAVITY * k) * t + TAU * wh(fi + 17.0);
 		float e = exp(sin(ph) - 1.0);
@@ -160,11 +170,43 @@ float lap(vec2 p, float t) {
 	return lap_height * (exp(sin(ph) - 1.0) - CREST_MEAN) / (1.0 - CREST_MEAN);
 }
 
+// The lift at uv, smoothed over the cell and its neighbours (weights 1 2 1 each way), so the
+// sheet is a rounded surface, not the 2 m cells' facets, and its line under the sand is smooth.
+float sim_smooth(vec2 uv, vec2 du, vec2 dv) {
+	float sum = 0.0;
+	for (int i = -1; i <= 1; i++) {
+		for (int j = -1; j <= 1; j++) {
+			float w = float((2 - abs(i)) * (2 - abs(j)));
+			sum += w * texture(sim_height, uv + float(i) * du + float(j) * dv).r;
+		}
+	}
+	return sum / 16.0;
+}
+
+// The liquid's lift at p (world x z) and its slope (dh/dx, dh/dz); none off the sim.
+vec3 sim_at(vec2 p) {
+	if (sim_on <= 0.0) {
+		return vec3(0.0);
+	}
+	vec2 uv = (p - sim_origin) / sim_size;
+	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
+		return vec3(0.0);
+	}
+	vec2 cell = sim_size / vec2(textureSize(sim_height, 0));
+	vec2 du = vec2(1.0, 0.0) / vec2(textureSize(sim_height, 0));
+	vec2 dv = vec2(0.0, 1.0) / vec2(textureSize(sim_height, 0));
+	float h = sim_smooth(uv, du, dv);
+	float hx = sim_smooth(uv + du, du, dv) - sim_smooth(uv - du, du, dv);
+	float hz = sim_smooth(uv + dv, du, dv) - sim_smooth(uv - dv, du, dv);
+	return vec3(h, hx / (2.0 * cell.x), hz / (2.0 * cell.y));
+}
+
 void vertex() {
+	vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	if (lap_height > 0.0) {
-		vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 		VERTEX.y += lap(w.xz, TIME) * COLOR.r;
 	}
+	VERTEX.y += sim_at(w.xz).x;
 }
 
 // What lies behind this pixel in view space (the depth texture, both renderers' NDC).
@@ -186,13 +228,17 @@ void fragment() {
 	float fp = max(length(dFdx(p)), length(dFdy(p)));
 	vec2 carried = p - flow * t;  // the river carries its waves downstream
 	float lost = 0.0;
-	vec3 h = wave_set(carried, t, fp, wave_length, wave_slope, WAVES, SPREAD, 0.0, lost);
+	vec3 h = wave_set(carried, t, fp, wind, wave_length, wave_slope, WAVES, SPREAD, 0.0, lost);
 	h += ripples(carried, t, fp, lost);
-	// A crest's body is lighter (light through its top): the wind waves and ripples, not the slow swell.
+	// A crest's body is lighter (light through its top): the wind waves, and the swell's rolling crests.
 	float crest = clamp(h.x / max(0.001, wave_slope * wave_length / TAU), -1.0, 1.0);
 	if (swell_length > 0.0) {
-		h += wave_set(p, t, fp, swell_length, swell_slope, SWELLS, SPREAD * 0.4, 40.0, lost);
+		vec3 s = wave_set(p, t, fp, swell_dir, swell_length, swell_slope, SWELLS, SPREAD * 0.08, 40.0, lost);
+		h += s;
+		crest = clamp(0.15 * crest + s.x / max(0.001, swell_slope * swell_length / TAU), -1.0, 1.0);
 	}
+	vec3 liquid = sim_at(p);
+	h.yz += clamp(liquid.yz, vec2(-2.0), vec2(2.0));  // a dry rim's cliff never tips the normal over
 	vec3 n_world = normalize(vec3(-h.y, 1.0, -h.z));
 	NORMAL = normalize((VIEW_MATRIX * vec4(n_world, 0.0)).xyz);
 	float alpha0 = rough_near * rough_near;
@@ -220,12 +266,17 @@ void fragment() {
 	float band = 1.0 - smoothstep(0.0, foam_depth, below);
 	float lace = gnoise(carried * 1.7 + vec2(t * 0.11, seed)).x + 0.5 * gnoise(carried * 4.3 - vec2(0.0, t * 0.17)).x;
 	float froth = smoothstep(0.4, 0.75, band * (0.75 + lace)) * foam;
+	// The liquid's own crests break white where they steepen or stand tall, broken by the same lace.
+	float cap = max(length(liquid.yz) / whitecap_slope, liquid.x / whitecap_lift);
+	froth = max(froth, smoothstep(0.7, 1.2, cap * (0.75 + lace)) * sim_on);
 
 	float seen = clear * (1.0 - fres);  // the share of what is under the water that reaches the eye
 	ALBEDO = mix(body * (1.0 - clear) * (1.0 - fres), foam_color, froth);
 	ALPHA = mix(1.0 - seen, 1.0, froth);
-	// The sky's glow in patches (an unlit body would be black at night) (sky_color, per look).
-	EMISSION = sky_color * (night_glow * night + day_glow) * clamp(0.5 + mottle, 0.0, 1.5) * (1.0 - froth);
+	// The sky's glow (an unlit body would be black at night) (sky_color, per look): as faintly
+	// patched as the body (mottle_amp), and lighter on the crests, so the rolling bands read at night.
+	float glow = 0.5 * (1.0 + mottle_amp * mottle) * (1.0 + crest_light * crest);
+	EMISSION = sky_color * (night_glow * night + day_glow) * glow * (1.0 - froth);
 	SPECULAR = spec * (1.0 - froth);
 	ROUGHNESS = mix(ROUGHNESS, 0.7, froth);
 }

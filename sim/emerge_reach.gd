@@ -56,11 +56,11 @@ static func max_growth(upgrades: Array[Dictionary], species_id: String, tier: in
 	return levels
 
 
-## Fits the city's "harbour" in `tuning` (a stage's, CityGrowth.tuning_for) to the biggest body:
-## at least as wide as it plus "fit_margin" each side ("fit_width"), the sea floor at the rise
-## its crouched back ("crouch_back" per body scale) plus "seabed_clear" under the surface
-## ("seabed_depth"), and no painted stand-in within the game camera's ground reach of the rise
-## ("view_clear").
+## Fits the city's "harbour" in `tuning` (a stage's, CityGrowth.tuning_for) to the biggest body: at
+## least as wide as it plus "fit_margin" each side ("fit_width"), the sea floor at the rise its
+## crouched back ("crouch_back" per body scale) plus "seabed_clear" under the surface
+## ("seabed_depth") in a hollow that holds the whole body ("hollow"), and no painted stand-in within
+## the game camera's ground reach of the rise ("view_clear").
 static func fit(tuning: Dictionary, upgrades: Array[Dictionary], tier: int) -> void:
 	var city: Dictionary = tuning.get("city", {})
 	if not city.has("harbour"):
@@ -71,6 +71,9 @@ static func fit(tuning: Dictionary, upgrades: Array[Dictionary], tier: int) -> v
 	bay["fit_width"] = ceilf(body.y + Num.f(bay["fit_margin"]) * 2.0)
 	var crouch := Num.f(bay["crouch_back"]) * scale + Num.f(bay["seabed_clear"])
 	bay["seabed_depth"] = maxf(Num.f(bay["seabed_depth"]), crouch)
+	# The rise's hollow holds the whole body, nose to tail, out from the beach line.
+	var hold := maxf(body.x, body.y) * 0.5 + Num.f(bay["nose_gap"]) + Num.f(bay["fit_margin"])
+	bay["hollow"] = maxf(Num.f(bay["hollow"]), ceilf(hold))
 	var cam: Dictionary = tuning.get("camera", {})
 	var offset: Array = cam.get("offset", [0, 0, 0])
 	var behind := absf(Num.f(offset[2]))

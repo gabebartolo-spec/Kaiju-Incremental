@@ -290,9 +290,31 @@ static func seabed(cfg: Dictionary) -> float:
 	return sea(cfg) - Num.f(cfg["harbour"]["seabed_depth"]) if cfg.has("harbour") else 0.0
 
 
-## The ground's height at p: 0 (the street) on land; in the water the sea floor, rising across
-## the beach (city "harbour" "beach" metres seaward of the waterline, measured straight out) to
-## "sand_top", the sand's own height, just under the street; the port's water is deep to its quay.
+## The wading floor (world y): city "wade_depth" under the sea's surface, where the shelf levels
+## out (director 2026-10-31: the baby half submerged).
+static func shelf_floor(cfg: Dictionary) -> float:
+	return sea(cfg) - Num.f(cfg["wade_depth"])
+
+
+## How far seaward of the shore line the water meets the sand (the shelf's slope crosses the sea).
+static func waterline(cfg: Dictionary) -> float:
+	var h: Dictionary = cfg["harbour"]
+	var top := Num.f(h["sand_top"])
+	return Num.f(h["drop"]) * (top - sea(cfg)) / (top - drop_floor(cfg))
+
+
+## The foot of the drop (world y): city "harbour" "drop_depth" under the sea's surface, "drop"
+## metres out from the shore line (director 2026-10-31: steeper near the shore, so a wave's trough
+## never bares the seabed), from where the shelf eases on down to the wading floor.
+static func drop_floor(cfg: Dictionary) -> float:
+	return sea(cfg) - Num.f(cfg["harbour"]["drop_depth"])
+
+
+## The ground's height at p: 0 (the street) on land; in the water the sea floor, sloping gently from
+## "sand_top" (the sand's own height, just under the street) at the shore line, faster over the
+## first "drop" metres to drop_floor, then down to the wading floor by "shelf" metres, measured
+## straight out (director 2026-10-31: "slowly deeper but never too deep"); only the rise's hollow
+## goes down to the seabed. The port's water is deep to its quay.
 static func floor_at(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
 	if not holds(plan, p):
 		return 0.0
@@ -300,5 +322,13 @@ static func floor_at(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
 	var h: Dictionary = cfg["harbour"]
 	if p.x >= Num.f(b["port_x"]):
 		return seabed(cfg)
-	var share := clampf((shore_at(h, p.x) - p.y) / Num.f(h["beach"]), 0.0, 1.0)
-	return lerpf(Num.f(h["sand_top"]), seabed(cfg), share)
+	var out := shore_at(h, p.x) - p.y
+	var drop := Num.f(h["drop"])
+	var shelf := lerpf(Num.f(h["sand_top"]), drop_floor(cfg), clampf(out / drop, 0.0, 1.0))
+	if out > drop:
+		var share := clampf((out - drop) / (Num.f(h["shelf"]) - drop), 0.0, 1.0)
+		shelf = lerpf(drop_floor(cfg), shelf_floor(cfg), share)
+	var hollow := Num.f(h["hollow"])
+	var centre := Vector2(Num.f(h["rise_x"]), Num.f(b["apex"]) - Num.f(h["beach"]) - hollow)
+	var rim := smoothstep(hollow, hollow + Num.f(h["hollow_edge"]), p.distance_to(centre))
+	return minf(shelf, lerpf(seabed(cfg), shelf, rim))
