@@ -11,7 +11,7 @@ static func start(piece: Node3D, mesher: BuildingMesher, chunks: PackedInt32Arra
 	var make := func() -> void:
 		for k: int in chunks:
 			parts.append_array(mesher.parts_of(k))
-	var task := WorkerWait.add(WorkerThreadPool.add_task(make))
+	var task := WorkerWait.add(WorkerThreadPool.add_task(make, true))
 	piece.set_meta("parts", parts)
 	piece.set_meta("parts_task", task)
 
