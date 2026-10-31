@@ -24,6 +24,7 @@ the u16 bones then counts the rig's bones and the helpers, which take the indice
 import gzip
 import hashlib
 import json
+import os
 import struct
 import sys
 from pathlib import Path
@@ -32,6 +33,7 @@ import numpy as np
 
 import cor
 import skin_helpers
+import thicken
 
 VERSION = 2
 LATTICE_PASSES = 12  # joint blend width, in voxel-lattice smoothing passes (look test round 2)
@@ -232,6 +234,16 @@ def hinge_hold(w, cells, mine, p):
     return (1.0 - f[:, None]) * w + f[:, None] * held
 
 
+def thicken_spec(kdir, name):
+    """data/tuning.json skin_bake.thicken.<name> (thicken.py), or None. KAIJU_THICKEN_GIRTH overrides
+    its girth, for side-by-side variants only."""
+    tuning = json.loads((kdir.parents[1] / "data" / "tuning.json").read_text(encoding="utf-8"))
+    spec = tuning.get("skin_bake", {}).get("thicken", {}).get(name)
+    if spec is not None and os.environ.get("KAIJU_THICKEN_GIRTH"):
+        spec = dict(spec, girth=float(os.environ["KAIJU_THICKEN_GIRTH"]))
+    return spec
+
+
 def top3(w):
     top = np.argsort(-w, axis=1)[:, :3]
     tw = np.take_along_axis(w, top, 1)
@@ -245,6 +257,9 @@ def bake(name, rest, kdir, rig):
     cells, rgb, owner = read_kvox(kdir / f"{name}.kvox")
     bones = rest["bones"]
     names = [b["name"] for b in bones]
+    spec = thicken_spec(kdir, name)
+    if spec is not None:
+        cells, rgb, owner = thicken.thicken(cells, rgb, owner, names, rig["bones"], spec)
     nb = len(names)
     parents = {b["name"]: b["parent"] for b in rig["bones"]}
     files = skin_files(kdir, name)

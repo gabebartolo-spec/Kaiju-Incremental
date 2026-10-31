@@ -5963,6 +5963,30 @@
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
+    "skin_bake": {
+      "type": "object",
+      "properties": {
+        "thicken": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "thigh": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+              "hip": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+              "girth": {"type": "number", "minimum": 1.0, "maximum": 2.0},
+              "full_to": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+              "knee": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+              "hip_reach": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 2.0}
+            },
+            "required": ["thigh", "hip", "girth", "full_to", "knee", "hip_reach"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["thicken"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
     "render_opt": {
       "type": "object",
       "properties": {
