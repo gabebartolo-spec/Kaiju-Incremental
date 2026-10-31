@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-430 · Director · Globe continent states: grey coastline locked, pulsing yellow available, green conquered
+Overworld plan row G3, his picks: "Grey / yellow / green" and, for locked, "Coastline only". A locked continent draws
+only its coastline in UiKit LOCKED grey, no fill; an available one fills in ACCENT yellow and pulses slowly (one
+breath every 2 s); a conquered one fills steady in UiKit GOOD green. Which continents are available follows D-420 and
+D-422 (Campaign.states, read from the save's conquered list). Locked continents' markers turn LOCKED grey and the
+continent neither lights on hover nor answers a click (his pick: "Grey, not clickable").
+
 ## 2026-11-01 · D-429 · Director · Globe mission markers: pin and name on all seven, click turns and zooms in
 Overworld plan row G4, his picks: "Pin + name" (a small yellow diamond on the continent, a leader line up and right
 to its name in caps, ACCENT yellow with a dark outline), "All seven now" (the offered-pair filter waits for T1, the
@@ -385,10 +392,3 @@ size; the next ring big, spire size; the outer ring the biggest, megatower size)
 bigger. The stadium and wheel are two pool entries, not certain to appear; when drawn, the stadium takes the west spot
 and the wheel the east one, inside stage 2's reach. Everything else stays random per seed (D-263). Replaces D-071's fixed
 four in order and D-270's "south, past the river with the Ferris wheel"; D-271's reach holds.
-
-## 2026-10-28 · D-374 · Director · The Colossus rig gets hip and knee helper joints; every skeleton is checked over its full move range
-His words (10-28 ~18:4x), on the knee/thigh crumple in charge, emerge, hlt, run, slam and leap, which skin weights alone
-cannot fix: "add the joints, i asked you to make sure the skeletons were ready for animation, you failed, do your job
-properly do not do lazy work". So: corrective helper joints at the hip and knee keep the big poses (no smaller-swing pose
-bar); the young croc and Behemoth skeletons get the same full-range check and fix now; the Colossus drafts are
-retargeted onto the new rig in Cascadeur (D-199).

@@ -4,6 +4,7 @@ extends Control
 ## name): a small diamond on the continent with a leader line up and right to its name. GlobeView
 ## places it each frame at the continent's anchor projected to the screen (the Control's position
 ## is the diamond's centre) and fades it out as the anchor turns away toward the globe's edge.
+## A locked continent's marker is UiKit LOCKED grey (D-430, director 2026-11-01).
 
 const DIAMOND_PX := 9.0  # half the diamond's diagonal, px at 1080p
 const LEADER := Vector2(22.0, -22.0)  # diamond centre to the line's elbow
@@ -12,6 +13,7 @@ const LINE_PX := 2.0
 const NAME_GAP := 4.0  # line end to the name's left edge
 
 var _name: Label
+var _ink := UiKit.ACCENT
 
 
 func _init(display_name: String) -> void:
@@ -26,13 +28,24 @@ func _ready() -> void:
 	_name.position = Vector2(LEADER.x + LEADER_RUN + NAME_GAP, LEADER.y - size_px.y / 2.0)
 
 
+## Grey for a locked continent, yellow otherwise.
+func set_locked(on: bool) -> void:
+	_ink = UiKit.LOCKED if on else UiKit.ACCENT
+	_name.add_theme_color_override("font_color", _ink)
+	queue_redraw()
+
+
+func ink() -> Color:
+	return _ink
+
+
 func _draw() -> void:
 	var ink := UiKit.outline_color()
 	var outline := float(UiKit.outline_px(UiKit.SIZE_SMALL))
 	var elbow := LEADER
 	var tip := LEADER + Vector2(LEADER_RUN, 0.0)
-	# The outline first, wider, so the yellow reads over the bright coastlines.
-	for pass_ink: Color in [ink, UiKit.ACCENT]:
+	# The outline first, wider, so the colour reads over the bright coastlines.
+	for pass_ink: Color in [ink, _ink]:
 		var grow := outline if pass_ink == ink else 0.0
 		var w := LINE_PX + grow * 2.0
 		draw_polyline(PackedVector2Array([Vector2.ZERO, elbow, tip]), pass_ink, w, true)

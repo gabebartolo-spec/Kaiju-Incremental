@@ -2,6 +2,13 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-374 · Director · The Colossus rig gets hip and knee helper joints; every skeleton is checked over its full move range
+His words (10-28 ~18:4x), on the knee/thigh crumple in charge, emerge, hlt, run, slam and leap, which skin weights alone
+cannot fix: "add the joints, i asked you to make sure the skeletons were ready for animation, you failed, do your job
+properly do not do lazy work". So: corrective helper joints at the hip and knee keep the big poses (no smaller-swing pose
+bar); the young croc and Behemoth skeletons get the same full-range check and fix now; the Colossus drafts are
+retargeted onto the new rig in Cascadeur (D-199).
+
 ## 2026-10-28 · D-373 · Director · The river intro is dropped; the beach start ships straight onto main
 His words (10-28 ~18:2x): "im sick of seeing runs start in the river. when will our beach front patch hit the godot
 runs?"; "why would river intro - a scene we nixed and dont require any further build - go before our planned ship?";
