@@ -163,7 +163,7 @@ static func part_event(
 	event["under"] = under
 	if under:  # the cell it stands on, for the readers that check what held it
 		event["support"] = support(f, index, lo.y)
-	if str(part["kind"]) != "topple":
+	if str(part["kind"]) != "topple" or not under:  # a gutted topple falls the gap too
 		event["drop"] = drop(f, index)
 	return event
 

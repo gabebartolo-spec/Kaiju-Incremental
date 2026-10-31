@@ -30,6 +30,7 @@ func run_checks() -> void:
 	await _t("_check_ao_ladder")
 	await _t("_check_split_brighter_diagonal")
 	await _t("_check_baked_agrees_with_cells")
+	await _t("_check_baked_mesh_packed")
 	await _t("_check_materials_have_finish")
 	await _t("_check_look_reaches_material")
 	await _t("_check_shader_hash_matches")
@@ -178,6 +179,52 @@ func _check_baked_agrees_with_cells() -> void:
 			r[2] == 0 and s[2] == 0,
 			"%s: slab AO equal, shell AO never lighter (%d shell, %d slab off)" % [f[0], r[2], s[2]]
 		)
+
+
+## The baked building mesh is packed (24 bytes a vertex, not 40; director 10-31): it reads back
+## with every position within 1 mm, every finish and chunk exact, and AO unchanged to 1e-4.
+func _check_baked_mesh_packed() -> void:
+	for f: Array in FIXTURES:
+		var baked := BuildingMesher.new(BuildingVoxels.new(_building(f), Color("8a7f72")))
+		var arrays := baked._shell_arrays
+		var packed := BuildingMesher.mesh_of(arrays)
+		var plain := ArrayMesh.new()
+		plain.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		var pa: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var n := pa.size()
+		check(
+			_bytes(packed) * 5 <= _bytes(plain) * 3,
+			(
+				"%s: packed mesh %d bytes, plain %d (%d vertices)"
+				% [f[0], _bytes(packed), _bytes(plain), n]
+			)
+		)
+		var back := packed.surface_get_arrays(0)
+		var pb: PackedVector3Array = back[Mesh.ARRAY_VERTEX]
+		var ua: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+		var ub: PackedVector2Array = back[Mesh.ARRAY_TEX_UV]
+		var wa: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV2]
+		var wb: PackedVector2Array = back[Mesh.ARRAY_TEX_UV2]
+		var off := 0
+		for v: int in n:
+			var d := (pa[v] - pb[v]).abs()
+			if (
+				maxf(d.x, maxf(d.y, d.z)) > 0.001
+				or roundi(ua[v].y) != roundi(ub[v].y)
+				or roundi(wa[v].x) != roundi(wb[v].x)
+				or absf(ua[v].x - ub[v].x) > 1e-4
+			):
+				off += 1
+		check(
+			n > 0 and off == 0, "%s: packed vertices read back true (%d of %d off)" % [f[0], off, n]
+		)
+
+
+static func _bytes(mesh: ArrayMesh) -> int:
+	var s := RenderingServer.mesh_get_surface(mesh.get_rid(), 0)
+	var vertex: PackedByteArray = s["vertex_data"]
+	var attribute: PackedByteArray = s["attribute_data"]
+	return vertex.size() + attribute.size()
 
 
 ## Every material names a finish class the look prices (roughness and specular).

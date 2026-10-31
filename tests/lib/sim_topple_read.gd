@@ -33,6 +33,7 @@ func run() -> void:
 	for run: int in RUNS:
 		_rampage(run, notes)
 	_check_gutted_topple(notes)
+	_check_gutted_hinge_falls(notes)
 	_check_falls_by_physics(notes)
 	_check_supports(notes)
 
@@ -90,6 +91,8 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 					"height": size.x,
 					"span": size.y,
 					"under": under,
+					"hinge_y": _hinge_y(e),
+					"drop": Num.f(e["drop"]),
 					"dir": e["dir"],
 					"cut_dir": e["cut_dir"],
 					"to_part": base / maxi(1, count) - sim.kaiju_pos,
@@ -183,6 +186,32 @@ func _check_gutted_topple(log: Array[Dictionary]) -> void:
 			"every gutted tower part topples (%d) instead of dropping as one block: %s"
 			% [toppled, dropped]
 		)
+	)
+
+
+static func _hinge_y(e: Dictionary) -> float:
+	var pivot: Vector3 = e["pivot"]
+	return pivot.y
+
+
+## A gutted topple hinges on the air (floating-tower bug, director 2026-10-31): above the
+## ground it falls the gap below its hinge as it goes over, never turning in mid-air.
+func _check_gutted_hinge_falls(log: Array[Dictionary]) -> void:
+	var floating: Array[String] = []
+	var checked := 0
+	for f: Dictionary in log:
+		var gutted: bool = f["under"] != true and Num.i(f["height"]) > Num.i(f["span"])
+		if f["landmark"] == true or not gutted or str(f["kind"]) != "topple":
+			continue
+		var cut: Vector2 = f["cut_dir"]
+		if Num.f(f["hinge_y"]) < 1.0 or cut != Vector2.ZERO:  # a cut-side topple hinges on floor
+			continue
+		checked += 1
+		if Num.f(f["drop"]) <= 0.0:
+			floating.append("hinge %.1f high, drop %.1f" % [f["hinge_y"], f["drop"]])
+	_check.call(
+		floating.is_empty(),
+		"every gutted topple above the ground falls its gap (%d): %s" % [checked, floating]
 	)
 
 

@@ -47,14 +47,14 @@ var clips: KaijuClips
 ## The clip playing ("idle", "walk", a turn, "roar", "rise_bay": RampageRise.rise) and its frame.
 var state := "idle"
 var clip_time := 0.0
-## Walk cycles travelled so far (distance / stride), for tests and captures, and walk clip frames
-## played so far.
+## Walk cycles travelled (distance / stride) and walk clip frames played, for tests and captures.
 var walk_cycles := 0.0
 var walk_frames := 0.0
 ## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
 var tail_shown := 0.0
 var rake: ClipRake  # the claw rake keyed in Cascadeur, over the clips (D-185)
+var lash: ClipLash  # the tail lash keyed in Cascadeur, over the clips
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
@@ -123,6 +123,7 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_ik = LegReach.new(self)
 	_leap = ClipLeap.new(clips)
 	rake = ClipRake.new(rig, clips, swing)  # and the claw's streak (ClawTrail)
+	lash = ClipLash.new(clips, swing)
 
 
 func update(delta: float) -> void:
@@ -141,7 +142,7 @@ func update(delta: float) -> void:
 		for i: int in 2:  # the new clip's lifted foot lifts at once: held down, it caught up later
 			pose.planted[i] = pose.planted[i] and to.planted[i]
 	pose = _leap.grounded(pose)  # (and the leap's hold ends with this frame)
-	_apply(rake.layer(pose, dt), dt)
+	_apply(lash.layer(rake.layer(pose, dt), dt), dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
