@@ -7,9 +7,16 @@ extends "res://tests/lib/runner.gd"
 ## Seeded by design: the default map_seed; no check reads the clock.
 ##   godot --headless --path . --script tests/run_water_tests.gd
 
+const Harbour := preload("res://tests/lib/city_harbour.gd")
+
 const DT := 1.0 / 30.0
 const STAGES := [1, 2, 3]
 const EPS := 1e-4
+## The rise's highest water, as a share of the kaiju's height (a crest, not a mound round it).
+const RISE_LIFT := 0.35
+const RISE_REACH := 60.0  # metres round the kaiju the rise's water is read over
+const RISE_AFTER := 2.0  # seconds after its head is out that the fountain's water is read
+const RISE_UNDER := 2.0  # metres the rings over the kaiju holding under may stand (0.8 m each)
 
 
 func suite_name() -> String:
@@ -24,6 +31,7 @@ func run_checks() -> void:
 	await _t("_check_liquid_settles")
 	await _t("_check_liquid_whole_bay")
 	await _t("_check_liquid_open_sea")
+	await _t("_check_liquid_rise_calm")
 	await _t("_check_liquid_native")
 
 
@@ -206,6 +214,73 @@ func _check_liquid_open_sea() -> void:
 		through,
 		"the wave runs out of the mouth, not back (the mouth rose %.3f m walled, %.3f m open)" % top
 	)
+
+
+## The rise disturbs the water without burying the kaiju in it (director 2026-11-01, "adult kaiju
+## emerge scene is broken": the stage-3 rise camera sat inside a mound as high as the sea was
+## deep; at rise_volume 3600 and ripple_volume 240 the water near it stood 48 m over the still
+## sea, 2.5 x its height). Before its head is out only the rings stand over it (under RISE_UNDER
+## m: its submerged column took the water's place, it never pushed it up); through the rise and
+## RISE_AFTER s past the fountain no water within RISE_REACH m stands over RISE_LIFT of its height.
+func _check_liquid_rise_calm() -> void:
+	var tier := 3
+	var seed: int = Content.section("city")["map_seed"]
+	var grown := EmergeReach.max_growth(Content.upgrades(), "reptilian", tier)
+	var sim: RampageSim = Harbour._fresh(tier, seed, tier, grown)
+	sim.emerge.start(sim)
+	var bay: WaterSim.Basin = sim.water.basins[0]
+	var cap := Num.f(Content.tuning()["emerge"]["max_seconds"]) + RISE_AFTER
+	var held := 0.0  # the highest water while it holds under
+	var peak := 0.0  # the highest water through the rise and the fountain
+	var where := 0.0
+	var t := 0.0
+	var until := INF
+	while t < until and t < cap:
+		sim.step(DT, Vector2.ZERO, false)
+		t += DT
+		if sim.emerge.surfaced and until == INF:
+			until = t + RISE_AFTER
+		var lift := _lift_near(bay, sim.kaiju_pos, RISE_REACH)
+		if not sim.emerge.surfaced:
+			held = maxf(held, lift)
+		if lift > peak:
+			peak = lift
+			where = t
+	var limit := sim.reach_height() * RISE_LIFT
+	check(
+		until < INF,
+		"the adult's head breaks the water within %.0f s (%.1f s)" % [cap - RISE_AFTER, t]
+	)
+	var at := bay.at(sim.emerge.rise_at)
+	var deep := bay.rest - bay.floor_y[bay.nx * at.y + at.x]
+	check(
+		held < RISE_UNDER,
+		(
+			"only rings stand over it while it holds under (highest %.2f m of %.1f m of water)"
+			% [held, deep]
+		)
+	)
+	check(
+		peak < limit,
+		(
+			"no water within %.0f m stands over %.1f m (%.2f of its %.1f m) in the rise: %.1f m at %.1f s"
+			% [RISE_REACH, limit, RISE_LIFT, sim.reach_height(), peak, where]
+		)
+	)
+	sim.dispose()
+
+
+## The highest lift over the still water within reach m of p, among the wet columns.
+func _lift_near(b: WaterSim.Basin, p: Vector2, reach: float) -> float:
+	var c := b.at(p)
+	var n := ceili(reach / b.cell)
+	var top := 0.0
+	for j: int in range(maxi(0, c.y - n), mini(b.nz, c.y + n + 1)):
+		for i: int in range(maxi(0, c.x - n), mini(b.nx, c.x + n + 1)):
+			var k := j * b.nx + i
+			if b.depth[k] > 0.0:
+				top = maxf(top, b.lift(k))
+	return top
 
 
 ## KaijuWater steps the pipes with the GDScript's own floats: the same water either way.

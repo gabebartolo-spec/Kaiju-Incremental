@@ -1998,6 +1998,7 @@
         "friction": {"$ref": "#/$defs/num"},
         "calm": {"$ref": "#/$defs/num"},
         "body_radius": {"$ref": "#/$defs/num"},
+        "body_rate": {"$ref": "#/$defs/num"},
         "stomp_share": {"$ref": "#/$defs/num"},
         "stomp_volume": {"$ref": "#/$defs/num"},
         "rise_radius": {"$ref": "#/$defs/num"},
@@ -2008,7 +2009,7 @@
         "whitecap_lift": {"$ref": "#/$defs/num"},
         "film": {"$ref": "#/$defs/num"}
       },
-      "required": ["cell", "rim", "courant", "friction", "calm", "body_radius", "stomp_share", "stomp_volume", "rise_radius", "rise_volume", "ripple_seconds", "ripple_volume", "whitecap_slope", "whitecap_lift", "film"],
+      "required": ["cell", "rim", "courant", "friction", "calm", "body_radius", "body_rate", "stomp_share", "stomp_volume", "rise_radius", "rise_volume", "ripple_seconds", "ripple_volume", "whitecap_slope", "whitecap_lift", "film"],
       "additionalProperties": false
     },
     "water": {
