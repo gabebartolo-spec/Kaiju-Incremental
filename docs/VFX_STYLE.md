@@ -132,11 +132,8 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
   - **Breath:** a dim feeler, then 2-3 bright strokes down one fixed main channel to `_first_hit`, 3-5 branches
     re-rolled per stroke fanning across the sim's BreathCone (never past it), at most 3 full flashes a second, no
     saturated red. Replaces the cylinder core AND the orange flame curtain (`breath_curtain.gdshader` goes).
-  - **Breath look (D-412):** a dense purple column of 7-9 strands (`strands`, `strand_spread`), pooling at the
-    ground where it lands (`pool`, `pool_radius`) and chaining on (`chain`, `chain_step`), climbing the facades it
-    strikes; tuning `fx.bolt.breath`. Capture: `tools/capture/capture_breath.gd` (stills + DAMAGE readout;
-    `--audit=1` checks every frame that no drawn point sits in a standing chunk). The rig's `wall_cut` ends every
-    line at the first chunk still standing, so the bolt only passes through what the sim broke.
+  - **Breath look (D-412):** a dense purple column that pools and chains up what it strikes (`fx.bolt.breath`);
+    `wall_cut` ends each line at the first standing chunk. Capture/audit: `tools/capture/capture_breath.gd`.
   - **Thunder Beam (ultimate):** the same bolt held for the beam's seconds, its main channel re-struck on the
     stroke schedule as the head steers, branches lashing the buildings it crosses; replaces the solid box at
     `powers_view.gd:120`. It lights fires per D-129 through the existing coat.

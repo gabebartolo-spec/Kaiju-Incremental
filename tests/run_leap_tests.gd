@@ -30,7 +30,6 @@ func run_checks() -> void:
 	await _t("_check_effect")
 
 
-
 ## The breath press never starts the leap (director 2026-10-31: the croc floated while it breathed,
 ## as the breath and the dash shared bit 4); the dash press alone still does.
 func _check_breath_no_leap() -> void:
@@ -41,7 +40,10 @@ func _check_breath_no_leap() -> void:
 	var leaps := [breath.body.dash.on(), dash.body.dash.on()]
 	check(
 		RampageSim.BREATH & BUTTON == 0 and not breath.body.dash.on() and dash.body.dash.on(),
-		"the breath press leaves the croc standing, the dash press leaps (breath, dash): %s" % [leaps]
+		(
+			"the breath press leaves the croc standing, the dash press leaps (breath, dash): %s"
+			% [leaps]
+		)
 	)
 
 

@@ -33,8 +33,8 @@ var cone: Dictionary = {}
 ## something solid (AbilityFx._first_hit). Invalid: branches run their whole way.
 var blocker: Callable
 ## (lines: Array[PackedVector3Array]) -> Array[PackedVector3Array]: the drawn lines, each cut
-## short before the first chunk still standing (AbilityFx._cut_at_standing), so the bolt shows only where the sim broke
-## things (director 2026-10-31). Invalid: lines draw whole.
+## short before the first chunk still standing (StandingCut), so the bolt shows only where the
+## sim broke things (director 2026-10-31). Invalid: lines draw whole.
 var wall_cut: Callable
 ## (rng, count) -> Array[Vector3]: where this play's branches strike. Invalid: across the cone.
 var ends: Callable

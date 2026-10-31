@@ -21,6 +21,9 @@ const STAND_OFF := 0.85
 ## Caps in physics frames: the walk to the building and the press-to-strike wait.
 const WALK_MAX := 600
 const STRIKE_MAX := 180
+## The audit: sample each drawn line every TOUCH_STEP; stop after AUDIT_MAX frames.
+const TOUCH_STEP := 0.25
+const AUDIT_MAX := 240
 ## The breath's cameras, body-scale units from the kaiju's feet as (right, ahead, up): behind it on
 ## the open ground it came from, so only the target stands between them and the column.
 const VIEWS := {"right": Vector3(16.0, -14.0, 12.0), "left": Vector3(-16.0, -14.0, 12.0)}
@@ -173,10 +176,6 @@ func _report(sim: RampageSim, before: Array) -> void:
 ## strands, pool, chains; sampled every TOUCH_STEP) that lies inside a building's footprint and
 ## floors. Counts points in chunks still standing (the bolt drawn through something the sim did
 ## not break) and lists each building the bolt reached against whether the strike damaged it.
-const TOUCH_STEP := 0.25
-const AUDIT_MAX := 240
-
-
 func _touch_audit(sim: RampageSim, before: Array) -> void:
 	var rig: BoltRig = _rampage.ability_fx._beam.rig
 	var reached := {}
@@ -204,7 +203,12 @@ func _touch_audit(sim: RampageSim, before: Array) -> void:
 					reached[hit.x] = true
 					if hit.y == 1:
 						standing_hits += 1
-						print("TOUCH frame=%d b%d standing chunk at %s" % [frames, hit.x, a + seg * (float(j) / n)])
+						print(
+							(
+								"TOUCH frame=%d b%d standing chunk at %s"
+								% [frames, hit.x, a + seg * (float(j) / n)]
+							)
+						)
 		through += standing_hits
 		frames += 1
 		await physics_frame
@@ -214,8 +218,10 @@ func _touch_audit(sim: RampageSim, before: Array) -> void:
 		if _floors(sim.buildings[i].frame) == was:
 			undamaged.append(i)
 	print(
-		"AUDIT frames=%d points=%d in_standing_chunks=%d reached=%s reached_undamaged=%s cut_ms=%.2f"
-		% [frames, points, through, reached.keys(), undamaged, cut_ms]
+		(
+			"AUDIT frames=%d points=%d in_standing_chunks=%d reached=%s reached_undamaged=%s cut_ms=%.2f"
+			% [frames, points, through, reached.keys(), undamaged, cut_ms]
+		)
 	)
 
 
