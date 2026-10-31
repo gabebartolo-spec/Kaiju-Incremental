@@ -29,7 +29,7 @@ static func faces(arrays: Array, into: Dictionary) -> void:
 	var normals: PackedVector3Array = arrays[1]
 	var colors: PackedColorArray = arrays[2]
 	for q: int in range(0, verts.size(), 4):
-		into[[Vector3i((verts[q] * 64.0).round()), Vector3i(normals[q])]] = colors[q]
+		into[[Vector3i((verts[q] * 64.0).round()), Vector3i(normals[q].round())]] = colors[q]
 
 
 static func colour(face_map: Dictionary, key: Array) -> Color:
@@ -93,7 +93,7 @@ static func shown(arrays: Array, lift: Vector3, salt: int, into: Dictionary) -> 
 				var mid := corner + (u / nu + v / nv) * 0.5
 				var cell := Vector3i(((mid - n * size * 0.5 - lift) / size).round())
 				var c := Look.jitter(colors[q], cell, salt).clamp()
-				into[[Vector3i((corner * 64.0).round()), Vector3i(n)]] = c
+				into[[Vector3i((corner * 64.0).round()), Vector3i(n.round())]] = c
 
 
 ## A grid's faces as the view shows them (merged quads split, jittered per voxel).
