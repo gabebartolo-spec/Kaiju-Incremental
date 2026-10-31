@@ -1,0 +1,85 @@
+{
+	"_note": "The campaign's continents on Tellus Nova (Content.continents(); D-418..D-422; Overworld plan row F3). Placeholder rows: the names, stages, order and Threat shares are ruled, the bonus ids are stand-ins until the director picks the bonuses (D-421: the plan's lists are proposals). In the globe's fixed sequence (D-420): Ostia Minor first, then the two lowest unconquered of Carthago..Neptunia are offered; the capital is last. id: the save's key (SaveFile campaign conquered/bonuses). stage: the growth stage the city plays at, an index of tuning growth.stages (0 young, 1 Behemoth, 2 Colossus; D-419). threat: Threat Level percent its conquest adds (D-422; the six sum to 80, in-mission noise adds the rest, capped at 99). bonuses: the three bonuses its conquest offers, the player keeps one (D-421); none for the capital. Each: id (the save's bonuses value) and scale, stat -> fraction added to that stat after upgrades (0.15 = +15%; picks on one stat add before multiplying; UpgradeTree.apply, plan row F4). Only Ostia Minor's three carry test scales; the rest are {} until the bonuses are picked. capital: Aurelia, opened when the sixth conquest sets Threat to 100 (D-422).",
+	"continents": [
+		{
+			"id": "ostia_minor",
+			"name": "Ostia Minor",
+			"stage": 0,
+			"threat": 10,
+			"bonuses": [
+				{"id": "bonus_ostia_minor_1", "scale": {"stomp_damage": 0.15}},
+				{"id": "bonus_ostia_minor_2", "scale": {"hp": 0.1}},
+				{"id": "bonus_ostia_minor_3", "scale": {"speed": 0.1}}
+			],
+			"capital": false
+		},
+		{
+			"id": "carthago",
+			"name": "Carthago",
+			"stage": 1,
+			"threat": 12,
+			"bonuses": [
+				{"id": "bonus_carthago_1", "scale": {}},
+				{"id": "bonus_carthago_2", "scale": {}},
+				{"id": "bonus_carthago_3", "scale": {}}
+			],
+			"capital": false
+		},
+		{
+			"id": "thule",
+			"name": "Thule",
+			"stage": 1,
+			"threat": 12,
+			"bonuses": [
+				{"id": "bonus_thule_1", "scale": {}},
+				{"id": "bonus_thule_2", "scale": {}},
+				{"id": "bonus_thule_3", "scale": {}}
+			],
+			"capital": false
+		},
+		{
+			"id": "silvania",
+			"name": "Silvania",
+			"stage": 2,
+			"threat": 14,
+			"bonuses": [
+				{"id": "bonus_silvania_1", "scale": {}},
+				{"id": "bonus_silvania_2", "scale": {}},
+				{"id": "bonus_silvania_3", "scale": {}}
+			],
+			"capital": false
+		},
+		{
+			"id": "mons_ferrata",
+			"name": "Mons Ferrata",
+			"stage": 2,
+			"threat": 16,
+			"bonuses": [
+				{"id": "bonus_mons_ferrata_1", "scale": {}},
+				{"id": "bonus_mons_ferrata_2", "scale": {}},
+				{"id": "bonus_mons_ferrata_3", "scale": {}}
+			],
+			"capital": false
+		},
+		{
+			"id": "neptunia",
+			"name": "Neptunia",
+			"stage": 2,
+			"threat": 16,
+			"bonuses": [
+				{"id": "bonus_neptunia_1", "scale": {}},
+				{"id": "bonus_neptunia_2", "scale": {}},
+				{"id": "bonus_neptunia_3", "scale": {}}
+			],
+			"capital": false
+		},
+		{
+			"id": "aurelia",
+			"name": "Aurelia",
+			"stage": 2,
+			"threat": 0,
+			"bonuses": [],
+			"capital": true
+		}
+	]
+}

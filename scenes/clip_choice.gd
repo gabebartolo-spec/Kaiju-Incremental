@@ -12,18 +12,49 @@ static func pick(g: ClipGait) -> void:
 	if g._roar_queued:
 		g._roar_queued = false
 		g._go("roar", 0.0)
+	elif g.state == "roar" and _sets_off(g, moving):  # he walks out of it (ClipTakes.roar_over)
+		g.takes.roar_time = g.clip_time
+		_set_off(g)
 	elif g.state == "walk_start":
 		_walk_start(g, moving)
 	elif g._stomp.holds(g.state) or g.state.begins_with("turn") or g.state == "slam_stop":
-		if _played_out(g, moving):
-			g._go("walk" if moving else "idle", g._walk_start() if moving else 0.0)
+		_from_held(g, moving)
 	elif moving:
-		if g.state == "idle" and g.takes.has_walk_start():  # from standing: the keyed start
-			g._go("walk_start", ClipTakes.WALK_START_FROM)
-		elif g.state != "walk":
-			g._go("walk", g._walk_start())
+		_moving(g)
 	else:
 		_stand_or_turn(g)
+
+
+## A roar, keyed stomp, turn or slam stop that has played out: the keyed start if he stood
+## (never out of a slam stop), else straight into the walk or idle.
+static func _from_held(g: ClipGait, moving: bool) -> void:
+	if not _played_out(g, moving):
+		return
+	if moving and g.state != "slam_stop":
+		_set_off(g)
+	else:
+		g._go("walk" if moving else "idle", g._walk_start() if moving else 0.0)
+
+
+## Moving: from standing the keyed start, else the walk (a walk already running stays).
+static func _moving(g: ClipGait) -> void:
+	if g.state == "idle":
+		_set_off(g)
+	elif g.state != "walk":
+		g._go("walk", g._walk_start())
+
+
+## Whether the sim has set him walking: its step clock has started (the rise's drift keeps it at 0).
+static func _sets_off(g: ClipGait, moving: bool) -> bool:
+	return moving and not g._leap.on and g.step_phase > 0.0 and g.step_phase != INF
+
+
+## Moving from a standing clip: the keyed walk start, else straight into the walk.
+static func _set_off(g: ClipGait) -> void:
+	if g.takes.has_walk_start():
+		g._go("walk_start", ClipTakes.WALK_START_FROM)
+	else:
+		g._go("walk", g._walk_start())
 
 
 ## The walk start: back to idle if he stops, into the walk loop once its share has played.

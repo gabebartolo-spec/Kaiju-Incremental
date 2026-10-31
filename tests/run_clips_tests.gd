@@ -5,12 +5,14 @@ extends "res://tests/lib/runner.gd"
 ## file for another skeleton is refused, the adult's keyed clips are all there (the rise ends on
 ## the roar's start, the death stagger holds its stone pose), the walk's phase follows the distance
 ## travelled, a standing heading change turns on the spot, the roar opens the jaw and ends, no bone
-## goes NaN, a curve while walking swings the tail out and it settles, the clips (not the
-## procedural tail) own the tail bones, a roar keyed with a tail slam lands it as one footfall,
+## goes NaN, a set-off into a turn jumps no foot (tests/lib/clip_set_off.gd), a curve while
+## walking swings the tail out and it settles, the clips (not the procedural tail) own the tail
+## bones, a roar keyed with a tail slam lands it as one footfall,
 ## and every other kaiju keeps its procedural gait. Fixed 60 Hz steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_clips_tests.gd
 ## Seeded by design: nothing here draws random numbers (the gaits seed their own twitches).
 
+const ClipSetOff := preload("res://tests/lib/clip_set_off.gd")
 const CLIPS := "res://assets/kaiju/reptilian_adult.kclip"
 ## Each croc titan stage and its Blender skin export (assets/kaiju/test/<name>.skin.json).
 const STAGES := {
@@ -39,6 +41,10 @@ func run_checks() -> void:
 	await _t("_check_tail_lag")
 	await _t("_check_tail_owner")
 	await _t("_check_tail_slam")
+	await _h(
+		"ClipSetOff",
+		func() -> void: await ClipSetOff.check(check, _colossus(), _model("reptilian", "adult"))
+	)
 
 
 func _model(species: String, stage: String) -> KaijuModel:
@@ -47,6 +53,22 @@ func _model(species: String, stage: String) -> KaijuModel:
 	var kaiju := KaijuModel.new(species, colors, stage)
 	root.add_child(kaiju)
 	return kaiju
+
+
+## The Colossus (evolve1 + evolve2) on his own tuning, as Rampage builds him, a far building so the
+## run goes on (run_gait_tests._croc).
+func _colossus() -> RampageSim:
+	var def := Content.species_def("reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), {"evolve1": 1, "evolve2": 1}, "reptilian")
+	var stats := UpgradeTree.run_stats(Content.section("kaiju"), def, tree)
+	var layout: Array[Dictionary] = [
+		{"x": 38.0, "z": 38.0, "w": 2, "d": 2, "h": 2, "tier": 1, "style": 0}
+	]
+	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
+	sim.body.use_species("reptilian")
+	sim.time_left = 1.0e9
+	sim.kaiju_pos = Vector2(0.0, 30.0)
+	return sim
 
 
 func _rig_of(kaiju: KaijuModel) -> KaijuRig:

@@ -124,7 +124,8 @@ func _continue() -> void:
 		_save["seed"] = SaveFile.fresh_seed()
 		SaveSystem.save_game(_save)
 	var levels: Dictionary = _save.get("levels", {})
-	_tree = UpgradeTree.new(GameData.upgrades, levels, str(_save.get("species", "")))
+	var picked: Dictionary = _save.get("bonuses", {})  # conquest bonuses (plan row F4)
+	_tree = UpgradeTree.new(GameData.upgrades, levels, str(_save.get("species", "")), picked)
 	if Num.i(_save.get("runs", 0)) == 0:
 		_start_rampage()
 	else:
@@ -240,7 +241,10 @@ func _on_bought(screen: UpgradeScreen, id: String) -> void:
 func _reveal(screen: UpgradeScreen, id: String, then := Callable()) -> void:
 	var before_levels := _tree.levels.duplicate()
 	before_levels[id] = _tree.level(id) - 1
-	var before_tree := UpgradeTree.new(GameData.upgrades, before_levels, str(_save["species"]))
+	var picked: Dictionary = _save.get("bonuses", {})
+	var before_tree := UpgradeTree.new(
+		GameData.upgrades, before_levels, str(_save["species"]), picked
+	)
 	var after := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var stage_city: Dictionary = CityGrowth.for_stats(after)["city"]
 	var reveal := EvolutionReveal.new()

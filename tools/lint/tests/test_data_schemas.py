@@ -117,6 +117,35 @@ class DataSchemasSmoke(unittest.TestCase):
         self.assertEqual(exit_code, 1, out)
         self.assertIn("species id 'reptilian' appears more than once", out)
 
+    def test_continents_campaign_rules(self):
+        def row(cid, stage=0, capital=False, bonuses=None):
+            ids = [] if capital else [f"{cid}_{i}" for i in range(3)]
+            picks = [{"id": b, "scale": {"hp": 0.1}} for b in (ids if bonuses is None else bonuses)]
+            return {"id": cid, "stage": stage, "capital": capital, "bonuses": picks}
+        stages = ("tuning", json.dumps({"growth": {"stages": [{}, {}]}, "kaiju": {"hp": 1}}), LOOSE)
+
+        def run(rows):
+            return check([("continents", json.dumps({"continents": rows}), LOOSE), stages])
+        exit_code, out = run([row("a"), row("b", 1), row("cap", 1, True)])
+        self.assertEqual(exit_code, 0, out)
+        bad = {
+            "continent id 'a' appears more than once": [row("a"), row("a"), row("cap", 0, True)],
+            "'b' stage 2 is not a growth stage (0..1)": [row("a"), row("b", 2), row("cap", 0, True)],
+            "'b' offers 2 bonuses, not 3": [row("a"), row("b", 0, False, ["x", "y"]), row("cap", 0, True)],
+            "bonus id 'a_0' appears more than once": [row("a"), row("b", 0, False, ["a_0", "y", "z"]),
+                                                      row("cap", 0, True)],
+            "the capital 'cap' is not the last continent": [row("cap", 0, True), row("a")],
+            "2 capitals, not 1": [row("a"), row("c1", 0, True), row("c2", 0, True)],
+            "0 capitals, not 1": [row("a"), row("b")],
+            "bonus 'x' scales 'luck', not a kaiju stat": [
+                row("a"), dict(row("b"), bonuses=[{"id": "x", "scale": {"luck": 0.1}}, {"id": "y", "scale": {}},
+                                                  {"id": "z", "scale": {}}]), row("cap", 0, True)],
+        }
+        for message, rows in bad.items():
+            exit_code, out = run(rows)
+            self.assertEqual(exit_code, 1, message)
+            self.assertIn(message, out)
+
     def test_own_self_test_plants_defects_and_catches_them(self):
         exit_code, out = check([tuning({"stomp": {"damage": 5}})], "--self-test")
         self.assertEqual(exit_code, 0, out)
