@@ -5416,7 +5416,15 @@
                 "dust": {"$ref": "#/$defs/num"},
                 "fan_spread": {"$ref": "#/$defs/num"},
                 "fan_near": {"$ref": "#/$defs/num"},
-                "clear": {"$ref": "#/$defs/num"}
+                "clear": {"$ref": "#/$defs/num"},
+                "strands": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+                "strand_spread": {"$ref": "#/$defs/num"},
+                "strand_sway": {"$ref": "#/$defs/num"},
+                "pool": {"$ref": "#/$defs/num"},
+                "pool_radius": {"$ref": "#/$defs/num"},
+                "chain": {"$ref": "#/$defs/num"},
+                "chain_step": {"$ref": "#/$defs/num"},
+                "reroll": {"$ref": "#/$defs/num"}
               },
               "required": [
                 "core", "sway", "branches", "bow", "sub_forks", "strike_scale", "ring",
