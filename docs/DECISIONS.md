@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-425 · Director · The demo is Ostia Minor plus one pick of Carthago or Thule
+Asked which continents the croc-only demo covers, he picked "Ostia to Carthago/Thule", then, told that both play at
+Behemoth (D-419) so the demo has no Colossus stage, "Ostia + one pick": Ostia Minor (young), then the player picks
+Carthago or Thule (Behemoth) and the demo ends after that conquest. Young and Behemoth only. Changes D-212's "the
+full croc game" and the demo's "three cities" (D-050, D-145, D-156).
+
 ## 2026-10-31 · D-424 · Director · One kaiju per mission
 Ruled with the Overworld plan (claude.ai artifact PcHHG2EhRYsKfBzC2ZkQkV, "Settled on 31 Oct"): a mission is played by
 one kaiju; there is no tag-team or second kaiju in the same city.
