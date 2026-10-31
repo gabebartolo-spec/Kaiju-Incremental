@@ -312,11 +312,15 @@ func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 	_dress()
 	_slabs.visible = not fine
 	var out := _parts(cells)
+	_hide(cells)
+	return out
+
+
+func _hide(cells: Array[Vector3i]) -> void:
 	for c: Vector3i in cells:
 		_put_state(c, 0.0)
 	_expose(cells)
 	_alive_tex.update(_alive)
-	return out
 
 
 ## Bites ragged edges round a hole: some standing neighbours of the broken chunks lose a share
@@ -348,15 +352,20 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 	piece_alive.fill(Color(0, 0, 0))
 	for c: Vector3i in cells:
 		piece_alive.set_pixel(_index(c), 0, Color(_get_state(c), 0, 0))
-	var parts := hide_chunks(cells)
+	_dress()
+	_slabs.visible = not fine
+	_hide(cells)
+	var chunks: PackedInt32Array = []
+	for c: Vector3i in cells:
+		chunks.append(_index(c))
 	var piece := Node3D.new()
+	PieceParts.start(piece, mesher, chunks)
 	piece.position = pivot
 	var tex := ImageTexture.create_from_image(piece_alive)
 	for mesh: ArrayMesh in [mesher.shell, mesher.slabs]:
 		var mi := _instance(mesh, _material(tex, true))
 		mi.position = -pivot  # the meshes are baked in world space
 		piece.add_child(mi)
-	piece.set_meta("parts", parts)
 	piece.set_meta("pivot", pivot)
 	if not cells.is_empty():  # its chunks at rest, world space (tests read it)
 		var box := AABB(b.chunk_world(cells[0]) - Vector3.ONE * 0.5, Vector3.ONE)

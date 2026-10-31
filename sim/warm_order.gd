@@ -23,3 +23,40 @@ static func next_cold(
 		best = n
 		best_d = d
 	return best
+
+
+## Up to `count` unpromoted carvable buildings within the same reach as next_cold, nearest first
+## (ties by building index).
+static func cold(
+	carving: Carving, buildings: Array[RampageSim.Building], margin: float, count: int
+) -> Array[int]:
+	var sim := carving.sim
+	var reach := maxf(2.0 * sim.stomp_radius(), sim.ability_reach()) + margin
+	var found: Array[Vector2] = []  # (distance, index)
+	for n: int in sim.grid.around(sim.kaiju_pos, reach + 2.0 * sim.grid.pad):
+		if carving.promoted(n) or not carving.takes(n):
+			continue
+		var b := buildings[n]
+		var d := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
+		if d - Vector2(b.w, b.d).length() * 0.5 <= reach:
+			found.append(Vector2(d, n))
+	found.sort()
+	var out: Array[int] = []
+	for k: int in mini(count, found.size()):
+		out.append(int(found[k].y))
+	return out
+
+
+## Starts the cells of the next promoter.ahead (warm_ahead) buildings warm() will ready (and the
+## one it is on) on worker threads (CellPromoter.start), so a tall tower's never stalls a step.
+## Only when the work runs changes: the cells are the same, and the run waits for them where
+## it needs them.
+static func ahead(carving: Carving, margin: float) -> void:
+	var count := carving.promoter.ahead
+	if count <= 0 or carving._warming < 0:
+		return
+	if carving._party.is_empty():
+		carving._party = PartyWalls.of(carving.sim.buildings)
+	var party := carving._party
+	for n: int in cold(carving, carving.sim.buildings, margin, count + 1):
+		carving.promoter.start(n, carving.sim.buildings[n], party[n])

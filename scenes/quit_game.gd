@@ -52,5 +52,7 @@ static func settle_audio(tree: SceneTree) -> void:
 ## test or capture needs nothing. Safe to call twice.
 static func release_sims_at_exit(tree: SceneTree) -> void:
 	var exiting := tree.root.tree_exiting
+	if not exiting.is_connected(WorkerWait.wait_all):
+		exiting.connect(WorkerWait.wait_all, CONNECT_ONE_SHOT)
 	if not exiting.is_connected(SimTeardown.cut_all):
 		exiting.connect(SimTeardown.cut_all, CONNECT_ONE_SHOT)

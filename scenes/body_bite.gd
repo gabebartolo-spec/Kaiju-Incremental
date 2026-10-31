@@ -41,7 +41,7 @@ static func tear(
 	tween.tween_property(piece, "rotation", spin, seconds)
 	tween.chain().tween_callback(
 		func() -> void:
-			var parts: Array = piece.get_meta("parts")
+			var parts := PieceParts.of(piece)
 			for part: Dictionary in parts:
 				var pos: Vector3 = part["pos"]
 				var color: Color = part["color"]

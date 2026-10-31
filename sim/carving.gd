@@ -83,6 +83,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	alive_share = Num.f(cfg.get("chunk_alive_share", 0.5))
 	warm_margin = Num.f(cfg.get("warm_margin", 3.0))
 	warm_emerge_margin = Num.f(cfg.get("warm_emerge_margin", warm_margin))
+	promoter.ahead = Num.i(cfg.get("warm_ahead", 0))
 	_materials = Content.materials()
 	LandmarkCells.preload_models(on)  # a landmark's first hit then only builds its grid
 	_strength.resize(256)
@@ -120,6 +121,7 @@ func warm(emerging: bool = false) -> void:
 		var margin := warm_emerge_margin if emerging else warm_margin
 		_warming = WarmOrder.next_cold(self, sim.buildings, margin)
 		_warm_stage = 0
+		WarmOrder.ahead(self, margin)
 		if _warming < 0:
 			return
 	var n := _warming

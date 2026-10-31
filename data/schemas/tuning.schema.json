@@ -5762,6 +5762,7 @@
         "chunk_alive_share": {"$ref": "#/$defs/num"},
         "warm_margin": {"$ref": "#/$defs/num"},
         "warm_emerge_margin": {"$ref": "#/$defs/num"},
+        "warm_ahead": {"$ref": "#/$defs/num"},
         "ruin_shadows": {"$ref": "#/$defs/num"},
         "fall_dirs": {
           "type": "object",
@@ -5778,7 +5779,7 @@
       },
       "required": [
         "res", "arc_shed_cells", "column_bay", "carve", "chunk_alive_share", "warm_margin",
-        "warm_emerge_margin", "fall_dirs", "carve_view", "view_upload_usec"
+        "warm_emerge_margin", "warm_ahead", "fall_dirs", "carve_view", "view_upload_usec"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

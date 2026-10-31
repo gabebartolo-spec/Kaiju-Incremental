@@ -98,7 +98,7 @@ func regrow(sim: RampageSim, i: int) -> void:
 	var full := b.w * b.d * b.height
 	b.frame = Structure.new(b.w, b.d, b.height, b.frame.max_hp)
 	sim.carving.grids.erase(i)
-	sim.carving.promoter.grids.erase(i)
+	sim.carving.promoter.forget(i)
 	sim.chunks_destroyed = maxi(0, sim.chunks_destroyed - full)
 	sim.powers.fire.reset_building(i)
 	sim.collapse.forget_topple(i)
