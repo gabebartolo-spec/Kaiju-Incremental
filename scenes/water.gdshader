@@ -9,6 +9,11 @@ shader_type spatial;
 //    waves rolling toward the shore"), its crests a lighter band of the body colour; it lifts the
 //    sheet itself (director 2026-10-31: "all water behaving like water") and dies out over the
 //    shelf, where the sim's floor rises to the sand;
+//  - on the bay, once OceanWaves runs, the open sea instead (director 2026-11-01: "copy a proven
+//    ocean"): GodotOceanWaves' FFT wind sea (MIT, scenes/ocean/), its cascades' displacement and
+//    normal maps sampled as that project's water shader does (it lifts and shifts the sheet, its
+//    normals and foam where the surface folds), fading over the shelf like the swell; the wind
+//    waves and ripples give way to it there;
 //  - on the beach's sea, waves lapping the shore (director 2026-10-29: "gentle waves lapping against
 //    the shore"): low wavelets run landward (`lap_dir`) and lift the surface itself, so the waterline
 //    and its foam climb the sloping sand and slide back down (the sheet is cut into rows for it; its
@@ -66,7 +71,18 @@ uniform vec2 sim_size = vec2(1.0);
 uniform float sim_on = 0.0;
 uniform float whitecap_slope = 0.35;  // a sim crest this steep (or this high, m) breaks white
 uniform float whitecap_lift = 0.5;
+// The open sea (OceanWaves): its cascades' maps, one layer each, and per cascade (1 / tile x,
+// 1 / tile z, displacement scale, normal scale).
+uniform float ocean_on = 0.0;
+uniform int ocean_count = 0;
+uniform sampler2DArray ocean_disp : filter_linear, repeat_enable;
+uniform sampler2DArray ocean_normals : filter_linear, repeat_enable;
+uniform vec4 ocean_scales[8];  // the source's MAX_CASCADES
 
+varying vec2 rest_xz;  // where this point of the sheet lies at rest (the ocean's map coordinates)
+
+const float OCEAN_NEAR = 150.0;  // the source's: the ocean's lift falls off past this far (m) from the camera
+const float OCEAN_FALLOFF = 0.007;
 const float GRAVITY = 9.81;
 const int WAVES = 6;
 const int SWELLS = 3;
@@ -81,6 +97,57 @@ const float LAP_BEND_LONG = 23.0;
 const float LAP_BEND_SHORT = 9.0;
 const float SWELL_SHALLOW = 0.3;  // the swell is gone where the floor is this close under the still water (m)
 const float SWELL_DEEP = 1.8;  // and whole where it is this deep or more
+
+// GodotOceanWaves' filter weights for a cubic B-spline, and bicubic filtering with them
+// (GPU Gems 2 ch. 20), as its water shader has them.
+vec4 cubic_weights(float a) {
+	float a2 = a * a;
+	float a3 = a2 * a;
+	float w0 = -a3 + a2 * 3.0 - a * 3.0 + 1.0;
+	float w1 = a3 * 3.0 - a2 * 6.0 + 4.0;
+	float w2 = -a3 * 3.0 + a2 * 3.0 + a * 3.0 + 1.0;
+	float w3 = a3;
+	return vec4(w0, w1, w2, w3) / 6.0;
+}
+
+vec4 texture_bicubic(sampler2DArray sampler, vec3 uvw) {
+	vec2 dims = vec2(textureSize(sampler, 0).xy);
+	vec2 dims_inv = 1.0 / dims;
+	uvw.xy = uvw.xy * dims + 0.5;
+	vec2 fuv = fract(uvw.xy);
+	vec4 wx = cubic_weights(fuv.x);
+	vec4 wy = cubic_weights(fuv.y);
+	vec4 g = vec4(wx.xz + wx.yw, wy.xz + wy.yw);
+	vec4 h = (vec4(wx.yw, wy.yw) / g + vec2(-1.5, 0.5).xyxy + floor(uvw.xy).xxyy) * dims_inv.xxyy;
+	vec2 w = g.xz / (g.xz + g.yw);
+	return mix(
+		mix(texture(sampler, vec3(h.yw, uvw.z)), texture(sampler, vec3(h.xw, uvw.z)), w.x),
+		mix(texture(sampler, vec3(h.yz, uvw.z)), texture(sampler, vec3(h.xz, uvw.z)), w.x), w.y);
+}
+
+// The open sea's shift of the sheet at p (rest world x z): the cascades summed, as the source.
+vec3 ocean_shift(vec2 p) {
+	vec3 sum = vec3(0.0);
+	for (int i = 0; i < ocean_count; i++) {
+		vec4 sc = ocean_scales[i];
+		sum += texture(ocean_disp, vec3(p * sc.xy, float(i))).xyz * sc.z;
+	}
+	return sum;
+}
+
+// Its slope (dh/dx, dh/dz) and foam at p, as the source's fragment reads them.
+vec3 ocean_gradient(vec2 p) {
+	float map_size = float(textureSize(ocean_normals, 0).x);
+	vec3 sum = vec3(0.0);
+	for (int i = 0; i < ocean_count; i++) {
+		vec4 sc = ocean_scales[i];
+		vec3 coords = vec3(p * sc.xy, float(i));
+		float ppm = map_size * min(sc.x, sc.y);  // the map's pixels per metre
+		sum += mix(texture_bicubic(ocean_normals, coords), texture(ocean_normals, coords), min(1.0, ppm * 0.1)).xyw
+			* vec3(sc.ww, 1.0);
+	}
+	return sum;
+}
 
 float wh(float n) {
 	return fract(sin(n * 91.3458 + seed * 1.37) * 47453.5453);
@@ -220,12 +287,16 @@ float swell_keep(vec2 p) {
 
 void vertex() {
 	vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	rest_xz = w.xz;
 	if (lap_height > 0.0) {
 		VERTEX.y += lap(w.xz, TIME) * COLOR.r;
 	}
 	// The swell lifts the sheet itself (director 2026-10-31: "all water behaving like water"), so the
 	// whole sea rolls even when nothing stirs the sim; it dies out over the shelf to the sand.
-	if (swell_length > 0.0) {
+	if (ocean_on > 0.0) {
+		float near = min(exp(-(length(w.xz - CAMERA_POSITION_WORLD.xz) - OCEAN_NEAR) * OCEAN_FALLOFF), 1.0);
+		VERTEX += ocean_shift(w.xz) * near * swell_keep(w.xz);
+	} else if (swell_length > 0.0) {
 		float none = 0.0;
 		VERTEX.y += wave_set(w.xz, TIME, 0.0, swell_dir, swell_length, swell_slope, SWELLS, SPREAD * 0.08, 40.0, none).x
 			* swell_keep(w.xz);
@@ -256,7 +327,19 @@ void fragment() {
 	h += ripples(carried, t, fp, lost);
 	// A crest's body is lighter (light through its top): the wind waves, and the swell's rolling crests.
 	float crest = clamp(h.x / max(0.001, wave_slope * wave_length / TAU), -1.0, 1.0);
-	if (swell_length > 0.0) {
+	float sea_foam = 0.0;
+	if (ocean_on > 0.0) {
+		// The open sea, as the source's fragment: its slope and foam, the slope eased into a flat
+		// sheet with distance; the wind waves and ripples give way to it where it is whole.
+		float keep = swell_keep(rest_xz);
+		float dist = length(VERTEX.xz);
+		vec3 g = ocean_gradient(rest_xz);
+		sea_foam = smoothstep(0.0, 1.0, g.z * 0.75) * exp(-dist * 0.0075) * keep;
+		g.xy *= mix(0.015, 1.0, exp(-dist * 0.0175));
+		h = h * (1.0 - keep) + vec3(0.0, g.xy * keep);
+		lost *= 1.0 - keep;
+		crest *= 0.15 * (1.0 - keep);  // the wind waves' share beside a swell, as below (whole, crest_light blacks a trough)
+	} else if (swell_length > 0.0) {
 		vec3 s = wave_set(p, t, fp, swell_dir, swell_length, swell_slope, SWELLS, SPREAD * 0.08, 40.0, lost)
 			* swell_keep(p);
 		h += s;
@@ -294,6 +377,7 @@ void fragment() {
 	// The liquid's own crests break white where they steepen or stand tall, broken by the same lace.
 	float cap = max(length(liquid.yz) / whitecap_slope, liquid.x / whitecap_lift);
 	froth = max(froth, smoothstep(0.7, 1.2, cap * (0.75 + lace)) * sim_on);
+	froth = max(froth, sea_foam);
 
 	float seen = clear * (1.0 - fres);  // the share of what is under the water that reaches the eye
 	ALBEDO = mix(body * (1.0 - clear) * (1.0 - fres), foam_color, froth);

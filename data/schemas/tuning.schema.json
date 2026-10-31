@@ -1998,6 +1998,7 @@
         "friction": {"$ref": "#/$defs/num"},
         "calm": {"$ref": "#/$defs/num"},
         "body_radius": {"$ref": "#/$defs/num"},
+        "body_rate": {"$ref": "#/$defs/num"},
         "stomp_share": {"$ref": "#/$defs/num"},
         "stomp_volume": {"$ref": "#/$defs/num"},
         "rise_radius": {"$ref": "#/$defs/num"},
@@ -2008,7 +2009,7 @@
         "whitecap_lift": {"$ref": "#/$defs/num"},
         "film": {"$ref": "#/$defs/num"}
       },
-      "required": ["cell", "rim", "courant", "friction", "calm", "body_radius", "stomp_share", "stomp_volume", "rise_radius", "rise_volume", "ripple_seconds", "ripple_volume", "whitecap_slope", "whitecap_lift", "film"],
+      "required": ["cell", "rim", "courant", "friction", "calm", "body_radius", "body_rate", "stomp_share", "stomp_volume", "rise_radius", "rise_volume", "ripple_seconds", "ripple_volume", "whitecap_slope", "whitecap_lift", "film"],
       "additionalProperties": false
     },
     "water": {
@@ -2080,12 +2081,50 @@
           "required": ["height", "length", "period", "dir", "row", "column", "fade", "wet_width", "wet_dark", "wet_rough"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
+        },
+        "ocean": {
+          "type": "object",
+          "properties": {
+            "map_size": {"type": "integer", "enum": [64, 128, 256, 512, 1024]},
+            "scale": {"type": "number", "exclusiveMinimum": 0},
+            "updates_per_second": {"$ref": "#/$defs/num"},
+            "heading": {"$ref": "#/$defs/num"},
+            "cascades": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tile": {"$ref": "#/$defs/num"},
+                  "displacement": {"$ref": "#/$defs/num"},
+                  "normal": {"$ref": "#/$defs/num"},
+                  "wind_speed": {"$ref": "#/$defs/num"},
+                  "wind_direction": {"$ref": "#/$defs/num"},
+                  "fetch_km": {"$ref": "#/$defs/num"},
+                  "swell": {"$ref": "#/$defs/num"},
+                  "spread": {"$ref": "#/$defs/num"},
+                  "detail": {"$ref": "#/$defs/num"},
+                  "whitecap": {"$ref": "#/$defs/num"},
+                  "foam_amount": {"$ref": "#/$defs/num"}
+                },
+                "required": [
+                  "tile", "displacement", "normal", "wind_speed", "wind_direction", "fetch_km",
+                  "swell", "spread", "detail", "whitecap", "foam_amount"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["map_size", "scale", "updates_per_second", "heading", "cascades"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
         }
       },
       "required": [
         "on", "absorb", "murk", "foam_depth", "foam", "rough_near", "rough_far", "specular",
         "crest_light", "mottle_length", "mottle_amp", "night_glow", "day_glow", "river", "bay",
-        "lap"
+        "lap", "ocean"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
