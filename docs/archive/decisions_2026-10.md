@@ -2,6 +2,18 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-358 · Director · Hatchlings: a late Colossus node, one purple-crackling egg spewed from the maw per rampage
+His words: "roadmap: "Hatchlings" / each of our kaiju should be able to lay eggs (or im actually leaning toward they
+spew the eggs out) / late game power where you can spawn an autonomous baby version of your kaiju that rampages the
+city"; "they should only lay 1 egg, and it should be crackling with purple energy". Picks: "Spewed from the maw
+(Recommended)"; unlock: first offered as "Apex Titan (Recommended)", a stage D-135 had already cut (the lead's mistake, from a stale note); asked again (01:3x, "what is "apex titan""), he picked "A late Colossus node" (bought on the evolution tree after reaching the Colossus, the adult final form, so it is worked toward inside that stage); how it is earned: "must reach a certain biomass threshold within
+a run, challenging but attainable"; at the mark "You choose when to spew (Recommended)" (a button lights up, one egg
+per rampage, the player picks the moment); the hatchling is "Your species' baby form (Recommended)" (the young form the
+player starts as, at that size, with its keyed moves), rampaging on its own. Every species gets it. The egg's purple is
+the kaiju-juice colour (D-357). Earlier the cut insectoid's Brood ultimate (archive SPECIES_2026-10) laid several eggs;
+this replaces that idea with one egg for all species. Queued behind the debt list and render plan (D-310); the mark's
+size and the spew move are asked when it is built.
+
 ## 2026-10-28 · D-357 · Director · The lightning is purple, from deep in the throat, with arcs up the spines first
 Shown the round 7 clip (#309, D-308): "currently it spawns above his head slightly in front, arcing from up to down /
 its light yellow/white / i want it to come from deep in his throat and be purple lightning / I want his spines to light
@@ -99,15 +111,6 @@ to him.
 ## 2026-10-30 · D-397 · Director · Tripo spend for the adult-city Taskforce
 "you can spend up to 2000 credits" (Tripo, this session: gas soldier and walking mech models, obsidian with electric
 blue highlights, D-143).
-
-## 2026-10-27 · D-343 · Director · The croc's first step from standing gets a keyed walk-start
-Asked how the young croc should start walking from a stand: "Key a walk-start (Recommended)": a Cascadeur
-stand-to-walk clip plus its plumbing, on the one keyer's queue (D-336), before turn-skate B.
-
-## 2026-10-27 · D-342 · Director · Slow motion: the slowdown is too brief
-On the #308 clip (slow motion only when a landmark falls; rooftop rifle hits land on the hide, D-259, D-245): "i think
-the slowdown is too brief but looks good". Merged as is (400903ee); the slowdown is lengthened and a new ~6 s clip goes
-to him.
 
 ## 2026-10-27 · D-341 · Director · Death chunks approved (D-323)
 On the #322 clip (he breaks into 8 baked jagged stone chunks with dust, never cubes, D-323): "Yes, merge it

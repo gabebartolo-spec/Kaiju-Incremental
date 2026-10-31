@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-413 · Director · Boats slow enough to catch; rock that shows
+"Retune, then reclip", then "Yes, ship it" on the 1080p dusk river clip. A boat fled his wake at up to ~8.8 u/s, he
+walks ~2.5, so none ever capsized in play. data/tuning.json boats: flee_push 6 -> 2, drag 0.5 -> 1.0 (top speed
+~1.5 u/s), wake_rock_deg 22 -> 35. Clip camera: "Fixed side camera" (tools/capture/capture_boats.gd --side).
+
 ## 2026-10-31 · D-412 · Director · The Lightning Breath is a purple column that chains over what it hits
 "Make the lightning breath look like a dragon fire lamp": a dense purple column that pools and chains along the ground
 and climbs the buildings it strikes. Sheet at dusk: "looks good". The sim's damage stays (a measured breath fells two
@@ -383,15 +388,3 @@ is tuned and shown once, not four times; sim, animation and perf work are unchan
 not night and dusk). For the demo every rampage plays at dusk, the options time toggle is hidden while only one time
 can play, and every capture and clip for him shows dusk. D-145's random time (never the same twice) and the toggle
 return after the demo; night, morning and noon looks stay in data, untouched (D-279, D-285, D-328 still hold for night).
-
-## 2026-10-28 · D-358 · Director · Hatchlings: a late Colossus node, one purple-crackling egg spewed from the maw per rampage
-His words: "roadmap: "Hatchlings" / each of our kaiju should be able to lay eggs (or im actually leaning toward they
-spew the eggs out) / late game power where you can spawn an autonomous baby version of your kaiju that rampages the
-city"; "they should only lay 1 egg, and it should be crackling with purple energy". Picks: "Spewed from the maw
-(Recommended)"; unlock: first offered as "Apex Titan (Recommended)", a stage D-135 had already cut (the lead's mistake, from a stale note); asked again (01:3x, "what is "apex titan""), he picked "A late Colossus node" (bought on the evolution tree after reaching the Colossus, the adult final form, so it is worked toward inside that stage); how it is earned: "must reach a certain biomass threshold within
-a run, challenging but attainable"; at the mark "You choose when to spew (Recommended)" (a button lights up, one egg
-per rampage, the player picks the moment); the hatchling is "Your species' baby form (Recommended)" (the young form the
-player starts as, at that size, with its keyed moves), rampaging on its own. Every species gets it. The egg's purple is
-the kaiju-juice colour (D-357). Earlier the cut insectoid's Brood ultimate (archive SPECIES_2026-10) laid several eggs;
-this replaces that idea with one egg for all species. Queued behind the debt list and render plan (D-310); the mark's
-size and the spew move are asked when it is built.
