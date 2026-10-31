@@ -3,7 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## in the globe's sequence with the ruled names and stages; each conquest offers three bonuses and
 ## the capital, last, none; the six conquests' Threat shares leave room for mission noise; every
 ## id is a key the save's campaign can hold. Plan row F4: a picked bonus reaches combat through
-## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. Seeded, no clock.
+## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. Plan row G1: the
+## Tellus Nova mask holds the seven continents apart, Neptunia an island chain. Seeded, no clock.
 ##   godot --headless --path . --script tests/run_campaign_tests.gd
 
 const ORDER := [
@@ -17,6 +18,9 @@ const STAGES := [0, 1, 1, 2, 2, 2, 2]  # D-419: young, Behemoth x2, Colossus x3 
 const THREAT_CAP := 99.0
 const SPECIES := "reptilian"
 const ATTACK := "bonus_ostia_minor_1"  # the test bonus: stomp_damage +15%
+## Plan row G1: 0 sea, 1..7 the continents in ORDER (tools/overworld/paint_tellus_mask.py).
+const MASK := "res://assets/overworld/tellus_nova_mask.png"
+const NEPTUNIA_ISLES := 5  # the gate: an island chain, not one landmass
 
 
 func suite_name() -> String:
@@ -24,6 +28,7 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	await _t("_check_globe_mask")
 	await _t("_check_seven_in_order")
 	await _t("_check_stages")
 	await _t("_check_bonuses_and_capital")
@@ -44,6 +49,69 @@ func _check_seven_in_order() -> void:
 		str(Content.continent("thule").get("name", "")) == "Thule", "continent(id) finds one by id"
 	)
 	check(Content.continent("atlantis").is_empty(), "an unknown id gives {}")
+
+
+func _check_globe_mask() -> void:
+	var img := Image.load_from_file(ProjectSettings.globalize_path(MASK))
+	check(
+		img != null and img.get_width() == 2 * img.get_height(), "the mask is 2:1 equirectangular"
+	)
+	if img == null:
+		return
+	img.convert(Image.FORMAT_L8)
+	var w := img.get_width()
+	var h := img.get_height()
+	var px := img.get_data()
+	var counts := PackedInt32Array()
+	counts.resize(256)
+	for v in px:
+		counts[v] += 1
+	var stray := 0
+	for v in range(ORDER.size() + 1, 256):
+		stray += counts[v]
+	check(stray == 0, "every pixel is sea or one of the 7 continents (%d stray)" % stray)
+	for n in ORDER.size():
+		check(counts[n + 1] > 0, "%s has land on the mask" % ORDER[n])
+	# Each pole row is one value: a row mixing land and sea meets at the pole as a straight wedge.
+	var mixed := 0
+	for x in w:
+		mixed += int(px[x] != px[0]) + int(px[(h - 1) * w + x] != px[(h - 1) * w])
+	check(
+		mixed == 0, "each pole row is all one value, so nothing pinches at a pole (%d off)" % mixed
+	)
+	var nep := ORDER.find("neptunia") + 1
+	var isles := _regions(px, w, h, nep)
+	check(
+		isles >= NEPTUNIA_ISLES,
+		"Neptunia is an island chain: %d separate islands (>= %d)" % [isles, NEPTUNIA_ISLES]
+	)
+
+
+## Separate 4-connected regions of one value; x wraps, as the mask's left and right edges meet.
+func _regions(px: PackedByteArray, w: int, h: int, value: int) -> int:
+	var seen := PackedByteArray()
+	seen.resize(px.size())
+	var found := 0
+	for i in px.size():
+		if px[i] != value or seen[i] == 1:
+			continue
+		found += 1
+		seen[i] = 1
+		var stack: Array[int] = [i]
+		while not stack.is_empty():
+			var c: int = stack.pop_back()
+			var x := c % w
+			var y := c / w
+			for nb: int in [
+				y * w + (x + 1) % w,
+				y * w + (x + w - 1) % w,
+				c - w if y > 0 else -1,
+				c + w if y < h - 1 else -1
+			]:
+				if nb >= 0 and px[nb] == value and seen[nb] == 0:
+					seen[nb] = 1
+					stack.append(nb)
+	return found
 
 
 func _check_stages() -> void:
