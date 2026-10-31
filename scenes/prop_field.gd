@@ -231,12 +231,16 @@ func _crush_group(group: Dictionary, at: Vector3) -> void:
 	if group.get("fells", false):
 		_burst(mm, group, at)
 		return
+	# Origins come from the prop's own copy: reading them back from the MultiMesh stalled a
+	# topple's landing up to 66 ms (bench 10-31, decor.crush).
 	var ids: PackedInt32Array = group["ids"]
-	for i: int in ids:
-		var t := mm.get_instance_transform(i)
-		t.origin.y = t.origin.y * 0.2 + voxel * 0.1
-		t.basis = Basis.from_scale(Vector3(1.15, 0.25, 1.15))
-		mm.set_instance_transform(i, t)
+	var origins: PackedVector3Array = group["origins"]
+	var flat := Basis.from_scale(Vector3(1.15, 0.25, 1.15))
+	for k: int in ids.size():
+		var o := origins[k]
+		mm.set_instance_transform(
+			ids[k], Transform3D(flat, Vector3(o.x, o.y * 0.2 + voxel * 0.1, o.z))
+		)
 
 
 ## A tree is crushed in place, all on this frame: the stump (its lowest STUMP cells) turns the
