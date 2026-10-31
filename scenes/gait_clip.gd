@@ -33,6 +33,9 @@ const JAW_HOLD_SECONDS := 0.15
 const ROAR_SLAM_FRAME := 44.0
 const SLAM_WINDOW := 10.0
 const TAIL_SLAM_STRENGTH := 1.6
+## A lifted foot whose clip spot jumps (a clip change, the sim's step length changing mid-swing)
+## eases onto it at this rate (1/s): it jumped 6.6 m in a frame (director 2026-11-01 "teleport").
+const SHIFT_EASE := 6.0
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
@@ -59,6 +62,10 @@ var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
 var _steps: ClipSteps  # the walk clip against the sim's step clock
 var _path: SwingPath  # a lifted foot's way to its clip path
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _air_at: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # a lifted foot's toe last frame (world)
+var _cut: Array[bool] = [false, false]  # its clip spot moved under a lifted foot (new clip, step)
+var _shift: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # a lifted foot's jump, easing out
+var _ratio_was := 1.0
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 ## Each foot's flat heading (FootHold.foot_yaw) when it went down, and the turn (rad) its toes are
 ## held to: a planted foot keeps its world yaw while the body turns over it and while a splayed
@@ -139,6 +146,7 @@ func update(delta: float) -> void:
 			pose.planted[i] = pose.planted[i] and to.planted[i]
 	pose = _leap.grounded(pose)  # (and the leap's hold ends with this frame)
 	pose = takes.layer(pose, turn_ahead, state == "walk", dt)
+	pose = takes.roar_over(pose, state == "roar", dt)
 	_apply(lash.layer(rake.layer(pose, dt), dt), dt)
 	takes.look_ahead(self, dt)
 	_slam_tail(roar_was)
@@ -230,6 +238,8 @@ func _go(next: String, at: float) -> void:
 	if state == "walk" and next == "idle":
 		_stomp.settle()  # the weight settles as he stops
 	_restep.go(next == "walk" and state != "walk" and step_phase == INF)
+	if state == "walk_start" and next == "walk":  # the walk start into the walk: the feet ease
+		_cut = [true, true]
 	_from = state
 	_from_time = clip_time
 	_blend = 0.0
@@ -310,6 +320,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		targets.append(_foot_target(i, pose, dt))
 		var held := _hold.hold(_plant_heading[i], legs[i])
 		fixes.append(held if legs[i].planted else _yaw_fix[i] * exp(-FOOT_YAW_DECAY * dt))
+	_ratio_was = step_ratio
 	_ik.lower_body(self, targets, fixes, dt)
 	for i: int in targets.size():
 		var planted := legs[i].planted
@@ -322,11 +333,12 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	var leg := legs[i]
 	var clip_toe := rig.global_transform * _stepped(clips.to_rig(pose.feet[i]))
+	_cut[i] = _cut[i] or (state == "walk" and _from == "walk_start" and step_ratio != _ratio_was)
 	var planted := pose.planted[i] and not _stomp.catching(i)
 	if planted and _was_planted[i] and _restep.overreached(self, i, _lock[i], clip_toe):
 		_stomp.restep(i)  # the body got away from this foot: step after it
 		planted = false
-	var target := _path.down(i, clip_toe + _lag[i])
+	var target := _path.down(i, clip_toe + _lag[i] + _shift[i])  # lands where it was going
 	if _stomp.catching(i):
 		var k := _stomp.advance(i, dt)
 		_lag[i] *= 1.0 - smoothstep(0.0, 1.0, k)
@@ -335,14 +347,23 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 			planted = pose.planted[i]
 			target = _put_down(i, target, clip_toe) if planted else target
 	elif planted:
+		if not _was_planted[i] and _shift[i] != Vector3.ZERO:  # an eased swing lands where it is
+			target = _path.down(i, _air_at[i])
 		target = _put_down(i, target, clip_toe)
 	else:
 		_stomp.forget(i)
 		if _was_planted[i]:
 			_path.lift(self, i, clip_toe, _lock[i])
 		target = _path.target(self, i, dt, clip_toe)
+		if _cut[i] and not _was_planted[i]:  # its spot moved: swing on from where it is, never jump
+			_shift[i] = _air_at[i] - target
+		_shift[i] *= exp(-SHIFT_EASE * dt)
+		target += _shift[i]
+		_air_at[i] = target
 		_lag[i] = _path.lag[i]
 	leg.planted = planted
+	_cut[i] = false
+	_shift[i] = _shift[i] if not planted else Vector3.ZERO
 	_was_planted[i] = planted
 	_restep.update(i, planted)
 	return target

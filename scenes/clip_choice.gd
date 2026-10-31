@@ -12,18 +12,36 @@ static func pick(g: ClipGait) -> void:
 	if g._roar_queued:
 		g._roar_queued = false
 		g._go("roar", 0.0)
+	elif g.state == "roar" and _sets_off(g, moving):  # he walks out of it (ClipTakes.roar_over)
+		g.takes.roar_time = g.clip_time
+		_set_off(g)
 	elif g.state == "walk_start":
 		_walk_start(g, moving)
 	elif g._stomp.holds(g.state) or g.state.begins_with("turn") or g.state == "slam_stop":
-		if _played_out(g, moving):
+		if _played_out(g, moving) and moving and g.state != "slam_stop":  # stood: the keyed start
+			_set_off(g)
+		elif _played_out(g, moving):
 			g._go("walk" if moving else "idle", g._walk_start() if moving else 0.0)
 	elif moving:
-		if g.state == "idle" and g.takes.has_walk_start():  # from standing: the keyed start
-			g._go("walk_start", ClipTakes.WALK_START_FROM)
+		if g.state == "idle":  # from standing: the keyed start
+			_set_off(g)
 		elif g.state != "walk":
 			g._go("walk", g._walk_start())
 	else:
 		_stand_or_turn(g)
+
+
+## Whether the sim has set him walking: its step clock has started (the rise's drift keeps it at 0).
+static func _sets_off(g: ClipGait, moving: bool) -> bool:
+	return moving and not g._leap.on and g.step_phase > 0.0 and g.step_phase != INF
+
+
+## Moving from a standing clip: the keyed walk start, else straight into the walk.
+static func _set_off(g: ClipGait) -> void:
+	if g.takes.has_walk_start():
+		g._go("walk_start", ClipTakes.WALK_START_FROM)
+	else:
+		g._go("walk", g._walk_start())
 
 
 ## The walk start: back to idle if he stops, into the walk loop once its share has played.
