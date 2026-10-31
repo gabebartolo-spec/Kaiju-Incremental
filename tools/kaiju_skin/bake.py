@@ -30,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
+import cor
 import skin_helpers
 
 VERSION = 2
@@ -370,6 +371,11 @@ def bake(name, rest, kdir, rig):
     blob += struct.pack("<I", len(fpos)) + vert_rec.tobytes()
     blob += struct.pack("<I", len(tris) * 3) + np.array(tris, dtype="<u4").tobytes()
     blob += skin_helpers.block(helpers)
+    if from_blender is not None:  # director 2026-10-31: centres of rotation keep the thigh full
+        cw = np.zeros((count, 3))
+        cw[:, :2] = cq / 255.0
+        cw[:, 2] = np.maximum(0.0, 1.0 - cw[:, 0] - cw[:, 1])
+        blob += cor.block((cells + np.array([0.0, 0.5, 0.0])) * v, cb, cw, nw)
     (kdir / f"{name}.vskin").write_bytes(gzip.compress(blob, 9))
     print(f"{name}: {count} voxels, {nb} bones, {len(helpers)} helpers, weights {'Blender skin' if from_blender is not None else 'lattice'}, "
           f"filler {len(fpos)} vertices {len(tris)} triangles, {mouth.sum()} mouth voxels")

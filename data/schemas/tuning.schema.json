@@ -5972,6 +5972,7 @@
         "people_buffers": {"$ref": "#/$defs/bool"},
         "people_aabb_margin_m": {"$ref": "#/$defs/num"},
         "kaiju_three_faces": {"$ref": "#/$defs/bool"},
+        "kaiju_cor_skinning": {"$ref": "#/$defs/bool"},
         "fx_pool": {
           "type": "object",
           "properties": {
@@ -6015,7 +6016,7 @@
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
-        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
+        "people_aabb_margin_m", "kaiju_three_faces", "kaiju_cor_skinning", "night_clip_max", "fx_pool",
         "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m", "facade_aa", "facade_bake",
         "facade_aa_start", "facade_aa_cells", "native_colliders", "collider_boxes_per_tick",
         "island_merged"

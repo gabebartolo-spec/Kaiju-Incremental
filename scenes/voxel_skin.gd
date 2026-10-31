@@ -53,6 +53,8 @@ var _slack := 1.0
 var _reach: VoxelSkinReach
 ## D-374 corrective joints after the rig's bones (none for most kaiju): VoxelSkinHelpers.
 var _helpers: VoxelSkinHelpers
+## Whether the cubes turn about baked centres of rotation (VoxelSkinCor).
+var cor := false
 
 
 ## Puts the skin on a rig built from <base> (KaijuModel does this); null when show_rigid_voxels is
