@@ -61,11 +61,11 @@ func animate(delta: float) -> void:
 		var k := clampf(Num.f(f["t"]) / Num.f(f["duration"]), 0.0, 1.0)
 		if str(f["kind"]) == "topple":
 			_topple.pose(f, delta)
-		else:
-			node.position.y = (
-				node.position.y - (Num.f(f["drop"]) * k * k - Num.f(f.get("dropped", 0.0)))
-			)
-			f["dropped"] = Num.f(f["drop"]) * k * k
+		# A drop, or a gutted topple whose hinge had nothing under it, falls its gap.
+		node.position.y = (
+			node.position.y - (Num.f(f["drop"]) * k * k - Num.f(f.get("dropped", 0.0)))
+		)
+		f["dropped"] = Num.f(f["drop"]) * k * k
 
 
 ## A section hit the ground (or what was below it): it bursts into debris and dust.
