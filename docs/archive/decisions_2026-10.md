@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-360 · Director · No far blur: the skyline stays sharp, haze alone carries the depth
+His comment watching runs (about 01:4x): "the blurred distance also looks kind of distracting, makes it like you have
+a smudge on your screen". Shown the same dusk Behemoth frame with today's far blur (A) and without it (B), and quoted
+D-163 ("Far blur only", locked on the kaiju, haze carrying the depth), he picked "B: no far blur" (not keep A, not a
+lighter blur). Replaces D-163's depth-blur clause only: far blur is off by default; haze, cool shadows with warm fire
+and fine-block ground stay as D-163 set them. Owner: load-flake (flag off by default, PR); the facade pop-in probe
+("Blurry turns sharp") follows.
+
 ## 2026-10-28 · D-359 · Director · The demo plays at dusk only
 His question: "would it be faster if we focused on just one time of day for the demo". Told that it is (each new look
 is tuned and shown once, not four times; sim, animation and perf work are unchanged), and quoted his 10-22 ruling

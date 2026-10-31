@@ -46,6 +46,33 @@ varying vec3 v_normal;
 // the window hashes (seed in, chaos out) re-roll per pixel row: lit windows flashed dark bars.
 varying flat vec4 v_custom;
 varying flat float v_top;
+#ifdef BAKED
+// The building's real facade (FacadeBake, D-415): the atlas, its cells per metre, and the box's
+// min corner and size (flat: one per instance). Baked instances carry custom data
+// (-1 - atlas x, atlas y, beacon, glass): x < 0 tells them from the invented pattern's.
+uniform sampler2D facade_atlas : filter_nearest;
+uniform float facade_res = 8.0;
+varying flat vec3 v_lo;
+varying flat vec3 v_size;
+
+// The atlas texel of the wall point `world` with outward normal `n`.
+vec4 baked_texel(vec3 world, vec3 n) {
+	ivec3 cells = ivec3(round(v_size * facade_res));
+	vec3 local = (world - v_lo) * facade_res;
+	int along;
+	int offset;
+	if (abs(n.x) > 0.5) {
+		along = clamp(int(floor(local.z)), 0, cells.z - 1);
+		offset = n.x < 0.0 ? 0 : cells.z;
+	} else {
+		along = clamp(int(floor(local.x)), 0, cells.x - 1);
+		offset = 2 * cells.z + (n.z < 0.0 ? 0 : cells.x);
+	}
+	int y = clamp(int(floor(local.y)), 0, cells.y - 1);
+	ivec2 corner = ivec2(int(-v_custom.x - 0.5), int(v_custom.y + 0.5));
+	return texelFetch(facade_atlas, corner + ivec2(offset + along, y), 0);
+}
+#endif
 
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
@@ -130,6 +157,10 @@ void vertex() {
 	v_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	v_custom = INSTANCE_CUSTOM;
 	v_top = (MODEL_MATRIX * vec4(0.0, 0.5, 0.0, 1.0)).y;
+#ifdef BAKED
+	v_lo = (MODEL_MATRIX * vec4(-0.5, -0.5, -0.5, 1.0)).xyz;
+	v_size = vec3(length(MODEL_MATRIX[0].xyz), length(MODEL_MATRIX[1].xyz), length(MODEL_MATRIX[2].xyz));
+#endif
 }
 
 void fragment() {
@@ -158,6 +189,25 @@ void fragment() {
 				albedo = vec3(0.4, 0.05, 0.03);
 			}
 		}
+#ifdef BAKED
+	} else if (v_normal.y > -0.5 && v_custom.x < -0.5) {
+		// The voxels' own colour and glow (building_baked.gdshader): a lit window's colour from
+		// the city's window palette by its world grid cell, as the voxels pick it.
+		vec4 t = baked_texel(v_world, v_normal);
+		albedo = srgb_to_linear(t.rgb);
+		float lit = 1.0 - t.a;
+		if (window_tagged(t.a)) {
+			lit = 1.0;
+			if (window_palette_on) {
+				vec2 unit = v_custom.w > 0.5 ? vec2(2.0, 0.5) : vec2(1.0);
+				vec2 align = mod(v_lo.xz, unit.x);
+				vec4 w = window_pick(window_hash_of(v_world - v_normal * (window_voxel * 0.5), v_normal, unit, align));
+				albedo = w.rgb;
+				lit = w.a;
+			}
+		}
+		emit = albedo * glow * lit;
+#endif
 	} else if (v_normal.y > -0.5) {
 		int style = int(v_custom.x + 0.5);
 		if (filter_windows && max(foot.x, foot.y) > filter_start) {
@@ -200,7 +250,11 @@ void fragment() {
 	}
 	// The surface family on wall and roof (a lit window keeps its own glow): the 4 m tone drift and the
 	// block grain, in world space; the grain fades with distance as on the ground.
-	if (dot(emit, emit) < 1e-6) {
+	bool own = false;  // a baked wall: the voxels' colour as it is
+#ifdef BAKED
+	own = v_custom.x < -0.5 && abs(v_normal.y) < 0.5;
+#endif
+	if (dot(emit, emit) < 1e-6 && !own) {
 		vec3 q = v_world - v_normal * 0.001;
 		vec2 pc = sd_cell(sd_plane(q, v_normal));
 		albedo *= (1.0 + (sd_fbm(pc, 4.0) - 0.5) * tone_drift) * sd_grain(q, -VERTEX.z);

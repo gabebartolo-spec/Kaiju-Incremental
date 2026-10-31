@@ -31,17 +31,22 @@ uint window_mix(uint v) {
 	return x;
 }
 
-// The lit window a point inside a window voxel falls in, as a world grid cell
-// (WindowPalette.window_key), hashed (WindowPalette.window_hash). n: the face's normal; the
-// half-open shift runs along the face only, so the point never sits on a unit edge.
-uint window_hash(vec3 cell_point, vec3 n) {
+// window_hash with the building's unit and align given (a stand-in box: one per instance).
+uint window_hash_of(vec3 cell_point, vec3 n, vec2 unit, vec2 align) {
 	vec3 at = cell_point - (vec3(1.0) - abs(n)) * vec3(window_voxel * 0.5);
-	vec2 u = at.y < 1.0 ? vec2(1.0) : window_unit;
-	vec3 grid = vec3((at.x - window_align.x) / u.x, at.y / u.y, (at.z - window_align.y) / u.x);
+	vec2 u = at.y < 1.0 ? vec2(1.0) : unit;
+	vec3 grid = vec3((at.x - align.x) / u.x, at.y / u.y, (at.z - align.y) / u.x);
 	ivec3 k = ivec3(floor(grid));
 	uint h = window_mix(uint(k.x));
 	h = window_mix(h ^ uint(k.y));
 	return window_mix(h ^ uint(k.z));
+}
+
+// The lit window a point inside a window voxel falls in, as a world grid cell
+// (WindowPalette.window_key), hashed (WindowPalette.window_hash). n: the face's normal; the
+// half-open shift runs along the face only, so the point never sits on a unit edge.
+uint window_hash(vec3 cell_point, vec3 n) {
+	return window_hash_of(cell_point, n, window_unit, window_align);
 }
 
 // rgb: the window's linear colour; a: its brightness (WindowPalette.pick).

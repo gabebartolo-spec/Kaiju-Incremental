@@ -12,6 +12,14 @@ more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). 
 round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
 surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.
 
+## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
+A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
+the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city
+only (the far skyline keeps its shader pattern), and a longer load: "i dont really care if the load screen goes for
+10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
+and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
+cached).
+
 ## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
 Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
 fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim
@@ -387,11 +395,3 @@ about the insectoid and cephalopod, he picked "Croc and people only". Pauses the
 His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
 picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a
 landing; a taller building takes the leap in its side, he carves in (D-268) and drops to the street at its foot.
-
-## 2026-10-28 · D-360 · Director · No far blur: the skyline stays sharp, haze alone carries the depth
-His comment watching runs (about 01:4x): "the blurred distance also looks kind of distracting, makes it like you have
-a smudge on your screen". Shown the same dusk Behemoth frame with today's far blur (A) and without it (B), and quoted
-D-163 ("Far blur only", locked on the kaiju, haze carrying the depth), he picked "B: no far blur" (not keep A, not a
-lighter blur). Replaces D-163's depth-blur clause only: far blur is off by default; haze, cool shadows with warm fire
-and fine-block ground stay as D-163 set them. Owner: load-flake (flag off by default, PR); the facade pop-in probe
-("Blurry turns sharp") follows.
