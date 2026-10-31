@@ -67,9 +67,11 @@ func speed_mult() -> float:
 	return 1.0 + value * Num.f(titan["speed_bonus"]) if active() else 1.0
 
 
-## 0..1 for the drawn walk-to-run blend (D-335, the keyed run): the momentum itself.
+## 0..1 for the drawn walk-to-run blend (D-335, the keyed run): the momentum, only while it speeds
+## the walk (speed_bonus > 0). With no speed bonus he walks at walk speed, so the run take stays
+## off (director 2026-10-31: the run at walk speed read as a stomp every step).
 func blend() -> float:
-	return value
+	return value if active() and Num.f(titan["speed_bonus"]) > 0.0 else 0.0
 
 
 ## Whether he has the momentum to crash through what stands under his crash height.
