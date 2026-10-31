@@ -90,7 +90,11 @@ func _ready() -> void:
 	_land_mat.set_shader_parameter("tint", UiKit.ACCENT)
 	_land_mat.set_shader_parameter("mask", MASK)
 	_globe.add_child(_sphere(RADIUS * LAND_LIFT, _land_mat))
+	_add_markers()
 
+
+## One GlobeMarker per continent, on a CanvasLayer above the globe, in Content order.
+func _add_markers() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	for def: Dictionary in Content.continents():
@@ -255,33 +259,34 @@ static func anchors(mask: Image, count: int) -> Array[Vector3]:
 				continue
 			var p := point_of(_texel_uv(x, y, w, h))
 			means[v] += p
-			var l := posmod(x - s, w)
-			var r := posmod(x + s, w)
-			var up := (y - s) * w
-			var row := y * w
-			var dn := (y + s) * w
-			if (
-				px[up + l] == v
-				and px[up + x] == v
-				and px[up + r] == v
-				and px[row + l] == v
-				and px[row + r] == v
-				and px[dn + l] == v
-				and px[dn + x] == v
-				and px[dn + r] == v
-			):
+			if _inside(px, x, y, w, v):
 				cands[v].append(p)
 	var out: Array[Vector3] = []
 	for v in count + 1:
-		var mean := means[v].normalized()
-		var best := Vector3.ZERO
-		var best_dot := -2.0
-		for p: Vector3 in cands[v]:
-			if p.dot(mean) > best_dot:
-				best_dot = p.dot(mean)
-				best = p
-		out.append(best)
+		out.append(_nearest(cands[v], means[v].normalized()))
 	return out
+
+
+## True when the 8 texels ANCHOR_STEP px round (x, y) all hold v; x wraps, y stays in range.
+static func _inside(px: PackedByteArray, x: int, y: int, w: int, v: int) -> bool:
+	var s := ANCHOR_STEP
+	for dy: int in [-s, 0, s]:
+		var row := (y + dy) * w
+		for dx: int in [-s, 0, s]:
+			if (dx != 0 or dy != 0) and px[row + posmod(x + dx, w)] != v:
+				return false
+	return true
+
+
+## The point nearest dir (largest dot), or ZERO when there are none.
+static func _nearest(points: Array, dir: Vector3) -> Vector3:
+	var best := Vector3.ZERO
+	var best_dot := -2.0
+	for p: Vector3 in points:
+		if p.dot(dir) > best_dot:
+			best_dot = p.dot(dir)
+			best = p
+	return best
 
 
 static func _texel_uv(x: int, y: int, w: int, h: int) -> Vector2:
