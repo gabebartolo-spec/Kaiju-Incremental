@@ -9,10 +9,14 @@ import sys
 import unittest
 from pathlib import Path
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:  # the CI lint image has no numpy; the bake tools need it
+    np = None
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "kaiju_skin"))
-import cor  # noqa: E402
+if np is not None:
+    import cor  # noqa: E402
 
 
 RING = 8  # cubes round the tube at each x
@@ -35,6 +39,7 @@ def _turn(deg):
     return np.array([[np.cos(a), -np.sin(a), 0.0], [np.sin(a), np.cos(a), 0.0], [0.0, 0.0, 1.0]])
 
 
+@unittest.skipUnless(np is not None, "numpy is not installed")
 class CorTest(unittest.TestCase):
     def test_on_keeps_the_bend_from_thinning(self):
         centres, bones, weights = _limb()

@@ -9,10 +9,14 @@ import sys
 import unittest
 from pathlib import Path
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:  # the CI lint image has no numpy; the bake tools need it
+    np = None
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "kaiju_skin"))
-import thicken  # noqa: E402
+if np is not None:
+    import thicken  # noqa: E402
 
 NAMES = ["spine0", "leg_l0", "leg_l1"]
 BONES = [{"name": "leg_l1", "head": [0.0, 100.0, 0.0], "tail": [0.0, 0.0, 0.0]}]
@@ -37,6 +41,7 @@ def _width(cells, y):
     return np.abs(cells[cells[:, 1] == y][:, 0]).max()
 
 
+@unittest.skipUnless(np is not None, "numpy is not installed")
 class ThickenTest(unittest.TestCase):
     def test_on_widens_mid_thigh_and_keeps_the_knee(self):
         cells, rgb, owner = _leg()
