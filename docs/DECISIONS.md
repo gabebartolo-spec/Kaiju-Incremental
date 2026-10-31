@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
+Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
+surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
+the water burst". The pre-rise spray column is removed; arcs of the kaiju's purple bolt (D-357) skate over the water,
+more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
+round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
+surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.
+
 ## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
 Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
 fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim

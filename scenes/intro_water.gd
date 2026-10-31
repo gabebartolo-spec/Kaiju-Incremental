@@ -1,20 +1,21 @@
 class_name IntroWater
 extends Node3D
 ## The water before the kaiju breaks it (director 2026-10-20 #11: "zoomed in on the water which
-## begins to ripple and fount before our kaiju emerges"): the rings are the liquid's own (WaterSim
-## ripple_seconds) while it holds under; here a column of spray (cube droplets, like the city's
-## voxels) rising and building until the head breaks the surface, then a burst of spray with the
-## break. Paced by the sim's own rise (Emergence progress), never the clock; presentation only,
-## tuning "intro" "water". RiverView keeps its splash rings at the start, the break and the step
-## out.
+## begins to ripple ... before our kaiju emerges"): the rings are the liquid's own (WaterSim
+## ripple_seconds) while it holds under; here purple electricity crackling over the surface,
+## building until the head breaks it (IntroCrackle; director 2026-10-31: no spray before him),
+## then a burst of spray with the break, the same electricity climbing it. Paced by the sim's
+## own rise (Emergence progress), never the clock; presentation only, tuning "intro" "water".
+## RiverView keeps its splash rings at the start, the break and the step out.
 
 var _sim: RampageSim
 var _fx: Fx
 var _cfg: Dictionary
-var _fount: GPUParticles3D
+var _crackle: IntroCrackle
 var _burst: GPUParticles3D
 var _burst_done := false
 var _ahead := 0.0
+var _since_burst := INF  # seconds since he broke the water (frame time: the rise clock stops)
 var _break := 0.0  # seconds into the rise the head's top breaks the water
 
 
@@ -34,38 +35,41 @@ func _ready() -> void:
 	var ahead := _sim.facing * _ahead
 	var water := _sim.emerge.water_y()
 	position = Vector3(_sim.kaiju_pos.x + ahead.x, water + 0.05, _sim.kaiju_pos.y + ahead.y)
-	_fount = _spray(Num.i(_cfg["fount_amount"]), Num.f(_cfg["fount_speed"]) * s, false)
-	_burst = _spray(Num.i(_cfg["burst_amount"]), Num.f(_cfg["burst_speed"]) * s, true)
-	_fount.emitting = true  # built and compiled now, under the loading screen; hidden until due
-	_fount.visible = false
+	_burst = _spray(Num.i(_cfg["burst_amount"]), Num.f(_cfg["burst_speed"]) * s)
+	_crackle = IntroCrackle.new(_cfg, s)
+	add_child(_crackle)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var emerge := _sim.emerge
-	if _fount == null:
+	if _crackle == null:
 		return
 	var t := emerge.progress() * emerge.total()
-	# It builds to its peak as the head breaks and plays on while the head clears the water.
-	var from := Num.f(_cfg["fount_from_seconds"])
-	var due := emerge.active and t >= from and t < _break + Num.f(_cfg["fount_after_seconds"])
-	var build := clampf((t - from) / maxf(0.001, _break - from), 0.0, 1.0)
-	_fount.amount_ratio = lerpf(Num.f(_cfg["fount_start"]), 1.0, build)
-	_fount.visible = due
-	_fount.emitting = due
+	# It builds to its peak as the head breaks, then climbs the burst for burst_arc_seconds.
+	var from := Num.f(_cfg["crackle_from_seconds"])
+	var build := 0.0
+	if emerge.active and not emerge.surfaced and t >= from:
+		build = clampf((t - from) / maxf(0.001, _break - from), 0.01, 1.0)
+	var body := Vector3(_sim.kaiju_pos.x, position.y, _sim.kaiju_pos.y) - position
 	if emerge.surfaced and not _burst_done:
 		_burst_done = true
+		_since_burst = 0.0
+		_burst.position = body  # thrown up round his body, where the arcs climb
 		_burst.restart()
 		_burst.emitting = true
+	_since_burst += delta
+	var climb := 1.0 - _since_burst / Num.f(_cfg["burst_arc_seconds"])  # thins out to none
+	_crackle.step(delta, build, clampf(climb, 0.0, 1.0), body)
 
 
-## Cube droplets thrown up from the water: a steady column (one_shot false) or one burst.
-func _spray(amount: int, speed: float, one_shot: bool) -> GPUParticles3D:
+## The burst of spray thrown up from the water as he breaks it.
+func _spray(amount: int, speed: float) -> GPUParticles3D:
 	var s := _sim.body_scale()
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	mat.emission_sphere_radius = Num.f(_cfg["width"]) * s
 	mat.direction = Vector3.UP
-	mat.spread = Num.f(_cfg["burst_spread" if one_shot else "fount_spread"])
+	mat.spread = Num.f(_cfg["burst_spread"])
 	mat.initial_velocity_min = speed * 0.6
 	mat.initial_velocity_max = speed
 	mat.gravity = Vector3(0, -Num.f(_cfg["gravity"]) * s, 0)
@@ -76,27 +80,39 @@ func _spray(amount: int, speed: float, one_shot: bool) -> GPUParticles3D:
 	var hues: Array = _cfg["colors"]
 	mat.color_initial_ramp = tones(hues, false)
 	mat.color_ramp = tones(["ffffffff", "ffffff00"], true)
-	var cube := SphereMesh.new()  # round drops: cubes read as debris, not water
-	cube.radius = Num.f(_cfg["drop"]) * s * 0.5
-	cube.height = cube.radius * 2.0
-	cube.radial_segments = 8
-	cube.rings = 4
-	var look := StandardMaterial3D.new()  # lit: the drops take the scene's light and shade
-	look.vertex_color_use_as_albedo = true
-	look.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	look.roughness = 0.35
-	cube.material = look
 	var p := GPUParticles3D.new()
 	p.process_material = mat
-	p.draw_pass_1 = cube
+	p.draw_pass_1 = puff(Num.f(_cfg["drop"]) * s)
 	p.amount = amount
 	p.lifetime = Num.f(_cfg["life"])
-	p.one_shot = one_shot
-	p.explosiveness = 0.95 if one_shot else 0.0
+	p.one_shot = true
+	p.explosiveness = 0.95
 	p.emitting = false
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20) * s, Vector3(40, 30, 40) * s)
 	add_child(p)
 	return p
+
+
+## One drop of spray: a soft round puff facing the camera, clear at its edge, so a thousand of
+## them overlap into one mass of white water (director 2026-10-31: solid spheres read as balls).
+static func puff(size: float) -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = Vector2(size, size)
+	var ramp := Gradient.new()
+	ramp.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)])
+	var soft := GradientTexture2D.new()
+	soft.gradient = ramp
+	soft.fill = GradientTexture2D.FILL_RADIAL
+	soft.fill_from = Vector2(0.5, 0.5)
+	soft.fill_to = Vector2(0.5, 0.0)
+	var look := StandardMaterial3D.new()  # lit: the spray takes the scene's light and shade
+	look.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	look.vertex_color_use_as_albedo = true
+	look.albedo_texture = soft
+	look.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	look.roughness = 0.35
+	quad.material = look
+	return quad
 
 
 ## The ripples' tone on the water: the spray's middle tone (tuning intro.water.colors).
