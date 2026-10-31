@@ -34,7 +34,7 @@ static func load_for(rig: KaijuRig, base: String) -> VoxelSkin:
 	var skin := VoxelSkin.new()
 	skin._helpers = helpers
 	skin._setup(rig, raw)
-	var cors := VoxelSkinCor.after_helpers(raw, VoxelSkin._filler_end(raw), helpers.count)
+	var cors := VoxelSkinCor.after_helpers(VoxelSkin._filler_end(raw), helpers.count)
 	skin.cor = VoxelSkinCor.apply(skin._cubes, raw, cors, raw.decode_u32(22))
 	return skin
 

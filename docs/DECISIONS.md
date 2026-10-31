@@ -397,8 +397,3 @@ to get through them all and we will see what was good / use our reference models
 animation audit gets one keyed draft (the croc at all three stages, plus people, per his 10-25 "Creatures + people"),
 saved as its own .casc and opened in his Cascadeur (D-347); no second takes, no clips, no PRs until he picks. Asked
 about the insectoid and cephalopod, he picked "Croc and people only". Pauses the keyer's #332 work for the run.
-
-## 2026-10-28 · D-361 · Director · The leap lands on roofs up to shoulder height; a taller building takes it in its side
-His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
-picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a
-landing; a taller building takes the leap in its side, he carves in (D-268) and drops to the street at its foot.

@@ -38,6 +38,8 @@ var hits := SkinHits.new()
 ## in this frame, set on all three draw nodes so the engine culls and shadow-casts by it (BOUNDS
 ## when the flag is off). VoxelSkinReach works it out from the pose.
 var bounds := BOUNDS
+## Whether the cubes turn about baked centres of rotation (VoxelSkinCor).
+var cor := false
 var _rig: KaijuRig
 var _nodes: Array[Node3D] = []
 var _binds: Array[Transform3D] = []
@@ -53,8 +55,6 @@ var _slack := 1.0
 var _reach: VoxelSkinReach
 ## D-374 corrective joints after the rig's bones (none for most kaiju): VoxelSkinHelpers.
 var _helpers: VoxelSkinHelpers
-## Whether the cubes turn about baked centres of rotation (VoxelSkinCor).
-var cor := false
 
 
 ## Puts the skin on a rig built from <base> (KaijuModel does this); null when show_rigid_voxels is

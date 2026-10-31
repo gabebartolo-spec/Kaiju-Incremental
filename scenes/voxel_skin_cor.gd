@@ -15,7 +15,7 @@ const WIDTH := 4096
 
 
 ## Byte offset just past the helper block that starts at `at` (`at` itself when there is none).
-static func after_helpers(raw: PackedByteArray, at: int, helpers: int) -> int:
+static func after_helpers(at: int, helpers: int) -> int:
 	if helpers <= 0:
 		return at
 	return at + 6 + helpers * VoxelSkinHelpers.HELPER_BYTES
