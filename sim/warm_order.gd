@@ -45,3 +45,18 @@ static func cold(
 	for k: int in mini(count, found.size()):
 		out.append(int(found[k].y))
 	return out
+
+
+## Starts the cells of the next promoter.ahead (warm_ahead) buildings warm() will ready (and the
+## one it is on) on worker threads (CellPromoter.start), so a tall tower's never stalls a step.
+## Only when the work runs changes: the cells are the same, and the run waits for them where
+## it needs them.
+static func ahead(carving: Carving, margin: float) -> void:
+	var count := carving.promoter.ahead
+	if count <= 0 or carving._warming < 0:
+		return
+	if carving._party.is_empty():
+		carving._party = PartyWalls.of(carving.sim.buildings)
+	var party := carving._party
+	for n: int in cold(carving, carving.sim.buildings, margin, count + 1):
+		carving.promoter.start(n, carving.sim.buildings[n], party[n])

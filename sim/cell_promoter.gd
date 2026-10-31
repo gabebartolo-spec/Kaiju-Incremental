@@ -8,6 +8,9 @@ extends RefCounted
 ## model, and the arcs of a ring); a red-barrel site a HazardCells; a building a BuildingCells.
 ## RampageSim promotes through Carving (WP7).
 
+## How many buildings past the one warming have their cells made ahead on workers (tuning
+## warm_ahead; WarmOrder.ahead).
+var ahead := 0
 ## Building index -> BuildingCells, LandmarkCells or HazardCells, for the buildings hit so far.
 var grids: Dictionary = {}
 ## Cells made ahead of their first use (prepare), by building; dropped (drop_ready) once they

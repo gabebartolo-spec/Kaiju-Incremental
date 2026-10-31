@@ -61,8 +61,6 @@ var alive_share := 0.5
 ## and how far while it emerges (it strikes nothing then, so the nearest are made ready first).
 var warm_margin := 3.0
 var warm_emerge_margin := 3.0
-## How many buildings past the one warming have their cells made ahead on workers (warm_ahead).
-var warm_ahead := 0
 var promoter := CellPromoter.new()
 ## Building index -> Grid, for the buildings hit so far.
 var grids: Dictionary = {}
@@ -85,7 +83,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	alive_share = Num.f(cfg.get("chunk_alive_share", 0.5))
 	warm_margin = Num.f(cfg.get("warm_margin", 3.0))
 	warm_emerge_margin = Num.f(cfg.get("warm_emerge_margin", warm_margin))
-	warm_ahead = Num.i(cfg.get("warm_ahead", 0))
+	promoter.ahead = Num.i(cfg.get("warm_ahead", 0))
 	_materials = Content.materials()
 	LandmarkCells.preload_models(on)  # a landmark's first hit then only builds its grid
 	_strength.resize(256)
@@ -123,7 +121,7 @@ func warm(emerging: bool = false) -> void:
 		var margin := warm_emerge_margin if emerging else warm_margin
 		_warming = WarmOrder.next_cold(self, sim.buildings, margin)
 		_warm_stage = 0
-		_ahead(margin)
+		WarmOrder.ahead(self, margin)
 		if _warming < 0:
 			return
 	var n := _warming
@@ -136,18 +134,6 @@ func warm(emerging: bool = false) -> void:
 	_warm_stage += 1
 	if _warm_stage > 2:
 		_warming = -1
-
-
-## Starts the cells of the next warm_ahead buildings warm() will ready (and the one it is on) on
-## worker threads (CellPromoter.start), so a tall tower's never stalls a step. Only when the work
-## runs changes: the cells are the same, and the run waits for them where it needs them.
-func _ahead(margin: float) -> void:
-	if warm_ahead <= 0 or _warming < 0:
-		return
-	if _party.is_empty():
-		_party = PartyWalls.of(sim.buildings)
-	for n: int in WarmOrder.cold(self, sim.buildings, margin, warm_ahead + 1):
-		promoter.start(n, sim.buildings[n], _party[n])
 
 
 ## Makes the cells of every carvable building within warm_emerge_margin of the kaiju's strike
