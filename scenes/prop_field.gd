@@ -238,7 +238,9 @@ func _crush_group(group: Dictionary, at: Vector3) -> void:
 	var flat := Basis.from_scale(Vector3(1.15, 0.25, 1.15))
 	for k: int in ids.size():
 		var o := origins[k]
-		mm.set_instance_transform(ids[k], Transform3D(flat, Vector3(o.x, o.y * 0.2 + voxel * 0.1, o.z)))
+		mm.set_instance_transform(
+			ids[k], Transform3D(flat, Vector3(o.x, o.y * 0.2 + voxel * 0.1, o.z))
+		)
 
 
 ## A tree is crushed in place, all on this frame: the stump (its lowest STUMP cells) turns the
