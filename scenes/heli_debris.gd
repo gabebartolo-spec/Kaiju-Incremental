@@ -12,6 +12,11 @@ const SCORCH := Color("5a4a36")
 const BOUNCE_BELOW := -3.0
 const BOUNCE_KEEP := 0.3
 
+## Every chunk is this unit box, scaled to its size, in a shared material per colour: one mesh and
+## a handful of materials for all wrecks instead of one each per chunk.
+static var _unit: BoxMesh
+static var _paints: Dictionary = {}
+
 var _cfg: Dictionary
 var _rng: RandomNumberGenerator
 var _pieces: Array[Piece] = []
@@ -28,6 +33,7 @@ class Piece:
 	var flat := false  # a part that lies level (rotors, gun) at roll `lie`, never on edge
 	var rest := -1.0  # seconds since it came to rest (-1: still flying)
 	var fire_left := 0.0
+	var size := Vector3.ONE  # its scale before it fades
 
 
 func _init(cfg: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -42,6 +48,7 @@ func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0) -> Piece
 	if not node is MeshInstance3D:  # a model part (voxels): chunks and blades land on any face
 		piece.lie = _rng.randf_range(0.7, 1.4) * (1.0 if _rng.randf() < 0.5 else -1.0)
 	piece.node = node
+	piece.size = node.scale
 	piece.vel = vel
 	piece.spin = spin
 	if fire_size > 0.0:
@@ -110,7 +117,7 @@ func _step(piece: Piece, delta: float, gravity: float) -> bool:
 		if piece.fire != null and piece.rest > seconds * 0.6:
 			_put_out(piece)
 		if piece.rest > seconds:
-			node.scale = Vector3.ONE * maxf(0.0, 1.0 - (piece.rest - seconds) / fade)
+			node.scale = piece.size * maxf(0.0, 1.0 - (piece.rest - seconds) / fade)
 		if piece.rest > seconds + fade:
 			node.queue_free()
 			_put_out(piece)
@@ -149,12 +156,15 @@ func _spin(rate: float) -> Vector3:
 
 
 func _box(size: Vector3, color: Color) -> MeshInstance3D:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.9
-	mesh.material = mat
+	if _unit == null:
+		_unit = BoxMesh.new()
+	if not _paints.has(color):
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = color
+		mat.roughness = 0.9
+		_paints[color] = mat
 	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
+	mi.mesh = _unit
+	mi.material_override = _paints[color]
+	mi.scale = size
 	return mi
