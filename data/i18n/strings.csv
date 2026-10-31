@@ -414,3 +414,9 @@ unreadable save,unreadable save,partida ilegible,sauvegarde illisible,salvataggi
 {rank} SWATTED FROM THE SKY,{rank} SWATTED FROM THE SKY,{rank} DERRIBADO DEL CIELO,{rank} ÉCRASÉ EN PLEIN CIEL,{rank} SCHIACCIATO GIÙ DAL CIELO,{rank} VOM HIMMEL GEFEGT,"{rank} СБИТ С НЕБА, КАК МУХА",{rank}被从空中拍落
 {species} STILL AT LARGE,{species} STILL AT LARGE,{species} SIGUE SUELTO,{species} TOUJOURS EN CAVALE,{species} ANCORA A PIEDE LIBERO,{species} WEITER AUF FREIEM FUSS,{species} ВСЁ ЕЩЁ НА СВОБОДЕ,{species}仍逍遥在外
 "First load takes longer (up to half a minute). Nothing is frozen.","First load takes longer (up to half a minute). Nothing is frozen.","La primera carga tarda más (hasta medio minuto). No se ha colgado.","Le premier chargement est plus long (jusqu'à une demi-minute). Rien n'est bloqué.","Il primo caricamento richiede più tempo (fino a mezzo minuto). Non è bloccato.","Der erste Ladevorgang dauert länger (bis zu einer halben Minute). Nichts ist eingefroren.","Первая загрузка идёт дольше (до полуминуты). Игра не зависла.","首次加载需要更久（最多半分钟）。游戏没有卡住。"
+Bonus to be designed,Bonus to be designed,Bonificación por diseñar,Bonus à concevoir,Bonus da progettare,Bonus noch offen,Бонус ещё не придуман,奖励待设计
+LOSE,LOSE,DERROTA,DÉFAITE,SCONFITTA,NIEDERLAGE,ПОРАЖЕНИЕ,失败
+Stand-in mission: the city comes later,Stand-in mission: the city comes later,Misión provisional: la ciudad llegará después,Mission provisoire : la ville viendra plus tard,Missione provvisoria: la città arriverà dopo,Platzhalter-Mission: die Stadt kommt später,Временная миссия: город появится позже,临时任务：城市稍后加入
+Threat +%d%%,Threat +%d%%,Amenaza +%d%%,Menace +%d%%,Minaccia +%d%%,Bedrohung +%d%%,Угроза +%d%%,威胁 +%d%%
+WIN,WIN,VICTORIA,VICTOIRE,VITTORIA,SIEG,ПОБЕДА,胜利
+WIN ONE:,WIN ONE:,GANA UNO:,GAGNEZ-EN UN :,VINCINE UNO:,GEWINNE EINEN:,ВЫБЕРИ ОДИН:,赢取其一：
