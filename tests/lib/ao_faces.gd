@@ -10,6 +10,9 @@ const XZ_FLOOR := {Vector2i(-1, -1): 0, Vector2i(1, -1): 1, Vector2i(-1, 1): 1, 
 ## The side wall's -x face at (0, 0, 1): the ground shades its foot, its top is open.
 const YZ_GROUND := {Vector2i(-1, -1): 1, Vector2i(-1, 1): 1, Vector2i(1, -1): 3, Vector2i(1, 1): 3}
 
+## Packed meshes store UV in 16 bits (about 1.5e-5); AO levels sit 1/3 apart.
+const AO_TOLERANCE := 1e-4
+
 
 ## A mesher reset to a 3x3x3 grid at the ground (offset 0), every cell drawn as wall (id 1).
 static func fixture_mesher(m: CellMesher) -> CellMesher:
@@ -110,7 +113,9 @@ static func _uvs(
 	verts: PackedVector3Array, normals: PackedVector3Array, uv: PackedVector2Array, into: Dictionary
 ) -> void:
 	for q: int in range(0, verts.size(), 4):
-		into[[Vector3i((verts[q] * 64.0).round()), Vector3i(normals[q])]] = uv.slice(q, q + 4)
+		into[[Vector3i((verts[q] * 64.0).round()), Vector3i(normals[q].round())]] = uv.slice(
+			q, q + 4
+		)
 
 
 ## Baked faces against the cell mesh's: [shared, finish differs, AO off] where AO off is unequal
@@ -128,7 +133,7 @@ static func compare(baked: Dictionary, cells: Dictionary, equal: bool) -> Array[
 		for q: int in 4:
 			finish_off = finish_off or roundi(b[q].y) != roundi(c[q].y)
 			var d := b[q].x - c[q].x
-			ao_off = ao_off or (absf(d) > 1e-6 if equal else d > 1e-6)
+			ao_off = ao_off or (absf(d) > AO_TOLERANCE if equal else d > AO_TOLERANCE)
 		out[1] += int(finish_off)
 		out[2] += int(ao_off)
 	return out
