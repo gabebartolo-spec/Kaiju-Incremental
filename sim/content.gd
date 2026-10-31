@@ -57,7 +57,7 @@ static func landmarks() -> Dictionary:
 
 ## The campaign's continents (data/continents.json, D-418..D-422), in the globe's sequence (D-420):
 ## {id (the save's key), name, stage (a tuning growth.stages index), threat (Threat % a conquest
-## adds), bonuses (the three bonus ids offered), capital (Aurelia, last)}.
+## adds), bonuses (the three offered: each {id, scale}), capital (Aurelia, last)}.
 static func continents() -> Array[Dictionary]:
 	_load()
 	return _continents
@@ -68,6 +68,16 @@ static func continent(id: String) -> Dictionary:
 	for def: Dictionary in continents():
 		if def["id"] == id:
 			return def
+	return {}
+
+
+## One conquest bonus by id ({id, scale: stat -> fraction added}), or {} when there is none.
+static func bonus(id: String) -> Dictionary:
+	for def: Dictionary in continents():
+		var offered: Array = def["bonuses"]
+		for pick: Dictionary in offered:
+			if pick["id"] == id:
+				return pick
 	return {}
 
 
