@@ -6,7 +6,9 @@ shader_type spatial;
 //    exp(sin) profile; Finch, GPU Gems 1 ch. 1; Acerola, "How Games Fake Water") and fine ripples
 //    (two octaves of gradient noise drifting apart); on the river both ride its current;
 //  - on the bay a long swell rolling toward the shore (`swell_dir`; director 2026-10-31: "natural
-//    waves rolling toward the shore"), its crests a lighter band of the body colour (normals only);
+//    waves rolling toward the shore"), its crests a lighter band of the body colour; it lifts the
+//    sheet itself (director 2026-10-31: "all water behaving like water") and dies out over the
+//    shelf, where the sim's floor rises to the sand;
 //  - on the beach's sea, waves lapping the shore (director 2026-10-29: "gentle waves lapping against
 //    the shore"): low wavelets run landward (`lap_dir`) and lift the surface itself, so the waterline
 //    and its foam climb the sloping sand and slide back down (the sheet is cut into rows for it; its
@@ -77,6 +79,8 @@ const float CREST_MEAN = 0.4658;  // the mean of exp(sin - 1), I0(1) / e: height
 const float LAP_BEND = 1.4;  // how far (m) a lapping crest bends along the shore, over these two lengths (m)
 const float LAP_BEND_LONG = 23.0;
 const float LAP_BEND_SHORT = 9.0;
+const float SWELL_SHALLOW = 0.3;  // the swell is gone where the floor is this close under the still water (m)
+const float SWELL_DEEP = 1.8;  // and whole where it is this deep or more
 
 float wh(float n) {
 	return fract(sin(n * 91.3458 + seed * 1.37) * 47453.5453);
@@ -201,10 +205,30 @@ vec3 sim_at(vec2 p) {
 	return vec3(h, hx / (2.0 * cell.x), hz / (2.0 * cell.y));
 }
 
+// How much of the swell a point keeps (0 to 1): all of it over open water and off the sim, none
+// in the shallows, where the sim's floor (its ground over the still water, G) rises to the sand.
+float swell_keep(vec2 p) {
+	if (sim_on <= 0.0) {
+		return 1.0;
+	}
+	vec2 uv = (p - sim_origin) / sim_size;
+	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
+		return 1.0;
+	}
+	return smoothstep(SWELL_SHALLOW, SWELL_DEEP, -texture(sim_height, uv).g);
+}
+
 void vertex() {
 	vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	if (lap_height > 0.0) {
 		VERTEX.y += lap(w.xz, TIME) * COLOR.r;
+	}
+	// The swell lifts the sheet itself (director 2026-10-31: "all water behaving like water"), so the
+	// whole sea rolls even when nothing stirs the sim; it dies out over the shelf to the sand.
+	if (swell_length > 0.0) {
+		float none = 0.0;
+		VERTEX.y += wave_set(w.xz, TIME, 0.0, swell_dir, swell_length, swell_slope, SWELLS, SPREAD * 0.08, 40.0, none).x
+			* swell_keep(w.xz);
 	}
 	VERTEX.y += sim_at(w.xz).x;
 }
@@ -233,7 +257,8 @@ void fragment() {
 	// A crest's body is lighter (light through its top): the wind waves, and the swell's rolling crests.
 	float crest = clamp(h.x / max(0.001, wave_slope * wave_length / TAU), -1.0, 1.0);
 	if (swell_length > 0.0) {
-		vec3 s = wave_set(p, t, fp, swell_dir, swell_length, swell_slope, SWELLS, SPREAD * 0.08, 40.0, lost);
+		vec3 s = wave_set(p, t, fp, swell_dir, swell_length, swell_slope, SWELLS, SPREAD * 0.08, 40.0, lost)
+			* swell_keep(p);
 		h += s;
 		crest = clamp(0.15 * crest + s.x / max(0.001, swell_slope * swell_length / TAU), -1.0, 1.0);
 	}

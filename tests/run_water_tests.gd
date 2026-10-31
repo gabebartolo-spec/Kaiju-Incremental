@@ -22,6 +22,9 @@ func run_checks() -> void:
 	await _t("_check_surface_off")
 	await _t("_check_liquid_wave")
 	await _t("_check_liquid_settles")
+	await _t("_check_liquid_whole_bay")
+	await _t("_check_liquid_open_sea")
+	await _t("_check_liquid_native")
 
 
 func _check_default_on() -> void:
@@ -159,20 +162,107 @@ func _check_liquid_settles() -> void:
 	check(not bay.active.has_area(), still)
 
 
+## The whole bay moves (director 2026-10-31: the 80 m window left one rectangle of waves, its
+## edge a wall): the rise's wave runs on past where that wall stood.
+func _check_liquid_whole_bay() -> void:
+	var w := _liquid()
+	var bay: WaterSim.Basin = w.basins[0]
+	var p := _shelf_point(w)
+	var far := p + Vector2(60.0, 0.0)
+	check(
+		not is_nan(w.surface_at(far)) and _wet(bay, far),
+		"water 60 m off the push (past the old wall)"
+	)
+	w.disturb(p, _rise_volume(), _rise_radius())
+	var peak := 0.0
+	for n: int in 600:
+		w._flow(bay, DT)
+		peak = maxf(peak, w.surface_at(far) - bay.rest)
+	check(peak > 0.02, "the rise's wave reaches water 60 m off within 20 s (it rose %.3f m)" % peak)
+	var whole := bay.active.size.x == bay.nx
+	check(
+		whole,
+		"the stepped window grows to the bay's width (%d of %d)" % [bay.active.size.x, bay.nx]
+	)
+
+
+## The bay's mouth is open sea: a wave runs out there instead of bouncing back off a wall. A wall
+## doubles a wave as it turns it back, so the mouth's highest lift shows which it met.
+func _check_liquid_open_sea() -> void:
+	var top: Array[float] = []
+	for open: bool in [false, true]:
+		var w := _liquid()
+		var bay: WaterSim.Basin = w.basins[0]
+		bay.open = open
+		var c := Vector2i(bay.nx / 2, 16)
+		w.disturb(bay.centre(c), _rise_volume(), _rise_radius())
+		var most := 0.0
+		for n: int in 360:
+			w._flow(bay, DT)
+			most = maxf(most, bay.lift(c.x))
+		top.append(most)
+	var through := top[1] < top[0] * 0.75
+	check(
+		through,
+		"the wave runs out of the mouth, not back (the mouth rose %.3f m walled, %.3f m open)" % top
+	)
+
+
+## KaijuWater steps the pipes with the GDScript's own floats: the same water either way.
+func _check_liquid_native() -> void:
+	if not ClassDB.class_exists("KaijuWater"):
+		check(true, "no native library loaded: the GDScript pipes alone")
+		return
+	var runs := []
+	for native: bool in [false, true]:
+		var w := _liquid()
+		w.use_native = native
+		var bay: WaterSim.Basin = w.basins[0]
+		var p := _shelf_point(w)
+		w.disturb(p, 40.0, 1.5)
+		w.disturb(bay.centre(Vector2i(bay.nx / 2, 3)), 40.0, 1.5)
+		for n: int in 45:
+			w._flow(bay, DT)
+		runs.append([bay.depth, bay.flow, bay.active])
+	var same_window: bool = runs[0][2] == runs[1][2]
+	var same_depth: bool = runs[0][0] == runs[1][0]
+	var same_flow: bool = runs[0][1] == runs[1][1]
+	check(same_window, "the same window stepped (%s, %s)" % [runs[0][2], runs[1][2]])
+	check(same_depth, "native and GDScript depths match bit for bit after 1.5 s")
+	check(same_flow, "native and GDScript flows match bit for bit after 1.5 s")
+
+
+func _rise_volume() -> float:
+	return Num.f(Content.section("water_sim")["rise_volume"])
+
+
+func _rise_radius() -> float:
+	return Num.f(Content.section("water_sim")["rise_radius"])
+
+
+func _wet(b: WaterSim.Basin, p: Vector2) -> bool:
+	var c := b.at(p)
+	return b.floor_y[c.y * b.nx + c.x] < b.rest - 0.5
+
+
 func _liquid() -> WaterSim:
 	return WaterSim.new(Content.section("city"), {"water_sim": Content.section("water_sim")})
 
 
-## A point on the bay's flat shelf, clear of the rise's hollow.
+## A point on the bay's flat shelf, clear of the rise's hollow and of the open sea at the mouth.
 func _shelf_point(w: WaterSim) -> Vector2:
 	var cfg := Content.section("city")
 	var bay: WaterSim.Basin = w.basins[0]
 	for k: int in bay.nx * bay.nz:
 		var c := Vector2i(k % bay.nx, k / bay.nx)
 		var p := bay.centre(c)
-		if c.x > bay.nx / 4 and absf(bay.floor_y[k] - CityHarbour.shelf_floor(cfg)) < 0.01:
+		if (
+			c.x > bay.nx / 4
+			and c.y >= 8
+			and absf(bay.floor_y[k] - CityHarbour.shelf_floor(cfg)) < 0.01
+		):
 			return p
-	return bay.centre(Vector2i(bay.nx / 4, 2))
+	return bay.centre(Vector2i(bay.nx / 4, 8))
 
 
 func _volume(b: WaterSim.Basin) -> float:
