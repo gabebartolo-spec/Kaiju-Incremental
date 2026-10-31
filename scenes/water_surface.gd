@@ -57,6 +57,8 @@ static func material(rect: Rect2, deep: Color, bay: bool, seed: int) -> ShaderMa
 	mat.set_shader_parameter("deep_color", deep)
 	mat.set_shader_parameter("shallow_color", deep)
 	mat.set_shader_parameter("foam_color", Look.color("water_foam"))
+	if bay:
+		mat.set_meta("ocean", true)  # the open sea (OceanWaves) runs on it
 	for key: String in ["absorb", "murk", "foam_depth", "foam", "rough_near", "rough_far"]:
 		mat.set_shader_parameter(key, Num.f(cfg[key]))
 	mat.set_shader_parameter("spec", Num.f(cfg["specular"]))

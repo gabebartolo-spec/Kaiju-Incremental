@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-428 · Director · The open sea is a copied FFT ocean; the sim's waves ride on top
+Of the whole-bay water (D-426) "looks functional but ugly and not very realistic", and he picked "Copy a proven ocean
+(Recommended)": the GodotOceanWaves Tessendorf FFT ocean (MIT, 2Retr0, commit a171446f; licence register row) runs
+as OceanWaves, map 256, waves heading -107 degrees (in from the open sea). It is Froude-scaled by 0.1 (tuning
+water.ocean.scale: tile, fetch and depth x0.1, wind x sqrt 0.1), so troughs stay under a metre and never bare the
+seabed, while slopes stay those of the real sea. It fades out over the shelf where the sim's swell takes over. Its
+wind-wave crest lights the water at 0.15 weight, as the sim's does: at full weight crest_light 1.4 drove a trough's
+colour below zero, which the premultiplied blend drew as black blotches by the shore.
+
 ## 2026-11-01 · D-427 · Director · Load screen: 12 graded dusk stills, random each load
 His shot list for load-screen art: "get caps of the powers / destruction / the city from panoramic angles / all three
 kaiju forms / then edit the photos to be more epic", then "remove the ui from the screencaps". Shown the board of 12
@@ -384,16 +393,3 @@ rising from the river) is never landed and is never a dependency for anything; t
 is removed. Runs start in the crescent sea bay on the north edge and walk up the beach (D-270); the bay, beach and quays
 from claude/intro-bay are ported straight onto main (builder beach-start), rising on the approved rise clip until the
 keyed rise_bay clip exists (D-199). Never ask him about the river intro or the river for the intro again.
-
-## 2026-10-28 · D-372 · Director · Render item 15 (Medium GPU p95 bar) is parked for now
-The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
-runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
-or GPU-cut work on item 15 until he unparks it; the render plan's other open items (10 and 11, D-327) go ahead.
-
-## 2026-10-28 · D-371 · Director · The "never touch" rules on Dracorex, Defender and his Cascadeur tabs are removed
-His words (10-28 ~17:0x): "i never made these rules. i dont even know what they are, you can remove the rules". The
-"never open, edit or save the Dracorex file", "never touch Defender" and "never touch his Cascadeur tabs" lines were
-agent-added on top of D-305, D-318 and D-320. Removed: agents treat the Dracorex sample and the open Cascadeur tabs
-like any other file and tab. D-318 and D-320 stay only as the record of what he answered. Method lessons stay (tabs
-in batches of 5, probes never switch scene: they prevent crashes). Claude still cannot change Windows security
-settings itself (its own tool limit, not his rule).
