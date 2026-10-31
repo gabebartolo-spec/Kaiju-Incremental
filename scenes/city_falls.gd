@@ -76,7 +76,7 @@ func land(event: Dictionary) -> void:
 	var f: Dictionary = falling[id]
 	falling.erase(id)
 	var node: Node3D = f["node"]
-	var parts: Array = node.get_meta("parts", [])
+	var parts := PieceParts.of(node)
 	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
 		_topple_land(node, event)
 		return

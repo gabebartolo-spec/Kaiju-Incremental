@@ -48,7 +48,7 @@ static func retire(node: Node3D, landmark: bool) -> void:
 func _init(piece: Node3D, view: CityView, event: Dictionary) -> void:
 	_cfg = Content.section("landmark_burst")
 	var b := view.sim.buildings[Num.i(event["building"])]
-	var parts: Array = piece.get_meta("parts", [])
+	var parts := PieceParts.of(piece)
 	piece.queue_free()
 	if parts.is_empty():
 		return

@@ -54,7 +54,7 @@ func pose(f: Dictionary, delta: float) -> void:
 	var base: Array = node.get_meta("base_parts", [])
 	if base.is_empty():
 		var pivot: Vector3 = node.get_meta("pivot")
-		for part: Dictionary in node.get_meta("parts", []):
+		for part: Dictionary in PieceParts.of(node):
 			var pos: Vector3 = part["pos"]
 			if pos.y < pivot.y + Num.f(_cfg["crumble_floors"]):
 				base.append(part)
@@ -126,7 +126,7 @@ func _process(delta: float) -> void:
 		node.global_transform = (
 			Transform3D(Basis.from_scale(Vector3(1, flat, 1)), Vector3.ZERO) * rest
 		)
-		var parts: Array = node.get_meta("parts", [])
+		var parts := PieceParts.of(node)
 		if parts.is_empty():
 			continue
 		var pivot: Vector3 = node.get_meta("pivot")
