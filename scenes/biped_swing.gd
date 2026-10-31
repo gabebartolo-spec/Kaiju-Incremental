@@ -60,7 +60,7 @@ var yaw_rate := 0.0
 var trail: ClawTrail
 ## A gait that plays the keyed rake sets this: the sim's claw cues go to it (ClipRake).
 var clip_rake: ClipRake
-## The keyed tail lash (ClipLash) when the clips carry it: the sim's tail cues go to it, no code whip.
+## The keyed tail lash (ClipLash) when the clips carry it; it replaces the code whip.
 var clip_lash: ClipLash
 var _straight: Array[float] = []
 var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone

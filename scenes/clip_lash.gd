@@ -14,7 +14,7 @@ const FADE_SECONDS := 0.3
 const TWIST_PREFIXES: Array[String] = ["pelvis", "spine", "lumbar", "chest", "neck", "head"]
 
 var clips: KaijuClips
-## True when the clips carry both keyed lashes: the sim's tail cues come here (BipedSwing.clip_lash).
+## True when the clips carry both keyed lashes (then BipedSwing.clip_lash is this).
 var on := false
 ## The lash playing ("lash_r" or "lash_l"; "" when none) and its time (clip frames; negative while
 ## it waits for its start).
