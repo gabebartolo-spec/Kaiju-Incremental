@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-373 · Director · The river intro is dropped; the beach start ships straight onto main
+His words (10-28 ~18:2x): "im sick of seeing runs start in the river. when will our beach front patch hit the godot
+runs?"; "why would river intro - a scene we nixed and dont require any further build - go before our planned ship?";
+"we already spoke about this today ... we arent using the river intro". So: PR #245 (branch claude/intro-port, the kaiju
+rising from the river) is never landed and is never a dependency for anything; the D-310 queue slot "river intro #245"
+is removed. Runs start in the crescent sea bay on the north edge and walk up the beach (D-270); the bay, beach and quays
+from claude/intro-bay are ported straight onto main (builder beach-start), rising on the approved rise clip until the
+keyed rise_bay clip exists (D-199). Never ask him about the river intro or the river for the intro again.
+
 ## 2026-10-28 · D-372 · Director · Render item 15 (Medium GPU p95 bar) is parked for now
 The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
 runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
