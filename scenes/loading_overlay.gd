@@ -53,18 +53,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", GAP)
-	var band := PanelContainer.new()
-	var box := StyleBoxFlat.new()
-	box.bg_color = BAND
-	box.content_margin_top = BAND_PAD
-	box.content_margin_bottom = BAND_PAD
-	band.add_theme_stylebox_override("panel", box)
-	band.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	band.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	band.offset_top = -(NewsTicker.HEIGHT + BAND_LIFT)
-	band.offset_bottom = band.offset_top
-	band.add_child(col)
-	add_child(band)
+	add_child(_band(col))
 	var word := UiKit.header(tr("INCOMING"))
 	word.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(word)
@@ -89,6 +78,22 @@ func _ready() -> void:
 	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	crawl.offset_top = -NewsTicker.HEIGHT
 	add_child(crawl)
+
+
+## The dark band low on the screen, holding `col` (the word and the meter).
+func _band(col: Control) -> PanelContainer:
+	var band := PanelContainer.new()
+	var box := StyleBoxFlat.new()
+	box.bg_color = BAND
+	box.content_margin_top = BAND_PAD
+	box.content_margin_bottom = BAND_PAD
+	band.add_theme_stylebox_override("panel", box)
+	band.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	band.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	band.offset_top = -(NewsTicker.HEIGHT + BAND_LIFT)
+	band.offset_bottom = band.offset_top
+	band.add_child(col)
+	return band
 
 
 ## A still other than the last one shown, filling the screen (cropped, never stretched).
