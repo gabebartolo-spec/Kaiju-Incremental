@@ -25,8 +25,8 @@ var momentum: float:
 var run: Momentum
 var beam_left := 0.0
 var glide_left := 0.0
-## Coated chunks, key building * 2^20 + chunk index: {"b", "c", "t", "dps", "kind"}.
-var coats: Dictionary = {}
+## Coated chunks, worn each step (CoatWear).
+var coats := CoatWear.new()
 ## The cephalopod's limbs: hydra strikes, grab and throw (Tentacles).
 var tentacles: Tentacles
 var tail_sweeps := 0
@@ -260,7 +260,7 @@ func step(dt: float, held: bool) -> void:
 	_glide(dt, held)
 	_beam(dt)
 	tentacles.step(dt)
-	CoatWear.step(sim, coats, dt)
+	coats.step(sim, dt)
 	fire.step(dt)
 
 
@@ -341,16 +341,13 @@ func coat(index: int, cells: Array[Vector3i]) -> void:
 		return
 	var b := sim.buildings[index]
 	var fresh: Array[Vector3i] = []
+	var seconds := Num.f(sim.hit_coat["seconds"])
+	var dps := Num.f(sim.hit_coat["dps"])
 	for c: Vector3i in cells:
-		var key := index * 1048576 + b.frame.index(c)
+		var key := index * CoatWear.KEY_SPAN + b.frame.index(c)
 		if not coats.has(key):
 			fresh.append(c)
-		coats[key] = {
-			"b": index,
-			"c": c,
-			"t": Num.f(sim.hit_coat["seconds"]),
-			"dps": Num.f(sim.hit_coat["dps"]),
-		}
+		coats.put(key, c, seconds, dps)
 	if not fresh.is_empty():
 		sim.events.append(
 			{"type": "coated", "building": index, "cells": fresh, "kind": sim.hit_coat["kind"]}
