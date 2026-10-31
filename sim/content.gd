@@ -17,6 +17,7 @@ static var _landmarks: Dictionary = {}
 static var _pool: Dictionary = {}
 static var _sports: Dictionary = {}
 static var _materials: Array[Dictionary] = []
+static var _continents: Array[Dictionary] = []
 
 
 static func tuning() -> Dictionary:
@@ -52,6 +53,32 @@ static func species_def(id: String) -> Dictionary:
 static func landmarks() -> Dictionary:
 	_load()
 	return _landmarks
+
+
+## The campaign's continents (data/continents.json, D-418..D-422), in the globe's sequence (D-420):
+## {id (the save's key), name, stage (a tuning growth.stages index), threat (Threat % a conquest
+## adds), bonuses (the three offered: each {id, scale}), capital (Aurelia, last)}.
+static func continents() -> Array[Dictionary]:
+	_load()
+	return _continents
+
+
+## One continent by id, or {} when there is none.
+static func continent(id: String) -> Dictionary:
+	for def: Dictionary in continents():
+		if def["id"] == id:
+			return def
+	return {}
+
+
+## One conquest bonus by id ({id, scale: stat -> fraction added}), or {} when there is none.
+static func bonus(id: String) -> Dictionary:
+	for def: Dictionary in continents():
+		var offered: Array = def["bonuses"]
+		for pick: Dictionary in offered:
+			if pick["id"] == id:
+				return pick
+	return {}
 
 
 ## The city's building pool (data/city_buildings.json, D-256): the whole book (districts,
@@ -184,6 +211,7 @@ static func _load() -> void:
 	_pool = load_json("res://data/city_buildings.json")
 	_sports = load_json("res://data/sports.json")
 	_materials = _list("res://data/materials.json", "materials")
+	_continents = _list("res://data/continents.json", "continents")
 	var names: Dictionary = _tuning.get("names", {})
 	for content: Variant in [_tuning, _upgrades, _species]:
 		_fill(content, names)
