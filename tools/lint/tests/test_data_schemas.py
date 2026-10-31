@@ -119,10 +119,10 @@ class DataSchemasSmoke(unittest.TestCase):
 
     def test_continents_campaign_rules(self):
         def row(cid, stage=0, capital=False, bonuses=None):
-            picks = [] if capital else [f"{cid}_{i}" for i in range(3)]
-            return {"id": cid, "stage": stage, "capital": capital,
-                    "bonuses": picks if bonuses is None else bonuses}
-        stages = ("tuning", json.dumps({"growth": {"stages": [{}, {}]}}), LOOSE)
+            ids = [] if capital else [f"{cid}_{i}" for i in range(3)]
+            picks = [{"id": b, "scale": {"hp": 0.1}} for b in (ids if bonuses is None else bonuses)]
+            return {"id": cid, "stage": stage, "capital": capital, "bonuses": picks}
+        stages = ("tuning", json.dumps({"growth": {"stages": [{}, {}]}, "kaiju": {"hp": 1}}), LOOSE)
 
         def run(rows):
             return check([("continents", json.dumps({"continents": rows}), LOOSE), stages])
@@ -137,6 +137,9 @@ class DataSchemasSmoke(unittest.TestCase):
             "the capital 'cap' is not the last continent": [row("cap", 0, True), row("a")],
             "2 capitals, not 1": [row("a"), row("c1", 0, True), row("c2", 0, True)],
             "0 capitals, not 1": [row("a"), row("b")],
+            "bonus 'x' scales 'luck', not a kaiju stat": [
+                row("a"), dict(row("b"), bonuses=[{"id": "x", "scale": {"luck": 0.1}}, {"id": "y", "scale": {}},
+                                                  {"id": "z", "scale": {}}]), row("cap", 0, True)],
         }
         for message, rows in bad.items():
             exit_code, out = run(rows)

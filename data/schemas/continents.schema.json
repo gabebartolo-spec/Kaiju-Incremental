@@ -13,7 +13,18 @@
           "name": {"$ref": "#/$defs/str"},
           "stage": {"$ref": "#/$defs/int"},
           "threat": {"$ref": "#/$defs/num"},
-          "bonuses": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+          "bonuses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"$ref": "#/$defs/str"},
+                "scale": {"type": "object", "additionalProperties": {"$ref": "#/$defs/num"}}
+              },
+              "required": ["id", "scale"],
+              "additionalProperties": false
+            }
+          },
           "capital": {"$ref": "#/$defs/bool"}
         },
         "required": ["id", "name", "stage", "threat", "bonuses", "capital"],

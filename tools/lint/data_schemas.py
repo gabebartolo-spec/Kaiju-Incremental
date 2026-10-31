@@ -223,12 +223,15 @@ def cross_checks(datas: dict) -> list[str]:
 
 def continent_checks(datas: dict) -> list[str]:
     """The campaign's rules a schema cannot see (D-418..D-422): unique ids and bonus ids, a stage that
-    exists in tuning growth.stages, three bonuses per conquerable continent, one capital, last, with none."""
+    exists in tuning growth.stages, three bonuses per conquerable continent, one capital, last, with none;
+    a bonus scales only a stat the kaiju has (tuning kaiju)."""
     out: list[str] = []
     rows = datas.get("continents.json", {}).get("continents", [])
     if not rows:
         return out
-    stages = len(datas.get("tuning.json", {}).get("growth", {}).get("stages", []))
+    tuning = datas.get("tuning.json", {})
+    stages = len(tuning.get("growth", {}).get("stages", []))
+    stats = set(tuning.get("kaiju", {}))
     seen: set = set()
     bonuses: set = set()
     for i, c in enumerate(rows):
@@ -243,10 +246,14 @@ def continent_checks(datas: dict) -> list[str]:
         want = 0 if c.get("capital") else 3
         if len(picks) != want:
             out.append(f"continents.json: '{cid}' offers {len(picks)} bonuses, not {want} (D-421)")
-        for b in picks:
+        for pick in picks:
+            b = pick.get("id")
             if b in bonuses:
                 out.append(f"continents.json: bonus id '{b}' appears more than once")
             bonuses.add(b)
+            for stat in pick.get("scale", {}):
+                if stats and stat not in stats:
+                    out.append(f"continents.json: bonus '{b}' scales '{stat}', not a kaiju stat")
         if c.get("capital") and i != len(rows) - 1:
             out.append(f"continents.json: the capital '{cid}' is not the last continent (D-420)")
     capitals = [c.get("id") for c in rows if c.get("capital")]
