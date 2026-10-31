@@ -36,6 +36,7 @@ func run_checks() -> void:
 	await _t("_check_wear")
 	await _t("_check_rubble_parity")
 	await _t("_check_replay")
+	await _t("_check_beam_parity")
 
 
 ## A tuning with carving switched on or off (everything else as data/tuning.json); `cut_only`
@@ -359,5 +360,32 @@ func _check_replay() -> void:
 		(
 			"the same walk, native %s and reference, carves, falls and pays alike (%d lines)"
 			% [VoxelSupport.native() != null, traces[0].count("\n")]
+		)
+	)
+
+
+## Beam parity: a beam slanting across a tower carves the same cells whether its force per grid
+## column comes from KaijuSettle.beam_at or Carving.hit's Callable loop (the GDScript reference).
+func _check_beam_parity() -> void:
+	var digests: Array[int] = []
+	var cut: Array[int] = []
+	for run: int in 2:
+		VoxelSupport.use_native = run == 0
+		var sim := _sim([TOWER.duplicate()], true)
+		var beam := RampageSim.Beam.new(
+			Vector2(-9.0, -1.3), Vector2(0.96, 0.28).normalized(), 12.0, 0.9
+		)
+		sim.hit_beam = beam
+		for k: int in 6:
+			sim.carving.hit(0, beam.reaches, 400.0, Vector2i(0, 8))
+		sim.hit_beam = null
+		digests.append(sim.carving.frame(0).digest())
+		cut.append(sim.carving.frame(0).cells.count(VoxelFrame.EMPTY))
+	VoxelSupport.use_native = true
+	check(
+		digests[0] == digests[1] and cut[0] == cut[1] and cut[0] > 0,
+		(
+			"a beam carves alike natively (%s) and by the reference: %d empty cells, digest %d"
+			% [VoxelSupport.native() != null, cut[0], digests[0]]
 		)
 	)

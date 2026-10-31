@@ -75,6 +75,12 @@ public:
 			const PackedInt32Array &p_ints, const PackedInt32Array &p_cx, const PackedInt32Array &p_cz,
 			const PackedInt32Array &p_fy, const PackedInt32Array &p_live) const;
 
+	// A beam's force per grid column (Carving.hit's sampling loop, RampageSim.Beam.reaches): 1 or 0
+	// on each column the spans cover, -1 elsewhere. ints [w, d, offset x, offset z, res], nums
+	// [world x0, world z0, origin x, origin y, dir x, dir y, length, half].
+	PackedFloat32Array beam_at(const PackedInt32Array &p_spans, const PackedInt32Array &p_ints,
+			const PackedFloat64Array &p_nums) const;
+
 	// BuildingCells' generation (b2-3 part 4, kaiju_cells.cpp): [offset, dims, cells] as
 	// sim/building_cells.gd makes them, or an empty Array when a mark falls outside its margin.
 	// ints [w, d, floors, res, style, tier, column_bay, party side bits, neon count], nums [x, z,

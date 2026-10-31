@@ -53,6 +53,7 @@ void KaijuSettle::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("wear", "cells", "wear", "at", "amounts", "spans", "strength", "nums", "ints", "cx",
 								 "cz", "fy", "live"),
 			&KaijuSettle::wear);
+	ClassDB::bind_method(D_METHOD("beam_at", "spans", "ints", "nums"), &KaijuSettle::beam_at);
 }
 
 Array KaijuSettle::label(const PackedByteArray &p_cells, const PackedByteArray &p_fixtures,

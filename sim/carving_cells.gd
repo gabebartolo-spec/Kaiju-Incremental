@@ -56,6 +56,33 @@ static func wear(
 	g.mats.append_array(mats)
 
 
+## A beam's force at each grid column the spans cover (1 or 0, -1 elsewhere), sampled natively
+## as Carving.hit's Callable loop would; empty when there is no beam or no native core.
+static func beam_at(
+	beam: RampageSim.Beam, b: RampageSim.Building, f: VoxelFrame, spans: PackedInt32Array
+) -> PackedFloat32Array:
+	var nat := VoxelSupport.native()
+	if beam == null or nat == null:
+		return PackedFloat32Array()
+	return nat.call(
+		"beam_at",
+		spans,
+		PackedInt32Array([f.w, f.d, f.offset.x, f.offset.z, f.res]),
+		PackedFloat64Array(
+			[
+				b.x - b.w * 0.5,
+				b.z - b.d * 0.5,
+				beam.origin.x,
+				beam.origin.y,
+				beam.dir.x,
+				beam.dir.y,
+				beam.length,
+				beam.half
+			]
+		)
+	)
+
+
 ## Per chunk (Structure.index), the cells of g's grid in it.
 static func counts(g: Carving.Grid, chunks: int) -> PackedInt32Array:
 	var f := g.frame

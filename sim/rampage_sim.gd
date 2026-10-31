@@ -66,6 +66,27 @@ class Building:
 		return Vector3(x - w * 0.5 + p.x, p.y + base, z - d * 0.5 + p.z)
 
 
+## A beam's footprint: a strip from origin along dir, `length` long and `half` to each side.
+class Beam:
+	var origin: Vector2
+	var dir: Vector2
+	var length: float
+	var half: float
+
+	func _init(o: Vector2, d: Vector2, l: float, h: float) -> void:
+		origin = o
+		dir = d
+		length = l
+		half = h
+
+	## 1 where a disc of radius r at p touches the strip, else 0.
+	func reaches(p: Vector2, r: float) -> float:
+		var rel := p - origin
+		var t := rel.dot(dir)
+		var side := absf(rel.dot(Vector2(-dir.y, dir.x)))
+		return 1.0 if t >= -r and t <= length + r and side <= half + r else 0.0
+
+
 ## A part of a building on its way down: dropping straight, or toppling over an edge.
 class Fall:
 	var id: int
@@ -169,6 +190,8 @@ var ultimate_ready_in := 0.0
 var hit_coat: Dictionary = {}
 ## While true, _hit_area also reaches helicopters whatever the kaiju's height.
 var hit_air := false
+## While set, _hit_area's force is this beam's shape, which Carving samples without a Callable.
+var hit_beam: Beam = null
 ## Events of the current step (Collapse appends here too).
 var events: Array[Dictionary]:
 	get:
