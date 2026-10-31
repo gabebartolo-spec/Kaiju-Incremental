@@ -2,6 +2,48 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
+Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
+was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
+Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)". The croc's jaw is keyed in the same
+Cascadeur file as the body at all three stages (D-228's Blender jaw stays only for rigs with no Cascadeur jaw). Wide
+open on roar and breath-beam; a snarling gape showing teeth on charge, claw rake, standing stomp, tail sweep and leap
+landing (D-239); every other move keeps the jaw shut.
+
+## 2026-10-28 · D-367 · Director · Collapse sounds: the newest cuts the oldest
+Asked why many collapses at once went silent in the wider city (each collapse rings about 3.4 s and only 3 play at
+once, so a 4th was dropped), he picked "Newest cuts oldest (Recommended)". When a hero sound's voices are all busy, a
+new collapse takes over that sound's own oldest voice once it has played at least 1.0 s (a tuning value); no other
+hero sound is ever cut for it.
+
+## 2026-10-28 · D-366 · Director · Wider-city music pacing waits for balancing
+Asked about the city music's last layers never arriving in the wider (1.5x) city (there is more city to destroy before
+they trigger), he picked "Leave it for balancing" (D-363). The pacing stays as it is; only the test is refit to the
+bigger city.
+
+## 2026-10-28 · D-365 · Director · Claw rake PR #332 closed, branch kept
+Asked whether to close #332 (grown croc claw rake, waiting on a rebake) to free a PR slot, he picked "Yes, close it
+(Recommended)". The branch claude/croc-claw stays; the PR reopens when its rebake passes on GitHub.
+
+## 2026-10-28 · D-364 · Director · Cascadeur restarted to free memory
+Asked whether to restart Cascadeur (holding about 11 GB, free memory under 2 GB, every rebake and local run waiting),
+he picked "Yes, restart it (Recommended)". It had already exited when the lead went to close it and was relaunched
+minimized; one copy only (D-336).
+
+## 2026-10-28 · D-363 · Director · Balance waits until the game is beautiful and working
+His words, after dying in every run of the play build: "dont worry abot balance yet. lets get the game beautiful and
+working then we can balance it". Army strength, run length and upgrade costs stay as they are until he says so; the
+lead checked his question instead ("maybe i didnt actualyl getkilled?"): the run summary names the real cause
+(army kill: BROUGHT DOWN, clock: TIME UP), and every ending plays the stone and blast by design (D-263, D-294).
+
+## 2026-10-28 · D-362 · Director · First drafts of every remaining Cascadeur animation, one attempt each
+His words, going to sleep: "do a first draft of all remaining casc animations, dont iterate on any first attempts, try
+to get through them all and we will see what was good / use our reference models and clips that ive shown you", then
+"dont stop the casc work, really rapid fire get through all animations". Every open creature and people row of the
+animation audit gets one keyed draft (the croc at all three stages, plus people, per his 10-25 "Creatures + people"),
+saved as its own .casc and opened in his Cascadeur (D-347); no second takes, no clips, no PRs until he picks. Asked
+about the insectoid and cephalopod, he picked "Croc and people only". Pauses the keyer's #332 work for the run.
+
 ## 2026-10-28 · D-361 · Director · The leap lands on roofs up to shoulder height; a taller building takes it in its side
 His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
 picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a

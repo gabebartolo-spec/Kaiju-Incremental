@@ -4,6 +4,48 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-425 · Director · The demo is Ostia Minor plus one pick of Carthago or Thule
+Asked which continents the croc-only demo covers, he picked "Ostia to Carthago/Thule", then, told that both play at
+Behemoth (D-419) so the demo has no Colossus stage, "Ostia + one pick": Ostia Minor (young), then the player picks
+Carthago or Thule (Behemoth) and the demo ends after that conquest. Young and Behemoth only. Changes D-212's "the
+full croc game" and the demo's "three cities" (D-050, D-145, D-156).
+
+## 2026-10-31 · D-424 · Director · One kaiju per mission
+Ruled with the Overworld plan (claude.ai artifact PcHHG2EhRYsKfBzC2ZkQkV, "Settled on 31 Oct"): a mission is played by
+one kaiju; there is no tag-team or second kaiju in the same city.
+
+## 2026-10-31 · D-423 · Director · Komodo after the first conquest, serpent after the second
+Same ruling set. Species unlocks ride the path, not the map: the Komodo dragon unlocks after the first continent
+conquered, the serpent after the second, whichever continents those were. Rewords D-197 ("finishing the first city
+unlocks the Komodo, the next city the serpent"), since cities no longer come in a fixed order (D-420).
+
+## 2026-10-31 · D-422 · Director · Global Threat Level; the sixth conquest sets 100% and opens Aurelia with GODBREAKER
+Same ruling set. One campaign-wide Threat Level: each conquest adds its share and in-mission noise adds the rest, but
+noise caps at 99%; only the sixth conquest sets 100%. At 100% the capital Aurelia opens with the mecha boss inside,
+named GODBREAKER (its loss card reads K-07 LOST · GODBREAKER DEPLOYED; prestige faces GODBREAKER Mk II). Replaces
+D-211's trigger ("once every upgrade of all three reptilians is unlocked"); the mecha itself (D-211, D-227, D-230) is
+unchanged.
+
+## 2026-10-31 · D-421 · Director · A conquest bonus is a pick of one from three
+Same ruling set. Conquering a continent offers three bonuses and the player keeps one. The bonus lists in the plan
+are proposals, still to be reacted to.
+
+## 2026-10-31 · D-420 · Director · The globe offers the two lowest-tier unconquered continents in sequence
+Same ruling set. Ostia Minor comes first; after it the globe always offers the two lowest-tier unconquered continents
+in the fixed sequence Carthago, Thule, Silvania, Mons Ferrata, Neptunia: conquer one and the next in sequence joins
+the pair. Difficulty always climbs and the choice is real (16 paths; the sixth pick is forced). Aurelia is last
+(D-422).
+
+## 2026-10-31 · D-419 · Director · A continent fixes the growth stage
+Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
+Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
+adolescent, adult)" in DESIGN.
+
+## 2026-10-31 · D-418 · Director · Seven continents on Tellus Nova
+Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
+Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
+Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".
+
 ## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
 On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
 Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
@@ -355,45 +397,3 @@ Team shape stays keyer + 4 builders (D-353).
 Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
 Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
 conflicting over an hour. The repo is public, so extra checks cost no CI minutes.
-
-## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
-Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
-was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
-Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)". The croc's jaw is keyed in the same
-Cascadeur file as the body at all three stages (D-228's Blender jaw stays only for rigs with no Cascadeur jaw). Wide
-open on roar and breath-beam; a snarling gape showing teeth on charge, claw rake, standing stomp, tail sweep and leap
-landing (D-239); every other move keeps the jaw shut.
-
-## 2026-10-28 · D-367 · Director · Collapse sounds: the newest cuts the oldest
-Asked why many collapses at once went silent in the wider city (each collapse rings about 3.4 s and only 3 play at
-once, so a 4th was dropped), he picked "Newest cuts oldest (Recommended)". When a hero sound's voices are all busy, a
-new collapse takes over that sound's own oldest voice once it has played at least 1.0 s (a tuning value); no other
-hero sound is ever cut for it.
-
-## 2026-10-28 · D-366 · Director · Wider-city music pacing waits for balancing
-Asked about the city music's last layers never arriving in the wider (1.5x) city (there is more city to destroy before
-they trigger), he picked "Leave it for balancing" (D-363). The pacing stays as it is; only the test is refit to the
-bigger city.
-
-## 2026-10-28 · D-365 · Director · Claw rake PR #332 closed, branch kept
-Asked whether to close #332 (grown croc claw rake, waiting on a rebake) to free a PR slot, he picked "Yes, close it
-(Recommended)". The branch claude/croc-claw stays; the PR reopens when its rebake passes on GitHub.
-
-## 2026-10-28 · D-364 · Director · Cascadeur restarted to free memory
-Asked whether to restart Cascadeur (holding about 11 GB, free memory under 2 GB, every rebake and local run waiting),
-he picked "Yes, restart it (Recommended)". It had already exited when the lead went to close it and was relaunched
-minimized; one copy only (D-336).
-
-## 2026-10-28 · D-363 · Director · Balance waits until the game is beautiful and working
-His words, after dying in every run of the play build: "dont worry abot balance yet. lets get the game beautiful and
-working then we can balance it". Army strength, run length and upgrade costs stay as they are until he says so; the
-lead checked his question instead ("maybe i didnt actualyl getkilled?"): the run summary names the real cause
-(army kill: BROUGHT DOWN, clock: TIME UP), and every ending plays the stone and blast by design (D-263, D-294).
-
-## 2026-10-28 · D-362 · Director · First drafts of every remaining Cascadeur animation, one attempt each
-His words, going to sleep: "do a first draft of all remaining casc animations, dont iterate on any first attempts, try
-to get through them all and we will see what was good / use our reference models and clips that ive shown you", then
-"dont stop the casc work, really rapid fire get through all animations". Every open creature and people row of the
-animation audit gets one keyed draft (the croc at all three stages, plus people, per his 10-25 "Creatures + people"),
-saved as its own .casc and opened in his Cascadeur (D-347); no second takes, no clips, no PRs until he picks. Asked
-about the insectoid and cephalopod, he picked "Croc and people only". Pauses the keyer's #332 work for the run.
