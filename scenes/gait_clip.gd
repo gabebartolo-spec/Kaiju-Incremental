@@ -59,6 +59,10 @@ var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
 var _steps: ClipSteps  # the walk clip against the sim's step clock
 var _path: SwingPath  # a lifted foot's way to its clip path
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _air_at: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # a lifted foot's toe last frame (world)
+var _cut: Array[bool] = [false, false]  # its clip spot moved under a lifted foot (new clip, step)
+var _shift: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # a lifted foot's jump, easing out
+var _ratio_was := 1.0
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 ## Each foot's flat heading (FootHold.foot_yaw) when it went down, and the turn (rad) its toes are
 ## held to: a planted foot keeps its world yaw while the body turns over it and while a splayed
@@ -139,6 +143,7 @@ func update(delta: float) -> void:
 			pose.planted[i] = pose.planted[i] and to.planted[i]
 	pose = _leap.grounded(pose)  # (and the leap's hold ends with this frame)
 	pose = takes.layer(pose, turn_ahead, state == "walk", dt)
+	pose = takes.roar_over(pose, state == "roar", dt)
 	_apply(lash.layer(rake.layer(pose, dt), dt), dt)
 	takes.look_ahead(self, dt)
 	_slam_tail(roar_was)
@@ -230,6 +235,8 @@ func _go(next: String, at: float) -> void:
 	if state == "walk" and next == "idle":
 		_stomp.settle()  # the weight settles as he stops
 	_restep.go(next == "walk" and state != "walk" and step_phase == INF)
+	if state == "walk_start" and next == "walk":  # the walk start into the walk: the feet ease
+		_cut = [true, true]
 	_from = state
 	_from_time = clip_time
 	_blend = 0.0
@@ -307,60 +314,16 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var targets: Array[Vector3] = []
 	var fixes: Array[float] = []  # each foot's yaw: a planted one held, a lifted one easing back
 	for i: int in mini(legs.size(), 2):
-		targets.append(_foot_target(i, pose, dt))
+		targets.append(ClipFeet.target(self, i, pose, dt))
 		var held := _hold.hold(_plant_heading[i], legs[i])
 		fixes.append(held if legs[i].planted else _yaw_fix[i] * exp(-FOOT_YAW_DECAY * dt))
+	_ratio_was = step_ratio
 	_ik.lower_body(self, targets, fixes, dt)
 	for i: int in targets.size():
 		var planted := legs[i].planted
 		_yaw_fix[i] = _hold.held(legs[i], s, targets[i], fixes[i]) if planted else fixes[i]
 		_ik.reach(self, i, targets[i], _yaw_fix[i])
 	_feet_primed = true
-
-
-## Foot i's toe this frame (world; down: leg.planted): a catch step, its lock, or its air path.
-func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
-	var leg := legs[i]
-	var clip_toe := rig.global_transform * _stepped(clips.to_rig(pose.feet[i]))
-	var planted := pose.planted[i] and not _stomp.catching(i)
-	if planted and _was_planted[i] and _restep.overreached(self, i, _lock[i], clip_toe):
-		_stomp.restep(i)  # the body got away from this foot: step after it
-		planted = false
-	var target := _path.down(i, clip_toe + _lag[i])
-	if _stomp.catching(i):
-		var k := _stomp.advance(i, dt)
-		_lag[i] *= 1.0 - smoothstep(0.0, 1.0, k)
-		target = clip_toe + _lag[i] + Vector3.UP * _stomp.rise(i, k) * hip_height * s
-		if not _stomp.catching(i):  # on the street this frame: it plants now, not a frame on
-			planted = pose.planted[i]
-			target = _put_down(i, target, clip_toe) if planted else target
-	elif planted:
-		target = _put_down(i, target, clip_toe)
-	else:
-		_stomp.forget(i)
-		if _was_planted[i]:
-			_path.lift(self, i, clip_toe, _lock[i])
-		target = _path.target(self, i, dt, clip_toe)
-		_lag[i] = _path.lag[i]
-	leg.planted = planted
-	_was_planted[i] = planted
-	_restep.update(i, planted)
-	return target
-
-
-## A foot the clip has down: it locks where it lands, its footfall goes out; returns its spot.
-func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
-	var leg := legs[i]
-	if not _was_planted[i]:
-		_lock[i] = target
-		_plant_heading[i] = _hold.foot_yaw(leg)
-		leg.plant_at = target
-		leg.drift = 0.0
-		var strength := _stomp.landing(i, clampf(0.2 + speed_k(), 0.0, 1.0), s)
-		if _feet_primed:  # the first frame's feet were already down: no step, no ring
-			rig.foot_planted.emit("left" if leg.side < 0.0 else "right", strength, target)
-	_lag[i] = _lock[i] - clip_toe
-	return _lock[i]
 
 
 ## A clip foot spot, its fore-aft travel shortened to the sim's step (ClipSteps.shortened); a smooth

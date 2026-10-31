@@ -35,6 +35,15 @@ const GAP_STRAIGHT := 0.03
 const GAP_TURN := 0.08
 const RATIO_TURN := 0.5
 const AIM_FROM := 0.25
+## The aim moves at most this fast (hip heights a second): at a slow cadence a frame's yaw, run on
+## for the many frames left aloft, jumped the toe 1.8 m in a frame (Colossus U-turn, director
+## 2026-11-01). A turn's aim moves well under 1 hip/s, so only a jump is held back (an ease lagged
+## every turn and moved the pivot off the foot: motion gate).
+const AIM_RATE := 6.0
+## A foot lifted walking rises this much (hip heights) mid-swing, over the clip's own toe lift
+## (1.5%): in a slow turn step it hung a metre up for over a second and read as a slide
+## (director 2026-11-01 "left foot slides forward"). Within the motion gate's lift_max (20%).
+const SWING_LIFT := 0.08
 
 ## Each foot's offset from its clip path (world), set by target().
 var lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
@@ -48,6 +57,8 @@ var _last_yaw: Array[float] = [INF, INF]  # the body's yaw last frame (rad)
 var _last_frames: Array[float] = [0.0, 0.0]  # walk frames played last frame
 var _aloft: Array[bool] = [false, false]  # it was on this path last frame
 var _last_toe: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # where then, below its lift (world)
+var _aim_at: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # its eased aim (world offset)
+var _walk_lift: Array[bool] = [false, false]  # it lifted in the walk loop (its swing is the clip's)
 
 
 func _init(swing_frames: float) -> void:
@@ -64,6 +75,8 @@ func lift(gait: ClipGait, i: int, clip_toe: Vector3, lock: Vector3) -> void:
 	_last_yaw[i] = INF
 	_last_frames[i] = gait.walk_frames
 	_lock[i] = lock
+	_aim_at[i] = Vector3.ZERO
+	_walk_lift[i] = gait.state == "walk"
 
 
 ## Foot i's toe this frame in the air (world), its clip spot now at `clip_toe`.
@@ -76,10 +89,15 @@ func target(gait: ClipGait, i: int, dt: float, clip_toe: Vector3) -> Vector3:
 	var gap := _lock[i] - clip_toe + (clip_toe - _lift_toe[i]) * on_path  # from where it went
 	lag[i] = gap * (1.0 - smoothstep(0.0, 1.0, k))
 	var lift_h := minf(LAG_LIFT * gap.length(), LAG_LIFT_MAX * gait.hip_height * gait.s)
-	var aim := _aim(gait, i, clip_toe) * smoothstep(AIM_FROM, 1.0, k)
+	var aim_to := _aim(gait, i, clip_toe) * smoothstep(AIM_FROM, 1.0, k)
+	_aim_at[i] = _aim_at[i].move_toward(aim_to, AIM_RATE * gait.hip_height * gait.s * dt)
+	var aim := _aim_at[i]
 	_aloft[i] = true
 	_last_toe[i] = clip_toe + lag[i] + aim
-	return _last_toe[i] + Vector3.UP * lift_h * sin(PI * k)
+	var through := (gait.walk_frames - _lift_frame[i]) / _swing_frames if _walk_lift[i] else 1.0
+	var arc := SWING_LIFT * gait.hip_height * gait.s * sin(PI * clampf(through, 0.0, 1.0))
+	lift_h = lift_h * sin(PI * k) + arc
+	return _last_toe[i] + Vector3.UP * lift_h
 
 
 ## Where foot i lands if its clip puts it down this frame (world): a turn's short step under where
