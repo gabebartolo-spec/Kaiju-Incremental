@@ -33,6 +33,7 @@ func _init(run: Rampage, fx: Fx, kaiju: KaijuModel, full: bool) -> void:
 	run.add_child(RiverView.new(sim, fx, head.x))
 	run.add_child(IntroWater.new(sim, fx, head.x))
 	run.add_child(WaterView.new(sim))
+	run.add_child(OceanWaves.new())
 	intro = RunIntro.new(sim, full)
 	run.add_child(self)
 

@@ -5,7 +5,8 @@ extends SceneTree
 ## --shots saves a still of the first stomp that plants a foot and of the first rake mid-swing,
 ## each with a 2x crop round the croc. Needs a window; pair with --write-movie for a clip.
 ## --walk=S: he first walks north for S seconds of the rampage, then stands (walking, then
-## stomping, in one clip).
+## stomping, in one clip). --stand=S: he stands S seconds after the rise before that walk.
+## --feet: a line per frame of the walk (state, clip frame, speed, each foot down and where).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/c.avi \
 ##     --script tools/capture/capture_croc_standing.gd -- --out=<dir> --seconds=8 [--shots] \
@@ -29,6 +30,8 @@ var _seconds := 8.0
 var _shots := false
 var _log := false
 var _walk := 0.0
+var _stand := 0.0
+var _feet := false
 var _last_cam := Vector3.ZERO
 
 
@@ -36,13 +39,23 @@ func _initialize() -> void:
 	if not NativeGuard.ok(self):
 		return
 	var a := Kit.args(
-		{"out": _out, "seconds": _seconds, "shots": false, "log": false, "walk": _walk}
+		{
+			"out": _out,
+			"seconds": _seconds,
+			"shots": false,
+			"log": false,
+			"walk": _walk,
+			"stand": _stand,
+			"feet": false
+		}
 	)
 	_out = str(a["out"])
 	_seconds = Num.f(a["seconds"])
 	_shots = a["shots"]
 	_log = a["log"]
 	_walk = Num.f(a["walk"])
+	_stand = Num.f(a["stand"])
+	_feet = a["feet"]
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
 		quit(1)
@@ -55,8 +68,16 @@ func _run() -> void:
 	var levels: Dictionary = Kit.STAGE_LEVELS[ADULT_LEVELS]
 	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels), 1)
 	var walk := _walk
+	var stand := _stand
+	var risen: Array[float] = []  # sim time the rise ended: --stand counts from there
 	rampage.scripted = func(sim: RampageSim) -> Dictionary:
-		return {"move": Vector2(0, -1)} if sim.elapsed < walk else {}
+		if risen.is_empty() and not sim.emerge.active:
+			risen.append(sim.elapsed)
+		var from := 0.0
+		if stand > 0.0:
+			from = risen[0] + stand if not risen.is_empty() else INF
+		var on := sim.elapsed >= from and sim.elapsed < from + walk
+		return {"move": Vector2(0, -1)} if on else {}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
 	var aim: Node3D = rampage.find_child("BreathAim", false, false)
@@ -74,6 +95,8 @@ func _run() -> void:
 	var wait := -1  # frames before the latest stomp's still: the ring has opened by then
 	while Engine.get_process_frames() - start < int(_seconds * 60.0):
 		await process_frame
+		if _feet:
+			_log_feet(rampage, gait, Engine.get_process_frames() - start)
 		if _log:
 			_log_camera(rampage, gait, float(Engine.get_process_frames() - start) / 60.0)
 		if not _shots:
@@ -127,6 +150,26 @@ func _rake_clock(gait: ClipGait) -> float:
 	if rake.weight() <= 0.0:
 		return -1.0
 	return RAKE_MID + (rake.clip_time - rake.clips.hit_frame(rake.clip)) / rake.clips.fps
+
+
+## --feet: one line a frame: state, clip frame, speed, then each foot (1 down, 0 up) and its spot.
+func _log_feet(rampage: Rampage, gait: ClipGait, frame: int) -> void:
+	var line := (
+		"feet f=%d %s ct=%.1f v=%.2f ph=%.2f"
+		% [frame, gait.state, gait.clip_time, gait.speed, gait.step_phase]
+	)
+	for leg: BipedLeg in gait.legs.slice(0, 2):
+		var at := gait.rig.tail_world(leg.tip)
+		line += " | %d %.2f %.2f %.2f" % [int(leg.planted), at.x, at.y, at.z]
+	var body := gait.rig.global_position
+	var sim := rampage.sim
+	line += " | body %.2f %.2f stride %.2f" % [body.x, body.z, gait.stride()]
+	var at := sim.kaiju_pos
+	var sf: Array = sim.body._feet
+	var hd: Vector2 = sim.body.heading
+	var tail := " | sim %.3f %.2f %.2f %.2f" % [sim.body.stride, sim.stat("speed"), at.x, at.y]
+	tail += " | sfeet %.1f %.1f  %.1f %.1f" % [sf[0].x, sf[0].y, sf[1].x, sf[1].y]
+	print(line, tail, " | hd %.2f %.2f" % [hd.x, hd.y])
 
 
 ## Street rings (Fx.shockwave planes) alive now.

@@ -37,6 +37,7 @@ var splashes: Array[Dictionary] = []
 var use_native := true
 var _cfg: Dictionary
 var _surfaced := false
+var _placed := false  # the body has stood in the water once (its first place lies still)
 var _ripple := 0.0  # seconds to the next ripple while the body holds under
 var _r := Rect2i()  # the sub-step being taken: its window, length (s) and flow kept
 var _h := 0.0
@@ -175,7 +176,7 @@ func step(sim: RampageSim, dt: float, events: Array[Dictionary]) -> void:
 	# the view takes them each frame; a headless run keeps the last
 	if splashes.size() > SPLASHES_KEPT:
 		splashes = splashes.slice(-SPLASHES_KEPT)
-	_stand(sim)
+	_stand(sim, dt)
 	var bs := sim.body_scale()
 	for event: Dictionary in events:
 		if str(event["type"]) != "stomp":
@@ -200,11 +201,15 @@ func step(sim: RampageSim, dt: float, events: Array[Dictionary]) -> void:
 		_flow(basin, dt)
 
 
-## Puts the kaiju's submerged body into the columns it stands in (an upright column of
-## water_sim body_radius times its height, from where it stands up to the still surface).
-func _stand(sim: RampageSim) -> void:
+## The kaiju's submerged body in the columns it stands in (body_radius x its height across, up to
+## its head or the still surface). Its first place takes the water's place (the sea over it lies
+## still); then it moves or grows at most body_rate m/s a cell, pushing the water (bow wave, wake):
+## a whole column dropped into a cell is a wall of water the pipes blow up on (20 m spikes).
+func _stand(sim: RampageSim, dt: float) -> void:
 	var radius := Num.f(_cfg["body_radius"]) * sim.reach_height()
 	var p := sim.kaiju_pos
+	var head := sim.stand_y + sim.reach_height()
+	var rate := Num.f(_cfg["body_rate"]) * dt
 	for basin: Basin in basins:
 		var c := basin.at(p)
 		var n := ceili(radius / basin.cell) + 1
@@ -215,17 +220,21 @@ func _stand(sim: RampageSim) -> void:
 		for j: int in range(span.position.y, span.end.y):
 			for i: int in range(span.position.x, span.end.x):
 				var k := j * basin.nx + i
-				var share := (
-					1.0
-					- smoothstep(radius * 0.6, radius, basin.centre(Vector2i(i, j)).distance_to(p))
-				)
+				var d := basin.centre(Vector2i(i, j)).distance_to(p)
+				var share := 1.0 - smoothstep(radius * 0.6, radius, d)
 				var foot := maxf(basin.floor_y[k], sim.stand_y)
-				var want := share * maxf(0.0, basin.rest - foot) if basin.depth[k] > 0.0 else 0.0
+				var top := minf(basin.rest, head)
+				var want := share * maxf(0.0, top - foot) if basin.depth[k] > 0.0 else 0.0
 				if absf(want - basin.body[k]) > 0.0001:
-					basin.body[k] = want
+					if not _placed:
+						basin.depth[k] = maxf(0.0, basin.depth[k] - (want - basin.body[k]))
+						basin.body[k] = want
+					else:
+						basin.body[k] = move_toward(basin.body[k], want, rate)
 					moved = true
 		if moved:
 			basin.wake(near)
+	_placed = true
 
 
 ## The virtual pipes: each column pushes water into each lower neighbour (g * its depth * the

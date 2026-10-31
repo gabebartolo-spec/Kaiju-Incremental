@@ -36,7 +36,7 @@ func update(i: int, planted: bool) -> void:
 func overreached(gait: ClipGait, i: int, lock: Vector3, clip_toe: Vector3) -> bool:
 	var leg := gait.legs[i]
 	var gap := (lock - clip_toe).length()
-	if set_off[i]:  # held through the other foot's step; only a gap catches it up
+	if set_off[i] or _starting(gait, i):  # held through the other foot's step; only a gap
 		return gap > (RESTEP_GAP if gait.legs[1 - i].planted else SET_OFF_GAP) * gait.stride()
 	if gap > RESTEP_GAP * gait.stride():
 		return true
@@ -47,6 +47,14 @@ func overreached(gait: ClipGait, i: int, lock: Vector3, clip_toe: Vector3) -> bo
 	if gait.state != "walk":  # standing on a straight-keyed leg is not overreach (STAND_SLACK)
 		reach = maxf(reach, (clip_toe + to_ankle - hip).length() + STAND_SLACK * length)
 	return (lock + to_ankle - hip).length() > reach
+
+
+## The keyed walk start, or the walk's first step after it with the other foot still in the air:
+## the sim swings the body about its own foot, not the drawn one, as he turns setting off.
+static func _starting(gait: ClipGait, i: int) -> bool:
+	if gait.state == "walk_start":
+		return true
+	return gait.state == "walk" and gait._from == "walk_start" and not gait.legs[1 - i].planted
 
 
 ## The walk frame to start from: the one whose feet stand nearest where the feet are now (rig
