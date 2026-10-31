@@ -40,6 +40,13 @@ Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign 
 Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
 Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".
 
+## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
+On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
+Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
+.kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
+"Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
+(tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".
+
 ## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
 Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
 surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
@@ -384,11 +391,3 @@ Team shape stays keyer + 4 builders (D-353).
 Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
 Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
 conflicting over an hour. The repo is public, so extra checks cost no CI minutes.
-
-## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
-Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
-was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
-Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)". The croc's jaw is keyed in the same
-Cascadeur file as the body at all three stages (D-228's Blender jaw stays only for rigs with no Cascadeur jaw). Wide
-open on roar and breath-beam; a snarling gape showing teeth on charge, claw rake, standing stomp, tail sweep and leap
-landing (D-239); every other move keeps the jaw shut.

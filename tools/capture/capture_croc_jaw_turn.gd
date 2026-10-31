@@ -3,7 +3,7 @@ extends SceneTree
 ## director 2026-10-28: "is that a slit in crocs jaw? when he looks left or right"). After the rise
 ## from the river he stands, then the stick is barely pushed (TURN_PUSH: he turns nearly on the
 ## spot) to his left by TURN_DEG, then to his right by TURN_DEG: the head leads each turn by up to
-## ClipGait.HEAD_LEAD_MAX. A free camera stands on his right side, square to where he faced, at
+## ClipTakes.HEAD_LEAD_MAX. A free camera stands on his right side, square to where he faced, at
 ## head height. Prints the frame the turns start (where to cut the clip). With --dump, writes the
 ## skin's bone matrices each frame of the turns (VoxelSkin.pose, rig space), the rig's world scale
 ## and the voxel size to <out>/pose.json, for the seam parting measure (tools/kaiju_skin).
@@ -99,7 +99,7 @@ func _run() -> void:
 			mats.append(
 				[p.x.x, p.x.y, p.x.z, p.y.x, p.y.y, p.y.z, p.z.x, p.z.y, p.z.z, p.w.x, p.w.y, p.w.z]
 			)
-		frames.append({"look": gait._look, "state": gait.state, "pose": mats})
+		frames.append({"look": gait.takes.look, "state": gait.state, "pose": mats})
 	if _dump:
 		var out := {
 			"stage": _stage,

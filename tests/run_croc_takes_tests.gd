@@ -5,11 +5,17 @@ extends "res://tests/lib/runner.gd"
 ## is back to idle after it; without the hook the body keeps its standing pose (on vs off). A
 ## standing stomp plays the keyed stomp of the foot the sim chose: that foot rises high and lands
 ## as the stomp's footfall inside the scene's wait; the adolescent, with no keyed stomp, lifts its
-## foot in code and stays idle (on vs off). Fixed 60 Hz steps, no clock, no randomness.
+## foot in code and stays idle (on vs off). Walking (PR3): from standing the walk start plays about
+## 1.3 s, then the walk (the adolescent walks at once); momentum blends the walk into the keyed run
+## (blend 1 vs 0); a slam plays the slam stop to its end; a walking turn lays head_look (mirrored
+## for a right turn) or the 90 deg walk turn over the upper body (vs no turn).
+## Fixed 60 Hz steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_takes_tests.gd
 
 const DT := 1.0 / 60.0
 ## The adult croc's leap seconds (tuning contact.leap.stages.reptilian, the adult's stage).
+## When a walking turn starts (s): past the walk start, in the walk loop.
+const TURN_AT := 2.0
 const LEAP_SECONDS := {"crouch": 0.8, "flight": 0.867, "settle": 0.867, "recover": 1.067}
 
 
@@ -20,6 +26,10 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_leap")
 	await _t("_check_stomp")
+	await _t("_check_walk_start")
+	await _t("_check_run")
+	await _t("_check_slam_stop")
+	await _t("_check_walk_turns")
 
 
 ## The leap clip on the Dash phases (on) against no hook (off): how far the pelvis dips in the
@@ -78,6 +88,110 @@ func _check_stomp() -> void:
 		off.states == ["idle"] and off.landed == "left",
 		"without keyed stomps the foot is lifted in code (%s, landed %s)" % [off.states, off.landed]
 	)
+
+
+## From standing, the adult plays the walk start's first steps, then the walk; the adolescent
+## (no take) walks at once.
+func _check_walk_start() -> void:
+	var on: Walk = await _walk("adult", 3.0)
+	var off: Walk = await _walk("adolescent", 3.0)
+	var start: float = on.seconds.get("walk_start", 0.0)
+	check(
+		on.states.slice(0, 3) == ["idle", "walk_start", "walk"],
+		"standing to walking: %s (the adolescent: %s)" % [on.states, off.states]
+	)
+	check(
+		(
+			absf(start - ClipTakes.WALK_START_SECONDS + ClipTakes.WALK_START_FROM / 24.0) < 0.1
+			and not off.states.has("walk_start")
+		),
+		"the walk start plays %.2f s before the walk loop" % start
+	)
+
+
+## Full momentum (blend 1) against none, on the same step clock: the walk becomes the run.
+func _check_run() -> void:
+	var on: Walk = await _walk("adult", 3.0, {"run": 1.0})
+	var off: Walk = await _walk("adult", 3.0, {"run": 0.0})
+	var most := 0.0
+	for f: int in mini(on.arm.size(), off.arm.size()):
+		most = maxf(most, on.arm[f].angle_to(off.arm[f]))
+	check(on.finite and on.states.has("walk"), "he runs on the walk's state, no bone NaN")
+	check(most > 0.25, "the run moves the arm %.2f rad from the walk's at the same step" % most)
+
+
+## A slam while he walks plays the slam stop to its end; no slam, he walks on.
+func _check_slam_stop() -> void:
+	var on: Walk = await _walk("adult", 7.0, {"slam_at": 2.5})
+	var off: Walk = await _walk("adult", 7.0)
+	var played: float = on.seconds.get("slam_stop", 0.0)
+	check(
+		absf(played - on.slam_s) < 0.1 and on.after == "idle",
+		"the slam stop plays %.2f s of its %.2f s, then idle (%s)" % [played, on.slam_s, on.states]
+	)
+	check(not off.states.has("slam_stop"), "no slam, no slam stop (%s)" % [off.states])
+
+
+## A small walking turn lays head_look on (the right one mirrored), a big one the walk turn; the
+## head turns with the take, not without a turn.
+func _check_walk_turns() -> void:
+	var none: Walk = await _walk("adult", 4.0)
+	for ahead: float in [0.6, -0.6, 1.4, -1.4]:
+		var on: Walk = await _walk("adult", 4.0, {"ahead": ahead})
+		var big := absf(ahead) >= ClipTakes.BIG_TURN
+		var want := ("walk_turn_left" if ahead > 0.0 else "walk_turn_right") if big else "head_look"
+		var most := 0.0
+		for f: int in mini(on.head.size(), none.head.size()):
+			most = maxf(most, on.head[f].angle_to(none.head[f]))
+		check(
+			on.turn == want and on.mirrored == (not big and ahead < 0.0),
+			"a %.1f rad walking turn plays %s (mirrored %s)" % [ahead, on.turn, on.mirrored]
+		)
+		check(
+			on.weight > 0.9 and most > 0.1,
+			"it lays on (%.2f), the head turns %.2f rad" % [on.weight, most]
+		)
+	check(none.turn.is_empty(), "no turn, no turn take (%s)" % none.turn)
+
+
+## `stage` standing 0.5 s, then walking `seconds` on a step clock; `with`: "run" the run blend,
+## "ahead" a turn (rad) from TURN_AT (in the walk loop), closing over 1.5 s, "slam_at" a slam (s)
+## that stops him.
+func _walk(stage: String, seconds: float, with := {}) -> Walk:
+	var run: float = with.get("run", 0.0)
+	var ahead: float = with.get("ahead", 0.0)
+	var slam_at: float = with.get("slam_at", INF)
+	var kaiju := _model(stage)
+	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
+	var gait: ClipGait = rig.gait
+	var speed := gait.stride() * 0.5  # half a stride a second
+	var out := Walk.new()
+	if gait.clips.has_clip("slam_stop"):
+		out.slam_s = gait.clips.frames_of("slam_stop") / gait.clips.fps
+	var phase := 0.0
+	for f: int in roundi((seconds + 0.5) / DT):
+		var t := f * DT
+		var moving := t >= 0.5 and t < slam_at
+		if moving:
+			kaiju.position.z -= speed * DT
+			phase += 1.0 * DT  # one step a second
+		var turn := ahead * clampf(1.0 - (t - TURN_AT) / 1.5, 0.0, 1.0) if moving else 0.0
+		kaiju.follow_steps(phase if moving else INF, 1.0, run, 1 if t >= slam_at else 0)
+		kaiju.animate(DT, 1.0 if moving else 0.0, turn)
+		out.finite = out.finite and rig.bone("spine0").global_transform.origin.is_finite()
+		if out.states.is_empty() or out.states[-1] != gait.state:
+			out.states.append(gait.state)
+		out.seconds[gait.state] = out.seconds.get(gait.state, 0.0) + DT
+		out.arm.append(rig.bone("arm_l1").global_transform.basis.get_rotation_quaternion())
+		out.head.append(rig.bone("head1").global_transform.basis.get_rotation_quaternion())
+		if not gait.takes.turn.is_empty():
+			out.turn = gait.takes.turn
+			out.mirrored = gait.takes.mirrored
+			out.weight = maxf(out.weight, gait.takes.turn_weight())
+	out.after = gait.state
+	kaiju.queue_free()
+	await process_frame
+	return out
 
 
 ## One standing stomp of the `side` foot at `stage`, and what it did.
@@ -190,4 +304,18 @@ class Stomp:
 	var strength := 0.0
 	var weight := 0.0  # a stomp's footfall at this body (ClipStomp.landing)
 	var states: Array[String] = []
+	var after := ""
+
+
+## One walk's record.
+class Walk:
+	var finite := true
+	var states: Array[String] = []
+	var seconds: Dictionary = {}  # state -> seconds played
+	var arm: Array[Quaternion] = []  # the left forearm's world turn per frame
+	var head: Array[Quaternion] = []  # the skull's
+	var turn := ""
+	var mirrored := false
+	var weight := 0.0
+	var slam_s := 0.0  # the slam stop take's length (s)
 	var after := ""

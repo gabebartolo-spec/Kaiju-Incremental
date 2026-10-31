@@ -171,6 +171,9 @@ func _check_walk_phase() -> void:
 	var speeds: Array[float] = [3.0, 6.0]
 	var ok := true
 	var report := ""
+	while gait.state != "walk":  # the walk start (ClipTakes) plays first; count from the loop
+		kaiju.position += Vector3(0, 0, -speeds[0] * DT)
+		kaiju.animate(DT, 1.0)
 	for v: float in speeds:
 		var start_cycles := gait.walk_cycles
 		var start := kaiju.position

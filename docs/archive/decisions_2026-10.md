@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-368 · Director · Croc jaw keyed in Cascadeur; roar, beam and attack snarls open the mouth
+Asked why the mouth never opens in the croc drafts (the keyer left every jaw for a Blender layer under D-228, which
+was never scheduled; the croc's r12 skeleton has a jaw joint that passed a 40 degree open test), he picked "Key it in
+Cascadeur (Recommended)" and "Roar, beam, plus attack snarls (Recommended)". The croc's jaw is keyed in the same
+Cascadeur file as the body at all three stages (D-228's Blender jaw stays only for rigs with no Cascadeur jaw). Wide
+open on roar and breath-beam; a snarling gape showing teeth on charge, claw rake, standing stomp, tail sweep and leap
+landing (D-239); every other move keeps the jaw shut.
+
 ## 2026-10-28 · D-367 · Director · Collapse sounds: the newest cuts the oldest
 Asked why many collapses at once went silent in the wider city (each collapse rings about 3.4 s and only 3 play at
 once, so a 4th was dropped), he picked "Newest cuts oldest (Recommended)". When a hero sound's voices are all busy, a
