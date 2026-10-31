@@ -93,11 +93,15 @@ func _add_rim_light() -> void:
 
 
 ## The sim's step clock for the legs (BodyContact.step_clock; INF: their own): they step on it,
-## each step step_ratio of a full stride long. Call before animate().
-func follow_steps(step_phase: float, step_ratio: float) -> void:
+## each step step_ratio of a full stride long. The titan's run (Momentum): run_blend 0..1 how far
+## the walk has become the keyed run (blend), slams his slams so far (a new one plays the keyed
+## slam stop, ClipGait.slam_stop). Call before animate().
+func follow_steps(step_phase: float, step_ratio: float, run_blend := 0.0, slams := 0) -> void:
 	if _rig != null:
 		_rig.gait.step_phase = step_phase
 		_rig.gait.step_ratio = step_ratio
+		if _rig.gait is ClipGait:
+			(_rig.gait as ClipGait).run(run_blend, slams)
 
 
 ## moving: 0..1 how hard it walks; turn_ahead: yaw (rad) still to turn, the head leads by it.

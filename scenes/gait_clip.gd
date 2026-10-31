@@ -33,12 +33,6 @@ const JAW_HOLD_SECONDS := 0.15
 const ROAR_SLAM_FRAME := 44.0
 const SLAM_WINDOW := 10.0
 const TAIL_SLAM_STRENGTH := 1.6
-## The head looks into a turn before the body makes it (director comments #16): it eases (1/s)
-## toward the yaw still to turn (KaijuGait.turn_ahead), at most HEAD_LEAD_MAX (rad), the neck
-## taking NECK_SHARE of it and the skull the rest, on top of the clip's pose.
-const HEAD_LEAD_MAX := 0.6
-const HEAD_LEAD_EASE := 10.0
-const NECK_SHARE := 0.4
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
@@ -55,6 +49,7 @@ var tail_swing := 0.0
 var tail_shown := 0.0
 var rake: ClipRake  # the claw rake keyed in Cascadeur, over the clips (D-185)
 var lash: ClipLash  # the tail lash keyed in Cascadeur, over the clips
+var takes: ClipTakes  # the keyed walk start, run, slam stop and walking turns
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
@@ -85,7 +80,6 @@ var _slam_low := Vector3(0, INF, 0)
 var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
 var _spring_tail := 0  # tail bones the turns bend (spring chain; the r12 tip plays clips only)
-var _look := 0.0  # the head's look-ahead into the turn (rad)
 var _leap: ClipLeap
 
 
@@ -124,6 +118,7 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_leap = ClipLeap.new(clips)
 	rake = ClipRake.new(rig, clips, swing)  # and the claw's streak (ClawTrail)
 	lash = ClipLash.new(clips, swing)
+	takes = ClipTakes.new(clips)
 
 
 func update(delta: float) -> void:
@@ -136,14 +131,16 @@ func update(delta: float) -> void:
 		_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
+	pose = takes.walk_pose(pose, step_phase) if state == "walk" else pose
 	if _blend < 1.0 and not _from.is_empty():
 		var to := pose
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), to, smoothstep(0.0, 1.0, _blend))
 		for i: int in 2:  # the new clip's lifted foot lifts at once: held down, it caught up later
 			pose.planted[i] = pose.planted[i] and to.planted[i]
 	pose = _leap.grounded(pose)  # (and the leap's hold ends with this frame)
+	pose = takes.layer(pose, turn_ahead, state == "walk", dt)
 	_apply(lash.layer(rake.layer(pose, dt), dt), dt)
-	_look_ahead(dt)
+	takes.look_ahead(self, dt)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
 	_measure_slide()
@@ -179,6 +176,15 @@ func stomp() -> void:
 	)
 	if not keyed.is_empty():
 		_go(keyed, 0.0)
+
+
+## The titan's run (Momentum): the walk's blend into the keyed run, and his slams so far; a new
+## slam into a building plays the keyed slam stop to its end.
+func run(blend: float, slams: int) -> void:
+	takes.run_blend = blend
+	if slams > takes.slams and clips.has_clip("slam_stop") and not _leap.on:
+		_go("slam_stop", 0.0)
+	takes.slams = slams
 
 
 ## The foot the next standing stomp lifts (the sim chose it: its damage is centred under that foot).
@@ -267,17 +273,6 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		rig.pose_basis(bone_name, Basis(q), offset)
 	swing.youth = clampf((ADULT_SCALE - s) / (ADULT_SCALE - BABY_SCALE), 0.0, 1.0)
 	swing.pose_rake(dt)  # the code claw rake over the clip's arms, or the keyed rake's streak
-
-
-## Turns the neck and skull about the world's up into the turn still to make (after the clip).
-func _look_ahead(dt: float) -> void:
-	var ahead := clampf(0.0 if turn_ahead == INF else turn_ahead, -HEAD_LEAD_MAX, HEAD_LEAD_MAX)
-	_look = lerpf(_look, ahead, minf(1.0, dt * HEAD_LEAD_EASE))
-	for bone_name: String in ["head0", "head1"]:
-		if rig.has_bone(bone_name):
-			var share := NECK_SHARE if bone_name == "head0" else 1.0 - NECK_SHARE
-			var b := rig.bone(bone_name).global_transform.basis.orthonormalized()
-			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
 
 
 ## A roar keyed with a tail slam (KaijuClips.slams) lands it as a heavy footfall at the tip.
