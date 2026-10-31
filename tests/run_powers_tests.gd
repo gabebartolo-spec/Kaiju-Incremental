@@ -10,6 +10,8 @@ const TailCity := preload("res://tests/lib/powers_tail_city.gd")
 const TurnWeight := preload("res://tests/lib/powers_turn_weight.gd")
 const Bolt := preload("res://tests/lib/powers_bolt.gd")
 const Lightning := preload("res://tests/lib/powers_lightning.gd")
+## Long enough for a pressed lash to wind up (tuning lash_windup 1.5 s) and land, short of a second.
+const LASH_SECONDS := 2.5
 
 
 func suite_name() -> String:
@@ -76,7 +78,7 @@ func _check_tail() -> void:
 	]:
 		var levels: Dictionary = run["levels"]
 		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
-		var seen := _run(sim, 1.0, Vector2.ZERO, Num.i(run["press"]))
+		var seen := _run(sim, LASH_SECONDS, Vector2.ZERO, Num.i(run["press"]))
 		var cut := sim.powers.tail_cut
 		results.append(
 			{"alive": _alive(sim, 0), "sweeps": sim.powers.tail_sweeps, "seen": seen, "cut": cut}
@@ -189,7 +191,7 @@ func _check_shear() -> void:
 	var cut: Array[int] = []
 	for levels: Dictionary in [{"r_tail": 1}, {"r_tail": 1, "r_shear": 2}]:
 		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 14))], Vector2(0, -3.5))
-		_run(sim, 1.0, Vector2.ZERO, PRESS)
+		_run(sim, LASH_SECONDS, Vector2.ZERO, PRESS)
 		cut.append(sim.powers.tail_cut)
 	check(
 		cut[1] > cut[0],
@@ -278,7 +280,7 @@ func _check_levels() -> void:
 		var sim := _sim(
 			"reptilian", {"r_tail": level}, [_b(0, 0, Vector3i(3, 3, 8), 2)], Vector2(0, -3.5)
 		)
-		_run(sim, 1.0, Vector2.ZERO, PRESS)
+		_run(sim, LASH_SECONDS, Vector2.ZERO, PRESS)
 		cut.append(sim.powers.tail_cut)
 	check(cut[1] > cut[0], "a higher tail level cuts deeper: %d > %d" % [cut[1], cut[0]])
 

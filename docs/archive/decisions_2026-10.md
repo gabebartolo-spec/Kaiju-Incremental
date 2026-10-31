@@ -2,6 +2,18 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-356 · Director · The Godot window is never left idle
+"godot has been empty like 90% of the time recently, make sure its always being used so we can be efficient". Asked
+whether tonight's speed runs may start at once instead of at 01:00 (D-331): picked "Start now (Recommended)"; the hold
+was lifted 00:30 and the night queue runs back to back, builders' captures queue behind it. Standing rule: a capture,
+clip or speed run always waits behind the one-window slot, so the window never sits empty while work is queued.
+
+## 2026-10-27 · D-355 · Director · The grown croc eases into its walk over about 1.3 s
+For the keyed walk-start (D-343). Asked whether the croc may take about 1.3 s to reach full walking speed from standing
+(today about 0.13 s): picked "Ease in, ~1.3 s (Recommended)". The sim's set-off changes (walk_off_s and the step clock),
+and the keyed walk-start plays over it. A ~6 s clip goes to him before it ships. Not picked: the body trailing the sim
+(a ~30% surge) or a quick 0.4 s first step (the defect he named).
+
 ## 2026-10-27 · D-354 · Director · Creature animation runs alongside the parked work
 Asked for a plan to finish the render plan and the debt list ("make a plan to finish the render plan, debt fixes"). Asked
 whether the Cascadeur animation row (debt row 21, 31 of 40 moves to key) holds back the parked work (roads, wider city,
