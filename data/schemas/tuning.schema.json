@@ -5963,6 +5963,30 @@
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
+    "skin_bake": {
+      "type": "object",
+      "properties": {
+        "thicken": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "thigh": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+              "hip": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+              "girth": {"type": "number", "minimum": 1.0, "maximum": 2.0},
+              "full_to": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+              "knee": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+              "hip_reach": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 2.0}
+            },
+            "required": ["thigh", "hip", "girth", "full_to", "knee", "hip_reach"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["thicken"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
     "render_opt": {
       "type": "object",
       "properties": {
@@ -5972,6 +5996,7 @@
         "people_buffers": {"$ref": "#/$defs/bool"},
         "people_aabb_margin_m": {"$ref": "#/$defs/num"},
         "kaiju_three_faces": {"$ref": "#/$defs/bool"},
+        "kaiju_cor_skinning": {"$ref": "#/$defs/bool"},
         "fx_pool": {
           "type": "object",
           "properties": {
@@ -6015,7 +6040,7 @@
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
-        "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
+        "people_aabb_margin_m", "kaiju_three_faces", "kaiju_cor_skinning", "night_clip_max", "fx_pool",
         "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m", "facade_aa", "facade_bake",
         "facade_aa_start", "facade_aa_cells", "native_colliders", "collider_boxes_per_tick",
         "island_merged"

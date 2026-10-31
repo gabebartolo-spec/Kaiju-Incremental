@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
+On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
+Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
+.kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
+"Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
+(tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".
+
 ## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
 Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
 surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
@@ -390,8 +397,3 @@ to get through them all and we will see what was good / use our reference models
 animation audit gets one keyed draft (the croc at all three stages, plus people, per his 10-25 "Creatures + people"),
 saved as its own .casc and opened in his Cascadeur (D-347); no second takes, no clips, no PRs until he picks. Asked
 about the insectoid and cephalopod, he picked "Croc and people only". Pauses the keyer's #332 work for the run.
-
-## 2026-10-28 · D-361 · Director · The leap lands on roofs up to shoulder height; a taller building takes it in its side
-His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
-picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a
-landing; a taller building takes the leap in its side, he carves in (D-268) and drops to the street at its foot.

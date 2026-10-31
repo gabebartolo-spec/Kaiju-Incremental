@@ -4,7 +4,8 @@ shader_type spatial;
 // whole numbers (half precision safe: the compatibility renderer stores per-instance data that
 // way), COLOR.rgb its sRGB colour and COLOR.a its second bone's weight. Each cube's centre follows
 // its blended bones (smooth); it turns with its main bone's rotation (cubes of one bone stay on
-// one tidy grid) and keeps its size.
+// one tidy grid) and keeps its size. With use_cor (VoxelSkinCor) a blended cube instead turns by
+// its bones' blended rotation about its baked centre of rotation, which the blend moves.
 
 // The stone's colour, variation and kept shade: one formula with the pieces that fly off when he
 // shatters (death_stone.gdshader).
@@ -17,6 +18,9 @@ shader_type spatial;
 uniform mat4 bones[128];
 // The cubes' own node back to skin (rig) space, so the shader can read each instance's centre.
 uniform mat4 to_skin;
+// Director 2026-10-31 (thighs): per cube (by instance) its centre of rotation, w 1 when it has one.
+uniform bool use_cor = false;
+uniform sampler2D cors : filter_nearest;
 // Where a cube's bones disagree the blended basis shrinks: grow the cube by that much times this.
 uniform float gap_fill = 1.0;
 // Cubes keep one size: growth is off by default (lead review round 2); the filler covers gaps.
@@ -49,6 +53,41 @@ varying vec3 tint;
 varying vec3 rest;
 varying vec3 rest_pos;
 
+// A bone's turn as a unit quaternion (xyz, w) from its orthonormal basis.
+vec4 to_quat(mat3 m) {
+	float t = m[0][0] + m[1][1] + m[2][2];
+	if (t > 0.0) {
+		float s = sqrt(t + 1.0) * 2.0;
+		return vec4(m[1][2] - m[2][1], m[2][0] - m[0][2], m[0][1] - m[1][0], s * s * 0.25) / s;
+	}
+	if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) {
+		float s = sqrt(1.0 + m[0][0] - m[1][1] - m[2][2]) * 2.0;
+		return vec4(s * s * 0.25, m[1][0] + m[0][1], m[2][0] + m[0][2], m[1][2] - m[2][1]) / s;
+	}
+	if (m[1][1] > m[2][2]) {
+		float s = sqrt(1.0 + m[1][1] - m[0][0] - m[2][2]) * 2.0;
+		return vec4(m[1][0] + m[0][1], s * s * 0.25, m[2][1] + m[1][2], m[2][0] - m[0][2]) / s;
+	}
+	float s = sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) * 2.0;
+	return vec4(m[2][0] + m[0][2], m[2][1] + m[1][2], s * s * 0.25, m[0][1] - m[1][0]) / s;
+}
+
+mat3 from_quat(vec4 q) {
+	vec3 a = q.xyz * 2.0;
+	vec3 b = q.xyz * a;
+	float xy = q.x * a.y, xz = q.x * a.z, yz = q.y * a.z;
+	vec3 w = q.w * a;
+	return mat3(vec3(1.0 - b.y - b.z, xy + w.z, xz - w.y), vec3(xy - w.z, 1.0 - b.x - b.z, yz + w.x),
+		vec3(xz + w.y, yz - w.x, 1.0 - b.x - b.y));
+}
+
+// A bone's basis without its scale: square axes.
+mat3 square(mat4 m) {
+	vec3 ax = normalize(m[0].xyz);
+	vec3 ay = normalize(m[1].xyz - ax * dot(ax, m[1].xyz));
+	return mat3(ax, ay, cross(ax, ay));
+}
+
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
 }
@@ -70,10 +109,21 @@ void vertex() {
 	float grow = 1.0 + min(max_grow, gap_fill * max(0.0, shrink));
 	// The main bone's turn only: its scale (a gait's swell or stretch) never reaches a cube, so
 	// every cube keeps one size and square axes (lead review round 2: no slats).
-	mat3 m = mat3(bones[b0]);
-	vec3 ax = normalize(m[0]);
-	vec3 ay = normalize(m[1] - ax * dot(ax, m[1]));
-	mat3 turn = mat3(ax, ay, cross(ax, ay));
+	mat3 turn = square(bones[b0]);
+	if (use_cor) {
+		int width = textureSize(cors, 0).x;
+		vec4 c_rot = texelFetch(cors, ivec2(INSTANCE_ID % width, INSTANCE_ID / width), 0);
+		if (c_rot.w > 0.5) {
+			// The bones' turns blended as quaternions on one side of the sphere (QLERP).
+			vec4 q0 = to_quat(turn);
+			vec4 q1 = to_quat(square(bones[b1]));
+			vec4 q2 = to_quat(square(bones[b2]));
+			vec4 q = normalize(q0 * w0 + q1 * (w1 * sign(dot(q0, q1) + 1e-6))
+				+ q2 * (w2 * sign(dot(q0, q2) + 1e-6)));
+			turn = from_quat(q);
+			moved = turn * (centre - c_rot.xyz) + (blend * vec4(c_rot.xyz, 1.0)).xyz;
+		}
+	}
 	vec3 local = VERTEX;
 	vec3 n = NORMAL;
 	if (three_faces) {

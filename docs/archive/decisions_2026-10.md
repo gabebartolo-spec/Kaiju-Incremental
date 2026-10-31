@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-361 · Director · The leap lands on roofs up to shoulder height; a taller building takes it in its side
+His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
+picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a
+landing; a taller building takes the leap in its side, he carves in (D-268) and drops to the street at its foot.
+
 ## 2026-10-28 · D-360 · Director · No far blur: the skyline stays sharp, haze alone carries the depth
 His comment watching runs (about 01:4x): "the blurred distance also looks kind of distracting, makes it like you have
 a smudge on your screen". Shown the same dusk Behemoth frame with today's far blur (A) and without it (B), and quoted
