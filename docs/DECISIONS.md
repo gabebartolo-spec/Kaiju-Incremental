@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
+Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
+surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
+the water burst". The pre-rise spray column is removed; arcs of the kaiju's purple bolt (D-357) skate over the water,
+more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
+round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
+surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.
+
 ## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
 A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
 the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city
@@ -11,6 +19,7 @@ only (the far skyline keeps its shader pattern), and a longer load: "i dont real
 10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
 and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
 cached).
+
 ## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
 Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
 fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim
@@ -386,11 +395,3 @@ about the insectoid and cephalopod, he picked "Croc and people only". Pauses the
 His words, playing the build: "leap attack is broken because you can leap to the top of a sky scraper haha". Asked, he
 picked "Tall ones: hit the side". Changes D-262's landing: a roof at about his shoulder height or lower is still a
 landing; a taller building takes the leap in its side, he carves in (D-268) and drops to the street at its foot.
-
-## 2026-10-28 · D-360 · Director · No far blur: the skyline stays sharp, haze alone carries the depth
-His comment watching runs (about 01:4x): "the blurred distance also looks kind of distracting, makes it like you have
-a smudge on your screen". Shown the same dusk Behemoth frame with today's far blur (A) and without it (B), and quoted
-D-163 ("Far blur only", locked on the kaiju, haze carrying the depth), he picked "B: no far blur" (not keep A, not a
-lighter blur). Replaces D-163's depth-blur clause only: far blur is off by default; haze, cool shadows with warm fire
-and fine-block ground stay as D-163 set them. Owner: load-flake (flag off by default, PR); the facade pop-in probe
-("Blurry turns sharp") follows.

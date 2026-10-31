@@ -1946,12 +1946,19 @@
         "water": {
           "type": "object",
           "properties": {
-            "fount_from_seconds": {"$ref": "#/$defs/num"},
-            "fount_after_seconds": {"$ref": "#/$defs/num"},
-            "fount_start": {"$ref": "#/$defs/num"},
-            "fount_amount": {"$ref": "#/$defs/num"},
-            "fount_speed": {"$ref": "#/$defs/num"},
-            "fount_spread": {"$ref": "#/$defs/num"},
+            "crackle_from_seconds": {"$ref": "#/$defs/num"},
+            "crackle_reach": {"$ref": "#/$defs/num"},
+            "crackle_length": {"$ref": "#/$defs/num"},
+            "crackle_width": {"$ref": "#/$defs/num"},
+            "crackle_every": {"$ref": "#/$defs/num"},
+            "crackle_rounds": {"$ref": "#/$defs/num"},
+            "crackle_push": {"$ref": "#/$defs/num"},
+            "burst_arcs": {"$ref": "#/$defs/num"},
+            "burst_arc_seconds": {"$ref": "#/$defs/num"},
+            "burst_arc_height": {"$ref": "#/$defs/num"},
+            "burst_arc_foot": {"$ref": "#/$defs/num"},
+            "burst_arc_top": {"$ref": "#/$defs/num"},
+            "crackle_arcs": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
             "burst_amount": {"$ref": "#/$defs/num"},
             "burst_speed": {"$ref": "#/$defs/num"},
             "burst_spread": {"$ref": "#/$defs/num"},
@@ -1963,8 +1970,9 @@
             "colors": {"type": "array", "items": {"$ref": "#/$defs/hex6"}}
           },
           "required": [
-            "fount_from_seconds",
-            "fount_after_seconds", "fount_start", "fount_amount", "fount_speed", "fount_spread",
+            "crackle_from_seconds", "crackle_arcs", "crackle_reach", "crackle_length",
+            "crackle_width", "crackle_every", "crackle_rounds", "crackle_push", "burst_arcs",
+            "burst_arc_seconds", "burst_arc_height", "burst_arc_foot", "burst_arc_top",
             "burst_amount", "burst_speed", "burst_spread", "gravity", "life", "drop", "drop_min",
             "width", "colors"
           ],
