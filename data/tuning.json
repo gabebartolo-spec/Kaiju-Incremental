@@ -1679,10 +1679,10 @@
 			"gap_jitter": 0.1,
 			"end_margin": 0.04,
 			"tail": 0.2,
-			"hold_level": 0.6,
+			"hold_level": 0.85,
 			"stroke_decay": 0.09,
 			"branch_peak": 1.0,
-			"branch_hold": 0.5,
+			"branch_hold": 0.85,
 			"branch_decay": 0.14,
 			"light_decay": 0.12,
 			"light": {"hold_share": 0.2, "falloff": 1.5, "mouth": [8.0, 16.0], "impact": [34.0, 28.0]},
@@ -1704,7 +1704,9 @@
 				"arcs": 0, "arc_reach": 8.0, "arc_width": 0.17,
 				"branch_from": [0.3, 0.8], "branch_width": 1.0, "branch_sway": 0.15,
 				"anchor_near": false, "anchor_back": 0.0, "dust": 3.5,
-				"fan_spread": 0.8, "fan_near": 0.55, "clear": 0.0
+				"fan_spread": 0.8, "fan_near": 0.55, "clear": 0.0,
+				"strands": [7, 9], "strand_spread": 1.6, "strand_sway": 0.18,
+				"pool": 8, "pool_radius": 5.0, "chain": 4, "chain_step": 2.5, "reroll": 0.06
 			},
 			"thunder": {
 				"core": 1.08, "sway": 0.22, "branches": [4, 6],

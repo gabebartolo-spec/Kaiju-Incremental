@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-410 · Director · The Lightning Breath is a purple column that chains over what it hits
+"Make the lightning breath look like a dragon fire lamp": a dense purple column that pools and chains along the ground
+and climbs the buildings it strikes. Sheet at dusk: "looks good". The sim's damage stays (a measured breath fells two
+18-19 floor towers whole and slices seven more).
+Asked "does it damage what the VFX touches?": the bolt is now cut where it meets a chunk the sim left standing, so
+it is drawn only through what the strike broke (frame-by-frame audit: 0 of 94,612 points in standing chunks). Same PR: the breath gets its own input bit (BREATH 4 -> 8); since
+#455 it shared the dash bit, so every breath also leapt and the croc floated ("why hes floating in the air").
+
 ## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
 Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
 stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).
