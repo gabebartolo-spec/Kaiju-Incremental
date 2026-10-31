@@ -14,6 +14,9 @@ const LANE_HALF := 0.6  # how far sideways another car still counts as in my lan
 const ARRIVE_SECONDS := 1.4
 const FLASH_HZ := 4.0
 const CRUSHED := Vector3(1.1, 0.25, 1.1)
+## How far a car can hop sideways in one frame: a U-turn or a turn at a crossing moves it from
+## one lane to another (lanes sit at most about 2.2 m off the centre line). The grid's slack.
+const LANE_HOP := 4.5
 
 
 class Car:
@@ -50,6 +53,16 @@ var _meshes: Array[ArrayMesh] = []
 var _police_meshes: Array[ArrayMesh] = []
 var _clock := 0.0
 var _lit := 0
+## Rebuilt each update(): the cars by grid cell (index lists), the cars that may jump further
+## than a cell this frame (every car checks them), the tanks' poses and the street numbers.
+var _grid := {}
+var _cell := 1.0
+var _loose := PackedInt32Array()
+var _no_cars := PackedInt32Array()  # an empty cell
+var _tanks: TankKeepOut.Poses
+var _gap := 0.0
+var _jam_wreck := 0.0
+var _jam_queue := 0.0
 
 
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
@@ -157,16 +170,17 @@ func update(delta: float) -> void:
 	var lit := int(_clock * FLASH_HZ) % 2
 	var swap := lit != _lit
 	_lit = lit
+	_frame_index(delta)
 	for car: Car in cars:
 		if car.crushed:
 			continue
-		if TankKeepOut.run_over(sim, car):  # a tank drives over it: flattened, as by the kaiju
+		if TankKeepOut.run_over(_tanks, car):  # a tank drives over it: flattened, as by the kaiju
 			crush(car.pos, 0.0)
 			continue
 		if car.police and swap:
 			car.body.mesh = _police_meshes[lit]
 		if car.parked:
-			TankKeepOut.make_way(sim, car)
+			TankKeepOut.make_way(_tanks, car)
 		if car.arrive_t >= 0.0:
 			_arrive(car, delta)
 		elif not car.parked:
@@ -247,18 +261,59 @@ func _turn_back(car: Car, backing: bool) -> void:
 ## a parked cruiser a car soon gives up; behind a live car it queues, so jams back up the street.
 func _blocked(car: Car) -> float:
 	var dir := car.dir
-	var gap := Num.f(_cfg["car_gap"])
-	for other: Car in cars:
+	var first := -1  # the earliest car in `cars` holding this one up, as a plain scan finds it
+	var cx := floori(car.pos.x / _cell)
+	var cy := floori(car.pos.y / _cell)
+	for gx: int in range(cx - 1, cx + 2):
+		for gy: int in range(cy - 1, cy + 2):
+			var bucket: PackedInt32Array = _grid.get(Vector2i(gx, gy), _no_cars)
+			first = _ahead(car, dir, bucket, first)
+	first = _ahead(car, dir, _loose, first)
+	if first >= 0:
+		var other := cars[first]
+		return _jam_wreck if other.crushed or other.parked else _jam_queue
+	if TankKeepOut.in_lane(_tanks, car, dir):  # a tank: no waiting it out, turn round at once
+		return 0.0
+	return -1.0
+
+
+## The lowest index of `first` and the cars in `ids` within car_gap ahead in car's lane.
+func _ahead(car: Car, dir: Vector2, ids: PackedInt32Array, first: int) -> int:
+	for i: int in ids:
+		if first >= 0 and i >= first:
+			continue
+		var other := cars[i]
 		if other == car:
 			continue
 		var rel := other.pos - car.pos
 		var ahead := rel.dot(dir)
-		if ahead > 0.0 and ahead < gap and absf(rel.cross(dir)) < LANE_HALF:
-			var dead := other.crushed or other.parked
-			return Num.f(_cfg["jam_wreck_s"]) if dead else Num.f(_cfg["jam_queue_s"])
-	if TankKeepOut.in_lane(sim, car, dir):  # a tank: no waiting it out, turn round at once
-		return 0.0
-	return -1.0
+		if ahead > 0.0 and ahead < _gap and absf(rel.cross(dir)) < LANE_HALF:
+			first = i
+	return first
+
+
+## Buckets the cars for _blocked. A cell is car_gap plus the furthest a driving car moves this
+## frame (its drive and a LANE_HOP), so the 3x3 cells round a car hold every car that can come
+## within car_gap of it.
+## Arriving and parked police cars can jump further, so they go in _loose and everyone checks them.
+func _frame_index(delta: float) -> void:
+	_gap = Num.f(_cfg["car_gap"])
+	_jam_wreck = Num.f(_cfg["jam_wreck_s"])
+	_jam_queue = Num.f(_cfg["jam_queue_s"])
+	_tanks = TankKeepOut.Poses.new(sim)
+	var fastest := maxf(Num.f(_cfg["flee_speed"]), Num.f(_cfg["drive_speed"]))
+	_cell = _gap + LANE_HALF + fastest * delta + LANE_HOP
+	_grid.clear()
+	_loose.clear()
+	for i: int in cars.size():
+		var car := cars[i]
+		if car.arrive_t >= 0.0 or (car.parked and car.police):
+			_loose.append(i)
+			continue
+		var key := Vector2i(floori(car.pos.x / _cell), floori(car.pos.y / _cell))
+		var bucket: PackedInt32Array = _grid.get(key, PackedInt32Array())
+		bucket.append(i)
+		_grid[key] = bucket
 
 
 ## The crossing to drive to next from car.node: a legal lane at random, or, fleeing, any
