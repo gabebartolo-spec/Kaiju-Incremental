@@ -56,7 +56,7 @@ func _check_surface_on() -> void:
 			var size: Vector2 = (mi.mesh as PlaneMesh).size
 			var long := Vector2.RIGHT if size.x >= size.y else Vector2.DOWN
 			var along := flow.length() > 0.0 and absf(flow.normalized().dot(long)) > 0.999
-			rivers += int(along and deep.is_equal_approx(Look.color("river")))
+			rivers += int(along and deep.is_equal_approx(Look.color("water")))
 		shaded -= int(mat.render_priority != WaterSurface.PRIORITY)
 		var foam: Color = mat.get_shader_parameter("foam_color")
 		shaded -= int(not foam.is_equal_approx(Look.color("water_foam")))
@@ -74,7 +74,7 @@ func _check_surface_on() -> void:
 	check(
 		rivers == channels.size(),
 		(
-			"each river channel flows along its length in the look's river colour (%d of %d)"
+			"each river channel flows along its length in the look's one water colour (%d of %d)"
 			% [rivers, channels.size()]
 		)
 	)

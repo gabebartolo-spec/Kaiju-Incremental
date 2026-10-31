@@ -240,7 +240,6 @@
           "lot": {"$ref": "#/$defs/str"},
           "water": {"$ref": "#/$defs/str"},
           "sand": {"$ref": "#/$defs/str"},
-          "river": {"$ref": "#/$defs/str"},
           "ambient_color": {"$ref": "#/$defs/hex6"},
           "lamp_energy": {"$ref": "#/$defs/num"},
           "voxel_ao_on": {"$ref": "#/$defs/bool"},
@@ -252,7 +251,6 @@
           "agx_contrast": {"$ref": "#/$defs/num"},
           "post_contrast": {"$ref": "#/$defs/num"},
           "deband": {"$ref": "#/$defs/bool"},
-          "water_shallow": {"$ref": "#/$defs/hex6"},
           "water_foam": {"$ref": "#/$defs/hex6"}
         },
         "required": [
@@ -270,7 +268,7 @@
           "ground_damp", "ground_streak", "ground_soil", "ground_paving", "ground_band_h",
           "ground_night_floor", "ground_lamp_pool", "styles", "roof", "window", "window_lit_color",
           "window_palette_on", "window_lit_palette", "window_lit_gain",
-          "outskirts", "asphalt", "lot", "water", "river", "ambient_color", "lamp_energy",
+          "outskirts", "asphalt", "lot", "water", "ambient_color", "lamp_energy",
           "voxel_ao_on", "voxel_ao_strength", "voxel_ao_light_affect", "finish_on",
           "finish_roughness", "finish_specular"
         ],

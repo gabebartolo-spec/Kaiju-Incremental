@@ -5,7 +5,8 @@ shader_type spatial;
 //    wind waves (six directional waves on the deep-water dispersion w^2 = g k, each a sharp-crested
 //    exp(sin) profile; Finch, GPU Gems 1 ch. 1; Acerola, "How Games Fake Water") and fine ripples
 //    (two octaves of gradient noise drifting apart); on the river both ride its current;
-//  - on the bay a long gentle swell (normals only);
+//  - on the bay a long swell rolling toward the shore (`swell_dir`; director 2026-10-31: "natural
+//    waves rolling toward the shore"), its crests a lighter band of the body colour (normals only);
 //  - on the beach's sea, waves lapping the shore (director 2026-10-29: "gentle waves lapping against
 //    the shore"): low wavelets run landward (`lap_dir`) and lift the surface itself, so the waterline
 //    and its foam climb the sloping sand and slide back down (the sheet is cut into rows for it; its
@@ -38,6 +39,7 @@ uniform float ripple_slope = 0.12;
 uniform float swell_length = 0.0;  // the bay's swell (m); 0 = none (the river)
 uniform float swell_slope = 0.03;
 uniform vec2 wind = vec2(0.6, -0.8);  // where the waves run (unit, x z)
+uniform vec2 swell_dir = vec2(0.0, 1.0);  // where the swell rolls: landward (unit, x z)
 uniform vec2 flow = vec2(0.0);  // the current (m/s, x z)
 uniform float rough_near = 0.05;
 uniform float rough_far = 0.25;
@@ -112,13 +114,13 @@ vec2 turn(vec2 d, float a) {
 
 // A set of directional waves round the wind: (height, dh/dx, dh/dz). fp is the pixel's footprint
 // (m); lost gathers the slope variance the faded waves give up.
-vec3 wave_set(vec2 p, float t, float fp, float len0, float slope0, int count, float spread, float salt, inout float lost) {
+vec3 wave_set(vec2 p, float t, float fp, vec2 dir, float len0, float slope0, int count, float spread, float salt, inout float lost) {
 	vec3 sum = vec3(0.0);
 	float len = len0;
 	float s = slope0;
 	for (int i = 0; i < count; i++) {
 		float fi = float(i) + salt;
-		vec2 d = turn(wind, (wh(fi) - 0.5) * spread);
+		vec2 d = turn(dir, (wh(fi) - 0.5) * spread);
 		float k = TAU / len;
 		float ph = k * dot(d, p) - sqrt(GRAVITY * k) * t + TAU * wh(fi + 17.0);
 		float e = exp(sin(ph) - 1.0);
@@ -186,12 +188,14 @@ void fragment() {
 	float fp = max(length(dFdx(p)), length(dFdy(p)));
 	vec2 carried = p - flow * t;  // the river carries its waves downstream
 	float lost = 0.0;
-	vec3 h = wave_set(carried, t, fp, wave_length, wave_slope, WAVES, SPREAD, 0.0, lost);
+	vec3 h = wave_set(carried, t, fp, wind, wave_length, wave_slope, WAVES, SPREAD, 0.0, lost);
 	h += ripples(carried, t, fp, lost);
-	// A crest's body is lighter (light through its top): the wind waves and ripples, not the slow swell.
+	// A crest's body is lighter (light through its top): the wind waves, and the swell's rolling crests.
 	float crest = clamp(h.x / max(0.001, wave_slope * wave_length / TAU), -1.0, 1.0);
 	if (swell_length > 0.0) {
-		h += wave_set(p, t, fp, swell_length, swell_slope, SWELLS, SPREAD * 0.4, 40.0, lost);
+		vec3 s = wave_set(p, t, fp, swell_dir, swell_length, swell_slope, SWELLS, SPREAD * 0.08, 40.0, lost);
+		h += s;
+		crest = clamp(0.15 * crest + s.x / max(0.001, swell_slope * swell_length / TAU), -1.0, 1.0);
 	}
 	vec3 n_world = normalize(vec3(-h.y, 1.0, -h.z));
 	NORMAL = normalize((VIEW_MATRIX * vec4(n_world, 0.0)).xyz);
@@ -224,8 +228,10 @@ void fragment() {
 	float seen = clear * (1.0 - fres);  // the share of what is under the water that reaches the eye
 	ALBEDO = mix(body * (1.0 - clear) * (1.0 - fres), foam_color, froth);
 	ALPHA = mix(1.0 - seen, 1.0, froth);
-	// The sky's glow in patches (an unlit body would be black at night) (sky_color, per look).
-	EMISSION = sky_color * (night_glow * night + day_glow) * clamp(0.5 + mottle, 0.0, 1.5) * (1.0 - froth);
+	// The sky's glow (an unlit body would be black at night) (sky_color, per look): as faintly
+	// patched as the body (mottle_amp), and lighter on the crests, so the rolling bands read at night.
+	float glow = 0.5 * (1.0 + mottle_amp * mottle) * (1.0 + crest_light * crest);
+	EMISSION = sky_color * (night_glow * night + day_glow) * glow * (1.0 - froth);
 	SPECULAR = spec * (1.0 - froth);
 	ROUGHNESS = mix(ROUGHNESS, 0.7, froth);
 }
