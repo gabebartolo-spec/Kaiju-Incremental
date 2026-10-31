@@ -21,6 +21,47 @@ const V4 := {
 	"last_weather": "rain",
 }
 
+## A save as v5 (slots, before the campaign) wrote it.
+const V5 := {
+	"version": 5,
+	"species": "reptilian",
+	"seed": 77,
+	"rubble": 1234,
+	"levels": {"claws": 2, "hide": 1, "evolve1": 1},
+	"runs": 7,
+	"best": {"rubble": 900.0, "destruction": 0.42},
+	"city_seconds": 61.5,
+	"demo": true,
+	"demo_done": false,
+	"totals": {"rubble": 4000.0},
+	"specimen": 3,
+	"lab_card": false,
+}
+## A v6 save file as a player's game would hold it mid-campaign, typed by hand: Ostia Minor and
+## Carthago conquered, one bonus picked for each, Threat 37.5 and one noise entry per mission.
+const CAMPAIGN_FILE := """{
+	"version": 6,
+	"species": "reptilian",
+	"seed": 77,
+	"rubble": 5000,
+	"levels": {"claws": 3},
+	"runs": 12,
+	"best": {"rubble": 1500.0},
+	"city_seconds": 90.0,
+	"demo": true,
+	"demo_done": false,
+	"totals": {},
+	"specimen": 2,
+	"lab_card": false,
+	"conquered": ["ostia_minor", "carthago"],
+	"bonuses": {"ostia_minor": "bonus_ostia_minor_1", "carthago": "bonus_carthago_3"},
+	"threat": 37.5,
+	"noise_log": [
+		{"continent": "ostia_minor", "noise": 20.0},
+		{"continent": "carthago", "noise": 17.5}
+	]
+}"""
+
 
 func _frames(n: int) -> void:
 	for _i: int in n:
@@ -54,6 +95,15 @@ func _same(a: Variant, b: Variant) -> bool:
 			return false
 		for key: Variant in da:
 			if not db.has(key) or not _same(da[key], db[key]):
+				return false
+		return true
+	if a is Array and b is Array:
+		var xa: Array = a
+		var xb: Array = b
+		if xa.size() != xb.size():
+			return false
+		for i: int in xa.size():
+			if not _same(xa[i], xb[i]):
 				return false
 		return true
 	return typeof(a) == typeof(b) and a == b

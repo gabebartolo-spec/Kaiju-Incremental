@@ -1,8 +1,9 @@
 extends "res://tests/lib/slots_base.gd"
-## Save slots suite (director 2026-10-26, "Three slots (Recommended)"): the v4 save migrates to v5
-## with its specimen number; the one save from before slots moves into slot 1 with nothing lost
-## (and never when it cannot be read); the specimen goes up only when the kaiju dies; and the
-## title's slot list makes, loads and deletes slots by real clicks through Main.
+## Save slots suite (director 2026-10-26, "Three slots (Recommended)"): the v4 save migrates with
+## its specimen number; a v5 save gains the empty campaign (v6, D-418 to D-422) and a hand-written
+## campaign save round-trips unchanged; the one save from before slots moves into slot 1 with
+## nothing lost (and never when it cannot be read); the specimen goes up only when the kaiju
+## dies; and the title's slot list makes, loads and deletes slots by real clicks through Main.
 ## Seeded by design: no rampage is played to an outcome; the lab walk uses pinned city streams.
 ##   godot --headless --path . --script tests/run_slots_tests.gd
 
@@ -14,6 +15,8 @@ func suite_name() -> String:
 func run_checks() -> void:
 	SaveFile.wipe()
 	await _t("_check_v4_migrates")
+	await _t("_check_v5_gains_campaign")
+	await _t("_check_campaign_round_trip")
 	await _t("_check_legacy_into_slot_1")
 	await _t("_check_legacy_never_lost")
 	await _t("_check_specimen")
@@ -28,7 +31,7 @@ func run_checks() -> void:
 	SaveFile.slot = 1
 
 
-## A v4 save comes up as v5 with specimen K-01 and every other key as it was.
+## A v4 save comes up as the current version with specimen K-01 and every other key as it was.
 func _check_v4_migrates() -> void:
 	var up := SaveFile.migrate(V4.duplicate(true))
 	var same := true
@@ -36,12 +39,76 @@ func _check_v4_migrates() -> void:
 		if key != "version" and up.get(key) != V4[key]:
 			same = false
 	check(
-		Num.i(up.get("version", 0)) == 5 and SaveFile.VERSION == 5,
-		"a v4 save migrates to v5: %s" % up.get("version")
+		Num.i(up.get("version", 0)) == SaveFile.VERSION,
+		"a v4 save migrates to v%d: %s" % [SaveFile.VERSION, up.get("version")]
 	)
 	check(Num.i(up.get("specimen", 0)) == 1, "a migrated save is specimen K-01: %s" % [up])
 	check(same, "migration keeps every v4 key unchanged: %s" % [up])
-	check(SaveFile.migrate(up) == up, "migrating a v5 save changes nothing")
+	check(SaveFile.migrate(up) == up, "migrating a current save changes nothing")
+
+
+## A v5 save (before the campaign) comes up as v6 with nothing conquered, no bonuses, Threat 0
+## and an empty noise log, every v5 key as it was; a new save starts the same way.
+func _check_v5_gains_campaign() -> void:
+	var up := SaveFile.migrate(V5.duplicate(true))
+	var kept := true
+	for key: String in V5:
+		if key != "version" and not _same(up.get(key), V5[key]):
+			kept = false
+	check(
+		Num.i(up.get("version", 0)) == 6 and SaveFile.VERSION == 6,
+		"a v5 save migrates to v6: %s" % up.get("version")
+	)
+	check(
+		(
+			_same(up.get("conquered"), [])
+			and _same(up.get("bonuses"), {})
+			and _same(up.get("threat"), 0.0)
+			and _same(up.get("noise_log"), [])
+		),
+		"a migrated v5 save has conquered nothing, Threat 0: %s" % [up]
+	)
+	check(kept, "migration keeps every v5 key unchanged: %s" % [up])
+	check(SaveFile.migrate(up) == up, "migrating a v6 save changes nothing")
+	var fresh := SaveFile.new_save("reptilian")
+	var empty := true
+	for key: String in SaveFile.campaign():
+		if not _same(fresh.get(key), SaveFile.campaign()[key]):
+			empty = false
+	check(empty, "a new save starts with the empty campaign: %s" % [fresh])
+
+
+## A campaign save written by hand (two conquests, a bonus each, Threat and two noise entries)
+## loads from its slot as written, and saving it back and loading again changes nothing.
+func _check_campaign_round_trip() -> void:
+	SaveFile.wipe()
+	var file := FileAccess.open(SaveFile.path(2), FileAccess.WRITE)
+	file.store_string(CAMPAIGN_FILE)
+	file.close()
+	var want: Dictionary = JSON.parse_string(CAMPAIGN_FILE)
+	var loaded := SaveFile.load_game(2)
+	check(_same(loaded, want), "the hand-written campaign save loads as written: %s" % [loaded])
+	var conquered: Array = loaded.get("conquered", [])
+	var bonuses: Dictionary = loaded.get("bonuses", {})
+	var noise: Array = loaded.get("noise_log", [])
+	check(
+		(
+			conquered == ["ostia_minor", "carthago"]
+			and str(bonuses.get("carthago", "")) == "bonus_carthago_3"
+			and Num.f(loaded.get("threat", -1)) == 37.5
+			and noise.size() == 2
+		),
+		"its conquests, bonuses, Threat and noise log read back: %s" % [loaded]
+	)
+	SaveFile.save_game(loaded, 2)
+	var again := SaveFile.load_game(2)
+	check(_same(again, want), "saved and loaded again it is unchanged: %s" % [again])
+	var newer := CAMPAIGN_FILE.replace('"version": 6', '"version": 7')
+	file = FileAccess.open(SaveFile.path(3), FileAccess.WRITE)
+	file.store_string(newer)
+	file.close()
+	check(SaveFile.load_game(3).is_empty(), "the same save marked v7 is refused, never half-read")
+	SaveFile.wipe()
 
 
 ## The pre-slots save.json moves into slot 1 (migrated), slots 2 and 3 stay empty, and the old
