@@ -8,7 +8,9 @@ changes. The lead owns the wording; a decision goes in the PR that acts on it (a
 Overworld plan row G4, his picks: "Pin + name" (a small yellow diamond on the continent, a leader line up and right
 to its name in caps, ACCENT yellow with a dark outline), "All seven now" (the offered-pair filter waits for T1, the
 colour states for G3) and "Turn + zoom in" (a click turns the continent to the centre and closes the camera in over
-0.7 s, eased; the spin holds while one is selected; a click on sea or Esc flies back out and the spin resumes).
+0.7 s, eased; the spin holds while one is selected; a click on sea or Esc flies back out and the spin resumes). Shown the stills, "Keep both": Aurelia's pin (the south polar cap)
+stays out of view at the default lean until the globe is dragged down, and Neptunia's one pin stays on its southern
+islands with the northern islet chain unmarked.
 
 ## 2026-11-01 · D-427 · Director · Load screen: 12 graded dusk stills, random each load
 His shot list for load-screen art: "get caps of the powers / destruction / the city from panoramic angles / all three
