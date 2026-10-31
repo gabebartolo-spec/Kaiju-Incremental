@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-412 · Director · The Lightning Breath is a purple column that chains over what it hits
+"Make the lightning breath look like a dragon fire lamp": a dense purple column that pools and chains along the ground
+and climbs the buildings it strikes. Sheet at dusk: "looks good". The sim's damage stays (a measured breath fells two
+18-19 floor towers whole and slices seven more).
+Asked "does it damage what the VFX touches?": the bolt is now cut where it meets a chunk the sim left standing, so
+it is drawn only through what the strike broke (frame-by-frame audit: 0 of 94,612 points in standing chunks). Same PR: the breath gets its own input bit (BREATH 4 -> 8); since
+#455 it shared the dash bit, so every breath also leapt and the croc floated ("why hes floating in the air").
+
 ## 2026-10-31 · D-411 · Director · The tail lash winds up 1.5 s, then lands; cooldown 3.5 s
 The keyed fix3 lash ("looks great … looks shippable") curls the tail round for ~1.4 s before it strikes. Asked whether
 the button keeps instant damage or plays the curl first: picked "Full windup (Recommended)". The press emits
@@ -387,14 +395,3 @@ player starts as, at that size, with its keyed moves), rampaging on its own. Eve
 the kaiju-juice colour (D-357). Earlier the cut insectoid's Brood ultimate (archive SPECIES_2026-10) laid several eggs;
 this replaces that idea with one egg for all species. Queued behind the debt list and render plan (D-310); the mark's
 size and the spew move are asked when it is built.
-
-## 2026-10-28 · D-357 · Director · The lightning is purple, from deep in the throat, with arcs up the spines first
-Shown the round 7 clip (#309, D-308): "currently it spawns above his head slightly in front, arcing from up to down /
-its light yellow/white / i want it to come from deep in his throat and be purple lightning / I want his spines to light
-up from tip of his [tail] to his head in sequence before he spews purple lightning from his maw"; "purple is our
-default 'kaiju colour', because of the kaiju juice that fuels their evolution". Told that plates lighting tail to head
-before a glowing breath is the Godzilla charge-up D-108 steered away from, he picked: "Arcs jump up the spines
-(Recommended)" (lightning crackles spine to spine, tail tip to head, never a steady glow); "Fit inside it
-(Recommended)" (the charge-up plays inside the D-166 strike delay, 0.8 / 1.1 / 1.4 s, the breath no slower); "Yes,
-both match (Recommended)" (the Thunder Beam turns purple with the same charge-up). Changes: D-108's white-hot colour
-and the open halo-colour question (R 17.6) are replaced by purple; the bolt starts inside the mouth, never above the head.

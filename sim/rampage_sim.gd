@@ -105,7 +105,7 @@ class Tank:
 const HELD := 1
 const ULTIMATE := 2
 ## The breath's own button (D-280: the lash took the signature; Q / pad X).
-const BREATH := 4
+const BREATH := 8
 ## A tank's footprint radius for area hits.
 const TANK_RADIUS := 0.6
 

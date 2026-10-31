@@ -22,6 +22,8 @@ const SPARK_LIFE_SPREAD := 0.6
 const MOLTEN := Color("ff7a2a")
 ## How long the prewarm's bolt lives (before its first stroke, so it kicks nothing).
 const PREWARM_BOLT := 0.05
+## The breath's lines are tested for standing chunks every this many units (StandingCut).
+const CUT_STEP := 0.25
 const WATER := Color(0.85, 0.95, 1.0)
 
 ## Every effect played, in order ("breath", "leap", "lash", "cracks", "ready", "deflect",
@@ -90,6 +92,7 @@ func _ready() -> void:
 		_city.fx.keep.hold("bolt_%d" % mat.get_instance_id(), mat)
 	_beam.rig.fx = _city.fx
 	_beam.rig.blocker = _first_hit
+	_beam.rig.wall_cut = _cut_at_standing
 	played.clear()
 
 
@@ -287,6 +290,12 @@ func _first_hit(from: Vector3, span: Vector3) -> float:
 			if b.frame.top_below(floori(lx), floori(lz), b.height) + 1 > p.y:
 				return t
 	return 1.0
+
+
+## `lines` cut short at the first chunk still standing (StandingCut): the breath draws only where
+## the sim broke the city (director 2026-10-31).
+func _cut_at_standing(lines: Array[PackedVector3Array]) -> Array[PackedVector3Array]:
+	return StandingCut.cut(lines, _near_line, CUT_STEP)
 
 
 ## The buildings whose footprint overlaps the box from `from` to `to` (ground plane).

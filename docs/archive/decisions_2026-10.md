@@ -2,6 +2,17 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-357 · Director · The lightning is purple, from deep in the throat, with arcs up the spines first
+Shown the round 7 clip (#309, D-308): "currently it spawns above his head slightly in front, arcing from up to down /
+its light yellow/white / i want it to come from deep in his throat and be purple lightning / I want his spines to light
+up from tip of his [tail] to his head in sequence before he spews purple lightning from his maw"; "purple is our
+default 'kaiju colour', because of the kaiju juice that fuels their evolution". Told that plates lighting tail to head
+before a glowing breath is the Godzilla charge-up D-108 steered away from, he picked: "Arcs jump up the spines
+(Recommended)" (lightning crackles spine to spine, tail tip to head, never a steady glow); "Fit inside it
+(Recommended)" (the charge-up plays inside the D-166 strike delay, 0.8 / 1.1 / 1.4 s, the breath no slower); "Yes,
+both match (Recommended)" (the Thunder Beam turns purple with the same charge-up). Changes: D-108's white-hot colour
+and the open halo-colour question (R 17.6) are replaced by purple; the bolt starts inside the mouth, never above the head.
+
 ## 2026-10-28 · D-356 · Director · The Godot window is never left idle
 "godot has been empty like 90% of the time recently, make sure its always being used so we can be efficient". Asked
 whether tonight's speed runs may start at once instead of at 01:00 (D-331): picked "Start now (Recommended)"; the hold

@@ -32,6 +32,10 @@ var cone: Dictionary = {}
 ## (from: Vector3, span: Vector3) -> float: how much of the span a branch gets before it meets
 ## something solid (AbilityFx._first_hit). Invalid: branches run their whole way.
 var blocker: Callable
+## (lines: Array[PackedVector3Array]) -> Array[PackedVector3Array]: the drawn lines, each cut
+## short before the first chunk still standing (StandingCut), so the bolt shows only where the
+## sim broke things (director 2026-10-31). Invalid: lines draw whole.
+var wall_cut: Callable
 ## (rng, count) -> Array[Vector3]: where this play's branches strike. Invalid: across the cone.
 var ends: Callable
 ## Where the sparks and dust come from (the city's Fx); null: none.
@@ -54,6 +58,7 @@ var _strike: MeshInstance3D
 var _rng: RandomNumberGenerator
 var _t := 0.0
 var _since := 0.0
+var _crackle := 0.0
 var _next := 0.0
 var _end := 0.0
 var _index := 0
@@ -75,7 +80,7 @@ func _init(kind: String, eye: Color, body_scale: float, cfg: Dictionary) -> void
 	_scale = body_scale
 	_arcs = BoltArcs.new(_row, cfg, body_scale)
 	_thrown = BoltImpact.new(_row, cfg, body_scale)
-	_forks = BoltBranches.new(self, cfg, _row)
+	_forks = BoltBranches.new(self, cfg, _row, body_scale)
 	_view = BoltView.new(Num.f(_row["core"]) * body_scale, eye, cfg)
 	add_child(_view)
 	var colours := BoltView.halo_colours(cfg, eye)
@@ -146,6 +151,7 @@ func _process(delta: float) -> void:
 		return
 	if _t >= _next:
 		_stroke()
+	_recrackle(delta)
 	_feel()
 	if _arcs.step(delta, _mouth, _hit, _rng):
 		_dirty = true
@@ -167,6 +173,19 @@ func _feel() -> void:
 	var now := lerpf(Num.f(reach[0]), Num.f(reach[1]), clampf(done, 0.0, 1.0))
 	if not is_equal_approx(now, _reveal):
 		_reveal = now
+		_dirty = true
+
+
+## Between strokes the forks re-roll every row "reroll" seconds (0: never), so a held breath
+## crackles as a living stream; no flash, light or sparks ride on it (the stroke cap stands).
+func _recrackle(delta: float) -> void:
+	var every := Num.f(_row.get("reroll", 0.0))
+	if every <= 0.0 or _index == 0:
+		return
+	_crackle -= delta
+	if _crackle <= 0.0:
+		_crackle = every
+		_roll_branches()
 		_dirty = true
 
 
@@ -274,6 +293,12 @@ func _draw() -> void:
 		lines.append(_kept(BoltShape.place(shape, BoltShape.at_t(host, Num.f(b["t"])), end)))
 	var widths := Vector2(Num.f(_row["branch_width"]), Num.f(_row["arc_width"]))
 	drawn_main = BoltShape.cut(main, _reveal)
+	if wall_cut.is_valid():
+		var all: Array[PackedVector3Array] = [drawn_main]
+		all.append_array(lines)
+		var cut: Array[PackedVector3Array] = wall_cut.call(all)
+		drawn_main = cut[0]
+		lines = cut.slice(1)
 	drawn_lines = lines
 	_view.rebuild(drawn_main, lines, _arcs.lines, widths)
 	var dir := (_hit - _mouth).normalized()
