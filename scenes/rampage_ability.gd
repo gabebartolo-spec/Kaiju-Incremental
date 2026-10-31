@@ -83,7 +83,8 @@ func place(delta: float, moving: float, at: Vector3) -> Vector3:
 	var drawn := step(delta, target, at)
 	_kaiju.position = drawn
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)  # sim angle to yaw: flipped
-	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
+	var run := sim.powers.run
+	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio, run.blend(), run.slams)
 	_kaiju.animate(delta, moving, -sim.body.turn_left)
 	return drawn
 

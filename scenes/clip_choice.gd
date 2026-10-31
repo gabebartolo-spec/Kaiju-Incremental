@@ -1,6 +1,7 @@
 class_name ClipChoice
 extends RefCounted
-## Which clip the ClipGait plays next: roar, keyed stomp, turn in place, walk or idle (its clock
+## Which clip the ClipGait plays next: roar, keyed stomp, slam stop, turn in
+## place, walk start, walk or idle (its clock
 ## stays there).
 
 
@@ -11,14 +12,26 @@ static func pick(g: ClipGait) -> void:
 	if g._roar_queued:
 		g._roar_queued = false
 		g._go("roar", 0.0)
-	elif g._stomp.holds(g.state) or g.state.begins_with("turn"):
+	elif g.state == "walk_start":
+		_walk_start(g, moving)
+	elif g._stomp.holds(g.state) or g.state.begins_with("turn") or g.state == "slam_stop":
 		if _played_out(g, moving):
 			g._go("walk" if moving else "idle", g._walk_start() if moving else 0.0)
 	elif moving:
-		if g.state != "walk":
+		if g.state == "idle" and g.takes.has_walk_start():  # from standing: the keyed start
+			g._go("walk_start", ClipTakes.WALK_START_FROM)
+		elif g.state != "walk":
 			g._go("walk", g._walk_start())
 	else:
 		_stand_or_turn(g)
+
+
+## The walk start: back to idle if he stops, into the walk loop once its share has played.
+static func _walk_start(g: ClipGait, moving: bool) -> void:
+	if not moving:
+		g._go("idle", 0.0)
+	elif g.takes.walk_started(g.clip_time):
+		g._go("walk", g._walk_start())
 
 
 ## A roar or keyed stomp plays to its last frame; a turn until he moves or it has settled past its

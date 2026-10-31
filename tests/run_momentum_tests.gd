@@ -270,6 +270,14 @@ func _check_build_and_turn() -> void:
 		steps * DT <= FULL_BY_S,
 		"full momentum from a standstill in %.2f s (bar %.1f s)" % [steps * DT, FULL_BY_S]
 	)
+	var still := sim.powers.run.blend()
+	check(
+		still == 0.0 or Num.f(sim.powers.run.titan["speed_bonus"]) > 0.0,
+		(
+			"full momentum with no speed bonus draws no run (blend %.2f): he walks at walk speed"
+			% still
+		)
+	)
 	var start := sim.powers.momentum
 	var low := start
 	var n := roundi(TURN_S / DT)

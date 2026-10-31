@@ -8,26 +8,31 @@ extends RefCounted
 const BEND_MAX := 0.1
 
 var clips: KaijuClips
+var clip := "walk"  # the stepping clip it measures (the walk, or the keyed run)
+var frames := 1  # its loop: the clip's frames, or the span it loops over (the run)
 var land := 0.0  # the walk clip's first footfall (frame), the sim's step phase 0
 var step_frames := 1.0  # walk clip frames in one step (half a cycle)
 var foot_mid := 0.0  # the walk clip's feet, mean fore-aft position (rig space)
 var swing_frames := 1.0  # walk clip frames a foot is in the air each cycle
 
 
-func _init(p_clips: KaijuClips) -> void:
+## p_loop: frames the clip loops over (0: all of them), for a take keyed longer than its cycle.
+func _init(p_clips: KaijuClips, p_clip := "walk", p_loop := 0) -> void:
 	clips = p_clips
+	clip = p_clip
+	frames = p_loop if p_loop > 0 else clips.frames_of(clip)
 	land = _first_landing()
 	foot_mid = _mean_foot_z()
-	step_frames = float(clips.frames_of("walk")) / clips.cycles_of("walk") * 0.5
+	step_frames = float(frames) / clips.cycles_of(clip) * 0.5
 	var up := 0
-	for f: int in clips.frames_of("walk"):
-		up += 0 if clips.pose_at("walk", float(f)).planted[0] else 1
-	swing_frames = maxf(1.0, float(up) / clips.cycles_of("walk"))
+	for f: int in frames:
+		up += 0 if clips.pose_at(clip, float(f)).planted[0] else 1
+	swing_frames = maxf(1.0, float(up) / clips.cycles_of(clip))
 
 
 ## The walk frame the sim's step clock is at: its footfalls (integer phases) land on the clip's.
 func frame_at(step_phase: float) -> float:
-	return fposmod(land + step_phase * step_frames, float(clips.frames_of("walk")))
+	return fposmod(land + step_phase * step_frames, float(frames))
 
 
 ## A foot spot of the clip (rig space) with its fore-aft travel shortened to step_ratio of a full
@@ -46,9 +51,9 @@ func curved(toe: Vector3, bend: float) -> Vector3:
 ## The walk clip's feet, mean fore-aft position over the loop (rig space).
 func _mean_foot_z() -> float:
 	var sum := 0.0
-	var n := clips.frames_of("walk")
+	var n := frames
 	for f: int in n:
-		var pose := clips.pose_at("walk", float(f))
+		var pose := clips.pose_at(clip, float(f))
 		sum += clips.to_rig(pose.feet[0]).z + clips.to_rig(pose.feet[1]).z
 	return sum / (2.0 * n)
 
@@ -56,10 +61,10 @@ func _mean_foot_z() -> float:
 ## The walk clip's first footfall: the first frame a foot comes down (a foot planted that was not
 ## the frame before), wrapping round the loop.
 func _first_landing() -> float:
-	var n := clips.frames_of("walk")
+	var n := frames
 	for f: int in n:
-		var before := clips.pose_at("walk", float((f + n - 1) % n))
-		var now := clips.pose_at("walk", float(f))
+		var before := clips.pose_at(clip, float((f + n - 1) % n))
+		var now := clips.pose_at(clip, float(f))
 		for i: int in 2:
 			if now.planted[i] and not before.planted[i]:
 				return float(f)
