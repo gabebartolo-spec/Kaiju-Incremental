@@ -23,8 +23,30 @@ func grid(n: int) -> CellGrid:
 
 ## Building n (b) was hit: its fine grid, made now if this is the first hit. party: as
 ## BuildingCells' (a landmark takes none; the floors a neighbour covers per side).
+## Cells made ahead of their first use (prepare), by building; dropped (drop_ready) once they
+## could go stale. Not in `grids`, so nothing that asks what is promoted sees them.
+var ready: Dictionary = {}
+
+
+## Makes building n's cells now (the work on_hit would do) and keeps them for its first on_hit.
+func prepare(n: int, b: RampageSim.Building, party: Dictionary = {}) -> void:
+	if grids.has(n) or ready.has(n):
+		return
+	ready[n] = on_hit(n, b, party)
+	grids.erase(n)
+
+
+## Forgets every prepared grid not yet used (the buildings may change from here on).
+func drop_ready() -> void:
+	ready.clear()
+
+
 func on_hit(n: int, b: RampageSim.Building, party: Dictionary = {}) -> CellGrid:
 	if grids.has(n):
+		return grids[n]
+	if ready.has(n):  # made at load (prepare): the same cells, nothing has touched it since
+		grids[n] = ready[n]
+		ready.erase(n)
 		return grids[n]
 	var cells: CellGrid
 	if b.landmark != "" or b.model != "":  # a landmark or a pool building (D-253)

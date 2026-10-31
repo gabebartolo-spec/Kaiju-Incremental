@@ -134,6 +134,29 @@ func warm(emerging: bool = false) -> void:
 		_warming = -1
 
 
+## Makes the cells of every carvable building within warm_emerge_margin of the kaiju's strike
+## reach anywhere along a to b (the emergence's rise and bank), at load, so Emergence.step's
+## warm() finds stage 0 done (perf, director 2026-10-31). The warm schedule, and so the run, is
+## unchanged: nothing counts these as promoted, and nothing touches a building before the
+## kaiju emerges (Emergence drops what is left then).
+func prepare_along(a: Vector2, b: Vector2) -> void:
+	if not on:
+		return
+	if _party.is_empty():
+		_party = PartyWalls.of(sim.buildings)
+	var reach := maxf(2.0 * sim.stomp_radius(), sim.ability_reach()) + warm_emerge_margin
+	var steps := maxi(1, ceili(a.distance_to(b) / maxf(1.0, sim.grid.pad)))
+	for i: int in steps + 1:
+		var p := a.lerp(b, float(i) / steps)
+		for n: int in sim.grid.around(p, reach + 2.0 * sim.grid.pad):
+			if promoted(n) or not takes(n):
+				continue
+			var bd := sim.buildings[n]
+			var d := Vector2(bd.x, bd.z).distance_to(p)
+			if d - Vector2(bd.w, bd.d).length() * 0.5 <= reach:
+				promoter.prepare(n, bd, _party[n])
+
+
 ## A force-shaped blow (RampageSim.hit_area's force and damage) on floors floors.x..floors.y-1
 ## of building n (a coating, sim.hit_coat, covers the chunks it reaches).
 func hit(n: int, force: Callable, damage: float, floors: Vector2i) -> void:
