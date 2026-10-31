@@ -21,7 +21,9 @@ var _place := 0.0  # > 0: once he is up, put him this far from the boat (arena e
 func _initialize() -> void:
 	if not NativeGuard.ok(self):
 		return
-	var a := Kit.args({"seconds": _seconds, "time": _time, "where": _where, "place": _place, "side": _side})
+	var a := Kit.args(
+		{"seconds": _seconds, "time": _time, "where": _where, "place": _place, "side": _side}
+	)
 	_side = Num.f(a["side"])
 	_place = Num.f(a["place"])
 	_seconds = Num.f(a["seconds"])
@@ -82,7 +84,12 @@ func _report(sim: RampageSim, second: int) -> void:
 		var p: Vector2 = boat["pos"]
 		if p.distance_to(sim.kaiju_pos) < 30.0:
 			near += 1
-	print("boats t=%ds kaiju %s, %d within 30, capsized %d" % [second, sim.kaiju_pos, near, _view.capsized])
+	print(
+		(
+			"boats t=%ds kaiju %s, %d within 30, capsized %d"
+			% [second, sim.kaiju_pos, near, _view.capsized]
+		)
+	)
 
 
 ## Parks a camera on the water _side units past the boat, low, looking back at him, so the boat
