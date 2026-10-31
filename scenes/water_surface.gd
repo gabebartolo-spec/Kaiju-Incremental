@@ -1,14 +1,14 @@
 class_name WaterSurface
 extends RefCounted
-## The city's water surface (D-244, D-245; D-325 step 1, "the surface"): every river channel and
-## the bay drawn with water.gdshader, one look for both (depth colour, a foam line where anything
-## meets it, two scales of moving normal detail, Fresnel, the sky's reflection kept); the river's
-## waves ride its current along the channel, the bay has a gentle swell. Its waves run with the
-## run's wind (Fire.WIND), as the rain and the smoke lean. Numbers: tuning "water"; colours: the
-## look's "water" (one colour for the river, the bay and the open sea; director 2026-10-31) and
-## "water_foam". The bay's swell rolls landward (tuning water.lap dir), so its waves run to the shore.
-## Presentation only: nothing reads it back. Tuning water.on false draws the glossy sheet it
-## replaced (captures compare the two).
+## The city's water surface (D-244, D-245; D-325 step 1, "the surface"): every river channel and the
+## bay drawn with water.gdshader, one look for both (depth colour, a foam line where anything meets
+## it, two scales of moving normal detail, Fresnel, the sky's reflection kept); the river's waves
+## ride its current along the channel, the bay has a gentle swell. Its waves run with the run's wind
+## (Fire.WIND), as the rain and the smoke lean. Numbers: tuning "water"; colours: the look's "water"
+## (one colour for the river, the bay and the open sea; director 2026-10-31) and "water_foam". The
+## bay's swell rolls landward (tuning water.lap dir), so its waves run to the shore. Presentation
+## only: nothing reads it back. Tuning water.on false draws the glossy sheet it replaced (captures
+## compare the two).
 
 const SHADER := preload("res://scenes/water.gdshader")
 ## Every sheet is in this group (a capture masks the water by it).

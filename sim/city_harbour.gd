@@ -310,11 +310,11 @@ static func drop_floor(cfg: Dictionary) -> float:
 	return sea(cfg) - Num.f(cfg["harbour"]["drop_depth"])
 
 
-## The ground's height at p: 0 (the street) on land; in the water the sea floor, sloping gently
-## from "sand_top" (the sand's own height, just under the street) at the shore line, faster over
-## the first "drop" metres to drop_floor, then down to the wading floor by "shelf" metres, measured straight out (director 2026-10-31:
-## "slowly deeper but never too deep"); only the rise's hollow goes down to the seabed. The
-## port's water is deep to its quay.
+## The ground's height at p: 0 (the street) on land; in the water the sea floor, sloping gently from
+## "sand_top" (the sand's own height, just under the street) at the shore line, faster over the
+## first "drop" metres to drop_floor, then down to the wading floor by "shelf" metres, measured
+## straight out (director 2026-10-31: "slowly deeper but never too deep"); only the rise's hollow
+## goes down to the seabed. The port's water is deep to its quay.
 static func floor_at(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
 	if not holds(plan, p):
 		return 0.0

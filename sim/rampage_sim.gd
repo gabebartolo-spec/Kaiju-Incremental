@@ -282,13 +282,12 @@ func result() -> Dictionary:
 	return out
 
 
-## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/BREATH and
-## Dash.BUTTON).
+## Advances the rampage by dt (move, signature pressed, buttons HELD/ULTIMATE/BREATH/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
+	water.step(self, dt, _events)  # the liquid moves under every frame, the rise and death too
 	if death.holds(dt) or emerge.step(self, dt):
-		water.step(self, dt, _events)
 		return _events
 	time_left -= dt
 	elapsed += dt
@@ -314,7 +313,6 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	_step_sky(dt)
 	rail.step(dt)
 	Endless.step(self, dt)
-	water.step(self, dt, _events)
 	news.step(_events)
 	var why := Endless.over_reason(self)
 	if why != "":

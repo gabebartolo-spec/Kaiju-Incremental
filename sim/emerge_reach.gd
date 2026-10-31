@@ -56,11 +56,11 @@ static func max_growth(upgrades: Array[Dictionary], species_id: String, tier: in
 	return levels
 
 
-## Fits the city's "harbour" in `tuning` (a stage's, CityGrowth.tuning_for) to the biggest body:
-## at least as wide as it plus "fit_margin" each side ("fit_width"), the sea floor at the rise
-## its crouched back ("crouch_back" per body scale) plus "seabed_clear" under the surface
-## ("seabed_depth") in a hollow that holds the whole body ("hollow"), and no painted stand-in within the game camera's ground reach of the rise
-## ("view_clear").
+## Fits the city's "harbour" in `tuning` (a stage's, CityGrowth.tuning_for) to the biggest body: at
+## least as wide as it plus "fit_margin" each side ("fit_width"), the sea floor at the rise its
+## crouched back ("crouch_back" per body scale) plus "seabed_clear" under the surface
+## ("seabed_depth") in a hollow that holds the whole body ("hollow"), and no painted stand-in within
+## the game camera's ground reach of the rise ("view_clear").
 static func fit(tuning: Dictionary, upgrades: Array[Dictionary], tier: int) -> void:
 	var city: Dictionary = tuning.get("city", {})
 	if not city.has("harbour"):

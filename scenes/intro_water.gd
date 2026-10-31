@@ -2,10 +2,11 @@ class_name IntroWater
 extends Node3D
 ## The water before the kaiju breaks it (director 2026-10-20 #11: "zoomed in on the water which
 ## begins to ripple and fount before our kaiju emerges"): the rings are the liquid's own (WaterSim
-## ripple_seconds) while it holds under; here a column of spray (cube droplets, like the city's voxels) rising and
-## building until the head breaks the surface, then a burst of spray with the break. Paced by
-## the sim's own rise (Emergence progress), never the clock; presentation only, tuning
-## "intro" "water". RiverView keeps its splash rings at the start, the break and the step out.
+## ripple_seconds) while it holds under; here a column of spray (cube droplets, like the city's
+## voxels) rising and building until the head breaks the surface, then a burst of spray with the
+## break. Paced by the sim's own rise (Emergence progress), never the clock; presentation only,
+## tuning "intro" "water". RiverView keeps its splash rings at the start, the break and the step
+## out.
 
 var _sim: RampageSim
 var _fx: Fx

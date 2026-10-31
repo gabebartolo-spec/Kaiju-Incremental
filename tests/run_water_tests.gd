@@ -135,13 +135,15 @@ func _check_liquid_wave() -> void:
 	var before := _volume(bay)
 	var off := p + Vector2(9.0, 0.0)
 	check(w.disturb(p, 40.0, 1.5), "a push into the bay's shelf water is taken")
-	check(w.surface_at(p) < bay.rest - 0.1, "it leaves a crater (%.2f under the still water)" % (bay.rest - w.surface_at(p)))
+	var dip := bay.rest - w.surface_at(p)
+	check(dip > 0.1, "it leaves a crater (%.2f under the still water)" % dip)
 	var peak := 0.0
 	for n: int in 90:
 		w._flow(bay, DT)
 		peak = maxf(peak, w.surface_at(off) - bay.rest)
 	check(peak > 0.02, "a wave reaches water 9 m off within 3 s (it rose %.3f m)" % peak)
-	check(absf(_volume(bay) - before) < 0.5, "no water made or lost (%.3f m3 out of %.0f)" % [_volume(bay) - before, before])
+	var lost := _volume(bay) - before
+	check(absf(lost) < 0.5, "no water made or lost (%.3f m3 out of %.0f)" % [lost, before])
 
 
 ## Friction takes the waves down and the window sleeps: still water costs nothing.
@@ -153,7 +155,8 @@ func _check_liquid_settles() -> void:
 	while bay.active.has_area() and n < 1800:
 		w._flow(bay, DT)
 		n += 1
-	check(not bay.active.has_area(), "the bay is still again within 60 s of a stomp (%.1f s)" % (n * DT))
+	var still := "the bay is still again within 60 s of a stomp (%.1f s)" % (n * DT)
+	check(not bay.active.has_area(), still)
 
 
 func _liquid() -> WaterSim:

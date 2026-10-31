@@ -22,6 +22,7 @@ const G := 9.8
 const SPLASHES_KEPT := 16
 const WALL := 1000.0  # a floor this far over the surface: never wet
 
+
 ## One body of water (the bay, the river): a grid of columns.
 class Basin:
 	var origin: Vector2  # world (x, z) of cell (0, 0)'s corner
@@ -36,11 +37,11 @@ class Basin:
 	var active := Rect2i()  # the stepped columns (empty: all at rest)
 	var focus := Vector2i()  # the latest push's column: a window too big is kept round it
 
-	func _init(p_origin: Vector2, p_cell: float, p_nx: int, p_nz: int, p_rest: float) -> void:
+	func _init(p_origin: Vector2, p_cell: float, p_n: Vector2i, p_rest: float) -> void:
 		origin = p_origin
 		cell = p_cell
-		nx = p_nx
-		nz = p_nz
+		nx = p_n.x
+		nz = p_n.y
 		rest = p_rest
 		floor_y.resize(nx * nz)
 		depth.resize(nx * nz)
@@ -66,12 +67,16 @@ class Basin:
 			active = r if not active.has_area() else active.merge(r)
 			focus = r.get_center()
 
+
 var basins: Array[Basin] = []
 ## Splashes this step, for the view's spray: {"pos": Vector3, "size": metres}.
 var splashes: Array[Dictionary] = []
 var _cfg: Dictionary
 var _surfaced := false
 var _ripple := 0.0  # seconds to the next ripple while the body holds under
+var _r := Rect2i()  # the sub-step being taken: its window, length (s) and flow kept
+var _h := 0.0
+var _keep := 1.0
 
 
 func _init(city: Dictionary, tuning: Dictionary) -> void:
@@ -97,8 +102,7 @@ static func _bay(plan: Dictionary, city: Dictionary, cell: float) -> Basin:
 	var basin := Basin.new(
 		Vector2(rect.position.x, z0),
 		cell,
-		ceili(rect.size.x / cell),
-		ceili((far - z0) / cell) + 1,
+		Vector2i(ceili(rect.size.x / cell), ceili((far - z0) / cell) + 1),
 		CityHarbour.sea(city)
 	)
 	for k: int in basin.nx * basin.nz:
@@ -118,7 +122,7 @@ static func _river(channels: Array[Rect2], city: Dictionary, cell: float) -> Bas
 	var rest := -Num.f(city["river_depth"])
 	var bed := rest - Num.f(city["wade_depth"])
 	var basin := Basin.new(
-		whole.position, cell, ceili(whole.size.x / cell), ceili(whole.size.y / cell), rest
+		whole.position, cell, Vector2i(ceili(whole.size.x / cell), ceili(whole.size.y / cell)), rest
 	)
 	for k: int in basin.nx * basin.nz:
 		var p := basin.centre(Vector2i(k % basin.nx, k / basin.nx))
@@ -154,23 +158,12 @@ func disturb(p: Vector2, volume: float, radius: float) -> bool:
 	var basin := basin_at(p)
 	if basin == null:
 		return false
-	var inner: Array[int] = []
-	var rim: Array[int] = []
 	var reach := radius * Num.f(_cfg["rim"])
 	var c := basin.at(p)
 	var n := ceili(reach / basin.cell) + 1
-	for j: int in range(c.y - n, c.y + n + 1):
-		for i: int in range(c.x - n, c.x + n + 1):
-			if i < 0 or j < 0 or i >= basin.nx or j >= basin.nz:
-				continue
-			var k := j * basin.nx + i
-			if basin.depth[k] <= 0.0:
-				continue
-			var d := basin.centre(Vector2i(i, j)).distance_to(p)
-			if d <= radius:
-				inner.append(k)
-			elif d <= reach:
-				rim.append(k)
+	var rings := _rings(basin, p, Vector2(radius, reach))
+	var inner: Array[int] = rings[0]
+	var rim: Array[int] = rings[1]
 	if inner.is_empty():
 		return false
 	var area := basin.cell * basin.cell
@@ -188,10 +181,30 @@ func disturb(p: Vector2, volume: float, radius: float) -> bool:
 	return true
 
 
+## The wet columns round p: [those within reach.x, those beyond it out to reach.y].
+static func _rings(basin: Basin, p: Vector2, reach: Vector2) -> Array:
+	var inner: Array[int] = []
+	var rim: Array[int] = []
+	var c := basin.at(p)
+	var n := ceili(reach.y / basin.cell) + 1
+	for j: int in range(maxi(0, c.y - n), mini(basin.nz, c.y + n + 1)):
+		for i: int in range(maxi(0, c.x - n), mini(basin.nx, c.x + n + 1)):
+			var k := j * basin.nx + i
+			if basin.depth[k] <= 0.0:
+				continue
+			var d := basin.centre(Vector2i(i, j)).distance_to(p)
+			if d <= reach.x:
+				inner.append(k)
+			elif d <= reach.y:
+				rim.append(k)
+	return [inner, rim]
+
+
 ## One step: the kaiju's body stands in the water; its stomps and the rise throw it; the water
 ## flows. events: the sim's events this step (read for "stomp").
 func step(sim: RampageSim, dt: float, events: Array[Dictionary]) -> void:
-	if splashes.size() > SPLASHES_KEPT:  # the view takes them each frame; a headless run keeps the last
+	# the view takes them each frame; a headless run keeps the last
+	if splashes.size() > SPLASHES_KEPT:
 		splashes = splashes.slice(-SPLASHES_KEPT)
 	_stand(sim)
 	var bs := sim.body_scale()
@@ -233,7 +246,10 @@ func _stand(sim: RampageSim) -> void:
 		for j: int in range(span.position.y, span.end.y):
 			for i: int in range(span.position.x, span.end.x):
 				var k := j * basin.nx + i
-				var share := 1.0 - smoothstep(radius * 0.6, radius, basin.centre(Vector2i(i, j)).distance_to(p))
+				var share := (
+					1.0
+					- smoothstep(radius * 0.6, radius, basin.centre(Vector2i(i, j)).distance_to(p))
+				)
 				var foot := maxf(basin.floor_y[k], sim.stand_y)
 				var want := share * maxf(0.0, basin.rest - foot) if basin.depth[k] > 0.0 else 0.0
 				if absf(want - basin.body[k]) > 0.0001:
@@ -279,47 +295,58 @@ func _flow(basin: Basin, dt: float) -> void:
 ## One sub-step over r (its edge a wall: nothing leaks out of the window); returns the biggest
 ## surface lift left in it (m).
 func _pipes(basin: Basin, r: Rect2i, h: float, keep: float) -> float:
+	_r = r
+	_h = h
+	_keep = keep
+	var top := basin.floor_y.duplicate()
+	for j: int in range(r.position.y, r.end.y):
+		for k: int in range(j * basin.nx + r.position.x, j * basin.nx + r.end.x):
+			top[k] += basin.depth[k] + basin.body[k]
+	for j: int in range(r.position.y, r.end.y):
+		for i: int in range(r.position.x, r.end.x):
+			_outflow(basin, top, i, j)
+	return _drain(basin)
+
+
+## Column (i, j)'s four outflows this sub-step, pushed by the surface drop to each neighbour.
+func _outflow(basin: Basin, top: PackedFloat32Array, i: int, j: int) -> void:
+	var nx := basin.nx
+	var f := basin.flow
+	var k := j * nx + i
+	var dk := basin.depth[k]
+	var e := k * 4
+	if dk <= 0.0:
+		for o: int in 4:
+			f[e + o] = 0.0
+		return
+	var t := top[k]
+	var a := _h * G / basin.cell * dk
+	var x1 := _r.end.x - 1
+	var y1 := _r.end.y - 1
+	var qr := maxf(0.0, f[e] * _keep + a * (t - top[k + 1])) if i < x1 else 0.0
+	var ql := maxf(0.0, f[e + 1] * _keep + a * (t - top[k - 1])) if i > _r.position.x else 0.0
+	var qd := maxf(0.0, f[e + 2] * _keep + a * (t - top[k + nx])) if j < y1 else 0.0
+	var qu := maxf(0.0, f[e + 3] * _keep + a * (t - top[k - nx])) if j > _r.position.y else 0.0
+	var out := (qr + ql + qd + qu) * _h
+	var scale := 1.0
+	if out > dk * basin.cell:  # never more than it holds
+		scale = dk * basin.cell / out
+	f[e] = qr * scale
+	f[e + 1] = ql * scale
+	f[e + 2] = qd * scale
+	f[e + 3] = qu * scale
+
+
+## Moves the sub-step's flows into the columns; returns the biggest surface lift left (m).
+func _drain(basin: Basin) -> float:
 	var nx := basin.nx
 	var f := basin.flow
 	var d := basin.depth
-	var top := basin.floor_y.duplicate()
-	var x0 := r.position.x
-	var x1 := r.end.x - 1
-	var y0 := r.position.y
-	var y1 := r.end.y - 1
-	for j: int in range(y0, y1 + 1):
-		for k: int in range(j * nx + x0, j * nx + x1 + 1):
-			top[k] += d[k] + basin.body[k]
-	var push := h * G / basin.cell
-	for j: int in range(y0, y1 + 1):
-		for i: int in range(x0, x1 + 1):
-			var k := j * nx + i
-			var dk := d[k]
-			var e := k * 4
-			if dk <= 0.0:
-				f[e] = 0.0
-				f[e + 1] = 0.0
-				f[e + 2] = 0.0
-				f[e + 3] = 0.0
-				continue
-			var t := top[k]
-			var a := push * dk
-			var qr := maxf(0.0, f[e] * keep + a * (t - top[k + 1])) if i < x1 else 0.0
-			var ql := maxf(0.0, f[e + 1] * keep + a * (t - top[k - 1])) if i > x0 else 0.0
-			var qd := maxf(0.0, f[e + 2] * keep + a * (t - top[k + nx])) if j < y1 else 0.0
-			var qu := maxf(0.0, f[e + 3] * keep + a * (t - top[k - nx])) if j > y0 else 0.0
-			var out := (qr + ql + qd + qu) * h
-			if out > dk * basin.cell:  # never more than it holds
-				var scale := dk * basin.cell / out
-				qr *= scale
-				ql *= scale
-				qd *= scale
-				qu *= scale
-			f[e] = qr
-			f[e + 1] = ql
-			f[e + 2] = qd
-			f[e + 3] = qu
-	var gain := h / basin.cell
+	var x0 := _r.position.x
+	var x1 := _r.end.x - 1
+	var y0 := _r.position.y
+	var y1 := _r.end.y - 1
+	var gain := _h / basin.cell
 	var stir := 0.0
 	for j: int in range(y0, y1 + 1):
 		for i: int in range(x0, x1 + 1):

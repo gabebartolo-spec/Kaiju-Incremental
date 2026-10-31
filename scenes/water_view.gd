@@ -16,6 +16,7 @@ var _film := 0.0
 var _images: Array[Image] = []
 var _textures: Array[ImageTexture] = []
 var _bytes: Array[PackedFloat32Array] = []
+var _was_active: Array[bool] = []
 
 
 func _init(sim: RampageSim) -> void:
@@ -113,9 +114,6 @@ func _around(basin: WaterSim.Basin, k: int, ground: float) -> float:
 ## A column's ground over the still water (land past the basin: the street).
 func _ground(basin: WaterSim.Basin, k: int) -> float:
 	return basin.floor_y[k] - basin.rest if basin.floor_y[k] < WaterSim.WALL else 0.0
-
-
-var _was_active: Array[bool] = []
 
 
 ## True the frame after a basin went to sleep (its last, settled heights still to draw).
