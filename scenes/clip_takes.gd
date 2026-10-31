@@ -12,6 +12,9 @@ extends RefCounted
 
 ## The walk start's share of the take played before the walk loop (D-355: about 1.3 s).
 const WALK_START_SECONDS := 1.3
+## The take's first lift: frames before it are a standing hold, during which the sim's body already
+## glides (director 2026-10-31: "the first 2 seconds his feet just slide around").
+const WALK_START_FROM := 14.0
 ## The run take loops over its first RUN_LOOP frames (one full cycle: frame 95 matches frame 0
 ## within 10.5 deg on every bone; the take runs on to 129).
 const RUN_LOOP := 95

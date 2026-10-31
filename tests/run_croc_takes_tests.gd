@@ -101,7 +101,10 @@ func _check_walk_start() -> void:
 		"standing to walking: %s (the adolescent: %s)" % [on.states, off.states]
 	)
 	check(
-		absf(start - ClipTakes.WALK_START_SECONDS) < 0.1 and not off.states.has("walk_start"),
+		(
+			absf(start - ClipTakes.WALK_START_SECONDS + ClipTakes.WALK_START_FROM / 24.0) < 0.1
+			and not off.states.has("walk_start")
+		),
 		"the walk start plays %.2f s before the walk loop" % start
 	)
 

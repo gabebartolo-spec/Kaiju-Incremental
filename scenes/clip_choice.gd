@@ -19,7 +19,7 @@ static func pick(g: ClipGait) -> void:
 			g._go("walk" if moving else "idle", g._walk_start() if moving else 0.0)
 	elif moving:
 		if g.state == "idle" and g.takes.has_walk_start():  # from standing: the keyed start
-			g._go("walk_start", 0.0)
+			g._go("walk_start", ClipTakes.WALK_START_FROM)
 		elif g.state != "walk":
 			g._go("walk", g._walk_start())
 	else:
