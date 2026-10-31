@@ -4,6 +4,18 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-411 · Director · The tail lash winds up 1.5 s, then lands; cooldown 3.5 s
+The keyed fix3 lash ("looks great … looks shippable") curls the tail round for ~1.4 s before it strikes. Asked whether
+the button keeps instant damage or plays the curl first: picked "Full windup (Recommended)". The press emits
+tail_windup, the hit lands lash_windup (1.5 s) later with the keyed strike; lash_cooldown 1.2 -> 3.5 s. Adult and baby
+play the Cascadeur take (lash_r, mirrored lash_l); the adolescent keeps the code whip until its y7 skeleton ships.
+Proof waived by the director ("i dont care for the proof just merge it").
+
+## 2026-10-31 · D-410 · Director · Reference motion may be copied exactly onto our rigs
+"you can copy the examples EXACTLY if thats best practice, dont be obtuse, its still an invisible skeleton in an
+original model". Godzilla, T-rex and other reference motion is retargeted key for key onto our original kaiju; no
+licence check and no credit needed for the motion. Replaces D-302's licence line for motion references.
+
 ## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
 Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
 stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).
@@ -386,15 +398,3 @@ before a glowing breath is the Godzilla charge-up D-108 steered away from, he pi
 (Recommended)" (the charge-up plays inside the D-166 strike delay, 0.8 / 1.1 / 1.4 s, the breath no slower); "Yes,
 both match (Recommended)" (the Thunder Beam turns purple with the same charge-up). Changes: D-108's white-hot colour
 and the open halo-colour question (R 17.6) are replaced by purple; the bolt starts inside the mouth, never above the head.
-
-## 2026-10-28 · D-356 · Director · The Godot window is never left idle
-"godot has been empty like 90% of the time recently, make sure its always being used so we can be efficient". Asked
-whether tonight's speed runs may start at once instead of at 01:00 (D-331): picked "Start now (Recommended)"; the hold
-was lifted 00:30 and the night queue runs back to back, builders' captures queue behind it. Standing rule: a capture,
-clip or speed run always waits behind the one-window slot, so the window never sits empty while work is queued.
-
-## 2026-10-27 · D-355 · Director · The grown croc eases into its walk over about 1.3 s
-For the keyed walk-start (D-343). Asked whether the croc may take about 1.3 s to reach full walking speed from standing
-(today about 0.13 s): picked "Ease in, ~1.3 s (Recommended)". The sim's set-off changes (walk_off_s and the step clock),
-and the keyed walk-start plays over it. A ~6 s clip goes to him before it ships. Not picked: the body trailing the sim
-(a ~30% surge) or a quick 0.4 s first step (the defect he named).

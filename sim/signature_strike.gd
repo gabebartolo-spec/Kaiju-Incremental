@@ -10,7 +10,7 @@ static func fire(sim: RampageSim) -> void:
 	var damage := sim.stat("ability_damage")
 	match sim.ability_type:
 		"lash":
-			sim.powers.lash()
+			sim.powers.wind_lash()
 		"cone":
 			sim.strikes.breath()  # the cone burns at the strike, where he faces then (D-166)
 		"leap":

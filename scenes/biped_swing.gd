@@ -60,6 +60,8 @@ var yaw_rate := 0.0
 var trail: ClawTrail
 ## A gait that plays the keyed rake sets this: the sim's claw cues go to it (ClipRake).
 var clip_rake: ClipRake
+## The keyed tail lash (ClipLash) when the clips carry it; it replaces the code whip.
+var clip_lash: ClipLash
 var _straight: Array[float] = []
 var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone
 var _whip := 0.0  # 1 -> 0 over a tail whip
@@ -101,6 +103,11 @@ func whip(side: float) -> void:
 func strike(limb: String, side: float) -> void:
 	if clip_rake != null and limb in ["claw_windup", "claw"]:
 		clip_rake.cue(limb, side)
+	elif limb.begins_with("tail"):
+		if clip_lash != null:
+			clip_lash.cue(limb, side)
+		elif limb == "tail":
+			whip(side)  # the code whip waits for the strike
 	elif limb == "claw_windup":
 		_rake_wait = Num.f(_claw["wait_s"])
 		_rake_t = 0.0 if _rake_wait <= 0.0 else _rake_t
@@ -109,8 +116,6 @@ func strike(limb: String, side: float) -> void:
 		_rake_wait = 0.0
 		_rake_t = _rake_cross()
 		_rake_side = side
-	else:
-		whip(side)
 
 
 ## The "claw_fx" tuning plus wait_s and lift_s: the code rake starts wait_s after the sim's windup

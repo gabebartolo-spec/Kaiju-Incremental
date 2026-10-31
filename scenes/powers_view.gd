@@ -135,6 +135,8 @@ func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bo
 			_city.fx.shockwave_to(kaiju_at, Num.f(event["reach"]))  # dust out to the tail's reach
 			var behind := kaiju_at - _w(sim.facing) * Num.f(event["reach"]) * 0.7
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
+		"tail_windup":
+			_hook("tail_sweep", [Num.f(event["side"]), "tail_windup"])
 		"swipe_windup":
 			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
 		"swipe":
