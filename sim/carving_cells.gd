@@ -68,10 +68,18 @@ static func beam_at(
 		"beam_at",
 		spans,
 		PackedInt32Array([f.w, f.d, f.offset.x, f.offset.z, f.res]),
-		PackedFloat64Array([
-			b.x - b.w * 0.5, b.z - b.d * 0.5, beam.origin.x, beam.origin.y,
-			beam.dir.x, beam.dir.y, beam.length, beam.half
-		])
+		PackedFloat64Array(
+			[
+				b.x - b.w * 0.5,
+				b.z - b.d * 0.5,
+				beam.origin.x,
+				beam.origin.y,
+				beam.dir.x,
+				beam.dir.y,
+				beam.length,
+				beam.half
+			]
+		)
 	)
 
 

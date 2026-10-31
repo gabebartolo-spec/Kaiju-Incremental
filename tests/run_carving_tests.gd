@@ -372,7 +372,9 @@ func _check_beam_parity() -> void:
 	for run: int in 2:
 		VoxelSupport.use_native = run == 0
 		var sim := _sim([TOWER.duplicate()], true)
-		var beam := RampageSim.Beam.new(Vector2(-9.0, -1.3), Vector2(0.96, 0.28).normalized(), 12.0, 0.9)
+		var beam := RampageSim.Beam.new(
+			Vector2(-9.0, -1.3), Vector2(0.96, 0.28).normalized(), 12.0, 0.9
+		)
 		sim.hit_beam = beam
 		for k: int in 6:
 			sim.carving.hit(0, beam.reaches, 400.0, Vector2i(0, 8))
@@ -382,6 +384,8 @@ func _check_beam_parity() -> void:
 	VoxelSupport.use_native = true
 	check(
 		digests[0] == digests[1] and cut[0] == cut[1] and cut[0] > 0,
-		"a beam carves alike natively (%s) and by the reference: %d empty cells, digest %d"
-		% [VoxelSupport.native() != null, cut[0], digests[0]]
+		(
+			"a beam carves alike natively (%s) and by the reference: %d empty cells, digest %d"
+			% [VoxelSupport.native() != null, cut[0], digests[0]]
+		)
 	)
