@@ -84,17 +84,26 @@ func _start_fall(index: int, b: RampageSim.Building, part: Dictionary, g: float)
 	)
 	if f.kind == "drop" and b.landmark == "" and gutted:
 		f.kind = "topple"  # its whole base went at once: it goes over, it never pops
+		# Nothing under its hinge: it falls the gap below as it goes over, never turns in mid-air.
+		f.drop = Num.f(part["drop"]) if part.has("drop") else _drop_distance(b, f, low)
 	if f.kind == "topple":
-		if not f.cells.is_empty() and not _toppled_ids.has(index):
-			_toppled_ids[index] = true
-			toppled += 1
-		_aim_topple(f, b, part, low)
-		f.duration = sqrt(2.0 * f.height / g) * 1.8
+		_start_topple(f, b, part, low)
+		f.duration = maxf(sqrt(2.0 * f.height / g) * 1.8, sqrt(2.0 * f.drop / g))
 	else:
 		f.drop = Num.f(part["drop"]) if part.has("drop") else _drop_distance(b, f, low)
 		f.pivot = b.local_to_world(Vector3(b.w * 0.5, low, b.d * 0.5))
 		f.duration = sqrt(2.0 * f.drop / g)
 	return f
+
+
+## A toppling part's count and aim.
+func _start_topple(
+	f: RampageSim.Fall, b: RampageSim.Building, part: Dictionary, low: float
+) -> void:
+	if not f.cells.is_empty() and not _toppled_ids.has(f.building):
+		_toppled_ids[f.building] = true
+		toppled += 1
+	_aim_topple(f, b, part, low)
 
 
 ## Sets a toppling part's direction and pivot.

@@ -39,6 +39,7 @@ var tail_cut := 0
 var _rng: RandomNumberGenerator
 var _ram_cd := 0.0
 var _glide_armed := false
+var _lash_wait := -1.0  # seconds until a wound-up lash strikes; < 0: none
 
 
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
@@ -137,11 +138,27 @@ func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 	_climb(dt)
 	_ram(dt)
 	swipe.step(dt)
+	if _lash_wait >= 0.0:
+		_lash_wait -= dt
+		if _lash_wait < 0.0:
+			lash()
 
 
 ## Stomp (and ram) damage multiplier from momentum: the momentum node makes it hit harder.
 func hit_mult() -> float:
 	return 1.0 + sim.stat("momentum") * momentum
+
+
+## The signature pressed: the tail winds up (the keyed curl, director 2026-10-31 "Full windup"),
+## and lash() strikes powers.lash_windup later, when the keyed tail crosses behind him.
+func wind_lash() -> void:
+	if _lash_wait >= 0.0:
+		return
+	sim.events.append({"type": "tail_windup", "side": 1.0 if tail_sweeps % 2 == 0 else -1.0})
+	_lash_wait = Num.f(cfg["lash_windup"])
+	if _lash_wait <= 0.0:
+		_lash_wait = -1.0
+		lash()
 
 
 ## The tail lash (D-280): mid-stride, the tail whips through the half ring behind and beside

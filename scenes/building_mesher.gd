@@ -340,7 +340,10 @@ static func mesh_of(arrays: Array) -> ArrayMesh:
 	ThreadCheck.main_only("BuildingMesher.mesh_of")
 	var mesh := ArrayMesh.new()
 	if not arrays.is_empty():
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		# Packed: 24 bytes a vertex, not 40 (positions within 0.85 mm, director yes 10-31).
+		mesh.add_surface_from_arrays(
+			Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, Mesh.ARRAY_FLAG_COMPRESS_ATTRIBUTES
+		)
 	return mesh
 
 

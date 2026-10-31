@@ -48,7 +48,7 @@ PLANT_SLIDE = 0.5  # m a keyed frame: a planted toe tip holds still (the peel mo
 BASE_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
               "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [f"tail{i}" for i in range(9)] + ["jaw"]
 IDENTITY = struct.pack("<4h", 0, 0, 0, 32767)
-MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "rake_r": "rake_l", "rake_l": "rake_r"}
+MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "rake_r": "rake_l", "rake_l": "rake_r", "lash_r": "lash_l", "lash_l": "lash_r"}
 arm = bpy.data.objects["croc_rig"]; ad = arm.data
 mesh = bpy.data.objects["croc_mesh"]; me = mesh.data
 scene = bpy.context.scene
