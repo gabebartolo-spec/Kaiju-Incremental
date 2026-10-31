@@ -6,6 +6,8 @@ extends RefCounted
 ## Rings (tuning "tree", ROADMAP E): a species listed there grows its tree outward in rings, each
 ## node a kind (stat, verb, stage); only the open rings can be bought, the next one shows as
 ## shapes, the rest stay hidden (R 1.4, R 16.3). A species not listed keeps the whole tree open.
+## Conquest bonuses (D-421, plan row F4) ride the same path: the picks a save holds scale the
+## stats after the upgrades, so combat reads them as it reads any upgrade.
 
 ## How much of a node the tree screen may show (R 16.3).
 enum Reveal { HIDDEN, SHAPE, FULL }
@@ -19,14 +21,22 @@ var cost_mult := 1.0
 ## The species' rings from the centre out (tuning "tree" "species"): each {"stage", "target"}.
 ## Empty: no rings, every node open.
 var rings: Array = []
+## The conquest bonus ids picked (the save's "bonuses" values, Content.bonus).
+var bonuses: Array[String] = []
 var _tiers: Dictionary = {}
 
-## species_id "" keeps every branch (data checks); a game passes its kaiju's species.
+## species_id "" keeps every branch (data checks); a game passes its kaiju's species, and its
+## save's "bonuses" (continent id -> bonus id picked) as picked.
 
 
 func _init(
-	definitions: Array[Dictionary], saved_levels: Dictionary = {}, species_id: String = ""
+	definitions: Array[Dictionary],
+	saved_levels: Dictionary = {},
+	species_id: String = "",
+	picked: Dictionary = {}
 ) -> void:
+	for continent: String in picked:
+		bonuses.append(str(picked[continent]))
 	for def: Dictionary in definitions:
 		var owner := str(def.get("species", ""))
 		if species_id != "" and owner != "" and owner != species_id:
@@ -159,7 +169,8 @@ func levels_total() -> int:
 	return total
 
 
-## Base stats with every bought level's effects added.
+## Base stats with every bought level's effects added, then each picked bonus's scale: a stat
+## grows by the fractions on it, summed (two +10% picks are +20%, not +21%).
 func apply(base: Dictionary, species_id: String = "") -> Dictionary:
 	var out: Dictionary = base.duplicate()
 	for id: String in order:
@@ -170,6 +181,14 @@ func apply(base: Dictionary, species_id: String = "") -> Dictionary:
 		var effects := effects_for(def, species_id)
 		for stat: String in effects:
 			out[stat] = Num.f(out.get(stat, 0.0)) + Num.f(effects[stat]) * owned
+	var fractions: Dictionary = {}
+	for id: String in bonuses:
+		var pick := Content.bonus(id)
+		var scale: Dictionary = pick.get("scale", {})
+		for stat: String in scale:
+			fractions[stat] = Num.f(fractions.get(stat, 0.0)) + Num.f(scale[stat])
+	for stat: String in fractions:
+		out[stat] = Num.f(out.get(stat, 0.0)) * (1.0 + Num.f(fractions[stat]))
 	return out
 
 

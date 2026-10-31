@@ -7,7 +7,9 @@ extends RefCounted
 ## - slam_stop: the momentum slam into a building stops him with it (Momentum, "slam" event);
 ## - walking turns: a turn while he walks lays its take over the walk's upper body (spine, neck,
 ##   head, arms, tail), timed by how far the sim has turned him: head_look (its left one mirrored
-##   for the right) under BIG_TURN, walk_turn_left / walk_turn_right from there.
+##   for the right) under BIG_TURN, walk_turn_left / walk_turn_right from there;
+## - a roar he walks out of: the legs walk (ClipChoice), the roar's upper body and jaw play on over
+##   them to its end (the rise's roar used to glide him on planted feet, director 2026-10-31).
 ## Clips a body lacks are skipped (the baby and Behemoth walk as before). Presentation only.
 
 ## The walk start's share of the take played before the walk loop (D-355: about 1.3 s).
@@ -41,11 +43,13 @@ var turn := ""
 var mirrored := false
 var turn_time := 0.0
 var look := 0.0  # the head's look-ahead into the turn (rad)
+var roar_time := INF  # the roar frame laid over the walk (INF: none)
 var _run: ClipSteps
 var _total := 0.0  # the yaw still to turn when the turn started (rad)
 var _progress := 0.0
 var _weight := 0.0
 var _layer: Array[int] = []
+var _roar_bones: Array[int] = []  # the turn layer's bones and the jaw
 var _mirror: Array[int] = []  # bone i's other side (itself when it has none)
 var _rest: Dictionary = {}  # turn clip -> its first pose
 var _yaws: Dictionary = {}  # turn clip -> |yaw| per frame, start to its peak
@@ -62,6 +66,9 @@ func _init(p_clips: KaijuClips) -> void:
 		var other := bone_name.replace("_l", "_r")
 		other = bone_name.replace("_r", "_l") if other == bone_name else other
 		_mirror.append(maxi(0, clips.bones.find(other)) if other != bone_name else i)
+	_roar_bones = _layer.duplicate()
+	if clips.bones.has("jaw"):
+		_roar_bones.append(clips.bones.find("jaw"))
 	for clip: String in ["head_look", "walk_turn_left", "walk_turn_right"]:
 		if clips.has_clip(clip):
 			_rest[clip] = clips.pose_at(clip, 0.0)
@@ -112,6 +119,21 @@ func _lay(pose: KaijuClips.Pose) -> KaijuClips.Pose:
 		var j := _mirror[i] if mirrored else i
 		var twist := _flip(now.turns[j] * rest.turns[j].inverse())
 		pose.turns[i] = (Quaternion.IDENTITY.slerp(twist, w) * pose.turns[i]).normalized()
+	return pose
+
+
+## Lays the rest of a roar he walked out of (roar_time) over the walk's upper body and jaw, fading
+## out over its last FADE_SECONDS; a new roar (roaring) plays as a clip and ends it.
+func roar_over(pose: KaijuClips.Pose, roaring: bool, dt: float) -> KaijuClips.Pose:
+	var end := clips.frames_of("roar") - 1.0
+	roar_time = INF if roaring else roar_time + dt * clips.fps
+	if roar_time >= end:
+		roar_time = INF
+		return pose
+	var now := clips.pose_at("roar", roar_time)
+	var w := smoothstep(0.0, 1.0, minf(1.0, (end - roar_time) / (FADE_SECONDS * clips.fps)))
+	for i: int in _roar_bones:
+		pose.turns[i] = pose.turns[i].slerp(now.turns[i], w).normalized()
 	return pose
 
 

@@ -4,7 +4,9 @@ extends RefCounted
 ## on a grid along and across the sand, and volleyball courts (lines, posts and a
 ## net) with the grid kept off them; city "harbour" "props". Their own PropField, finer than the
 ## street props' and set on the sand (a court's lines lie flush, everything else stands on it),
-## crushed by the kaiju like the street props (CityDecor). Presentation only; no RNG.
+## crushed by the kaiju like the street props (CityDecor), an umbrella folding shut and
+## falling over rather than flattening to a coloured disc (director 10-30: "Skittles").
+## Presentation only; no RNG.
 
 
 ## The beach's props within the decor's view, in their own field (not yet built), or null with
@@ -21,8 +23,9 @@ static func plant(decor: CityDecor) -> PropField:
 			field.add(Vector3(at.x, 0, at.y), _lines.bind(cfg))
 			field.add(Vector3(at.x, 0, at.y), _net.bind(cfg))
 	var n := 0
+	var folds: Array[String] = ["pole", "umbrella0", "umbrella1", "umbrella2", "umbrella3"]
 	for at: Vector2 in spots(plan, decor._view):
-		field.add(Vector3(at.x, 0, at.y), _umbrella.bind(cfg, n % 4))
+		field.add(Vector3(at.x, 0, at.y), _umbrella.bind(cfg, n % 4), false, folds)
 		n += 1
 	return field
 
