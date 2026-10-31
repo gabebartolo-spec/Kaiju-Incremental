@@ -31,6 +31,7 @@ func run_checks() -> void:
 	await _t("_check_globe_markers")
 	await _t("_check_globe_states")
 	await _t("_check_globe_locked")
+	await _t("_check_globe_mission")
 
 
 func _check_globe_mask() -> void:
@@ -323,3 +324,63 @@ func _open_all(globe: GlobeView) -> void:
 	for id: String in ORDER:
 		states[id] = Campaign.State.AVAILABLE
 	globe.set_states(states)
+
+
+## Plan row G5 (director 2026-11-01: right side column, Win/Lose stub + pick), on vs off. A click
+## on Ostia Minor opens its panel: name, stage, Threat and its bonuses in plain words. LAUNCH
+## opens the stub mission; LOSE comes back to the panel with nothing changed. Launched again, WIN
+## shows the three bonuses; keeping the second conquers Ostia Minor with it, the globe flies out
+## and Carthago opens.
+func _check_globe_mission() -> void:
+	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
+	globe.spin = false
+	root.add_child(globe)
+	var panel := globe.mission_panel()
+	check(not panel.visible, "no panel before a pick")
+	var id := "ostia_minor"
+	_face(globe, globe.anchor_of(id))
+	_click(globe, globe.camera().unproject_position(globe.surface_global(globe.anchor_of(id))))
+	var words := _texts(panel)
+	check(panel.visible and panel.id == id, "a click on Ostia Minor opens its panel")
+	for want: String in ["OSTIA MINOR", "Young croc", "Threat +10%", "WIN ONE:"]:
+		check(words.has(want), "the panel reads '%s': %s" % [want, words])
+	check(words.has("+15% Stomps hit harder"), "a bonus reads in plain words: %s" % [words])
+	for won: bool in [false, true]:
+		_play(globe, won)
+	globe.free()
+
+
+## LAUNCH, then WIN and the second bonus, or LOSE; checks the save and the globe after.
+func _play(globe: GlobeView, won: bool) -> void:
+	var id := "ostia_minor"
+	var panel := globe.mission_panel()
+	var mission := globe.mission()
+	panel.launch_button().pressed.emit()
+	check(mission.visible and mission.id == id, "LAUNCH opens Ostia Minor's mission")
+	mission.buttons()[0 if won else 1].pressed.emit()
+	if won:
+		var picks := mission.buttons()
+		check(picks.size() == 3, "WIN offers three bonuses, keep one (D-421): %d" % picks.size())
+		picks[1].pressed.emit()
+	var result := "won" if won else "lost"
+	var conquered: Array = globe.save().get("conquered", [])
+	check(not mission.visible, "%s: the mission closes" % result)
+	var want: Array = [id] if won else []
+	check(conquered == want, "%s: conquered %s" % [result, conquered])
+	check(globe.locked("carthago") != won, "%s: Carthago is open: %s" % [result, won])
+	check(globe.marker(id).ink() == UiKit.ACCENT, "%s: Ostia Minor's marker stays lit" % result)
+	if won:
+		var bonuses: Dictionary = globe.save()["bonuses"]
+		var kept: String = bonuses.get(id, "")
+		check(kept == "bonus_ostia_minor_2", "the second bonus is kept: %s" % bonuses)
+		check(globe.selected == "" and not panel.visible, "won: the globe flies back out")
+	else:
+		check(panel.visible and globe.selected == id, "lost: back on Ostia Minor's panel")
+
+
+## Every Label's text under a node.
+func _texts(node: Node) -> Array[String]:
+	var out: Array[String] = []
+	for child: Node in node.find_children("*", "Label", true, false):
+		out.append((child as Label).text)
+	return out

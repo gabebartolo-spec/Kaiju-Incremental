@@ -2,6 +2,19 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-375 · Director · Landmarks are drawn at random from a pool into designated spots, tiered by stage
+His words (10-28 ~21:xx), on the stadium placement clash between D-270 ("south, past the river") and D-271 (reachable
+from stage 2) once the bay moved the start: "so i want maps to be randomised as you know, but if we need to make certain
+constants like stadium is west, wheel is east, thats ok, as long as the rest of the city is random"; "as long as you are
+also considering that landmarks will be picked at random from a pool of many"; "so the stadium and wheel are no
+certainty to appear"; "we can have designated landmark spots though". Q: tier the spots by stage? A: "Tier per stage
+(Recommended)". So: each street plan keeps a few designated landmark spots; each run fills every spot with a random
+landmark from a large pool, drawn from the tier that spot's stage reaches (near the beach medium, stadium and wheel
+size; the next ring big, spire size; the outer ring the biggest, megatower size), so every stage still reaches something
+bigger. The stadium and wheel are two pool entries, not certain to appear; when drawn, the stadium takes the west spot
+and the wheel the east one, inside stage 2's reach. Everything else stays random per seed (D-263). Replaces D-071's fixed
+four in order and D-270's "south, past the river with the Ferris wheel"; D-271's reach holds.
+
 ## 2026-10-28 · D-374 · Director · The Colossus rig gets hip and knee helper joints; every skeleton is checked over its full move range
 His words (10-28 ~18:4x), on the knee/thigh crumple in charge, emerge, hlt, run, slam and leap, which skin weights alone
 cannot fix: "add the joints, i asked you to make sure the skeletons were ready for animation, you failed, do your job

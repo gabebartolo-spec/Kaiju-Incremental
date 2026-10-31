@@ -18,6 +18,7 @@ static var _pool: Dictionary = {}
 static var _sports: Dictionary = {}
 static var _materials: Array[Dictionary] = []
 static var _continents: Array[Dictionary] = []
+static var _stage_words: Array = []
 
 
 static func tuning() -> Dictionary:
@@ -69,6 +70,12 @@ static func continent(id: String) -> Dictionary:
 		if def["id"] == id:
 			return def
 	return {}
+
+
+## A growth stage (a continent's "stage") in game words: "Young croc", "Behemoth", "Colossus".
+static func stage_word(stage: int) -> String:
+	_load()
+	return str(_stage_words[stage]) if stage >= 0 and stage < _stage_words.size() else ""
 
 
 ## One conquest bonus by id ({id, scale: stat -> fraction added}), or {} when there is none.
@@ -212,6 +219,7 @@ static func _load() -> void:
 	_sports = load_json("res://data/sports.json")
 	_materials = _list("res://data/materials.json", "materials")
 	_continents = _list("res://data/continents.json", "continents")
+	_stage_words = load_json("res://data/continents.json").get("stage_words", [])
 	var names: Dictionary = _tuning.get("names", {})
 	for content: Variant in [_tuning, _upgrades, _species]:
 		_fill(content, names)

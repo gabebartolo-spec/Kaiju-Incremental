@@ -4,6 +4,7 @@
   "description": "Structure and types of this data file (CLAUDE.md hard rule 4); see data/schemas/README.md.",
   "type": "object",
   "properties": {
+    "stage_words": {"type": "array", "items": {"$ref": "#/$defs/str"}},
     "continents": {
       "type": "array",
       "items": {
@@ -33,7 +34,7 @@
       }
     }
   },
-  "required": ["continents"],
+  "required": ["stage_words", "continents"],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,
   "$defs": {

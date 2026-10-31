@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-431 · Director · Globe mission panel: a right-side column, and a Win/Lose stub mission with the pick
+Overworld plan row G5, his picks: "Right side column", "Leave them out", "Win/Lose stub + pick". A picked continent
+shows a full-height card down the right third (the continent stays in view on the left): its name, its stage in game
+words, Threat +N%, WIN ONE: and its three bonuses in plain words, and LAUNCH. The city preview and landmarks are left
+out until plan rows C1..C5 make them. LAUNCH opens a plain stand-in mission with WIN and LOSE until real cities start
+from the globe: WIN offers the three bonuses, the player keeps one (D-421), and the globe returns with the continent
+conquered, its bonus kept and Threat raised by its share (D-422); LOSE returns with nothing changed.
+
 ## 2026-11-01 · D-430 · Director · Globe continent states: grey coastline locked, pulsing yellow available, green conquered
 Overworld plan row G3, his picks: "Grey / yellow / green" and, for locked, "Coastline only". A locked continent draws
 only its coastline in UiKit LOCKED grey, no fill; an available one fills in ACCENT yellow and pulses slowly (one
@@ -379,16 +387,3 @@ His words (10-28 ~22:1x): "that wasnt something i told you to codify though, it 
 never told you to make it a rule". Q: what replaces it? A: "Load check (Recommended)". `C:/kt/gpu_slot.sh` admits a
 window when under 3 Godot windows are open, >=3 GB video memory free, GPU use <85%, <80 C, 20 s after the last start
 (logged in `C:/kt/gpu_slot.log`); gq runs up to 3 window jobs. D-340's "don't cook the GPU" aim stands.
-
-## 2026-10-28 · D-375 · Director · Landmarks are drawn at random from a pool into designated spots, tiered by stage
-His words (10-28 ~21:xx), on the stadium placement clash between D-270 ("south, past the river") and D-271 (reachable
-from stage 2) once the bay moved the start: "so i want maps to be randomised as you know, but if we need to make certain
-constants like stadium is west, wheel is east, thats ok, as long as the rest of the city is random"; "as long as you are
-also considering that landmarks will be picked at random from a pool of many"; "so the stadium and wheel are no
-certainty to appear"; "we can have designated landmark spots though". Q: tier the spots by stage? A: "Tier per stage
-(Recommended)". So: each street plan keeps a few designated landmark spots; each run fills every spot with a random
-landmark from a large pool, drawn from the tier that spot's stage reaches (near the beach medium, stadium and wheel
-size; the next ring big, spire size; the outer ring the biggest, megatower size), so every stage still reaches something
-bigger. The stadium and wheel are two pool entries, not certain to appear; when drawn, the stadium takes the west spot
-and the wheel the east one, inside stage 2's reach. Everything else stays random per seed (D-263). Replaces D-071's fixed
-four in order and D-270's "south, past the river with the Ferris wheel"; D-271's reach holds.
