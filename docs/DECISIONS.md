@@ -395,11 +395,3 @@ D-163 ("Far blur only", locked on the kaiju, haze carrying the depth), he picked
 lighter blur). Replaces D-163's depth-blur clause only: far blur is off by default; haze, cool shadows with warm fire
 and fine-block ground stay as D-163 set them. Owner: load-flake (flag off by default, PR); the facade pop-in probe
 ("Blurry turns sharp") follows.
-
-## 2026-10-28 · D-359 · Director · The demo plays at dusk only
-His question: "would it be faster if we focused on just one time of day for the demo". Told that it is (each new look
-is tuned and shown once, not four times; sim, animation and perf work are unchanged), and quoted his 10-22 ruling
-("the time of day will be randomised each run"), he answered "dusk only" (not the recommended night only, not all four,
-not night and dusk). For the demo every rampage plays at dusk, the options time toggle is hidden while only one time
-can play, and every capture and clip for him shows dusk. D-145's random time (never the same twice) and the toggle
-return after the demo; night, morning and noon looks stay in data, untouched (D-279, D-285, D-328 still hold for night).
