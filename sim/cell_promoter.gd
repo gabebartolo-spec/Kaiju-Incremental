@@ -10,6 +10,9 @@ extends RefCounted
 
 ## Building index -> BuildingCells, LandmarkCells or HazardCells, for the buildings hit so far.
 var grids: Dictionary = {}
+## Cells made ahead of their first use (prepare), by building; dropped (drop_ready) once they
+## could go stale. Not in `grids`, so nothing that asks what is promoted sees them.
+var ready: Dictionary = {}
 
 
 func promoted(n: int) -> bool:
@@ -19,13 +22,6 @@ func promoted(n: int) -> bool:
 ## The fine grid of building n, or null while it has not been hit.
 func grid(n: int) -> CellGrid:
 	return grids.get(n, null)
-
-
-## Building n (b) was hit: its fine grid, made now if this is the first hit. party: as
-## BuildingCells' (a landmark takes none; the floors a neighbour covers per side).
-## Cells made ahead of their first use (prepare), by building; dropped (drop_ready) once they
-## could go stale. Not in `grids`, so nothing that asks what is promoted sees them.
-var ready: Dictionary = {}
 
 
 ## Makes building n's cells now (the work on_hit would do) and keeps them for its first on_hit.
@@ -41,6 +37,8 @@ func drop_ready() -> void:
 	ready.clear()
 
 
+## Building n (b) was hit: its fine grid, made now if this is the first hit. party: as
+## BuildingCells' (a landmark takes none; the floors a neighbour covers per side).
 func on_hit(n: int, b: RampageSim.Building, party: Dictionary = {}) -> CellGrid:
 	if grids.has(n):
 		return grids[n]
