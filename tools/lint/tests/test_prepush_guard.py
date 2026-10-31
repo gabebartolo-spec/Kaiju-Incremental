@@ -85,6 +85,19 @@ IMPORT = {
 }
 
 
+# Step 1b's tool (tools/native_dll.sh check|fetch): already main's build; stale until a fetch; stale for good (a
+# running Godot holds the DLL, so the fetch's copy cannot replace it). $STUB_DIR is set by prepush_env.
+NATIVE = {
+    "ok": "exit 0\n",
+    "stale_until_fetched": (
+        'case "$1" in\n'
+        'fetch) touch "$STUB_DIR/fetched" ;;\n'
+        'check) [ -f "$STUB_DIR/fetched" ] || { echo "native_dll: FAIL stale"; exit 1; } ;;\n'
+        "esac\nexit 0\n"
+    ),
+    "stale_after_fetch": '[ "$1" = check ] && { echo "native_dll: FAIL stale"; exit 1; }\nexit 0\n',
+}
+
 def find_bash():
     git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
     if os.name == "nt" and git_bash.exists():
@@ -98,7 +111,15 @@ def script(root, rel, body):
     return path
 
 
-def project(root, run_tests=SUITES["ok"], check_scripts=COMPILE["ok"], run_all=LINTS["ok"], godot=IMPORT["ok"], picks=""):
+def project(
+    root,
+    run_tests=SUITES["ok"],
+    check_scripts=COMPILE["ok"],
+    run_all=LINTS["ok"],
+    godot=IMPORT["ok"],
+    picks="",
+    native_dll=NATIVE["ok"],
+):
     """A scratch repo whose tools/prepush.sh is the real one and everything it calls is a stub."""
     root = Path(root)
     helpers.write(root, "tools/prepush.sh", PREPUSH.read_text(encoding="utf-8"))
@@ -111,7 +132,7 @@ def project(root, run_tests=SUITES["ok"], check_scripts=COMPILE["ok"], run_all=L
     helpers.write(root, "tools/lint/prepush_picks.py", f'import sys\nsys.stdout.write("{lines}")\n')
     script(root, "tools/check_scripts.sh", check_scripts)
     script(root, "tools/lint/run_all.sh", run_all)
-    script(root, "tools/native_dll.sh", "exit 0\n")  # step 4c compares the DLL with main's CI build (needs gh)
+    script(root, "tools/native_dll.sh", native_dll)  # step 1b compares the DLL with main's CI build (needs gh)
     script(root, "godot_stub.sh", godot)
     script(root, "tools/run_tests.sh", run_tests)
     for suite in ("alpha", "beta", "gamma"):
@@ -339,6 +360,24 @@ class PrepushGuard(unittest.TestCase):
     def test_repo_lints_ok_line_that_is_not_the_last_line_is_fail(self):
         self.case("lints", LINTS, "marker_not_last")
 
+
+    # step 1b: tools/native_dll.sh (the DLL against main's CI build), before every slow step
+    def test_stale_dll_is_fetched_and_the_run_passes(self):
+        with helpers.scratch() as root:
+            sha = project(root, native_dll=NATIVE["stale_until_fetched"])
+            code, out = run_prepush(root)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(last_line(out), f"prepush: PASS {sha}", out)
+        self.assertIn("native DLL is not main's CI build: fetching it", out)
+
+    def test_dll_still_stale_after_a_fetch_fails_before_the_import(self):
+        with helpers.scratch() as root:
+            project(root, native_dll=NATIVE["stale_after_fetch"])
+            code, out = run_prepush(root)
+        self.assertEqual(code, 1, out)
+        self.assertRegex(last_line(out), r"^prepush: FAIL native DLL \(still not main's CI build", out)
+        self.assertNotIn("== 2 ", out)
+        self.assertNotIn("== 4 ", out)
 
 if __name__ == "__main__":
     unittest.main()
