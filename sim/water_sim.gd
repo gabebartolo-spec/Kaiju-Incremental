@@ -7,15 +7,20 @@ extends RefCounted
 ## channel bed), moved by the shallow-water equations as virtual pipes between neighbouring
 ## columns: water runs downhill from a higher surface to a lower one, so a push makes a real wave
 ## that travels at the speed its depth gives it (sqrt(g * depth)), slows and steepens over the
-## shelf, bounces off the quays and banks, runs up the sand and drains back. Nothing is added or
-## lost: each column holds its depth of water and the pipes only move it.
+## shelf, bounces off the quays and banks, runs up the sand and drains back. Inside the bay
+## nothing is added or lost: each column holds its depth of water and the pipes only move it; at
+## the bay's mouth (row 0) water runs out to the open sea at the wave's own speed, so a wave
+## leaves there instead of bouncing back.
 ##
 ## What disturbs it: the kaiju's body (its submerged column stands in the water, so where it
 ## walks it lifts the surface ahead of it and the water closes in behind: a bow wave and a wake),
 ## each stomp in the water and the rise from the sea (a volume thrown out of a disc onto its rim:
 ## a crater and a ring wave, with a splash event for the spray), and anything else through
 ## disturb(). Only an active window round the disturbance is stepped (the rest is at rest); it
-## grows with the waves and sleeps once they die down (tuning friction). Fire is untouched: the
+## grows a column a step each way until it holds the whole basin, so a wave runs as far as the
+## water does (director 2026-10-31: the window was capped at 80 m, its edge a wall, so the waves
+## piled up in a box), and sleeps once they die down (tuning friction). The native core
+## (KaijuWater) steps it when the extension is there, the same floats as the GDScript pipes. Fire is untouched: the
 ## water's puts-out stays where it was.
 
 const G := 9.8
@@ -35,7 +40,8 @@ class Basin:
 	var body := PackedFloat32Array()  # metres of the kaiju's body standing in it
 	var flow := PackedFloat32Array()  # 4 per column: outflow right, left, down (+z), up (-z), m^2/s
 	var active := Rect2i()  # the stepped columns (empty: all at rest)
-	var focus := Vector2i()  # the latest push's column: a window too big is kept round it
+	var focus := Vector2i()  # the latest push's column
+	var open := false  # row 0 is open sea (the bay's mouth): a wave runs out of it
 
 	func _init(p_origin: Vector2, p_cell: float, p_n: Vector2i, p_rest: float) -> void:
 		origin = p_origin
@@ -77,14 +83,21 @@ var _ripple := 0.0  # seconds to the next ripple while the body holds under
 var _r := Rect2i()  # the sub-step being taken: its window, length (s) and flow kept
 var _h := 0.0
 var _keep := 1.0
+## Step with the native core when the extension has it (a check turns it off to compare).
+var use_native := true
+var _native: RefCounted  # KaijuWater, or null: the GDScript pipes
 
 
 func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_cfg = tuning["water_sim"]
+	if ClassDB.class_exists("KaijuWater"):
+		_native = ClassDB.instantiate("KaijuWater")
 	var plan := CityGen.map(city)
 	var cell := Num.f(_cfg["cell"])
 	if plan.has("harbour"):
-		basins.append(_bay(plan, city, cell))
+		var bay := _bay(plan, city, cell)
+		bay.open = true
+		basins.append(bay)
 	var channels := CityRiver.channels(plan, city)
 	if not channels.is_empty():
 		basins.append(_river(channels, city, cell))
@@ -266,16 +279,8 @@ func _flow(basin: Basin, dt: float) -> void:
 	if not basin.active.has_area():
 		return
 	# The window spreads a column a step each way (waves outrun it only where they are already
-	# small), up to water_sim window metres a side.
-	var most := ceili(Num.f(_cfg["window"]) / basin.cell)
-	var r := basin.active.grow(1)
-	if r.size.x > most:
-		r.position.x = clampi(basin.focus.x - most / 2, r.position.x, r.end.x - most)
-		r.size.x = most
-	if r.size.y > most:
-		r.position.y = clampi(basin.focus.y - most / 2, r.position.y, r.end.y - most)
-		r.size.y = most
-	r = r.intersection(Rect2i(0, 0, basin.nx, basin.nz))
+	# small), out to the whole basin.
+	var r := basin.active.grow(1).intersection(Rect2i(0, 0, basin.nx, basin.nz))
 	basin.active = r
 	var deepest := 0.0
 	for j: int in range(r.position.y, r.end.y):
@@ -286,14 +291,40 @@ func _flow(basin: Basin, dt: float) -> void:
 	var h := dt / subs
 	var keep := maxf(0.0, 1.0 - Num.f(_cfg["friction"]) * h)
 	var stir := 0.0
-	for s: int in subs:
-		stir = _pipes(basin, r, h, keep)
+	if use_native and _native != null:
+		stir = _step_native(basin, r, subs, h, keep)
+	else:
+		for s: int in subs:
+			stir = _pipes(basin, r, h, keep)
 	if stir < Num.f(_cfg["calm"]):
 		_settle(basin, r)
 
 
-## One sub-step over r (its edge a wall: nothing leaks out of the window); returns the biggest
-## surface lift left in it (m).
+## All of _flow's sub-steps in one native call (KaijuWater.step: the GDScript pipes' floats).
+func _step_native(basin: Basin, r: Rect2i, subs: int, h: float, keep: float) -> float:
+	var out: Array = _native.call(
+		"step",
+		basin.floor_y,
+		basin.depth,
+		basin.body,
+		basin.flow,
+		basin.nx,
+		r,
+		subs,
+		h,
+		keep,
+		G,
+		basin.cell,
+		basin.rest,
+		basin.open
+	)
+	basin.depth = out[0]
+	basin.flow = out[1]
+	return out[2]
+
+
+## One sub-step over r (its edge a wall: the basin's own, or calm water the window has not
+## reached yet); then the open sea at the mouth. Returns the biggest surface lift left in it (m).
 func _pipes(basin: Basin, r: Rect2i, h: float, keep: float) -> float:
 	_r = r
 	_h = h
@@ -305,7 +336,24 @@ func _pipes(basin: Basin, r: Rect2i, h: float, keep: float) -> float:
 	for j: int in range(r.position.y, r.end.y):
 		for i: int in range(r.position.x, r.end.x):
 			_outflow(basin, top, i, j)
-	return _drain(basin)
+	var stir := _drain(basin)
+	_open(basin)
+	return stir
+
+
+## The bay's mouth (row 0) is open sea: water runs out of it at the wave's own speed (sqrt(g d)
+## times its lift off the still water; in where it dips), so a wave leaves there, never bouncing
+## back as off a wall (a first-order radiating edge).
+func _open(basin: Basin) -> void:
+	if not basin.open or _r.position.y > 0:
+		return
+	var d := basin.depth
+	var gain := _h / basin.cell
+	for k: int in range(_r.position.x, _r.end.x):
+		if d[k] <= 0.0:
+			continue
+		var lift := basin.floor_y[k] + d[k] - basin.rest
+		d[k] = maxf(0.0, d[k] - gain * sqrt(G * d[k]) * lift)
 
 
 ## Column (i, j)'s four outflows this sub-step, pushed by the surface drop to each neighbour.
