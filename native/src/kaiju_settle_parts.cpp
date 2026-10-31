@@ -6,6 +6,7 @@
 #include "kaiju_settle.h"
 #include <godot_cpp/variant/vector3i.hpp>
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
@@ -282,4 +283,33 @@ Array KaijuSettle::wear(const PackedByteArray &p_cells, const PackedFloat32Array
 	out.push_back(rem);
 	out.push_back(mt);
 	return out;
+}
+
+PackedFloat32Array KaijuSettle::beam_at(const PackedInt32Array &p_spans, const PackedInt32Array &p_ints,
+		const PackedFloat64Array &p_nums) const {
+	const int w = p_ints[0], d = p_ints[1], off_x = p_ints[2], off_z = p_ints[3], res = p_ints[4];
+	const double x0 = p_nums[0], z0 = p_nums[1], length = p_nums[6], half = p_nums[7];
+	// The Vector2s are float32 in GDScript; their products and sums stay float32 (Vector2.dot).
+	const float ox = float(p_nums[2]), oy = float(p_nums[3]), dx = float(p_nums[4]), dy = float(p_nums[5]);
+	const double r = 0.5 / res;
+	PackedFloat32Array at;
+	at.resize(int64_t(w) * d);
+	float *a = at.ptrw();
+	std::fill(a, a + int64_t(w) * d, -1.0f);
+	const int32_t *sp = p_spans.ptr();
+	for (int64_t s = 0; s + 4 < p_spans.size(); s += 5)
+		for (int gz = sp[s + 2]; gz < sp[s + 3]; gz++)
+			for (int gx = sp[s]; gx < sp[s + 1]; gx++) {
+				const int col = gx + gz * w;
+				if (a[col] >= 0.0f) continue;
+				// Vector3(gx + offset + 0.5, ...) / res, then local_to_world: float32 stores, doubles between.
+				const float lx = float(double(gx + off_x) + 0.5) / float(res);
+				const float lz = float(double(gz + off_z) + 0.5) / float(res);
+				const float px = float(x0 + double(lx)), pz = float(z0 + double(lz));
+				const float rx = px - ox, rz = pz - oy;
+				const float t = rx * dx + rz * dy;
+				const float side = std::fabs(rx * -dy + rz * dx);
+				a[col] = (double(t) >= -r && double(t) <= length + r && double(side) <= half + r) ? 1.0f : 0.0f;
+			}
+	return at;
 }

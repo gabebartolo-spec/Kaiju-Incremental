@@ -315,18 +315,17 @@ func _beam(dt: float) -> void:
 	var half := Num.f(cfg["beam_half_width"]) * _bs()
 	sim.hit_coat = {"kind": "burn", "dps": Num.f(cfg["burn_dps"]), "seconds": cfg["burn_seconds"]}
 	sim.hit_air = true
+	var beam := RampageSim.Beam.new(origin, dir, length, half)
+	sim.hit_beam = beam
 	sim.hit_area(
-		func(p: Vector2, r: float) -> float:
-			var rel := p - origin
-			var t := rel.dot(dir)
-			var side := absf(rel.dot(Vector2(-dir.y, dir.x)))
-			return 1.0 if t >= -r and t <= length + r and side <= half + r else 0.0,
+		beam.reaches,
 		sim.stat("beam_dps") * dt,
 		0,
 		ceili(sim.reach_top() * Num.f(cfg["coat_reach_mult"]))
 	)
 	sim.hit_coat = {}
 	sim.hit_air = false
+	sim.hit_beam = null
 	if beam_left <= 0.0:
 		sim.events.append({"type": "beam_end"})
 

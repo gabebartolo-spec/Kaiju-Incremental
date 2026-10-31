@@ -140,15 +140,22 @@ func hit(n: int, force: Callable, damage: float, floors: Vector2i) -> void:
 	var b := sim.buildings[n]
 	var g: Grid = grids.get(n, null)
 	var chunks: Array[Vector3i] = []
-	for y: int in range(maxi(0, floors.x), mini(floors.y, b.height)):
+	var top := mini(floors.y, b.height)
+	var reached := PackedByteArray()  # force ignores height: once per chunk column, 2 = not asked yet
+	reached.resize(b.w * b.d)
+	reached.fill(2)
+	for y: int in range(maxi(0, floors.x), top):
 		for x: int in b.w:
 			for z: int in b.d:
 				var c := Vector3i(x, y, z)
 				if not (b.frame.alive(c) if g == null else g.live[b.frame.index(c)] > 0):
 					continue
-				var p := b.chunk_world(c)
-				var k: float = force.call(Vector2(p.x, p.z), 0.5)
-				if k > 0.0:
+				var i := x + z * b.w
+				if reached[i] == 2:
+					var p := b.chunk_world(c)
+					var k: float = force.call(Vector2(p.x, p.z), 0.5)
+					reached[i] = 1 if k > 0.0 else 0
+				if reached[i] == 1:
 					chunks.append(c)
 	if chunks.is_empty():
 		return
@@ -158,22 +165,24 @@ func hit(n: int, force: Callable, damage: float, floors: Vector2i) -> void:
 	var f := g.frame
 	var res := f.res
 	var mult := _mult(b)
-	var at := PackedFloat32Array()  # the force at each grid column, sampled once
-	at.resize(f.w * f.d)
-	at.fill(-1.0)
 	var spans := PackedInt32Array()  # per chunk: its grid columns and floor
 	for c: Vector3i in chunks:
 		var xs := _span(c.x, b.w, f.offset.x, f.w, res)
 		var zs := _span(c.z, b.d, f.offset.z, f.d, res)
 		spans.append_array([xs.x, xs.y, zs.x, zs.y, c.y])
-		for gz: int in range(zs.x, zs.y):
-			for gx: int in range(xs.x, xs.y):
-				var col := gx + gz * f.w
-				if at[col] < 0.0:
-					var local := Vector3(gx + f.offset.x + 0.5, 0.0, gz + f.offset.z + 0.5) / res
-					var p := b.local_to_world(local)
-					var k: float = force.call(Vector2(p.x, p.z), 0.5 / res)
-					at[col] = maxf(0.0, k)
+	var at := CarvingCells.beam_at(sim.hit_beam, b, f, spans)  # the force at each grid column
+	if at.is_empty():
+		at.resize(f.w * f.d)
+		at.fill(-1.0)
+		for s: int in range(0, spans.size(), 5):
+			for gz: int in range(spans[s + 2], spans[s + 3]):
+				for gx: int in range(spans[s], spans[s + 1]):
+					var col := gx + gz * f.w
+					if at[col] < 0.0:
+						var local := Vector3(gx + f.offset.x + 0.5, 0.0, gz + f.offset.z + 0.5) / res
+						var p := b.local_to_world(local)
+						var k: float = force.call(Vector2(p.x, p.z), 0.5 / res)
+						at[col] = maxf(0.0, k)
 	CarvingCells.wear(self, g, spans, at, PackedFloat32Array(), damage, mult)
 	_finish(n, g)
 
