@@ -8,6 +8,8 @@ extends "res://tests/lib/runner.gd"
 const DT := 1.0 / 15.0
 const FAR := Vector2(5000.0, 5000.0)
 
+const WALK := 2.5  # his opening walk, u/s (measured)
+
 
 func suite_name() -> String:
 	return "Boats"
@@ -18,6 +20,7 @@ func run_checks() -> void:
 	await _t("_check_far_kaiju_leaves_them")
 	await _t("_check_wake_pushes_away")
 	await _t("_check_wade_capsizes")
+	await _t("_check_walk_catches_boat")
 	await _t("_check_seeded")
 
 
@@ -112,6 +115,21 @@ func _check_wade_capsizes() -> void:
 	check(view.capsized == 1, "the boat he wades into rolls over")
 	_step(view, Num.f(cfg["capsize_s"]) + Num.f(cfg["sink_s"]) + 1.0, FAR)
 	check(_sunk(b) and not _node(b).visible, "then it sinks out of sight")
+
+
+## Director 2026-10-31: a boat used to flee at ~8.8 u/s and he never caught one. Walking after a
+## river boat from 14 u at his opening pace (2.5 u/s, measured in capture_boats), he capsizes it.
+func _check_walk_catches_boat() -> void:
+	var view := _view()
+	var b: Dictionary = view.boats.filter(func(x: Dictionary) -> bool: return x["where"] == "river")[0]
+	var kaiju := _pos(b) + Vector2(14.0, 0.0)
+	for n: int in ceili(12.0 / DT):
+		var to := _pos(b) - kaiju
+		kaiju += to.limit_length(WALK * DT)
+		view.step(DT, kaiju)
+		if view.capsized > 0:
+			break
+	check(view.capsized == 1, "walking after a boat he catches and capsizes it")
 
 
 func _check_seeded() -> void:

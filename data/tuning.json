@@ -2005,7 +2005,7 @@
 		"mix": {"B01": 3.0, "B02": 2.0, "B03": 3.0, "B04": 4.0},
 		"pier_spacing": 9.0, "pier_fill": 0.6, "pier_gap": 1.4, "bay": 6, "river": 5, "river_bank": 0.45, "spacing": 7.0,
 		"rock_deg": 2.5, "rock_hz": [0.12, 0.25], "bob": 0.04,
-		"wake_radius": 30.0, "wake_rock_deg": 22.0, "wake_fade_s": 4.0, "flee_push": 6.0, "drag": 0.5,
+		"wake_radius": 30.0, "wake_rock_deg": 35.0, "wake_fade_s": 4.0, "flee_push": 2.0, "drag": 1.0,
 		"capsize_radius": 6.0, "capsize_s": 2.5, "sink_s": 8.0
 	},
 	"wildlife": {
