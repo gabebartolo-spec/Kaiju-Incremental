@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-429 · Director · Globe mission markers: pin and name on all seven, click turns and zooms in
+Overworld plan row G4, his picks: "Pin + name" (a small yellow diamond on the continent, a leader line up and right
+to its name in caps, ACCENT yellow with a dark outline), "All seven now" (the offered-pair filter waits for T1, the
+colour states for G3) and "Turn + zoom in" (a click turns the continent to the centre and closes the camera in over
+0.7 s, eased; the spin holds while one is selected; a click on sea or Esc flies back out and the spin resumes). Shown the stills, "Keep both": Aurelia's pin (the south polar cap)
+stays out of view at the default lean until the globe is dragged down, and Neptunia's one pin stays on its southern
+islands with the northern islet chain unmarked.
+
 ## 2026-11-01 · D-428 · Director · The open sea is a copied FFT ocean; the sim's waves ride on top
 Of the whole-bay water (D-426) "looks functional but ugly and not very realistic", and he picked "Copy a proven ocean
 (Recommended)": the GodotOceanWaves Tessendorf FFT ocean (MIT, 2Retr0, commit a171446f; licence register row) runs
@@ -384,12 +392,3 @@ cannot fix: "add the joints, i asked you to make sure the skeletons were ready f
 properly do not do lazy work". So: corrective helper joints at the hip and knee keep the big poses (no smaller-swing pose
 bar); the young croc and Behemoth skeletons get the same full-range check and fix now; the Colossus drafts are
 retargeted onto the new rig in Cascadeur (D-199).
-
-## 2026-10-28 · D-373 · Director · The river intro is dropped; the beach start ships straight onto main
-His words (10-28 ~18:2x): "im sick of seeing runs start in the river. when will our beach front patch hit the godot
-runs?"; "why would river intro - a scene we nixed and dont require any further build - go before our planned ship?";
-"we already spoke about this today ... we arent using the river intro". So: PR #245 (branch claude/intro-port, the kaiju
-rising from the river) is never landed and is never a dependency for anything; the D-310 queue slot "river intro #245"
-is removed. Runs start in the crescent sea bay on the north edge and walk up the beach (D-270); the bay, beach and quays
-from claude/intro-bay are ported straight onto main (builder beach-start), rising on the approved rise clip until the
-keyed rise_bay clip exists (D-199). Never ask him about the river intro or the river for the intro again.

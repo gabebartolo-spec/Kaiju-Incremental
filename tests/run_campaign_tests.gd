@@ -3,10 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## in the globe's sequence with the ruled names and stages; each conquest offers three bonuses and
 ## the capital, last, none; the six conquests' Threat shares leave room for mission noise; every
 ## id is a key the save's campaign can hold. Plan row F4: a picked bonus reaches combat through
-## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. Plan row G1: the
-## Tellus Nova mask holds the seven continents apart, Neptunia an island chain. Plan row G2: the
-## globe reads the mask where SphereMesh draws it, and a point on each continent hit-tests to that
-## continent through the camera, lights it and picks it on a click. Seeded, no clock.
+## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. The hologram
+## globe's checks (rows G1..G4) live in run_globe_tests.gd. Seeded, no clock.
 ##   godot --headless --path . --script tests/run_campaign_tests.gd
 
 const ORDER := [
@@ -20,13 +18,6 @@ const STAGES := [0, 1, 1, 2, 2, 2, 2]  # D-419: young, Behemoth x2, Colossus x3 
 const THREAT_CAP := 99.0
 const SPECIES := "reptilian"
 const ATTACK := "bonus_ostia_minor_1"  # the test bonus: stomp_damage +15%
-## Plan row G1: 0 sea, 1..7 the continents in ORDER (tools/overworld/paint_tellus_mask.py).
-const MASK := "res://assets/overworld/tellus_nova_mask.png"
-const NEPTUNIA_ISLES := 5  # the gate: an island chain, not one landmass
-const GLOBE := "res://scenes/globe_view.tscn"
-const UV_TOLERANCE := 0.0001
-## Mask px between candidate anchors; an anchor's 8 neighbours this far away share its value.
-const ANCHOR_STEP := 4
 
 
 func suite_name() -> String:
@@ -34,9 +25,6 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	await _t("_check_globe_mask")
-	await _t("_check_globe_uv")
-	await _t("_check_globe_hit")
 	await _t("_check_seven_in_order")
 	await _t("_check_stages")
 	await _t("_check_bonuses_and_capital")
@@ -57,185 +45,6 @@ func _check_seven_in_order() -> void:
 		str(Content.continent("thule").get("name", "")) == "Thule", "continent(id) finds one by id"
 	)
 	check(Content.continent("atlantis").is_empty(), "an unknown id gives {}")
-
-
-func _check_globe_mask() -> void:
-	var img := Image.load_from_file(ProjectSettings.globalize_path(MASK))
-	check(
-		img != null and img.get_width() == 2 * img.get_height(), "the mask is 2:1 equirectangular"
-	)
-	if img == null:
-		return
-	img.convert(Image.FORMAT_L8)
-	var w := img.get_width()
-	var h := img.get_height()
-	var px := img.get_data()
-	var counts := PackedInt32Array()
-	counts.resize(256)
-	for v in px:
-		counts[v] += 1
-	var stray := 0
-	for v in range(ORDER.size() + 1, 256):
-		stray += counts[v]
-	check(stray == 0, "every pixel is sea or one of the 7 continents (%d stray)" % stray)
-	for n in ORDER.size():
-		check(counts[n + 1] > 0, "%s has land on the mask" % ORDER[n])
-	# Each pole row is one value: a row mixing land and sea meets at the pole as a straight wedge.
-	var mixed := 0
-	for x in w:
-		mixed += int(px[x] != px[0]) + int(px[(h - 1) * w + x] != px[(h - 1) * w])
-	check(
-		mixed == 0, "each pole row is all one value, so nothing pinches at a pole (%d off)" % mixed
-	)
-	var nep := ORDER.find("neptunia") + 1
-	var isles := _regions(px, w, h, nep)
-	check(
-		isles >= NEPTUNIA_ISLES,
-		"Neptunia is an island chain: %d separate islands (>= %d)" % [isles, NEPTUNIA_ISLES]
-	)
-
-
-## Separate 4-connected regions of one value; x wraps, as the mask's left and right edges meet.
-func _regions(px: PackedByteArray, w: int, h: int, value: int) -> int:
-	var seen := PackedByteArray()
-	seen.resize(px.size())
-	var found := 0
-	for i in px.size():
-		if px[i] != value or seen[i] == 1:
-			continue
-		found += 1
-		seen[i] = 1
-		var stack: Array[int] = [i]
-		while not stack.is_empty():
-			var c: int = stack.pop_back()
-			var x := c % w
-			var y := c / w
-			for nb: int in [
-				y * w + (x + 1) % w,
-				y * w + (x + w - 1) % w,
-				c - w if y > 0 else -1,
-				c + w if y < h - 1 else -1
-			]:
-				if nb >= 0 and px[nb] == value and seen[nb] == 0:
-					seen[nb] = 1
-					stack.append(nb)
-	return found
-
-
-## The land shader samples the mask at the mesh's UV; the hit-test computes a UV from a point.
-## They must agree, or a click lands on the wrong continent: every SphereMesh vertex off the
-## poles and the seam maps back to its own UV.
-func _check_globe_uv() -> void:
-	var sphere := SphereMesh.new()
-	sphere.radial_segments = GlobeView.SEGMENTS
-	sphere.rings = GlobeView.RINGS
-	var arrays := sphere.get_mesh_arrays()
-	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
-	var worst := 0.0
-	var tested := 0
-	for i in verts.size():
-		var uv := uvs[i]
-		if uv.y <= 0.0 or uv.y >= 1.0 or uv.x <= 0.0 or uv.x >= 1.0:
-			continue
-		worst = maxf(worst, (GlobeView.uv_of(verts[i]) - uv).length())
-		tested += 1
-	check(
-		tested > 0 and worst < UV_TOLERANCE,
-		"uv_of matches SphereMesh's UVs at %d vertices (worst %.6f)" % [tested, worst]
-	)
-
-
-## On the globe scene: each continent's anchor, turned to face the camera, hit-tests to that
-## continent through the screen; the pointer over it lights it, a click picks it; sea and the space
-## beside the globe hit nothing.
-func _check_globe_hit() -> void:
-	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
-	globe.spin = false
-	root.add_child(globe)
-	var picked: Array[String] = []
-	globe.continent_picked.connect(func(id: String) -> void: picked.append(id))
-	var img := Image.load_from_file(ProjectSettings.globalize_path(MASK))
-	img.convert(Image.FORMAT_L8)
-	var cam := globe.camera()
-	for n in ORDER.size():
-		var local := _point_of(_anchor(img, n + 1))
-		globe.yaw = -atan2(local.x, local.z)
-		globe.set_tilt(asin(local.y))
-		globe._process(0.0)
-		var screen := cam.unproject_position(globe.surface_global(local))
-		var hit := globe.continent_at(screen)
-		check(hit == str(ORDER[n]), "%s's anchor hit-tests to it (got '%s')" % [ORDER[n], hit])
-		var move := InputEventMouseMotion.new()
-		move.position = screen
-		globe._unhandled_input(move)
-		check(globe.hovered == str(ORDER[n]), "the pointer over %s lights it" % ORDER[n])
-		for pressed: bool in [true, false]:
-			var click := InputEventMouseButton.new()
-			click.button_index = MOUSE_BUTTON_LEFT
-			click.pressed = pressed
-			click.position = screen
-			globe._unhandled_input(click)
-	check(picked == Array(ORDER, TYPE_STRING, "", null), "a click picks each one: %s" % [picked])
-	var sea := _point_of(_anchor(img, 0))
-	globe.yaw = -atan2(sea.x, sea.z)
-	globe.set_tilt(asin(sea.y))
-	globe._process(0.0)
-	var at := cam.unproject_position(globe.surface_global(sea))
-	check(globe.continent_at(at) == "", "open sea hits no continent")
-	check(
-		globe.continent_at(Vector2.ZERO) == "", "the corner of the screen, off the globe, hits none"
-	)
-	globe.free()
-
-
-## A mask texel well inside one value's area (its 8 neighbours ANCHOR_STEP px away share it),
-## nearest the area's mean direction on the sphere.
-func _anchor(img: Image, value: int) -> Vector2:
-	var w := img.get_width()
-	var h := img.get_height()
-	var px := img.get_data()
-	var cands: Array[Vector2i] = []
-	var mean := Vector3.ZERO
-	for y in range(ANCHOR_STEP, h - ANCHOR_STEP, ANCHOR_STEP):
-		for x in range(0, w, ANCHOR_STEP):
-			if px[y * w + x] != value:
-				continue
-			mean += _point_of(_uv(x, y, w, h))
-			var inside := true
-			for d: Vector2i in [
-				Vector2i(-1, -1),
-				Vector2i(0, -1),
-				Vector2i(1, -1),
-				Vector2i(-1, 0),
-				Vector2i(1, 0),
-				Vector2i(-1, 1),
-				Vector2i(0, 1),
-				Vector2i(1, 1)
-			]:
-				var nx := posmod(x + d.x * ANCHOR_STEP, w)
-				inside = inside and px[(y + d.y * ANCHOR_STEP) * w + nx] == value
-			if inside:
-				cands.append(Vector2i(x, y))
-	var best := Vector2i.ZERO
-	var best_dot := -2.0
-	for c: Vector2i in cands:
-		var dot := _point_of(_uv(c.x, c.y, w, h)).dot(mean.normalized())
-		if dot > best_dot:
-			best_dot = dot
-			best = c
-	return _uv(best.x, best.y, w, h)
-
-
-func _uv(x: int, y: int, w: int, h: int) -> Vector2:
-	return Vector2((x + 0.5) / w, (y + 0.5) / h)
-
-
-## The point on the unit sphere at a mask UV, the inverse of GlobeView.uv_of.
-func _point_of(uv: Vector2) -> Vector3:
-	var lon := uv.x * TAU
-	var colat := uv.y * PI
-	return Vector3(sin(colat) * sin(lon), cos(colat), sin(colat) * cos(lon))
 
 
 func _check_stages() -> void:
