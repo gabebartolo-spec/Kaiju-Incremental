@@ -5,13 +5,16 @@
 # Runs what CI's first gates run, so a push never goes red on something a minute of local work
 # catches, then the suites the change touches:
 #   1. branch is not behind origin/main (a stale branch merges main first);
+#   1b. the local native DLL's md5 against main's CI build (tools/native_dll.sh): a stale or
+#      missing DLL silently runs the slow GDScript mesher in every bench and capture. It runs
+#      first because it takes seconds and a mismatch used to fail only after the import, compile
+#      and lints; a mismatch now fetches main's build and checks again (fails only if that does
+#      not fix it, e.g. a running Godot holds the DLL); a branch that changes native/ is not
+#      compared, its DLL is its own build;
 #   2. tuning keys + complexity ratchet (tests.yml preflight);
 #   3. snake_case names, gdlint and gdformat --check on the changed .gd files (lint.yml);
 #   4. headless import + every script parsed and compiled (tests.yml preflight), then the repo lints
 #      (tools/lint/run_all.sh, also lint.yml: every script has its committed .uid, ...);
-#   4c. the local native DLL's md5 against main's CI build (tools/native_dll.sh): a stale or
-#      missing DLL silently runs the slow GDScript mesher in every bench and capture (a mismatch
-#      fails; a branch that changes native/ is not compared, its DLL is its own build);
 #   5. the touched suites: tools/lint/prepush_picks.py picks every suite whose runner, or code its
 #      runner or tests/lib helpers reference (a changed sim/ or scenes/ script by class_name or
 #      res:// path, a changed data/tuning.json section), changed, and 'native' for any new or changed
@@ -83,6 +86,13 @@ git fetch -q origin || fail "git fetch"
 behind=$(git rev-list --count "HEAD..$BASE")
 [ "$behind" = 0 ] || fail "branch is $behind commits behind $BASE: git merge $BASE first"
 
+step "1b native DLL against main's CI build"
+if ! REF="$BASE" bash tools/native_dll.sh check; then
+	echo "native DLL is not main's CI build: fetching it"
+	REF="$BASE" bash tools/native_dll.sh fetch || fail "native DLL fetch (bash tools/native_dll.sh fetch)"
+	REF="$BASE" bash tools/native_dll.sh check || fail "native DLL (still not main's CI build after a fetch: close any Godot holding it)"
+fi
+
 changed=$(git diff --name-only --diff-filter=ACMR "$BASE...HEAD")
 gd=$(echo "$changed" | grep -E '\.gd$' | grep -v -E '^(\.godot|\.claude|tests/fixtures/lint)/' || true)
 
@@ -128,9 +138,6 @@ run_step "check_scripts.sh" "$run_data/check_scripts.log" '^ok: check_scripts: [
 
 step "4b repo lints (tools/lint/run_all.sh: .uid files, ...)"
 run_step "run_all.sh" "$run_data/lints.log" '^lint: ok$' bash tools/lint/run_all.sh || fail "repo lints"
-
-step "4c native DLL against main's CI build"
-REF="$BASE" bash tools/native_dll.sh check || fail "native DLL (bash tools/native_dll.sh fetch)"
 
 step "5 touched suites"
 BASE_REF="$BASE" picks "$changed" | tee "$run_data/picks.txt" | sed 's/^/  /'
