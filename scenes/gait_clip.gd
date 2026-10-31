@@ -33,9 +33,6 @@ const JAW_HOLD_SECONDS := 0.15
 const ROAR_SLAM_FRAME := 44.0
 const SLAM_WINDOW := 10.0
 const TAIL_SLAM_STRENGTH := 1.6
-## A lifted foot whose clip spot jumps (a clip change, the sim's step length changing mid-swing)
-## eases onto it at this rate (1/s): it jumped 6.6 m in a frame (director 2026-11-01 "teleport").
-const SHIFT_EASE := 6.0
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
@@ -317,7 +314,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var targets: Array[Vector3] = []
 	var fixes: Array[float] = []  # each foot's yaw: a planted one held, a lifted one easing back
 	for i: int in mini(legs.size(), 2):
-		targets.append(_foot_target(i, pose, dt))
+		targets.append(ClipFeet.target(self, i, pose, dt))
 		var held := _hold.hold(_plant_heading[i], legs[i])
 		fixes.append(held if legs[i].planted else _yaw_fix[i] * exp(-FOOT_YAW_DECAY * dt))
 	_ratio_was = step_ratio
@@ -327,61 +324,6 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		_yaw_fix[i] = _hold.held(legs[i], s, targets[i], fixes[i]) if planted else fixes[i]
 		_ik.reach(self, i, targets[i], _yaw_fix[i])
 	_feet_primed = true
-
-
-## Foot i's toe this frame (world; down: leg.planted): a catch step, its lock, or its air path.
-func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
-	var leg := legs[i]
-	var clip_toe := rig.global_transform * _stepped(clips.to_rig(pose.feet[i]))
-	_cut[i] = _cut[i] or (state == "walk" and _from == "walk_start" and step_ratio != _ratio_was)
-	var planted := pose.planted[i] and not _stomp.catching(i)
-	if planted and _was_planted[i] and _restep.overreached(self, i, _lock[i], clip_toe):
-		_stomp.restep(i)  # the body got away from this foot: step after it
-		planted = false
-	var target := _path.down(i, clip_toe + _lag[i] + _shift[i])  # lands where it was going
-	if _stomp.catching(i):
-		var k := _stomp.advance(i, dt)
-		_lag[i] *= 1.0 - smoothstep(0.0, 1.0, k)
-		target = clip_toe + _lag[i] + Vector3.UP * _stomp.rise(i, k) * hip_height * s
-		if not _stomp.catching(i):  # on the street this frame: it plants now, not a frame on
-			planted = pose.planted[i]
-			target = _put_down(i, target, clip_toe) if planted else target
-	elif planted:
-		if not _was_planted[i] and _shift[i] != Vector3.ZERO:  # an eased swing lands where it is
-			target = _path.down(i, _air_at[i])
-		target = _put_down(i, target, clip_toe)
-	else:
-		_stomp.forget(i)
-		if _was_planted[i]:
-			_path.lift(self, i, clip_toe, _lock[i])
-		target = _path.target(self, i, dt, clip_toe)
-		if _cut[i] and not _was_planted[i]:  # its spot moved: swing on from where it is, never jump
-			_shift[i] = _air_at[i] - target
-		_shift[i] *= exp(-SHIFT_EASE * dt)
-		target += _shift[i]
-		_air_at[i] = target
-		_lag[i] = _path.lag[i]
-	leg.planted = planted
-	_cut[i] = false
-	_shift[i] = _shift[i] if not planted else Vector3.ZERO
-	_was_planted[i] = planted
-	_restep.update(i, planted)
-	return target
-
-
-## A foot the clip has down: it locks where it lands, its footfall goes out; returns its spot.
-func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
-	var leg := legs[i]
-	if not _was_planted[i]:
-		_lock[i] = target
-		_plant_heading[i] = _hold.foot_yaw(leg)
-		leg.plant_at = target
-		leg.drift = 0.0
-		var strength := _stomp.landing(i, clampf(0.2 + speed_k(), 0.0, 1.0), s)
-		if _feet_primed:  # the first frame's feet were already down: no step, no ring
-			rig.foot_planted.emit("left" if leg.side < 0.0 else "right", strength, target)
-	_lag[i] = _lock[i] - clip_toe
-	return _lock[i]
 
 
 ## A clip foot spot, its fore-aft travel shortened to the sim's step (ClipSteps.shortened); a smooth

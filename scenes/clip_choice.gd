@@ -18,17 +18,30 @@ static func pick(g: ClipGait) -> void:
 	elif g.state == "walk_start":
 		_walk_start(g, moving)
 	elif g._stomp.holds(g.state) or g.state.begins_with("turn") or g.state == "slam_stop":
-		if _played_out(g, moving) and moving and g.state != "slam_stop":  # stood: the keyed start
-			_set_off(g)
-		elif _played_out(g, moving):
-			g._go("walk" if moving else "idle", g._walk_start() if moving else 0.0)
+		_from_held(g, moving)
 	elif moving:
-		if g.state == "idle":  # from standing: the keyed start
-			_set_off(g)
-		elif g.state != "walk":
-			g._go("walk", g._walk_start())
+		_moving(g)
 	else:
 		_stand_or_turn(g)
+
+
+## A roar, keyed stomp, turn or slam stop that has played out: the keyed start if he stood
+## (never out of a slam stop), else straight into the walk or idle.
+static func _from_held(g: ClipGait, moving: bool) -> void:
+	if not _played_out(g, moving):
+		return
+	if moving and g.state != "slam_stop":
+		_set_off(g)
+	else:
+		g._go("walk" if moving else "idle", g._walk_start() if moving else 0.0)
+
+
+## Moving: from standing the keyed start, else the walk (a walk already running stays).
+static func _moving(g: ClipGait) -> void:
+	if g.state == "idle":
+		_set_off(g)
+	elif g.state != "walk":
+		g._go("walk", g._walk_start())
 
 
 ## Whether the sim has set him walking: its step clock has started (the rise's drift keeps it at 0).
