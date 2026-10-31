@@ -10,7 +10,7 @@ extends Node3D
 ## its anchor, projected to the screen every frame. The globe only presents: each continent wears
 ## its campaign state (Campaign.states, plan row G3, D-430), read from the save when it opens and
 ## set again with set_states. A locked continent neither lights up nor answers a click, and its
-## marker is grey (D-430).
+## marker is grey (D-430). A picked continent opens its mission (GlobeMissions, plan row G5).
 
 signal continent_picked(id: String)
 
@@ -58,6 +58,7 @@ var _drag_px := 0.0
 var _fly_from := Vector3.ZERO  # yaw, tilt, camera distance
 var _fly_to := Vector3.ZERO
 var _fly_t := 1.0  # 1 when no flight is under way
+var _missions: GlobeMissions
 
 
 func _ready() -> void:
@@ -96,8 +97,9 @@ func _ready() -> void:
 	_land_mat.set_shader_parameter("mask", MASK)
 	_globe.add_child(_sphere(RADIUS * LAND_LIFT, _land_mat))
 	_add_markers()
-	var conquered: Array = SaveFile.load_game().get("conquered", [])
-	set_states(Campaign.states(Content.continents(), conquered))
+	_missions = GlobeMissions.new(self)
+	add_child(_missions)
+	set_states(_missions.states())
 
 
 ## Each continent's look from its Campaign.State, by id (the shader reads them per mask value).
@@ -126,6 +128,18 @@ func _add_markers() -> void:
 		var marker := GlobeMarker.new(str(def["name"]))
 		layer.add_child(marker)
 		_markers.append(marker)
+
+
+func mission_panel() -> MissionPanel:
+	return _missions.panel
+
+
+func mission() -> StubMission:
+	return _missions.mission
+
+
+func save() -> Dictionary:
+	return _missions.save()
 
 
 func _process(delta: float) -> void:
@@ -202,6 +216,7 @@ func fly_to(id: String) -> void:
 ## Back out to CAMERA_DISTANCE where the globe stands, over FLY_S; the idle spin resumes.
 func fly_out() -> void:
 	selected = ""
+	_missions.panel.hide_panel()
 	_fly(Vector3(yaw, tilt(), CAMERA_DISTANCE))
 
 
@@ -326,6 +341,7 @@ func _click(id: String) -> void:
 	if id != "":
 		continent_picked.emit(id)
 		fly_to(id)
+		_missions.panel.show_for(Content.continent(id))
 	elif selected != "":
 		fly_out()
 

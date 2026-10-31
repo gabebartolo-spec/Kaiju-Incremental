@@ -34,6 +34,8 @@ func run_checks() -> void:
 	await _t("_check_bonus_scales_stats")
 	await _t("_check_bonus_in_combat")
 	await _t("_check_states")
+	await _t("_check_conquer")
+	await _t("_check_stage_words")
 
 
 func _check_seven_in_order() -> void:
@@ -208,3 +210,51 @@ func _check_states() -> void:
 		check(
 			wrong.is_empty(), "after %s the globe offers %s (wrong: %s)" % [conquered, open, wrong]
 		)
+
+
+## Plan row G5: a won mission adds the continent to conquered, keeps the one bonus picked (D-421)
+## and raises Threat by its share; the save passed in is untouched and a second win of the same
+## continent changes nothing. The last conquest before the capital sets Threat to 100 (D-422).
+func _check_conquer() -> void:
+	var fresh := SaveFile.campaign()
+	var ostia := Content.continent("ostia_minor")
+	var won := Campaign.conquer(fresh, ostia, "bonus_ostia_minor_2")
+	var threat: float = won["threat"]
+	var ids: Array = won["conquered"]
+	var kept: Dictionary = won["bonuses"]
+	check(ids == ["ostia_minor"], "Ostia Minor joins conquered: %s" % [ids])
+	check(
+		kept == {"ostia_minor": "bonus_ostia_minor_2"},
+		"the one bonus kept is stored by continent (D-421): %s" % [kept]
+	)
+	check(is_equal_approx(threat, 10.0), "Threat rises by its share: %s" % threat)
+	check(fresh == SaveFile.campaign(), "the save passed in is left as it was")
+	check(
+		Campaign.conquer(won, ostia, "bonus_ostia_minor_3") == won, "a second win changes nothing"
+	)
+	var save := fresh
+	var threats: Array[float] = []
+	for id: String in ORDER.slice(0, 6):
+		save = Campaign.conquer(save, Content.continent(id), "")
+		var t: float = save["threat"]
+		threats.append(t)
+	check(
+		threats.slice(0, 5).all(func(t: float) -> bool: return t <= THREAT_CAP),
+		"the first five conquests stay at or under the cap: %s" % [threats]
+	)
+	check(
+		is_equal_approx(threats[5], 100.0), "the sixth sets Threat to 100 (D-422): %s" % [threats]
+	)
+	var conquered: Array = save["conquered"]
+	var states := Campaign.states(Content.continents(), conquered)
+	var aurelia: int = states["aurelia"]
+	check(aurelia == Campaign.State.AVAILABLE, "and Aurelia opens")
+
+
+## Plan row G5: each stage is named in game words for the mission panel.
+func _check_stage_words() -> void:
+	var words: Array[String] = []
+	for stage in 3:
+		words.append(Content.stage_word(stage))
+	check(words == ["Young croc", "Behemoth", "Colossus"], "stages in game words: %s" % [words])
+	check(Content.stage_word(3) == "", "an unknown stage has no word")
