@@ -30,6 +30,7 @@ func run_checks() -> void:
 	await _t("_check_globe_hit")
 	await _t("_check_globe_markers")
 	await _t("_check_globe_states")
+	await _t("_check_globe_locked")
 
 
 func _check_globe_mask() -> void:
@@ -126,6 +127,7 @@ func _check_globe_hit() -> void:
 	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
 	globe.spin = false
 	root.add_child(globe)
+	_open_all(globe)
 	var picked: Array[String] = []
 	globe.continent_picked.connect(func(id: String) -> void: picked.append(id))
 	var anchors := _anchors()
@@ -161,6 +163,7 @@ func _check_globe_hit() -> void:
 func _check_globe_markers() -> void:
 	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
 	root.add_child(globe)
+	_open_all(globe)
 	var mask := GlobeView.MASK.get_image()
 	mask.convert(Image.FORMAT_L8)
 	for n in ORDER.size():
@@ -281,3 +284,42 @@ func _check_globe_states() -> void:
 		wrong.is_empty(), "each continent's state reaches the shader at its mask value %s" % [wrong]
 	)
 	globe.free()
+
+
+## D-430 (director 2026-11-01: locked markers grey, not clickable). On a fresh save Thule is
+## locked: the pointer over it lights nothing, a click picks nothing and flies nowhere, and its
+## marker is grey; opened, the same pointer and click light it and pick it, its marker yellow.
+func _check_globe_locked() -> void:
+	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
+	globe.spin = false
+	root.add_child(globe)
+	var picked: Array[String] = []
+	globe.continent_picked.connect(func(id: String) -> void: picked.append(id))
+	var id := "thule"
+	_face(globe, globe.anchor_of(id))
+	var screen := globe.camera().unproject_position(globe.surface_global(globe.anchor_of(id)))
+	for open: bool in [false, true]:
+		if open:
+			_open_all(globe)
+		var move := InputEventMouseMotion.new()
+		move.position = screen
+		globe._unhandled_input(move)
+		_click(globe, screen)
+		var want := id if open else ""
+		var ink := UiKit.ACCENT if open else UiKit.LOCKED
+		var state := "open" if open else "locked"
+		check(globe.hovered == want, "%s %s: the pointer lights '%s'" % [id, state, globe.hovered])
+		check(
+			picked == ([id] if open else []) and globe.selected == want,
+			"%s %s: a click picks %s" % [id, state, picked]
+		)
+		check(globe.marker(id).ink() == ink, "%s %s: its marker is %s" % [id, state, ink])
+	globe.free()
+
+
+## Every continent available, so hit and fly checks reach all seven whatever the save holds.
+func _open_all(globe: GlobeView) -> void:
+	var states := {}
+	for id: String in ORDER:
+		states[id] = Campaign.State.AVAILABLE
+	globe.set_states(states)

@@ -9,7 +9,8 @@ extends Node3D
 ## click on sea or Esc flies back out. Each continent carries a mission marker (GlobeMarker) at
 ## its anchor, projected to the screen every frame. The globe only presents: each continent wears
 ## its campaign state (Campaign.states, plan row G3, D-430), read from the save when it opens and
-## set again with set_states.
+## set again with set_states. A locked continent neither lights up nor answers a click, and its
+## marker is grey (D-430).
 
 signal continent_picked(id: String)
 
@@ -51,6 +52,7 @@ var _mask: Image
 var _ids: Array[String] = []
 var _anchors: Array[Vector3] = []  # per mask value, 0 the sea
 var _markers: Array[GlobeMarker] = []  # per continent, in _ids order
+var _states := {}  # Campaign.State by id, as set_states last gave them
 var _dragging := false
 var _drag_px := 0.0
 var _fly_from := Vector3.ZERO  # yaw, tilt, camera distance
@@ -104,7 +106,14 @@ func set_states(states: Dictionary) -> void:
 	per_value.resize(_ids.size() + 1)
 	for n in _ids.size():
 		per_value[n + 1] = states.get(_ids[n], Campaign.State.LOCKED)
+		_markers[n].set_locked(per_value[n + 1] == Campaign.State.LOCKED)
 	_land_mat.set_shader_parameter("states", per_value)
+	_states = states
+
+
+## True for a continent the campaign has not opened yet (and for the sea's "").
+func locked(id: String) -> bool:
+	return _states.get(id, Campaign.State.LOCKED) == Campaign.State.LOCKED
 
 
 ## One GlobeMarker per continent, on a CanvasLayer above the globe, in Content order.
@@ -144,7 +153,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif _dragging:
 			_dragging = false
 			if _drag_px <= CLICK_SLOP_PX:
-				_click(continent_at(button.position))
+				_click(_open_at(button.position))
 	var motion := event as InputEventMouseMotion
 	if motion == null:
 		return
@@ -153,7 +162,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		yaw += motion.relative.x * DRAG_RAD_PER_PX
 		set_tilt(_tilt.rotation.x + motion.relative.y * DRAG_RAD_PER_PX)
 		_globe.rotation.y = yaw
-	_set_hovered(continent_at(motion.position))
+	_set_hovered(_open_at(motion.position))
 
 
 func tilt() -> float:
@@ -305,6 +314,12 @@ static func _nearest(points: Array, dir: Vector3) -> Vector3:
 
 static func _texel_uv(x: int, y: int, w: int, h: int) -> Vector2:
 	return Vector2((x + 0.5) / w, (y + 0.5) / h)
+
+
+## The continent under a screen point, or "" over sea, off the globe or on a locked continent.
+func _open_at(screen: Vector2) -> String:
+	var id := continent_at(screen)
+	return "" if locked(id) else id
 
 
 func _click(id: String) -> void:
