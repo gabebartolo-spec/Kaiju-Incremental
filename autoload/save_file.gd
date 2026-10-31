@@ -2,7 +2,8 @@ class_name SaveFile
 extends RefCounted
 ## Versioned saves in three slots (director 2026-10-26: "Three slots (Recommended)"). Each slot is
 ## one file: species, rubble bank, upgrade levels, run history, the best rampage so far (what the
-## results screen compares against) and the specimen number (K-01, +1 each time the kaiju dies).
+## results screen compares against), the specimen number (K-01, +1 each time the kaiju dies) and
+## the campaign: continents conquered, the bonus picked for each, Threat and the mission-noise log.
 ## A save from a newer version is refused, never half-loaded; an older one is migrated.
 ## The one save before slots (user://save.json) moves into the first empty slot, kept as a backup.
 ## Static so screens and tests can use it without the SaveSystem autoload (which forwards here).
@@ -12,7 +13,7 @@ const LEGACY_PATH := "user://save.json"
 ## Where the legacy file is kept once a slot holds it: renamed, never deleted.
 const LEGACY_BACKUP := "user://save.json.pre_slots"
 const SLOT_PATH := "user://save_slot_%d.json"
-const VERSION := 5
+const VERSION := 6
 ## The results screen's records (personal bests, D-259): each is the best single rampage, per
 ## stat, kept in the slot's save. A key an older save lacks starts at nothing (no migration);
 ## "best_combo" is recorded once the combo system reports it.
@@ -130,7 +131,7 @@ static func latest_slot(keep: Callable) -> int:
 ## A fresh save for a new kaiju of `species_id`: specimen K-01. `city_seed` is the slot's own city
 ## seed (CitySeed, D-263 "Different per save"): main.gd draws it with fresh_seed(); 0 elsewhere.
 static func new_save(species_id: String, city_seed: int = 0) -> Dictionary:
-	return {
+	var save := {
 		"version": VERSION,
 		"species": species_id,
 		"seed": city_seed,
@@ -145,6 +146,15 @@ static func new_save(species_id: String, city_seed: int = 0) -> Dictionary:
 		"specimen": 1,
 		"lab_card": false,
 	}
+	save.merge(campaign())
+	return save
+
+
+## The campaign keys a new save starts with (D-418 to D-422): the continent ids conquered, in
+## order; the bonus id picked for each (D-421, one of three); the global Threat, 0 to 100 (D-422);
+## and the noise log, one entry per mission (the overworld writes its entries).
+static func campaign() -> Dictionary:
+	return {"conquered": [], "bonuses": {}, "threat": 0.0, "noise_log": []}
 
 
 ## A new save's city seed: random per save, or pinned_seed when a test pins it. A save without
@@ -185,7 +195,8 @@ static func take_lab_card(save: Dictionary) -> bool:
 ## Brings an older save up to VERSION. v1 kept only "best_destruction"; v2 keeps a "best"
 ## record per stat; v3 drops the nodes tuning "save" "refunds" names (D-135 cut EVOLVE: Apex
 ## Titan) and gives their rubble back, so no one loses a purchase; v4 adds the demo keys; v5 (save
-## slots) adds the specimen number, K-01 for a kaiju that has not died yet on record.
+## slots) adds the specimen number, K-01 for a kaiju that has not died yet on record; v6 adds the
+## campaign keys (campaign()), empty: an older kaiju has conquered nothing yet.
 ## Unknown or newer versions are refused (empty), never guessed at.
 static func migrate(data: Dictionary) -> Dictionary:
 	var version: int = Num.i(data.get("version", 0))
@@ -206,6 +217,10 @@ static func migrate(data: Dictionary) -> Dictionary:
 		out["totals"] = out.get("totals", {})
 	if version < 5:  # v5: the specimen number lives in the slot
 		out["specimen"] = Num.i(out.get("specimen", 1))
+	if version < 6:  # v6: the campaign (D-418 to D-422), empty for a kaiju from before it
+		for key: String in campaign():
+			if not out.has(key):
+				out[key] = campaign()[key]
 	out["version"] = VERSION
 	return out
 
