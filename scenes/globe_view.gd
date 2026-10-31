@@ -7,8 +7,9 @@ extends Node3D
 ## continent under it lights up, and a click that did not drag emits continent_picked and flies
 ## the camera to it (the globe turns it to the centre, the camera closes in, the spin holds); a
 ## click on sea or Esc flies back out. Each continent carries a mission marker (GlobeMarker) at
-## its anchor, projected to the screen every frame. The globe only presents; which continents are
-## offered is campaign state (D-420), read by later rows.
+## its anchor, projected to the screen every frame. The globe only presents: each continent wears
+## its campaign state (Campaign.states, plan row G3, D-430), read from the save when it opens and
+## set again with set_states.
 
 signal continent_picked(id: String)
 
@@ -88,9 +89,22 @@ func _ready() -> void:
 	_land_mat = ShaderMaterial.new()
 	_land_mat.shader = LAND
 	_land_mat.set_shader_parameter("tint", UiKit.ACCENT)
+	_land_mat.set_shader_parameter("locked_tint", UiKit.LOCKED)
+	_land_mat.set_shader_parameter("conquered_tint", UiKit.GOOD)
 	_land_mat.set_shader_parameter("mask", MASK)
 	_globe.add_child(_sphere(RADIUS * LAND_LIFT, _land_mat))
 	_add_markers()
+	var conquered: Array = SaveFile.load_game().get("conquered", [])
+	set_states(Campaign.states(Content.continents(), conquered))
+
+
+## Each continent's look from its Campaign.State, by id (the shader reads them per mask value).
+func set_states(states: Dictionary) -> void:
+	var per_value := PackedInt32Array()
+	per_value.resize(_ids.size() + 1)
+	for n in _ids.size():
+		per_value[n + 1] = states.get(_ids[n], Campaign.State.LOCKED)
+	_land_mat.set_shader_parameter("states", per_value)
 
 
 ## One GlobeMarker per continent, on a CanvasLayer above the globe, in Content order.

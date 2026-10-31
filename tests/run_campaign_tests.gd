@@ -3,7 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## in the globe's sequence with the ruled names and stages; each conquest offers three bonuses and
 ## the capital, last, none; the six conquests' Threat shares leave room for mission noise; every
 ## id is a key the save's campaign can hold. Plan row F4: a picked bonus reaches combat through
-## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. The hologram
+## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. Plan row G3: which
+## continents are locked, available and conquered follows D-420 and D-422 (Campaign). The hologram
 ## globe's checks (rows G1..G4) live in run_globe_tests.gd. Seeded, no clock.
 ##   godot --headless --path . --script tests/run_campaign_tests.gd
 
@@ -32,6 +33,7 @@ func run_checks() -> void:
 	await _t("_check_save_keys")
 	await _t("_check_bonus_scales_stats")
 	await _t("_check_bonus_in_combat")
+	await _t("_check_states")
 
 
 func _check_seven_in_order() -> void:
@@ -175,3 +177,34 @@ func _stomp_once(picked: Dictionary) -> float:
 	var lost := 1000.0 - tank.hp
 	sim.dispose()
 	return lost
+
+
+## D-420: Ostia Minor alone, then the two lowest unconquered in sequence; D-422: the capital once
+## the other six have fallen. Each case: the conquered ids, then the ids that must be available.
+func _check_states() -> void:
+	var cases := [
+		[[], ["ostia_minor"]],
+		[["ostia_minor"], ["carthago", "thule"]],
+		[["ostia_minor", "carthago"], ["thule", "silvania"]],
+		[["ostia_minor", "thule"], ["carthago", "silvania"]],
+		[["ostia_minor", "thule", "silvania", "neptunia"], ["carthago", "mons_ferrata"]],
+		[ORDER.slice(0, 5), ["neptunia"]],
+		[ORDER.slice(0, 6), ["aurelia"]],
+		[ORDER, []],
+	]
+	for c: Array in cases:
+		var conquered: Array = c[0]
+		var open: Array = c[1]
+		var states := Campaign.states(Content.continents(), conquered)
+		var wrong: Array[String] = []
+		for id: String in ORDER:
+			var want := Campaign.State.LOCKED
+			if conquered.has(id):
+				want = Campaign.State.CONQUERED
+			elif open.has(id):
+				want = Campaign.State.AVAILABLE
+			if states.get(id, -1) != want:
+				wrong.append(id)
+		check(
+			wrong.is_empty(), "after %s the globe offers %s (wrong: %s)" % [conquered, open, wrong]
+		)

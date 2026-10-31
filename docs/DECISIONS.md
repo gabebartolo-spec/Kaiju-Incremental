@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-430 · Director · Globe continent states: grey coastline locked, pulsing yellow available, green conquered
+Overworld plan row G3, his picks: "Grey / yellow / green" and, for locked, "Coastline only". A locked continent draws
+only its coastline in UiKit LOCKED grey, no fill; an available one fills in ACCENT yellow and pulses slowly (one
+breath every 2 s); a conquered one fills steady in UiKit GOOD green. Which continents are available follows D-420 and
+D-422 (Campaign.states, read from the save's conquered list). The mission markers stay yellow on all seven.
+
 ## 2026-11-01 · D-428 · Director · Globe mission markers: pin and name on all seven, click turns and zooms in
 Overworld plan row G4, his picks: "Pin + name" (a small yellow diamond on the continent, a leader line up and right
 to its name in caps, ACCENT yellow with a dark outline), "All seven now" (the offered-pair filter waits for T1, the
@@ -392,8 +398,3 @@ rising from the river) is never landed and is never a dependency for anything; t
 is removed. Runs start in the crescent sea bay on the north edge and walk up the beach (D-270); the bay, beach and quays
 from claude/intro-bay are ported straight onto main (builder beach-start), rising on the approved rise clip until the
 keyed rise_bay clip exists (D-199). Never ask him about the river intro or the river for the intro again.
-
-## 2026-10-28 · D-372 · Director · Render item 15 (Medium GPU p95 bar) is parked for now
-The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
-runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
-or GPU-cut work on item 15 until he unparks it; the render plan's other open items (10 and 11, D-327) go ahead.

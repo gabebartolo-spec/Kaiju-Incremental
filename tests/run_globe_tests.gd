@@ -1,9 +1,9 @@
 extends "res://tests/lib/runner.gd"
-## Globe suite (Overworld plan rows G1, G2, G4): the Tellus Nova mask holds the seven continents
+## Globe suite (Overworld plan rows G1..G4): the Tellus Nova mask holds the seven continents
 ## apart, Neptunia an island chain; the globe reads the mask where SphereMesh draws it, and a
 ## point on each continent hit-tests to that continent through the camera, lights it and picks it
 ## on a click; each continent's marker stays on it as the globe spins, and a click flies the
-## camera to it. Seeded, no clock.
+## camera to it. Each continent wears its campaign state (G3). Seeded, no clock.
 ##   godot --headless --path . --script tests/run_globe_tests.gd
 
 ## The continents in the mask's value order (1..7; D-420), as Content.continents() loads them.
@@ -29,6 +29,7 @@ func run_checks() -> void:
 	await _t("_check_globe_uv")
 	await _t("_check_globe_hit")
 	await _t("_check_globe_markers")
+	await _t("_check_globe_states")
 
 
 func _check_globe_mask() -> void:
@@ -255,3 +256,28 @@ func _click(globe: GlobeView, at: Vector2) -> void:
 		click.pressed = pressed
 		click.position = at
 		globe._unhandled_input(click)
+
+
+## Plan row G3 (D-430): the globe opens on a fresh save with Ostia Minor alone available, and
+## set_states hands the land shader each continent's Campaign.State at its mask value.
+func _check_globe_states() -> void:
+	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
+	root.add_child(globe)
+	var mat: ShaderMaterial = globe._land_mat
+	var fresh: PackedInt32Array = mat.get_shader_parameter("states")
+	var want := PackedInt32Array([Campaign.State.LOCKED, Campaign.State.AVAILABLE])
+	for n in ORDER.size() - 1:
+		want.append(Campaign.State.LOCKED)
+	check(fresh == want, "a fresh save opens with Ostia Minor alone available: %s" % [fresh])
+	var conquered := ["ostia_minor", "thule"]
+	globe.set_states(Campaign.states(Content.continents(), conquered))
+	var now: PackedInt32Array = mat.get_shader_parameter("states")
+	var states := Campaign.states(Content.continents(), conquered)
+	var wrong: Array[String] = []
+	for n in ORDER.size():
+		if now[n + 1] != states[ORDER[n]]:
+			wrong.append(ORDER[n])
+	check(
+		wrong.is_empty(), "each continent's state reaches the shader at its mask value %s" % [wrong]
+	)
+	globe.free()

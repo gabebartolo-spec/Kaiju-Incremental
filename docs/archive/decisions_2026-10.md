@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-372 · Director · Render item 15 (Medium GPU p95 bar) is parked for now
+The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
+runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
+or GPU-cut work on item 15 until he unparks it; the render plan's other open items (10 and 11, D-327) go ahead.
+
 ## 2026-10-28 · D-371 · Director · The "never touch" rules on Dracorex, Defender and his Cascadeur tabs are removed
 His words (10-28 ~17:0x): "i never made these rules. i dont even know what they are, you can remove the rules". The
 "never open, edit or save the Dracorex file", "never touch Defender" and "never touch his Cascadeur tabs" lines were
