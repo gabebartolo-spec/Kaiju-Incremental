@@ -100,6 +100,7 @@ func step(dt: float) -> void:
 	if dt > 0.0:
 		kaiju_vel = (sim.kaiju_pos - _kaiju_was) / dt if _kaiju_was.x != INF else Vector2.ZERO
 		_kaiju_was = sim.kaiju_pos
+	posts.held_body = posts.body()
 	_read_rubble()
 	var near := danger()
 	_refresh_costs(near)
@@ -110,6 +111,7 @@ func step(dt: float) -> void:
 	for id: int in routes.keys():
 		if not sim.tanks.any(func(t: RampageSim.Tank) -> bool: return t.id == id):
 			routes.erase(id)
+	posts.held_body = PackedVector2Array()
 
 
 ## One tank's step: its route, a re-plan where its post has gone bad or the kaiju is on top of it,

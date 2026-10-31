@@ -5,6 +5,7 @@ extends RefCounted
 ## Frames at which the scene is counted.
 const AT: Array[int] = [600, 1800, 2600]
 const TOP := 12
+const ABLATE_EVERY := 30
 
 
 ## Census frames, and stills of the frames listed in --shots (--shots=1800,2600).
@@ -15,6 +16,24 @@ static func at(root: Node, frame: int, args: Dictionary) -> void:
 		)
 	if frame in AT:
 		run(root, frame)
+	var key := str(args.get("ablate", ""))
+	if not key.is_empty() and frame % ABLATE_EVERY == 0:
+		ablate(root, key)
+
+
+## --ablate=<script file or engine class>: stops those nodes processing, re-applied every
+## ABLATE_EVERY frames to catch new ones; the process span against a plain run is their cost.
+static func ablate(root: Node, key: String) -> void:
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		for child: Node in node.get_children():
+			stack.append(child)
+		if node.get_class() == key:
+			node.process_mode = Node.PROCESS_MODE_DISABLED
+		elif node.get_script() != null and _script_of(node) == key:
+			node.set_process(false)
+			node.set_physics_process(false)
 
 
 ## Prints the scripts with the most processing nodes and the owners of the most visible shadow

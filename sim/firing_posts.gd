@@ -5,6 +5,8 @@ extends RefCounted
 ## every post taken, a reserve post out of range on the reserve ring or one behind it. Part of
 ## Convoy; numbers are army.convoy in data/tuning.json.
 
+## body() held for one convoy step (Convoy.step): the kaiju does not move while tanks plan.
+var held_body := PackedVector2Array()
 var convoy: Convoy
 var graph: RoadGraph
 var sim: RampageSim
@@ -180,6 +182,8 @@ func head() -> Vector2:
 ## walks (Convoy.kaiju_vel): the line from its origin to its head, swept along its walk. A
 ## striding kaiju's path ahead is danger already, so the tanks clear it in time.
 func body() -> PackedVector2Array:
+	if not held_body.is_empty():
+		return held_body
 	var h := head()
 	var ahead := convoy.kaiju_vel * Num.f(cfg["lookahead"])
 	return PackedVector2Array([sim.kaiju_pos, h, h + ahead, sim.kaiju_pos + ahead])
