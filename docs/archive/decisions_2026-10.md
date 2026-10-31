@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-371 · Director · The "never touch" rules on Dracorex, Defender and his Cascadeur tabs are removed
+His words (10-28 ~17:0x): "i never made these rules. i dont even know what they are, you can remove the rules". The
+"never open, edit or save the Dracorex file", "never touch Defender" and "never touch his Cascadeur tabs" lines were
+agent-added on top of D-305, D-318 and D-320. Removed: agents treat the Dracorex sample and the open Cascadeur tabs
+like any other file and tab. D-318 and D-320 stay only as the record of what he answered. Method lessons stay (tabs
+in batches of 5, probes never switch scene: they prevent crashes). Claude still cannot change Windows security
+settings itself (its own tool limit, not his rule).
+
 ## 2026-10-28 · D-370 · Director · Ruleset after the rule audit
 Rule audit 10-28; his picks, each the recommended option except roadmap. Decision log: a decision goes into
 DECISIONS.md in the PR that acts on it, the lead owns the wording; log-only updates ride in the lead's next PR (main

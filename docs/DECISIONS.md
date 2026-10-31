@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-428 · Director · Globe mission markers: pin and name on all seven, click turns and zooms in
+Overworld plan row G4, his picks: "Pin + name" (a small yellow diamond on the continent, a leader line up and right
+to its name in caps, ACCENT yellow with a dark outline), "All seven now" (the offered-pair filter waits for T1, the
+colour states for G3) and "Turn + zoom in" (a click turns the continent to the centre and closes the camera in over
+0.7 s, eased; the spin holds while one is selected; a click on sea or Esc flies back out and the spin resumes).
+
 ## 2026-11-01 · D-427 · Director · Load screen: 12 graded dusk stills, random each load
 His shot list for load-screen art: "get caps of the powers / destruction / the city from panoramic angles / all three
 kaiju forms / then edit the photos to be more epic", then "remove the ui from the screencaps". Shown the board of 12
@@ -389,11 +395,3 @@ keyed rise_bay clip exists (D-199). Never ask him about the river intro or the r
 The 10-28 re-measure (#371) left Medium's whole-run GPU p95 0.3-0.9 ms over Phase 0's. Fixing it needs night speed
 runs (D-331, D-299). His words (10-28 ~17:2x): "we wont be able to do it tonight, park it FOR NOW". So: no profiling
 or GPU-cut work on item 15 until he unparks it; the render plan's other open items (10 and 11, D-327) go ahead.
-
-## 2026-10-28 · D-371 · Director · The "never touch" rules on Dracorex, Defender and his Cascadeur tabs are removed
-His words (10-28 ~17:0x): "i never made these rules. i dont even know what they are, you can remove the rules". The
-"never open, edit or save the Dracorex file", "never touch Defender" and "never touch his Cascadeur tabs" lines were
-agent-added on top of D-305, D-318 and D-320. Removed: agents treat the Dracorex sample and the open Cascadeur tabs
-like any other file and tab. D-318 and D-320 stay only as the record of what he answered. Method lessons stay (tabs
-in batches of 5, probes never switch scene: they prevent crashes). Claude still cannot change Windows security
-settings itself (its own tool limit, not his rule).

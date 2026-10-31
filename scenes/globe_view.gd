@@ -1,11 +1,14 @@
 class_name GlobeView
 extends Node3D
-## The campaign's hologram globe of Tellus Nova (D-418; Overworld plan row G2): a hologram shell
-## sphere (globe_hologram.gdshader) and, just outside it, a land sphere that reads the landmass
-## mask (globe_land.gdshader). It spins idly; a left-drag turns it (sideways spins, up and down
-## tilts) and releasing resumes the spin. The pointer is hit-tested against the same mask: the
-## continent under it lights up, and a click that did not drag emits continent_picked. The globe
-## only presents; which continents are offered is campaign state (D-420), read by later rows.
+## The campaign's hologram globe of Tellus Nova (D-418; Overworld plan rows G2, G4): a hologram
+## shell sphere (globe_hologram.gdshader) and, just outside it, a land sphere that reads the
+## landmass mask (globe_land.gdshader). It spins idly; a left-drag turns it (sideways spins, up and
+## down tilts) and releasing resumes the spin. The pointer is hit-tested against the same mask: the
+## continent under it lights up, and a click that did not drag emits continent_picked and flies
+## the camera to it (the globe turns it to the centre, the camera closes in, the spin holds); a
+## click on sea or Esc flies back out. Each continent carries a mission marker (GlobeMarker) at
+## its anchor, projected to the screen every frame. The globe only presents; which continents are
+## offered is campaign state (D-420), read by later rows.
 
 signal continent_picked(id: String)
 
@@ -18,15 +21,24 @@ const LAND_LIFT := 1.003  # the land sphere's radius over the shell's, so the tw
 const SEGMENTS := 96
 const RINGS := 48
 const CAMERA_DISTANCE := 3.4
+const ZOOM_DISTANCE := 2.6  # the camera's distance from the centre while a continent is selected
 const CAMERA_FOV := 38.0
 const START_TILT := 0.3  # rad, the globe leans toward the camera so the north reads
 const TILT_LIMIT := 1.1  # rad either way
 const IDLE_SPIN := 0.25  # rad/s
 const DRAG_RAD_PER_PX := 0.006
 const CLICK_SLOP_PX := 6.0  # a press that moves further than this is a drag, not a pick
+const FLY_S := 0.7  # the fly-to and fly-out time, eased in and out
+## Mask px between candidate anchors; an anchor's 8 neighbours this far away share its value.
+const ANCHOR_STEP := 4
+## A marker fades over this much of the facing range (dot of the surface normal with the view
+## direction) as its anchor turns toward the globe's edge; at or below 0 it is hidden.
+const MARKER_FADE := 0.25
 
 ## The continent the pointer is over ("" for sea or off the globe).
 var hovered := ""
+## The continent the camera has flown to ("" when it is out at CAMERA_DISTANCE).
+var selected := ""
 var yaw := 0.0
 var spin := true
 
@@ -36,17 +48,20 @@ var _globe: Node3D
 var _land_mat: ShaderMaterial
 var _mask: Image
 var _ids: Array[String] = []
+var _anchors: Array[Vector3] = []  # per mask value, 0 the sea
+var _markers: Array[GlobeMarker] = []  # per continent, in _ids order
 var _dragging := false
 var _drag_px := 0.0
+var _fly_from := Vector3.ZERO  # yaw, tilt, camera distance
+var _fly_to := Vector3.ZERO
+var _fly_t := 1.0  # 1 when no flight is under way
 
 
 func _ready() -> void:
 	_mask = MASK.get_image()
 	if _mask.get_format() != Image.FORMAT_L8:
 		_mask.convert(Image.FORMAT_L8)
-	for def: Dictionary in Content.continents():
-		var id: String = def["id"]
-		_ids.append(id)
+	_anchors = anchors(_mask, Content.continents().size())
 
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
@@ -76,24 +91,42 @@ func _ready() -> void:
 	_land_mat.set_shader_parameter("mask", MASK)
 	_globe.add_child(_sphere(RADIUS * LAND_LIFT, _land_mat))
 
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	for def: Dictionary in Content.continents():
+		var id: String = def["id"]
+		_ids.append(id)
+		var marker := GlobeMarker.new(str(def["name"]))
+		layer.add_child(marker)
+		_markers.append(marker)
+
 
 func _process(delta: float) -> void:
-	if spin and not _dragging:
+	if _fly_t < 1.0:
+		_fly_t = minf(1.0, _fly_t + delta / FLY_S)
+		var now := _fly_from.lerp(_fly_to, smoothstep(0.0, 1.0, _fly_t))
+		yaw = now.x
+		set_tilt(now.y)
+		_camera.position.z = now.z
+	elif spin and not _dragging and selected == "":
 		yaw += IDLE_SPIN * delta
 	_globe.rotation.y = yaw
+	_place_markers()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and selected != "":
+		fly_out()
+		return
 	var button := event as InputEventMouseButton
 	if button != null and button.button_index == MOUSE_BUTTON_LEFT:
 		if button.pressed:
-			_dragging = true
+			_dragging = _fly_t >= 1.0
 			_drag_px = 0.0
 		elif _dragging:
 			_dragging = false
-			var id := continent_at(button.position)
-			if _drag_px <= CLICK_SLOP_PX and id != "":
-				continent_picked.emit(id)
+			if _drag_px <= CLICK_SLOP_PX:
+				_click(continent_at(button.position))
 	var motion := event as InputEventMouseMotion
 	if motion == null:
 		return
@@ -115,6 +148,46 @@ func set_tilt(rad: float) -> void:
 
 func camera() -> Camera3D:
 	return _camera
+
+
+func flying() -> bool:
+	return _fly_t < 1.0
+
+
+## Turns the continent to the centre of the screen and closes the camera in, over FLY_S; the idle
+## spin holds while it is selected.
+func fly_to(id: String) -> void:
+	var value := _ids.find(id) + 1
+	if value == 0:
+		return
+	selected = id
+	var n := _anchors[value]
+	var face_yaw := -atan2(n.x, n.z)
+	_fly(
+		Vector3(
+			yaw + wrapf(face_yaw - yaw, -PI, PI),
+			clampf(asin(clampf(n.y, -1.0, 1.0)), -TILT_LIMIT, TILT_LIMIT),
+			ZOOM_DISTANCE
+		)
+	)
+
+
+## Back out to CAMERA_DISTANCE where the globe stands, over FLY_S; the idle spin resumes.
+func fly_out() -> void:
+	selected = ""
+	_fly(Vector3(yaw, tilt(), CAMERA_DISTANCE))
+
+
+## The unit-sphere point, in the globe's own frame, a continent's marker stands on (ZERO for an
+## unknown id).
+func anchor_of(id: String) -> Vector3:
+	var value := _ids.find(id) + 1
+	return _anchors[value] if value > 0 else Vector3.ZERO
+
+
+func marker(id: String) -> GlobeMarker:
+	var n := _ids.find(id)
+	return _markers[n] if n >= 0 else null
 
 
 ## A point given in the globe's own frame (the frame uv_of reads), in world space as it turns now.
@@ -148,11 +221,101 @@ static func uv_of(local: Vector3) -> Vector2:
 	return Vector2(fposmod(atan2(n.x, n.z) / TAU, 1.0), acos(clampf(n.y, -1.0, 1.0)) / PI)
 
 
+## The point on the unit sphere at a mask UV, the inverse of uv_of.
+static func point_of(uv: Vector2) -> Vector3:
+	var lon := uv.x * TAU
+	var colat := uv.y * PI
+	return Vector3(sin(colat) * sin(lon), cos(colat), sin(colat) * cos(lon))
+
+
 ## The mask's value (0 sea, 1..7 the continents in D-420 order) at a UV, nearest texel.
 static func id_at_uv(mask: Image, uv: Vector2) -> int:
 	var x := clampi(int(uv.x * mask.get_width()), 0, mask.get_width() - 1)
 	var y := clampi(int(uv.y * mask.get_height()), 0, mask.get_height() - 1)
 	return roundi(mask.get_pixel(x, y).r * 255.0)
+
+
+## Each mask value's anchor (index 0 the sea, 1..count the continents) as a unit-sphere point: the
+## texel well inside its area (its 8 neighbours ANCHOR_STEP px away share it) nearest the area's
+## mean direction, so an island chain's marker still stands on land. One pass over the mask.
+static func anchors(mask: Image, count: int) -> Array[Vector3]:
+	var w := mask.get_width()
+	var h := mask.get_height()
+	var px := mask.get_data()
+	var means: Array[Vector3] = []
+	var cands: Array[Array] = []
+	for v in count + 1:
+		means.append(Vector3.ZERO)
+		cands.append([])
+	var s := ANCHOR_STEP
+	for y in range(s, h - s, s):
+		for x in range(0, w, s):
+			var v: int = px[y * w + x]
+			if v > count:
+				continue
+			var p := point_of(_texel_uv(x, y, w, h))
+			means[v] += p
+			var l := posmod(x - s, w)
+			var r := posmod(x + s, w)
+			var up := (y - s) * w
+			var row := y * w
+			var dn := (y + s) * w
+			if (
+				px[up + l] == v
+				and px[up + x] == v
+				and px[up + r] == v
+				and px[row + l] == v
+				and px[row + r] == v
+				and px[dn + l] == v
+				and px[dn + x] == v
+				and px[dn + r] == v
+			):
+				cands[v].append(p)
+	var out: Array[Vector3] = []
+	for v in count + 1:
+		var mean := means[v].normalized()
+		var best := Vector3.ZERO
+		var best_dot := -2.0
+		for p: Vector3 in cands[v]:
+			if p.dot(mean) > best_dot:
+				best_dot = p.dot(mean)
+				best = p
+		out.append(best)
+	return out
+
+
+static func _texel_uv(x: int, y: int, w: int, h: int) -> Vector2:
+	return Vector2((x + 0.5) / w, (y + 0.5) / h)
+
+
+func _click(id: String) -> void:
+	if id != "":
+		continent_picked.emit(id)
+		fly_to(id)
+	elif selected != "":
+		fly_out()
+
+
+func _fly(target: Vector3) -> void:
+	_fly_from = Vector3(yaw, tilt(), _camera.position.z)
+	_fly_to = target
+	_fly_t = 0.0
+
+
+## Each marker at its anchor on the screen, faded as the anchor turns toward the globe's edge and
+## hidden on the far side.
+func _place_markers() -> void:
+	_globe.force_update_transform()
+	var eye := _camera.global_position
+	for n in _markers.size():
+		var world := _globe.to_global(_anchors[n + 1] * RADIUS * LAND_LIFT)
+		var normal := (world - _globe.global_position).normalized()
+		var facing := normal.dot((eye - world).normalized())
+		var m := _markers[n]
+		m.visible = facing > 0.0
+		if m.visible:
+			m.position = _camera.unproject_position(world)
+			m.modulate.a = smoothstep(0.0, MARKER_FADE, facing)
 
 
 func _set_hovered(id: String) -> void:
