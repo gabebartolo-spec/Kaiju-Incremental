@@ -43,6 +43,8 @@ var _ready_index: Array[int] = []
 var _mutex := Mutex.new()
 var _rest: Array[int] = []
 var _stand_ins: StreamDissolve
+## The real facades for the stand-in boxes (D-415), baked on workers from _ready to finish_initial.
+var _facades: FacadeBake
 var _now: Array[int] = []
 var _pre: Array[BuildingView] = []
 var _initial := -1  # the initial group task while it is out, else -1
@@ -81,6 +83,7 @@ func _ready() -> void:
 		_chunks[n] = StreamRank.chunks(b)
 	_budget = Num.i(_sim.city.get("stream_chunks", 1 << 30))
 	_party = BuildingView.party_walls(_sim.buildings)
+	_start_facades()
 	var order: Array[int] = []
 	for n: int in count:
 		order.append(n)
@@ -106,6 +109,13 @@ func _ready() -> void:
 	_pending = true
 	if not defer_initial:
 		finish_initial()
+
+
+## The real facades for the stand-in boxes (D-415, render_opt.facade_bake), baked on workers.
+func _start_facades() -> void:
+	if Content.section("render_opt").get("facade_bake", true) == true:
+		_facades = FacadeBake.new(_sim.buildings, _colors, _party)
+		_facades.start()
 
 
 ## Starts meshing the nearest buildings (_now) into _pre: on workers, or at once here under the
@@ -134,8 +144,10 @@ func finish_initial() -> void:
 		WorkerThreadPool.wait_for_group_task_completion(_initial)
 		_initial = -1
 	_pending = false
+	if _facades != null:
+		_facades.finish()
 	_stand_ins = StreamDissolve.new(_sim.buildings, _sim.city)
-	add_child(_stand_ins.build(_colors))
+	add_child(_stand_ins.build(_colors, _facades))
 	for k: int in _now.size():
 		var n := _now[k]
 		_state[n] = 2
@@ -353,6 +365,8 @@ func _free_view(n: int, force := false) -> void:
 
 func _exit_tree() -> void:
 	_stop = true
+	if _facades != null:
+		_facades.wait()
 	if _initial >= 0:
 		WorkerThreadPool.wait_for_group_task_completion(_initial)
 		_initial = -1

@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
+A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
+the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city
+only (the far skyline keeps its shader pattern), and a longer load: "i dont really care if the load screen goes for
+10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
+and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
+cached).
 ## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
 Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
 fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim
@@ -387,11 +394,3 @@ D-163 ("Far blur only", locked on the kaiju, haze carrying the depth), he picked
 lighter blur). Replaces D-163's depth-blur clause only: far blur is off by default; haze, cool shadows with warm fire
 and fine-block ground stay as D-163 set them. Owner: load-flake (flag off by default, PR); the facade pop-in probe
 ("Blurry turns sharp") follows.
-
-## 2026-10-28 · D-359 · Director · The demo plays at dusk only
-His question: "would it be faster if we focused on just one time of day for the demo". Told that it is (each new look
-is tuned and shown once, not four times; sim, animation and perf work are unchanged), and quoted his 10-22 ruling
-("the time of day will be randomised each run"), he answered "dusk only" (not the recommended night only, not all four,
-not night and dusk). For the demo every rampage plays at dusk, the options time toggle is hidden while only one time
-can play, and every capture and clip for him shows dusk. D-145's random time (never the same twice) and the toggle
-return after the demo; night, morning and noon looks stay in data, untouched (D-279, D-285, D-328 still hold for night).

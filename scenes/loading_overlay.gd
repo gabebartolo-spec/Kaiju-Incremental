@@ -38,6 +38,13 @@ func _ready() -> void:
 	_bar.max_value = STAGES
 	_bar.value = _done
 	col.add_child(_bar)
+	if FacadeBake.first_load():  # D-415: the first load bakes the facades, up to half a minute
+		var note := UiKit.label(
+			tr("First load takes longer (up to half a minute). Nothing is frozen.")
+		)
+		note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		note.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		col.add_child(note)
 	var news: Array = UiKit.ui()["loading_news"]
 	var lines := PackedStringArray()
 	for line: Variant in news:

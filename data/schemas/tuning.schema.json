@@ -5998,6 +5998,7 @@
         "soft_smoke": {"$ref": "#/$defs/bool"},
         "soft_smoke_m": {"$ref": "#/$defs/num"},
         "facade_aa": {"$ref": "#/$defs/bool"},
+        "facade_bake": {"$ref": "#/$defs/bool"},
         "facade_aa_start": {"$ref": "#/$defs/num"},
         "facade_aa_cells": {"$ref": "#/$defs/num"},
         "native_colliders": {"$ref": "#/$defs/bool"},
@@ -6007,7 +6008,7 @@
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
         "people_aabb_margin_m", "kaiju_three_faces", "night_clip_max", "fx_pool",
-        "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m", "facade_aa",
+        "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m", "facade_aa", "facade_bake",
         "facade_aa_start", "facade_aa_cells", "native_colliders", "collider_boxes_per_tick",
         "island_merged"
       ],
