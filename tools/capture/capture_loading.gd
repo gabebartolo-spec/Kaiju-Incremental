@@ -9,6 +9,8 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 
 
 func _initialize() -> void:
+	if not NativeGuard.ok(self):
+		return
 	var a := Kit.args({"out": "user://loading", "loads": "3"})
 	DirAccess.make_dir_recursive_absolute(str(a["out"]))
 	if not Kit.window_ok():
