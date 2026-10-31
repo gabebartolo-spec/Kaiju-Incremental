@@ -76,6 +76,7 @@ func start(sim: RampageSim, keyed := 0.0) -> void:
 	# whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
 	sim.facing = _ahead()
 	sim.body.heading = sim.facing
+	sim.carving.prepare_along(rise_at, sim.clamp_to_arena(_bank))
 
 
 ## The start's timing: the data's, or a keyed rise of `keyed` seconds in place of its hold and rise.
@@ -196,6 +197,7 @@ func _surface(sim: RampageSim) -> void:
 func _land(sim: RampageSim, bank: Vector2) -> void:
 	sim.kaiju_pos = bank
 	active = false
+	sim.carving.promoter.drop_ready()
 	sim.events.append({"type": "kaiju_emerged"})
 
 
