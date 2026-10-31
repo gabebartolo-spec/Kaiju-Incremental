@@ -1,8 +1,8 @@
 class_name IntroWater
 extends Node3D
 ## The water before the kaiju breaks it (director 2026-10-20 #11: "zoomed in on the water which
-## begins to ripple and fount before our kaiju emerges"): rings spreading from over its head
-## while it holds under, a column of spray (cube droplets, like the city's voxels) rising and
+## begins to ripple and fount before our kaiju emerges"): the rings are the liquid's own (WaterSim
+## ripple_seconds) while it holds under; here a column of spray (cube droplets, like the city's voxels) rising and
 ## building until the head breaks the surface, then a burst of spray with the break. Paced by
 ## the sim's own rise (Emergence progress), never the clock; presentation only, tuning
 ## "intro" "water". RiverView keeps its splash rings at the start, the break and the step out.
@@ -10,7 +10,6 @@ extends Node3D
 var _sim: RampageSim
 var _fx: Fx
 var _cfg: Dictionary
-var _rings := 0
 var _fount: GPUParticles3D
 var _burst: GPUParticles3D
 var _burst_done := false
@@ -45,12 +44,6 @@ func _process(_delta: float) -> void:
 	if _fount == null:
 		return
 	var t := emerge.progress() * emerge.total()
-	var every := Num.f(_cfg["ripple_seconds"])
-	if emerge.active and not emerge.surfaced and t >= _rings * every:
-		_rings += 1  # one ring a frame at most, so a fast-forward never stacks them
-		var grow := 1.0 + Num.f(_cfg["ripple_grow"]) * t
-		var radius := Num.f(_cfg["ripple_radius"]) * _sim.body_scale() * grow
-		_fx.ring_of(global_position, radius, 0.0, foam(_cfg))
 	# It builds to its peak as the head breaks and plays on while the head clears the water.
 	var from := Num.f(_cfg["fount_from_seconds"])
 	var due := emerge.active and t >= from and t < _break + Num.f(_cfg["fount_after_seconds"])
@@ -79,12 +72,15 @@ func _spray(amount: int, speed: float, one_shot: bool) -> GPUParticles3D:
 	# blue-grey), fading out at the end of its life.
 	mat.scale_min = Num.f(_cfg["drop_min"])
 	mat.scale_max = 1.0
-	var tones: Array = _cfg["colors"]
-	mat.color_initial_ramp = _tones(tones, false)
-	mat.color_ramp = _tones(["ffffffff", "ffffff00"], true)
-	var cube := BoxMesh.new()
-	cube.size = Vector3.ONE * Num.f(_cfg["drop"]) * s
-	var look := StandardMaterial3D.new()  # lit: the cubes take the scene's light and shade
+	var hues: Array = _cfg["colors"]
+	mat.color_initial_ramp = tones(hues, false)
+	mat.color_ramp = tones(["ffffffff", "ffffff00"], true)
+	var cube := SphereMesh.new()  # round drops: cubes read as debris, not water
+	cube.radius = Num.f(_cfg["drop"]) * s * 0.5
+	cube.height = cube.radius * 2.0
+	cube.radial_segments = 8
+	cube.rings = 4
+	var look := StandardMaterial3D.new()  # lit: the drops take the scene's light and shade
 	look.vertex_color_use_as_albedo = true
 	look.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	look.roughness = 0.35
@@ -109,7 +105,7 @@ static func foam(cfg: Dictionary) -> Color:
 
 
 ## A texture of `colors` (hex strings): a smooth ramp over a life, or hard steps to pick one from.
-static func _tones(colors: Array, smooth: bool) -> GradientTexture1D:
+static func tones(colors: Array, smooth: bool) -> GradientTexture1D:
 	var ramp := Gradient.new()
 	var picked := PackedColorArray()
 	for hex: Variant in colors:

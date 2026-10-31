@@ -175,6 +175,7 @@ var brood: Brood
 var stomp: RampageStomp
 var strikes: Strikes  # the reptilian's big attacks, a beat after the press (D-166)
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
+var water: WaterSim  # the bay and the river as a liquid the body and its blows push about
 var death: DeathOverload  # how he dies: stagger, stone, shatter
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
@@ -287,6 +288,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	var signature_held := buttons & HELD != 0
 	_events = []
 	if death.holds(dt) or emerge.step(self, dt):
+		water.step(self, dt, _events)
 		return _events
 	time_left -= dt
 	elapsed += dt
@@ -312,6 +314,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	_step_sky(dt)
 	rail.step(dt)
 	Endless.step(self, dt)
+	water.step(self, dt, _events)
 	news.step(_events)
 	var why := Endless.over_reason(self)
 	if why != "":

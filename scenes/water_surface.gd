@@ -33,6 +33,10 @@ static func sheet(rect: Rect2, y: float, deep: Color, bay: bool, seed: int) -> M
 	var mi := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = rect.size
+	# cut into the liquid's cells, so its waves (WaterView) can lift the sheet
+	var cell := Num.f(Content.section("water_sim")["cell"])
+	plane.subdivide_width = ceili(rect.size.x / cell)
+	plane.subdivide_depth = ceili(rect.size.y / cell)
 	plane.material = material(rect, deep, bay, seed) if on() else gloss(deep)
 	mi.mesh = plane
 	var mid := rect.get_center()

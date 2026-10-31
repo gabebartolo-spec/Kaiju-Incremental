@@ -38,6 +38,7 @@ var fire: FireSpread
 var tail_cut := 0
 var _rng: RandomNumberGenerator
 var _ram_cd := 0.0
+var _channels: Variant = null  # the river's channels (CityRiver), found on first need
 var _glide_armed := false
 var _lash_wait := -1.0  # seconds until a wound-up lash strikes; < 0: none
 
@@ -213,9 +214,12 @@ func _ram(dt: float) -> void:
 ## the chunks it stands on.
 func _climb(dt: float) -> void:
 	if sim.stat("climb") <= 0.0 or sim.airborne:
-		sim.stand_y = 0.0
+		sim.stand_y = _wade(dt)
 		return
 	var top := column_top(sim.kaiju_pos)
+	if top <= 0.0:
+		sim.stand_y = _wade(dt)
+		return
 	if top > sim.stand_y:
 		sim.stand_y = minf(top, sim.stand_y + Num.f(cfg["climb_speed"]) * dt)
 	else:
@@ -235,6 +239,23 @@ func _climb(dt: float) -> void:
 
 
 ## Height (floors) of the standing top of the building column at pos, 0 on the street.
+## Off the buildings he stands on the street, or in the river's channels on the wading floor,
+## city "wade_depth" under the river's water (director 2026-10-31: "the baby kaiju should be like
+## half submerged in the river"), stepping down into it and up out of it at "wade_speed" m/s.
+func _wade(dt: float) -> float:
+	var city := sim.city
+	if _channels == null:
+		_channels = CityRiver.channels(CityGen.map(city), city) if city.has("wade_depth") else []
+	var ground := 0.0
+	for channel: Rect2 in _channels:
+		if channel.has_point(sim.kaiju_pos):
+			ground = -Num.f(city["river_depth"]) - Num.f(city["wade_depth"])
+			break
+	if ground >= 0.0 and sim.stand_y >= 0.0:
+		return 0.0
+	return move_toward(sim.stand_y, ground, Num.f(city["wade_speed"]) * dt)
+
+
 func column_top(pos: Vector2) -> float:
 	for i: int in sim.grid.around(pos, 0.0):
 		var b := sim.buildings[i]

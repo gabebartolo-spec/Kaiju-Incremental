@@ -240,8 +240,8 @@ static func _fresh(tier: int, map_seed: int, size: int = 0, growth: int = 0) -> 
 	return sim
 
 
-## The beach slopes from the sea floor up to sand just under the street; no street runs into the
-## bay; no building or prop stands in it.
+## The beach slopes gently from the wading floor (director 2026-10-31: "never too deep") up to
+## sand just under the street; no street runs into the bay; no building or prop stands in it.
 static func _check_bay(
 	tier: int,
 	map_seed: int,
@@ -252,13 +252,13 @@ static func _check_bay(
 ) -> void:
 	var water := CityHarbour.basin(plan)
 	var line := CityHarbour.arc(plan, sim.city)
-	var mid := line[line.size() / 2]  # the beach's middle, at the curve
+	var mid := line[line.size() / 4]  # along the beach, clear of the rise's hollow
 	var top := CityHarbour.floor_at(plan, sim.city, mid + Vector2(0.0, -0.01))
 	var foot := CityHarbour.floor_at(
-		plan, sim.city, mid - Vector2(0.0, Num.f(sim.city["harbour"]["beach"]) + 0.01)
+		plan, sim.city, mid - Vector2(0.0, Num.f(sim.city["harbour"]["shelf"]) + 0.01)
 	)
 	var sloped := top < 0.0 and top > -SAND_UNDER
-	sloped = sloped and absf(foot - CityHarbour.seabed(sim.city)) < 0.01
+	sloped = sloped and absf(foot - CityHarbour.shelf_floor(sim.city)) < 0.01
 	var roads := 0
 	var nodes: Array[Vector2] = plan["nodes"]
 	for street: Dictionary in plan["streets"]:

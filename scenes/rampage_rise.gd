@@ -32,6 +32,7 @@ func _init(run: Rampage, fx: Fx, kaiju: KaijuModel, full: bool) -> void:
 	head = head_at(kaiju, Vector2(Num.f(_cfg["aim_ahead"]), height)) * sim.body_scale()
 	run.add_child(RiverView.new(sim, fx, head.x))
 	run.add_child(IntroWater.new(sim, fx, head.x))
+	run.add_child(WaterView.new(sim))
 	intro = RunIntro.new(sim, full)
 	run.add_child(self)
 

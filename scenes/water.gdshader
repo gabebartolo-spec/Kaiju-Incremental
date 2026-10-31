@@ -56,6 +56,14 @@ uniform float lap_height = 0.0;  // the lapping wavelets' height (m); 0 = none (
 uniform float lap_length = 8.0;  // their spacing (m)
 uniform float lap_period = 6.0;  // seconds between one reaching the sand and the next
 uniform vec2 lap_dir = vec2(0.0, 1.0);  // landward (unit, x z)
+// The liquid (WaterSim, drawn by WaterView): its surface's lift over the still water per cell (m),
+// a dry cell far under; the sheet takes the lift and its slope, so the sim's waves are what shows.
+uniform sampler2D sim_height : filter_linear, repeat_disable;
+uniform vec2 sim_origin = vec2(0.0);
+uniform vec2 sim_size = vec2(1.0);
+uniform float sim_on = 0.0;
+uniform float whitecap_slope = 0.35;  // a sim crest this steep (or this high, m) breaks white
+uniform float whitecap_lift = 0.5;
 
 const float GRAVITY = 9.81;
 const int WAVES = 6;
@@ -162,11 +170,43 @@ float lap(vec2 p, float t) {
 	return lap_height * (exp(sin(ph) - 1.0) - CREST_MEAN) / (1.0 - CREST_MEAN);
 }
 
+// The lift at uv, smoothed over the cell and its neighbours (weights 1 2 1 each way), so the
+// sheet is a rounded surface, not the 2 m cells' facets, and its line under the sand is smooth.
+float sim_smooth(vec2 uv, vec2 du, vec2 dv) {
+	float sum = 0.0;
+	for (int i = -1; i <= 1; i++) {
+		for (int j = -1; j <= 1; j++) {
+			float w = float((2 - abs(i)) * (2 - abs(j)));
+			sum += w * texture(sim_height, uv + float(i) * du + float(j) * dv).r;
+		}
+	}
+	return sum / 16.0;
+}
+
+// The liquid's lift at p (world x z) and its slope (dh/dx, dh/dz); none off the sim.
+vec3 sim_at(vec2 p) {
+	if (sim_on <= 0.0) {
+		return vec3(0.0);
+	}
+	vec2 uv = (p - sim_origin) / sim_size;
+	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
+		return vec3(0.0);
+	}
+	vec2 cell = sim_size / vec2(textureSize(sim_height, 0));
+	vec2 du = vec2(1.0, 0.0) / vec2(textureSize(sim_height, 0));
+	vec2 dv = vec2(0.0, 1.0) / vec2(textureSize(sim_height, 0));
+	float h = sim_smooth(uv, du, dv);
+	float hx = sim_smooth(uv + du, du, dv) - sim_smooth(uv - du, du, dv);
+	float hz = sim_smooth(uv + dv, du, dv) - sim_smooth(uv - dv, du, dv);
+	return vec3(h, hx / (2.0 * cell.x), hz / (2.0 * cell.y));
+}
+
 void vertex() {
+	vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	if (lap_height > 0.0) {
-		vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 		VERTEX.y += lap(w.xz, TIME) * COLOR.r;
 	}
+	VERTEX.y += sim_at(w.xz).x;
 }
 
 // What lies behind this pixel in view space (the depth texture, both renderers' NDC).
@@ -197,6 +237,8 @@ void fragment() {
 		h += s;
 		crest = clamp(0.15 * crest + s.x / max(0.001, swell_slope * swell_length / TAU), -1.0, 1.0);
 	}
+	vec3 liquid = sim_at(p);
+	h.yz += clamp(liquid.yz, vec2(-2.0), vec2(2.0));  // a dry rim's cliff never tips the normal over
 	vec3 n_world = normalize(vec3(-h.y, 1.0, -h.z));
 	NORMAL = normalize((VIEW_MATRIX * vec4(n_world, 0.0)).xyz);
 	float alpha0 = rough_near * rough_near;
@@ -224,6 +266,9 @@ void fragment() {
 	float band = 1.0 - smoothstep(0.0, foam_depth, below);
 	float lace = gnoise(carried * 1.7 + vec2(t * 0.11, seed)).x + 0.5 * gnoise(carried * 4.3 - vec2(0.0, t * 0.17)).x;
 	float froth = smoothstep(0.4, 0.75, band * (0.75 + lace)) * foam;
+	// The liquid's own crests break white where they steepen or stand tall, broken by the same lace.
+	float cap = max(length(liquid.yz) / whitecap_slope, liquid.x / whitecap_lift);
+	froth = max(froth, smoothstep(0.7, 1.2, cap * (0.75 + lace)) * sim_on);
 
 	float seen = clear * (1.0 - fres);  // the share of what is under the water that reaches the eye
 	ALBEDO = mix(body * (1.0 - clear) * (1.0 - fres), foam_color, froth);

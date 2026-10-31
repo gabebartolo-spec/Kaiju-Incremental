@@ -1946,9 +1946,6 @@
         "water": {
           "type": "object",
           "properties": {
-            "ripple_seconds": {"$ref": "#/$defs/num"},
-            "ripple_radius": {"$ref": "#/$defs/num"},
-            "ripple_grow": {"$ref": "#/$defs/num"},
             "fount_from_seconds": {"$ref": "#/$defs/num"},
             "fount_after_seconds": {"$ref": "#/$defs/num"},
             "fount_start": {"$ref": "#/$defs/num"},
@@ -1966,7 +1963,7 @@
             "colors": {"type": "array", "items": {"$ref": "#/$defs/hex6"}}
           },
           "required": [
-            "ripple_seconds", "ripple_radius", "ripple_grow", "fount_from_seconds",
+            "fount_from_seconds",
             "fount_after_seconds", "fount_start", "fount_amount", "fount_speed", "fount_spread",
             "burst_amount", "burst_speed", "burst_spread", "gravity", "life", "drop", "drop_min",
             "width", "colors"
@@ -1981,6 +1978,30 @@
         "skip_ticks", "hud_fade_seconds", "aim_fade_seconds", "water"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
+    "water_sim": {
+      "type": "object",
+      "properties": {
+        "_note": {"type": "string"},
+        "cell": {"$ref": "#/$defs/num"},
+        "rim": {"$ref": "#/$defs/num"},
+        "courant": {"$ref": "#/$defs/num"},
+        "friction": {"$ref": "#/$defs/num"},
+        "calm": {"$ref": "#/$defs/num"},
+        "window": {"$ref": "#/$defs/num"},
+        "body_radius": {"$ref": "#/$defs/num"},
+        "stomp_share": {"$ref": "#/$defs/num"},
+        "stomp_volume": {"$ref": "#/$defs/num"},
+        "rise_radius": {"$ref": "#/$defs/num"},
+        "rise_volume": {"$ref": "#/$defs/num"},
+        "ripple_seconds": {"$ref": "#/$defs/num"},
+        "ripple_volume": {"$ref": "#/$defs/num"},
+        "whitecap_slope": {"$ref": "#/$defs/num"},
+        "whitecap_lift": {"$ref": "#/$defs/num"},
+        "film": {"$ref": "#/$defs/num"}
+      },
+      "required": ["cell", "rim", "courant", "friction", "calm", "window", "body_radius", "stomp_share", "stomp_volume", "rise_radius", "rise_volume", "ripple_seconds", "ripple_volume", "whitecap_slope", "whitecap_lift", "film"],
       "additionalProperties": false
     },
     "water": {
@@ -2044,9 +2065,12 @@
             "dir": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
             "row": {"$ref": "#/$defs/num"},
             "column": {"$ref": "#/$defs/num"},
-            "fade": {"$ref": "#/$defs/num"}
+            "fade": {"$ref": "#/$defs/num"},
+            "wet_width": {"$ref": "#/$defs/num"},
+            "wet_dark": {"$ref": "#/$defs/num"},
+            "wet_rough": {"$ref": "#/$defs/num"}
           },
-          "required": ["height", "length", "period", "dir", "row", "column", "fade"],
+          "required": ["height", "length", "period", "dir", "row", "column", "fade", "wet_width", "wet_dark", "wet_rough"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         }
@@ -2317,6 +2341,8 @@
         "plaza_blocks": {"$ref": "#/$defs/num"},
         "river": {"$ref": "#/$defs/bool"},
         "river_depth": {"$ref": "#/$defs/num"},
+        "wade_depth": {"$ref": "#/$defs/num"},
+        "wade_speed": {"$ref": "#/$defs/num"},
         "river_inset": {"$ref": "#/$defs/num"},
         "quay": {
           "type": "object",
@@ -2349,6 +2375,11 @@
             "arc_points": {"$ref": "#/$defs/num"},
             "beach": {"$ref": "#/$defs/num"},
             "sand_top": {"$ref": "#/$defs/num"},
+            "shelf": {"$ref": "#/$defs/num"},
+            "drop": {"$ref": "#/$defs/num"},
+            "drop_depth": {"$ref": "#/$defs/num"},
+            "hollow": {"$ref": "#/$defs/num"},
+            "hollow_edge": {"$ref": "#/$defs/num"},
             "sea_level": {"$ref": "#/$defs/num"},
             "seabed_depth": {"$ref": "#/$defs/num"},
             "crouch_back": {"$ref": "#/$defs/num"},
@@ -2414,7 +2445,7 @@
           },
           "required": [
             "beach_x", "sea_z", "shore", "sand", "promenade", "road", "back_z", "side_streets",
-            "quay_back", "piers", "seawall", "light", "arc_points", "beach", "sand_top",
+            "quay_back", "piers", "seawall", "light", "arc_points", "beach", "shelf", "drop", "drop_depth", "hollow", "hollow_edge", "sand_top",
             "sea_level", "seabed_depth", "crouch_back", "seabed_clear", "rise_x", "nose_gap",
             "bank_inset", "fit_margin", "view_margin", "props", "port"
           ],
@@ -2805,7 +2836,7 @@
         "tree_debris_bark", "tree_debris_size", "tree_debris_speed", "tree_leaf_speed",
         "tree_leaf_spread", "tree_bark_size", "tree_puff_size", "tree_puff_alpha", "block_long",
         "block_short", "block_far", "avenues", "avenue_width", "street_width", "alley_width",
-        "sidewalk", "alley_chance", "parking_chance", "plaza_blocks", "river", "river_depth",
+        "sidewalk", "alley_chance", "parking_chance", "plaza_blocks", "river", "river_depth", "wade_depth", "wade_speed",
         "river_inset", "quay", "diagonal_through", "diagonal_deg", "cores", "depth_min",
         "depth_max", "frontage_min", "frontage_max", "tower_chance", "pencil_chance",
         "pencil_height", "yard_chance", "min_height", "max_height", "tier_height",
@@ -6313,7 +6344,7 @@
   "required": [
     "ui", "display", "stat_text", "names", "news", "threat", "results", "save", "demo", "pause",
     "feedback", "kaiju", "powers", "heli_wreck", "strike", "air", "vip", "taskforce", "army",
-    "explosives", "blast_fx", "intro", "emerge", "water", "city", "sfx", "city_sound", "music",
+    "explosives", "blast_fx", "intro", "emerge", "water", "water_sim", "city", "sfx", "city_sound", "music",
     "title", "rail", "rail_look", "creation", "chain", "audio", "claw_fx", "clip_stomp", "camera",
     "slowmo", "camera_shake", "accessibility", "photo_mode", "rumble", "post_fx", "topple_fx",
     "skyline_rampage", "arena_edge", "body", "contact", "growth", "fx", "landmark_burst",
