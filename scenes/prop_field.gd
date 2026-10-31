@@ -3,7 +3,8 @@ extends RefCounted
 ## Many small static props (cars, trees, streetlights) in one MultiMesh, each prop a group of
 ## instances that can be crushed when the kaiju stomps on it or walks over it. A car, bush or
 ## lamp flattens; a tree bursts: its trunk and crown go to voxel debris in their own colours
-## (thrown like a building's) and a pale stump stays (critic on #55: a toppled tree never read).
+## (thrown like a building's) and a pale stump stays (critic on #55: a toppled tree never read);
+## a beach umbrella folds shut and falls over (director 10-30: flattened, "Skittles").
 ## Presentation only: the sim never knows props exist.
 
 const TILE := 32.0  # props draw as one MultiMesh per ground square this size (culled apart)
@@ -11,6 +12,7 @@ const BUCKET := 8.0  # props are filed by ground cell of this size, so a crush l
 const STUMP := 2  # a crushed tree leaves its lowest cells this many high standing
 const LEAF_EVERY := 4  # a crushed tree throws one piece per this many of its leaf cells
 const BARK_EVERY := 1  # and every one of its bark cells above the stump
+const FOLD := 0.3  # a folded prop's cells close in on its pole to this share of their reach
 
 var vox := VoxelBuilder.new()
 var voxel: float
@@ -43,8 +45,10 @@ func _init(p_voxel: float) -> void:
 
 ## Adds a prop: `shape` fills a VoxelBuilder in prop-local cells; `at` is its world base.
 ## Each prop is built into the shared builder offset by its own cell origin. fells: a tree,
-## crushed to a stump and debris rather than flattened.
-func add(at: Vector3, shape: Callable, fells := false) -> void:
+## crushed to a stump and debris rather than flattened. folds: the palette keys (an umbrella's
+## pole and canopy) that close in on the prop's upright axis and fall over, away from the blow,
+## rather than flattening where they stand.
+func add(at: Vector3, shape: Callable, fells := false, folds: Array[String] = []) -> void:
 	for r: Rect2 in keep_out:
 		if r.has_point(Vector2(at.x, at.z)):
 			return
@@ -61,7 +65,8 @@ func add(at: Vector3, shape: Callable, fells := false) -> void:
 			"cells": vox.cells.size() - before,
 			"offset": offset,
 			"local": local,
-			"fells": fells
+			"fells": fells,
+			"folds": folds
 		}
 	)
 	var key := Vector2i(floori(at.x / BUCKET), floori(at.z / BUCKET))
@@ -235,12 +240,33 @@ func _crush_group(group: Dictionary, at: Vector3) -> void:
 	# topple's landing up to 66 ms (bench 10-31, decor.crush).
 	var ids: PackedInt32Array = group["ids"]
 	var origins: PackedVector3Array = group["origins"]
+	var keys: PackedStringArray = group["keys"]
+	var folds: Array[String] = group["folds"]
+	var base: Vector3 = group["at"]
+	var out := Vector3(base.x - at.x, 0, base.z - at.z).normalized()
+	if out == Vector3.ZERO:
+		out = Vector3.BACK
+	var offset: Vector3i = group["offset"]
+	var foot := Vector3(offset) * voxel
 	var flat := Basis.from_scale(Vector3(1.15, 0.25, 1.15))
 	for k: int in ids.size():
 		var o := origins[k]
-		mm.set_instance_transform(
-			ids[k], Transform3D(flat, Vector3(o.x, o.y * 0.2 + voxel * 0.1, o.z))
-		)
+		var to := Transform3D(flat, Vector3(o.x, o.y * 0.2 + voxel * 0.1, o.z))
+		if keys[k] in folds:
+			to = _fallen(o - foot, out).translated(foot)
+		mm.set_instance_transform(ids[k], to)
+
+
+## Where a folding cell (`rel` from the prop's foot) lies once the prop has closed and fallen
+## along `out`, as a beach umbrella closes: each rib swings down from the crown, so a cell
+## hangs as far below its height as it reached from the pole (the canopy a long cone down the
+## pole's top, not a ball at its tip); its reach closes to FOLD of itself; then the whole lies
+## on the sand along `out`, the bundle as thick as it is closed.
+func _fallen(rel: Vector3, out: Vector3) -> Transform3D:
+	var round := Vector3(rel.x, 0, rel.z) * FOLD
+	var lie := out * (rel.y - Vector2(rel.x, rel.z).length()) + round
+	lie.y = voxel * 0.5 + round.length()
+	return Transform3D(Basis.from_scale(Vector3(1.0, 0.8, 1.0)), lie)
 
 
 ## A tree is crushed in place, all on this frame: the stump (its lowest STUMP cells) turns the
