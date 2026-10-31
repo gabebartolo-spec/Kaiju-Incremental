@@ -6,7 +6,8 @@ Debt row 5 (D-295, 2026-10-27). The schema for data/<name>.json is data/schemas/
 may hold and its type, so a misspelled key, a missing key or a number written as a string fails here
 instead of silently reading a default in the game. The check also fails on a repeated key in one
 object (JSON keeps the last one without a word) and on a broken cross-reference between the files
-(an upgrade that requires an upgrade that does not exist, an unknown species, a repeated id).
+(an upgrade that requires an upgrade that does not exist, an unknown species, a repeated id, a
+continent at a growth stage that does not exist, a campaign without exactly one capital, last).
 
     python tools/lint/data_schemas.py              # check data/*.json (CI preflight, tools/prepush.sh)
     python tools/lint/data_schemas.py --self-test  # plant a wrong type and an unknown key in each file
@@ -204,6 +205,7 @@ def cross_checks(datas: dict) -> list[str]:
                     out.append(f"upgrades.json: upgrade '{u.get('id')}' {key} names unknown species '{s}'")
     unique("materials.json", [m.get("id") for m in datas.get("materials.json", {}).get("materials", [])], "material")
     unique("sports.json", [s.get("id") for s in datas.get("sports.json", {}).get("sports", [])], "sport")
+    out += continent_checks(datas)
     looks = datas.get("looks.json", {})
     look_ids = [x.get("id") for x in looks.get("looks", [])]
     unique("looks.json", look_ids, "look")
@@ -216,6 +218,40 @@ def cross_checks(datas: dict) -> list[str]:
     for t in times.get("play", []):
         if t not in times.get("order", []):
             out.append(f"looks.json: times.play lists '{t}', which is not in times.order")
+    return out
+
+
+def continent_checks(datas: dict) -> list[str]:
+    """The campaign's rules a schema cannot see (D-418..D-422): unique ids and bonus ids, a stage that
+    exists in tuning growth.stages, three bonuses per conquerable continent, one capital, last, with none."""
+    out: list[str] = []
+    rows = datas.get("continents.json", {}).get("continents", [])
+    if not rows:
+        return out
+    stages = len(datas.get("tuning.json", {}).get("growth", {}).get("stages", []))
+    seen: set = set()
+    bonuses: set = set()
+    for i, c in enumerate(rows):
+        cid = c.get("id")
+        if cid in seen:
+            out.append(f"continents.json: continent id '{cid}' appears more than once")
+        seen.add(cid)
+        stage = c.get("stage")
+        if stages and isinstance(stage, int) and not 0 <= stage < stages:
+            out.append(f"continents.json: '{cid}' stage {stage} is not a growth stage (0..{stages - 1})")
+        picks = c.get("bonuses", [])
+        want = 0 if c.get("capital") else 3
+        if len(picks) != want:
+            out.append(f"continents.json: '{cid}' offers {len(picks)} bonuses, not {want} (D-421)")
+        for b in picks:
+            if b in bonuses:
+                out.append(f"continents.json: bonus id '{b}' appears more than once")
+            bonuses.add(b)
+        if c.get("capital") and i != len(rows) - 1:
+            out.append(f"continents.json: the capital '{cid}' is not the last continent (D-420)")
+    capitals = [c.get("id") for c in rows if c.get("capital")]
+    if len(capitals) != 1:
+        out.append(f"continents.json: {len(capitals)} capitals, not 1 (D-422)")
     return out
 
 

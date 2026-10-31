@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "data/continents.json",
+  "description": "Structure and types of this data file (CLAUDE.md hard rule 4); see data/schemas/README.md.",
+  "type": "object",
+  "properties": {
+    "continents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"$ref": "#/$defs/str"},
+          "name": {"$ref": "#/$defs/str"},
+          "stage": {"$ref": "#/$defs/int"},
+          "threat": {"$ref": "#/$defs/num"},
+          "bonuses": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+          "capital": {"$ref": "#/$defs/bool"}
+        },
+        "required": ["id", "name", "stage", "threat", "bonuses", "capital"],
+        "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["continents"],
+  "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+  "additionalProperties": false,
+  "$defs": {
+    "bool": {"type": "boolean"},
+    "int": {"type": "integer"},
+    "num": {"type": "number"},
+    "str": {"type": "string"},
+    "hex6": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"}
+  }
+}
