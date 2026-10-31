@@ -169,7 +169,10 @@ func _check_liquid_whole_bay() -> void:
 	var bay: WaterSim.Basin = w.basins[0]
 	var p := _shelf_point(w)
 	var far := p + Vector2(60.0, 0.0)
-	check(not is_nan(w.surface_at(far)) and _wet(bay, far), "water 60 m off the push (past the old wall)")
+	check(
+		not is_nan(w.surface_at(far)) and _wet(bay, far),
+		"water 60 m off the push (past the old wall)"
+	)
 	w.disturb(p, _rise_volume(), _rise_radius())
 	var peak := 0.0
 	for n: int in 600:
@@ -177,7 +180,10 @@ func _check_liquid_whole_bay() -> void:
 		peak = maxf(peak, w.surface_at(far) - bay.rest)
 	check(peak > 0.02, "the rise's wave reaches water 60 m off within 20 s (it rose %.3f m)" % peak)
 	var whole := bay.active.size.x == bay.nx
-	check(whole, "the stepped window grows to the bay's width (%d of %d)" % [bay.active.size.x, bay.nx])
+	check(
+		whole,
+		"the stepped window grows to the bay's width (%d of %d)" % [bay.active.size.x, bay.nx]
+	)
 
 
 ## The bay's mouth is open sea: a wave runs out there instead of bouncing back off a wall. A wall
@@ -250,7 +256,11 @@ func _shelf_point(w: WaterSim) -> Vector2:
 	for k: int in bay.nx * bay.nz:
 		var c := Vector2i(k % bay.nx, k / bay.nx)
 		var p := bay.centre(c)
-		if c.x > bay.nx / 4 and c.y >= 8 and absf(bay.floor_y[k] - CityHarbour.shelf_floor(cfg)) < 0.01:
+		if (
+			c.x > bay.nx / 4
+			and c.y >= 8
+			and absf(bay.floor_y[k] - CityHarbour.shelf_floor(cfg)) < 0.01
+		):
 			return p
 	return bay.centre(Vector2i(bay.nx / 4, 8))
 

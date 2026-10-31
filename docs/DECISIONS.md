@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-10-31 · D-426 · Director · The whole bay is water: native step, open mouth, swell lifts the sheet
+On the sea lying flat except one rectangle of waves round the kaiju (the sim stepped only an 80 m window by him,
+walled at its edge): "investigate why all the water is flat except for this rectangle then fix it so all water is
+behaving like water", and of the options he picked "Whole bay + real swell (Recommended)". The bay's shallow water
+is stepped whole every frame by native code (KaijuWater, bit for bit the GDScript pipes; 1.8 ms at most for the
+436x50 cells), its mouth is open sea (a wave runs out there instead of bouncing back), and the shader's swell lifts
+the sheet itself everywhere, dying out over the shelf, so the whole sea rolls even when he is still.
+
 ## 2026-10-31 · D-425 · Director · The demo is Ostia Minor plus one pick of Carthago or Thule
 Asked which continents the croc-only demo covers, he picked "Ostia to Carthago/Thule", then, told that both play at
 Behemoth (D-419) so the demo has no Colossus stage, "Ostia + one pick": Ostia Minor (young), then the player picks
@@ -381,19 +389,3 @@ agent-added on top of D-305, D-318 and D-320. Removed: agents treat the Dracorex
 like any other file and tab. D-318 and D-320 stay only as the record of what he answered. Method lessons stay (tabs
 in batches of 5, probes never switch scene: they prevent crashes). Claude still cannot change Windows security
 settings itself (its own tool limit, not his rule).
-
-## 2026-10-28 · D-370 · Director · Ruleset after the rule audit
-Rule audit 10-28; his picks, each the recommended option except roadmap. Decision log: a decision goes into
-DECISIONS.md in the PR that acts on it, the lead owns the wording; log-only updates ride in the lead's next PR (main
-requires checks, so no direct push); no separate board PR after each merge. Godot queue: gq syncs a job's worktree to
-latest main itself (only a real conflict refuses); a speed run waiting over 20 min in the day moves to NIGHT_QUEUE.txt;
-NO_GODOT_UNTIL holds every start. Reading: what the task touches, in full, grep the rest. Asking: only real calls.
-Handoffs about 150 lines, edited after a commit, push or PR change. Reports short, no line count, no read receipts.
-Tool caps raised (output 25k, reads 25k, commands 6000). Player-effect fixture only for new systems or rules.
-Checklist walks only where a defect reached you twice. Roadmap: picked "Wait for assignment" (unchanged).
-Team shape stays keyer + 4 builders (D-353).
-
-## 2026-10-28 · D-369 · Director · No cap on open PRs
-Changes D-353 (its "at most 3 open PRs"). Asked "why is 3 the cap"; the cap held 6 finished branches out of the game.
-Picked "Drop the cap (Recommended)": finished work opens its PR at once and merges on a green check; no PR left
-conflicting over an hour. The repo is public, so extra checks cost no CI minutes.

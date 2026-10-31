@@ -20,71 +20,27 @@ extends RefCounted
 ## grows a column a step each way until it holds the whole basin, so a wave runs as far as the
 ## water does (director 2026-10-31: the window was capped at 80 m, its edge a wall, so the waves
 ## piled up in a box), and sleeps once they die down (tuning friction). The native core
-## (KaijuWater) steps it when the extension is there, the same floats as the GDScript pipes. Fire is untouched: the
-## water's puts-out stays where it was.
+## (KaijuWater) steps it when the extension is there, the same floats as the GDScript pipes.
+## Fire is untouched: the water's puts-out stays where it was.
 
 const G := 9.8
 const SPLASHES_KEPT := 16
 const WALL := 1000.0  # a floor this far over the surface: never wet
 
-
-## One body of water (the bay, the river): a grid of columns.
-class Basin:
-	var origin: Vector2  # world (x, z) of cell (0, 0)'s corner
-	var cell := 1.0
-	var nx := 0
-	var nz := 0
-	var rest := 0.0  # the still surface (world y)
-	var floor_y := PackedFloat32Array()  # each column's bed (world y)
-	var depth := PackedFloat32Array()  # its water (m)
-	var body := PackedFloat32Array()  # metres of the kaiju's body standing in it
-	var flow := PackedFloat32Array()  # 4 per column: outflow right, left, down (+z), up (-z), m^2/s
-	var active := Rect2i()  # the stepped columns (empty: all at rest)
-	var focus := Vector2i()  # the latest push's column
-	var open := false  # row 0 is open sea (the bay's mouth): a wave runs out of it
-
-	func _init(p_origin: Vector2, p_cell: float, p_n: Vector2i, p_rest: float) -> void:
-		origin = p_origin
-		cell = p_cell
-		nx = p_n.x
-		nz = p_n.y
-		rest = p_rest
-		floor_y.resize(nx * nz)
-		depth.resize(nx * nz)
-		body.resize(nx * nz)
-		flow.resize(nx * nz * 4)
-
-	## The surface's height over the still water at column k (under the bed when dry).
-	func lift(k: int) -> float:
-		return floor_y[k] + depth[k] + body[k] - rest
-
-	func at(p: Vector2) -> Vector2i:
-		return Vector2i(floori((p.x - origin.x) / cell), floori((p.y - origin.y) / cell))
-
-	func centre(c: Vector2i) -> Vector2:
-		return origin + (Vector2(c) + Vector2(0.5, 0.5)) * cell
-
-	func size() -> Vector2:
-		return Vector2(nx, nz) * cell
-
-	func wake(rect: Rect2i) -> void:
-		var r := rect.intersection(Rect2i(0, 0, nx, nz))
-		if r.has_area():
-			active = r if not active.has_area() else active.merge(r)
-			focus = r.get_center()
-
+## One body of water (the bay, the river): a grid of columns (sim/water_basin.gd).
+const Basin := preload("res://sim/water_basin.gd")
 
 var basins: Array[Basin] = []
 ## Splashes this step, for the view's spray: {"pos": Vector3, "size": metres}.
 var splashes: Array[Dictionary] = []
+## Step with the native core when the extension has it (a check turns it off to compare).
+var use_native := true
 var _cfg: Dictionary
 var _surfaced := false
 var _ripple := 0.0  # seconds to the next ripple while the body holds under
 var _r := Rect2i()  # the sub-step being taken: its window, length (s) and flow kept
 var _h := 0.0
 var _keep := 1.0
-## Step with the native core when the extension has it (a check turns it off to compare).
-var use_native := true
 var _native: RefCounted  # KaijuWater, or null: the GDScript pipes
 
 
@@ -292,7 +248,9 @@ func _flow(basin: Basin, dt: float) -> void:
 	var keep := maxf(0.0, 1.0 - Num.f(_cfg["friction"]) * h)
 	var stir := 0.0
 	if use_native and _native != null:
-		stir = _step_native(basin, r, subs, h, keep)
+		_h = h
+		_keep = keep
+		stir = _step_native(basin, r, subs)
 	else:
 		for s: int in subs:
 			stir = _pipes(basin, r, h, keep)
@@ -301,7 +259,7 @@ func _flow(basin: Basin, dt: float) -> void:
 
 
 ## All of _flow's sub-steps in one native call (KaijuWater.step: the GDScript pipes' floats).
-func _step_native(basin: Basin, r: Rect2i, subs: int, h: float, keep: float) -> float:
+func _step_native(basin: Basin, r: Rect2i, subs: int) -> float:
 	var out: Array = _native.call(
 		"step",
 		basin.floor_y,
@@ -311,8 +269,8 @@ func _step_native(basin: Basin, r: Rect2i, subs: int, h: float, keep: float) -> 
 		basin.nx,
 		r,
 		subs,
-		h,
-		keep,
+		_h,
+		_keep,
 		G,
 		basin.cell,
 		basin.rest,
