@@ -65,13 +65,18 @@ func sweep_fits(tank: RampageSim.Tank, at: Vector2, to: Vector2) -> bool:
 ## At its post a tank squares its hull to its road (the nearer way; parked at a crossing, the
 ## road its hull lies nearer); only its turret turns. When that swing has no room (a tank
 ## pulled up beside it mid-pivot), it squares to the nearest road axis at the crossing that
-## has, so it never waits half turned.
+## has, so it never waits half turned; a hull already within skew_deg of its road stays put
+## (swinging it toward the cross street only to swing back next step reads as crabbing).
 func settle(tank: RampageSim.Tank, r: ConvoyRoute, rate: float) -> void:
 	if r.edge < 0 or r.front == Vector2.ZERO:
 		return
+	var nearest := true
 	for want: Vector2 in _axes(tank, r):
 		if absf(r.front.angle_to(want)) < 0.0001:
 			return  # squared already
+		if not nearest and graph.square(r.front, r.edge):
+			return  # square enough to its road (skew_deg): never swung toward a cross street
+		nearest = false
 		var front := r.front.rotated(clampf(r.front.angle_to(want), -rate, rate))
 		if fits(tank, tank.pos, front):
 			r.front = front
