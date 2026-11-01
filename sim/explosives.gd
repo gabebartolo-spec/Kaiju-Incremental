@@ -119,7 +119,7 @@ func _blast(at: Vector2, radius: float, damage: float, height: int) -> void:
 		var b := _sim.buildings[s.building]
 		if s.state == IDLE and force.call(s.pos, Vector2(b.w, b.d).length() * 0.5) > 0.0:
 			damaged(s.building, true)
-	_sim.hit_area(force, damage, 0, height)
+	SimDamage.area(_sim, force, damage, 0, height, true)  # a blast throws tanks (D-437)
 
 
 func _step_bursts(dt: float) -> void:
@@ -143,7 +143,8 @@ func _step_bursts(dt: float) -> void:
 	bursts = left
 
 
-## Tanks inside a cloud lose cloud_tank_dps; a rooftop squad inside it for cloud_squad_seconds dies.
+## A tank inside a cloud for cloud_tank_seconds is wrecked (its crew gassed); a rooftop squad
+## inside it for cloud_squad_seconds dies.
 func _step_clouds(dt: float) -> void:
 	if clouds.is_empty():
 		return
@@ -152,10 +153,13 @@ func _step_clouds(dt: float) -> void:
 	var left: Array[Dictionary] = []
 	for cloud: Dictionary in clouds:
 		var at: Vector2 = cloud["pos"]
+		var exposure: Dictionary = cloud["exposure"]
 		for tank: RampageSim.Tank in _sim.tanks:
 			if tank.pos.distance_to(at) <= r:
-				tank.hp -= Num.f(k["cloud_tank_dps"]) * dt
-		var exposure: Dictionary = cloud["exposure"]
+				exposure[tank] = Num.f(exposure.get(tank, 0.0)) + dt
+				tank.wrecked = (
+					tank.wrecked or Num.f(exposure[tank]) >= Num.f(k["cloud_tank_seconds"])
+				)
 		for squad: Army.Squad in _sim.army_units.squads:
 			if squad.pos.distance_to(at) <= r:
 				exposure[squad] = Num.f(exposure.get(squad, 0.0)) + dt

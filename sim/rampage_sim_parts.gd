@@ -29,6 +29,7 @@ static func make(
 	s.rail = Rail.new(s, tuning, Seeds.derive(rng, 0x7A11))
 	for n: int in range(pieces.x, pieces.y):
 		s.rail.add_piece(n)
+	s.alert_chunks = RunNews.alert_chunks(s.army, tuning)
 	s.news = RunNews.new(s, tuning)
 	s.death = DeathOverload.new(s, tuning, Seeds.derive(rng, 0xDEAD))
 	var strike_cfg: Dictionary = tuning["strike"]

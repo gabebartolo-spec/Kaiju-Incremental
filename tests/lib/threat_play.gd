@@ -1,8 +1,8 @@
 extends RefCounted
 ## The threat suite's on-screen checks (tests/run_threat_tests.gd): the bar under a centred
-## clock as the threat meter, by filled segments; the crawl sliding up for each big moment in turn
-## and hiding for the end beat; then by real input through Main: a threat rise, a landmark fall
-## and a death, and the lab card before the next rise.
+## clock as the threat meter, by filled segments, holding the city's level (D-437); the crawl
+## sliding up for each big moment in turn and hiding for the end beat; then by real input through
+## Main: a landmark fall and a death, and the lab card before the next rise.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const CreationWalk := preload("res://tests/lib/creation_walk.gd")
@@ -55,6 +55,12 @@ static func chunks_at(sim: RampageSim, share: float) -> int:
 	return ceili(share * span / Num.f(sim.army["escalation_per_chunk"]))
 
 
+## How far the army has climbed its spawn ramp, 0 (a city caught unaware) to 1 (as fast as it can).
+static func share(sim: RampageSim) -> float:
+	var span := Num.f(sim.army["start_interval"]) - Num.f(sim.army["min_interval"])
+	return clampf(Num.f(sim.army["escalation_per_chunk"]) * sim.escalation() / span, 0.0, 1.0)
+
+
 func _sim() -> RampageSim:
 	var tuning := Content.tuning()
 	var stats := UpgradeTree.run_stats(
@@ -73,20 +79,19 @@ func _hud_checks() -> void:
 	await _frames(3)
 	_layout(hud)
 	_levels_read_without_colour(hud.clock.threat)
-	hud.clock.threat.show_level(1, 0.0, false)
-	sim.chunks_destroyed = chunks_at(sim, 0.25)
-	await _step(hud, sim)
 	var badge := hud.clock.threat
+	sim.chunks_destroyed = chunks_at(sim, 1.0)
+	_fell_landmark(sim)
+	sim.collapse.toppled = 10
+	await _step(hud, sim)
 	check.call(
-		badge.level == 2 and badge.filled() == 1,
-		"a rise to level 2 fills one segment: %d" % badge.filled()
+		badge.level == sim.news.level and badge.level == RunNews.LOWEST,
+		"the bar holds the young city's level however much falls: %d" % badge.level
 	)
-	check.call(badge.pop > 1.0, "the rise pops the new segment (%.2f)" % badge.pop)
-	await _progress(hud, sim)
-	var line := RampageNews.line_for({"type": "threat_up", "level": 2})
+	var line := _landmark_line(sim)
 	check.call(
 		hud.news.showing() and hud.news.shown == PackedStringArray([line]),
-		"the crawl slides up with the rise's line: %s" % [hud.news.shown]
+		"the crawl slides up with the felled landmark's line: %s" % [hud.news.shown]
 	)
 	var strip := hud.news.ticker
 	check.call(
@@ -96,19 +101,12 @@ func _hud_checks() -> void:
 		),
 		"one line never shows twice on the strip at once"
 	)
-	sim.chunks_destroyed = chunks_at(sim, 1.0)
-	sim.collapse.toppled = 10
-	await _step(hud, sim)
 	for _i: int in CRAWL_WAIT_FRAMES:
-		if hud.news.shown.size() >= 3:
+		if hud.news.shown.size() >= 2:
 			break
 		await t.process_frame
 	var want := PackedStringArray(
-		[
-			line,
-			RampageNews.line_for({"type": "threat_up", "level": 5}),
-			RampageNews.line_for({"type": "towers_toppled", "count": 10}),
-		]
+		[line, RampageNews.line_for({"type": "towers_toppled", "count": 10})]
 	)
 	check.call(
 		hud.news.shown == want,
@@ -177,24 +175,8 @@ func _levels_read_without_colour(bar: ThreatBar) -> void:
 	)
 
 
-## At a seeded moment the current segment's fill equals the army's progress toward the next level.
-func _progress(hud: RampageHud, sim: RampageSim) -> void:
-	var at: Array = Content.section("threat")["level_at"]
-	sim.chunks_destroyed = chunks_at(sim, 0.375)
-	await _step(hud, sim)
-	var want := RunNews.progress_for(RunNews.army_share(sim), at)
-	var bar := hud.clock.threat
-	check.call(
-		bar.level == 2 and absf(bar.partial() - want) < 0.001 and want > 0.2 and want < 0.8,
-		(
-			"the current segment fills by progress to the next level: %.3f vs %.3f"
-			% [bar.partial(), want]
-		)
-	)
-
-
-## A new kaiju by clicks; a threat rise and a felled landmark reach the crawl; time's up kills it;
-## EVOLVE, RAMPAGE: the lab card for K-02, then the rise.
+## A new kaiju by clicks; the bar holds the city's level and a felled landmark reaches the crawl;
+## time's up kills it; EVOLVE, RAMPAGE: the lab card for K-02, then the rise.
 func _by_input() -> void:
 	SaveFile.wipe()
 	var main: Node = (load(MAIN_SCENE) as PackedScene).instantiate()
@@ -215,17 +197,17 @@ func _by_input() -> void:
 			break
 		await t.process_frame
 	var hud := GuiInput.find_script(rampage, RampageHud) as RampageHud
+	var level := sim.news.level
 	sim.chunks_destroyed += chunks_at(sim, 0.25)
 	_fell_landmark(sim)
 	await _frames(30)
 	var news := hud.news.shown + hud.news.waiting()
-	check.call(hud.clock.threat.level >= 2, "in play the bar rises (%d)" % hud.clock.threat.level)
 	check.call(
-		(
-			news.has(RampageNews.line_for({"type": "threat_up", "level": 2}))
-			and news.has(_landmark_line(sim))
-		),
-		"in play the rise and the felled landmark reach the crawl: %s" % [news]
+		hud.clock.threat.level == level,
+		"in play the bar holds the city's level (%d)" % hud.clock.threat.level
+	)
+	check.call(
+		news.has(_landmark_line(sim)), "in play the felled landmark reaches the crawl: %s" % [news]
 	)
 	for _i: int in END_WAIT_FRAMES:
 		if sim.over:

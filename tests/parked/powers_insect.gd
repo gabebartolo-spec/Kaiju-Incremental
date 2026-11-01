@@ -89,7 +89,6 @@ func _check_brood() -> void:
 	var sim := out[1]
 	var tank := RampageSim.Tank.new()
 	tank.id = 900
-	tank.hp = 999.0
 	tank.cooldown = 0.0
 	tank.pos = (
 		sim.brood.young[0].pos + Vector2(3, 0)

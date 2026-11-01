@@ -13,7 +13,6 @@ const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 ## The most the sim's stomp point may sit from the drawn foot (world units).
 const CENTRE_TOL := 0.5
 const STOMPS := 4
-const TANK_HP := 100000.0
 const HERO_HP := 1.0e9
 
 var _suite: SceneTree
@@ -101,7 +100,6 @@ func _stage(size: int, turned: bool) -> void:
 		var before := planted.size()
 		var old_centre := sim.kaiju_pos
 		var tank := _tank(sim, spots, old_centre)
-		var was := tank.hp
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
 			if str(event["type"]) != "stomp":
 				continue
@@ -113,7 +111,7 @@ func _stage(size: int, turned: bool) -> void:
 			var at: Vector2 = event["at"]
 			worst = maxf(worst, foot.distance_to(at))
 			if spots.size() >= 2:  # the tank stood on this foot's spot from the stomp before last
-				var shot := {"lost": was - tank.hp, "spot": spots[-2], "old": old_centre}
+				var shot := {"lost": tank.last_blow, "spot": spots[-2], "old": old_centre}
 				_damage("%s (%s)" % [STAGES[size], "turned" if turned else "straight"], sim, shot)
 			spots.append(foot)
 	_check.call(
@@ -127,20 +125,19 @@ func _stage(size: int, turned: bool) -> void:
 	await _suite.process_frame
 
 
-## A tank (very tough) on the spot this foot planted two stomps ago (stomps alternate feet, so it is
+## A tank on the spot this foot planted two stomps ago (stomps alternate feet, so it is
 ## the same foot's spot), or at the old centre until there is one.
 func _tank(sim: RampageSim, spots: Array[Vector2], old_centre: Vector2) -> RampageSim.Tank:
 	sim.tanks.clear()
 	var tank := RampageSim.Tank.new()
 	tank.id = 0
-	tank.hp = TANK_HP
 	tank.pos = spots[-2] if spots.size() >= 2 else old_centre
 	sim.tanks.append(tank)
 	return tank
 
 
-## The tank on the foot's spot lost the whole stomp_damage; one where the old centre was would have
-## lost only a part of it (or none). `shot`: {lost, spot, old}.
+## The tank on the foot's spot was thrown by the whole stomp_damage; one where the old centre
+## was would have taken only a part of it (or none). `shot`: {lost, spot, old}.
 func _damage(label: String, sim: RampageSim, shot: Dictionary) -> void:
 	var lost := Num.f(shot["lost"])
 	var full := sim.stat("stomp_damage") * sim.powers.hit_mult()
@@ -149,10 +146,13 @@ func _damage(label: String, sim: RampageSim, shot: Dictionary) -> void:
 	var old_k := RampageSim.falloff(
 		old.distance_to(spot) - RampageSim.TANK_RADIUS, sim.stomp_radius()
 	)
-	_check.call(
-		absf(lost - full) < 0.01 and old_k < 1.0,
-		(
-			"%s: a tank on the foot's spot takes the whole blow (%.1f of %.1f; old centre %.0f%%)"
-			% [label, lost, full, old_k * 100.0]
+	(
+		_check
+		. call(
+			absf(lost - full) < 0.01 and old_k < 1.0,
+			(
+				"%s: a tank on the foot's spot is thrown by the whole blow (%.1f of %.1f; old centre %.0f%%)"
+				% [label, lost, full, old_k * 100.0]
+			)
 		)
 	)

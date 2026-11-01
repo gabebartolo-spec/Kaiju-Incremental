@@ -38,7 +38,7 @@ func _check_helicopters() -> void:
 			% Num.i(seen.get("heli_fired", 0))
 		)
 	)
-	check(heli.hp > 0.0, "a young kaiju's stomps cannot reach a helicopter")
+	check(not heli.downed, "a young kaiju's stomps cannot reach a helicopter")
 	var grown := _sim("reptilian", {"evolve1": 1, "claws": 5, "hide": 5}, [], Vector2(0, 0))
 	var diver := grown.air.spawn()
 	_face_away_from_camera(grown)
@@ -112,7 +112,7 @@ func _check_caps() -> void:
 	var called := first.has("heli_spawned") and sim.air.helis.size() == 1
 	_run(sim, Num.f(air["interval"]) * 1.5, Vector2.ZERO)  # a long spell at the cap first
 	called = called and sim.air.helis.size() == 1
-	sim.air.helis[0].hp = 0.0 if called else 1.0
+	sim.air.helis[0].downed = called
 	sim.air.clear_dead()
 	var soon := _run(sim, Num.f(air["interval"]) * 0.9, Vector2.ZERO)
 	var later := _run(sim, Num.f(air["interval"]) * 0.2, Vector2.ZERO)

@@ -4,6 +4,22 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-437 · Director · The threat level belongs to the city: it sets where the army starts
+His words: "'alertness' level is now tied to the city/stage themselves, rather than in-run progression". Picked "By
+stage": the young city (Ostia Minor) 1, Behemoth (Carthago, Thule) 3, Colossus 4 (Aurelia 5 later); "Show the city's
+level" on the badge; and "Starting point": the level sets where the army starts, destruction still ramps it inside
+the run. Why: each conquest should feel like a harder city, not the same calm start. Changes: tuning `threat.level`
+(stage overlays), RunNews.alert_chunks starts RampageSim.escalation at that level's share of the spawn ramp; the badge
+is fixed all run and the "threat rises" crawl lines and event are gone (capture_threat.gd removed). Same day, no
+enemy hit points: "if the tank gets smacked by a kaiju, i want that tank to go flying and die, not take hp damage";
+picked "Yes, all kaiju", helicopters "Yes, one blow", "In the threat PR". Tank, helicopter and VIP hp are deleted:
+a blow that reaches a tank wrecks it. Then "a stomp shouldnt send it flying but a tail swipe? or a charge attack?
+yeah it should go flying"; picked claw swipe and explosions too. Tail lash, ram, leap ring, claw swipe and explosions
+throw it (SimDamage.throw, flight blow_throw/throw_min/throw_max) and it comes down wrecked; stomp, slam, crash, bombs
+and breath wreck it where it stands. One blow downs a helicopter, burst_blow or more blows it apart; chem cloud wrecks a tank after cloud_tank_seconds. Threat now
+sets only spawn rate, helicopter cap, Taskforce and rooftop volley damage, never toughness. Threat suite on/off
+fixture: Behemoth city at level 3 vs 1 (escalation, helicopter cap); sim fixture: the same blow thrown (a sideways hit) vs crushed (a stomp).
+
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
 His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
 fade? A: "Gentle fade". Why: the ocean's FFT cascades (8.8, 5.7, 1.6 m tiles) have no mip chain, so from high up one
@@ -379,20 +395,3 @@ Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it c
 row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
 Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
 Stadium-driven tests (flow, crowd) play the stage-2 city.
-
-## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
-His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
-the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not
-practice"). On skills: "can we delete all our skills, i dont think we need them"; Q: what should happen to the
-skills? A: "Delete all outright". So: RULEBOOK.md no longer loads; `~/.claude/memory-shared` moved to
-`~/.claude-archive/memory-shared-2026-10-29` and the stop hook no longer asks for lessons; the 14 personal skills in
-`~/.claude/skills` are deleted (app-synced Anthropic skills untouched). `~/.claude/CLAUDE.md` keeps "straight to me",
-no spend, end-with-state and write-concisely. Replaces D-378's rulebook and skill mentions.
-
-## 2026-10-29 · D-378 · Director · Sessions boot on a small core; history is searched, not read at start
-His words (~03:0x): "90% of them are pointless. really we could cull almost everything. no wonder our context is always
-so high". Q: how hard to cut startup reading? A: "Core only (Recommended)". A session boots on its handoff, the CLAUDE.md
-files, the rulebook and the DESIGN sections its task touches. Handoffs hold current state only, max 80 lines; their
-history moves to `~/.claude/handoffs/kaiju/archive/`. The co-lead playbook, roadmap chapters and archives are grepped when
-a task needs the why, never boot reading. Nothing is deleted. Changes: RULEBOOK (Session start, Context), kaiju-handoff
-and game-studio-lead skills; lead handoff cut from 253 to ~60 lines.

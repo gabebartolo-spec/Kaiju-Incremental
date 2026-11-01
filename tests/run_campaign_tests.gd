@@ -157,14 +157,14 @@ func _check_bonus_scales_stats() -> void:
 
 ## One stomp through the sim's own strike path (Strikes.stomp, as RampageStomp lands it) on a
 ## tank under the foot, the save's bonus picked and not: the bonus stomp takes 15% more hp off it.
-## A tank's hp drops by exactly the blow (buildings carve against material thresholds, so their
+## A tank is thrown by exactly the blow (buildings carve against material thresholds, so their
 ## loss is not proportional to it). No combat code changed.
 func _check_bonus_in_combat() -> void:
 	var off := _stomp_once({})
 	var on := _stomp_once({"ostia_minor": ATTACK})
 	check(
 		off > 0.0 and is_equal_approx(on, off * 1.15),
-		"a stomp in the sim does 15%% more with the attack bonus (%.2f -> %.2f hp)" % [off, on]
+		"a stomp in the sim does 15%% more with the attack bonus (%.2f -> %.2f blow)" % [off, on]
 	)
 
 
@@ -172,11 +172,10 @@ func _stomp_once(picked: Dictionary) -> float:
 	var empty: Array[Dictionary] = []
 	var sim := RampageSim.new(_stats({}, picked), Content.tuning(), empty, Seeds.make("army", 0))
 	var tank := RampageSim.Tank.new()
-	tank.hp = 1000.0
 	tank.cooldown = 1000.0
 	sim.tanks.append(tank)
 	sim.strikes.stomp(tank.pos, 0.0)
-	var lost := 1000.0 - tank.hp
+	var lost := tank.last_blow
 	sim.dispose()
 	return lost
 

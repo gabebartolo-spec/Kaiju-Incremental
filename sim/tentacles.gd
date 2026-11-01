@@ -139,12 +139,12 @@ func _grab(dt: float) -> void:
 	if best_heli != null:
 		kind = "heli"
 		from = best_heli.pos
-		best_heli.hp = 0.0
+		best_heli.downed = true
 		sim.air.clear_dead(true)
 	elif best_tank != null:
 		kind = "tank"
 		from = best_tank.pos
-		best_tank.hp = 0.0
+		best_tank.wrecked = true
 		sim.army_units.clear_dead()
 	_throw(kind, from)
 

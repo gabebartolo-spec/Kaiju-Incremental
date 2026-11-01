@@ -184,14 +184,13 @@ func _check_second_fall_restarts() -> void:
 	node.free()
 
 
-## Only a landmark's fall slows the world: the threat rising, towers toppling, the VIP's kill and
+## Only a landmark's fall slows the world: towers toppling, the VIP's kill and
 ## its escape do not (D-243: the VIP kill stays without).
 func _check_only_a_landmark_slows() -> void:
 	var sim := _sim()
 	var node := _node(sim, null)
 	await _frames(2)
 	var others: Array[Dictionary] = [
-		{"type": "threat_up", "level": 2},
 		{"type": "towers_toppled", "count": 10},
 		{"type": "vip_spawned", "heli": 1, "rank": 1, "x": 0.0, "z": 0.0},
 		{"type": "vip_down", "heli": 1, "x": 0.0, "z": 0.0, "y": 5.0},

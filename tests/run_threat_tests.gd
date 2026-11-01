@@ -1,9 +1,8 @@
 extends "res://tests/lib/runner.gd"
 ## Threat suite (D-259 "A small threat icon", news crawl "On big events"; D-260 specimens): the
-## threat level is the army's escalation read out (1-5, data rows); the sim reports each rise, each
-## felled landmark and each tower total once; every report has a short crawl line (the VIP's wait
-## for the helicopter); the bar under the clock reads the level by filled segments and
-## the progress by the current one;
+## threat level is the city's own (1-5, data, D-437) and sets where the army starts; the sim
+## reports each felled landmark and each tower total once; every report has a short crawl line
+## (the VIP's wait for the helicopter); the bar under the clock reads the level by filled segments;
 ## the crawl slides up for each moment in turn; every death owes one lab card; and by real input
 ## through Main a death puts the lab card (K-01 LOST - K-02 RELEASED) before the next rise.
 ## Seeded by design: the sims are built on pinned seeds and their state set by hand; no outcome
@@ -18,6 +17,9 @@ const LAYOUT: Array[Dictionary] = [
 ]
 ## A crawl line stays a headline: at most this many characters.
 const MAX_LINE := 36
+
+## Float slack on a level's starting share (the chunks times the per-chunk step round off).
+const SHARE_EPS := 1.0e-4
 
 
 func suite_name() -> String:
@@ -36,53 +38,81 @@ func run_checks() -> void:
 
 ## A small sim on pinned seeds (ThreatPlay builds its own too).
 static func small_sim() -> RampageSim:
+	return stage_sim(Content.tuning())
+
+
+## The small city on `tuning` (a growth stage's), on pinned seeds.
+static func stage_sim(tuning: Dictionary) -> RampageSim:
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"),
 		Content.species_def("reptilian"),
 		UpgradeTree.new(Content.upgrades())
 	)
-	return RampageSim.new(stats, Content.tuning(), LAYOUT, Seeds.make("army", 0))
+	return RampageSim.new(stats, tuning, LAYOUT, Seeds.make("army", 0))
 
 
-## Level 1 while the city is caught unaware, 5 once the army spawns as fast as it can, one up at
-## each data row; never outside 1-5.
+## Each stage's city has its own threat level (data), shown from the first second, and starts
+## the army at that level's share of its spawn ramp (D-437). On vs off: the Behemoth city against
+## the same city at level 1.
 func _check_levels() -> void:
+	var tuning := Content.tuning()
 	var at: Array = Content.section("threat")["level_at"]
 	check(at.size() == 4, "four rows lift the level from 1 to 5: %s" % [at])
-	check(RunNews.level_for(0.0, at) == 1, "no escalation reads level 1")
 	var seen: Array[int] = []
-	for share: Variant in at:
-		seen.append(RunNews.level_for(Num.f(share) - 0.001, at))
-		seen.append(RunNews.level_for(Num.f(share), at))
+	for tier: int in [1, 2, 3]:
+		var sim := stage_sim(CityGrowth.tuning_for(tuning, tier))
+		var n := sim.news.level
+		seen.append(n)
+		var share := ThreatPlay.share(sim)
+		var from := 0.0 if n == RunNews.LOWEST else Num.f(at[n - 2])
+		var to := 1.0 if n > at.size() else Num.f(at[n - 1])
+		check(
+			share > from - SHARE_EPS and share < to,  # alert_chunks rounds up onto the level's start
+			"stage %d starts the army at level %d's share: %.3f" % [tier, n, share]
+		)
+	check(seen == [1, 3, 4], "the young city reads 1, Behemoth 3, Colossus 4: %s" % [seen])
+	var on := CityGrowth.tuning_for(tuning, 2)
+	var off := on.duplicate(true)
+	off["threat"]["level"] = 1
+	var hot := stage_sim(on)
+	var calm := stage_sim(off)
 	check(
-		seen == [1, 2, 2, 3, 3, 4, 4, 5],
-		"each row lifts the level by one at its share and not before: %s" % [seen]
+		calm.escalation() == 0 and hot.escalation() > 0,
+		(
+			"level 3 starts the army alert, level 1 caught unaware: %d vs %d"
+			% [hot.escalation(), calm.escalation()]
+		)
 	)
-	check(RunNews.level_for(9.0, at) == 5, "the level stops at 5")
-	var sim := small_sim()
-	check(is_zero_approx(RunNews.army_share(sim)), "a fresh rampage's army has not escalated")
-	sim.chunks_destroyed = ThreatPlay.chunks_at(sim, 1.0)
 	check(
-		is_equal_approx(RunNews.army_share(sim), 1.0),
-		"at the army's fastest spawn rate the share is 1 (%d chunks)" % sim.chunks_destroyed
+		hot.army_units.threat_scale() > calm.army_units.threat_scale(),
+		(
+			"rooftop volleys hit harder from the start: x%.2f vs x%.2f"
+			% [hot.army_units.threat_scale(), calm.army_units.threat_scale()]
+		)
+	)
+	check(
+		hot.air.cap() > calm.air.cap(),
+		"helicopters are up from the start: %d vs %d" % [hot.air.cap(), calm.air.cap()]
 	)
 
 
-## As the city falls the sim reports each new level once, in order, and never a fall back.
+## Destruction climbs the army on from the city's level, but the badge never moves and no rise is
+## reported (D-437).
 func _check_threat_events() -> void:
-	var sim := small_sim()
-	var at: Array = Content.section("threat")["level_at"]
-	var levels: Array[int] = []
-	for share: Variant in at + [1.0, 0.0]:
-		sim.chunks_destroyed = ThreatPlay.chunks_at(sim, Num.f(share))
-		var events: Array[Dictionary] = []
-		sim.news.step(events)
-		sim.news.step(events)  # a second look at the same city adds nothing
-		for e: Dictionary in events:
-			if e["type"] == "threat_up":
-				levels.append(Num.i(e["level"]))
-	check(levels == [2, 3, 4, 5], "one threat_up per level, in order: %s" % [levels])
-	check(sim.news.level == 5, "the level stays at its peak (%d)" % sim.news.level)
+	var sim := stage_sim(CityGrowth.tuning_for(Content.tuning(), 2))
+	var start := sim.escalation()
+	var level := sim.news.level
+	sim.chunks_destroyed = ThreatPlay.chunks_at(sim, 1.0)
+	var events: Array[Dictionary] = []
+	sim.news.step(events)
+	check(
+		sim.escalation() == start + sim.chunks_destroyed,
+		"the city's fall still climbs the army: %d -> %d" % [start, sim.escalation()]
+	)
+	check(
+		events.is_empty() and sim.news.level == level,
+		"the badge stays at the city's level %d: %s" % [level, events]
+	)
 
 
 ## A landmark is reported once, the step it loses the felled share; a flattened block never is.
@@ -139,8 +169,6 @@ func _check_lines() -> void:
 		{"type": "vip_killed"},
 		{"type": "vip_escaped"},
 	]
-	for level: int in [2, 3, 4, 5]:
-		events.append({"type": "threat_up", "level": level})
 	var bad: Array[String] = []
 	var lines: Dictionary = {}
 	for e: Dictionary in events:

@@ -3,20 +3,17 @@ extends RefCounted
 ## The rampage's big moments, as sim events the HUD turns into a threat meter and news crawl
 ## lines (D-259: "A small threat icon", news crawl "On big events"). Pure sim; it decides nothing.
 ##
-## The threat level (1-5) is the army's own escalation read out: how far the tanks' spawn rate
-## has climbed from tuning "army" start_interval toward min_interval as the city falls
-## (RampageSim.escalation). Tuning "threat" level_at: the share of that climb each level 2..5
-## starts at. Each step it appends:
-##   {"type": "threat_up", "level"}  the level rose
+## The threat level (1-5) is the city's own, tuning "threat" "level" (a growth stage overrides
+## it), fixed for the whole run (D-437): it sets where the army starts, the share of its spawn
+## ramp from "army" start_interval toward min_interval that "level_at" gives that level
+## (alert_chunks); destruction climbs the army on from there, the level never moves. Each step:
 ##   {"type": "landmark_felled", "landmark"}  a landmark lost RunTally's felled share
 ##   {"type": "towers_toppled", "count"}  the toppled towers reached a tower_counts row
 
 const LOWEST := 1
 
-## The current threat level, LOWEST..LOWEST + level_at.size().
+## The city's threat level, LOWEST..LOWEST + level_at.size().
 var level := LOWEST
-## How far toward the next level the army's escalation is, 0-1 (1 at the top level).
-var progress := 0.0
 var _sim: RampageSim
 var _cfg: Dictionary
 ## Indices of the landmarks still standing (not yet reported felled).
@@ -30,46 +27,26 @@ func _init(sim: RampageSim, tuning: Dictionary) -> void:
 	_cfg = tuning.get("threat", Content.section("threat"))
 	var results: Dictionary = tuning.get("results", Content.section("results"))
 	_felled_share = Num.f(results["landmark_felled_share"])
+	level = Num.i(_cfg["level"])
 	for i: int in sim.buildings.size():
 		if sim.buildings[i].landmark != "":
 			_standing.append(i)
 
 
-## How far the army has escalated, 0 (a city caught unaware) to 1 (spawning as fast as it can).
-static func army_share(sim: RampageSim) -> float:
-	var start := Num.f(sim.army["start_interval"])
-	var span := maxf(0.001, start - Num.f(sim.army["min_interval"]))
-	return clampf(Num.f(sim.army["escalation_per_chunk"]) * sim.escalation() / span, 0.0, 1.0)
-
-
-## The threat level for an army escalated to `share` (army_share).
-static func level_for(share: float, level_at: Array) -> int:
-	var n := LOWEST
-	for at: Variant in level_at:
-		if share >= Num.f(at):
-			n += 1
-	return n
-
-
-## The share of the way from this level's row to the next one's, 0-1; 1 at the top level.
-static func progress_for(share: float, level_at: Array) -> float:
-	var n := level_for(share, level_at)
-	if n > level_at.size():
-		return 1.0
-	var from := 0.0 if n == LOWEST else Num.f(level_at[n - 2])
-	var to := Num.f(level_at[n - 1])
-	return clampf((share - from) / maxf(0.001, to - from), 0.0, 1.0)
+## Chunks of escalation that put `army` at the city's own threat level from the start (D-437):
+## the share of its spawn ramp where that level begins (tuning "threat" level, level_at).
+static func alert_chunks(army: Dictionary, tuning: Dictionary) -> int:
+	var cfg: Dictionary = tuning.get("threat", Content.section("threat"))
+	var at: Array = cfg["level_at"]
+	var n := Num.i(cfg["level"])
+	if n <= LOWEST:
+		return 0
+	var span := Num.f(army["start_interval"]) - Num.f(army["min_interval"])
+	return ceili(Num.f(at[n - 2]) * span / Num.f(army["escalation_per_chunk"]))
 
 
 ## Appends this step's big moments to `events`.
 func step(events: Array[Dictionary]) -> void:
-	var at: Array = _cfg["level_at"]
-	var share := army_share(_sim)
-	var now := level_for(share, at)
-	progress = progress_for(share, at)
-	if now > level:
-		level = now
-		events.append({"type": "threat_up", "level": level})
 	for i: int in _standing.duplicate():
 		var b := _sim.buildings[i]
 		if RunTally.felled(b.start_chunks, b.frame.alive_count, _felled_share):

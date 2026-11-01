@@ -141,7 +141,7 @@ func _check_endless() -> void:
 					spawned_late += 1
 		peak = maxi(peak, sim.tanks.size())
 		if step % 90 == 0 and sim.tanks.size() > 0:
-			sim.tanks[0].hp = 0.0  # the kaiju eats one now and then
+			sim.tanks[0].wrecked = true  # the kaiju eats one now and then
 			sim.army_units.clear_dead()
 	_check.call(
 		not sim.over and sim.time_left < 0.0,

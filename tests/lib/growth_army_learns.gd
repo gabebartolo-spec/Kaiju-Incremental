@@ -58,16 +58,13 @@ static func check(check: Callable, play: Callable) -> void:
 	var on := CityGrowth.tuning_for_stats(Content.tuning(), grown_stats)
 	check.call(
 		(
-			Num.f(on["army"]["tank_hp"]) > Num.f(off["army"]["tank_hp"]) * 1.3
-			and Num.f(on["army"]["tank_damage"]) > Num.f(off["army"]["tank_damage"]) * 1.3
+			Num.f(on["army"]["tank_damage"]) > Num.f(off["army"]["tank_damage"]) * 1.3
 			and Num.f(on["army"]["start_interval"]) < Num.f(off["army"]["start_interval"])
 			and Num.f(on["air"]["damage"]) > Num.f(off["air"]["damage"])
 		),
 		(
-			"the army learns: tanks %.0f -> %.0f hp, %.1f -> %.1f damage, every %.1f -> %.1f s"
+			"the army learns: tanks %.1f -> %.1f damage, every %.1f -> %.1f s"
 			% [
-				off["army"]["tank_hp"],
-				on["army"]["tank_hp"],
 				off["army"]["tank_damage"],
 				on["army"]["tank_damage"],
 				off["army"]["start_interval"],

@@ -68,14 +68,9 @@ func step(dt: float) -> void:
 		)
 	var reach := convoy.reach()
 	var at_head := convoy.posts.head()
-	var coated := false
 	convoy.step(dt)
 	taskforce.step(dt)
 	for tank: RampageSim.Tank in sim.tanks:
-		if tank.coat_t > 0.0:
-			tank.coat_t -= dt
-			tank.hp -= tank.coat_dps * dt
-			coated = true
 		if not _gun_ready(tank, dt):
 			continue
 		# range is measured to the body line, as the tank's post is (FiringPosts.aim_point)
@@ -90,7 +85,7 @@ func step(dt: float) -> void:
 		elif dist <= reach + 1.0 and convoy.clear_line(tank.pos, aim):
 			tank.cooldown = Num.f(cfg["fire_interval"])
 			shoot(tank, dist, reach)
-	if _step_squads(dt) or coated:
+	if _step_squads(dt):
 		clear_dead()
 
 
@@ -173,8 +168,6 @@ func _spawn() -> bool:
 	tank.id = _next_id
 	_next_id += 1
 	tank.pos = at
-	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.escalation()
-	tank.hp = Num.f(cfg["tank_hp"]) * threat
 	tank.cooldown = Num.f(cfg["fire_interval"])
 	sim.tanks.append(tank)
 	sim.events.append({"type": "tank_spawned", "tank": tank.id})
@@ -184,7 +177,7 @@ func _spawn() -> bool:
 func clear_dead() -> void:
 	var alive: Array[RampageSim.Tank] = []
 	for tank: RampageSim.Tank in sim.tanks:
-		if tank.hp > 0.0:
+		if not tank.wrecked:
 			alive.append(tank)
 		else:
 			sim.tanks_destroyed += 1
@@ -221,7 +214,8 @@ func _next_shot() -> float:
 	return Num.f(rooftop["fire_interval"]) * (1.0 + jitter)
 
 
-## How hard the army fights back: more the more of the city has fallen.
+## How hard the rooftop squads' volleys sting: more the more of the city has fallen (their
+## damage, never how tough anything is: no unit has hit points, D-437).
 func threat_scale() -> float:
 	return 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.escalation()
 
