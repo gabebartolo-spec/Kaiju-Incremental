@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "stage_words": {"type": "array", "items": {"$ref": "#/$defs/str"}},
+    "bonus_lines": {"type": "object", "additionalProperties": {"$ref": "#/$defs/str"}},
     "continents": {
       "type": "array",
       "items": {
@@ -34,7 +35,7 @@
       }
     }
   },
-  "required": ["stage_words", "continents"],
+  "required": ["stage_words", "bonus_lines", "continents"],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,
   "$defs": {

@@ -1,5 +1,5 @@
 extends RefCounted
-## No freeway deck stands in the fixed front (director 2026-11-01, D-432: "i really hate this
+## No freeway deck stands in the fixed front (director 2026-11-01, D-433: "i really hate this
 ## bridge, i have no idea why its even in the game, remove it entirely"). The skyline's elevated
 ## waterfront expressway ran 9 m inside the old quay; once the sea came in to the coast (D-381)
 ## it stood on pillars across the whole bay, read as a bridge, and the two inland freeways
@@ -35,8 +35,10 @@ static func check(
 	check_fn.call(
 		decks == 0 and lamps == 0,
 		(
-			"stage %d, map_seed %d: no freeway in the front (z %.0f to %.0f): %d concrete boxes"
-			+ " (first at %s), %d lamps"
+			(
+				"stage %d, map_seed %d: no freeway in the front (z %.0f to %.0f): %d concrete boxes"
+				+ " (first at %s), %d lamps"
+			)
+			% [tier, map_seed, mouth, edge, decks, first, lamps]
 		)
-		% [tier, map_seed, mouth, edge, decks, first, lamps]
 	)

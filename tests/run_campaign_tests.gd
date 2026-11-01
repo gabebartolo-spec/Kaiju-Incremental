@@ -258,3 +258,13 @@ func _check_stage_words() -> void:
 		words.append(Content.stage_word(stage))
 	check(words == ["Young croc", "Behemoth", "Colossus"], "stages in game words: %s" % [words])
 	check(Content.stage_word(3) == "", "an unknown stage has no word")
+	var shown: Array[String] = []
+	for pick: Dictionary in Content.continent("ostia_minor")["bonuses"]:
+		shown.append(MissionPanel.bonus_text(pick, root))
+	var want: Array[String] = ["Stomps hit 15% harder", "10% more health", "Moves 10% faster"]
+	check(shown == want, "bonuses read with the number inside (D-432): %s" % [shown])
+	for def: Dictionary in Content.continents():
+		for pick: Dictionary in def.get("bonuses", []):
+			var scale: Dictionary = pick["scale"]
+			for stat: String in scale:
+				check(Content.bonus_line(stat) != "", "%s has a bonus line" % stat)

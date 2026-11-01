@@ -47,7 +47,7 @@ func start(def: Dictionary) -> void:
 ## The won screen: one button per bonus the continent offers; pressing one keeps it.
 func _pick(def: Dictionary) -> void:
 	_clear()
-	_column.add_child(UiKit.header(tr("WIN ONE:"), UiKit.SIZE_TITLE))
+	_column.add_child(UiKit.header(tr(str(def["name"])).to_upper(), UiKit.SIZE_TITLE))
 	var offered: Array = def["bonuses"]
 	for pick: Dictionary in offered:
 		var b := UiKit.button(MissionPanel.bonus_text(pick, self), UiKit.SIZE_BODY)

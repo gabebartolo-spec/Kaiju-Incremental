@@ -5,7 +5,7 @@ extends Node3D
 ## The street plan's outer blocks hold cheap stand-in buildings (one painted box each,
 ## facade.gdshader); two elevated freeways wind through the east and west outskirts, on land
 ## only (the waterfront expressway that once ran along the quay is gone: it stood in the bay
-## once the sea came in to the coast, D-381, and the director cut it, D-432); a second skyline
+## once the sea came in to the coast, D-381, and the director cut it, D-433); a second skyline
 ## across the bay has a lattice tower and blinking beacons; lamps glow down the outer streets
 ## and a few aircraft lights cross the sky. Never destroyed; presentation only.
 
@@ -152,7 +152,7 @@ func _lit() -> float:
 
 ## The two inland freeways start on land: past the fixed front (CityHarbour; its back street,
 ## where the random grid begins) when the city has one, else just in from the coast. No deck
-## stands in the bay, on the beach or in the port (D-432).
+## stands in the bay, on the beach or in the port (D-433).
 func _plan_freeways() -> void:
 	var outer := Num.f(cfg["outer_half"]) + 40.0
 	var front := CityHarbour.rect_of(cfg)
