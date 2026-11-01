@@ -10,6 +10,7 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FocusOrder := preload("res://tests/lib/focus_order.gd")
 const TitleLayout := preload("res://tests/lib/ui_title_layout.gd")
 const TitleBeach := preload("res://tests/lib/ui_title_beach.gd")
+const TitleHaze := preload("res://tests/lib/ui_title_haze.gd")
 const CANVAS := Vector2i(1920, 1080)
 const SUMMARY := "Reptilian, 7 rampages"
 ## The ticker along the bottom edge, and how far the corner buttons may stand from the screen's.
@@ -43,6 +44,7 @@ func run() -> void:
 	t.root.size = window
 	await _far_tower_cap()
 	TitleBeach.new(t, check).run()
+	TitleHaze.new(check).run()
 
 
 ## D-158 option C: the title's far shore stands no tower, the lattice tower included, over tuning
