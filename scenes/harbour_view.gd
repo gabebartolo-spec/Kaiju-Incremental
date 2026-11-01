@@ -136,9 +136,22 @@ static func _sheet(rect: Rect2, span: Array, cols: int, rows: int) -> ArrayMesh:
 			verts[k] = Vector3(xs[c], y, z)
 			colors[k] = tint
 			k += 1
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = _sheet_index(cols, rows)
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## The sheet's triangle indices, two per cell, row by row over a (cols + 1)-wide vertex grid.
+static func _sheet_index(cols: int, rows: int) -> PackedInt32Array:
 	var index := PackedInt32Array()
 	index.resize(rows * cols * 6)
-	k = 0
+	var k := 0
 	for r: int in rows:
 		for c: int in cols:
 			var q := r * (cols + 1) + c
@@ -149,15 +162,7 @@ static func _sheet(rect: Rect2, span: Array, cols: int, rows: int) -> ArrayMesh:
 			index[k + 4] = q + cols + 2
 			index[k + 5] = q + cols + 1
 			k += 6
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_COLOR] = colors
-	arrays[Mesh.ARRAY_INDEX] = index
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return mesh
+	return index
 
 
 ## _sheet as built before 2026-11 (packed_water off): a SurfaceTool call per vertex and index.

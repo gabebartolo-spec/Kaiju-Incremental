@@ -156,18 +156,8 @@ func _ready() -> void:
 		add_child(stages.overlay)
 		if not await stages.next(self):
 			return
-	if sim == null:  # setup_later: the sim builds on a worker, the loading screen draws
-		_build = SimOnWorker.new(_later)
-		if not await _build.wait(self, stages):
-			return
-		_take_sim(_build.take())
-		_build = null
-	_city = CityView.new(sim, _fx_rng)
-	_city.stages = stages
-	add_child(_city)
-	while not _city.is_loaded:  # staged: the city builds itself over the next frames
-		if not await stages.next(self, false):
-			return
+	if not await RampageLoad.sim_and_city(self, stages):
+		return
 	var colors: Dictionary = species["colors"]
 	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
