@@ -65,6 +65,10 @@ func run_checks() -> void:
 		func() -> void: preload("res://tests/lib/city_decor_cost.gd").check(root, check)
 	)
 	await _h(
+		"beach_mesh_cost",
+		func() -> void: preload("res://tests/lib/beach_mesh_cost.gd").check(root, check)
+	)
+	await _h(
 		"city_footfall_dust",
 		func() -> void: preload("res://tests/lib/city_footfall_dust.gd").check(check, root)
 	)

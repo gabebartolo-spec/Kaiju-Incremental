@@ -139,23 +139,8 @@ static func beach(plan: Dictionary, cfg: Dictionary, sand: Color) -> MeshInstanc
 	var nz := ceili((z1 - z0) / CELL)
 	var lap: Dictionary = Content.section("water")["lap"]
 	var grid := _heights(plan, cfg, Rect2(x0, z0, x1 - x0, z1 - z0), Num.f(lap["wet_width"]))
-	var ys: PackedFloat32Array = grid[0]
-	var ups: PackedFloat32Array = grid[1]
-	var at := func(i: int, j: int) -> Vector3:
-		return Vector3(minf(x0 + i * CELL, x1), ys[j * (nx + 1) + i], z0 + j * CELL)
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for j: int in nz:
-		for i: int in nx:
-			var q: Array[Vector3] = [at.call(i, j), at.call(i + 1, j)]
-			q.append_array([at.call(i + 1, j + 1), at.call(i, j + 1)])
-			for n: int in [0, 1, 2, 0, 2, 3]:  # two triangles, clockwise from above (Godot front faces)
-				st.set_uv(Vector2(q[n].x, q[n].z) / (GRAIN * GRAIN_TILE))
-				st.set_color(Color(ups[_cell(n, i, j, nx)], 0.0, 0.0))
-				st.add_vertex(q[n])
-	st.generate_normals()
 	var mi := MeshInstance3D.new()
-	mi.mesh = st.commit()
+	mi.mesh = _beach_mesh([x0, x1, z0], nx, nz, grid)
 	mi.material_override = _sand(sand, lap)
 	return mi
 
@@ -173,31 +158,95 @@ static func _sand(sand: Color, lap: Dictionary) -> ShaderMaterial:
 ## The beach grid's corners over `area` (CELL apart, the last column clamped to its east end):
 ## [each corner's height, its metres up the sand from the waterline over wet_width (0..1)].
 static func _heights(plan: Dictionary, cfg: Dictionary, area: Rect2, wet_width: float) -> Array:
+	var rows := []
+	rows.resize(ceili(area.size.y / CELL) + 1)
+	var row := func(j: int) -> void: rows[j] = _height_row(plan, cfg, area, wet_width, j)
+	var task := WorkerThreadPool.add_group_task(row, rows.size())
+	WorkerThreadPool.wait_for_group_task_completion(task)
+	var ys := PackedFloat32Array()
+	var ups := PackedFloat32Array()
+	for done: Array in rows:
+		var row_ys: PackedFloat32Array = done[0]
+		var row_ups: PackedFloat32Array = done[1]
+		ys.append_array(row_ys)
+		ups.append_array(row_ups)
+	return [ys, ups]
+
+
+## One row (j) of _heights: reads only plan and cfg, so the rows build on worker threads.
+static func _height_row(
+	plan: Dictionary, cfg: Dictionary, area: Rect2, wet_width: float, j: int
+) -> Array:
 	var h: Dictionary = cfg["harbour"]
 	var top := Num.f(h["sand_top"])
 	var waterline := CityHarbour.waterline(cfg)
 	var ys := PackedFloat32Array()
 	var ups := PackedFloat32Array()
-	for j: int in ceili(area.size.y / CELL) + 1:
-		for i: int in ceili(area.size.x / CELL) + 1:
-			var p := Vector2(
-				minf(area.position.x + i * CELL, area.end.x), area.position.y + j * CELL
-			)
-			var up := p.y - CityHarbour.shore_at(h, p.x) + waterline
-			# Past the harbour's water the sand still dips under the sea (never a bar at the sand's
-			# top a hand under the surface, bared by every trough: director 2026-10-31).
-			var off := top if up >= 0.0 else CityHarbour.shelf_floor(cfg)
-			ys.append(CityHarbour.floor_at(plan, cfg, p) if CityHarbour.holds(plan, p) else off)
-			ups.append(clampf(up / wet_width, 0.0, 1.0))
+	for i: int in ceili(area.size.x / CELL) + 1:
+		var p := Vector2(minf(area.position.x + i * CELL, area.end.x), area.position.y + j * CELL)
+		var up := p.y - CityHarbour.shore_at(h, p.x) + waterline
+		# Past the harbour's water the sand still dips under the sea (never a bar at the sand's
+		# top a hand under the surface, bared by every trough: director 2026-10-31).
+		var off := top if up >= 0.0 else CityHarbour.shelf_floor(cfg)
+		ys.append(CityHarbour.floor_at(plan, cfg, p) if CityHarbour.holds(plan, p) else off)
+		ups.append(clampf(up / wet_width, 0.0, 1.0))
 	return [ys, ups]
 
 
-## The index into the beach's grid of corner n (0..3, clockwise from (i, j)) of cell (i, j).
-static func _cell(n: int, i: int, j: int, nx: int) -> int:
-	var at: Array[Vector2i] = [
-		Vector2i(i, j), Vector2i(i + 1, j), Vector2i(i + 1, j + 1), Vector2i(i, j + 1)
-	]
-	return at[n].y * (nx + 1) + at[n].x
+## The beach's height field (grid: _heights; span: [west x, east x, north z]) as one indexed
+## mesh: a corner's place, grain uv and wetness are the same in all four cells round it, and its
+## normal is the sum of their triangles' normals, summed in SurfaceTool.generate_normals' order
+## (it built 390k vertices to the same mesh, ~0.5 s a city).
+static func _beach_mesh(span: Array[float], nx: int, nz: int, grid: Array) -> ArrayMesh:
+	var x0 := span[0]
+	var x1 := span[1]
+	var z0 := span[2]
+	var ys: PackedFloat32Array = grid[0]
+	var ups: PackedFloat32Array = grid[1]
+	var count := (nx + 1) * (nz + 1)
+	var verts := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var colors := PackedColorArray()
+	for j: int in nz + 1:
+		for i: int in nx + 1:
+			var k := j * (nx + 1) + i
+			var v := Vector3(minf(x0 + i * CELL, x1), ys[k], z0 + j * CELL)
+			verts.append(v)
+			uvs.append(Vector2(v.x, v.z) / (GRAIN * GRAIN_TILE))
+			colors.append(Color(ups[k], 0.0, 0.0))
+	var sums := PackedVector3Array()
+	sums.resize(count)
+	var index := PackedInt32Array()
+	for j: int in nz:
+		for i: int in nx:
+			var q := j * (nx + 1) + i
+			var r := q + nx + 1  # the cell's corners clockwise from (i, j): q, q + 1, r + 1, r
+			_corner_sums(verts, sums, q, q + 1, r + 1)
+			_corner_sums(verts, sums, q, r + 1, r)
+			index.append_array([q, q + 1, r + 1, q, r + 1, r])
+	var normals := PackedVector3Array()
+	for s: Vector3 in sums:
+		normals.append(s.normalized())
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = index
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## Triangle a, b, c's normal added to each of its corners' sums (generate_normals' order).
+static func _corner_sums(
+	verts: PackedVector3Array, sums: PackedVector3Array, a: int, b: int, c: int
+) -> void:
+	var normal := Plane(verts[a], verts[b], verts[c]).normal
+	sums[a] += normal
+	sums[b] += normal
+	sums[c] += normal
 
 
 static func _grains(sand: Color) -> ImageTexture:
