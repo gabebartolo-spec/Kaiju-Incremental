@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-432 · Director · The mission panel is a compact card, not a full-height column
+Replaces D-431's "Right side column". On the 1080p stills he called the full-height panel "AI slop", a giant box
+with nothing in it, and picked "Compact card": the same lines and look, the box sized to its text and centred down
+the right margin. The globe test fails a card taller than half the screen.
+
 ## 2026-11-01 · D-431 · Director · Globe mission panel: a right-side column, and a Win/Lose stub mission with the pick
 Overworld plan row G5, his picks: "Right side column", "Leave them out", "Win/Lose stub + pick". A picked continent
 shows a full-height card down the right third (the continent stays in view on the left): its name, its stage in game
