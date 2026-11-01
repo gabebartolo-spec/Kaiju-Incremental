@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-376 · Director · Windowed Godot runs start by GPU load check, not one at a time (replaces D-340's rule)
+His words (10-28 ~22:1x): "that wasnt something i told you to codify though, it was something specific for that time, i
+never told you to make it a rule". Q: what replaces it? A: "Load check (Recommended)". `C:/kt/gpu_slot.sh` admits a
+window when under 3 Godot windows are open, >=3 GB video memory free, GPU use <85%, <80 C, 20 s after the last start
+(logged in `C:/kt/gpu_slot.log`); gq runs up to 3 window jobs. D-340's "don't cook the GPU" aim stands.
+
 ## 2026-10-28 · D-375 · Director · Landmarks are drawn at random from a pool into designated spots, tiered by stage
 His words (10-28 ~21:xx), on the stadium placement clash between D-270 ("south, past the river") and D-271 (reachable
 from stage 2) once the bay moved the start: "so i want maps to be randomised as you know, but if we need to make certain

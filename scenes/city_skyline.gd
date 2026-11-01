@@ -3,14 +3,16 @@ extends Node3D
 ## Everything past the playable edge, so the city has a believable end: to the north a quay,
 ## the bay and a far skyline; east, west and south the streets run on until the fog takes them.
 ## The street plan's outer blocks hold cheap stand-in buildings (one painted box each,
-## facade.gdshader); an elevated expressway runs along the waterfront; a second skyline across
-## the bay has a lattice tower and blinking beacons; lamps glow down the outer streets and a
-## few aircraft lights cross the sky. Never destroyed; presentation only.
+## facade.gdshader); two elevated freeways wind through the east and west outskirts, on land
+## only (the waterfront expressway that once ran along the quay is gone: it stood in the bay
+## once the sea came in to the coast, D-381, and the director cut it, D-433); a second skyline
+## across the bay has a lattice tower and blinking beacons; lamps glow down the outer streets
+## and a few aircraft lights cross the sky. Never destroyed; presentation only.
 
 const DECK_Y := 7.0
 const DECK_WIDTH := 5.0
 const DETAIL_REACH := 200.0  # roof clutter and lamp heads only this close to the centre
-const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the expressway
+const QUAY_CLEAR := 17.0  # no stand-ins this close to the quay
 const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
 const LATTICE_HEIGHT := 130.0
@@ -31,8 +33,8 @@ var _near: Array[Dictionary] = []  # boxes: size, centre, colour, custom
 var _far: Array[Dictionary] = []
 var _plain: Array[Dictionary] = []  # concrete and hills: transform, colour
 var _lamps: Array[Vector3] = []
-## Elevated freeways as ground-plane polylines: the waterfront one and two that wind through
-## the east and west outskirts, breaking the long straight sightlines down the grid.
+## Elevated freeways as ground-plane polylines: two that wind through the east and west
+## outskirts, breaking the long straight sightlines down the grid.
 var _freeways: Array[PackedVector2Array] = []
 
 
@@ -98,8 +100,8 @@ func _outer_blocks() -> void:
 		if str(block["use"]) != "outer":
 			continue
 		var rect: Rect2 = block["rect"]
-		if rect.position.y < ground.coast + EXPRESSWAY_CLEAR:
-			continue  # the waterfront: the expressway and the quay
+		if rect.position.y < ground.coast + QUAY_CLEAR:
+			continue  # the waterfront: the quay
 		# Blocks differ: some rise, some sit low, so the skyline is never one flat field.
 		var scale := _rng.randf_range(0.5, 1.4)
 		for lot: Dictionary in CityLots.fill_block(_rng, ground.plan, block, outer_cfg, scale):
@@ -148,17 +150,16 @@ func _lit() -> float:
 	return Look.value("window_lit") * _rng.randf_range(0.6, 1.4)
 
 
+## The two inland freeways start on land: past the fixed front (CityHarbour; its back street,
+## where the random grid begins) when the city has one, else just in from the coast. No deck
+## stands in the bay, on the beach or in the port (D-433).
 func _plan_freeways() -> void:
 	var outer := Num.f(cfg["outer_half"]) + 40.0
-	var shore := PackedVector2Array()
-	var x := -outer
-	while x <= outer:
-		shore.append(Vector2(x, ground.coast + 9.0 + sin(x / 47.0) * 5.0))
-		x += 6.0
-	_freeways.append(shore)
+	var front := CityHarbour.rect_of(cfg)
+	var from := front.end.y if front.has_area() else ground.coast + 9.0
 	for side: float in [-1.0, 1.0]:  # inland, winding north to south past the city
 		var path := PackedVector2Array()
-		var z := ground.coast + 9.0
+		var z := from
 		while z <= outer:
 			path.append(Vector2(_inland_x(side, z), z))
 			z += 6.0

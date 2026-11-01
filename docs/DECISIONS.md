@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-433 · Director · The bay bridge is gone: no freeway stands in the front
+His words, with a crop of the deck on piers across the bay: "i really hate this bridge, i have no idea why its even in
+the game, remove it entirely". Why it was there: CitySkyline's elevated waterfront expressway (Tokyo's Shuto, the
+pre-harbour skyline) ran 9 m inside the old quay; when the fixed front put the sea right up to the coast (D-381) it
+was left standing on pillars across the whole bay, lamps and all, and read as a bridge; the two inland freeways
+started in the water beside it. Changes: the waterfront expressway is removed; the inland freeways begin on land at
+the front's back street (where the random grid starts) when the city has a harbour, so no deck stands in the bay,
+on the beach or in the port. City suite fixture tests/lib/city_front_clear.gd (every city failed before, none after).
+
 ## 2026-11-01 · D-432 · Director · The mission panel is a compact card, not a full-height column
 Replaces D-431's "Right side column". On the 1080p stills he called the full-height panel "AI slop", a giant box
 with nothing in it, and picked "Compact card": the same lines and look, the box sized to its text and centred down
@@ -389,9 +398,3 @@ rectangle of whole blocks centred on the north edge, one size per stage in data;
 coast road runs along its south side; the crescent sand, water and quays are drawn inside it; landmarks, parks and plazas
 are never placed in it; the rise is at the bay centre. Player bars stay. Serves D-270, D-373; the beachfront pieces (D-277)
 take fixed spots from it.
-
-## 2026-10-28 · D-376 · Director · Windowed Godot runs start by GPU load check, not one at a time (replaces D-340's rule)
-His words (10-28 ~22:1x): "that wasnt something i told you to codify though, it was something specific for that time, i
-never told you to make it a rule". Q: what replaces it? A: "Load check (Recommended)". `C:/kt/gpu_slot.sh` admits a
-window when under 3 Godot windows are open, >=3 GB video memory free, GPU use <85%, <80 C, 20 s after the last start
-(logged in `C:/kt/gpu_slot.log`); gq runs up to 3 window jobs. D-340's "don't cook the GPU" aim stands.

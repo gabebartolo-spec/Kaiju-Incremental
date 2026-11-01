@@ -51,7 +51,7 @@ static func facade_material(haze: float) -> ShaderMaterial:
 
 
 ## CitySkyline's plain boxes (`plain`: its _plain list): roof gear and the lattice tower in the
-## instance colour; the concrete (expressway, far shore quay) in the ground's concrete look. The
+## instance colour; the concrete (freeways, far shore quay) in the ground's concrete look. The
 ## hazy ones fade like the far skyline.
 static func plain_boxes(plain: Array[Dictionary], cfg: Dictionary, far_haze: FarHaze) -> Node3D:
 	var holder := Node3D.new()
