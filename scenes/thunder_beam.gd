@@ -44,6 +44,12 @@ func _init(sim: RampageSim, kaiju: Node3D, eye: Color, run: int) -> void:
 	add_child(charge)
 
 
+## The charge finds the spine ridge now (the load), not on the first press: 44-97 ms of main
+## thread by growth step, a hitch every first lightning press of a run.
+func _ready() -> void:
+	charge.prepare()
+
+
 ## Draws a throwaway beam out of sight for a few frames, so its shaders compile now (and stay).
 func prewarm(keep: ShaderKeep) -> void:
 	rig.aim(Vector3(0, -50, 0), Vector3(0, -50, 4))
