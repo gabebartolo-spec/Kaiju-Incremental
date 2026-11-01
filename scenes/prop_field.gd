@@ -14,7 +14,6 @@ const LEAF_EVERY := 4  # a crushed tree throws one piece per this many of its le
 const BARK_EVERY := 1  # and every one of its bark cells above the stump
 const FOLD := 0.3  # a folded prop's cells close in on its pole to this share of their reach
 
-var vox := VoxelBuilder.new()
 var voxel: float
 var stump_color := Color(0.85, 0.77, 0.6)  # every crushed tree's stump: fresh-cut wood
 var leaf_color := Color(0.42, 0.82, 0.24)  # a crushed tree's leaf debris (saturated: dusk light)
@@ -44,31 +43,25 @@ func _init(p_voxel: float) -> void:
 
 
 ## Adds a prop: `shape` fills a VoxelBuilder in prop-local cells; `at` is its world base.
-## Each prop is built into the shared builder offset by its own cell origin. fells: a tree,
-## crushed to a stump and debris rather than flattened. folds: the palette keys (an umbrella's
-## pole and canopy) that close in on the prop's upright axis and fall over, away from the blow,
-## rather than flattening where they stand.
+## fells: a tree, crushed to a stump and debris rather than flattened. folds: the palette keys
+## (an umbrella's pole and canopy) that close in on the prop's upright axis and fall over, away
+## from the blow, rather than flattening where they stand.
 func add(at: Vector3, shape: Callable, fells := false, folds: Array[String] = []) -> void:
-	for r: Rect2 in keep_out:
-		if r.has_point(Vector2(at.x, at.z)):
-			return
+	if _kept_out(at):
+		return  # before shape: a shape may draw from its owner's rng
 	var local := VoxelBuilder.new()
 	shape.call(local)
+	add_cells(at, local, fells, folds)
+
+
+## add() with the prop's cells already built. `local` is only read, so props of one model and
+## turn may share it (StreetProps: rebuilding a baked model per prop cost 0.5 s a city).
+func add_cells(at: Vector3, local: VoxelBuilder, fells := false, folds: Array[String] = []) -> void:
+	if _kept_out(at):
+		return
 	var offset := Vector3i((at / voxel).round())
 	offset.y = 0
-	var before := vox.cells.size()
-	for cell: Vector3i in local.cells:
-		_copy(local, cell, vox, cell + offset)
-	_groups.append(
-		{
-			"at": at,
-			"cells": vox.cells.size() - before,
-			"offset": offset,
-			"local": local,
-			"fells": fells,
-			"folds": folds
-		}
-	)
+	_groups.append({"at": at, "offset": offset, "local": local, "fells": fells, "folds": folds})
 	var key := Vector2i(floori(at.x / BUCKET), floori(at.z / BUCKET))
 	if not _buckets.has(key):
 		_buckets[key] = []
@@ -89,7 +82,8 @@ func felled() -> Array[Vector2]:
 ## Builds the props into one MultiMesh per TILE m square of ground under one Node3D, so the camera
 ## culls the tiles it does not see (one city-wide MultiMesh was drawn whole whenever any prop
 ## showed; D-254's bigger city doubled that). Frustum culling only: what the camera shows is
-## unchanged. glow: strength for palette colours with alpha 0 (lamps).
+## unchanged. glow: strength for palette colours with alpha 0 (lamps). The tiles' voxels are
+## copied and packed across worker threads (1.1 s on one, a load freeze); the nodes on this one.
 func build(palette: Dictionary, salt: int, glow: float) -> Node3D:
 	var holder := Node3D.new()
 	var by_tile := {}  # Vector2i -> group indices
@@ -100,28 +94,48 @@ func build(palette: Dictionary, salt: int, glow: float) -> Node3D:
 			by_tile[key] = []
 		var list: Array = by_tile[key]
 		list.append(n)
-	for key: Vector2i in by_tile:
-		var tile := VoxelBuilder.new()
-		tile.salt = salt
-		tile.detail = true  # the city's surface family (flat surfaces P3)
-		var members: Array = by_tile[key]
-		for n: int in members:
-			var local: VoxelBuilder = _groups[n]["local"]
-			var offset: Vector3i = _groups[n]["offset"]
-			for cell: Vector3i in local.cells:
-				_copy(local, cell, tile, cell + offset)
-		var mmi := tile.build(palette, voxel, glow, Vector3.ZERO)
+	var members: Array = by_tile.values()
+	var first := _tiles.size()
+	var bufs: Array[PackedFloat32Array] = []
+	bufs.resize(members.size())
+	var pack := func(t: int) -> void:
+		var tile: Array = members[t]
+		bufs[t] = _pack_tile(tile, palette, salt, first + t)
+	var task := WorkerThreadPool.add_group_task(pack, members.size())
+	WorkerThreadPool.wait_for_group_task_completion(task)
+	for buf: PackedFloat32Array in bufs:
+		var mmi := VoxelBuilder.instance(buf, voxel, glow, true)
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(mmi)
 		_tiles.append(mmi)
-		# Each prop remembers which instances of its tile are its voxels, so crushing touches
-		# only those.
-		var index_of := {}
-		for i: int in tile.built_cells.size():
-			index_of[tile.built_cells[i]] = i
-		for n: int in members:
-			_index(_groups[n], index_of, tile, _tiles.size() - 1)
 	return holder
+
+
+## One tile's voxels packed (VoxelBuilder.pack): its props copied in, each told which of the
+## tile's instances are its voxels (so crushing touches only those). Safe on a worker thread.
+func _pack_tile(members: Array, palette: Dictionary, salt: int, at_tile: int) -> PackedFloat32Array:
+	var tile := VoxelBuilder.new()
+	tile.salt = salt
+	tile.detail = true  # the city's surface family (flat surfaces P3)
+	for n: int in members:
+		var local: VoxelBuilder = _groups[n]["local"]
+		var offset: Vector3i = _groups[n]["offset"]
+		for cell: Vector3i in local.cells:
+			_copy(local, cell, tile, cell + offset)
+	var buf := tile.pack(palette, voxel, Vector3.ZERO)
+	var index_of := {}
+	for i: int in tile.built_cells.size():
+		index_of[tile.built_cells[i]] = i
+	for n: int in members:
+		_index(_groups[n], index_of, tile, at_tile)
+	return buf
+
+
+func _kept_out(at: Vector3) -> bool:
+	for r: Rect2 in keep_out:
+		if r.has_point(Vector2(at.x, at.z)):
+			return true
+	return false
 
 
 ## One cell from `from` into `to` at `at`: its palette key, or its own colour (a baked model's).
