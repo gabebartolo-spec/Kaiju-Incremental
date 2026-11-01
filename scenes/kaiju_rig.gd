@@ -116,15 +116,33 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 			gait = ClipGait.or_biped(self, spec.get("clips"))
 
 
-## Each bone's voxels and the joint bands over its overlaps; the rig's height in world units.
+## Each bone's voxels and the joint bands over its overlaps; the rig's height in world units. The
+## parts pack on worker threads (VoxelBuilder.pack: 0.7 s of an adult's 1.8 s build on one thread,
+## 2026-11-02); their nodes are made here, in the same order.
 func _skin(vox: VoxelBuilder, voxel: float) -> void:
 	var bands := RigJoints.overlap(self)
+	var parts: Array[Array] = []  # [bone name, voxels, inset, origin]
 	for bone_name: String in _voxels:
-		var part: VoxelBuilder = _voxels[bone_name]
-		skins[bone_name] = attach_voxels(bone_name, part)
+		parts.append([bone_name, _voxels[bone_name], 1.0, -_head[bone_name]])
 	for bone_name: String in bands:
-		var band: VoxelBuilder = bands[bone_name]
-		attach_voxels(bone_name, band, null, JOINT_INSET)
+		parts.append([bone_name, bands[bone_name], JOINT_INSET, -_head[bone_name]])
+	var bufs := []
+	bufs.resize(parts.size())
+	var pack_part := func(i: int) -> void:
+		var part: VoxelBuilder = parts[i][1]
+		part.salt = 7
+		var origin: Vector3 = parts[i][3]
+		part.inset = parts[i][2]
+		bufs[i] = part.pack({}, _voxel, origin)
+	var task := WorkerThreadPool.add_group_task(pack_part, parts.size())
+	WorkerThreadPool.wait_for_group_task_completion(task)
+	for i: int in parts.size():
+		var bone_name: String = parts[i][0]
+		var part: VoxelBuilder = parts[i][1]
+		var buf: PackedFloat32Array = bufs[i]
+		var mmi := _show(bone_name, buf, part.detail, null)
+		if i < _voxels.size():
+			skins[bone_name] = mmi
 	height_units = vox.height_hint * voxel if vox.height_hint > 0 else 10.0
 
 
@@ -168,7 +186,12 @@ func attach_voxels(
 	part.salt = 7
 	part.inset = inset
 	var head: Vector3 = _head[bone_name]
-	var mmi := part.build({}, _voxel, _glow, -head)
+	return _show(bone_name, part.pack({}, _voxel, -head), part.detail, under)
+
+
+## A bone's packed voxels (VoxelBuilder.pack) as a node on the bone, or on `under`.
+func _show(bone_name: String, buf: PackedFloat32Array, detail: bool, under: Node3D) -> Node3D:
+	var mmi := VoxelBuilder.instance(buf, _voxel, _glow, detail)
 	(mmi.multimesh.mesh as PrimitiveMesh).material = Look.hide_material(_voxel, _glow)
 	mmi.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 	var holder: Node3D = under if under != null else bone(bone_name)

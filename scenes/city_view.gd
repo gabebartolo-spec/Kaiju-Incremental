@@ -49,30 +49,55 @@ func _ready() -> void:
 	if stages.on:
 		process_mode = Node.PROCESS_MODE_DISABLED  # street life and traffic wait for the finished city
 	CityEnvironment.attach(self, sim)
-	_build_ground()
+	var streets := _build_ground()
+	if _with_decor and not await _build_outskirts(streets):
+		return
 	if not await stages.next(self):
 		return
 	_build_buildings()
 	_add_layers()
 	if not await stages.next(self):
 		return
-	if _with_decor:
-		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
-		add_child(_decor)
-		if not await stages.next(self):
-			return
-		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
-		add_child(street)
-		if not await stages.next(self):
-			return
+	if _with_decor and not await _build_street_decor():
+		return
 	# Where the kaiju's walk ends (comments #18).
 	add_child(ArenaEdge.new(sim, ArenaEdge.trees_of(_decor)))
-	while stages.on and not _stream.initial_done():
-		if not await stages.next(self, false):
-			return
-	_stream.finish_initial()
+	if not await _finish_streaming():
+		return
 	process_mode = Node.PROCESS_MODE_INHERIT
 	is_loaded = true
+
+
+## The outskirts, a frame each: no one ~2 s freeze (perf 2026-11); false if the load was cut.
+func _build_outskirts(streets: CityGround) -> bool:
+	if not await stages.next(self, false):
+		return false
+	SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
+	if not await stages.next(self, false):
+		return false
+	wildlife = WildlifeView.attach(self, sim)
+	boats = BoatView.attach(self, sim)
+	return true
+
+
+## The decor and street life, a frame each; false if the load was cut.
+func _build_street_decor() -> bool:
+	_decor = CityDecor.new(sim, Seeds.make("decor", 0))
+	add_child(_decor)
+	if not await stages.next(self):
+		return false
+	street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
+	add_child(street)
+	return await stages.next(self)
+
+
+## Waits out the initial chunk stream, a frame at a time, then closes it; false if the load was cut.
+func _finish_streaming() -> bool:
+	while stages.on and not _stream.initial_done():
+		if not await stages.next(self, false):
+			return false
+	_stream.finish_initial()
+	return true
 
 
 ## The effect layers: dust and sparks, debris, ruins, topples, falls and the light pool.
@@ -164,8 +189,8 @@ func _build_buildings() -> void:
 	_bubble = CameraBubble.new(sim.buildings, _stream.built)
 
 
-## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
-func _build_ground() -> void:
+## The street plan's ground (the outskirts, the bay and the skyline follow in _ready).
+func _build_ground() -> CityGround:
 	var ground := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
@@ -177,10 +202,7 @@ func _build_ground() -> void:
 	var streets := CityGround.new(sim.city)
 	add_child(streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
-	if _with_decor:
-		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
-		wildlife = WildlifeView.attach(self, sim)
-		boats = BoatView.attach(self, sim)
+	return streets
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.

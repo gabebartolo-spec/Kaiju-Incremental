@@ -71,6 +71,7 @@ func run_checks() -> void:
 	await _t("_check_r6_one_surface")
 	await _t("_check_r7_road_paint_everywhere")
 	await _t("_check_r8_beachfront_paint")
+	await _t("_check_paint_index")
 
 
 func _build() -> void:
@@ -189,6 +190,14 @@ func _check_r8_beachfront_paint() -> void:
 		"R8 the beach road and every side street carry their lines",
 		func(g: RoadGround, paint: Array[Transform3D]) -> Array[String]:
 			return _beachfront(g.plan, paint)
+	)
+
+
+func _check_paint_index() -> void:
+	_each(
+		"road paint by node index equals the linear find's, mark for mark",
+		func(g: RoadGround, _paint: Array[Transform3D]) -> Array[String]:
+			return Edges.paint_index(g)
 	)
 
 

@@ -45,6 +45,8 @@ static func _case(
 		await _frames(tree, 3)
 		screen = main.call("screen")
 	var rampage := screen as Rampage
+	if rampage != null:
+		await rampage.wait_loaded()  # its sim builds behind the loading screen
 	var tier := rampage.sim.size_tier() if rampage != null else -1
 	var noted: Dictionary = main.get("_save")
 	(

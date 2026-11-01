@@ -13,6 +13,7 @@ var field: PropField
 var placed: Dictionary = {}  # id -> how many stand in this city (tests, the report)
 var _cfg: Dictionary
 var _models: Dictionary = {}  # parsed models per id (the first pose's cells): one read a city
+var _turns: Dictionary = {}  # [id, quarter turns] -> that model turned (PropField.add_cells)
 var _rng := RandomNumberGenerator.new()
 var _spots: Array[Vector2] = []  # every placed prop's base (spacing)
 
@@ -37,7 +38,13 @@ func put(id: String, at: Vector2, face: Vector2) -> bool:
 	if cells == null:
 		return false
 	var turns := (_quarter(face) + Num.i(_cfg["models"][id]["yaw"])) % 4
-	field.add(Vector3(at.x, 0, at.y), func(v: VoxelBuilder) -> void: _turned(cells, turns, v))
+	var key := [id, turns]
+	if not _turns.has(key):
+		var turned := VoxelBuilder.new()
+		_turned(cells, turns, turned)
+		_turns[key] = turned
+	var shared: VoxelBuilder = _turns[key]
+	field.add_cells(Vector3(at.x, 0, at.y), shared)
 	placed[id] = Num.i(placed.get(id, 0)) + 1
 	_spots.append(at)
 	return true

@@ -27,6 +27,9 @@ var _camera: Camera3D
 var _fade := 0.0
 var _flash_rng := Seeds.make("title_flash", 0)
 var _view: SubViewport
+## The worker task building the title's sim (-1 when none runs), and what it built.
+var _sim_task := -1
+var _sim: RampageSim
 
 
 func _ready() -> void:
@@ -43,12 +46,33 @@ func _ready() -> void:
 ## The sim's parts point back at it, so a dropped sim is never freed: let go of them
 ## (RampageSim.dispose, D-179) or every visit to the title keeps a city in memory.
 func _exit_tree() -> void:
+	if _sim_task >= 0:
+		WorkerWait.wait(_sim_task)
+		_sim_task = -1
 	if _city != null and _city.sim != null:
 		_city.sim.dispose()
+	elif _sim != null:
+		_sim.dispose()
 
 
 func _build() -> void:
 	Content.set_time("night")
+	# The plan and the sim (~1.3 s) build on a worker so the menu keeps drawing meanwhile.
+	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(_cfg["city_tier"]))
+	var city_tuning: Dictionary = tuning["city"]
+	city_tuning["far_tower_cap"] = Num.f(_cfg["tower_cap"])  # D-158: the colossus clears every tower
+	var city_fog: Dictionary = city_tuning["far_fog"]
+	var title_fog: Dictionary = _cfg["far_fog"]
+	city_tuning["far_fog"] = far_fog(city_fog, title_fog)
+	_sim_task = WorkerWait.add(
+		WorkerThreadPool.add_task(_make_sim.bind(tuning, Num.i(_cfg["city_tier"])))
+	)
+	while not WorkerThreadPool.is_task_completed(_sim_task):
+		if not is_inside_tree():
+			return
+		await get_tree().process_frame
+	WorkerWait.wait(_sim_task)
+	_sim_task = -1
 	_make_city()
 	while not _city.is_loaded:
 		if not is_inside_tree():
@@ -59,6 +83,12 @@ func _build() -> void:
 	ready_to_show.emit()
 
 
+## Worker side of _build: the city plan and the sim, the same ones the main thread built before.
+func _make_sim(tuning: Dictionary, tier: int) -> void:
+	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
+	_sim = RampageSim.new({}, tuning, layout, Seeds.make("army", 0))
+
+
 ## The title's far-shore haze (D-441, "Thin the haze"): the city's far_fog with the title's keys
 ## over it, so the burning towers stand clear in their own fire.
 static func far_fog(city_fog: Dictionary, title_fog: Dictionary) -> Dictionary:
@@ -67,23 +97,13 @@ static func far_fog(city_fog: Dictionary, title_fog: Dictionary) -> Dictionary:
 	return fog
 
 
-## The sim, the city view and the still camera (the city then builds over a few frames).
+## The city view and the still camera (the city then builds over a few frames).
 func _make_city() -> void:
 	_view = SubViewport.new()
 	_view.own_world_3d = true
 	_view.handle_input_locally = false
 	add_child(_view)
-	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(_cfg["city_tier"]))
-	var city_tuning: Dictionary = tuning["city"]
-	city_tuning["far_tower_cap"] = Num.f(_cfg["tower_cap"])  # D-158: the colossus clears every tower
-	var city_fog: Dictionary = city_tuning["far_fog"]
-	var title_fog: Dictionary = _cfg["far_fog"]
-	city_tuning["far_fog"] = far_fog(city_fog, title_fog)
-	var layout := CityGrowth.layout(
-		Content.tuning(), Num.i(_cfg["city_tier"]), Seeds.make("city", 0)
-	)
-	var sim := RampageSim.new({}, tuning, layout, Seeds.make("army", 0))
-	_city = CityView.new(sim, Seeds.make("fx", 0))
+	_city = CityView.new(_sim, Seeds.make("fx", 0))
 	var stages := BuildStages.new()
 	stages.on = true
 	_city.stages = stages

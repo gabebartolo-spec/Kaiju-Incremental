@@ -14,6 +14,7 @@ const MIN_STAGES := 4
 
 static func run(tree: SceneTree, check: Callable) -> void:
 	await _staged_build(tree, check)
+	await _sim_on_worker(tree, check)
 	await _leave_mid_build(tree, check)
 	await _plain_build(tree, check)
 	await FlowHandover.run(tree, check)  # the run's start, then its hand-over (research 19, 20)
@@ -30,6 +31,39 @@ static func _rampage(staged: bool) -> Rampage:
 	rampage.staged = staged
 	rampage.setup(species, stats, layout, 0)
 	return rampage
+
+
+## Main's way in (Rampage.setup_later, perf 2026-11): the loading screen is up before the city plan
+## and sim exist; they build on a worker and equal the main thread's (setup, off), building for
+## building, with the kaiju risen as far.
+static func _sim_on_worker(tree: SceneTree, check: Callable) -> void:
+	var off := _rampage(false)
+	var species := Content.species_def("reptilian")
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
+	)
+	var on := Rampage.new()
+	on.staged = true
+	on.setup_later(
+		species, stats, CityGrowth.layout.bind(Content.tuning(), 1, Seeds.make("city", 0)), 0
+	)
+	check.call(off.sim != null and on.sim == null, "setup builds its sim at once, setup_later not")
+	tree.root.add_child(on)
+	check.call(
+		on.sim == null and not on.find_children("*", "LoadingOverlay", false, false).is_empty(),
+		"the loading screen is up before the worker's sim exists"
+	)
+	await on.wait_loaded()
+	var same := (
+		on.sim != null
+		and TitleLoadCost._digest(on.sim) == TitleLoadCost._digest(off.sim)
+		and on.sim.emerge.progress() == off.sim.emerge.progress()
+	)
+	check.call(same, "the worker's sim equals setup's (%d buildings)" % [off.sim.buildings.size()])
+	on.queue_free()
+	off.sim.dispose()  # never in the tree, so its _exit_tree never lets go of it
+	off.free()
+	await tree.process_frame
 
 
 static func _staged_build(tree: SceneTree, check: Callable) -> void:

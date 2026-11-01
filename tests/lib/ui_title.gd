@@ -44,6 +44,8 @@ func run() -> void:
 	t.root.size = window
 	await _far_tower_cap()
 	_sky_less_look()
+	TitleLoadCost.run(check)
+	await TitleLoadCost.split(check, t)
 	TitleBeach.new(t, check).run()
 	TitleHaze.new(check).run()
 

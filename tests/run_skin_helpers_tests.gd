@@ -2,7 +2,8 @@ extends "res://tests/lib/runner.gd"
 ## D-374 corrective helper joints (scenes/voxel_skin_helpers.gd): the Colossus's skin carries its
 ## hip, knee, web, ankle and belly helpers per leg by default (the young croc four a leg), a
 ## helper's pose matches the reference maths (tools/kaiju_skin/skin_helpers.py pose(), numbers
-## below from it), a helper sits still at rest, and a skin without a helper block has none.
+## below from it), a helper sits still at rest, and a skin without a helper block has none; the
+## Colossus loads through the faster rig and skin builds and draws what the old ones drew.
 ##   godot --headless --path . --script tests/run_skin_helpers_tests.gd
 ## Seeded by design: fixed poses, no clock.
 
@@ -28,6 +29,7 @@ func run_checks() -> void:
 	await _t("_check_reference_maths")
 	await _t("_check_still_at_rest")
 	await _t("_check_plain_skin_has_none")
+	await _t("_check_load_cost")
 
 
 func _helpers_of(base: String) -> VoxelSkinHelpers:
@@ -127,3 +129,7 @@ func _near(x: Basis, y: Basis) -> bool:
 		if (x[i] - y[i]).length() > CLOSE:
 			return false
 	return true
+
+
+func _check_load_cost() -> void:
+	preload("res://tests/lib/kaiju_load_cost.gd").check(check)

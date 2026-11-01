@@ -22,7 +22,7 @@ static func check(root: Node, check_fn: Callable) -> void:
 	check_fn.call(Num.i(placed.get(str(cfg["lamps"]), 0)) > 0, "street props: lamp model on lamps")
 	check_fn.call(off._street.placed.is_empty(), "street props: none when off")
 	check_fn.call(
-		on._street.field.vox.cells.size() > 0 and off._street.field.vox.cells.size() == 0,
+		on._street.field._groups.size() > 0 and off._street.field._groups.is_empty(),
 		"street props: their cells draw only when on"
 	)
 	var group: Dictionary = on._street.field._groups[0]
