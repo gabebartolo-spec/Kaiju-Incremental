@@ -42,6 +42,7 @@ func run() -> void:
 	t.root.size = window
 	await _far_tower_cap()
 	_sky_less_look()
+	TitleLoadCost.run(check)
 
 
 ## The title's look skips a world with no sky (the far beast's own little world, #213) and still
