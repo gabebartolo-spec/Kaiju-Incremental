@@ -395,11 +395,3 @@ skills? A: "Delete all outright". So: RULEBOOK.md no longer loads; `~/.claude/me
 `~/.claude-archive/memory-shared-2026-10-29` and the stop hook no longer asks for lessons; the 14 personal skills in
 `~/.claude/skills` are deleted (app-synced Anthropic skills untouched). `~/.claude/CLAUDE.md` keeps "straight to me",
 no spend, end-with-state and write-concisely. Replaces D-378's rulebook and skill mentions.
-
-## 2026-10-29 · D-378 · Director · Sessions boot on a small core; history is searched, not read at start
-His words (~03:0x): "90% of them are pointless. really we could cull almost everything. no wonder our context is always
-so high". Q: how hard to cut startup reading? A: "Core only (Recommended)". A session boots on its handoff, the CLAUDE.md
-files, the rulebook and the DESIGN sections its task touches. Handoffs hold current state only, max 80 lines; their
-history moves to `~/.claude/handoffs/kaiju/archive/`. The co-lead playbook, roadmap chapters and archives are grepped when
-a task needs the why, never boot reading. Nothing is deleted. Changes: RULEBOOK (Session start, Context), kaiju-handoff
-and game-studio-lead skills; lead handoff cut from 253 to ~60 lines.
