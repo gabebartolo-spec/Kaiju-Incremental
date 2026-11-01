@@ -9,6 +9,7 @@ extends RefCounted
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FocusOrder := preload("res://tests/lib/focus_order.gd")
 const TitleLayout := preload("res://tests/lib/ui_title_layout.gd")
+const TitleBeach := preload("res://tests/lib/ui_title_beach.gd")
 const CANVAS := Vector2i(1920, 1080)
 const SUMMARY := "Reptilian, 7 rampages"
 ## The ticker along the bottom edge, and how far the corner buttons may stand from the screen's.
@@ -44,6 +45,7 @@ func run() -> void:
 	_sky_less_look()
 	TitleLoadCost.run(check)
 	await TitleLoadCost.split(check, t)
+	TitleBeach.new(t, check).run()
 
 
 ## The title's look skips a world with no sky (the far beast's own little world, #213) and still
