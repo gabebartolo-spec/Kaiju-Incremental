@@ -81,6 +81,14 @@ func _init(voxels: BuildingVoxels) -> void:
 	_w = _v.b.w * _res
 	_d = _v.b.d * _res
 	_h = _v.b.height * _res
+	var baked: Variant = BuildingNative.bake(_v, VoxelAO.finish_table(), _noise)
+	if baked != null:  # the native bake: the same arrays as the GDScript below
+		var got: Array = baked
+		_shell_arrays = got[0]
+		_slab_arrays = got[1]
+		samples = got[2]
+		_v = null
+		return
 	var shell_cells: Array[Vector3i] = []
 	var slab_cells: Array[Vector3i] = []
 	var outside: Array[Vector3i] = []  # slabs outside the hollow (a brick building's balconies)
