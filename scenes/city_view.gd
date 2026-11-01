@@ -49,7 +49,15 @@ func _ready() -> void:
 	if stages.on:
 		process_mode = Node.PROCESS_MODE_DISABLED  # street life and traffic wait for the finished city
 	CityEnvironment.attach(self, sim)
-	_build_ground()
+	var streets := _build_ground()
+	if _with_decor:  # the outskirts, each in a frame of its own: no one ~2 s freeze (perf 2026-11)
+		if not await stages.next(self, false):
+			return
+		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
+		if not await stages.next(self, false):
+			return
+		wildlife = WildlifeView.attach(self, sim)
+		boats = BoatView.attach(self, sim)
 	if not await stages.next(self):
 		return
 	_build_buildings()
@@ -164,8 +172,8 @@ func _build_buildings() -> void:
 	_bubble = CameraBubble.new(sim.buildings, _stream.built)
 
 
-## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
-func _build_ground() -> void:
+## The street plan's ground (the outskirts, the bay and the skyline follow in _ready).
+func _build_ground() -> CityGround:
 	var ground := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
@@ -177,10 +185,7 @@ func _build_ground() -> void:
 	var streets := CityGround.new(sim.city)
 	add_child(streets)
 	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
-	if _with_decor:
-		SkylineRampage.attach(self, CitySkyline.new(streets, Seeds.make("skyline", 0)), _rng)
-		wildlife = WildlifeView.attach(self, sim)
-		boats = BoatView.attach(self, sim)
+	return streets
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
