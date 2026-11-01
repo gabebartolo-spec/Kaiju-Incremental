@@ -19,6 +19,7 @@ static var _sports: Dictionary = {}
 static var _materials: Array[Dictionary] = []
 static var _continents: Array[Dictionary] = []
 static var _stage_words: Array = []
+static var _bonus_lines: Dictionary = {}
 
 
 static func tuning() -> Dictionary:
@@ -76,6 +77,13 @@ static func continent(id: String) -> Dictionary:
 static func stage_word(stage: int) -> String:
 	_load()
 	return str(_stage_words[stage]) if stage >= 0 and stage < _stage_words.size() else ""
+
+
+## A bonus stat as a phrase with its percent inside ("Moves %d%% faster"), or "" when the stat
+## has none.
+static func bonus_line(stat: String) -> String:
+	_load()
+	return str(_bonus_lines.get(stat, ""))
 
 
 ## One conquest bonus by id ({id, scale: stat -> fraction added}), or {} when there is none.
@@ -219,7 +227,9 @@ static func _load() -> void:
 	_sports = load_json("res://data/sports.json")
 	_materials = _list("res://data/materials.json", "materials")
 	_continents = _list("res://data/continents.json", "continents")
-	_stage_words = load_json("res://data/continents.json").get("stage_words", [])
+	var campaign := load_json("res://data/continents.json")
+	_stage_words = campaign.get("stage_words", [])
+	_bonus_lines = campaign.get("bonus_lines", {})
 	var names: Dictionary = _tuning.get("names", {})
 	for content: Variant in [_tuning, _upgrades, _species]:
 		_fill(content, names)

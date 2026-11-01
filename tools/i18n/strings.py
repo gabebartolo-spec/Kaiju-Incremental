@@ -29,6 +29,7 @@ CHECKED = ["en"]
 ## data file -> the keys whose string values the player reads (at any depth).
 DATA_FIELDS: dict[str, list[str]] = {
     "species.json": ["name", "blurb"],
+    "continents.json": ["stomp_damage", "hp", "speed"],  # bonus_lines (D-432)
     "upgrades.json": ["name", "desc", "reptilian", "insectoid", "cephalopod"],
     "looks.json": [
         "clear", "dusk", "fog", "morning", "night", "noon", "overcast", "rain", "thunderstorm",

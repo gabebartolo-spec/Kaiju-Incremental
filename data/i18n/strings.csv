@@ -419,4 +419,6 @@ LOSE,LOSE,DERROTA,DÉFAITE,SCONFITTA,NIEDERLAGE,ПОРАЖЕНИЕ,失败
 Stand-in mission: the city comes later,Stand-in mission: the city comes later,Misión provisional: la ciudad llegará después,Mission provisoire : la ville viendra plus tard,Missione provvisoria: la città arriverà dopo,Platzhalter-Mission: die Stadt kommt später,Временная миссия: город появится позже,临时任务：城市稍后加入
 Threat +%d%%,Threat +%d%%,Amenaza +%d%%,Menace +%d%%,Minaccia +%d%%,Bedrohung +%d%%,Угроза +%d%%,威胁 +%d%%
 WIN,WIN,VICTORIA,VICTOIRE,VITTORIA,SIEG,ПОБЕДА,胜利
-WIN ONE:,WIN ONE:,GANA UNO:,GAGNEZ-EN UN :,VINCINE UNO:,GEWINNE EINEN:,ВЫБЕРИ ОДИН:,赢取其一：
+Stomps hit %d%% harder,Stomps hit %d%% harder,Los pisotones golpean un %d%% más fuerte,Les piétinements frappent %d%% plus fort,I pestoni colpiscono il %d%% più forte,Stampfer treffen %d%% härter,Топот бьёт на %d%% сильнее,践踏伤害提高 %d%%
+%d%% more health,%d%% more health,%d%% más de salud,%d%% de santé en plus,%d%% di salute in più,%d%% mehr Leben,На %d%% больше здоровья,生命值提高 %d%%
+Moves %d%% faster,Moves %d%% faster,Se mueve un %d%% más rápido,Se déplace %d%% plus vite,Si muove il %d%% più veloce,Bewegt sich %d%% schneller,Двигается на %d%% быстрее,移动速度提高 %d%%
