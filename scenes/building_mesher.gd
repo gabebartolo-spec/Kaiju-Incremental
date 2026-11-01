@@ -56,6 +56,7 @@ var _face_u: Array[Vector3] = []
 var _face_v: Array[Vector3] = []
 var _rings: Array = []
 var _color: Color
+var _noise := Look.value("color_noise")  # Look.jitter_by, read once
 var _base: Color
 var _tag: Vector2
 # Only while baking: per (direction, depth) plane, Vector2i(v, u) -> merge id; per merge id its
@@ -281,7 +282,7 @@ func _start_cell(cell: Vector3i) -> void:
 	# The mesh keeps the palette colour: building_baked.gdshader jitters it per voxel and bites in
 	# clumps of 2x2x2 voxels (voxel_merged). The jittered colour is the debris sample's.
 	_base = base
-	_color = Look.jitter(base, cell, _v.b.style)
+	_color = Look.jitter_by(base, cell, _v.b.style, _noise)
 	_tag = Vector2(chunk_index(cell), 0.0)
 	_finish_class = Num.i(_finish.get(key, 0))
 
