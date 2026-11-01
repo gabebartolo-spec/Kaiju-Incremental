@@ -25,6 +25,7 @@ const EdgeMark := preload("res://tests/lib/city_arena_edge.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
 const BridgeLand := preload("res://tests/lib/city_bridge_land.gd")
+const FrontClear := preload("res://tests/lib/city_front_clear.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -211,6 +212,7 @@ func _check_no_empty_ground() -> void:
 			RiverStart.check_look(tier, map_seed, sim, decor, check)
 			EdgeMark.check(tier, map_seed, sim, decor, check)
 			SpawnView.check(tier, map_seed, sim, skyline, check)
+			FrontClear.check(tier, map_seed, sim, skyline, check)
 			Harbour.check(tier, map_seed, sim, decor, check)
 			Harbour.check_walkers(tier, map_seed, sim, street, check)
 			BeachCrowdCheck.check(tier, map_seed, street, check)
