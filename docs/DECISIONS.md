@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-02 · D-440 · Director · The title's foreground is a night beach, not a paved quay
+His words, on the title still: "this is wrong btw... meant to be a beach". Q: how? A: "Sand in front, same view". Why:
+the game is set on a beach and bay; the paved ledge read as a harbour wall. Changes: title_shore.gd draws the old ledge
+as the game's own sand (grains, wet line) sloping into the bay, its waterline wandering (tuning `title.shore.beach_*`),
+a broken foam line, the fires' orange on the wet sand, and the bay lapping up it with the game's lap (`water.lap`).
+Camera and far shore unchanged; title_ledge.gdshader is replaced by title_sand.gdshader. UI suite `ui_title_beach.gd`.
+
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
 His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
 fade? A: "Gentle fade". Why: the ocean's FFT cascades (8.8, 5.7, 1.6 m tiles) have no mip chain, so from high up one
