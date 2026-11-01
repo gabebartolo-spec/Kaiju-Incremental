@@ -55,11 +55,15 @@ static func plain(b: RampageSim.Building) -> bool:
 
 
 ## Whether no city's facade is baked yet: the first load bakes and takes longer (D-415), so the
-## loading screen says so.
+## loading screen says so. No cache folder yet is a first load too (listing a missing folder logs
+## an engine ERROR).
 static func first_load() -> bool:
 	return (
 		Content.section("render_opt").get("facade_bake", true) == true
-		and DirAccess.get_files_at(CACHE_DIR).is_empty()
+		and (
+			not DirAccess.dir_exists_absolute(CACHE_DIR)
+			or DirAccess.get_files_at(CACHE_DIR).is_empty()
+		)
 	)
 
 

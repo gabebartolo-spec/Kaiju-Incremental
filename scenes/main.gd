@@ -15,6 +15,11 @@ var _endless := false
 
 
 func _ready() -> void:
+	# A worker task started ahead of its use (WorkerWait) still running as the process quits
+	# aborts the exit (exit 134); the game waits for them as it leaves.
+	var exiting := get_tree().root.tree_exiting
+	if not exiting.is_connected(WorkerWait.wait_all):
+		exiting.connect(WorkerWait.wait_all, CONNECT_ONE_SHOT)
 	_show_title()
 
 
