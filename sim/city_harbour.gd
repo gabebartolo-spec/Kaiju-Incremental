@@ -224,18 +224,30 @@ static func holds(plan: Dictionary, p: Vector2) -> bool:
 	if not plan.has("harbour"):
 		return false
 	var b: Dictionary = plan["harbour"]
+	var h: Dictionary = b["h"]
+	return holds_at(plan, p, shore_at(h, p.x))
+
+
+## holds() with the shore line at p.x given (`shore`: shore_at of the plan's harbour "h"), for a
+## grid that reads it once per column (HarbourView._heights).
+static func holds_at(plan: Dictionary, p: Vector2, shore: float) -> bool:
+	if not plan.has("harbour"):
+		return false
+	var b: Dictionary = plan["harbour"]
 	var rect: Rect2 = b["rect"]
 	if not rect.has_point(p) or p.y < Num.f(b["mouth"]):
 		return false
 	var walls: Array[Rect2] = b["walls"]
-	if walls.any(func(r: Rect2) -> bool: return r.has_point(p)):
-		return false
+	for r: Rect2 in walls:
+		if r.has_point(p):
+			return false
 	if p.x >= Num.f(b["port_x"]):
 		var piers: Array[Rect2] = b["piers"]
-		var dry := piers.any(func(r: Rect2) -> bool: return r.has_point(p))
-		return p.y < Num.f(b["quay_z"]) and not dry
-	var h: Dictionary = b["h"]
-	return p.y < shore_at(h, p.x)
+		for r: Rect2 in piers:
+			if r.has_point(p):
+				return false
+		return p.y < Num.f(b["quay_z"])
+	return p.y < shore
 
 
 ## Whether p lies on the beach's sand: between the waterline and the promenade, west of the
@@ -318,11 +330,18 @@ static func drop_floor(cfg: Dictionary) -> float:
 static func floor_at(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
 	if not holds(plan, p):
 		return 0.0
+	var h: Dictionary = cfg["harbour"]
+	return floor_held(plan, cfg, p, shore_at(h, p.x))
+
+
+## floor_at() at a p that holds() water, the shore line at p.x given (`shore`: shore_at of
+## cfg "harbour").
+static func floor_held(plan: Dictionary, cfg: Dictionary, p: Vector2, shore: float) -> float:
 	var b: Dictionary = plan["harbour"]
 	var h: Dictionary = cfg["harbour"]
 	if p.x >= Num.f(b["port_x"]):
 		return seabed(cfg)
-	var out := shore_at(h, p.x) - p.y
+	var out := shore - p.y
 	var drop := Num.f(h["drop"])
 	var shelf := lerpf(Num.f(h["sand_top"]), drop_floor(cfg), clampf(out / drop, 0.0, 1.0))
 	if out > drop:

@@ -14,6 +14,12 @@ const GRAIN_TILE := 64  # grains per side of the sand's texture, tiled over the 
 const CELL := 1.0  # metres: the beach's height-field cell
 const COLUMN := 1.0  # metres: a column of the curved bands (promenade, road, pavement)
 
+## The beach grid reads each column's shore line once, not at every corner three times (it is x's
+## alone): the height field 339 -> 120 ms. Off: per corner, as before (fixture: same heights).
+static var by_column := true
+## Perf 2026-11: the bay's sheet from packed arrays (water 120 -> 40 ms). Off: SurfaceTool.
+static var packed_water := true
+
 
 ## The port's decks (x, z): its quay from the beach's east end to the front's east edge (the beach
 ## road's near kerb seaward to the quay's edge), its finger piers, and the seawall with its
@@ -89,6 +95,77 @@ static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstan
 	var rows := ceili((reach - mouth) / Num.f(lap["row"]))
 	var fade := Num.f(lap["fade"])
 	var y := CityHarbour.sea(cfg)
+	var mi := MeshInstance3D.new()
+	var span := [mouth, reach, fade, y]
+	mi.mesh = _sheet(rect, span, cols, rows) if packed_water else _sheet_st(rect, span, cols, rows)
+	if WaterSurface.on():
+		var mat := WaterSurface.material(rect, color, true, Num.i(cfg["map_seed"]))
+		WaterSurface.lap(mat)
+		mi.material_override = mat
+	else:
+		mi.material_override = WaterSurface.gloss(color)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.add_to_group(WaterSurface.GROUP)
+	return mi
+
+
+## The bay's sheet, cols x rows cells over rect's x and span's z ([mouth, reach, fade, y]), its
+## rows fading in from the mouth: packed arrays, one call (the per-vertex SurfaceTool build,
+## _sheet_st, gives the same mesh).
+static func _sheet(rect: Rect2, span: Array, cols: int, rows: int) -> ArrayMesh:
+	var mouth: float = span[0]
+	var reach: float = span[1]
+	var fade: float = span[2]
+	var y: float = span[3]
+	var n := (rows + 1) * (cols + 1)
+	var verts := PackedVector3Array()
+	verts.resize(n)
+	var normals := PackedVector3Array()
+	normals.resize(n)
+	normals.fill(Vector3.UP)
+	var colors := PackedColorArray()
+	colors.resize(n)
+	var xs := PackedFloat32Array()
+	for c: int in cols + 1:
+		xs.append(lerpf(rect.position.x, rect.end.x, float(c) / cols))
+	var k := 0
+	for r: int in rows + 1:
+		var z := lerpf(mouth, reach, float(r) / rows)
+		var tint := Color(clampf((z - mouth) / fade, 0.0, 1.0), 0.0, 0.0)
+		for c: int in cols + 1:
+			verts[k] = Vector3(xs[c], y, z)
+			colors[k] = tint
+			k += 1
+	var index := PackedInt32Array()
+	index.resize(rows * cols * 6)
+	k = 0
+	for r: int in rows:
+		for c: int in cols:
+			var q := r * (cols + 1) + c
+			index[k] = q
+			index[k + 1] = q + 1
+			index[k + 2] = q + cols + 2
+			index[k + 3] = q
+			index[k + 4] = q + cols + 2
+			index[k + 5] = q + cols + 1
+			k += 6
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = index
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## _sheet as built before 2026-11 (packed_water off): a SurfaceTool call per vertex and index.
+static func _sheet_st(rect: Rect2, span: Array, cols: int, rows: int) -> ArrayMesh:
+	var mouth: float = span[0]
+	var reach: float = span[1]
+	var fade: float = span[2]
+	var y: float = span[3]
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_normal(Vector3.UP)
@@ -102,17 +179,7 @@ static func water(plan: Dictionary, cfg: Dictionary, color: Color) -> MeshInstan
 			var q := r * (cols + 1) + c
 			for k: int in [q, q + 1, q + cols + 2, q, q + cols + 2, q + cols + 1]:
 				st.add_index(k)
-	var mi := MeshInstance3D.new()
-	mi.mesh = st.commit()
-	if WaterSurface.on():
-		var mat := WaterSurface.material(rect, color, true, Num.i(cfg["map_seed"]))
-		WaterSurface.lap(mat)
-		mi.material_override = mat
-	else:
-		mi.material_override = WaterSurface.gloss(color)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.add_to_group(WaterSurface.GROUP)
-	return mi
+	return st.commit()
 
 
 ## The beach: a height field over the beach (the front's west edge to its east end), the sim's
@@ -160,7 +227,10 @@ static func _sand(sand: Color, lap: Dictionary) -> ShaderMaterial:
 static func _heights(plan: Dictionary, cfg: Dictionary, area: Rect2, wet_width: float) -> Array:
 	var rows := []
 	rows.resize(ceili(area.size.y / CELL) + 1)
-	var row := func(j: int) -> void: rows[j] = _height_row(plan, cfg, area, wet_width, j)
+	var cols := []  # off: each corner reads its own shore
+	if by_column:
+		cols = _shores(plan, cfg, area)
+	var row := func(j: int) -> void: rows[j] = _height_row(plan, cfg, area, wet_width, j, cols)
 	var task := WorkerThreadPool.add_group_task(row, rows.size())
 	WorkerThreadPool.wait_for_group_task_completion(task)
 	var ys := PackedFloat32Array()
@@ -173,22 +243,48 @@ static func _heights(plan: Dictionary, cfg: Dictionary, area: Rect2, wet_width: 
 	return [ys, ups]
 
 
-## One row (j) of _heights: reads only plan and cfg, so the rows build on worker threads.
+## Each grid column's shore line (CityHarbour.shore_at of x alone): [cfg's harbour, the plan's],
+## 64-bit like the corner-by-corner reads.
+static func _shores(plan: Dictionary, cfg: Dictionary, area: Rect2) -> Array[PackedFloat64Array]:
+	var h: Dictionary = cfg["harbour"]
+	var plan_h: Dictionary = plan["harbour"]["h"] if plan.has("harbour") else h
+	var own := PackedFloat64Array()
+	var plans := PackedFloat64Array()
+	for i: int in ceili(area.size.x / CELL) + 1:
+		var x := minf(area.position.x + i * CELL, area.end.x)
+		own.append(CityHarbour.shore_at(h, x))
+		plans.append(CityHarbour.shore_at(plan_h, x))
+	return [own, plans]
+
+
+## One row (j) of _heights: reads only plan, cfg and `cols` (_shores; [] reads each corner's own),
+## so the rows build on worker threads.
 static func _height_row(
-	plan: Dictionary, cfg: Dictionary, area: Rect2, wet_width: float, j: int
+	plan: Dictionary, cfg: Dictionary, area: Rect2, wet_width: float, j: int, cols: Array
 ) -> Array:
 	var h: Dictionary = cfg["harbour"]
 	var top := Num.f(h["sand_top"])
 	var waterline := CityHarbour.waterline(cfg)
 	var ys := PackedFloat32Array()
 	var ups := PackedFloat32Array()
+	var shelf := CityHarbour.shelf_floor(cfg)
+	var own: PackedFloat64Array = cols[0] if not cols.is_empty() else PackedFloat64Array()
+	var plans: PackedFloat64Array = cols[1] if not cols.is_empty() else PackedFloat64Array()
 	for i: int in ceili(area.size.x / CELL) + 1:
 		var p := Vector2(minf(area.position.x + i * CELL, area.end.x), area.position.y + j * CELL)
-		var up := p.y - CityHarbour.shore_at(h, p.x) + waterline
+		if cols.is_empty():
+			var was := p.y - CityHarbour.shore_at(h, p.x) + waterline
+			var dip := top if was >= 0.0 else CityHarbour.shelf_floor(cfg)
+			ys.append(CityHarbour.floor_at(plan, cfg, p) if CityHarbour.holds(plan, p) else dip)
+			ups.append(clampf(was / wet_width, 0.0, 1.0))
+			continue
+		var shore := own[i]
+		var up := p.y - shore + waterline
 		# Past the harbour's water the sand still dips under the sea (never a bar at the sand's
 		# top a hand under the surface, bared by every trough: director 2026-10-31).
-		var off := top if up >= 0.0 else CityHarbour.shelf_floor(cfg)
-		ys.append(CityHarbour.floor_at(plan, cfg, p) if CityHarbour.holds(plan, p) else off)
+		var off := top if up >= 0.0 else shelf
+		var wet := CityHarbour.holds_at(plan, p, plans[i])
+		ys.append(CityHarbour.floor_held(plan, cfg, p, shore) if wet else off)
 		ups.append(clampf(up / wet_width, 0.0, 1.0))
 	return [ys, ups]
 

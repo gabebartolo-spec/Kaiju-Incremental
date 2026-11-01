@@ -34,9 +34,31 @@ static func check(_root: Node, check_fn: Callable) -> void:
 		verts_on * 5 < verts_off,
 		"beach: %d vertices where the old build made %d" % [verts_on, verts_off]
 	)
+	_check_columns(plan, cfg, check_fn)
+	_check_water(plan, cfg, check_fn)
 	beach.material_override = null
 	beach.free()
 	sim.dispose()
+
+
+## Height field on vs off (perf 2026-11): each column's shore line read once (HarbourView.by_column)
+## gives the per-corner build's heights and wetness byte for byte.
+static func _check_columns(plan: Dictionary, cfg: Dictionary, check_fn: Callable) -> void:
+	var area := _area(plan, cfg)
+	var wet := Num.f(Content.section("water")["lap"]["wet_width"])
+	var was := HarbourView.by_column
+	HarbourView.by_column = true
+	var on := var_to_bytes(HarbourView._heights(plan, cfg, area, wet))
+	HarbourView.by_column = false
+	var off := var_to_bytes(HarbourView._heights(plan, cfg, area, wet))
+	HarbourView.by_column = was
+	check_fn.call(
+		on == off and on.size() > 0,
+		(
+			"beach: column-cached heights are the per-corner ones (%d bytes on, %d off)"
+			% [on.size(), off.size()]
+		)
+	)
 
 
 ## Each triangle corner, in draw order: [place, normal, uv, colour].
@@ -60,24 +82,14 @@ static func _triangles(mesh: ArrayMesh) -> Array:
 ## The beach as HarbourView built it before 2026-11-02: six vertices a cell, SurfaceTool's
 ## smooth normals.
 static func _old(plan: Dictionary, cfg: Dictionary) -> ArrayMesh:
-	var b: Dictionary = plan["harbour"]
-	var h: Dictionary = cfg["harbour"]
-	var rect: Rect2 = b["rect"]
-	var x0 := rect.position.x
-	var x1 := Num.f(b["beach_east"])
-	var z0 := INF
-	var z1 := -INF
-	var reach := maxf(
-		Num.f(h["shelf"]), Num.f(h["beach"]) + 2.0 * Num.f(h["hollow"]) + Num.f(h["hollow_edge"])
-	)
-	for p: Vector2 in CityHarbour.arc(plan, cfg):
-		z0 = minf(z0, p.y - reach)
-		z1 = maxf(z1, CityHarbour.bands(h, p.x)[1])
+	var area := _area(plan, cfg)
+	var x0 := area.position.x
+	var x1 := area.end.x
+	var z0 := area.position.y
 	var cell := HarbourView.CELL
 	var nx := ceili((x1 - x0) / cell)
-	var nz := ceili((z1 - z0) / cell)
+	var nz := ceili(area.size.y / cell)
 	var lap: Dictionary = Content.section("water")["lap"]
-	var area := Rect2(x0, z0, x1 - x0, z1 - z0)
 	var grid := HarbourView._heights(plan, cfg, area, Num.f(lap["wet_width"]))
 	var ys: PackedFloat32Array = grid[0]
 	var ups: PackedFloat32Array = grid[1]
@@ -97,3 +109,42 @@ static func _old(plan: Dictionary, cfg: Dictionary) -> ArrayMesh:
 				st.add_vertex(q)
 	st.generate_normals()
 	return st.commit()
+
+
+## The bay's sheet on vs off (perf 2026-11): packed arrays (HarbourView.packed_water) give the
+## SurfaceTool build's mesh byte for byte.
+static func _check_water(plan: Dictionary, cfg: Dictionary, check_fn: Callable) -> void:
+	var was := HarbourView.packed_water
+	var sheets: Array[PackedByteArray] = []
+	for packed: bool in [true, false]:
+		HarbourView.packed_water = packed
+		var mi := HarbourView.water(plan, cfg, Look.color("water"))
+		var mesh: ArrayMesh = mi.mesh
+		sheets.append(var_to_bytes(mesh.surface_get_arrays(0)))
+		mi.free()
+	HarbourView.packed_water = was
+	check_fn.call(
+		sheets[0] == sheets[1] and sheets[0].size() > 0,
+		(
+			"water: the packed bay sheet is the SurfaceTool one (%d bytes on, %d off)"
+			% [sheets[0].size(), sheets[1].size()]
+		)
+	)
+
+
+## The beach's grid area, as HarbourView.beach lays it.
+static func _area(plan: Dictionary, cfg: Dictionary) -> Rect2:
+	var b: Dictionary = plan["harbour"]
+	var h: Dictionary = cfg["harbour"]
+	var rect: Rect2 = b["rect"]
+	var x0 := rect.position.x
+	var x1 := Num.f(b["beach_east"])
+	var z0 := INF
+	var z1 := -INF
+	var reach := maxf(
+		Num.f(h["shelf"]), Num.f(h["beach"]) + 2.0 * Num.f(h["hollow"]) + Num.f(h["hollow_edge"])
+	)
+	for p: Vector2 in CityHarbour.arc(plan, cfg):
+		z0 = minf(z0, p.y - reach)
+		z1 = maxf(z1, CityHarbour.bands(h, p.x)[1])
+	return Rect2(x0, z0, x1 - x0, z1 - z0)
