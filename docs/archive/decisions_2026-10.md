@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-28 · D-377 · Director · The bay is a fixed block on the north edge; the city is laid around it
+His words (~23:5x), after the cut-in bay kept leaving stubs and slivers: "instead of just throwing shit at the wall and seeing
+what sticks why dont u make an implementation plan for the beach front"; "if its easier the bay can always be in the same
+positon on the map, fixed location". Q: the plan (`C:/kt/beach_plan/PLAN.md`)? A: "Go (Recommended)". The bay is a
+rectangle of whole blocks centred on the north edge, one size per stage in data; streets are pinned to its sides and a
+coast road runs along its south side; the crescent sand, water and quays are drawn inside it; landmarks, parks and plazas
+are never placed in it; the rise is at the bay centre. Player bars stay. Serves D-270, D-373; the beachfront pieces (D-277)
+take fixed spots from it.
+
 ## 2026-10-28 · D-376 · Director · Windowed Godot runs start by GPU load check, not one at a time (replaces D-340's rule)
 His words (10-28 ~22:1x): "that wasnt something i told you to codify though, it was something specific for that time, i
 never told you to make it a rule". Q: what replaces it? A: "Load check (Recommended)". `C:/kt/gpu_slot.sh` admits a

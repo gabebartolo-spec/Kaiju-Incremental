@@ -2089,6 +2089,7 @@
             "scale": {"type": "number", "exclusiveMinimum": 0},
             "updates_per_second": {"$ref": "#/$defs/num"},
             "heading": {"$ref": "#/$defs/num"},
+            "fade_texels": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
             "cascades": {
               "type": "array",
               "minItems": 1,
@@ -2116,7 +2117,7 @@
               }
             }
           },
-          "required": ["map_size", "scale", "updates_per_second", "heading", "cascades"],
+          "required": ["map_size", "scale", "updates_per_second", "heading", "fade_texels", "cascades"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         }

@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
+His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
+fade? A: "Gentle fade". Why: the ocean's FFT cascades (8.8, 5.7, 1.6 m tiles) have no mip chain, so from high up one
+pixel spans many texels and the fine tiles alias into a repeating speckle. Changes: water.gdshader fades each cascade
+by its screen footprint (texels per pixel) between tuning `water.ocean.fade_texels` [3, 12]; the game camera's near
+water is unchanged. Water suite check `_check_ocean_fade`.
+
 ## 2026-11-01 · D-433 · Director · The bay bridge is gone: no freeway stands in the front
 His words, with a crop of the deck on piers across the bay: "i really hate this bridge, i have no idea why its even in
 the game, remove it entirely". Why it was there: CitySkyline's elevated waterfront expressway (Tokyo's Shuto, the
@@ -389,12 +396,3 @@ files, the rulebook and the DESIGN sections its task touches. Handoffs hold curr
 history moves to `~/.claude/handoffs/kaiju/archive/`. The co-lead playbook, roadmap chapters and archives are grepped when
 a task needs the why, never boot reading. Nothing is deleted. Changes: RULEBOOK (Session start, Context), kaiju-handoff
 and game-studio-lead skills; lead handoff cut from 253 to ~60 lines.
-
-## 2026-10-28 · D-377 · Director · The bay is a fixed block on the north edge; the city is laid around it
-His words (~23:5x), after the cut-in bay kept leaving stubs and slivers: "instead of just throwing shit at the wall and seeing
-what sticks why dont u make an implementation plan for the beach front"; "if its easier the bay can always be in the same
-positon on the map, fixed location". Q: the plan (`C:/kt/beach_plan/PLAN.md`)? A: "Go (Recommended)". The bay is a
-rectangle of whole blocks centred on the north edge, one size per stage in data; streets are pinned to its sides and a
-coast road runs along its south side; the crescent sand, water and quays are drawn inside it; landmarks, parks and plazas
-are never placed in it; the rise is at the bay centre. Player bars stay. Serves D-270, D-373; the beachfront pieces (D-277)
-take fixed spots from it.

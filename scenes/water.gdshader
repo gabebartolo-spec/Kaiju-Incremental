@@ -78,6 +78,9 @@ uniform int ocean_count = 0;
 uniform sampler2DArray ocean_disp : filter_linear, repeat_enable;
 uniform sampler2DArray ocean_normals : filter_linear, repeat_enable;
 uniform vec4 ocean_scales[8];  // the source's MAX_CASCADES
+// A cascade fades out as one screen pixel covers more of its map (texels per pixel, from to):
+// its maps have no mip chain, so from far or high a fine tile aliases into a repeating speckle.
+uniform vec2 ocean_fade = vec2(3.0, 12.0);
 
 varying vec2 rest_xz;  // where this point of the sheet lies at rest (the ocean's map coordinates)
 
@@ -143,8 +146,11 @@ vec3 ocean_gradient(vec2 p) {
 		vec4 sc = ocean_scales[i];
 		vec3 coords = vec3(p * sc.xy, float(i));
 		float ppm = map_size * min(sc.x, sc.y);  // the map's pixels per metre
+		vec2 texels = coords.xy * map_size;
+		float footprint = max(length(dFdx(texels)), length(dFdy(texels)));
+		float shown = 1.0 - smoothstep(ocean_fade.x, ocean_fade.y, footprint);
 		sum += mix(texture_bicubic(ocean_normals, coords), texture(ocean_normals, coords), min(1.0, ppm * 0.1)).xyw
-			* vec3(sc.ww, 1.0);
+			* vec3(sc.ww, 1.0) * shown;
 	}
 	return sum;
 }
