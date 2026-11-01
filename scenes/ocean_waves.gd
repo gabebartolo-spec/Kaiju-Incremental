@@ -112,6 +112,8 @@ func _bind() -> void:
 		mat.set_shader_parameter("ocean_disp", _disp)
 		mat.set_shader_parameter("ocean_normals", _normals)
 		mat.set_shader_parameter("ocean_scales", _scales)
+		var fade: Array = _cfg["fade_texels"]
+		mat.set_shader_parameter("ocean_fade", Vector2(Num.f(fade[0]), Num.f(fade[1])))
 
 
 ## The source's per-update step: time and foam rates for every cascade, then one cascade a frame.

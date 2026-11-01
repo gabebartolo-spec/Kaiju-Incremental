@@ -16,6 +16,11 @@ const EPS := 1e-4
 const RISE_LIFT := 0.35
 const RISE_REACH := 60.0  # metres round the kaiju the rise's water is read over
 const RISE_AFTER := 2.0  # seconds after its head is out that the fountain's water is read
+## The bay seen from above (the director's "from above zoomed out", 2026-11-01) and the game
+## camera's near water: metres from the camera to the water, at 1080 rows.
+const ABOVE_REACH := 246.0
+const NEAR_REACH := 40.0
+const ROWS := 1080.0
 const RISE_UNDER := 2.0  # metres the rings over the kaiju holding under may stand (0.8 m each)
 
 
@@ -33,6 +38,7 @@ func run_checks() -> void:
 	await _t("_check_liquid_open_sea")
 	await _t("_check_liquid_rise_calm")
 	await _t("_check_liquid_native")
+	await _t("_check_ocean_fade")
 
 
 func _check_default_on() -> void:
@@ -345,3 +351,46 @@ func _volume(b: WaterSim.Basin) -> float:
 	for k: int in b.nx * b.nz:
 		out += b.depth[k]
 	return out * b.cell * b.cell
+
+
+## The open sea's cascades have no mip chain, so one screen pixel over many texels of a fine tile
+## aliases into a repeating speckle (director 2026-11-01: "bay texture looks bad from above zoomed
+## out"; he picked the gentle fade). water.gdshader fades each cascade by its footprint (texels per
+## pixel) over tuning water.ocean.fade_texels: from above the finest tile must be gone, while the
+## game camera's near water keeps its broad cascades whole. The shader's default matches tuning.
+func _check_ocean_fade() -> void:
+	var cfg: Dictionary = Content.section("water")["ocean"]
+	var fade: Array = cfg["fade_texels"]
+	var lo := Num.f(fade[0])
+	var hi := Num.f(fade[1])
+	check(
+		lo >= 1.0 and hi > lo, "fade_texels %s: starts at a texel a pixel or more, rises" % [fade]
+	)
+	var code := (load("res://scenes/water.gdshader") as Shader).code
+	check(
+		code.contains("uniform vec2 ocean_fade = vec2(%.1f, %.1f);" % [lo, hi]),
+		"water.gdshader's ocean_fade default is tuning's %s" % [fade]
+	)
+	var half := deg_to_rad(Num.f(Content.tuning()["camera"]["fov"])) * 0.5
+	var map := Num.f(cfg["map_size"])
+	var tiles: Array[float] = []
+	for c: Dictionary in cfg["cascades"]:
+		tiles.append(Num.f(c["tile"]) * Num.f(cfg["scale"]))
+	tiles.sort()
+	var shown := func(tile: float, reach: float) -> float:
+		var footprint := map / tile * 2.0 * reach * tan(half) / ROWS
+		return 1.0 - smoothstep(lo, hi, footprint)
+	var finest: float = shown.call(tiles[0], ABOVE_REACH)
+	check(
+		finest < EPS,
+		(
+			"from above (%.0f m) the finest tile (%.1f m) is faded out: %.3f"
+			% [ABOVE_REACH, tiles[0], finest]
+		)
+	)
+	for tile: float in tiles.slice(1):
+		var near: float = shown.call(tile, NEAR_REACH)
+		check(
+			near > 1.0 - EPS,
+			"near water (%.0f m) keeps the %.1f m tile whole: %.3f" % [NEAR_REACH, tile, near]
+		)
