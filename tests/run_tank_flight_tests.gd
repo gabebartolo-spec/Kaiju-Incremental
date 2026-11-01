@@ -1,4 +1,4 @@
-extends "res://tests/lib/leap_base.gd"
+extends "res://tests/lib/tank_hold_checks.gd"
 ## Flung tanks (TankFlight; director 2026-10-30: real flung tanks first, with Ricochet and Domino in
 ## the same PR). A launched tank flies an arc and lands where the old shove put it; a building in
 ## the way is carved and stops it. Player-effect fixtures "croc.ricochet" and "croc.domino": the
@@ -29,6 +29,10 @@ func run_checks() -> void:
 	await _t("_check_arc")
 	await _t("_check_stomp_throws")
 	await _t("_check_wall")
+	await _t("_check_bore")
+	await _t("_check_wedge")
+	await _t("_check_roof")
+	await _t("_check_husk")
 	await _t("_check_ricochet")
 	await _t("_check_domino")
 	await _t("_check_leap_flings")
@@ -103,15 +107,15 @@ func _check_stomp_throws() -> void:
 	)
 
 
-## A tower in the way: the throw carves its face and the tank drops at the foot, outside it.
+## A tower in the way: the throw bores through it (TankHold) and the tank comes out the far side.
 func _check_wall() -> void:
 	var run := _throw_at_wall({})
 	check(Num.i(run["walls"]) == 1, "the tank hits the tower once (%d)" % Num.i(run["walls"]))
 	check(Num.i(run["carved"]) > 0, "the hit carves the tower (%d chunks)" % Num.i(run["carved"]))
 	var x := Num.f(run["x"])
 	check(
-		x < WALL_AT and x > WALL_AT - 2.0,
-		"it drops at the foot of the tower, outside it (x %.2f, face %.1f)" % [x, WALL_AT]
+		x > WALL_AT + WIDE and Num.i(run["through"]) == 1,
+		"it bores out the far side of the tower (x %.2f, far face %.1f)" % [x, WALL_AT + WIDE]
 	)
 
 
@@ -282,7 +286,11 @@ func _throw_at_wall(levels: Dictionary) -> Dictionary:
 			break
 	var carved := sim.chunks_destroyed - before
 	return {
-		"x": tank.pos.x, "bounces": tank.bounces, "walls": sim.flight.walls_hit, "carved": carved
+		"x": tank.pos.x,
+		"bounces": tank.bounces,
+		"walls": sim.flight.walls_hit,
+		"carved": carved,
+		"through": sim.flight.hold.through,
 	}
 
 
