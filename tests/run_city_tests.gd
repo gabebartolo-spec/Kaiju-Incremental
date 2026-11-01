@@ -51,6 +51,7 @@ func run_checks() -> void:
 	await _t("_check_rise_clear_of_rail")
 	await _t("_check_bay_fixed")
 	await _t("_check_rise_fits_intro")
+	await _t("_check_map_kept")
 	await _h(
 		"city_light_pool",
 		func() -> void: preload("res://tests/lib/city_light_pool.gd").check(root, check)
@@ -289,3 +290,18 @@ func _check_rise_fits_intro() -> void:
 		for map_seed: int in COVERAGE_SEEDS:
 			RiseTime.check(tier, map_seed, {}, check)
 			RiseTime.check_keyed(tier, map_seed, check)
+
+
+## CityGen.map keeps the plans it built (a rampage asked for its plan 14 times at 0.3 s each):
+## a kept plan equals a fresh build, and each caller's copy is its own to change.
+func _check_map_kept() -> void:
+	var cfg := Content.section("city")
+	var first := CityGen.map(cfg)
+	var fresh := CityGen._map(cfg)
+	var nodes: Array = first["nodes"]
+	nodes.clear()
+	var again := CityGen.map(cfg)
+	check(again == fresh, "a kept plan equals a fresh build after a caller changed its copy")
+	var other := cfg.duplicate(true)
+	other["map_seed"] = Num.i(cfg["map_seed"]) + 1
+	check(CityGen.map(other) != fresh, "another map_seed is another plan, not the kept one")

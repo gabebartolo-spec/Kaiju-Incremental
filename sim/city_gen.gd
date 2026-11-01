@@ -21,7 +21,12 @@ const AVENUE := "avenue"
 const STREET := "street"
 const ALLEY := "alley"
 const DIAGONAL := "diagonal"
+const MAPS_KEPT := 4  # plans kept (a stage's city, the title's, the overworld's)
 const MIN_LOT_M := 2.0  # CityLots' narrowest lot side: no block is cut thinner
+
+## The last few plans built, [cfg, plan] each: a plan takes 0.3 s and a rampage asked for it
+## 14 times (the sim's water, rail, roads, the views' ground, decor, traffic ...).
+static var _made: Array[Array] = []
 
 
 ## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style
@@ -101,8 +106,21 @@ static func cores(cfg: Dictionary) -> Array[Vector3]:
 	return out
 
 
-## The street plan: nodes (crossings), streets between them, blocks between the streets.
+## The street plan: nodes (crossings), streets between them, blocks between the streets. The same
+## cfg always makes the same plan, so it is built once and each caller gets its own copy.
 static func map(cfg: Dictionary) -> Dictionary:
+	for made: Array in _made:
+		if made[0] == cfg:
+			var plan: Dictionary = made[1]
+			return plan.duplicate(true)
+	var plan := _map(cfg)
+	_made.push_front([cfg.duplicate(true), plan.duplicate(true)])
+	if _made.size() > MAPS_KEPT:
+		_made.pop_back()
+	return plan
+
+
+static func _map(cfg: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Num.i(cfg["map_seed"])
 	var rings := districts(cfg)

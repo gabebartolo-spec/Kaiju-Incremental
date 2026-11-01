@@ -16,6 +16,7 @@ var _film := 0.0
 var _images: Array[Image] = []
 var _textures: Array[ImageTexture] = []
 var _bytes: Array[PackedFloat32Array] = []
+var _low: Array[PackedFloat64Array] = []  # each column's lowest surface: its ground plus the film
 var _was_active: Array[bool] = []
 
 
@@ -30,7 +31,13 @@ func _ready() -> void:
 	for basin: WaterSim.Basin in _sim.water.basins:
 		var heights := PackedFloat32Array()
 		heights.resize(basin.nx * basin.nz * 2)  # (surface, ground) per column
+		var low := PackedFloat64Array()
+		low.resize(basin.nx * basin.nz)
+		for k: int in basin.nx * basin.nz:  # the bed never moves: its half is written once
+			heights[2 * k + 1] = _ground(basin, k)
+			low[k] = _ground(basin, k) + _film
 		_bytes.append(heights)
+		_low.append(low)
 		var image := Image.create_from_data(
 			basin.nx, basin.nz, false, Image.FORMAT_RGF, heights.to_byte_array()
 		)
@@ -72,21 +79,31 @@ func _process(_delta: float) -> void:
 	_sim.water.splashes = []
 
 
-## Writes the moving basins' heights (all of them, the first time).
+## Writes the moving basins' heights (all of them, the first time). The bay never settles (its
+## open sea keeps running), so this walks some 40k columns every frame: no calls or member
+## lookups per column (they made it 14 ms of a 25 ms frame).
 func _fill(all: bool) -> void:
 	for n: int in _sim.water.basins.size():
 		var basin := _sim.water.basins[n]
 		if not all and not basin.active.has_area() and not _stirred(n):
 			continue
 		var heights := _bytes[n]
+		var low := _low[n]
+		var floor_y := basin.floor_y
+		var depth := basin.depth
+		var body := basin.body
+		var rest := basin.rest
 		for k: int in basin.nx * basin.nz:
-			var ground := _ground(basin, k)
-			heights[2 * k] = 0.0  # dry: the still water, under the sand there, so the sand hides it
-			if basin.depth[k] > 0.0:  # a film never sinks into the sand under it (it reads as water)
-				heights[2 * k] = maxf(basin.lift(k), ground + _film)
-			elif basin.body[k] > 0.0:
-				heights[2 * k] = _around(basin, k, ground)
-			heights[2 * k + 1] = ground
+			var d := depth[k]
+			# dry: the still water, under the sand there, so the sand hides it; a film never
+			# sinks into the sand under it (it reads as water)
+			if d > 0.0:
+				heights[2 * k] = maxf(floor_y[k] + d + body[k] - rest, low[k])
+			elif body[k] > 0.0:
+				heights[2 * k] = _around(basin, k, _ground(basin, k))
+			else:
+				heights[2 * k] = 0.0
+		_bytes[n] = heights
 		_images[n].set_data(basin.nx, basin.nz, false, Image.FORMAT_RGF, heights.to_byte_array())
 		_textures[n].update(_images[n])
 
