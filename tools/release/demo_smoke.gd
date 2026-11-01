@@ -131,6 +131,8 @@ func _walk_end() -> void:
 	_press(_screen(), "TRY ENDLESS MODE")
 	await _frames(12)
 	var endless := _screen() as Rampage
+	if endless != null:
+		await endless.wait_loaded()  # its sim builds behind the loading screen
 	_check(
 		"TRY ENDLESS MODE starts the endless rampage",
 		endless != null and endless.sim.endless != null,
