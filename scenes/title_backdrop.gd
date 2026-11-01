@@ -103,7 +103,8 @@ func _dress() -> void:
 			"coast_z": _coast_z(),
 			"cam": _camera.position,
 			"fires": fires,
-			"ripple": _cfg["ripple"]
+			"ripple": _cfg["ripple"],
+			"water": _cfg["variants"][str(_cfg["variant"])]["water"]
 		}
 	)
 	_city.add_child(_shore)

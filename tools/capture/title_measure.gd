@@ -151,8 +151,8 @@ static func towers_and_head(backdrop: TitleBackdrop, frame_h: float) -> void:
 		)
 
 
-## The water band: the shore line down to the top of the near railing, px at the capture's height
-## (the band before D-158 was 476 px at 2160: shore 1208, rail 1684).
+## The water band: the far shore line down to the near beach's waterline, px at the capture's
+## height (the band before D-158 was 476 px at 2160, down to the old quay's rail top).
 static func water_band(backdrop: TitleBackdrop, frame_h: float) -> void:
 	var camera := backdrop.find_children("*", "Camera3D", true, false)[0] as Camera3D
 	var view := camera.get_viewport() as SubViewport
@@ -160,16 +160,16 @@ static func water_band(backdrop: TitleBackdrop, frame_h: float) -> void:
 	var city: Dictionary = backdrop._city.sim.city
 	var shore: Dictionary = Content.section("title")["shore"]
 	var far_z := Num.f(city["coast_z"]) - Num.f(city["bay_width"])
-	var edge_z := Num.f(city["coast_z"]) - Num.f(shore["ledge_from"]) - Num.f(shore["ledge_depth"])
-	var rail_y := Num.f(shore["ledge_top"]) + 0.45 + Num.f(shore["rail_height"])
-	var top := _screen_y(camera, size, Vector3(camera.position.x, rail_y, edge_z + 0.9), frame_h)
+	var edge_z := Num.f(city["coast_z"]) - Num.f(shore["beach_from"]) - Num.f(shore["beach_depth"])
+	var water_y := TitleShore.WATER_Y
+	var top := _screen_y(camera, size, Vector3(camera.position.x, water_y, edge_z), frame_h)
 	var line := _screen_y(camera, size, Vector3(camera.position.x, 0.0, far_z), frame_h)
 	print(
 		"measure water band px ",
 		snappedf(top - line, 0.1),
 		" (shore ",
 		snappedf(line, 0.1),
-		", rail top ",
+		", beach waterline ",
 		snappedf(top, 0.1),
 		"; before D-158: 476)"
 	)
