@@ -274,6 +274,8 @@ func _apply_look() -> void:
 	var env: Dictionary = look["env"]
 	for node: Node in _city.find_children("*", "WorldEnvironment", true, false):
 		var environment := (node as WorldEnvironment).environment
+		if environment.sky == null:  # the far beast's little world has none: the city's sky only
+			continue
 		var sky_material := environment.sky.sky_material as ProceduralSkyMaterial
 		sky_material.sky_top_color = Color(str(env["sky_top"]))
 		for horizon: Color in [Color(str(env["sky_horizon"]))]:
