@@ -342,9 +342,9 @@ func _check_globe_mission() -> void:
 	_click(globe, globe.camera().unproject_position(globe.surface_global(globe.anchor_of(id))))
 	var words := _texts(panel)
 	check(panel.visible and panel.id == id, "a click on Ostia Minor opens its panel")
-	for want: String in ["OSTIA MINOR", "Young croc", "Threat +10%", "WIN ONE:"]:
+	for want: String in ["OSTIA MINOR", "Young croc", "Threat +10%"]:
 		check(words.has(want), "the panel reads '%s': %s" % [want, words])
-	check(words.has("+15% Stomps hit harder"), "a bonus reads in plain words: %s" % [words])
+	check(words.has("Stomps hit 15% harder"), "a bonus reads in plain words: %s" % [words])
 	await process_frame
 	var screen := globe.get_viewport().get_visible_rect()
 	var card := panel.get_global_rect()

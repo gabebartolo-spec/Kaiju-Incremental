@@ -7,7 +7,10 @@ changes. The lead owns the wording; a decision goes in the PR that acts on it (a
 ## 2026-11-01 · D-432 · Director · The mission panel is a compact card, not a full-height column
 Replaces D-431's "Right side column". On the 1080p stills he called the full-height panel "AI slop", a giant box
 with nothing in it, and picked "Compact card": the same lines and look, the box sized to its text and centred down
-the right margin. The globe test fails a card taller than half the screen.
+the right margin. The globe test fails a card taller than half the screen. On the card he also cut the "WIN ONE:"
+label ("awful ai slop"; the bonuses stand alone, and the pick screen is headed by the continent's name) and the
+"+10% Moves faster" wording ("syntactically meaningless"): each bonus stat has its own phrase with the number
+inside ("Moves 10% faster", `bonus_lines` in data/continents.json).
 
 ## 2026-11-01 · D-431 · Director · Globe mission panel: a right-side column, and a Win/Lose stub mission with the pick
 Overworld plan row G5, his picks: "Right side column", "Leave them out", "Win/Lose stub + pick". A picked continent

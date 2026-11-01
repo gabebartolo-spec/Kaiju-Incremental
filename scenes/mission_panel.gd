@@ -3,7 +3,7 @@ extends PanelContainer
 ## The globe's mission panel (Overworld plan row G5; director 2026-11-01: "Compact card", D-432): a
 ## card sized to its text, centred down the right margin, so the continent the camera flew to stays
 ## in view. It names the continent and its growth stage in game words, the Threat its
-## conquest adds and the three bonuses it offers (WIN ONE:, D-421), and LAUNCH starts its mission.
+## conquest adds and the three bonuses it offers (D-421), and LAUNCH starts its mission.
 ## The city preview and landmarks come with plan rows C1..C5 (director: "Leave them out").
 
 signal launched(id: String)
@@ -47,7 +47,6 @@ func show_for(def: Dictionary) -> void:
 	_lines.add_child(UiKit.label(tr(Content.stage_word(stage)), UiKit.SIZE_BODY, UiKit.MUTED))
 	var threat: float = def["threat"]
 	_lines.add_child(UiKit.label(tr("Threat +%d%%") % roundi(threat), UiKit.SIZE_BODY, UiKit.ALERT))
-	_lines.add_child(UiKit.label(tr("WIN ONE:"), UiKit.SIZE_BODY, UiKit.ACCENT))
 	var offered: Array = def["bonuses"]
 	for pick: Dictionary in offered:
 		_lines.add_child(UiKit.label(bonus_text(pick, self), UiKit.SIZE_BODY, UiKit.TEXT))
@@ -64,16 +63,16 @@ func launch_button() -> Button:
 	return _launch
 
 
-## A bonus in plain words from data (D-077): "+15% Stomps hit harder", one line per stat it
-## scales; a bonus the director has not picked yet (no scale) says so.
+## A bonus in plain words from data (D-077, D-432): "Moves 10% faster", the percent inside each
+## stat's phrase (Content.bonus_line); a bonus the director has not picked yet (no scale) says so.
 static func bonus_text(pick: Dictionary, node: Node) -> String:
-	var words: Dictionary = Content.section("stat_text")
 	var scale: Dictionary = pick["scale"]
 	var parts: PackedStringArray = []
 	for stat: String in scale:
-		var entry: Dictionary = words.get(stat, {})
+		var line: String = Content.bonus_line(stat)
 		var frac: float = scale[stat]
-		parts.append("+%d%% %s" % [roundi(frac * PERCENT), node.tr(str(entry.get("line", stat)))])
+		if line != "":
+			parts.append(node.tr(line) % roundi(frac * PERCENT))
 	if parts.is_empty():
 		return node.tr("Bonus to be designed")
 	return ", ".join(parts)
