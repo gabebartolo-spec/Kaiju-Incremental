@@ -186,7 +186,7 @@ func _flames(size: float) -> GPUParticles3D:
 		PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)]),
 		PackedFloat32Array([0.0, 0.08, 0.82, 1.0])
 	)
-	var mesh := flame_mesh(grow * z, _seed)
+	var mesh := flame_mesh(grow, _seed)  # the particles carry the zoom (scale_min, scale_max)
 	_flame_mat = mesh.material
 	_flame_mat.set_shader_parameter("flame_h", FLAME_HEIGHT * grow * z)
 	_flame_mat.set_shader_parameter("half_w", (size * 0.4 + 0.3 * grow) * z)

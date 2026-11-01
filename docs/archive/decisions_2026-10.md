@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
+His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
+the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not
+practice"). On skills: "can we delete all our skills, i dont think we need them"; Q: what should happen to the
+skills? A: "Delete all outright". So: RULEBOOK.md no longer loads; `~/.claude/memory-shared` moved to
+`~/.claude-archive/memory-shared-2026-10-29` and the stop hook no longer asks for lessons; the 14 personal skills in
+`~/.claude/skills` are deleted (app-synced Anthropic skills untouched). `~/.claude/CLAUDE.md` keeps "straight to me",
+no spend, end-with-state and write-concisely. Replaces D-378's rulebook and skill mentions.
+
 ## 2026-10-29 · D-378 · Director · Sessions boot on a small core; history is searched, not read at start
 His words (~03:0x): "90% of them are pointless. really we could cull almost everything. no wonder our context is always
 so high". Q: how hard to cut startup reading? A: "Core only (Recommended)". A session boots on its handoff, the CLAUDE.md

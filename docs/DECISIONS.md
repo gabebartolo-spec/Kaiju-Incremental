@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-02 · D-441 · Director · Title: today's croc side-on behind the city, its fires on visible towers
+His words, on the title still: "this fire is wrong btw / and we should update the kaiju silhouette to match our
+current adult croc design / improve it too". Q: which view of the croc? A: "C: side-on". Q: the left district's roof
+fires float in the haze; which fix? A: "Thin the haze". Changes: Fire no longer scales its flame quad by the zoom the
+particles already carry (title flames were zoom² tall; fx_pool `_zoomed_flames`); assets/title/colossus_0.png
+re-baked from today's croc (bake_colossus `--yaws=45,60,90,135 --pick=1`), `title.colossus` eye and crown moved to
+it; the title's far shore leaves the engine's depth fog (`title.far_fog`, ui `ui_title_haze.gd`), play area unchanged.
+
 ## 2026-11-02 · D-440 · Director · The title's foreground is a night beach, not a paved quay
 His words, on the title still: "this is wrong btw... meant to be a beach". Q: how? A: "Sand in front, same view". Why:
 the game is set on a beach and bay; the paved ledge read as a harbour wall. Changes: title_shore.gd draws the old ledge
@@ -386,12 +394,3 @@ Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it c
 row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
 Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
 Stadium-driven tests (flow, crowd) play the stage-2 city.
-
-## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
-His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
-the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not
-practice"). On skills: "can we delete all our skills, i dont think we need them"; Q: what should happen to the
-skills? A: "Delete all outright". So: RULEBOOK.md no longer loads; `~/.claude/memory-shared` moved to
-`~/.claude-archive/memory-shared-2026-10-29` and the stop hook no longer asks for lessons; the 14 personal skills in
-`~/.claude/skills` are deleted (app-synced Anthropic skills untouched). `~/.claude/CLAUDE.md` keeps "straight to me",
-no spend, end-with-state and write-concisely. Replaces D-378's rulebook and skill mentions.

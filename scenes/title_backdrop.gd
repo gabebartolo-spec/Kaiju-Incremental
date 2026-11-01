@@ -59,6 +59,14 @@ func _build() -> void:
 	ready_to_show.emit()
 
 
+## The title's far-shore haze (D-441, "Thin the haze"): the city's far_fog with the title's keys
+## over it, so the burning towers stand clear in their own fire.
+static func far_fog(city_fog: Dictionary, title_fog: Dictionary) -> Dictionary:
+	var fog := city_fog.duplicate()
+	fog.merge(title_fog, true)
+	return fog
+
+
 ## The sim, the city view and the still camera (the city then builds over a few frames).
 func _make_city() -> void:
 	_view = SubViewport.new()
@@ -68,6 +76,9 @@ func _make_city() -> void:
 	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(_cfg["city_tier"]))
 	var city_tuning: Dictionary = tuning["city"]
 	city_tuning["far_tower_cap"] = Num.f(_cfg["tower_cap"])  # D-158: the colossus clears every tower
+	var city_fog: Dictionary = city_tuning["far_fog"]
+	var title_fog: Dictionary = _cfg["far_fog"]
+	city_tuning["far_fog"] = far_fog(city_fog, title_fog)
 	var layout := CityGrowth.layout(
 		Content.tuning(), Num.i(_cfg["city_tier"]), Seeds.make("city", 0)
 	)
