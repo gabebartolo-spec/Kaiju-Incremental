@@ -61,6 +61,9 @@ func _build() -> void:
 	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(_cfg["city_tier"]))
 	var city_tuning: Dictionary = tuning["city"]
 	city_tuning["far_tower_cap"] = Num.f(_cfg["tower_cap"])  # D-158: the colossus clears every tower
+	var city_fog: Dictionary = city_tuning["far_fog"]
+	var title_fog: Dictionary = _cfg["far_fog"]
+	city_tuning["far_fog"] = far_fog(city_fog, title_fog)
 	_sim_task = WorkerWait.add(
 		WorkerThreadPool.add_task(_make_sim.bind(tuning, Num.i(_cfg["city_tier"])))
 	)
@@ -84,6 +87,14 @@ func _build() -> void:
 func _make_sim(tuning: Dictionary, tier: int) -> void:
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	_sim = RampageSim.new({}, tuning, layout, Seeds.make("army", 0))
+
+
+## The title's far-shore haze (D-441, "Thin the haze"): the city's far_fog with the title's keys
+## over it, so the burning towers stand clear in their own fire.
+static func far_fog(city_fog: Dictionary, title_fog: Dictionary) -> Dictionary:
+	var fog := city_fog.duplicate()
+	fog.merge(title_fog, true)
+	return fog
 
 
 ## The city view and the still camera (the city then builds over a few frames).

@@ -3307,6 +3307,7 @@
         "city_tier": {"$ref": "#/$defs/num"},
         "fade_s": {"$ref": "#/$defs/num"},
         "tower_cap": {"$ref": "#/$defs/num"},
+        "far_fog": {"type": "object"},
         "camera": {
           "type": "object",
           "properties": {
