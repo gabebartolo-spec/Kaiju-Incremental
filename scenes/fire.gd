@@ -66,6 +66,7 @@ var _smoke_density := 1.0
 var _embers_node: GPUParticles3D
 var _flame_mat: ShaderMaterial
 var _flame_base := 0.2
+var _placed := Vector3(INF, INF, INF)  # where the flame shader was last told the fire stands
 
 
 ## far: {} for a fire in the street, else {"zoom", "smoke_share", "density", "wind", "puff",
@@ -159,6 +160,10 @@ func _process(delta: float) -> void:
 ## Tells the flame shader where the fire stands now (its floor for the height grading, its centre
 ## for the heart): it rides what carries it.
 func _set_flame_place() -> void:
+	var at := global_position
+	if at == _placed:
+		return  # unchanged: the shader has it already
+	_placed = at
 	_flame_mat.set_shader_parameter("base_y", global_position.y + _flame_base)
 	_flame_mat.set_shader_parameter("fire_xz", Vector2(global_position.x, global_position.z))
 
@@ -188,6 +193,7 @@ func _flames(size: float) -> GPUParticles3D:
 	)
 	var mesh := flame_mesh(grow, _seed)  # the particles carry the zoom (scale_min, scale_max)
 	_flame_mat = mesh.material
+	_placed = Vector3(INF, INF, INF)  # a new material: tell it again
 	_flame_mat.set_shader_parameter("flame_h", FLAME_HEIGHT * grow * z)
 	_flame_mat.set_shader_parameter("half_w", (size * 0.4 + 0.3 * grow) * z)
 	var count := roundi(TONGUES * maxf(1.0, size) * _density)
