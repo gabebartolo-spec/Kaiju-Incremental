@@ -84,7 +84,6 @@ func _tank(sim: RampageSim, id: int, at: Vector2) -> RampageSim.Tank:
 	var tank := RampageSim.Tank.new()
 	tank.id = id
 	tank.pos = at
-	tank.hp = 1000.0
 	tank.cooldown = 1.0e9
 	sim.tanks.append(tank)
 	return tank

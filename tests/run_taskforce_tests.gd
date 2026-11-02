@@ -62,9 +62,13 @@ func _check_arrival_and_cap() -> void:
 	check(sizes_ok and arrivals >= 3, "squads of 3-4 keep coming: %s" % [tf.squad_sizes])
 	check(most <= 12 and most >= 9, "never more than 12 alive, and it fills to the cap (%d)" % most)
 	check(edge_ok, "each squad comes in at the map edge, just past the arena")
+	# Both at threat level 1 (no alert start): the Behemoth city's own level 3 (D-437) starts
+	# the wait at its floor, and this measures the climb destruction adds.
 	var hurried := _adolescent()
+	hurried.alert_chunks = 0
 	hurried.chunks_destroyed = 40000
 	var slow := _adolescent()
+	slow.alert_chunks = 0
 	slow.chunks_destroyed = 200
 	check(
 		hurried.army_units.taskforce.interval() < slow.army_units.taskforce.interval(),

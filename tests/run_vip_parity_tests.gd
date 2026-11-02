@@ -108,7 +108,7 @@ func _shoot_down_gunships(sim: RampageSim) -> Array[String]:
 		sim.air.spawn()  # an idle kaiju draws none this early: call two in
 	var mark: int = sim.events.size()
 	for heli: AirWing.Heli in sim.air.helis:
-		heli.hp = 0.0
+		heli.downed = true
 		heli.last_blow = 0.0
 	sim.air.clear_dead()
 	for i in range(mark, sim.events.size()):

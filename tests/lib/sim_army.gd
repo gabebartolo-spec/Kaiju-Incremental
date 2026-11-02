@@ -1,8 +1,8 @@
 extends RefCounted
 ## The sim suite's army check, split out to keep the runner small: standing still, the army
-## arrives and hurts the kaiju, and armoured scales cut what a tank shot does. The run starts at
-## the river bank (D-083), out of the tanks' reach, so both kaiju wait for the first tank and then
-## stand where it is: they meet the same army.
+## arrives and hurts the kaiju, and armoured scales cut what a tank shot does. Both kaiju stand
+## still at the river bank (D-083) while the first tank drives to its firing post in reach: they
+## meet the same army. Neither steps onto the tank: any blow that reaches it wrecks it (D-437).
 
 const DT := 1.0 / 30.0
 const ARRIVE_STEPS := 30 * 15
@@ -31,9 +31,6 @@ func run() -> void:
 	for i: int in ARRIVE_STEPS:
 		soft.step(DT, Vector2.ZERO, false)
 		armoured.step(DT, Vector2.ZERO, false)
-	if soft.tanks.size() > 0:
-		soft.kaiju_pos = soft.tanks[0].pos
-		armoured.kaiju_pos = soft.tanks[0].pos
 	var soft_hit := 0.0
 	var armoured_hit := 0.0
 	for i: int in FIGHT_STEPS:

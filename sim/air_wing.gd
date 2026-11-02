@@ -7,9 +7,10 @@ extends RefCounted
 ## only when it stands tall enough (a grown body or a climbed roof) or with an attack that
 ## reaches the air (fire). They keep to the far side of the kaiju from the game camera
 ## (`camera_bearing`, clear of `clear_arc` either side of it), so a helicopter never hangs
-## between the player and the kaiju. How one dies (D-140, D-141, D-145): a killing blow of at
-## least `blow_apart` of its hp blows it apart in the air; a lighter one (a glancing hit, a burning
-## coat, a toppling tower sweeping through it) sends it spinning down for `fall_seconds`,
+## between the player and the kaiju. How one dies (D-140, D-141, D-145): any blow that reaches it
+## downs it (no hit points, D-437); a blow of at least `burst_blow` blows it apart in the air, a
+## lighter one (a glancing hit, a toppling tower sweeping through it) sends it spinning down for
+## `fall_seconds`,
 ## drifting `fall_drift`, its crew sometimes bailing out by parachute (`bailout_chance`, up to
 ## `bailout_max`), until it crashes: the wreck smashes `crash_floors` floors within
 ## `crash_radius`, crushing the tanks and squads below (D-167; never the kaiju), and sets the
@@ -31,11 +32,9 @@ class Heli:
 	var pass_at := Vector2.ZERO  # unit vector from the kaiju to the pass line's nearest point
 	var pass_dir := Vector2.ZERO  # the way along the line it flies
 	var pass_left := 0.0
-	var hp: float
 	var cooldown: float
-	var coat_t := 0.0
-	var coat_dps := 0.0
-	var last_blow := 0.0  # the damage of the latest hit: how hard the killing blow was
+	var downed := false  # a blow reached it: out of the sky
+	var last_blow := 0.0  # the damage of the blow that downed it: burst or spin down
 
 
 ## A downed helicopter spinning to the ground; it crashes when `left` runs out.
@@ -88,13 +87,7 @@ func step(dt: float) -> void:
 			_spawn_timer = Num.f(cfg["interval"])
 			spawn()
 	flight.step(helis, dt)
-	var coated := false
 	for heli: Heli in helis:
-		if heli.coat_t > 0.0:
-			heli.coat_t -= dt
-			heli.hp -= heli.coat_dps * dt
-			heli.last_blow = heli.coat_dps * dt  # a coat kill is a light blow: it spins down
-			coated = true
 		heli.cooldown -= dt
 		if heli.cooldown <= 0.0:
 			heli.cooldown = Num.f(cfg["fire_interval"])
@@ -102,8 +95,6 @@ func step(dt: float) -> void:
 			var hurt := Num.f(cfg["damage"]) - sim.stat("armor")
 			sim.hp -= maxf(Num.f(army["min_damage"]), hurt)
 			sim.events.append({"type": "heli_fired", "heli": heli.id})
-	if coated:
-		clear_dead()
 	_fall(dt)
 
 
@@ -126,7 +117,7 @@ func _swept_by_falls() -> void:
 				(heli.pos - start).dot(span) / maxf(0.001, span.length_squared()), 0.0, 1.0
 			)
 			if heli.pos.distance_to(start + span * t) <= half:
-				heli.hp = 0.0
+				heli.downed = true
 				heli.last_blow = 0.0  # knocked aside, never blown apart
 				hit = true
 	if hit:
@@ -139,7 +130,6 @@ func spawn() -> Heli:
 	heli.id = _next_id
 	_next_id += 1
 	flight.place(heli)
-	heli.hp = Num.f(cfg["hp"])
 	heli.cooldown = Num.f(cfg["fire_interval"]) * Num.f(cfg["first_burst_delay"])
 	helis.append(heli)
 	sim.events.append({"type": "heli_spawned", "heli": heli.id})
@@ -152,12 +142,9 @@ func hit(force: Callable, damage: float, reaches_air: bool) -> void:
 		return
 	for heli: Heli in helis:
 		var k: float = force.call(heli.pos, Num.f(cfg["heli_radius"]))
-		heli.hp -= damage * k
-		if k > 0.0:
+		if k > 0.0 and not heli.downed:
+			heli.downed = true
 			heli.last_blow = damage * k
-		if k > 0.0 and not sim.hit_coat.is_empty():
-			heli.coat_t = Num.f(sim.hit_coat["seconds"])
-			heli.coat_dps = Num.f(sim.hit_coat["dps"]) * Num.f(sim.powers_cfg["ink_unit_mult"])
 	clear_dead()
 
 
@@ -165,13 +152,13 @@ func hit(force: Callable, damage: float, reaches_air: bool) -> void:
 func clear_dead() -> void:
 	var alive: Array[Heli] = []
 	for heli: Heli in helis:
-		if heli.hp > 0.0:
+		if not heli.downed:
 			alive.append(heli)
 			continue
 		destroyed += 1
 		sim.rubble += Num.f(cfg["rubble"]) * sim.stat("rubble_mult")
 		var event := {"type": "heli_destroyed", "heli": heli.id, "x": heli.pos.x, "z": heli.pos.y}
-		if heli.last_blow >= Num.f(cfg["hp"]) * Num.f(cfg["blow_apart"]):
+		if heli.last_blow >= Num.f(cfg["burst_blow"]):
 			event["fate"] = "burst"
 		else:
 			event.merge(_spin_down(heli))

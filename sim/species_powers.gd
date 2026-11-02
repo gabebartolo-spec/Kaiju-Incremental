@@ -168,7 +168,8 @@ func lash() -> void:
 	var arc := Num.f(cfg["tail_arc_dot"])
 	sim.events.append({"type": "tail_sweep", "side": side, "reach": reach})
 	var before := sim.chunks_destroyed
-	sim.hit_area(
+	SimDamage.area(
+		sim,
 		func(p: Vector2, r: float) -> float:
 			var to := p - centre
 			if to.length() > reach + r:
@@ -176,7 +177,8 @@ func lash() -> void:
 			return 1.0 if to.length() <= r or ahead.dot(to.normalized()) <= arc else 0.0,
 		Num.f(cfg["lash_damage"]) + sim.stat("tail_damage"),
 		lo,
-		lo + floors
+		lo + floors,
+		true  # the lash throws tanks (D-437)
 	)
 	tail_cut += sim.chunks_destroyed - before
 

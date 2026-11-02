@@ -97,15 +97,15 @@ func _lands_on_a_building() -> void:
 	var b := sim.buildings[target]
 	var before := b.frame.alive_count
 	var paid := sim.chunks_destroyed
-	var tank_hp := 0.0
+	var blows := 0.0
 	for tank: RampageSim.Tank in sim.tanks:
-		tank_hp += tank.hp
+		blows += tank.last_blow
 	StrayShell.land(sim, Vector2(b.x, b.z))
 	var after := 0.0
 	for tank: RampageSim.Tank in sim.tanks:
-		after += tank.hp
+		after += tank.last_blow
 	_check.call(
-		sim.chunks_destroyed > paid and is_equal_approx(after, tank_hp),
+		sim.chunks_destroyed > paid and is_equal_approx(after, blows),
 		(
 			"a stray shell on building %d breaks %d of its chunks (%d standing before) and no tank"
 			% [target, sim.chunks_destroyed - paid, before]
@@ -159,9 +159,9 @@ func _counts_as_destruction() -> void:
 		"and the city's ruin rises: %.5f -> %.5f of the city" % [ruin, sim.destruction()]
 	)
 	_check.call(
-		sim.army_units.threat_scale() > threat and sim.air.cap() > helis,
+		sim.army_units.threat_scale() > threat and sim.air.cap() >= helis,
 		(
-			"and the army escalates: threat x%.4f -> x%.4f, helicopters allowed %d -> %d"
+			"and the army escalates: threat x%.4f -> x%.4f, helicopters allowed %d -> %d (a step)"
 			% [threat, sim.army_units.threat_scale(), helis, sim.air.cap()]
 		)
 	)

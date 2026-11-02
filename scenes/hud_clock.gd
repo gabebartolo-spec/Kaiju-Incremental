@@ -40,4 +40,4 @@ func refresh() -> void:
 		time.scale = Vector2.ONE * Num.f(_hud["hurry_pulse_scale"])
 		create_tween().tween_property(time, "scale", Vector2.ONE, Num.f(_hud["hurry_pulse_s"]))
 	_last_second = second
-	threat.show_level(sim.news.level, sim.news.progress)
+	threat.show_level(sim.news.level, 0.0, false)  # the city's own, all run (D-437)

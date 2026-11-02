@@ -41,6 +41,27 @@ beast in the skyline (skyline_rampage, far_beast, hexapod gait and rig, insectoi
 Content.species() and Demo.allows() list only playable species. The reptilian plays exactly as before. Both species
 stay stretch goals in DESIGN; git history keeps the code.
 
+## 2026-11-01 · D-437 · Director · The threat level belongs to the city: it sets where the army starts
+His words: "'alertness' level is now tied to the city/stage themselves, rather than in-run progression". Picked "By
+stage": the young city (Ostia Minor) 1, Behemoth (Carthago, Thule) 3, Colossus 4 (Aurelia 5 later); "Show the city's
+level" on the badge; and "Starting point": the level sets where the army starts, destruction still ramps it inside
+the run. Why: each conquest should feel like a harder city, not the same calm start. Changes: tuning `threat.level`
+(stage overlays), RunNews.alert_chunks starts RampageSim.escalation at that level's share of the spawn ramp; the badge
+is fixed all run and the "threat rises" crawl lines and event are gone (capture_threat.gd removed). Same day, no
+enemy hit points: "if the tank gets smacked by a kaiju, i want that tank to go flying and die, not take hp damage";
+picked "Yes, all kaiju", helicopters "Yes, one blow", "In the threat PR". Tank, helicopter and VIP hp are deleted:
+a blow that reaches a tank wrecks it. Then "a stomp shouldnt send it flying but a tail swipe? or a charge attack?
+yeah it should go flying"; picked claw swipe and explosions too. Tail lash, ram, leap ring, claw swipe and explosions
+throw it (SimDamage.throw, flight blow_throw/throw_min/throw_max) and it comes down wrecked; stomp, slam, crash, bombs
+and breath wreck it where it stands. One blow downs a helicopter, burst_blow or more blows it apart; chem cloud wrecks a tank after cloud_tank_seconds. Threat now
+sets only spawn rate, helicopter cap, Taskforce and rooftop volley damage, never toughness. 11-02, balance: with no enemy hp the army stopped winning (pacing, reptilian: defeats Behemoth 2 of 20 vs main's 14
+of 24, Colossus 3 of 34 vs 24 of 39); he picked "Army harder" and then "B as measured" over +1 levels and +1 heli: tank
+hits x1.5 (Behemoth tank_damage 6.9 to 10.4, Colossus 7.3 to 11.0) and Colossus helicopter hits x1.5 (air damage 5.4
+to 8.1); measured defeats 9 of 21 and 26 of 37, second evolution 0.80 h. Threat suite on/off
+fixture: Behemoth city at level 3 vs 1 (escalation, helicopter cap); sim fixture: the same blow thrown (a sideways hit) vs crushed (a stomp).
+11-02, Q: from level 3 the city's start puts the Taskforce wait at its 8 s floor, so destruction no longer
+hurries the squads in grown cities; keep, or a wait only destruction shortens? A: "Keep 8 s from start".
+
 ## 2026-11-01 · D-436 · Director · Every city is the adult city at every stage
 Asked why the city grows with the kaiju (D-039, D-254 half-widths 75 / 120 / 225 m), his words: "just make every city
 the same size (adult kaiju city)"; "if our baby kaiju cant destroy the whole city, thats not a problem, thats a design
@@ -372,24 +393,3 @@ each side, a pier to the riverbed at each end. A piece's floor 0 is the riverbed
 Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks. The spread
 suite's "1.5x city razes a smaller share" check goes (he picked "Drop share check": with bridges breakable it read 40%
 vs 39%, a balance number under D-385); its bigger-city and replay checks stay.
-
-## 2026-10-30 · D-388 · Director · Landmarks carve on cells
-Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
-Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
-ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
-section above the stub comes down as one topple over the stub's edge (rim outward, stands inward) before the support
-settle. Landmarks keep their cut side (D-387). Bay bridges still render as decks (river bridges carve, D-389).
-
-## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
-Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
-every topple to its cut side, and a base eaten whole toward the kaiju, so most fell onto it): they picked "Seeded mix":
-each topple draws its direction from the run's seed, its cut side 40%, either side of that 25% each, away 10%
-(data/tuning.json destruction.fall_dirs). Replayable; some towers still land on the kaiju. Landmarks keep their cut
-side. Amends D-099 (the cut side is now the likeliest way, not the only one). Not chosen: mostly sideways, fully
-random, away mostly.
-
-## 2026-10-30 · D-386 · Director · A PR re-push re-runs only failed, unrun or touched suites
-He approved: a pull request's re-push runs the suites that failed or never ran on its last run, plus every suite whose
-code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
-closure, autoloads included); any other changed file or any doubt runs everything. Main still runs everything: a
-main push reuses only a PR run that tested every suite. Why: re-testing passed suites cost an hour per fix.

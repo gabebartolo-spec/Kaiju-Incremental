@@ -67,7 +67,8 @@ func _rake() -> void:
 		var inside := along >= near - r and along <= far + r
 		return 1.0 if inside and absf(to.dot(across)) <= half + r else 0.0
 	var floor_lo := maxi(0, floori(sim.stand_y))
-	sim.hit_area(band, sim.stat("swipe_damage") * sim.powers.hit_mult(), floor_lo, ceili(top))
+	var dmg := sim.stat("swipe_damage") * sim.powers.hit_mult()
+	SimDamage.area(sim, band, dmg, floor_lo, ceili(top), true)  # the swipe throws tanks (D-437)
 	sim.army_units.taskforce.swat(band, top)  # a jetpack agent in the air is swatted (D-139)
 	_undermine(band, Vector2i(floor_lo, ceili(top)), centre, ahead)
 	cut += sim.chunks_destroyed - before

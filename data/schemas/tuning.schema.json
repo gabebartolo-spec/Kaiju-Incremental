@@ -610,18 +610,6 @@
         "live": {
           "type": "object",
           "properties": {
-            "threat": {
-              "type": "object",
-              "properties": {
-                "2": {"$ref": "#/$defs/str"},
-                "3": {"$ref": "#/$defs/str"},
-                "4": {"$ref": "#/$defs/str"},
-                "5": {"$ref": "#/$defs/str"}
-              },
-              "required": ["2", "3", "4", "5"],
-              "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-              "additionalProperties": false
-            },
             "landmarks": {
               "type": "object",
               "properties": {
@@ -648,7 +636,7 @@
               "additionalProperties": false
             }
           },
-          "required": ["threat", "landmarks", "towers", "vip"],
+          "required": ["landmarks", "towers", "vip"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
@@ -670,10 +658,11 @@
     "threat": {
       "type": "object",
       "properties": {
+        "level": {"type": "integer", "minimum": 1, "maximum": 5},
         "level_at": {"type": "array", "items": {"$ref": "#/$defs/num"}},
         "tower_counts": {"type": "array", "items": {"$ref": "#/$defs/num"}}
       },
-      "required": ["level_at", "tower_counts"],
+      "required": ["level", "level_at", "tower_counts"],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
@@ -1128,7 +1117,7 @@
     "air": {
       "type": "object",
       "properties": {
-        "blow_apart": {"$ref": "#/$defs/num"},
+        "burst_blow": {"$ref": "#/$defs/num"},
         "fall_seconds": {"$ref": "#/$defs/num"},
         "fall_drift": {"$ref": "#/$defs/num"},
         "bailout_chance": {"$ref": "#/$defs/num"},
@@ -1140,7 +1129,6 @@
         "interval": {"$ref": "#/$defs/num"},
         "max": {"$ref": "#/$defs/num"},
         "max_per_chunks": {"$ref": "#/$defs/num"},
-        "hp": {"$ref": "#/$defs/num"},
         "altitude": {"$ref": "#/$defs/num"},
         "standoff": {"$ref": "#/$defs/num"},
         "standoff_jitter": {"$ref": "#/$defs/num"},
@@ -1176,9 +1164,9 @@
         "clear_lead_deg": {"$ref": "#/$defs/num"}
       },
       "required": [
-        "blow_apart", "fall_seconds", "fall_drift", "bailout_chance", "bailout_max",
+        "burst_blow", "fall_seconds", "fall_drift", "bailout_chance", "bailout_max",
         "crash_radius", "crash_damage", "crash_floors", "after_chunks", "interval", "max",
-        "max_per_chunks", "hp", "altitude", "standoff", "standoff_jitter", "spawn_far",
+        "max_per_chunks", "altitude", "standoff", "standoff_jitter", "spawn_far",
         "pull_back", "heli_speed", "heli_accel", "heli_turn_deg", "nose_share", "anchor_seconds",
         "lead_seconds", "arrive", "hold_seconds", "glide_deg", "slot_tries", "strafe_gap",
         "strafe_close", "pass_corridor", "strafe_exit", "strafe_veer", "strafe_lead",
@@ -1195,7 +1183,6 @@
         "window": {"type": "array", "items": {"$ref": "#/$defs/num"}},
         "ranks": {"type": "array", "items": {"$ref": "#/$defs/str"}},
         "payout": {"type": "array", "items": {"$ref": "#/$defs/num"}},
-        "hp_mult": {"$ref": "#/$defs/num"},
         "radius": {"$ref": "#/$defs/num"},
         "altitude": {"$ref": "#/$defs/num"},
         "pad_height": {"type": "array", "items": {"$ref": "#/$defs/num"}},
@@ -1258,11 +1245,11 @@
         }
       },
       "required": [
-        "window", "ranks", "payout", "hp_mult", "radius", "altitude", "pad_height", "pad_range",
-        "liftoff_seconds", "climb_seconds", "circle_radius", "circle_seconds", "lap_jitter_deg",
-        "window_seconds", "escape_cap", "exit_margin", "exit_spread_deg", "turn_limit", "accel",
-        "rotor_pitch", "rotor_db", "headline_seconds", "killed_seconds", "slide_seconds",
-        "headlines", "rotor_unit", "beacon", "look"
+        "window", "ranks", "payout", "radius", "altitude", "pad_height", "pad_range",
+        "liftoff_seconds", "climb_seconds", "circle_radius", "circle_seconds", "lap_jitter_deg", "window_seconds",
+        "escape_cap", "exit_margin", "exit_spread_deg", "turn_limit", "accel",
+        "rotor_pitch", "rotor_db", "headline_seconds", "killed_seconds",
+        "slide_seconds", "headlines", "rotor_unit", "beacon", "look"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1456,7 +1443,6 @@
         },
         "start_interval": {"$ref": "#/$defs/num"},
         "min_interval": {"$ref": "#/$defs/num"},
-        "tank_hp": {"$ref": "#/$defs/num"},
         "tank_damage": {"$ref": "#/$defs/num"},
         "min_damage": {"$ref": "#/$defs/num"},
         "fire_interval": {"$ref": "#/$defs/num"},
@@ -1511,6 +1497,9 @@
             "gravity": {"$ref": "#/$defs/num"},
             "loft_deg": {"$ref": "#/$defs/num"},
             "min_distance": {"$ref": "#/$defs/num"},
+            "blow_throw": {"$ref": "#/$defs/num"},
+            "throw_min": {"$ref": "#/$defs/num"},
+            "throw_max": {"$ref": "#/$defs/num"},
             "clearance": {"$ref": "#/$defs/num"},
             "wall_radius": {"$ref": "#/$defs/num"},
             "wall_damage": {"$ref": "#/$defs/num"},
@@ -1521,7 +1510,6 @@
             "ground_restitution": {"$ref": "#/$defs/num"},
             "ground_friction": {"$ref": "#/$defs/num"},
             "strike_radius": {"$ref": "#/$defs/num"},
-            "domino_damage": {"$ref": "#/$defs/num"},
             "domino_reach": {"$ref": "#/$defs/num"},
             "spin_turns_min": {"$ref": "#/$defs/num"},
             "spin_turns_max": {"$ref": "#/$defs/num"},
@@ -1530,7 +1518,7 @@
           "required": [
             "gravity", "loft_deg", "min_distance", "clearance", "wall_radius", "wall_damage",
             "wall_floors", "wall_restitution", "bounces", "min_bounce_speed", "ground_restitution",
-            "ground_friction", "strike_radius", "domino_damage", "domino_reach", "spin_turns_min",
+            "ground_friction", "strike_radius", "domino_reach", "spin_turns_min",
             "spin_turns_max", "topple_deg"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -1538,7 +1526,7 @@
         }
       },
       "required": [
-        "convoy", "start_interval", "min_interval", "tank_hp", "tank_damage", "min_damage",
+        "convoy", "start_interval", "min_interval", "tank_damage", "min_damage",
         "fire_interval", "range", "speed", "tank_rubble", "spawn_radius", "escalation_per_chunk",
         "threat_per_chunk", "shell_flight", "miss", "rooftop", "flight"
       ],
@@ -1590,11 +1578,11 @@
             "height": {"$ref": "#/$defs/num"},
             "cloud_radius": {"$ref": "#/$defs/num"},
             "cloud_seconds": {"$ref": "#/$defs/num"},
-            "cloud_tank_dps": {"$ref": "#/$defs/num"},
+            "cloud_tank_seconds": {"$ref": "#/$defs/num"},
             "cloud_squad_seconds": {"$ref": "#/$defs/num"}
           },
           "required": [
-            "radius", "damage", "height", "cloud_radius", "cloud_seconds", "cloud_tank_dps",
+            "radius", "damage", "height", "cloud_radius", "cloud_seconds", "cloud_tank_seconds",
             "cloud_squad_seconds"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -5042,18 +5030,17 @@
             "army": {
               "type": "object",
               "properties": {
-                "tank_hp": {"$ref": "#/$defs/num"},
                 "tank_damage": {"$ref": "#/$defs/num"},
                 "start_interval": {"$ref": "#/$defs/num"}
               },
-              "required": ["tank_hp", "tank_damage", "start_interval"],
+              "required": ["tank_damage", "start_interval"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             },
             "air": {
               "type": "object",
-              "properties": {"hp": {"$ref": "#/$defs/num"}, "damage": {"$ref": "#/$defs/num"}},
-              "required": ["hp", "damage"],
+              "properties": {"damage": {"$ref": "#/$defs/num"}},
+              "required": ["damage"],
               "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
               "additionalProperties": false
             }
@@ -5087,7 +5074,6 @@
                   "max": {"$ref": "#/$defs/num"},
                   "after_chunks": {"$ref": "#/$defs/num"},
                   "max_per_chunks": {"$ref": "#/$defs/num"},
-                  "hp": {"$ref": "#/$defs/num"},
                   "rubble": {"$ref": "#/$defs/num"},
                   "damage": {"$ref": "#/$defs/num"}
                 },
@@ -5103,7 +5089,6 @@
                   "fire_interval": {"$ref": "#/$defs/num"},
                   "spawn_radius": {"$ref": "#/$defs/num"},
                   "start_interval": {"$ref": "#/$defs/num"},
-                  "tank_hp": {"$ref": "#/$defs/num"},
                   "tank_rubble": {"$ref": "#/$defs/num"},
                   "escalation_per_chunk": {"$ref": "#/$defs/num"},
                   "threat_per_chunk": {"$ref": "#/$defs/num"},
@@ -5120,23 +5105,28 @@
                   "army": {
                     "type": "object",
                     "properties": {
-                      "tank_hp": {"$ref": "#/$defs/num"},
                       "tank_damage": {"$ref": "#/$defs/num"},
                       "start_interval": {"$ref": "#/$defs/num"}
                     },
-                    "required": ["tank_hp", "tank_damage", "start_interval"],
+                    "required": ["tank_damage", "start_interval"],
                     "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                     "additionalProperties": false
                   },
                   "air": {
                     "type": "object",
-                    "properties": {"hp": {"$ref": "#/$defs/num"}, "damage": {"$ref": "#/$defs/num"}},
-                    "required": ["hp", "damage"],
+                    "properties": {"damage": {"$ref": "#/$defs/num"}},
+                    "required": ["damage"],
                     "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                     "additionalProperties": false
                   }
                 },
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+                "additionalProperties": false
+              },
+              "threat": {
+                "type": "object",
+                "properties": {"level": {"type": "integer", "minimum": 1, "maximum": 5}},
+                "required": ["level"],
                 "additionalProperties": false
               },
               "body": {

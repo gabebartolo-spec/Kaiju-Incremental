@@ -21,7 +21,7 @@ func run_checks() -> void:
 	await _t("_check_crash_fire")
 	await _t("_check_crash_crushes_army")
 	await _t("_check_crash_spares_kaiju")
-	await _t("_check_coat_kill")
+	await _t("_check_one_blow")
 	await _t("_check_topple")
 	await _t("_check_seeded")
 
@@ -33,10 +33,9 @@ func _scene(levels: Dictionary) -> RampageSim:
 	return sim
 
 
-## Downs the only helicopter with a last blow of `blow` (its hp first set just under it).
+## Downs the only helicopter with one blow of `blow` (no hit points, D-437).
 func _down(sim: RampageSim, blow: float) -> Dictionary:
 	var heli: AirWing.Heli = sim.air.helis[0]
-	heli.hp = blow * 0.5
 	sim.events.clear()
 	sim.air.hit(func(_p: Vector2, _r: float) -> float: return 1.0, blow, true)
 	for event: Dictionary in sim.events:
@@ -66,12 +65,12 @@ func _aim_at_block(sim: RampageSim) -> void:
 
 func _check_burst() -> void:
 	var sim := _scene({})
-	var hp := Num.f(sim.air.cfg["hp"])
+	var hp := Num.f(sim.air.cfg["burst_blow"])
 	var rubble := sim.rubble
 	var event := _down(sim, hp)
 	check(
 		str(event.get("fate", "")) == "burst" and sim.air.falling.is_empty(),
-		"a killing blow of its full hp blows the helicopter apart in the air: %s" % event
+		"a blow of burst_blow blows the helicopter apart in the air: %s" % event
 	)
 	check(
 		sim.air.destroyed == 1 and sim.rubble > rubble,
@@ -84,7 +83,7 @@ func _check_burst() -> void:
 
 func _check_spin_crash() -> void:
 	var sim := _scene({})
-	var hp := Num.f(sim.air.cfg["hp"])
+	var hp := Num.f(sim.air.cfg["burst_blow"])
 	var event := _down(sim, hp * 0.2)
 	check(
 		str(event.get("fate", "")) == "spin" and sim.air.falling.size() == 1,
@@ -108,7 +107,7 @@ func _check_spin_crash() -> void:
 
 ## Downs the only helicopter, then lets its wreck land at `at` on the very next step.
 func _crash_at(sim: RampageSim, at: Vector2) -> void:
-	_down(sim, Num.f(sim.air.cfg["hp"]) * 0.2)
+	_down(sim, Num.f(sim.air.cfg["burst_blow"]) * 0.2)
 	var down: AirWing.Falling = sim.air.falling[0]
 	down.pos = at
 	down.drift = Vector2.ZERO
@@ -119,15 +118,15 @@ func _crash_at(sim: RampageSim, at: Vector2) -> void:
 func _tank_at(sim: RampageSim, id: int, at: Vector2) -> RampageSim.Tank:
 	var tank := RampageSim.Tank.new()
 	tank.id = id
-	tank.hp = 5.0  # a crash's damage kills it where it lands
 	tank.cooldown = 99.0
 	tank.pos = at
 	sim.tanks.append(tank)
 	return tank
 
 
-## The wreck's impact reaches the army below it (D-167): a tank in the crash radius dies, one far
-## away lives, and a squad on a low roof under it dies (the fall is a hit_area, never the sky).
+## The wreck's impact reaches the army below it (D-167): a tank in the crash radius is thrown and
+## dies, one far away lives, and a squad on a low roof under it dies (the fall is a hit_area,
+## never the sky).
 func _check_crash_crushes_army() -> void:
 	var sim := _scene({})
 	sim.army_units.squads.clear()
@@ -163,8 +162,14 @@ func _check_crash_crushes_army() -> void:
 	check(not tf.agents.has(perched), "a Taskforce agent perched on the struck roof dies (D-173)")
 	check(tf.agents.has(far_agent), "an agent perched on a far block lives")
 	check(tf.agents.has(flying), "an agent in the air over the struck roof is not touched")
-	check(not sim.tanks.has(near), "a tank under the crash is crushed (hp %.1f)" % near.hp)
-	check(sim.tanks.has(far) and far.hp == 5.0, "a tank far from the crash is not hurt")
+	check(
+		not sim.tanks.has(near) or near.flying or near.wrecked,
+		"a tank under the crash is thrown to its death (no hit points, D-437)"
+	)
+	check(
+		sim.tanks.has(far) and not far.wrecked and far.last_blow == 0.0,
+		"a tank far from the crash is not touched"
+	)
 	check(not sim.army_units.squads.has(squad), "a squad on a low roof under the crash is killed")
 	check(
 		not sim.army_units.squads.has(roof),
@@ -189,7 +194,7 @@ func _check_crash_spares_kaiju() -> void:
 func _check_crash_fire() -> void:
 	for levels: Dictionary in [ABLAZE, {}]:
 		var sim := _scene(levels)
-		_down(sim, Num.f(sim.air.cfg["hp"]) * 0.2)
+		_down(sim, Num.f(sim.air.cfg["burst_blow"]) * 0.2)
 		_aim_at_block(sim)
 		_until_crash(sim, Num.f(sim.air.cfg["fall_seconds"]) + 1.0)
 		var burning := sim.powers.fire.state[0] >= FireSpread.State.BURNING
@@ -203,24 +208,23 @@ func _check_crash_fire() -> void:
 		)
 
 
-## A burning coat that finishes a helicopter off after a heavy, non-lethal hit sends it spinning
-## down: the killing blow is the coat's light tick, not the old heavy hit.
-func _check_coat_kill() -> void:
-	var sim := _scene({})
-	var heli: AirWing.Heli = sim.air.helis[0]
-	heli.last_blow = Num.f(sim.air.cfg["hp"])  # an earlier heavy hit that did not kill
-	heli.hp = 0.001
-	heli.coat_t = 1.0
-	heli.coat_dps = 1.0
-	sim.events.clear()
-	sim.air.step(DT)
-	var fates: Array = (
-		sim
-		. events
-		. filter(func(e: Dictionary) -> bool: return str(e["type"]) == "heli_destroyed")
-		. map(func(e: Dictionary) -> String: return str(e.get("fate", "")))
+## No hit points (D-437, director 2026-11-01: helicopters "Yes, one blow"). Player-effect fixture
+## "heli.one_blow": a blow that misses it (off) and the lightest blow that reaches it (on). On, it
+## spins down; off, it flies on.
+func _check_one_blow() -> void:
+	var off := _scene({})
+	off.air.hit(func(_p: Vector2, _r: float) -> float: return 0.0, 1000.0, true)
+	off.air.clear_dead()
+	var on := _scene({})
+	var event := _down(on, 0.01)
+	check(
+		off.air.helis.size() == 1 and off.air.destroyed == 0,
+		"a blow that misses leaves the helicopter flying"
 	)
-	check(fates == ["spin"], "a coat kill after a heavy hit spins it down: %s" % [fates])
+	check(
+		str(event.get("fate", "")) == "spin" and on.air.destroyed == 1,
+		"the lightest blow that reaches it downs it: %s" % event
+	)
 
 
 ## A tower toppling through a helicopter knocks it spinning down; a short one does not.
@@ -259,12 +263,12 @@ func _check_seeded() -> void:
 	var runs: Array[Dictionary] = []
 	for n: int in 2:
 		var sim := _scene({})
-		runs.append(_down(sim, Num.f(sim.air.cfg["hp"]) * 0.2))
+		runs.append(_down(sim, Num.f(sim.air.cfg["burst_blow"]) * 0.2))
 	check(runs[0] == runs[1], "the same seed spins the same fall and crew: %s" % runs[0])
 	var angles: Array[float] = []
 	for blow_share: float in [0.2, 1.0]:  # a spin draws from the fall stream, a burst does not
 		var sim := _scene({})
-		_down(sim, Num.f(sim.air.cfg["hp"]) * blow_share)
+		_down(sim, Num.f(sim.air.cfg["burst_blow"]) * blow_share)
 		angles.append(sim.air.spawn().slot)
 	check(
 		is_equal_approx(angles[0], angles[1]),
@@ -275,5 +279,5 @@ func _check_seeded() -> void:
 		var sim := _sim("reptilian", {}, [_b(0, 0, Vector3i(3, 3, 4))], KAIJU_AT)
 		sim.air = AirWing.new(sim, sim.air.cfg, Seeds.make("army", seed))
 		sim.air.spawn()
-		crews += Num.i(_down(sim, Num.f(sim.air.cfg["hp"]) * 0.2).get("crew", 0))
+		crews += Num.i(_down(sim, Num.f(sim.air.cfg["burst_blow"]) * 0.2).get("crew", 0))
 	check(crews > 0 and crews < 40 * 2, "some crews bail out, not all (%d in 40 falls)" % crews)

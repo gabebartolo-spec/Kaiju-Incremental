@@ -105,11 +105,11 @@ class Fall:
 class Tank:
 	var id: int
 	var pos: Vector2
-	var hp: float
 	var cooldown: float
-	## Burning: damage per second until coat_t runs out.
-	var coat_t := 0.0
-	var coat_dps := 0.0
+	## Out of the fight for good: no hit points (D-437); Army.clear_dead clears it.
+	var wrecked := false
+	## The last blow that threw it (damage x force; SimDamage.throw).
+	var last_blow := 0.0
 	## Sent flying (TankFlight): height over the street, velocity (y up), bounces taken, and how
 	## deep in a Domino chain it is. A tank at rest on a roof keeps its height.
 	var flying := false
@@ -133,6 +133,7 @@ const TANK_RADIUS := 0.6
 var stats: Dictionary
 var army: Dictionary
 var city: Dictionary
+var alert_chunks := 0  # RunNews.alert_chunks: where the city's threat level starts the army
 var ability_type := "ring"
 var buildings: Array[Building] = []
 ## The buildings filed by ground cell, for questions about one spot (BuildingGrid).
@@ -183,8 +184,7 @@ var news: RunNews  # the big moments (threat level, landmarks, tower totals) as 
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
-## In the air (gliding): no stomps, no blocking.
-var airborne := false
+var airborne := false  # gliding: no stomps, no blocking
 var ultimate_ready_in := 0.0
 ## While set, every chunk and unit _hit_area damages is coated: {"kind", "dps", "seconds"}.
 var hit_coat: Dictionary = {}
@@ -265,9 +265,9 @@ func reach_top() -> float:
 	return stand_y + reach_height()
 
 
-## Chunks' worth of how far the city has fallen, as the army and air wing escalate on it.
+## Chunks' worth of army alert: the city's starting level (D-437), the city fallen, and Endless.
 func escalation() -> int:
-	return chunks_destroyed + Endless.escalation(self)
+	return alert_chunks + chunks_destroyed + Endless.escalation(self)
 
 
 func destruction() -> float:
