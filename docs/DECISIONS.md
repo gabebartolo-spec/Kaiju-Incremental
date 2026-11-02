@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-449 · Director · The leap never vaults a tower above his shoulder
+Bug: the kaiju leapt onto the tops of extremely tall buildings. D-361 kept such roofs off the leap's target,
+but LeapArc raised the arc over every building on the flight path, so a tower between him and a low roof (or
+the open-ground landing) was cleared and he came down on or over its top. Now Dash.aim_at asks LeapArc.wall
+for the first building on the path taller than his shoulder (the existing per-stage leap "shoulder" share x
+drawn height, D-361; no new number) and makes it the target, taken in its side as D-361 does. Roofs at or under
+the shoulder still land (Leap suite: _check_no_vault, _check_low_roof).
+
 ## 2026-11-03 · D-447 · Director · Per-frame CPU trims (no visual change)
 Under D-032 (looks first): CPU-only savings, identical output. LightPool.repick walks the group once and tests
 the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/fire_xz to its flame shader only
@@ -389,11 +397,3 @@ connector was not in the building session, so #445 ships the four tree sounds sy
 (0 credits); the 500 stay approved for replacing them from a session that has it. The kaiju himself, at his current
 stage, turns at the empty centre of the rings: "yes". Tuning `tree.skin` and `tree.skin.fx`; `fx.enabled` is the
 on/off switch the fixture flips.
-
-## 2026-10-30 · D-395 · Director · The feedback link is the Itch page
-His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's LEAVE FEEDBACK opens it (tuning demo.feedback_url); replaces the placeholder D-148 left.
-
-## 2026-10-30 · D-394 · Director · The landmark pool's named entries
-His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
-ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
-stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".

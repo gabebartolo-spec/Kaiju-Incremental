@@ -66,6 +66,34 @@ func plan(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vecto
 		top += clear
 
 
+## The first standing building (in path order) the body's discs pass over on the way from `ends[0]`
+## to `ends[1]` along `ahead` that stands taller than `numbers.x` (world units), sampling every
+## `numbers.y` units; buildings it overlaps at take-off are skipped. -1 for none. A leap never
+## clears such a building: it takes it in its side (Dash.aim_at; director 2026-11-03, D-361).
+func wall(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vector2) -> int:
+	var limit := numbers.x
+	_discs = discs
+	var skip := _overlaps(ends[0], ahead)
+	var span := ends[0].distance_to(ends[1])
+	var count := maxi(1, ceili(span / maxf(numbers.y, 0.01)))
+	var s := _sim.body_scale()
+	for n: int in range(1, count + 1):
+		var pose := ends[0].lerp(ends[1], float(n) / count)
+		for d: Array in _discs:
+			var c := pose + ahead * Num.f(d[0]) * s
+			var r := Num.f(d[1]) * s
+			for i: int in _sim.buildings.size():
+				var b := _sim.buildings[i]
+				if b.frame.alive_count == 0 or skip.has(i) or float(b.height) <= limit:
+					continue
+				var gap := Vector2(
+					maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
+				)
+				if gap.length() < r:
+					return i
+	return -1
+
+
 ## The parabola through (0, 0) and (1, land_y) peaking at `top`.
 func _fit() -> void:
 	var peak := maxf(top, maxf(land_y, 0.001))
