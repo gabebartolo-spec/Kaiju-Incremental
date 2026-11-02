@@ -5137,7 +5137,7 @@
                 "additionalProperties": false
               }
             },
-            "required": ["city", "air", "army"],
+            "required": ["air", "army"],
             "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
             "additionalProperties": false
           }
