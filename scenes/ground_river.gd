@@ -24,12 +24,9 @@ static func river(g: CityGround, channels: Array[Rect2], asphalt: Color, stone: 
 		for other: Rect2 in channels:
 			if other != channel:
 				open.append(other.grow(CityGround.RIVER_QUAY))
-		var diagonal := DiagonalPaving.band(g.plan, g.cfg, 0.0)
+		var diagonals := DiagonalPaving.bands(g.plan, g.cfg, 0.0)
 		for side: Rect2 in GroundKit.cut(banks, open):
-			if (
-				DiagonalPaving.pieces(side, diagonal).size() == 1
-				and CityGround._whole(side, diagonal)
-			):
+			if CityGround._whole(side, diagonals):
 				g._face(side, wall, stone, -depth)
 			else:
 				g.cut_walls.append(side)
@@ -40,8 +37,7 @@ static func river(g: CityGround, channels: Array[Rect2], asphalt: Color, stone: 
 			stone,
 			-depth
 		)
-	var over := CityRiver.diagonal_deck(g.plan, g.cfg)
-	if not over.is_empty():
+	for over: Dictionary in CityRiver.diagonal_decks(g.plan, g.cfg):
 		g._diagonal_deck(over, channels[0], [asphalt, stone])
 	for deck: Rect2 in bridges:
 		g._bridge(deck, channels, stone)

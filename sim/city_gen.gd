@@ -108,8 +108,9 @@ static func map(cfg: Dictionary) -> Dictionary:
 	var rings := districts(cfg)
 	var full := rings[rings.size() - 1]
 	var outer := Num.f(cfg["outer_half"])
-	var diag := _diagonal(cfg)
-	var lines := CityLines.draw(rng, cfg, diag)
+	var diags := diagonals_of(cfg)
+	var diag: Dictionary = diags[0]
+	var lines := CityLines.draw(rng, cfg, diags)
 	var xs: Array[float] = lines["xs"]
 	var zs: Array[float] = lines["zs"]
 	var avenues_x: Dictionary = lines["avenues_x"]
@@ -119,12 +120,16 @@ static func map(cfg: Dictionary) -> Dictionary:
 		"streets": [] as Array[Dictionary],
 		"blocks": [] as Array[Dictionary],
 		"sidewalk": Num.f(cfg["sidewalk"]),
-		"diagonal": diag,
+		"diagonal": diag,  # the first diagonal (the only one but in a two-diagonal plan)
+		"diagonals": diags,
 		"xs": xs,
 		"zs": zs,
 		"bay": CityHarbour.rect_of(cfg),  # the sea bay, laid first: no street enters it
 	}
+	CityWater.dig(plan, cfg)  # Thule's fjord: no street but its bridges crosses it
 	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
+	CityPlaza.add(plan, [avenues_x, avenues_z], cfg)  # where two diagonals meet: no street inside
+	CityLineFit.sharp_cells(plan, diags, xs, zs, outer, cfg)
 	# Which grid edges are alleys (CityAlleys): x-line i between zs[j] and zs[j+1] is
 	# alley_x[Vector2i(i, j)].
 	var alleys := CityAlleys.lay(rng, plan, [avenues_x, avenues_z], cfg)
@@ -132,12 +137,15 @@ static func map(cfg: Dictionary) -> Dictionary:
 	var alley_z: Dictionary = alleys["z"]
 	var index := {}
 	_lay_streets(plan, index, lines, [alley_x, alley_z], cfg)
-	_lay_diagonal(plan, index, diag, xs, zs, outer, cfg)
+	for d: Dictionary in diags:
+		_lay_diagonal(plan, index, d, xs, zs, outer, cfg)
+	CityWater.lay(plan, index, cfg)  # Carthago's harbour ring and spokes
 	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
+	CityWater.mark(plan, cfg)  # Thule's fjord banks, the rise
 	return plan
 
 
-## Every grid street, split at each crossing and where the diagonal crosses: x-lines (running
+## Every grid street, split at each crossing and where each diagonal crosses: x-lines (running
 ## along z) first, then z-lines. alleys: [alley_x, alley_z].
 static func _lay_streets(
 	plan: Dictionary, index: Dictionary, lines: Dictionary, alleys: Array, cfg: Dictionary
@@ -145,20 +153,25 @@ static func _lay_streets(
 	var xs: Array[float] = lines["xs"]
 	var zs: Array[float] = lines["zs"]
 	var outer := Num.f(cfg["outer_half"])
-	var diag: Dictionary = plan["diagonal"]
+	var diags: Array[Dictionary] = plan["diagonals"]
 	var avenues_x: Dictionary = lines["avenues_x"]
 	var avenues_z: Dictionary = lines["avenues_z"]
 	var alley_x: Dictionary = alleys[0]
 	var alley_z: Dictionary = alleys[1]
+	var sx: Dictionary = plan["sharp_x"]
+	var sz: Dictionary = plan["sharp_z"]
 	for i: int in xs.size():
 		var stops: Array[float] = []
 		stops.assign(zs)
-		var cross := _diag_at_x(diag, xs[i])
-		if absf(cross) <= outer:
-			stops.append(cross)
+		for diag: Dictionary in diags:
+			var cross := diag_at_x(diag, xs[i])
+			if absf(cross) <= outer and not sx.has(Vector2i(i, cell_of(zs, cross))):
+				stops.append(cross)
 		stops.sort()
 		for k: int in stops.size() - 1:
-			var j := _cell(zs, (stops[k] + stops[k + 1]) * 0.5)
+			var j := cell_of(zs, (stops[k] + stops[k + 1]) * 0.5)
+			if sx.has(Vector2i(i, j)):
+				continue  # a diagonal crosses it too sharply, or too near a junction: left out
 			var kind := AVENUE if avenues_x.has(i) else STREET
 			if alley_x.has(Vector2i(i, j)):
 				kind = ALLEY
@@ -166,12 +179,15 @@ static func _lay_streets(
 	for j: int in zs.size():
 		var stops: Array[float] = []
 		stops.assign(xs)
-		var cross := _diag_at_z(diag, zs[j])
-		if absf(cross) <= outer:
-			stops.append(cross)
+		for diag: Dictionary in diags:
+			var cross := diag_at_z(diag, zs[j])
+			if absf(cross) <= outer and not sz.has(Vector2i(j, cell_of(xs, cross))):
+				stops.append(cross)
 		stops.sort()
 		for k: int in stops.size() - 1:
-			var i := _cell(xs, (stops[k] + stops[k + 1]) * 0.5)
+			var i := cell_of(xs, (stops[k] + stops[k + 1]) * 0.5)
+			if sz.has(Vector2i(j, i)):
+				continue
 			var kind := AVENUE if avenues_z.has(j) else STREET
 			if alley_z.has(Vector2i(j, i)):
 				kind = ALLEY
@@ -189,14 +205,16 @@ static func _lay_diagonal(
 	cfg: Dictionary
 ) -> void:
 	var along: Array[Vector2] = []
-	for x: float in xs:
-		var z := _diag_at_x(diag, x)
-		if absf(z) <= outer:
-			along.append(Vector2(x, z))
-	for z: float in zs:
-		var x := _diag_at_z(diag, z)
-		if absf(x) <= outer:
-			along.append(Vector2(x, z))
+	var sx: Dictionary = plan["sharp_x"]
+	var sz: Dictionary = plan["sharp_z"]
+	for i: int in xs.size():
+		var z := diag_at_x(diag, xs[i])
+		if absf(z) <= outer and not sx.has(Vector2i(i, cell_of(zs, z))):
+			along.append(Vector2(xs[i], z))
+	for j: int in zs.size():
+		var x := diag_at_z(diag, zs[j])
+		if absf(x) <= outer and not sz.has(Vector2i(j, cell_of(xs, x))):
+			along.append(Vector2(x, zs[j]))
 	along.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
@@ -205,6 +223,19 @@ static func _lay_diagonal(
 ## The diagonal avenue of cfg: {at, dir} (city.diagonal_through, city.diagonal_deg).
 static func diagonal_of(cfg: Dictionary) -> Dictionary:
 	return _diagonal(cfg)
+
+
+## Every diagonal avenue of cfg: the first (diagonal_of), then city.diagonal_count - 1 more
+## through the same point, turned evenly round the half circle (Carthago's spokes, D-435: they
+## meet in the open site there, CityPlaza, which holds its round harbour, CityWater).
+static func diagonals_of(cfg: Dictionary) -> Array[Dictionary]:
+	var first := _diagonal(cfg)
+	var out: Array[Dictionary] = [first]
+	var count := Num.i(cfg["diagonal_count"])
+	var dir: Vector2 = first["dir"]
+	for k: int in range(1, count):
+		out.append({"at": first["at"], "dir": dir.rotated(PI * k / count)})
+	return out
 
 
 ## The diagonal avenue: a point it passes and its direction (unit, ground plane).
@@ -217,21 +248,29 @@ static func _diagonal(cfg: Dictionary) -> Dictionary:
 	}
 
 
-static func _diag_at_x(diag: Dictionary, x: float) -> float:
+## Where a diagonal crosses x-line x (its z), and z-line z (its x).
+static func diag_at_x(diag: Dictionary, x: float) -> float:
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
 	return at.y + (x - at.x) * dir.y / dir.x
 
 
-static func _diag_at_z(diag: Dictionary, z: float) -> float:
+static func diag_at_z(diag: Dictionary, z: float) -> float:
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
 	return at.x + (z - at.y) * dir.x / dir.y
 
 
-## Distance from p to the diagonal's centre line.
+## Distance from p to the nearest diagonal's centre line.
 static func diagonal_distance(plan: Dictionary, p: Vector2) -> float:
-	var diag: Dictionary = plan["diagonal"]
+	var out := INF
+	for diag: Dictionary in plan["diagonals"]:
+		out = minf(out, line_distance(diag, p))
+	return out
+
+
+## Distance from p to one diagonal's centre line.
+static func line_distance(diag: Dictionary, p: Vector2) -> float:
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
 	return absf((p - at).cross(dir))
@@ -244,23 +283,6 @@ static func pavement(block: Dictionary, cfg: Dictionary) -> Rect2:
 	return rect if block.has("site") else rect.grow(Num.f(cfg["sidewalk"]))
 
 
-## The non-alley street whose carriageway holds p (between its two crossings), or {}. Alleys
-## have no pavement and carry people, so they do not count.
-static func road_at(plan: Dictionary, p: Vector2) -> Dictionary:
-	var nodes: Array[Vector2] = plan["nodes"]
-	for street: Dictionary in plan["streets"]:
-		if str(street["kind"]) == ALLEY:
-			continue
-		var from: Vector2 = nodes[Num.i(street["from"])]
-		var to: Vector2 = nodes[Num.i(street["to"])]
-		var dir := (to - from).normalized()
-		var along := (p - from).dot(dir)
-		var half := Num.f(street["width"]) * 0.5
-		if along > 0.0 and along < from.distance_to(to) and absf((p - from).cross(dir)) < half:
-			return street
-	return {}
-
-
 static func width_of(kind: String, cfg: Dictionary) -> float:
 	match kind:
 		AVENUE, DIAGONAL:
@@ -271,7 +293,7 @@ static func width_of(kind: String, cfg: Dictionary) -> float:
 
 
 ## Index of the gap between lines that holds `v`.
-static func _cell(lines: Array[float], v: float) -> int:
+static func cell_of(lines: Array[float], v: float) -> int:
 	for k: int in lines.size() - 1:
 		if v >= lines[k] and v <= lines[k + 1]:
 			return k
@@ -290,7 +312,18 @@ static func _node(plan: Dictionary, index: Dictionary, p: Vector2) -> int:
 static func _street(
 	plan: Dictionary, index: Dictionary, a: Vector2, b: Vector2, kind: String, cfg: Dictionary
 ) -> void:
-	if a.distance_to(b) < 0.01 or CitySites.cuts(plan, a, b) or CityHarbour.inside(plan, a, b):
+	if CitySites.cuts(plan, a, b) or CityHarbour.inside(plan, a, b):
+		return
+	if CityWater.wet(plan, a, b, kind):
+		return
+	lay(plan, index, a, b, kind, cfg)
+
+
+## One street from a to b, wherever it lies (CityWater's ring and spokes inside their open site).
+static func lay(
+	plan: Dictionary, index: Dictionary, a: Vector2, b: Vector2, kind: String, cfg: Dictionary
+) -> void:
+	if a.distance_to(b) < 0.01:
 		return
 	var streets: Array[Dictionary] = plan["streets"]
 	(
@@ -323,20 +356,20 @@ static func _blocks(
 	var walk := Num.f(cfg["sidewalk"])
 	var blocks: Array[Dictionary] = plan["blocks"]
 	var inner: Array[int] = []
+	var ex: Array[Dictionary] = [alley_x, plan["sharp_x"]]  # [alleys, left-out pieces]
+	var ez: Array[Dictionary] = [alley_z, plan["sharp_z"]]
 	for i: int in xs.size() - 1:
 		for j: int in zs.size() - 1:
-			var inset := func(avenue: bool, alley: bool) -> float:
-				if alley:
+			var inset := func(avenue: bool, edges: Array[Dictionary], key: Vector2i) -> float:
+				if edges[1].has(key):
+					return 0.0  # no street: the blocks either side abut, the diagonal cuts both
+				if edges[0].has(key):
 					return Num.f(cfg["alley_width"]) * 0.5
 				return width_of(AVENUE if avenue else STREET, cfg) * 0.5 + walk
-			var x0: float = xs[i] + inset.call(avenues_x.has(i), alley_x.has(Vector2i(i, j)))
-			var x1: float = (
-				xs[i + 1] - inset.call(avenues_x.has(i + 1), alley_x.has(Vector2i(i + 1, j)))
-			)
-			var z0: float = zs[j] + inset.call(avenues_z.has(j), alley_z.has(Vector2i(j, i)))
-			var z1: float = (
-				zs[j + 1] - inset.call(avenues_z.has(j + 1), alley_z.has(Vector2i(j + 1, i)))
-			)
+			var x0: float = xs[i] + inset.call(avenues_x.has(i), ex, Vector2i(i, j))
+			var x1: float = xs[i + 1] - inset.call(avenues_x.has(i + 1), ex, Vector2i(i + 1, j))
+			var z0: float = zs[j] + inset.call(avenues_z.has(j), ez, Vector2i(j, i))
+			var z1: float = zs[j + 1] - inset.call(avenues_z.has(j + 1), ez, Vector2i(j + 1, i))
 			var rect := Rect2(x0, z0, x1 - x0, z1 - z0)
 			# Inside the last district a block takes the use it has once that district is in
 			# play, whatever the stage, so its lots never change (CityBand holds it back).

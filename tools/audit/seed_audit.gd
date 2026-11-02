@@ -18,11 +18,15 @@ const LOTS_BAR := 0.5
 const MOVED_M := 1.0
 
 
-## The city of run `index` at stage `tier`: {layout, plan}. mode "game" or "seeded".
-static func city(base: Dictionary, tier: int, index: int, mode: String) -> Dictionary:
+## The city of run `index` at stage `tier`: {layout, plan}. mode "game" or "seeded"; continent
+## (game mode): that continent's own city (D-435), "" the default plan.
+static func city(
+	base: Dictionary, tier: int, index: int, mode: String, continent := ""
+) -> Dictionary:
 	if mode == "game":
-		var cfg: Dictionary = CitySeed.tuning(base, tier, 0, index)["city"]
-		return {"layout": CitySeed.layout(base, tier, 0, index), "plan": CityGen.map(cfg)}
+		var cfg: Dictionary = CitySeed.tuning(base, tier, 0, index, continent)["city"]
+		var layout := CitySeed.layout(base, tier, 0, index, continent)
+		return {"layout": layout, "plan": CityGen.map(cfg)}
 	var seeded := Roads.city(base, tier, Roads.seeds(index + 1)[index])
 	var layout := CityGen.generate(Seeds.make(CitySeed.STREAM, index), seeded)
 	return {"layout": layout, "plan": CityGen.map(seeded)}

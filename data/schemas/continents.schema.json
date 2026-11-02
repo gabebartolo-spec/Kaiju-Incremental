@@ -27,7 +27,8 @@
               "additionalProperties": false
             }
           },
-          "capital": {"$ref": "#/$defs/bool"}
+          "capital": {"$ref": "#/$defs/bool"},
+          "tuning": {"type": "object", "additionalProperties": {"type": "object"}}
         },
         "required": ["id", "name", "stage", "threat", "bonuses", "capital"],
         "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

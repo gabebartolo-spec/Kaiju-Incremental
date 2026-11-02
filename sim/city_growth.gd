@@ -9,33 +9,43 @@ extends RefCounted
 
 
 ## The tuning a rampage at this size tier runs on: a deep copy of `tuning` with the stage's
-## overrides applied. Tiers past the last stage use the last stage.
-static func tuning_for(tuning: Dictionary, tier: int) -> Dictionary:
+## overrides applied, then the continent's own (data/continents.json "tuning", D-435: its street
+## plan's seed and pattern) when one is named. Tiers past the last stage use the last stage.
+static func tuning_for(tuning: Dictionary, tier: int, continent := "") -> Dictionary:
 	var out: Dictionary = tuning.duplicate(true)
 	var stages := _stages(tuning)
 	if stages.is_empty():
 		return out
 	var stage: Dictionary = stages[clampi(tier - 1, 0, stages.size() - 1)]
-	for section: String in stage:
-		if section == "per_level":
-			continue
-		var into: Dictionary = out[section]
-		var over: Dictionary = stage[section]
-		for key: String in over:
-			into[key] = _copy(over[key])
+	_overlay(out, stage)
+	if continent != "":
+		var own: Dictionary = Content.continent(continent).get("tuning", {})
+		_overlay(out, own)
 	EmergeReach.fit(out, Content.upgrades(), tier)  # the bay holds this stage's biggest body
 	return out
 
 
-## The game's tuning for a rampage with these run stats: their size tier picks the stage, and
-## the levels bought inside that stage ("stage_growth") harden the army and air on top.
+## Sets every key `over` names, section by section, in `out` (a stage's "per_level" is no section).
+static func _overlay(out: Dictionary, over: Dictionary) -> void:
+	for section: String in over:
+		if section == "per_level":
+			continue
+		var into: Dictionary = out[section]
+		var keys: Dictionary = over[section]
+		for key: String in keys:
+			into[key] = _copy(keys[key])
+
+
+## The game's tuning for a rampage with these run stats: their size tier picks the stage, their
+## "continent" (when set) its own city, and the levels bought inside that stage ("stage_growth")
+## harden the army and air on top.
 static func for_stats(stats: Dictionary) -> Dictionary:
 	return tuning_for_stats(Content.tuning(), stats)
 
 
 static func tuning_for_stats(tuning: Dictionary, stats: Dictionary) -> Dictionary:
 	var tier := Num.i(stats.get("size", 1))
-	var out := tuning_for(tuning, tier)
+	var out := tuning_for(tuning, tier, str(stats.get("continent", "")))
 	return hardened(out, tuning, tier, Num.f(stats.get("stage_growth", 0.0)))
 
 
@@ -71,9 +81,12 @@ static func per_level_for(tuning: Dictionary, tier: int) -> Dictionary:
 	return growth.get("per_level", {})
 
 
-## The playable city of a size tier, seeded from `rng` (CityGen.generate on the stage's city).
-static func layout(tuning: Dictionary, tier: int, rng: RandomNumberGenerator) -> Array[Dictionary]:
-	var cfg: Dictionary = tuning_for(tuning, tier)["city"]
+## The playable city of a size tier (on a continent's own plan when named), seeded from `rng`
+## (CityGen.generate on the stage's city).
+static func layout(
+	tuning: Dictionary, tier: int, rng: RandomNumberGenerator, continent := ""
+) -> Array[Dictionary]:
+	var cfg: Dictionary = tuning_for(tuning, tier, continent)["city"]
 	return CityGen.generate(rng, cfg)
 
 

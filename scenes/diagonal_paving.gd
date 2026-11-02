@@ -23,8 +23,8 @@ const SPREAD := 1000.0
 static func meshes(ground: CityGround, colors: Dictionary, mat: ShaderMaterial) -> Array:
 	var plan := ground.plan
 	var cfg := ground.cfg
-	var road := band(plan, cfg, 0.0)
-	var kerbed := band(plan, cfg, Num.f(cfg["sidewalk"]))
+	var road := bands(plan, cfg, 0.0)
+	var kerbed := bands(plan, cfg, Num.f(cfg["sidewalk"]))
 	var depth := Num.f(cfg.get("river_depth", 0.0))
 	var top := CityGround.PAVE_TOP
 	var tools := {}  # kind data -> SurfaceTool
@@ -100,37 +100,48 @@ static func _instance(st: SurfaceTool, data: Color, mat: ShaderMaterial) -> Mult
 	return mmi
 
 
-## True when the diagonal's carriageway reaches into the block's pavement.
+## True when a diagonal's carriageway reaches into the block's pavement.
 static func cuts(plan: Dictionary, block: Dictionary, cfg: Dictionary) -> bool:
 	var walk := CityGen.pavement(block, cfg)
 	var half := CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5
 	return CityGen.diagonal_distance(plan, walk.get_center()) < walk.size.length() * 0.5 + half
 
 
-## The diagonal's carriageway grown by `grow` either side, as a polygon (x, z).
-static func band(plan: Dictionary, cfg: Dictionary, grow: float) -> PackedVector2Array:
-	var diag: Dictionary = plan["diagonal"]
-	var at: Vector2 = diag["at"]
-	var dir: Vector2 = diag["dir"]
-	var across := Vector2(-dir.y, dir.x) * (CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + grow)
-	var along := dir * Num.f(cfg["outer_half"]) * REACH
-	return PackedVector2Array(
-		[at - along - across, at + along - across, at + along + across, at - along + across]
-	)
-
-
-## What is left of rect once the band is cut out of it.
-static func pieces(rect: Rect2, cut: PackedVector2Array) -> Array[PackedVector2Array]:
-	var poly := PackedVector2Array(
-		[
-			rect.position,
-			Vector2(rect.end.x, rect.position.y),
-			rect.end,
-			Vector2(rect.position.x, rect.end.y)
-		]
-	)
+## Each diagonal's carriageway grown by `grow` either side, as a polygon (x, z): one per
+## diagonal avenue (two where they meet at a plaza, D-435).
+static func bands(plan: Dictionary, cfg: Dictionary, grow: float) -> Array[PackedVector2Array]:
 	var out: Array[PackedVector2Array] = []
-	out.assign(Geometry2D.clip_polygons(poly, cut))
+	var half := CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + grow
+	for diag: Dictionary in plan["diagonals"]:
+		var at: Vector2 = diag["at"]
+		var dir: Vector2 = diag["dir"]
+		var across := Vector2(-dir.y, dir.x) * half
+		var along := dir * Num.f(cfg["outer_half"]) * REACH
+		out.append(
+			PackedVector2Array(
+				[at - along - across, at + along - across, at + along + across, at - along + across]
+			)
+		)
+	return out
+
+
+## What is left of rect once every band in `cuts` is cut out of it.
+static func pieces(rect: Rect2, cuts: Array[PackedVector2Array]) -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = [
+		PackedVector2Array(
+			[
+				rect.position,
+				Vector2(rect.end.x, rect.position.y),
+				rect.end,
+				Vector2(rect.position.x, rect.end.y)
+			]
+		)
+	]
+	for cut: PackedVector2Array in cuts:
+		var left: Array[PackedVector2Array] = []
+		for poly: PackedVector2Array in out:
+			left.append_array(Geometry2D.clip_polygons(poly, cut))
+		out = left
 	return out
 
 

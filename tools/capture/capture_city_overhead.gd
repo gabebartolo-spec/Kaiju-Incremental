@@ -7,7 +7,8 @@ extends SceneTree
 ## Needs a window and the off-screen no_focus override.cfg on this PC (or CI):
 ##   godot --path . --resolution 3840x2160 --fixed-fps 60 \
 ##     --script tools/capture/capture_city_overhead.gd -- --stage=1 --out=<dir> \
-##     [--island [--pick=k]]
+##     [--island [--pick=k]] [--continent=<id>]   (that continent's own city, D-435)
+##     [--clear]   (distance fog off: from this height it hides the street plan)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 90  # frames for streaming and lights to settle before the still
@@ -26,12 +27,25 @@ func _run() -> void:
 	if not Kit.window_ok():
 		quit(2)
 		return
-	var a := Kit.args({"stage": 1, "out": "user://overhead", "island": false, "seed": 0, "pick": 0})
+	var a := Kit.args(
+		{
+			"stage": 1,
+			"out": "user://overhead",
+			"island": false,
+			"seed": 0,
+			"pick": 0,
+			"continent": "",
+			"clear": false
+		}
+	)
 	var stage: int = a["stage"]
 	var out: String = a["out"]
+	var continent := str(a["continent"])  # its own city (D-435); "" the default plan
 	DirAccess.make_dir_recursive_absolute(out)
 	var stats := Kit.stats("reptilian", Kit.STAGE_LEVELS[stage - 1])
-	var layout := CityGrowth.layout(Content.tuning(), stage, Seeds.make("city", Num.i(a["seed"])))
+	stats["continent"] = continent
+	var rng := Seeds.make("city", Num.i(a["seed"]))
+	var layout := CityGrowth.layout(Content.tuning(), stage, rng, continent)
 	var rampage := Kit.rampage("reptilian", stats, Num.i(a["seed"]), layout)
 	root.add_child(rampage)
 	if a["island"]:
@@ -43,13 +57,15 @@ func _run() -> void:
 	var sim := rampage.sim
 	var cam := Kit.camera(root)
 	cam.fov = FOV
-	var shot := "stage%d_overhead" % stage
+	var shot := ("%s_" % continent if continent != "" else "") + "stage%d_overhead" % stage
 	var reach := sim.arena_half + Num.f(sim.city["view_beyond"])
 	var high := reach / tan(deg_to_rad(FOV * 0.5))
 	cam.position = Vector3(0.0, high, 0.0)
 	cam.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	for k: int in SETTLE:
 		cam.make_current()
+		if a["clear"]:
+			_no_fog(root)
 		await process_frame
 	print("capture: ", Kit.still(self, out, shot))
 	quit(0)
@@ -113,3 +129,14 @@ static func _road_back(plan: Dictionary, spot: Vector2) -> Vector2:
 			if dir.y > 0.0:
 				best = dir
 	return nodes[n] + best * ISLAND_BACK
+
+
+## Distance and volumetric fog off on every WorldEnvironment (weather may set it each frame).
+func _no_fog(node: Node) -> void:
+	if node is WorldEnvironment:
+		var env := (node as WorldEnvironment).environment
+		if env != null:
+			env.fog_enabled = false
+			env.volumetric_fog_enabled = false
+	for child: Node in node.get_children():
+		_no_fog(child)

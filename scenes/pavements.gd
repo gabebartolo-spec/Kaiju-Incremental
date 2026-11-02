@@ -27,8 +27,11 @@ func _init(sim: RampageSim) -> void:
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		var use := str(block["use"])
-		if use in ["outer", "river", "harbour"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
-			continue  # past the edge, the river or the sea bay: no one walks on the water
+		if (
+			use in ["outer", "river", "harbour", "shore"]
+			or maxf(absf(rect.end.x), absf(rect.end.y)) > half
+		):
+			continue  # past the edge, the river, the sea bay or the fjord: no one walks on the water
 		# The pavement line, the same distance in from the kerb as round every other block.
 		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
 		var size := ring.size * 0.5
@@ -37,7 +40,7 @@ func _init(sim: RampageSim) -> void:
 		for c: Vector2 in CORNERS:
 			nodes.append(ring.get_center() + c * size)
 			links.append([])
-			in_road.append(1 if cut and not CityGen.road_at(diagonal, nodes[-1]).is_empty() else 0)
+			in_road.append(1 if cut and not _road_at(diagonal, nodes[-1]).is_empty() else 0)
 		for c: int in 4:
 			var a := first + c
 			var b := first + (c + 1) % 4
@@ -46,13 +49,30 @@ func _init(sim: RampageSim) -> void:
 	_cross_streets()
 
 
-## The plan with only its diagonal avenue among the streets (CityGen.road_at's input).
+## The plan with only its diagonal avenue among the streets (_road_at's input).
 static func _diagonal_only(plan: Dictionary) -> Dictionary:
 	var avenue: Array[Dictionary] = []
 	for road: Dictionary in plan["streets"]:
 		if str(road["kind"]) == CityGen.DIAGONAL:
 			avenue.append(road)
 	return {"nodes": plan["nodes"], "streets": avenue}
+
+
+## The non-alley street whose carriageway holds p (between its two crossings), or {}. Alleys
+## have no pavement and carry people, so they do not count.
+static func _road_at(plan: Dictionary, p: Vector2) -> Dictionary:
+	var nodes: Array[Vector2] = plan["nodes"]
+	for street: Dictionary in plan["streets"]:
+		if str(street["kind"]) == CityGen.ALLEY:
+			continue
+		var from: Vector2 = nodes[Num.i(street["from"])]
+		var to: Vector2 = nodes[Num.i(street["to"])]
+		var dir := (to - from).normalized()
+		var along := (p - from).dot(dir)
+		var half := Num.f(street["width"]) * 0.5
+		if along > 0.0 and along < from.distance_to(to) and absf((p - from).cross(dir)) < half:
+			return street
+	return {}
 
 
 ## Crossings: a corner links to the nearest corner of another block straight across a street.

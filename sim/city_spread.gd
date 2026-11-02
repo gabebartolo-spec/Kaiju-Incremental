@@ -173,7 +173,7 @@ static func _clear(site: Dictionary, placed: Array[Dictionary]) -> bool:
 ## D-381; the exact spot lies a few metres out in the water, which rise_slack covers), else the
 ## middle of the river's row on the city's axis. INF with neither.
 static func rise_estimate(zs: Array[float], cfg: Dictionary) -> Vector2:
-	if cfg.has("harbour"):
+	if CityHarbour.on(cfg):
 		var h: Dictionary = cfg["harbour"]
 		var x := Num.f(h["rise_x"])
 		return Vector2(x, CityHarbour.shore_at(h, x))

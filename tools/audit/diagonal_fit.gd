@@ -6,7 +6,10 @@ extends SceneTree
 ## sizes, street widths or outskirts change (the city_audit suite fails while the data does not
 ## fit). A setting counts only when its neighbours STEP_Z either side fit too (a margin).
 ##   godot --headless --path . --script tools/audit/diagonal_fit.gd -- [--write]
-## --write puts the pick into data/tuning.json (the two rows only).
+##     [--continent=<id>] [--deg=<start>]
+## --write puts the pick into data/tuning.json (the two rows only). --continent fits that
+## continent's city at its stage (its overlay, e.g. Carthago's spokes; printed, not written);
+## --deg searches round that angle instead of the current one.
 
 const DEG_REACH := 3.0  # search the angle this far either side of the current one
 const DEG_STEP := 0.25
@@ -22,12 +25,20 @@ func _initialize() -> void:
 func _start() -> void:
 	await process_frame
 	var cfg: Dictionary = Content.tuning()["city"]
+	var deg_from := NAN
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--continent="):
+			var id := arg.trim_prefix("--continent=")
+			var tier := Num.i(Content.continent(id)["stage"]) + 1
+			cfg = CityGrowth.tuning_for(Content.tuning(), tier, id)["city"]
+		elif arg.begins_with("--deg="):
+			deg_from = arg.trim_prefix("--deg=").to_float()
 	var through: Array = cfg["diagonal_through"]
 	var x0 := Num.f(through[0])
 	var z0 := Num.f(through[1])
 	var deg0 := Num.f(cfg["diagonal_deg"])
 	var full := CityGen.districts(cfg)[-1]
-	var fits_now := CityLineFit.x_runs_fit(cfg, CityGen.diagonal_of(cfg))
+	var fits_now := CityLineFit.x_runs_fit(cfg, CityGen.diagonals_of(cfg))
 	print(
 		(
 			"diagonal_fit: now through (%.2f, %.2f) at %.2f deg: %s"
@@ -35,8 +46,9 @@ func _start() -> void:
 		)
 	)
 	var tries: Array[Array] = []  # [deviation, z, deg], nearest first
-	var deg := deg0 - DEG_REACH
-	while deg <= deg0 + DEG_REACH + 0.001:
+	var centre := deg0 if is_nan(deg_from) else deg_from
+	var deg := centre - DEG_REACH
+	while deg <= centre + DEG_REACH + 0.001:
 		var z := z0 - Z_REACH
 		while z <= z0 + Z_REACH + 0.001:
 			tries.append([_deviation([x0, z0, deg0], [x0, z, deg], full), z, deg])
@@ -71,7 +83,7 @@ func _fits(cfg: Dictionary, x0: float, z: float, deg: float) -> bool:
 		var c := cfg.duplicate()
 		c["diagonal_through"] = [x0, z + dz]
 		c["diagonal_deg"] = deg
-		if not CityLineFit.x_runs_fit(c, CityGen.diagonal_of(c)):
+		if not CityLineFit.x_runs_fit(c, CityGen.diagonals_of(c)):
 			return false
 	return true
 

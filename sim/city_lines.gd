@@ -184,10 +184,15 @@ static func avenues(
 ## every run fits clean).
 ## rng: the plan's own stream (the first district's lines and the avenue picks); later districts
 ## and the outskirts draw from their own (map_seed + 2, + 1).
-static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) -> Dictionary:
+## diags: CityGen.diagonals_of(cfg). No inner avenue runs through the plaza where they meet
+## (CityPlaza), whose ground swallows the streets inside it.
+static func draw(
+	rng: RandomNumberGenerator, cfg: Dictionary, diags: Array[Dictionary]
+) -> Dictionary:
 	var rings := CityGen.districts(cfg)
 	var outer := Num.f(cfg["outer_half"])
-	var x_rule := CityLineFit.x_rule(cfg, diag, rings)
+	var x_rule := CityLineFit.x_rule(cfg, diags, rings)
+	var meet: Vector2 = diags[0]["at"]
 	var gaps := gaps(cfg)
 	# The x-lines come first: the z-lines then sit between the diagonal's crossings with them
 	# (CityLineFit).
@@ -202,11 +207,13 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 	var xs := _lay(
 		streams, rings, outer, [gaps["long"], gaps["far_long"]], [inner_rule, x_rule], bay_x
 	)
-	var x_fits := _x_fits(x_rule, xs, cfg, bay_x)
+	var x_clear := _x_fits(x_rule, xs, cfg, bay_x)
+	var x_fits := func(i: int) -> bool:
+		return x_clear.call(i) and not CityPlaza.swallows(xs, i, meet.x, cfg)
 	var avenues_x := avenues(rng, xs, rings, x_fits, cfg)
 	var avenue_at: Array[float] = []
 	avenue_at.assign(avenues_x.keys().map(func(i: int) -> float: return xs[i]))
-	var z_rule := CityLineFit.z_rule(cfg, diag, xs, rings, avenue_at)
+	var z_rule := CityLineFit.z_rule(cfg, diags, xs, rings, avenue_at)
 	z_rule["report"] = report
 	var zs := _lay(
 		streams, rings, outer, [gaps["short"], gaps["far_short"]], [z_rule, z_rule], bay_z
@@ -214,7 +221,11 @@ static func draw(rng: RandomNumberGenerator, cfg: Dictionary, diag: Dictionary) 
 	var need := (
 		CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + CityGen.width_of(CityGen.AVENUE, cfg) * 0.5
 	)
-	var z_fits := func(j: int) -> bool: return CityLineFit.clearance(diag, "z", zs[j], xs) >= need
+	var z_fits := func(j: int) -> bool:
+		return (
+			CityLineFit.clearance(diags, "z", zs[j], xs) >= need
+			and not CityPlaza.swallows(zs, j, meet.y, cfg)
+		)
 	var avenues_z := avenues(rng, zs, rings, z_fits, cfg)
 	return {
 		"xs": xs,
@@ -262,4 +273,4 @@ static func _lay(
 static func fit_breaks(cfg: Dictionary) -> int:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Num.i(cfg["map_seed"])  # CityGen.map's own stream
-	return Num.i(draw(rng, cfg, CityGen.diagonal_of(cfg))["breaks"])
+	return Num.i(draw(rng, cfg, CityGen.diagonals_of(cfg))["breaks"])

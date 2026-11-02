@@ -2501,6 +2501,30 @@
         },
         "diagonal_through": {"type": "array", "items": {"$ref": "#/$defs/num"}},
         "diagonal_deg": {"$ref": "#/$defs/num"},
+        "diagonal_count": {"$ref": "#/$defs/int"},
+        "diagonal_min_cross_deg": {"$ref": "#/$defs/num"},
+        "diagonal_plaza": {"$ref": "#/$defs/num"},
+        "layout": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {"enum": ["bay", "cothon", "fjord"]},
+            "radius": {"$ref": "#/$defs/num"},
+            "ring": {"$ref": "#/$defs/num"},
+            "ring_points": {"$ref": "#/$defs/int"},
+            "x": {"$ref": "#/$defs/num"},
+            "width": {"$ref": "#/$defs/num"},
+            "meander": {"type": "array", "items": {"$ref": "#/$defs/num"}},
+            "quay": {"$ref": "#/$defs/num"},
+            "rise_z": {"$ref": "#/$defs/num"},
+            "bank_inset": {"$ref": "#/$defs/num"},
+            "step": {"$ref": "#/$defs/num"},
+            "canals": {"type": "array", "items": {"enum": ["n", "e", "s", "w"]}},
+            "canal_width": {"$ref": "#/$defs/num"}
+          },
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "cores": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}},
         "depth_min": {"$ref": "#/$defs/num"},
         "depth_max": {"$ref": "#/$defs/num"},
@@ -2884,7 +2908,7 @@
         "tree_leaf_spread", "tree_bark_size", "tree_puff_size", "tree_puff_alpha", "block_long",
         "block_short", "block_far", "avenues", "avenue_width", "street_width", "alley_width",
         "sidewalk", "alley_chance", "parking_chance", "plaza_blocks", "river", "river_depth", "wade_depth", "wade_speed",
-        "river_inset", "quay", "diagonal_through", "diagonal_deg", "cores", "depth_min",
+        "river_inset", "quay", "diagonal_through", "diagonal_deg", "diagonal_count", "diagonal_plaza", "diagonal_min_cross_deg", "layout", "cores", "depth_min",
         "depth_max", "frontage_min", "frontage_max", "tower_chance", "pencil_chance",
         "pencil_height", "yard_chance", "min_height", "max_height", "tier_height",
         "size_scale_per_tier", "young_scale", "growth_per_level", "leap_distance",
@@ -5179,7 +5203,6 @@
                   "far_haze": {"$ref": "#/$defs/num"},
                   "outer_cores": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/num"}}}
                 },
-                "required": ["half", "coast_z", "max_height"],
                 "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
                 "additionalProperties": false
               },

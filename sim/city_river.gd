@@ -141,23 +141,33 @@ static func bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	return out
 
 
-## The diagonal avenue's own bridge over the river (roads suite R2: no road crosses open water
+## Each diagonal avenue's own bridge over the river (roads suite R2: no road crosses open water
 ## off a deck): its centre line from where its carriageway first reaches over the water to where
-## it last does, {from, to, width}; {} when it never crosses.
-static func diagonal_deck(plan: Dictionary, cfg: Dictionary) -> Dictionary:
+## it last does, {from, to, width}; one per diagonal that crosses.
+static func diagonal_decks(plan: Dictionary, cfg: Dictionary) -> Array[Dictionary]:
 	var water := channels(plan, cfg)
-	var diag: Dictionary = plan["diagonal"]
+	var out: Array[Dictionary] = []
+	if water.is_empty():
+		return out
+	for diag: Dictionary in plan["diagonals"]:
+		var deck := _deck(diag, water[0], cfg)
+		if not deck.is_empty():
+			out.append(deck)
+	return out
+
+
+static func _deck(diag: Dictionary, water: Rect2, cfg: Dictionary) -> Dictionary:
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
-	if water.is_empty() or absf(dir.y) < 0.01:
+	if absf(dir.y) < 0.01:
 		return {}
 	var width := CityGen.width_of(CityGen.DIAGONAL, cfg)
 	var lean := width * 0.5 * absf(dir.x)  # how far the carriageway's edges reach past its centre in z
 	var ends: Array[Vector2] = []
-	for z: float in [water[0].position.y - lean, water[0].end.y + lean]:
+	for z: float in [water.position.y - lean, water.end.y + lean]:
 		ends.append(at + dir * ((z - at.y) / dir.y))
 	var mid := (ends[0] + ends[1]) * 0.5
-	if mid.x < water[0].position.x or mid.x > water[0].end.x:
+	if mid.x < water.position.x or mid.x > water.end.x:
 		return {}
 	return {"from": ends[0], "to": ends[1], "width": width}
 

@@ -93,7 +93,11 @@ func _on_edge(r: Rect2, edge: int, t: float) -> Vector2:
 ## the blocks (little plazas, the way Broadway leaves them). Past the playable edge the kerb row
 ## runs on as far as the camera sees (D-062), clear of the skyline's stand-ins.
 func diagonal() -> void:
-	var diag: Dictionary = _plan["diagonal"]
+	for diag: Dictionary in _plan["diagonals"]:
+		_line(diag)
+
+
+func _line(diag: Dictionary) -> void:
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
 	var side := Vector2(-dir.y, dir.x)

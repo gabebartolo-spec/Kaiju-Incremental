@@ -14,10 +14,16 @@ extends RefCounted
 ## plan["rise_bank"] (on the sand straight up the beach). Pure.
 
 
+## True when the city has the beachfront: it has "harbour" tuning and its layout is the bay
+## (CityWater; Carthago and Thule rise from their own water, D-435).
+static func on(cfg: Dictionary) -> bool:
+	return cfg.has("harbour") and CityWater.kind(cfg) == CityWater.BAY
+
+
 ## The front between the street centre lines: the whole map north of the back street; an empty
 ## Rect2 without one.
 static func rect_of(cfg: Dictionary) -> Rect2:
-	if not cfg.has("harbour"):
+	if not CityHarbour.on(cfg):
 		return Rect2()
 	var outer := Num.f(cfg["outer_half"]) + 1.0
 	return Rect2(-outer, -outer, outer * 2.0, Num.f(cfg["harbour"]["back_z"]) + outer)
@@ -34,7 +40,7 @@ static func in_any(cfg: Dictionary, rect: Rect2) -> bool:
 static func pins(cfg: Dictionary) -> Dictionary:
 	var xs: Array[float] = []
 	var zs: Array[float] = []
-	if cfg.has("harbour"):
+	if CityHarbour.on(cfg):
 		zs.append(Num.f(cfg["harbour"]["back_z"]))
 	return {"x": xs, "z": zs}
 
@@ -280,14 +286,14 @@ static func from_shore(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
 
 ## The sea's surface (world y): city "harbour" "sea_level".
 static func sea(cfg: Dictionary) -> float:
-	return Num.f(cfg["harbour"]["sea_level"]) if cfg.has("harbour") else 0.0
+	return Num.f(cfg["harbour"]["sea_level"]) if CityHarbour.on(cfg) else 0.0
 
 
 ## The sea floor at the rise (world y): the sea's surface less city "harbour" "seabed_depth"
 ## (EmergeReach.fit: the stage's biggest body crouched, plus "seabed_clear"; the data's own
 ## figure until it is fitted).
 static func seabed(cfg: Dictionary) -> float:
-	return sea(cfg) - Num.f(cfg["harbour"]["seabed_depth"]) if cfg.has("harbour") else 0.0
+	return sea(cfg) - Num.f(cfg["harbour"]["seabed_depth"]) if CityHarbour.on(cfg) else 0.0
 
 
 ## The wading floor (world y): city "wade_depth" under the sea's surface, where the shelf levels

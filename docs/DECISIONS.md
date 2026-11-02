@@ -4,6 +4,35 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-01 · D-436 · Director · Every city is the adult city at every stage
+Asked why the city grows with the kaiju (D-039, D-254 half-widths 75 / 120 / 225 m), his words: "just make every city
+the same size (adult kaiju city)"; "if our baby kaiju cant destroy the whole city, thats not a problem, thats a design
+decision we can set different win conditions for Ostia other than 'level the city'"; "the grind is the game, the skill
+tree matters more than anything our city/level structure is just to give more narrative structure and momentum". Q:
+should the baby start in the full adult city, with all districts and 40 m towers? A: "Yes, full city". So every stage
+runs the adult city (tuning.json city: half 225, coast 295 m north, towers to 40 m, tower chance 0.65, the adult
+skyline cores); a stage keeps only its fog and haze (the camera still scales with the kaiju), army and air. Every
+landmark spot stands from stage 1. Replaces D-039's growing city and D-254's per-stage widths; Ostia's own win
+condition is to come.
+Same day, Carthago's 13 deg spokes now cross the adult city's outer streets under the road rule's 20 deg; he picked
+"Drop sharp street bits": spokes keep 13 deg and full length, a street piece a spoke crosses at under
+city.diagonal_min_cross_deg (20) is left out and the blocks either side abut (CityLineFit.sharp_cells). Such a steep
+spoke drifts too slowly for the line fit (3.5 m per 15 m block), so its crossing of a street beside a grid junction
+is left out too (no "close" junctions). Roads suite on/off fixture: Carthago with 20 vs 0.
+
+## 2026-11-01 · D-435 · Director · Each demo map has its own layout and emerge: Ostia beach, Carthago harbour, Thule fjord
+Overworld plan row C1. Tuning the grid per continent (two diagonals and a plaza for Carthago, longer blocks for Thule)
+was built and shown at 1080p; his words: "they all look pretty much identical. the layouts should be completely
+different. we will have to craft unique 'emerge' scenes for each map. only one map should have the water layout like
+that". His picks: Ostia Minor keeps today's layout (sea and beach, harbour, river band, rises from the bay; D-381);
+Carthago a circular harbour (a round naval harbour mid-city, streets radiating from it, the kaiju bursts up out of
+it); Thule a fjord through ice (a narrow fjord cuts the city lengthways, the kaiju breaks up through its ice). Each
+map is shown first as a 1080p top-down plan from the sim (streets, water, emerge point) for his yes, then built. He
+added: "we will probably need to make more buildings and landmarks, we have tripo and meshy for that" (each spend
+still needs his written yes and cap here; Meshy enters LICENSING_REGISTER before its first model). On the plans:
+Carthago's harbour alone was "a random inner city lake": it "has to somehow be connected to the edge of the map". Of
+one canal south, two (north-south) or four (a cross), he picked one canal south, 14 m wide, to the map's edge.
+
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
 His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
 fade? A: "Gentle fade". Why: the ocean's FFT cascades (8.8, 5.7, 1.6 m tiles) have no mip chain, so from high up one
@@ -360,39 +389,3 @@ tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last
 alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
 plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
 suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
-
-## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
-His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
-fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
-every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
-road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
-man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
-(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
-The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
-stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
-wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1. Built (10-30) as pool models
-P01-P03 authored in code (tools/port/build_port.py, no Tripo spend), district "port", role "fixed": CityPort stands
-the same 4 cranes, 3 sheds and 29 stacks on the quay and yard in every city, where the real band reaches (stage 3).
-
-## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
-Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
-row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
-Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
-Stadium-driven tests (flow, crowd) play the stage-2 city.
-
-## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
-His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
-the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not
-practice"). On skills: "can we delete all our skills, i dont think we need them"; Q: what should happen to the
-skills? A: "Delete all outright". So: RULEBOOK.md no longer loads; `~/.claude/memory-shared` moved to
-`~/.claude-archive/memory-shared-2026-10-29` and the stop hook no longer asks for lessons; the 14 personal skills in
-`~/.claude/skills` are deleted (app-synced Anthropic skills untouched). `~/.claude/CLAUDE.md` keeps "straight to me",
-no spend, end-with-state and write-concisely. Replaces D-378's rulebook and skill mentions.
-
-## 2026-10-29 · D-378 · Director · Sessions boot on a small core; history is searched, not read at start
-His words (~03:0x): "90% of them are pointless. really we could cull almost everything. no wonder our context is always
-so high". Q: how hard to cut startup reading? A: "Core only (Recommended)". A session boots on its handoff, the CLAUDE.md
-files, the rulebook and the DESIGN sections its task touches. Handoffs hold current state only, max 80 lines; their
-history moves to `~/.claude/handoffs/kaiju/archive/`. The co-lead playbook, roadmap chapters and archives are grepped when
-a task needs the why, never boot reading. Nothing is deleted. Changes: RULEBOOK (Session start, Context), kaiju-handoff
-and game-studio-lead skills; lead handoff cut from 253 to ~60 lines.
