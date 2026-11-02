@@ -5,19 +5,10 @@ extends Node3D
 ## events and state; decides nothing. Part of Rampage.
 ##
 ## Rig hooks (agreed with kaiju-motion, called only when the model has them):
-## tail_sweep(side[, "claw"]), grab(limb, at), throw(toward), limb_tip(limb), jaw_open(open),
-## climbing(on).
+## tail_sweep(side[, "claw"]), jaw_open(open).
 
-const INK := Color("7dff3a")
-const EGG := Color("e8dcb8")
-const YOUNG := Color("3a2a22")
-const CAR := Color("8a3b2e")
 const TRACER := Color("ffd27a")
 const COATS_SHOWN := 4
-## Shares of a throw's flight: the tentacle reaching (the rig's 0.3 s reach in 0.7 s), then
-## lifting the object on its tip; the rest is the throw.
-const REACH_SHARE := 0.43
-const LIFT_SHARE := 0.22
 
 var sim: RampageSim
 ## The rampage's sounds (Rampage sets it): the helicopters' gun and crash.
@@ -34,11 +25,9 @@ var _tint: Color
 var _helis: Dictionary = {}
 var _vip: VipView  # the leader's escape helicopter (D-149)
 var _wrecks: HeliWreck
-var _young: Dictionary = {}
 var _thunder: ThunderBeam
 var _strike: AirstrikeView  # time's up: the jet run (D-263)
 var _dust_t := 0.0
-var _climbing := false
 var _glow_mats: Dictionary = {}
 
 
@@ -118,15 +107,15 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	elif kind in ["strike_windup", "beam_start", "beam_end"]:
 		if not _thunder.on_event(event, kaiju_at):
 			return false
-	elif not PowerSplash.play(_city, event, kaiju_at, bs) and not _acted(kind, event, kaiju_at, bs):
+	elif not _acted(kind, event, kaiju_at, bs):
 		return rooftops.on_event(event, kaiju_at)
 	if not played.has(str(event["type"])):
 		played.append(str(event["type"]))
 	return true
 
 
-## The powers PowersView plays itself (the arms' sweeps, coats, a limb's strike, grabs,
-## helicopters); false for any other event.
+## The powers PowersView plays itself (the arms' sweeps, coats, helicopters); false for any
+## other event.
 func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bool:
 	match kind:
 		"tail_sweep":
@@ -143,12 +132,6 @@ func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bo
 			_swiped(event, kaiju_at)
 		"coated", "fire_burning":
 			_lit(event)
-		"limb":
-			var to: Vector2 = event["at"]
-			_streak(kaiju_at + Vector3(0, 1.5 * bs, 0), _w(to, 1.0), _tint, 0.18)
-			_city.fx.dust(_w(to, 0.4), 0.6)
-		"grab":
-			_thrown(event, kaiju_at)
 		"heli_spawned":
 			_helis[Num.i(event["heli"])] = HelicopterModel.added_to(self)
 		"heli_fired":
@@ -160,7 +143,6 @@ func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bo
 	return true
 
 
-## Fire (beam) or ink glowing on a few of the newly coated chunks.
 ## A claw swipe crosses now: its arm's sweep, the slash, the lash sound, cars and people crushed.
 func _swiped(event: Dictionary, kaiju_at: Vector3) -> void:
 	var arc: Dictionary = {}
@@ -176,24 +158,12 @@ func _swiped(event: Dictionary, kaiju_at: Vector3) -> void:
 func _coated(event: Dictionary) -> void:
 	var b := sim.buildings[Num.i(event["building"])]
 	var cells: Array[Vector3i] = event["cells"]
-	var ink := str(event["kind"]) == "ink"
 	for n: int in mini(COATS_SHOWN, cells.size()):
 		var cell := cells[n * cells.size() / mini(COATS_SHOWN, cells.size())]
-		var at := b.chunk_world(cell)
-		if ink:
-			var blob := _box(Vector3.ONE * 1.05, INK)
-			blob.position = at
-			add_child(blob)
-			var tween := blob.create_tween()
-			tween.tween_property(
-				blob, "scale", Vector3.ONE * 0.2, Num.f(sim.powers_cfg["ink_seconds"])
-			)
-			tween.tween_callback(blob.queue_free)
-		else:
-			_city.burn_chunk(Num.i(event["building"]), cell, 0.45)
+		_city.burn_chunk(Num.i(event["building"]), cell, 0.45)
 
 
-## A coat (beam, ink) on chunks, or a whole building the sim set burning.
+## A coat (the beam's fire) on chunks, or a whole building the sim set burning.
 func _lit(event: Dictionary) -> void:
 	if str(event["type"]) == "coated":
 		_coated(event)
@@ -218,50 +188,6 @@ func _burning(index: int) -> void:
 			cell.y = b.frame.top_below(cell.x, cell.z, b.height)
 			if cell.y >= 0:
 				_city.burn_chunk(index, cell, size)
-
-
-func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:
-	var kind := str(event["kind"])
-	var from := _w(event["from"], 1.0)
-	var to := _w(event["to"], 0.5)
-	_hook("grab", [0, from])
-	var node: Node3D
-	match kind:
-		"tank":
-			node = TankModel.new()
-		"heli":
-			node = HelicopterModel.new()
-		_:
-			node = _box(Vector3(1.0, 0.7, 2.0), CAR, false)
-	add_child(node)
-	node.position = from
-	# The sim's flight (throw_seconds) runs from the grab to the landing. The tentacle reaches
-	# (REACH_SHARE), lifts the object on its tip (LIFT_SHARE), then throws it to land on time.
-	var seconds := Num.f(sim.powers_cfg["throw_seconds"])
-	var hold := kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
-	var tween := node.create_tween()
-	tween.tween_interval(seconds * REACH_SHARE)
-	tween.tween_method(
-		func(t: float) -> void: node.position = from.lerp(_tip(hold), t),
-		0.0,
-		1.0,
-		seconds * LIFT_SHARE
-	)
-	tween.tween_callback(func() -> void: _hook("throw", [to]))
-	var flight := seconds * (1.0 - REACH_SHARE - LIFT_SHARE)
-	tween.tween_property(node, "position", to, flight)
-	tween.parallel().tween_property(node, "rotation", Vector3(TAU, 0, PI), flight)
-	tween.tween_callback(node.queue_free)
-	if not _kaiju.has_method("limb_tip"):
-		_streak(kaiju_at + Vector3(0, 1.5, 0), from, _tint, 0.3)
-
-
-## Where the holding tentacle's tip is (the rig's limb_tip), or `fallback` without that rig.
-func _tip(fallback: Vector3) -> Vector3:
-	if _kaiju.has_method("limb_tip"):
-		var tip: Vector3 = _kaiju.call("limb_tip", 0)
-		return tip
-	return fallback
 
 
 func _heli_fired(id: int, kaiju_at: Vector3) -> void:
@@ -309,8 +235,8 @@ func helis() -> Array[Node3D]:
 	return out
 
 
-## Per frame: helicopters on their circles, the young on their hunt, the beam along the
-## kaiju's facing, and momentum's dust trail.
+## Per frame: helicopters on their circles, the beam along the kaiju's facing, and momentum's
+## dust trail.
 func update(delta: float, kaiju_at: Vector3) -> void:
 	var bs := sim.body_scale()
 	var turn := minf(1.0, delta * Num.f(Content.section("vehicles")["heli_turn"]))
@@ -324,44 +250,8 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 				var heading := atan2(-to.x, -to.z)
 				node.rotation.y = lerp_angle(node.rotation.y, heading, turn)
 			node.aim(kaiju_at + Vector3(0, 3.0 * bs, 0))
-	_track_young()
 	_thunder.update(kaiju_at)
-	var climbing := sim.stand_y > 0.5
-	if climbing != _climbing:
-		_climbing = climbing
-		_hook("climbing", [climbing])
 	_dust_t -= delta
 	if sim.powers.momentum > 0.5 and _dust_t <= 0.0:  # a titan's run (Momentum), always on
 		_dust_t = 0.15
 		_city.fx.dust(kaiju_at - _w(sim.facing) * bs + Vector3(0, 0.3, 0), bs * sim.powers.momentum)
-
-
-## The young on their hunt: an egg's node until it hatches, then a young's; gone ones freed.
-func _track_young() -> void:
-	var seen := {}
-	for y: Brood.Young in sim.brood.young:
-		seen[y.id] = true
-		var node: Node3D = _young.get(y.id)
-		if node == null:
-			node = _young_node(y.hatch > 0.0)
-			_young[y.id] = node
-		if y.hatch <= 0.0 and node.get_meta("egg", false):
-			node.queue_free()
-			node = _young_node(false)
-			_young[y.id] = node
-		var at := _w(y.pos)
-		var to := at - node.position
-		node.position = at
-		if to.length() > 0.01:
-			node.rotation.y = atan2(-to.x, -to.z)
-	for id: int in _young.keys():
-		if not seen.has(id):
-			var gone: Node3D = _young[id]
-			gone.queue_free()
-			_young.erase(id)
-
-
-func _young_node(egg: bool) -> Node3D:
-	var node := BroodModel.make(egg, _box)
-	add_child(node)
-	return node

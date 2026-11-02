@@ -30,7 +30,7 @@ CHECKED = ["en"]
 DATA_FIELDS: dict[str, list[str]] = {
     "species.json": ["name", "blurb"],
     "continents.json": ["stomp_damage", "hp", "speed"],  # bonus_lines (D-432)
-    "upgrades.json": ["name", "desc", "reptilian", "insectoid", "cephalopod"],
+    "upgrades.json": ["name", "desc", "reptilian"],
     "looks.json": [
         "clear", "dusk", "fog", "morning", "night", "noon", "overcast", "rain", "thunderstorm",
         "random_label",

@@ -5,9 +5,9 @@ tracing the body's own limbs, voxelizes the surface and tags every voxel with it
     blender -b --python tools/blender/rig_voxel.py -- <in.glb> <out_basename> <species> <height_vox>
 
 Writes <out>.kvox (version 2, one pose; each voxel's flags byte is its bone index) and <out>.rig.json
-(type "biped", "hexapod" or "radial"; bones: name, parent, head, tail in voxel units with y up and -Z forward,
-plus "physics" chains). The insectoid gets the hexapod skeleton (D-022 mantis), the cephalopod a
-radial one (mantle + 8 tentacle chains), the reptilian a biped.
+(type "biped" or "hexapod"; bones: name, parent, head, tail in voxel units with y up and -Z forward,
+plus "physics" chains). The insectoid gets the hexapod skeleton (D-022 mantis), the reptilian a
+biped.
 Colours come from the model's base-colour texture when it has one (a Tripo textured export),
 else from data/species.json. Pure Blender + numpy.
 """
@@ -331,97 +331,6 @@ def hexapod_skeleton(v, tris, lo, hi):
     return bones
 
 
-# Radial bodies (shares of the body's width): how wide a found tentacle claims the surface (so
-# the next tip is a different tentacle), how thick a tentacle's voxels may be around its chain,
-# and how long (share of the longest) a tip must reach to count as a tentacle.
-TENTACLE_CLAIM = 0.09
-TENTACLE_THICK = (0.09, 0.04)  # at the root, at the tip
-TENTACLE_MIN_REACH = 0.5
-# How far (times its root thickness) from its chain a tentacle may claim voxels.
-TENTACLE_REACH = 1.3
-# Mantle seeds: within this share of the mantle's radius. A run of mantle voxels with fewer
-# voxels than this per step along it is an arm, not the head's shell.
-MANTLE_SEED = 0.6
-MANTLE_FLOOR = 0.55
-ARM_PER_STEP = 30
-
-
-def radial_skeleton(v, tris, lo, hi, segments=6, max_arms=16):
-    """Bones for an octopus- or hydra-like body: a mantle on the midline and one physics chain per
-    tentacle, however many the sculpt has. Tentacles are found one at a time: the surface point
-    furthest (over the surface) from the body is a tip; its path back to the body is that
-    tentacle, and everything near the path is claimed so the next tip is a different tentacle.
-    It stops when the furthest unclaimed point is short of a tentacle's reach."""
-    H = hi[2] - lo[2]
-    W = max(hi[0] - lo[0], hi[1] - lo[1])
-    # The body's centre is under its mantle/head (the upper body), not the bounding box's centre.
-    top = v[v[:, 2] > lo[2] + H * 0.55]
-    centre = top[:, :2].mean(0) if len(top) else np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2])
-    # The core is under the mantle, low: a path from a tip ends where its arm meets the body,
-    # never climbing the face to the crown.
-    core = np.where((np.linalg.norm(v[:, :2] - centre, axis=1) < W * 0.06) & (v[:, 2] < lo[2] + H * 0.35))[0]
-    if len(core) < 3:
-        core = np.where(np.linalg.norm(v[:, :2] - centre, axis=1) < W * 0.06)[0]
-    dist, prev = geodesic(v, tris, core)
-    reach = np.where(np.isfinite(dist), dist, -1.0)
-    body = v[core]
-    base = np.array([centre[0], centre[1], body[:, 2].min() + H * 0.05])
-    crown = np.array([centre[0], centre[1], hi[2]])
-    bones = [{"name": "mantle0", "parent": None, "head": base, "tail": crown, "physics": False}]
-    free = reach.copy()
-    # A tip is out past the mantle (a big round head has far-away points of its own).
-    flat = np.linalg.norm(v[:, :2] - centre, axis=1)
-    upper = flat[v[:, 2] > lo[2] + H * 0.55]
-    # The mantle dominates the upper body (raised tentacles are a minority): its median radius.
-    mantle_r = np.median(upper) * 1.4 if len(upper) else W * 0.1
-    free[flat < mantle_r * 1.05] = -1.0
-    # Near the head, tips hang low (a big head's crown is not one); out wide, a raised arch may be.
-    free[(v[:, 2] > lo[2] + H * 0.6) & (flat < mantle_r * 1.6)] = -1.0
-    # A tip is thin: little surface around it (a head's shell is broad).
-    cell = (v / (W * 0.04)).astype(int)
-    _, inverse, counts = np.unique(cell, axis=0, return_inverse=True, return_counts=True)
-    crowd = counts[inverse.ravel()]
-    free[crowd > np.percentile(crowd, 60)] = -1.0
-    MANTLE_ZONE.update({"width": W, "centre": centre, "radius": mantle_r, "floor": lo[2] + H * MANTLE_FLOOR})
-    longest = free.max()
-    radius = W * TENTACLE_CLAIM
-    found = []  # outer path points of every tentacle so far
-    count = 0
-    for _ in range(max_arms * 3):
-        if count >= max_arms:
-            break
-        tip = int(np.argmax(free))
-        if free[tip] < longest * TENTACLE_MIN_REACH:
-            break
-        path = path_to_core(v, prev, tip)
-        # Claim this tentacle: every vertex near its outer path, so the next tip is another one.
-        outer = path[: max(2, int(len(path) * 0.9))]
-        for chunk in np.array_split(outer, max(1, len(outer) // 50)):
-            near = np.min(np.linalg.norm(v[:, None, :] - chunk[None, :, :], axis=2), axis=1) < radius
-            free[near] = -1.0
-        # A tip whose path mostly runs alongside a tentacle already found is that tentacle again.
-        span = path[: max(2, int(len(path) * 0.6))]
-        if found:
-            seen = np.concatenate(found)
-            close = np.min(np.linalg.norm(span[:, None, :] - seen[None, :, :], axis=2), axis=1)
-            if np.mean(close < radius * 1.5) > 0.3:
-                continue
-        found.append(outer[:: max(1, len(outer) // 40)])
-        joints = [at_arc(path, f) for f in np.linspace(0.92, 0.0, segments + 1)]
-        # A "tentacle" lying high from root to tip is a ridge on the mantle's own shell.
-        if joints[0][2] > lo[2] + H * 0.3 and joints[-1][2] > lo[2] + H * 0.3:
-            continue
-        parent = "mantle0"
-        for j in range(segments):
-            name = f"tentacle{count}_{j}"
-            bones.append({"name": name, "parent": parent, "head": joints[j], "tail": joints[j + 1],
-                          "physics": True})
-            parent = name
-        count += 1
-    print(f"radial: {(len(bones) - 1) // segments} tentacles")
-    for b in bones:
-        b["head"], b["tail"] = np.asarray(b["head"]).tolist(), np.asarray(b["tail"]).tolist()
-    return bones
 
 
 JAW_CLOSE_MAX = 1.0
@@ -485,12 +394,9 @@ def split_jaw(points, owner, bones, cell, rgb):
 # Where the hexapod's head is (set by hexapod_skeleton): voxels above the neck near the head's
 # centre belong to the head whatever bone is nearest, so the head turns as one piece.
 HEAD_ZONE = {}
-# Where a radial body's mantle is (set by radial_skeleton): voxels above tentacle height within
-# its radius stay on the mantle, so a big head never flaps about on a tentacle.
-MANTLE_ZONE = {}
 
 # Limb roots sit against the body; their distance is stretched so body voxels stay on the body.
-ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4, "antenna": 4.0, "tentacle": 2.0}
+ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4, "antenna": 4.0}
 
 
 def close_jaw(keys, values, owner, bones, scale, origin, shut=1.0):
@@ -596,36 +502,6 @@ def neighbour_table(keys):
     return np.stack([grid[k[:, 0] + a, k[:, 1] + b, k[:, 2] + c] for a, b, c in steps], axis=1)
 
 
-def grow(label, nb, allow=None):
-    """Fills unlabelled voxels (-1) outward from the labelled ones, one shell at a time (each
-    takes the commonest label among its labelled neighbours): a Voronoi split over the body, so
-    every region stays joined to its seeds. allow[i, c] (optional) says voxel i may take label c."""
-    label = label.copy()
-    while True:
-        todo = np.where(label < 0)[0]
-        if len(todo) == 0:
-            return label
-        around = np.where(nb[todo] >= 0, label[np.maximum(nb[todo], 0)], -1)
-        if allow is not None:
-            ok = allow[todo[:, None], np.maximum(around, 0)]
-            around = np.where(ok, around, -1)
-        has = (around >= 0).any(1)
-        if not has.any():
-            return label  # islands with no seed keep -1
-        rows = todo[has]
-        label[rows] = majority(around[has])
-
-
-def majority(around):
-    """Commonest non-negative value per row (rows must have one)."""
-    top = around.max() + 1
-    counts = np.zeros((len(around), top), dtype=np.int32)
-    for j in range(around.shape[1]):
-        ok = around[:, j] >= 0
-        np.add.at(counts, (np.where(ok)[0], around[ok, j]), 1)
-    return counts.argmax(1)
-
-
 def pieces(label, nb):
     """Connected-component id per voxel (26-connected, same label only)."""
     comp = np.arange(len(label))
@@ -668,59 +544,6 @@ def join_fragments(label, nb, keep=()):
         if moved == 0:
             break
     return label
-
-
-def radial_owners(keys, points, bones):
-    """Bone of every voxel of a radial body. Mantle seeds are the voxels in the mantle's core;
-    each tentacle's seeds are the voxels hugging its chain. The rest is grown from the seeds over
-    the voxel surface, so each tentacle is one joined piece reaching back to the mantle and no
-    slate patch is stranded mid-arm. Speckle where tentacles meet the mantle is smoothed by a
-    majority vote, and any piece left cut off joins what it touches most. A run of mantle
-    voxels reaching further out than the mantle's radius is a tentacle the skeleton missed: it
-    gets a chain of its own. Returns the owners (bones may gain chains)."""
-    nb = neighbour_table(keys)
-    names = [b["name"] for b in bones]
-    centre, mantle_r, W = MANTLE_ZONE["centre"], MANTLE_ZONE["radius"], MANTLE_ZONE["width"]
-    flat = np.linalg.norm(points[:, :2] - centre, axis=1)
-    cell = np.ptp(points[:, 0]) / max(1, np.ptp(keys[:, 0]))
-    owner = np.full(len(points), -1)
-    for _ in range(6):
-        chain = np.array([chain_index(n) for n in names])
-        chains = chain.max() + 1
-        label = np.full(len(points), -1)
-        seeds = (flat < mantle_r * MANTLE_SEED) & (points[:, 2] > MANTLE_ZONE["floor"])
-        label[seeds] = 0
-        # A tentacle may only grow over voxels near its own chain (its surface path is off
-        # centre, so the bound is generous); the mantle may take anything.
-        allow = np.ones((len(points), chains), bool)
-        for c in range(1, chains):
-            own = np.where(chain == c)[0]
-            ds = np.stack([_seg_dist(points, bones[i]) for i in own])
-            # It tapers: each bone may claim less the further out along the chain it is.
-            taper = np.linspace(TENTACLE_THICK[0], TENTACLE_THICK[1], len(own))[:, None]
-            label[(ds.min(0) < W * TENTACLE_THICK[1]) & (label < 0)] = c
-            allow[:, c] = (ds < W * taper * TENTACLE_REACH).any(0)
-        label = grow(label, nb, allow)
-        label = grow(label, nb)
-        label[label < 0] = 0
-        for _ in range(2):
-            around = np.where(nb >= 0, label[np.maximum(nb, 0)], -1)
-            vote = majority(np.c_[around, label, label])  # a voxel's own label counts twice
-            label = vote
-        label = join_fragments(label, nb)
-        label = adopt_islands(points, label, nb, bones, chain)
-        added = missed_tentacle(points, label, nb, bones, seeds, mantle_r, cell)
-        if not added:
-            break
-        names = [b["name"] for b in bones]
-    # Within a chain, each voxel goes to the nearest of that chain's own bones.
-    chain = np.array([chain_index(n) for n in names])
-    for c in range(chains):
-        sel = np.where(label == c)[0]
-        own = np.where(chain == c)[0]
-        d = np.stack([_seg_dist(points[sel], bones[i]) for i in own])
-        owner[sel] = own[np.argmin(d, axis=0)]
-    return owner
 
 
 MANDIBLE_REACH = 0.3
@@ -770,119 +593,6 @@ def whole_limbs(keys, points, owner, bones):
         owner[i] = own[np.argmin([_seg_dist(points[i:i + 1], bones[j])[0] for j in own])]
     print(f"limb fragments rejoined: {len(moved)} voxels")
     return owner
-
-
-def chain_index(name):
-    """0 for the mantle, k + 1 for tentacle k."""
-    return int(name[len("tentacle"):].split("_")[0]) + 1 if name.startswith("tentacle") else 0
-
-
-def walk_from(nb, starts, n):
-    """walk() from several starts at once."""
-    steps = np.full(n, -1)
-    steps[starts] = 0
-    frontier = np.asarray(starts)
-    k = 0
-    while len(frontier):
-        k += 1
-        nxt = nb[frontier].ravel()
-        nxt = np.unique(nxt[nxt >= 0])
-        nxt = nxt[steps[nxt] < 0]
-        steps[nxt] = k
-        frontier = nxt
-    return np.maximum(steps, 0)
-
-
-def walk(nb, start, n):
-    """Steps from `start` to every voxel it reaches over the neighbour table (-1 unreached)."""
-    steps = np.full(n, -1)
-    steps[start] = 0
-    frontier = np.array([start])
-    k = 0
-    while len(frontier):
-        k += 1
-        nxt = nb[frontier].ravel()
-        nxt = np.unique(nxt[nxt >= 0])
-        nxt = nxt[steps[nxt] < 0]
-        steps[nxt] = k
-        frontier = nxt
-    return steps
-
-
-def adopt_islands(points, label, nb, bones, chain):
-    """A loose piece of mantle (a tentacle tip the sculpt left unjoined) goes to the nearest chain."""
-    comp = pieces(label, nb)
-    body = comp[label == 0]
-    if len(body) == 0:
-        return label
-    main = np.bincount(body).argmax()
-    loose = np.where((label == 0) & (comp != main))[0]
-    if len(loose) == 0 or chain.max() == 0:
-        return label
-    for c in np.unique(comp[loose]):
-        idx = np.where(comp == c)[0]
-        d = [np.min([_seg_dist(points[idx], bones[i]).min() for i in np.where(chain == k)[0]])
-             for k in range(1, chain.max() + 1)]
-        label[idx] = 1 + int(np.argmin(d))
-    return label
-
-
-def missed_tentacle(points, label, nb, bones, seeds, mantle_r, cell, segments=6):
-    """Adds a chain for the longest thin run of mantle voxels reaching further (walked voxel to
-    voxel from the mantle's core) than the mantle's radius and ending out past it: an arm the
-    skeleton search missed. The head's own shell is broad, an arm is thin. True if one was added."""
-    body = np.where(label == 0)[0]
-    # The mantle as it ended up (raised arms inflate the skeleton's estimate): its upper half.
-    flat = np.linalg.norm(points[body, :2] - MANTLE_ZONE["centre"], axis=1)
-    upper = points[body, 2] > np.median(points[body, 2])
-    mantle_r = min(mantle_r, float(np.median(flat[upper])) * 1.4) if upper.any() else mantle_r
-    remap = np.full(len(points), -1)
-    remap[body] = np.arange(len(body))
-    nb_b = np.where(nb[body] >= 0, remap[np.maximum(nb[body], 0)], -1)
-    steps = walk_from(nb_b, np.where(seeds[body])[0], len(body))
-    out = steps * cell > mantle_r * 0.5
-    if not out.any():
-        return False
-    sub = np.where(out)[0]
-    remap2 = np.full(len(body), -1)
-    remap2[sub] = np.arange(len(sub))
-    nb_sub = np.where(nb_b[sub] >= 0, remap2[np.maximum(nb_b[sub], 0)], -1)
-    comp = pieces(np.zeros(len(sub), int), nb_sub)
-    best = None
-    for c in np.unique(comp):
-        idx = np.where(comp == c)[0]
-        if len(idx) < 20:
-            continue
-        run = walk(nb_sub, idx[np.argmin(steps[sub[idx]])], len(sub))
-        span = (run.max() * cell) + mantle_r * 0.5
-        thick = len(idx) / max(1, run.max())
-        # An arm's tip is out past the mantle; the far side of the head's own shell is not.
-        tip = points[body[sub[idx[np.argmax(run[idx])]]]]
-        out_far = np.linalg.norm(tip[:2] - MANTLE_ZONE["centre"]) > mantle_r * 1.15
-        if span > mantle_r and thick < ARM_PER_STEP and out_far and (best is None or span > best[0]):
-            best = (span, idx, run)
-    if best is None:
-        return False
-    sub = body[sub]
-    idx, steps = best[1], best[2]
-    tip = int(np.argmax(steps))
-    # Path back: from the tip, always to a neighbour one step nearer.
-    path = [tip]
-    while steps[path[-1]] > 0:
-        cand = nb_sub[path[-1]]
-        cand = cand[cand >= 0]
-        path.append(int(cand[np.argmin(steps[cand])]))
-    pts = points[sub[np.array(path)]]
-    joints = [at_arc(pts, f) for f in np.linspace(0.0, 1.0, segments + 1)]
-    k = max(chain_index(b["name"]) for b in bones)
-    parent = "mantle0"
-    for j in range(segments):
-        name = f"tentacle{k}_{j}"
-        bones.append({"name": name, "parent": parent, "head": np.asarray(joints[segments - j]),
-                      "tail": np.asarray(joints[segments - j - 1]), "physics": True})
-        parent = name
-    print(f"radial: added a chain for a missed arm ({best[0]:.3f} long, {len(idx)} voxels)")
-    return True
 
 
 def nearest_bone(points, bones, side_of, penalty=None):
@@ -995,11 +705,9 @@ def main():
     lo, hi = v.min(0), v.max(0)
     H = hi[2] - lo[2]
     col = vertex_colours(v, n, tris, colors, H)
-    body_plan = {"insectoid": "hexapod", "cephalopod": "radial"}.get(species, "biped")
+    body_plan = {"insectoid": "hexapod"}.get(species, "biped")
     if body_plan == "hexapod":
         bones = hexapod_skeleton(v, tris, lo, hi)
-    elif body_plan == "radial":
-        bones = radial_skeleton(v, tris, lo, hi)
     else:
         bones = biped_skeleton(v, lo, hi)
     scale = (height - 1) / H
@@ -1016,19 +724,16 @@ def main():
             np.linalg.norm(centres_bl - HEAD_ZONE["centre"], axis=1) < HEAD_ZONE["radius"])
         keep = np.array([names[o].startswith("arm") for o in owner])
         owner[in_head & ~keep] = names.index("head0")
-    if body_plan == "radial":
-        owner = radial_owners(keys, centres_bl, bones)
     if body_plan == "biped":
         owner = reclaim_plates(centres_bl, owner, bones)
         rgb = np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
         owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
     values = list(cells.values())
     keys, values, owner = close_jaw(keys, values, owner, bones, scale, origin, jaw_shut)
-    if body_plan != "radial":
-        owner = adopt_orphans(keys, owner)
-        if body_plan == "hexapod":
-            owner = split_mandibles(keys, centres_bl, owner, bones)
-            owner = whole_limbs(keys, centres_bl, owner, bones)
+    owner = adopt_orphans(keys, owner)
+    if body_plan == "hexapod":
+        owner = split_mandibles(keys, centres_bl, owner, bones)
+        owner = whole_limbs(keys, centres_bl, owner, bones)
     values = clean_blemishes(keys, values, owner, bones)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))

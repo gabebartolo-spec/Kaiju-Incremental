@@ -5,10 +5,8 @@ extends RefCounted
 ## RampageSim; split out to keep files small. Pure and seeded.
 ##   Reptilian: the tail lash on the signature (D-280, D-328), Atomic Beam; momentum is always
 ##   on (Momentum, D-337).
-##   Insectoid: glide after a leap while the button is held, climbing (Brood is in Brood).
-##   Cephalopod: squeezing through gaps, Corrosive Ink (limbs, grab and throw: Tentacles).
 ## Shared: buildings block the body (slow it) unless a power says otherwise, and coatings
-## (beam fire, ink) that eat chunks and units over time.
+## (beam fire) that eat chunks and units over time.
 
 ## A chunk is one sim unit across: its centre is this far from its faces.
 const CHUNK_HALF := 0.5
@@ -24,11 +22,8 @@ var momentum: float:
 ## The titan's run (D-337): momentum, crashing through what is under it, the slam.
 var run: Momentum
 var beam_left := 0.0
-var glide_left := 0.0
 ## Coated chunks, worn each step (CoatWear).
 var coats := CoatWear.new()
-## The cephalopod's limbs: hydra strikes, grab and throw (Tentacles).
-var tentacles: Tentacles
 var tail_sweeps := 0
 ## The reptilian's claw rake (Claws, D-095).
 var swipe: ClawSwipe
@@ -39,7 +34,6 @@ var tail_cut := 0
 var _rng: RandomNumberGenerator
 var _ram_cd := 0.0
 var _channels: Variant = null  # the river's channels (CityRiver), found on first need
-var _glide_armed := false
 var _lash_wait := -1.0  # seconds until a wound-up lash strikes; < 0: none
 
 
@@ -49,7 +43,6 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	var run_cfg: Dictionary = cfg["momentum"]
 	run = Momentum.new(sim, run_cfg)
-	tentacles = Tentacles.new(sim, rng)
 	swipe = ClawSwipe.new(sim, cfg)
 	var fire_cfg: Dictionary = cfg["fire"]
 	fire = FireSpread.new(sim, fire_cfg, Seeds.derive(rng, 0xF12E))
@@ -64,11 +57,11 @@ func use_species(species_id: String) -> void:
 	run.use_species(species_id)
 
 
-## --- Movement: blocking, momentum, climbing --------------------------------------------
+## --- Movement: blocking, momentum, wading ----------------------------------------------
 
 
 ## Speed multiplier this step: momentum speeds the walk; buildings in the way slow the body, except
-## when it climbs over them, glides above them, squeezes between them or crashes through them.
+## when it leaps over them or crashes through them.
 func speed_mult() -> float:
 	return _ground_mult() * sim.army_units.taskforce.frost.mult()  # ice on the legs slows it
 
@@ -79,8 +72,6 @@ func _ground_mult() -> float:
 	if sim.airborne:
 		return Num.f(cfg["glide_speed_mult"])
 	var mult := run.speed_mult()
-	if sim.stat("climb") > 0.0:
-		return mult
 	if blocked(sim.kaiju_pos, block_radius()):
 		mult *= Num.f(cfg["block_slow"])
 	return mult
@@ -89,11 +80,10 @@ func _ground_mult() -> float:
 ## The body's footprint for being held up by buildings. It does not grow with the kaiju, and
 ## it stays narrower than a street (block_street_margin inside half its width): a grown kaiju
 ## strides down any street and only the walls it walks into hold it back. It is wider than
-## an alley, so alleys hold it, unless Squeeze shrinks it.
+## an alley, so alleys hold it.
 func block_radius() -> float:
 	var street := Num.f(sim.city["street_width"]) * 0.5 - Num.f(cfg["block_street_margin"])
-	var squeeze := 1.0 - clampf(sim.stat("squeeze"), 0.0, Num.f(cfg["squeeze_max"]))
-	return minf(Num.f(cfg["block_radius"]), street) * squeeze
+	return minf(Num.f(cfg["block_radius"]), street)
 
 
 ## Any standing street-level chunk whose square the circle (pos, radius) overlaps (one a crash
@@ -136,7 +126,7 @@ func turn_toward(from: Vector2, to: Vector2, dt: float) -> Vector2:
 func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 	var turn := absf(old_facing.angle_to(sim.facing)) if moving else 0.0
 	run.build(dt, turn, moving)
-	_climb(dt)
+	sim.stand_y = _wade(dt)
 	_ram(dt)
 	swipe.step(dt)
 	if _lash_wait >= 0.0:
@@ -210,36 +200,7 @@ func _ram(dt: float) -> void:
 	sim.hit_area(front, sim.stat("stomp_damage") * sim.stat("momentum") * momentum)
 
 
-## A climber stands on the highest chunk under it, rising at climb speed; its weight breaks
-## the chunks it stands on.
-func _climb(dt: float) -> void:
-	if sim.stat("climb") <= 0.0 or sim.airborne:
-		sim.stand_y = _wade(dt)
-		return
-	var top := column_top(sim.kaiju_pos)
-	if top <= 0.0:
-		sim.stand_y = _wade(dt)
-		return
-	if top > sim.stand_y:
-		sim.stand_y = minf(top, sim.stand_y + Num.f(cfg["climb_speed"]) * dt)
-	else:
-		sim.stand_y = top
-	if sim.stand_y < 1.0:
-		return
-	var centre := sim.kaiju_pos
-	var load_radius := Num.f(cfg["climb_load_radius"])
-	var y := floori(sim.stand_y) - 1
-	sim.hit_area(
-		func(p: Vector2, r: float) -> float:
-			return 1.0 if p.distance_to(centre) <= load_radius + r else 0.0,
-		Num.f(cfg["climb_load"]) * sim.stat("climb") * dt,
-		y,
-		y + 1
-	)
-
-
-## Height (floors) of the standing top of the building column at pos, 0 on the street.
-## Off the buildings he stands on the street, or in the river's channels on the wading floor,
+## Where he stands: on the street, or in the river's channels on the wading floor,
 ## city "wade_depth" under the river's water (director 2026-10-31: "the baby kaiju should be like
 ## half submerged in the river"), stepping down into it and up out of it at "wade_speed" m/s.
 func _wade(dt: float) -> float:
@@ -256,6 +217,7 @@ func _wade(dt: float) -> float:
 	return move_toward(sim.stand_y, ground, Num.f(city["wade_speed"]) * dt)
 
 
+## Height (floors) of the standing top of the building column at pos, 0 on the street.
 func column_top(pos: Vector2) -> float:
 	for i: int in sim.grid.around(pos, 0.0):
 		var b := sim.buildings[i]
@@ -269,23 +231,14 @@ func column_top(pos: Vector2) -> float:
 ## --- Signature follow-ups and ultimates ------------------------------------------------
 
 
-## Leap Slam just landed: if Wing Buzz is owned, keeping the button held glides on.
-func leap_landed() -> void:
-	_glide_armed = sim.stat("glide_seconds") > 0.0
-
-
 func has_ultimate() -> bool:
-	return sim.stat("beam_dps") > 0.0 or sim.stat("brood_count") > 0.0 or sim.stat("ink_dps") > 0.0
+	return sim.stat("beam_dps") > 0.0
 
 
 func ultimate() -> void:
 	sim.events.append({"type": "ultimate"})  # the view roars (D-145)
 	if sim.stat("beam_dps") > 0.0:
 		sim.strikes.beam()  # the stream starts at the strike, the jaws open (D-166)
-	elif sim.stat("brood_count") > 0.0:
-		sim.brood.lay(Num.i(sim.stat("brood_count")))
-	elif sim.stat("ink_dps") > 0.0:
-		_ink()
 
 
 ## The jaws open: the Thunder Beam's stream starts (Strikes, after the wind-up).
@@ -294,36 +247,10 @@ func start_beam() -> void:
 	sim.events.append({"type": "beam_start", "seconds": beam_left})
 
 
-func step(dt: float, held: bool) -> void:
-	_glide(dt, held)
+func step(dt: float) -> void:
 	_beam(dt)
-	tentacles.step(dt)
 	coats.step(sim, dt)
 	fire.step(dt)
-
-
-func _glide(dt: float, held: bool) -> void:
-	if _glide_armed and not sim.airborne:
-		_glide_armed = false
-		if held:
-			sim.airborne = true
-			glide_left = sim.stat("glide_seconds")
-			sim.events.append({"type": "glide_start"})
-		return
-	if not sim.airborne or sim.body.dash.on():  # the croc's leap is airborne too, never a glide
-		return
-	glide_left -= dt
-	if held and glide_left > 0.0:
-		return
-	sim.airborne = false
-	var land := sim.kaiju_pos
-	var reach := sim.ability_reach()
-	sim.events.append({"type": "glide_land", "reach": reach})
-	sim.hit_area(
-		func(p: Vector2, r: float) -> float:
-			return RampageSim.falloff(p.distance_to(land) - r, reach),
-		sim.stat("ability_damage") * Num.f(cfg["glide_land_mult"])
-	)
 
 
 func _beam(dt: float) -> void:
@@ -351,25 +278,7 @@ func _beam(dt: float) -> void:
 		sim.events.append({"type": "beam_end"})
 
 
-func _ink() -> void:
-	var centre := sim.kaiju_pos
-	var reach := Num.f(cfg["ink_reach"]) * _bs()
-	var dps := sim.stat("ink_dps")
-	sim.events.append({"type": "ink", "reach": reach})
-	sim.hit_coat = {"kind": "ink", "dps": dps, "seconds": cfg["ink_seconds"]}
-	sim.hit_air = true
-	sim.hit_area(
-		func(p: Vector2, r: float) -> float:
-			return RampageSim.falloff(p.distance_to(centre) - r, reach),
-		dps * Num.f(cfg["ink_splash"]),
-		0,
-		ceili(sim.reach_top() * Num.f(cfg["coat_reach_mult"]))
-	)
-	sim.hit_coat = {}
-	sim.hit_air = false
-
-
-## --- Coatings: beam fire and ink eat what they cover -----------------------------------
+## --- Coatings: beam fire eats what it covers -------------------------------------------
 
 
 ## Coats chunks of building `index` with sim.hit_coat (refreshing an existing coat).

@@ -129,7 +129,7 @@ static func _crack(ang: float, r: float, cracks: int, noise: FastNoiseLite) -> f
 	return (1.0 - smoothstep(width * 0.4, width, to_crack)) * smoothstep(0.05, 0.18, r)
 
 
-## Concentric gouges, as if dragged round by tentacles.
+## Concentric gouges, as if dragged round by a tail.
 static func _scratch(r: float, n: float) -> float:
 	var ring := fposmod(r * 26.0 + n * 0.8, 1.0)
 	return 1.0 - smoothstep(0.06, 0.12, absf(ring - 0.5))

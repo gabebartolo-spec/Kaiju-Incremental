@@ -25,7 +25,6 @@ static func fire(sim: RampageSim) -> void:
 					return RampageSim.falloff(p.distance_to(land) - r, reach),
 				damage
 			)
-			sim.powers.leap_landed()
 		_:
 			var centre := sim.kaiju_pos
 			sim.events.append({"type": "ability", "kind": "ring", "reach": reach})

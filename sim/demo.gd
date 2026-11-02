@@ -10,8 +10,11 @@ static func enabled() -> bool:
 	return _cfg().get("enabled", false) == true
 
 
-## True when `species_id` is playable (every species is, with the demo off).
+## True when `species_id` is playable: one of Content.species() (never the far beast's insectoid,
+## D-438), and with the demo on one of its species.
 static func allows(species_id: String) -> bool:
+	if not Content.species().any(func(def: Dictionary) -> bool: return def["id"] == species_id):
+		return false
 	if not enabled():
 		return true
 	var allowed: Array = _cfg().get("species", [])

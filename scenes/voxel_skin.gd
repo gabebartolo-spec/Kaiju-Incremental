@@ -7,7 +7,7 @@ extends Node3D
 ## moved to render layer 0, where nothing draws them. Presentation only. Child of the rig.
 
 const CUBE_SHADER := preload("res://scenes/voxel_skin.gdshader")
-## Bones the shaders take (the hydra has 79).
+## Bones the shaders take.
 const MAX_BONES := 128
 ## Gzip'd .vskin layout version this reader understands (tools/kaiju_skin/bake.py).
 const VERSION := 2
@@ -315,7 +315,7 @@ func world_points(most: int) -> Array[Dictionary]:
 
 
 ## A bone's pose as its own voxels would show it: the bone, or the voxels' node when a gait scales
-## it (the octopus mantle breathing).
+## it.
 func _skin_global(i: int) -> Transform3D:
 	var bone_name := _nodes[i].name
 	var held: Variant = _rig.skins.get(bone_name, null)

@@ -45,9 +45,9 @@ func _check_entries() -> void:
 	var croc := _croc({}, [])
 	var entry: Dictionary = titans["croc"]
 	check(croc.powers.run.titan == entry, "the reptilian plays the croc's momentum entry")
-	var bug := croc.powers.run
-	bug.use_species("insectoid")
-	check(not bug.active(), "a species with no titan entry has no momentum")
+	var none := croc.powers.run
+	none.use_species("no_titan")
+	check(not none.active(), "a species with no titan entry has no momentum")
 	var serpent := entry.duplicate()
 	serpent["crash_height"] = "body"
 	croc.powers.run.titan = serpent

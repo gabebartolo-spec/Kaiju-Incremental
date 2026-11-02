@@ -1,10 +1,10 @@
 extends SceneTree
 ## Records a real autoplayed rampage (the flow test's city and seed) for one species, so its
-## locomotion is seen among buildings: the cephalopod gripping building edges, every species
-## stomping and turning at the gameplay camera. Needs a window and --write-movie.
+## locomotion is seen among buildings: stomping and turning at the gameplay camera. Needs a
+## window and --write-movie.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
-##     --script tools/capture/capture_rampage_kaiju.gd -- --species=cephalopod --seconds=12
+##     --script tools/capture/capture_rampage_kaiju.gd -- --species=reptilian --seconds=12
 ##
 ## --time=dusk|night|morning|noon sets the time of day (default: the game's). --train-still=<dir>
 ## (no --write-movie) saves <dir>/train.png at the game camera, HUD hidden, on the first frame a
@@ -17,7 +17,7 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 ## The middle share of the screen (each axis) the train's middle car must be in for the still.
 const TRAIN_FRAME := 0.6
 
-var _species := "cephalopod"
+var _species := "reptilian"
 var _seconds := 12.0
 var _time := ""
 var _train_still := ""

@@ -1,7 +1,7 @@
 class_name KaijuGait
 extends RefCounted
-## How one body plan moves (KaijuRig drives one per kaiju): a biped stalks, a hexapod skitters,
-## a radial body hauls itself along on its tentacles. The base class reads where the kaiju is
+## How one body plan moves (KaijuRig drives one per kaiju): a biped stalks, a hexapod skitters.
+## The base class reads where the kaiju is
 ## going from its parent node every frame (position, speed, heading, turn rate), so every gait
 ## follows whatever the sim and the scene do to the kaiju and never decides anything itself.
 

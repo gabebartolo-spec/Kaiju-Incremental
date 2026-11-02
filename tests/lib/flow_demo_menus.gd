@@ -44,19 +44,24 @@ func _check_other_species_save() -> void:
 	await _frames(2)
 
 
-## Settings' controls list only what the playable species can do: the croc-only demo shows no
-## insectoid Glide row; the full game does (lead, 2026-10-18).
+## Settings' controls list only what the playable species can do: the croc's Breath row in the
+## demo and the full game alike, and no Glide in either (the insectoid is not playable, D-438).
 func _check_controls_rows() -> void:
 	var with_demo := await _control_names()
 	var demo := Content.section("demo")
 	demo["enabled"] = false
 	var full_game := await _control_names()
 	demo["enabled"] = true
-	var glide := func(names: Array[String]) -> bool:
-		return names.any(func(n: String) -> bool: return n.containsn("glide"))
+	var has := func(names: Array[String], word: String) -> bool:
+		return names.any(func(n: String) -> bool: return n.containsn(word))
 	check.call(
-		not glide.call(with_demo) and glide.call(full_game),
-		"the demo's controls list has no insectoid Glide; the full game's has: %s" % [with_demo]
+		(
+			has.call(with_demo, "breath")
+			and has.call(full_game, "breath")
+			and not has.call(with_demo, "glide")
+			and not has.call(full_game, "glide")
+		),
+		"both controls lists show the croc's Breath and no Glide: %s / %s" % [with_demo, full_game]
 	)
 
 

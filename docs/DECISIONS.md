@@ -31,6 +31,16 @@ as the game's own sand (grains, wet line) sloping into the bay, its waterline wa
 a broken foam line, the fires' orange on the wet sand, and the bay lapping up it with the game's lap (`water.lap`).
 Camera and far shore unchanged; title_ledge.gdshader is replaced by title_sand.gdshader. UI suite `ui_title_beach.gd`.
 
+## 2026-11-02 · D-438 · Director · Octopus and insectoid code removed
+His words: "remove octopus code if its bloating the game and confusing you", then "definitely remove the octopus
+code", then "remove the insectoid too, the only trace of him should be in the city across the bay". Changes: every
+cephalopod path is deleted (tentacles, Hydra Limbs, Grab and Throw, Squeeze, Corrosive Ink, radial gait, grip,
+stand-in, its assets, upgrades, tuning, strings and tests). The insectoid is no longer playable (Glide, Climb, Brood,
+its upgrades, tuning, strings and tests are gone); data/species.json keeps its entry with `playable: false` so the far
+beast in the skyline (skyline_rampage, far_beast, hexapod gait and rig, insectoid_* assets) still draws it.
+Content.species() and Demo.allows() list only playable species. The reptilian plays exactly as before. Both species
+stay stretch goals in DESIGN; git history keeps the code.
+
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
 His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
 fade? A: "Gentle fade". Why: the ocean's FFT cascades (8.8, 5.7, 1.6 m tiles) have no mip chain, so from high up one

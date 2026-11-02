@@ -31,9 +31,9 @@ on:
   workflow_dispatch:
     inputs:
       species:
-        description: Species to pace ("all" runs the three in parallel jobs)
+        description: Species to pace ("all" is the reptilian, the only playable one)
         type: choice
-        options: [reptilian, insectoid, cephalopod, all]
+        options: [reptilian, all]
         default: reptilian
       runs:
         description: Run cap per species (tools/pacing.gd --runs)
@@ -88,8 +88,8 @@ jobs:
             verbose=$(jq -r 'if has("verbose") then .verbose else true end' .github/pacing-run.json)
           fi
           case "$species" in
-            reptilian|insectoid|cephalopod|all) ;;
-            *) echo "::error::species must be reptilian, insectoid, cephalopod or all, got '$species'"; exit 1 ;;
+            reptilian|all) ;;
+            *) echo "::error::species must be reptilian or all, got '$species'"; exit 1 ;;
           esac
           case "$runs" in
             ''|*[!0-9]*) echo "::error::runs must be a whole number, got '$runs'"; exit 1 ;;
@@ -99,7 +99,7 @@ jobs:
             *) echo "::error::verbose must be true or false, got '$verbose'"; exit 1 ;;
           esac
           if [ "$species" = all ]; then
-            echo 'species=["reptilian","insectoid","cephalopod"]' >> "$GITHUB_OUTPUT"
+            echo 'species=["reptilian"]' >> "$GITHUB_OUTPUT"
           else
             echo "species=[\"$species\"]" >> "$GITHUB_OUTPUT"
           fi
