@@ -10,6 +10,11 @@ the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/
 when it moves. TaskforceView reuses its per-frame id dictionaries. Skipped: weather rain smears, carve debris
 totals, crowd lose_cells/_bury, debris early-outs (not trivially identical; need a closer read).
 
+## 2026-11-03 · D-446 · Director · The counts run keeps the kaiju alive to the route's end
+Main's `counts` suite was red since #536 (army harder, D-437): the army killed the kaiju at step 3307 of 3360
+(over=true), so "the route played all steps" failed. The bar counts FxPool peaks over the whole route, not the
+army, so bench_lib takes `hp` and counts sets 1,000,000, as the military and fire suites already do.
+
 ## 2026-11-03 · D-445 · Director · W walks forward: the stick turns with the camera
 Q: "WASD controls dont work, seems like theres no way to walk forwards." Since D-330 the camera turns to sit
 behind the kaiju, but the stick still pointed at fixed map directions (W = north, -z). At the rise he faces +z, so W
@@ -392,7 +397,3 @@ His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's 
 His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
 ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
 stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".
-
-## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
-A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
-menu_fps 60, so the frame rate the preview shows is the real one; closing Settings restores the menu cap.

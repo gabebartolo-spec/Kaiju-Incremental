@@ -27,6 +27,7 @@ const DEFAULTS := {
 	"tune": "",
 	"levels": "",  # extra upgrade levels, "r_beam=1,r_shear=1": the body the route runs with
 	"beam-at": 0,  # >0: the ultimate fires on this route step only (the beam scenario), not every time
+	"hp": 0.0,  # >0: the kaiju's hit points, so the army cannot end the route early (counts, D-446)
 	"res": "3840x2160",  # the window and viewport size measured (1920x1080 for the 1080p bar, D-339)
 }
 
@@ -111,6 +112,8 @@ func start(tree: SceneTree, a: Dictionary) -> bool:
 		var lv := pair.split("=")
 		owned[lv[0]] = int(lv[1])
 	var stats := Kit.stats("reptilian", owned, "reptilian")
+	if Num.f(a["hp"]) > 0.0:
+		stats["hp"] = Num.f(a["hp"])
 	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
 	rampage = Rampage.new()
 	rampage.setup(Content.species_def("reptilian"), stats, layout, 0)
