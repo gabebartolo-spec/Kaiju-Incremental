@@ -79,7 +79,11 @@ func _check_rampages() -> void:
 				steps += 1
 				var reach := _reach(sim)
 				var danger := _danger(sim)
-				for tank: RampageSim.Tank in sim.tanks:
+				# A thrown or wrecked tank is not driving (no hit points: a blow throws it, D-437)
+				var grounded := sim.tanks.filter(
+					func(t: RampageSim.Tank) -> bool: return not t.flying and not t.wrecked
+				)
+				for tank: RampageSim.Tank in grounded:
 					tank_samples += 1
 					if not last.has(tank.id):
 						entered += 1
@@ -102,8 +106,8 @@ func _check_rampages() -> void:
 					var head: Vector2 = heads[tank.id]
 					if _hull_in_building(tank.pos, head, grid):
 						inside += 1
-				for tank: RampageSim.Tank in sim.tanks:
-					for other: RampageSim.Tank in sim.tanks:
+				for tank: RampageSim.Tank in grounded:
+					for other: RampageSim.Tank in grounded:
 						if (
 							other.id > tank.id
 							and tank.pos.distance_to(other.pos) < HULL_LENGTH * 2.5
@@ -146,7 +150,7 @@ func _check_rampages() -> void:
 						danger_t[tank.id] = 0.0
 				last = {}
 				hulls_was = heads.duplicate()
-				for tank: RampageSim.Tank in sim.tanks:
+				for tank: RampageSim.Tank in grounded:
 					last[tank.id] = tank.pos
 	var in_band := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	print(

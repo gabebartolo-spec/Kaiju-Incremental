@@ -136,12 +136,12 @@ func _spawn(toward: Array[Vector2]) -> Array[AirWing.Heli]:
 	return helis
 
 
-## Downs `heli` alone with a last blow of `share` of its hp. A spin falls straight onto `land`
-## (the sim's crash point and the view's wreck both), wherever it was hit.
+## Downs `heli` alone with one blow of `share` x burst_blow (no hit points, D-437). A spin
+## falls straight onto `land` (the sim's crash point and the view's wreck both), wherever it was
+## hit.
 func _blow(heli: AirWing.Heli, share: float, land: Vector2) -> void:
 	var sim := _rampage.sim
-	var hp := Num.f(sim.air.cfg["hp"])
-	heli.hp = hp * share * 0.5
+	var hp := Num.f(sim.air.cfg["burst_blow"])
 	var at := heli.pos
 	sim.events.clear()
 	sim.air.hit(

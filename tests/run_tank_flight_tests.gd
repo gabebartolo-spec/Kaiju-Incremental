@@ -27,6 +27,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_arc")
+	await _t("_check_stomp_throws")
 	await _t("_check_wall")
 	await _t("_check_ricochet")
 	await _t("_check_domino")
@@ -54,6 +55,51 @@ func _check_arc() -> void:
 	check(
 		at.distance_to(EAST * THROW) < 0.3 and not tank.flying and tank.height == 0.0,
 		"it lands %.1f out on open ground (thrown to %.1f): %s" % [at.x, THROW, landed]
+	)
+
+
+## No hit points (D-437, director 2026-11-01: "if the tank gets smacked by a kaiju, i want that
+## tank to go flying and die, not take hp damage"; "a stomp shouldnt send it flying but a tail
+## swipe? or a charge attack? yeah it should go flying"). Player-effect fixture "tank.thrown": the
+## same blow on a tank 1 m off, as a sideways hit (on: throws) and as a stomp (off). On, the tank
+## leaves the street and comes down wrecked; off, it is wrecked where it stands. Both are cleared
+## as destroyed; a tank past a real stomp's reach is untouched.
+func _check_stomp_throws() -> void:
+	var out: Array[Dictionary] = []
+	for mode: String in ["throw", "crush", "far"]:
+		var sim := _croc({}, [])
+		var tank := _tank(sim, 901, EAST * (sim.stomp_radius() + 10.0 if mode == "far" else 1.0))
+		if mode == "far":
+			sim.strikes.stomp(Vector2.ZERO, 0.0)
+		else:
+			var force := func(p: Vector2, r: float) -> float:
+				return RampageSim.falloff(p.length() - r, sim.stomp_radius())
+			SimDamage.area(sim, force, sim.stat("stomp_damage"), 0, -1, mode == "throw")
+		var apex := 0.0
+		for _n: int in roundi(WATCH_S / DT):
+			apex = maxf(apex, tank.height)
+			sim.step(DT, Vector2.ZERO, false, 0)
+		var destroyed := not sim.tanks.has(tank)  # a crush clears it inside the blow itself
+		out.append({"apex": apex, "wrecked": str(tank.wrecked), "destroyed": str(destroyed)})
+	check(
+		(
+			Num.f(out[0]["apex"]) > 0.0
+			and str(out[0]["wrecked"]) == "true"
+			and str(out[0]["destroyed"]) == "true"
+		),
+		"a sideways hit throws the tank, which comes down wrecked and destroyed: %s" % [out[0]]
+	)
+	check(
+		Num.f(out[1]["apex"]) == 0.0 and str(out[1]["destroyed"]) == "true",
+		"a stomp wrecks the tank where it stands: %s" % [out[1]]
+	)
+	check(
+		(
+			Num.f(out[2]["apex"]) == 0.0
+			and str(out[2]["wrecked"]) == "false"
+			and str(out[2]["destroyed"]) == "false"
+		),
+		"a tank past the stomp's reach is untouched: %s" % [out[2]]
 	)
 
 
@@ -95,13 +141,13 @@ func _check_domino() -> void:
 	var one := _throw_into_row({"r_domino": 1})
 	var two := _throw_into_row({"r_domino": 2})
 	check(
-		str(off["launched"]) == str([901]) and Num.f(off["hp_b"]) == 1000.0,
+		str(off["launched"]) == str([901]) and not (str(off["wrecked_b"]) == "true"),
 		"without Domino the tank it lands on is untouched: %s" % [off]
 	)
 	check(
 		(
 			str(one["launched"]) == str([901, 902])
-			and Num.f(one["hp_b"]) < 1000.0
+			and (str(one["wrecked_b"]) == "true")
 			and Num.f(one["b_x"]) > THROW + 3.0
 		),
 		"Domino 1 knocks the second tank flying on east: %s" % [one]
@@ -261,7 +307,7 @@ func _throw_into_row(levels: Dictionary) -> Dictionary:
 			if str(event["type"]) == "tank_landed" and id == 902:
 				b_x = b.pos.x
 	launched.sort()
-	return {"launched": launched, "hp_b": b.hp, "b_x": b_x}
+	return {"launched": launched, "wrecked_b": b.wrecked, "b_x": b_x}
 
 
 ## The event of `kind` for tank `id` among `events`, else `fallback`.

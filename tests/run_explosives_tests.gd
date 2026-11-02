@@ -123,22 +123,26 @@ func _check_chain() -> void:
 	check(sim.explosives.sites[2].state == Explosives.IDLE, "the far factory never went off")
 
 
-## A chem lab's cloud wears down a tank parked inside it, past the blast's own reach.
+## A chem lab's cloud wrecks a tank parked inside it, past the blast's own reach, once it has
+## stood in it cloud_tank_seconds (no hit points, D-437).
 func _check_toxic_cloud() -> void:
 	var sim := _sim([_site("chem_lab", 0.0, 0.0)])
 	var tank := RampageSim.Tank.new()
-	tank.pos = Vector2(6.5, 0.0)  # past 2 x blast radius (6), inside the cloud (7)
-	tank.hp = 1000.0
+	tank.pos = Vector2(6.8, 0.0)  # its edge past 2 x blast radius (6), inside the cloud (7)
 	tank.cooldown = 1000.0
 	sim.tanks.append(tank)
 	sim.explosives.damaged(0)
 	var events := _run(sim, 1.5, tank)
 	check(_of(events, "toxic_cloud").size() == 1, "the lab leaves a toxic cloud")
-	var after_blast := tank.hp
-	_run(sim, 3.0, tank)
+	var early := tank.wrecked
+	var lab: Dictionary = sim.explosives.cfg["chem_lab"]
+	_run(sim, Num.f(lab["cloud_tank_seconds"]), tank)  # past the fuse plus the exposure
 	check(
-		tank.hp < after_blast,
-		"the cloud keeps hurting the tank (%.1f -> %.1f)" % [after_blast, tank.hp]
+		not early and tank.wrecked,
+		(
+			"the cloud wrecks the tank once it has stood in it long enough (%s -> %s)"
+			% [early, tank.wrecked]
+		)
 	)
 
 

@@ -18,7 +18,6 @@ func run_checks() -> void:
 	await _t("_check_breath")
 	await _t("_check_beam")
 	await _t("_check_topple")
-	await _t("_check_burning")
 	await _t("_check_escape")
 	await _t("_check_payout_matters")
 	await _t("_check_block_payout")
@@ -191,15 +190,6 @@ func _check_topple() -> void:
 		outcomes == ["killed", "gone"],
 		"a toppling tower brings it down at lift-off (and not once it is away): %s" % [outcomes]
 	)
-
-
-func _check_burning() -> void:
-	var sim := _flying()
-	sim.vip.pos = sim.kaiju_pos + Vector2(5.0, 0.0)
-	sim.vip._coat_t = 5.0
-	sim.vip._coat_dps = 100.0
-	_run(sim, 0.5, Vector2.ZERO)
-	check(sim.vip.state == "killed", "a burning coat finishes it")
 
 
 ## Left alone it escapes: the mocking headline's event, no payout, nothing else lost.

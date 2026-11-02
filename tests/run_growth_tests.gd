@@ -160,7 +160,7 @@ func _check_edges() -> void:
 
 
 ## Defences harden with each stage: no helicopters for the young kaiju, helicopters from the
-## Behemoth on, tougher tanks that come faster every stage.
+## Behemoth on, tanks that come faster every stage (never tougher: no hit points, D-437).
 func _check_defences() -> void:
 	var air_ok := Num.i(_tuning(1)["air"]["max"]) == 0
 	var harder := true
@@ -168,7 +168,6 @@ func _check_defences() -> void:
 		var now := _tuning(tier)
 		var before := _tuning(tier - 1)
 		air_ok = air_ok and Num.i(now["air"]["max"]) > Num.i(before["air"]["max"])
-		harder = harder and Num.f(now["army"]["tank_hp"]) > Num.f(before["army"]["tank_hp"])
 		harder = (
 			harder
 			and Num.f(now["army"]["start_interval"]) < Num.f(before["army"]["start_interval"])

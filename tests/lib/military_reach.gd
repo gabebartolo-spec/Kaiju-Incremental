@@ -48,7 +48,6 @@ func _fires_by_the_head() -> void:
 	var tank := RampageSim.Tank.new()
 	tank.id = 9999
 	tank.pos = spot
-	tank.hp = 1000.0
 	tank.cooldown = 0.0
 	sim.tanks.append(tank)
 	sim.events.clear()

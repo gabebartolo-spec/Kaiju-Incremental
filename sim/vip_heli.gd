@@ -6,10 +6,11 @@ extends RefCounted
 ## speed, never pinned to the kaiju, D-183; never through it, director 2026-10-30), then runs
 ## straight for the map edge so that the whole flight takes about `window_seconds`. Bringing it down
 ## pays `payout` (about a city block's worth, Tuning "vip"); letting it reach the edge costs only
-## that payout. How it dies: any area attack that reaches its height (the breath, the Thunder Beam;
-## a stomp or claw only while it is still low over the roofs) or a toppling tower sweeping its
-## height. It falls like any gunship (AirWing's fates and wreck), under its own id. Own file
-## and own seeded stream, so it never shifts the army's or the air wing's draws. Part of RampageSim.
+## that payout. How it dies (one blow, no hit points, D-437): any area attack that reaches its
+## height (the breath, the Thunder Beam; a stomp or claw only while it is still low over the
+## roofs) or a toppling tower sweeping its height. It falls like any gunship (AirWing's fates and
+## wreck), under its own id. Own file and own seeded stream, so it never shifts the army's or the
+## air wing's draws. Part of RampageSim.
 
 ## Its id among the sky's helicopters: far above AirWing's own counter.
 const ID := 1000000
@@ -31,15 +32,12 @@ var payout := 0.0
 var paid := 0.0
 var _rng: RandomNumberGenerator
 var _fall_rng: RandomNumberGenerator  # its own fall draws: a kill never shifts the air wing's
-var _hp := 0.0
 var _spawn_at := 0.0
 var _roof := 0.0
 var _turned := 0.0
 var _exit := NO_TARGET
 var _dash_speed := 0.0
 var _last_blow := 0.0
-var _coat_t := 0.0
-var _coat_dps := 0.0
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -85,7 +83,6 @@ func step(dt: float) -> void:
 		return
 	flight_t += dt
 	_swept_by_falls()
-	_burn(dt)
 	if state == "flying":
 		_fly(dt)
 
@@ -99,13 +96,8 @@ func hit(force: Callable, damage: float) -> void:
 	var k: float = force.call(pos, Num.f(cfg["radius"]))
 	if k <= 0.0:
 		return
-	_hp -= damage * k
 	_last_blow = damage * k
-	if not sim.hit_coat.is_empty():
-		_coat_t = Num.f(sim.hit_coat["seconds"])
-		_coat_dps = Num.f(sim.hit_coat["dps"]) * Num.f(sim.powers_cfg["ink_unit_mult"])
-	if _hp <= 0.0:
-		down("blow")
+	down("blow")
 
 
 ## It is down: pays the kill, then falls as AirWing's fates say.
@@ -118,7 +110,7 @@ func down(by: String) -> void:
 	heli.id = ID
 	heli.pos = pos
 	var event := {"type": "vip_down", "heli": ID, "x": pos.x, "z": pos.y, "y": altitude()}
-	if _last_blow >= Num.f(air["hp"]) * Num.f(cfg["hp_mult"]) * Num.f(air["blow_apart"]):
+	if _last_blow >= Num.f(air["burst_blow"]):
 		event["fate"] = "burst"
 	else:
 		event.merge(sim.air._spin_down(heli, _fall_rng))
@@ -138,7 +130,6 @@ func _lift_off() -> void:
 	# time; it is something to chase): it sets off sideways, its circle's centre beyond the pad.
 	var away := (pos - sim.kaiju_pos).angle()
 	heading = away - PI * 0.5 + (_rng.randf() - 0.5) * deg_to_rad(Num.f(cfg["lap_jitter_deg"]))
-	_hp = Num.f(sim.air.cfg["hp"]) * Num.f(cfg["hp_mult"])
 	state = "flying"
 	sim.events.append({"type": "vip_spawned", "heli": ID, "rank": rank, "x": pos.x, "z": pos.y})
 
@@ -186,17 +177,6 @@ func _swept_by_falls() -> void:
 			_last_blow = 0.0  # knocked aside, never blown apart
 			down("topple")
 			return
-
-
-## A burning coat keeps eating it after the blow.
-func _burn(dt: float) -> void:
-	if _coat_t <= 0.0:
-		return
-	_coat_t -= dt
-	_hp -= _coat_dps * dt
-	_last_blow = _coat_dps * dt  # a coat kill is a light blow: it spins down
-	if _hp <= 0.0:
-		down("burn")
 
 
 ## One step of the flight: the banked lap round the pad, then the dash to the edge.

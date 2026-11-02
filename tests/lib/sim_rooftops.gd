@@ -163,8 +163,11 @@ func run() -> void:
 	# the biomass at the end.
 	# Landmarks off in both: the scripted walk goes to the nearest building, and the Behemoth's
 	# wheel stands by the start in a plaza no rooftop squad covers, so it would never meet one.
+	# The city's threat level pinned at 1: the Behemoth city's own level 3 (D-437) starts a
+	# harder army that ends the scripted run sooner, and this measures the squads, not the army.
 	var on_tune := grown.duplicate(true)
 	on_tune["city"]["landmarks"] = []
+	on_tune["threat"]["level"] = 1
 	var off_tune := on_tune.duplicate(true)
 	off_tune["army"]["rooftop"]["max_by_tier"] = [0, 0, 0, 0]
 	var build := {"claws": 3, "hide": 5, "rage": 3, "evolve1": 1}

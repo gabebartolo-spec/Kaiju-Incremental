@@ -65,16 +65,13 @@ func _check_ring_and_fling() -> void:
 	var at: Vector2 = land.get("at", Vector2.INF)
 	check(at.distance_to(centre) < 0.05, "the ring is centred under the feet: %s" % [land])
 	check(
-		flung.has(901) and out > ring * 0.5 + 1.0 and near.hp < 1000.0,
+		flung.has(901) and out > ring * 0.5 + 1.0 and near.wrecked,
 		(
-			"a tank in the ring is flung out to %.1f (from %.1f) and hurt (hp %.0f)"
-			% [out, ring * 0.5, near.hp]
+			"a tank in the ring is flung out to %.1f (from %.1f) and wrecked (%s)"
+			% [out, ring * 0.5, near.wrecked]
 		)
 	)
-	check(
-		not flung.has(902) and far.hp == 1000.0,
-		"a tank past twice the ring is untouched (hp %.0f)" % far.hp
-	)
+	check(not flung.has(902) and not far.wrecked, "a tank past twice the ring is untouched")
 
 
 ## A second press inside the cooldown does nothing; after it, it leaps again. A leap shatters frost.

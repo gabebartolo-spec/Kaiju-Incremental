@@ -41,6 +41,28 @@ beast in the skyline (skyline_rampage, far_beast, hexapod gait and rig, insectoi
 Content.species() and Demo.allows() list only playable species. The reptilian plays exactly as before. Both species
 stay stretch goals in DESIGN; git history keeps the code.
 
+## 2026-11-01 · D-437 · Director · The threat level belongs to the city: it sets where the army starts
+His words: "'alertness' level is now tied to the city/stage themselves, rather than in-run progression". Picked "By
+stage": the young city (Ostia Minor) 1, Behemoth (Carthago, Thule) 3, Colossus 4 (Aurelia 5 later); "Show the city's
+level" on the badge; and "Starting point": the level sets where the army starts, destruction still ramps it inside
+the run. Why: each conquest should feel like a harder city, not the same calm start. Changes: tuning `threat.level`
+(stage overlays), RunNews.alert_chunks starts RampageSim.escalation at that level's share of the spawn ramp; the badge
+is fixed all run and the "threat rises" crawl lines and event are gone (capture_threat.gd removed). Same day, no
+enemy hit points: "if the tank gets smacked by a kaiju, i want that tank to go flying and die, not take hp damage";
+picked "Yes, all kaiju", helicopters "Yes, one blow", "In the threat PR". Tank, helicopter and VIP hp are deleted:
+a blow that reaches a tank wrecks it. Then "a stomp shouldnt send it flying but a tail swipe? or a charge attack?
+yeah it should go flying"; picked claw swipe and explosions too. Tail lash, ram, leap ring, claw swipe and explosions
+throw it (SimDamage.throw, flight blow_throw/throw_min/throw_max) and it comes down wrecked; stomp, slam, crash, bombs
+and breath wreck it where it stands. One blow downs a helicopter, burst_blow or more blows it apart; chem cloud wrecks a tank after cloud_tank_seconds. Threat now
+sets only spawn rate, helicopter cap, Taskforce and rooftop volley damage, never toughness. 11-02, balance: with no enemy hp the army stopped winning (pacing, reptilian: defeats Behemoth 2 of 20 vs main's 14
+of 24, Colossus 3 of 34 vs 24 of 39); he picked "Army harder" and then "B as measured" over +1 levels and +1 heli: tank
+hits x1.5 (Behemoth tank_damage 6.9 to 10.4, Colossus 7.3 to 11.0) and Colossus helicopter hits x1.5 (air damage 5.4
+to 8.1); measured defeats 9 of 21 and 26 of 37, second evolution 0.80 h. Threat suite on/off
+fixture: Behemoth city at level 3 vs 1 (escalation, helicopter cap); sim fixture: the same blow thrown (a sideways hit) vs crushed (a stomp).
+11-02, Q: from level 3 the city's start puts the Taskforce wait at its 8 s floor, so destruction no longer
+hurries the squads in grown cities; keep, or a wait only destruction shortens? A: "Keep 8 s from start".
+
+
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
 His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
 fade? A: "Gentle fade". Why: the ocean's FFT cascades (8.8, 5.7, 1.6 m tiles) have no mip chain, so from high up one
@@ -372,28 +394,3 @@ rule plus two runs match; pinned fingerprints (street, cells, landmark cells, de
 go, run-vs-run matches stay; menu checks by exact wording and pixel gaps become overlap / on-screen / reachable rules;
 species lists come from the data. Kept: slide, catch steps, knee pops, locked legs, NaN, overlaps, determinism, saves,
 text size and contrast. Report: the audit's REPORT_tests_too_strict.md. Replaces motion_gate.json's "never widen".
-
-## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
-Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
-12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
-stands up out of the sea to his first beachfront hotel down; the walk across the sand counts (the sand gets umbrellas
-and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
-landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
-
-## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test (relaxed by D-403)
-Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
-a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
-local Godot suite run to check a change before it goes up, not even the suites it touched. Replaces the last
-clause of the archived local-prepush decision ("builders still run locally only the suites they iterate on").
-Probes that measure something a fix needs still run locally.
-
-## 2026-10-29 · D-382 · Director · A pull request skips the slow second-angle suites; they run on main
-His words: "which of these, if any, can we remove, or is it necessary for us to run them all for EVERY patch? its a
-real bottleneck for dev time"; on the list: "Yes, write D-382". No suite is deleted. Thirteen slow suites that check the
-game from a second angle run on every push to main only (the `slow` job, 3 lanes, never blocking): streamview, load,
-counts, crowd, empty_space, roads, heliflight, skyline, city_audit, demoend, croc_standing, slowmo, results (4,365 s of
-8,802). Everything else, motion and smoke included, runs on every PR (until D-403: engine suites moved to main too). The list is the `pr_skip` line of
-tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last green PR run took 18 min, shard 1
-alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
-plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
-suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.

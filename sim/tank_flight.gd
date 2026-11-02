@@ -5,10 +5,12 @@ extends RefCounted
 ## that lands where today's shove put it (launch(): the distance sets the speed at loft_deg). Each
 ## tick it moves by exact constant-gravity kinematics; a building column standing above its hull
 ## is a wall: the hit carves the floors round the impact (damage per unit of speed) and the tank
-## drops at the foot of it. The ground (the street, or a roof it comes down on) ends the flight.
+## drops at the foot of it. The ground (the street, or a roof it comes down on) ends the flight, and
+## the tank with it: it comes down wrecked (no hit points, director 2026-11-01: "if the tank gets
+## smacked by a kaiju, i want that tank to go flying and die").
 ## Ricochet (throw_ricochet, per level) gives a bounce off a wall or the ground instead of
 ## stopping, at wall_restitution / ground_restitution. Domino (throw_domino, per level) is chain
-## depth: a flying tank that reaches a grounded one hurts it by domino_damage and launches it on
+## depth: a flying tank that reaches a grounded one launches it on
 ## along its own way, domino_reach out, one generation deeper. An airborne tank neither drives
 ## nor fires (Convoy, Army skip it); a tank left on a roof falls when the roof goes. It tumbles
 ## (director 2026-10-30, "Seeded mix"): each launch spins it about an axis from this class's own
@@ -143,6 +145,7 @@ func _touch_down(tank: RampageSim.Tank) -> void:
 		return
 	tank.vel = Vector3.ZERO
 	tank.flying = false
+	tank.wrecked = true
 	_settle(tank)
 	sim.events.append(
 		{
@@ -187,20 +190,18 @@ func _bounce_left(tank: RampageSim.Tank) -> bool:
 
 
 ## Domino: a grounded tank within strike_radius of a flying one of a shallower generation than the
-## node's depth is hurt and knocked on along the flyer's way.
+## node's depth is knocked on along the flyer's way.
 func _strike(tank: RampageSim.Tank) -> void:
 	if tank.gen >= roundi(sim.stat("throw_domino")):
 		return
 	var reach := Num.f(cfg["strike_radius"])
 	var flat := Vector2(tank.vel.x, tank.vel.z)
 	for other: RampageSim.Tank in sim.tanks:
-		if other == tank or other.flying or other.hp <= 0.0:
+		if other == tank or other.flying or other.wrecked:
 			continue
 		if other.pos.distance_to(tank.pos) > reach or tank.height - other.height > reach:
 			continue
 		var way := flat if flat != Vector2.ZERO else other.pos - tank.pos
-		other.hp -= Num.f(cfg["domino_damage"])
 		knocked += 1
 		sim.events.append({"type": "tank_knocked", "tank": other.id, "by": tank.id})
-		if other.hp > 0.0:  # a wreck is cleared where it stands (Army.clear_dead)
-			launch(other, way, Num.f(cfg["domino_reach"]), tank.gen + 1)
+		launch(other, way, Num.f(cfg["domino_reach"]), tank.gen + 1)

@@ -36,9 +36,6 @@ static func line_for(event: Dictionary) -> String:
 	var live: Dictionary = Content.section("news")["live"]
 	var kind := str(event.get("type", ""))
 	match kind:
-		"threat_up":
-			var levels: Dictionary = live["threat"]
-			return TranslationServer.translate(str(levels.get(str(Num.i(event["level"])), "")))
 		"landmark_felled":
 			var lines: Dictionary = live["landmarks"]
 			return TranslationServer.translate(

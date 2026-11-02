@@ -46,7 +46,6 @@ func run() -> void:
 		var tank := RampageSim.Tank.new()
 		tank.id = n
 		tank.pos = at + u * GAP * n
-		tank.hp = 100.0
 		sim.tanks.append(tank)
 		tanks.append(tank)
 		var route := ConvoyRoute.new()

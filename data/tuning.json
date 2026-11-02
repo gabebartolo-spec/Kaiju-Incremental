@@ -114,7 +114,6 @@
 		],
 		"_note_live": "The crawl during a rampage (D-259 'On big events'; RampageNews): one line per sim event (RunNews). threat: by the level reached (2..5); landmarks: by landmark id, any other id takes 'landmark'; towers: '{n}' is the tower total reached; vip: by the VIP's event type (lines wait for the VIP helicopter). specimen: the lab card before a new specimen's first rise (SpecimenCard; '{lost}' and '{next}' are specimen numbers; the headline's two halves sit either side of a drawn dot, as the fonts have no middle dot).",
 		"live": {
-			"threat": {"2": "ARMY TOLD TO TAKE THIS SERIOUSLY", "3": "THREAT LEVEL 3 - ALL LEAVE CANCELLED", "4": "THREAT LEVEL 4 - GENERALS SWEATING", "5": "THREAT LEVEL 5 - EVERYBODY PANIC"},
 			"landmarks": {"stadium": "STADIUM CLOSED - GAME ABANDONED", "wheel": "BIG WHEEL GOES FOR A ROLL", "spire": "SPIRE SNAPPED LIKE A BREADSTICK", "megatower": "MEGATOWER FALLS - SKYLINE SHORTER", "landmark": "ANOTHER LANDMARK OFF THE MAP"},
 			"towers": "{n} TOWERS DOWN AND COUNTING",
 			"vip": {"vip_spawned": "VIP SPOTTED FLEEING BY CHOPPER", "vip_killed": "VIP FLIGHT CANCELLED - PERMANENTLY", "vip_escaped": "VIP ESCAPES - DENIES BEING HERE"}
@@ -122,7 +121,8 @@
 		"specimen": {"title": "SPECIMEN K-{next}", "headline": ["K-{lost} LOST", "K-{next} RELEASED"]}
 	},
 	"threat": {
-		"_note": "The threat meter, the bar under the clock (D-259 'A small threat icon', D-267 'The army's real strength'; 1-5; RunNews). Decided mapping (per-stage escalation comes from the army-balance branch): the level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made as the city falls; level_at = the share each level 2..5 starts at. tower_counts: the toppled-tower totals the crawl reports.",
+		"_note": "The threat meter, the bar under the clock (D-259 'A small threat icon', D-267 'The army's real strength'; 1-5; RunNews). The level is the army's own escalation read out, the share of the climb from army start_interval to min_interval its spawn rate has made; level_at = the share each level 2..5 starts at. level: the city's own alert level, fixed for the whole run (D-437, director 2026-11-01: \"'alertness' level is now tied to the city/stage themselves, rather than in-run progression\"; the city's level is where the army starts): the army, air wing and Taskforce start at that level's share of the climb, destruction still climbs them from there, and the badge shows the city's level all run (a growth stage overrides it: young 1, Behemoth 3, Colossus 4). tower_counts: the toppled-tower totals the crawl reports.",
+		"level": 1,
 		"level_at": [0.25, 0.5, 0.75, 1.0],
 		"tower_counts": [10, 25, 50, 100]
 	},
@@ -447,8 +447,8 @@
 		"stomp_standing": 0.45
 	},
 	"air": {
-		"_note_deaths": "How a helicopter dies (D-140, D-141, D-145; AirWing): a killing blow of at least blow_apart x its hp blows it apart in the air; a lighter one sends it spinning down for fall_seconds, drifting fall_drift units, crew bailing out with chance bailout_chance (1..bailout_max of them); the wreck smashes crash_floors floors within crash_radius for crash_damage and sets the building it hits burning (City Ablaze). Placeholders, flagged for tuning.",
-		"blow_apart": 0.6,
+		"_note_deaths": "How a helicopter dies (D-140, D-141, D-145, D-437; AirWing): helicopters have no hit points, so any blow that reaches one downs it; a blow of at least burst_blow (damage x force) blows it apart in the air, a lighter one sends it spinning down for fall_seconds, drifting fall_drift units, crew bailing out with chance bailout_chance (1..bailout_max of them); the wreck smashes crash_floors floors within crash_radius for crash_damage and sets the building it hits burning (City Ablaze). Placeholders, flagged for tuning.",
+		"burst_blow": 10.8,
 		"fall_seconds": 2.2,
 		"fall_drift": 6.0,
 		"bailout_chance": 0.35,
@@ -460,7 +460,6 @@
 		"interval": 12.0,
 		"max": 3,
 		"max_per_chunks": 400,
-		"hp": 18,
 		"altitude": 9.0,
 		"_note_flight": "How a helicopter flies (D-183 Stand-off gunships, AirFlight). Distances marked (x scale) are in model units times the kaiju's body scale, so they grow with him: a claw rake reaches 13 x scale ahead (powers.swipe_far) and its band is up to about 4.6 x scale wide, the breath reaches 25 x scale or more. Each helicopter steers for its slot: a point on its own ring round the kaiju that goes where he goes (standoff = the ring (x scale), standoff_jitter = how far each one's own ring differs, spawn_far = rings out it flies in from). heli_speed (units a second), heli_accel (units a second squared) and heli_turn_deg (degrees a second, its nose) are its limits, so it glides and backs off without a jerk; its nose follows its flight from nose_share of top speed up and faces the kaiju below it; arrive = how close to its goal counts as there (it hovers facing him). The pilots take the kaiju to be where he was over the last anchor_seconds (his stepped turns swing his position ten units or more about the planted foot, which they do not chase) and put each slot lead_seconds of his walk ahead, so a helicopter backs off before he is on it. pull_back = the kaiju within this (x scale) of it puts its slot straight behind it (under standoff x (1 - standoff_jitter)). hold_seconds = how long it keeps a slot, glide_deg = how far along the ring it moves to the next, slot_tries = candidate slots tried for room from the others. clear_arc (and clear_lead_deg more, for lag) = the camera side no slot enters. Strafing: one pass at a time, strafe_gap seconds apart (strafe_retry later when no helicopter slot is within strafe_reach_deg of the line entry), a fly-by at full speed along a straight line that passes strafe_close (x scale) from the kaiju on the flank (the camera's view along him) on the side of the helicopter's slot, turned on until it keeps clear of the corridor of pass_corridor (x scale) each side of the camera's line to him, so it never flies between the camera and him, aimed strafe_lead seconds of his walk ahead, lined up first (it flies to the line's entry end and hovers there, as at a slot) and then run by following a point strafe_carrot (x scale) ahead along it, the line bending outward past him by strafe_veer (so it turns away from the corridor), over strafe_exit (x scale) past him, where it turns back out to its slot (strafe_seconds the longest). Placeholders, flagged for tuning.",
 		"standoff": 30.0,
@@ -497,11 +496,10 @@
 		"clear_lead_deg": 40.0
 	},
 	"vip": {
-		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds (setting off sideways so the circle curls away from the kaiju, lap_jitter_deg of seeded wobble), then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). hp = the air wing's hp x hp_mult; radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
+		"_note": "The leader's escape helicopter (VipHeli, D-149, director 2026-10-25 'go'): once a rampage, at a seeded moment (window = share of the run), the city's leader (ranks by size tier: Mayor, Governor, President) lifts off a standing mid-rise (pad_height floors, pad_range m from the kaiju, else any) and climbs over climb_seconds while it flies one banked lap of circle_radius (x body scale) in circle_seconds (setting off sideways so the circle curls away from the kaiju, lap_jitter_deg of seeded wobble), then runs for the map edge away from the kaiju (exit_spread_deg either side, no faster than turn_limit rad/s, gathering speed at accel) so the flight lasts about window_seconds (escape_cap x window_seconds is the longest it may fly); it escapes at exit_margin past the arena edge. payout[tier] = about one city block's worth of biomass (a block's mean in-arena building value, measured by tests/run_vip_tests.gd per city size; a kill pays it x the kaiju's rubble_mult, an escape pays nothing and loses only that). radius = hit radius; throw_pass / throw_ceiling = how close a thrown tank or car must fly, and how low the leader must be, to bring it down. rotor_pitch / rotor_db: its own rotor sound (the cleared heli_rotor.ogg, lower and louder). Headlines go to the news strip ({rank} is the rank): liftoff, killed, escaped (mocking), shown headline_seconds. gold / white = the VIP look (white body, gold rotors and trim). bank / pitch = radians the model leans a turn rad/s and a ground speed unit; turn = how quickly its heading follows the sim's (as heli_turn); rotor_unit = the rotor sound's reach (a 3D unit size). Placeholders flagged for tuning.",
 		"window": [0.12, 0.5],
 		"ranks": ["MAYOR", "GOVERNOR", "PRESIDENT"],
 		"payout": [62.0, 63.0, 101.0],
-		"hp_mult": 1.0,
 		"radius": 1.2,
 		"altitude": 9.0,
 		"pad_height": [3, 8],
@@ -605,7 +603,6 @@
 		},
 		"start_interval": 5.0,
 		"min_interval": 1.0,
-		"tank_hp": 25,
 		"tank_damage": 4,
 		"min_damage": 1,
 		"fire_interval": 2.2,
@@ -617,10 +614,13 @@
 		"threat_per_chunk": 0.0005,
 		"shell_flight": 0.22,
 		"flight": {
-			"_note": "Tanks the reptilian sends flying (sim/tank_flight.gd; research 22 recs 2-4; director 2026-10-30 'Flight first, same PR' for Ricochet and Domino; numbers agent-set). The ram and the leap launch a tank at loft_deg so it lands on open ground where the old shove put it (no flight under min_distance). gravity in units/s2. A building column above the hull (+ clearance) is a wall: it carves wall_floors floors from the impact height, wall_damage x the tank's ground speed, falling off past wall_radius, and the tank drops there. bounces: free bounces before Ricochet (throw_ricochet adds one per level), off a wall at wall_restitution or off the ground (falling faster than min_bounce_speed) at ground_restitution, losing ground_friction of its forward speed. Domino (throw_domino = chain depth): a flying tank within strike_radius of a grounded one deals domino_damage and launches it domino_reach on along its way. Tumble (director 2026-10-30 'Seeded mix', 'Lands as it falls'): each launch spins the hull about a seeded axis, spin_turns_min..max turns over the flight; a landing within topple_deg of upright drops onto its tracks, past it the tank rests on its side or roof (toppled: never drives or fires again, not counted by endless's max_tanks).",
+			"_note": "Tanks the reptilian sends flying (sim/tank_flight.gd; research 22 recs 2-4; director 2026-10-30 'Flight first, same PR' for Ricochet and Domino; numbers agent-set). The ram and the leap launch a tank at loft_deg so it lands on open ground where the old shove put it (no flight under min_distance). A sideways blow that reaches a grounded tank throws it too: tail lash, ram, leap ring, claw swipe, explosion (D-437, director 2026-11-01: 'a stomp shouldnt send it flying but a tail swipe? or a charge attack? yeah it should go flying'; SimDamage.throw; a stomp, slam, crash or breath wrecks it where it stands): blow_throw m per unit of blow (damage x force), throw_min..throw_max, away from where the blow is strongest. Tanks have no hit points: any blow wrecks one, and every flight ends with the tank wrecked where it comes down. gravity in units/s2. A building column above the hull (+ clearance) is a wall: it carves wall_floors floors from the impact height, wall_damage x the tank's ground speed, falling off past wall_radius, and the tank drops there. bounces: free bounces before Ricochet (throw_ricochet adds one per level), off a wall at wall_restitution or off the ground (falling faster than min_bounce_speed) at ground_restitution, losing ground_friction of its forward speed. Domino (throw_domino = chain depth): a flying tank within strike_radius of a grounded one launches it domino_reach on along its way. Tumble (director 2026-10-30 'Seeded mix', 'Lands as it falls'): each launch spins the hull about a seeded axis, spin_turns_min..max turns over the flight; a landing within topple_deg of upright drops onto its tracks, past it the tank rests on its side or roof (toppled: never drives or fires again, not counted by endless's max_tanks).",
 			"gravity": 30.0,
 			"loft_deg": 35.0,
 			"min_distance": 0.05,
+			"blow_throw": 0.5,
+			"throw_min": 1.5,
+			"throw_max": 14.0,
 			"clearance": 0.1,
 			"wall_radius": 1.2,
 			"wall_damage": 1.0,
@@ -631,7 +631,6 @@
 			"ground_restitution": 0.45,
 			"ground_friction": 0.3,
 			"strike_radius": 1.5,
-			"domino_damage": 20.0,
 			"domino_reach": 6.0,
 			"spin_turns_min": 0.5,
 			"spin_turns_max": 1.5,
@@ -665,7 +664,7 @@
 		"fuse_s": 1.2, "chain_fuse_s": 0.35,
 		"fuel_silo": {"radius": 5.0, "damage": 80.0, "height": 16},
 		"fireworks_factory": {"radius": 3.0, "damage": 50.0, "height": 10, "bursts": 8, "burst_spread": 9.0, "burst_every_s": 0.25, "burst_radius": 1.5, "burst_damage": 25.0, "burn_dps": 4.0, "burn_seconds": 4.0},
-		"chem_lab": {"radius": 3.0, "damage": 45.0, "height": 10, "cloud_radius": 7.0, "cloud_seconds": 8.0, "cloud_tank_dps": 6.0, "cloud_squad_seconds": 1.5}
+		"chem_lab": {"radius": 3.0, "damage": 45.0, "height": 10, "cloud_radius": 7.0, "cloud_seconds": 8.0, "cloud_tank_seconds": 4.0, "cloud_squad_seconds": 1.5}
 	},
 	"blast_fx": {
 		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake.trauma: how hard each kind of blast kicks the camera (times 1 - distance/reach from the kaiju); kick = ONE kick of units x that, thrown up and away from the blast and easing out (squared) over kick.seconds, never a shake back and forth (clip critic round 6); no screen flash (director 2026-10-27: cut), no hit-stop and no screen-bending ripple any more. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay; every blast cracks once, crack_db over the mix with no distance fade (round 7: the third blast's crack barely cleared the bed), body and rumble sit tail_db under it. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; fireball.top_scale x reach_scale = how far the ball reaches (round 2, 7), speed_scale = start speed in radii/s (round 6: 2-3x the footprint), build_seconds = it spawns over that long (a few frames, not one), fireball = a sudden tall burst of Fire's own flames (Fire.FLAME_CUBE voxels at Fire.FLAME_SCALE, its ember shader at its own heat, its colours and ramp: a bigger blast is more flames, never bigger cubes): amount of them at blast radius 5, spawned over burst_seconds, living seconds, up on a spread (degrees) with gravity lift up like Fire's, speed_scale radii a second, damped to stop top_scale site heights up; fire = the real Fire left at the site afterwards (size x radius/5; seconds 0: it stays burning like any other until the fire cap puts the oldest out) which brings the game's own smoke (D-151, VFX lead 2026-10-23); shock.ring = the game's dust shockwave out to the blast's reach plus puffs Fx.dust round its rim; cloud = the chem gas as the game's soft smoke tinted shades, puff = its size range, shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
@@ -1555,8 +1554,8 @@
 	},
 	"growth": {
 		"per_level": {
-			"army": {"tank_hp": 0.03, "tank_damage": 0.03, "start_interval": -0.01},
-			"air": {"hp": 0.03, "damage": 0.03}
+			"army": {"tank_damage": 0.03, "start_interval": -0.01},
+			"air": {"damage": 0.03}
 		},
 		"stages": [
 			{
@@ -1570,24 +1569,26 @@
 			{
 				"city": {"half": 120, "coast_z": -190, "max_height": 32, "outer_cores": [[195, -106, 68], [-180, -90, 52], [195, 180, 45], [315, 45, 52], [-300, 135, 45], [60, 330, 52], [-165, 375, 38], [390, -60, 45]], "tower_chance": 0.6,
 					"fog_scale": 0.6, "far_haze": 0.0024},
-				"army": {"range": 14.5, "spawn_radius": 52, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6.9, "tank_rubble": 6,
+				"threat": {"level": 3},
+				"army": {"range": 14.5, "spawn_radius": 52, "start_interval": 4.0, "tank_damage": 10.4, "tank_rubble": 6,
 					"escalation_per_chunk": 0.00011, "threat_per_chunk": 0.0002},
-				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12},
+				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "rubble": 12},
 				"per_level": {
-					"army": {"tank_hp": 0.02, "tank_damage": 0.02, "start_interval": -0.01},
-					"air": {"hp": 0.02, "damage": 0.02}
+					"army": {"tank_damage": 0.02, "start_interval": -0.01},
+					"air": {"damage": 0.02}
 				}
 			},
 			{
 				"city": {"half": 225, "coast_z": -295, "max_height": 40, "outer_cores": [[300, -164, 68], [-284, -142, 52], [273, 252, 45], [315, 45, 52], [-300, 135, 45], [60, 330, 52], [-165, 375, 38], [390, -60, 45]], "tower_chance": 0.65,
 					"fog_scale": 0.34, "far_haze": 0.0014},
-				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 7.3,
+				"threat": {"level": 4},
+				"army": {"range": 15.0, "spawn_radius": 57, "start_interval": 3.2, "min_interval": 0.8, "tank_damage": 11.0,
 					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.00002, "threat_per_chunk": 0.00008},
-				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 5.4,
+				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "damage": 8.1,
 					"rubble": 30},
 				"per_level": {
-					"army": {"tank_hp": 0.03, "tank_damage": 0.02, "start_interval": -0.01},
-					"air": {"hp": 0.03, "damage": 0.03}
+					"army": {"tank_damage": 0.02, "start_interval": -0.01},
+					"air": {"damage": 0.03}
 				}
 			}
 		]
