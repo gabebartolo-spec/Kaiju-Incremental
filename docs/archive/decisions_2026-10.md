@@ -2,6 +2,19 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
+His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
+fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
+every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
+road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
+man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
+(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
+The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
+stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
+wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1. Built (10-30) as pool models
+P01-P03 authored in code (tools/port/build_port.py, no Tripo spend), district "port", role "fixed": CityPort stands
+the same 4 cranes, 3 sheds and 29 stacks on the quay and yard in every city, where the real band reaches (stage 3).
+
 ## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
 Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
 row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the

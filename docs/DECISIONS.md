@@ -4,6 +4,18 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-02 · D-443 · Director · The baby rises on the wading shelf, in today's spot
+Q: flow@5 failed because the baby's head broke the water at frame 92, after the wade began: its unkeyed rise ended
+on the hollow's 7 m deep floor, which is fitted for the adult's keyed crouch. Rise on the shelf, or a shallower
+hollow at stage 1? A: "Shallower hollow". So below `harbour.shelf_below` (2) the hollow's floor is the wading
+shelf (`wade_depth`, 2.5 m) and the rise spot is unchanged. The whole body is in open water and the head breaks
+the water during the rise (frame 43). Stages 2 and 3 keep the deep hollow (EmergeReach.fit).
+
+## 2026-11-02 · D-442 · Director · Tonight: the RAM floor drops to 4 GB for the slow-suite fixes
+Q: the runner waited on D-317's 6 GB floor (5.5 GB free: his browser and games open); close them, or lower the
+floor tonight? A: "Lower floor tonight". So tonight's local suite runs use `MIN_FREE_MB=4096`; the tool default
+stays 6144 (D-317) and nothing in the repo changes. Tomorrow the 6 GB floor is back.
+
 ## 2026-11-02 · D-441 · Director · Title: today's croc side-on behind the city, its fires on visible towers
 His words, on the title still: "this fire is wrong btw / and we should update the kaiju silhouette to match our
 current adult croc design / improve it too". Q: which view of the croc? A: "C: side-on". Q: the left district's roof
@@ -385,16 +397,3 @@ tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last
 alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
 plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
 suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
-
-## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
-His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
-fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
-every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
-road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
-man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
-(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
-The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
-stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
-wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1. Built (10-30) as pool models
-P01-P03 authored in code (tools/port/build_port.py, no Tripo spend), district "port", role "fixed": CityPort stands
-the same 4 cranes, 3 sheds and 29 stacks on the quay and yard in every city, where the real band reaches (stage 3).

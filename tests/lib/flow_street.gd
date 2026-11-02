@@ -26,10 +26,12 @@ static func jams_hold(check: Callable, traffic: Traffic) -> void:
 	ahead.pos = me.pos + me.dir * Num.f(cfg["car_gap"]) * 0.5
 	var saved := traffic.cars
 	traffic.cars = [me, ahead]
+	traffic._frame_index(0.0)  # _blocked reads the cars through the frame's grid (#491)
 	var queue := traffic._blocked(me)
 	ahead.crushed = true
 	var wreck := traffic._blocked(me)
 	traffic.cars = saved
+	traffic._frame_index(0.0)
 	(
 		check
 		. call(

@@ -211,7 +211,10 @@ func _pick() -> String:
 func _model(id: String) -> VoxelBuilder:
 	if not _models.has(id):
 		var read := Kvox.read(DIR % id)
-		_models[id] = read.frames[0] if not read.frames.is_empty() else null
+		var vox: VoxelBuilder = read.frames[0] if not read.frames.is_empty() else null
+		if vox != null:
+			vox.detail = true  # the city's surface family (flat surfaces P3)
+		_models[id] = vox
 	return _models[id]
 
 
