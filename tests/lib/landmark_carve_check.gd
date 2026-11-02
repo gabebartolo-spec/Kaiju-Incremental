@@ -4,6 +4,9 @@ extends RefCounted
 ## one blow on the foot of its rim with the kaiju outside. On: the blow bites the landmark's own
 ## cells (cells_carved) and its rim arc comes down outward as one topple of fine cells over the
 ## stub (LandmarkCells' rule, WP6). Off: no cells; the chunk Structure's arc falls as before.
+## Also "ring_holds" (flow@4's stadium, 2026-11-02): a blow high on the rim takes its arc, never the
+## whole ring (VoxelFrame.settle with topples off; on, the tilt rule tips a share of it over the
+## pitch), and CarvingCells.gone: an empty chunk inside the shell holds until the one above goes.
 
 var _check: Callable
 var _make: Callable
@@ -57,6 +60,68 @@ func run() -> void:
 				)
 			)
 		sim.dispose()
+	_ring_holds()
+	_gone()
+
+
+## One blow high on the south rim, the kaiju outside: on, the rampage's settle sheds what the blow
+## cut loose and the ring stands; off (its grid settled with topples), the tilt rule tips a large
+## share of the ring in over the pitch (flow@4: the stands fell on the fans).
+func _ring_holds() -> void:
+	var lost := {}
+	for topples: bool in [true, false]:
+		var sim: RampageSim = _make.call([_stadium()] as Array[Dictionary], true)
+		var b := sim.buildings[0]
+		var top := Vector3i(b.w / 2, b.height - 1, b.d - 1)
+		while top.y > 0 and not b.frame.alive(top):
+			top.y -= 1
+		sim.kaiju_pos = Vector2(b.x, b.z + b.d)
+		sim.damage_chunks(0, [top] as Array[Vector3i], b.frame.max_hp * 2.0)
+		var g: Carving.Grid = sim.carving.grids[0]
+		var cells := g.frame.alive_count
+		var gone := 0
+		if topples:
+			for part: Dictionary in g.frame.settle(true):
+				var index: PackedInt32Array = part["index"]
+				gone += index.size()
+		else:
+			sim.step(1.0 / 15.0, Vector2.ZERO, false)
+			gone = cells - g.frame.alive_count
+		lost[topples] = float(gone) / maxf(1.0, cells)
+		sim.dispose()
+	var on := Num.f(lost[false])
+	var off := Num.f(lost[true])
+	(
+		_check
+		. call(
+			on < 0.05 and off > 0.1 and off > on * 3.0,
+			(
+				(
+					"ring_holds: after one high blow the stadium's settle takes %.1f%% of its cells (on);"
+					+ " with topples (off) %.1f%%"
+				)
+				% [on * 100.0, off * 100.0]
+			)
+		)
+	)
+
+
+## CarvingCells.gone on a two-chunk column: the lower chunk never held a cell (inside the shell).
+func _gone() -> void:
+	var g := Carving.Grid.new()
+	g.bw = 1
+	g.bd = 1
+	g.full = PackedInt32Array([0, 10])
+	g.live = PackedInt32Array([0, 10])
+	g.dead = PackedByteArray([0, 0])
+	var held := not CarvingCells.gone(g, 0, 0.25) and not CarvingCells.gone(g, 1, 0.25)
+	g.live[1] = 2
+	var worn := CarvingCells.gone(g, 1, 0.25)
+	g.dead[1] = 1
+	_check.call(
+		held and worn and CarvingCells.gone(g, 0, 0.25),
+		"gone: an empty chunk stands while the chunk above holds, and goes once it is gone"
+	)
 
 
 ## The stadium's layout entry as the city builds it (its baked chunks, its arcs).

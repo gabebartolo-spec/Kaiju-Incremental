@@ -2431,6 +2431,7 @@
             "seabed_depth": {"$ref": "#/$defs/num"},
             "crouch_back": {"$ref": "#/$defs/num"},
             "seabed_clear": {"$ref": "#/$defs/num"},
+            "shelf_below": {"type": "integer", "minimum": 1},
             "rise_x": {"$ref": "#/$defs/num"},
             "nose_gap": {"$ref": "#/$defs/num"},
             "bank_inset": {"$ref": "#/$defs/num"},
@@ -2493,7 +2494,7 @@
           "required": [
             "beach_x", "sea_z", "shore", "sand", "promenade", "road", "back_z", "side_streets",
             "quay_back", "piers", "seawall", "light", "arc_points", "beach", "shelf", "drop", "drop_depth", "hollow", "hollow_edge", "sand_top",
-            "sea_level", "seabed_depth", "crouch_back", "seabed_clear", "rise_x", "nose_gap",
+            "sea_level", "seabed_depth", "crouch_back", "seabed_clear", "shelf_below", "rise_x", "nose_gap",
             "bank_inset", "fit_margin", "view_margin", "props", "port"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},

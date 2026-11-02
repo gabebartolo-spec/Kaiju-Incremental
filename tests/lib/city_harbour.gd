@@ -81,11 +81,17 @@ static func _check_walk_in(tier: int, map_seed: int, sim: RampageSim, check_fn: 
 ## its mouth, where the biggest body's tail may reach).
 ## At this stage the sea floor at the rise lies deep enough that every measured crouch
 ## (CROUCH_TOPS) at the stage's biggest body scale starts wholly under the water: the back never
-## shows at the rise's first frame (coordinator 2026-10-28).
+## shows at the rise's first frame (coordinator 2026-10-28). Below "shelf_below" it is the wading
+## shelf (director 2026-11-02 "Shallower hollow").
 static func check_seabed(tier: int, check_fn: Callable) -> void:
 	var tuning := CityGrowth.tuning_for(Content.tuning().duplicate(true), tier)
 	var cfg: Dictionary = tuning["city"]
 	var depth := CityHarbour.sea(cfg) - CityHarbour.seabed(cfg)
+	if tier < Num.i(cfg["harbour"]["shelf_below"]):
+		var wade := Num.f(cfg["wade_depth"])
+		var msg := "stage %d: the floor at the rise is the shelf, %.2f m under the water (wade %.2f)"
+		check_fn.call(absf(depth - wade) < 0.01, msg % [tier, depth, wade])
+		return
 	var scale := EmergeReach.biggest_scale(tuning, Content.upgrades(), tier)
 	var tallest := ""
 	var top := 0.0
@@ -140,6 +146,44 @@ static func check_rise(tier: int, map_seed: int, check_fn: Callable) -> void:
 				CityHarbour.seabed(sim.city),
 				dry
 			]
+		)
+	)
+
+
+## Below "shelf_below" (the baby, with no keyed rise clip: director 2026-11-02 "Shallower
+## hollow") the body rises at today's spot on the wading shelf (CityHarbour.shelf_floor) and its
+## head breaks the water during the rise, at Emergence.break_at; over the adult's deep seabed it
+## stood too low to break before the wade (flow@5, frame 92 > 62).
+static func check_rise_shelf(tier: int, map_seed: int, check_fn: Callable) -> void:
+	var grown := EmergeReach.max_growth(Content.upgrades(), "reptilian", tier)
+	var sim := _fresh(tier, map_seed, tier, grown)
+	if tier >= Num.i(sim.city["harbour"]["shelf_below"]):
+		return
+	var clip := RampageRise.keyed(sim, "reptilian")
+	check_fn.call(clip == 0.0, "stage %d: no keyed rise clip (%.2f s)" % [tier, clip])
+	sim.emerge.start(sim)
+	var plan := CityGen.map(sim.city)
+	var at := sim.kaiju_pos
+	var bed := CityHarbour.floor_at(plan, sim.city, at)
+	var shelf := CityHarbour.shelf_floor(sim.city)
+	var due := sim.emerge.break_at(sim)
+	var broke := -1.0
+	var t := 0.0
+	while sim.emerge.active and sim.emerge.risen() < 1.0:
+		sim.step(DT, Vector2.ZERO, false)
+		t += DT
+		for e: Dictionary in sim.events:
+			if str(e["type"]) == "surface_break":
+				broke = t
+	check_fn.call(
+		CityHarbour.holds(plan, at) and absf(bed - shelf) < 0.01 and absf(broke - due) <= DT,
+		(
+			(
+				"stage %d, map_seed %d: unkeyed, the kaiju rises at %s on the shelf (floor %.2f,"
+				+ " shelf %.2f, seabed %.2f) and breaks the water %.3f s in, during the rise"
+				+ " (break_at %.3f)"
+			)
+			% [tier, map_seed, at, bed, shelf, CityHarbour.seabed(sim.city), broke, due]
 		)
 	)
 
