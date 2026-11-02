@@ -190,6 +190,10 @@ func clear_dead() -> void:
 				}
 			)
 	sim.tanks = alive
+	_clear_dead_squads()
+
+
+func _clear_dead_squads() -> void:
 	if squads.any(func(squad: Squad) -> bool: return squad.dead):
 		var holding: Array[Squad] = []
 		for squad: Squad in squads:
