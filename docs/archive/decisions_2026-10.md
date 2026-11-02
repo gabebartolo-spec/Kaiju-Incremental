@@ -2,6 +2,17 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-385 · Director · Tests guard behaviour and bugs, not balance numbers (rank 1 now)
+Q (audit of all 76 suites on fb5e3adbc: which checks freeze tuning or old measurements so polish turns CI red with
+nothing broken?): he picked "A: rank 1 now" (rank 2 as each check next breaks, rank 3 when convenient). Implementation
+and polish come before balance tuning. Rank 1 now: military parked-in-range floor over hand-picked seeds becomes "a
+tank that parks sits in the band"; motion gate steps-per-second bands go (footfall = clip stride and no slide stay),
+foot lift one range for every stage, knee jerk one shared ceiling; gait's young route pinned to 1 mm becomes a turn
+rule plus two runs match; pinned fingerprints (street, cells, landmark cells, destruction trace and island sizes)
+go, run-vs-run matches stay; menu checks by exact wording and pixel gaps become overlap / on-screen / reachable rules;
+species lists come from the data. Kept: slide, catch steps, knee pops, locked legs, NaN, overlaps, determinism, saves,
+text size and contrast. Report: the audit's REPORT_tests_too_strict.md. Replaces motion_gate.json's "never widen".
+
 ## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
 Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
 12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he

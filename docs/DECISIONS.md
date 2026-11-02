@@ -31,6 +31,16 @@ as the game's own sand (grains, wet line) sloping into the bay, its waterline wa
 a broken foam line, the fires' orange on the wet sand, and the bay lapping up it with the game's lap (`water.lap`).
 Camera and far shore unchanged; title_ledge.gdshader is replaced by title_sand.gdshader. UI suite `ui_title_beach.gd`.
 
+## 2026-11-02 · D-439 · Director · A flung tank carves a building, wedges in a big one, caves a roof in
+His words: "when a tank hits a building it needs to carve it, it would be really cool if a tank could even wedge into
+and get stuck in the bigger buildings or if they land ontop of a building they could crush it". Picked "Tank-sized
+hole", "Too big to punch through", "Punch through floors", "Own PR after threat". Why: a thrown tank should leave a
+mark the player remembers, not bounce off. Changes: TankHold (army.flight.hold): a tank flying into a wall bores a
+hull-sized tunnel, deeper the faster it flew; out a thin building's far side it flies on at bore_keep of its speed,
+else it sticks wedged and stays as a husk while the floors over it stand; one coming down on a roof caves in floors
+by its fall speed and ends inside; a husk falls when its floor breaks. Tank flight suite on/off fixtures: tank.bore
+(slow vs fast), tank.wedge (thin vs thick), tank.roof (street vs low vs high drop), tank.husk (standing vs broken).
+
 ## 2026-11-02 · D-438 · Director · Octopus and insectoid code removed
 His words: "remove octopus code if its bloating the game and confusing you", then "definitely remove the octopus
 code", then "remove the insectoid too, the only trace of him should be in the city across the bay". Changes: every
@@ -383,14 +393,3 @@ He approved: a pull request's re-push runs the suites that failed or never ran o
 code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
 closure, autoloads included); any other changed file or any doubt runs everything. Main still runs everything: a
 main push reuses only a PR run that tested every suite. Why: re-testing passed suites cost an hour per fix.
-
-## 2026-10-30 · D-385 · Director · Tests guard behaviour and bugs, not balance numbers (rank 1 now)
-Q (audit of all 76 suites on fb5e3adbc: which checks freeze tuning or old measurements so polish turns CI red with
-nothing broken?): he picked "A: rank 1 now" (rank 2 as each check next breaks, rank 3 when convenient). Implementation
-and polish come before balance tuning. Rank 1 now: military parked-in-range floor over hand-picked seeds becomes "a
-tank that parks sits in the band"; motion gate steps-per-second bands go (footfall = clip stride and no slide stay),
-foot lift one range for every stage, knee jerk one shared ceiling; gait's young route pinned to 1 mm becomes a turn
-rule plus two runs match; pinned fingerprints (street, cells, landmark cells, destruction trace and island sizes)
-go, run-vs-run matches stay; menu checks by exact wording and pixel gaps become overlap / on-screen / reachable rules;
-species lists come from the data. Kept: slide, catch steps, knee pops, locked legs, NaN, overlaps, determinism, saves,
-text size and contrast. Report: the audit's REPORT_tests_too_strict.md. Replaces motion_gate.json's "never widen".

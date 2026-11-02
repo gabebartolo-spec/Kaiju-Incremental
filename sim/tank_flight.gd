@@ -3,16 +3,17 @@ extends RefCounted
 ## Tanks the reptilian sends flying (research 22 recs 2-4; director 2026-10-30: real flung tanks
 ## first, then Ricochet and Domino on them). The ram and the leap launch a tank on a ballistic arc
 ## that lands where today's shove put it (launch(): the distance sets the speed at loft_deg). Each
-## tick it moves by exact constant-gravity kinematics; a building column standing above its hull
-## is a wall: the hit carves the floors round the impact (damage per unit of speed) and the tank
-## drops at the foot of it. The ground (the street, or a roof it comes down on) ends the flight, and
+## tick it moves by exact constant-gravity kinematics; a standing chunk ahead at its height is a
+## wall: it bores a hull-sized tunnel and flies on out the far side or sticks there, wedged
+## (TankHold). The ground (the street, a floor inside, or a roof it caves in) ends the flight, and
 ## the tank with it: it comes down wrecked (no hit points, director 2026-11-01: "if the tank gets
-## smacked by a kaiju, i want that tank to go flying and die").
+## smacked by a kaiju, i want that tank to go flying and die"); a wreck above the street stays,
+## a husk, until its floor goes.
 ## Ricochet (throw_ricochet, per level) gives a bounce off a wall or the ground instead of
 ## stopping, at wall_restitution / ground_restitution. Domino (throw_domino, per level) is chain
 ## depth: a flying tank that reaches a grounded one launches it on
 ## along its own way, domino_reach out, one generation deeper. An airborne tank neither drives
-## nor fires (Convoy, Army skip it); a tank left on a roof falls when the roof goes. It tumbles
+## nor fires (Convoy, Army skip it). It tumbles
 ## (director 2026-10-30, "Seeded mix"): each launch spins it about an axis from this class's own
 ## seeded stream; where it lands past topple_deg it rests on its side or roof, toppled for good
 ## ("Lands as it falls"). Numbers are army.flight in data/tuning.json.
@@ -24,6 +25,8 @@ var launched := 0
 var walls_hit := 0
 var knocked := 0
 var toppled := 0
+## Bores, wedges, caved-in roofs and the husks they leave (TankHold).
+var hold: TankHold
 var _rng: RandomNumberGenerator
 
 
@@ -31,6 +34,8 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> 
 	sim = p_sim
 	cfg = p_cfg
 	_rng = rng
+	var hold_cfg: Dictionary = p_cfg["hold"]
+	hold = TankHold.new(p_sim, hold_cfg)
 
 
 ## Sends `tank` flying along `dir` to land `distance` out on open ground; chain generation `gen`.
@@ -68,10 +73,7 @@ func step(dt: float) -> void:
 	for tank: RampageSim.Tank in sim.tanks:
 		if tank.flying:
 			_fly(tank, dt)
-		elif tank.height > 0.0 and sim.powers.column_top(tank.pos) < tank.height:
-			tank.vel = Vector3.ZERO  # its roof is gone: it falls, without a spin
-			tank.spin = Vector3.ZERO
-			tank.flying = true
+	hold.step(dt)
 
 
 func _fly(tank: RampageSim.Tank, dt: float) -> void:
@@ -79,27 +81,32 @@ func _fly(tank: RampageSim.Tank, dt: float) -> void:
 	var flat := Vector2(tank.vel.x, tank.vel.z)
 	var next := sim.clamp_to_arena(tank.pos + flat * dt)
 	var y := tank.height + tank.vel.y * dt - 0.5 * g * dt * dt
+	var from_y := tank.height + Num.f(cfg["clearance"])  # what it flew level with: walls, floors
 	tank.vel.y -= g * dt
-	if sim.powers.column_top(next) > y + Num.f(cfg["clearance"]):
-		_wall(tank, next, y)
-		next = tank.pos
+	if hold.solid(next, from_y):
+		if not _wall(tank, next, y, from_y):
+			return  # wedged where the tunnel ends
+		next = tank.pos  # bounced back off, or out the far side (TankHold.bore)
 	tank.pos = next
 	tank.height = y
 	if tank.spin != Vector3.ZERO:
 		var turn := Basis(tank.spin.normalized(), tank.spin.length() * dt)
 		tank.tilt = (turn * tank.tilt).orthonormalized()
 	_strike(tank)
-	var ground := sim.powers.column_top(tank.pos)
+	var ground := hold.floor_under(tank.pos, from_y)
 	if tank.height <= ground:
 		tank.height = ground
 		_touch_down(tank)
 
 
-## A building in the way at `next`: carve round the impact, then bounce back off it (Ricochet)
-## or lose the forward speed and drop.
-func _wall(tank: RampageSim.Tank, next: Vector2, y: float) -> void:
+## A building in the way at `next`: with a bounce left (Ricochet) it carves round the impact and
+## bounces back off; else it bores in (TankHold.bore). False if it stuck there, wedged.
+func _wall(tank: RampageSim.Tank, next: Vector2, y: float, from_y: float) -> bool:
 	walls_hit += 1
 	var flat := Vector2(tank.vel.x, tank.vel.z)
+	sim.events.append({"type": "tank_hit_wall", "tank": tank.id, "at": next, "height": y})
+	if not _bounce_left(tank):
+		return hold.bore(tank, next, y, flat)
 	var radius := Num.f(cfg["wall_radius"])
 	var floor_at := maxi(0, floori(y))
 	sim.hit_area(
@@ -109,21 +116,17 @@ func _wall(tank: RampageSim.Tank, next: Vector2, y: float) -> void:
 		floor_at,
 		floor_at + Num.i(cfg["wall_floors"])
 	)
-	sim.events.append({"type": "tank_hit_wall", "tank": tank.id, "at": next, "height": y})
-	if _bounce_left(tank):
-		tank.bounces += 1
-		var normal := _wall_normal(tank.pos, next, y)
-		flat = (flat - 2.0 * flat.dot(normal) * normal) * Num.f(cfg["wall_restitution"])
-	else:
-		flat = Vector2.ZERO
+	tank.bounces += 1
+	var normal := _wall_normal(tank.pos, next, from_y)
+	flat = (flat - 2.0 * flat.dot(normal) * normal) * Num.f(cfg["wall_restitution"])
 	tank.vel = Vector3(flat.x, tank.vel.y, flat.y)
+	return true
 
 
 ## Which way the wall faces: the axis whose step alone runs into it (both: straight back).
-func _wall_normal(from: Vector2, next: Vector2, y: float) -> Vector2:
-	var clear := Num.f(cfg["clearance"])
-	var x_hits := sim.powers.column_top(Vector2(next.x, from.y)) > y + clear
-	var z_hits := sim.powers.column_top(Vector2(from.x, next.y)) > y + clear
+func _wall_normal(from: Vector2, next: Vector2, from_y: float) -> Vector2:
+	var x_hits := hold.solid(Vector2(next.x, from.y), from_y)
+	var z_hits := hold.solid(Vector2(from.x, next.y), from_y)
 	var step := next - from
 	if x_hits and not z_hits:
 		return Vector2(signf(step.x), 0.0)
@@ -147,6 +150,7 @@ func _touch_down(tank: RampageSim.Tank) -> void:
 	tank.flying = false
 	tank.wrecked = true
 	_settle(tank)
+	hold.punch(tank, fall)  # come down on a roof: it caves in
 	sim.events.append(
 		{
 			"type": "tank_landed",
