@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-445 · Director · W walks forward: the stick turns with the camera
+Q: "WASD controls dont work, seems like theres no way to walk forwards." Since D-330 the camera turns to sit
+behind the kaiju, but the stick still pointed at fixed map directions (W = north, -z). At the rise he faces +z, so W
+walked him back toward the camera. A: the stick is now camera-relative: it is turned by the camera's yaw and swing
+(Rampage.view_turn). Probe after the rise, 3 s of W: before, 4.1 m backwards (-z); after, 8.1 m forwards (+z).
+Holding A or D now turns him in a circle, as in any third-person game. Scripted and autoplay input stay in map
+directions.
+
 ## 2026-11-03 · D-444 · Director · The roadmap is docs/ROADMAP.md in the repo, not the Claude Doc
 Q: the Claude Doc roadmap opens from one account only. Should the repo file replace it as the source of truth?
 A: "Yes, repo file". docs/ROADMAP.md is the roadmap. Roadmap changes go in it through a PR. The Claude Doc is
