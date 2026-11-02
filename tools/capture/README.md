@@ -50,6 +50,24 @@ test's city and rampage, a staged city, frame waits, render timings, stills and 
 script preloads it (`const Kit := preload("res://tools/capture/capture_kit.gd")`) instead of
 copying that code.
 
+## One shot, and before/after
+
+`shot.gd` is the general still: a seeded rampage (species, stage, run seed, time of day), stills at
+chosen seconds, a fixed camera (`--cam`/`--at`) or the game's, a walk target, any tuning value
+(`--tune=sec.key=v`) and render features off (`--off=fog,ssao,ocean,...`; the list is in its header).
+Reach for it before writing a one-off; add a flag to it when a bug needs one.
+
+`ab.sh` runs the same shot.gd flags on a base ref (default `origin/main`, in a reused detached
+worktree `../Kaiju-Incremental-wt/_ab-base`) and on this checkout, then tiles one sheet, before row
+over after row: the evidence a visual PR carries.
+
+```bash
+bash tools/capture/ab.sh --out=C:/kt/ab/night -- --still-at=8,12 --time=night
+```
+
+A fresh worktree is made ready for either with `bash tools/wt_setup.sh` (override.cfg, native DLL,
+windowed import via gpu_slot; `--check` only reports).
+
 ## The native library guard
 
 A missing or stale native DLL does not stop the game: it falls back to the slow GDScript mesher
