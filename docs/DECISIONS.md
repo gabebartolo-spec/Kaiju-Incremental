@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-448 · Director · Falling buildings hit neighbours and the kaiju, never pass through
+Q: a falling building passed through its neighbour and through the kaiju. Cause: a fall is a scripted pose (ToppleFx
+tilt, CityFalls drop) checked against nothing until it landed; the kaiju had no physics body. A: FallContact (sim)
+poses each falling part as the view draws it every tick and samples its chunks. A neighbour's live chunks it reaches
+take a landing's blow (carved); one that survives stops it. The kaiju's hide (a rigid capsule, tuning fall_contact)
+stops it at the first touch (bisected in the tick). It shatters there into DebrisField fragments thrown from outside
+the hide. KaijuHide (AnimatableBody3D) follows him, so fragments hit and slide off. Max overlap (fall_contact
+suite): neighbour 0.48 to 0.11, kaiju topple 1.03 to 0.00, drop 0.96 to 0.00. Not done: settled debris vs neighbours.
+
 ## 2026-11-03 · D-447 · Director · Per-frame CPU trims (no visual change)
 Under D-032 (looks first): CPU-only savings, identical output. LightPool.repick walks the group once and tests
 the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/fire_xz to its flame shader only
@@ -389,11 +398,3 @@ connector was not in the building session, so #445 ships the four tree sounds sy
 (0 credits); the 500 stay approved for replacing them from a session that has it. The kaiju himself, at his current
 stage, turns at the empty centre of the rings: "yes". Tuning `tree.skin` and `tree.skin.fx`; `fx.enabled` is the
 on/off switch the fixture flips.
-
-## 2026-10-30 · D-395 · Director · The feedback link is the Itch page
-His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's LEAVE FEEDBACK opens it (tuning demo.feedback_url); replaces the placeholder D-148 left.
-
-## 2026-10-30 · D-394 · Director · The landmark pool's named entries
-His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
-ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
-stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".
