@@ -69,22 +69,27 @@ static func chunk_depth(b: RampageSim.Building, p: Vector3) -> float:
 
 
 ## The sample points of a part's chunks at `xf` (centre and 8 corners pulled in by `inset`),
-## only of chunks whose centre lies inside `within` (what it may touch, grown by a chunk).
+## only of chunks whose centre lies inside `within` (what it may touch, grown by a chunk):
+## [points, the same points where the fall began] (no tilt, no drop). What a point already
+## touched as it began (the base he chewed, a wall it leant on) never counts as running into it.
 static func samples(
 	f: RampageSim.Fall, b: RampageSim.Building, xf: Transform3D, inset: float, within: AABB
-) -> PackedVector3Array:
+) -> Array[PackedVector3Array]:
 	var out := PackedVector3Array()
+	var was := PackedVector3Array()
+	var start := Transform3D(Basis(), f.pivot)
 	var h := 0.5 - inset
 	for c: Vector3i in f.cells:
 		var rel := b.chunk_world(c) - f.pivot
-		var at := xf * rel
-		if not within.has_point(at):
+		if not within.has_point(xf * rel):
 			continue
-		out.append(at)
-		for k: int in 8:
-			var corner := Vector3(h if k & 1 else -h, h if k & 2 else -h, h if k & 4 else -h)
-			out.append(xf * (rel + corner))
-	return out
+		for k: int in 9:
+			var off := Vector3.ZERO
+			if k < 8:
+				off = Vector3(h if k & 1 else -h, h if k & 2 else -h, h if k & 4 else -h)
+			out.append(xf * (rel + off))
+			was.append(start * (rel + off))
+	return [out, was]
 
 
 ## What part f runs into this tick (f.t already advanced by dt): {} for nothing, else
@@ -138,7 +143,12 @@ static func probe(
 		and hi.y > a.y - r
 	)
 	var near: Array[int] = []
-	if f.kind == "topple":
+	# Neighbours from the end of the shudder (its few degrees of wobble are the tower's death
+	# throes, drawn against a wall it shares, not a fall into it).
+	var shudder := minf(
+		Num.f(topple_cfg["shudder_s"]), f.duration * Num.f(topple_cfg["shudder_max_share"])
+	)
+	if f.kind == "topple" and t >= shudder:
 		for i: int in sim.grid.in_rect(Vector2(lo.x, lo.z), Vector2(hi.x, hi.z)):
 			var nb := sim.buildings[i]
 			if i == f.building or lo.y > nb.base + nb.height:
@@ -162,17 +172,20 @@ static func probe(
 		)
 		within = nbox if first else within.merge(nbox)
 		first = false
-	var pts := samples(f, own, xf, Num.f(cfg["inset"]), within.grow(0.9))
+	var both := samples(f, own, xf, Num.f(cfg["inset"]), within.grow(0.9))
+	var pts := both[0]
+	var was := both[1]
 	if near_kaiju:
-		for p: Vector3 in pts:
-			if hide_depth(p, cap) > 0.0:
+		for n: int in pts.size():
+			if hide_depth(pts[n], cap) > 0.0 and hide_depth(was[n], cap) <= 0.0:
 				return {"contact": "kaiju"}
 	var blow := Num.f(sim.city["impact_damage"])
 	for i: int in near:
 		var nb := sim.buildings[i]
 		var hit: Array[Vector3i] = []
-		for p: Vector3 in pts:
-			if chunk_depth(nb, p) > 0.0:
+		for n: int in pts.size():
+			var p := pts[n]
+			if chunk_depth(nb, p) > 0.0 and chunk_depth(nb, was[n]) <= 0.0:
 				var c := Vector3i(
 					floori(p.x - (nb.x - nb.w * 0.5)),
 					floori(p.y - nb.base),
