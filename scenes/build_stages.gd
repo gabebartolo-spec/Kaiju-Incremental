@@ -8,15 +8,16 @@ var on := false
 var overlay: LoadingOverlay
 
 
-## Called after each stage by the node that builds. False when that node left the tree meanwhile
-## (the build stops). `counts` false: a wait that is not a finished stage (the meter stays).
+## Called after each stage by the node that builds. False when that node left the tree or was
+## freed meanwhile (the build stops). `counts` false: a wait that is not a finished stage (the
+## meter stays).
 func next(node: Node, counts: bool = true) -> bool:
 	if not on:
 		return true
 	if counts and overlay != null:
 		overlay.advance()
 	await node.get_tree().process_frame
-	return node.is_inside_tree()
+	return is_instance_valid(node) and node.is_inside_tree()
 
 
 ## The build is done: the loading screen goes.

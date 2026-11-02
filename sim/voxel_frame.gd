@@ -235,15 +235,16 @@ func detach() -> Array[Dictionary]:
 ## what hung from a toppled load below its level: a fresh flood, its islands land as the first
 ## ones do (review FIX on #97: nothing is left floating). The native flood and cell loops
 ## (KaijuSettle) run it where the extension is loaded; with VoxelSupport.use_native off this is
-## the GDScript reference they are held to (tests/lib/settle_replay.gd).
-func settle() -> Array[Dictionary]:
+## the GDScript reference they are held to (tests/lib/settle_replay.gd). `topples` off: islands
+## only (a ring landmark comes down by its arcs, never whole: its weight hangs over the pitch).
+func settle(topples: bool = true) -> Array[Dictionary]:
 	settled_once = true
 	var support := VoxelSupport.new(self)
 	var out: Array[Dictionary] = []
 	_drop_islands(support, out)
 	var first := out.size()
 	var plan := w * d
-	var tips := support.topple()
+	var tips := support.topple() if topples else ([] as Array[Dictionary])
 	for tip: Dictionary in tips:
 		var label: int = tip["label"]
 		var level: int = tip["level"]

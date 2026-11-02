@@ -268,13 +268,15 @@ func _check_bridges_meet_land() -> void:
 
 
 ## The biggest kaiju of each stage 1-3 rises over the sea floor wholly in the bay's water, its
-## crouched back under the surface at first (tests/lib/city_harbour.gd check_seabed, check_rise;
-## D-270).
+## crouched back under the surface at first; the baby rises on the shelf and breaks the water
+## during the rise (tests/lib/city_harbour.gd check_seabed, check_rise, check_rise_shelf;
+## D-270, director 2026-11-02).
 func _check_rise_in_water() -> void:
 	for tier: int in [1, 2, 3]:
 		Harbour.check_seabed(tier, check)
 		for map_seed: int in COVERAGE_SEEDS:
 			Harbour.check_rise(tier, map_seed, check)
+			Harbour.check_rise_shelf(tier, map_seed, check)
 
 
 ## The railway's viaduct keeps clear of the rise at stages 1-3 (tests/lib/city_harbour.gd
