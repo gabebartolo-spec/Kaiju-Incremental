@@ -44,8 +44,9 @@ func _process(delta: float) -> void:
 ## the best `pool_size` seen, in order, as it scans (no sort of every lamp): the order is the
 ## distance, then the tree order, exactly as sorting them all by (distance, index) gave. The
 ## distance is a 32-bit float, as it was when it was stored in a Vector2 to sort.
-func nearest(origin: Vector3) -> Array[PooledLight]:
-	var all := get_tree().get_nodes_in_group(PooledLight.GROUP)
+func nearest(origin: Vector3, all: Array[Node] = []) -> Array[PooledLight]:
+	if all.is_empty():
+		all = get_tree().get_nodes_in_group(PooledLight.GROUP)
 	var dist := PackedFloat32Array()  # the best so far, ascending
 	var best: Array[PooledLight] = []
 	for i: int in all.size():
@@ -65,11 +66,14 @@ func nearest(origin: Vector3) -> Array[PooledLight]:
 
 
 func repick(origin: Vector3) -> void:
-	var near := nearest(origin)
-	var all := get_tree().get_nodes_in_group(PooledLight.GROUP)
+	var all := get_tree().get_nodes_in_group(PooledLight.GROUP)  # one walk of the group
+	var near := nearest(origin, all)
+	var picked := {}  # the near set, for an O(1) test
+	for light: PooledLight in near:
+		picked[light] = true
 	for node: Node in all:
 		var light: PooledLight = node
-		if not near.has(light):
+		if not picked.has(light):
 			light.set_wanted(false)
 	var live := 0
 	for node: Node in all:

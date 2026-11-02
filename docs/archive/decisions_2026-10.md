@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-392 · Director · Six languages plus Chinese: Simplified Chinese, Spanish, Italian, French, Russian, German
+Roadmap item 1. Fonts: "Draw + Noto SC": accented Latin and Cyrillic are drawn into the four Kaiju faces
+(tools/fonts/glyphs.py); Simplified Chinese falls back to Noto Sans SC (SIL OFL 1.1), subset to the game's characters.
+Translations: "Claude now, review later": Claude writes every language into `data/i18n/strings.csv`; a native
+check before release is a separate spend question. The language is a button on the Accessibility page.
+
 ## 2026-10-30 · D-391 · Director · The roadmap moves to a Claude Doc
 A: "Yes, redirect it": the roadmap lives at https://claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q; `docs/ROADMAP.md`
 points there; the old file is frozen as `docs/archive/ROADMAP_2026-10.md` for detail agents cannot get from the doc.

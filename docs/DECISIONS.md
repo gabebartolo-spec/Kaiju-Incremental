@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-447 · Director · Per-frame CPU trims (no visual change)
+Under D-032 (looks first): CPU-only savings, identical output. LightPool.repick walks the group once and tests
+the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/fire_xz to its flame shader only
+when it moves. TaskforceView reuses its per-frame id dictionaries. Skipped: weather rain smears, carve debris
+totals, crowd lose_cells/_bury, debris early-outs (not trivially identical; need a closer read).
+
 ## 2026-11-03 · D-445 · Director · W walks forward: the stick turns with the camera
 Q: "WASD controls dont work, seems like theres no way to walk forwards." Since D-330 the camera turns to sit
 behind the kaiju, but the stick still pointed at fixed map directions (W = north, -z). At the rise he faces +z, so W
@@ -390,9 +396,3 @@ stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"):
 ## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
 A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
 menu_fps 60, so the frame rate the preview shows is the real one; closing Settings restores the menu cap.
-
-## 2026-10-30 · D-392 · Director · Six languages plus Chinese: Simplified Chinese, Spanish, Italian, French, Russian, German
-Roadmap item 1. Fonts: "Draw + Noto SC": accented Latin and Cyrillic are drawn into the four Kaiju faces
-(tools/fonts/glyphs.py); Simplified Chinese falls back to Noto Sans SC (SIL OFL 1.1), subset to the game's characters.
-Translations: "Claude now, review later": Claude writes every language into `data/i18n/strings.csv`; a native
-check before release is a separate spend question. The language is a button on the Accessibility page.
