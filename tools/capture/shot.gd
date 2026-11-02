@@ -5,7 +5,8 @@ extends SceneTree
 ##   bash C:/kt/gpu_slot.sh godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/shot.gd -- --still-at=8,12 --out=C:/kt/shots --tag=base
 ## Flags (all optional):
-##   --species=reptilian  --stage=0..3 (0 baby, else Kit.STAGE_LEVELS[stage-1])  --run=0 (city/army seed)
+##   --species=reptilian  --stage=0..3 (0 baby, else Kit.STAGE_LEVELS[stage-1])
+##   --run=0 (city/army seed)
 ##   --time=day|dusk|night  --still-at=8,12 (seconds)  --out=dir  --tag=name (file prefix)
 ##   --cam=x,y,z --at=x,y,z   a fixed camera there looking at that point (else the game camera)
 ##   --walk=x,z               the kaiju walks to that ground point (else autoplay)
