@@ -1,5 +1,5 @@
 extends SceneTree
-## Captures every power's VFX in a real, autoplayed rampage for review: each species fires its
+## Captures every power's VFX in a real, autoplayed rampage for review: the croc fires his
 ## signature once (stills along the way), and the upgraded reptilian is kept going long enough
 ## to show cracking stomps, glancing shells, healing motes and the ready pulse. Pair with
 ## --write-movie for the clip. Needs a window (no --headless) and the no-focus override.cfg.
@@ -28,13 +28,11 @@ const SHOWN := {
 		"sig_power": 2,
 		"sig_recharge": 4
 	},
-	"insectoid": {"claws": 1, "hide": 1, "rage": 1, "evolve1": 1, "sig_power": 2},
-	"cephalopod": {"claws": 1, "hide": 1, "rage": 1, "evolve1": 1, "sig_power": 2},
 }
 
 var _out := "user://powers"
 
-var _species: Array[String] = ["reptilian", "insectoid", "cephalopod"]
+var _species: Array[String] = ["reptilian"]
 var _signature_only := false
 var _side := false
 var _young := false

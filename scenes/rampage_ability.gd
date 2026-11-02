@@ -72,14 +72,13 @@ func play(event: Dictionary, kaiju_at: Vector3, strength: float) -> void:
 			r.sfx.play("lash")
 
 
-## One frame of the drawn kaiju (moved here from Rampage._update_kaiju): where it stands (a glide's
-## lift, the croc's leap arc), its heading, the legs on the sim's step clock; `moving` 0..1 how
+## One frame of the drawn kaiju (moved here from Rampage._update_kaiju): where it stands (the croc's
+## leap arc), its heading, the legs on the sim's step clock; `moving` 0..1 how
 ## hard it walks. Returns where it is drawn.
 func place(delta: float, moving: float, at: Vector3) -> Vector3:
 	var sim := _rampage.sim
 	var target := _world(sim.kaiju_pos)
-	var lift := Rampage.GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0
-	target.y = sim.stand_y + (sim.body.dash.height() if sim.body.dash.on() else lift)
+	target.y = sim.stand_y + (sim.body.dash.height() if sim.body.dash.on() else 0.0)
 	var drawn := step(delta, target, at)
 	_kaiju.position = drawn
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)  # sim angle to yaw: flipped

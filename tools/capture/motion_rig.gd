@@ -125,9 +125,5 @@ class Shot:
 		if kind == "game":
 			Kit.place_game_camera(cam, model, body_scale)
 			return
-		if species == "cephalopod":  # a wide body needs a wider shot
-			cam.position = at + Vector3(16.0 * 1.4, 4.0 * 1.4, 0) * body_scale
-			cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
-			return
 		cam.position = at + Vector3(22.0, 5.0, 0) * body_scale  # side: the whole body in frame
 		cam.look_at(at + Vector3(0, 4.8, 0) * body_scale)

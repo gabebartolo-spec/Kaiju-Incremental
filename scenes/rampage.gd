@@ -16,8 +16,6 @@ const FOOTFALL_DIP := 0.35
 ## The dip scales with body size, but never below this: a baby still shakes the street.
 const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
-## How high a gliding insectoid hovers (per body scale).
-const GLIDE_LIFT := 3.0
 
 var sim: RampageSim
 ## true (the game's own flow): _ready builds the scene in stages, a frame each, behind a
@@ -186,7 +184,7 @@ func _ready() -> void:
 
 
 ## The powers, the rise, the blasts and the vehicles; the kaiju put under the river with its
-## grip finder, footfalls and ability bound.
+## footfalls and ability bound.
 func _add_powers(eye: Color) -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, eye)
 	add_child(_powers)
@@ -197,9 +195,6 @@ func _add_powers(eye: Color) -> void:
 	_kaiju.position = _kaiju_at
 	_follow.focus = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
-	_kaiju.set_grip_finder(
-		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
-	)
 	_kaiju.foot_planted.connect(_on_footfall)
 	_ability.bind(self, _city, _kaiju)
 

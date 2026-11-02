@@ -16,7 +16,7 @@ extends RefCounted
 ## still add up).
 ##
 ## The chunk Structure stays as a coarse mirror for what still reads chunks (army squads, the
-## kaiju's climb and blocking, nearest_standing): a chunk is gone once at most chunk_alive_share
+## kaiju's blocking, nearest_standing): a chunk is gone once at most chunk_alive_share
 ## of the cells it had at promotion are left, and only then pays its rubble and counts as
 ## destroyed, as a broken chunk does today (one that falls pays when it lands, with the topple
 ## bonus). Pure and deterministic: fixed scan orders, no RNG, no clock.

@@ -5,7 +5,7 @@ extends SceneTree
 ## Per kaiju: the voxel size and, per bone in rig.json order, its rest transform relative to the
 ## rig (rig units), as 12 numbers: basis columns x, y, z, then origin.
 
-const SPECIES: Array[String] = ["reptilian", "insectoid", "cephalopod"]
+const SPECIES: Array[String] = ["reptilian", "insectoid"]  # the croc and the far beast
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 
 

@@ -36,7 +36,6 @@ func run_checks() -> void:
 	await _t("_check_ring_sizes")
 	await _t("_check_reveal_young")
 	await _t("_check_reveal_grown")
-	await _t("_check_unringed_species")
 	await _t("_check_old_save")
 	await _t("_check_bars_catch")
 	await _t("_check_pacing")
@@ -168,16 +167,6 @@ func _check_reveal_grown() -> void:
 	)
 	levels[r3[0]] = 1
 	check(_croc(levels).ring_open(4), "a ring 3 node opens ring 4")
-
-
-## A species without rings keeps today's whole tree open (the insectoid and cephalopod).
-func _check_unringed_species() -> void:
-	var tree := UpgradeTree.new(Content.upgrades(), {}, "insectoid")
-	var shut: Array[String] = []
-	for id: String in tree.order:
-		if tree.reveal(id) != UpgradeTree.Reveal.FULL or not tree.ring_open(tree.ring(id)):
-			shut.append(id)
-	check(tree.rings.is_empty() and shut.is_empty(), "the insectoid tree is all open: %s" % [shut])
 
 
 ## An old save keeps every level it bought: through the migration, a save to disk and back and

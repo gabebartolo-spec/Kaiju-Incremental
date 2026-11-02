@@ -2,8 +2,8 @@ class_name AbilityFx
 extends Node3D
 ## The look of every unlockable power, presentation only (D-026). Each signature attack has its
 ## own shape: Lightning Breath a forked bolt that runs out to what it hits, lights the street
-## there and scorches it, Leap Slam a trail through the air and a glowing crater, Tentacle Lash
-## two streaks whipping round with the tentacle tips, spray, debris and gouges. Upgrades show
+## there and scorches it, Leap Slam a trail through the air and a glowing crater, Tail Lash
+## two streaks whipping round with the tail tip, spray, debris and gouges. Upgrades show
 ## too: Signature Power brightens the attack, heavy stomps crack the street molten, Signature
 ## Recharge pulses at the feet and lights the body, Regeneration shimmers green over the hide,
 ## Armoured Scales throw shells off in a spark burst and a metallic flash. Nothing here hides the
@@ -200,8 +200,8 @@ func leap_land(at: Vector3, reach: float, strength: float) -> void:
 	_city.flash(at + Vector3(0, 1.5, 0), _tint, 7.0 * strength, 0.5)
 
 
-## Tentacle Lash: two streaks whipping round with the tentacle tips at shin height, ink and
-## water flung off them, street chunks kicked along the arc as it passes, gouges left behind.
+## Tail Lash: two streaks whipping round with the tail tip at shin height, spray flung off it,
+## street chunks kicked along the arc as it passes, gouges left behind.
 func lash(centre: Vector3, reach: float, strength: float) -> void:
 	played.append("lash")
 	var seconds := Num.f(_tune["sweep_seconds"])
