@@ -66,6 +66,49 @@ func plan(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vecto
 		top += clear
 
 
+## The first standing building (in path order) the body's discs pass over on the way from `ends[0]`
+## to `ends[1]` along `ahead` that stands taller than `numbers.x` (world units), sampling every
+## `numbers.y` units; buildings it overlaps at take-off are skipped. -1 for none. A leap never
+## clears such a building: it takes it in its side (Dash.aim_at; director 2026-11-03, D-361).
+func wall(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vector2) -> int:
+	_discs = discs
+	var s := _sim.body_scale()
+	var tall := _tall_near(ends, numbers.x)
+	if tall.is_empty():
+		return -1
+	var skip := _overlaps(ends[0], ahead)
+	var count := maxi(1, ceili(ends[0].distance_to(ends[1]) / maxf(numbers.y, 0.01)))
+	for n: int in range(1, count + 1):
+		var pose := ends[0].lerp(ends[1], float(n) / count)
+		for d: Array in _discs:
+			var c := pose + ahead * Num.f(d[0]) * s
+			for i: int in tall:
+				var b := _sim.buildings[i]
+				var gap := Vector2(
+					maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
+				)
+				if not skip.has(i) and gap.length() < Num.f(d[1]) * s:
+					return i
+	return -1
+
+
+## The standing buildings taller than `limit` whose footprints may come within the body's reach
+## of the segment `ends` (BuildingGrid, padded by the farthest disc's edge).
+func _tall_near(ends: PackedVector2Array, limit: float) -> PackedInt32Array:
+	var pad := 0.0
+	for d: Array in _discs:
+		pad = maxf(pad, absf(Num.f(d[0])) + Num.f(d[1]))
+	pad *= _sim.body_scale()
+	var lo := Vector2(minf(ends[0].x, ends[1].x), minf(ends[0].y, ends[1].y)) - Vector2.ONE * pad
+	var hi := Vector2(maxf(ends[0].x, ends[1].x), maxf(ends[0].y, ends[1].y)) + Vector2.ONE * pad
+	var out := PackedInt32Array()
+	for i: int in _sim.grid.in_rect(lo, hi):
+		var b := _sim.buildings[i]
+		if b.frame.alive_count > 0 and float(b.height) > limit:
+			out.append(i)
+	return out
+
+
 ## The parabola through (0, 0) and (1, land_y) peaking at `top`.
 func _fit() -> void:
 	var peak := maxf(top, maxf(land_y, 0.001))
