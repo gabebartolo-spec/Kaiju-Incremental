@@ -21,7 +21,9 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 	var sim := run.sim
 	var scripted := run.scripted
 	var signature_on := run.autoplay_signature
+	# The stick is the camera's: up walks where the camera looks, which turns behind him (D-330).
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	move = move.rotated(-run.view_turn())
 	var signature := Input.is_action_just_pressed("signature")
 	var held := held_button.read(Input.is_action_pressed("signature"), signature)
 	var ultimate := Input.is_action_just_pressed("ultimate")

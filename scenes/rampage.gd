@@ -125,6 +125,11 @@ func wait_loaded() -> void:
 		await get_tree().process_frame
 
 
+## The camera's turn about +y (radians; 0 looks north, -z): the player's stick turns with it.
+func view_turn() -> float:
+	return _follow.yaw + _follow.swing
+
+
 ## Test hook: the kaiju walks toward the nearest building it can topple on its own.
 func set_autoplay(on: bool) -> void:
 	_reader.autoplay = on
