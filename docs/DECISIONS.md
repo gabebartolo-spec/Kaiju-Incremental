@@ -31,6 +31,16 @@ as the game's own sand (grains, wet line) sloping into the bay, its waterline wa
 a broken foam line, the fires' orange on the wet sand, and the bay lapping up it with the game's lap (`water.lap`).
 Camera and far shore unchanged; title_ledge.gdshader is replaced by title_sand.gdshader. UI suite `ui_title_beach.gd`.
 
+## 2026-11-02 · D-439 · Director · A flung tank carves a building, wedges in a big one, caves a roof in
+His words: "when a tank hits a building it needs to carve it, it would be really cool if a tank could even wedge into
+and get stuck in the bigger buildings or if they land ontop of a building they could crush it". Picked "Tank-sized
+hole", "Too big to punch through", "Punch through floors", "Own PR after threat". Why: a thrown tank should leave a
+mark the player remembers, not bounce off. Changes: TankHold (army.flight.hold): a tank flying into a wall bores a
+hull-sized tunnel, deeper the faster it flew; out a thin building's far side it flies on at bore_keep of its speed,
+else it sticks wedged and stays as a husk while the floors over it stand; one coming down on a roof caves in floors
+by its fall speed and ends inside; a husk falls when its floor breaks. Tank flight suite on/off fixtures: tank.bore
+(slow vs fast), tank.wedge (thin vs thick), tank.roof (street vs low vs high drop), tank.husk (standing vs broken).
+
 ## 2026-11-02 · D-438 · Director · Octopus and insectoid code removed
 His words: "remove octopus code if its bloating the game and confusing you", then "definitely remove the octopus
 code", then "remove the insectoid too, the only trace of him should be in the city across the bay". Changes: every
@@ -383,13 +393,3 @@ Q (10-30, after the lip slit and three weight fits left Cascadeur's mesh at 18-2
 "Accept game result". In the game the baby's mouth already opens as a slit (the bake's hinge rule, #356): at a 38 deg
 gape every parting is jaw|head1 along the mouth, none at the corner or throat, red mouth voxels shown. The mesh bar is
 dropped for the baby roar; no edge loops are added. Changes: roadmap row 1's baby jaw is done with #426.
-
-## 2026-10-30 · D-389 · Director · River bridges carve on cells
-Q (ROADMAP 4, "carve is universal"; river bridges were flat decks CityGround drew, never broken): they picked "Carve,
-spans drop" and "Keep deck, add piers". Each river bridge (CityRiver.bridges) is now a row of buildings, one per span
-(tuning bridge.span, sim/bridge_layout.gd, the railway's pattern): an asphalt deck at street level, a stone parapet
-each side, a pier to the riverbed at each end. A piece's floor 0 is the riverbed, bed floors under the street
-(Building.base), so a deck cut off its piers drops or tips into the river. CityGround keeps only the abutments; the
-Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks. The spread
-suite's "1.5x city razes a smaller share" check goes (he picked "Drop share check": with bridges breakable it read 40%
-vs 39%, a balance number under D-385); its bigger-city and replay checks stay.

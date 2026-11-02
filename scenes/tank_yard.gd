@@ -45,9 +45,15 @@ func update(delta: float, kaiju_at: Vector3, steps: int) -> void:
 		node.basis = tank.tilt * Basis(Vector3.UP, Num.f(_yaw.get(tank.id, 0.0)))  # its tumble on top
 		if not tank.flying and not tank.toppled:
 			node.aim(kaiju_at + Vector3(0, 2.0 * _sim.body_scale(), 0), delta)
+	for husk: RampageSim.Tank in _sim.flight.hold.husks:  # wrecks wedged or on a floor (TankHold)
+		if nodes.has(husk.id):
+			var node: TankModel = nodes[husk.id]
+			node.position = Vector3(husk.pos.x, husk.height, husk.pos.y)
+			node.basis = husk.tilt * Basis(Vector3.UP, Num.f(_yaw.get(husk.id, 0.0)))
 
 
-## A tank event (Rampage hands over all four): spawned and destroyed tanks come and go; a fired
+## A tank event (Rampage hands them over): spawned and destroyed tanks come and go (a husk's wreck
+## burns where it rests, its model kept until tank_husk_down); a fired
 ## shell flies to where it goes, and a stray's impact comes when it lands (the sim lands it after
 ## army.shell_flight).
 func on_event(event: Dictionary, kaiju_at: Vector3) -> void:
@@ -55,8 +61,14 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> void:
 		"tank_spawned":
 			spawn(Num.i(event["tank"]))
 			return
-		"tank_destroyed":
-			destroy(Num.i(event["tank"]), Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"])))
+		"tank_destroyed", "tank_husk_down":
+			var at := Vector3(
+				Num.f(event["x"]), Num.f(event.get("y", 0.0)) + 0.5, Num.f(event["z"])
+			)
+			if event.get("husk", false):
+				TankFx.wreck(_city, at)
+			else:
+				destroy(Num.i(event["tank"]), at)
 			return
 	var at: Vector2 = event.get("at", _sim.kaiju_pos)
 	var world := Vector3(at.x, 0.0, at.y)

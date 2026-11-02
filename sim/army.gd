@@ -176,10 +176,24 @@ func clear_dead() -> void:
 		else:
 			sim.tanks_destroyed += 1
 			sim.rubble += Num.f(cfg["tank_rubble"]) * sim.stat("rubble_mult")
+			var husk := sim.flight.hold.holds(tank)  # wedged, or on a floor above the street: stays
+			if husk:
+				sim.flight.hold.husks.append(tank)
 			sim.events.append(
-				{"type": "tank_destroyed", "tank": tank.id, "x": tank.pos.x, "z": tank.pos.y}
+				{
+					"type": "tank_destroyed",
+					"tank": tank.id,
+					"x": tank.pos.x,
+					"y": tank.height,
+					"z": tank.pos.y,
+					"husk": husk
+				}
 			)
 	sim.tanks = alive
+	_clear_dead_squads()
+
+
+func _clear_dead_squads() -> void:
 	if squads.any(func(squad: Squad) -> bool: return squad.dead):
 		var holding: Array[Squad] = []
 		for squad: Squad in squads:

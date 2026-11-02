@@ -634,7 +634,20 @@
 			"domino_reach": 6.0,
 			"spin_turns_min": 0.5,
 			"spin_turns_max": 1.5,
-			"topple_deg": 45.0
+			"topple_deg": 45.0,
+			"hold": {
+				"_note": "A flung tank meeting a building (sim/tank_hold.gd; director 2026-11-01: \"when a tank hits a building it needs to carve it, it would be really cool if a tank could even wedge into and get stuck in the bigger buildings or if they land ontop of a building they could crush it\"; picked \"Tank-sized hole\", \"Too big to punch through\", \"Punch through floors\"). With no bounce left, a wall hit bores a tunnel bore_half m to each side of its way and wall_floors floors high from the impact, bore_min m deep plus bore_per_speed m per unit of ground speed, at most bore_max; each chunk in it takes bore_damage, past any building's toughness. Clear out the far side, the tank flies on at bore_keep of its ground speed; else it sticks with its nose at the tunnel's end (hull_half_length back from it), wedged. Coming down on a roof it caves in roof_per_speed floors per unit of fall speed, roof_min..roof_max, under its hull (bore_half to each side) and rests on the floor below. A wreck above the street or wedged stays (a husk) and falls when its floor breaks; numbers agent-set.",
+				"bore_half": 1.25,
+				"bore_min": 2.0,
+				"bore_per_speed": 0.2,
+				"bore_max": 8.0,
+				"bore_damage": 1000.0,
+				"bore_keep": 0.5,
+				"hull_half_length": 2.0,
+				"roof_per_speed": 0.2,
+				"roof_min": 1,
+				"roof_max": 4
+			}
 		},
 		"miss": {
 			"hit_near": 0.9,
