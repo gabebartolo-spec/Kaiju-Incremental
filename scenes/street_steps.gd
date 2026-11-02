@@ -31,6 +31,8 @@ static func walk(s: StreetLife, delta: float, kaiju: Vector2) -> void:
 			startle(s, i, at, kaiju, gawk)
 		elif s.fleeing[i] == 1 and d > calm:
 			s.fleeing[i] = 0
+		elif s.fleeing[i] == 1 and (s._nodes[s.to_node[i]] - at).dot(kaiju - at) > 0.0:
+			reverse(s, i)  # its corner lies toward the kaiju (it moved, or a wreck spawn): turn
 		var to := s._nodes[s.to_node[i]] - at
 		var step := speeds[s.fleeing[i]] * s.pace[i] * dt  # fleeing 1: running
 		if to.length() > step:
@@ -72,9 +74,14 @@ static func startle(s: StreetLife, i: int, at: Vector2, kaiju: Vector2, gawk: fl
 	s.pinned_until[i] = s._clock + gawk
 	s.heading[i] = (kaiju - at).normalized()
 	if (s._nodes[s.to_node[i]] - at).dot(kaiju - at) > 0.0:
-		var swap := s.from_node[i]
-		s.from_node[i] = s.to_node[i]
-		s.to_node[i] = swap
+		reverse(s, i)
+
+
+## Person i turns back along its pavement: the corner it came from is its goal.
+static func reverse(s: StreetLife, i: int) -> void:
+	var swap := s.from_node[i]
+	s.from_node[i] = s.to_node[i]
+	s.to_node[i] = swap
 
 
 ## How near the kaiju comes before people run: panic_per_scale x body scale, at most panic_radius.
