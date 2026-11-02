@@ -179,8 +179,6 @@ func _swept_by_falls() -> void:
 			return
 
 
-
-
 ## One step of the flight: the banked lap round the pad, then the dash to the edge.
 func _fly(dt: float) -> void:
 	var radius := Num.f(cfg["circle_radius"]) * sim.body_scale()
