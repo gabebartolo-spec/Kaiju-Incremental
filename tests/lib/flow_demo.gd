@@ -269,10 +269,11 @@ func _feedback_inputs(card: DemoEnd) -> void:
 ## back to the tree through the report.
 func _endless_run(main: Node) -> void:
 	var run := _screen(main) as Rampage
+	if run != null:
+		await _settled(run)  # its sim builds behind the loading screen (Rampage.setup_later)
 	check.call(run != null and run.sim.endless != null, "Endless mode starts an endless rampage")
 	if run == null:
 		return
-	await _settled(run)
 	var before := SaveFile.load_game()
 	await _frames(60)
 	check.call(not run.sim.over and run.sim.elapsed > 0.5, "Endless mode has no clock to run out")

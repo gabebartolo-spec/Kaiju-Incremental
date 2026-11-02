@@ -12,6 +12,9 @@ const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
 const LAMP_EVERY := 13.0
 ## Half the footprint of car(): 3 voxels across and 6 long (PROP_VOXEL), along its street.
 const CAR_HALF := Vector2(0.375, 0.75)
+## The side of the grid cells _on_building files the footprints and channels under, so a spot
+## tests only the few rects round it (every one of ~1.5k each call cost 0.6 s of parking).
+const BLOCK_CELL := 8.0
 
 var sim: RampageSim
 var plan: Dictionary
@@ -28,6 +31,7 @@ var _view: float  # parked cars reach this far from the centre: the arena and wh
 var _lamps: Array[PooledLight] = []
 var _footprints: Array[Rect2] = []
 var _water: Array[Rect2] = []  # the river and its bridges (CityRiver): no car parks, no lamp
+var _blocked := {}  # Vector2i cell (BLOCK_CELL) -> the _footprints and _water rects touching it
 var _paints := 0  # how many car paints
 var _walked := Vector2(INF, INF)  # where the kaiju stood last frame (trample)
 var _kaiju: KaijuModel  # the drawn kaiju (found once), whose body tramples what it covers
@@ -65,6 +69,13 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 		_props.keep_out.append(basin.grow(0.3))  # nothing planted in the bay the kaiju rises in
 	for b: RampageSim.Building in sim.lot_buildings():  # the street runs on under the viaduct
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
+	for r: Rect2 in _footprints + _water:
+		var lo := Vector2i((r.position / BLOCK_CELL).floor())
+		var hi := Vector2i((r.end / BLOCK_CELL).floor())
+		for i: int in range(lo.x, hi.x + 1):
+			for j: int in range(lo.y, hi.y + 1):
+				var list: Array = _blocked.get_or_add(Vector2i(i, j), [])
+				list.append(r)
 
 
 func _ready() -> void:
@@ -179,7 +190,7 @@ func _inside(p: Vector2, margin: float = 0.0) -> bool:
 
 
 func _on_building(p: Vector2) -> bool:
-	for r: Rect2 in _footprints + _water:
+	for r: Rect2 in _blocked.get(Vector2i((p / BLOCK_CELL).floor()), []):
 		if r.has_point(p):
 			return true
 	return false

@@ -14,12 +14,23 @@ static func run(suite: SceneTree, check: Callable, stats: Dictionary) -> void:
 	await suite.physics_frame
 	var view: VipView = rampage.find_children("*", "VipView", true, false)[0]
 	var vip := rampage.sim.vip
+	var spare := view._spare
+	check.call(
+		spare != null and not spare.visible,
+		"the leader's model is built at load, hidden (no hitch at lift-off)"
+	)
 	vip._spawn_at = 0.0
 	var frames := 0
 	while view._model == null and frames < 300:
 		await suite.physics_frame
 		frames += 1
 	check.call(view._model != null and vip.flying(), "the model lifts off with the sim")
+	check.call(view._model == spare and spare.visible, "the lift-off shows the model built at load")
+	var off := VipView.new(rampage.sim, null, null)
+	off.prebuild = false
+	suite.root.add_child(off)
+	check.call(off._spare == null, "off: no model until lift-off")
+	off.free()
 	check.call(
 		(
 			view._strip != null

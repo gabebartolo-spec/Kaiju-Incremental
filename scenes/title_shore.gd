@@ -7,13 +7,13 @@ extends Node3D
 ## back from its edge (CitySkyline), so the wall and the promenade have the strip in front.
 
 const REFLECT := preload("res://scenes/title_shore.gdshader")
-const LEDGE := preload("res://scenes/title_ledge.gdshader")
+const SAND := preload("res://scenes/title_sand.gdshader")
 ## The wall's face is at the shore line; the strip behind it is the promenade (m).
 const PROMENADE := 9.0
 const WATER_Y := -0.8
 const MAX_FIRES := 12
-## Lamp posts stand this far back from the ledge's lip (m).
-const POST_BACK := 2.4
+## The shallows sit this far over the bay at the lap's low point, so they never flicker in it (m).
+const TIDE_LIFT := 0.03
 
 var _cfg: Dictionary
 var _shore_z: float
@@ -21,15 +21,23 @@ var _cam: Vector3
 var _fires: PackedFloat32Array
 var _coast_z: float
 var _water: ShaderMaterial
+var _sand: ShaderMaterial
 var _ripple: Dictionary
+var _lap: Dictionary
+var _bay: Dictionary
+var _tide: Array[Node3D] = []
+var _tide_rest := PackedFloat32Array()
+var _time := 0.0
 
 
 ## places: "shore_z" (the far shore's edge, world z), "coast_z" (the play area's quay, where the
-## near ledge starts), "cam" (where the title's camera stands) and "fires" (the x of each burning
+## near beach starts), "cam" (where the title's camera stands) and "fires" (the x of each burning
 ## tower, for their reflections).
 func _init(cfg: Dictionary, places: Dictionary) -> void:
 	_cfg = cfg
 	_ripple = places["ripple"]
+	_bay = places["water"]
+	_lap = Content.section("water")["lap"]
 	_shore_z = Num.f(places["shore_z"])
 	_coast_z = Num.f(places["coast_z"])
 	_cam = places["cam"]
@@ -70,7 +78,7 @@ func _ready() -> void:
 	)
 	_lamps(span, top)
 	_reflections(span)
-	_ledge(span)
+	_beach(span)
 
 
 func _box(size: Vector3, at: Vector3, mat: Material) -> MeshInstance3D:
@@ -141,156 +149,103 @@ func _lamp_spots(span: float) -> Array[Vector2]:
 	return spots
 
 
-## The play area's embankment along the bottom of the picture: a stone ledge out past the quay,
-## its top a little above the water and its edge lit, so the view stands on a shore too.
-func _ledge(span: float) -> void:
-	var from := Num.f(_cfg["ledge_from"])
-	var depth := Num.f(_cfg["ledge_depth"])
-	var top := Num.f(_cfg["ledge_top"])
-	var z := _coast_z - from - depth / 2.0
-	var body := Vector3(span * 2.0, top - WATER_Y, depth)
-	var mid_y := (top + WATER_Y) / 2.0
-	var edge_z := _coast_z - from - depth
-	add_child(_box(body, Vector3(0.0, mid_y, z), _ledge_material(span, edge_z)))
-	var cap := _lit_material(
-		Color(str(_cfg["ledge_cap"])), Color(str(_cfg["promenade_glow"])), Num.f(_cfg["ledge_glow"])
-	)
-	var cap_at := Vector3(0.0, top + 0.12, edge_z + 0.7)
-	add_child(_box(Vector3(span * 2.0, 0.25, 1.4), cap_at, cap))
-	_kerb(span, top, edge_z)
-	_railing(span, top, edge_z)
-	_posts(span, top, edge_z)
+## The play area's beach along the bottom of the picture (director 2026-11-02: "meant to be a
+## beach"): a strip of sand from under the picture's bottom edge sloping down into the bay, the
+## game's own sand (grains, wet along the waterline) going under the water past its lip, and the
+## bay lapping up it (_tide).
+func _beach(span: float) -> void:
+	var near_z := _coast_z - Num.f(_cfg["beach_from"])
+	var depth := Num.f(_cfg["beach_depth"])
+	var grade := (Num.f(_cfg["beach_top"]) - WATER_Y) / depth
+	var under := Num.f(_cfg["beach_under"])
+	var step := Num.f(_cfg["beach_step"])
+	# The sand swells and dips along the shore (two seeded waves), so the waterline wanders.
+	var rng := Seeds.make("title_beach", 0)
+	var wander := Num.f(_cfg["beach_wander"])
+	var length := Num.f(_cfg["beach_wander_length"])
+	var phase := Vector2(rng.randf() * TAU, rng.randf() * TAU)
+	var cols := ceili(span * 2.0 / step) + 1
+	var rows := ceili(depth + under) + 1
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_normal(Vector3.UP)  # unlit sand (title_sand.gdshader): the normal is never read
+	for j: int in rows:
+		var back := minf(j, depth + under)  # metres from the near edge toward the bay
+		for i: int in cols:
+			var x := -span + i * step
+			var swell := sin(x / length + phase.x) + 0.5 * sin(x / (length * 0.37) + phase.y)
+			var at := Vector3(
+				x, Num.f(_cfg["beach_top"]) - grade * back + wander * swell, near_z - back
+			)
+			st.set_uv(Vector2(at.x, at.z) / (HarbourView.GRAIN * HarbourView.GRAIN_TILE))
+			st.add_vertex(at)
+	for j: int in rows - 1:
+		for i: int in cols - 1:
+			var a := j * cols + i
+			for k: int in [a, a + cols, a + 1, a + 1, a + cols, a + cols + 1]:  # clockwise from above
+				st.add_index(k)
+	var sand := MeshInstance3D.new()
+	sand.mesh = st.commit()
+	_sand = _sand_material(grade)
+	sand.material_override = _sand
+	sand.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(sand)
+	_shallows(span, near_z - depth)
 
 
-## The ledge's paving: slabs, a pool of lamplight under every lamp, the fires' glow on the lip.
-func _ledge_material(span: float, edge_z: float) -> ShaderMaterial:
+## The sand's look: the game's grains and wet line (HarbourView), at night, the fires on it.
+func _sand_material(grade: float) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
-	mat.shader = LEDGE
-	mat.set_shader_parameter("stone_colour", Color(str(_cfg["ledge_color"])))
-	mat.set_shader_parameter("pool_colour", Color(str(_cfg["lamp_color"])))
+	mat.shader = SAND
+	mat.set_shader_parameter("grains", HarbourView._grains(Look.color("sand")))
+	mat.set_shader_parameter("wet_width", Num.f(_lap["wet_width"]))
+	mat.set_shader_parameter("wet_dark", Num.f(_lap["wet_dark"]))
+	mat.set_shader_parameter("night", Num.f(_cfg["beach_night"]))
+	mat.set_shader_parameter("grade", grade)
+	mat.set_shader_parameter("tide_y", WATER_Y + TIDE_LIFT)
+	mat.set_shader_parameter("foam_color", Color(str(_cfg["beach_foam"])))
+	mat.set_shader_parameter("foam_width", Num.f(_cfg["beach_foam_width"]))
 	mat.set_shader_parameter("fire_colour", Color(str(_cfg["fire_reflect"])))
-	mat.set_shader_parameter("lamp_gap", Num.f(_cfg["post_gap"]))
-	mat.set_shader_parameter("lamp_span", span)
-	mat.set_shader_parameter("lamp_z", edge_z + POST_BACK)
-	mat.set_shader_parameter("lip_z", edge_z)
-	var pool: Array = _cfg["pool_radius"]
-	mat.set_shader_parameter("pool_radius", Vector2(Num.f(pool[0]), Num.f(pool[1])))
-	mat.set_shader_parameter("pool_strength", Num.f(_cfg["pool_strength"]))
-	mat.set_shader_parameter("fire_strength", Num.f(_cfg["ledge_fire"]))
-	var xs := PackedFloat32Array(_fires)
-	if not xs.is_empty():
+	mat.set_shader_parameter("fire_reach", Num.f(_cfg["beach_fire_reach"]))
+	mat.set_shader_parameter("fire_strength", Num.f(_cfg["beach_fire"]))
+	if not _fires.is_empty():
 		var total := 0.0
-		for x: float in xs:
+		for x: float in _fires:
 			total += x
-		mat.set_shader_parameter("fire_x", total / xs.size())
+		mat.set_shader_parameter("fire_x", total / _fires.size())
 	return mat
 
 
-## Kerb stones along the ledge's lip: pale blocks with gaps, so the edge reads as cut stone.
-func _kerb(span: float, top: float, edge_z: float) -> void:
-	var gap := Num.f(_cfg["kerb_gap"])
-	var count := int(span * 2.0 / gap)
-	var mm := _blocks(Vector3(gap * 0.88, 0.3, 0.7), Color(str(_cfg["kerb_color"])), count)
-	for i: int in count:
-		var at := Vector3(-span + (i + 0.5) * gap, top + 0.3, edge_z + 1.5)
-		mm.multimesh.set_instance_transform(i, Transform3D(Basis(), at))
-	add_child(mm)
+## The bay's edge over the sand's lip, in the bay's own colour (tuning title variant "water"): it
+## and the reflections rise and fall with the game's lap (tuning water.lap height, period), so the
+## water runs a few metres up the shallow sand and back.
+func _shallows(span: float, edge_z: float) -> void:
+	var mesh := PlaneMesh.new()
+	mesh.size = Vector2(span * 2.0, Num.f(_cfg["beach_under"]) * 2.0)
+	var mat := _lit_material(Color(str(_bay["color"])), Color.BLACK, 0.0)
+	mat.roughness = Num.f(_bay["roughness"])
+	mesh.material = mat
+	var water := MeshInstance3D.new()
+	water.mesh = mesh
+	water.position = Vector3(0.0, WATER_Y + TIDE_LIFT, edge_z)
+	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(water)
+	_rides_tide(water)
 
 
-## A railing along the lip: thin dark uprights and a top rail, a black silhouette over the water.
-func _railing(span: float, top: float, edge_z: float) -> void:
-	var gap := Num.f(_cfg["rail_gap"])
-	var height := Num.f(_cfg["rail_height"])
-	var color := Color(str(_cfg["rail_color"]))
-	var thick := Num.f(_cfg["rail_thick"])
-	var count := int(span * 2.0 / gap)
-	var mm := _blocks(Vector3(thick, height, thick), color, count)
-	for i: int in count:
-		var at := Vector3(-span + (i + 0.5) * gap, top + 0.45 + height / 2.0, edge_z + 0.9)
-		mm.multimesh.set_instance_transform(i, Transform3D(Basis(), at))
-	add_child(mm)
-	var rail := _lit_material(color, Color.BLACK, 0.0)
-	add_child(
-		_box(
-			Vector3(span * 2.0, thick * 0.7, thick),
-			Vector3(0.0, top + 0.45 + height, edge_z + 0.9),
-			rail
-		)
-	)
-	add_child(
-		_box(
-			Vector3(span * 2.0, thick * 0.5, thick * 0.8),
-			Vector3(0.0, top + 0.45 + height * 0.5, edge_z + 0.9),
-			rail
-		)
-	)
+## The lap's rise this frame (m, 0 .. height): the shallows and the reflections over them follow it.
+func _process(delta: float) -> void:
+	_time += delta
+	var period := Num.f(_lap["period"])
+	var rise := Num.f(_lap["height"]) * (0.5 + 0.5 * sin(TAU * _time / period))
+	for i: int in _tide.size():
+		_tide[i].position.y = _tide_rest[i] + rise
+	_sand.set_shader_parameter("tide_y", WATER_Y + TIDE_LIFT + rise)
 
 
-## A few tall lamp posts with warm heads and, between them, low bollards, along the ledge.
-func _posts(span: float, top: float, edge_z: float) -> void:
-	var gap := Num.f(_cfg["post_gap"])
-	var height := Num.f(_cfg["post_height"])
-	var count := int(span * 2.0 / gap)
-	var mm := _blocks(Vector3(0.22, height, 0.22), Color(str(_cfg["post_color"])), count)
-	for i: int in count:
-		var x := -span + (i + 0.5) * gap
-		mm.multimesh.set_instance_transform(
-			i, Transform3D(Basis(), Vector3(x, top + 0.3 + height / 2.0, edge_z + POST_BACK))
-		)
-		var head := _box(
-			Vector3(0.4, 0.28, 0.4),
-			Vector3(x, top + 0.3 + height, edge_z + POST_BACK),
-			_lit_material(
-				Color("4a3416"), Color(str(_cfg["lamp_color"])), Num.f(_cfg["post_energy"])
-			)
-		)
-		add_child(head)
-		var halo := MeshInstance3D.new()
-		halo.mesh = _glow_quad(Color(Color(str(_cfg["lamp_color"])), Num.f(_cfg["post_halo"])))
-		halo.scale = Vector3.ONE * Num.f(_cfg["post_glow"])
-		halo.position = head.position
-		add_child(halo)
-	add_child(mm)
-	_bollards(span, top, edge_z)
-
-
-## Low bollards along the ledge, between the posts.
-func _bollards(span: float, top: float, edge_z: float) -> void:
-	var color := Color(str(_cfg["rail_color"]))
-	var bollard_gap := Num.f(_cfg["bollard_gap"])
-	var bollards := int(span * 2.0 / bollard_gap)
-	var bm := _blocks(
-		Vector3(
-			Num.f(_cfg["bollard_width"]),
-			Num.f(_cfg["bollard_height"]),
-			Num.f(_cfg["bollard_width"])
-		),
-		color.lightened(0.1),
-		bollards
-	)
-	for i: int in bollards:
-		var x := -span + (i + 0.5) * bollard_gap + 3.0
-		bm.multimesh.set_instance_transform(
-			i,
-			Transform3D(
-				Basis(), Vector3(x, top + 0.3 + Num.f(_cfg["bollard_height"]) / 2.0, edge_z + 3.2)
-			)
-		)
-	add_child(bm)
-
-
-func _blocks(size: Vector3, color: Color, count: int) -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	mesh.material = _lit_material(color, Color.BLACK, 0.0)
-	mm.mesh = mesh
-	mm.instance_count = count
-	var node := MultiMeshInstance3D.new()
-	node.multimesh = mm
-	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return node
+func _rides_tide(node: Node3D) -> void:
+	_tide.append(node)
+	_tide_rest.append(node.position.y)
 
 
 ## A soft additive billboard glow in `color`.
@@ -347,3 +302,4 @@ func _reflections(span: float) -> void:
 	sheet.position = Vector3(0.0, WATER_Y + 0.04, _shore_z + length / 2.0)
 	sheet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(sheet)
+	_rides_tide(sheet)  # above the shallows, or they would hide the streaks near the beach

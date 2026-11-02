@@ -16,8 +16,6 @@ const FOOTFALL_DIP := 0.35
 ## The dip scales with body size, but never below this: a baby still shakes the street.
 const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
-## How high a gliding insectoid hovers (per body scale).
-const GLIDE_LIFT := 3.0
 
 var sim: RampageSim
 ## true (the game's own flow): _ready builds the scene in stages, a frame each, behind a
@@ -51,6 +49,7 @@ var rumble: PadRumble
 var run_index := 0  # the run number (setup's p_run): it seeds each bolt
 ## Main: the whole intro (the first run, the first after an evolution) or its short cut (RunIntro).
 var full_intro := true
+var endless := false  # the demo's Endless mode (D-156), set before the sim is made
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
@@ -82,22 +81,41 @@ var _reader := RunInput.new()  # this frame's presses (held move D-259, the rise
 var _rise: RampageRise  # the run's opening: the rise from the sea bay and the intro
 ## How far the stick pushed on the last sim step (the walk cycle's pace between steps).
 var _move_len := 0.0
+var _later: Callable  # setup_later's sim maker, run on a worker by _ready (_build meanwhile)
+var _build: SimOnWorker
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; p_run: army seed, time of day.
 func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], p_run: int) -> void:
+	setup_later(p_species, stats, func() -> Array[Dictionary]: return layout, p_run)
+	var made: RampageSim = _later.call()
+	_take_sim(made)
+
+
+## Main's way in: the city plan (`plan`) and the sim build on a worker behind the loading
+## screen, up the frame Continue is pressed (perf 2026-11). `sim` is null until: wait_loaded.
+func setup_later(p_species: Dictionary, stats: Dictionary, plan: Callable, p_run: int) -> void:
 	species = p_species
 	run_index = p_run
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
 	Content.set_time(Content.time_for_run(p_run))
+	_later = func() -> RampageSim:
+		var layout: Array[Dictionary] = plan.call()
+		return RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", p_run))
+
+
+## The rest of setup, on the main thread, once the sim exists.
+func _take_sim(made: RampageSim) -> void:
+	sim = made
 	var ability: Dictionary = species["ability"]
-	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", p_run))
 	sim.ability_type = str(ability["type"])
 	sim.army_units.taskforce.carried = city_seconds  # rampage time in this city so far (D-160)
+	if endless:  # the demo's Endless mode (D-156)
+		sim.endless = Endless.new()
 	sim.body.use_species(str(species["id"]))  # first: the rise is placed by the body's length
 	sim.emerge.start(sim, RampageRise.keyed(sim, str(species["id"])))  # from the bay, D-270
-	_fx_rng = Seeds.make("fx", p_run)
-	sfx = Sfx.new(Seeds.make("sfx", p_run))
+	_fx_rng = Seeds.make("fx", run_index)
+	sfx = Sfx.new(Seeds.make("sfx", run_index))
 	_cues = PowerCues.new(sim, sfx)
 
 
@@ -116,6 +134,8 @@ func set_autoplay(on: bool) -> void:
 ## dropped sim is never freed; let go of them (RampageSim.dispose, D-179) or every rampage played
 ## keeps its city in memory for good. The children have left already, nothing reads the sim.
 func _exit_tree() -> void:
+	if _build != null:
+		_build.drop()
 	if sim != null:
 		sim.dispose()
 
@@ -134,12 +154,8 @@ func _ready() -> void:
 		add_child(stages.overlay)
 		if not await stages.next(self):
 			return
-	_city = CityView.new(sim, _fx_rng)
-	_city.stages = stages
-	add_child(_city)
-	while not _city.is_loaded:  # staged: the city builds itself over the next frames
-		if not await stages.next(self, false):
-			return
+	if not await RampageLoad.sim_and_city(self, stages):
+		return
 	var colors: Dictionary = species["colors"]
 	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
@@ -168,7 +184,7 @@ func _ready() -> void:
 
 
 ## The powers, the rise, the blasts and the vehicles; the kaiju put under the river with its
-## grip finder, footfalls and ability bound.
+## footfalls and ability bound.
 func _add_powers(eye: Color) -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, eye)
 	add_child(_powers)
@@ -179,9 +195,6 @@ func _add_powers(eye: Color) -> void:
 	_kaiju.position = _kaiju_at
 	_follow.focus = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
-	_kaiju.set_grip_finder(
-		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
-	)
 	_kaiju.foot_planted.connect(_on_footfall)
 	_ability.bind(self, _city, _kaiju)
 

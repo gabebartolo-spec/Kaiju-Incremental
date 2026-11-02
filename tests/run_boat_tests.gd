@@ -22,6 +22,7 @@ func run_checks() -> void:
 	await _t("_check_wade_capsizes")
 	await _t("_check_walk_catches_boat")
 	await _t("_check_seeded")
+	await _t("_check_shared_mesh")
 
 
 func _view() -> BoatView:
@@ -141,3 +142,33 @@ func _check_seeded() -> void:
 			same and a.boats[i]["id"] == b.boats[i]["id"] and a.boats[i]["pos"] == b.boats[i]["pos"]
 		)
 	check(same and a.boats.size() > 0, "the same seed moors the same boats (%d)" % a.boats.size())
+
+
+## A boat only moves whole, so the boats of one model share one MultiMesh, built once (the title
+## built ~0.4 s of them, one per boat): as many meshes as models, each the same buffer as a fresh
+## build of its model.
+func _check_shared_mesh() -> void:
+	var view := _view()
+	var meshes := {}
+	var ids := {}
+	for b: Dictionary in view.boats:
+		var holder := _node(b)
+		var mmi := holder.get_child(0) as MultiMeshInstance3D
+		meshes[mmi.multimesh.get_instance_id()] = mmi.multimesh
+		ids[b["id"]] = mmi.multimesh
+	check(
+		meshes.size() == ids.size() and view.boats.size() > ids.size(),
+		(
+			"%d boats share %d meshes, one per model (%d)"
+			% [view.boats.size(), meshes.size(), ids.size()]
+		)
+	)
+	var voxel := Num.f(Content.section("boats")["voxel"])
+	var same := true
+	for id: String in ids:
+		var shared: MultiMesh = ids[id]
+		var vox: VoxelBuilder = view.call("_model", id)
+		var fresh := vox.build({}, voxel, 0.0, Vector3.ZERO)
+		same = same and shared.buffer == fresh.multimesh.buffer and shared.buffer.size() > 0
+		fresh.free()
+	check(same, "each shared mesh equals its model built fresh")

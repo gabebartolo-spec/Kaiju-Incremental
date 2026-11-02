@@ -11,6 +11,7 @@
         "properties": {
           "id": {"$ref": "#/$defs/str"},
           "name": {"$ref": "#/$defs/str"},
+          "playable": {"$ref": "#/$defs/bool"},
           "blurb": {"$ref": "#/$defs/str"},
           "cost_mult": {"$ref": "#/$defs/num"},
           "ability": {
@@ -58,7 +59,9 @@
             "additionalProperties": false
           }
         },
-        "required": ["id", "name", "blurb", "ability", "stats", "colors"],
+        "required": ["id", "name", "colors"],
+        "if": {"properties": {"playable": {"const": false}}, "required": ["playable"]},
+        "else": {"required": ["blurb", "ability", "stats"]},
         "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
         "additionalProperties": false
       }

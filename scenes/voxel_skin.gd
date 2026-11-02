@@ -7,7 +7,7 @@ extends Node3D
 ## moved to render layer 0, where nothing draws them. Presentation only. Child of the rig.
 
 const CUBE_SHADER := preload("res://scenes/voxel_skin.gdshader")
-## Bones the shaders take (the hydra has 79).
+## Bones the shaders take.
 const MAX_BONES := 128
 ## Gzip'd .vskin layout version this reader understands (tools/kaiju_skin/bake.py).
 const VERSION := 2
@@ -15,6 +15,8 @@ const VERSION := 2
 const HEADER_BYTES := 26
 ## Bytes a cube takes in a .vskin: cell x y z (s16 each), colour, bone flags, three bones, weight.
 const CELL_BYTES := 15
+## Floats a cube takes in the MultiMesh buffer: the 3x4 transform, the colour, the custom data.
+const INSTANCE_FLOATS := 20
 ## Bytes a filler vertex takes (position, colour, three bones, weight): VoxelSkinFill.
 const FILL_VERTEX_BYTES := 20
 ## Generous bounds: the shaders move every vertex away from where the engine thinks it is.
@@ -166,7 +168,9 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 
 
 ## The cubes as one MultiMesh from raw's cell block: a transform, a tint and the bones' packing
-## (pack) per cell; every cell is also handed to `hits`.
+## (pack) per cell, written straight into the MultiMesh buffer (INSTANCE_FLOATS a cube; three
+## engine calls a cube cost 0.65 s for an adult's 415k, 2026-11-02); every cell is also handed to
+## `hits`.
 func _cube_multimesh(raw: PackedByteArray, cells: int, voxel: float, three: bool) -> MultiMesh:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
@@ -179,17 +183,33 @@ func _cube_multimesh(raw: PackedByteArray, cells: int, voxel: float, three: bool
 		mm.mesh = ThreeFaceCube.mesh(box.size)
 	mm.instance_count = cells
 	mm.custom_aabb = BOUNDS
+	var buf := PackedFloat32Array()
+	buf.resize(cells * INSTANCE_FLOATS)  # zeroed: the transform's off-diagonal stays 0
 	var at := HEADER_BYTES
+	var amount := Look.value("color_noise")
 	for i: int in cells:
 		var cell := Vector3i(raw.decode_s16(at), raw.decode_s16(at + 2), raw.decode_s16(at + 4))
 		var base := Color8(raw[at + 6], raw[at + 7], raw[at + 8])
-		var tint := Look.jitter(base, cell, 7)
-		tint.a = raw[at + 14] / 255.0  # the second bone's weight rides in the colour's alpha
-		mm.set_instance_transform(i, Transform3D(Basis(), (Vector3(cell) + HALF_UP) * voxel))
-		mm.set_instance_color(i, tint)
-		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
+		var tint := Look.jitter_by(base, cell, 7, amount)
+		var centre := (Vector3(cell) + HALF_UP) * voxel
+		var k := i * INSTANCE_FLOATS
+		buf[k] = 1.0
+		buf[k + 3] = centre.x
+		buf[k + 5] = 1.0
+		buf[k + 7] = centre.y
+		buf[k + 10] = 1.0
+		buf[k + 11] = centre.z
+		buf[k + 12] = tint.r
+		buf[k + 13] = tint.g
+		buf[k + 14] = tint.b
+		buf[k + 15] = raw[at + 14] / 255.0  # the second bone's weight rides in the colour's alpha
+		buf[k + 16] = raw[at + 10] + 128 * raw[at + 9]  # pack(): bone 0 and the flags
+		buf[k + 17] = raw[at + 11]
+		buf[k + 18] = raw[at + 12]
+		buf[k + 19] = raw[at + 13]
 		hits.add_cell(raw[at + 10], cell, base)
 		at += CELL_BYTES
+	mm.buffer = buf
 	return mm
 
 
@@ -295,7 +315,7 @@ func world_points(most: int) -> Array[Dictionary]:
 
 
 ## A bone's pose as its own voxels would show it: the bone, or the voxels' node when a gait scales
-## it (the octopus mantle breathing).
+## it.
 func _skin_global(i: int) -> Transform3D:
 	var bone_name := _nodes[i].name
 	var held: Variant = _rig.skins.get(bone_name, null)

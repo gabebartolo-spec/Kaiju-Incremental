@@ -11,6 +11,10 @@ const LoadOffMain := preload("res://tests/lib/load_off_main.gd")
 ## clock: _process is off and a wait steps the stream by hand with its workers settled (_drain),
 ## so no wall clock decides a result and a slow worker only makes a wait take longer.
 const FRAME := 1.0 / 60.0
+## A stand-in dissolve long enough to sample halfway (the shipped default is 0, a hard swap: D-415).
+const STAND_IN_FADE_S := 0.5
+## The stream budget past the held landmarks in the budget check.
+const STREAM_SPARE := 30000
 
 
 func suite_name() -> String:
@@ -178,13 +182,17 @@ func _check_stream() -> void:
 	await process_frame
 
 
-## Facade pop-in (director 2026-10-28; the lead's call): a streamed building's box does not vanish
-## the frame its mesh arrives, it dissolves out over city.stand_in_fade_s; a building the rampage
+## Facade pop-in: the default is a hard swap (D-415, city.stand_in_fade_s 0). With a fade set, a
+## streamed building's box dissolves out over city.stand_in_fade_s; a building the rampage
 ## touches (carved, broken, falling) loses its box at once, never a fade (D-326).
 func _check_stand_in_fade() -> void:
 	var sim := _sim_at(2)
-	var fade := Num.f(sim.city.get("stand_in_fade_s", 0.0))
-	check(fade > 0.0, "the stand-in dissolve is on by default (city.stand_in_fade_s %.2f)" % fade)
+	var swap := Num.f(sim.city.get("stand_in_fade_s", 0.0))
+	check(
+		swap == 0.0, "a hard swap by default, no dither (D-415, city.stand_in_fade_s %.2f)" % swap
+	)
+	var fade := STAND_IN_FADE_S  # the dissolve stays tunable: its path still works
+	sim.city["stand_in_fade_s"] = fade
 	sim.city["load_chunks"] = 3000
 	sim.city["stream_chunks"] = 1 << 30
 	var colors: Array[Color] = []
@@ -258,7 +266,12 @@ func _check_stand_in_fade() -> void:
 func _check_stream_budget() -> void:
 	var sim := _sim_at(3)
 	sim.city["load_chunks"] = 3000
-	sim.city["stream_chunks"] = 30000
+	# Without a camera every landmark stays held (StreamRank.keeps_landmark), outside the budget:
+	# the budget is what the plan spends on top of them.
+	var budget := STREAM_SPARE
+	for b: RampageSim.Building in sim.buildings:
+		budget += b.w * b.d * b.height if b.is_held() else 0
+	sim.city["stream_chunks"] = budget
 	var colors: Array[Color] = []
 	for b: RampageSim.Building in sim.buildings:
 		colors.append(Color.GRAY)
@@ -268,10 +281,13 @@ func _check_stream_budget() -> void:
 	var spot := sim.kaiju_pos
 	var near := _nearest_plain(sim, spot)
 	await _drain(stream, sim, stream.complete)
-	var cap := 30000 + _ring_slack(sim)
+	var cap := budget + _ring_slack(sim)
 	check(
 		stream.resident_chunks() <= cap and stream.resident_chunks() > 3000,
-		"the stream stops at its chunk budget (%d meshed, budget 30000)" % stream.resident_chunks()
+		(
+			"the stream stops at its chunk budget (%d meshed, budget %d)"
+			% [stream.resident_chunks(), budget]
+		)
 	)
 	var missing := 0
 	for n: int in sim.buildings.size():

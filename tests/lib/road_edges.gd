@@ -342,3 +342,19 @@ static func _nearest(nodes: Array[Vector2], p: Vector2) -> int:
 		if nodes[n].distance_to(p) < nodes[best].distance_to(p):
 			best = n
 	return best
+
+
+## On vs off (RoadPaint.use_index, a load cut): the node index gives the same marks, transform for
+## transform, as the linear find; off fills no index, so the check sees which way it ran.
+static func paint_index(ground: RoadGround) -> Array[String]:
+	var on := RoadPaint.new(ground.plan, ground.cfg, ground._coast)
+	var off := RoadPaint.new(ground.plan, ground.cfg, ground._coast)
+	off.use_index = false
+	var fast := on.marks()
+	var slow := off.marks()
+	var out: Array[String] = []
+	if on._index.is_empty() or not off._index.is_empty():
+		out.append("index on %d nodes, off %d" % [on._index.size(), off._index.size()])
+	if var_to_bytes(fast) != var_to_bytes(slow):
+		out.append("%d marks by index, %d by find, not the same" % [fast.size(), slow.size()])
+	return out

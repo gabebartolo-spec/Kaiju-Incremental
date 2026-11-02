@@ -33,7 +33,7 @@ const SHARED: Array[String] = [
 	"arcs.gd",
 ]
 ## Events about units, not structures (they free their own models).
-const UNITS: Array[String] = ["tank_", "heli_", "rooftop_", "train_", "agent_", "brood_"]
+const UNITS: Array[String] = ["tank_", "heli_", "rooftop_", "train_", "agent_"]
 const LOSS := "(broken|collapsed|crushed|destroyed|smashed|gone|razed)"
 
 

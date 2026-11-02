@@ -111,6 +111,7 @@ func _lamp(at: Vector3, color: Color, energy: float, size := 0.0) -> Node3D:
 	bulb.mesh = ball
 	bulb.position = at
 	bulb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	bulb.add_to_group("vfx_exempt")  # a flying light, not a surface (as Aircraft's)
 	add_child(bulb)
 	return bulb
 
@@ -168,8 +169,9 @@ func _repaint(mmi: MultiMeshInstance3D, part: String, buf: PackedFloat32Array) -
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
+	mm.use_custom_data = true  # VehicleParts packs in the surface family (DETAIL_STRIDE)
 	mm.mesh = mmi.multimesh.mesh
-	mm.instance_count = floori(buf.size() / float(VoxelBuilder.STRIDE))
+	mm.instance_count = floori(buf.size() / float(VoxelBuilder.DETAIL_STRIDE))
 	if mm.instance_count > 0:
 		mm.buffer = buf
 	mmi.multimesh = mm
@@ -177,7 +179,7 @@ func _repaint(mmi: MultiMeshInstance3D, part: String, buf: PackedFloat32Array) -
 	mat.set_shader_parameter("glow", Num.f(_cfg["vip_glow"]))  # lit from within: reads at night
 	mmi.material_override = mat
 	var colours := PackedColorArray()
-	for k: int in range(0, buf.size(), VoxelBuilder.STRIDE):
+	for k: int in range(0, buf.size(), VoxelBuilder.DETAIL_STRIDE):
 		colours.append(_colour_at(buf, k))
 	painted[part] = colours
 
@@ -186,7 +188,7 @@ func _repaint(mmi: MultiMeshInstance3D, part: String, buf: PackedFloat32Array) -
 ## light and shade), the band at the part's lower middle takes `band`, and voxels darker than `dark`
 ## (glass, skids) are left alone. Painted voxels glow (alpha 0).
 func _paint(buf: PackedFloat32Array, base: Color, band: Color, dark: float) -> PackedFloat32Array:
-	var stride := VoxelBuilder.STRIDE
+	var stride := VoxelBuilder.DETAIL_STRIDE
 	var count := floori(buf.size() / float(stride))
 	var low := INF
 	var high := -INF

@@ -3,11 +3,11 @@ extends Node3D
 ## A rigged voxel kaiju (tools/blender/rig_voxel.py): one node per bone, each carrying its
 ## own voxels, so the body bends where the real one would. A gait per body plan (KaijuGait)
 ## moves it: planted feet solved by IK, a body that carries its weight, a head that hunts.
-## Tails, antennae and tentacles ("physics" bones) are spring chains the gait can steer.
+## Tails and antennae ("physics" bones) are spring chains the gait can steer.
 ## Presentation only: the gait follows the node's motion and never moves the kaiju. Faces -Z.
 
-## A foot (or a tentacle's grip) came down, on the frame it touches: which ("left"/"right",
-## "fl"/"fr"/"bl"/"br", "t0".."t7"), how hard (0..1: walk speed x life stage, 1 = an adult's
+## A foot came down, on the frame it touches: which ("left"/"right",
+## "fl"/"fr"/"bl"/"br"), how hard (0..1: walk speed x life stage, 1 = an adult's
 ## stomp) and where (world). For footfall sounds, dust and camera shake; presentation only.
 signal foot_planted(side: String, strength: float, at: Vector3)
 
@@ -15,7 +15,7 @@ signal foot_planted(side: String, strength: float, at: Vector3)
 const JOINT_INSET := 0.82
 
 
-## A run of physics bones (tail, antenna, tentacle) simulated as Verlet points.
+## A run of physics bones (tail, antenna) simulated as Verlet points.
 class SpringChain:
 	var names: Array[String] = []
 	var stiffness := Num.f(Content.section("chain")["stiffness"])
@@ -25,12 +25,6 @@ class SpringChain:
 	## Joint world positions this frame and last frame (index 0 is the root).
 	var pos := PackedVector3Array()
 	var prev := PackedVector3Array()
-	## When set, the joint at that index is pinned to this world point (a tentacle tip gripping).
-	var pins: Dictionary = {}
-	## Joints never sink below this world height (a tentacle lying on the street).
-	var ground := -INF
-	## Whole-chain contraction (1 = rest length): a gripping tentacle shortens as it hauls.
-	var contract := 1.0
 
 	## Throws every joint (more towards the tip): a stomp whips the tail.
 	func kick(velocity: Vector3, dt: float) -> void:
@@ -39,7 +33,7 @@ class SpringChain:
 
 
 var height_units: float
-## "biped", "hexapod" or "radial" (rig.json "type"); picks the gait.
+## "biped" or "hexapod" (rig.json "type"); picks the gait.
 var body_plan := "biped"
 var gait: KaijuGait
 var chains: Array[SpringChain] = []
@@ -110,21 +104,37 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 	match body_plan:
 		"hexapod":
 			gait = HexapodGait.new(self)
-		"radial":
-			gait = RadialGait.new(self)
 		_:
 			gait = ClipGait.or_biped(self, spec.get("clips"))
 
 
-## Each bone's voxels and the joint bands over its overlaps; the rig's height in world units.
+## Each bone's voxels and the joint bands over its overlaps; the rig's height in world units. The
+## parts pack on worker threads (VoxelBuilder.pack: 0.7 s of an adult's 1.8 s build on one thread,
+## 2026-11-02); their nodes are made here, in the same order.
 func _skin(vox: VoxelBuilder, voxel: float) -> void:
 	var bands := RigJoints.overlap(self)
+	var parts: Array[Array] = []  # [bone name, voxels, inset, origin]
 	for bone_name: String in _voxels:
-		var part: VoxelBuilder = _voxels[bone_name]
-		skins[bone_name] = attach_voxels(bone_name, part)
+		parts.append([bone_name, _voxels[bone_name], 1.0, -_head[bone_name]])
 	for bone_name: String in bands:
-		var band: VoxelBuilder = bands[bone_name]
-		attach_voxels(bone_name, band, null, JOINT_INSET)
+		parts.append([bone_name, bands[bone_name], JOINT_INSET, -_head[bone_name]])
+	var bufs := []
+	bufs.resize(parts.size())
+	var pack_part := func(i: int) -> void:
+		var part: VoxelBuilder = parts[i][1]
+		part.salt = 7
+		var origin: Vector3 = parts[i][3]
+		part.inset = parts[i][2]
+		bufs[i] = part.pack({}, _voxel, origin)
+	var task := WorkerThreadPool.add_group_task(pack_part, parts.size())
+	WorkerThreadPool.wait_for_group_task_completion(task)
+	for i: int in parts.size():
+		var bone_name: String = parts[i][0]
+		var part: VoxelBuilder = parts[i][1]
+		var buf: PackedFloat32Array = bufs[i]
+		var mmi := _show(bone_name, buf, part.detail, null)
+		if i < _voxels.size():
+			skins[bone_name] = mmi
 	height_units = vox.height_hint * voxel if vox.height_hint > 0 else 10.0
 
 
@@ -168,7 +178,12 @@ func attach_voxels(
 	part.salt = 7
 	part.inset = inset
 	var head: Vector3 = _head[bone_name]
-	var mmi := part.build({}, _voxel, _glow, -head)
+	return _show(bone_name, part.pack({}, _voxel, -head), part.detail, under)
+
+
+## A bone's packed voxels (VoxelBuilder.pack) as a node on the bone, or on `under`.
+func _show(bone_name: String, buf: PackedFloat32Array, detail: bool, under: Node3D) -> Node3D:
+	var mmi := VoxelBuilder.instance(buf, _voxel, _glow, detail)
 	(mmi.multimesh.mesh as PrimitiveMesh).material = Look.hide_material(_voxel, _glow)
 	mmi.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 	var holder: Node3D = under if under != null else bone(bone_name)
@@ -340,8 +355,6 @@ func simulate_chains(delta: float) -> void:
 			ChainStep.run(chain, target, h)
 		for i: int in chain.names.size():
 			aim(chain.names[i], chain.pos[i], chain.pos[i + 1])
-		if chain.contract != 1.0:
-			bone(chain.names[0]).scale = Vector3.ONE * chain.contract
 
 
 ## World positions of a chain's joints if every bone of it sat at its driven rest pose.
@@ -349,11 +362,7 @@ func _rest_points(chain: SpringChain) -> PackedVector3Array:
 	var names := chain.names
 	var parent := bone(names[0]).get_parent() as Node3D
 	var first := rest_of(names[0])
-	var shrink := Vector3.ONE * chain.contract
-	var xform := (
-		parent.global_transform
-		* Transform3D((first.basis * chain.drive[0]).scaled(shrink), first.origin)
-	)
+	var xform := parent.global_transform * Transform3D(first.basis * chain.drive[0], first.origin)
 	var points := PackedVector3Array([xform.origin])
 	for i: int in names.size():
 		points.append(xform * dir_of(names[i]))

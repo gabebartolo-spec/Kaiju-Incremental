@@ -17,7 +17,6 @@ const UI_SCALES: Array[float] = [1.0, 1.15, 1.25]
 const CONTROLS: Array[Array] = [
 	["Move", "WASD / arrows", "Left stick"],
 	["Signature attack", "Space", "A"],
-	["Glide (insectoid, hold)", "Hold Space", "Hold A", "insectoid"],
 	["Breath (croc)", "Q", "X", "reptilian"],
 	["Leap", "Shift", "B"],
 	["Ultimate", "E", "Y"],

@@ -208,3 +208,14 @@ static func support(f: VoxelFrame, index: PackedInt32Array, low: int) -> int:
 		if y >= 0:
 			return x + z * f.w + y * plan
 	return -1
+
+
+## Whether chunk ci of g is gone: worn to at most `share` of its cells, or, for a chunk that never
+## held a cell (the inside of a landmark's shell, under the stadium's stands and pitch), once
+## the chunk above it is gone (until then it holds up what stands on it), or at once on the top
+## floor (a tower's setback: nothing stands on it).
+static func gone(g: Carving.Grid, ci: int, share: float) -> bool:
+	if g.full[ci] > 0:
+		return g.live[ci] <= floori(g.full[ci] * share)
+	var above := ci + g.bw * g.bd
+	return above >= g.dead.size() or g.dead[above] == 1

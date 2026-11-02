@@ -166,6 +166,7 @@ func _charge(kaiju: KaijuModel, stage: String, kind: String, strike_in: float) -
 		beam.free()
 		return
 	charge.process_mode = Node.PROCESS_MODE_DISABLED
+	_ready_ridge(kaiju, charge, label)
 	var press := {"type": "strike_windup", "kind": kind, "strike_in": strike_in}
 	beam.call("on_event", press, Vector3.ZERO)
 	var hops: Array[Dictionary] = charge.get("hops")
@@ -189,6 +190,22 @@ func _charge(kaiju: KaijuModel, stage: String, kind: String, strike_in: float) -
 	beam.free()
 	kaiju.jaw_open(false)
 	_step(kaiju, 30)
+
+
+## On vs off: the beam in the tree has found the ridge before any press (no first-press hitch); a
+## charge left out of a beam has not, so the check can fail.
+func _ready_ridge(kaiju: KaijuModel, charge: Node3D, label: String) -> void:
+	var bolt: Dictionary = Content.section("fx")["bolt"]
+	var bare := SpineCharge.new(kaiju, Color.WHITE, 1.0, bolt)
+	var ready := Num.i(charge.call("ridge_size"))
+	_check.call(
+		ready > 0 and bare.ridge_size() == 0,
+		(
+			"%s: the ridge is found at load, before the press (%d points; bare %d)"
+			% [label, ready, bare.ridge_size()]
+		)
+	)
+	bare.free()
 
 
 ## Hop k runs from ridge point k to k+1, in time order, and the ridge walks from the tail's tip to

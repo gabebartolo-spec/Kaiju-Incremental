@@ -12,6 +12,7 @@ var depth := PackedFloat32Array()  # its water (m)
 var body := PackedFloat32Array()  # metres of the kaiju's body standing in it
 var flow := PackedFloat32Array()  # 4 per column: outflow right, left, down (+z), up (-z), m^2/s
 var active := Rect2i()  # the stepped columns (empty: all at rest)
+var held := Rect2i()  # the columns the kaiju's body stands in (empty: none)
 var open := false  # row 0 is open sea (the bay's mouth): a wave runs out of it
 
 
@@ -48,3 +49,16 @@ func wake(rect: Rect2i) -> void:
 	var r := rect.intersection(Rect2i(0, 0, nx, nz))
 	if r.has_area():
 		active = r if not active.has_area() else active.merge(r)
+
+
+## The deepest water in `r`, a row at a time (max() runs natively: a column at a time cost ms).
+func deepest(r: Rect2i) -> float:
+	var most := 0.0
+	for j: int in range(r.position.y, r.end.y):
+		most = maxf(most, Num.f(Array(depth.slice(j * nx + r.position.x, j * nx + r.end.x)).max()))
+	return most
+
+
+## Grows `held` to take in column `c` (one the body stands in).
+func hold(c: Vector2i) -> void:
+	held = held.merge(Rect2i(c, Vector2i.ONE)) if held.has_area() else Rect2i(c, Vector2i.ONE)

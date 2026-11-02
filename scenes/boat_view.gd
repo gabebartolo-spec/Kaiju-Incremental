@@ -19,6 +19,8 @@ var _cfg: Dictionary
 var _sim: RampageSim
 var _rng: RandomNumberGenerator
 var _models: Dictionary = {}  # id -> VoxelBuilder (one read a city)
+## id -> MultiMesh: one built per model, shared by every boat of it (a boat only ever moves whole).
+var _meshes: Dictionary = {}
 var _t := 0.0
 
 
@@ -209,7 +211,10 @@ func _pick() -> String:
 func _model(id: String) -> VoxelBuilder:
 	if not _models.has(id):
 		var read := Kvox.read(DIR % id)
-		_models[id] = read.frames[0] if not read.frames.is_empty() else null
+		var vox: VoxelBuilder = read.frames[0] if not read.frames.is_empty() else null
+		if vox != null:
+			vox.detail = true  # the city's surface family (flat surfaces P3)
+		_models[id] = vox
 	return _models[id]
 
 
@@ -224,7 +229,13 @@ func _add(id: String, p: Vector2, yaw: float, home: Dictionary) -> Dictionary:
 	var vox := _model(id)
 	var height := 0.0
 	if vox != null:
-		holder.add_child(vox.build({}, voxel, 0.0, Vector3.ZERO))
+		if not _meshes.has(id):
+			var built := vox.build({}, voxel, 0.0, Vector3.ZERO)
+			_meshes[id] = built.multimesh
+			built.free()
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = _meshes[id]
+		holder.add_child(mmi)
 		height = Num.f(row["metres_tall"]) / Num.f(_cfg["metres_per_unit"])
 	var draft := height * Num.f(row["draft"])
 	var boat := {

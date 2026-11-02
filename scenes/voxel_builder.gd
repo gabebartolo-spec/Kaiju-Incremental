@@ -150,13 +150,14 @@ func pack(palette: Dictionary, voxel: float, origin: Vector3) -> PackedFloat32Ar
 	var buf := PackedFloat32Array()
 	buf.resize(shown.size() * stride)  # zeroed: the transform's off-diagonal stays 0
 	var lift := Vector3(0, voxel * 0.5, 0)
+	var amount := Look.value("color_noise")
 	for i: int in shown.size():
 		var cell := shown[i]
 		sorted_y[i] = cell.y
 		var key: String = cells[cell]
 		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
 		var at := origin + Vector3(cell) * voxel + lift
-		var c: Color = Look.jitter(base, cell, salt) if noise else base
+		var c: Color = Look.jitter_by(base, cell, salt, amount) if noise else base
 		var k := i * stride
 		buf[k] = inset
 		buf[k + 3] = at.x
@@ -210,10 +211,11 @@ func bake_arrays(palette: Dictionary, voxel: float, origin: Vector3) -> Array:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var lift := Vector3(0, voxel * 0.5, 0)
+	var amount := Look.value("color_noise")
 	for cell: Vector3i in cells:
 		var key: String = cells[cell]
 		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
-		st.set_color(Look.jitter(base, cell, salt))
+		st.set_color(Look.jitter_by(base, cell, salt, amount))
 		var centre := origin + Vector3(cell) * voxel + lift
 		for d: Vector3i in NEIGHBOURS:
 			if not cells.has(cell + d):

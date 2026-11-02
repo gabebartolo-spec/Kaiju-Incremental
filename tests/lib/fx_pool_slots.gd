@@ -35,9 +35,48 @@ func run() -> void:
 	await _reset_on_take()
 	await _exhausted_and_flag_off()
 	await _fire_and_blast()
+	_zoomed_flames()
 	await _two_pools()  # last: freeing the second pool leaves no shared pool
 	Engine.time_scale = scale_before
 	_fx.free()
+
+
+## A fire seen from far away (the title's, FarFire) is the street fire at a zoom: its tallest
+## tongue is zoom times the street fire's, not zoom squared (director 2026-11-02, "this fire is
+## wrong": the title's flames stood ~70 m tall, solid orange cones over the towers).
+func _zoomed_flames() -> void:
+	var zoom := 3.0
+	var far := {
+		"zoom": zoom,
+		"smoke_share": 0.3,
+		"density": 1.0,
+		"wind": 1.0,
+		"puff": 1.0,
+		"ember_density": 1.0,
+		"smoke_density": 0.0
+	}
+	var street := _tongue(Fire.new(1.2, 0.0))
+	var title := _tongue(Fire.new(1.2, 0.0, far))
+	_check.call(
+		is_equal_approx(title / street, zoom),
+		(
+			"a far fire's tongues are its zoom times the street's (%.1f x, zoom %.0f)"
+			% [title / street, zoom]
+		)
+	)
+
+
+## The tallest tongue (m) of `fire`: its flame quad's height at the particles' largest scale.
+func _tongue(fire: Fire) -> float:
+	var height := 0.0
+	for child: Node in fire.get_children():
+		var p := child as GPUParticles3D
+		var quad := (p.draw_pass_1 as QuadMesh) if p != null else null
+		var draw := (quad.material as ShaderMaterial) if quad != null else null
+		if draw != null and draw.shader == Fire.FLAME_SHADER:
+			height = quad.size.y * (p.process_material as ParticleProcessMaterial).scale_max
+	fire.free()
+	return height
 
 
 func _wait() -> void:

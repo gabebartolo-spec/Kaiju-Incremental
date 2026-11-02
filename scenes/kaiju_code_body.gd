@@ -12,15 +12,10 @@ func _init(vox: VoxelBuilder) -> void:
 	_vox = vox
 
 
-## Draws the species' body into the builder.
-func shape(species_id: String) -> void:
-	match species_id:
-		"insectoid":
-			_insectoid()
-		"cephalopod":
-			_cephalopod()
-		_:
-			_reptilian()
+## Draws the species' body into the builder: the reptilian's is the only code-built body left
+## (D-438; every other species has a voxel model).
+func shape(_species_id: String) -> void:
+	_reptilian()
 
 
 ## Design units -> cells.
@@ -126,80 +121,3 @@ func _dorsal_plates() -> void:
 			for dz: int in range(-half, half + 1):
 				var key := "accent_edge" if h == height - 1 or absi(dz) == half else "accent"
 				_vox.put(Vector3i(0, root + 1 + h, z + dz), key)
-
-
-func _insectoid() -> void:
-	_blob(Vector3(0, 4.6, 6.0), Vector3(2.8, 2.4, 3.8), "body")  # abdomen
-	_blob(Vector3(0, 5.2, 0.6), Vector3(1.6, 1.6, 2.0), "body")  # thorax
-	_tube(Vector3(0, 5.6, -1.2), Vector3(0, 5.9, -2.4), Vector2(1.0, 0.9), "body")  # neck
-	_blob(Vector3(0, 6.0, -4.2), Vector3(2.2, 1.9, 2.0), "belly")  # head
-	for side: int in [-1, 1]:
-		_insect_side(side)
-	_vox.repaint(
-		func(cell: Vector3i, key: String) -> String:
-			if key == "body" and cell.z > roundi(3.0 * RES) and cell.z % 4 == 0:
-				return "scale"  # abdomen segments
-			if key == "eye" and posmod(cell.x * 3 + cell.y * 5 + cell.z * 7, 6) == 0:
-				return "pupil"  # compound-eye facets
-			return key
-	)
-
-
-## One side of the insectoid: its compound eye, mandible and tip, antenna and three legs.
-func _insect_side(side: int) -> void:
-	_blob(Vector3(side * 1.8, 6.6, -4.8), Vector3(0.8, 0.9, 0.9), "eye")  # compound eyes
-	_tube(
-		Vector3(side * 1.3, 5.0, -5.8),
-		Vector3(side * 0.5, 4.8, -8.0),
-		Vector2(0.45, 0.25),
-		"accent"
-	)
-	_tube(
-		Vector3(side * 0.6, 4.8, -7.9), Vector3(side * 0.1, 4.8, -8.4), Vector2(0.2, 0.2), "ivory"
-	)
-	var antenna: Array[Vector3] = [
-		_u(Vector3(side * 0.8, 7.6, -5.0)),
-		_u(Vector3(side * 2.4, 10.6, -7.0)),
-		_u(Vector3(side * 3.4, 11.6, -6.0)),
-	]
-	var thin: Array[float] = [0.4, 0.3, 0.3]
-	_vox.chain(antenna, thin, "accent")
-	for leg: int in 3:  # six legs: up to a high knee, splayed out and down to the ground
-		var hip := Vector3(side * 1.2, 5.0, -0.4 + leg)
-		var knee := Vector3(side * 5.0, 8.0, -2.0 + leg * 2.5)
-		var foot := Vector3(side * 8.0, 0.0, -4.0 + leg * 4.0)
-		_tube(hip, knee, Vector2(0.5, 0.45), "accent")
-		_tube(knee, foot, Vector2(0.45, 0.3), "accent")
-		_blob(knee, Vector3.ONE * 0.6, "joint")
-
-
-func _cephalopod() -> void:
-	_blob(Vector3(0, 10.0, 1.0), Vector3(3.6, 5.5, 3.6), "body")  # mantle
-	_blob(Vector3(0, 5.5, 0.0), Vector3(2.8, 1.8, 2.8), "body")  # head under the mantle
-	_tube(Vector3(0, 4.6, -2.4), Vector3(0, 4.0, -3.2), Vector2(0.6, 0.5), "belly")  # siphon
-	for side: int in [-1, 1]:
-		var eye := Vector3i(side * roundi(2.75 * RES), roundi(6.1 * RES), roundi(-0.6 * RES))
-		_vox.blob(Vector3(eye), Vector3(1.0, 0.75, 0.75) * RES, "eye")
-		_vox.box(eye + Vector3i(side * 2, 0, -2), eye + Vector3i(side * 2, 0, 2), "pupil")
-	for i: int in 8:  # tentacles: thick at the head, tapering over the ground
-		var angle := TAU * i / 8.0 + 0.2
-		var dir := Vector3(sin(angle), 0, -cos(angle))
-		var side := dir.cross(Vector3.UP)
-		var points: Array[Vector3] = [
-			_u(dir * 2.0 + Vector3(0, 4.2, 0)),
-			_u(dir * 4.5 + Vector3(0, 1.6, 0)),
-			_u(dir * 7.5 + Vector3(0, 0.6, 0) + side * 0.6),
-			_u(dir * 10.0 + side * 1.6),
-		]
-		var radii: Array[float] = [1.0 * RES, 0.8 * RES, 0.55 * RES, 0.2 * RES]
-		_vox.chain(points, radii, "body")
-	_vox.repaint(
-		func(cell: Vector3i, key: String) -> String:
-			if key != "body":
-				return key
-			if cell.y > roundi(6.0 * RES) and _roll(cell) < 12:
-				return "accent"  # mantle speckles
-			if cell.y <= 1 and (cell.x + cell.z) % 2 == 0:
-				return "belly"  # suckers on the undersides
-			return key
-	)

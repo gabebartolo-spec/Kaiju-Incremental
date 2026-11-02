@@ -6,10 +6,9 @@ extends Node3D
 ## "spin" sets it burning and falling along the sim's drift, flames along its body and a thick
 ## smoke trail behind it, pitching, rolling and spinning faster, crew bailing out under pale
 ## canopies, until "heli_crashed" lands it: a flash and light, a fireball, dust and a ring, its
-## rotors thrown off and its body left burning; "grabbed" just takes the model away (the
-## tentacle's throw draws the rest). Every look is an existing family (docs/VFX_STYLE.md): Fire,
-## smoke, dust, flashes, debris (HeliFx, HeliDebris). Numbers: tuning "heli_wreck". Part of
-## PowersView. Presentation only.
+## rotors thrown off and its body left burning. Every look is an existing family
+## (docs/VFX_STYLE.md): Fire, smoke, dust, flashes, debris (HeliFx, HeliDebris). Numbers: tuning
+## "heli_wreck". Part of PowersView. Presentation only.
 
 const CREW_OUTFIT := 2  # VoxelPerson.ROOFTOP_OUTFITS: a soldier in drab
 const CANOPY := Color("e2dac4")
@@ -67,8 +66,6 @@ func downed(node: Node3D, event: Dictionary, paint: Array[Color]) -> void:
 		Num.f(event["x"]), Num.f(event.get("y", _sim.air.altitude())), Num.f(event["z"])
 	)
 	match str(event.get("fate", "burst")):
-		"grabbed":
-			node.queue_free()
 		"spin":
 			_spin(node, at, event, paint)
 		_:

@@ -507,63 +507,6 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
-        "glide_seconds": {
-          "type": "object",
-          "properties": {
-            "line": {"$ref": "#/$defs/str"},
-            "fmt": {"$ref": "#/$defs/str"},
-            "unit": {"$ref": "#/$defs/str"}
-          },
-          "required": ["line", "fmt", "unit"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "climb": {
-          "type": "object",
-          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
-          "required": ["line", "fmt"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "brood_count": {
-          "type": "object",
-          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
-          "required": ["line", "fmt"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "limbs": {
-          "type": "object",
-          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
-          "required": ["line", "fmt"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "squeeze": {
-          "type": "object",
-          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
-          "required": ["line", "fmt"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "throw_damage": {
-          "type": "object",
-          "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
-          "required": ["line", "fmt"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "ink_dps": {
-          "type": "object",
-          "properties": {
-            "line": {"$ref": "#/$defs/str"},
-            "fmt": {"$ref": "#/$defs/str"},
-            "unit": {"$ref": "#/$defs/str"}
-          },
-          "required": ["line", "fmt", "unit"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
         "fire_spread": {
           "type": "object",
           "properties": {"line": {"$ref": "#/$defs/str"}, "fmt": {"$ref": "#/$defs/str"}},
@@ -632,8 +575,7 @@
         "hp", "stomp_damage", "stomp_radius", "stomp_interval", "speed", "armor", "run_seconds",
         "ability_damage", "ability_cooldown", "ability_range", "size", "regen", "rubble_mult",
         "swipe_damage", "swipe_width", "tail_damage", "tail_reach", "tail_floors", "momentum",
-        "beam_dps", "glide_seconds", "climb", "brood_count", "limbs", "squeeze", "throw_damage",
-        "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
+        "beam_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
         "death_blast", "eat_heal", "throw_ricochet", "throw_domino"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -891,13 +833,6 @@
         "tail_floors": {"$ref": "#/$defs/num"},
         "momentum": {"$ref": "#/$defs/num"},
         "beam_dps": {"$ref": "#/$defs/num"},
-        "glide_seconds": {"$ref": "#/$defs/num"},
-        "climb": {"$ref": "#/$defs/num"},
-        "brood_count": {"$ref": "#/$defs/int"},
-        "limbs": {"$ref": "#/$defs/num"},
-        "throw_damage": {"$ref": "#/$defs/num"},
-        "squeeze": {"$ref": "#/$defs/num"},
-        "ink_dps": {"$ref": "#/$defs/num"},
         "fire_spread": {"$ref": "#/$defs/num"},
         "fire_rate": {"$ref": "#/$defs/num"},
         "fire_wind": {"$ref": "#/$defs/num"},
@@ -909,8 +844,7 @@
         "hp", "speed", "stomp_damage", "stomp_radius", "stomp_interval", "size", "armor", "regen",
         "rubble_mult", "run_seconds", "ability_damage", "ability_cooldown", "ability_range",
         "swipe_damage", "swipe_width", "tail_damage", "tail_reach", "tail_floors", "momentum",
-        "beam_dps", "glide_seconds", "climb", "brood_count", "limbs", "throw_damage", "squeeze",
-        "ink_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
+        "beam_dps", "fire_spread", "fire_rate", "fire_wind", "fire_embers", "firestorm",
         "death_blast"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -965,12 +899,10 @@
         "body_radius": {"$ref": "#/$defs/num"},
         "block_radius": {"$ref": "#/$defs/num"},
         "block_street_margin": {"$ref": "#/$defs/num"},
-        "squeeze_max": {"$ref": "#/$defs/num"},
         "beam_move_mult": {"$ref": "#/$defs/num"},
         "tail_arc_dot": {"$ref": "#/$defs/num"},
         "tail_floors_per_scale": {"$ref": "#/$defs/num"},
         "ram_reach_extra": {"$ref": "#/$defs/num"},
-        "climb_load_radius": {"$ref": "#/$defs/num"},
         "coat_reach_mult": {"$ref": "#/$defs/num"},
         "block_slow": {"$ref": "#/$defs/num"},
         "lash_cooldown": {"$ref": "#/$defs/num"},
@@ -997,58 +929,7 @@
         "burn_seconds": {"$ref": "#/$defs/num"},
         "burn_dps": {"$ref": "#/$defs/num"},
         "glide_speed_mult": {"$ref": "#/$defs/num"},
-        "glide_land_mult": {"$ref": "#/$defs/num"},
-        "climb_speed": {"$ref": "#/$defs/num"},
         "climb_dig": {"$ref": "#/$defs/num"},
-        "climb_load": {"$ref": "#/$defs/num"},
-        "egg_spread": {"$ref": "#/$defs/num"},
-        "egg_spread_min": {"$ref": "#/$defs/num"},
-        "brood_retarget": {"$ref": "#/$defs/num"},
-        "brood_close_in": {"$ref": "#/$defs/num"},
-        "brood_bite_reach": {"$ref": "#/$defs/num"},
-        "hatch_seconds": {"$ref": "#/$defs/num"},
-        "brood_max": {"$ref": "#/$defs/num"},
-        "brood_hp": {"$ref": "#/$defs/num"},
-        "brood_speed": {"$ref": "#/$defs/num"},
-        "brood_life": {"$ref": "#/$defs/num"},
-        "brood_damage": {"$ref": "#/$defs/num"},
-        "brood_bite_interval": {"$ref": "#/$defs/num"},
-        "brood_bite_radius": {"$ref": "#/$defs/num"},
-        "brood_hunt_radius": {"$ref": "#/$defs/num"},
-        "limb_interval": {"$ref": "#/$defs/num"},
-        "limb_reach": {"$ref": "#/$defs/num"},
-        "limb_radius": {"$ref": "#/$defs/num"},
-        "limb_mult": {"$ref": "#/$defs/num"},
-        "grab_cooldown": {"$ref": "#/$defs/num"},
-        "car_wait": {"$ref": "#/$defs/num"},
-        "grab_reach": {"$ref": "#/$defs/num"},
-        "throw_range": {"$ref": "#/$defs/num"},
-        "throw_seconds": {"$ref": "#/$defs/num"},
-        "throw_blast": {
-          "type": "object",
-          "properties": {
-            "tank": {"$ref": "#/$defs/num"},
-            "heli": {"$ref": "#/$defs/num"},
-            "car": {"$ref": "#/$defs/num"}
-          },
-          "required": ["tank", "heli", "car"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "throw_mult": {
-          "type": "object",
-          "properties": {
-            "tank": {"$ref": "#/$defs/num"},
-            "heli": {"$ref": "#/$defs/num"},
-            "car": {"$ref": "#/$defs/num"}
-          },
-          "required": ["tank", "heli", "car"],
-          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
-          "additionalProperties": false
-        },
-        "ink_reach": {"$ref": "#/$defs/num"},
-        "ink_seconds": {"$ref": "#/$defs/num"},
-        "ink_splash": {"$ref": "#/$defs/num"},
         "ink_unit_mult": {"$ref": "#/$defs/num"},
         "momentum": {
           "type": "object",
@@ -1135,20 +1016,13 @@
         }
       },
       "required": [
-        "fire", "body_radius", "block_radius", "block_street_margin", "squeeze_max",
-        "beam_move_mult", "tail_arc_dot", "tail_floors_per_scale", "ram_reach_extra",
-        "climb_load_radius", "coat_reach_mult", "block_slow", "lash_cooldown", "lash_windup", "lash_damage",
-        "swipe_interval", "swipe_windup", "swipe_near", "swipe_far", "swipe_top",
-        "swipe_chew_s", "swipe_chew_rows", "tail_reach", "tail_floor_lo", "tail_floors",
-        "ram_interval", "ram_min", "knockback", "ultimate_cooldown", "beam_seconds", "beam_range",
-        "beam_half_width", "beam_turn_speed", "burn_seconds", "burn_dps", "glide_speed_mult",
-        "glide_land_mult", "climb_speed", "climb_dig", "climb_load", "egg_spread",
-        "egg_spread_min", "brood_retarget", "brood_close_in", "brood_bite_reach", "hatch_seconds",
-        "brood_max", "brood_hp", "brood_speed", "brood_life", "brood_damage",
-        "brood_bite_interval", "brood_bite_radius", "brood_hunt_radius", "limb_interval",
-        "limb_reach", "limb_radius", "limb_mult", "grab_cooldown", "car_wait", "grab_reach",
-        "throw_range", "throw_seconds", "throw_blast", "throw_mult", "ink_reach", "ink_seconds",
-        "ink_splash", "ink_unit_mult", "momentum"
+        "fire", "body_radius", "block_radius", "block_street_margin", "beam_move_mult",
+        "tail_arc_dot", "tail_floors_per_scale", "ram_reach_extra", "coat_reach_mult",
+        "block_slow", "lash_cooldown", "lash_windup", "lash_damage", "swipe_interval",
+        "swipe_windup", "swipe_near", "swipe_far", "swipe_top", "swipe_chew_s", "swipe_chew_rows",
+        "tail_reach", "tail_floor_lo", "tail_floors", "ram_interval", "ram_min", "knockback",
+        "ultimate_cooldown", "beam_seconds", "beam_range", "beam_half_width", "beam_turn_speed",
+        "burn_seconds", "burn_dps", "glide_speed_mult", "climb_dig", "ink_unit_mult", "momentum"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1337,8 +1211,6 @@
         "exit_spread_deg": {"$ref": "#/$defs/num"},
         "turn_limit": {"$ref": "#/$defs/num"},
         "accel": {"$ref": "#/$defs/num"},
-        "throw_pass": {"$ref": "#/$defs/num"},
-        "throw_ceiling": {"$ref": "#/$defs/num"},
         "rotor_pitch": {"$ref": "#/$defs/num"},
         "rotor_db": {"$ref": "#/$defs/num"},
         "headline_seconds": {"$ref": "#/$defs/num"},
@@ -1387,10 +1259,10 @@
       },
       "required": [
         "window", "ranks", "payout", "hp_mult", "radius", "altitude", "pad_height", "pad_range",
-        "liftoff_seconds", "climb_seconds", "circle_radius", "circle_seconds", "lap_jitter_deg", "window_seconds",
-        "escape_cap", "exit_margin", "exit_spread_deg", "turn_limit", "accel", "throw_pass",
-        "throw_ceiling", "rotor_pitch", "rotor_db", "headline_seconds", "killed_seconds",
-        "slide_seconds", "headlines", "rotor_unit", "beacon", "look"
+        "liftoff_seconds", "climb_seconds", "circle_radius", "circle_seconds", "lap_jitter_deg",
+        "window_seconds", "escape_cap", "exit_margin", "exit_spread_deg", "turn_limit", "accel",
+        "rotor_pitch", "rotor_db", "headline_seconds", "killed_seconds", "slide_seconds",
+        "headlines", "rotor_unit", "beacon", "look"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1508,7 +1380,12 @@
             "death_floors": {"$ref": "#/$defs/num"},
             "rubble_share": {"$ref": "#/$defs/num"}
           },
-          "required": ["max_by_tier", "first_delay", "start_interval", "min_interval", "escalation_per_chunk", "speed", "standoff", "range", "volley_cooldown", "first_charge", "bombs", "spread", "warn", "bomb_radius", "bomb_share", "bomb_damage", "bomb_floors", "radius", "death_radius", "death_damage", "death_floors", "rubble_share"],
+          "required": [
+            "max_by_tier", "first_delay", "start_interval", "min_interval", "escalation_per_chunk",
+            "speed", "standoff", "range", "volley_cooldown", "first_charge", "bombs", "spread",
+            "warn", "bomb_radius", "bomb_share", "bomb_damage", "bomb_floors", "radius",
+            "death_radius", "death_damage", "death_floors", "rubble_share"
+          ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         }
@@ -1517,8 +1394,8 @@
         "max_by_tier", "first_arrival", "hover_seconds", "min_flight_s", "start_interval",
         "min_interval", "escalation_per_chunk", "squad_size", "squad_spacing", "edge_inset",
         "jet_speed", "jet_height", "hop_speed_share", "hop_arc", "perch_min_height", "perch_range",
-        "perch_seconds", "perch_tries", "perch_fallback", "rubble_share", "railgun", "frost", "gas", "mechs",
-        "swat"
+        "perch_seconds", "perch_tries", "perch_fallback", "rubble_share", "railgun", "frost",
+        "gas", "mechs", "swat"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1589,7 +1466,6 @@
         "spawn_radius": {"$ref": "#/$defs/num"},
         "escalation_per_chunk": {"$ref": "#/$defs/num"},
         "threat_per_chunk": {"$ref": "#/$defs/num"},
-        "young_damage_mult": {"$ref": "#/$defs/num"},
         "shell_flight": {"$ref": "#/$defs/num"},
         "miss": {
           "type": "object",
@@ -1664,7 +1540,7 @@
       "required": [
         "convoy", "start_interval", "min_interval", "tank_hp", "tank_damage", "min_damage",
         "fire_interval", "range", "speed", "tank_rubble", "spawn_radius", "escalation_per_chunk",
-        "threat_per_chunk", "young_damage_mult", "shell_flight", "miss", "rooftop", "flight"
+        "threat_per_chunk", "shell_flight", "miss", "rooftop", "flight"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -1804,7 +1680,11 @@
         },
         "fire": {
           "type": "object",
-          "properties": {"size": {"$ref": "#/$defs/num"}, "seconds": {"$ref": "#/$defs/num"}, "water_seconds": {"$ref": "#/$defs/num"}},
+          "properties": {
+            "size": {"$ref": "#/$defs/num"},
+            "seconds": {"$ref": "#/$defs/num"},
+            "water_seconds": {"$ref": "#/$defs/num"}
+          },
           "required": ["size", "seconds", "water_seconds"],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -1982,8 +1862,8 @@
       },
       "required": [
         "yaw_deg", "distance", "height", "clearance", "push_in", "fov", "aim_ahead", "aim_height",
-        "aim_head", "aim_soft", "pull_from_seconds", "short_seconds", "short_lead_seconds", "full_lead_seconds",
-        "skip_ticks", "hud_fade_seconds", "aim_fade_seconds", "water"
+        "aim_head", "aim_soft", "pull_from_seconds", "short_seconds", "short_lead_seconds",
+        "full_lead_seconds", "skip_ticks", "hud_fade_seconds", "aim_fade_seconds", "water"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -2009,7 +1889,11 @@
         "whitecap_lift": {"$ref": "#/$defs/num"},
         "film": {"$ref": "#/$defs/num"}
       },
-      "required": ["cell", "rim", "courant", "friction", "calm", "body_radius", "body_rate", "stomp_share", "stomp_volume", "rise_radius", "rise_volume", "ripple_seconds", "ripple_volume", "whitecap_slope", "whitecap_lift", "film"],
+      "required": [
+        "cell", "rim", "courant", "friction", "calm", "body_radius", "body_rate", "stomp_share",
+        "stomp_volume", "rise_radius", "rise_volume", "ripple_seconds", "ripple_volume",
+        "whitecap_slope", "whitecap_lift", "film"
+      ],
       "additionalProperties": false
     },
     "water": {
@@ -2078,7 +1962,10 @@
             "wet_dark": {"$ref": "#/$defs/num"},
             "wet_rough": {"$ref": "#/$defs/num"}
           },
-          "required": ["height", "length", "period", "dir", "row", "column", "fade", "wet_width", "wet_dark", "wet_rough"],
+          "required": [
+            "height", "length", "period", "dir", "row", "column", "fade", "wet_width", "wet_dark",
+            "wet_rough"
+          ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
@@ -2431,6 +2318,7 @@
             "seabed_depth": {"$ref": "#/$defs/num"},
             "crouch_back": {"$ref": "#/$defs/num"},
             "seabed_clear": {"$ref": "#/$defs/num"},
+            "shelf_below": {"type": "integer", "minimum": 1},
             "rise_x": {"$ref": "#/$defs/num"},
             "nose_gap": {"$ref": "#/$defs/num"},
             "bank_inset": {"$ref": "#/$defs/num"},
@@ -2493,7 +2381,7 @@
           "required": [
             "beach_x", "sea_z", "shore", "sand", "promenade", "road", "back_z", "side_streets",
             "quay_back", "piers", "seawall", "light", "arc_points", "beach", "shelf", "drop", "drop_depth", "hollow", "hollow_edge", "sand_top",
-            "sea_level", "seabed_depth", "crouch_back", "seabed_clear", "rise_x", "nose_gap",
+            "sea_level", "seabed_depth", "crouch_back", "seabed_clear", "shelf_below", "rise_x", "nose_gap",
             "bank_inset", "fit_margin", "view_margin", "props", "port"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
@@ -2907,10 +2795,10 @@
         "tree_debris_bark", "tree_debris_size", "tree_debris_speed", "tree_leaf_speed",
         "tree_leaf_spread", "tree_bark_size", "tree_puff_size", "tree_puff_alpha", "block_long",
         "block_short", "block_far", "avenues", "avenue_width", "street_width", "alley_width",
-        "sidewalk", "alley_chance", "parking_chance", "plaza_blocks", "river", "river_depth", "wade_depth", "wade_speed",
-        "river_inset", "quay", "diagonal_through", "diagonal_deg", "diagonal_count", "diagonal_plaza", "diagonal_min_cross_deg", "layout", "cores", "depth_min",
-        "depth_max", "frontage_min", "frontage_max", "tower_chance", "pencil_chance",
-        "pencil_height", "yard_chance", "min_height", "max_height", "tier_height",
+        "sidewalk", "alley_chance", "parking_chance", "plaza_blocks", "river", "river_depth",
+        "wade_depth", "wade_speed", "river_inset", "quay", "diagonal_through", "diagonal_deg",
+        "diagonal_count", "diagonal_plaza", "diagonal_min_cross_deg", "layout", "cores", "depth_min", "depth_max", "frontage_min", "frontage_max", "tower_chance",
+        "pencil_chance", "pencil_height", "yard_chance", "min_height", "max_height", "tier_height",
         "size_scale_per_tier", "young_scale", "growth_per_level", "leap_distance",
         "cone_half_angle_deg", "breath_snout_ahead", "chunk_hp", "dwarf_exp", "chunk_rubble",
         "kaiju_height", "impact_damage", "fall_gravity", "topple_bonus", "far_fog", "far_reflect",
@@ -3331,6 +3219,7 @@
         "city_tier": {"$ref": "#/$defs/num"},
         "fade_s": {"$ref": "#/$defs/num"},
         "tower_cap": {"$ref": "#/$defs/num"},
+        "far_fog": {"type": "object"},
         "camera": {
           "type": "object",
           "properties": {
@@ -3451,41 +3340,27 @@
             "window_length": {"$ref": "#/$defs/num"},
             "fire_length": {"$ref": "#/$defs/num"},
             "fire_radius": {"$ref": "#/$defs/num"},
-            "ledge_from": {"$ref": "#/$defs/num"},
-            "ledge_depth": {"$ref": "#/$defs/num"},
-            "ledge_top": {"$ref": "#/$defs/num"},
-            "ledge_color": {"$ref": "#/$defs/hex6"},
-            "ledge_cap": {"$ref": "#/$defs/str"},
-            "ledge_glow": {"$ref": "#/$defs/num"},
-            "rail_color": {"$ref": "#/$defs/hex6"},
-            "rail_thick": {"$ref": "#/$defs/num"},
-            "rail_height": {"$ref": "#/$defs/num"},
-            "bollard_width": {"$ref": "#/$defs/num"},
-            "rail_gap": {"$ref": "#/$defs/num"},
-            "kerb_color": {"$ref": "#/$defs/hex6"},
-            "kerb_gap": {"$ref": "#/$defs/num"},
-            "post_gap": {"$ref": "#/$defs/num"},
-            "post_color": {"$ref": "#/$defs/hex6"},
-            "post_energy": {"$ref": "#/$defs/num"},
-            "post_halo": {"$ref": "#/$defs/num"},
-            "pool_radius": {"type": "array", "items": {"$ref": "#/$defs/num"}},
-            "pool_strength": {"$ref": "#/$defs/num"},
-            "ledge_fire": {"$ref": "#/$defs/num"},
-            "post_glow": {"$ref": "#/$defs/num"},
-            "post_height": {"$ref": "#/$defs/num"},
-            "bollard_gap": {"$ref": "#/$defs/num"},
-            "bollard_height": {"$ref": "#/$defs/num"}
+            "beach_from": {"$ref": "#/$defs/num"},
+            "beach_depth": {"$ref": "#/$defs/num"},
+            "beach_top": {"$ref": "#/$defs/num"},
+            "beach_under": {"$ref": "#/$defs/num"},
+            "beach_night": {"$ref": "#/$defs/num"},
+            "beach_step": {"$ref": "#/$defs/num"},
+            "beach_wander": {"$ref": "#/$defs/num"},
+            "beach_wander_length": {"$ref": "#/$defs/num"},
+            "beach_foam": {"$ref": "#/$defs/str"},
+            "beach_foam_width": {"$ref": "#/$defs/num"},
+            "beach_fire": {"$ref": "#/$defs/num"},
+            "beach_fire_reach": {"$ref": "#/$defs/num"}
           },
           "required": [
             "half_span", "wall_top", "wall_color", "wall_glow", "cap_height", "cap_color",
             "promenade_color", "promenade_glow", "promenade_energy", "lamp_gap", "lamp_out",
             "lamp_jitter", "lamp_height", "lamp_back", "lamp_glow", "lamp_color", "reflect_length",
             "window_reflect", "fire_reflect", "window_strength", "fire_strength", "window_length",
-            "fire_length", "fire_radius", "ledge_from", "ledge_depth", "ledge_top", "ledge_color",
-            "ledge_cap", "ledge_glow", "rail_color", "rail_thick", "rail_height", "bollard_width",
-            "rail_gap", "kerb_color", "kerb_gap", "post_gap", "post_color", "post_energy",
-            "post_halo", "pool_radius", "pool_strength", "ledge_fire", "post_glow", "post_height",
-            "bollard_gap", "bollard_height"
+            "fire_length", "fire_radius", "beach_from", "beach_depth", "beach_top", "beach_under",
+            "beach_night", "beach_fire", "beach_fire_reach", "beach_step", "beach_wander",
+            "beach_wander_length", "beach_foam", "beach_foam_width"
           ],
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
@@ -4755,10 +4630,10 @@
       },
       "required": [
         "offset", "fov", "zoom_base", "zoom_per_scale", "lead_base", "lead_per_scale", "lead_hold",
-        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_radius", "bubble_core",
-        "bubble_max", "bubble_seconds", "safe_top", "safe_centre", "head_rise_s", "head_settle_s",
-        "follow_s", "follow_accel", "turn_follow",
-        "swing_deg", "swing_return", "swing_deg_per_s", "swing_mouse_deg_per_px"
+        "lead_ease", "lead_toward_camera", "lead_moving", "lead_depth_share", "bubble_radius",
+        "bubble_core", "bubble_max", "bubble_seconds", "safe_top", "safe_centre", "head_rise_s",
+        "head_settle_s", "follow_s", "follow_accel", "turn_follow", "swing_deg", "swing_return",
+        "swing_deg_per_s", "swing_mouse_deg_per_px"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -5780,7 +5655,8 @@
       "required": [
         "person_voxel", "walk_speed", "run_speed", "panic_radius", "calm_radius", "stomp_catch",
         "fall_spill", "panic_per_scale", "panic_gawk", "cars", "drive_speed", "flee_speed",
-        "car_gap", "jam_wreck_s", "jam_queue_s", "rubble_press", "rubble_keep", "blockade_interval", "blockade_distance", "max_blockades", "cops_per_blockade",
+        "car_gap", "jam_wreck_s", "jam_queue_s", "rubble_press", "rubble_keep",
+        "blockade_interval", "blockade_distance", "max_blockades", "cops_per_blockade",
         "cop_hold_radius", "cop_fire_interval", "max_police_cars", "far_radius", "far_every",
         "view_margin"
       ],
@@ -5847,8 +5723,8 @@
       },
       "required": [
         "tank_height", "turret_turn", "gun_elevation", "recoil", "recoil_seconds", "hull_turn",
-        "tank_beacon", "heli_height", "jet_height", "jet_spacing", "main_rotor_spin", "tail_rotor_spin", "heli_turn", "heli_lights",
-        "vip_dark", "vip_glow", "vip_band"
+        "tank_beacon", "heli_height", "jet_height", "jet_spacing", "main_rotor_spin",
+        "tail_rotor_spin", "heli_turn", "heli_lights", "vip_dark", "vip_glow", "vip_band"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -6102,10 +5978,10 @@
       },
       "required": [
         "debris_cache", "kaiju_tight_bounds", "kaiju_bounds_slack", "people_buffers",
-        "people_aabb_margin_m", "kaiju_three_faces", "kaiju_cor_skinning", "night_clip_max", "fx_pool",
-        "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m", "facade_aa", "facade_bake",
-        "facade_aa_start", "facade_aa_cells", "native_colliders", "collider_boxes_per_tick",
-        "island_merged"
+        "people_aabb_margin_m", "kaiju_three_faces", "kaiju_cor_skinning", "night_clip_max",
+        "fx_pool", "remesh_high_priority", "remesh_worker_mesh", "soft_smoke", "soft_smoke_m",
+        "facade_aa", "facade_bake", "facade_aa_start", "facade_aa_cells", "native_colliders",
+        "collider_boxes_per_tick", "island_merged"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
@@ -6149,7 +6025,10 @@
             "floors": {"$ref": "#/$defs/num"},
             "death_after_s": {"$ref": "#/$defs/num"}
           },
-          "required": ["jets", "run_length", "pass_s", "altitude", "bombs", "bomb_span", "fall_s", "radius", "damage", "floors", "death_after_s"],
+          "required": [
+            "jets", "run_length", "pass_s", "altitude", "bombs", "bomb_span", "fall_s", "radius",
+            "damage", "floors", "death_after_s"
+          ],
           "additionalProperties": false
         },
         "look": {
@@ -6441,12 +6320,12 @@
   "required": [
     "ui", "display", "stat_text", "names", "news", "threat", "results", "save", "demo", "pause",
     "feedback", "kaiju", "powers", "heli_wreck", "strike", "air", "vip", "taskforce", "army",
-    "explosives", "blast_fx", "intro", "emerge", "water", "water_sim", "city", "sfx", "city_sound", "music",
-    "title", "rail", "rail_look", "creation", "chain", "audio", "claw_fx", "clip_stomp", "camera",
-    "slowmo", "camera_shake", "accessibility", "photo_mode", "rumble", "post_fx", "topple_fx",
-    "skyline_rampage", "arena_edge", "body", "contact", "growth", "fx", "landmark_burst",
-    "carve_physics", "crowd", "street", "vehicles", "destruction", "lights", "rain", "render_opt",
-    "death", "slam_fx", "bridge", "tree", "wildlife", "boats"
+    "explosives", "blast_fx", "intro", "emerge", "water", "water_sim", "city", "sfx", "city_sound",
+    "music", "title", "rail", "rail_look", "creation", "chain", "audio", "claw_fx", "clip_stomp",
+    "camera", "slowmo", "camera_shake", "accessibility", "photo_mode", "rumble", "post_fx",
+    "topple_fx", "skyline_rampage", "arena_edge", "body", "contact", "growth", "fx",
+    "landmark_burst", "carve_physics", "crowd", "street", "vehicles", "destruction", "lights",
+    "rain", "render_opt", "death", "slam_fx", "bridge", "tree", "wildlife", "boats"
   ],
   "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
   "additionalProperties": false,

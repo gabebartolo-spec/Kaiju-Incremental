@@ -16,7 +16,7 @@ extends RefCounted
 ## still add up).
 ##
 ## The chunk Structure stays as a coarse mirror for what still reads chunks (army squads, the
-## kaiju's climb and blocking, nearest_standing): a chunk is gone once at most chunk_alive_share
+## kaiju's blocking, nearest_standing): a chunk is gone once at most chunk_alive_share
 ## of the cells it had at promotion are left, and only then pays its rubble and counts as
 ## destroyed, as a broken chunk does today (one that falls pays when it lands, with the topple
 ## bonus). Pure and deterministic: fixed scan orders, no RNG, no clock.
@@ -268,7 +268,7 @@ func settle(n: int) -> Array[Dictionary]:
 	var g: Grid = grids[n]
 	var f := g.frame
 	var out: Array[Dictionary] = []
-	for part: Dictionary in _shed(g) + f.settle():
+	for part: Dictionary in _shed(g) + f.settle(g.ring == null):
 		var index: PackedInt32Array = part["index"]
 		_lost(g, index)
 		var info := CarvingCells.fallen(g, index)  # g.live loses its cells
@@ -370,13 +370,13 @@ func _finish(n: int, g: Grid) -> int:
 	return broken.size()
 
 
-## Chunks of building n left with at most alive_share of their cells: gone from the Structure
-## mirror now (scan order).
+## Chunks of building n left with at most alive_share of their cells (CarvingCells.gone): gone
+## from the Structure mirror now (top floor first, so an empty chunk follows the one it held up).
 func _deaths(n: int, g: Grid) -> Array[Vector3i]:
 	var b := sim.buildings[n]
 	var out: Array[Vector3i] = []
-	for ci: int in g.live.size():
-		if g.dead[ci] == 0 and g.live[ci] <= floori(g.full[ci] * alive_share):
+	for ci: int in range(g.live.size() - 1, -1, -1):
+		if g.dead[ci] == 0 and CarvingCells.gone(g, ci, alive_share):
 			g.dead[ci] = 1
 			var c := _chunk_cell(g, ci)
 			b.frame.remove(c)

@@ -3,7 +3,7 @@ extends RefCounted
 ## A held move's button (D-259 "Hold or toggle for held moves"): with Settings > ACCESSIBILITY >
 ## Held moves on HOLD the move lasts while the button is down; on TOGGLE one press holds it on and
 ## the next press lets it go, so nobody has to keep a finger down. Rampage reads the signature
-## button's hold through it (the glide today; every held move reads RampageSim.HELD).
+## button's hold through it (every held move reads RampageSim.HELD).
 
 var _latched := false
 

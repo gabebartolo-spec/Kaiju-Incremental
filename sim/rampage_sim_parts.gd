@@ -20,7 +20,6 @@ static func make(
 	s.air = AirWing.new(s, air_cfg, Seeds.derive(rng, 0xA1))
 	var vip_cfg: Dictionary = tuning["vip"]
 	s.vip = VipHeli.new(s, vip_cfg, Seeds.derive(rng, 0x71B))
-	s.brood = Brood.new(s, Seeds.derive(rng, 0xB0))
 	s.stomp = RampageStomp.new(s)
 	s.emerge = Emergence.new(s.city, tuning)
 	s.water = WaterSim.new(s.city, tuning)

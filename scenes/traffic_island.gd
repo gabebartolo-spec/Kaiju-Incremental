@@ -31,6 +31,8 @@ static func plant(decor: CityDecor) -> void:
 
 
 ## The island centres for decor's city: one per diagonal x avenue crossing with a free wedge.
+## Each crossing searches only what lies within its wedge's reach (the whole city's buildings,
+## cars, props and streets per spot took 0.9 s of the load); the spots are the same.
 static func spots(decor: CityDecor) -> Array[Vector2]:
 	var sim := decor.sim
 	var city := sim.city
@@ -40,46 +42,101 @@ static func spots(decor: CityDecor) -> Array[Vector2]:
 		return out
 	var plan := decor.plan
 	var half := CityGen.half_extent(city)
-	var taken: Array[Rect2] = []
-	for b: RampageSim.Building in sim.lot_buildings():
-		taken.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d))
-	taken.append_array(decor.cars)
-	var props: Array[Vector2] = []
-	for g: Dictionary in decor._props._groups:
-		var at: Vector3 = g["at"]
-		props.append(Vector2(at.x, at.z))
-	var world := {"taken": taken, "props": props, "water": CityRiver.channels(plan, city)}
+	var taken := _taken(decor)
+	var props := _prop_points(decor)
 	var nodes: Array[Vector2] = plan["nodes"]
+	var roads := _roads(plan, nodes)
+	var touching := _touching(plan)
+	var water := CityRiver.channels(plan, city)
+	var foot := (Num.f(cfg["half_cells"]) + 0.5) * CityDecor.PROP_VOXEL
+	var clear := maxf(Num.f(cfg["kerb_gap"]), Num.f(cfg["prop_clear"]))
+	var reach := Num.f(cfg["wedge_reach"]) + foot + clear
 	for n: int in nodes.size():
 		var p := nodes[n]
-		if maxf(absf(p.x), absf(p.y)) > half:
+		if maxf(absf(p.x), absf(p.y)) > half or not touching.has(n):
 			continue
-		var arms := _arms(plan, n)
+		var mine: Array = touching[n]
+		var arms := _arms(nodes, mine, n)
 		var diag: Array[Vector2] = arms[0]
 		var avenue: Array[Vector2] = arms[1]
-		var best := Vector2.INF
-		for d: Vector2 in diag:
-			for a: Vector2 in avenue:
-				if d.dot(a) <= 0.0:
-					continue  # not a sharp corner
-				var spot := _wedge_spot(plan, p, (d + a).normalized(), world, cfg)
-				if spot.distance_to(p) < best.distance_to(p):
-					best = spot
+		if diag.is_empty() or avenue.is_empty():
+			continue
+		var area := Rect2(p, Vector2.ZERO).grow(reach)
+		var world := {
+			"taken": taken.filter(func(r: Rect2) -> bool: return r.intersects(area)),
+			"props": props.filter(func(o: Vector2) -> bool: return area.grow(1.0).has_point(o)),
+			"roads": roads.filter(func(r: Array) -> bool: return _box(r).intersects(area)),
+			"water": water,
+		}
+		var best := _best_spot(p, diag, avenue, world, cfg)
 		if best != Vector2.INF and maxf(absf(best.x), absf(best.y)) <= half:
 			out.append(best)
 	return out
 
 
-## [diagonal arm directions, avenue arm directions] at node n (unit, away from it).
-static func _arms(plan: Dictionary, n: int) -> Array:
-	var nodes: Array[Vector2] = plan["nodes"]
+## The footprints an island may not sit on: decor's lot buildings and parked cars.
+static func _taken(decor: CityDecor) -> Array[Rect2]:
+	var taken: Array[Rect2] = []
+	for b: RampageSim.Building in decor.sim.lot_buildings():
+		taken.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d))
+	taken.append_array(decor.cars)
+	return taken
+
+
+## Where each of decor's props already stands, on the ground plane.
+static func _prop_points(decor: CityDecor) -> Array[Vector2]:
+	var props: Array[Vector2] = []
+	for g: Dictionary in decor._props._groups:
+		var at: Vector3 = g["at"]
+		props.append(Vector2(at.x, at.z))
+	return props
+
+
+## The plan's streets as [a, b, half width, box] each.
+static func _roads(plan: Dictionary, nodes: Array[Vector2]) -> Array[Array]:
+	var roads: Array[Array] = []
+	for st: Dictionary in plan["streets"]:
+		var a := nodes[Num.i(st["from"])]
+		var b := nodes[Num.i(st["to"])]
+		var w := Num.f(st["width"]) * 0.5
+		roads.append([a, b, w, Rect2(a, Vector2.ZERO).expand(b).grow(w)])
+	return roads
+
+
+## Node index -> the plan's streets that start or end there.
+static func _touching(plan: Dictionary) -> Dictionary:
+	var touching := {}
+	for st: Dictionary in plan["streets"]:
+		for end: int in [Num.i(st["from"]), Num.i(st["to"])]:
+			if not touching.has(end):
+				touching[end] = []
+			var list: Array = touching[end]
+			list.append(st)
+	return touching
+
+
+## The nearest-to-p free spot over the sharp corners of diag x avenue arms; Vector2.INF if none.
+static func _best_spot(
+	p: Vector2, diag: Array[Vector2], avenue: Array[Vector2], world: Dictionary, cfg: Dictionary
+) -> Vector2:
+	var best := Vector2.INF
+	for d: Vector2 in diag:
+		for a: Vector2 in avenue:
+			if d.dot(a) <= 0.0:
+				continue  # not a sharp corner
+			var spot := _wedge_spot(p, (d + a).normalized(), world, cfg)
+			if spot.distance_to(p) < best.distance_to(p):
+				best = spot
+	return best
+
+
+## [diagonal arm directions, avenue arm directions] at node n (unit, away from it) of its streets.
+static func _arms(nodes: Array[Vector2], streets: Array, n: int) -> Array:
 	var diag: Array[Vector2] = []
 	var avenue: Array[Vector2] = []
-	for s: Dictionary in plan["streets"]:
+	for s: Dictionary in streets:
 		var from := Num.i(s["from"])
 		var to := Num.i(s["to"])
-		if from != n and to != n:
-			continue
 		var dir := (nodes[to if from == n else from] - nodes[n]).normalized()
 		match str(s["kind"]):
 			CityGen.DIAGONAL:
@@ -91,62 +148,47 @@ static func _arms(plan: Dictionary, n: int) -> Array:
 
 ## The first free spot from p along `dir` (INF none): clear of carriageways, props, buildings,
 ## parked cars and the water by the island's own half size plus the gaps in cfg.
-static func _wedge_spot(
-	plan: Dictionary, p: Vector2, dir: Vector2, world: Dictionary, cfg: Dictionary
-) -> Vector2:
+static func _wedge_spot(p: Vector2, dir: Vector2, world: Dictionary, cfg: Dictionary) -> Vector2:
 	var foot := (Num.f(cfg["half_cells"]) + 0.5) * CityDecor.PROP_VOXEL
 	var step := Num.f(cfg["search_step"])
 	var t := Num.f(cfg["node_clear"])
 	var reach := Num.f(cfg["wedge_reach"])
+	var water: Array[Rect2] = world["water"]
+	var taken: Array = world["taken"]
+	var roads: Array = world["roads"]
+	var props: Array = world["props"]
+	var gap := foot + Num.f(cfg["kerb_gap"])
+	var apart := foot + Num.f(cfg["prop_clear"])
 	while t <= reach:
 		var q := p + dir * t
 		t += step
 		var box := Rect2(q, Vector2.ZERO).grow(foot)
-		var water: Array[Rect2] = world["water"]
-		var taken: Array[Rect2] = world["taken"]
-		if _wet(q, water) or _hits(box, taken):
+		if _wet(q, water) or taken.any(func(r: Rect2) -> bool: return r.intersects(box)):
 			continue
-		if _near_road(q, plan, foot + Num.f(cfg["kerb_gap"])):
+		if _near_road(q, roads, gap):
 			continue
-		var crowded := false
-		var props: Array[Vector2] = world["props"]
-		for o: Vector2 in props:
-			crowded = crowded or o.distance_to(q) < foot + Num.f(cfg["prop_clear"])
-		if not crowded:
+		if not props.any(func(o: Vector2) -> bool: return o.distance_to(q) < apart):
 			return q
 	return Vector2.INF
 
 
-static func _hits(box: Rect2, rects: Array[Rect2]) -> bool:
-	for r: Rect2 in rects:
-		if r.intersects(box):
-			return true
-	return false
-
-
-## Whether q lies within `gap` of any street's carriageway.
-static func _near_road(q: Vector2, plan: Dictionary, gap: float) -> bool:
-	var near := _near_streets(plan, Rect2(q, Vector2.ZERO).grow(gap))
-	for s: Array in near:
-		var a: Vector2 = s[0]
-		var b: Vector2 = s[1]
-		var w: float = s[2]
+## Whether q lies within `gap` of any of `roads`' carriageways ([a, b, half width, box] each).
+static func _near_road(q: Vector2, roads: Array, gap: float) -> bool:
+	var box := Rect2(q, Vector2.ZERO).grow(gap)
+	for r: Array in roads:
+		if not _box(r).intersects(box):
+			continue
+		var a: Vector2 = r[0]
+		var b: Vector2 = r[1]
+		var w: float = r[2]
 		if Geometry2D.get_closest_point_to_segment(q, a, b).distance_to(q) < w + gap:
 			return true
 	return false
 
 
-## The carriageways reaching into box: [a, b, half width] each.
-static func _near_streets(plan: Dictionary, box: Rect2) -> Array[Array]:
-	var out: Array[Array] = []
-	var nodes: Array[Vector2] = plan["nodes"]
-	for s: Dictionary in plan["streets"]:
-		var a := nodes[Num.i(s["from"])]
-		var b := nodes[Num.i(s["to"])]
-		var w := Num.f(s["width"]) * 0.5
-		if Rect2(a, Vector2.ZERO).expand(b).grow(w).intersects(box):
-			out.append([a, b, w])
-	return out
+static func _box(road: Array) -> Rect2:
+	var box: Rect2 = road[3]
+	return box
 
 
 static func _wet(p: Vector2, water: Array[Rect2]) -> bool:

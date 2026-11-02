@@ -5,7 +5,7 @@ extends RefCounted
 
 static var _tuning: Dictionary = {}
 static var _upgrades: Array[Dictionary] = []
-static var _species: Array[Dictionary] = []
+static var _species: Array[Dictionary] = []  # every entry, the far beast's look too
 static var _looks: Array[Dictionary] = []
 static var _look_id := ""
 static var _times: Dictionary = {}
@@ -38,13 +38,22 @@ static func upgrades() -> Array[Dictionary]:
 	return _upgrades
 
 
+## The species a player can be: data/species.json minus "playable": false entries (the insectoid
+## only rampages across the bay, D-438).
 static func species() -> Array[Dictionary]:
 	_load()
-	return _species
+	var out: Array[Dictionary] = []
+	for def: Dictionary in _species:
+		if def.get("playable", true) != false:
+			out.append(def)
+	return out
 
 
+## Any species entry by id, an unplayable one too (FarBeast reads the insectoid's colors); an
+## unknown id gives the first playable species.
 static func species_def(id: String) -> Dictionary:
-	for def: Dictionary in species():
+	_load()
+	for def: Dictionary in _species:
 		if def["id"] == id:
 			return def
 	return species()[0]

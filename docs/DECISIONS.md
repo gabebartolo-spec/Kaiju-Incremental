@@ -4,6 +4,43 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-02 · D-443 · Director · The baby rises on the wading shelf, in today's spot
+Q: flow@5 failed because the baby's head broke the water at frame 92, after the wade began: its unkeyed rise ended
+on the hollow's 7 m deep floor, which is fitted for the adult's keyed crouch. Rise on the shelf, or a shallower
+hollow at stage 1? A: "Shallower hollow". So below `harbour.shelf_below` (2) the hollow's floor is the wading
+shelf (`wade_depth`, 2.5 m) and the rise spot is unchanged. The whole body is in open water and the head breaks
+the water during the rise (frame 43). Stages 2 and 3 keep the deep hollow (EmergeReach.fit).
+
+## 2026-11-02 · D-442 · Director · Tonight: the RAM floor drops to 4 GB for the slow-suite fixes
+Q: the runner waited on D-317's 6 GB floor (5.5 GB free: his browser and games open); close them, or lower the
+floor tonight? A: "Lower floor tonight". So tonight's local suite runs use `MIN_FREE_MB=4096`; the tool default
+stays 6144 (D-317) and nothing in the repo changes. Tomorrow the 6 GB floor is back.
+
+## 2026-11-02 · D-441 · Director · Title: today's croc side-on behind the city, its fires on visible towers
+His words, on the title still: "this fire is wrong btw / and we should update the kaiju silhouette to match our
+current adult croc design / improve it too". Q: which view of the croc? A: "C: side-on". Q: the left district's roof
+fires float in the haze; which fix? A: "Thin the haze". Changes: Fire no longer scales its flame quad by the zoom the
+particles already carry (title flames were zoom² tall; fx_pool `_zoomed_flames`); assets/title/colossus_0.png
+re-baked from today's croc (bake_colossus `--yaws=45,60,90,135 --pick=1`), `title.colossus` eye and crown moved to
+it; the title's far shore leaves the engine's depth fog (`title.far_fog`, ui `ui_title_haze.gd`), play area unchanged.
+
+## 2026-11-02 · D-440 · Director · The title's foreground is a night beach, not a paved quay
+His words, on the title still: "this is wrong btw... meant to be a beach". Q: how? A: "Sand in front, same view". Why:
+the game is set on a beach and bay; the paved ledge read as a harbour wall. Changes: title_shore.gd draws the old ledge
+as the game's own sand (grains, wet line) sloping into the bay, its waterline wandering (tuning `title.shore.beach_*`),
+a broken foam line, the fires' orange on the wet sand, and the bay lapping up it with the game's lap (`water.lap`).
+Camera and far shore unchanged; title_ledge.gdshader is replaced by title_sand.gdshader. UI suite `ui_title_beach.gd`.
+
+## 2026-11-02 · D-438 · Director · Octopus and insectoid code removed
+His words: "remove octopus code if its bloating the game and confusing you", then "definitely remove the octopus
+code", then "remove the insectoid too, the only trace of him should be in the city across the bay". Changes: every
+cephalopod path is deleted (tentacles, Hydra Limbs, Grab and Throw, Squeeze, Corrosive Ink, radial gait, grip,
+stand-in, its assets, upgrades, tuning, strings and tests). The insectoid is no longer playable (Glide, Climb, Brood,
+its upgrades, tuning, strings and tests are gone); data/species.json keeps its entry with `playable: false` so the far
+beast in the skyline (skyline_rampage, far_beast, hexapod gait and rig, insectoid_* assets) still draws it.
+Content.species() and Demo.allows() list only playable species. The reptilian plays exactly as before. Both species
+stay stretch goals in DESIGN; git history keeps the code.
+
 ## 2026-11-01 · D-436 · Director · Every city is the adult city at every stage
 Asked why the city grows with the kaiju (D-039, D-254 half-widths 75 / 120 / 225 m), his words: "just make every city
 the same size (adult kaiju city)"; "if our baby kaiju cant destroy the whole city, thats not a problem, thats a design
@@ -353,39 +390,3 @@ He approved: a pull request's re-push runs the suites that failed or never ran o
 code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
 closure, autoloads included); any other changed file or any doubt runs everything. Main still runs everything: a
 main push reuses only a PR run that tested every suite. Why: re-testing passed suites cost an hour per fix.
-
-## 2026-10-30 · D-385 · Director · Tests guard behaviour and bugs, not balance numbers (rank 1 now)
-Q (audit of all 76 suites on fb5e3adbc: which checks freeze tuning or old measurements so polish turns CI red with
-nothing broken?): he picked "A: rank 1 now" (rank 2 as each check next breaks, rank 3 when convenient). Implementation
-and polish come before balance tuning. Rank 1 now: military parked-in-range floor over hand-picked seeds becomes "a
-tank that parks sits in the band"; motion gate steps-per-second bands go (footfall = clip stride and no slide stay),
-foot lift one range for every stage, knee jerk one shared ceiling; gait's young route pinned to 1 mm becomes a turn
-rule plus two runs match; pinned fingerprints (street, cells, landmark cells, destruction trace and island sizes)
-go, run-vs-run matches stay; menu checks by exact wording and pixel gaps become overlap / on-screen / reachable rules;
-species lists come from the data. Kept: slide, catch steps, knee pops, locked legs, NaN, overlaps, determinism, saves,
-text size and contrast. Report: the audit's REPORT_tests_too_strict.md. Replaces motion_gate.json's "never widen".
-
-## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
-Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
-12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
-stands up out of the sea to his first beachfront hotel down; the walk across the sand counts (the sand gets umbrellas
-and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
-landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
-
-## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test (relaxed by D-403)
-Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
-a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
-local Godot suite run to check a change before it goes up, not even the suites it touched. Replaces the last
-clause of the archived local-prepush decision ("builders still run locally only the suites they iterate on").
-Probes that measure something a fix needs still run locally.
-
-## 2026-10-29 · D-382 · Director · A pull request skips the slow second-angle suites; they run on main
-His words: "which of these, if any, can we remove, or is it necessary for us to run them all for EVERY patch? its a
-real bottleneck for dev time"; on the list: "Yes, write D-382". No suite is deleted. Thirteen slow suites that check the
-game from a second angle run on every push to main only (the `slow` job, 3 lanes, never blocking): streamview, load,
-counts, crowd, empty_space, roads, heliflight, skyline, city_audit, demoend, croc_standing, slowmo, results (4,365 s of
-8,802). Everything else, motion and smoke included, runs on every PR (until D-403: engine suites moved to main too). The list is the `pr_skip` line of
-tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last green PR run took 18 min, shard 1
-alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
-plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
-suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
