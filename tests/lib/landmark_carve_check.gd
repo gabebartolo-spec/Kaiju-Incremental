@@ -106,7 +106,8 @@ func _ring_holds() -> void:
 	)
 
 
-## CarvingCells.gone on a two-chunk column: the lower chunk never held a cell (inside the shell).
+## CarvingCells.gone on a two-chunk column: an empty chunk under a full one (inside the shell),
+## then an empty one on top of a full one (a setback).
 func _gone() -> void:
 	var g := Carving.Grid.new()
 	g.bw = 1
@@ -121,6 +122,15 @@ func _gone() -> void:
 	_check.call(
 		held and worn and CarvingCells.gone(g, 0, 0.25),
 		"gone: an empty chunk stands while the chunk above holds, and goes once it is gone"
+	)
+	# An empty chunk on the top floor (a setback) holds nothing up: it goes at once, or the
+	# building never counts as fallen (sim "a longer rampage destroys more", growth city_fallen).
+	g.full = PackedInt32Array([10, 0])
+	g.live = PackedInt32Array([10, 0])
+	g.dead = PackedByteArray([0, 0])
+	_check.call(
+		CarvingCells.gone(g, 1, 0.25) and not CarvingCells.gone(g, 0, 0.25),
+		"gone: an empty top-floor chunk goes at once; the full one below stands"
 	)
 
 
