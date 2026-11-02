@@ -1,9 +1,9 @@
 # Roadmap
 
-This file is the roadmap both Claude accounts can read. It was rebuilt from git on 2026-11-03: main up to 77cb93e9e,
+This file is the roadmap and its source of truth (D-444). Both Claude accounts can read it. Change it by PR. It was rebuilt from git on 2026-11-03: main up to 77cb93e9e,
 docs/DECISIONS.md up to D-443, and `docs/archive/ROADMAP_2026-10.md`. Edits made to the Claude Doc
 (claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q) after 2026-10-30 are not in it, because that doc only opens from one
-account. When the two disagree, the director decides, and the answer goes in here.
+account. That doc is frozen. If the director names something it held that is missing here, add it here.
 
 Phase notes, research refs ("R n.m") and owners are in `docs/archive/ROADMAP_2026-10.md`. Read it by section.
 
