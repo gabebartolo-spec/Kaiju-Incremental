@@ -396,13 +396,3 @@ Roadmap item 1. Fonts: "Draw + Noto SC": accented Latin and Cyrillic are drawn i
 (tools/fonts/glyphs.py); Simplified Chinese falls back to Noto Sans SC (SIL OFL 1.1), subset to the game's characters.
 Translations: "Claude now, review later": Claude writes every language into `data/i18n/strings.csv`; a native
 check before release is a separate spend question. The language is a button on the Accessibility page.
-
-## 2026-10-30 · D-391 · Director · The roadmap moves to a Claude Doc
-A: "Yes, redirect it": the roadmap lives at https://claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q; `docs/ROADMAP.md`
-points there; the old file is frozen as `docs/archive/ROADMAP_2026-10.md` for detail agents cannot get from the doc.
-
-## 2026-10-30 · D-390 · Director · The baby roar's jaw is judged in the game, not on Cascadeur's mesh
-Q (10-30, after the lip slit and three weight fits left Cascadeur's mesh at 18-22 head flips on the baby roar, bar 6):
-"Accept game result". In the game the baby's mouth already opens as a slit (the bake's hinge rule, #356): at a 38 deg
-gape every parting is jaw|head1 along the mouth, none at the corner or throat, red mouth voxels shown. The mesh bar is
-dropped for the baby roar; no edge loops are added. Changes: roadmap row 1's baby jaw is done with #426.
