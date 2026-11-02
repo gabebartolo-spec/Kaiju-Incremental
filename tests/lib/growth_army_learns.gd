@@ -1,12 +1,16 @@
 extends RefCounted
 ## The growth suite's army-learns checks (D-069): inside a stage the army scales with the levels
-## the kaiju owns, evolving resets that growth, and a full Behemoth loses more health to the army
-## that learnt. `play` is the suite's seeded rampage: play(tuning, layout, levels) -> result.
+## the kaiju owns, evolving resets that growth, and a full Behemoth loses health faster to the army
+## that learnt. `play` is the suite's seeded rampage: play(tuning, layout, levels, clock) -> result.
 
 ## The cities the learning army is measured in, summed: one seeded rampage swings by a quarter
 ## from platform to platform (city seed 0 alone read 280 vs 182 hp here and 230 vs 182 on CI,
-## ratios 1.54 and 1.26), the six together hold 1.7 (1.45 to 2.17 each).
+## ratios 1.54 and 1.26); over LEARN_CLOCK the six together hold 1.55 (1.18 to 1.95 each).
 const LEARN_SEEDS := 6
+## Both armies are met over this many seconds: since the B balance (D-437 addendum) the learnt army
+## ends the full Behemoth in each city (about 59 s in), so over a whole run the health lost hits its
+## cap whichever army it meets.
+const LEARN_CLOCK := 40.0
 
 ## Every Behemoth-tier node bought, the evolution to Colossus not yet.
 const BEHEMOTH_FULL := {
@@ -76,8 +80,8 @@ static func check(check: Callable, play: Callable) -> void:
 	var hard_lost := 0.0
 	for city_seed: int in LEARN_SEEDS:
 		var layout := CityGrowth.layout(Content.tuning(), 2, Seeds.make("city", city_seed))
-		var soft: Dictionary = play.call(off, layout, BEHEMOTH_FULL)
-		var hard: Dictionary = play.call(on, layout, BEHEMOTH_FULL)
+		var soft: Dictionary = play.call(off, layout, BEHEMOTH_FULL, LEARN_CLOCK)
+		var hard: Dictionary = play.call(on, layout, BEHEMOTH_FULL, LEARN_CLOCK)
 		soft_lost += Num.f(soft["hp_lost"])
 		hard_lost += Num.f(hard["hp_lost"])
 	(
@@ -85,8 +89,8 @@ static func check(check: Callable, play: Callable) -> void:
 		. call(
 			hard_lost > soft_lost * 1.3,
 			(
-				"a full Behemoth loses more health to the army that learnt (%.0f vs %.0f hp over %d cities)"
-				% [hard_lost, soft_lost, LEARN_SEEDS]
+				"a full Behemoth loses more to the army that learnt (%.0f vs %.0f hp, %d cities x %.0f s)"
+				% [hard_lost, soft_lost, LEARN_SEEDS, LEARN_CLOCK]
 			)
 		)
 	)
