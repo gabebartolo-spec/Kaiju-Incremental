@@ -23,6 +23,9 @@ var _boxes: Dictionary = {}  # agent id -> MeshInstance3D
 var _lines: Dictionary = {}  # agent id -> MeshInstance3D (the aiming line)
 var _mechs: Dictionary = {}  # mech id -> MeshInstance3D
 var _marks: Array[MeshInstance3D] = []  # gas clouds and target rings, rebuilt to the sim's count
+var _live: Dictionary = {}  # reused each frame: agent id -> true
+var _aiming: Dictionary = {}  # reused each frame: agent id -> aiming
+var _live_mechs: Dictionary = {}  # reused each frame: mech id -> true
 
 
 func _init(sim: RampageSim) -> void:
@@ -30,8 +33,10 @@ func _init(sim: RampageSim) -> void:
 
 
 func _process(_delta: float) -> void:
-	var live := {}
-	var aiming := {}
+	var live := _live
+	var aiming := _aiming
+	live.clear()
+	aiming.clear()
 	for agent: Taskforce.Agent in _sim.army_units.taskforce.agents:
 		live[agent.id] = true
 		aiming[agent.id] = agent.state == Taskforce.AIM
@@ -45,7 +50,8 @@ func _process(_delta: float) -> void:
 
 
 func _draw_mechs() -> void:
-	var live := {}
+	var live := _live_mechs
+	live.clear()
 	var size := MECH * _sim.reach_height()
 	for mech: TaskforceMechs.Mech in _sim.army_units.taskforce.mechs.mechs:
 		live[mech.id] = true

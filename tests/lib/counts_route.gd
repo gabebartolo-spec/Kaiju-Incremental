@@ -69,7 +69,8 @@ func run() -> void:
 	var a := Lib.DEFAULTS.duplicate()
 	a["route-file"] = ROUTE
 	a["tune"] = ",".join(tune)
-	a["hp"] = 1000000.0  # the kaiju must not fall: the bar counts the whole route, not the army (D-446)
+	# the kaiju must not fall: the bar counts the whole route, not the army (D-446)
+	a["hp"] = 1000000.0
 	var began := Time.get_ticks_msec()
 	print("COUNTS set-up starts %.0f s after the engine started" % (began / 1000.0))
 	var started: bool = await _lib.start(_tree, a)
