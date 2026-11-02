@@ -167,24 +167,12 @@ func _start(aim: Dictionary) -> void:
 ## the first building on the flight path above his shoulder becomes the target, taken in its side
 ## (director 2026-11-03: he leapt onto the tops of extremely tall buildings).
 func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
-	var feet := at + ahead * body.feet_ahead()
-	var best := _nearest_ahead(feet, ahead)
-	var land := feet + ahead * Num.f(_now()["reach"]) * sim.body_scale()
-	var roof := 0.0
-	if best >= 0:
-		var b := sim.buildings[best]
-		land = Vector2(b.x, b.z)
-		roof = float(b.height)
+	var aim := _target(at, ahead)
+	var best := Num.i(aim["building"])
+	var to: Vector2 = aim["to"]
+	var roof := Num.f(aim["roof"])
 	var step := Num.f(cfg["landing_step"])
-	var to := _dry(sim.clamp_to_arena(land - ahead * body.feet_ahead()), at, step)
 	var side := false
-	var ends := PackedVector2Array([at, to])
-	var wall := arc.wall(body.discs(), ends, ahead, Vector2(shoulder_y(), step))
-	if wall >= 0 and wall != best:  # a tower in the way: the leap takes it, never clears it
-		best = wall
-		var w := sim.buildings[best]
-		roof = float(w.height)
-		to = _dry(sim.clamp_to_arena(Vector2(w.x, w.z) - ahead * body.feet_ahead()), at, step)
 	if best >= 0 and (_dwarfs(best) or _in_tower(to, ahead, roof)):
 		roof = 0.0
 		while to != at and _in_tower(to, ahead, 0.0):
@@ -195,6 +183,30 @@ func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 		while to != at and _feet_in(best, to, ahead):
 			to = to.move_toward(at, step)
 	return {"building": best, "to": to, "roof": roof, "side": side}
+
+
+## The leap's target before D-091 and D-361 move its landing: {"building", "to", "roof"}. The
+## nearest building ahead in reach (_nearest_ahead), else the street at the full reach; then the
+## first building on the flight path above his shoulder (LeapArc.wall), if any, in its place.
+func _target(at: Vector2, ahead: Vector2) -> Dictionary:
+	var feet := at + ahead * body.feet_ahead()
+	var best := _nearest_ahead(feet, ahead)
+	var land := feet + ahead * Num.f(_now()["reach"]) * sim.body_scale()
+	if best >= 0:
+		land = _centre(best)
+	var step := Num.f(cfg["landing_step"])
+	var to := _dry(sim.clamp_to_arena(land - ahead * body.feet_ahead()), at, step)
+	var ends := PackedVector2Array([at, to])
+	var wall := arc.wall(body.discs(), ends, ahead, Vector2(shoulder_y(), step))
+	if wall >= 0 and wall != best:  # a tower in the way: the leap takes it, never clears it
+		best = wall
+		to = _dry(sim.clamp_to_arena(_centre(best) - ahead * body.feet_ahead()), at, step)
+	var roof := float(sim.buildings[best].height) if best >= 0 else 0.0
+	return {"building": best, "to": to, "roof": roof}
+
+
+func _centre(index: int) -> Vector2:
+	return Vector2(sim.buildings[index].x, sim.buildings[index].z)
 
 
 ## `to` pulled back toward `at` by `step` until it is out of the sea bay's water (Emergence.wet): a

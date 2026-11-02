@@ -71,27 +71,42 @@ func plan(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vecto
 ## `numbers.y` units; buildings it overlaps at take-off are skipped. -1 for none. A leap never
 ## clears such a building: it takes it in its side (Dash.aim_at; director 2026-11-03, D-361).
 func wall(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vector2) -> int:
-	var limit := numbers.x
 	_discs = discs
-	var skip := _overlaps(ends[0], ahead)
-	var span := ends[0].distance_to(ends[1])
-	var count := maxi(1, ceili(span / maxf(numbers.y, 0.01)))
 	var s := _sim.body_scale()
+	var tall := _tall_near(ends, numbers.x)
+	if tall.is_empty():
+		return -1
+	var skip := _overlaps(ends[0], ahead)
+	var count := maxi(1, ceili(ends[0].distance_to(ends[1]) / maxf(numbers.y, 0.01)))
 	for n: int in range(1, count + 1):
 		var pose := ends[0].lerp(ends[1], float(n) / count)
 		for d: Array in _discs:
 			var c := pose + ahead * Num.f(d[0]) * s
-			var r := Num.f(d[1]) * s
-			for i: int in _sim.buildings.size():
+			for i: int in tall:
 				var b := _sim.buildings[i]
-				if b.frame.alive_count == 0 or skip.has(i) or float(b.height) <= limit:
-					continue
 				var gap := Vector2(
 					maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
 				)
-				if gap.length() < r:
+				if not skip.has(i) and gap.length() < Num.f(d[1]) * s:
 					return i
 	return -1
+
+
+## The standing buildings taller than `limit` whose footprints may come within the body's reach
+## of the segment `ends` (BuildingGrid, padded by the farthest disc's edge).
+func _tall_near(ends: PackedVector2Array, limit: float) -> PackedInt32Array:
+	var pad := 0.0
+	for d: Array in _discs:
+		pad = maxf(pad, absf(Num.f(d[0])) + Num.f(d[1]))
+	pad *= _sim.body_scale()
+	var lo := Vector2(minf(ends[0].x, ends[1].x), minf(ends[0].y, ends[1].y)) - Vector2.ONE * pad
+	var hi := Vector2(maxf(ends[0].x, ends[1].x), maxf(ends[0].y, ends[1].y)) + Vector2.ONE * pad
+	var out := PackedInt32Array()
+	for i: int in _sim.grid.in_rect(lo, hi):
+		var b := _sim.buildings[i]
+		if b.frame.alive_count > 0 and float(b.height) > limit:
+			out.append(i)
+	return out
 
 
 ## The parabola through (0, 0) and (1, land_y) peaking at `top`.
