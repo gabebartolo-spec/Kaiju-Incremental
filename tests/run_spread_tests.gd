@@ -16,8 +16,10 @@ const Play := preload("res://tests/lib/spread_play.gd")
 const SEEDS := 20
 const SHIPPED := 7301
 const SEED_STEP := 977
-## The play area's half-widths per stage (D-254).
-const HALVES: Array[float] = [75.0, 120.0, 225.0]
+## The play area's half-width at every stage: the one adult city (D-436 replaced D-254's growth).
+const HALVES: Array[float] = [225.0, 225.0, 225.0]
+## The districts (rings) the city is still built in (D-254's 75 / 120 / 225 m).
+const DISTRICTS: Array[float] = [75.0, 120.0, 225.0]
 ## The stadium's distance from the rise before D-254 (125 m: 2.50 / 1.56 / 0.83 x the old
 ## half-widths); it must stay at least this share of each stage's half-width (b2-21).
 const STADIUM_SHARE: Array[float] = [2.5, 1.5625, 0.8333]
@@ -58,13 +60,13 @@ func _rings() -> Array[float]:
 	return CityGen.districts(Content.section("city"))
 
 
-## Each stage's play area is 1.5x the old one: 75 / 120 / 225 m half-widths.
+## Every stage plays the adult city, 225 m half-width (D-436); its districts stay 75 / 120 / 225 m.
 func _check_halves() -> void:
 	var got: Array[float] = []
 	for tier: int in [1, 2, 3]:
 		got.append(CityGen.half_extent(_cfg(SHIPPED, tier)))
 	check(got == HALVES, "the play area's half-widths are %s (got %s)" % [HALVES, got])
-	check(_rings() == HALVES, "the districts are the stages' play areas (%s)" % [_rings()])
+	check(_rings() == DISTRICTS, "the districts are %s (got %s)" % [DISTRICTS, _rings()])
 
 
 ## Landmarks a stage newly opens keep 0.4 x its width apart; a pair with an inner district's

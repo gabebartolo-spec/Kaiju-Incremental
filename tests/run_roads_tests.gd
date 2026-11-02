@@ -24,6 +24,7 @@ extends "res://tests/lib/runner.gd"
 const RoadGround := preload("res://tests/lib/road_ground.gd")
 const Net := preload("res://tests/lib/road_net.gd")
 const Edges := preload("res://tests/lib/road_edges.gd")
+const Audit := preload("res://tools/audit/road_audit.gd")
 const STAGES: Array[int] = [1, 2, 3]
 ## 20 cities: the three the city suite pins, then 17 more.
 const SEEDS: Array[int] = [
@@ -71,6 +72,7 @@ func run_checks() -> void:
 	await _t("_check_r6_one_surface")
 	await _t("_check_r7_road_paint_everywhere")
 	await _t("_check_r8_beachfront_paint")
+	await _t("_check_sharp_pieces_left_out")
 	await _t("_check_paint_index")
 
 
@@ -247,3 +249,47 @@ static func _beachfront(plan: Dictionary, paint: Array[Transform3D]) -> Array[St
 		if stops.size() < 2:
 			out.append("side street at x %.0f has %d stop lines, not 2" % [sx, stops.size()])
 	return out
+
+
+## Player-effect fixture "city.sharp_cross" (director 2026-11-01 on Carthago's 13 deg spokes:
+## "Drop sharp street bits"): Carthago's city with city.diagonal_min_cross_deg (on) and with it
+## at 0 (off). On, no street meets a spoke at under the road audit's 20 deg and the street pieces
+## it would have crossed are gone, as is a spoke's crossing beside a grid junction (no "close"
+## junctions); off, those sharp and close junctions are back. Ostia's straight-on
+## diagonal leaves nothing out.
+func _check_sharp_pieces_left_out() -> void:
+	var on: Dictionary = CityGrowth.tuning_for(Content.tuning(), 2, "carthago")["city"]
+	var off := on.duplicate(true)
+	off["diagonal_min_cross_deg"] = 0.0
+	var angles := Vector2i.ZERO
+	var close := Vector2i.ZERO
+	var cfgs: Array[Dictionary] = [on, off]
+	for k: int in 2:
+		for v: Dictionary in Audit.run(cfgs[k])["violations"]:
+			angles[k] += int(str(v["rule"]) == "angle")
+			close[k] += int(str(v["rule"]) == "close")
+	var plan_on := CityGen.map(on)
+	var plan_off := CityGen.map(off)
+	var sx: Dictionary = plan_on["sharp_x"]
+	var sz: Dictionary = plan_on["sharp_z"]
+	var gone := sx.size() + sz.size()
+	var pieces := Vector2i(_n(plan_on, "streets"), _n(plan_off, "streets"))
+	check(
+		angles.x == 0 and angles.y > 0 and gone > 0,
+		"Carthago: sharp junctions on %d vs off %d, %d pieces left out" % [angles.x, angles.y, gone]
+	)
+	check(
+		close.x == 0 and close.y > 0,
+		"Carthago: close junctions on %d vs off %d" % [close.x, close.y]
+	)
+	check(pieces.x < pieces.y, "Carthago: fewer street pieces on (%s, on vs off)" % pieces)
+	var ostia: Dictionary = CityGrowth.tuning_for(Content.tuning(), 2, "ostia_minor")["city"]
+	var plain := CityGen.map(ostia)
+	var ox: Dictionary = plain["sharp_x"]
+	var oz: Dictionary = plain["sharp_z"]
+	check(ox.is_empty() and oz.is_empty(), "Ostia Minor leaves no piece out")
+
+
+func _n(plan: Dictionary, key: String) -> int:
+	var items: Array = plan[key]
+	return items.size()

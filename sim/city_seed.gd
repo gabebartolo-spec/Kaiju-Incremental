@@ -11,9 +11,12 @@ extends RefCounted
 const STREAM := "city"
 
 
-## The stage's tuning for this run (CityGrowth.tuning_for), its city config the run's own.
-static func tuning(base: Dictionary, tier: int, _save_seed: int, _run_index: int) -> Dictionary:
-	return CityGrowth.tuning_for(base, tier)
+## The stage's tuning for this run (CityGrowth.tuning_for), its city config the run's own: the
+## continent's street plan when one is named (D-435).
+static func tuning(
+	base: Dictionary, tier: int, _save_seed: int, _run_index: int, continent := ""
+) -> Dictionary:
+	return CityGrowth.tuning_for(base, tier, continent)
 
 
 ## The stream the run's buildings draw from (CityGen.generate): the run index's stream, salted
@@ -24,7 +27,7 @@ static func stream(save_seed: int, run_index: int) -> RandomNumberGenerator:
 
 ## The run's buildings: CityGen.generate on the run's city config and stream.
 static func layout(
-	base: Dictionary, tier: int, save_seed: int, run_index: int
+	base: Dictionary, tier: int, save_seed: int, run_index: int, continent := ""
 ) -> Array[Dictionary]:
-	var cfg: Dictionary = tuning(base, tier, save_seed, run_index)["city"]
+	var cfg: Dictionary = tuning(base, tier, save_seed, run_index, continent)["city"]
 	return CityGen.generate(stream(save_seed, run_index), cfg)

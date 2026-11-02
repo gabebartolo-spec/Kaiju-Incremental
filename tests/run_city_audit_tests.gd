@@ -31,6 +31,8 @@ const LANDMARK_SEEDS := 20
 const ROAD_RULES_HELD: Array[String] = [
 	"stub", "zero", "split", "angle", "kerb", "arms", "water", "thin", "close!"
 ]
+## The demo's continents with their own city (D-425, D-435).
+const DEMO_CONTINENTS: Array[String] = ["ostia_minor", "carthago", "thule"]
 const STUB_M := 4.0  # the planted dead end: shorter than any block
 
 
@@ -50,6 +52,8 @@ func run_checks() -> void:
 	await _t("_check_lines_fit_clean")
 	await _t("_check_landmarks_clear")
 	await _t("_check_layout_assets_held")
+	await _t("_check_continent_cities_hold")
+	await _t("_check_continent_cities_differ")
 
 
 ## A street stub hung off a crossing of the shipped plan is caught as a "stub" right there.
@@ -210,7 +214,7 @@ func _check_road_rules_held() -> void:
 func _check_diagonal_fits() -> void:
 	var cfg := Roads.city(Content.tuning(), 1, Roads.SHIPPED_SEED)
 	check(
-		CityLineFit.x_runs_fit(cfg, CityGen.diagonal_of(cfg)),
+		CityLineFit.x_runs_fit(cfg, CityDiagonals.of(cfg)),
 		(
 			"the shipped diagonal %s at %s deg fits the rings %s (else run tools/audit/diagonal_fit.gd)"
 			% [cfg["diagonal_through"], cfg["diagonal_deg"], cfg["districts"]]
@@ -220,7 +224,7 @@ func _check_diagonal_fits() -> void:
 	old["diagonal_through"] = [-6, 4]
 	old["diagonal_deg"] = 27
 	check(
-		not CityLineFit.x_runs_fit(old, CityGen.diagonal_of(old)),
+		not CityLineFit.x_runs_fit(old, CityDiagonals.of(old)),
 		"the pre-fix diagonal (-6, 4) at 27 deg is caught as not fitting"
 	)
 
@@ -313,3 +317,84 @@ func _check_lines_fit_clean() -> void:
 	planted["diagonal_deg"] = 27
 	var got := CityLines.fit_breaks(planted)
 	check(got > 0, "a plan that cannot fit (pre-fit diagonal) is caught: %d rules broken" % got)
+
+
+## Each demo continent's own city (D-435) at its own stage (D-419): its streets fit clean (bar the
+## harbour's), it keeps main's road rules, and the same run index builds it twice (SeedAudit).
+func _check_continent_cities_hold() -> void:
+	var base := Content.tuning()
+	for id: String in DEMO_CONTINENTS:
+		var tier := Num.i(Content.continent(id)["stage"]) + 1
+		var cfg: Dictionary = CityGrowth.tuning_for(base, tier, id)["city"]
+		# The fit assumes one shallow diagonal; the harbour's steep spokes skip it (director 11-01)
+		if CityWater.kind(cfg) != CityWater.COTHON:
+			var breaks := CityLines.fit_breaks(cfg)
+			check(breaks == 0, "%s stage %d: every street run fits clean (%d)" % [id, tier, breaks])
+			check(
+				CityLineFit.x_runs_fit(cfg, CityDiagonals.of(cfg)),
+				"%s stage %d: its diagonals clear the rings" % [id, tier]
+			)
+		var bad: Array[Dictionary] = []
+		for v: Dictionary in Roads.run(cfg)["violations"]:
+			var rule := str(v["rule"])
+			if rule == "close" and str(v["note"]).contains("overlap"):
+				rule = "close!"
+			if rule in ROAD_RULES_HELD:
+				bad.append(v)
+		check(bad.is_empty(), "%s stage %d: no held road rule broken (%s)" % [id, tier, bad])
+		var one := SeedAudit.layout_hash(SeedAudit.city(base, tier, 3, "game", id))
+		var two := SeedAudit.layout_hash(SeedAudit.city(base, tier, 3, "game", id))
+		check(one == two, "%s stage %d: run 3 twice, the same city" % [id, tier])
+
+
+## On vs off (D-435): with no continent tuning a city is the default plan; Ostia Minor keeps it
+## (even), Carthago's two diagonals meet at a plaza, Thule's blocks are uneven with more alleys.
+func _check_continent_cities_differ() -> void:
+	var base := Content.tuning()
+	var plain := _plan(base, "")
+	var ostia := _plan(base, "ostia_minor")
+	var carthago := _plan(base, "carthago")
+	var thule := _plan(base, "thule")
+	check(
+		JSON.stringify(ostia["streets"]) == JSON.stringify(plain["streets"]),
+		"Ostia Minor builds the default street plan"
+	)
+	var diags: Array[Dictionary] = carthago["diagonals"]
+	var plain_diags: Array[Dictionary] = plain["diagonals"]
+	check(
+		diags.size() == 2 and plain_diags.size() == 1,
+		"Carthago: two diagonals (default: %d)" % plain_diags.size()
+	)
+	check(_has_plaza(carthago) and not _has_plaza(plain), "Carthago: a plaza site, default none")
+	var spread := Vector2(_gap_spread(thule), _gap_spread(plain))
+	check(spread.x > spread.y, "Thule: street gaps spread wider (%s m, vs default)" % spread)
+	var alleys := Vector2i(_count(thule, CityGen.ALLEY), _count(plain, CityGen.ALLEY))
+	check(alleys.x > alleys.y, "Thule: more alleys (%s, vs default)" % alleys)
+
+
+## Stage 2's street plan, of continent id's own city ("" the default).
+func _plan(base: Dictionary, id: String) -> Dictionary:
+	var cfg: Dictionary = CityGrowth.tuning_for(base, 2, id)["city"]
+	return CityGen.map(cfg)
+
+
+func _has_plaza(plan: Dictionary) -> bool:
+	var sites: Array = plan["sites"]
+	return sites.any(func(site: Dictionary) -> bool: return site.get("plaza", false))
+
+
+## The widest minus the narrowest gap between the plan's x street lines.
+func _gap_spread(plan: Dictionary) -> float:
+	var xs: Array[float] = plan["xs"]
+	var gaps: Array[float] = []
+	for k: int in xs.size() - 1:
+		gaps.append(xs[k + 1] - xs[k])
+	return gaps.max() - gaps.min()
+
+
+func _count(plan: Dictionary, kind: String) -> int:
+	var n := 0
+	for street: Dictionary in plan["streets"]:
+		if str(street["kind"]) == kind:
+			n += 1
+	return n

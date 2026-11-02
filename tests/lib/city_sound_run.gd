@@ -18,6 +18,9 @@ const BABY := {"claws": 2, "hide": 2}
 ## (destruction and people fled, both as shares) takes a kaiju this strong, not the first-run one.
 const LATE_BABY := {"claws": 5, "hide": 5, "rage": 5, "quake": 2}
 const ADOLESCENT := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}
+## The young city as it stood before D-436 (every stage now plays the 225 m adult city, which no
+## one baby run ruins): the sound's shape over a whole ruin is what the suite checks, not pacing.
+const YOUNG_CITY := {"half": 75, "coast_z": -145, "max_height": 26, "tower_chance": 0.55}
 
 var sim: RampageSim
 var street: StreetLife
@@ -30,8 +33,9 @@ var _target := Vector2(INF, INF)
 var _frame := 0
 
 
-## tier: the city's growth step (1..3); levels: the upgrades owned.
-func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
+## tier: the city's growth step (1..3); levels: the upgrades owned; city: keys laid over the
+## tuning's city (a smaller city one run can ruin, as YOUNG_CITY), none for the shipped one.
+func _init(tree: SceneTree, tier: int, levels: Dictionary, city := {}) -> void:
 	var table: Dictionary = Content.section("display")["graphics"]
 	var row: Dictionary = table["high"]
 	GraphicsPresets.start_run(row)
@@ -39,7 +43,9 @@ func _init(tree: SceneTree, tier: int, levels: Dictionary) -> void:
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	)
-	var base := Content.tuning()
+	var base: Dictionary = Content.tuning().duplicate(true)
+	var base_city: Dictionary = base["city"]
+	base_city.merge(city, true)
 	sim = RampageSim.new(
 		stats,
 		CityGrowth.tuning_for(base, tier),

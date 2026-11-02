@@ -72,6 +72,37 @@ fixture: Behemoth city at level 3 vs 1 (escalation, helicopter cap); sim fixture
 11-02, Q: from level 3 the city's start puts the Taskforce wait at its 8 s floor, so destruction no longer
 hurries the squads in grown cities; keep, or a wait only destruction shortens? A: "Keep 8 s from start".
 
+## 2026-11-01 · D-436 · Director · Every city is the adult city at every stage
+Asked why the city grows with the kaiju (D-039, D-254 half-widths 75 / 120 / 225 m), his words: "just make every city
+the same size (adult kaiju city)"; "if our baby kaiju cant destroy the whole city, thats not a problem, thats a design
+decision we can set different win conditions for Ostia other than 'level the city'"; "the grind is the game, the skill
+tree matters more than anything our city/level structure is just to give more narrative structure and momentum". Q:
+should the baby start in the full adult city, with all districts and 40 m towers? A: "Yes, full city". So every stage
+runs the adult city (tuning.json city: half 225, coast 295 m north, towers to 40 m, tower chance 0.65, the adult
+skyline cores); a stage keeps only its fog and haze (the camera still scales with the kaiju), army and air. Every
+landmark spot stands from stage 1. Replaces D-039's growing city and D-254's per-stage widths; Ostia's own win
+condition is to come.
+Same day, Carthago's 13 deg spokes now cross the adult city's outer streets under the road rule's 20 deg; he picked
+"Drop sharp street bits": spokes keep 13 deg and full length, a street piece a spoke crosses at under
+city.diagonal_min_cross_deg (20) is left out and the blocks either side abut (CityLineFit.sharp_cells). Such a steep
+spoke drifts too slowly for the line fit (3.5 m per 15 m block), so its crossing of a street beside a grid junction
+is left out too (no "close" junctions). Roads suite on/off fixture: Carthago with 20 vs 0.
+11-02, Q: every outer stand-in now lies past the 200 m roof-gear reach, so the far skyline shows no rooftop
+tanks at any stage (as the Colossus skyline always did); raise the reach to 300 m or keep it? A: "Keep as Colossus".
+The far-tank tally check retires; the playable roofs keep D-352's mix (city_roof_tanks).
+
+## 2026-11-01 · D-435 · Director · Each demo map has its own layout and emerge: Ostia beach, Carthago harbour, Thule fjord
+Overworld plan row C1. Tuning the grid per continent (two diagonals and a plaza for Carthago, longer blocks for Thule)
+was built and shown at 1080p; his words: "they all look pretty much identical. the layouts should be completely
+different. we will have to craft unique 'emerge' scenes for each map. only one map should have the water layout like
+that". His picks: Ostia Minor keeps today's layout (sea and beach, harbour, river band, rises from the bay; D-381);
+Carthago a circular harbour (a round naval harbour mid-city, streets radiating from it, the kaiju bursts up out of
+it); Thule a fjord through ice (a narrow fjord cuts the city lengthways, the kaiju breaks up through its ice). Each
+map is shown first as a 1080p top-down plan from the sim (streets, water, emerge point) for his yes, then built. He
+added: "we will probably need to make more buildings and landmarks, we have tripo and meshy for that" (each spend
+still needs his written yes and cap here; Meshy enters LICENSING_REGISTER before its first model). On the plans:
+Carthago's harbour alone was "a random inner city lake": it "has to somehow be connected to the edge of the map". Of
+one canal south, two (north-south) or four (a cross), he picked one canal south, 14 m wide, to the map's edge.
 
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
 His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
@@ -362,34 +393,3 @@ Q (10-30, after the lip slit and three weight fits left Cascadeur's mesh at 18-2
 "Accept game result". In the game the baby's mouth already opens as a slit (the bake's hinge rule, #356): at a 38 deg
 gape every parting is jaw|head1 along the mouth, none at the corner or throat, red mouth voxels shown. The mesh bar is
 dropped for the baby roar; no edge loops are added. Changes: roadmap row 1's baby jaw is done with #426.
-
-## 2026-10-30 · D-389 · Director · River bridges carve on cells
-Q (ROADMAP 4, "carve is universal"; river bridges were flat decks CityGround drew, never broken): they picked "Carve,
-spans drop" and "Keep deck, add piers". Each river bridge (CityRiver.bridges) is now a row of buildings, one per span
-(tuning bridge.span, sim/bridge_layout.gd, the railway's pattern): an asphalt deck at street level, a stone parapet
-each side, a pier to the riverbed at each end. A piece's floor 0 is the riverbed, bed floors under the street
-(Building.base), so a deck cut off its piers drops or tips into the river. CityGround keeps only the abutments; the
-Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks. The spread
-suite's "1.5x city razes a smaller share" check goes (he picked "Drop share check": with bridges breakable it read 40%
-vs 39%, a balance number under D-385); its bigger-city and replay checks stay.
-
-## 2026-10-30 · D-388 · Director · Landmarks carve on cells
-Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
-Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
-ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
-section above the stub comes down as one topple over the stub's edge (rim outward, stands inward) before the support
-settle. Landmarks keep their cut side (D-387). Bay bridges still render as decks (river bridges carve, D-389).
-
-## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
-Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
-every topple to its cut side, and a base eaten whole toward the kaiju, so most fell onto it): they picked "Seeded mix":
-each topple draws its direction from the run's seed, its cut side 40%, either side of that 25% each, away 10%
-(data/tuning.json destruction.fall_dirs). Replayable; some towers still land on the kaiju. Landmarks keep their cut
-side. Amends D-099 (the cut side is now the likeliest way, not the only one). Not chosen: mostly sideways, fully
-random, away mostly.
-
-## 2026-10-30 · D-386 · Director · A PR re-push re-runs only failed, unrun or touched suites
-He approved: a pull request's re-push runs the suites that failed or never ran on its last run, plus every suite whose
-code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
-closure, autoloads included); any other changed file or any doubt runs everything. Main still runs everything: a
-main push reuses only a PR run that tested every suite. Why: re-testing passed suites cost an hour per fix.

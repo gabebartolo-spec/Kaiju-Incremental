@@ -2,6 +2,37 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-389 · Director · River bridges carve on cells
+Q (ROADMAP 4, "carve is universal"; river bridges were flat decks CityGround drew, never broken): they picked "Carve,
+spans drop" and "Keep deck, add piers". Each river bridge (CityRiver.bridges) is now a row of buildings, one per span
+(tuning bridge.span, sim/bridge_layout.gd, the railway's pattern): an asphalt deck at street level, a stone parapet
+each side, a pier to the riverbed at each end. A piece's floor 0 is the riverbed, bed floors under the street
+(Building.base), so a deck cut off its piers drops or tips into the river. CityGround keeps only the abutments; the
+Rect2s still feed quays, decor, roads and pathing. Bay bridges and the diagonal deck stay flat decks. The spread
+suite's "1.5x city razes a smaller share" check goes (he picked "Drop share check": with bridges breakable it read 40%
+vs 39%, a balance number under D-385); its bigger-city and replay checks stay.
+
+## 2026-10-30 · D-388 · Director · Landmarks carve on cells
+Q (ROADMAP 4, "carve is universal", director 2026-10-26): landmarks broke by chunks only (Carving.takes skipped them).
+Now a landmark promotes to its LandmarkCells grid on its first hit and blows carve its cells like any building's. A
+ring landmark's arcs (the stadium) keep the chunk rule on cells: once an arc has lost arc_shed_cells cells, its
+section above the stub comes down as one topple over the stub's edge (rim outward, stands inward) before the support
+settle. Landmarks keep their cut side (D-387). Bay bridges still render as decks (river bridges carve, D-389).
+
+## 2026-10-30 · D-387 · Director · b2-5: topples fall in a seeded mix of directions
+Q (b2-5, "buildings seem to ALWAYS collapse toward our kaiju ... make the collapse directions more varied"; D-099 sent
+every topple to its cut side, and a base eaten whole toward the kaiju, so most fell onto it): they picked "Seeded mix":
+each topple draws its direction from the run's seed, its cut side 40%, either side of that 25% each, away 10%
+(data/tuning.json destruction.fall_dirs). Replayable; some towers still land on the kaiju. Landmarks keep their cut
+side. Amends D-099 (the cut side is now the likeliest way, not the only one). Not chosen: mostly sideways, fully
+random, away mostly.
+
+## 2026-10-30 · D-386 · Director · A PR re-push re-runs only failed, unrun or touched suites
+He approved: a pull request's re-push runs the suites that failed or never ran on its last run, plus every suite whose
+code changed since (tools/ci_select_suites.py: a changed .gd/.tscn/.tres in the suite's res:// or class_name
+closure, autoloads included); any other changed file or any doubt runs everything. Main still runs everything: a
+main push reuses only a PR run that tested every suite. Why: re-testing passed suites cost an hour per fix.
+
 ## 2026-10-30 · D-385 · Director · Tests guard behaviour and bugs, not balance numbers (rank 1 now)
 Q (audit of all 76 suites on fb5e3adbc: which checks freeze tuning or old measurements so polish turns CI red with
 nothing broken?): he picked "A: rank 1 now" (rank 2 as each check next breaks, rank 3 when convenient). Implementation

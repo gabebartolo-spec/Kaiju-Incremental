@@ -2,10 +2,11 @@ extends RefCounted
 ## ROADS audit, ground half (D-265): what lies beside and under every road of the real city
 ## (CityBand.extent), read off the street plan (CityGen.map) the way CityGround lays it.
 ##   water  a road piece over the river's open water off every bridge deck (CityRiver.bridges and
-##          the diagonal's, CityRiver.diagonal_deck)
+##          the diagonals', CityRiver.diagonal_decks)
 ##   kerb   a stretch of road edge, away from its junctions, with no kerbed pavement beside it
 ##          (CityGen.pavement of a block or a landmark's plaza), no other carriageway and no
-##          water (a bridge's parapet or the quay); alleys carry no pavement by design
+##          water (a bridge's parapet or the quay: the river, or CityWater.over); alleys carry no
+##          pavement by design
 ## The kerb check samples each edge every SAMPLE_M at half a pavement out from the kerb line.
 ## Pure; the same plan always gives the same answer.
 
@@ -30,22 +31,27 @@ static func _water(g: Graph.Net) -> Array[Dictionary]:
 		return out
 	var channel := water[0].grow(-0.01)
 	var decks := CityRiver.bridges(g.plan, g.cfg)
-	var diagonal := CityRiver.diagonal_deck(g.plan, g.cfg)
+	var diagonals := CityRiver.diagonal_decks(g.plan, g.cfg)
 	for k: int in g.pieces:
 		var steps := maxi(1, ceili(g.length(k) / WATER_STEP))
 		for i: int in steps + 1:
 			var p := g.end_a(k).lerp(g.end_b(k), float(i) / steps)
-			var on_diagonal := g.kind(k) == CityGen.DIAGONAL and _on_deck(diagonal, p)
+			var on_diagonal := g.kind(k) == CityGen.DIAGONAL and _on_any_deck(diagonals, p)
 			if channel.has_point(p) and not _in_any(decks, p, 0.01) and not on_diagonal:
 				out.append(Graph.violation("water", p, "%s over open water" % g.kind(k)))
 				break
 	return out
 
 
-## True when p lies on the diagonal's bridge (CityRiver.diagonal_deck; {} when it has none).
+## True when p lies on any diagonal's bridge (CityRiver.diagonal_decks).
+static func _on_any_deck(decks: Array[Dictionary], p: Vector2) -> bool:
+	for deck: Dictionary in decks:
+		if _on_deck(deck, p):
+			return true
+	return false
+
+
 static func _on_deck(deck: Dictionary, p: Vector2) -> bool:
-	if deck.is_empty():
-		return false
 	var a: Vector2 = deck["from"]
 	var b: Vector2 = deck["to"]
 	var on := Geometry2D.get_closest_point_to_segment(p, a, b)
@@ -72,7 +78,7 @@ static func _kerbs(g: Graph.Net) -> Array[Dictionary]:
 
 
 ## What may stand beside a road edge: pavements (blocks and plazas) and every piece's
-## carriageway, bucketed by CELL; the river's water.
+## carriageway, bucketed by CELL; the river's water; the plan (CityWater.over).
 static func _context(g: Graph.Net) -> Dictionary:
 	var pavements := {}
 	for block: Dictionary in g.plan["blocks"]:
@@ -87,6 +93,7 @@ static func _context(g: Graph.Net) -> Dictionary:
 		"roads": roads,
 		"water": CityRiver.channels(g.plan, g.cfg),
 		"walk": Num.f(g.cfg["sidewalk"]),
+		"plan": g.plan,
 	}
 
 
@@ -152,4 +159,5 @@ static func _covered(ctx: Dictionary, p: Vector2, k: int) -> bool:
 		if on.distance_to(p) <= Num.f(item["half"]):
 			return true
 	var water: Array[Rect2] = ctx["water"]
-	return _in_any(water, p, 0.5)
+	var plan: Dictionary = ctx["plan"]
+	return _in_any(water, p, 0.5) or CityWater.over(plan, p)

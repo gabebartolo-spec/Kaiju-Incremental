@@ -105,8 +105,9 @@ static func _next(run_at: Array, d: int, e: int, st: int, rule: Dictionary) -> i
 		return st
 	var a := _at(run_at, d)
 	var b := _at(run_at, e)
-	var diag: Dictionary = rule["diag"]
-	var gap := absf(crossing(diag, b) - crossing(diag, a))
+	var gap := INF
+	for diag: Dictionary in rule["diags"]:
+		gap = minf(gap, absf(crossing(diag, b) - crossing(diag, a)))
 	var avenue := Num.f(rule["s_avenue"])
 	if st == 1 and gap >= avenue + _s_of(b, rule) + STEP:
 		return 2
@@ -133,19 +134,26 @@ static func _pos_ok(p: int, rule: Dictionary) -> bool:
 		var bad: Dictionary = rule["bad"]
 		return not bad.has(p)
 	if str(rule.get("axis", "")) == "x":
-		var diag: Dictionary = rule["diag"]
-		var c := crossing(diag, float(p))
-		for z: float in rule["fixed_z"]:
-			if absf(c - z) < Num.f(rule["s_avenue"]):
-				return false
+		for diag: Dictionary in rule["diags"]:
+			var c := crossing(diag, float(p))
+			for z: float in rule["fixed_z"]:
+				if absf(c - z) < Num.f(rule["s_avenue"]):
+					return false
 	return true
 
 
 static func _gap_ok(a: float, b: float, rule: Dictionary) -> bool:
 	if str(rule.get("axis", "")) != "x":
 		return true
+	for diag: Dictionary in rule["diags"]:
+		if not _gap_ok_for(a, b, diag, rule):
+			return false
+	return true
+
+
+## _gap_ok for one diagonal.
+static func _gap_ok_for(a: float, b: float, diag: Dictionary, rule: Dictionary) -> bool:
 	var need := _s_of(a, rule) + _s_of(b, rule) + STEP
-	var diag: Dictionary = rule["diag"]
 	var ca := crossing(diag, a)
 	var cb := crossing(diag, b)
 	if absf(cb - ca) < need:
@@ -172,6 +180,51 @@ static func _s_of(x: float, rule: Dictionary) -> float:
 	return Num.f(rule["s_street"])
 
 
+## The grid cells whose street piece a diagonal would cross sharper than
+## city.diagonal_min_cross_deg (director 2026-11-01, Carthago's 13 deg spokes: "Drop sharp street
+## bits"), into plan: sharp_x {Vector2i(x-line i, cell j): true}, sharp_z {Vector2i(z-line j,
+## cell i): true}, keyed as CityAlleys' edges. CityGen leaves those pieces out, no node on them.
+## Such a steep diagonal's crossings of the other axis beside a grid junction count as sharp too.
+static func sharp_cells(
+	plan: Dictionary,
+	diags: Array[Dictionary],
+	xs: Array[float],
+	zs: Array[float],
+	outer: float,
+	cfg: Dictionary
+) -> void:
+	var least := deg_to_rad(Num.f(cfg["diagonal_min_cross_deg"]))
+	var short: Array = cfg["block_short"]
+	var near := maxf(_clearances(cfg)[1], Num.f(short[0]))
+	var sx := {}
+	var sz := {}
+	for diag: Dictionary in diags:
+		var dir: Vector2 = diag["dir"]
+		var along_z := atan2(absf(dir.x), absf(dir.y)) < least  # near the x-lines' own run
+		var along_x := atan2(absf(dir.y), absf(dir.x)) < least  # near the z-lines' run
+		for i: int in xs.size():
+			var z := CityDiagonals.at_x(diag, xs[i])
+			if absf(z) <= outer and (along_z or (along_x and _beside(z, zs, near))):
+				sx[Vector2i(i, CityGen.cell_of(zs, z))] = true
+		for j: int in zs.size():
+			var x := CityDiagonals.at_z(diag, zs[j])
+			if absf(x) <= outer and (along_x or (along_z and _beside(x, xs, near))):
+				sz[Vector2i(j, CityGen.cell_of(xs, x))] = true
+	plan["sharp_x"] = sx
+	plan["sharp_z"] = sz
+
+
+## Is v off every one of `lines` but within `near` (an avenue's clearance, or the shortest block
+## when that is wider: the road rule's "close") of one? A steep diagonal drifts too slowly across
+## the other axis for the line fit to keep its crossings off the grid junctions (13 deg: 3.5 m a
+## 15 m block), so such a crossing's piece is left out as well.
+static func _beside(v: float, lines: Array[float], near: float) -> bool:
+	for line: float in lines:
+		if absf(v - line) < near:
+			return v != line
+	return false
+
+
 ## The diagonal's z where it crosses the x-line at x.
 static func crossing(diag: Dictionary, x: float) -> float:
 	var at: Vector2 = diag["at"]
@@ -183,7 +236,7 @@ static func crossing(diag: Dictionary, x: float) -> float:
 ## the sea bay's pinned z-lines (CityHarbour.pins: the back street), which no fitted z-line can
 ## dodge the diagonal for, so the x-lines keep its crossings an avenue's clearance off them; z_cap
 ## the widest z gap CityLines fits (the z-lines' own max(hi, 2 lo - 1)).
-static func x_rule(cfg: Dictionary, diag: Dictionary, rings: Array[float]) -> Dictionary:
+static func x_rule(cfg: Dictionary, diags: Array[Dictionary], rings: Array[float]) -> Dictionary:
 	var ring_z: Array[float] = []
 	for r: float in rings:
 		ring_z.append(r)
@@ -196,7 +249,7 @@ static func x_rule(cfg: Dictionary, diag: Dictionary, rings: Array[float]) -> Di
 	var z_cap := maxi(Num.i(short[1]), 2 * Num.i(short[0]) - 1)
 	return {
 		"axis": "x",
-		"diag": diag,
+		"diags": diags,
 		"ring_z": ring_z,
 		"fixed_z": fixed_z,
 		"s_street": s[0],
@@ -205,34 +258,40 @@ static func x_rule(cfg: Dictionary, diag: Dictionary, rings: Array[float]) -> Di
 	}
 
 
-## Whether x-line i may be an avenue: the diagonal's crossings either side leave a z-line room
+## Whether x-line i may be an avenue: each diagonal's crossings either side leave a z-line room
 ## at an avenue's clearance on its side.
 static func avenue_fits_x(rule: Dictionary, xs: Array[float], i: int) -> bool:
-	var diag: Dictionary = rule["diag"]
-	var c := crossing(diag, xs[i])
-	for k: int in [i - 1, i + 1]:
-		if k < 0 or k >= xs.size():
-			continue
-		var need := Num.f(rule["s_avenue"]) + _s_of(xs[k], rule) + STEP
-		if absf(crossing(diag, xs[k]) - c) < need:
-			return false
+	for diag: Dictionary in rule["diags"]:
+		var c := crossing(diag, xs[i])
+		for k: int in [i - 1, i + 1]:
+			if k < 0 or k >= xs.size():
+				continue
+			var need := Num.f(rule["s_avenue"]) + _s_of(xs[k], rule) + STEP
+			if absf(crossing(diag, xs[k]) - c) < need:
+				return false
 	return true
 
 
-## The z-lines' rule: every whole metre within s of an x-line's crossing is barred.
+## The z-lines' rule: every whole metre within s of an x-line's crossing with any diagonal is
+## barred.
 static func z_rule(
-	cfg: Dictionary, diag: Dictionary, xs: Array[float], rings: Array[float], avenue_x: Array
+	cfg: Dictionary,
+	diags: Array[Dictionary],
+	xs: Array[float],
+	rings: Array[float],
+	avenue_x: Array
 ) -> Dictionary:
 	var s := _clearances(cfg)
-	var x_rules := x_rule(cfg, diag, rings)
+	var x_rules := x_rule(cfg, diags, rings)
 	x_rules["avenue_x"] = avenue_x
 	var bad := {}
-	for x: float in xs:
-		var c := crossing(diag, x)
-		var need := _s_of(x, x_rules)
-		for z: int in range(ceili(c - need), floori(c + need) + 1):
-			if absf(z - c) < need:
-				bad[z] = true
+	for diag: Dictionary in diags:
+		for x: float in xs:
+			var c := crossing(diag, x)
+			var need := _s_of(x, x_rules)
+			for z: int in range(ceili(c - need), floori(c + need) + 1):
+				if absf(z - c) < need:
+					bad[z] = true
 	return {"axis": "z", "bad": bad, "s_street": s[0], "s_avenue": s[1]}
 
 
@@ -246,23 +305,26 @@ static func _clearances(cfg: Dictionary) -> Array[float]:
 	]
 
 
-## How far line `v` on `axis` keeps from the nearest crossing of the diagonal with the other axis
+## How far line `v` on `axis` keeps from the nearest crossing of any diagonal with the other axis
 ## (INF with none): an avenue needs _clearances()[1].
-static func clearance(diag: Dictionary, axis: String, v: float, others: Array[float]) -> float:
+static func clearance(
+	diags: Array[Dictionary], axis: String, v: float, others: Array[float]
+) -> float:
 	var out := INF
-	for o: float in others:
-		var c := crossing(diag, o if axis == "z" else v)
-		out = minf(out, absf((v if axis == "z" else o) - c))
+	for diag: Dictionary in diags:
+		for o: float in others:
+			var c := crossing(diag, o if axis == "z" else v)
+			out = minf(out, absf((v if axis == "z" else o) - c))
 	return out
 
 
 ## Whether the x-lines of cfg's plan can meet every rule whatever the seed (the runs between the
 ## fixed ring lines and out to the outskirts; the z-lines then always fit between the diagonal's
 ## crossings): the check tools/audit/diagonal_fit.gd uses to pick city.diagonal_through and
-## city.diagonal_deg. diag: CityGen.diagonal_of(cfg), or a candidate.
-static func x_runs_fit(cfg: Dictionary, diag: Dictionary) -> bool:
+## city.diagonal_deg. diags: CityDiagonals.of(cfg), or a candidate's.
+static func x_runs_fit(cfg: Dictionary, diags: Array[Dictionary]) -> bool:
 	var rings := CityGen.districts(cfg)
-	var rule := x_rule(cfg, diag, rings)
+	var rule := x_rule(cfg, diags, rings)
 	for r: float in rings:
 		if not _pos_ok(roundi(r), rule) or not _pos_ok(-roundi(r), rule):
 			return false

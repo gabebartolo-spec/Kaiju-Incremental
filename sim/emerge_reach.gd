@@ -65,7 +65,7 @@ static func max_growth(upgrades: Array[Dictionary], species_id: String, tier: in
 ## the game camera's ground reach of the rise ("view_clear").
 static func fit(tuning: Dictionary, upgrades: Array[Dictionary], tier: int) -> void:
 	var city: Dictionary = tuning.get("city", {})
-	if not city.has("harbour"):
+	if not CityHarbour.on(city):
 		return
 	var bay: Dictionary = city["harbour"]
 	var body := biggest(tuning, upgrades, tier)

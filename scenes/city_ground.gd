@@ -287,7 +287,7 @@ func _bridge(deck: Rect2, channels: Array[Rect2], stone: Color) -> void:
 	GroundRiver.abutments(self, deck, channels, Num.f(cfg.get("river_depth", 0.0)), stone)
 
 
-## The diagonal's bridge (CityRiver.diagonal_deck): its deck at the avenue's level with a parapet
+## A diagonal's bridge (CityRiver.diagonal_decks): its deck at the avenue's level with a parapet
 ## along each side, each running only over the channel (`water`, quays included), so neither
 ## crosses a street along the bank. colors: [asphalt, stone].
 func _diagonal_deck(over: Dictionary, water: Rect2, colors: Array[Color]) -> void:
@@ -314,10 +314,12 @@ func _diagonal_deck(over: Dictionary, water: Rect2, colors: Array[Color]) -> voi
 		_put(Rect2(at - rail * 0.5, rail), Vector2(PARAPET.x, 1.0), angle, [stone, face])
 
 
-## True when polygon `cut` leaves all of rect (they do not overlap).
-static func _whole(rect: Rect2, cut: PackedVector2Array) -> bool:
-	var left := DiagonalPaving.pieces(rect, cut)
-	return absf(_area(left[0]) - rect.get_area()) < 0.001
+## True when the polygons in `cuts` leave all of rect (none overlaps it).
+static func _whole(rect: Rect2, cuts: Array[PackedVector2Array]) -> bool:
+	var left := 0.0
+	for piece: PackedVector2Array in DiagonalPaving.pieces(rect, cuts):
+		left += _area(piece)
+	return absf(left - rect.get_area()) < 0.001
 
 
 static func _area(poly: PackedVector2Array) -> float:

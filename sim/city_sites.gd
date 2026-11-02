@@ -40,7 +40,11 @@ static func site_at(
 	if river >= 0 and j.x <= river + 1 and j.y >= river:
 		return {}  # never in the river's row (CityRiver) nor its far bank, where inlets open
 	var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
-	if _crosses_diagonal(plan, outer, cfg) or CityHarbour.in_any(cfg, outer):
+	if (
+		_crosses_diagonal(plan, outer, cfg)
+		or CityHarbour.in_any(cfg, outer)
+		or CityWater.reaches(plan, outer)
+	):
 		return {}  # never across the diagonal nor in any stage's sea bay (CityHarbour)
 	return _site(spec, shape, i, j, outer, axes)
 
@@ -69,7 +73,11 @@ static func bridge_at(
 		return {}
 	var j := Vector2i(river + 1, river + rows)
 	var outer := Rect2(xs[i.x], zs[river], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[river])
-	if _crosses_diagonal(plan, outer, cfg) or CityHarbour.in_any(cfg, outer):
+	if (
+		_crosses_diagonal(plan, outer, cfg)
+		or CityHarbour.in_any(cfg, outer)
+		or CityWater.reaches(plan, outer)
+	):
 		return {}
 	return _site(spec, shape, i, j, outer, axes)
 
@@ -122,7 +130,7 @@ static func covers(plan: Dictionary, i: int, j: int) -> bool:
 
 ## Each site's block: "landmark" while it lies in the playable city or the real band the camera
 ## shows past its edge (CityBand), else "outer" (a stand-in until an evolution
-## brings it near).
+## brings it near); the diagonals' plaza (CityPlaza) is "plaza", open paved ground.
 static func add_blocks(plan: Dictionary, cfg: Dictionary) -> void:
 	var blocks: Array[Dictionary] = plan["blocks"]
 	var half := CityGen.half_extent(cfg)
@@ -138,12 +146,18 @@ static func add_blocks(plan: Dictionary, cfg: Dictionary) -> void:
 			. append(
 				{
 					"rect": rect,
-					"use": "landmark" if reach < half or CityBand.real(rect, cfg) else "outer",
+					"use": _use(sites[n], reach < half or CityBand.real(rect, cfg)),
 					"district": CityGen.district_of(rect, cfg),
 					"site": n,
 				}
 			)
 		)
+
+
+static func _use(site: Dictionary, near: bool) -> String:
+	if site.get("plaza", false):
+		return "plaza"
+	return "landmark" if near else "outer"
 
 
 ## The landmarks standing in district `ring` of the playable city, as layout entries
@@ -249,9 +263,15 @@ static func _inset(avenues: Dictionary, k: int, cfg: Dictionary) -> float:
 	return CityGen.width_of(kind, cfg) * 0.5
 
 
-## True when the diagonal avenue (with its half width) passes through the rect.
+## True when a diagonal avenue (with its half width) passes through the rect.
 static func _crosses_diagonal(plan: Dictionary, outer: Rect2, cfg: Dictionary) -> bool:
-	var diag: Dictionary = plan["diagonal"]
+	for diag: Dictionary in plan["diagonals"]:
+		if _crosses(diag, outer, cfg):
+			return true
+	return false
+
+
+static func _crosses(diag: Dictionary, outer: Rect2, cfg: Dictionary) -> bool:
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
 	var clear := CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + Num.f(cfg["sidewalk"])

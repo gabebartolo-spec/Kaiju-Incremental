@@ -39,7 +39,7 @@ var _blocks: Array[Dictionary] = []  # {walk, rect, use}
 var _block_hash := {}  # Vector2i -> Array[int]
 var _road_hash := {}  # Vector2i -> Array[int]
 var _coast: float
-var _diag_deck: Dictionary
+var _diag_decks: Array[Dictionary]
 var _front := {}  # HarbourView.bands, once
 
 
@@ -50,7 +50,7 @@ func _init(p_plan: Dictionary, p_cfg: Dictionary) -> void:
 	_coast = Num.f(cfg["coast_z"])
 	water = CityRiver.channels(plan, cfg)
 	decks = CityRiver.bridges(plan, cfg)
-	_diag_deck = CityRiver.diagonal_deck(plan, cfg)
+	_diag_decks = CityRiver.diagonal_decks(plan, cfg)
 	_index_roads()
 	_index_blocks()
 
@@ -129,20 +129,21 @@ static func where(p: Vector2) -> String:
 	return "(%.1f, %.1f)" % [p.x, p.y]
 
 
-## True when p is on a bridge deck: a street's (CityRiver.bridges) or the diagonal's
-## (CityRiver.diagonal_deck).
+## True when p is on a bridge deck: a street's (CityRiver.bridges) or a diagonal's
+## (CityRiver.diagonal_decks).
 func on_deck(p: Vector2) -> bool:
 	for deck: Rect2 in decks:
 		if deck.has_point(p):
 			return true
-	if _diag_deck.is_empty():
-		return false
-	var a: Vector2 = _diag_deck["from"]
-	var b: Vector2 = _diag_deck["to"]
-	var dir := (b - a).normalized()
-	var along := (p - a).dot(dir)
-	var across := absf((p - a).cross(dir))
-	return along >= 0.0 and along <= a.distance_to(b) and across <= Num.f(_diag_deck["width"]) * 0.5
+	for over: Dictionary in _diag_decks:
+		var a: Vector2 = over["from"]
+		var b: Vector2 = over["to"]
+		var dir := (b - a).normalized()
+		var along := (p - a).dot(dir)
+		var across := absf((p - a).cross(dir))
+		if along >= 0.0 and along <= a.distance_to(b) and across <= Num.f(over["width"]) * 0.5:
+			return true
+	return false
 
 
 func _over_water(p: Vector2) -> bool:

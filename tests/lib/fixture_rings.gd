@@ -66,7 +66,10 @@ static func apply(base: Dictionary) -> void:
 	city["park_every"] = PARK_EVERY
 	var stages: Array = base["growth"]["stages"]
 	for k: int in 2:
-		var over: Dictionary = stages[k]["city"]
+		var stage: Dictionary = stages[k]
+		if not stage.has("city"):  # one city size (D-436): a stage may carry no city overlay
+			stage["city"] = {}
+		var over: Dictionary = stage["city"]
 		over["half"] = HALVES[k]
 		over["coast_z"] = COASTS[k]
 		over.erase("outer_cores")  # the stage's own skyline (D-254) for the 1.5x play area
