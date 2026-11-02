@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-444 · Director · The roadmap is docs/ROADMAP.md in the repo, not the Claude Doc
+Q: the Claude Doc roadmap opens from one account only. Should the repo file replace it as the source of truth?
+A: "Yes, repo file". docs/ROADMAP.md is the roadmap. Roadmap changes go in it through a PR. The Claude Doc is
+frozen and no longer updated.
+
 ## 2026-11-02 · D-443 · Director · The baby rises on the wading shelf, in today's spot
 Q: flow@5 failed because the baby's head broke the water at frame 92, after the wade began: its unkeyed rise ended
 on the hollow's 7 m deep floor, which is fitted for the adult's keyed crouch. Rise on the shelf, or a shallower
