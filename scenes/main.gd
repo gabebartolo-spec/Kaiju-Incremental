@@ -161,15 +161,15 @@ func _start_rampage(endless := false) -> void:
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var tier := Num.i(stats["size"])
 	var runs := Num.i(_save.get("runs", 0))
-	# The run's city (CitySeed): the slot's own seed and the run index.
-	var layout := CitySeed.layout(Content.tuning(), tier, Num.i(_save.get("seed", 0)), runs)
+	# The run's city (CitySeed): the slot's own seed and the run index, planned on the rampage's
+	# worker behind its loading screen (Rampage.setup_later).
+	var layout := CitySeed.layout.bind(Content.tuning(), tier, Num.i(_save.get("seed", 0)), runs)
 	_endless = endless
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
 	rampage.city_seconds = Num.f(_save.get("city_seconds", 0.0))
-	rampage.setup(_species(), stats, layout, runs)
-	if endless:  # the demo's Endless mode (D-156)
-		rampage.sim.endless = Endless.new()
+	rampage.endless = endless  # the demo's Endless mode (D-156)
+	rampage.setup_later(_species(), stats, layout, runs)
 	# The time of day (D-145): random, never the last run's, unless the options fix one. The
 	# save remembers it, even if the rampage is quit before it ends.
 	var time_id := TimeOfDay.pick(runs, str(_save.get("last_time", "")), PlayerSettings.time_of_day)

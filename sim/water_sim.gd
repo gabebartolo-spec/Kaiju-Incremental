@@ -214,9 +214,11 @@ func _stand(sim: RampageSim, dt: float) -> void:
 		var c := basin.at(p)
 		var n := ceili(radius / basin.cell) + 1
 		var near := Rect2i(c - Vector2i(n, n), Vector2i(n, n) * 2 + Vector2i.ONE)
-		var span := near.merge(basin.active) if basin.active.has_area() else near
+		# round him and where his body still is: the rest holds none (the window cost 10 ms)
+		var span := near.merge(basin.held) if basin.held.has_area() else near
 		span = span.intersection(Rect2i(0, 0, basin.nx, basin.nz))
 		var moved := false
+		basin.held = Rect2i()
 		for j: int in range(span.position.y, span.end.y):
 			for i: int in range(span.position.x, span.end.x):
 				var k := j * basin.nx + i
@@ -232,6 +234,8 @@ func _stand(sim: RampageSim, dt: float) -> void:
 					else:
 						basin.body[k] = move_toward(basin.body[k], want, rate)
 					moved = true
+				if basin.body[k] > 0.0:
+					basin.hold(Vector2i(i, j))
 		if moved:
 			basin.wake(near)
 	_placed = true
@@ -247,11 +251,7 @@ func _flow(basin: Basin, dt: float) -> void:
 	# small), out to the whole basin.
 	var r := basin.active.grow(1).intersection(Rect2i(0, 0, basin.nx, basin.nz))
 	basin.active = r
-	var deepest := 0.0
-	for j: int in range(r.position.y, r.end.y):
-		for i: int in range(r.position.x, r.end.x):
-			deepest = maxf(deepest, basin.depth[j * basin.nx + i])
-	var speed := sqrt(G * maxf(deepest, 0.01))
+	var speed := sqrt(G * maxf(basin.deepest(r), 0.01))
 	var subs := maxi(1, ceili(speed * dt / (basin.cell * Num.f(_cfg["courant"]))))
 	var h := dt / subs
 	var keep := maxf(0.0, 1.0 - Num.f(_cfg["friction"]) * h)

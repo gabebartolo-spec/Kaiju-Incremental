@@ -1,7 +1,6 @@
 extends "res://tests/lib/powers_base.gd"
-## Helis suite: the croc and the helicopters (D-037, D-183) and his full branch replayed. Moved
-## out of run_tentacles_tests.gd, now parked with the cephalopod and insectoid (tests/parked/,
-## director 2026-10-29: only what the demo build needs is tested). Headless, no autoloads.
+## Helis suite: the croc and the helicopters (D-037, D-183) and his full branch replayed.
+## Headless, no autoloads.
 ##   godot --headless --path . --script tests/run_helis_tests.gd
 
 ## Strafing passes a helicopter is sent on, and the seconds each is given (strafe_seconds).

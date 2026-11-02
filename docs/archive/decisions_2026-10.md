@@ -2,6 +2,50 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
+Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
+12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
+stands up out of the sea to his first beachfront hotel down; the walk across the sand counts (the sand gets umbrellas
+and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
+landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
+
+## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test (relaxed by D-403)
+Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
+a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
+local Godot suite run to check a change before it goes up, not even the suites it touched. Replaces the last
+clause of the archived local-prepush decision ("builders still run locally only the suites they iterate on").
+Probes that measure something a fix needs still run locally.
+
+## 2026-10-29 · D-382 · Director · A pull request skips the slow second-angle suites; they run on main
+His words: "which of these, if any, can we remove, or is it necessary for us to run them all for EVERY patch? its a
+real bottleneck for dev time"; on the list: "Yes, write D-382". No suite is deleted. Thirteen slow suites that check the
+game from a second angle run on every push to main only (the `slow` job, 3 lanes, never blocking): streamview, load,
+counts, crowd, empty_space, roads, heliflight, skyline, city_audit, demoend, croc_standing, slowmo, results (4,365 s of
+8,802). Everything else, motion and smoke included, runs on every PR (until D-403: engine suites moved to main too). The list is the `pr_skip` line of
+tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last green PR run took 18 min, shard 1
+alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
+plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
+suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
+
+## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
+His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
+fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
+every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
+road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
+man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
+(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
+The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
+stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
+wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1. Built (10-30) as pool models
+P01-P03 authored in code (tools/port/build_port.py, no Tripo spend), district "port", role "fixed": CityPort stands
+the same 4 cranes, 3 sheds and 29 stacks on the quay and yard in every city, where the real band reaches (stage 3).
+
+## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
+Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
+row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
+Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
+Stadium-driven tests (flow, crowd) play the stage-2 city.
+
 ## 2026-10-29 · D-379 · Director · Rulebook, shared memory and personal skills removed; two rules kept
 His words: "i want to straight up delete the rulebook"; "no spend without your yes / only you judge art / these are
 the only things i want". On shared memory: "Archive it + stop refills (Recommended)" ("a good idea in theory but not

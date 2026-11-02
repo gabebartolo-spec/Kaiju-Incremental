@@ -74,6 +74,11 @@ func start(kind: String, strike_in: float, rng: RandomNumberGenerator) -> void:
 		_jaw_shut_at = INF  # the beam's own end shuts it (beam_end)
 
 
+## Finds the ridge now (see ThunderBeam._ready); start() finds it again only if the body changed.
+func prepare() -> void:
+	_find_ridge()
+
+
 ## Where the ridge point `index` (tail tip 0 .. head) is in the world now.
 func ridge_point(index: int) -> Vector3:
 	return _rig.bone(_bones[index]).global_transform * _ridge[index]

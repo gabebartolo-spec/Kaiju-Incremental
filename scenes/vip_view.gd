@@ -8,6 +8,9 @@ extends Node3D
 
 ## The rampage's sounds (PowersView passes them): the wreck's crash.
 var sfx: Sfx
+## The leader's model, built and painted at load and hidden until lift-off: built at the lift-off
+## it was a 12 ms hitch (perf 2026-11). Off: built then, as before.
+var prebuild := true
 var _sim: RampageSim
 var _cfg: Dictionary
 var _model: HelicopterModel
@@ -18,6 +21,7 @@ var _strip: NewsTicker
 var _strip_left := 0.0
 var _beacon: Node3D
 var _clock := 0.0
+var _spare: HelicopterModel
 
 
 func _init(p_sim: RampageSim, city: CityView, p_sfx: Sfx) -> void:
@@ -29,6 +33,13 @@ func _init(p_sim: RampageSim, city: CityView, p_sfx: Sfx) -> void:
 	add_child(_wreck)
 	_layer = CanvasLayer.new()
 	add_child(_layer)
+
+
+func _ready() -> void:
+	if prebuild:
+		_spare = _painted()
+		_spare.visible = false
+		_spare.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 ## The leader's model, while it flies (PowersView.helis lists it with the gunships).
@@ -93,10 +104,10 @@ func _process(delta: float) -> void:
 
 
 func _spawn() -> void:
-	_model = HelicopterModel.new(HelicopterModel.VIP_BASE)
-	add_child(_model)
-	var look: Dictionary = _cfg["look"]
-	_model.vip_look(Color(str(look["white"])), Color(str(look["gold"])))
+	_model = _spare if _spare != null else _painted()
+	_spare = null
+	_model.visible = true
+	_model.process_mode = Node.PROCESS_MODE_INHERIT
 	_model.position = Vector3(_sim.vip.pos.x, _sim.vip.altitude(), _sim.vip.pos.y)
 	_rotor = AudioStreamPlayer3D.new()
 	_rotor.bus = AudioBuses.of("heli_rotor")
@@ -111,6 +122,15 @@ func _spawn() -> void:
 	_rotor.play()
 	_beacon = _lamp()
 	_model.add_child(_beacon)
+
+
+## The white-and-gold model, in the tree.
+func _painted() -> HelicopterModel:
+	var model := HelicopterModel.new(HelicopterModel.VIP_BASE)
+	add_child(model)
+	var look: Dictionary = _cfg["look"]
+	model.vip_look(Color(str(look["white"])), Color(str(look["gold"])))
+	return model
 
 
 ## A blinking gold lamp on the mast and its light on the roofs: it reads in the dark as the leader,

@@ -10,7 +10,7 @@ extends OptionsPage
 const WAIT_KEYS := "PRESS A KEY"
 const WAIT_PAD := "PRESS A BUTTON"
 ## The Controls list rows (PlayerSettings.CONTROLS) shown as text: not rebindable here.
-const FIXED: Array[String] = ["Glide (insectoid, hold)", "Fullscreen", "Confirm", "Back"]
+const FIXED: Array[String] = ["Fullscreen", "Confirm", "Back"]
 
 ## action -> {KeyBinds.KEYS: Button, KeyBinds.PAD: Button}
 var binds: Dictionary = {}

@@ -1,8 +1,8 @@
 class_name Army
 extends RefCounted
 ## The tanks: they arrive faster the more the city falls, drive in by road to firing positions
-## (Convoy, D-066) and shell the kaiju (or the nearest young of a brood, if one is closer) when
-## they have a clear line of fire. Coated tanks burn. Part of RampageSim; the tanks themselves
+## (Convoy, D-066) and shell the kaiju when they have a clear line of
+## fire. Coated tanks burn. Part of RampageSim; the tanks themselves
 ## live in sim.tanks. Draws from the army's own seeded stream.
 ## Rooftop defenders (D-063): armed citizens hold some of the taller roofs from the start and
 ## fire rifles at the kaiju in range, a sting far below a tank shell, scaled by its size tier and
@@ -76,13 +76,7 @@ func step(dt: float) -> void:
 		# range is measured to the body line, as the tank's post is (FiringPosts.aim_point)
 		var aim := convoy.posts.aim_point(tank.pos, at_head)
 		var dist := tank.pos.distance_to(aim)
-		# A young of the brood nearer than the kaiju draws the fire instead.
-		var young := sim.brood.nearest_young(tank.pos, minf(dist, reach + 1.0))
-		if young != null and convoy.clear_line(tank.pos, young.pos):
-			tank.cooldown = Num.f(cfg["fire_interval"])
-			young.hp -= Num.f(cfg["tank_damage"]) * Num.f(cfg["young_damage_mult"])
-			sim.events.append({"type": "tank_fired", "tank": tank.id, "at": young.pos})
-		elif dist <= reach + 1.0 and convoy.clear_line(tank.pos, aim):
+		if dist <= reach + 1.0 and convoy.clear_line(tank.pos, aim):
 			tank.cooldown = Num.f(cfg["fire_interval"])
 			shoot(tank, dist, reach)
 	if _step_squads(dt):

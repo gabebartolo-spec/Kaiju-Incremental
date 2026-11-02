@@ -42,7 +42,7 @@ static func check(check: Callable, sim: RampageSim, kaiju: KaijuModel) -> void:
 	await kaiju.get_tree().process_frame
 
 
-## RampageAbility.place on the ground: no glide, no leap.
+## RampageAbility.place on the ground: no leap.
 static func _place(sim: RampageSim, kaiju: KaijuModel, moving: float) -> void:
 	kaiju.position = Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 	kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)

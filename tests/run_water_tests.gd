@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_water_tests.gd
 
 const Harbour := preload("res://tests/lib/city_harbour.gd")
+const WaterCost := preload("res://tests/lib/water_cost.gd")
 
 const DT := 1.0 / 30.0
 const STAGES := [1, 2, 3]
@@ -39,6 +40,8 @@ func run_checks() -> void:
 	await _t("_check_liquid_rise_calm")
 	await _t("_check_liquid_native")
 	await _t("_check_ocean_fade")
+	await _h("WaterCost.held", func() -> void: WaterCost.held(check))
+	await _h("WaterCost.fill", func() -> void: WaterCost.fill(self, check))
 
 
 func _check_default_on() -> void:

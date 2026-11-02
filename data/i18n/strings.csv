@@ -14,7 +14,6 @@ keys,en,es,fr,it,de,ru,zh_CN
 %s:,%s:,%s:,%s :,%s:,%s:,%s:,%s：
 1 STOREY,1 STOREY,1 PISO,1 ÉTAGE,1 PIANO,1 STOCKWERK,1 ЭТАЖ,1 层
 A bigger bang: your last breath flattens the block.,A bigger bang: your last breath flattens the block.,Un estallido mayor: tu último aliento arrasa la manzana.,Plus fort : votre dernier souffle rase le pâté.,Un botto più grande: l'ultimo respiro rade al suolo l'isolato.,Ein größerer Knall: Dein letzter Atem plättet den Block.,Взрыв мощнее: последний вздох сносит квартал.,更大的爆炸：你的最后一口气夷平整个街区。
-"A limb seizes a tank, helicopter or car and hurls it where you face; a thrown tank goes off like a grenade.","A limb seizes a tank, helicopter or car and hurls it where you face; a thrown tank goes off like a grenade.","Un miembro agarra un tanque, helicóptero o coche y lo lanza adonde miras; un tanque lanzado estalla como una granada.","Un membre saisit tank, hélico ou voiture et le lance devant vous ; un tank lancé explose comme une grenade.","Un arto afferra un carro armato, un elicottero o un'auto e lo scaglia davanti a te; un carro lanciato esplode come una granata.","Ein Glied packt Panzer, Heli oder Auto und schleudert ihn in Blickrichtung; ein Panzer explodiert wie eine Granate.","Конечность хватает танк, вертолёт или машину и швыряет вперёд; брошенный танк взрывается как граната.",肢体抓起坦克、直升机或汽车，朝你面向的方向扔出；扔出的坦克会像手雷一样爆炸。
 A longer tail that cuts higher: whole towers lose their upper floors.,A longer tail that cuts higher: whole towers lose their upper floors.,Una cola más larga que corta más alto: torres enteras pierden sus pisos altos.,Queue plus longue qui tranche plus haut : les tours perdent leurs étages.,Una coda più lunga che taglia più in alto: interi grattacieli perdono i piani alti.,"Ein längerer Schwanz, der höher schneidet: Türme verlieren ihre oberen Etagen.",Хвост длиннее и бьёт выше: башни лишаются верхних этажей.,更长的尾巴，扫得更高：整栋高楼的上层被削掉。
 ACCESSIBILITY,ACCESSIBILITY,ACCESIBILIDAD,ACCESSIBILITÉ,ACCESSIBILITÀ,BARRIEREFREIHEIT,ДОСТУПНОСТЬ,辅助功能
 ANOTHER LANDMARK OFF THE MAP,ANOTHER LANDMARK OFF THE MAP,OTRO MONUMENTO BORRADO DEL MAPA,ENCORE UN MONUMENT RAYÉ DE LA CARTE,UN ALTRO MONUMENTO CANCELLATO,WIEDER EIN WAHRZEICHEN WENIGER,ЕЩЁ ОДНА ДОСТОПРИМЕЧАТЕЛЬНОСТЬ СТЁРТА С КАРТЫ,又一座地标从地图上消失
@@ -66,7 +65,6 @@ COWARD {rank} ESCAPES THE CITY,COWARD {rank} ESCAPES THE CITY,EL COBARDE {rank} 
 COWARD {rank} FLEES CITY BY CHOPPER,COWARD {rank} FLEES CITY BY CHOPPER,EL COBARDE {rank} HUYE EN HELICÓPTERO,LE LÂCHE {rank} FUIT EN HÉLICO,IL CODARDO {rank} FUGGE IN ELICOTTERO,FEIGLING {rank} FLIEHT PER HELI,ТРУС {rank} УДИРАЕТ НА ВЕРТОЛЁТЕ,懦夫{rank}乘直升机逃离城市
 Camera motion,Camera motion,Movimiento de cámara,Mouvement caméra,Movimento camera,Kamerabewegung,Движение камеры,镜头晃动
 Cataclysm,Cataclysm,Cataclismo,Cataclysme,Cataclisma,Kataklysmus,Катаклизм,灾变
-Cephalopod,Cephalopod,Cefalópodo,Céphalopode,Cefalopode,Kopffüßer,Головоногий,头足类
 Charges hit harder,Charges hit harder,Embestidas más fuertes,Charges plus puissantes,Cariche più potenti,Ansturm trifft härter,Таран бьёт сильнее,冲撞更猛
 Charges hit harder.,Charges hit harder.,Embestidas más fuertes.,Charges plus puissantes.,Cariche più potenti.,Ansturm trifft härter.,Таран бьёт сильнее.,冲撞更猛。
 Chunky,Chunky,Robusto,Costaud,Massiccio,Wuchtig,Здоровяк,壮硕
@@ -79,9 +77,6 @@ Claw swipes rake wider,Claw swipes rake wider,Zarpazos más amplios,Coups de gri
 Claw swipes rake wider.,Claw swipes rake wider.,Zarpazos más amplios.,Coups de griffe plus larges.,Artigliate più ampie.,Klauenhiebe reichen weiter.,Удары когтями шире.,爪击范围更广。
 Claw swipes tear through anything.,Claw swipes tear through anything.,Los zarpazos lo atraviesan todo.,Les coups de griffe déchirent tout.,Le artigliate squarciano tutto.,Klauenhiebe zerfetzen alles.,Когти рвут что угодно.,爪击撕裂一切。
 Clear,Clear,Despejado,Dégagé,Sereno,Leeren,Ясно,晴朗
-Climb any building and fight from its roof; your weight breaks the top floors so towers fall from the top.,Climb any building and fight from its roof; your weight breaks the top floors so towers fall from the top.,Trepa cualquier edificio y lucha desde el tejado; tu peso rompe los pisos altos y las torres caen desde arriba.,Escaladez tout bâtiment et combattez du toit ; votre poids brise les derniers étages et les tours s'effondrent par le haut.,Scala qualsiasi edificio e combatti dal tetto; il tuo peso sfonda i piani alti e le torri crollano dall'alto.,"Erklimme jedes Gebäude und kämpfe vom Dach; dein Gewicht bricht die oberen Etagen, Türme fallen von oben.","Лезь на любое здание и бейся с крыши; твой вес ломает верхние этажи, и башни рушатся сверху.",攀上任意建筑，在楼顶作战；你的体重压垮顶层，高楼自上而下崩塌。
-Climber,Climber,Trepador,Grimpeur,Scalatore,Kletterer,Скалолаз,攀爬者
-Climbs taller towers,Climbs taller towers,Trepa torres más altas,Grimpe aux tours plus hautes,Scala torri più alte,Erklimmt höhere Türme,Лезет на башни выше,能爬更高的楼
 Club Tail,Club Tail,Cola de maza,Queue massue,Coda a mazza,Keulenschwanz,Хвост-булава,锤尾
 Confirm,Confirm,Confirmar,Confirmer,Conferma,Bestätigen,Подтвердить,确认
 Cost %d,Cost %d,Coste %d,Coût %d,Costo %d,Kosten %d,Цена: %d,花费 %d
@@ -113,7 +108,6 @@ EVOLVE: Behemoth,EVOLVE: Behemoth,EVOLUCIÓN: Behemoth,ÉVOLUER : Béhémoth,EVO
 EVOLVE: Colossus,EVOLVE: Colossus,EVOLUCIÓN: Coloso,ÉVOLUER : Colosse,EVOLVI: Colosso,ENTWICKELN: Koloss,ЭВОЛЮЦИЯ: Колосс,进化：巨像
 EVOLVING...,EVOLVING...,EVOLUCIONANDO...,ÉVOLUTION...,EVOLUZIONE...,ENTWICKLUNG...,ЭВОЛЮЦИЯ...,进化中……
 Each army hit does less damage.,Each army hit does less damage.,Cada golpe del ejército hace menos daño.,Chaque tir de l'armée fait moins de dégâts.,Ogni colpo dell'esercito fa meno danni.,Jeder Armeetreffer macht weniger Schaden.,Каждый удар армии наносит меньше урона.,军队的每次攻击伤害降低。
-"Each level frees a tentacle that strikes on its own at whatever is near, in every direction.","Each level frees a tentacle that strikes on its own at whatever is near, in every direction.","Cada nivel libera un tentáculo que golpea solo lo que tenga cerca, en todas direcciones.","Chaque niveau libère un tentacule qui frappe seul tout ce qui est proche, dans toutes les directions.","Ogni livello libera un tentacolo che colpisce da solo tutto ciò che è vicino, in ogni direzione.","Jede Stufe befreit einen Tentakel, der selbst zuschlägt – auf alles in der Nähe, in jede Richtung.","Каждый уровень освобождает щупальце, которое само бьёт всё рядом, во все стороны.",每级解放一条触手，自动向四面八方攻击附近的一切。
 Earthbreaker,Earthbreaker,Rompetierras,Brise-terre,Spaccaterra,Erdbrecher,Землелом,裂地者
 Ember Rain,Ember Rain,Lluvia de brasas,Pluie de braises,Pioggia di braci,Glutregen,Дождь углей,余烬之雨
 Embers leap across the streets to the next block.,Embers leap across the streets to the next block.,Las brasas saltan las calles hasta la siguiente manzana.,Les braises sautent les rues jusqu'au pâté voisin.,Le braci saltano le strade fino all'isolato vicino.,Glut springt über die Straßen zum nächsten Block.,Угли перелетают через улицы в соседний квартал.,余烬跃过街道，蔓延到下一个街区。
@@ -124,8 +118,6 @@ Enter / A to skip,Enter / A to skip,Enter / A para saltar,Entrée / A pour passe
 Enter / pad A to buy,Enter / pad A to buy,Enter / A del mando para comprar,Entrée / A manette pour acheter,Enter / pad A per comprare,Enter / Pad A zum Kaufen,Enter / A — купить,Enter / 手柄 A 购买
 Explosive sites you set off start big fires.,Explosive sites you set off start big fires.,Los sitios explosivos que detonas causan grandes incendios.,Les sites explosifs que vous faites sauter causent de gros incendies.,I siti esplosivi che fai saltare scatenano grandi incendi.,Gezündete Sprengziele entfachen große Brände.,Взорванные тобой объекты вызывают большие пожары.,你引爆的爆炸物会引发大火。
 FINAL STRIKE FELLS KAIJU,FINAL STRIKE FELLS KAIJU,UN GOLPE FINAL ABATE AL KAIJU,UN DERNIER COUP ABAT LE KAIJU,COLPO FINALE ABBATTE IL KAIJU,LETZTER SCHLAG FÄLLT KAIJU,ПОСЛЕДНИЙ УДАР СРАЗИЛ КАЙДЗЮ,致命一击击倒怪兽
-"Fast and fragile. Rapid strikes, leaps across the city.","Fast and fragile. Rapid strikes, leaps across the city.","Rápido y frágil. Golpes veloces, salta por la ciudad.","Rapide et fragile. Coups vifs, bonds à travers la ville.","Veloce e fragile. Colpi rapidi, balzi per la città.","Schnell und zerbrechlich. Rasche Hiebe, Sprünge über die Stadt.","Быстрый и хрупкий. Стремительные удары, прыжки по городу.",迅捷而脆弱。攻击飞快，跃过整座城市。
-Faster legs and quicker strikes.,Faster legs and quicker strikes.,Patas más rápidas y golpes más veloces.,"Pattes plus rapides, coups plus vifs.",Gambe più veloci e colpi più rapidi.,Schnellere Beine und flinkere Hiebe.,"Быстрее ноги, быстрее удары.",腿更快，出手更快。
 Fault Line,Fault Line,Falla,Faille,Faglia,Bruchlinie,Разлом,断层
 Fire Front,Fire Front,Frente de fuego,Front de feu,Fronte di fuoco,Feuerfront,Огненный фронт,火线
 Fire runs with the wind,Fire runs with the wind,El fuego corre con el viento,Le feu suit le vent,Il fuoco corre col vento,Feuer folgt dem Wind,Огонь идёт по ветру,火借风势
@@ -142,12 +134,9 @@ Frenzy,Frenzy,Frenesí,Frénésie,Frenesia,Raserei,Неистовство,狂乱
 Fullscreen,Fullscreen,Pantalla completa,Plein écran,Schermo intero,Vollbild,Полный экран,全屏
 Fullscreen and UI scale,Fullscreen and UI scale,Pantalla completa y escala UI,Plein écran et taille de l'IU,Schermo intero e scala UI,Vollbild und UI-Größe,Полный экран и масштаб UI,全屏与界面缩放
 GENERALS DEMAND BIGGER TANKS,GENERALS DEMAND BIGGER TANKS,LOS GENERALES PIDEN TANQUES MÁS GRANDES,LES GÉNÉRAUX EXIGENT DES TANKS PLUS GROS,I GENERALI VOGLIONO CARRI PIÙ GROSSI,GENERÄLE FORDERN GRÖSSERE PANZER,ГЕНЕРАЛЫ ТРЕБУЮТ ТАНКИ ПОБОЛЬШЕ,将军们要求更大的坦克
-"Glide (insectoid, hold)","Glide (insectoid, hold)","Planear (insectoide, mantener)","Planer (insectoïde, maintenir)","Plana (insettoide, tieni)","Gleiten (Insektoid, halten)","Планирование (насекомое, удерж.)",滑翔（昆虫型，按住）
-Glides longer,Glides longer,Planea más tiempo,Plane plus longtemps,Plana più a lungo,Gleitet länger,Планирует дольше,滑翔更久
 "Go out with a bang: when you fall, you take the street with you.","Go out with a bang: when you fall, you take the street with you.","Despídete a lo grande: al caer, te llevas la calle contigo.","Partez en beauté : en tombant, vous emportez la rue avec vous.","Esci col botto: quando cadi, ti porti dietro la strada.","Abgang mit Knall: Fällst du, nimmst du die Straße mit.","Уйди красиво: падая, ты прихватишь с собой улицу.",轰轰烈烈地谢幕：你倒下时，整条街陪葬。
 Gore,Gore,Sangre,Gore,Sangue,Blut,Кровь,血腥
 Gorge,Gorge,Atracón,Gavage,Abbuffata,Fressrausch,Обжорство,暴食
-Grab and Throw,Grab and Throw,Agarrar y lanzar,Saisir et lancer,Afferra e lancia,Packen und Werfen,Хватай и бросай,抓取投掷
 Graphics and FPS,Graphics and FPS,Gráficos y FPS,Graphismes et IPS,Grafica e FPS,Grafik und FPS,Графика и FPS,画面与帧率
 Ground Eater,Ground Eater,Devoratierras,Mange-terre,Mangiaterra,Bodenfresser,Пожиратель земли,噬地者
 Grow enormous. Topple skyscrapers.,Grow enormous. Topple skyscrapers.,Crece enorme. Derriba rascacielos.,Devenez énorme. Abattez les gratte-ciel.,Diventa enorme. Abbatti i grattacieli.,Werde riesig. Stürze Wolkenkratzer.,Стань огромным. Вали небоскрёбы.,长得无比巨大。推倒摩天大楼。
@@ -165,13 +154,8 @@ Held moves,Held moves,Movimientos mantenidos,Actions maintenues,Mosse tenute,Geh
 Helicopters,Helicopters,Helicópteros,Hélicoptères,Elicotteri,Helikopter,Вертолёты,直升机
 Hide this,Hide this,Ocultar,Masquer,Nascondi,Ausblenden,Скрыть,隐藏
 Hoarder,Hoarder,Acaparador,Accumulateur,Accumulatore,Hamsterer,Накопитель,囤积者
-Hold A,Hold A,Mantén A,Maintenir A,Tieni A,A halten,Удерж. A,按住 A
-Hold Space,Hold Space,Mantén Espacio,Maintenir Espace,Tieni Spazio,Leertaste halten,Удерж. Space,按住 Space
-Hold the leap button in the air to glide and steer; landing crushes again.,Hold the leap button in the air to glide and steer; landing crushes again.,Mantén el salto en el aire para planear y girar; al aterrizar vuelves a aplastar.,Maintenez saut en l'air pour planer et diriger ; l'atterrissage écrase à nouveau.,Tieni il tasto salto in aria per planare e virare; l'atterraggio schiaccia di nuovo.,"Halte im Sprung die Sprungtaste, um zu gleiten und zu lenken; die Landung zermalmt erneut.","Удерживай прыжок в воздухе, чтобы планировать и рулить; приземление снова давит.",空中按住跳跃键可滑翔并转向；落地再次碾压。
-Hydra Limbs,Hydra Limbs,Miembros de hidra,Membres d'hydre,Arti d'idra,Hydra-Glieder,Конечности гидры,九头蛇之肢
 INCOMING,INCOMING,SE ACERCA,EN APPROCHE,IN ARRIVO,IM ANFLUG,ВНИМАНИЕ,来袭
 INSURERS REFUSE CLAIMS: 'ACT OF MONSTER',INSURERS REFUSE CLAIMS: 'ACT OF MONSTER',LAS ASEGURADORAS NO PAGAN: 'CAUSA MONSTRUOSA',LES ASSUREURS REFUSENT : « CAS DE MONSTRE »,ASSICURAZIONI NON PAGANO: 'CAUSA MOSTRO',VERSICHERER LEHNEN AB: 'HÖHERE MONSTERGEWALT',СТРАХОВЩИКИ ОТКАЗЫВАЮТ: «ДЕЯНИЕ МОНСТРА»,保险公司拒赔：“属怪兽行为”
-Ink burns harder,Ink burns harder,La tinta quema más,L'encre ronge plus fort,Inchiostro più corrosivo,Tinte ätzt stärker,Чернила жгут сильнее,墨汁腐蚀更强
 Insectoid,Insectoid,Insectoide,Insectoïde,Insettoide,Insektoid,Насекомое,昆虫型
 Juggernaut,Juggernaut,Imparable,Mastodonte,Inarrestabile,Koloss,Джаггернаут,主宰
 KAIJU COLLAPSES MID-RAMPAGE,KAIJU COLLAPSES MID-RAMPAGE,EL KAIJU SE DESPLOMA EN PLENO ATAQUE,LE KAIJU S'EFFONDRE EN PLEIN SACCAGE,IL KAIJU CROLLA IN PIENA FURIA,KAIJU BRICHT MITTEN IM AMOKLAUF ZUSAMMEN,КАЙДЗЮ РУХНУЛ ПОСРЕДИ БУЙСТВА,怪兽暴走途中倒下
@@ -185,7 +169,6 @@ LOW,LOW,BAJO,BAS,BASSA,NIEDRIG,НИЗКО,低
 Landmarks felled,Landmarks felled,Monumentos derribados,Monuments abattus,Monumenti abbattuti,Wahrzeichen gefällt,Повалено достопримечательностей,推倒地标
 Language,Language,Idioma,Langue,Lingua,Sprache,Язык,语言
 Leap,Leap,Salto,Saut,Balzo,Sprung,Прыжок,跳跃
-Leap Slam,Leap Slam,Salto aplastante,Saut écrasant,Balzo schiacciante,Sprungschlag,Удар в прыжке,跃击
 Left click,Left click,Clic izquierdo,Clic gauche,Clic sinistro,Linksklick,Левый клик,左键
 Left stick,Left stick,Stick izquierdo,Stick gauche,Levetta sinistra,Linker Stick,Левый стик,左摇杆
 Level %d / %d,Level %d / %d,Nivel %d / %d,Niveau %d / %d,Livello %d / %d,Stufe %d / %d,Уровень %d / %d,等级 %d / %d
@@ -205,10 +188,8 @@ Meltdown,Meltdown,Fusión,Fusion,Fusione,Kernschmelze,Расплавление,�
 Middle click,Middle click,Clic central,Clic milieu,Clic centrale,Mittelklick,Средний клик,中键
 Military destroyed,Military destroyed,Militares destruidos,Militaires détruits,Militari distrutti,Militär zerstört,Уничтожено техники,摧毁军队
 Momentum,Momentum,Impulso,Élan,Slancio,Schwung,Инерция,冲劲
-More free tentacles,More free tentacles,Más tentáculos libres,Plus de tentacules libres,Più tentacoli liberi,Mehr freie Tentakel,Больше свободных щупалец,更多自由触手
 More health,More health,Más salud,Plus de santé,Più salute,Mehr Leben,Больше здоровья,更多生命
 More health.,More health.,Más salud.,Plus de santé.,Più salute.,Mehr Leben.,Больше здоровья.,更多生命。
-More young per clutch,More young per clutch,Más crías por puesta,Plus de petits par ponte,Più piccoli per covata,Mehr Junge pro Gelege,Больше детёнышей в кладке,每窝更多幼崽
 Morning,Morning,Mañana,Matin,Mattina,Morgen,Утро,清晨
 Mouse %d,Mouse %d,Ratón %d,Souris %d,Mouse %d,Maus %d,Мышь %d,鼠标 %d
 Mouse 4,Mouse 4,Ratón 4,Souris 4,Mouse 4,Maus 4,Мышь 4,鼠标 4
@@ -254,8 +235,6 @@ Plated Back,Plated Back,Lomo blindado,Dos blindé,Dorso corazzato,Panzerrücken,
 Power,Power,Potencia,Puissance,Potenza,Kraft,Сила,威力
 Press E / pad Y in a rampage; recharges in %ds.,Press E / pad Y in a rampage; recharges in %ds.,Pulsa E / Y del mando al arrasar; recarga en %ds.,E / Y manette en saccage ; recharge en %ds.,Premi E / pad Y in azione; si ricarica in %ds.,Drück E / Pad Y im Amoklauf; lädt in %ds.,Жми E / Y во время буйства; перезарядка %d с.,暴走中按 E / 手柄 Y；%d 秒后充能完毕。
 "Press E: a long beam from your maw, steered as you turn, that sets everything it crosses burning.","Press E: a long beam from your maw, steered as you turn, that sets everything it crosses burning.","Pulsa E: un largo rayo de tus fauces, que giras al girar, incendia todo lo que cruza.","E : un long rayon jaillit de votre gueule, guidé en tournant, et embrase tout ce qu'il touche.","Premi E: un lungo raggio dalle fauci, guidato mentre ti giri, che incendia tutto ciò che attraversa.","Drück E: ein langer Strahl aus dem Maul, lenkbar beim Drehen, der alles Getroffene in Brand setzt.","Жми E: длинный луч из пасти, ведомый поворотом, поджигает всё на пути.",按 E：从口中射出长光束，随你转向，所过之处全部燃烧。
-Press E: lay eggs that hatch into elephant-sized young who eat the streets and fight the army.,Press E: lay eggs that hatch into elephant-sized young who eat the streets and fight the army.,Pulsa E: pon huevos que eclosionan en crías del tamaño de elefantes que devoran calles y luchan contra el ejército.,"E : pondez des œufs d'où sortent des petits grands comme des éléphants, qui dévorent les rues et l'armée.",Premi E: deponi uova da cui nascono piccoli grandi come elefanti che divorano le strade e combattono l'esercito.,"Drück E: Leg Eier, aus denen elefantengroße Junge schlüpfen, die Straßen fressen und die Armee bekämpfen.","Жми E: отложи яйца, из них вылупятся детёныши размером со слона, жрущие улицы и бьющиеся с армией.",按 E：产下虫卵，孵出大象般大小的幼崽，吞噬街道、对抗军队。
-Press E: spray ink all around; coated buildings dissolve and coated attackers die.,Press E: spray ink all around; coated buildings dissolve and coated attackers die.,Pulsa E: rocía tinta alrededor; los edificios cubiertos se disuelven y los atacantes mueren.,E : projetez de l'encre alentour ; bâtiments et assaillants touchés se dissolvent.,Premi E: spruzza inchiostro tutt'intorno; gli edifici colpiti si dissolvono e gli assalitori muoiono.,"Drück E: Versprühe Tinte rundum; benetzte Gebäude zerfallen, benetzte Angreifer sterben.","Жми E: разбрызгай чернила вокруг; облитые здания растворяются, облитые враги гибнут.",按 E：向四周喷射墨汁；沾上的建筑溶解，沾上的敌人毙命。
 RAMPAGE  >,RAMPAGE  >,ARRASAR  >,SACCAGE  >,DISTRUGGI  >,AMOKLAUF  >,БУЙСТВО  >,暴走  >
 RAMPAGE ENDED,RAMPAGE ENDED,FIN DEL ATAQUE,SACCAGE TERMINÉ,DISTRUZIONE FINITA,AMOKLAUF BEENDET,БУЙСТВО ЗАВЕРШЕНО,暴走结束
 RAMPAGE OVER,RAMPAGE OVER,ATAQUE TERMINADO,FIN DU SACCAGE,FINE DELLA FURIA,AMOKLAUF VORBEI,БУЙСТВО ОКОНЧЕНО,暴走结束
@@ -287,7 +266,6 @@ SPIRE SNAPPED LIKE A BREADSTICK,SPIRE SNAPPED LIKE A BREADSTICK,AGUJA PARTIDA CO
 STADIUM CLOSED - GAME ABANDONED,STADIUM CLOSED - GAME ABANDONED,ESTADIO CERRADO - PARTIDO SUSPENDIDO,STADE FERMÉ - MATCH ABANDONNÉ,STADIO CHIUSO - PARTITA SOSPESA,STADION GESCHLOSSEN – SPIEL ABGEBROCHEN,СТАДИОН ЗАКРЫТ - МАТЧ ОТМЕНЁН,体育场关闭——比赛取消
 Saved to {path},Saved to {path},Guardado en {path},Enregistré dans {path},Salvato in {path},Gespeichert unter {path},Сохранено в {path},已保存至 {path}
 Scarred Hide,Scarred Hide,Piel curtida,Cuir balafré,Pelle sfregiata,Narbenhaut,Шрамированная шкура,伤痕之皮
-Scuttle,Scuttle,Correteo,Détaler,Sgattaiola,Huschen,Юркость,疾行
 Sharpened Claws,Sharpened Claws,Garras afiladas,Griffes affûtées,Artigli affilati,Geschärfte Klauen,Заточенные когти,锋利之爪
 Shearing Tail,Shearing Tail,Cola cortante,Queue tranchante,Coda tranciante,Scherender Schwanz,Режущий хвост,切割之尾
 Shrugs off more damage,Shrugs off more damage,Aguanta más daño,Encaisse plus de dégâts,Incassa più danni,Steckt mehr Schaden weg,Выдерживает больше урона,承受更多伤害
@@ -301,13 +279,9 @@ Signature attack is ready sooner,Signature attack is ready sooner,El ataque de f
 Signature attack reaches further,Signature attack reaches further,El ataque de firma llega más lejos,Attaque signature plus longue,Attacco firma più lontano,Signaturangriff reicht weiter,Коронная атака бьёт дальше,招牌攻击范围更远
 Signature: %s,Signature: %s,Firma: %s,Signature : %s,Firma: %s,Signatur: %s,Коронный приём: %s,招牌：%s
 Skyscraper Claws,Skyscraper Claws,Garras rascacielos,Griffes gratte-ciel,Artigli grattacielo,Wolkenkratzerklauen,Когти-небоскрёбы,摩天之爪
-Slip through gaps between buildings instead of shoving through them.,Slip through gaps between buildings instead of shoving through them.,Cuélate entre los edificios en vez de abrirte paso a empujones.,Faufilez-vous entre les bâtiments au lieu de les bousculer.,Sgusci tra gli edifici invece di sfondarli.,"Schlüpf durch Lücken zwischen Gebäuden, statt dich hindurchzudrängen.","Проскальзывай между зданиями, а не продирайся сквозь них.",从建筑间的缝隙钻过，而不是硬挤过去。
-"Slow on land, huge reach. Tentacles sweep whole blocks.","Slow on land, huge reach. Tentacles sweep whole blocks.","Lento en tierra, gran alcance. Sus tentáculos barren manzanas.","Lent sur terre, immense portée. Les tentacules balaient des pâtés entiers.","Lento a terra, portata enorme. I tentacoli spazzano interi isolati.","Langsam an Land, enorme Reichweite. Tentakel fegen ganze Blocks.","Медленный на суше, огромный охват. Щупальца сметают кварталы.",陆上迟缓，攻击范围巨大。触手横扫整个街区。
 Slowly heal while rampaging.,Slowly heal while rampaging.,Te curas poco a poco al arrasar.,Soin lent en saccageant.,Guarisci lentamente mentre distruggi.,Heilt langsam im Amoklauf.,Медленно лечись во время буйства.,暴走时缓慢恢复生命。
 Sound effects,Sound effects,Efectos de sonido,Effets sonores,Effetti sonori,Soundeffekte,Звуковые эффекты,音效
 Speed,Speed,Velocidad,Vitesse,Velocità,Tempo,Скорость,速度
-Squeeze,Squeeze,Estrujar,Se faufiler,Sgusciare,Quetschen,Протиск,挤压
-Squeezes harder,Squeezes harder,Estruja más fuerte,Serre plus fort,Stritola più forte,Quetscht stärker,Сжимает сильнее,挤压更强
 "Stands %d floors tall (was %d)
 Towers up to %d floors now fall to you","Stands %d floors tall (was %d)
 Towers up to %d floors now fall to you","Mides %d pisos (antes %d)
@@ -350,12 +324,10 @@ Tail reaches further,Tail reaches further,La cola llega más lejos,Queue plus lo
 Tail reaches further.,Tail reaches further.,Coletazos de más alcance.,Coups de queue plus longs.,Colpi di coda più ampi.,Schwanz reicht weiter.,Хвост бьёт дальше.,尾击范围更远。
 Tallest tower toppled,Tallest tower toppled,Torre más alta derribada,Plus haute tour abattue,Torre più alta abbattuta,Höchster Turm gestürzt,Самая высокая поваленная башня,推倒的最高楼
 Tanks,Tanks,Tanques,Tanks,Carri armati,Panzer,Танки,坦克
-Tentacle Lash,Tentacle Lash,Latigazo de tentáculo,Fouet tentaculaire,Frustata di tentacoli,Tentakelpeitsche,Хлёст щупальцем,触手鞭笞
 The army got you this time,The army got you this time,Esta vez te pilló el ejército,L'armée vous a eu cette fois,Stavolta l'esercito ti ha preso,Diesmal hat dich die Armee erwischt,На этот раз армия тебя достала,这次被军队收拾了
 The biggest bang: nothing near you outlives you.,The biggest bang: nothing near you outlives you.,El mayor estallido: nada cerca de ti te sobrevive.,L'apothéose : rien autour ne vous survit.,Il botto finale: nulla vicino a te ti sopravvive.,Der größte Knall: Nichts in deiner Nähe überlebt dich.,Самый мощный взрыв: ничто рядом тебя не переживёт.,终极爆炸：身边无一幸存。
 The rampage ends now and you keep your biomass.,The rampage ends now and you keep your biomass.,El ataque termina ya y conservas tu biomasa.,Le saccage s'arrête et vous gardez votre biomasse.,La distruzione finisce ora e tieni la biomassa.,"Der Amoklauf endet jetzt, du behältst deine Biomasse.","Буйство закончится сейчас, биомасса останется у тебя.",暴走立即结束，你保留已获得的生物质。
 Thick Hide,Thick Hide,Piel gruesa,Cuir épais,Pelle spessa,Dicke Haut,Толстая шкура,厚皮
-Throws hit harder,Throws hit harder,Lanzamientos más fuertes,Lancers plus puissants,Lanci più potenti,Würfe treffen härter,Броски бьют сильнее,投掷更猛
 Thunder Beam,Thunder Beam,Rayo trueno,Rayon foudre,Raggio tonante,Donnerstrahl,Громовой луч,雷霆光束
 Thunderhead,Thunderhead,Nubarrón,Cumulonimbus,Cumulonembo,Gewitterturm,Грозовая туча,雷暴云
 Thunderstorm,Thunderstorm,Tormenta,Orage,Temporale,Gewitter,Гроза,雷暴
@@ -365,8 +337,6 @@ Titan Hide,Titan Hide,Piel de titán,Cuir de titan,Pelle titanica,Titanenhaut,Ш
 Towers one tier taller now fall%sto%syou.,Towers one tier taller now fall%sto%syou.,Ya caen%sante%sti torres un nivel más altas.,Les tours d'un palier de plus%stombent%sdésormais.,Ora abbatti%storri di%sun livello più alte.,Türme eine Stufe höher fallen jetzt%szu%sdir.,Башни на ярус выше%sтеперь%sпадают.,再高一级的高楼现在也会%s被%s你推倒。
 Towers toppled,Towers toppled,Torres derribadas,Tours abattues,Torri abbattute,Türme gestürzt,Повалено башен,推倒高楼
 ULTIMATE,ULTIMATE,DEFINITIVO,ULTIME,SUPREMA,ULTIMATIV,УЛЬТА,终极技
-ULTIMATE: Brood,ULTIMATE: Brood,DEFINITIVO: Prole,ULTIME : Couvée,SUPREMA: Covata,ULTIMATIV: Brut,УЛЬТА: Выводок,终极技：孵群
-ULTIMATE: Corrosive Ink,ULTIMATE: Corrosive Ink,DEFINITIVO: Tinta corrosiva,ULTIME : Encre corrosive,SUPREMA: Inchiostro corrosivo,ULTIMATIV: Ätztinte,УЛЬТА: Едкие чернила,终极技：腐蚀墨汁
 ULTIMATE: {beam},ULTIMATE: {beam},DEFINITIVO: {beam},ULTIME : {beam},SUPREMA: {beam},ULTIMATIV: {beam},УЛЬТА: {beam},终极技：{beam}
 UNLIMITED,UNLIMITED,ILIMITADO,ILLIMITÉ,ILLIMITATO,UNBEGRENZT,БЕЗ ЛИМИТА,无限制
 Ultimate,Ultimate,Definitivo,Ultime,Suprema,Ultimativ,Ульта,终极技
@@ -384,7 +354,6 @@ Weather,Weather,Clima,Météo,Meteo,Wetter,Погода,天气
 What happened? Anything you tell us helps.,What happened? Anything you tell us helps.,¿Qué pasó? Cualquier detalle nos ayuda.,Que s'est-il passé ? Chaque détail nous aide.,Cos'è successo? Ogni dettaglio ci aiuta.,Was ist passiert? Jeder Hinweis hilft.,Что случилось? Любая подробность поможет.,发生了什么？你提供的任何信息都有帮助。
 What you eat heals you.,What you eat heals you.,Lo que comes te cura.,Ce que vous mangez vous soigne.,Ciò che mangi ti cura.,"Was du frisst, heilt dich.",Съеденное лечит тебя.,吞食即可回血。
 Wide Rake,Wide Rake,Zarpazo amplio,Griffe large,Artigliata ampia,Weiter Hieb,Широкий взмах,横扫爪
-Wing Buzz,Wing Buzz,Zumbido alar,Bourdonnement,Ronzio d'ali,Flügelsurren,Жужжание крыльев,振翅
 Wrecking Tail,Wrecking Tail,Cola demoledora,Queue démolisseuse,Coda demolitrice,Abrissschwanz,Хвост-таран,破城尾
 "YES, DELETE","YES, DELETE","SÍ, BORRAR","OUI, SUPPRIMER","SÌ, ELIMINA","JA, LÖSCHEN","ДА, УДАЛИТЬ",是，删除
 "YES, END IT","YES, END IT","SÍ, TERMINAR","OUI, ARRÊTER","SÌ, BASTA","JA, BEENDEN","ДА, ЗАВЕРШИТЬ",是，结束

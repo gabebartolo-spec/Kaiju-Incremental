@@ -53,7 +53,7 @@ func _play(leader: bool, kill_at := -1.0) -> Played:
 		if kill_at >= 0.0 and t >= round_at:
 			if leader and not killed_vip:
 				killed_vip = true
-				sim.vip.down(false, "blow")
+				sim.vip.down("blow")
 			out.fates.append_array(_shoot_down_gunships(sim))
 			round_at += 10.0
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):

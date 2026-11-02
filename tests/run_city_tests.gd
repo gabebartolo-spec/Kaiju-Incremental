@@ -51,6 +51,7 @@ func run_checks() -> void:
 	await _t("_check_rise_clear_of_rail")
 	await _t("_check_bay_fixed")
 	await _t("_check_rise_fits_intro")
+	await _t("_check_map_kept")
 	await _h(
 		"city_light_pool",
 		func() -> void: preload("res://tests/lib/city_light_pool.gd").check(root, check)
@@ -58,6 +59,14 @@ func run_checks() -> void:
 	await _h(
 		"city_street_props",
 		func() -> void: preload("res://tests/lib/city_street_props.gd").check(root, check)
+	)
+	await _h(
+		"city_decor_cost",
+		func() -> void: preload("res://tests/lib/city_decor_cost.gd").check(root, check)
+	)
+	await _h(
+		"beach_mesh_cost",
+		func() -> void: preload("res://tests/lib/beach_mesh_cost.gd").check(root, check)
 	)
 	await _h(
 		"city_footfall_dust",
@@ -259,13 +268,15 @@ func _check_bridges_meet_land() -> void:
 
 
 ## The biggest kaiju of each stage 1-3 rises over the sea floor wholly in the bay's water, its
-## crouched back under the surface at first (tests/lib/city_harbour.gd check_seabed, check_rise;
-## D-270).
+## crouched back under the surface at first; the baby rises on the shelf and breaks the water
+## during the rise (tests/lib/city_harbour.gd check_seabed, check_rise, check_rise_shelf;
+## D-270, director 2026-11-02).
 func _check_rise_in_water() -> void:
 	for tier: int in [1, 2, 3]:
 		Harbour.check_seabed(tier, check)
 		for map_seed: int in COVERAGE_SEEDS:
 			Harbour.check_rise(tier, map_seed, check)
+			Harbour.check_rise_shelf(tier, map_seed, check)
 
 
 ## The railway's viaduct keeps clear of the rise at stages 1-3 (tests/lib/city_harbour.gd
@@ -289,3 +300,18 @@ func _check_rise_fits_intro() -> void:
 		for map_seed: int in COVERAGE_SEEDS:
 			RiseTime.check(tier, map_seed, {}, check)
 			RiseTime.check_keyed(tier, map_seed, check)
+
+
+## CityGen.map keeps the plans it built (a rampage asked for its plan 14 times at 0.3 s each):
+## a kept plan equals a fresh build, and each caller's copy is its own to change.
+func _check_map_kept() -> void:
+	var cfg := Content.section("city")
+	var first := CityGen.map(cfg)
+	var fresh := CityGen._map(cfg)
+	var nodes: Array = first["nodes"]
+	nodes.clear()
+	var again := CityGen.map(cfg)
+	check(again == fresh, "a kept plan equals a fresh build after a caller changed its copy")
+	var other := cfg.duplicate(true)
+	other["map_seed"] = Num.i(cfg["map_seed"]) + 1
+	check(CityGen.map(other) != fresh, "another map_seed is another plan, not the kept one")

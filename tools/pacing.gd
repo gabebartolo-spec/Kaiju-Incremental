@@ -43,7 +43,7 @@ func _initialize() -> void:
 			_verbose = true
 		if arg.begins_with("--species="):
 			_only = arg.substr(10)
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in ["reptilian"]:
 		if _only == "" or _only == species_id:
 			_pace(species_id)
 	quit()

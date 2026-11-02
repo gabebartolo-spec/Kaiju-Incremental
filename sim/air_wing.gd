@@ -5,12 +5,12 @@ extends RefCounted
 ## reach, glide between them under their own speed and turn limits and pull back when it
 ## advances; now and then one makes a strafing pass within claw reach. A kaiju reaches them
 ## only when it stands tall enough (a grown body or a climbed roof) or with an attack that
-## reaches the air (fire, ink, tentacles); a cephalopod can pluck one out of the sky. They keep
-## to the far side of the kaiju from the game camera (`camera_bearing`, clear of `clear_arc`
-## either side of it), so a helicopter never hangs between the player and the kaiju. How one dies
-## (D-140, D-141, D-145): any blow that reaches it downs it (no hit points, D-437); a blow of at
-## least `burst_blow` blows it apart in the air, a lighter one (a glancing hit, a toppling tower
-## sweeping through it) sends it spinning down for `fall_seconds`,
+## reaches the air (fire). They keep to the far side of the kaiju from the game camera
+## (`camera_bearing`, clear of `clear_arc` either side of it), so a helicopter never hangs
+## between the player and the kaiju. How one dies (D-140, D-141, D-145): any blow that reaches it
+## downs it (no hit points, D-437); a blow of at least `burst_blow` blows it apart in the air, a
+## lighter one (a glancing hit, a toppling tower sweeping through it) sends it spinning down for
+## `fall_seconds`,
 ## drifting `fall_drift`, its crew sometimes bailing out by parachute (`bailout_chance`, up to
 ## `bailout_max`), until it crashes: the wreck smashes `crash_floors` floors within
 ## `crash_radius`, crushing the tanks and squads below (D-167; never the kaiju), and sets the
@@ -148,8 +148,8 @@ func hit(force: Callable, damage: float, reaches_air: bool) -> void:
 	clear_dead()
 
 
-## Takes the dead out of the sky. grabbed: a tentacle has them (no break-up, no fall).
-func clear_dead(grabbed := false) -> void:
+## Takes the dead out of the sky.
+func clear_dead() -> void:
 	var alive: Array[Heli] = []
 	for heli: Heli in helis:
 		if not heli.downed:
@@ -158,9 +158,7 @@ func clear_dead(grabbed := false) -> void:
 		destroyed += 1
 		sim.rubble += Num.f(cfg["rubble"]) * sim.stat("rubble_mult")
 		var event := {"type": "heli_destroyed", "heli": heli.id, "x": heli.pos.x, "z": heli.pos.y}
-		if grabbed:
-			event["fate"] = "grabbed"
-		elif heli.last_blow >= Num.f(cfg["burst_blow"]):
+		if heli.last_blow >= Num.f(cfg["burst_blow"]):
 			event["fate"] = "burst"
 		else:
 			event.merge(_spin_down(heli))

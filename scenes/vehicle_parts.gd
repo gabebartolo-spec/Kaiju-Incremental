@@ -87,5 +87,8 @@ func _read_path(part: String) -> String:
 func _read(part: String) -> Kvox:
 	var path := _read_path(part)
 	if not _kvox_cache.has(path):
-		_kvox_cache[path] = Kvox.read(path)
+		var read := Kvox.read(path)
+		for vox: VoxelBuilder in read.frames:
+			vox.detail = true  # the city's surface family (flat surfaces P3)
+		_kvox_cache[path] = read
 	return _kvox_cache[path]

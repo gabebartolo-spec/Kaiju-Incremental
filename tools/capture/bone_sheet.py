@@ -7,7 +7,7 @@ in slate), and prints per model: voxels, bones, and the faults that make a limb 
 moves: "fragments" (pieces of a limb chain cut off from the rest of that chain but touching another
 part, 26-connected: they tear away when the limb moves; a piece touching nothing at all is a
 loose mesh island and rides its chain whole),
-"slate islands" (pieces of the root body cut off from it, e.g. stuck mid-tentacle) and
+"slate islands" (pieces of the root body cut off from it) and
 "unchained long arms" (root-body runs reaching further from the body's centre than its radius).
 Pure numpy + Pillow.
 """
@@ -34,7 +34,7 @@ def load(base):
 
 
 def chain_of(name):
-    """Chain a bone belongs to: tentacle3_2 -> tentacle3, leg_l1 -> leg_l, mantle0 -> mantle."""
+    """Chain a bone belongs to: leg_l1 -> leg_l, head0 -> head."""
     if "_" in name and name.split("_")[-1].isdigit():
         return name.rsplit("_", 1)[0]
     return name.rstrip("0123456789")

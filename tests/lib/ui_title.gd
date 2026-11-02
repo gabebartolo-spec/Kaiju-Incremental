@@ -9,6 +9,8 @@ extends RefCounted
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FocusOrder := preload("res://tests/lib/focus_order.gd")
 const TitleLayout := preload("res://tests/lib/ui_title_layout.gd")
+const TitleBeach := preload("res://tests/lib/ui_title_beach.gd")
+const TitleHaze := preload("res://tests/lib/ui_title_haze.gd")
 const CANVAS := Vector2i(1920, 1080)
 const SUMMARY := "Reptilian, 7 rampages"
 ## The ticker along the bottom edge, and how far the corner buttons may stand from the screen's.
@@ -41,6 +43,44 @@ func run() -> void:
 	await _without_save()
 	t.root.size = window
 	await _far_tower_cap()
+	_sky_less_look()
+	TitleLoadCost.run(check)
+	await TitleLoadCost.split(check, t)
+	TitleBeach.new(t, check).run()
+	TitleHaze.new(check).run()
+
+
+## The title's look skips a world with no sky (the far beast's own little world, #213) and still
+## colours the city's: an error there stopped the look half done (every title since 2026-10-26).
+func _sky_less_look() -> void:
+	var tuning := Content.tuning()
+	var layout := CityGrowth.layout(tuning, 1, Seeds.make("city", 0))
+	var sim := RampageSim.new({}, CityGrowth.tuning_for(tuning, 1), layout, Seeds.make("army", 0))
+	var city := CityView.new(sim, Seeds.make("fx", 0))
+	var bare := WorldEnvironment.new()
+	bare.environment = Environment.new()  # clear colour, no sky: the far beast's
+	city.add_child(bare)
+	var lit := WorldEnvironment.new()
+	lit.environment = Environment.new()
+	lit.environment.sky = Sky.new()
+	lit.environment.sky.sky_material = ProceduralSkyMaterial.new()
+	city.add_child(lit)
+	var backdrop := TitleBackdrop.new()
+	backdrop.set("_cfg", Content.section("title"))
+	backdrop.set("_city", city)
+	backdrop.call("_apply_look")
+	var cfg: Dictionary = Content.section("title")
+	var look: Dictionary = cfg["variants"][str(cfg["variant"])]
+	var env: Dictionary = look["env"]
+	var want := Color(str(env["sky_top"]))
+	var sky := lit.environment.sky.sky_material as ProceduralSkyMaterial
+	check.call(
+		sky.sky_top_color.is_equal_approx(want),
+		"the title's look colours the city's sky past a world with none (%s)" % sky.sky_top_color
+	)
+	backdrop.free()
+	city.free()
+	sim.dispose()
 
 
 ## D-158 option C: the title's far shore stands no tower, the lattice tower included, over tuning

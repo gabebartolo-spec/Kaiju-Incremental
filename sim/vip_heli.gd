@@ -7,9 +7,8 @@ extends RefCounted
 ## straight for the map edge so that the whole flight takes about `window_seconds`. Bringing it down
 ## pays `payout` (about a city block's worth, Tuning "vip"); letting it reach the edge costs only
 ## that payout. How it dies (one blow, no hit points, D-437): any area attack that reaches its
-## height (the breath, the Thunder Beam, ink and limbs reach the sky; a stomp or claw only while it
-## is still low over the roofs), a toppling tower sweeping its height, a tank or car in flight
-## (thrown), or a grab while it is low (a tentacle). It falls like any gunship (AirWing's fates and
+## height (the breath, the Thunder Beam; a stomp or claw only while it is still low over the
+## roofs) or a toppling tower sweeping its height. It falls like any gunship (AirWing's fates and
 ## wreck), under its own id. Own file and own seeded stream, so it never shifts the army's or the
 ## air wing's draws. Part of RampageSim.
 
@@ -84,7 +83,6 @@ func step(dt: float) -> void:
 		return
 	flight_t += dt
 	_swept_by_falls()
-	_hit_by_thrown()
 	if state == "flying":
 		_fly(dt)
 
@@ -99,18 +97,11 @@ func hit(force: Callable, damage: float) -> void:
 	if k <= 0.0:
 		return
 	_last_blow = damage * k
-	down(false, "blow")
+	down("blow")
 
 
-## Where a tentacle can seize it (within `reach` of the kaiju and low enough to touch), or none.
-func grab_pos(reach: float) -> Vector2:
-	if state != "flying" or altitude() > sim.reach_top():
-		return NO_TARGET
-	return pos if pos.distance_to(sim.kaiju_pos) <= reach else NO_TARGET
-
-
-## It is down: pays the kill, then falls as AirWing's fates say ("grabbed" only leaves the sky).
-func down(grabbed: bool, by: String) -> void:
+## It is down: pays the kill, then falls as AirWing's fates say.
+func down(by: String) -> void:
 	state = "killed"
 	paid = payout * sim.stat("rubble_mult")
 	sim.rubble += paid
@@ -119,9 +110,7 @@ func down(grabbed: bool, by: String) -> void:
 	heli.id = ID
 	heli.pos = pos
 	var event := {"type": "vip_down", "heli": ID, "x": pos.x, "z": pos.y, "y": altitude()}
-	if grabbed:
-		event["fate"] = "grabbed"
-	elif _last_blow >= Num.f(air["burst_blow"]):
+	if _last_blow >= Num.f(air["burst_blow"]):
 		event["fate"] = "burst"
 	else:
 		event.merge(sim.air._spin_down(heli, _fall_rng))
@@ -186,20 +175,10 @@ func _swept_by_falls() -> void:
 		var t := clampf((pos - start).dot(span) / maxf(0.001, span.length_squared()), 0.0, 1.0)
 		if pos.distance_to(start + span * t) <= half:
 			_last_blow = 0.0  # knocked aside, never blown apart
-			down(false, "topple")
+			down("topple")
 			return
 
 
-## A tank or car a tentacle has thrown that flies through it while it is low enough: it goes down.
-func _hit_by_thrown() -> void:
-	if altitude() > Num.f(cfg["throw_ceiling"]):
-		return
-	for throw: Tentacles.Thrown in sim.powers.tentacles.thrown:
-		var at := throw.from.lerp(throw.to, clampf(throw.t / throw.duration, 0.0, 1.0))
-		if at.distance_to(pos) <= Num.f(cfg["throw_pass"]):
-			_last_blow = Num.f(sim.air.cfg["burst_blow"])  # a thrown tank blows it apart
-			down(false, "thrown")
-			return
 
 
 ## One step of the flight: the banked lap round the pad, then the dash to the edge.

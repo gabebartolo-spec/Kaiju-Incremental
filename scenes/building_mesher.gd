@@ -56,6 +56,7 @@ var _face_u: Array[Vector3] = []
 var _face_v: Array[Vector3] = []
 var _rings: Array = []
 var _color: Color
+var _noise := Look.value("color_noise")  # Look.jitter_by, read once
 var _base: Color
 var _tag: Vector2
 # Only while baking: per (direction, depth) plane, Vector2i(v, u) -> merge id; per merge id its
@@ -80,6 +81,14 @@ func _init(voxels: BuildingVoxels) -> void:
 	_w = _v.b.w * _res
 	_d = _v.b.d * _res
 	_h = _v.b.height * _res
+	var baked: Variant = BuildingNative.bake(_v, VoxelAO.finish_table(), _noise)
+	if baked != null:  # the native bake: the same arrays as the GDScript below
+		var got: Array = baked
+		_shell_arrays = got[0]
+		_slab_arrays = got[1]
+		samples = got[2]
+		_v = null
+		return
 	var shell_cells: Array[Vector3i] = []
 	var slab_cells: Array[Vector3i] = []
 	var outside: Array[Vector3i] = []  # slabs outside the hollow (a brick building's balconies)
@@ -281,7 +290,7 @@ func _start_cell(cell: Vector3i) -> void:
 	# The mesh keeps the palette colour: building_baked.gdshader jitters it per voxel and bites in
 	# clumps of 2x2x2 voxels (voxel_merged). The jittered colour is the debris sample's.
 	_base = base
-	_color = Look.jitter(base, cell, _v.b.style)
+	_color = Look.jitter_by(base, cell, _v.b.style, _noise)
 	_tag = Vector2(chunk_index(cell), 0.0)
 	_finish_class = Num.i(_finish.get(key, 0))
 

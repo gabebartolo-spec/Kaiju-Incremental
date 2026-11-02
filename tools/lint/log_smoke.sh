@@ -15,7 +15,7 @@
 # are never filtered or muted: fix the cause. Exit 0 = both logs clean, 1 = lines found (counted, with the
 # first backtrace of each kind) or a run did not finish.
 #
-#   GODOT=/path/to/godot tools/lint/log_smoke.sh [script args for log_smoke.gd, e.g. --species=insectoid --seconds=20]
+#   GODOT=/path/to/godot tools/lint/log_smoke.sh [script args for log_smoke.gd, e.g. --species=reptilian --seconds=20]
 #   LOGS=<dir> keeps the raw logs there (default: a temp dir, removed).
 #   ONLY=demo|rampage|street|audio runs just one kind. AUDIO_ARGS='--settle=0' quits the audio runs
 #   without settling (the known-bad input: the checker must go red).

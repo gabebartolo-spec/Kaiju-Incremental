@@ -168,11 +168,10 @@ var carving: Carving
 var army_units: Army
 var flight: TankFlight  # tanks the reptilian sends flying
 var explosives: Explosives
-## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
+## Species powers (SpeciesPowers) and the helicopters (AirWing).
 var powers: SpeciesPowers
 var air: AirWing
 var vip: VipHeli  # the leader's escape helicopter (D-149), beside the air wing
-var brood: Brood
 var stomp: RampageStomp
 var strikes: Strikes  # the reptilian's big attacks, a beat after the press (D-166)
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
@@ -284,7 +283,6 @@ func result() -> Dictionary:
 
 ## Advances the rampage by dt (move, signature pressed, buttons HELD/ULTIMATE/BREATH/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
-	var signature_held := buttons & HELD != 0
 	_events = []
 	water.step(self, dt, _events)  # the liquid moves under every frame, the rise and death too
 	if death.holds(dt) or emerge.step(self, dt):
@@ -305,8 +303,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	strikes.step(dt)
 	stomp.step(dt)
 	SignatureStrike.step_buttons(self, dt, signature_pressed, buttons)
-	powers.step(dt, signature_held)
-	brood.step(dt)
+	powers.step(dt)
 	collapse.step(dt)
 	explosives.step(dt)
 	_step_ground(dt)

@@ -6,7 +6,7 @@ extends RefCounted
 ## no scene is built.
 
 const CROC := "reptilian"
-const SPECIES: Array[String] = ["reptilian", "insectoid", "cephalopod"]
+const SPECIES: Array[String] = ["reptilian"]
 const SCREEN := Vector2(1920, 1080)
 ## The map beside the side panel at 1080p, smaller than the screen (a fit there fits the screen).
 const AREA := Vector2(1300, 1000)

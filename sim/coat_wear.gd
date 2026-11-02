@@ -1,6 +1,6 @@
 class_name CoatWear
 extends RefCounted
-## The coatings (beam fire, ink) eat what they cover each step, and wear off when their time
+## The coatings (beam fire) eat what they cover each step, and wear off when their time
 ## runs out or the chunk is gone. Part of SpeciesPowers; split out to keep files small. Pure.
 ## Coats are kept in packed arrays in the order they were first laid (a refresh keeps its
 ## place): a beam lays a thousand at once, and a Dictionary per coat cost ~4 us each a step.

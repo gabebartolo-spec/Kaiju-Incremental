@@ -4,6 +4,43 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-02 · D-443 · Director · The baby rises on the wading shelf, in today's spot
+Q: flow@5 failed because the baby's head broke the water at frame 92, after the wade began: its unkeyed rise ended
+on the hollow's 7 m deep floor, which is fitted for the adult's keyed crouch. Rise on the shelf, or a shallower
+hollow at stage 1? A: "Shallower hollow". So below `harbour.shelf_below` (2) the hollow's floor is the wading
+shelf (`wade_depth`, 2.5 m) and the rise spot is unchanged. The whole body is in open water and the head breaks
+the water during the rise (frame 43). Stages 2 and 3 keep the deep hollow (EmergeReach.fit).
+
+## 2026-11-02 · D-442 · Director · Tonight: the RAM floor drops to 4 GB for the slow-suite fixes
+Q: the runner waited on D-317's 6 GB floor (5.5 GB free: his browser and games open); close them, or lower the
+floor tonight? A: "Lower floor tonight". So tonight's local suite runs use `MIN_FREE_MB=4096`; the tool default
+stays 6144 (D-317) and nothing in the repo changes. Tomorrow the 6 GB floor is back.
+
+## 2026-11-02 · D-441 · Director · Title: today's croc side-on behind the city, its fires on visible towers
+His words, on the title still: "this fire is wrong btw / and we should update the kaiju silhouette to match our
+current adult croc design / improve it too". Q: which view of the croc? A: "C: side-on". Q: the left district's roof
+fires float in the haze; which fix? A: "Thin the haze". Changes: Fire no longer scales its flame quad by the zoom the
+particles already carry (title flames were zoom² tall; fx_pool `_zoomed_flames`); assets/title/colossus_0.png
+re-baked from today's croc (bake_colossus `--yaws=45,60,90,135 --pick=1`), `title.colossus` eye and crown moved to
+it; the title's far shore leaves the engine's depth fog (`title.far_fog`, ui `ui_title_haze.gd`), play area unchanged.
+
+## 2026-11-02 · D-440 · Director · The title's foreground is a night beach, not a paved quay
+His words, on the title still: "this is wrong btw... meant to be a beach". Q: how? A: "Sand in front, same view". Why:
+the game is set on a beach and bay; the paved ledge read as a harbour wall. Changes: title_shore.gd draws the old ledge
+as the game's own sand (grains, wet line) sloping into the bay, its waterline wandering (tuning `title.shore.beach_*`),
+a broken foam line, the fires' orange on the wet sand, and the bay lapping up it with the game's lap (`water.lap`).
+Camera and far shore unchanged; title_ledge.gdshader is replaced by title_sand.gdshader. UI suite `ui_title_beach.gd`.
+
+## 2026-11-02 · D-438 · Director · Octopus and insectoid code removed
+His words: "remove octopus code if its bloating the game and confusing you", then "definitely remove the octopus
+code", then "remove the insectoid too, the only trace of him should be in the city across the bay". Changes: every
+cephalopod path is deleted (tentacles, Hydra Limbs, Grab and Throw, Squeeze, Corrosive Ink, radial gait, grip,
+stand-in, its assets, upgrades, tuning, strings and tests). The insectoid is no longer playable (Glide, Climb, Brood,
+its upgrades, tuning, strings and tests are gone); data/species.json keeps its entry with `playable: false` so the far
+beast in the skyline (skyline_rampage, far_beast, hexapod gait and rig, insectoid_* assets) still draws it.
+Content.species() and Demo.allows() list only playable species. The reptilian plays exactly as before. Both species
+stay stretch goals in DESIGN; git history keeps the code.
+
 ## 2026-11-01 · D-437 · Director · The threat level belongs to the city: it sets where the army starts
 His words: "'alertness' level is now tied to the city/stage themselves, rather than in-run progression". Picked "By
 stage": the young city (Ostia Minor) 1, Behemoth (Carthago, Thule) 3, Colossus 4 (Aurelia 5 later); "Show the city's
@@ -22,6 +59,7 @@ of 24, Colossus 3 of 34 vs 24 of 39); he picked "Army harder" and then "B as mea
 hits x1.5 (Behemoth tank_damage 6.9 to 10.4, Colossus 7.3 to 11.0) and Colossus helicopter hits x1.5 (air damage 5.4
 to 8.1); measured defeats 9 of 21 and 26 of 37, second evolution 0.80 h. Threat suite on/off
 fixture: Behemoth city at level 3 vs 1 (escalation, helicopter cap); sim fixture: the same blow thrown (a sideways hit) vs crushed (a stomp).
+
 
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
 His words: "bay texture looks bad from above zoomed out". Q: what looks bad? A: "Repeating pattern". Q: strong or gentle
@@ -354,47 +392,3 @@ rule plus two runs match; pinned fingerprints (street, cells, landmark cells, de
 go, run-vs-run matches stay; menu checks by exact wording and pixel gaps become overlap / on-screen / reachable rules;
 species lists come from the data. Kept: slide, catch steps, knee pops, locked legs, NaN, overlaps, determinism, saves,
 text size and contrast. Report: the audit's REPORT_tests_too_strict.md. Replaces motion_gate.json's "never widen".
-
-## 2026-10-29 · D-384 · Director · The rise bar counts to his first hotel down, sand walk included
-Q: with the fixed front (D-381) sand lies between where he rises and the hotels, so the old bar (every building within
-12 m of the rise down in 10 s) has nothing in reach. His answer: "Hotels hit in 10 s": keep 10 s, counted from when he
-stands up out of the sea to his first beachfront hotel down; the walk across the sand counts (the sand gets umbrellas
-and crowds to smash on the way). Changes the city suite's spawn-view and rise-forms checks; the river look's
-landing-nearness part goes, the bar covers it. Replaces D-131's 12 m reach, keeps its 10 s.
-
-## 2026-10-29 · D-383 · Director · No local test runs: push and CI is the test (relaxed by D-403)
-Q: why run locally the same suites GitHub runs ("ok so remove that rule from existence becasue i hate it")? A:
-a change runs only the cheap local gates (lint, schemas; no Godot), then is pushed and CI runs every suite. No
-local Godot suite run to check a change before it goes up, not even the suites it touched. Replaces the last
-clause of the archived local-prepush decision ("builders still run locally only the suites they iterate on").
-Probes that measure something a fix needs still run locally.
-
-## 2026-10-29 · D-382 · Director · A pull request skips the slow second-angle suites; they run on main
-His words: "which of these, if any, can we remove, or is it necessary for us to run them all for EVERY patch? its a
-real bottleneck for dev time"; on the list: "Yes, write D-382". No suite is deleted. Thirteen slow suites that check the
-game from a second angle run on every push to main only (the `slow` job, 3 lanes, never blocking): streamview, load,
-counts, crowd, empty_space, roads, heliflight, skyline, city_audit, demoend, croc_standing, slowmo, results (4,365 s of
-8,802). Everything else, motion and smoke included, runs on every PR (until D-403: engine suites moved to main too). The list is the `pr_skip` line of
-tools/ci_timings.txt; moving a suite in or out is a decision here. Why: the last green PR run took 18 min, shard 1
-alone 17.5 (12 suites had no timing row, flow@2/2 was 592 s); re-measured and with flow in 4 parts the heaviest shard
-plans at 527 s, with the skips 322 s. Changes: tools/ci_timings.txt, tools/plan_ci_shards.sh (--slow hands a split
-suite over as its parts), tests.yml slow job (native library, 60 min, logs), tests/README.md.
-
-## 2026-10-29 · D-381 · Director · The beachfront is one fixed, bespoke place; the random city joins it
-His words: "build this as a bespoke, fixed location, its always the same, just have the randomzied map connect to these
-fixed roads and environmental positions"; board v4: "Yes, build it". So: the front the kaiju rises from is the same at
-every seed and stage (CityHarbour; tuning `harbour`): a decently long sand beach curving along the sea, promenade, beach
-road, hotel blocks on pavement between fixed side streets, and past the beach's east end a separate port bay with a
-man-made seawall, breakwater, piers and quay yard. The random map connects to its roads. The sand gets crowded later
-(volleyball nets, umbrellas, lounge chairs, people). Replaces D-377's one bay size per stage: the front no longer grows.
-The front sits north of the arena's centre (back street z -7, sea line z -80; director "Push front north"), so every
-stage keeps a city behind it and the young arena still shows a strip of sea; he rises just outside the young arena and
-wades in. Port picks (director 10-29): STS crane A2, container stacks B1, sheds C1. Built (10-30) as pool models
-P01-P03 authored in code (tools/port/build_port.py, no Tripo spend), district "port", role "fixed": CityPort stands
-the same 4 cranes, 3 sheds and 29 stacks on the quay and yard in every city, where the real band reaches (stage 3).
-
-## 2026-10-29 · D-380 · Lead (director "idc") · Stage 1 shows the east landmark spot only
-Q: the bay start leaves the west landmark spot ~0.5 m past the baby's band (it cannot move north: the river
-row). A (lead call A, director "idc"): stage 1 shows the east spot's landmark only; both spots from the
-Behemoth. Bars name spots, never landmarks (spots fixed, the landmark in each rotates, director 2026-10-29).
-Stadium-driven tests (flow, crowd) play the stage-2 city.

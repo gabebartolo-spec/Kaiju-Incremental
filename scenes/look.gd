@@ -97,7 +97,12 @@ static func plain_detail_material(color: Color, self_light: float) -> ShaderMate
 
 ## Deterministic brightness jitter per cell, so surfaces read as built from blocks.
 static func jitter(base: Color, cell: Vector3i, salt: int) -> Color:
-	var amount := value("color_noise")
+	return jitter_by(base, cell, salt, value("color_noise"))
+
+
+## jitter() with the amount (value("color_noise")) read once by the caller: reading it per cell
+## was most of the cost of a loop over a kaiju's 415k cubes (0.34 s, 2026-11-02).
+static func jitter_by(base: Color, cell: Vector3i, salt: int, amount: float) -> Color:
 	if amount <= 0.0:
 		return base
 	var h := absi(hash(Vector4i(cell.x, cell.y, cell.z, salt)))

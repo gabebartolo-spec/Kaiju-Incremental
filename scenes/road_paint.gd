@@ -15,6 +15,10 @@ var cfg: Dictionary
 var rp: Dictionary  # city.road_paint
 var coast: float
 var paint: Array[Transform3D] = []
+## A node position to its first index in plan["nodes"] (what Array.find gives), filled once by
+## marks(): the linear find per crossing road cost ~35 of marks()' ~250 ms. Off: the old find.
+var use_index := true
+var _index := {}
 
 
 func _init(p_plan: Dictionary, p_cfg: Dictionary, p_coast: float) -> void:
@@ -35,6 +39,10 @@ func marks() -> Array[Transform3D]:
 	var zebras := zebra_junctions()
 	var crossing := _crossings()
 	paint.clear()
+	_index.clear()
+	for i: int in nodes.size() if use_index else 0:
+		if not _index.has(nodes[i]):
+			_index[nodes[i]] = i
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
 		var width := Num.f(street["width"])
@@ -247,7 +255,7 @@ func _near_crossings(crossing: Dictionary, ends: Array[int], dir: Vector2) -> Ar
 	for end: int in ends:
 		for road: Array in crossing.get(end, []):
 			for far: Vector2 in [road[0], road[1]]:
-				var key := _node_at(nodes, far)
+				var key := Num.i(_index.get(far, -1)) if use_index else nodes.find(far)
 				for other: Array in crossing.get(key, []):
 					var p0: Vector2 = other[0]
 					var p1: Vector2 = other[1]
@@ -255,10 +263,6 @@ func _near_crossings(crossing: Dictionary, ends: Array[int], dir: Vector2) -> Ar
 					if absf(d.cross(dir)) > DASH_SLANT and not out.has(other):
 						out.append(other)
 	return out
-
-
-static func _node_at(nodes: Array[Vector2], p: Vector2) -> int:
-	return nodes.find(p)
 
 
 ## True when p lies on the asphalt of one of `roads` ([from, to, half]), reaching into its

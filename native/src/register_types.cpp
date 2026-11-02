@@ -1,5 +1,6 @@
 #include "register_types.h"
 #include "kaiju_buckets.h"
+#include "kaiju_building.h"
 #include "kaiju_carve.h"
 #include "kaiju_mesher.h"
 #include "kaiju_settle.h"
@@ -18,6 +19,7 @@ void initialize_kaiju_carve(ModuleInitializationLevel level) {
 	GDREGISTER_CLASS(KaijuBuckets);
 	GDREGISTER_CLASS(KaijuWalk);
 	GDREGISTER_CLASS(KaijuWater);
+	GDREGISTER_CLASS(KaijuBuilding);
 }
 
 void uninitialize_kaiju_carve(ModuleInitializationLevel level) {

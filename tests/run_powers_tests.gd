@@ -2,8 +2,7 @@ extends "res://tests/lib/powers_base.gd"
 ## Powers suite: the croc's branch (docs/SPECIES.md, D-035), the demo's species. Every branch
 ## node has a player-effect fixture: the same seeded, scripted scene with the node owned and
 ## without it plays out visibly differently. Headless, no autoloads. The helicopters are in
-## run_helis_tests.gd; the insectoid's and the cephalopod's are parked with them (tests/parked/,
-## director 2026-10-29).
+## run_helis_tests.gd.
 ##   godot --headless --path . --script tests/run_powers_tests.gd
 
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")
@@ -62,7 +61,7 @@ func _check_branches() -> void:
 	var saved := UpgradeTree.new(Content.upgrades(), {"r_tail": 2, "i_glide": 1}, "reptilian")
 	check(
 		saved.level("r_tail") == 2 and not saved.defs.has("i_glide"),
-		"a reptilian's tree keeps its own levels and drops another species' nodes"
+		"a reptilian's tree keeps its own levels and drops nodes it no longer has"
 	)
 
 
@@ -245,8 +244,7 @@ func _check_beam() -> void:
 
 
 ## A kaiju with no branch node bought plays exactly as before the branches existed (the lash is
-## his signature, D-401, so it is not a branch power): no ram, no climb, no glide, no limbs or
-## throws, no ultimate.
+## his signature, D-401, so it is not a branch power): no ram, no beam, no coats, no ultimate.
 func _check_base_unchanged() -> void:
 	var stray: Array[String] = []
 	for species_id: String in ["reptilian"]:
@@ -261,9 +259,7 @@ func _check_base_unchanged() -> void:
 			if sim.stand_y != 0.0 or sim.powers.hit_mult() != 1.0:
 				stray.append("%s lift/mult" % species_id)
 				break
-		for kind: String in [
-			"glide_start", "beam_start", "eggs_laid", "limb", "grab", "ink", "coated"
-		]:
+		for kind: String in ["beam_start", "coated"]:
 			if seen.has(kind):
 				stray.append("%s %s" % [species_id, kind])
 		if sim.powers.has_ultimate():
