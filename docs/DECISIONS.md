@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-446 · Director · The counts run keeps the kaiju alive to the route's end
+Main's `counts` suite was red since #536 (army harder, D-437): the army killed the kaiju at step 3307 of 3360
+(over=true), so "the route played all steps" failed. The bar counts FxPool peaks over the whole route, not the
+army, so bench_lib takes `hp` and counts sets 1,000,000, as the military and fire suites already do.
+
 ## 2026-11-03 · D-445 · Director · W walks forward: the stick turns with the camera
 Q: "WASD controls dont work, seems like theres no way to walk forwards." Since D-330 the camera turns to sit
 behind the kaiju, but the stick still pointed at fixed map directions (W = north, -z). At the rise he faces +z, so W
@@ -390,9 +395,3 @@ stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"):
 ## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
 A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
 menu_fps 60, so the frame rate the preview shows is the real one; closing Settings restores the menu cap.
-
-## 2026-10-30 · D-392 · Director · Six languages plus Chinese: Simplified Chinese, Spanish, Italian, French, Russian, German
-Roadmap item 1. Fonts: "Draw + Noto SC": accented Latin and Cyrillic are drawn into the four Kaiju faces
-(tools/fonts/glyphs.py); Simplified Chinese falls back to Noto Sans SC (SIL OFL 1.1), subset to the game's characters.
-Translations: "Claude now, review later": Claude writes every language into `data/i18n/strings.csv`; a native
-check before release is a separate spend question. The language is a button on the Accessibility page.
