@@ -34,10 +34,24 @@ var _walk := Vector2.INF
 func _initialize() -> void:
 	if not NativeGuard.ok(self):
 		return
-	var o := Kit.args({
-		"species": "reptilian", "stage": 0, "run": 0, "time": "day", "still-at": "8",
-		"out": "user://shots", "tag": "shot", "cam": "", "at": "0,0,0", "walk": "", "off": "",
-	})
+	var o := (
+		Kit
+		. args(
+			{
+				"species": "reptilian",
+				"stage": 0,
+				"run": 0,
+				"time": "day",
+				"still-at": "8",
+				"out": "user://shots",
+				"tag": "shot",
+				"cam": "",
+				"at": "0,0,0",
+				"walk": "",
+				"off": "",
+			}
+		)
+	)
 	_species = str(o["species"])
 	_stage = str(o["stage"]).to_int()
 	_run_seed = str(o["run"]).to_int()
