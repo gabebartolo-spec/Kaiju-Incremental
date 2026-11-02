@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-448 · Director · Closer read of the D-447 skips: three more identical trims
+Under D-032. Rain smears rewrite only slots that were visible last tick (the rest already hold the hidden
+values), and the lamp walk stops once lamp_max is reached. CarvePhysics reads live_bodies() once per tick, not
+twice (a pure read; nothing changes in between). DebrisField returns right after advancing its clock when no
+body, queue or head is left (the last _draw already zeroed every mesh; no RNG drawn). Skipped: crowd
+lose_cells/_bury (already O(1) when idle; the only trim saves ~4 has() calls a second).
+
 ## 2026-11-03 · D-447 · Director · Per-frame CPU trims (no visual change)
 Under D-032 (looks first): CPU-only savings, identical output. LightPool.repick walks the group once and tests
 the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/fire_xz to its flame shader only
@@ -387,12 +394,3 @@ on/off switch the fixture flips.
 
 ## 2026-10-30 · D-395 · Director · The feedback link is the Itch page
 His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's LEAVE FEEDBACK opens it (tuning demo.feedback_url); replaces the placeholder D-148 left.
-
-## 2026-10-30 · D-394 · Director · The landmark pool's named entries
-His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
-ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
-stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".
-
-## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
-A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
-menu_fps 60, so the frame rate the preview shows is the real one; closing Settings restores the menu cap.
