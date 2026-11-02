@@ -7,6 +7,7 @@
 #
 #   bash tools/wt_setup.sh            do what is missing, then report
 #   bash tools/wt_setup.sh --check    report only (exit 1 if anything is missing)
+#   bash ../other-wt/tools/wt_setup.sh   from a worktree that has no copy yet: sets up this one
 #
 # Steps (each skipped when already done):
 #   1. override.cfg: the off-screen no_focus window (Kit.window_ok needs it for windowed captures).
@@ -16,7 +17,8 @@
 #      restored afterwards.
 # Env: GODOT (default: godot on PATH, else C:/kt/godotbin/godot), GPU_SLOT (default C:/kt/gpu_slot.sh).
 set -u
-cd "$(dirname "$0")/.." || exit 1
+# The worktree is the one you run it in (the git root of $PWD), not the one the script sits in.
+cd "$(git rev-parse --show-toplevel)" || exit 1
 CHECK=0
 [ "${1:-}" = "--check" ] && CHECK=1
 GODOT="${GODOT:-$(command -v godot || echo C:/kt/godotbin/godot)}"
