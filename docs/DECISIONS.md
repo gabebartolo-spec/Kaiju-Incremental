@@ -59,6 +59,8 @@ of 24, Colossus 3 of 34 vs 24 of 39); he picked "Army harder" and then "B as mea
 hits x1.5 (Behemoth tank_damage 6.9 to 10.4, Colossus 7.3 to 11.0) and Colossus helicopter hits x1.5 (air damage 5.4
 to 8.1); measured defeats 9 of 21 and 26 of 37, second evolution 0.80 h. Threat suite on/off
 fixture: Behemoth city at level 3 vs 1 (escalation, helicopter cap); sim fixture: the same blow thrown (a sideways hit) vs crushed (a stomp).
+11-02, Q: from level 3 the city's start puts the Taskforce wait at its 8 s floor, so destruction no longer
+hurries the squads in grown cities; keep, or a wait only destruction shortens? A: "Keep 8 s from start".
 
 
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
