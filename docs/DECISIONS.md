@@ -17,7 +17,10 @@ a blow that reaches a tank wrecks it. Then "a stomp shouldnt send it flying but 
 yeah it should go flying"; picked claw swipe and explosions too. Tail lash, ram, leap ring, claw swipe and explosions
 throw it (SimDamage.throw, flight blow_throw/throw_min/throw_max) and it comes down wrecked; stomp, slam, crash, bombs
 and breath wreck it where it stands. One blow downs a helicopter, burst_blow or more blows it apart; chem cloud wrecks a tank after cloud_tank_seconds. Threat now
-sets only spawn rate, helicopter cap, Taskforce and rooftop volley damage, never toughness. Threat suite on/off
+sets only spawn rate, helicopter cap, Taskforce and rooftop volley damage, never toughness. 11-02, balance: with no enemy hp the army stopped winning (pacing, reptilian: defeats Behemoth 2 of 20 vs main's 14
+of 24, Colossus 3 of 34 vs 24 of 39); he picked "Army harder" and then "B as measured" over +1 levels and +1 heli: tank
+hits x1.5 (Behemoth tank_damage 6.9 to 10.4, Colossus 7.3 to 11.0) and Colossus helicopter hits x1.5 (air damage 5.4
+to 8.1); measured defeats 9 of 21 and 26 of 37, second evolution 0.80 h. Threat suite on/off
 fixture: Behemoth city at level 3 vs 1 (escalation, helicopter cap); sim fixture: the same blow thrown (a sideways hit) vs crushed (a stomp).
 
 ## 2026-11-01 · D-434 · Director · The open sea's fine ripple fades with distance instead of tiling
