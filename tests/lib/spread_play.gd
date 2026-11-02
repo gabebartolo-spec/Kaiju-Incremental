@@ -94,6 +94,8 @@ static func _old(tuning: Dictionary) -> Dictionary:
 	city["diagonal_through"] = Rings.DIAGONAL_THROUGH.duplicate()
 	var growth: Dictionary = out["growth"]
 	var stage: Dictionary = growth["stages"][0]
+	if not stage.has("city"):
+		stage["city"] = {}  # every stage plays the adult city now (D-436): no overlay of its own
 	var stage_city: Dictionary = stage["city"]
 	stage_city["half"] = OLD_HALVES[0]
 	stage_city["coast_z"] = OLD_COAST

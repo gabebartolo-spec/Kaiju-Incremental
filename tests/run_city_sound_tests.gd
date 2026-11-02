@@ -10,7 +10,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_city_sound_tests.gd
 
 const Run := preload("res://tests/lib/city_sound_run.gd")
-## Long enough for the 1.5x city to reach its ruin (phase 0.96 at 120 s, leap-side 2026-10-28).
+## Long enough for the young city (Run.YOUNG_CITY) to reach its ruin (phase 0.96 at 120 s, 10-28).
 const SECONDS := 120.0
 ## The panic beds must peak in the first share of the run and fall this far below the peak.
 const EARLY := 0.6
@@ -27,7 +27,7 @@ func run_checks() -> void:
 	await _t("_check_curve_data")
 	await _t("_check_phase_and_level_maths")
 	await _t("_check_music_data")
-	_run = Run.new(self, 1, Run.LATE_BABY)
+	_run = Run.new(self, 1, Run.LATE_BABY, Run.YOUNG_CITY)
 	await process_frame
 	_run.run(SECONDS)
 	await _t("_check_panic_then_quiet")
