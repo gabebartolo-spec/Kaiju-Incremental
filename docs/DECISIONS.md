@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-448 · Director · Dusk grade copied from Shin Godzilla
+Reference: Shin Godzilla GKIDS trailer, frames A C D H I (director's pick; frames stay local). Base grade copies
+A/C/D, measured with grade.py: black 0.003-0.070, mid 0.17-0.38, white 0.52-0.84, sat ~0.20, warm olive
+highlights (h48-63), cool/green-grey shadows, hazy sky over a darker city. Concrete look: sky aaa688->c4bd9c /
+horizon d6cfae, ambient 0.8 colour 667a78, sun e2dcb4 at 1.2, fog 7e8274 at 0.005, saturation 0.7, agx_contrast
+1.7, post_contrast 1.0, new key exposure 1.2 (tonemap_exposure), sand aaa080. Game stills land black 0.06-0.16,
+mid 0.27-0.33, white 0.82-0.84, sat 0.18-0.19, highlights h46-49. H/I breath violet: no change (fx.bolt is
+already purple). Details: docs/research/shin_godzilla_grade.md.
+
 ## 2026-11-03 · D-447 · Director · Per-frame CPU trims (no visual change)
 Under D-032 (looks first): CPU-only savings, identical output. LightPool.repick walks the group once and tests
 the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/fire_xz to its flame shader only
@@ -387,12 +396,3 @@ on/off switch the fixture flips.
 
 ## 2026-10-30 · D-395 · Director · The feedback link is the Itch page
 His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's LEAVE FEEDBACK opens it (tuning demo.feedback_url); replaces the placeholder D-148 left.
-
-## 2026-10-30 · D-394 · Director · The landmark pool's named entries
-His words (10-30): "giant donut that will detach and roll"; "large church"; "airport"; "a theme park with rides and a
-ferris wheel"; "a castle (tourist destination)". With "Spire + megatower" (built in code, free), these join the
-stadium and wheel in the D-375 pool. Rings (lead table, director "sounds good"): donut and church medium; castle and theme park big; airport biggest. The donut's roll is new sim behaviour and gets its own task. Big and biggest share the outer ring (no fourth ring): Q: a ring of its own for biggest? A: "they can arrive with the spire".
-
-## 2026-10-30 · D-393 · Director · The graphics preview lifts the menu frame cap
-A: "Yes, lift it": while Settings (with the comment #90 preview) is open, menus run at the player's own FPS cap, not
-menu_fps 60, so the frame rate the preview shows is the real one; closing Settings restores the menu cap.

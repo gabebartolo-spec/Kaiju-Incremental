@@ -68,5 +68,8 @@ static func _sky() -> Sky:
 static func grade(env: Environment) -> void:
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
 	env.tonemap_agx_contrast = Look.value("agx_contrast")
+	# Exposure before the tone map (D-448): the AgX shoulder lifts the mids more than the whites.
+	if Content.look().has("exposure"):
+		env.tonemap_exposure = Look.value("exposure")
 	env.adjustment_enabled = true
 	env.adjustment_contrast = Look.value("post_contrast")
