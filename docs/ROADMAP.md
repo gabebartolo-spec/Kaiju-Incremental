@@ -69,7 +69,7 @@ Phases 1 to 4 are open. Next comes the landmark-spot notes.
 | 6 | Render and performance: graphics preview in options | perf done (#530, #531); preview open |
 | 8 | CI | slow suites fixed; `counts` red |
 | 9 | Sound and music | open |
-| 10 | Demo shell: textures, preview, load art, end screen, feedback (Itch link, D-395) | load stills done (D-427); rest open |
+| 10 | Demo shell: textures, preview, load art, end screen, feedback (Itch link, D-395) | end screen (demo_end.gd), feedback link (D-395), graphics preview with the menu cap lifted (D-393) and load stills (D-427) done; textures open |
 
 ## Milestones
 
@@ -79,10 +79,10 @@ Phases 1 to 4 are open. Next comes the landmark-spot notes.
   - full Taskforce
   - textures
   - helicopter deaths
-  - graphics preview
-  - load art
-  - end screen
-  - feedback link
+  - graphics preview (done, D-393)
+  - load art (stills done, D-427)
+  - end screen (done)
+  - feedback link (done, D-395)
   - the overworld loop: globe, mission, conquest
 - **M4: Itch release candidate**
 
