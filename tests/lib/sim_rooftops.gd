@@ -7,8 +7,9 @@ extends RefCounted
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 ## D-076: the seeded Behemoth fixture draws at least this many rooftop volleys a second over its
-## run (1.55 with D-076a and #50; 0.29 with the old squads and interval).
-const MIN_BEHEMOTH_VOLLEYS := 1.0
+## run (1.55 with D-076a and #50; 0.29 with the old squads and interval; 1.09 before D-448, 0.97
+## after: falling towers now carve the neighbours they hit, so roofs come down sooner).
+const MIN_BEHEMOTH_VOLLEYS := 0.9
 
 var _check: Callable
 var _make: Callable

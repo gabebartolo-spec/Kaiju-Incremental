@@ -77,6 +77,9 @@ func land(event: Dictionary) -> void:
 	falling.erase(id)
 	var node: Node3D = f["node"]
 	var parts := PieceParts.of(node)
+	if str(event.get("contact", "")) != "":
+		_shatter(node, parts, event)
+		return
 	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
 		_topple_land(node, event)
 		return
@@ -100,6 +103,42 @@ func land(event: Dictionary) -> void:
 		if street != null and b.landmark == "":  # came down round its own (not a ring's) walls
 			var spill := Num.f(street.tune("fall_spill"))
 			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH + spill)
+
+
+## It hit a neighbour or the kaiju on the way down (FallContact): it shatters where it is, its
+## fragments thrown off what it hit (from outside the kaiju's hide, KaijuHide), and whatever lies
+## under the stretch it reached is crushed. Never squashed or slid through what stopped it.
+func _shatter(node: Node3D, parts: Array, event: Dictionary) -> void:
+	var pivot: Vector3 = node.get_meta("pivot", node.global_position)
+	var on_kaiju := str(event["contact"]) == "kaiju"
+	var axis := Vector3(_city.sim.kaiju_pos.x, 0.0, _city.sim.kaiju_pos.y)
+	var first := Vector3.INF
+	for n: int in mini(parts.size(), DEBRIS_PER_LANDING):
+		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
+		var pos: Vector3 = part["pos"]
+		var at := node.global_transform * (pos - pivot)
+		var away := Vector3.UP * 0.3
+		if on_kaiju:
+			var off := Vector3(at.x, 0.0, at.z) - axis
+			away += off.normalized() if off.length_squared() > 1e-6 else Vector3.RIGHT
+		if _city.kaiju_hide != null:
+			at = _city.kaiju_hide.outside(at)
+		first = at if first == Vector3.INF else first
+		var color: Color = part["color"]
+		_city.debris(at, color, away)
+	if node is LandmarkBurst:
+		LandmarkBurst.retire(node, true)
+	else:
+		node.queue_free()
+	if first != Vector3.INF:
+		_city.fx.dust(first, 1.5)
+	if event.has("from") and event.has("to"):
+		var from: Vector2 = event["from"]
+		var to: Vector2 = event["to"]
+		var width := Num.f(event["width"])
+		var spots: Array[Vector3] = [Vector3(from.x, from.y, width * 0.6)]
+		spots.append(Vector3(to.x, to.y, width * 0.6))
+		_city.crush_all(spots)
 
 
 ## A tower came down across the street: it breaks up and leaves a rubble strip (ToppleFx); what

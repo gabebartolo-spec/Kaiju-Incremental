@@ -12,6 +12,17 @@ for the first building on the path taller than his shoulder (the existing per-st
 drawn height, D-361; no new number) and makes it the target, taken in its side as D-361 does. Roofs at or under
 the shoulder still land (Leap suite: _check_no_vault, _check_low_roof).
 
+## 2026-11-03 · D-448 · Director · Falling buildings hit neighbours and the kaiju, never pass through
+Q: a falling building passed through its neighbour and through the kaiju. Cause: a fall is a scripted pose (ToppleFx
+tilt, CityFalls drop) checked against nothing until it landed; the kaiju had no physics body. A: FallContact (sim)
+poses each falling part as the view draws it every tick and samples its chunks. A neighbour's live chunks it reaches
+take a landing's blow (carved); one that survives stops it. The kaiju's hide (a rigid capsule, tuning fall_contact)
+stops it at the first touch (bisected in the tick). It shatters there into DebrisField fragments thrown from outside
+the hide. KaijuHide (AnimatableBody3D) follows him, so fragments hit and slide off. Max overlap (fall_contact
+suite): neighbour 0.48 to 0.11, kaiju topple 1.03 to 0.00, drop 0.96 to 0.00. What a part touched as it began (the
+base he chewed, a shared wall) and a topple's shudder never count. Rooftop fixture floor 1.0 to 0.9 volleys/s (1.09
+to 0.97: roofs fall sooner). Not done: settled debris vs neighbours.
+
 ## 2026-11-03 · D-447 · Director · Per-frame CPU trims (no visual change)
 Under D-032 (looks first): CPU-only savings, identical output. LightPool.repick walks the group once and tests
 the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/fire_xz to its flame shader only
@@ -385,15 +396,3 @@ switch the onelook check flips. The look itself is his call on the stills before
 ## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
 "Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
 rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
-
-## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
-Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
-changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,
-it needs a lot of vfx, sfx and beautiful UI design". So the screen is a specimen plate with glass cells that fill with
-Special K, tubes that surge and bubble, motes from the biomass counter, a rim flare when a ring opens, lightning on an
-evolution, a scanner sweep, a lab readout for the side panel, and its own sounds. "go straight to the build" (no mockup
-board); "500 credits sure": ElevenLabs sound effects up to 500 credits for this screen (precedent D-237). The ElevenLabs
-connector was not in the building session, so #445 ships the four tree sounds synthesised in `tools/sfx/build_sfx.py`
-(0 credits); the 500 stay approved for replacing them from a session that has it. The kaiju himself, at his current
-stage, turns at the empty centre of the rings: "yes". Tuning `tree.skin` and `tree.skin.fx`; `fx.enabled` is the
-on/off switch the fixture flips.

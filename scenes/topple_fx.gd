@@ -22,17 +22,7 @@ func _init(city: CityView, rng: RandomNumberGenerator) -> void:
 ## creeps to lean_deg, then a slow lean that accelerates (sinh, like a tipping column) to 90 deg
 ## exactly when the sim lands it.
 static func tilt(cfg: Dictionary, t: float, duration: float) -> float:
-	var shudder := minf(Num.f(cfg["shudder_s"]), duration * Num.f(cfg["shudder_max_share"]))
-	var lean := deg_to_rad(Num.f(cfg["lean_deg"]))
-	if t < shudder:
-		var k := t / shudder
-		var wobble := (
-			sin(t * TAU * Num.f(cfg["shudder_hz"])) * deg_to_rad(Num.f(cfg["shudder_deg"]))
-		)
-		return lean * k * k + wobble * (1.0 - k * 0.5)
-	var u := clampf((t - shudder) / maxf(0.001, duration - shudder), 0.0, 1.0)
-	var c := Num.f(cfg["lean_curve"])
-	return lean + (PI * 0.5 - lean) * sinh(c * u) / sinh(c)
+	return FallContact.tilt(cfg, t, duration)  # the sim's own curve: what it hits, it hits here
 
 
 ## Poses a falling topple (CityView's fall record) for this frame; its base crumbles while it

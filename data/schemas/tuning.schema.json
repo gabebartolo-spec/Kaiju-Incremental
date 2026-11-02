@@ -4814,6 +4814,20 @@
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
     },
+    "fall_contact": {
+      "type": "object",
+      "properties": {
+        "on": {"type": "boolean"},
+        "inset": {"$ref": "#/$defs/num"},
+        "bisect": {"$ref": "#/$defs/int"},
+        "hide_radius": {"$ref": "#/$defs/num"},
+        "hide_height": {"$ref": "#/$defs/num"},
+        "fragment_margin": {"$ref": "#/$defs/num"}
+      },
+      "required": ["on", "inset", "bisect", "hide_radius", "hide_height", "fragment_margin"],
+      "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+      "additionalProperties": false
+    },
     "topple_fx": {
       "type": "object",
       "properties": {

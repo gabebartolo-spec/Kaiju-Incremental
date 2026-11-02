@@ -22,6 +22,8 @@ var blast_break: BlastBreak
 var carve: CityCarve
 var wildlife: WildlifeView  # gulls, pigeons and the whale (null without decor)
 var boats: BoatView  # the moored boats: rock, flee his wake, capsize (null without decor)
+## The kaiju's rigid hide (KaijuHide): debris and falling parts break up against it.
+var kaiju_hide: KaijuHide
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _bubble: CameraBubble
@@ -106,6 +108,9 @@ func _add_layers() -> void:
 	add_child(fx)
 	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
 	add_child(_debris)
+	kaiju_hide = KaijuHide.new(sim)
+	add_child(kaiju_hide)
+	_debris.keep_out = kaiju_hide.outside  # no fragment is ever thrown from inside his hide
 	_ruins = RuinYard.new(sim, _stream.view)
 	add_child(_ruins)
 	_topple = ToppleFx.new(self, _rng)
