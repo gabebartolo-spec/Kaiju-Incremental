@@ -214,7 +214,7 @@ func _check_road_rules_held() -> void:
 func _check_diagonal_fits() -> void:
 	var cfg := Roads.city(Content.tuning(), 1, Roads.SHIPPED_SEED)
 	check(
-		CityLineFit.x_runs_fit(cfg, CityGen.diagonals_of(cfg)),
+		CityLineFit.x_runs_fit(cfg, CityDiagonals.of(cfg)),
 		(
 			"the shipped diagonal %s at %s deg fits the rings %s (else run tools/audit/diagonal_fit.gd)"
 			% [cfg["diagonal_through"], cfg["diagonal_deg"], cfg["districts"]]
@@ -224,7 +224,7 @@ func _check_diagonal_fits() -> void:
 	old["diagonal_through"] = [-6, 4]
 	old["diagonal_deg"] = 27
 	check(
-		not CityLineFit.x_runs_fit(old, CityGen.diagonals_of(old)),
+		not CityLineFit.x_runs_fit(old, CityDiagonals.of(old)),
 		"the pre-fix diagonal (-6, 4) at 27 deg is caught as not fitting"
 	)
 
@@ -331,7 +331,7 @@ func _check_continent_cities_hold() -> void:
 			var breaks := CityLines.fit_breaks(cfg)
 			check(breaks == 0, "%s stage %d: every street run fits clean (%d)" % [id, tier, breaks])
 			check(
-				CityLineFit.x_runs_fit(cfg, CityGen.diagonals_of(cfg)),
+				CityLineFit.x_runs_fit(cfg, CityDiagonals.of(cfg)),
 				"%s stage %d: its diagonals clear the rings" % [id, tier]
 			)
 		var bad: Array[Dictionary] = []

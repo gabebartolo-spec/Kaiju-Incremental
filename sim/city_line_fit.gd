@@ -203,11 +203,11 @@ static func sharp_cells(
 		var along_z := atan2(absf(dir.x), absf(dir.y)) < least  # near the x-lines' own run
 		var along_x := atan2(absf(dir.y), absf(dir.x)) < least  # near the z-lines' run
 		for i: int in xs.size():
-			var z := CityGen.diag_at_x(diag, xs[i])
+			var z := CityDiagonals.at_x(diag, xs[i])
 			if absf(z) <= outer and (along_z or (along_x and _beside(z, zs, near))):
 				sx[Vector2i(i, CityGen.cell_of(zs, z))] = true
 		for j: int in zs.size():
-			var x := CityGen.diag_at_z(diag, zs[j])
+			var x := CityDiagonals.at_z(diag, zs[j])
 			if absf(x) <= outer and (along_x or (along_z and _beside(x, xs, near))):
 				sz[Vector2i(j, CityGen.cell_of(xs, x))] = true
 	plan["sharp_x"] = sx
@@ -321,7 +321,7 @@ static func clearance(
 ## Whether the x-lines of cfg's plan can meet every rule whatever the seed (the runs between the
 ## fixed ring lines and out to the outskirts; the z-lines then always fit between the diagonal's
 ## crossings): the check tools/audit/diagonal_fit.gd uses to pick city.diagonal_through and
-## city.diagonal_deg. diags: CityGen.diagonals_of(cfg), or a candidate's.
+## city.diagonal_deg. diags: CityDiagonals.of(cfg), or a candidate's.
 static func x_runs_fit(cfg: Dictionary, diags: Array[Dictionary]) -> bool:
 	var rings := CityGen.districts(cfg)
 	var rule := x_rule(cfg, diags, rings)

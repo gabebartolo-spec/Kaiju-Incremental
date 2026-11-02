@@ -126,24 +126,13 @@ static func _map(cfg: Dictionary) -> Dictionary:
 	var rings := districts(cfg)
 	var full := rings[rings.size() - 1]
 	var outer := Num.f(cfg["outer_half"])
-	var diags := diagonals_of(cfg)
-	var diag: Dictionary = diags[0]
+	var diags := CityDiagonals.of(cfg)
 	var lines := CityLines.draw(rng, cfg, diags)
 	var xs: Array[float] = lines["xs"]
 	var zs: Array[float] = lines["zs"]
 	var avenues_x: Dictionary = lines["avenues_x"]
 	var avenues_z: Dictionary = lines["avenues_z"]
-	var plan := {
-		"nodes": [] as Array[Vector2],
-		"streets": [] as Array[Dictionary],
-		"blocks": [] as Array[Dictionary],
-		"sidewalk": Num.f(cfg["sidewalk"]),
-		"diagonal": diag,  # the first diagonal (the only one but in a two-diagonal plan)
-		"diagonals": diags,
-		"xs": xs,
-		"zs": zs,
-		"bay": CityHarbour.rect_of(cfg),  # the sea bay, laid first: no street enters it
-	}
+	var plan := _empty_plan(cfg, diags, xs, zs)
 	CityWater.dig(plan, cfg)  # Thule's fjord: no street but its bridges crosses it
 	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
 	CityPlaza.add(plan, [avenues_x, avenues_z], cfg)  # where two diagonals meet: no street inside
@@ -161,6 +150,23 @@ static func _map(cfg: Dictionary) -> Dictionary:
 	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
 	CityWater.mark(plan, cfg)  # Thule's fjord banks, the rise
 	return plan
+
+
+## The plan before any street, block or site is laid.
+static func _empty_plan(
+	cfg: Dictionary, diags: Array[Dictionary], xs: Array[float], zs: Array[float]
+) -> Dictionary:
+	return {
+		"nodes": [] as Array[Vector2],
+		"streets": [] as Array[Dictionary],
+		"blocks": [] as Array[Dictionary],
+		"sidewalk": Num.f(cfg["sidewalk"]),
+		"diagonal": diags[0],  # the first diagonal (the only one but in a two-diagonal plan)
+		"diagonals": diags,
+		"xs": xs,
+		"zs": zs,
+		"bay": CityHarbour.rect_of(cfg),  # the sea bay, laid first: no street enters it
+	}
 
 
 ## Every grid street, split at each crossing and where each diagonal crosses: x-lines (running
@@ -182,7 +188,7 @@ static func _lay_streets(
 		var stops: Array[float] = []
 		stops.assign(zs)
 		for diag: Dictionary in diags:
-			var cross := diag_at_x(diag, xs[i])
+			var cross := CityDiagonals.at_x(diag, xs[i])
 			if absf(cross) <= outer and not sx.has(Vector2i(i, cell_of(zs, cross))):
 				stops.append(cross)
 		stops.sort()
@@ -198,7 +204,7 @@ static func _lay_streets(
 		var stops: Array[float] = []
 		stops.assign(xs)
 		for diag: Dictionary in diags:
-			var cross := diag_at_z(diag, zs[j])
+			var cross := CityDiagonals.at_z(diag, zs[j])
 			if absf(cross) <= outer and not sz.has(Vector2i(j, cell_of(xs, cross))):
 				stops.append(cross)
 		stops.sort()
@@ -226,57 +232,16 @@ static func _lay_diagonal(
 	var sx: Dictionary = plan["sharp_x"]
 	var sz: Dictionary = plan["sharp_z"]
 	for i: int in xs.size():
-		var z := diag_at_x(diag, xs[i])
+		var z := CityDiagonals.at_x(diag, xs[i])
 		if absf(z) <= outer and not sx.has(Vector2i(i, cell_of(zs, z))):
 			along.append(Vector2(xs[i], z))
 	for j: int in zs.size():
-		var x := diag_at_z(diag, zs[j])
+		var x := CityDiagonals.at_z(diag, zs[j])
 		if absf(x) <= outer and not sz.has(Vector2i(j, cell_of(xs, x))):
 			along.append(Vector2(x, zs[j]))
 	along.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
-
-
-## The diagonal avenue of cfg: {at, dir} (city.diagonal_through, city.diagonal_deg).
-static func diagonal_of(cfg: Dictionary) -> Dictionary:
-	return _diagonal(cfg)
-
-
-## Every diagonal avenue of cfg: the first (diagonal_of), then city.diagonal_count - 1 more
-## through the same point, turned evenly round the half circle (Carthago's spokes, D-435: they
-## meet in the open site there, CityPlaza, which holds its round harbour, CityWater).
-static func diagonals_of(cfg: Dictionary) -> Array[Dictionary]:
-	var first := _diagonal(cfg)
-	var out: Array[Dictionary] = [first]
-	var count := Num.i(cfg["diagonal_count"])
-	var dir: Vector2 = first["dir"]
-	for k: int in range(1, count):
-		out.append({"at": first["at"], "dir": dir.rotated(PI * k / count)})
-	return out
-
-
-## The diagonal avenue: a point it passes and its direction (unit, ground plane).
-static func _diagonal(cfg: Dictionary) -> Dictionary:
-	var through: Array = cfg["diagonal_through"]
-	var angle := deg_to_rad(Num.f(cfg["diagonal_deg"]))
-	return {
-		"at": Vector2(Num.f(through[0]), Num.f(through[1])),
-		"dir": Vector2(cos(angle), sin(angle)),
-	}
-
-
-## Where a diagonal crosses x-line x (its z), and z-line z (its x).
-static func diag_at_x(diag: Dictionary, x: float) -> float:
-	var at: Vector2 = diag["at"]
-	var dir: Vector2 = diag["dir"]
-	return at.y + (x - at.x) * dir.y / dir.x
-
-
-static func diag_at_z(diag: Dictionary, z: float) -> float:
-	var at: Vector2 = diag["at"]
-	var dir: Vector2 = diag["dir"]
-	return at.x + (z - at.y) * dir.x / dir.y
 
 
 ## Distance from p to the nearest diagonal's centre line.

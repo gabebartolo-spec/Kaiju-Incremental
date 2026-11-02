@@ -184,7 +184,7 @@ static func avenues(
 ## every run fits clean).
 ## rng: the plan's own stream (the first district's lines and the avenue picks); later districts
 ## and the outskirts draw from their own (map_seed + 2, + 1).
-## diags: CityGen.diagonals_of(cfg). No inner avenue runs through the plaza where they meet
+## diags: CityDiagonals.of(cfg). No inner avenue runs through the plaza where they meet
 ## (CityPlaza), whose ground swallows the streets inside it.
 static func draw(
 	rng: RandomNumberGenerator, cfg: Dictionary, diags: Array[Dictionary]
@@ -273,4 +273,4 @@ static func _lay(
 static func fit_breaks(cfg: Dictionary) -> int:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Num.i(cfg["map_seed"])  # CityGen.map's own stream
-	return Num.i(draw(rng, cfg, CityGen.diagonals_of(cfg))["breaks"])
+	return Num.i(draw(rng, cfg, CityDiagonals.of(cfg))["breaks"])

@@ -38,7 +38,7 @@ func _start() -> void:
 	var z0 := Num.f(through[1])
 	var deg0 := Num.f(cfg["diagonal_deg"])
 	var full := CityGen.districts(cfg)[-1]
-	var fits_now := CityLineFit.x_runs_fit(cfg, CityGen.diagonals_of(cfg))
+	var fits_now := CityLineFit.x_runs_fit(cfg, CityDiagonals.of(cfg))
 	print(
 		(
 			"diagonal_fit: now through (%.2f, %.2f) at %.2f deg: %s"
@@ -83,7 +83,7 @@ func _fits(cfg: Dictionary, x0: float, z: float, deg: float) -> bool:
 		var c := cfg.duplicate()
 		c["diagonal_through"] = [x0, z + dz]
 		c["diagonal_deg"] = deg
-		if not CityLineFit.x_runs_fit(c, CityGen.diagonals_of(c)):
+		if not CityLineFit.x_runs_fit(c, CityDiagonals.of(c)):
 			return false
 	return true
 

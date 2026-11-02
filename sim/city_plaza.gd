@@ -36,23 +36,25 @@ static func add(plan: Dictionary, avenues: Array, cfg: Dictionary) -> void:
 		var other: Rect2 = site["outer"]
 		if not other.grow(-0.01).intersects(outer):
 			kept.append(site)
-	(
-		kept
-		. append(
-			{
-				"id": "plaza",
-				"plaza": true,
-				"spec": {"id": "plaza"},
-				"shape": {},
-				"i": i,
-				"j": j,
-				"outer": outer,
-				"rect": rect,
-				"district": CityGen.district_of(rect, cfg),
-			}
-		)
-	)
+	kept.append(_site(i, j, outer, rect, cfg))
 	plan["sites"] = kept
+
+
+## The plaza's site: grid spans i and j, its outer edge and its kerbed rect.
+static func _site(
+	i: Vector2i, j: Vector2i, outer: Rect2, rect: Rect2, cfg: Dictionary
+) -> Dictionary:
+	return {
+		"id": "plaza",
+		"plaza": true,
+		"spec": {"id": "plaza"},
+		"shape": {},
+		"i": i,
+		"j": j,
+		"outer": outer,
+		"rect": rect,
+		"district": CityGen.district_of(rect, cfg),
+	}
 
 
 ## True when street line k lies inside the plaza round centre (the diagonals' crossing on that

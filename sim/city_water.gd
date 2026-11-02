@@ -178,8 +178,8 @@ static func _exit(diag: Dictionary, way: Vector2, rect: Rect2) -> Vector2:
 	var tx := (x - at.x) / way.x if absf(way.x) > 0.0001 else INF
 	var tz := (z - at.y) / way.y if absf(way.y) > 0.0001 else INF
 	if tx < tz:
-		return Vector2(x, CityGen.diag_at_x(diag, x))
-	return Vector2(CityGen.diag_at_z(diag, z), z)
+		return Vector2(x, CityDiagonals.at_x(diag, x))
+	return Vector2(CityDiagonals.at_z(diag, z), z)
 
 
 ## The rise: in the water at `at`, wading `way` to bank_inset past the water's edge (`edge` m out).
