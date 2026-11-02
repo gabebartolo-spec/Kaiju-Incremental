@@ -194,7 +194,8 @@ static func sharp_cells(
 	cfg: Dictionary
 ) -> void:
 	var least := deg_to_rad(Num.f(cfg["diagonal_min_cross_deg"]))
-	var near := _clearances(cfg)[1]
+	var short: Array = cfg["block_short"]
+	var near := maxf(_clearances(cfg)[1], Num.f(short[0]))
 	var sx := {}
 	var sz := {}
 	for diag: Dictionary in diags:
@@ -213,9 +214,10 @@ static func sharp_cells(
 	plan["sharp_z"] = sz
 
 
-## Is v off every one of `lines` but within `near` (an avenue's clearance) of one? A steep
-## diagonal drifts too slowly across the other axis for the line fit to keep its crossings off the
-## grid junctions (13 deg: 3.5 m a 15 m block), so such a crossing's piece is left out as well.
+## Is v off every one of `lines` but within `near` (an avenue's clearance, or the shortest block
+## when that is wider: the road rule's "close") of one? A steep diagonal drifts too slowly across
+## the other axis for the line fit to keep its crossings off the grid junctions (13 deg: 3.5 m a
+## 15 m block), so such a crossing's piece is left out as well.
 static func _beside(v: float, lines: Array[float], near: float) -> bool:
 	for line: float in lines:
 		if absf(v - line) < near:

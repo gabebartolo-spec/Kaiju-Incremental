@@ -1,20 +1,16 @@
 extends RefCounted
 ## The stadium is a reward for growing, not free biomass at the start (build 2 note 21: "the
-## stadium is free biomass, it needs to be placed as far away from our spawn spot as possible";
-## director 2026-10-20 picked "past the edge"): in the stage-1 city it stands wholly outside
-## the baby's walk (real, in the band past the edge: the baby at the edge can still bite into
-## it, as with every band block) and at least FAR m from the rise in the sea bay; in the stage-2
-## city it is real, in the band at least, so the Behemoth at the edge can bite into it (the
-## stage-1 rule; lead 2026-10-29: the old "inside the play area" bar had no decision behind it
-## and no site meets it beside the fixed bay). The wheel, moved with it, also stands past the
-## baby's edge and never overlaps the stadium; no block's lot overlaps a landmark's plaza.
+## stadium is free biomass, it needs to be placed as far away from our spawn spot as possible"):
+## at every stage it stands at least FAR m from the rise. Every landmark spot stands from stage 1
+## in the one adult city (D-436), so the old "past the baby's edge" bar (2026-10-20) is gone.
+## The wheel, moved with it, never overlaps the stadium; no block's lot overlaps a landmark's
+## plaza.
 
 const FAR := 100.0
 
 
 static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable) -> void:
 	var plan := CityGen.map(sim.city)
-	var here := sim.arena_half
 	var stadium := _site(plan, "stadium", tier, map_seed, check_fn)
 	var wheel := _site(plan, "wheel", tier, map_seed, check_fn)
 	if stadium.is_empty() or wheel.is_empty():
@@ -22,39 +18,18 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 	var rect: Rect2 = stadium["rect"]
 	var wheel_rect: Rect2 = wheel["rect"]
 	_check_lots(plan, [rect, wheel_rect], tier, map_seed, check_fn)
-	if tier >= 2:
-		check_fn.call(
-			CityBand.real(rect, sim.city),
-			(
-				(
-					"stage %d, map_seed %d: the stadium is real, in the band the kaiju at the"
-					+ " edge bites into (reach %.1f, edge %.1f)"
-				)
-				% [tier, map_seed, _reach(rect), here]
-			)
-		)
-		return
 	var spawn: Vector2 = plan.get("rise_spawn", Vector2.ZERO)
 	var far := spawn.distance_to(rect.get_center())
 	check_fn.call(
-		CityBand.near_edge(rect) > here and far >= FAR,
+		far >= FAR,
 		(
-			(
-				"stage 1, map_seed %d: the stadium stands %.0f m from the rise (>= %.0f), its near"
-				+ " side %.1f m past the baby's edge %.1f"
-			)
-			% [map_seed, far, FAR, CityBand.near_edge(rect) - here, here]
+			"stage %d, map_seed %d: the stadium stands %.0f m from the rise (>= %.0f)"
+			% [tier, map_seed, far, FAR]
 		)
 	)
 	check_fn.call(
-		CityBand.near_edge(wheel_rect) > here and not wheel_rect.intersects(rect),
-		(
-			(
-				"stage 1, map_seed %d: the wheel stands past the baby's edge (near side %.1f, edge"
-				+ " %.1f) clear of the stadium"
-			)
-			% [map_seed, CityBand.near_edge(wheel_rect), here]
-		)
+		not wheel_rect.intersects(rect),
+		"stage %d, map_seed %d: the wheel stands clear of the stadium" % [tier, map_seed]
 	)
 
 
@@ -93,11 +68,4 @@ static func _check_lots(
 			"stage %d, map_seed %d: no block lot overlaps a landmark plaza (%d)"
 			% [tier, map_seed, hits]
 		)
-	)
-
-
-## How far a rect reaches from the centre, measured square.
-static func _reach(rect: Rect2) -> float:
-	return maxf(
-		maxf(absf(rect.position.x), absf(rect.end.x)), maxf(absf(rect.position.y), absf(rect.end.y))
 	)

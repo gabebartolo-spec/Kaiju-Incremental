@@ -1,14 +1,16 @@
 extends "res://tests/lib/runner.gd"
-## Growth suite (D-039): the city grows with each evolution and the costs pace the tree for
-## 3-5 hours of active play. Player-effect fixtures (growth on vs off changes the city and
-## what a rampage achieves), the stages' cities and defences, the cost curve and the early
-## hook, and determinism. Headless and seeded.
+## Growth suite: every stage runs the one adult city (D-436, replacing D-039's growing city)
+## and the costs pace the tree for 3-5 hours of active play. Player-effect fixtures (the adult
+## city vs the old young city changes what a rampage achieves), the stages' cities and
+## defences, the cost curve and the early hook, and determinism. Headless and seeded.
 ##   godot --headless --path . --script tests/run_growth_tests.gd
 
 const DT := 1.0 / 15.0
 ## Upgrades owned at the start of each stage (enough body to be that stage's kaiju).
-## How much more of the city (a share, 0..1) the young city loses than the grown one.
+## How much more of the city (a share, 0..1) the old young city loses than the adult one.
 const GROWTH_MARGIN := 0.2
+## The stage-1 city before D-436 (main at 2026-11-01; its skyline cores draw only): the "off".
+const YOUNG_CITY := {"half": 75, "coast_z": -145, "max_height": 26, "tower_chance": 0.55}
 const COLOSSUS := {
 	"claws": 5,
 	"hide": 5,
@@ -26,10 +28,9 @@ const COLOSSUS := {
 	"sig_recharge": 4,
 	"evolve2": 1
 }
-## The growth-off run's clock (s): long enough that this Colossus flattens the young city (the
-## 1.5x stage-1 city, D-254, takes it about 98 s); growth on keeps the real clock and must reach
-## it. A Colossus never plays the young city, so the fixture sets its own clock and no game data
-## changes (director 2026-10-26).
+## The off run's clock (s): long enough that this Colossus flattens the old young city (about
+## 98 s); the adult city keeps the real clock. A Colossus never played the young city, so the
+## fixture sets its own clock and no game data changes (director 2026-10-26).
 const FIXTURE_CLOCK := 110.0
 
 
@@ -38,7 +39,7 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	await _t("_check_stages_grow")
+	await _t("_check_one_city")
 	await _t("_check_districts_kept")
 	await _t("_check_edges")
 	await _t("_check_defences")
@@ -61,9 +62,9 @@ func _layout(tier: int) -> Array[Dictionary]:
 	return CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 
 
-## Every evolution opens a bigger city with taller towers: more ground, buildings and chunks
-## (the tallest off the fixed beachfront and not a landmark: both stand the same at every stage).
-func _check_stages_grow() -> void:
+## Every stage runs the same adult city (D-436): the same ground, buildings, chunks and tallest
+## tower from the first run (the tallest off the fixed beachfront and not a landmark).
+func _check_one_city() -> void:
 	var stages := CityGrowth.stage_count(Content.tuning())
 	check(stages == 3, "one growth stage per body, young to Colossus (%d, D-135)" % stages)
 	var evolutions := 0
@@ -75,30 +76,30 @@ func _check_stages_grow() -> void:
 		evolutions + 1 == stages and bodies.size() == stages,
 		"evolutions + 1 = growth stages = bodies (%d, %d, %d)" % [evolutions, stages, bodies.size()]
 	)
-	var last := {"half": 0.0, "buildings": 0, "chunks": 0, "tallest": 0}
-	var grows := true
+	var first := {}
+	var same := true
 	var lines: Array[String] = []
 	for tier: int in range(1, stages + 1):
 		var cfg: Dictionary = _tuning(tier)["city"]
-		var layout := _layout(tier)
-		var chunks := 0
-		var tallest := 0
-		var front := CityHarbour.rect_of(cfg)  # its hotels stand the same at every stage (D-381)
-		for e: Dictionary in layout:
-			chunks += Num.i(e["w"]) * Num.i(e["d"]) * Num.i(e["h"])
-			if not (e.has("landmark") or front.has_point(Vector2(Num.f(e["x"]), Num.f(e["z"])))):
-				tallest = maxi(tallest, Num.i(e["h"]))
-		var now := {
-			"half": Num.f(cfg["half"]),
-			"buildings": layout.size(),
-			"chunks": chunks,
-			"tallest": tallest
-		}
-		for key: String in now:
-			grows = grows and Num.f(now[key]) > Num.f(last[key])
+		var now := _measure(cfg, _layout(tier))
+		if first.is_empty():
+			first = now
+		same = same and now == first
 		lines.append("%d: %s" % [tier, now])
-		last = now
-	check(grows, "each stage's city is bigger, fuller and taller than the last: %s" % [lines])
+	check(same, "every stage's city is the same adult city: %s" % [lines])
+
+
+func _measure(cfg: Dictionary, layout: Array[Dictionary]) -> Dictionary:
+	var chunks := 0
+	var tallest := 0
+	var front := CityHarbour.rect_of(cfg)  # its hotels stand the same at every stage (D-381)
+	for e: Dictionary in layout:
+		chunks += Num.i(e["w"]) * Num.i(e["d"]) * Num.i(e["h"])
+		if not (e.has("landmark") or front.has_point(Vector2(Num.f(e["x"]), Num.f(e["z"])))):
+			tallest = maxi(tallest, Num.i(e["h"]))
+	return {
+		"half": Num.f(cfg["half"]), "buildings": layout.size(), "chunks": chunks, "tallest": tallest
+	}
 
 
 ## An evolution adds districts round the one the kaiju knows: the street plan is the same at
@@ -185,31 +186,36 @@ func _check_defences() -> void:
 ## on the current tier's nodes harden the tanks and helicopters; an evolution resets that count.
 ## Player-effect fixture: a fully bought Behemoth in its own city with the escalation on loses
 ## more health to the army than with it off, so the clock is not the only thing that ends a run.
-## Player-effect fixture: a Colossus in the young city flattens it; in its own grown city the same
-## rampage does not (with the breath's 1.4 s wind-up it ends on the clock or is defeated), destroys
-## at least GROWTH_MARGIN (a share of the city) less, earns more and leaves city standing: growth on
-## vs off changes the city and the outcome. Seeded by design: army seed 1.
+## Player-effect fixture (D-436): a Colossus in the old young city (YOUNG_CITY) flattens it; in
+## the adult city every stage now runs, the same rampage at stage 1 does not (it ends on the clock
+## or is defeated), destroys at least GROWTH_MARGIN (a share of the city) less and leaves city
+## standing: one adult city on vs off changes the city and the outcome. Seeded: army seed 1.
 func _check_growth_matters() -> void:
-	var off := _play(Content.tuning(), _layout(1), COLOSSUS, FIXTURE_CLOCK)
-	var on := _play(_tuning(3), _layout(3), COLOSSUS)
+	var young := Content.tuning().duplicate(true)  # raw, no stage overlay: main's off run
+	var city: Dictionary = young["city"]
+	city.merge(YOUNG_CITY, true)
+	var off := _play(
+		young, CityGrowth.layout(young, 1, Seeds.make("city", 0)), COLOSSUS, FIXTURE_CLOCK
+	)
+	var on := _play(_tuning(1), _layout(1), COLOSSUS)
 	check(
 		Num.i(on["chunks"]) > Num.i(off["chunks"]) * 4,
 		(
-			"growth on: the Colossus's city is far bigger (%d vs %d chunks)"
+			"adult city on: stage 1's city is far bigger (%d vs %d chunks)"
 			% [on["chunks"], off["chunks"]]
 		)
 	)
 	check(
 		str(off["reason"]) == "city_fallen" and str(on["reason"]) != "city_fallen",
 		(
-			"growth off the Colossus flattens the city; on, it does not (%s vs %s)"
+			"adult city off, the Colossus flattens the young city; on, it does not (%s vs %s)"
 			% [off["reason"], on["reason"]]
 		)
 	)
 	check(
 		Num.f(off["destruction"]) >= Num.f(on["destruction"]) + GROWTH_MARGIN,
 		(
-			"growth off destroys at least %.0f points more of the city (%.0f%% vs %.0f%%)"
+			"adult city off destroys at least %.0f points more of the city (%.0f%% vs %.0f%%)"
 			% [
 				GROWTH_MARGIN * 100.0,
 				Num.f(off["destruction"]) * 100.0,

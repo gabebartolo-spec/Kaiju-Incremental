@@ -56,6 +56,9 @@ Same day, Carthago's 13 deg spokes now cross the adult city's outer streets unde
 city.diagonal_min_cross_deg (20) is left out and the blocks either side abut (CityLineFit.sharp_cells). Such a steep
 spoke drifts too slowly for the line fit (3.5 m per 15 m block), so its crossing of a street beside a grid junction
 is left out too (no "close" junctions). Roads suite on/off fixture: Carthago with 20 vs 0.
+11-02, Q: every outer stand-in now lies past the 200 m roof-gear reach, so the far skyline shows no rooftop
+tanks at any stage (as the Colossus skyline always did); raise the reach to 300 m or keep it? A: "Keep as Colossus".
+The far-tank tally check retires; the playable roofs keep D-352's mix (city_roof_tanks).
 
 ## 2026-11-01 · D-435 · Director · Each demo map has its own layout and emerge: Ostia beach, Carthago harbour, Thule fjord
 Overworld plan row C1. Tuning the grid per continent (two diagonals and a plaza for Carthago, longer blocks for Thule)

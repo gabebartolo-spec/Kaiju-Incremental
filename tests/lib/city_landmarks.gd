@@ -167,11 +167,10 @@ func _arcs() -> void:
 	)
 
 
-## Landmark sites (city.landmarks, fixed spots whose landmark rotates): on the shipping map the
-## east spot's landmark stands in the first city (past the edge, in the real band the camera
-## shows, CityBand: build 2 note 6) and both spots' at the Behemoth, each centred on its own
-## plaza of merged blocks: no street runs through a site, the landmark fits inside its kerbs,
-## and no other building touches it.
+## Landmark sites (city.landmarks, fixed spots whose landmark rotates): every spot's landmark
+## stands from stage 1 (D-436: one adult city at every stage), each centred on its own plaza of
+## merged blocks: no street runs through a site, the landmark fits inside its kerbs, and no
+## other building touches it.
 func _sites() -> void:
 	for tier: int in [1, 2]:
 		var base := Content.tuning()
@@ -202,12 +201,10 @@ func _sites() -> void:
 				if other != e and _footprint(other).intersects(foot):
 					touching += 1
 		ids.sort()
-		# Every landmark the spread placed (CitySpread, D-254) in the districts this stage's city
-		# holds: its own and the next (the real band past its edge).
+		# Every landmark the spread placed (CitySpread): all of them, at every stage (D-436).
 		var want: Array[String] = []
 		for site: Dictionary in plan["sites"]:
-			if Num.i(site["district"]) <= tier:
-				want.append(str(site["id"]))
+			want.append(str(site["id"]))
 		want.sort()
 		(
 			_check
