@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-452 · Director · Dusk grade copied from Shin Godzilla
+Reference: Shin Godzilla GKIDS trailer, frames A C D H I (director's pick; frames stay local). Base grade copies
+A/C/D, measured with grade.py: black 0.003-0.070, mid 0.17-0.38, white 0.52-0.84, sat ~0.20, warm olive
+highlights (h48-63), cool/green-grey shadows, hazy sky over a darker city. Concrete look: sky aaa688->c4bd9c /
+horizon d6cfae, ambient 0.8 colour 667a78, sun e2dcb4 at 1.2, fog 7e8274 at 0.005, saturation 0.7, agx_contrast
+1.7, post_contrast 1.0, new key exposure 1.2 (tonemap_exposure), sand aaa080. Game stills land black 0.06-0.16,
+mid 0.27-0.33, white 0.82-0.84, sat 0.18-0.19, highlights h46-49. H/I breath violet: no change (fx.bolt is
+already purple). Details: docs/research/shin_godzilla_grade.md.
+
 ## 2026-11-03 · D-449 · Director · The leap never vaults a tower above his shoulder
 Bug: the kaiju leapt onto the tops of extremely tall buildings. D-361 kept such roofs off the leap's target,
 but LeapArc raised the arc over every building on the flight path, so a tower between him and a low roof (or
@@ -386,13 +395,3 @@ parked and stopped ones (the decor's own car keeps the rest). All crushable. Tun
 His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
 the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
 check. Replaces D-384 (and the 10 s rise bar it carried from D-131).
-
-## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
-Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
-(`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest
-space so it rides the bones; seeded). Numbers in `data/looks.json` `kaiju_hide_*`; `kaiju_hide_on` is the on/off
-switch the onelook check flips. The look itself is his call on the stills before it lands.
-
-## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
-"Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
-rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
