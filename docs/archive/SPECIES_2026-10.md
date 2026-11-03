@@ -1,3 +1,5 @@
+> **ARCHIVED 2026-10, superseded.** Frozen October species list (the cephalopod was removed, D-438; DESIGN.md governs). The live doc is `docs/DESIGN.md`; nothing here is current.
+
 # Species identities
 
 Cap: 120 lines. Source: the director, 2026-10-16 (D-035). Each species plays differently, not just

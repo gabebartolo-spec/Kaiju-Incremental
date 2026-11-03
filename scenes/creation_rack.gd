@@ -29,6 +29,17 @@ static func titans(save: Dictionary) -> Array[Dictionary]:
 	return out
 
 
+## The titans the rack shows (director 2026-11-03, D-454): only those unlocked and playable
+## ("selectable": a species this build has in species.json and allows); the Komodo and serpent
+## stay hidden, vial and button, until both hold for them.
+static func shown(save: Dictionary) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for titan: Dictionary in titans(save):
+		if titan["selectable"] == true:
+			out.append(titan)
+	return out
+
+
 static func _exists(species: String) -> bool:
 	for def: Dictionary in Content.species():
 		if str(def["id"]) == species:

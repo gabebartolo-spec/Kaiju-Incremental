@@ -7,7 +7,7 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 1. **Measure walk cadence, then lengthen the stride instead of speeding up the legs.** The adult clip likely plays about 2.4x faster than it was authored. Cost: about 2 h to measure plus half a day to re-bake. (11-walk-animation.md)
 2. **Make sure the player can afford an upgrade after every rampage.** Use geometric costs in `data/` and a seeded sim test that checks the first hour. Cost: 1-2 days. (01-incremental.md)
 3. **Turn the body by stepping, not swivelling.** A planted foot steps once the body has twisted about 25-30 deg past where the foot was planted. Today's swivel looks like a plastic toy. Cost: about 40-60 lines in `gait_biped.gd`, no sim change. (14-turn-with-legs.md)
-4. **Stop tail and tentacle joints passing through walls.** Push them out of solid cells inside the existing chain passes, in presentation only. Cost: 0.5-1 day, no determinism risk. (13-body-collision.md)
+4. **Stop tail joints passing through walls.** Push them out of solid cells inside the existing chain passes, in presentation only. Cost: 0.5-1 day, no determinism risk. (13-body-collision.md)
 5. **Add one audio bus layout that ducks the bed under the roar and stomp.** Use a master limiter plus a Hero-to-Bed sidechain duck. Cost: about 1 h, no code. (08-soundscape.md)
 
 ## 01 Incremental loop (01-incremental.md)
@@ -50,7 +50,7 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 2. A pooled SFX manager with per-category voice caps from data. Hero voices are reserved, the quietest or farthest voice is stolen, and a 500-event test proves the caps hold. Cost: about 150-250 lines plus a test.
 3. The sim emits size-bucketed break events (energy against per-material thresholds), with one randomizer per bucket and a presentation-only RNG. Cost: one event field plus about 30 cleared samples.
 
-## 09 Tentacles (09-tentacles.md)
+## 09 Tentacles (archived: docs/archive/research_2026-10-21_09-tentacles.md; the cephalopod was removed, D-438)
 1. Step the existing Verlet chains at a fixed 1/60 s (at most 4 substeps a frame) and move their tunables into `data/`. Cost: about 15 lines.
 2. Make each reach a bend that travels from base to tip with an ease-in-out curve, pinning the tip only at the end. Cost: about 40-60 lines.
 3. The arm hauls back as a stiff three-segment jointed fetch while dragging a grabbed object. Cost: about 30 lines.
@@ -71,7 +71,7 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 3. Put a low sun or moon behind the kaiju, add fog sun scatter and aerial perspective, and raise normal bias rather than bias. Cost: data values only.
 
 ## 13 Body collision (13-body-collision.md)
-1. Push tail and tentacle joints out of solid cells (position-based dynamics), inside the existing constraint passes, in presentation only. Cost: 0.5-1 day.
+1. Push tail joints out of solid cells (position-based dynamics), inside the existing constraint passes, in presentation only. Cost: 0.5-1 day.
 2. Feet and grips rest on the height sampled under each foot instead of a flat plane, with a stretch cap. Cost: about half a day.
 3. The sim decides between blocking and carving with one rule (attack, dash or speed above a threshold; tail discs carve only on a fast turn). This is the director's call. Cost: about 1 day plus a seeded test and a sim-review packet.
 

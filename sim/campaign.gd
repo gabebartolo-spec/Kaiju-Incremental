@@ -18,6 +18,22 @@ const THREAT_CAP := 99.0
 const THREAT_FULL := 100.0
 
 
+## Whether LAUNCH starts this continent's real city (data "real_city", D-454: Ostia Minor,
+## Carthago, Thule); otherwise the stand-in WIN / LOSE mission.
+static func real_city(def: Dictionary) -> bool:
+	return def.get("real_city", false) == true
+
+
+## The run stats for a continent's real city (D-454): `stats` (UpgradeTree.run_stats) at the
+## continent's stage (stage index 0.. is size tier 1..; D-419) and naming the continent, so
+## CityGrowth.for_stats plays its own city (D-435). The input is left as it was.
+static func city_stats(stats: Dictionary, def: Dictionary) -> Dictionary:
+	var out := stats.duplicate(true)
+	out["size"] = Num.i(def["stage"]) + 1
+	out["continent"] = str(def["id"])
+	return out
+
+
 ## The save after a won mission (plan row G5): the continent joins conquered, the one bonus the
 ## player kept of its three is stored under its id (D-421), and Threat rises by its share, capped
 ## at THREAT_CAP, until the last conquest before the capital sets THREAT_FULL (D-422). The input

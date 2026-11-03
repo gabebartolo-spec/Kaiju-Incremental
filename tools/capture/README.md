@@ -24,10 +24,6 @@ captures the pushed branch, not your working tree.
 Local windowed runs only when the director is away; the focus-guard hook blocks windowed runs
 while a fullscreen app is in front. `bench_rampage.gd` is a performance bench and stays out of
 CI: software rendering says nothing about frame rate.
-
-`workflow_dispatch` only works for workflows that exist on the default branch, so
-`ci_capture.sh` works once `capture.yml` is on `main`. Until then a push to a `claude/**`
-branch that edits `capture.yml` runs the two example captures.
 ## Stills run on a fixed frame clock
 
 capture.yml passes a fixed fps to every run, stills included; give a local still capture the

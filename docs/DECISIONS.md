@@ -4,13 +4,30 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-11-03 · D-454 · Director · Bug bash: nine verified bugs fixed, behaviour as designed
+## 2026-11-03 · D-456 · Director · Bug bash: nine verified bugs fixed, behaviour as designed
 Under D-032 (fixes, no tuning). Endless regrow rebuilds a pool building in its model's shape and takes back only its
 start_chunks (rail and bridge pieces never regrow); a drop stopped on the kaiju no longer smashes the floors below; fled
 counts each person once (has_fled column); a startled civilian stands facing the kaiju on the startle frame (GDScript
 and KaijuWalk); F11 cannot be rebound away from fullscreen; GraphicsPresets.end_run lets menus read the row picked
 there; settings.cfg keeps -1 (tuning default) for SFX volume and camera motion; Damped's acceleration cap holds the
-position too (aim); blast bursts take the preset's particle cap. Each has its red-then-green test.
+position too (aim); blast bursts take the preset's particle cap. Each has its red-then-green test. city_sound: the run now ends at phase 0.83 (fled once each), so its floor is 0.8.
+
+## 2026-11-03 · D-455 · Director · One roadmap, rebuilt; stale docs bashed
+"stale and wrong; fix the cause; update the roadmap fully; clean up old docs." Cause: open rows lived in Claude Docs
+one account could not open, and done work was never marked. Rule: docs/ROADMAP.md is the only roadmap; add an item
+by PR the same day it is named, and mark it done in the PR that does it. Rebuilt ROADMAP.md from main at #561;
+archived lead-howto, DEMO_PLAYTEST, the tentacle research; archive banners; cephalopod, role and skill refs fixed.
+
+## 2026-11-03 · D-454 · Director · Globe LAUNCH starts the real city; unplayable titans hidden on the rack
+His rulings: (1) LAUNCH on the globe starts the real city where one exists, at the continent's stage: Ostia Minor
+today's beach, bay and river city, Carthago the cothon harbour, Thule the fjord (D-435 tuning). The other continents
+keep the stand-in WIN / LOSE mission. A real city's rampage over returns to the globe and resolves as the stand-in did
+(conquest on WIN, D-421, D-422). No rule yet says what wins a city (D-436: "Ostia's own win condition is to come"), so
+until he rules the city's end opens the stand-in's WIN / LOSE. (2) The Komodo and serpent stay hidden on the creation
+rack, vial and button, until their species are unlocked and playable (CreationRack "selectable": a species the build
+has in species.json and allows); the croc unchanged. Changes: continents.json real_city (Ostia Minor, Carthago, Thule);
+Campaign.real_city / city_stats (size = stage + 1, continent set); GlobeMissions starts a Rampage and hides the globe;
+CreationRack.shown. Tests: tests/run_globe_mission_tests.gd, tests/run_creation_tests.gd _check_rack_hides_unplayable.
 
 ## 2026-11-03 · D-453 · Director · Calmed civilians never walk back toward the kaiju
 Follows D-450 ("civilians sometimes flee toward the kaiju"). Remaining cause: a runner calmed past calm_radius (32 m)
@@ -381,20 +398,3 @@ wording, for the director.
 "Ship shadows off", after 1080p stills on vs off (bulldozer frames 1800 and 2600). Rubble heaps, strips and thrown
 chunks (RuinYard) stop casting shadows: data/tuning.json destruction.ruin_shadows = 0. Peak ruin: GPU p50 22.0 ->
 21.2 ms, shadow draws 2,442 -> 2,123 (docs/research/2026-10-31-cpu-profile.md).
-
-## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
-His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
-moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
-consent of 10-30 (D-400). Generated 10-31: trawler, tug, yacht, launch, 260 credits
-(provenance C:/Users/DANTE/cascadeur_bridge/city_boats/provenance.md). Spectacle only: nothing reaches the sim.
-
-## 2026-10-31 · D-403 · Director · Touched suites run locally; a PR runs lints and the sim suites; engine suites go to main
-"im sick of the CI purgatory". Three rulings. (1) Relaxes D-383: before a push, run the suites nearest the change
-locally, `python tools/run_touched.py` (walks back from each changed file to the first suites that reach it; `--all`
-for every suite that reaches it, `--engine` adds touched engine suites). (2) The suites are split: 21 that need the
-full engine (a scene, camera or capture; the `engine` line of tools/ci_timings.txt, picked by a .tscn, Camera3D,
-viewport or texture read in the runner or its tests/lib helpers) and the sim suites (the rest). (3) A pull request runs
-the lints, the compile preflight, the native build and the sim shards (heaviest ~322 s); the engine suites join the
-D-382 slow job on main, and the harness self-test and engine log smoke block `test` on main only. A new suite counts as
-sim until it is added to `engine`; moving one is a decision here. Changes: tools/ci_timings.txt,
-tools/plan_ci_shards.sh, tools/ci_retime.py, tools/run_touched.py, .github/workflows/tests.yml, CLAUDE.md.
