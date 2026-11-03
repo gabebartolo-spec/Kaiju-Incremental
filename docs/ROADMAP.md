@@ -66,8 +66,8 @@ Phases 1 to 4 are open. Next comes the landmark-spot notes.
 | 3 | Destruction: landmarks and bridges carve, varied collapse, stadium crowd | tank carving done (#537), rest open |
 | 4 | Random cities (city_seed, pool and spots, D-375) | moved into C1 Phases 1 to 4 |
 | 5 | Upgrade tree: rings, 2-3x the nodes, Ricochet/Domino, tail-lash nodes; bio lab screen (D-396) | open |
-| 6 | Render and performance: graphics preview in options | perf done (#530, #531); preview open |
-| 8 | CI | slow suites fixed; `counts` red |
+| 6 | Render and performance: graphics preview in options | perf done (#530, #531); graphics preview done (D-393) |
+| 8 | CI | slow suites fixed; `counts` green again (#545, D-446) |
 | 9 | Sound and music | open |
 | 10 | Demo shell: textures, preview, load art, end screen, feedback (Itch link, D-395) | end screen (demo_end.gd), feedback link (D-395), graphics preview with the menu cap lifted (D-393) and load stills (D-427) done; textures open |
 
