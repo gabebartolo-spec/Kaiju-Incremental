@@ -44,16 +44,16 @@ func _check_helicopters() -> void:
 	grown.time_left = 1.0e9  # the passes run longer than a short rampage
 	var swatted := false
 	for pass_n: int in PASSES:
-		# A swipe lands every 2 s, so each pass starts a little later in that rhythm (a pass is
-		# in the claw's band for about 1.6 s of it).
+		# A tail sweep lands every 2 s, so each pass starts a little later in that rhythm (a pass is
+		# in the tail's band for about 1.6 s of it).
 		_run(grown, 0.4 * pass_n, Vector2.ZERO)
 		grown.air.flight.start_pass(diver)
 		for _i: int in roundi(PASS_SECONDS / DT):
 			grown.hp = grown.max_hp  # the passes run on; the helicopters' fire is not measured
-			# He stands and turns to the diver, as a player swatting it does: a pass runs down his
-			# flank, so a turning walk met the claw's band only by where the city let him walk.
+			# He stands and turns his tail to the diver, as a player swatting it does: a pass runs down his
+			# flank, so a turning walk met the tail's band only by where the city let him walk.
 			if diver.pos.distance_to(grown.kaiju_pos) > 0.01:
-				grown.facing = (diver.pos - grown.kaiju_pos).normalized()
+				grown.facing = (grown.kaiju_pos - diver.pos).normalized()  # tail to it (D-459)
 			for event: Dictionary in grown.step(DT, Vector2.ZERO, false):
 				swatted = swatted or str(event["type"]) == "heli_destroyed"
 		if swatted:

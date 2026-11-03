@@ -3,7 +3,7 @@ extends RefCounted
 ## Military helicopters (D-037): once the kaiju has done enough damage they arrive and fire on
 ## it as stand-off gunships (D-183, AirFlight): they hold firing positions well beyond its
 ## reach, glide between them under their own speed and turn limits and pull back when it
-## advances; now and then one makes a strafing pass within claw reach. A kaiju reaches them
+## advances; now and then one makes a strafing pass within tail reach. A kaiju reaches them
 ## only when it stands tall enough (a grown body or a climbed roof) or with an attack that
 ## reaches the air (fire). They keep to the far side of the kaiju from the game camera
 ## (`camera_bearing`, clear of `clear_arc` either side of it), so a helicopter never hangs

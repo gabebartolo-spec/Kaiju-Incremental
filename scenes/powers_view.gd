@@ -5,7 +5,7 @@ extends Node3D
 ## events and state; decides nothing. Part of Rampage.
 ##
 ## Rig hooks (agreed with kaiju-motion, called only when the model has them):
-## tail_sweep(side[, "claw"]), jaw_open(open).
+## tail_sweep(side[, "tail_windup"]), jaw_open(open).
 
 const TRACER := Color("ffd27a")
 const COATS_SHOWN := 4
@@ -126,10 +126,8 @@ func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bo
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
 		"tail_windup":
 			_hook("tail_sweep", [Num.f(event["side"]), "tail_windup"])
-		"swipe_windup":
-			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
-		"swipe":
-			_swiped(event, kaiju_at)
+		"tail_auto":
+			_tail_auto(event, kaiju_at, bs)
 		"coated", "fire_burning":
 			_lit(event)
 		"heli_spawned":
@@ -146,16 +144,17 @@ func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bo
 	return true
 
 
-## A claw swipe crosses now: its arm's sweep, the slash, the lash sound, cars and people crushed.
-func _swiped(event: Dictionary, kaiju_at: Vector3) -> void:
-	var arc: Dictionary = {}
-	if _kaiju.has_method("tail_sweep"):  # the rake crosses now; its arm's sweep
-		arc = _kaiju.call("tail_sweep", Num.f(event["side"]), "claw")
-	ClawSlash.play(_city, kaiju_at, _w(sim.facing), event, arc)
+## The automatic tail sweep (D-459) lands now: the tail whips to its side, dust behind him, the
+## lash sound, cars and people crushed beside and behind him.
+func _tail_auto(event: Dictionary, kaiju_at: Vector3, bs: float) -> void:
+	var side := Num.f(event["side"])
+	var reach := Num.f(event["reach"])
+	_hook("tail_sweep", [side])
+	var behind := kaiju_at - _w(sim.facing) * reach * 0.5
+	_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
 	if sfx != null:
 		sfx.play("lash")
-	var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
-	_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
+	_city.crush(behind, reach * 0.5)  # cars, people
 
 
 func _coated(event: Dictionary) -> void:

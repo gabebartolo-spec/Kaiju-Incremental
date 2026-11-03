@@ -21,6 +21,7 @@ func run_checks() -> void:
 	await _t("_check_branches")
 	await _t("_check_tail")
 	await _t("_check_tail_touch")
+	await _t("_check_tail_sweep")
 	await _h("TailCity", func() -> void: TailCity.check(check))
 	await _h("TurnWeight", func() -> void: TurnWeight.check(check, _sim))
 	await _h("Bolt", func() -> void: Bolt.check(check))
@@ -77,6 +78,7 @@ func _check_tail() -> void:
 	]:
 		var levels: Dictionary = run["levels"]
 		var sim := _sim("reptilian", levels, [_b(0, 0, Vector3i(3, 3, 8))], Vector2(0, -3.5))
+		sim.stats["sweep_damage"] = 0.0  # the lash alone, without the auto sweep (D-459)
 		var seen := _run(sim, LASH_SECONDS, Vector2.ZERO, Num.i(run["press"]))
 		var cut := sim.powers.tail_cut
 		results.append(
@@ -100,7 +102,7 @@ func _check_tail() -> void:
 	check(
 		Num.i(results[2]["cut"]) > Num.i(results[1]["cut"]),
 		(
-			"Tail Sweep upgrades the lash: it cuts more (%d vs %d chunks)"
+			"Heavy Lash upgrades the lash: it cuts more (%d vs %d chunks)"
 			% [Num.i(results[2]["cut"]), Num.i(results[1]["cut"])]
 		)
 	)
@@ -144,6 +146,60 @@ func _check_tail_touch() -> void:
 	)
 
 
+## D-459: the automatic tail sweep (Swinging Tail's slot, was the claw rake) hits the buildings
+## beside and behind the standing croc and not the one ahead; off (sweep_damage 0) it hits none.
+## The sweep's damage also rides on the signature lash (lash_sweep_share).
+func _check_tail_sweep() -> void:
+	var out: Array[Dictionary] = []
+	for on: bool in [true, false]:
+		var layout: Array[Dictionary] = [
+			_b(0, 6, Vector3i(3, 3, 4)), _b(6, 0, Vector3i(3, 3, 4)), _b(0, -7, Vector3i(3, 3, 4))
+		]
+		var sim := _sim("reptilian", {"claws": 3}, layout, Vector2.ZERO)
+		if not on:
+			sim.stats["sweep_damage"] = 0.0
+		var seen := _run(sim, 6.0, Vector2.ZERO)
+		var row := {"sweeps": sim.powers.sweep.sweeps, "seen": seen}
+		row["behind"] = _alive(sim, 0)
+		row["beside"] = _alive(sim, 1)
+		row["ahead"] = _alive(sim, 2)
+		out.append(row)
+	var hit: Dictionary = out[0]
+	var miss: Dictionary = out[1]
+	var hit_seen: Dictionary = hit["seen"]
+	check(
+		Num.i(hit["sweeps"]) >= 2 and Num.i(hit_seen.get("tail_auto", 0)) >= 2,
+		"the tail sweeps on its own about every 2 s (%d sweeps in 6 s)" % Num.i(hit["sweeps"])
+	)
+	check(
+		(
+			Num.i(hit["behind"]) < Num.i(miss["behind"])
+			and Num.i(hit["beside"]) < Num.i(miss["beside"])
+		),
+		(
+			"the tail sweep breaks the buildings behind and beside him (%d/%d vs %d/%d standing off)"
+			% [hit["behind"], hit["beside"], miss["behind"], miss["beside"]]
+		)
+	)
+	check(
+		Num.i(hit["ahead"]) == Num.i(miss["ahead"]) and Num.i(miss["sweeps"]) == 0,
+		(
+			"the tail sweep leaves the building ahead (%d vs %d standing)"
+			% [hit["ahead"], miss["ahead"]]
+		)
+	)
+	var with := _sim("reptilian", {"claws": 3}, [], Vector2.ZERO)
+	var without := _sim("reptilian", {"claws": 3}, [], Vector2.ZERO)
+	without.stats["sweep_damage"] = 0.0
+	check(
+		with.powers.lash_damage() > without.powers.lash_damage(),
+		(
+			"the sweep's damage rides on the lash (%.1f vs %.1f)"
+			% [with.powers.lash_damage(), without.powers.lash_damage()]
+		)
+	)
+
+
 ## Momentum's node (D-337: the run is always on, the node a boost to it): charging down a
 ## straight street lined with blocks, the reptilian with it builds full momentum sooner and breaks
 ## more of the street; a U-turn bleeds momentum.
@@ -155,7 +211,7 @@ func _check_momentum() -> void:
 	for levels: Dictionary in [{"r_tail": 1}, {"r_tail": 1, "r_momentum": 3}]:
 		var sim := _sim("reptilian", levels, row, Vector2(0, 0))
 		sim.powers.use_species("reptilian")  # his run, as BodyContact.use_species picks it
-		sim.stats["swipe_damage"] = 0.0  # the claw swipe would break the whole row either way
+		sim.stats["sweep_damage"] = 0.0  # the tail sweep would break the whole row either way
 		var full_s := INF
 		for i: int in roundi(6.0 / DT):
 			sim.step(DT, EAST, false, 0)

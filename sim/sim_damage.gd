@@ -7,7 +7,7 @@ extends RefCounted
 ## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach) by
 ## damage x force(position, own radius), force 0..1; then lets the hit buildings settle. Units have
 ## no hit points (D-437): a blow that reaches a tank wrecks it, thrown (throw()) when `throws` (a
-## sideways hit: tail lash, claw swipe, explosion) or where it stands (a stomp, slam, crash, breath;
+## sideways hit: tail lash, tail sweep, explosion) or where it stands (a stomp, slam, crash, breath;
 ## director 2026-11-01: "a stomp shouldnt send it flying but a tail swipe? or a charge attack? yeah
 ## it should go flying"); roof squads, walking mechs and helicopters it reaches go down. hit_coat
 ## and hit_air widen what it does.

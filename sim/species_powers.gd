@@ -3,7 +3,8 @@ extends RefCounted
 ## The species branches of the upgrade tree as simulation (docs/SPECIES.md): each power is
 ## off until its node is bought (its stat is 0) and grows with every level. Part of
 ## RampageSim; split out to keep files small. Pure and seeded.
-##   Reptilian: the tail lash on the signature (D-280, D-328), Atomic Beam; momentum is always
+##   Reptilian: the tail lash on the signature (D-280, D-328), the automatic tail sweep (D-459),
+##   Atomic Beam; momentum is always
 ##   on (Momentum, D-337).
 ## Shared: buildings block the body (slow it) unless a power says otherwise, and coatings
 ## (beam fire) that eat chunks and units over time.
@@ -25,8 +26,8 @@ var beam_left := 0.0
 ## Coated chunks, worn each step (CoatWear).
 var coats := CoatWear.new()
 var tail_sweeps := 0
-## The reptilian's claw rake (Claws, D-095).
-var swipe: ClawSwipe
+## The reptilian's automatic tail sweep (D-459; it replaced the claw rake, D-095).
+var sweep: TailSweep
 ## Fire that spreads building to building once City Ablaze is owned (D-126).
 var fire: FireSpread
 ## Chunks broken by tail sweeps themselves (not what falls after).
@@ -43,7 +44,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	var run_cfg: Dictionary = cfg["momentum"]
 	run = Momentum.new(sim, run_cfg)
-	swipe = ClawSwipe.new(sim, cfg)
+	sweep = TailSweep.new(sim, cfg)
 	var fire_cfg: Dictionary = cfg["fire"]
 	fire = FireSpread.new(sim, fire_cfg, Seeds.derive(rng, 0xF12E))
 
@@ -128,7 +129,7 @@ func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 	run.build(dt, turn, moving)
 	sim.stand_y = _wade(dt)
 	_ram(dt)
-	swipe.step(dt)
+	sweep.step(dt)
 	if _lash_wait >= 0.0:
 		_lash_wait -= dt
 		if _lash_wait < 0.0:
@@ -155,7 +156,8 @@ func wind_lash() -> void:
 ## The tail lash (D-280): mid-stride, the tail whips through the half ring behind and beside
 ## the body (D-329: "Behind-and-around"), flattening the street and the floors up to the cut at
 ## full force (no falloff): what stands above the cut drops. The tail nodes upgrade it (D-328).
-## Lashes alternate sides so the whip reads left, then right.
+## Lashes alternate sides so the whip reads left, then right. D-459: the lash also carries the
+## removed claw rake's share, lash_sweep_share x the sweep_damage stat.
 func lash() -> void:
 	var side := 1.0 if tail_sweeps % 2 == 0 else -1.0
 	tail_sweeps += 1
@@ -175,12 +177,18 @@ func lash() -> void:
 			if to.length() > reach + r:
 				return 0.0
 			return 1.0 if to.length() <= r or ahead.dot(to.normalized()) <= arc else 0.0,
-		Num.f(cfg["lash_damage"]) + sim.stat("tail_damage"),
+		lash_damage(),
 		lo,
 		lo + floors,
 		true  # the lash throws tanks (D-437)
 	)
 	tail_cut += sim.chunks_destroyed - before
+
+
+## The lash's damage: its base, the tail nodes, and the rake's old share (D-459).
+func lash_damage() -> float:
+	var share := Num.f(cfg["lash_sweep_share"]) * sim.stat("sweep_damage")
+	return Num.f(cfg["lash_damage"]) + sim.stat("tail_damage") + share
 
 
 ## With the momentum node the reptilian rams what is in front of it and knocks tanks flying

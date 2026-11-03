@@ -33,8 +33,8 @@
               "stomp_damage": {"$ref": "#/$defs/num"},
               "stomp_radius": {"$ref": "#/$defs/num"},
               "stomp_interval": {"$ref": "#/$defs/num"},
-              "swipe_damage": {"$ref": "#/$defs/num"},
-              "swipe_width": {"$ref": "#/$defs/num"},
+              "sweep_damage": {"$ref": "#/$defs/num"},
+              "sweep_width": {"$ref": "#/$defs/num"},
               "ability_damage": {"$ref": "#/$defs/num"},
               "ability_cooldown": {"$ref": "#/$defs/num"},
               "ability_range": {"$ref": "#/$defs/num"}

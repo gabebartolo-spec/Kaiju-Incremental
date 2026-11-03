@@ -168,14 +168,11 @@ func _run() -> void:
 	quit()
 
 
-## The sim's claw rake to the model, as the rampage hands it on (PowersView.on_event): the windup
-## cue, then the rake.
+## The sim's tail sweep to the model, as the rampage hands it on (PowersView.on_event, D-459).
 func _cue(kaiju: KaijuModel, event: Dictionary) -> void:
 	match str(event["type"]):
-		"swipe_windup":
-			kaiju.tail_sweep(Num.f(event["side"]), "claw_windup")
-		"swipe":
-			kaiju.tail_sweep(Num.f(event["side"]), "claw")
+		"tail_auto":
+			kaiju.tail_sweep(Num.f(event["side"]))
 
 
 ## The drawn kaiju's height on screen (px): its ground point to its head.

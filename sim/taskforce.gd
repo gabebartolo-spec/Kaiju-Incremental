@@ -9,7 +9,7 @@ extends RefCounted
 ## and its shots land `railgun.squad_gap` seconds apart, so one dash saves the kaiju from the whole
 ## squad and a squad lands at most 2 hits in a second (D-166). It also launches frost grenades at
 ## the kaiju's feet (TaskforceFrost). An agent dies when the roof chunk it clings to goes (broken,
-## dropped or toppled) or when a claw swipe swats it out of the air mid-hop; each kill pays
+## dropped or toppled) or when a tail sweep swats it out of the air mid-hop; each kill pays
 ## biomass. In the adult city some agents are gas soldiers, who throw gas (TaskforceGas) in place
 ## of frost, walking mechs come up the roads (TaskforceMechs) and gunships fly
 ## (TaskforceGunships). Part of Army; pure and seeded
@@ -172,7 +172,7 @@ func place_agent(building: int, cell: Vector3i) -> Agent:
 	return agent
 
 
-## A claw swipe (its `force` over ground points, up to height `top`) swats every agent in the
+## A tail sweep (D-459; its `force` over ground points, up to height `top`) swats every agent in the
 ## air inside it: it spins off into the nearest wall and dies there.
 func swat(force: Callable, top: float) -> void:
 	var down: Array[Agent] = []

@@ -2,6 +2,16 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
+Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
+stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).
+Asked: change the take or the checks? "Change the checks": lift > 0.3 hip, toe and body within 0.03 hip, no
+variation bar (one take plays the same each time). Landing inside STOMP_WAIT and alternating feet stay.
+
+## 2026-10-31 · D-407 · Director · Colour-blind cues move to after the demo
+"push colour blind fixes to after demo". The check found #229's options carry no colour-blind setting; the threat
+meter (#234) already reads by segment count. The colour-blind pass is a post-demo roadmap row, not a demo gate.
+
 ## 2026-10-31 · D-406 · Director · The demo ships in English only; only English is checked
 His words (10-31): "remove the chinese test checks, we only going to ship the demo with English", then "remove checks
 for all languages other than english". strings.py checks only the en column (CHECKED); check_i18n.sh no longer runs

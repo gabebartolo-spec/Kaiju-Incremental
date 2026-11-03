@@ -5,4 +5,4 @@ extends RefCounted
 
 static func own_branch(texts: Array[String]) -> bool:
 	var beam := str(Content.tuning()["names"]["beam"])
-	return texts.has("Tail Sweep") and texts.has("ULTIMATE: %s" % beam) and not texts.has("Scuttle")
+	return texts.has("Heavy Lash") and texts.has("ULTIMATE: %s" % beam) and not texts.has("Scuttle")

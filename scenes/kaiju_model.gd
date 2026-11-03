@@ -175,14 +175,11 @@ func hip_height() -> float:
 
 
 ## Species-power hooks (no-ops on a body without the limb):
-## a fast tail whip to one side (-1 left, +1 right), or limb "claw_windup"/"claw": an arm's lift
-## and rake - the reptilian; a rake returns the arm's sweep (BipedSwing.claw_arc), else {}.
-func tail_sweep(side: float, limb: String = "tail") -> Dictionary:
+## a fast tail whip to one side (-1 left, +1 right), or its windup (limb "tail_windup") - the
+## reptilian's signature lash and automatic tail sweep (D-459).
+func tail_sweep(side: float, limb: String = "tail") -> void:
 	if _rig != null and _rig.gait is BipedGait:
-		var swing := (_rig.gait as BipedGait).swing
-		swing.strike(limb, side)
-		return swing.claw_arc(side) if limb == "claw" else {}
-	return {}
+		(_rig.gait as BipedGait).swing.strike(limb, side)
 
 
 ## The maw held open (the beam) or shut again - the reptilian.

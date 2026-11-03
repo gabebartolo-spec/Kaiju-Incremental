@@ -1,10 +1,10 @@
 extends "res://tests/lib/sim_suite.gd"
 ## How the helicopters fly (AirFlight, D-183 "Stand-off gunships", motion first D-177): at every
 ## growth step (young, Behemoth, Colossus) three helicopters fire on a kaiju that walks the city
-## for 120 s. Outside a strafing pass none comes within the claw band's reach; none jumps further
+## for 120 s. Outside a strafing pass none comes within the tail band's reach; none jumps further
 ## in a step than its top speed; none turns faster than its turn limit; none crosses to the
 ## camera's side; and a strafing pass does happen (one helicopter at a time), bringing its
-## helicopter into the claw band. Same seed, same flights. Player-effect fixture "heli.standoff":
+## helicopter into the tail band. Same seed, same flights. Player-effect fixture "heli.standoff":
 ## the same kaiju on the old orbit let helicopters dive to a fifth of a circle and turn right
 ## round at the ends of an arc. Headless.
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0 of its growth step.
@@ -158,16 +158,16 @@ func _check_flight(step: int) -> void:
 	var sim := _step_sim(step)
 	var air: Dictionary = Content.section("air")
 	var bs := sim.body_scale()
-	var far := Num.f(sim.powers_cfg["swipe_far"]) * bs
-	var claw := Vector2(far, sim.stat("swipe_width") * bs).length() + Num.f(air["heli_radius"])
+	var far := sim.powers.sweep.reach()  # the tail sweep's reach (D-459)
+	var band := far + Num.f(air["heli_radius"])
 	var ring := Num.f(air["standoff"]) * bs
 	var flew := _fly(sim, SECONDS)
 	var label := str(NAMES[step])
 	check(
-		Num.f(flew["hold"]) > claw,
+		Num.f(flew["hold"]) > band,
 		(
-			"%s: outside a pass none comes within the claw band (closest %.1f, claw %.1f, ring %.1f)"
-			% [label, Num.f(flew["hold"]), claw, ring]
+			"%s: outside a pass none comes within the tail band (closest %.1f, tail %.1f, ring %.1f)"
+			% [label, Num.f(flew["hold"]), band, ring]
 		)
 	)
 	var top := Num.f(air["heli_speed"])
@@ -226,7 +226,7 @@ func _check_flight(step: int) -> void:
 	check(
 		Num.f(flew["pass"]) <= far,
 		(
-			"%s: a pass brings its helicopter into the claw band (%.1f of %.1f)"
+			"%s: a pass brings its helicopter into the tail band (%.1f of %.1f)"
 			% [label, Num.f(flew["pass"]), far]
 		)
 	)

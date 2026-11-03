@@ -113,7 +113,7 @@ func _check_effect() -> void:
 	var runs: Array = []
 	for carve: bool in [true, false]:
 		var sim := _sim(layout, carve)
-		sim.stats["swipe_damage"] = 0.0  # stomps only: the claw rake (D-095) reaches past them
+		sim.stats["sweep_damage"] = 0.0  # stomps only: the tail sweep (D-459) reaches past them
 		runs.append([sim, _stand(sim, Vector2(2.6, 0.0), 60)])
 	var on: RampageSim = runs[0][0]
 	var off: RampageSim = runs[1][0]
