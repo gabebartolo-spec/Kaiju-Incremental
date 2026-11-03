@@ -266,13 +266,7 @@ func _land(s: Shard) -> void:
 
 ## The tallest standing building's height (floors) whose footprint holds `p`; 0 on open ground.
 func _top_at(p: Vector2) -> int:
-	var top := 0
-	for b: RampageSim.Building in sim.buildings:
-		if b.frame.alive_count == 0:
-			continue
-		if absf(p.x - b.x) <= b.w * 0.5 and absf(p.y - b.z) <= b.d * 0.5:
-			top = maxi(top, b.height + b.base)
-	return top
+	return AirWing.top_at(sim, p)
 
 
 ## The blast front moves on once the last shard is down (blast_at): everything between where it

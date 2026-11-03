@@ -138,6 +138,9 @@ func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bo
 			_heli_fired(Num.i(event["heli"]), kaiju_at)
 		"heli_destroyed", "heli_crashed":
 			_heli_down(event)
+		"gunship_destroyed":  # a Taskforce gunship falls as a helicopter does (D-458)
+			var paint: Array[Color] = [TaskforceView.OBSIDIAN]
+			_wreck().downed(TaskforceView.wreck_box(), event, paint)
 		_:
 			return false
 	return true

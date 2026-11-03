@@ -176,7 +176,17 @@ func _box(table: Dictionary, id: int, size: Vector3, material: Material) -> Mesh
 	return mesh
 
 
-func _plain(colour: Color) -> StandardMaterial3D:
+## A downed gunship's box for HeliWreck to carry down (the drawn one goes with the sim's ship).
+static func wreck_box() -> MeshInstance3D:
+	var mesh := MeshInstance3D.new()
+	var cube := BoxMesh.new()
+	cube.size = SHIP
+	cube.material = _plain(OBSIDIAN)
+	mesh.mesh = cube
+	return mesh
+
+
+static func _plain(colour: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = colour
 	return mat
