@@ -2,6 +2,22 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-403 · Director · Touched suites run locally; a PR runs lints and the sim suites; engine suites go to main
+"im sick of the CI purgatory". Three rulings. (1) Relaxes D-383: before a push, run the suites nearest the change
+locally, `python tools/run_touched.py` (walks back from each changed file to the first suites that reach it; `--all`
+for every suite that reaches it, `--engine` adds touched engine suites). (2) The suites are split: 21 that need the
+full engine (a scene, camera or capture; the `engine` line of tools/ci_timings.txt, picked by a .tscn, Camera3D,
+viewport or texture read in the runner or its tests/lib helpers) and the sim suites (the rest). (3) A pull request runs
+the lints, the compile preflight, the native build and the sim shards (heaviest ~322 s); the engine suites join the
+D-382 slow job on main, and the harness self-test and engine log smoke block `test` on main only. A new suite counts as
+sim until it is added to `engine`; moving one is a decision here. Changes: tools/ci_timings.txt,
+tools/plan_ci_shards.sh, tools/ci_retime.py, tools/run_touched.py, .github/workflows/tests.yml, CLAUDE.md.
+
+## 2026-10-30 · D-402 · Director · Grown railgun locks last longer, so the eased walk-off still dodges
+With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
+what gives: "Longer grown lock (Recommended)". `taskforce.railgun.lock_seconds_by_stage` 0.6 / 0.75 / 1.0 becomes
+0.6 / 1.0 / 1.3; the ease stays 1.3 s. The dodge test waits the stage's lock, not a fixed second.
+
 ## 2026-10-30 · D-401 · Director · The tail lash takes the signature button; the breath gets Q / pad X
 Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
 button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
