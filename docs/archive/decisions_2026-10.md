@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-399 · Director · The rise bar is removed
+His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
+the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
+check. Replaces D-384 (and the 10 s rise bar it carried from D-131).
+
 ## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
 Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
 (`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest

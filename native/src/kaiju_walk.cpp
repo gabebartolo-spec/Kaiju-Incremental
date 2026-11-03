@@ -117,6 +117,23 @@ Array KaijuWalk::step(const PackedVector2Array &p_pos, const PackedVector2Array 
 				fleeing_r = fleeing_w;
 			}
 			fleeing_w[i] = 0;
+		} else if (fleeing_r[i] == 1) {
+			// StreetSteps: a fleeing person whose corner lies toward the kaiju turns back.
+			ERR_FAIL_INDEX_V(to_r[i], node_count, Array());
+			const Vector2 ahead = node[to_r[i]];
+			if ((ahead.x - ax) * (kx - ax) + (ahead.y - ay) * (ky - ay) > 0.0f) {
+				if (from_w == nullptr) {
+					from_w = from.ptrw();
+					from_r = from_w;
+				}
+				if (to_w == nullptr) {
+					to_w = to.ptrw();
+					to_r = to_w;
+				}
+				const int32_t swap = from_w[i];
+				from_w[i] = to_w[i];
+				to_w[i] = swap;
+			}
 		}
 		const bool running = fleeing_r[i] == 1;
 		ERR_FAIL_INDEX_V(to_r[i], node_count, Array());

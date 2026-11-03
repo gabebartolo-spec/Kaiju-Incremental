@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-450 · Director · Fleeing civilians never step toward the kaiju
+Q: "civilians sometimes flee toward the kaiju; they must never do that." Causes: a runner's corner was checked only at
+the startle, so once the kaiju moved (or a wreck survivor spawned fleeing) it kept running at it; at a corner it took the
+linked corner furthest from the kaiju even when every one was nearer (a dead end sent it back past him). A: each frame a
+runner whose corner lies toward the kaiju turns back (one dot product, GDScript and KaijuWalk alike); at a corner it
+takes only a pavement whose first step leads away (a straight one then only gets further), else stands. tests/run_flee_tests.gd.
+
 ## 2026-11-03 · D-451 · Director · Closer read of the D-447 skips: three more identical trims
 Under D-032. Rain smears rewrite only slots that were visible last tick (the rest already hold the hidden
 values), and the lamp walk stops once lamp_max is reached. CarvePhysics reads live_bodies() once per tick, not
@@ -388,8 +395,3 @@ His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~1
 playable street, a traffic light at each lit crossing, the lamp model on every streetlight, Tripo cars among the
 parked and stopped ones (the decor's own car keeps the rest). All crushable. Tuning `city.street_props`. His
 1,500-credit Tripo consent (10-30) stays in reserve: this ships with 0 credits spent.
-
-## 2026-10-30 · D-399 · Director · The rise bar is removed
-His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
-the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
-check. Replaces D-384 (and the 10 s rise bar it carried from D-131).

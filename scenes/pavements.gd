@@ -124,22 +124,37 @@ func line_start(lot: int, corner: int) -> int:
 	return (lot % blocks) * 4 + corner
 
 
+## A fleeing walker's next corner from `here`: of the linked corners whose pavement leads away
+## from the kaiju from its first step (a straight line that starts away only gets further), the
+## furthest; the corner it came from counts too (a dead end turns it round). None leads away (the
+## kaiju is past every one): `here`, it stands until one does. Never a corner toward the kaiju.
+func flee_corner(here: int, kaiju: Vector2) -> int:
+	var at := nodes[here]
+	var away := at - kaiju
+	var best := here
+	var far := -1.0
+	for n: int in links[here]:
+		if (nodes[n] - at).dot(away) <= 0.0:
+			continue
+		var d := nodes[n].distance_squared_to(kaiju)
+		if d > far:
+			far = d
+			best = n
+	return best
+
+
 ## The corner a walker at `here` (come from `from`) heads for next: never straight back unless
-## it must; fleeing, the one furthest from the kaiju; else round its block or, by CROSS_CHANCE,
+## it must; fleeing, flee_corner; else round its block or, by CROSS_CHANCE,
 ## across the street (StreetLife's walkers; draws from rng in that order).
 func next_corner(here: int, from: int, kaiju: Vector2, fleeing: bool) -> int:
+	if fleeing:
+		return flee_corner(here, kaiju)
 	var options: Array[int] = []
 	for n: int in links[here]:
 		if n != from:
 			options.append(n)
 	if options.is_empty():
 		return from
-	if fleeing:  # the corner that takes it furthest from the kaiju
-		var best := options[0]
-		for n: int in options:
-			if nodes[n].distance_to(kaiju) > nodes[best].distance_to(kaiju):
-				best = n
-		return best
 	var lot := here >> 2
 	var crossings: Array[int] = []
 	var round_lot: Array[int] = []
