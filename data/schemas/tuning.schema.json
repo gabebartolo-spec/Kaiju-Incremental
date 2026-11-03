@@ -3896,9 +3896,10 @@
               "name": {"$ref": "#/$defs/str"},
               "species": {"$ref": "#/$defs/str"},
               "unlocked": {"$ref": "#/$defs/bool"},
+              "unlock_conquests": {"type": "integer", "minimum": 0},
               "genome": {"$ref": "#/$defs/str"}
             },
-            "required": ["id", "name", "species", "unlocked", "genome"],
+            "required": ["id", "name", "species", "unlocked", "unlock_conquests", "genome"],
             "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
             "additionalProperties": false
           }

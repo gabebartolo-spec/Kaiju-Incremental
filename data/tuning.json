@@ -1203,11 +1203,11 @@
 			"sign": "4fd1ff", "stair": "77736c"}
 	},
 	"creation": {
-		"_note": "D-207 Kaiju Creation, the new-game opening: a lab close-up on a petri dish and a rack of genomes; pick a genome, inject Special K (the kaiju juice, named by the director 2026-10-25), the kaiju genome takes over, the camera rushes into black with an egg crack, then the first run's river rise. titans: the rack in order; species is the species.json id a genome plays (\"\" = no titan to play yet); unlocked is the state a new player starts with, and a save's titans_unlocked list (save_key) unlocks more (the unlock rules are not decided, D-207). timing in seconds (ticks at 60 a second). Lab sizes in metres, one voxel size for the whole set; colours are PLACEHOLDERS for the VFX lead (juice: the kaiju's white-hot, pending R 17.6; behind the takeover's front the cells cool to the species' body colour, veins of them still burning). crack_sound names assets/sfx/<name>.ogg (made on ElevenLabs 2026-10-25 in the director's lab-sound list); with no file the cue is silent.",
+		"_note": "D-207 Kaiju Creation, the new-game opening: a lab close-up on a petri dish and a rack of genomes; pick a genome, inject Special K (the kaiju juice, named by the director 2026-10-25), the kaiju genome takes over, the camera rushes into black with an egg crack, then the first run's river rise. titans: the rack in order; species is the species.json id a genome plays (\"\" = no titan to play yet); unlocked is the state a new player starts with, and a save's titans_unlocked list (save_key) unlocks more; unlock_conquests is how many continents conquered add it to that list (D-423: Komodo after the first, serpent after the second; 0 = never by conquest). timing in seconds (ticks at 60 a second). Lab sizes in metres, one voxel size for the whole set; colours are PLACEHOLDERS for the VFX lead (juice: the kaiju's white-hot, pending R 17.6; behind the takeover's front the cells cool to the species' body colour, veins of them still burning). crack_sound names assets/sfx/<name>.ogg (made on ElevenLabs 2026-10-25 in the director's lab-sound list); with no file the cue is silent.",
 		"titans": [
-			{"id": "croc", "name": "CROC", "species": "reptilian", "unlocked": true, "genome": "6f8a3e"},
-			{"id": "komodo", "name": "KOMODO DRAGON", "species": "", "unlocked": false, "genome": "c46a1f"},
-			{"id": "serpent", "name": "SERPENT", "species": "", "unlocked": false, "genome": "2e9e8a"}
+			{"id": "croc", "name": "CROC", "species": "reptilian", "unlocked": true, "unlock_conquests": 0, "genome": "6f8a3e"},
+			{"id": "komodo", "name": "KOMODO DRAGON", "species": "", "unlocked": false, "unlock_conquests": 1, "genome": "c46a1f"},
+			{"id": "serpent", "name": "SERPENT", "species": "", "unlocked": false, "unlock_conquests": 2, "genome": "2e9e8a"}
 		],
 		"save_key": "titans_unlocked",
 		"timing": {"place_s": 4.2, "inject_s": 3.0, "takeover_s": 2.0, "zoom_s": 0.9, "black_s": 1.9},

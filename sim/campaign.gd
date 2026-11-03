@@ -37,7 +37,23 @@ static func conquer(save: Dictionary, def: Dictionary, bonus_id: String) -> Dict
 	var share: float = def["threat"]
 	threat = minf(threat + share, THREAT_CAP)
 	out["threat"] = THREAT_FULL if _capital_opens(conquered) else threat
+	_unlock_titans(out, conquered.size())
 	return out
+
+
+## D-423: species unlocks ride the path, not the map. Each titan whose unlock_conquests is reached
+## by this many conquests joins the save's titans_unlocked list (data/tuning.json "creation"),
+## whichever continents those were.
+static func _unlock_titans(save: Dictionary, count: int) -> void:
+	var cfg := Content.section("creation")
+	var key := str(cfg["save_key"])
+	var opened: Array = save.get(key, [])
+	for row: Dictionary in cfg["titans"]:
+		var need: int = row["unlock_conquests"]
+		var id := str(row["id"])
+		if need > 0 and count >= need and not opened.has(id):
+			opened.append(id)
+	save[key] = opened
 
 
 ## True once every continent but the capital has fallen (D-422).
