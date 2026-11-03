@@ -52,7 +52,7 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 - Leap: never vaults or lands on a tower above his shoulder (#549 D-449; #555 seeded-city regression).
 - Look: dusk grade copied from Shin Godzilla (#550, D-452); title night beach (#532, D-440, D-441); FFT ocean (D-428),
   ripple fade (#528); bay bridge gone (#527); load stills (D-427).
-- Taskforce: gunships in the adult city, up to 2, laser cannon (#556; D-143, D-145, D-152).
+- Taskforce: gunships in the adult city, up to 2, laser cannon (#556; D-143, D-145, D-152); with gas soldiers and mechs (#450) the full Taskforce is in.
 - Overworld: Komodo and serpent unlocks (#558, D-423); globe LAUNCH starts the real city (#561, D-454).
 - Cleanup: octopus and insectoid code removed (#535, D-438).
 - In review: bug bash, nine verified bugs fixed with tests (#560).
@@ -82,7 +82,7 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 - **M1: feel pass**
 - **M2: Taskforce agents**
 - **M3: demo complete**, which needs all of these:
-  - full Taskforce (gas soldiers, mechs and gunships in the adult city, #556; rest open)
+  - done: full Taskforce (gas soldiers and walking mechs #450, gunships #556; D-143, D-145, D-152)
   - textures
   - helicopter deaths
   - the overworld loop: globe, real mission, conquest
