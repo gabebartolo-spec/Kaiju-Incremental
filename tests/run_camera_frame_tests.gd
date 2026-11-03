@@ -163,6 +163,13 @@ func _check_damped() -> void:
 		jump = maxf(jump, absf(capped.velocity.x - last))
 		last = capped.velocity.x
 	check(jump <= 100.0 * FRAME + 0.0001, "a capped follower changes speed by %.3f a frame" % jump)
+	var held := Damped.new()  # the cap holds the position too: at 1 u/s/s it covers <= a t^2 / 2
+	for _i: int in 10:
+		held.step(Vector3(10, 0, 0), 1.0, 1.0, 0.1)
+	check(
+		held.value.x <= 0.5 + 0.0001,
+		"a capped follower moves %.3f in 1 s at 1 u/s/s" % held.value.x
+	)
 
 
 ## The camera bubble (CameraBubble; D-283, D-326, director 2026-10-27: "its the ones that the

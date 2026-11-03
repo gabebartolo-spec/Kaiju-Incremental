@@ -65,9 +65,24 @@ func frame(delta: float, kaiju: Vector2, now: PackedFloat64Array) -> void:
 	s.pinned_until = out[3]
 	s.from_node = from
 	s.to_node = to
-	s.fled += startled
+	_count_fled(s.pinned_until, startled, now)
 	for i: int in gone:  # last index first, as the loop removes them
 		s.remove(i)
+
+
+## Adds this frame's first-time fleers to fled (StreetSteps.startle): a person startled before is
+## not counted again. startled: the native count of startles (the scan runs only when any); one
+## startled now is pinned to clock + gawk (now). The native write may share the columns, so the
+## startle is read from the pin, not from a before/after compare.
+func _count_fled(pinned: PackedFloat64Array, startled: int, now: PackedFloat64Array) -> void:
+	if startled == 0:
+		return
+	var s := _s
+	var until := now[0] + now[3]
+	for i: int in pinned.size():
+		if pinned[i] == until and s.has_fled[i] == 0:
+			s.has_fled[i] = 1
+			s.fled += 1
 
 
 ## Each officer's step, last index first (Police moves them): pos and heading take theirs; returns

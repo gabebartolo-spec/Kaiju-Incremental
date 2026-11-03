@@ -28,6 +28,7 @@ func run_checks() -> void:
 	await _t("_check_people_bounds")
 	await _t("_check_walk_native")
 	await _t("_check_rubble_press")
+	await _t("_check_startle")
 
 
 ## The buffer checks run the native buckets (KaijuBuckets, item 7): without the library they skip,
@@ -319,3 +320,44 @@ func _check_rubble_press() -> void:
 		"rubble under a foot is pressed to 35%% of its height (%.2f)" % (buf[7] if whole else -1.0),
 	)
 	check(whole and is_equal_approx(buf[23], 1.0), "rubble out of reach is untouched")
+
+
+## A startled civilian spends the startle frame standing, facing the kaiju (the gawk), and fled
+## counts people: one who calms and is startled again is not counted twice. Both walk paths.
+func _check_startle() -> void:
+	for native: bool in [false, true]:
+		if native and not StreetDraw.available():
+			check(true, "skipped native startle: no native library")
+			continue
+		var replay := Replay.new(self, 1, "high", native)
+		var s := replay.street
+		s.cop[0] = 0
+		s.officers[0] = null
+		while s.pos.size() > 1:
+			s.remove(s.pos.size() - 1)
+		s._lod.far_every = 1
+		var at := s.pos[0]
+		var panic := StreetSteps.panic_radius(s)
+		var near := at + Vector2(panic * 0.5, 0.0)
+		var fled := s.fled
+		s.fleeing[0] = 0
+		s.pinned_until[0] = -1.0
+		StreetSteps.walk(s, Replay.DT, near)
+		var facing := s.heading[0].dot((near - at).normalized())
+		check(
+			s.pos[0] == at and facing > 0.999 and s.fleeing[0] == 1,
+			(
+				"native %s: startled, they stand facing the kaiju (moved %.3f, facing %.3f)"
+				% [native, s.pos[0].distance_to(at), facing]
+			)
+		)
+		s.pinned_until[0] = -1.0  # the gawk is over
+		StreetSteps.walk(s, Replay.DT, s.pos[0] + Vector2(panic * 3.0, 0.0))
+		var calmed := s.fleeing[0] == 0
+		s.pinned_until[0] = -1.0
+		StreetSteps.walk(s, Replay.DT, s.pos[0] + Vector2(panic * 0.5, 0.0))
+		check(
+			calmed and s.fleeing[0] == 1 and s.fled == fled + 1,
+			"native %s: startled twice, one person fled (fled +%d)" % [native, s.fled - fled]
+		)
+		replay.finish()

@@ -222,6 +222,7 @@ static func emit(
 	p.draw_pass_1 = mesh
 	if p.amount != maxi(1, amount):  # a changed amount re-allocates the system's buffer
 		p.amount = maxi(1, amount)
+	p.amount_ratio = GraphicsPresets.cap("particles")  # the preset's particle budget (R 18.3)
 	p.lifetime = life
 	p.one_shot = true
 	p.explosiveness = 1.0

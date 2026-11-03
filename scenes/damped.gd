@@ -25,8 +25,12 @@ func step(target: Vector3, smooth_s: float, max_accel: float, delta: float) -> V
 	var change := value - target
 	var temp := (velocity + change * omega) * delta
 	var next := (velocity - temp * omega) * decay
+	var next_value := target + (change + temp) * decay
 	if max_accel > 0.0:
-		next = velocity + (next - velocity).limit_length(max_accel * delta)
-	value = target + (change + temp) * decay
+		var capped := velocity + (next - velocity).limit_length(max_accel * delta)
+		if not capped.is_equal_approx(next):  # the cap binds: move by the capped velocity
+			next_value = value + (velocity + capped) * 0.5 * delta
+		next = capped
+	value = next_value
 	velocity = next
 	return value

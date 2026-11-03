@@ -277,7 +277,7 @@ func _land(f: RampageSim.Fall) -> void:
 			_crush_strip(start, finish, half_width, f.building)
 	else:
 		sim.events.append(event)
-		if scrap:
+		if scrap or f.contact != "":  # stopped on the kaiju's hide: the floors below take no blow
 			return
 		var hit: Array[Vector3i] = []
 		for c: Vector3i in f.cells:

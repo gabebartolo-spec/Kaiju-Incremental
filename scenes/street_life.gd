@@ -29,6 +29,7 @@ var pace := PackedFloat64Array()
 var from_node := PackedInt32Array()
 var to_node := PackedInt32Array()
 var fleeing := PackedByteArray()
+var has_fled := PackedByteArray()  # 1 once person i has fled (fled counts each person once)
 ## Standing still until this clock time: gawking at the kaiju a moment before running, or
 ## frozen under a falling tower (nobody outruns one).
 var pinned_until := PackedFloat64Array()
@@ -129,6 +130,7 @@ func add_person() -> int:
 	from_node.append(0)
 	to_node.append(0)
 	fleeing.append(0)
+	has_fled.append(0)
 	pinned_until.append(-1.0)
 	cop.append(0)
 	officers.append(null)
@@ -260,6 +262,7 @@ func remove(i: int) -> void:
 	from_node[i] = from_node[last]
 	to_node[i] = to_node[last]
 	fleeing[i] = fleeing[last]
+	has_fled[i] = has_fled[last]
 	pinned_until[i] = pinned_until[last]
 	cop[i] = cop[last]
 	officers[i] = officers[last]
@@ -272,6 +275,7 @@ func remove(i: int) -> void:
 	from_node.resize(last)
 	to_node.resize(last)
 	fleeing.resize(last)
+	has_fled.resize(last)
 	pinned_until.resize(last)
 	cop.resize(last)
 	officers.resize(last)

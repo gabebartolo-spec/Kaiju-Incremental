@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-402 · Director · Grown railgun locks last longer, so the eased walk-off still dodges
+With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
+what gives: "Longer grown lock (Recommended)". `taskforce.railgun.lock_seconds_by_stage` 0.6 / 0.75 / 1.0 becomes
+0.6 / 1.0 / 1.3; the ease stays 1.3 s. The dodge test waits the stage's lock, not a fixed second.
+
 ## 2026-10-30 · D-401 · Director · The tail lash takes the signature button; the breath gets Q / pad X
 Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
 button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E

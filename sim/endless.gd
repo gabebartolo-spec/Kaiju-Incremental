@@ -82,7 +82,7 @@ func regrow_step(sim: RampageSim, dt: float) -> void:
 ## nothing falling from it and the kaiju well clear.
 func regrowable(sim: RampageSim, i: int) -> bool:
 	var b := sim.buildings[i]
-	if b.landmark != "" or not b.in_arena or b.frame.alive_count > 0:
+	if b.landmark != "" or b.is_span() or not b.in_arena or b.frame.alive_count > 0:
 		return false
 	for f: RampageSim.Fall in sim.falls:
 		if f.building == i:
@@ -95,11 +95,14 @@ func regrowable(sim: RampageSim, i: int) -> bool:
 ## the "building_regrown" event.
 func regrow(sim: RampageSim, i: int) -> void:
 	var b := sim.buildings[i]
-	var full := b.w * b.d * b.height
 	b.frame = Structure.new(b.w, b.d, b.height, b.frame.max_hp)
+	if b.model != "":  # a pool building keeps only its model's chunks (Landmarks.building)
+		var row := ModelVariant.row_of(b.model)
+		if not row.is_empty():
+			b.frame.keep(ModelVariant.chunks(row, b.variant))
 	sim.carving.grids.erase(i)
 	sim.carving.promoter.forget(i)
-	sim.chunks_destroyed = maxi(0, sim.chunks_destroyed - full)
+	sim.chunks_destroyed = maxi(0, sim.chunks_destroyed - b.start_chunks)
 	sim.powers.fire.reset_building(i)
 	sim.collapse.forget_topple(i)
 	regrown += 1

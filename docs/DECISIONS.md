@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-454 · Director · Bug bash: nine verified bugs fixed, behaviour as designed
+Under D-032 (fixes, no tuning). Endless regrow rebuilds a pool building in its model's shape and takes back only its
+start_chunks (rail and bridge pieces never regrow); a drop stopped on the kaiju no longer smashes the floors below; fled
+counts each person once (has_fled column); a startled civilian stands facing the kaiju on the startle frame (GDScript
+and KaijuWalk); F11 cannot be rebound away from fullscreen; GraphicsPresets.end_run lets menus read the row picked
+there; settings.cfg keeps -1 (tuning default) for SFX volume and camera motion; Damped's acceleration cap holds the
+position too (aim); blast bursts take the preset's particle cap. Each has its red-then-green test.
+
 ## 2026-11-03 · D-453 · Director · Calmed civilians never walk back toward the kaiju
 Follows D-450 ("civilians sometimes flee toward the kaiju"). Remaining cause: a runner calmed past calm_radius (32 m)
 and its plain walk picked any corner at random, often back toward the kaiju, to re-panic at 25 m: it read as fleeing
@@ -390,8 +398,3 @@ the lints, the compile preflight, the native build and the sim shards (heaviest 
 D-382 slow job on main, and the harness self-test and engine log smoke block `test` on main only. A new suite counts as
 sim until it is added to `engine`; moving one is a decision here. Changes: tools/ci_timings.txt,
 tools/plan_ci_shards.sh, tools/ci_retime.py, tools/run_touched.py, .github/workflows/tests.yml, CLAUDE.md.
-
-## 2026-10-30 · D-402 · Director · Grown railgun locks last longer, so the eased walk-off still dodges
-With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
-what gives: "Longer grown lock (Recommended)". `taskforce.railgun.lock_seconds_by_stage` 0.6 / 0.75 / 1.0 becomes
-0.6 / 1.0 / 1.3; the ease stays 1.3 s. The dodge test waits the stage's lock, not a fixed second.

@@ -82,6 +82,7 @@ func _check_kaiju_topple() -> void:
 ## The tower's top floors dropping straight onto the kaiju standing in its footprint.
 func _check_kaiju_drop() -> void:
 	var results: Array[Dictionary] = []
+	var floor_hit: Array[bool] = []  # floor 10 (under the drop) took a blow
 	for contact: bool in [false, true]:
 		var sim := _contact_sim(contact, true, Vector2(0, 0))
 		var b := sim.buildings[0]
@@ -95,7 +96,9 @@ func _check_kaiju_drop() -> void:
 		f.drop = 11.0
 		f.pivot = b.local_to_world(Vector3(b.w * 0.5, 11, b.d * 0.5))
 		f.duration = sqrt(2.0 * f.drop / Num.f(sim.city["fall_gravity"]))
+		var before := _floor_hp(b, 10)
 		results.append(_follow(sim, f))
+		floor_hit.append(_floor_hp(b, 10) != before)
 		sim.dispose()
 	print(
 		(
@@ -106,6 +109,17 @@ func _check_kaiju_drop() -> void:
 	check(Num.f(results[0]["kaiju"]) > 0.5, "the drop fixture reaches the kaiju: %s" % results[0])
 	check(Num.f(results[1]["kaiju"]) <= TOLERANCE, "a drop never sinks into him: %s" % results[1])
 	check(str(results[1]["contact"]) == "kaiju", "a drop breaks up on him: %s" % results[1])
+	check(floor_hit[0], "a drop that lands smashes the floor under it")
+	check(not floor_hit[1], "a drop stopped on his hide leaves the floor under it whole")
+
+
+## Building b's chunk strengths on floor y.
+func _floor_hp(b: RampageSim.Building, y: int) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	for x: int in b.w:
+		for z: int in b.d:
+			out.append(b.frame.standing()[b.frame.index(Vector3i(x, y, z))])
+	return out
 
 
 ## A part breaking up on the kaiju: its fragments, thrown from where its chunks were (inside and

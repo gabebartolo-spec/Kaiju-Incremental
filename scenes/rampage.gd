@@ -139,6 +139,7 @@ func set_autoplay(on: bool) -> void:
 ## dropped sim is never freed; let go of them (RampageSim.dispose, D-179) or every rampage played
 ## keeps its city in memory for good. The children have left already, nothing reads the sim.
 func _exit_tree() -> void:
+	GraphicsPresets.end_run()
 	if _build != null:
 		_build.drop()
 	if sim != null:

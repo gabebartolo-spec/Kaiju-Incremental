@@ -111,6 +111,7 @@ Array KaijuWalk::step(const PackedVector2Array &p_pos, const PackedVector2Array 
 				from_w[i] = to_w[i];
 				to_w[i] = swap;
 			}
+			continue; // startled: this frame it stands facing the kaiju (gawk), no step
 		} else if (fleeing_r[i] == 1 && double(d) > calm) {
 			if (fleeing_w == nullptr) {
 				fleeing_w = fleeing.ptrw();
