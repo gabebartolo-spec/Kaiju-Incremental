@@ -68,6 +68,7 @@ func _until_crash(sim: RampageSim, id: int, seconds: float) -> Dictionary:
 	for i: int in roundi(seconds / DT):
 		sim.air.helis.clear()  # no other attacker fires, so only the crash could hurt him
 		sim.tanks.clear()
+		sim.army_units.squads.clear()
 		var hp := sim.hp
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
 			if str(event["type"]) == "heli_crashed" and Num.i(event["heli"]) == id:
