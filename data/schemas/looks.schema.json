@@ -250,6 +250,7 @@
           "finish_specular": {"$ref": "#/$defs/finish"},
           "agx_contrast": {"$ref": "#/$defs/num"},
           "post_contrast": {"$ref": "#/$defs/num"},
+          "exposure": {"$ref": "#/$defs/num"},
           "deband": {"$ref": "#/$defs/bool"},
           "water_foam": {"$ref": "#/$defs/hex6"}
         },

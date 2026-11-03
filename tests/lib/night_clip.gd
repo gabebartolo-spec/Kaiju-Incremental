@@ -11,7 +11,7 @@ extends RefCounted
 ## before.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
-const SHIPPED_AGX := 1.6
+const SHIPPED_AGX := 1.7
 const SHIPPED_POST := 1.0
 const OLD_AGX := 1.25
 const OLD_POST := 1.3

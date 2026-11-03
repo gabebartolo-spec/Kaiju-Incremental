@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-452 · Director · Dusk grade copied from Shin Godzilla
+Reference: Shin Godzilla GKIDS trailer, frames A C D H I (director's pick; frames stay local). Base grade copies
+A/C/D, measured with grade.py: black 0.003-0.070, mid 0.17-0.38, white 0.52-0.84, sat ~0.20, warm olive
+highlights (h48-63), cool/green-grey shadows, hazy sky over a darker city. Concrete look: sky aaa688->c4bd9c /
+horizon d6cfae, ambient 0.8 colour 667a78, sun e2dcb4 at 1.2, fog 7e8274 at 0.005, saturation 0.7, agx_contrast
+1.7, post_contrast 1.0, new key exposure 1.2 (tonemap_exposure), sand aaa080. Game stills land black 0.06-0.16,
+mid 0.27-0.33, white 0.82-0.84, sat 0.18-0.19, highlights h46-49. H/I breath violet: no change (fx.bolt is
+already purple). Details: docs/research/shin_godzilla_grade.md.
+
 ## 2026-11-03 · D-450 · Director · Fleeing civilians never step toward the kaiju
 Q: "civilians sometimes flee toward the kaiju; they must never do that." Causes: a runner's corner was checked only at
 the startle, so once the kaiju moved (or a wreck survivor spawned fleeing) it kept running at it; at a corner it took the
@@ -388,10 +397,3 @@ and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328
 for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
 procedural whip stands in until they land. Amended the same day: "Merge now" (the lash merges with the
 procedural whip; the clips follow).
-
-## 2026-10-30 · D-400 · Director · The 20 Tripo street props ship, at half the buildings' cube
-His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~19 cm)". Every prop is its baked
-`.kvox` (`tools/street_props/bake.sh`) at voxel 0.0625, half the buildings' 0.125: pavement furniture along every
-playable street, a traffic light at each lit crossing, the lamp model on every streetlight, Tripo cars among the
-parked and stopped ones (the decor's own car keeps the rest). All crushable. Tuning `city.street_props`. His
-1,500-credit Tripo consent (10-30) stays in reserve: this ships with 0 credits spent.
