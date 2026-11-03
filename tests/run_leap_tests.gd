@@ -148,7 +148,7 @@ func _check_aims_ahead() -> void:
 
 
 ## D-091: at a tower that dwarfs the young croc the leap comes down on the street before it, never
-## inside it; the landing's ring reaches its wall and, walking on into it, he chews it slowly.
+## inside it; the landing's ring reaches its wall and it is chewed, slowly.
 func _check_tower_wall() -> void:
 	var probe := _croc({}, [])
 	var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
@@ -178,11 +178,8 @@ func _check_tower_wall() -> void:
 		gap.length() < 2.0 * Num.f(ring.get("radius", 0.0)),
 		"the landing's ring reaches the tower's wall (%.1f from it)" % gap.length()
 	)
-	# D-459 dropped the rake's tower undermining (D-096) and a sweep's blow on a tower that dwarfs
-	# him is under one chunk's strength, so it is his body that chews the wall as he walks on (D-091)
-	var into := (Vector2(b.x, b.z) - sim.kaiju_pos).normalized()
 	for _n: int in roundi(3.0 / DT):
-		sim.step(DT, into, false, 0)
+		sim.step(DT, Vector2.ZERO, false, 0)  # standing at the wall: its stomps chew on (D-091)
 	var left := b.frame.alive_count
 	check(left < before, "the tower is chewed, slowly (%d of %d chunks left)" % [left, before])
 
