@@ -1341,6 +1341,7 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
+        "gunships": {"type": "object", "properties": {"max_by_tier": {"type": "array", "items": {"$ref": "#/$defs/num"}}}, "required": ["max_by_tier"], "patternProperties": {"^_": {"$ref": "#/$defs/str"}}, "additionalProperties": false},
         "mechs": {
           "type": "object",
           "properties": {
@@ -5651,6 +5652,7 @@
         "run_speed": {"$ref": "#/$defs/num"},
         "panic_radius": {"$ref": "#/$defs/num"},
         "calm_radius": {"$ref": "#/$defs/num"},
+        "wary_radius": {"$ref": "#/$defs/num"},
         "stomp_catch": {"$ref": "#/$defs/num"},
         "fall_spill": {"$ref": "#/$defs/num"},
         "panic_per_scale": {"$ref": "#/$defs/num"},
@@ -5675,7 +5677,7 @@
         "view_margin": {"$ref": "#/$defs/num"}
       },
       "required": [
-        "person_voxel", "walk_speed", "run_speed", "panic_radius", "calm_radius", "stomp_catch",
+        "person_voxel", "walk_speed", "run_speed", "panic_radius", "calm_radius", "wary_radius", "stomp_catch",
         "fall_spill", "panic_per_scale", "panic_gawk", "cars", "drive_speed", "flee_speed",
         "car_gap", "jam_wreck_s", "jam_queue_s", "rubble_press", "rubble_keep",
         "blockade_interval", "blockade_distance", "max_blockades", "cops_per_blockade",

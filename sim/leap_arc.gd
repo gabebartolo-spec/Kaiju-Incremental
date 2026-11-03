@@ -76,18 +76,25 @@ func wall(discs: Array, ends: PackedVector2Array, ahead: Vector2, numbers: Vecto
 	var tall := _tall_near(ends, numbers.x)
 	if tall.is_empty():
 		return -1
-	var skip := _overlaps(ends[0], ahead)
+	var skip := _overlaps(ends[0], ahead, tall)
+	var near := PackedInt32Array()
+	for i: int in tall:
+		if not skip.has(i):
+			near.append(i)
+	if near.is_empty():
+		return -1
 	var count := maxi(1, ceili(ends[0].distance_to(ends[1]) / maxf(numbers.y, 0.01)))
 	for n: int in range(1, count + 1):
 		var pose := ends[0].lerp(ends[1], float(n) / count)
 		for d: Array in _discs:
 			var c := pose + ahead * Num.f(d[0]) * s
-			for i: int in tall:
+			var r := Num.f(d[1]) * s
+			for i: int in near:
 				var b := _sim.buildings[i]
 				var gap := Vector2(
 					maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
 				)
-				if not skip.has(i) and gap.length() < Num.f(d[1]) * s:
+				if gap.length() < r:
 					return i
 	return -1
 
@@ -136,14 +143,16 @@ func _need(pose: Vector2, ahead: Vector2, skip: Dictionary) -> float:
 	return need
 
 
-## The standing buildings the discs overlap at `pose`: {index: true}.
-func _overlaps(pose: Vector2, ahead: Vector2) -> Dictionary:
+## The standing buildings the discs overlap at `pose`: {index: true}. Only those in `among`
+## when given (LeapArc.wall's tall candidates), else every building.
+func _overlaps(pose: Vector2, ahead: Vector2, among := PackedInt32Array()) -> Dictionary:
 	var s := _sim.body_scale()
 	var out := {}
+	var pool: Variant = among if not among.is_empty() else range(_sim.buildings.size())
 	for d: Array in _discs:
 		var c := pose + ahead * Num.f(d[0]) * s
 		var r := Num.f(d[1]) * s
-		for i: int in _sim.buildings.size():
+		for i: int in pool:
 			var b := _sim.buildings[i]
 			var gap := Vector2(
 				maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
