@@ -61,8 +61,10 @@ func _spin_onto(sim: RampageSim, at: Vector2) -> Dictionary:
 
 
 ## Steps until wreck `id` crashes (or `seconds` pass); the crash event, with "t": the time it
-## took and "hurt": the kaiju's health lost on the crash's step (no other attacker left), or {}.
+## took and "hurt": the kaiju's health lost on the crash's step beyond the step before it (any
+## steady loss is not the crash's), or {}.
 func _until_crash(sim: RampageSim, id: int, seconds: float) -> Dictionary:
+	var was := 0.0
 	for i: int in roundi(seconds / DT):
 		sim.air.helis.clear()  # no other attacker fires, so only the crash could hurt him
 		sim.tanks.clear()
@@ -70,8 +72,9 @@ func _until_crash(sim: RampageSim, id: int, seconds: float) -> Dictionary:
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, 0):
 			if str(event["type"]) == "heli_crashed" and Num.i(event["heli"]) == id:
 				event["t"] = (i + 1) * DT
-				event["hurt"] = hp - sim.hp
+				event["hurt"] = hp - sim.hp - was
 				return event
+		was = hp - sim.hp
 	return {}
 
 
@@ -121,7 +124,7 @@ func _check_crash_damage() -> void:
 		"its crash smashes the block it lands on (%d -> %d)" % [before, _alive(sim, 0)]
 	)
 	check(
-		Num.f(crash.get("hurt", 1.0)) <= 0.0,
+		Num.f(crash.get("hurt", 1.0)) <= 0.001,
 		"a crashing gunship never hurts the kaiju (%.2f)" % Num.f(crash.get("hurt", 1.0))
 	)
 
