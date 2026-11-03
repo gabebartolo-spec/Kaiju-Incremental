@@ -58,3 +58,9 @@ TBD: free, or pay-what-you-want with a minimum. His call.
 5. The hologram globe with Ostia Minor conquered and Carthago / Thule offered.
 6. GIF (6-8 s): a landmark falling in slow motion.
 Plus: the evolution tree screen, and a cover image (630x500) still TBD.
+
+## Director answers (2026-11-03)
+
+- Name on the page: Kaiju Evolution.
+- Visibility: a private page for now. No price is set yet.
+- Icon: draft one from the croc for the director's review. The exe keeps Godot's icon until it's approved.
