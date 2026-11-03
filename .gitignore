@@ -6,6 +6,7 @@ vault/
 .env
 __pycache__/
 out/
+dist/
 review/
 
 # Claude Code worktrees and local settings
