@@ -38,6 +38,7 @@ var rig_origin := Vector3.ZERO
 var _clips: Dictionary = {}  # name -> Vector3i(first frame, frames, loops 0/1)
 var _cycles: Dictionary = {}  # name -> walk cycles the clip holds (1 unless the file says)
 var _jaw_peaks: Dictionary = {}  # name -> frame with the jaw at its widest, when the file says
+var _strides: Dictionary = {}  # name -> a looping cycle's own travel (m; the charge), if given
 var _no_slam: Dictionary = {}  # clips keyed without a tail slam ("tail_slam": false)
 var _layers: Dictionary = {}  # layer clip name -> Vector3(hit frame, trail first, trail last)
 var _rest_heads: Array[Vector3] = []
@@ -88,6 +89,8 @@ func _load(header: Dictionary, raw: PackedByteArray, data_at: int) -> bool:
 		_clips[str(c["name"])] = Vector3i(first, frames, 1 if c.get("loop", false) else 0)
 		var cycles: float = c.get("cycles", 1.0)
 		_cycles[str(c["name"])] = maxi(1, roundi(cycles))
+		if c.has("stride_m"):
+			_strides[str(c["name"])] = Num.f(c["stride_m"])
 		if c.has("jaw_peak"):
 			_jaw_peaks[str(c["name"])] = Num.f(c["jaw_peak"])
 		if not c.get("tail_slam", true):
@@ -118,6 +121,11 @@ func frames_of(clip: String) -> int:
 
 
 ## Walk cycles (strides) the clip holds: its frames per stride is frames_of / cycles_of.
+## A looping cycle's own travel (m) when the file says (the charge), else the walk's stride_m.
+func stride_of(clip: String) -> float:
+	return Num.f(_strides.get(clip, stride_m))
+
+
 func cycles_of(clip: String) -> int:
 	return _cycles.get(clip, 1)
 

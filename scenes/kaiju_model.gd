@@ -99,6 +99,13 @@ func follow_steps(step_phase: float, step_ratio: float, run_blend := 0.0, slams 
 			(_rig.gait as ClipGait).run(run_blend, slams)
 
 
+## Whether the titan has the momentum to crash through (Momentum.crashing): his run lowers into the
+## keyed head-down charge (ClipTakes). Call before animate().
+func charge(charging: bool) -> void:
+	if _rig != null and _rig.gait is ClipGait:
+		(_rig.gait as ClipGait).takes.charging = charging
+
+
 ## moving: 0..1 how hard it walks; turn_ahead: yaw (rad) still to turn, the head leads by it.
 func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)

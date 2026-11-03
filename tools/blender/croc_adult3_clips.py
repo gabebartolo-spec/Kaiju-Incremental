@@ -9,7 +9,8 @@ started at 30 fps (header from the rig); an existing one keeps its fps (the Blen
 it (turns slerped, points blended between the two nearest keyed frames), and a clip of the same name is replaced. Modes:
 - still: in place as keyed (idle, roar, death, the rise from the bay); loops when <name> is "idle".
 - walk: one looping cycle; the root travels the cycle's pelvis travel at an even pace and is taken out, so the clip walks
-  in place and the game's step clock moves the body (header stride_m = that travel).
+  in place and the game's step clock moves the body (header stride_m = that travel, set by the clip named
+  walk only; another cycle such as the charge plays on the walk's step clock).
 - turn: a turn on the spot; the root yaw is the pelvis heading (stored per frame, the game turns the body by it) and is
   taken out of the pose. The mirrored turn is appended too (turn_left <-> turn_right).
 - layer: in place as keyed, played over the other clips on the arms and torso (ClipRake: the claw rake, D-185); its
@@ -420,13 +421,15 @@ for name, recs in clips:
         jaw = GAME_BONES.index("jaw")
         entry["jaw_peak"] = max(range(M), key=lambda k: min(recs[k][0][jaw].angle, 2 * math.pi - recs[k][0][jaw].angle))
         entry["tail_slam"] = False
+    if MODE == "walk" and NAME != "walk":  # its own travel: the game fits its feet to the walk's stride
+        entry["stride_m"] = round(travel.length / cycles, 4)
     if MODE == "layer":
         entry["layer"] = True
         entry["hit"] = round(MARKS[0] / STEP, 2)
         entry["trail"] = [round(MARKS[1] / STEP, 2), round(MARKS[2] / STEP, 2)]
     header["clips"].append(entry)
     body += pack(recs)
-if MODE == "walk":
+if MODE == "walk" and NAME == "walk":  # another cycle (the charge) keeps the walk's stride
     header["stride_m"] = round(travel.length / cycles, 4)
 if MODE == "move":
     travel = frames[-1][5]
