@@ -152,9 +152,10 @@ func _split(key: int, parts: Array[Dictionary], parent: IslandBody) -> void:
 func _physics_process(delta: float) -> void:
 	_clock += delta
 	IslandMesh.reap(false)  # remeshes of islands already gone
-	var over := live_bodies() - int(GraphicsPresets.cap("debris_live"))
+	var live_n := live_bodies()
+	var over := live_n - int(GraphicsPresets.cap("debris_live"))
 	if over > 0:
-		var live := maxi(1, live_bodies())
+		var live := maxi(1, live_n)
 		for key: int in _debris:
 			var d: CarveDebris = _debris[key]
 			d.retire(ceili(float(over) * d.live() / live))

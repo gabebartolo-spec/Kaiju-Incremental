@@ -2,6 +2,16 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
+Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
+(`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest
+space so it rides the bones; seeded). Numbers in `data/looks.json` `kaiju_hide_*`; `kaiju_hide_on` is the on/off
+switch the onelook check flips. The look itself is his call on the stills before it lands.
+
+## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
+"Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
+rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
+
 ## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
 Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
 changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,
