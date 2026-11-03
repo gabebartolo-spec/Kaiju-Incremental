@@ -11,16 +11,19 @@ extends Node
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const GLOBE := preload("res://scenes/globe_view.tscn")
 
-const PANEL_ID := "ostia_minor"
-const WANT_SIZE := Vector2i(1920, 1080)  # D-339: judged at 1080p
-const WARMUP_S := 1.0
+const WANT_SIZE := Vector2i(1920, 1080)  # D-339: 1080p is the baseline the readout is judged at
+const WARMUP_S := 1.0  # seconds for the globe to settle before the first still
 
 var _globe: GlobeView
 var _missions: GlobeMissions
 var _fails: Array[String] = []
+## The first continent in the globe's sequence (its panel is the one shown).
+var _panel_id := ""
 
 
 func _ready() -> void:
+	TranslationServer.set_locale("en")  # the expected strings are English
+	_panel_id = str(Content.continents()[0]["id"])
 	_globe = GLOBE.instantiate()
 	add_child(_globe)
 	for child: Node in _globe.get_children():
@@ -44,9 +47,9 @@ func _run() -> void:
 		if not def.get("capital", false):
 			outside.append(str(def["id"]))
 	var shows: Array[Dictionary] = []
-	for wins: Array in [[], [PANEL_ID], outside.slice(0, outside.size() - 1), outside]:
+	for wins: Array in [[], [_panel_id], outside.slice(0, outside.size() - 1), outside]:
 		shows.append(await _show(out, wins))
-	_missions.panel.show_for(Content.continent(PANEL_ID))
+	_missions.panel.show_for(Content.continent(_panel_id))
 	await _still(out.path_join("threat_panel.png"))
 	var box := _missions.threat_label.get_global_rect()
 	var card := _missions.panel.get_global_rect()
@@ -71,7 +74,7 @@ func _show(out: String, wins: Array) -> Dictionary:
 	for id: String in wins:
 		save = Campaign.conquer(save, Content.continent(id), "")
 	_missions.use_save(save)
-	var value := roundi(Num.f(save["threat"]))
+	var value := floori(Num.f(save["threat"]))
 	var label := _missions.threat_label
 	var want := tr("Threat %d%%") % value
 	await _still(out.path_join("threat_%d.png" % value))

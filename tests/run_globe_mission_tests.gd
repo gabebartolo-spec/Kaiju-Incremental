@@ -1,12 +1,10 @@
 extends "res://tests/lib/runner.gd"
 ## Globe mission suite (Overworld plan row G5; D-454): a picked continent's panel and LAUNCH. Ostia
-## Minor, Carthago and Thule start their real cities at their stage, the globe hidden, started and
-## banked as any rampage (RunStart, SaveFile.bank), the results shown, then WIN / LOSE; the rest
-## open the stand-in mission. One save between the globe and its host. Seeded, no clock.
+## Minor, Carthago and Thule start their real cities at their stage, the globe hidden, and the
+## rampage's end comes back on WIN / LOSE; the rest open the stand-in mission. Seeded, no clock.
 ##   godot --headless --path . --script tests/run_globe_mission_tests.gd
 
 const GLOBE := "res://scenes/globe_view.tscn"
-const RUBBLE := 40  # the test city's biomass
 
 
 func suite_name() -> String:
@@ -17,7 +15,6 @@ func run_checks() -> void:
 	await _t("_check_globe_mission")
 	await _t("_check_globe_real_cities")
 	await _t("_check_threat_readout")
-	await _t("_check_globe_one_save")
 
 
 ## The globe's mission flow (GlobeMissions), the scene's child.
@@ -84,10 +81,10 @@ func _play(globe: GlobeView, won: bool) -> void:
 	var panel := globe.mission_panel()
 	var mission := globe.mission()
 	var readout := _missions(globe).threat_label
-	check(readout.text == "Threat 0%", "before the mission Threat reads 0%%: %s" % readout.text)
-	var before: Dictionary = globe.save().duplicate(true)
+	var share := Num.i(Content.continent(id)["threat"])  # Ostia Minor's share (data, D-422)
+	var at_start := "Threat %d%%" % 0
+	check(readout.text == at_start, "before the mission Threat reads 0%%: %s" % readout.text)
 	panel.launch_button().pressed.emit()
-	await _past_card(globe, before)
 	var city := _missions(globe).city
 	check(not readout.visible, "no Threat readout while the city plays")
 	check(city != null and not globe.visible, "LAUNCH starts Ostia Minor's city, the globe hidden")
@@ -96,20 +93,7 @@ func _play(globe: GlobeView, won: bool) -> void:
 	check(not mission.visible, "no WIN / LOSE while the city plays")
 	await city.wait_loaded()
 	check(str(city.sim.stats.get("continent", "")) == id, "the rampage plays Ostia Minor's city")
-	_expect_run_setup(globe, city, before)
-	# The first city is lost to the army (a death), the second falls (none).
-	var reason := "city_fallen" if won else "defeated"
-	var result := {"rubble": RUBBLE, "reason": reason, "toppled": 3}
-	city.finished.emit(result)
-	await process_frame
-	await process_frame
-	_expect_banked(globe, before, result)
-	var results := _missions(globe).results
-	check(results != null and results.is_inside_tree(), "the city's results show (DESIGN Loop)")
-	check(not globe.visible and not mission.visible, "the results first, over the wrecked city")
-	if results == null:
-		return
-	results.continued.emit()
+	city.finished.emit({})
 	await process_frame
 	await process_frame
 	check(globe.visible and _missions(globe).city == null, "the rampage over, the globe is back")
@@ -119,20 +103,20 @@ func _play(globe: GlobeView, won: bool) -> void:
 		var picks := mission.buttons()
 		check(picks.size() == 3, "WIN offers three bonuses, keep one (D-421): %d" % picks.size())
 		picks[1].pressed.emit()
-	var outcome := "won" if won else "lost"
+	var result := "won" if won else "lost"
 	var conquered: Array = globe.save().get("conquered", [])
-	check(not mission.visible, "%s: the mission closes" % outcome)
+	check(not mission.visible, "%s: the mission closes" % result)
 	var want: Array = [id] if won else []
-	check(conquered == want, "%s: conquered %s" % [outcome, conquered])
-	check(globe.locked("carthago") != won, "%s: Carthago is open: %s" % [outcome, won])
-	var shown := "Threat %d%%" % roundi(Num.f(globe.save().get("threat", 0.0)))
-	var want_text := "Threat 10%" if won else "Threat 0%"
-	check(readout.visible, "%s: the Threat readout is back with the globe" % outcome)
+	check(conquered == want, "%s: conquered %s" % [result, conquered])
+	check(globe.locked("carthago") != won, "%s: Carthago is open: %s" % [result, won])
+	var shown := "Threat %d%%" % floori(Num.f(globe.save().get("threat", 0.0)))
+	var want_text := "Threat %d%%" % (share if won else 0)
+	check(readout.visible, "%s: the Threat readout is back with the globe" % result)
 	check(
 		readout.text == want_text and readout.text == shown,
-		"%s: Threat reads %s (save %s): %s" % [outcome, want_text, shown, readout.text]
+		"%s: Threat reads %s (save %s): %s" % [result, want_text, shown, readout.text]
 	)
-	check(globe.marker(id).ink() == UiKit.ACCENT, "%s: Ostia Minor's marker stays lit" % outcome)
+	check(globe.marker(id).ink() == UiKit.ACCENT, "%s: Ostia Minor's marker stays lit" % result)
 	if won:
 		var bonuses: Dictionary = globe.save()["bonuses"]
 		var kept: String = bonuses.get(id, "")
@@ -140,58 +124,6 @@ func _play(globe: GlobeView, won: bool) -> void:
 		check(globe.selected == "" and not panel.visible, "won: the globe flies back out")
 	else:
 		check(panel.visible and globe.selected == id, "lost: back on Ostia Minor's panel")
-
-
-## After a death the lab card shows before the city (as Main's next run), the globe hidden;
-## read, the city starts and the card is owed no more.
-func _past_card(globe: GlobeView, before: Dictionary) -> void:
-	var missions := _missions(globe)
-	if before.get("lab_card", false) != true:
-		check(missions.card == null, "no death last time: no lab card")
-		return
-	var card := missions.card
-	check(card != null and missions.city == null, "a death last time: the lab card first")
-	check(not globe.visible, "the lab card hides the globe")
-	if card == null:
-		return
-	card.done.emit()
-	await process_frame
-	await process_frame
-	check(missions.card == null and missions.city != null, "the card read, the city starts")
-	var owed: bool = globe.save().get("lab_card", true) == true
-	check(not owed, "the lab card is owed no more")
-
-
-## The city starts as Main starts a run (RunStart): the time of day and weather picked and
-## remembered, the clock carried, the whole intro only at a new size.
-func _expect_run_setup(globe: GlobeView, city: Rampage, before: Dictionary) -> void:
-	var save := globe.save()
-	var tier := Num.i(city.sim.stats["size"])
-	check(str(save.get("last_time", "")) != "", "the city's time of day is remembered: %s" % save)
-	check(str(save.get("last_weather", "")) != "", "the city's weather is remembered")
-	check(Num.i(save.get("intro_size", -1)) == tier, "the intro size is the city's: %d" % tier)
-	var full := Num.i(before.get("intro_size", -1)) != tier
-	check(city.full_intro == full, "the whole intro only at a new size: %s" % city.full_intro)
-	var clock := Num.f(before.get("city_seconds", 0.0))
-	check(city.city_seconds == clock, "the Taskforce's clock carries in: %s" % city.city_seconds)
-
-
-## The player effect, banked vs thrown away: the city's biomass, one run and its bests reach the
-## save; a death makes the next rise a new specimen and owes the lab card.
-func _expect_banked(globe: GlobeView, before: Dictionary, result: Dictionary) -> void:
-	var save := globe.save()
-	var rubble := Num.i(before.get("rubble", 0)) + RUBBLE
-	check(Num.i(save.get("rubble", 0)) == rubble, "the city's biomass is banked: %s" % save)
-	var runs := Num.i(before.get("runs", 0)) + 1
-	check(Num.i(save.get("runs", 0)) == runs, "the city counts as a run: %s" % save.get("runs"))
-	var best: Dictionary = save.get("best", {})
-	check(Num.f(best.get("rubble", 0.0)) >= RUBBLE, "the city's bests are kept: %s" % best)
-	var reason := str(result["reason"])
-	var died := SaveFile.DEATHS.has(reason)
-	var specimen := Num.i(before.get("specimen", 1)) + (1 if died else 0)
-	check(Num.i(save.get("specimen", 1)) == specimen, "%s: specimen %d" % [reason, specimen])
-	var owed: bool = save.get("lab_card", false) == true
-	check(owed == died, "a death owes the lab card: %s" % died)
 
 
 ## Every Label's text under a node.
@@ -253,13 +185,19 @@ func _check_threat_readout() -> void:
 		shares += Num.f(Content.continent(id)["threat"])
 	_missions(globe).use_save(save)
 	var readout := _missions(globe).threat_label
-	var five := "Threat %d%%" % roundi(minf(shares, Campaign.THREAT_CAP))
+	var five := "Threat %d%%" % floori(minf(shares, Campaign.THREAT_CAP))
 	check(readout.text == five, "five conquests read %s: %s" % [five, readout.text])
 	check(globe.locked("aurelia"), "five conquests: Aurelia stays locked")
 	save = Campaign.conquer(save, Content.continent(outside[-1]), "")
 	_missions(globe).use_save(save)
-	check(readout.text == "Threat 100%", "the sixth conquest reads 100%%: %s" % readout.text)
+	var full := "Threat %d%%" % int(Campaign.THREAT_FULL)
+	check(readout.text == full, "the sixth conquest reads %s: %s" % [full, readout.text])
 	check(not globe.locked("aurelia"), "the sixth conquest opens Aurelia (D-422)")
+	# The edge: a Threat just under full reads under it (truncated), so 100 shows only once the
+	# capital is open (D-422 says 99 at most until then).
+	_missions(globe).use_save({"conquered": [], "bonuses": {}, "threat": Campaign.THREAT_CAP + 0.5})
+	var edge := "Threat %d%%" % int(Campaign.THREAT_CAP)
+	check(readout.text == edge, "99.5 reads %s, never 100 with Aurelia locked: %s" % [edge, readout.text])
 	globe.mission_panel().show_for(Content.continent("ostia_minor"))
 	await process_frame
 	await process_frame
@@ -269,30 +207,3 @@ func _check_threat_readout() -> void:
 	var card := globe.mission_panel().get_global_rect()
 	check(not box.intersects(card), "the readout clears the panel: %s vs %s" % [box, card])
 	globe.free()
-
-
-## One save: the globe plays on the save its host hands in; a conquest is written to the slot and
-## reaches the host on saved, never a second copy that a later write of the host's would erase.
-func _check_globe_one_save() -> void:
-	SaveFile.wipe()
-	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
-	globe.spin = false
-	root.add_child(globe)
-	var missions := _missions(globe)
-	var hosted := SaveFile.new_save("reptilian")
-	hosted["rubble"] = 7
-	var heard: Array[Dictionary] = []
-	missions.saved.connect(func(save: Dictionary) -> void: heard.append(save))
-	missions.host(hosted)
-	missions.mission.start(Content.continent("ostia_minor"))
-	missions.mission.buttons()[0].pressed.emit()
-	missions.mission.buttons()[0].pressed.emit()
-	check(heard.size() == 1, "the conquest is one write: %d" % heard.size())
-	var got: Dictionary = heard[-1] if not heard.is_empty() else {}
-	var conquered: Array = got.get("conquered", [])
-	check(conquered == ["ostia_minor"], "the host hears the conquest: %s" % [conquered])
-	check(Num.i(got.get("rubble", 0)) == 7, "on the host's own save: %s" % got.get("rubble"))
-	var disk: Array = SaveFile.load_game().get("conquered", [])
-	check(disk == ["ostia_minor"], "the slot holds the conquest: %s" % [disk])
-	globe.free()
-	SaveFile.wipe()

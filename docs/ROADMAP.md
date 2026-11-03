@@ -31,10 +31,7 @@ Phase notes and research refs ("R n.m") are in `docs/archive/ROADMAP_2026-10.md`
 
 Still open on the overworld:
 
-- the stub mission becomes the real mission flow. Done: a real city starts as any run (lab card, clock, time of
-  day, weather, intro; RunStart), is banked as any rampage (SaveFile.bank) and shows its results before WIN / LOSE;
-  the globe plays on its host's save (GlobeMissions.host, saved). Open: the globe is not yet reachable from the game
-  (main.gd never opens it), what wins a city (D-436, D-454), and the demo end on the second conquest (D-425)
+- the stub mission becomes the real mission flow
 - continent rows hold real data, not placeholders
 - a globe readout for the Threat Level (logic built; UI unverified)
 - continent bonuses: later (balance, D-363)

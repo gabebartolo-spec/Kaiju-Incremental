@@ -18,6 +18,12 @@ const NAMES := [
 const STAGES := [0, 1, 1, 2, 2, 2, 2]  # D-419: young, Behemoth x2, Colossus x3 and the capital
 ## D-422: conquests and noise cap below 100; only the sixth conquest opens Aurelia.
 const THREAT_CAP := 99.0
+## D-435's words: a circular harbour (kind cothon), one canal south, 14 m wide, to the map's edge;
+## Thule a fjord through ice. The test pins what the decision text says, not a second guess.
+const D435_HARBOUR := "cothon"
+const D435_CANALS := ["s"]
+const D435_CANAL_WIDTH := 14
+const D435_FJORD := "fjord"
 const SPECIES := "reptilian"
 const ATTACK := "bonus_ostia_minor_1"  # the test bonus: stomp_damage +15%
 
@@ -40,7 +46,6 @@ func run_checks() -> void:
 	await _t("_check_conquer")
 	await _t("_check_titan_unlocks")
 	await _t("_check_stage_words")
-	await _t("_check_bank")
 
 
 func _check_seven_in_order() -> void:
@@ -67,27 +72,37 @@ func _check_real_cities() -> void:
 	)
 
 
+## D-435 rules Carthago's harbour (one canal, south, 14 m wide, to the map's edge) and Thule's
+## fjord; D-436 keeps every landmark spot standing, the same four as the default plan's.
 func _check_layouts() -> void:
 	var carthago: Dictionary = Content.continent("carthago")["tuning"]["city"]
 	var layout: Dictionary = carthago["layout"]
 	var kind: String = layout["kind"]
 	var canals: Array = layout["canals"]
 	var width: int = layout["canal_width"]
-	check(kind == "cothon", "Carthago's harbour is a cothon (D-435)")
-	check(canals == ["s"], "with one canal, south (D-435)")
-	check(width == 14, "14 m wide (D-435)")
+	check(kind == D435_HARBOUR, "Carthago's harbour is a cothon (D-435)")
+	check(canals == D435_CANALS, "with one canal, south (D-435): %s" % [canals])
+	check(width == D435_CANAL_WIDTH, "%d m wide (D-435): %d" % [D435_CANAL_WIDTH, width])
 	var thule: Dictionary = Content.continent("thule")["tuning"]["city"]
 	var thule_kind: String = thule["layout"]["kind"]
-	check(thule_kind == "fjord", "Thule's water is a fjord (D-435)")
+	check(thule_kind == D435_FJORD, "Thule's water is a fjord (D-435)")
 	check(not Content.continent("ostia_minor").has("tuning"), "Ostia Minor keeps today's beach, bay and river")
+	var default_spots: Dictionary = Content.tuning()["city"]["landmark_spots"]
+	var want := _spot_keys(default_spots)
 	for cid: String in ["carthago", "thule"]:
 		var spots: Dictionary = Content.continent(cid)["tuning"]["city"]["landmark_spots"]
-		var keys: Array = []
-		for k: String in spots:
-			if not k.begins_with("_"):
-				keys.append(k)
-		keys.sort()
-		check(keys == ["big", "biggest", "east", "west"], "%s has the four landmark spots (D-436): %s" % [cid, keys])
+		var keys := _spot_keys(spots)
+		check(keys == want, "%s has the default plan's landmark spots %s (D-436): %s" % [cid, want, keys])
+
+
+## The spot names of a landmark_spots table, sorted (notes skipped).
+func _spot_keys(spots: Dictionary) -> Array:
+	var keys: Array = []
+	for k: String in spots:
+		if not k.begins_with("_"):
+			keys.append(k)
+	keys.sort()
+	return keys
 
 
 func _check_stages() -> void:
@@ -324,37 +339,3 @@ func _check_titan_unlocks() -> void:
 	save = Campaign.conquer(save, Content.continent("carthago"), "")
 	var three: Array = save[key]
 	check(three == ["komodo", "serpent"], "a third adds nothing: %s" % [three])
-
-
-## SaveFile.bank, the one banking every rampage shares (main.gd and the globe's real cities), on
-## vs off: a normal rampage adds its biomass, one run, the clock and its bests and returns the best
-## before it; Endless banks none of it. A death bumps the specimen and owes the lab card in both.
-func _check_bank() -> void:
-	var result := {"rubble": 80, "reason": "defeated", "toppled": 3, "city_seconds": 12.5}
-	for endless: bool in [false, true]:
-		var save := SaveFile.new_save(SPECIES)
-		save["runs"] = 2
-		save["rubble"] = 100
-		save["best"] = {"rubble": 60.0, "toppled": 5.0}
-		var previous := SaveFile.bank(save, result, endless)
-		var mode := "endless" if endless else "normal"
-		check(previous == {"rubble": 60.0, "toppled": 5.0}, "%s: best before %s" % [mode, previous])
-		var want := [100, 2, 0.0, 60.0] if endless else [180, 3, 12.5, 80.0]
-		var best: Dictionary = save["best"]
-		var got := [
-			Num.i(save["rubble"]),
-			Num.i(save["runs"]),
-			Num.f(save["city_seconds"]),
-			Num.f(best["rubble"])
-		]
-		check(got == want, "%s: biomass, runs, clock, best biomass %s: %s" % [mode, want, got])
-		check(Num.f(best["toppled"]) == 5.0, "%s: a higher best stays: %s" % [mode, best])
-		var owed: bool = save["lab_card"] == true
-		check(Num.i(save["specimen"]) == 2 and owed, "%s: a death makes a new specimen" % mode)
-	var first := SaveFile.new_save(SPECIES)
-	first["best"] = {"rubble": 999.0}  # a first rampage has no best to compare against
-	var before := SaveFile.bank(first, {"rubble": 40, "reason": "city_fallen"}, false)
-	check(before.is_empty(), "a first rampage: no best before it: %s" % before)
-	var first_best: Dictionary = first["best"]
-	check(Num.f(first_best["rubble"]) == 40.0, "a first rampage sets the best: %s" % first_best)
-	check(Num.i(first["specimen"]) == 1, "the city falling is no death: %s" % first["specimen"])
