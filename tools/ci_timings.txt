@@ -49,7 +49,7 @@ momentum 55
 photo 55
 fire 52
 ui 52
-leap 50
+leap 46
 helideaths 47
 camera 46
 cells 45

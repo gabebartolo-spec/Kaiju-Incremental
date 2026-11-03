@@ -15,6 +15,9 @@ const FIXTURE_SHARES: Array[float] = [0.3, 0.4, 0.5, 0.6, 0.7]
 ## walk 137), five are the city (1242 vs 1041).
 const FIXTURE_STARTS := 5
 
+## _city_start's take-offs by "<dir> <skip>", found once per suite run.
+var _starts := {}
+
 
 ## The reptilian at `levels`, as Rampage builds it, standing at (0, 30) facing north, on `layout`
 ## plus a small block far behind it, so the run is not over for want of a city.
@@ -146,8 +149,21 @@ func _watch_leap(sim: RampageSim, b: RampageSim.Building) -> Dictionary:
 ## building's roof and the take-off is clear (_clear_roof_ahead) and so is the landing
 ## (_clear_landing); where the croc stands if none.
 func _city_start(sim: RampageSim, dir: Vector2, skip := 0) -> Vector2:
+	var key := "%s %s" % [dir, skip]
+	if not _starts.has(key):  # the seeded city is the same every run: scan it once (#549 speed)
+		var found := _city_starts(sim, dir, maxi(skip + 1, FIXTURE_STARTS))
+		for n: int in found.size():
+			_starts["%s %s" % [dir, n]] = found[n]
+		if not _starts.has(key):
+			_starts[key] = sim.kaiju_pos
+	return _starts[key]
+
+
+## The first `count` take-offs _city_start describes, in its order (fewer if the city has fewer).
+func _city_starts(sim: RampageSim, dir: Vector2, count: int) -> Array[Vector2]:
 	var home := sim.kaiju_pos
 	var reach := Num.f(_stage(sim)["reach"]) * sim.body_scale()
+	var out: Array[Vector2] = []
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
 		for share: float in FIXTURE_SHARES:
@@ -161,12 +177,12 @@ func _city_start(sim: RampageSim, dir: Vector2, skip := 0) -> Vector2:
 				and _clear_roof_ahead(sim, dir)
 				and _clear_landing(sim, aim, dir)
 			):
-				if skip == 0:
-					return at
-				skip -= 1
+				out.append(at)
 				break
+		if out.size() >= count:
+			break
 	sim.kaiju_pos = home
-	return home
+	return out
 
 
 ## True when a roof the croc can land on (D-361: at its shoulder or lower) is ahead along `dir`,
