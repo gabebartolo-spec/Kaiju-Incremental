@@ -167,23 +167,11 @@ func _start_rampage(endless := false) -> void:
 	_endless = endless
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
-	rampage.city_seconds = Num.f(_save.get("city_seconds", 0.0))
 	rampage.endless = endless  # the demo's Endless mode (D-156)
 	rampage.setup_later(_species(), stats, layout, runs)
-	# The time of day (D-145): random, never the last run's, unless the options fix one. The
-	# save remembers it, even if the rampage is quit before it ends.
-	var time_id := TimeOfDay.pick(runs, str(_save.get("last_time", "")), PlayerSettings.time_of_day)
-	Content.set_time(time_id)
-	_save["last_time"] = time_id
-	# The weather (D-155) the same way: seeded, never the last run's, unless the options fix one.
-	var weather_id := Weather.pick(runs, str(_save.get("last_weather", "")), PlayerSettings.weather)
-	Content.set_weather(weather_id)
-	_save["last_weather"] = weather_id
+	RunStart.prepare(_save, rampage)  # the clock so far, time of day and weather (D-145, D-155)
 	SaveSystem.save_game(_save)
-	# The whole run intro on the first run and the first after an evolution (a new size: a new
-	# body to show); the short cut otherwise (R 20.4). Saved with the run's result.
-	rampage.full_intro = Num.i(_save.get("intro_size", -1)) != tier
-	_save["intro_size"] = tier
+	RunStart.intro(_save, rampage, tier)  # saved with the run's result
 	rampage.finished.connect(_on_rampage_finished)
 	_swap(rampage)
 
@@ -193,20 +181,8 @@ func _start_rampage(endless := false) -> void:
 ## specimen, Endless included.
 ## An Endless run banks nothing; a demo rampage adds to the thanks screen's totals (Demo.add).
 func _on_rampage_finished(result: Dictionary) -> void:
-	var previous: Dictionary = _save.get("best", {})
-	if Num.i(_save.get("runs", 0)) == 0:
-		previous = {}
-	if SaveFile.note_end(_save, result):  # it died: the next rise is a new specimen
-		SaveSystem.save_game(_save)
-	if not _endless:
-		_save["rubble"] = Num.i(_save.get("rubble", 0)) + Num.i(result["rubble"])
-		_save["runs"] = Num.i(_save.get("runs", 0)) + 1
-		var clock := Num.f(_save.get("city_seconds", 0.0))
-		_save["city_seconds"] = Num.f(result.get("city_seconds", clock))  # the Taskforce's clock
-		_save["best"] = SaveFile.merge_best(previous, result)
-		if Demo.enabled():
-			_save["totals"] = Demo.add(_totals(), result)
-		SaveSystem.save_game(_save)
+	var previous := SaveFile.bank(_save, result, _endless)
+	SaveSystem.save_game(_save)
 	var results := ResultsScreen.new(result, previous)
 	if _endless:
 		results.go_label = tr("BACK  >")

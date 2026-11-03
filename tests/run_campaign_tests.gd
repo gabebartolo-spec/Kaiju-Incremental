@@ -37,6 +37,7 @@ func run_checks() -> void:
 	await _t("_check_conquer")
 	await _t("_check_titan_unlocks")
 	await _t("_check_stage_words")
+	await _t("_check_bank")
 
 
 func _check_seven_in_order() -> void:
@@ -286,3 +287,37 @@ func _check_titan_unlocks() -> void:
 	save = Campaign.conquer(save, Content.continent("carthago"), "")
 	var three: Array = save[key]
 	check(three == ["komodo", "serpent"], "a third adds nothing: %s" % [three])
+
+
+## SaveFile.bank, the one banking every rampage shares (main.gd and the globe's real cities), on
+## vs off: a normal rampage adds its biomass, one run, the clock and its bests and returns the best
+## before it; Endless banks none of it. A death bumps the specimen and owes the lab card in both.
+func _check_bank() -> void:
+	var result := {"rubble": 80, "reason": "defeated", "toppled": 3, "city_seconds": 12.5}
+	for endless: bool in [false, true]:
+		var save := SaveFile.new_save(SPECIES)
+		save["runs"] = 2
+		save["rubble"] = 100
+		save["best"] = {"rubble": 60.0, "toppled": 5.0}
+		var previous := SaveFile.bank(save, result, endless)
+		var mode := "endless" if endless else "normal"
+		check(previous == {"rubble": 60.0, "toppled": 5.0}, "%s: best before %s" % [mode, previous])
+		var want := [100, 2, 0.0, 60.0] if endless else [180, 3, 12.5, 80.0]
+		var best: Dictionary = save["best"]
+		var got := [
+			Num.i(save["rubble"]),
+			Num.i(save["runs"]),
+			Num.f(save["city_seconds"]),
+			Num.f(best["rubble"])
+		]
+		check(got == want, "%s: biomass, runs, clock, best biomass %s: %s" % [mode, want, got])
+		check(Num.f(best["toppled"]) == 5.0, "%s: a higher best stays: %s" % [mode, best])
+		var owed: bool = save["lab_card"] == true
+		check(Num.i(save["specimen"]) == 2 and owed, "%s: a death makes a new specimen" % mode)
+	var first := SaveFile.new_save(SPECIES)
+	first["best"] = {"rubble": 999.0}  # a first rampage has no best to compare against
+	var before := SaveFile.bank(first, {"rubble": 40, "reason": "city_fallen"}, false)
+	check(before.is_empty(), "a first rampage: no best before it: %s" % before)
+	var first_best: Dictionary = first["best"]
+	check(Num.f(first_best["rubble"]) == 40.0, "a first rampage sets the best: %s" % first_best)
+	check(Num.i(first["specimen"]) == 1, "the city falling is no death: %s" % first["specimen"])
