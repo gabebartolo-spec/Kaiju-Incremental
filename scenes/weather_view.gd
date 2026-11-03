@@ -33,6 +33,7 @@ var _ahead: Array[float] = []
 var _tops: Array[float] = []
 var _smear_mat: ShaderMaterial
 var _smear_wait := 0.0
+var _smear_used := -1  # slots at or past this already hold the hidden values
 
 
 ## Builds the current weather's view under `city` (a CityView, after its ground and environment
@@ -283,6 +284,7 @@ func _build_smears() -> void:
 	mm.mesh = quad
 	mm.instance_count = Num.i(smear["max"])
 	mm.visible_instance_count = 0
+	_smear_used = mm.instance_count  # fresh slots hold zeros: the first tick hides all
 	smears = MultiMeshInstance3D.new()
 	smears.name = "RainSmears"
 	smears.multimesh = mm
@@ -300,9 +302,10 @@ func _place_smears(from: Vector3) -> void:
 	var origin := Vector3(from.x, y, from.z)
 	var count := _place_lamps(mm, origin, reach, smear)
 	count = _place_windows(mm, origin, count, smear)
-	for i: int in range(count, mm.instance_count):  # the rest sit far below the world, unseen
+	for i: int in range(count, _smear_used):  # the rest sit far below the world, unseen
 		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, Vector3(0.0, -1000.0, 0.0)))
 		mm.set_instance_color(i, Color(0.0, 0.0, 0.0, 0.0))
+	_smear_used = count
 	mm.visible_instance_count = -1
 
 
@@ -315,7 +318,9 @@ func _place_lamps(mm: MultiMesh, origin: Vector3, reach: float, smear: Dictionar
 		var lamp := node as PooledLight
 		if lamp == null or not is_equal_approx(lamp.distance_fade_begin, lamp_fade):
 			continue  # fires and beacons: not a streetlight
-		if lamp.energy <= 0.0 or count >= Num.i(smear["lamp_max"]):
+		if count >= Num.i(smear["lamp_max"]):
+			break  # full: the rest would write nothing
+		if lamp.energy <= 0.0:
 			continue
 		var at := lamp.global_position
 		if Vector2(at.x - origin.x, at.z - origin.z).length() > reach:

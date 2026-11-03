@@ -13,6 +13,13 @@ horizon d6cfae, ambient 0.8 colour 667a78, sun e2dcb4 at 1.2, fog 7e8274 at 0.00
 mid 0.27-0.33, white 0.82-0.84, sat 0.18-0.19, highlights h46-49. H/I breath violet: no change (fx.bolt is
 already purple). Details: docs/research/shin_godzilla_grade.md.
 
+## 2026-11-03 · D-451 · Director · Closer read of the D-447 skips: three more identical trims
+Under D-032. Rain smears rewrite only slots that were visible last tick (the rest already hold the hidden
+values), and the lamp walk stops once lamp_max is reached. CarvePhysics reads live_bodies() once per tick, not
+twice (a pure read; nothing changes in between). DebrisField returns right after advancing its clock when no
+body, queue or head is left (the last _draw already zeroed every mesh; no RNG drawn). Skipped: crowd
+lose_cells/_bury (already O(1) when idle; the only trim saves ~4 has() calls a second).
+
 ## 2026-11-03 · D-449 · Director · The leap never vaults a tower above his shoulder
 Bug: the kaiju leapt onto the tops of extremely tall buildings. D-361 kept such roofs off the leap's target,
 but LeapArc raised the arc over every building on the flight path, so a tower between him and a low roof (or
@@ -390,8 +397,3 @@ His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~1
 playable street, a traffic light at each lit crossing, the lamp model on every streetlight, Tripo cars among the
 parked and stopped ones (the decor's own car keeps the rest). All crushable. Tuning `city.street_props`. His
 1,500-credit Tripo consent (10-30) stays in reserve: this ships with 0 credits spent.
-
-## 2026-10-30 · D-399 · Director · The rise bar is removed
-His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
-the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
-check. Replaces D-384 (and the 10 s rise bar it carried from D-131).
