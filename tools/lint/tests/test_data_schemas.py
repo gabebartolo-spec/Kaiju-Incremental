@@ -135,6 +135,8 @@ class DataSchemasSmoke(unittest.TestCase):
             "bonus id 'a_0' appears more than once": [row("a"), row("b", 0, False, ["a_0", "y", "z"]),
                                                       row("cap", 0, True)],
             "the capital 'cap' is not the last continent": [row("cap", 0, True), row("a")],
+            "'cap' is a real city but is the capital or has no stage": [
+                row("a"), dict(row("cap", 0, True), real_city=True)],
             "2 capitals, not 1": [row("a"), row("c1", 0, True), row("c2", 0, True)],
             "0 capitals, not 1": [row("a"), row("b")],
             "bonus 'x' scales 'luck', not a kaiju stat": [

@@ -4,7 +4,8 @@ extends "res://tests/lib/runner.gd"
 ## the capital, last, none; the six conquests' Threat shares leave room for mission noise; every
 ## id is a key the save's campaign can hold. Plan row F4: a picked bonus reaches combat through
 ## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. Plan row G3: which
-## continents are locked, available and conquered follows D-420 and D-422 (Campaign). The hologram
+## continents are locked, available and conquered follows D-420 and D-422 (Campaign). D-454 / D-435:
+## exactly Ostia Minor, Carthago and Thule are real cities, with the ruled layouts and four landmark spots. The hologram
 ## globe's checks (rows G1..G4) live in run_globe_tests.gd. Seeded, no clock.
 ##   godot --headless --path . --script tests/run_campaign_tests.gd
 
@@ -30,6 +31,8 @@ func run_checks() -> void:
 	await _t("_check_stages")
 	await _t("_check_bonuses_and_capital")
 	await _t("_check_threat_shares")
+	await _t("_check_real_cities")
+	await _t("_check_layouts")
 	await _t("_check_save_keys")
 	await _t("_check_bonus_scales_stats")
 	await _t("_check_bonus_in_combat")
@@ -51,6 +54,40 @@ func _check_seven_in_order() -> void:
 		str(Content.continent("thule").get("name", "")) == "Thule", "continent(id) finds one by id"
 	)
 	check(Content.continent("atlantis").is_empty(), "an unknown id gives {}")
+
+
+func _check_real_cities() -> void:
+	var real: Array = []
+	for c: Dictionary in Content.continents():
+		if Campaign.real_city(c):
+			real.append(str(c["id"]))
+	check(
+		real == ["ostia_minor", "carthago", "thule"],
+		"exactly Ostia Minor, Carthago and Thule are real cities (D-454): %s" % [real]
+	)
+
+
+func _check_layouts() -> void:
+	var carthago: Dictionary = Content.continent("carthago")["tuning"]["city"]
+	var layout: Dictionary = carthago["layout"]
+	var kind: String = layout["kind"]
+	var canals: Array = layout["canals"]
+	var width: int = layout["canal_width"]
+	check(kind == "cothon", "Carthago's harbour is a cothon (D-435)")
+	check(canals == ["s"], "with one canal, south (D-435)")
+	check(width == 14, "14 m wide (D-435)")
+	var thule: Dictionary = Content.continent("thule")["tuning"]["city"]
+	var thule_kind: String = thule["layout"]["kind"]
+	check(thule_kind == "fjord", "Thule's water is a fjord (D-435)")
+	check(not Content.continent("ostia_minor").has("tuning"), "Ostia Minor keeps today's beach, bay and river")
+	for cid: String in ["carthago", "thule"]:
+		var spots: Dictionary = Content.continent(cid)["tuning"]["city"]["landmark_spots"]
+		var keys: Array = []
+		for k: String in spots:
+			if not k.begins_with("_"):
+				keys.append(k)
+		keys.sort()
+		check(keys == ["big", "biggest", "east", "west"], "%s has the four landmark spots (D-436): %s" % [cid, keys])
 
 
 func _check_stages() -> void:

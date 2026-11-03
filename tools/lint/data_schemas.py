@@ -254,6 +254,8 @@ def continent_checks(datas: dict) -> list[str]:
             for stat in pick.get("scale", {}):
                 if stats and stat not in stats:
                     out.append(f"continents.json: bonus '{b}' scales '{stat}', not a kaiju stat")
+        if c.get("real_city") is True and (c.get("capital") or not isinstance(stage, int)):
+            out.append(f"continents.json: '{cid}' is a real city but is the capital or has no stage (D-454)")
         if c.get("capital") and i != len(rows) - 1:
             out.append(f"continents.json: the capital '{cid}' is not the last continent (D-420)")
     capitals = [c.get("id") for c in rows if c.get("capital")]
