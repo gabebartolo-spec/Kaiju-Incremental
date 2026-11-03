@@ -62,7 +62,7 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 | # | Row | Status |
 |---|---|---|
 | 0 | Adult croc (Colossus) walk stutter: each foot swings back, plants and pushes off before the forward step (director 2026-11-03) | open |
-| 0b | Croc thigh still warps at extreme leg movements (director 2026-11-03; see kaiju-thigh-skinning skill) | open |
+| 0b | Croc thigh still warps at extreme leg movements, and the thigh sinks into the torso at the hip (director 2026-11-03 still; see kaiju-thigh-skinning skill) | open |
 | 1 | Croc animation (Cascadeur, reference copied exactly, D-410) | open |
 | 2 | Bay-coast junctions | done (#431; bridge removed #527) |
 | 3 | Destruction: landmarks and bridges carve, varied collapse, stadium crowd | done (#421 D-387 D-388, #427 D-389, #537) |
