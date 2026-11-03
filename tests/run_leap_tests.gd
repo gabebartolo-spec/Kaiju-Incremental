@@ -20,6 +20,7 @@ func run_checks() -> void:
 	await _t("_check_shoulder_measured")
 	await _t("_check_low_roof")
 	await _t("_check_tall_side")
+	await _t("_check_no_vault")
 	await _t("_check_breath_no_leap")
 	await _t("_check_nowhere_to_land")
 	await _t("_check_no_water")
@@ -28,6 +29,59 @@ func run_checks() -> void:
 	await _t("_check_cooldown_and_frost")
 	await _t("_check_replay")
 	await _t("_check_effect")
+
+
+## Director 2026-11-03 ("the kaiju can jump onto the tops of extremely tall buildings"): at every
+## growth stage a tower above his shoulder standing across the flight path to a low roof is never
+## leapt over: the leap takes the tower in its side (the arc stays under its roof, the feet come
+## down on the street short of it); with the tower gone the same low roof is still landed on.
+func _check_no_vault() -> void:
+	for stage: String in STAGES:
+		var levels: Dictionary = STAGES[stage]
+		var probe := _croc(levels, [])
+		var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
+		var low := _block(_ahead(probe, reach * 0.95), 4, maxi(2, floori(_shoulder_y(probe))))
+		var near := _ahead(probe, reach * 0.55)  # clear of his snout at take-off
+		var lateral := (30.0 - near.y) * tan(deg_to_rad(40.0))  # its centre is out of the aim cone
+		var tower := _block(near + Vector2(lateral, 0.0), 3, ceili(_shoulder_y(probe) * 2.0))
+		tower["w"] = ceili(lateral * 2.0) + 2  # a long slab across the path
+		var open := _croc(levels, [low])
+		var open_leap := _first(open.step(DT, Vector2.ZERO, false, BUTTON), "leap")
+		check(
+			Num.i(open_leap.get("building", -2)) == 0 and Num.f(open_leap.get("roof", 0.0)) > 0.0,
+			"%s: with no tower the low roof is landed on: %s" % [stage, open_leap]
+		)
+		var sim := _croc(levels, [low, tower])
+		var b := sim.buildings[1]
+		var leap := _first(sim.step(DT, Vector2.ZERO, false, BUTTON), "leap")
+		var watched := _watch_leap(sim, b)
+		var apex := Num.f(watched["apex"])
+		var land: Dictionary = watched["land"]
+		var at: Vector2 = land.get("at", Vector2.INF)
+		check(
+			(
+				Num.i(leap.get("building", -2)) == 1
+				and Num.f(leap.get("roof", -1.0)) == 0.0
+				and apex < float(b.height)
+				and not _inside(b, at)
+				and sim.body.dash.height() == 0.0
+			),
+			(
+				(
+					"%s: a %d-high tower across the path (shoulder %.2f) is not leapt onto or over:"
+					+ " target %d, roof %.1f, apex %.2f, landed %s"
+				)
+				% [
+					stage,
+					b.height,
+					_shoulder_y(probe),
+					Num.i(leap.get("building", -2)),
+					Num.f(leap.get("roof", -1.0)),
+					apex,
+					at
+				]
+			)
+		)
 
 
 ## The breath press never starts the leap (director 2026-10-31: the croc floated while it breathed,

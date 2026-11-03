@@ -100,6 +100,8 @@ class Fall:
 	var width := -1.0  # across a topple, sim units (a carved part's; < 0: from its chunks)
 	var t := 0.0
 	var duration: float
+	## What it broke up against before it came down (FallContact): "", "building" or "kaiju".
+	var contact := ""
 
 
 class Tank:

@@ -69,6 +69,8 @@ func run() -> void:
 	var a := Lib.DEFAULTS.duplicate()
 	a["route-file"] = ROUTE
 	a["tune"] = ",".join(tune)
+	# the kaiju must not fall: the bar counts the whole route, not the army (D-446)
+	a["hp"] = 1000000.0
 	var began := Time.get_ticks_msec()
 	print("COUNTS set-up starts %.0f s after the engine started" % (began / 1000.0))
 	var started: bool = await _lib.start(_tree, a)
@@ -89,8 +91,15 @@ func run() -> void:
 	_tree.node_added.disconnect(_added)
 	print(
 		(
-			"COUNTS route steps=%d/%d (step %d at frame 0) frames=%d over=%s"
-			% [mini(_lib.steps, route_steps), route_steps, first_step, frames, sim.over]
+			"COUNTS route steps=%d/%d (step %d at frame 0) frames=%d over=%s (%s)"
+			% [
+				mini(_lib.steps, route_steps),
+				route_steps,
+				first_step,
+				frames,
+				sim.over,
+				sim.end_reason
+			]
 		)
 	)
 	print("COUNTS tally=%s wall_s=%.0f" % [_lib.tally, (Time.get_ticks_msec() - began) / 1000.0])

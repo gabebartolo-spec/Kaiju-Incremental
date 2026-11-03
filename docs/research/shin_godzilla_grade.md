@@ -1,4 +1,4 @@
-# Shin Godzilla dusk grade (D-448)
+# Shin Godzilla dusk grade (D-452)
 
 Reference: Shin Godzilla GKIDS trailer, frames A C D H I (local only). Measured with grade.py (letterbox
 cropped, Rec.709 luma). Game stills: tools/capture/shot.gd --time=dusk --still-at=6,10,14,20, 1920x1080, game camera.
