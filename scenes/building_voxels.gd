@@ -103,6 +103,14 @@ func _make_palette(base: Color) -> void:
 		var neon := NEON[i]
 		neon.a = 0.0
 		palette["neon%d" % i] = neon
+	_add_sashes()
+
+
+## Closed-window sash frames (director 2026-11-03): metal on towers, wood on low/old blocks.
+func _add_sashes() -> void:
+	for key: String in ["frame_metal", "frame_wood"]:
+		palette[key] = Look.color("window_" + key)
+	palette["frame_jamb"] = palette["frame_wood"]  # the sash's flush side (BuildingLayout._sash)
 
 
 ## The share of windows lit (Look "window_lit"); a test view overrides it to 0.
