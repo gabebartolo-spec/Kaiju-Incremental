@@ -9,6 +9,8 @@ extends RefCounted
 
 const KEYS := "keys"
 const PAD := "pad"
+## Fixed actions (Settings) whose keys a rebind may not take: F11 would toggle fullscreen too.
+const RESERVED: Array[String] = ["toggle_fullscreen"]
 ## The actions the player can rebind, in the Controls page's order: action, the name it shows, and
 ## whether its pad slot takes a button (the moves stay on the left stick). An action the build does
 ## not have (stomp before its own button lands) is left out.
@@ -99,6 +101,8 @@ static func bind(action: String, event: InputEvent) -> void:
 	if slot == "" or not InputMap.has_action(action):
 		return
 	var clean := _clean(event)
+	if _reserved(clean, slot):
+		return
 	for row: Array in actions():
 		var other := str(row[0])
 		if other == action:
@@ -276,6 +280,15 @@ static func _set_slot(action: String, slot: String, list: Array[InputEvent]) -> 
 ## The input as the game binds it: a key by its physical place, a mouse or pad button by index.
 static func _clean(event: InputEvent) -> InputEvent:
 	return _event(_code(event))
+
+
+## Whether `event` is a key a fixed action (RESERVED) already uses: such a rebind is refused.
+static func _reserved(event: InputEvent, slot: String) -> bool:
+	for r: String in RESERVED:
+		for e: InputEvent in events(r, slot):
+			if _same(e, event):
+				return true
+	return false
 
 
 static func _same(a: InputEvent, b: InputEvent) -> bool:

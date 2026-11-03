@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
+His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
+moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
+consent of 10-30 (D-400). Generated 10-31: trawler, tug, yacht, launch, 260 credits
+(provenance C:/Users/DANTE/cascadeur_bridge/city_boats/provenance.md). Spectacle only: nothing reaches the sim.
+
 ## 2026-10-31 · D-403 · Director · Touched suites run locally; a PR runs lints and the sim suites; engine suites go to main
 "im sick of the CI purgatory". Three rulings. (1) Relaxes D-383: before a push, run the suites nearest the change
 locally, `python tools/run_touched.py` (walks back from each changed file to the first suites that reach it; `--all`

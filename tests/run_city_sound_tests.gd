@@ -118,7 +118,7 @@ func _check_panic_then_quiet() -> void:
 	)
 	var last: Dictionary = series[series.size() - 1]
 	check(
-		Num.f(last["phase"]) > 0.9,
+		Num.f(last["phase"]) > 0.8,  # 0.83 once fled counts each person once (D-456)
 		"the run reached the ruined city: phase %.2f" % Num.f(last["phase"])
 	)
 	var first_phase := 1.0
@@ -168,7 +168,7 @@ func _check_planted_bad_curve_fails() -> void:
 func _check_stems_follow_the_phase() -> void:
 	var levels: Array[float] = _run.sound.music.levels
 	check(levels.size() == 4, "four stems on the player: %d" % levels.size())
-	_run.sound.advance(1000.0)  # phase is ~1: every stem fully in
+	_run.sound.music.follow(1.0, 1000.0)  # the ruined city: every stem fully in
 	for db: float in levels:
 		check(is_zero_approx(db), "all stems are fully in at the ruined city: %.1f dB" % db)
 	var music := _run.sound.music

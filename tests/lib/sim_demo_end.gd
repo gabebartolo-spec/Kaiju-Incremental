@@ -177,9 +177,8 @@ func _flatten(sim: RampageSim, i: int) -> int:
 		for z: int in b.d:
 			for x: int in b.w:
 				b.frame.damage(Vector3i(x, y, z), 1.0e9)
-	var full := b.w * b.d * b.height
-	sim.chunks_destroyed += full
-	return full
+	sim.chunks_destroyed += b.start_chunks  # what it had: a pool model keeps fewer than its box
+	return b.start_chunks
 
 
 ## The plain arena buildings, farthest from the kaiju first.
@@ -187,7 +186,7 @@ func _far_plain(sim: RampageSim) -> Array[int]:
 	var ids: Array[int] = []
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
-		if b.landmark == "" and b.in_arena:
+		if b.landmark == "" and b.in_arena and not b.is_span():
 			ids.append(i)
 	var from := sim.kaiju_pos
 	ids.sort_custom(
@@ -231,22 +230,47 @@ func _check_regrowth() -> void:
 			% [regrown_events, sim.endless.regrown]
 		)
 	)
-	var one: int = ruins[0]
-	for i: int in ruins:
-		if sim.buildings[i].frame.alive_count == 0:
+	_check_regrow_shape()
+
+
+## A pool building whose model keeps fewer chunks than its box (Landmarks.building keep()) regrows
+## in that shape and takes back only the chunks it had, not its full box.
+func _check_regrow_shape() -> void:
+	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	sim.endless = Endless.new()
+	var one := -1
+	for i: int in _far_plain(sim):
+		var c := sim.buildings[i]
+		if c.model != "" and c.start_chunks < c.w * c.d * c.height:
 			one = i
 			break
+	_check.call(one >= 0, "the city has a pool building shaped smaller than its box")
+	if one < 0:
+		return
 	var b := sim.buildings[one]
-	var full := b.w * b.d * b.height
+	sim.chunks_destroyed += 1000  # other buildings' destruction, which regrowing must not undo
 	var before := sim.chunks_destroyed
+	_flatten(sim, one)
 	sim.endless.regrow(sim, one)
 	_check.call(
-		sim.chunks_destroyed == maxi(0, before - full) and b.frame.alive_count == full,
+		sim.chunks_destroyed == before and b.frame.alive_count == b.start_chunks,
 		(
-			"regrowing stands it whole and takes its chunks back (%d -> %d, building of %d)"
-			% [before, sim.chunks_destroyed, full]
+			"regrowing stands it in its own shape and takes its chunks back (%d -> %d, %d of %d)"
+			% [before, sim.chunks_destroyed, b.frame.alive_count, b.start_chunks]
 		)
 	)
+	var span := _first_span(sim)
+	if span >= 0:
+		_check.call(not sim.endless.regrowable(sim, span), "a rail or bridge piece never regrows")
+
+
+func _first_span(sim: RampageSim) -> int:
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.is_span() and b.in_arena:
+			_flatten(sim, i)
+			return i
+	return -1
 
 
 ## A regrown building is new in every way the sim tracks: it can catch fire again, pays a full

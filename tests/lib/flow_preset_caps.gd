@@ -46,6 +46,14 @@ static func check(tree: SceneTree, check_fn: Callable) -> void:
 	check_fn.call(frozen, "each row's counts are the run's from its start, never mid-run %s" % bad)
 	var slow: Dictionary = table["potato"]
 	await _potato_reaches(tree, slow, check_fn)
+	var high_row: Dictionary = table["high"]
+	GraphicsPresets.start_run(high_row)
+	GraphicsPresets.end_run()  # back to the menus after a High run, then Potato picked there
+	PlayerSettings.graphics = "potato"
+	var menu := true
+	for key: String in GraphicsPresets.CAPS:
+		menu = menu and is_equal_approx(GraphicsPresets.cap(key), Num.f(slow[key]))
+	check_fn.call(menu, "after a run ends, the menus' counts follow the row picked there")
 	PlayerSettings.graphics = was
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())
 
@@ -60,6 +68,8 @@ static func _potato_reaches(tree: SceneTree, row: Dictionary, check_fn: Callable
 	var city: CityView = rampage._city
 	for i: int in Num.i(row["max_fires"]) + 5:
 		city.fire(Vector3(i, 0, 0), 0.5)
+	# A blast's burst (BlastParts.emit: fireball, flash, fireworks, toxic cloud) takes the cap too.
+	BlastParts.emit(city, ParticleProcessMaterial.new(), BoxMesh.new(), 8, 0.5, Vector3.ZERO)
 	var ratios := {}
 	for p: Node in city.find_children("*", "GPUParticles3D", true, false):
 		ratios[(p as GPUParticles3D).amount_ratio] = true

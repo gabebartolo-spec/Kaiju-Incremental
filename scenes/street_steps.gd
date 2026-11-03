@@ -28,7 +28,8 @@ static func walk(s: StreetLife, delta: float, kaiju: Vector2) -> void:
 		var dt := step_time(s, i, at, kaiju, delta)
 		if dt < 0.0:  # a far person's frame off
 			continue
-		update_flee(s, i, at, kaiju, radii)
+		if update_flee(s, i, at, kaiju, radii):
+			continue  # startled: this frame it stands facing the kaiju (gawk)
 		var to := s._nodes[s.to_node[i]] - at
 		var step := speeds[s.fleeing[i]] * s.pace[i] * dt  # fleeing 1: running
 		if to.length() > step:
@@ -44,18 +45,20 @@ static func walk(s: StreetLife, delta: float, kaiju: Vector2) -> void:
 
 ## Person i's flee state this frame: startle inside the panic radius, calm past the calm radius,
 ## and a runner whose corner lies toward the kaiju (it moved, or a wreck spawn) turns back (D-450).
-## radii: panic radius, calm radius, gawk time.
+## radii: panic radius, calm radius, gawk time. True when person i was startled this frame.
 static func update_flee(
 	s: StreetLife, i: int, at: Vector2, kaiju: Vector2, radii: PackedFloat64Array
-) -> void:
+) -> bool:
 	var d := at.distance_to(kaiju)
 	if s.fleeing[i] == 0:
 		if d < radii[0]:
 			startle(s, i, at, kaiju, radii[2])
+			return true
 	elif d > radii[1]:
 		s.fleeing[i] = 0
 	elif (s._nodes[s.to_node[i]] - at).dot(kaiju - at) > 0.0:
 		reverse(s, i)
+	return false
 
 
 ## Person i's step time this frame (StreetLod, D-254): far from the kaiju and the camera, one step
@@ -82,7 +85,9 @@ static func walk_cop(s: StreetLife, i: int, delta: float, kaiju: Vector2) -> voi
 ## Person i sees the kaiju: a moment (gawk) facing it, then runs; one walking toward it turns.
 static func startle(s: StreetLife, i: int, at: Vector2, kaiju: Vector2, gawk: float) -> void:
 	s.fleeing[i] = 1
-	s.fled += 1
+	if s.has_fled[i] == 0:  # fled counts people: one startled again is not counted twice
+		s.has_fled[i] = 1
+		s.fled += 1
 	s.pinned_until[i] = s._clock + gawk
 	s.heading[i] = (kaiju - at).normalized()
 	if (s._nodes[s.to_node[i]] - at).dot(kaiju - at) > 0.0:

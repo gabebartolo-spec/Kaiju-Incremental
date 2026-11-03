@@ -161,6 +161,11 @@ static func start_run(row: Dictionary) -> void:
 		_run_caps[key] = row[key]
 
 
+## The rampage is over: cap() reads the row in use again (Rampage._exit_tree).
+static func end_run() -> void:
+	_run_caps = {}
+
+
 ## A count of the rampage in play (start_run); before any, the row in use.
 static func cap(key: String) -> float:
 	if _run_caps.has(key):

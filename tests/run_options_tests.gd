@@ -37,6 +37,8 @@ func run_checks() -> void:
 	await _t("_check_pages_fit")
 	await _t("_check_graphics_preview")
 	await _h("Options in play", func() -> void: await OptionsPlay.new(self, check).run())
+	await _t("_check_rebind_reserved")  # after the play check: it resets the bindings
+	await _t("_check_defaults_kept")
 	KeyBinds.reset()
 
 
@@ -308,3 +310,47 @@ func _key(code: Key) -> InputEventKey:
 	var e := InputEventKey.new()
 	e.physical_keycode = code
 	return e
+
+
+## F11 is fullscreen's (Settings): binding it to an action is refused, the old key stays and
+## fullscreen keeps F11.
+func _check_rebind_reserved() -> void:
+	KeyBinds.reset()
+	var was := KeyBinds.text("breath", KeyBinds.KEYS)
+	var f11 := InputEventKey.new()
+	f11.physical_keycode = KEY_F11
+	f11.pressed = true
+	KeyBinds.bind("breath", f11)
+	var full := false
+	for e: InputEvent in KeyBinds.events("toggle_fullscreen", KeyBinds.KEYS):
+		full = full or (e is InputEventKey and (e as InputEventKey).physical_keycode == KEY_F11)
+	check(
+		KeyBinds.text("breath", KeyBinds.KEYS) == was and full,
+		(
+			"F11 stays fullscreen's: breath keeps '%s' ('%s')"
+			% [was, KeyBinds.text("breath", KeyBinds.KEYS)]
+		)
+	)
+	KeyBinds.reset()
+
+
+## Saving any setting keeps "use the tuning default" (-1) for the effects volume and camera
+## motion, so a later change to those defaults reaches a player who never moved the sliders.
+func _check_defaults_kept() -> void:
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(PlayerSettings.PATH))
+	PlayerSettings.sfx_volume = -1.0
+	PlayerSettings.camera_motion = -1.0
+	PlayerSettings.toggle_gore()
+	PlayerSettings.toggle_gore()
+	PlayerSettings.load_saved(false)
+	check(
+		PlayerSettings.sfx_volume == -1.0 and PlayerSettings.camera_motion == -1.0,
+		(
+			"a save keeps the tuning defaults (sfx %s, motion %s)"
+			% [PlayerSettings.sfx_volume, PlayerSettings.camera_motion]
+		)
+	)
+	check(
+		is_equal_approx(PlayerSettings.sfx(), Num.f(Content.section("sfx")["default_volume"])),
+		"the effects volume reads the tuning default (%s)" % PlayerSettings.sfx()
+	)

@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-456 · Director · Bug bash: nine verified bugs fixed, behaviour as designed
+Under D-032 (fixes, no tuning). Endless regrow rebuilds a pool building in its model's shape and takes back only its
+start_chunks (rail and bridge pieces never regrow); a drop stopped on the kaiju no longer smashes the floors below; fled
+counts each person once (has_fled column); a startled civilian stands facing the kaiju on the startle frame (GDScript
+and KaijuWalk); F11 cannot be rebound away from fullscreen; GraphicsPresets.end_run lets menus read the row picked
+there; settings.cfg keeps -1 (tuning default) for SFX volume and camera motion; Damped's acceleration cap holds the
+position too (aim); blast bursts take the preset's particle cap. Each has its red-then-green test. city_sound: the run now ends at phase 0.83 (fled once each), so its floor is 0.8.
+
 ## 2026-11-03 · D-455 · Director · One roadmap, rebuilt; stale docs bashed
 "stale and wrong; fix the cause; update the roadmap fully; clean up old docs." Cause: open rows lived in Claude Docs
 one account could not open, and done work was never marked. Rule: docs/ROADMAP.md is the only roadmap; add an item
@@ -390,9 +398,3 @@ wording, for the director.
 "Ship shadows off", after 1080p stills on vs off (bulldozer frames 1800 and 2600). Rubble heaps, strips and thrown
 chunks (RuinYard) stop casting shadows: data/tuning.json destruction.ruin_shadows = 0. Peak ruin: GPU p50 22.0 ->
 21.2 ms, shadow draws 2,442 -> 2,123 (docs/research/2026-10-31-cpu-profile.md).
-
-## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
-His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
-moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
-consent of 10-30 (D-400). Generated 10-31: trawler, tug, yacht, launch, 260 credits
-(provenance C:/Users/DANTE/cascadeur_bridge/city_boats/provenance.md). Spectacle only: nothing reaches the sim.

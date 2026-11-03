@@ -322,8 +322,8 @@ static func _set_bus(at: int, value: float) -> void:
 static func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "volume", volume)
-	cfg.set_value("audio", "sfx_volume", sfx())
-	cfg.set_value("display", "camera_motion", motion())
+	cfg.set_value("audio", "sfx_volume", sfx_volume)  # raw: -1 keeps the tuning default
+	cfg.set_value("display", "camera_motion", camera_motion)
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.set_value("display", "ui_scale", ui_scale)
 	cfg.set_value("display", "version", DISPLAY_VERSION)
@@ -341,6 +341,12 @@ static func save() -> void:
 	cfg.save(PATH)
 
 
+## A saved 0..1 setting, or -1 (the tuning default) when it was saved negative.
+static func _unit_or_default(saved: Variant) -> float:
+	var v := Num.f(saved)
+	return -1.0 if v < 0.0 else clampf(v, 0.0, 1.0)
+
+
 ## Reads settings.cfg (missing keys keep their defaults; `start_full` is the default mode).
 static func load_saved(start_full: bool) -> void:
 	fullscreen = start_full
@@ -348,8 +354,8 @@ static func load_saved(start_full: bool) -> void:
 	if cfg.load(PATH) != OK:
 		return
 	volume = clampf(Num.f(cfg.get_value("audio", "volume", volume)), 0.0, 1.0)
-	sfx_volume = clampf(Num.f(cfg.get_value("audio", "sfx_volume", sfx())), 0.0, 1.0)
-	camera_motion = clampf(Num.f(cfg.get_value("display", "camera_motion", motion())), 0.0, 1.0)
+	sfx_volume = _unit_or_default(cfg.get_value("audio", "sfx_volume", -1.0))
+	camera_motion = _unit_or_default(cfg.get_value("display", "camera_motion", -1.0))
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
 	controls_seen = cfg.get_value("ui", "controls_seen", false) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
