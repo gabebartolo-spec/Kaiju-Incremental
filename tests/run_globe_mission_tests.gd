@@ -15,6 +15,10 @@ func run_checks() -> void:
 	await _t("_check_globe_mission")
 	await _t("_check_globe_real_cities")
 	await _t("_check_threat_readout")
+	await _t("_check_threat_plate")
+	await _t("_check_panel_threat_line")
+	await _t("_check_returns_to_host")
+	await _t("_check_main_flow")
 
 
 ## The globe's mission flow (GlobeMissions), the scene's child.
@@ -57,7 +61,9 @@ func _check_globe_mission() -> void:
 	_click(globe, globe.camera().unproject_position(globe.surface_global(globe.anchor_of(id))))
 	var words := _texts(panel)
 	check(panel.visible and panel.id == id, "a click on Ostia Minor opens its panel")
-	for want: String in ["OSTIA MINOR", "Young croc", "Threat +10%"]:
+	var add := Num.i(Content.continent(id)["threat"])
+	var line := "Threat +%d%% (to %d%%)" % [add, add]
+	for want: String in ["OSTIA MINOR", "Young croc", line]:
 		check(words.has(want), "the panel reads '%s': %s" % [want, words])
 	check(words.has("Stomps hit 15% harder"), "a bonus reads in plain words: %s" % [words])
 	await process_frame
@@ -80,10 +86,13 @@ func _play(globe: GlobeView, won: bool) -> void:
 	var id := "ostia_minor"
 	var panel := globe.mission_panel()
 	var mission := globe.mission()
-	var readout := _missions(globe).threat_label
+	var readout := _missions(globe).threat
 	var share := Num.i(Content.continent(id)["threat"])  # Ostia Minor's share (data, D-422)
-	var at_start := "Threat %d%%" % 0
-	check(readout.text == at_start, "before the mission Threat reads 0%%: %s" % readout.text)
+	var at_start := "%d%%" % 0
+	check(
+		readout.value_text() == at_start,
+		"before the mission Threat reads 0%%: %s" % readout.value_text()
+	)
 	panel.launch_button().pressed.emit()
 	var city := _missions(globe).city
 	check(not readout.visible, "no Threat readout while the city plays")
@@ -109,12 +118,12 @@ func _play(globe: GlobeView, won: bool) -> void:
 	var want: Array = [id] if won else []
 	check(conquered == want, "%s: conquered %s" % [result, conquered])
 	check(globe.locked("carthago") != won, "%s: Carthago is open: %s" % [result, won])
-	var shown := "Threat %d%%" % floori(Num.f(globe.save().get("threat", 0.0)))
-	var want_text := "Threat %d%%" % (share if won else 0)
+	var shown := "%d%%" % floori(Num.f(globe.save().get("threat", 0.0)))
+	var want_text := "%d%%" % (share if won else 0)
 	check(readout.visible, "%s: the Threat readout is back with the globe" % result)
 	check(
-		readout.text == want_text and readout.text == shown,
-		"%s: Threat reads %s (save %s): %s" % [result, want_text, shown, readout.text]
+		readout.value_text() == want_text and readout.value_text() == shown,
+		"%s: Threat reads %s (save %s): %s" % [result, want_text, shown, readout.value_text()]
 	)
 	check(globe.marker(id).ink() == UiKit.ACCENT, "%s: Ostia Minor's marker stays lit" % result)
 	if won:
@@ -184,20 +193,28 @@ func _check_threat_readout() -> void:
 		save = Campaign.conquer(save, Content.continent(id), "")
 		shares += Num.f(Content.continent(id)["threat"])
 	_missions(globe).use_save(save)
-	var readout := _missions(globe).threat_label
-	var five := "Threat %d%%" % floori(minf(shares, Campaign.THREAT_CAP))
-	check(readout.text == five, "five conquests read %s: %s" % [five, readout.text])
+	var readout := _missions(globe).threat
+	var five := "%d%%" % floori(minf(shares, Campaign.THREAT_CAP))
+	check(
+		readout.value_text() == five, "five conquests read %s: %s" % [five, readout.value_text()]
+	)
 	check(globe.locked("aurelia"), "five conquests: Aurelia stays locked")
 	save = Campaign.conquer(save, Content.continent(outside[-1]), "")
 	_missions(globe).use_save(save)
-	var full := "Threat %d%%" % int(Campaign.THREAT_FULL)
-	check(readout.text == full, "the sixth conquest reads %s: %s" % [full, readout.text])
+	var full := "%d%%" % int(Campaign.THREAT_FULL)
+	check(
+		readout.value_text() == full,
+		"the sixth conquest reads %s: %s" % [full, readout.value_text()]
+	)
 	check(not globe.locked("aurelia"), "the sixth conquest opens Aurelia (D-422)")
 	# The edge: a Threat just under full reads under it (truncated), so 100 shows only once the
 	# capital is open (D-422 says 99 at most until then).
 	_missions(globe).use_save({"conquered": [], "bonuses": {}, "threat": Campaign.THREAT_CAP + 0.5})
-	var edge := "Threat %d%%" % int(Campaign.THREAT_CAP)
-	check(readout.text == edge, "99.5 reads %s, never 100 with Aurelia locked: %s" % [edge, readout.text])
+	var edge := "%d%%" % int(Campaign.THREAT_CAP)
+	check(
+		readout.value_text() == edge,
+		"99.5 reads %s, never 100 with Aurelia locked: %s" % [edge, readout.value_text()]
+	)
 	globe.mission_panel().show_for(Content.continent("ostia_minor"))
 	await process_frame
 	await process_frame
@@ -207,3 +224,126 @@ func _check_threat_readout() -> void:
 	var card := globe.mission_panel().get_global_rect()
 	check(not box.intersects(card), "the readout clears the panel: %s vs %s" % [box, card])
 	globe.free()
+
+
+## D-461 (director 2026-11-04), the plate: about 20 px tall, a yellow edge on a plate, label yellow,
+## on the safe-margin corner on both axes; the value runs from the ramp's first colour at 0 to its
+## last at the cap, redder as it climbs (on vs off: the same plate at 0 and at 99 differs).
+func _check_threat_plate() -> void:
+	var plate := ThreatReadout.new()
+	root.add_child(plate)
+	await process_frame
+	await process_frame
+	var cfg := ThreatReadout.config()
+	var tall := plate.get_global_rect().size.y
+	check(absf(tall - Num.f(cfg["height"])) <= 2.0, "the plate is about 20 px tall: %s" % tall)
+	check(plate.position == UiKit.safe_margin(), "the plate sits on the safe margin, both axes")
+	var edge := (plate.get_theme_stylebox("panel") as StyleBoxFlat).border_color
+	check(edge == UiKit.ACCENT, "the plate's edge is the hazard yellow")
+	var ramp: Array = cfg["ramp"]
+	var first: Array = ramp[0]
+	var last: Array = ramp[-1]
+	var calm_colour: Color = ThreatReadout.PALETTE[str(first[1])]
+	var alarm_colour: Color = ThreatReadout.PALETTE[str(last[1])]
+	check(ThreatReadout.colour_for(0.0) == calm_colour, "calm at 0")
+	check(ThreatReadout.colour_for(100.0) == alarm_colour, "alarm at 100")
+	check(ThreatReadout.colour_for(100.0) == UiKit.ALERT, "the last stop is alert red")
+	var reds := 0
+	var prev := ThreatReadout.colour_for(0.0)
+	for level: int in range(1, 101):
+		var now := ThreatReadout.colour_for(float(level))
+		reds += 1 if now.g <= prev.g + 0.0001 and now.r >= prev.r - 0.0001 else 0
+		prev = now
+	check(reds == 100, "the value never turns calmer as the level climbs: %d" % reds)
+	plate.show_level(0.0)
+	var calm := plate.value_colour()
+	plate.show_level(99.0)
+	check(plate.value_colour() != calm, "the value's colour moves with the level")
+	check(plate.value_colour().g < calm.g, "at 99 it is redder than at 0")
+	plate.free()
+
+
+## D-461, reconcile: the panel's line says what the conquest adds and where it leaves the corner
+## value (the same percent units, out of the cap).
+func _check_panel_threat_line() -> void:
+	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
+	globe.spin = false
+	root.add_child(globe)
+	var missions := _missions(globe)
+	missions.use_save({"conquered": [], "bonuses": {}, "threat": 0.0})
+	missions.show_panel("ostia_minor")
+	var add := Num.i(Content.continent("ostia_minor")["threat"])
+	var want := "Threat +%d%% (to %d%%)" % [add, add]
+	check(_texts(globe.mission_panel()).has(want), "the panel reads '%s'" % want)
+	var fresh := {"conquered": [], "bonuses": {}, "threat": 0.0}
+	var save := Campaign.conquer(fresh, Content.continent("ostia_minor"), "")
+	missions.use_save(save)
+	missions.show_panel("carthago")
+	var more := Num.i(Content.continent("carthago")["threat"])
+	var after := "Threat +%d%% (to %d%%)" % [more, add + more]
+	check(_texts(globe.mission_panel()).has(after), "the panel reads '%s' after one win" % after)
+	globe.free()
+
+
+## D-462: a mission resolving hands back to the host: WIN (bonus kept) and LOSE each emit
+## `returned`; the host's save carries the conquest on a WIN and nothing on a LOSE.
+func _check_returns_to_host() -> void:
+	for won: bool in [true, false]:
+		var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
+		globe.spin = false
+		root.add_child(globe)
+		var seen: Array[bool] = []
+		globe.returned().connect(func(w: bool) -> void: seen.append(w))
+		globe.use_save({"conquered": [], "bonuses": {}, "threat": 0.0})
+		var mission := globe.mission()
+		mission.start(Content.continent("silvania"))
+		mission.buttons()[0 if won else 1].pressed.emit()
+		if won:
+			check(seen.is_empty(), "WIN waits for the bonus pick before returning")
+			mission.buttons()[0].pressed.emit()
+		check(seen == [won], "the host hears %s: %s" % [won, seen])
+		var conquered: Array = globe.save().get("conquered", [])
+		check(conquered.has("silvania") == won, "conquered %s on won=%s" % [conquered, won])
+		globe.free()
+
+
+## D-462, the game's flow through Main: a new game's creation and Continue both land on the globe;
+## a city's WIN or LOSE lands on the TREE, the WIN carrying its conquest and kept bonus into the
+## game's save (on vs off: LOSE leaves the save as it was). No file is written for the slot but
+## the one this check makes.
+func _check_main_flow() -> void:
+	for won: bool in [true, false]:
+		SaveFile.wipe()
+		SaveFile.save_game(SaveFile.new_save("reptilian"))
+		var main: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
+		root.add_child(main)
+		await process_frame
+		await process_frame
+		main.call("_continue_slot", 1)
+		var shown: Node = main.call("screen")
+		var globe := shown as GlobeView
+		check(globe != null, "Continue (won=%s) opens the globe, not a run or the tree" % won)
+		if globe == null:
+			main.queue_free()
+			continue
+		var mission := globe.mission()
+		mission.start(Content.continent("ostia_minor"))
+		mission.buttons()[0 if won else 1].pressed.emit()
+		if won:
+			mission.buttons()[0].pressed.emit()
+		await process_frame
+		await process_frame
+		var current: Node = main.call("screen")
+		var tree := current as UpgradeScreen
+		var saved := SaveFile.load_game()
+		var conquered: Array = saved.get("conquered", [])
+		var word := "WIN" if won else "LOSE"
+		check(tree != null, "%s lands back on the tree: %s" % [word, current])
+		check(conquered.has("ostia_minor") == won, "%s: the save's conquests %s" % [word, conquered])
+		var share := Num.f(Content.continent("ostia_minor")["threat"]) if won else 0.0
+		check(Num.f(saved.get("threat", 0.0)) == share, "%s: Threat %s" % [word, saved.get("threat")])
+		var bonuses: Dictionary = saved.get("bonuses", {})
+		check(bonuses.has("ostia_minor") == won, "%s: the kept bonus %s" % [word, bonuses])
+		main.queue_free()
+		await process_frame
+	SaveFile.wipe()

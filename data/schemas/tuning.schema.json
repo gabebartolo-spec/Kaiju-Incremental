@@ -126,6 +126,20 @@
           "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
           "additionalProperties": false
         },
+        "threat_readout": {
+          "type": "object",
+          "properties": {
+            "height": {"$ref": "#/$defs/num"},
+            "font": {"$ref": "#/$defs/num"},
+            "border": {"$ref": "#/$defs/num"},
+            "pad": {"$ref": "#/$defs/num"},
+            "gap": {"$ref": "#/$defs/num"},
+            "ramp": {"type": "array", "items": {"type": "array"}}
+          },
+          "required": ["height", "font", "border", "pad", "gap", "ramp"],
+          "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
+          "additionalProperties": false
+        },
         "specimen_card": {
           "type": "object",
           "properties": {"seconds": {"$ref": "#/$defs/num"}, "gap": {"$ref": "#/$defs/num"}},
@@ -136,7 +150,7 @@
       },
       "required": [
         "safe_margin", "text", "hud", "hurt", "controls_card", "tooltip_width",
-        "species_spin_rate", "loading_news", "threat_bar", "news_live", "specimen_card"
+        "species_spin_rate", "loading_news", "threat_bar", "news_live", "specimen_card", "threat_readout"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false

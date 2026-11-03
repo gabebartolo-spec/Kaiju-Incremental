@@ -228,6 +228,8 @@ func _check_continue_picks_slot() -> void:
 	)
 	await GuiInput.click(self, two)
 	await _frames(3)
+	check(_screen(main) is GlobeView, "continuing a slot opens the globe (D-462)")
+	await preload("res://tests/lib/creation_walk.gd").globe_to_tree(self, main)
 	var tree := _screen(main) as UpgradeScreen
 	check(
 		tree != null and tree.rubble == 321 and SaveFile.slot == 2,

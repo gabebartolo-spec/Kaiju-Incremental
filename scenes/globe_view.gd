@@ -152,6 +152,16 @@ func save() -> Dictionary:
 	return _missions.save()
 
 
+## Plays on from this save (the host's, D-462) instead of the slot's file.
+func use_save(save_in: Dictionary) -> void:
+	_missions.use_save(save_in)
+
+
+## Emitted when a mission resolves (GlobeMissions.returned): the host moves on.
+func returned() -> Signal:
+	return _missions.returned
+
+
 func _process(delta: float) -> void:
 	if _fly_t < 1.0:
 		_fly_t = minf(1.0, _fly_t + delta / FLY_S)
@@ -351,7 +361,7 @@ func _click(id: String) -> void:
 	if id != "":
 		continent_picked.emit(id)
 		fly_to(id)
-		_missions.panel.show_for(Content.continent(id))
+		_missions.show_panel(id)
 	elif selected != "":
 		fly_out()
 

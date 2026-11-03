@@ -60,6 +60,7 @@ func _check_dusk_only() -> void:
 		await process_frame
 		await process_frame
 		main.call("_continue_slot", 1)
+		main.call("_start_rampage")  # Continue opens the globe (D-462); START begins the run
 		played.append(str(SaveFile.load_game().get("last_time", "")))
 		main.queue_free()
 		await process_frame
@@ -233,6 +234,7 @@ func _check_through_main() -> void:
 		await process_frame
 		await process_frame
 		main.call("_continue_slot", 1)  # slot 1: a save with no rampage yet starts one
+		main.call("_start_rampage")  # Continue opens the globe (D-462); START begins the run
 		seen.append(str(SaveFile.load_game().get("last_time", "")))
 		var table := Content.time_table()
 		var expected := str(Look.color("sky_top").to_html(false))

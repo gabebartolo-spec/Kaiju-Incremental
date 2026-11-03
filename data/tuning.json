@@ -47,7 +47,9 @@
 		"_note_news_live": "The crawl during a rampage (RampageNews): slides up over slide_s, stays while the headline crosses behind the tag plus read_s (never under min_s), then slides away; at most queue lines wait.",
 		"news_live": {"slide_s": 0.25, "read_s": 0.5, "min_s": 3.0, "queue": 3},
 		"_note_specimen_card": "The lab card before a new specimen rises (SpecimenCard, D-260 'a 2 s Lab card'): seconds on screen, gap between title and headline.",
-		"specimen_card": {"seconds": 2.0, "gap": 24}
+		"specimen_card": {"seconds": 2.0, "gap": 24},
+		"_note_threat_readout": "The globe's Threat Level plate (ThreatReadout, D-461): a bordered plate at the title-safe corner, height px tall, label in hazard yellow, the value coloured along ramp (Threat percent, UiKit palette name; colours blend between stops, calm at the first, alarm at the last), then the cap it counts to. font: label size; border: plate edge px; pad: px inside the edge, sideways; gap: px between its three parts.",
+		"threat_readout": {"height": 20, "font": 13, "border": 2, "pad": 8, "gap": 6, "ramp": [[0, "GOOD"], [50, "WARN"], [100, "ALERT"]]}
 	},
 	"display": {
 		"fps_caps": [60, 120, 0],

@@ -39,6 +39,7 @@ static func _case(
 	var slots: Node = main.call("screen")  # the save slots
 	await GuiInput.click(tree, GuiInput.button(slots, "SLOT 1"))
 	await _frames(tree, 3)
+	await preload("res://tests/lib/creation_walk.gd").globe_to_tree(tree, main)
 	var screen: Node = main.call("screen")
 	if screen is UpgradeScreen:
 		await GuiInput.click(tree, GuiInput.button(screen, "RAMPAGE"))

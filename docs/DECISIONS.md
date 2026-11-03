@@ -4,6 +4,19 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-04 · D-462 · Director · The globe sits after title and creation; a city's WIN or LOSE lands on the tree
+Flow: title -> creation (or Continue) -> globe -> a city -> WIN or LOSE -> the tree (upgrades), reached after a city, not
+before it. Main hosts the globe (`GlobeView.returned`); the D-454 stand-in missions (Silvania, Mons Ferrata, Neptunia,
+Aurelia) stay. NOT built, still unruled: the demo-end rule (Q4) and the win rule (Q5). Changes: `scenes/main.gd`,
+`docs/DESIGN.md` (Campaign bullet), `docs/ROADMAP.md`.
+
+## 2026-11-04 · D-461 · Director · The Threat readout is a plate like the mission panel's
+Yellow border and plate, label yellow, value coloured; about 20 px tall (not 30); at `UiKit.safe_margin` on both axes
+(same corner as the other HUD). The value runs from calm (0%) to alarm red toward 100%, colours from the UI palette and
+stops in data (tuning ui "threat_readout"). It reads "THREAT 12% / 100%" so 100% reads as the cap, and the mission
+panel's line reads "Threat +N% (to M%)", coloured by M like the plate in the same units. Changes: `scenes/threat_readout.gd`,
+`scenes/globe_missions.gd`, `scenes/mission_panel.gd`, `data/tuning.json`.
+
 ## 2026-11-03 · D-458 · Director (roadmap M3) · Helicopter deaths: a Taskforce gunship dies as a helicopter does
 A gunship downed by the kaiju now takes AirWing's fates and numbers (D-140, D-141, D-145, D-437) instead of vanishing:
 a blow of burst_blow blows it apart in the air; a lighter one sets it burning and spinning down as one of AirWing's
@@ -385,13 +398,3 @@ Proof waived by the director ("i dont care for the proof just merge it").
 "you can copy the examples EXACTLY if thats best practice, dont be obtuse, its still an invisible skeleton in an
 original model". Godzilla, T-rex and other reference motion is retargeted key for key onto our original kaiju; no
 licence check and no credit needed for the motion. Replaces D-302's licence line for motion references.
-
-## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
-Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
-stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).
-Asked: change the take or the checks? "Change the checks": lift > 0.3 hip, toe and body within 0.03 hip, no
-variation bar (one take plays the same each time). Landing inside STOMP_WAIT and alternating feet stay.
-
-## 2026-10-31 · D-407 · Director · Colour-blind cues move to after the demo
-"push colour blind fixes to after demo". The check found #229's options carry no colour-blind setting; the threat
-meter (#234) already reads by segment count. The colour-blind pass is a post-demo roadmap row, not a demo gate.

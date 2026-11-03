@@ -7,16 +7,20 @@ extends CanvasLayer
 ## LOSE (no rule yet says what wins a city). Other continents open the StubMission at once. The
 ## globe ignores the pointer meanwhile. A win stores the conquest in the save (Campaign.conquer;
 ## written back when there is a save on disk), the continents take their new states and the camera
-## flies back out; a loss returns to the panel with nothing changed. The global Threat Level
-## (D-422, Campaign.conquer) reads in the top-left corner while the globe is up (look, place and
-## wording are placeholders until the director rules).
+## flies back out; a loss returns to the panel with nothing changed. Either way the mission is
+## over and `returned` tells the host (Main: the tree is next, D-462). The global Threat Level
+## (D-422, Campaign.conquer) reads on a ThreatReadout plate in the top-left corner while the globe
+## is up (D-461).
+
+## A mission resolved (WIN with its bonus kept, or LOSE): the host moves on (D-462).
+signal returned(won: bool)
 
 const LAYER := 2  # over the markers' layer (1)
 
 var panel: MissionPanel
 var mission: StubMission
-## The global Threat Level readout (D-422).
-var threat_label: Label
+## The global Threat Level readout (D-422, D-461).
+var threat: ThreatReadout
 
 ## The real city's rampage under way (null when none).
 var city: Rampage
@@ -34,14 +38,12 @@ func _init(globe: GlobeView) -> void:
 	add_child(panel)
 	mission = StubMission.new()
 	add_child(mission)
-	threat_label = UiKit.label("")  # plain placeholder: look, place and wording undecided
-	threat_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	threat_label.position = UiKit.safe_margin()
-	add_child(threat_label)
+	threat = ThreatReadout.new()
+	add_child(threat)
 	_show_threat()
 	panel.launched.connect(_launch)
 	mission.won.connect(_won)
-	mission.lost.connect(_end)
+	mission.lost.connect(_lost)
 
 
 func save() -> Dictionary:
@@ -55,10 +57,16 @@ func use_save(save_in: Dictionary) -> void:
 	_show_threat()
 
 
-## The readout shows the save's Threat Level as a whole percent, truncated: 100 reads only once
-## the capital is open (D-422 holds it at 99 at most until then).
 func _show_threat() -> void:
-	threat_label.text = tr("Threat %d%%") % floori(Num.f(_save.get("threat", 0.0)))
+	threat.show_level(Num.f(_save.get("threat", 0.0)))
+
+
+## Opens a continent's panel, its Threat line reconciled with the readout: what the conquest adds
+## and the level it would leave (D-461).
+func show_panel(id: String) -> void:
+	var def := Content.continent(id)
+	var after: float = Campaign.conquer(_save, def, "")["threat"]
+	panel.show_for(def, after)
 
 
 ## Each continent's Campaign.State from the save.
@@ -94,7 +102,7 @@ func _start_city(def: Dictionary) -> void:
 	city.setup_later(species, stats, plan, runs)
 	city.finished.connect(_city_over.bind(def), CONNECT_DEFERRED)
 	panel.visible = false
-	threat_label.visible = false
+	threat.visible = false
 	_globe.set_shown(false)
 	PlayerSettings.in_play = true
 	_globe.add_sibling(city)
@@ -109,7 +117,7 @@ func _city_over(_result: Dictionary, def: Dictionary) -> void:
 	PlayerSettings.in_play = false
 	_globe.set_shown(true)
 	panel.visible = true
-	threat_label.visible = true
+	threat.visible = true
 	mission.start(def, tr("The rampage is over"))
 
 
@@ -121,6 +129,12 @@ func _won(id: String, bonus_id: String) -> void:
 	_show_threat()
 	_end(id)
 	_globe.fly_out()
+	returned.emit(true)
+
+
+func _lost(id: String) -> void:
+	_end(id)
+	returned.emit(false)
 
 
 func _end(_id: String) -> void:

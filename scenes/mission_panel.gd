@@ -36,8 +36,10 @@ func _init() -> void:
 	visible = false
 
 
-## Shows one continent's mission (a Content.continents() row).
-func show_for(def: Dictionary) -> void:
+## Shows one continent's mission (a Content.continents() row). `after`: the Threat Level its
+## conquest would leave, shown beside what it adds so the line reads in the corner readout's own
+## units (D-461); negative leaves it out.
+func show_for(def: Dictionary, after := -1.0) -> void:
 	id = str(def["id"])
 	for child: Node in _lines.get_children():
 		_lines.remove_child(child)
@@ -46,7 +48,11 @@ func show_for(def: Dictionary) -> void:
 	var stage: int = def["stage"]
 	_lines.add_child(UiKit.label(tr(Content.stage_word(stage)), UiKit.SIZE_BODY, UiKit.MUTED))
 	var threat: float = def["threat"]
-	_lines.add_child(UiKit.label(tr("Threat +%d%%") % roundi(threat), UiKit.SIZE_BODY, UiKit.ALERT))
+	var line := tr("Threat +%d%%") % roundi(threat)
+	if after >= 0.0:
+		line += tr(" (to %d%%)") % floori(after)
+	var tint := ThreatReadout.colour_for(after) if after >= 0.0 else UiKit.ALERT
+	_lines.add_child(UiKit.label(line, UiKit.SIZE_BODY, tint))
 	var offered: Array = def["bonuses"]
 	for pick: Dictionary in offered:
 		_lines.add_child(UiKit.label(bonus_text(pick, self), UiKit.SIZE_BODY, UiKit.TEXT))

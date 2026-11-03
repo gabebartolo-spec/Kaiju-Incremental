@@ -1,11 +1,14 @@
 extends Node
-## Game flow: title -> Kaiju Creation (new game) -> rampage -> end beat -> results ->
-## evolution tree (evolution reveal on an evolution) -> rampage ...
+## Game flow: title -> Kaiju Creation (new game) -> the globe (D-462; Continue goes there too) ->
+## a city's rampage -> WIN / LOSE -> evolution tree (evolution reveal on an evolution). The tree's
+## START still begins a plain rampage -> end beat -> results -> tree ...
 ## The demo (D-050, data/tuning.json "demo") offers its species only. Buying its final upgrade (the
 ## whole tree) shows the thanks screen and unlocks Endless mode (Endless, D-156), started from the
 ## thanks screen or the tree; normal mode stays replayable.
 ## Owns the save state; screens get what they need through setup() and report back by signal.
 ## Progress comes only from playing: nothing accrues while the game is closed.
+
+const GLOBE_SCENE := "res://scenes/globe_view.tscn"
 
 var _screen: Node
 var _save: Dictionary = {}
@@ -128,13 +131,33 @@ func _continue() -> void:
 	if not _save.has("seed"):  # a save from before saves had a city seed draws its own now
 		_save["seed"] = SaveFile.fresh_seed()
 		SaveSystem.save_game(_save)
+	_build_tree()
+	_show_globe()
+
+
+## The evolution tree from the save's levels and the conquest bonuses it holds (plan row F4).
+func _build_tree() -> void:
 	var levels: Dictionary = _save.get("levels", {})
-	var picked: Dictionary = _save.get("bonuses", {})  # conquest bonuses (plan row F4)
+	var picked: Dictionary = _save.get("bonuses", {})
 	_tree = UpgradeTree.new(GameData.upgrades, levels, str(_save.get("species", "")), picked)
-	if Num.i(_save.get("runs", 0)) == 0:
-		_start_rampage()
-	else:
-		_show_tree()
+
+
+## The globe, where a game goes from the title and from Kaiju Creation (D-462): the player picks a
+## continent and plays its city. A city's WIN or LOSE lands on the tree (_on_globe_returned).
+func _show_globe() -> void:
+	var globe := (load(GLOBE_SCENE) as PackedScene).instantiate() as GlobeView
+	_swap(globe)
+	globe.use_save(_save)
+	globe.returned().connect(_on_globe_returned.bind(globe), CONNECT_DEFERRED)
+
+
+## A globe mission is over, won or lost (D-462): the globe's save (the conquest and the bonus
+## kept, on a WIN) is the game's now, and the player lands on the tree.
+func _on_globe_returned(_won: bool, globe: GlobeView) -> void:
+	_save = globe.save()
+	SaveSystem.save_game(_save)
+	_build_tree()
+	_show_tree()
 
 
 ## The demo's rampage totals so far (Demo.add).
