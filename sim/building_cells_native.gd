@@ -31,6 +31,8 @@ const KEYS: Array[String] = [
 	"heater",
 	"heater_hi",
 	"solar",
+	"frame_metal",
+	"frame_wood",
 ]
 
 

@@ -25,7 +25,7 @@ const FIXTURES: Array = [
 const CITY_SAMPLE := 40
 ## Materials that hang on by an edge or a corner (data/materials.json "fixture").
 const FIXTURES_EXPECTED: Array[String] = [
-	"window", "mullion", "glass", "shop", "sign_frame", "neon0", "neon1", "neon2", "neon3"
+	"window", "mullion", "frame_metal", "frame_wood", "glass", "shop", "sign_frame", "neon0", "neon1", "neon2", "neon3"
 ]
 const MODULES: Array[String] = [
 	"res://sim/building_cells.gd",

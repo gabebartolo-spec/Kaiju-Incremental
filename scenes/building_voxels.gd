@@ -80,6 +80,8 @@ func _make_palette(base: Color) -> void:
 		"lit": lit,
 		"glass": Look.color("window").lerp(base, 0.3).lightened(0.1),
 		"mullion": base.darkened(0.45),
+		"frame_metal": Look.color("window_frame_metal"),
+		"frame_wood": Look.color("window_frame_wood"),
 		"spandrel": base.darkened(0.18),
 		"party": base.darkened(0.06),
 		"shop": Color("1e2429"),
