@@ -127,6 +127,6 @@ func _check_mechs_adult_only() -> void:
 	_open(young)
 	_run(adult, 30.0)
 	_run(young, 30.0)
-	check(adult.army_units.taskforce.mechs.cap() == 4, "up to 4 mechs walk the adult city (D-143)")
+	check(adult.army_units.taskforce.mechs.cap() == 3, "up to 3 mechs walk the adult city (D-143, director 2026-11-03)")
 	check(not adult.army_units.taskforce.mechs.mechs.is_empty(), "mechs walk in (on)")
 	check(young.army_units.taskforce.mechs.mechs.is_empty(), "none in the adolescent city (off)")
