@@ -43,6 +43,11 @@ class Falling:
 	var pos: Vector2
 	var drift: Vector2  # ground units a second
 	var left: float
+	var seconds := 0.0  # the whole fall's time
+	## Lands on roofs (a Taskforce gunship, D-457): it falls from `alt` as the view draws it
+	## (height alt x (1 - u^2)) and crashes on the first roof it meets, never through it.
+	var roofs := false
+	var alt := 0.0
 
 
 var sim: RampageSim
@@ -174,6 +179,7 @@ func _spin_down(heli: Heli, p_rng: RandomNumberGenerator = null) -> Dictionary:
 	down.id = heli.id
 	down.pos = heli.pos
 	down.left = Num.f(cfg["fall_seconds"])
+	down.seconds = down.left
 	var away := Vector2.from_angle(rng.randf() * TAU)
 	down.drift = away * Num.f(cfg["fall_drift"]) / down.left
 	falling.append(down)
@@ -185,26 +191,44 @@ func _spin_down(heli: Heli, p_rng: RandomNumberGenerator = null) -> Dictionary:
 	}
 
 
-## Falling wrecks drift down; each one that lands crashes.
+## Falling wrecks drift down; each one that lands crashes (on the street, or on the roof it meets).
 func _fall(dt: float) -> void:
 	var still: Array[Falling] = []
 	for down: Falling in falling:
 		down.left -= dt
 		down.pos = sim.clamp_to_arena(down.pos + down.drift * dt)
-		if down.left > 0.0:
+		var y := 0.0
+		var landed := down.left <= 0.0
+		if down.roofs and not landed:
+			var u := clampf(1.0 - down.left / maxf(down.seconds, 0.001), 0.0, 1.0)
+			y = down.alt * (1.0 - u * u)
+			landed = y <= top_at(sim, down.pos)
+		if not landed:
 			still.append(down)
 			continue
 		sim.events.append(
-			{"type": "heli_crashed", "heli": down.id, "x": down.pos.x, "z": down.pos.y}
+			{"type": "heli_crashed", "heli": down.id, "x": down.pos.x, "z": down.pos.y, "y": y}
 		)
-		_crash(down.pos)
+		_crash(down.pos, y)
 	falling = still
+
+
+## The tallest standing building's height (floors) whose footprint holds `p`; 0 on open ground.
+static func top_at(p_sim: RampageSim, p: Vector2) -> int:
+	var top := 0
+	for b: RampageSim.Building in p_sim.buildings:
+		if b.frame.alive_count == 0:
+			continue
+		if absf(p.x - b.x) <= b.w * 0.5 and absf(p.y - b.z) <= b.d * 0.5:
+			top = maxi(top, b.height + b.base)
+	return top
 
 
 ## The wreck hits the street at `at`: it sets the building it hits burning, which spreads with
 ## City Ablaze (D-141), and smashes the low floors around it. It hurts the city and the army
-## below (D-167), never the kaiju or the sky.
-func _crash(at: Vector2) -> void:
+## below (D-167), never the kaiju or the sky. On a roof at height `y` it smashes the
+## `crash_floors` floors under it instead of the street's.
+func _crash(at: Vector2, y := 0.0) -> void:
 	var radius := Num.f(cfg["crash_radius"])
 	var nearest := -1
 	var best := radius
@@ -225,8 +249,8 @@ func _crash(at: Vector2) -> void:
 		func(p: Vector2, r: float) -> float:
 			return RampageSim.falloff(p.distance_to(at) - r, radius),
 		Num.f(cfg["crash_damage"]),
-		0,
-		Num.i(cfg["crash_floors"])
+		maxi(0, floori(y) - Num.i(cfg["crash_floors"])),
+		maxi(floori(y), Num.i(cfg["crash_floors"]))
 	)
 	_crashing = false
 	_crush_roofs(at, radius)

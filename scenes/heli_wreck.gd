@@ -72,10 +72,10 @@ func downed(node: Node3D, event: Dictionary, paint: Array[Color]) -> void:
 			_burst(node, at, paint)
 
 
-## A spinning wreck reached the street at the sim's crash point.
+## A spinning wreck reached the street (or a roof, at the sim's "y") at the sim's crash point.
 func crashed(event: Dictionary) -> void:
 	var id := Num.i(event["heli"])
-	var ground := Vector3(Num.f(event["x"]), 0.0, Num.f(event["z"]))
+	var ground := Vector3(Num.f(event["x"]), Num.f(event.get("y", 0.0)), Num.f(event["z"]))
 	var paint := HelicopterModel.GUNSHIP_PAINT
 	if _falling.has(id):
 		var fall: Fall = _falling[id]

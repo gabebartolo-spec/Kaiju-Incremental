@@ -5,8 +5,15 @@ extends RefCounted
 ## (AirFlight: a stand-off ring, glides, strafing passes) and fire a blue laser cannon on the
 ## helicopters' own cadence and damage (tuning "air"); like any helicopter, a blow that reaches
 ## the air downs one (no hit points, D-437) and pays a helicopter's rubble. Only the cap is the
-## Taskforce's own number (tuning "taskforce" "gunships"). Part of Taskforce; pure and seeded.
-## Events: gunship_spawned, gunship_laser (from, to), gunship_destroyed.
+## Taskforce's own number (tuning "taskforce" "gunships"). It dies as a helicopter does (D-457,
+## AirWing's fates and numbers): a blow of `burst_blow` blows it apart in the air, a lighter one
+## sends it spinning down along AirWing's own falling wrecks, which crash it on the street or on
+## the first roof it meets (never through one), smashing floors, crushing the army below and
+## setting the building burning. Its wreck's id is WRECK_ID + its id. Part of Taskforce; pure
+## and seeded. Events: gunship_spawned, gunship_laser (from, to), gunship_destroyed (fate, heli,
+## y; then AirWing's heli_crashed).
+
+const WRECK_ID := 2000000  # its wreck's id among AirWing's falling (beside VipHeli.ID)
 
 var sim: RampageSim
 var cfg: Dictionary
@@ -14,6 +21,7 @@ var flight: AirFlight  # made on first use: the Army (and so this) is built befo
 var ships: Array[AirWing.Heli] = []
 var kills := 0
 var _rng: RandomNumberGenerator
+var _fall_rng: RandomNumberGenerator  # its own stream: spawns draw exactly as before deaths fell
 var _timer := 0.0
 var _next_id := 0
 
@@ -22,6 +30,7 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> 
 	sim = p_sim
 	cfg = p_cfg
 	_rng = rng
+	_fall_rng = Seeds.derive(rng, 0x6FA1)
 
 
 ## How many may fly at once in this city (none before the adult city).
@@ -68,21 +77,42 @@ func altitude() -> float:
 	return Num.f(_air()["altitude"])
 
 
-## An area blow downs every gunship it reaches, when it reaches the air (as AirWing.hit).
+## An area blow downs every gunship it reaches, when it reaches the air (as AirWing.hit), and it
+## falls as AirWing's helicopters do. A wreck's own impact never reaches the sky.
 func hit(force: Callable, damage: float, reaches_air: bool) -> void:
-	if not reaches_air or damage <= 0.0:
+	if not reaches_air or damage <= 0.0 or sim.air._crashing:
 		return
 	var alive: Array[AirWing.Heli] = []
 	for ship: AirWing.Heli in ships:
-		if Num.f(force.call(ship.pos, Num.f(_air()["heli_radius"]))) <= 0.0:
+		var k := Num.f(force.call(ship.pos, Num.f(_air()["heli_radius"])))
+		if k <= 0.0:
 			alive.append(ship)
 			continue
 		kills += 1
 		sim.rubble += Num.f(_air()["rubble"]) * sim.stat("rubble_mult")
-		sim.events.append(
-			{"type": "gunship_destroyed", "ship": ship.id, "x": ship.pos.x, "z": ship.pos.y}
-		)
+		sim.events.append(_down(ship, damage * k))
 	ships = alive
+
+
+## The gunship's death event: blown apart, or spinning down as one of AirWing's falling wrecks.
+func _down(ship: AirWing.Heli, blow: float) -> Dictionary:
+	var event := {
+		"type": "gunship_destroyed",
+		"ship": ship.id,
+		"heli": WRECK_ID + ship.id,
+		"x": ship.pos.x,
+		"z": ship.pos.y,
+		"y": altitude(),
+	}
+	if blow >= Num.f(_air()["burst_blow"]):
+		event["fate"] = "burst"
+		return event
+	event.merge(sim.air._spin_down(ship, _fall_rng))
+	var down: AirWing.Falling = sim.air.falling.back()
+	down.id = WRECK_ID + ship.id
+	down.roofs = true
+	down.alt = altitude()
+	return event
 
 
 func _flight() -> AirFlight:

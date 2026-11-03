@@ -113,6 +113,7 @@ suites; a new suite counts as sim until it is added to `engine`.
 | `skin_helpers` | D-374 corrective helper joints match the reference maths |
 | `tank_flight` | flung tanks fly an arc, carve and stop at a building; Ricochet and Domino fixtures |
 | `taskforce_adult` | adult-city gas soldiers and walking mechs (D-143, D-145, D-152), on vs off |
+| `gunship_deaths` | a downed Taskforce gunship (D-457): a hard blow blows it apart; a glancing one spins it down out of the sky as an AirWing wreck from its altitude, crashing on the street within its fall time and removed; its crash smashes the block it lands on, never the kaiju; over a building it lands on the roof early, never through it (vs open street) |
 | `taskforce_gunship` | up to 2 Taskforce gunships in the adult city, laser cannon, downed by an air blow, on vs off |
 | `voxel_ao` | building meshers bake per-corner AO and a material finish; native == GDScript |
 | `wildlife` | pigeons and gulls scatter on a roar or landing; far roars leave them; the whale |

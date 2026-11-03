@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-457 · Director (roadmap M3) · Helicopter deaths: a Taskforce gunship dies as a helicopter does
+A gunship downed by the kaiju now takes AirWing's fates and numbers (D-140, D-141, D-145, D-437) instead of vanishing:
+a blow of burst_blow blows it apart in the air; a lighter one sets it burning and spinning down as one of AirWing's
+falling wrecks (fall_seconds, fall_drift, crew bail-outs), drawn by HeliWreck with its obsidian box. It falls from its
+altitude along the view's own curve and crashes on the street, or on the first standing roof under it, never through
+one (AirWing.top_at); the crash is AirWing's own (crash_floors under it, army crushed, City Ablaze, never the kaiju),
+then the wreck is removed. No new numbers. City helicopters keep landing on the street as before. Test: gunship_deaths.
+
 ## 2026-11-03 · D-456 · Director · Bug bash: nine verified bugs fixed, behaviour as designed
 Under D-032 (fixes, no tuning). Endless regrow rebuilds a pool building in its model's shape and takes back only its
 start_chunks (rail and bridge pieces never regrow); a drop stopped on the kaiju no longer smashes the floors below; fled
@@ -385,16 +393,3 @@ meter (#234) already reads by segment count. The colour-blind pass is a post-dem
 His words (10-31): "remove the chinese test checks, we only going to ship the demo with English", then "remove checks
 for all languages other than english". strings.py checks only the en column (CHECKED); check_i18n.sh no longer runs
 subset_cjk.py --check and lint.yml no longer fetches kaiju_cjk.ttf. The seven columns stay in the table.
-
-## 2026-10-31 · D-405 · Director · Time's up is an AIRSTRIKE: a jet run of Tripo olive jets
-His words (10-31), on "killed by the final strike": "i hate the copy, all deaths are from the final strike technically
-so its just meaningless babble, change it". Picked headline "AIRSTRIKE", strike "Jet run" (D-263's railgun volley is
-dropped), jet model "Tripo, olive drab": J01, task 7536acba-0e5f-45dd-9f08-e06a93959859, 65 credits from the 1,500-credit
-consent (D-400), balance 5,240 after. At time's up three jets cross the screen through him and carpet-bomb his street
-(FinalStrike, death.airstrike), then he dies as before. The subline "The army ran out of patience" is the lead's
-wording, for the director.
-
-## 2026-10-31 · D-408 · Director · Rubble casts no shadows
-"Ship shadows off", after 1080p stills on vs off (bulldozer frames 1800 and 2600). Rubble heaps, strips and thrown
-chunks (RuinYard) stop casting shadows: data/tuning.json destruction.ruin_shadows = 0. Peak ruin: GPU p50 22.0 ->
-21.2 ms, shadow draws 2,442 -> 2,123 (docs/research/2026-10-31-cpu-profile.md).
