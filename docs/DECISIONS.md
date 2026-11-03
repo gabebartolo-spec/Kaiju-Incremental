@@ -4,6 +4,7 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-451 · Director · Closer read of the D-447 skips: three more identical trims
 Under D-032. Rain smears rewrite only slots that were visible last tick (the rest already hold the hidden
 values), and the lamp walk stops once lamp_max is reached. CarvePhysics reads live_bodies() once per tick, not
 twice (a pure read; nothing changes in between). DebrisField returns right after advancing its clock when no
@@ -392,9 +393,3 @@ parked and stopped ones (the decor's own car keeps the rest). All crushable. Tun
 His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
 the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
 check. Replaces D-384 (and the 10 s rise bar it carried from D-131).
-
-## 2026-10-30 · D-398 · Director · The kaiju gets his own hide grain
-Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the city's block grain
-(`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest
-space so it rides the bones; seeded). Numbers in `data/looks.json` `kaiju_hide_*`; `kaiju_hide_on` is the on/off
-switch the onelook check flips. The look itself is his call on the stills before it lands.
