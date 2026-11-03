@@ -80,8 +80,6 @@ func _make_palette(base: Color) -> void:
 		"lit": lit,
 		"glass": Look.color("window").lerp(base, 0.3).lightened(0.1),
 		"mullion": base.darkened(0.45),
-		"frame_metal": Look.color("window_frame_metal"),
-		"frame_wood": Look.color("window_frame_wood"),
 		"spandrel": base.darkened(0.18),
 		"party": base.darkened(0.06),
 		"shop": Color("1e2429"),
@@ -105,6 +103,13 @@ func _make_palette(base: Color) -> void:
 		var neon := NEON[i]
 		neon.a = 0.0
 		palette["neon%d" % i] = neon
+	_add_sashes()
+
+
+## Closed-window sash frames (director 2026-11-03): metal on towers, wood on low/old blocks.
+func _add_sashes() -> void:
+	for key: String in ["frame_metal", "frame_wood"]:
+		palette[key] = Look.color("window_" + key)
 
 
 ## The share of windows lit (Look "window_lit"); a test view overrides it to 0.
