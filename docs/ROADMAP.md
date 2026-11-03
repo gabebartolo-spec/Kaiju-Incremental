@@ -88,7 +88,7 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
   - the overworld loop: globe, real mission, conquest
   - done: graphics preview (D-393), load art (D-427), end screen, feedback link (D-395)
 - **M4: Itch release candidate**
-  - done: build and release tooling, draft page, RC checklist (D-458, docs/release/)
+  - done: build and release tooling, draft page, RC checklist (D-457, docs/release/)
   - open: icon, page approval, price, RC play test, upload
 
 ## Parked
