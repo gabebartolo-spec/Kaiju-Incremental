@@ -13,6 +13,13 @@ horizon d6cfae, ambient 0.8 colour 667a78, sun e2dcb4 at 1.2, fog 7e8274 at 0.00
 mid 0.27-0.33, white 0.82-0.84, sat 0.18-0.19, highlights h46-49. H/I breath violet: no change (fx.bolt is
 already purple). Details: docs/research/shin_godzilla_grade.md.
 
+## 2026-11-03 · D-450 · Director · Fleeing civilians never step toward the kaiju
+Q: "civilians sometimes flee toward the kaiju; they must never do that." Causes: a runner's corner was checked only at
+the startle, so once the kaiju moved (or a wreck survivor spawned fleeing) it kept running at it; at a corner it took the
+linked corner furthest from the kaiju even when every one was nearer (a dead end sent it back past him). A: each frame a
+runner whose corner lies toward the kaiju turns back (one dot product, GDScript and KaijuWalk alike); at a corner it
+takes only a pavement whose first step leads away (a straight one then only gets further), else stands. tests/run_flee_tests.gd.
+
 ## 2026-11-03 · D-451 · Director · Closer read of the D-447 skips: three more identical trims
 Under D-032. Rain smears rewrite only slots that were visible last tick (the rest already hold the hidden
 values), and the lamp walk stops once lamp_max is reached. CarvePhysics reads live_bodies() once per tick, not
@@ -390,10 +397,3 @@ and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328
 for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
 procedural whip stands in until they land. Amended the same day: "Merge now" (the lash merges with the
 procedural whip; the clips follow).
-
-## 2026-10-30 · D-400 · Director · The 20 Tripo street props ship, at half the buildings' cube
-His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~19 cm)". Every prop is its baked
-`.kvox` (`tools/street_props/bake.sh`) at voxel 0.0625, half the buildings' 0.125: pavement furniture along every
-playable street, a traffic light at each lit crossing, the lamp model on every streetlight, Tripo cars among the
-parked and stopped ones (the decor's own car keeps the rest). All crushable. Tuning `city.street_props`. His
-1,500-credit Tripo consent (10-30) stays in reserve: this ships with 0 credits spent.

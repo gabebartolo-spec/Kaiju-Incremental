@@ -2,6 +2,13 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-400 · Director · The 20 Tripo street props ship, at half the buildings' cube
+His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~19 cm)". Every prop is its baked
+`.kvox` (`tools/street_props/bake.sh`) at voxel 0.0625, half the buildings' 0.125: pavement furniture along every
+playable street, a traffic light at each lit crossing, the lamp model on every streetlight, Tripo cars among the
+parked and stopped ones (the decor's own car keeps the rest). All crushable. Tuning `city.street_props`. His
+1,500-credit Tripo consent (10-30) stays in reserve: this ships with 0 credits spent.
+
 ## 2026-10-30 · D-399 · Director · The rise bar is removed
 His words, on D-384: "remove this rule / it makes no sense its claude gibberish". The city suite no longer times
 the walk from the rise to the first beachfront hotel: city_rise_forms goes and SpawnView keeps only its stand-in
