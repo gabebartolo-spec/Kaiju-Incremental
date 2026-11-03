@@ -14,6 +14,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_globe_mission")
 	await _t("_check_globe_real_cities")
+	await _t("_check_threat_readout")
 
 
 ## The globe's mission flow (GlobeMissions), the scene's child.
@@ -79,8 +80,11 @@ func _play(globe: GlobeView, won: bool) -> void:
 	var id := "ostia_minor"
 	var panel := globe.mission_panel()
 	var mission := globe.mission()
+	var readout := _missions(globe).threat_label
+	check(readout.text == "Threat 0%", "before the mission Threat reads 0%%: %s" % readout.text)
 	panel.launch_button().pressed.emit()
 	var city := _missions(globe).city
+	check(not readout.visible, "no Threat readout while the city plays")
 	check(city != null and not globe.visible, "LAUNCH starts Ostia Minor's city, the globe hidden")
 	if city == null:
 		return
@@ -103,6 +107,13 @@ func _play(globe: GlobeView, won: bool) -> void:
 	var want: Array = [id] if won else []
 	check(conquered == want, "%s: conquered %s" % [result, conquered])
 	check(globe.locked("carthago") != won, "%s: Carthago is open: %s" % [result, won])
+	var shown := "Threat %d%%" % roundi(Num.f(globe.save().get("threat", 0.0)))
+	var want_text := "Threat 10%" if won else "Threat 0%"
+	check(readout.visible, "%s: the Threat readout is back with the globe" % result)
+	check(
+		readout.text == want_text and readout.text == shown,
+		"%s: Threat reads %s (save %s): %s" % [result, want_text, shown, readout.text]
+	)
 	check(globe.marker(id).ink() == UiKit.ACCENT, "%s: Ostia Minor's marker stays lit" % result)
 	if won:
 		var bonuses: Dictionary = globe.save()["bonuses"]
@@ -151,4 +162,40 @@ func _check_globe_real_cities() -> void:
 	globe.mission_panel().launch_button().pressed.emit()
 	check(_missions(globe).city == null, "Silvania has no real city yet: no rampage")
 	check(globe.mission().visible, "Silvania opens the stand-in WIN / LOSE")
+	globe.free()
+
+
+## D-422, the value the player sees: five conquests before the capital read their summed shares
+## (under the 99% cap) with Aurelia locked; the sixth sets 100% and opens Aurelia. The readout is on
+## screen and clear of the mission panel.
+func _check_threat_readout() -> void:
+	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
+	globe.spin = false
+	root.add_child(globe)
+	var save := {"conquered": [], "bonuses": {}, "threat": 0.0}
+	var outside: Array[String] = []
+	for def: Dictionary in Content.continents():
+		if not def.get("capital", false):
+			outside.append(str(def["id"]))
+	var shares := 0.0
+	for id: String in outside.slice(0, outside.size() - 1):
+		save = Campaign.conquer(save, Content.continent(id), "")
+		shares += Num.f(Content.continent(id)["threat"])
+	_missions(globe).use_save(save)
+	var readout := _missions(globe).threat_label
+	var five := "Threat %d%%" % roundi(minf(shares, Campaign.THREAT_CAP))
+	check(readout.text == five, "five conquests read %s: %s" % [five, readout.text])
+	check(globe.locked("aurelia"), "five conquests: Aurelia stays locked")
+	save = Campaign.conquer(save, Content.continent(outside[-1]), "")
+	_missions(globe).use_save(save)
+	check(readout.text == "Threat 100%", "the sixth conquest reads 100%%: %s" % readout.text)
+	check(not globe.locked("aurelia"), "the sixth conquest opens Aurelia (D-422)")
+	globe.mission_panel().show_for(Content.continent("ostia_minor"))
+	await process_frame
+	await process_frame
+	var screen := globe.get_viewport().get_visible_rect()
+	var box := readout.get_global_rect()
+	check(screen.encloses(box), "the readout is on screen: %s in %s" % [box, screen])
+	var card := globe.mission_panel().get_global_rect()
+	check(not box.intersects(card), "the readout clears the panel: %s vs %s" % [box, card])
 	globe.free()

@@ -7,12 +7,16 @@ extends CanvasLayer
 ## LOSE (no rule yet says what wins a city). Other continents open the StubMission at once. The
 ## globe ignores the pointer meanwhile. A win stores the conquest in the save (Campaign.conquer;
 ## written back when there is a save on disk), the continents take their new states and the camera
-## flies back out; a loss returns to the panel with nothing changed.
+## flies back out; a loss returns to the panel with nothing changed. The global Threat Level
+## (D-422, Campaign.conquer) reads in the top-left corner while the globe is up (look, place and
+## wording are placeholders until the director rules).
 
 const LAYER := 2  # over the markers' layer (1)
 
 var panel: MissionPanel
 var mission: StubMission
+## The global Threat Level readout (D-422).
+var threat_label: Label
 
 ## The real city's rampage under way (null when none).
 var city: Rampage
@@ -30,6 +34,11 @@ func _init(globe: GlobeView) -> void:
 	add_child(panel)
 	mission = StubMission.new()
 	add_child(mission)
+	threat_label = UiKit.label("", UiKit.SIZE_HEAD, UiKit.ALERT)
+	threat_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	threat_label.position = UiKit.safe_margin()
+	add_child(threat_label)
+	_show_threat()
 	panel.launched.connect(_launch)
 	mission.won.connect(_won)
 	mission.lost.connect(_end)
@@ -37,6 +46,18 @@ func _init(globe: GlobeView) -> void:
 
 func save() -> Dictionary:
 	return _save
+
+
+## Plays on from this save instead of the slot's (tests and proofs; nothing written to disk).
+func use_save(save_in: Dictionary) -> void:
+	_save = save_in
+	_globe.set_states(states())
+	_show_threat()
+
+
+## The readout shows the save's Threat Level, a whole percent.
+func _show_threat() -> void:
+	threat_label.text = tr("Threat %d%%") % roundi(Num.f(_save.get("threat", 0.0)))
 
 
 ## Each continent's Campaign.State from the save.
@@ -72,6 +93,7 @@ func _start_city(def: Dictionary) -> void:
 	city.setup_later(species, stats, plan, runs)
 	city.finished.connect(_city_over.bind(def), CONNECT_DEFERRED)
 	panel.visible = false
+	threat_label.visible = false
 	_globe.set_shown(false)
 	PlayerSettings.in_play = true
 	_globe.add_sibling(city)
@@ -86,6 +108,7 @@ func _city_over(_result: Dictionary, def: Dictionary) -> void:
 	PlayerSettings.in_play = false
 	_globe.set_shown(true)
 	panel.visible = true
+	threat_label.visible = true
 	mission.start(def, tr("The rampage is over"))
 
 
@@ -94,6 +117,7 @@ func _won(id: String, bonus_id: String) -> void:
 	if SaveFile.has_save():
 		SaveFile.save_game(_save)
 	_globe.set_states(states())
+	_show_threat()
 	_end(id)
 	_globe.fly_out()
 
