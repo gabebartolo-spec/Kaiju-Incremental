@@ -8,6 +8,8 @@ extends "res://tests/lib/runner.gd"
 
 const Replay := preload("res://tests/lib/street_replay.gd")
 const FRAMES := 240  # four seconds: past several corners at a run
+const WARY_OVER_CALM := 1.9  # the band past calm_radius checked: within wary_radius
+const CALM_FRAMES := 1200  # twenty seconds: out past calm_radius and a few corners on
 const EPS := 0.001  # m: float rounding of a step
 
 
@@ -19,6 +21,7 @@ func run_checks() -> void:
 	await _t("_check_flee_round_kaiju")
 	await _t("_check_flee_dead_ends")
 	await _t("_check_flee_moving_kaiju")
+	await _t("_check_calmed_keep_away")
 
 
 ## Civilians on every pavement within 20 m of three kaiju spots, all fleeing: none ever gets
@@ -97,6 +100,42 @@ func _check_flee_moving_kaiju() -> void:
 						worst = maxf(worst, -moved.dot((before[i] - k).normalized()))
 		check(steps > 1000, "fleeing steps measured: %d (native %s)" % [steps, native])
 		check(worst <= EPS, "no step led toward it (worst %.4f m, native %s)" % [worst, native])
+		run.finish()
+
+
+## Civilians that fled a still kaiju and calmed past calm_radius never walk back toward it while
+## within wary_radius (D-453: they used to turn at the next corner and come back to re-panic).
+func _check_calmed_keep_away() -> void:
+	for native: bool in _walks():
+		var run := Replay.new(self, 1, "high", native)
+		run.step_everyone()
+		var k := _corner_at(run, 1)
+		run.sim.kaiju_pos = k
+		var placed := _place_round(run, k)
+		var st := run.street
+		var calm := StreetSteps.panic_radius(st) * st.tune("calm_radius") / st.tune("panic_radius")
+		var wary := calm * WARY_OVER_CALM  # inside wary_radius (64 m over 32 for an adult)
+		var worst := 0.0
+		var calmed := 0
+		for f: int in CALM_FRAMES:
+			var before: PackedVector2Array = run.street.pos.duplicate()
+			var was: PackedByteArray = run.street.fleeing.duplicate()
+			run.sim.kaiju_pos = k
+			run.street._process(Replay.DT)
+			if run.street.pos.size() != before.size():
+				continue
+			for i: int in before.size():
+				if run.street.cop[i] == 1 or before[i].distance_to(k) > wary:
+					continue
+				if was[i] == 1 and run.street.fleeing[i] == 0:
+					calmed += 1
+				var closer := before[i].distance_to(k) - run.street.pos[i].distance_to(k)
+				worst = maxf(worst, closer)
+		check(
+			placed > 50 and calmed > 20,
+			"%d placed, %d calmed (native %s)" % [placed, calmed, native]
+		)
+		check(worst <= EPS, "none came back (worst %.4f m, native %s)" % [worst, native])
 		run.finish()
 
 
