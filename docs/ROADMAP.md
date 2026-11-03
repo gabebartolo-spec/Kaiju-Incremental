@@ -84,7 +84,7 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 - **M3: demo complete**, which needs all of these:
   - full Taskforce (gas soldiers, mechs and gunships in the adult city, #556; rest open)
   - textures
-  - helicopter deaths (gunships fall and crash, D-457, PR TBD)
+  - helicopter deaths (gunships fall and crash, D-457, #563)
   - the overworld loop: globe, real mission, conquest
   - done: graphics preview (D-393), load art (D-427), end screen, feedback link (D-395)
 - **M4: Itch release candidate**
