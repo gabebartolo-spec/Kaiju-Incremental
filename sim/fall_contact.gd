@@ -143,12 +143,10 @@ static func probe(
 		and hi.y > a.y - r
 	)
 	var near: Array[int] = []
-	# Neighbours from the end of the shudder (its few degrees of wobble are the tower's death
-	# throes, drawn against a wall it shares, not a fall into it).
-	var shudder := minf(
-		Num.f(topple_cfg["shudder_s"]), f.duration * Num.f(topple_cfg["shudder_max_share"])
-	)
-	if f.kind == "topple" and t >= shudder:
+	# Neighbours from the first tick: the shudder creeps to lean_deg, which on a tall tower puts
+	# its upper floors more than a chunk into a neighbour beside it (a point that began inside a
+	# wall it shares never counts, below, so the wobble against that wall is not a contact).
+	if f.kind == "topple":
 		for i: int in sim.grid.in_rect(Vector2(lo.x, lo.z), Vector2(hi.x, hi.z)):
 			var nb := sim.buildings[i]
 			if i == f.building or lo.y > nb.base + nb.height:
