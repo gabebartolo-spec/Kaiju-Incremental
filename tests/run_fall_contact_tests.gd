@@ -22,6 +22,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await _t("_check_neighbour")
+	await _t("_check_tall_neighbours")
 	await _t("_check_kaiju_topple")
 	await _t("_check_kaiju_drop")
 	await _t("_check_fragments_outside")
@@ -45,6 +46,25 @@ func _check_neighbour() -> void:
 	check(
 		Num.i(on["carved"]) > 0 or str(on["contact"]) == "building", "it carves or stops: %s" % on
 	)
+
+
+## Tall towers toppling into neighbours close by (touching, a street apart, taller, diagonal):
+## [tower size, neighbour centre, neighbour size, direction]. The touching one failed before the
+## shudder was checked (8 deg of lean put its 10th floor 1.4 chunks into the neighbour).
+func _check_tall_neighbours() -> void:
+	for c: Array in [
+		[Vector3i(2, 2, 40), Vector2(3, 0), Vector3i(4, 4, 10), Vector2(1, 0)],
+		[Vector3i(3, 3, 40), Vector2(4, 0), Vector3i(4, 4, 30), Vector2(1, 0)],
+		[Vector3i(2, 2, 40), Vector2(8, 0), Vector3i(4, 4, 12), Vector2(1, 0)],
+		[Vector3i(2, 2, 40), Vector2(20, 0), Vector3i(4, 4, 8), Vector2(1, 0)],
+		[Vector3i(2, 2, 40), Vector2(10, 10), Vector3i(6, 6, 10), Vector2(1, 1)],
+		[Vector3i(4, 4, 60), Vector2(30, 0), Vector3i(6, 6, 6), Vector2(1, 0)],
+	]:
+		var fx := {"tower": c[0], "nb_at": c[1], "nb_size": c[2], "dir": c[3]}
+		var on := _topple_run(true, false, fx)
+		var line := [c, on["neighbour"], on["contact"], on["carved"]]
+		print("NOTICE: %s overlap %.2f contact '%s' carved %d" % line)
+		check(Num.f(on["neighbour"]) <= TOLERANCE, "never inside a neighbour %s: %s" % [c, on])
 
 
 ## The same tower toppling onto the kaiju: it breaks up against his hide, never inside it.
@@ -136,15 +156,18 @@ func _check_fragments_outside() -> void:
 
 ## A sim with the tower at the origin, a 4x4x6 neighbour east of it (or none) and the kaiju at
 ## `at`; fall_contact.on = `contact`.
-func _contact_sim(contact: bool, kaiju: bool, at: Vector2) -> RampageSim:
+func _contact_sim(contact: bool, kaiju: bool, at: Vector2, fx: Dictionary = {}) -> RampageSim:
+	var tower: Vector3i = fx.get("tower", TOWER)
+	var nb_at: Vector2 = fx.get("nb_at", Vector2(5, 0))
+	var nb_size: Vector3i = fx.get("nb_size", Vector3i(4, 4, 6))
 	var tuning: Dictionary = Content.tuning().duplicate(true)
 	tuning["fall_contact"]["on"] = contact
 	var species := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var layout: Array[Dictionary] = [_b(0, 0, TOWER)]
+	var layout: Array[Dictionary] = [_b(0, 0, tower)]
 	if not kaiju:
-		layout.append(_b(5, 0, Vector3i(4, 4, 6)))
+		layout.append(_b(nb_at.x, nb_at.y, nb_size))
 	layout.append(_b(38.0, 38.0, Vector3i(2, 2, 2)))
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
 	sim.kaiju_pos = at if kaiju else Vector2(-30, -30)
@@ -152,8 +175,9 @@ func _contact_sim(contact: bool, kaiju: bool, at: Vector2) -> RampageSim:
 
 
 ## The tower toppling east from its east edge; the max overlaps seen.
-func _topple_run(contact: bool, kaiju: bool) -> Dictionary:
-	var sim := _contact_sim(contact, kaiju, Vector2(6, 0))
+func _topple_run(contact: bool, kaiju: bool, fx: Dictionary = {}) -> Dictionary:
+	var dir: Vector2 = fx.get("dir", Vector2(1, 0))
+	var sim := _contact_sim(contact, kaiju, Vector2(6, 0), fx)
 	var b := sim.buildings[0]
 	var f := RampageSim.Fall.new()
 	f.building = 0
@@ -163,8 +187,9 @@ func _topple_run(contact: bool, kaiju: bool) -> Dictionary:
 			for y: int in b.height:
 				f.cells.append(Vector3i(x, y, z))
 	f.height = b.height
-	f.dir = Vector2(1, 0)
-	f.pivot = b.local_to_world(Vector3(b.w, 0, b.d * 0.5))
+	f.dir = dir.normalized()
+	var edge := Vector3(1 + f.dir.x, 0, 1 + f.dir.y) * 0.5
+	f.pivot = b.local_to_world(Vector3(b.w * edge.x, 0, b.d * edge.z))
 	f.duration = sqrt(2.0 * f.height / Num.f(sim.city["fall_gravity"])) * 1.8
 	var out := _follow(sim, f)
 	sim.dispose()
