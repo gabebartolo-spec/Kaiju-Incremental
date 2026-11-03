@@ -2,6 +2,19 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-405 · Director · Time's up is an AIRSTRIKE: a jet run of Tripo olive jets
+His words (10-31), on "killed by the final strike": "i hate the copy, all deaths are from the final strike technically
+so its just meaningless babble, change it". Picked headline "AIRSTRIKE", strike "Jet run" (D-263's railgun volley is
+dropped), jet model "Tripo, olive drab": J01, task 7536acba-0e5f-45dd-9f08-e06a93959859, 65 credits from the 1,500-credit
+consent (D-400), balance 5,240 after. At time's up three jets cross the screen through him and carpet-bomb his street
+(FinalStrike, death.airstrike), then he dies as before. The subline "The army ran out of patience" is the lead's
+wording, for the director.
+
+## 2026-10-31 · D-408 · Director · Rubble casts no shadows
+"Ship shadows off", after 1080p stills on vs off (bulldozer frames 1800 and 2600). Rubble heaps, strips and thrown
+chunks (RuinYard) stop casting shadows: data/tuning.json destruction.ruin_shadows = 0. Peak ruin: GPU p50 22.0 ->
+21.2 ms, shadow draws 2,442 -> 2,123 (docs/research/2026-10-31-cpu-profile.md).
+
 ## 2026-10-31 · D-404 · Director · Boats are Tripo models, up to 300 credits
 His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and flee his wake): "Tripo models";
 moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
