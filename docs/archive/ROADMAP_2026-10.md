@@ -12,12 +12,12 @@ owner is whichever session takes it and reports to him. The director decides; a 
 - Playtest milestones
 - Flat surfaces programme
 - Parked and after the demo
-- Moved out, unchanged (grep there): `docs/roadmap/2026-10-20-post-demo-plan.md` (phases A-H with the 10-21 research,
-  10-22 comment rows), `docs/roadmap/2026-10-23-24-motion-reptilian.md` (Motion first, Reptilian models and skins),
-  `docs/roadmap/2026-10-23-26-sections.md` (10-23 overnight, interview answers, director comments; 10-26 interviews).
-- Trackers: `docs/roadmap/2026-10-27-tech-debt.md` (debt rows), `docs/roadmap/2026-10-27-destruction-plan.md`,
-  `docs/roadmap/2026-10-28-unlanded-audit.md` (branches not on main), `docs/roadmap/2026-10-28-director-comments.md`
-  (his latest comment rows), `docs/roadmap/2026-10-28-grown-croc-verdicts.md` (37 clips, 8 SHIP, 29 FIX).
+- Moved out, unchanged (grep there): `docs/archive/roadmap-notes/2026-10-20-post-demo-plan.md` (phases A-H with the 10-21 research,
+  10-22 comment rows), `docs/archive/roadmap-notes/2026-10-23-24-motion-reptilian.md` (Motion first, Reptilian models and skins),
+  `docs/archive/roadmap-notes/2026-10-23-26-sections.md` (10-23 overnight, interview answers, director comments; 10-26 interviews).
+- Trackers: `docs/archive/roadmap-notes/2026-10-27-tech-debt.md` (debt rows), `docs/archive/roadmap-notes/2026-10-27-destruction-plan.md`,
+  `docs/archive/roadmap-notes/2026-10-28-unlanded-audit.md` (branches not on main), `docs/archive/roadmap-notes/2026-10-28-director-comments.md`
+  (his latest comment rows), `docs/archive/roadmap-notes/2026-10-28-grown-croc-verdicts.md` (37 clips, 8 SHIP, 29 FIX).
 
 ## Phase 0, 1, 2 (the demo)
 - Phase 0 foundations and Phase 1 visual and factory proof: done (the look picked, D-104 / D-105 / D-285).
@@ -25,8 +25,8 @@ owner is whichever session takes it and reports to him. The director decides; a 
   (baby, adolescent, adult) with the full Taskforce, a Windows exe, about 2 hours to the thanks screen and endless mode;
   dusk only (D-359). Gate: his playtest of the demo exe (the Playtest milestones below). Forbidden until then: balance
   tuning (D-363 "until the game is beautiful and working"), paid audio (spend yes first), new species.
-- Playtest records: `docs/roadmap/2026-10-19-director-playtest.md` (exe 1), `docs/roadmap/2026-10-20-build2-playtest.md`
-  (carving build 2; "b2-N"), `docs/roadmap/2026-10-20-director-comments.md`, and the dated comment files after them.
+- Playtest records: `docs/archive/roadmap-notes/2026-10-19-director-playtest.md` (exe 1), `docs/archive/roadmap-notes/2026-10-20-build2-playtest.md`
+  (carving build 2; "b2-N"), `docs/archive/roadmap-notes/2026-10-20-director-comments.md`, and the dated comment files after them.
 - Only what the demo needs is tested (director 2026-10-29): the reptilian; other species' suites are parked
   (tests/parked/). The far insectoid stays as the skyline beast.
 
@@ -42,18 +42,18 @@ record); nothing is appended as a log. D-310 order: debt fixes, then parked work
    carve colliders, merged falling islands; render items 10 and 11, #381) are on main. Open: landmarks carve on cells and
    river/bay bridges become carved structures (carve is universal, director 2026-10-26; tests/run_structures_tests.gd
    names them as known failures), varied collapse directions (b2-5), the stadium crowd falling with a broken stand
-   (comments #17). Plan: `docs/roadmap/2026-10-27-destruction-plan.md`.
+   (comments #17). Plan: `docs/archive/roadmap-notes/2026-10-27-destruction-plan.md`.
 4. **Random cities (D-259, D-261, D-263, D-375):** a fresh city each run from shuffled blocks, the landmark pool drawn
    into tiered spots. Open: sim/city_seed.gd ignores the save seed (replays differ per slot: D-261, D-263); the pool
    and spots per D-375 (stage 1 shows the east spot only, D-380).
 5. **Upgrade tree (D-275, b2-28):** rings per species, 2-3x the nodes, his croc node ideas first
-   (`docs/roadmap/2026-10-26-interview-audit.md` section 1), an upgrade affordable after every rampage; the tree screen
+   (`docs/archive/roadmap-notes/2026-10-26-interview-audit.md` section 1), an upgrade affordable after every rampage; the tree screen
    skin follows. Balance itself waits (D-363). Throw nodes "Ricochet" and "Domino" (D-259); the tail lash's nodes (D-329).
 6. **Render plan and performance (D-276, D-300, D-312):** items 0-4, 6-9, 12-14 merged and on; item 5 parked (D-192 bar);
    item 15 (Medium GPU p95, 0.3-0.9 ms over the bar at the 10-28 re-baseline, `docs/research/2026-10-28-render-rebaseline.md`)
    PARKED (D-372). Graphics presets Potato..Max exist in data; the live preview in the options menu (comment #90) and the
    measured per-preset audit at 1080p and 4K (b2-25) are open, after the visuals are final.
-7. **Tech debt (`docs/roadmap/2026-10-27-tech-debt.md`):** rows 15 (file and long-function caps: baseline 22 of 33) and 21
+7. **Tech debt (`docs/archive/roadmap-notes/2026-10-27-tech-debt.md`):** rows 15 (file and long-function caps: baseline 22 of 33) and 21
    (procedural creature animation, row 1 above) are the open ones; the rest are done.
 8. **CI (D-351, D-382, D-383):** countable speed-run bars run as GitHub checks; a PR skips the 13 slow second-angle
    suites (the `pr_skip` line of tools/ci_timings.txt), which run on main; no local suite runs, push and CI is the test.

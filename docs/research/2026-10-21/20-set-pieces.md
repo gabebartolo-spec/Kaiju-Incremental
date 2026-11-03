@@ -5,7 +5,7 @@ repetition, when control returns, letterbox, sound sync, and how to build both i
 deterministic sim. Read first (read-only): `scenes/evolution_reveal.gd` (full), `sim/emergence.gd` (full, PR #113),
 `scenes/river_view.gd`, `scenes/rampage.gd` (setup, `_physics_process`, `_place_camera`), `sim/rampage_sim.gd` `step`,
 `data/tuning.json` "emerge" and "camera", `scenes/main.gd` `_reveal`, `scenes/reveal_stage.gd`, ROADMAP Phase D,
-`docs/roadmap/2026-10-20-director-comments.md` #11, DECISIONS D-105, research 02 (finding 6, rec 4) and 08 (bus plan).
+`docs/archive/roadmap-notes/2026-10-20-director-comments.md` #11, DECISIONS D-105, research 02 (finding 6, rec 4) and 08 (bus plan).
 "Estimate" or "inference" marks my own reasoning where no source states it.
 
 ## Key findings
@@ -15,7 +15,7 @@ deterministic sim. Read first (read-only): `scenes/evolution_reveal.gd` (full), 
    `kaiju_emerged` (`sim/rampage_sim.gd` lines 199-201). Tuning: `rise_seconds` 2.5, then a wade to the bank at
    `speed x wade_speed 2.0` (7.6-14 m/s by species), capped by `max_seconds` 8.0 (`data/tuning.json` line 251).
    *Estimate:* rise plus wade is about 3.5-5.5 s, against the director's "no longer than 3 seconds" (comments #11,
-   `docs/roadmap/2026-10-20-director-comments.md` line 19). The intro's length is set by the sim, so it has to be fixed
+   `docs/archive/roadmap-notes/2026-10-20-director-comments.md` line 19). The intro's length is set by the sim, so it has to be fixed
    there (in data), not only in the camera. Source: code read in this repo.
 2. **Hold the creature back, but in a game that replays, the tease must be tiny.** Gareth Edwards timed *Jaws* with a
    stopwatch: the shark is on screen about 4 minutes, and his *Godzilla* (2014) less than 8. He also says audiences
@@ -183,7 +183,7 @@ rendered frame.**
 - https://www.reddit.com/r/GTA6/comments/1e09b9t/cinematic_black_bars_for_cutscenes/
 - Repo files (read-only): sim/emergence.gd, sim/rampage_sim.gd, scenes/rampage.gd, scenes/river_view.gd,
   scenes/evolution_reveal.gd, scenes/reveal_stage.gd, scenes/main.gd, data/tuning.json, docs/DECISIONS.md (D-105),
-  docs/ROADMAP.md (Phase D), docs/roadmap/2026-10-20-director-comments.md (#11)
+  docs/ROADMAP.md (Phase D), docs/archive/roadmap-notes/2026-10-20-director-comments.md (#11)
 
 ## For Kaiju Incremental (ranked, simplest viable first)
 

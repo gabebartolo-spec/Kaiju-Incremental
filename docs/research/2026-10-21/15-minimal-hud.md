@@ -1,7 +1,7 @@
 # 15 Minimal in-run HUD for Kaiju Incremental (researched 2026-10-21)
 
 Scope: how to build a really minimal rampage HUD that still meets the director's rulings and 4K-TV readability. The
-fixed rulings (docs/roadmap/2026-10-20-build2-playtest.md, read in full for rows 10, 12, 13, 23) are:
+fixed rulings (docs/archive/roadmap-notes/2026-10-20-build2-playtest.md, read in full for rows 10, 12, 13, 23) are:
 - **b2-10:** "The timer at the top is good." Biomass is a boxless figure in the bottom right. No button or keyboard
   tutorials on screen: show them once at the start of the game and in a controls menu.
 - **b2-12:** The atomic breath cooldown is "just an icon with a circular load bar around the edges".

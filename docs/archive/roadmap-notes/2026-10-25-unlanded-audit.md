@@ -7,7 +7,7 @@ default. Method: every remote branch with work not on main (136), checked by con
 
 Re-stamped 2026-10-27: the last column says which rows have merged since (PR number, GitHub UTC merge time, from
 `gh pr view N --json mergedAt`) and which are still unlanded. The live owner, date and next step of every unlanded row is
-in `docs/roadmap/2026-10-27-unlanded-audit.md`. "Not re-checked" = no merge found in this pass; the row keeps its old target.
+in `docs/archive/roadmap-notes/2026-10-27-unlanded-audit.md`. "Not re-checked" = no merge found in this pass; the row keeps its old target.
 
 ## Approved, built, NOT in the game: each lands (owner, next step, target)
 

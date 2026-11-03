@@ -5,7 +5,7 @@ The 2026-10-20 post-demo plan (phases A-H with the 2026-10-21 research findings)
 ## Post-demo plan (2026-10-20, director: "sort it into the roadmap, put it in a chronological order")
 Every open item in one order, so nothing is built on something still subject to change. A phase starts when the
 one before it has merged; inside a phase the lead and the one Opus builder (director 2026-10-20) take items two at a time. "b2-N" = note N of
-`docs/roadmap/2026-10-20-build2-playtest.md`; "p1-N" = note N of `docs/roadmap/2026-10-19-director-playtest.md`.
+`docs/archive/roadmap-notes/2026-10-20-build2-playtest.md`; "p1-N" = note N of `docs/archive/roadmap-notes/2026-10-19-director-playtest.md`.
 Each phase ends with a build the director plays (its gate). Copy rule (b2-15/16/17/24/27) applies to all player text.
 "R n.m" = recommendation m of research file n in `docs/research/2026-10-21/` (director 2026-10-21: "i quite liked all
 its suggestions ... incorporate the best findings into our roadmap"). Costs and sources are in those files.
@@ -118,7 +118,7 @@ dash or speed above a threshold; does a fast turn's tail sweep carve?) (R 13.3).
 of our own trauma shake (R 7.2). Gate: clips through the motion critic, then build 5.
 
 **E. Progression: the upgrade tree.**
-b2-28 two to three times the nodes, his node ideas first (croc build list, `docs/roadmap/2026-10-26-interview-audit.md` section 1) · b2-2 tail whip node (automatic; the autonomous tail limb moved to the snake, D-202) · b2-27 drop "reptilian branch" · copy pass b2-15, b2-16,
+b2-28 two to three times the nodes, his node ideas first (croc build list, `docs/archive/roadmap-notes/2026-10-26-interview-audit.md` section 1) · b2-2 tail whip node (automatic; the autonomous tail limb moved to the snake, D-202) · b2-27 drop "reptilian branch" · copy pass b2-15, b2-16,
 b2-17, b2-24 and every other node text · then ONE balance pass on the new tree: p1-8 upgrade cadence and the young
 retune (#107 draft is superseded by it; its findings are inputs). Balance is his playtest. Gate: build 6.
 How (research): an upgrade affordable after every rampage and the first purchase inside about 60 s, costs geometric

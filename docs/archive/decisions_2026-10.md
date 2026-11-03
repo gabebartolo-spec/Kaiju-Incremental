@@ -721,7 +721,7 @@ His words: "i think our helis and tanks look untextured too, they look procedura
 Asked "so what are these slots? is it a guardrail hallucination?" (the "at most 3 builders" rule had no quote of his behind it; his 10-21 words were "use as many sub agents as you want, up to 8"). Answer: "idc how many, use 100 if its not going to ruin the tests / use as many as is feasible". The machine gates stay (nothing new under 6 GB free RAM or above 85% CPU, one speed check at a time); on a PC freeze find the cause before cutting builders. Rulebook "Kaiju team" line replaced. Replaces D-278 and D-287.
 
 ## 2026-10-27 · D-295 · Director · Every tech-debt item is actioned
-Asked "does our project have a proper tech stack and good codebase hygiene", then: "I want the FULL list of debt items, i want them all actioned". Picked "After facade+vehicles" for the hygiene builder. List: docs/roadmap/2026-10-27-tech-debt.md (from C:/kt/debt/debt_list.md), every row owned and closed by a PR.
+Asked "does our project have a proper tech stack and good codebase hygiene", then: "I want the FULL list of debt items, i want them all actioned". Picked "After facade+vehicles" for the hygiene builder. List: docs/archive/roadmap-notes/2026-10-27-tech-debt.md (from C:/kt/debt/debt_list.md), every row owned and closed by a PR.
 
 ## 2026-10-27 · D-294 · Director · Death: his stone shards land first, then the blast
 Asked (02:5x, on the death clip with all 3 Death Blast nodes): "Shards first": his falling stone body smashes buildings, then the blast clears the rest; both visibly destroy things. Not chosen: blast first (as built, shards hit only rubble). Same look: "i dont like the pale blocks that come out of the explosion" (plain untextured cubes; fix in the same PR #240).
@@ -1445,7 +1445,7 @@ capture-only branch. Phase B left: camera growth per stage (R 19).
 
 ## 2026-10-21 · D-110 · Director · Fallen slabs are destructible: anything the kaiju touches breaks
 Why: playtest of build 4, "rubble blocks are probably too big, the kaiju is gonna clip through them; alternatively make the
-rubble blocks destructible too" (comments #14, docs/roadmap/2026-10-21-rubble-slabs.webp). Asked smaller slabs vs
+rubble blocks destructible too" (comments #14, docs/archive/roadmap-notes/2026-10-21-rubble-slabs.webp). Asked smaller slabs vs
 destructible vs both, he picked destructible. Changes: a landed slab stays big, but a stomp, swipe, dash or the body walking
 into it breaks it into smaller chunks and gravel (sim decides, deterministic); the kaiju never clips through rubble.
 

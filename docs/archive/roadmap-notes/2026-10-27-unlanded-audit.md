@@ -53,7 +53,7 @@ W = C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt
 Unpushed but harmless (content already on main by PR, branch can be deleted): local/atm-rain-2 (4), local/far-insectoid (6), claude/fire-smooth-2 (4), local/hide-hit-2 (6), local/strike-delay-2 (10), local/vip-heli (9), pacing-run/stomp-cost (221 raw).
 
 ## Roadmap hygiene found on the way
-- docs/roadmap/2026-10-25-unlanded-audit.md still lists far-insectoid, strike-delay, rain, fire-smooth-2, VIP and stand-off gunships as unlanded with 10-26/10-27 targets; #212, #213, #239, #236, #246 and #210 (core) are merged since, so the table needs re-stamping.
+- docs/archive/roadmap-notes/2026-10-25-unlanded-audit.md still lists far-insectoid, strike-delay, rain, fire-smooth-2, VIP and stand-off gunships as unlanded with 10-26/10-27 targets; #212, #213, #239, #236, #246 and #210 (core) are merged since, so the table needs re-stamping.
 - ROADMAP.md rows "stand-off gunships ... queued after the volley rework" and "rolling out to every fire on claude/fire-smooth" are stale.
 - No ROADMAP row at all for: army-balance, intro-bay, komodo-land, komodo-mouth, prepush-deps, heli phase 3.
 - Stale dirty files in worktrees (safe to delete with the worktree): pr-body.md in far-insectoid, heli-standoff-2, intro-cinematic-2, komodo-clips; scratch probes tools/probe_army.gd (army-balance) and tools/probe_tmp/ (stomp-fix).
@@ -62,7 +62,7 @@ Unpushed but harmless (content already on main by PR, branch can be deleted): lo
 ## After the audit (lead, 2026-10-27 01:3x)
 - Every PC-only commit pushed: claude/thunder-beam-2, claude/army-balance, claude/intro-bay, claude/prepush-deps, backup/intro-cinematic-2 (intro water 10f3629c), backup/stomp-fix2.
 - Removed: worktrees and local branches of the 7 SUPERSEDED rows, the SCRATCH pacing run, stomp-fix2 (reversed), C:/kt/intro_sync. #223 closed (D-280); its branch stays for the dragon (D-281).
-- This audit replaces docs/roadmap/2026-10-25-unlanded-audit.md (six of its rows have since merged).
+- This audit replaces docs/archive/roadmap-notes/2026-10-25-unlanded-audit.md (six of its rows have since merged).
 
 ## Where every row stands (2026-10-27 07:30)
 Replaces "Roadmap rows (all after the render plan, D-276)": D-310 refines D-276, parked work starts tonight once every D-295 debt row has merged.

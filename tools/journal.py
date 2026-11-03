@@ -57,7 +57,7 @@ def decisions():
 
 def note_tables():
     """Every director note row: (file, number, his words, status)."""
-    folder = os.path.join(ROOT, "docs", "roadmap")
+    folder = os.path.join(ROOT, "docs", "archive", "roadmap-notes")
     rows = []
     for name in sorted(os.listdir(folder)):
         if not name.endswith(".md") or not re.match(r"\d{4}-\d\d-\d\d-", name):
