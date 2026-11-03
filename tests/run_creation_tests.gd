@@ -29,6 +29,7 @@ func run_checks() -> void:
 	SaveFile.delete_save()
 	await _t("_check_new_game_opens_lab")
 	await _t("_check_rack_reads_save")
+	await _t("_check_rack_hides_unplayable")
 	await _t("_check_trip_reaches_every_vial")
 	await _t("_check_crack_pause_roar")
 	SaveFile.delete_save()
@@ -93,26 +94,16 @@ func _check_new_game_opens_lab() -> void:
 	await _frames(2)
 
 
-## The rack: croc lit and focused, the other two greyed, locked and out of the focus order; every
-## line of text 24 px or more at 1080p.
+## The rack: the croc lit and focused; the Komodo and serpent hidden, no button and no vial, until
+## they are unlocked and playable (D-454); every line of text 24 px or more at 1080p.
 func _rack_ok(lab: Node) -> void:
 	var croc := GuiInput.button(lab, "CROC")
 	var komodo := GuiInput.button(lab, "KOMODO")
 	var serpent := GuiInput.button(lab, "SERPENT")
-	check(
-		croc != null and komodo != null and serpent != null,
-		"the rack shows the croc, Komodo and serpent genomes"
-	)
-	if croc == null or komodo == null or serpent == null:
+	check(croc != null and not croc.disabled, "the rack shows the croc genome, pickable")
+	check(komodo == null and serpent == null, "the Komodo and serpent genomes are hidden")
+	if croc == null:
 		return
-	check(
-		not croc.disabled and komodo.disabled and serpent.disabled,
-		"only the croc genome can be picked; the Komodo and serpent are locked"
-	)
-	check(
-		komodo.focus_mode == Control.FOCUS_NONE and serpent.focus_mode == Control.FOCUS_NONE,
-		"the locked genomes are out of the keyboard and pad focus order"
-	)
 	check(croc.has_focus(), "the croc genome has the focus from the start")
 	var small: Array[String] = []
 	for node: Node in lab.find_children("*", "Control", true, false):
@@ -340,3 +331,23 @@ func _surface_s() -> float:
 			if str(e["type"]) == "surface_break":
 				return t
 	return INF
+
+
+## D-454: a titan shows on the rack only when unlocked and playable. Unlocked in the save but
+## with no species to play (the Komodo and serpent today) it stays hidden; the croc always shows.
+func _check_rack_hides_unplayable() -> void:
+	var fresh := _ids(CreationRack.shown({}))
+	check(fresh == ["croc"], "a new player's rack shows the croc alone: %s" % [fresh])
+	var opened := _ids(CreationRack.shown({"titans_unlocked": ["komodo", "serpent"]}))
+	check(opened == ["croc"], "unlocked but unplayable titans stay hidden: %s" % [opened])
+	for titan: Dictionary in CreationRack.titans({"titans_unlocked": ["komodo", "serpent"]}):
+		var want: bool = titan["selectable"] == true
+		var seen := _ids(CreationRack.shown({"titans_unlocked": ["komodo", "serpent"]}))
+		check(seen.has(str(titan["id"])) == want, "%s shown only if playable" % titan["id"])
+
+
+func _ids(rows: Array[Dictionary]) -> Array[String]:
+	var out: Array[String] = []
+	for row: Dictionary in rows:
+		out.append(str(row["id"]))
+	return out

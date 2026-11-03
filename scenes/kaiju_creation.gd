@@ -1,15 +1,14 @@
 class_name KaijuCreation
 extends Control
-## Kaiju Creation, the new-game opening (D-207): a lab close-up on a petri dish (CreationLab).
-## Pick a genome from the rack (CreationRack: the croc lit, the Komodo and serpent greyed and
-## locked), it is poured into the dish; inject Special K (the kaiju juice), the kaiju genome
-## takes the reptile genome over, the camera rushes into the dish to black and an egg cracks
-## (a crack, a pause, a couple more cracks: tuning "creation" "cracks"; the director 2026-10-26),
-## then `created` hands the species to Main, whose first run opens with the rise from the sea bay
-## (the pause, then the roar as the head breaks the water). Presentation only: the sim
-## never sees it. Paced in fixed physics ticks (tuning "creation" "timing"), so captures and
-## tests see the same frames on any screen. Keyboard, pad and mouse; Esc / B goes back until the
-## injection.
+## Kaiju Creation, the new-game opening (D-207): a lab close-up on a petri dish (CreationLab). Pick
+## a genome from the rack (CreationRack.shown: only titans unlocked and playable, so today the croc
+## alone; D-454), it is poured into the dish; inject Special K (the kaiju juice), the kaiju genome
+## takes the reptile genome over, the camera rushes into the dish to black and an egg cracks (a
+## crack, a pause, a couple more cracks: tuning "creation" "cracks"; the director 2026-10-26), then
+## `created` hands the species to Main, whose first run opens with the rise from the sea bay (the
+## pause, then the roar as the head breaks the water). Presentation only: the sim never sees it.
+## Paced in fixed physics ticks (tuning "creation" "timing"), so captures and tests see the same
+## frames on any screen. Keyboard, pad and mouse; Esc / B goes back until the injection.
 
 signal created(species_id: String)
 signal back_pressed
@@ -51,12 +50,12 @@ var _white: ColorRect
 
 ## save: the save on disk ({} for none); the rack reads which titans it has unlocked.
 func setup(save: Dictionary) -> void:
-	_titans = CreationRack.titans(save)
+	_titans = CreationRack.shown(save)
 
 
 func _ready() -> void:
 	if _titans.is_empty():
-		_titans = CreationRack.titans({})
+		_titans = CreationRack.shown({})
 	var cfg := Content.section("creation")
 	var timing: Dictionary = cfg["timing"]
 	var keys := {

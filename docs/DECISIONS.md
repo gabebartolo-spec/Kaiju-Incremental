@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-454 · Director · Globe LAUNCH starts the real city; unplayable titans hidden on the rack
+His rulings: (1) LAUNCH on the globe starts the real city where one exists, at the continent's stage: Ostia Minor
+today's beach, bay and river city, Carthago the cothon harbour, Thule the fjord (D-435 tuning). The other continents
+keep the stand-in WIN / LOSE mission. A real city's rampage over returns to the globe and resolves as the stand-in did
+(conquest on WIN, D-421, D-422). No rule yet says what wins a city (D-436: "Ostia's own win condition is to come"), so
+until he rules the city's end opens the stand-in's WIN / LOSE. (2) The Komodo and serpent stay hidden on the creation
+rack, vial and button, until their species are unlocked and playable (CreationRack "selectable": a species the build
+has in species.json and allows); the croc unchanged. Changes: continents.json real_city (Ostia Minor, Carthago, Thule);
+Campaign.real_city / city_stats (size = stage + 1, continent set); GlobeMissions starts a Rampage and hides the globe;
+CreationRack.shown. Tests: tests/run_globe_mission_tests.gd, tests/run_creation_tests.gd _check_rack_hides_unplayable.
+
 ## 2026-11-03 · D-453 · Director · Calmed civilians never walk back toward the kaiju
 Follows D-450 ("civilians sometimes flee toward the kaiju"). Remaining cause: a runner calmed past calm_radius (32 m)
 and its plain walk picked any corner at random, often back toward the kaiju, to re-panic at 25 m: it read as fleeing
@@ -379,19 +390,3 @@ His words (10-31), on the boats DESIGN.md specs (moored, they rock, capsize and 
 moored at "Harbour piers, Bay where he rises, River"; budget "Up to 300" credits, taken from the 1,500-credit
 consent of 10-30 (D-400). Generated 10-31: trawler, tug, yacht, launch, 260 credits
 (provenance C:/Users/DANTE/cascadeur_bridge/city_boats/provenance.md). Spectacle only: nothing reaches the sim.
-
-## 2026-10-31 · D-403 · Director · Touched suites run locally; a PR runs lints and the sim suites; engine suites go to main
-"im sick of the CI purgatory". Three rulings. (1) Relaxes D-383: before a push, run the suites nearest the change
-locally, `python tools/run_touched.py` (walks back from each changed file to the first suites that reach it; `--all`
-for every suite that reaches it, `--engine` adds touched engine suites). (2) The suites are split: 21 that need the
-full engine (a scene, camera or capture; the `engine` line of tools/ci_timings.txt, picked by a .tscn, Camera3D,
-viewport or texture read in the runner or its tests/lib helpers) and the sim suites (the rest). (3) A pull request runs
-the lints, the compile preflight, the native build and the sim shards (heaviest ~322 s); the engine suites join the
-D-382 slow job on main, and the harness self-test and engine log smoke block `test` on main only. A new suite counts as
-sim until it is added to `engine`; moving one is a decision here. Changes: tools/ci_timings.txt,
-tools/plan_ci_shards.sh, tools/ci_retime.py, tools/run_touched.py, .github/workflows/tests.yml, CLAUDE.md.
-
-## 2026-10-30 · D-402 · Director · Grown railgun locks last longer, so the eased walk-off still dodges
-With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
-what gives: "Longer grown lock (Recommended)". `taskforce.railgun.lock_seconds_by_stage` 0.6 / 0.75 / 1.0 becomes
-0.6 / 1.0 / 1.3; the ease stays 1.3 s. The dodge test waits the stage's lock, not a fixed second.

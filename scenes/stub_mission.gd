@@ -28,12 +28,15 @@ func _init() -> void:
 	visible = false
 
 
-## Opens the mission for one continent (a Content.continents() row) on its WIN / LOSE choice.
-func start(def: Dictionary) -> void:
+## Opens the mission for one continent (a Content.continents() row) on its WIN / LOSE choice;
+## `line` the words under its name (a real city's mission passes its own, D-454).
+func start(def: Dictionary, line := "") -> void:
 	id = str(def["id"])
 	_clear()
 	_column.add_child(UiKit.header(tr(str(def["name"])).to_upper(), UiKit.SIZE_TITLE))
-	_column.add_child(_centred(tr("Stand-in mission: the city comes later")))
+	if line == "":
+		line = tr("Stand-in mission: the city comes later")
+	_column.add_child(_centred(line))
 	var win := UiKit.button(tr("WIN"), UiKit.SIZE_HEAD)
 	win.pressed.connect(_pick.bind(def))
 	_column.add_child(win)

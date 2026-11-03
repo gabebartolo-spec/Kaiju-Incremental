@@ -28,6 +28,7 @@
             }
           },
           "capital": {"$ref": "#/$defs/bool"},
+          "real_city": {"$ref": "#/$defs/bool"},
           "tuning": {"type": "object", "additionalProperties": {"type": "object"}}
         },
         "required": ["id", "name", "stage", "threat", "bonuses", "capital"],

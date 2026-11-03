@@ -59,6 +59,7 @@ var _fly_from := Vector3.ZERO  # yaw, tilt, camera distance
 var _fly_to := Vector3.ZERO
 var _fly_t := 1.0  # 1 when no flight is under way
 var _missions: GlobeMissions
+var _marker_layer: CanvasLayer
 
 
 func _ready() -> void:
@@ -122,12 +123,21 @@ func locked(id: String) -> bool:
 func _add_markers() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
+	_marker_layer = layer
 	for def: Dictionary in Content.continents():
 		var id: String = def["id"]
 		_ids.append(id)
 		var marker := GlobeMarker.new(str(def["name"]))
 		layer.add_child(marker)
 		_markers.append(marker)
+
+
+## Shows or hides the globe, its markers and its camera (hidden while a real city plays, D-454).
+func set_shown(on: bool) -> void:
+	visible = on
+	_marker_layer.visible = on
+	_camera.current = on
+	set_process(on)
 
 
 func mission_panel() -> MissionPanel:
