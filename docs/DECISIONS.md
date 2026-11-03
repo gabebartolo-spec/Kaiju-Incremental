@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-04 · D-460 · Director · Tail hits add up: the young croc's tail chews big towers, slowly
+"Tail hits add up". Each tail sweep wears a chunk down until it breaks, so his tail chews a tower that dwarfs him,
+slowly (D-459 with D-091). The sim already does this: Carving keeps each cell's wear (Carving.wear_column) and the
+plain chunk grid its hp (Structure.damage), so no sim change. The leap suite's tower check now watches the tail do
+it: the young croc lands short of a tier-3 tower, turns his back and his sweeps break its first chunks on about the
+ninth (20 chunks in 20 s; the half ring reaches about a metre into the wall).
+
 ## 2026-11-03 · D-459 · Director · The croc loses his claws; his damage moves to the tail
 "lets remove claw from our croc, doesnt really suit him anyway, refocus damage around the tail". The claw rake is gone
 at every stage (sim, arm pose, keyed rake layer, claw slash and trail VFX). Its slot is an automatic tail sweep on the
@@ -390,8 +397,3 @@ the button keeps instant damage or plays the curl first: picked "Full windup (Re
 tail_windup, the hit lands lash_windup (1.5 s) later with the keyed strike; lash_cooldown 1.2 -> 3.5 s. Adult and baby
 play the Cascadeur take (lash_r, mirrored lash_l); the adolescent keeps the code whip until its y7 skeleton ships.
 Proof waived by the director ("i dont care for the proof just merge it").
-
-## 2026-10-31 · D-410 · Director · Reference motion may be copied exactly onto our rigs
-"you can copy the examples EXACTLY if thats best practice, dont be obtuse, its still an invisible skeleton in an
-original model". Godzilla, T-rex and other reference motion is retargeted key for key onto our original kaiju; no
-licence check and no credit needed for the motion. Replaces D-302's licence line for motion references.

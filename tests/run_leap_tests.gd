@@ -148,7 +148,7 @@ func _check_aims_ahead() -> void:
 
 
 ## D-091: at a tower that dwarfs the young croc the leap comes down on the street before it, never
-## inside it; the landing's ring reaches its wall and it is chewed, slowly.
+## inside it; the landing's ring reaches its wall and his tail chews it, slowly (D-459, D-460).
 func _check_tower_wall() -> void:
 	var probe := _croc({}, [])
 	var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
@@ -178,10 +178,19 @@ func _check_tower_wall() -> void:
 		gap.length() < 2.0 * Num.f(ring.get("radius", 0.0)),
 		"the landing's ring reaches the tower's wall (%.1f from it)" % gap.length()
 	)
-	for _n: int in roundi(3.0 / DT):
-		sim.step(DT, Vector2.ZERO, false, 0)  # standing at the wall: its stomps chew on (D-091)
+	# he turns his back to the wall; each sweep wears its chunks down until they give (D-460)
+	var away := (sim.kaiju_pos - Vector2(b.x, b.z)).normalized()
+	for _n: int in roundi(1.0 / DT):
+		if sim.body.heading.dot(away) > 0.9:
+			break
+		sim.step(DT, away, false, 0)
+	var swept := sim.powers.sweep.sweeps
+	for _n: int in roundi(TAIL_CHEW_S / DT):
+		sim.step(DT, Vector2.ZERO, false, 0)
 	var left := b.frame.alive_count
-	check(left < before, "the tower is chewed, slowly (%d of %d chunks left)" % [left, before])
+	var said := "his tail chews the tower, slowly: %d sweeps in %.0f s broke %d (%d of %d left)"
+	var got := [sim.powers.sweep.sweeps - swept, TAIL_CHEW_S, sim.powers.sweep.cut, left, before]
+	check(sim.powers.sweep.cut > 0 and left < before, said % got)
 
 
 ## D-361: at every growth stage the data's shoulder (the roof height a leap may land on, as a share
