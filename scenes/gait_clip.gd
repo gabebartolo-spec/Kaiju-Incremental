@@ -135,7 +135,7 @@ func update(delta: float) -> void:
 		_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
-	pose = takes.walk_pose(pose, step_phase) if state == "walk" else pose
+	pose = takes.walk_pose(pose, step_phase, dt) if state == "walk" else pose
 	if _blend < 1.0 and not _from.is_empty():
 		var to := pose
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), to, smoothstep(0.0, 1.0, _blend))

@@ -141,6 +141,7 @@ func _run() -> void:
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 		var run := sim.powers.run
 		kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio, run.blend(), run.slams)
+		kaiju.charge(run.crashing())
 		kaiju.animate(DT, move.length(), -sim.body.turn_left)
 		way = way.slerp(sim.body.heading, minf(1.0, CAM_EASE * DT)).normalized()
 		_place(cam, kaiju, way, bs)

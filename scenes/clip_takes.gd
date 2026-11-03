@@ -4,6 +4,9 @@ extends RefCounted
 ## - walk_start: from standing, its first WALK_START_SECONDS (D-355's ease), then the walk loop;
 ## - run: the walk blends into the keyed run as momentum builds (Momentum.blend, D-335/D-337), both
 ##   on the sim's step clock (ClipSteps), so the feet land where the sim steps either way;
+## - charge: with the momentum to crash through (Momentum.crashing) the walk or run eases into the
+##   keyed head-down charge's gallop (Cascadeur charge_fix10, r13f), on the same step clock:
+##   the head lowers and braces before he hits;
 ## - slam_stop: the momentum slam into a building stops him with it (Momentum, "slam" event);
 ## - walking turns: a turn while he walks lays its take over the walk's upper body (spine, neck,
 ##   head, arms, tail), timed by how far the sim has turned him: head_look (its left one mirrored
@@ -20,6 +23,9 @@ const WALK_START_FROM := 14.0
 ## The run take loops over its first RUN_LOOP frames (one full cycle: frame 95 matches frame 0
 ## within 10.5 deg on every bone; the take runs on to 129).
 const RUN_LOOP := 95
+## Seconds the run takes to lower into the charge (the take's head drop, 0.3-1.05 s) and to rise
+## out of it.
+const CHARGE_SECONDS := 0.75
 ## Yaw still to turn (rad) that starts a walking turn's take, and from which it is the 90 deg one.
 const TURN_START := 0.35
 const BIG_TURN := 1.05
@@ -38,6 +44,10 @@ var clips: KaijuClips
 ## 0..1: how far the walk has blended into the run (the sim's momentum, set each frame).
 var run_blend := 0.0
 var slams := 0  # the sim's slams seen (Momentum.slams)
+## Whether he has the momentum to crash through (set each frame), and how far the run has lowered
+## into the charge (0..1).
+var charging := false
+var charge_weight := 0.0
 ## The walking turn playing ("" when none), whether it is mirrored, and its frame.
 var turn := ""
 var mirrored := false
@@ -45,6 +55,8 @@ var turn_time := 0.0
 var look := 0.0  # the head's look-ahead into the turn (rad)
 var roar_time := INF  # the roar frame laid over the walk (INF: none)
 var _run: ClipSteps
+var _charge: ClipSteps
+var _charge_sole := 0.0  # the charge's lowest toe tip (m): where a planted foot stands
 var _total := 0.0  # the yaw still to turn when the turn started (rad)
 var _progress := 0.0
 var _weight := 0.0
@@ -59,6 +71,12 @@ func _init(p_clips: KaijuClips) -> void:
 	clips = p_clips
 	if clips.has_clip("run"):
 		_run = ClipSteps.new(clips, "run", mini(RUN_LOOP, clips.frames_of("run")))
+	if clips.has_clip("charge"):  # one gallop cycle, its last frame its first
+		_charge = ClipSteps.new(clips, "charge", clips.frames_of("charge") - 1)
+		_charge_sole = INF
+		for f: int in clips.frames_of("charge"):
+			var p := clips.pose_at("charge", f)
+			_charge_sole = minf(_charge_sole, minf(p.feet[0].y, p.feet[1].y))
 	for i: int in clips.bones.size():
 		var bone_name := clips.bones[i]
 		if LAYER_PREFIXES.any(func(p: String) -> bool: return bone_name.begins_with(p)):
@@ -84,12 +102,26 @@ func walk_started(clip_time: float) -> bool:
 	return clip_time >= minf(WALK_START_SECONDS * clips.fps, clips.frames_of("walk_start") - 1.0)
 
 
-## The walk pose blended toward the run at the sim's step clock (step_phase INF: the walk alone).
-func walk_pose(walk: KaijuClips.Pose, step_phase: float) -> KaijuClips.Pose:
-	if _run == null or step_phase == INF or run_blend <= 0.0:
+## The walk pose blended toward the run at the sim's step clock (step_phase INF: the walk alone),
+## and the run toward the charge as charge_weight eases (dt) toward charging.
+func walk_pose(walk: KaijuClips.Pose, step_phase: float, dt := 0.0) -> KaijuClips.Pose:
+	var on := charging and step_phase != INF
+	charge_weight = clampf(charge_weight + (dt if on else -dt) / CHARGE_SECONDS, 0.0, 1.0)
+	if step_phase == INF:
 		return walk
-	var run := clips.pose_at("run", _run.frame_at(step_phase))
-	return KaijuClips.mix(walk, run, smoothstep(0.0, 1.0, run_blend))
+	var pose := walk
+	if _run != null and run_blend > 0.0:
+		var run := clips.pose_at("run", _run.frame_at(step_phase))
+		pose = KaijuClips.mix(walk, run, smoothstep(0.0, 1.0, run_blend))
+	if _charge == null or charge_weight <= 0.0:
+		return pose
+	var charge := clips.pose_at("charge", _charge.frame_at(step_phase))
+	var fit := clips.stride_m / clips.stride_of("charge")  # its longer stride on the walk's clock
+	for i: int in 2:  # (unfitted, a planted foot fell behind the body and was re-stepped, in air)
+		charge.feet[i].z *= fit
+		if charge.planted[i]:  # down on its sole: a frame between keys landed it 1-2 m up, held there
+			charge.feet[i].y = minf(charge.feet[i].y, _charge_sole)
+	return KaijuClips.mix(pose, charge, smoothstep(0.0, 1.0, charge_weight))
 
 
 ## Lays the walking turn over a walking pose: turn_ahead is the yaw still to turn (rad, + left;
