@@ -5,7 +5,7 @@ extends RefCounted
 ## (AirFlight: a stand-off ring, glides, strafing passes) and fire a blue laser cannon on the
 ## helicopters' own cadence and damage (tuning "air"); like any helicopter, a blow that reaches
 ## the air downs one (no hit points, D-437) and pays a helicopter's rubble. Only the cap is the
-## Taskforce's own number (tuning "taskforce" "gunships"). It dies as a helicopter does (D-457,
+## Taskforce's own number (tuning "taskforce" "gunships"). It dies as a helicopter does (D-458,
 ## AirWing's fates and numbers): a blow of `burst_blow` blows it apart in the air, a lighter one
 ## sends it spinning down along AirWing's own falling wrecks, which crash it on the street or on
 ## the first roof it meets (never through one), smashing floors, crushing the army below and

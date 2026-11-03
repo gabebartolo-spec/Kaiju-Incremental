@@ -1,5 +1,5 @@
 extends "res://tests/lib/powers_base.gd"
-## Gunship deaths suite (TaskforceGunships, D-457): a Taskforce gunship dies as a helicopter
+## Gunship deaths suite (TaskforceGunships, D-458): a Taskforce gunship dies as a helicopter
 ## does. A hard blow blows it apart in the air; a glancing one sends it spinning down as one of
 ## AirWing's falling wrecks, out of the sky at once; it falls from its altitude, crashes on the
 ## street within its fall time and is gone, its crash smashing the block it lands on through

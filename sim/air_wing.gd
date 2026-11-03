@@ -44,7 +44,7 @@ class Falling:
 	var drift: Vector2  # ground units a second
 	var left: float
 	var seconds := 0.0  # the whole fall's time
-	## Lands on roofs (a Taskforce gunship, D-457): it falls from `alt` as the view draws it
+	## Lands on roofs (a Taskforce gunship, D-458): it falls from `alt` as the view draws it
 	## (height alt x (1 - u^2)) and crashes on the first roof it meets, never through it.
 	var roofs := false
 	var alt := 0.0

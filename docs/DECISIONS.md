@@ -4,13 +4,20 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-11-03 · D-457 · Director (roadmap M3) · Helicopter deaths: a Taskforce gunship dies as a helicopter does
+## 2026-11-03 · D-458 · Director (roadmap M3) · Helicopter deaths: a Taskforce gunship dies as a helicopter does
 A gunship downed by the kaiju now takes AirWing's fates and numbers (D-140, D-141, D-145, D-437) instead of vanishing:
 a blow of burst_blow blows it apart in the air; a lighter one sets it burning and spinning down as one of AirWing's
 falling wrecks (fall_seconds, fall_drift, crew bail-outs), drawn by HeliWreck with its obsidian box. It falls from its
 altitude along the view's own curve and crashes on the street, or on the first standing roof under it, never through
 one (AirWing.top_at); the crash is AirWing's own (crash_floors under it, army crushed, City Ablaze, never the kaiju),
 then the wreck is removed. No new numbers. City helicopters keep landing on the street as before. Test: gunship_deaths.
+
+## 2026-11-03 · D-457 · Director · Itch release candidate prep (M4): build, workflow, draft page
+Roadmap M4 tooling, no upload. export_presets.cfg also excludes docs/, review/, vault/, out/, dist/ and carries file and
+product version 0.1.0.0; tools/build_release.py runs tools/export_windows.sh --release and zips dist/KaijuEvolution-
+<version>-windows.zip; butler push only with --push and BUTLER_API_KEY, never by an agent. release.yml builds it on a v*
+tag or by hand and uploads the zip (14 days). docs/release/itch_page.md (DRAFT: title, price, tags, specs his to set)
+and docs/release/checklist.md. No icon exists yet (project.godot has none), so the exe keeps Godot's.
 
 ## 2026-11-03 · D-456 · Director · Bug bash: nine verified bugs fixed, behaviour as designed
 Under D-032 (fixes, no tuning). Endless regrow rebuilds a pool building in its model's shape and takes back only its
@@ -388,8 +395,3 @@ variation bar (one take plays the same each time). Landing inside STOMP_WAIT and
 ## 2026-10-31 · D-407 · Director · Colour-blind cues move to after the demo
 "push colour blind fixes to after demo". The check found #229's options carry no colour-blind setting; the threat
 meter (#234) already reads by segment count. The colour-blind pass is a post-demo roadmap row, not a demo gate.
-
-## 2026-10-31 · D-406 · Director · The demo ships in English only; only English is checked
-His words (10-31): "remove the chinese test checks, we only going to ship the demo with English", then "remove checks
-for all languages other than english". strings.py checks only the en column (CHECKED); check_i18n.sh no longer runs
-subset_cjk.py --check and lint.yml no longer fetches kaiju_cjk.ttf. The seven columns stay in the table.
