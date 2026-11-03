@@ -1,4 +1,4 @@
-# Behemoth rise_bay r2 (WIP, keyer croc-claw, 2026-10-28): not for merge
+# Behemoth rise_bay r2 (2026-10-28; merged in the croc stack, #398)
 
 Port of the adult's approved rise_p (rig11/roar_intro/rise_keys.py) to the adolescent y7 rig via dk (DK_STAGE=adolescent, lengths x K 0.777).
 Take: C:/kt/casc_drafts_1028/adolescent/rise_bay_rise_r2.casc (180 f; frames/cfg/jaw json here regenerate it via grun.sh).

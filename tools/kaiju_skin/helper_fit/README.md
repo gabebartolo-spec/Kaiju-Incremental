@@ -10,5 +10,5 @@ merged lumbar/neck chains, bake.py top-3 u8 weights).
 - `runM.sh` -> `runP.sh` -> `runQ.sh`: the shipped fit in order (M from the G specs, P1 every frame, X1 left leg);
   the game uses `opt3_X1_l.json` + `opt3_P1_r.json` (`mk_helpers.py out.json l.json r.json` writes `tools/blender/croc_adult3_helpers.json`).
 - `runTab.sh <l> <r> <out.md>`: the 13-clip bar table. Data (Cascadeur dumps `cd/cdump_*.npz`, starting specs) lives outside git in
-  `$KAIJU_FIT_DATA` (default: the rigger's scratch folder).
+  `$KAIJU_FIT_DATA` (default: `C:/Users/DANTE/cascadeur_bridge/croc_young/skinfix/`).
 - Needs numpy, scipy, torch 2.14.1 CPU (all BSD-3; see docs/LICENSING_REGISTER.md).

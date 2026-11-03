@@ -1,6 +1,6 @@
 # Kaiju Incremental: working rules for every Claude Code session
 
-Godot 4.7.2, GDScript (static typing on). Read this file, your handoff (`~/.claude/handoffs/kaiju/<role>.md`, outside git), the
+Godot 4.7.2, GDScript (static typing on). Read this file, your worktree's handoff (one file in `~/.claude/handoffs/`, named by the SessionStart hook, outside git), the
 `docs/DESIGN.md` sections your task changes or relies on, the `docs/ROADMAP.md` index and only the rows your task names;
 grep the rest. No read-receipt message.
 Shared rules: `~/.claude/CLAUDE.md`; this file holds only what is true for Kaiju Incremental.
@@ -11,8 +11,8 @@ Shared rules: `~/.claude/CLAUDE.md`; this file holds only what is true for Kaiju
 - A roadmap item is context, not authorisation: start only what the director assigns (no roles since 2026-10-29); when done,
   stop, report with evidence, recommend the next step.
 - Simplest viable option first (fewer systems, numbers, files). Challenge the director when a request conflicts with
-  these rules or DESIGN.md: one paragraph, a better option, then do what he decides. Ask his judgement calls at once,
-  the `ask-the-director` way; never guess at a visual.
+  these rules or DESIGN.md: one paragraph, a better option, then do what he decides. Ask his judgement calls at once:
+  show the thing and ask directly (AskUserQuestion or the closing question); never guess at a visual.
 
 ## Hard rules
 1. **No runtime AI:** no LLM, diffusion or network model in the shipped game.

@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-455 · Director · One roadmap, rebuilt; stale docs bashed
+"stale and wrong; fix the cause; update the roadmap fully; clean up old docs." Cause: open rows lived in Claude Docs
+one account could not open, and done work was never marked. Rule: docs/ROADMAP.md is the only roadmap; add an item
+by PR the same day it is named, and mark it done in the PR that does it. Rebuilt ROADMAP.md from main at #561;
+archived lead-howto, DEMO_PLAYTEST, the tentacle research; archive banners; cephalopod, role and skill refs fixed.
+
 ## 2026-11-03 · D-454 · Director · Globe LAUNCH starts the real city; unplayable titans hidden on the rack
 His rulings: (1) LAUNCH on the globe starts the real city where one exists, at the continent's stage: Ostia Minor
 today's beach, bay and river city, Carthago the cothon harbour, Thule the fjord (D-435 tuning). The other continents

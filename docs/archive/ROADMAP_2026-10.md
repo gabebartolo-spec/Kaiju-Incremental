@@ -1,3 +1,5 @@
+> **ARCHIVED 2026-10, superseded.** Frozen October roadmap. The live doc is `docs/ROADMAP.md`; nothing here is current.
+
 # Roadmap
 
 Cap: 600 lines; finished work and dated detail roll to `docs/roadmap/` and `docs/archive/`. Read by section, never

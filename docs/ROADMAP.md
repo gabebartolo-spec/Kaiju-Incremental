@@ -1,11 +1,8 @@
 # Roadmap
 
-This file is the roadmap and its source of truth (D-444). Both Claude accounts can read it. Change it by PR. It was rebuilt from git on 2026-11-03: main up to 77cb93e9e,
-docs/DECISIONS.md up to D-443, and `docs/archive/ROADMAP_2026-10.md`. Edits made to the Claude Doc
-(claude.ai/artifact/CvbnH4ZPRZDLha74homA8Q) after 2026-10-30 are not in it, because that doc only opens from one
-account. That doc is frozen. If the director names something it held that is missing here, add it here.
-
-Phase notes, research refs ("R n.m") and owners are in `docs/archive/ROADMAP_2026-10.md`. Read it by section.
+This file is the only roadmap and its source of truth (D-444, D-455). Change it by PR; add a new item the same day it
+is named. Rebuilt from git on 2026-11-03 against main at d05726342 (#561) and docs/DECISIONS.md up to D-455.
+Phase notes and research refs ("R n.m") are in `docs/archive/ROADMAP_2026-10.md` (frozen). Read it by section.
 
 ## Vision and scope (Phase 2 vertical slice)
 
@@ -15,7 +12,7 @@ Phase notes, research refs ("R n.m") and owners are in `docs/archive/ROADMAP_202
 
 ## Where things stand
 
-**Overworld (campaign globe):** F1 to F4 and G1 to G5 are done.
+**Overworld (campaign globe):** F1 to F4 and G1 to G7 are done.
 
 | Row | What | PR |
 |---|---|---|
@@ -28,69 +25,75 @@ Phase notes, research refs ("R n.m") and owners are in `docs/archive/ROADMAP_202
 | G4 | Mission markers and camera fly-to (D-429) | #520 |
 | G3 | Continent colour states (D-430) | #523 |
 | G5 | Mission panel, stub mission, conquest on the globe (D-431, D-432) | #525, #526 |
+| G6 | Conquests unlock the Komodo and the serpent (D-423) | #558 |
+| G7 | Globe LAUNCH starts the real city; unplayable titans hidden on the rack (D-454) | #561 |
+| — | Global Threat Level logic: capped at 99, the last conquest sets 100 and opens Aurelia (D-422, `sim/campaign.gd`) | built |
 
-The overworld rows still open live in plan doc PcHHG2EhRYsKfBzC2ZkQkV, which this file can't see:
+Still open on the overworld:
 
 - the stub mission becomes the real mission flow
 - continent rows hold real data, not placeholders
-- the Global Threat Level, with the sixth conquest opening Aurelia (D-422)
-- Komodo and serpent unlocks (D-423)
+- a globe readout for the Threat Level (logic built; UI unverified)
+- continent bonuses: later (balance, D-363)
 
-**Cities, C1:** Phase 0 is done (#538). There are three demo layouts: Ostia beach, Carthago harbour and Thule fjord
-(D-435). Every city is the adult city at every stage (D-436), and the threat level belongs to each city (D-437).
-Phases 1 to 4 are open. Next comes the landmark-spot notes.
+**Cities, C1:** Phase 0 is done (#538). Three demo layouts: Ostia beach, Carthago harbour and Thule fjord (D-435).
+Every city is the adult city at every stage (D-436); the threat level belongs to each city (D-437). Phases 1 to 4
+are open; next are the landmark-spot notes.
 
-**Testing and CI:**
-
-- The six slow suites are fixed (#534).
-- Touched suites run locally. A PR runs the lints and the sim suites, and the engine suites run on main (D-403).
-- Test tools are in #539: wt_setup, shot, ab before/after sheet, triage.
-- Main's slow suite `counts` has been red since #536.
+**Testing and CI:** slow suites fixed (#534), `counts` green (#545, D-446). Touched suites run locally; a PR runs the
+lints and sim suites, engine suites run on main (D-403). Test tools in #539 and #541.
 
 **Since 2026-10-30:**
 
-- Performance: play runs at 111 fps (#530), and decor loads in 1.4 s (#531).
-- Title screen: a night beach (#532, D-440, D-441).
-- Water: the ripple fades with distance (#528), and the open sea is an FFT ocean (D-428).
-- Skyline: the bay bridge is gone (#527).
-- Destruction: tank carving (#537).
-- Cleanup: the octopus and insectoid were removed (#535).
-- Load screen: stills (D-427).
+- Performance: 111 fps (#530), decor loads in 1.4 s (#531), CPU trims (#544 D-447, #548 D-451), leap suite speed (#551).
+- Controls: W walks forward, the stick turns with the camera (#542, D-445).
+- Civilians: fleeing never steps toward the kaiju (#546, D-450); calmed ones never walk back (#554, D-453).
+- Destruction: tank carving (#537); falling buildings hit neighbours and the kaiju, never pass through (#547 D-448, #553).
+- Leap: never vaults or lands on a tower above his shoulder (#549 D-449; #555 seeded-city regression).
+- Look: dusk grade copied from Shin Godzilla (#550, D-452); title night beach (#532, D-440, D-441); FFT ocean (D-428),
+  ripple fade (#528); bay bridge gone (#527); load stills (D-427).
+- Taskforce: gunships in the adult city, up to 2, laser cannon (#556; D-143, D-145, D-152).
+- Overworld: Komodo and serpent unlocks (#558, D-423); globe LAUNCH starts the real city (#561, D-454).
+- Cleanup: octopus and insectoid code removed (#535, D-438).
+- In review: bug bash, nine verified bugs fixed with tests (#560).
 
-## Open work (archive rows, updated)
+## Open work
 
 | # | Row | Status |
 |---|---|---|
 | 1 | Croc animation (Cascadeur, reference copied exactly, D-410) | open |
-| 2 | Bay-coast junctions | open; the bridge was removed (#527) |
-| 3 | Destruction: landmarks and bridges carve, varied collapse, stadium crowd | tank carving done (#537), rest open |
+| 2 | Bay-coast junctions | done (#431; bridge removed #527) |
+| 3 | Destruction: landmarks and bridges carve, varied collapse, stadium crowd | done (#421 D-387 D-388, #427 D-389, #537) |
 | 4 | Random cities (city_seed, pool and spots, D-375) | moved into C1 Phases 1 to 4 |
-| 5 | Upgrade tree: rings, 2-3x the nodes, Ricochet/Domino, tail-lash nodes; bio lab screen (D-396) | open |
-| 6 | Render and performance: graphics preview in options | perf done (#530, #531); graphics preview done (D-393) |
-| 8 | CI | slow suites fixed; `counts` green again (#545, D-446) |
+| 5 | Upgrade tree: rings, 2-3x nodes, Ricochet/Domino, tail-lash nodes, bio lab screen | done (#422 D-275, #430, #455, #493, #445, #454 D-396) |
+| 6 | Render and performance, graphics preview | done (#530, #531, D-393) |
+| 8 | CI | done (#534; #545 D-446) |
 | 9 | Sound and music | open |
-| 10 | Demo shell: textures, preview, load art, end screen, feedback (Itch link, D-395) | end screen (demo_end.gd), feedback link (D-395), graphics preview with the menu cap lifted (D-393) and load stills (D-427) done; textures open |
+| 10 | Demo shell: textures, preview, load art, end screen, feedback link | done except textures (D-393, D-395, D-427) |
+| 11 | Civilians never flee toward the kaiju | done (#546 D-450, #554 D-453) |
+| 12 | Falling buildings never pass through a neighbour: they carve it or follow physics | done (#547 D-448, #553) |
+| 13 | Bug: the kaiju can jump onto the tops of extremely tall buildings | done (#549 D-449, #555) |
+| 14 | Revisit the appearance of closed windows | open (art: capture to the director first) |
+| 15 | Globe LAUNCH starts the real city; locked titans hidden until playable | done (#561, D-454) |
+| 16 | Continent bonuses | later (balance) |
 
 ## Milestones
 
 - **M1: feel pass**
 - **M2: Taskforce agents**
 - **M3: demo complete**, which needs all of these:
-  - full Taskforce
+  - full Taskforce (gas soldiers, mechs and gunships in the adult city, #556; rest open)
   - textures
   - helicopter deaths
-  - graphics preview (done, D-393)
-  - load art (stills done, D-427)
-  - end screen (done)
-  - feedback link (done, D-395)
-  - the overworld loop: globe, mission, conquest
+  - the overworld loop: globe, real mission, conquest
+  - done: graphics preview (D-393), load art (D-427), end screen, feedback link (D-395)
 - **M4: Itch release candidate**
 
 ## Parked
 
-- Komodo and serpent, now unlocks after conquests (D-423)
+- Komodo and serpent content stays out of the demo (croc only, D-424); their unlocks are built (#558)
 - Hatchlings (D-358)
-- Mecha finale
+- Mecha finale (shape ruled: GODBREAKER in Aurelia, D-422)
 - Colour-blind cues, until after the demo (D-407)
 
 ## Open director questions
@@ -99,8 +102,5 @@ Phases 1 to 4 are open. Next comes the landmark-spot notes.
 - Camera growth (R 19)
 - Serpent design (D-246)
 - Body contact: carve or yield (R 13.3)
-- Rampage timer (R 1.2)
 - Throw nodes (R 22.4)
-- Tree layout (R 16.5)
 - Fire (research 26) and fire crews
-- Finale shape (R 23.1)
