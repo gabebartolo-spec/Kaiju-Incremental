@@ -11,7 +11,8 @@ extends RefCounted
 ## the kaiju's feet (TaskforceFrost). An agent dies when the roof chunk it clings to goes (broken,
 ## dropped or toppled) or when a claw swipe swats it out of the air mid-hop; each kill pays
 ## biomass. In the adult city some agents are gas soldiers, who throw gas (TaskforceGas) in place
-## of frost, and walking mechs come up the roads (TaskforceMechs). Part of Army; pure and seeded
+## of frost, walking mechs come up the roads (TaskforceMechs) and gunships fly
+## (TaskforceGunships). Part of Army; pure and seeded
 ## from its own stream; numbers in data/tuning.json "taskforce".
 ## Presentation reads the agents and the events (taskforce_deployed, railgun_aim, railgun_locked,
 ## railgun_hit, railgun_missed, frost_launched, frost_hit, frost_cracked, agent_died; the gas and
@@ -55,6 +56,7 @@ var perch: TaskforcePerch
 var volley: TaskforceVolley
 var gas: TaskforceGas
 var mechs: TaskforceMechs
+var gunships: TaskforceGunships
 var agents: Array[Agent] = []
 ## Agents killed this run, and each squad's size as it arrived.
 var kills := 0
@@ -82,6 +84,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	gas = TaskforceGas.new(sim, gas_cfg)
 	var mech_cfg: Dictionary = cfg["mechs"]
 	mechs = TaskforceMechs.new(sim, mech_cfg, Seeds.derive(rng, 0x3EC4))
+	var ship_cfg: Dictionary = cfg["gunships"]
+	gunships = TaskforceGunships.new(sim, ship_cfg, Seeds.derive(rng, 0x6A5))
 
 
 ## How many may be alive at once: none in the young city, the same from the adolescent city on.
@@ -112,6 +116,7 @@ func step(dt: float) -> void:
 	frost.step(dt)
 	gas.step(dt)
 	mechs.step(dt, open)
+	gunships.step(dt, open)
 	_cool_down(dt)
 	volley.tick(dt, agents)
 	var fallen: Array[Agent] = []
