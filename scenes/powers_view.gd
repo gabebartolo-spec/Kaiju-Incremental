@@ -126,6 +126,8 @@ func _acted(kind: String, event: Dictionary, kaiju_at: Vector3, bs: float) -> bo
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
 		"tail_windup":
 			_hook("tail_sweep", [Num.f(event["side"]), "tail_windup"])
+		"tail_auto_windup":  # the automatic sweep's tail draws back first (D-459)
+			_hook("tail_sweep", [Num.f(event["side"]), "tail_windup"])
 		"tail_auto":
 			_tail_auto(event, kaiju_at, bs)
 		"coated", "fire_burning":

@@ -12,10 +12,10 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
   in place and the game's step clock moves the body (header stride_m = that travel).
 - turn: a turn on the spot; the root yaw is the pelvis heading (stored per frame, the game turns the body by it) and is
   taken out of the pose. The mirrored turn is appended too (turn_left <-> turn_right).
-- layer: in place as keyed, played over the other clips on the arms and torso (ClipRake: the claw rake, D-185); its
-  entry carries "layer": true, the hit frame (the claw crosses the snout line, where the sim's rake lands) and the
-  trail's first and last frames (the streak, D-243), given as keyed frames from <first> and stored as clip frames.
-  The mirrored rake is appended too (rake_r <-> rake_l).
+- layer: in place as keyed, played over the other clips (the tail lash, lash_r); its entry carries "layer": true,
+  the hit frame (where the sim's blow lands) and the trail's first and last frames (the streak), given as keyed frames
+  from <first> and stored as clip frames. The mirrored layer is appended too (lash_r <-> lash_l). The claw rake
+  layer (rake_r/rake_l) is gone with the croc's claws (D-459) and is never baked again.
 - move: a one-shot that travels and turns as keyed (walk start, leap, slam stop, walking turns): the pelvis's flat travel
   from the first frame (root, per frame) and its heading (yaw) are taken out of the pose, so the sim moves the body.
 A foot is planted while its toe tip is within PLANT_UP of its rest height and moves under PLANT_SLIDE to the next frame
@@ -48,7 +48,7 @@ PLANT_SLIDE = 0.5  # m a keyed frame: a planted toe tip holds still (the peel mo
 BASE_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
               "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [f"tail{i}" for i in range(9)] + ["jaw"]
 IDENTITY = struct.pack("<4h", 0, 0, 0, 32767)
-MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "rake_r": "rake_l", "rake_l": "rake_r", "lash_r": "lash_l", "lash_l": "lash_r"}
+MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "lash_r": "lash_l", "lash_l": "lash_r"}
 arm = bpy.data.objects["croc_rig"]; ad = arm.data
 mesh = bpy.data.objects["croc_mesh"]; me = mesh.data
 scene = bpy.context.scene
