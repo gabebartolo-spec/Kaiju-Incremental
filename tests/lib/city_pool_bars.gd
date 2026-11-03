@@ -262,7 +262,11 @@ static func carved(id: String, row: Dictionary, dt: float) -> int:
 		Content.species_def("reptilian"),
 		UpgradeTree.new(Content.upgrades())
 	)
-	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	# The carve path alone: with fall_contact on, a model that topples onto the kaiju beside it
+	# breaks up on him (D-448) before he has carved it.
+	var tuning: Dictionary = Content.tuning().duplicate(true)
+	tuning["fall_contact"]["on"] = false
+	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
 	sim.ability_type = str(Content.species_def("reptilian")["ability"]["type"])
 	sim.kaiju_pos = Vector2(Num.f(row["w"]) * 0.5 + 0.6, 0.0)
 	for _s: int in 60:

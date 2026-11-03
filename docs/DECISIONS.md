@@ -4,18 +4,41 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-11-03 · D-448 · Director · Closer read of the D-447 skips: three more identical trims
 Under D-032. Rain smears rewrite only slots that were visible last tick (the rest already hold the hidden
 values), and the lamp walk stops once lamp_max is reached. CarvePhysics reads live_bodies() once per tick, not
 twice (a pure read; nothing changes in between). DebrisField returns right after advancing its clock when no
 body, queue or head is left (the last _draw already zeroed every mesh; no RNG drawn). Skipped: crowd
 lose_cells/_bury (already O(1) when idle; the only trim saves ~4 has() calls a second).
 
+## 2026-11-03 · D-449 · Director · The leap never vaults a tower above his shoulder
+Bug: the kaiju leapt onto the tops of extremely tall buildings. D-361 kept such roofs off the leap's target,
+but LeapArc raised the arc over every building on the flight path, so a tower between him and a low roof (or
+the open-ground landing) was cleared and he came down on or over its top. Now Dash.aim_at asks LeapArc.wall
+for the first building on the path taller than his shoulder (the existing per-stage leap "shoulder" share x
+drawn height, D-361; no new number) and makes it the target, taken in its side as D-361 does. Roofs at or under
+the shoulder still land (Leap suite: _check_no_vault, _check_low_roof).
+
+## 2026-11-03 · D-448 · Director · Falling buildings hit neighbours and the kaiju, never pass through
+Q: a falling building passed through its neighbour and through the kaiju. Cause: a fall is a scripted pose (ToppleFx
+tilt, CityFalls drop) checked against nothing until it landed; the kaiju had no physics body. A: FallContact (sim)
+poses each falling part as the view draws it every tick and samples its chunks. A neighbour's live chunks it reaches
+take a landing's blow (carved); one that survives stops it. The kaiju's hide (a rigid capsule, tuning fall_contact)
+stops it at the first touch (bisected in the tick). It shatters there into DebrisField fragments thrown from outside
+the hide. KaijuHide (AnimatableBody3D) follows him, so fragments hit and slide off. Max overlap (fall_contact
+suite): neighbour 0.48 to 0.11, kaiju topple 1.03 to 0.00, drop 0.96 to 0.00. What a part touched as it began (the
+base he chewed, a shared wall) and a topple's shudder never count. Rooftop fixture floor 1.0 to 0.9 volleys/s (1.09
+to 0.97: roofs fall sooner). Not done: settled debris vs neighbours.
+
 ## 2026-11-03 · D-447 · Director · Per-frame CPU trims (no visual change)
 Under D-032 (looks first): CPU-only savings, identical output. LightPool.repick walks the group once and tests
 the near set by dictionary, not Array.has (O(n) not O(n^2)). Fire pushes base_y/fire_xz to its flame shader only
 when it moves. TaskforceView reuses its per-frame id dictionaries. Skipped: weather rain smears, carve debris
 totals, crowd lose_cells/_bury, debris early-outs (not trivially identical; need a closer read).
+
+## 2026-11-03 · D-446 · Director · The counts run keeps the kaiju alive to the route's end
+Main's `counts` suite was red since #536 (army harder, D-437): the army killed the kaiju at step 3307 of 3360
+(over=true), so "the route played all steps" failed. The bar counts FxPool peaks over the whole route, not the
+army, so bench_lib takes `hp` and counts sets 1,000,000, as the military and fire suites already do.
 
 ## 2026-11-03 · D-445 · Director · W walks forward: the stick turns with the camera
 Q: "WASD controls dont work, seems like theres no way to walk forwards." Since D-330 the camera turns to sit
@@ -375,22 +398,3 @@ Flat surfaces P3, part 3: the kaiju is textured with his OWN hide grain, not the
 (`scenes/hide_grain.gdshaderinc`: scutes with dark crevices, a tone shift per scute, a few flecks, in the hide's rest
 space so it rides the bones; seeded). Numbers in `data/looks.json` `kaiju_hide_*`; `kaiju_hide_on` is the on/off
 switch the onelook check flips. The look itself is his call on the stills before it lands.
-
-## 2026-10-30 · D-397 · Director · Plane lights and skyline lamp heads are lights, not surfaces
-"Exempt as lights": the aircraft's blinking lights and the skyline lamp heads join `vfx_exempt`, so the flat-surface
-rule does not apply to them; they leave KNOWN_FLAT (flat surfaces P3 part 2, cap 3).
-
-## 2026-10-30 · D-396 · Director · The tree screen is a bio lab, built in full
-Roadmap item 1, "Tree screen skin": "bio lab aesthetic". On the first, palette-only version: "I dont even know what you
-changed, looks identical, this isnt a small job, this screen is pivotal to the games appeal. it is a dopamine goldmine,
-it needs a lot of vfx, sfx and beautiful UI design". So the screen is a specimen plate with glass cells that fill with
-Special K, tubes that surge and bubble, motes from the biomass counter, a rim flare when a ring opens, lightning on an
-evolution, a scanner sweep, a lab readout for the side panel, and its own sounds. "go straight to the build" (no mockup
-board); "500 credits sure": ElevenLabs sound effects up to 500 credits for this screen (precedent D-237). The ElevenLabs
-connector was not in the building session, so #445 ships the four tree sounds synthesised in `tools/sfx/build_sfx.py`
-(0 credits); the 500 stay approved for replacing them from a session that has it. The kaiju himself, at his current
-stage, turns at the empty centre of the rings: "yes". Tuning `tree.skin` and `tree.skin.fx`; `fx.enabled` is the
-on/off switch the fixture flips.
-
-## 2026-10-30 · D-395 · Director · The feedback link is the Itch page
-His words (10-30): "https://veniceissinking.itch.io/kaiju". The thanks screen's LEAVE FEEDBACK opens it (tuning demo.feedback_url); replaces the placeholder D-148 left.

@@ -12,6 +12,8 @@ const SHRINK_MIN := 0.01  # a shrinking piece's last scale
 var size_scale := 1.0  # pieces are this many times the building's size (trees: bigger, to read)
 var lift := -1.0  # toward white before shading; below 0, the look's debris_lift
 var shadows := true  # whether the pieces cast shadows
+## pos -> pos moved clear of a body pieces must never start inside (CityView: KaijuHide.outside).
+var keep_out := Callable()
 
 var _rng: RandomNumberGenerator
 var _queue: Array[Array] = []
@@ -92,7 +94,7 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
 	body.add_child(shape)
 	var whiten := lift if lift >= 0.0 else Look.value("debris_lift")
 	var view := _view(snappedf(size, 0.02))
-	body.position = pos
+	body.position = keep_out.call(pos) if keep_out.is_valid() else pos
 	add_child(body)
 	var spread := Vector3(
 		_rng.randf_range(-1, 1), _rng.randf_range(0.1, 0.7), _rng.randf_range(-1, 1)

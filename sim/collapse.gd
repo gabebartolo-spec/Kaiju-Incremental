@@ -14,11 +14,15 @@ var _toppled_ids: Dictionary = {}
 ## it (tuning destruction.fall_dirs), drawn from the run's own stream so a replay matches.
 var _odds := PackedFloat32Array([1.0, 0.0, 0.0, 0.0])
 var _rng: RandomNumberGenerator
+var _contact: Dictionary = {}  # tuning fall_contact (FallContact); empty: falls pass through
+var _topple_cfg: Dictionary = {}  # tuning topple_fx: the tilt curve the view draws
 
 
 func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	_rng = rng
+	_contact = tuning.get("fall_contact", {})
+	_topple_cfg = tuning.get("topple_fx", {})
 	var cfg: Dictionary = tuning.get("destruction", {})
 	var dirs: Dictionary = cfg.get("fall_dirs", {})
 	if not dirs.is_empty():
@@ -230,10 +234,16 @@ func _drop_distance(b: RampageSim.Building, f: RampageSim.Fall, lowest: float) -
 
 func step(dt: float) -> void:
 	var landed: Array[RampageSim.Fall] = []
-	for f: RampageSim.Fall in sim.falls:
+	var on: bool = _contact.get("on", false) == true and not _topple_cfg.is_empty()
+	for f: RampageSim.Fall in sim.falls.duplicate():  # a carve may start new falls
 		f.t += dt
 		if f.t >= f.duration:
 			landed.append(f)
+		elif on:
+			var hit := FallContact.step(sim, f, _contact, _topple_cfg, dt)
+			if not hit.is_empty():
+				f.contact = str(hit["contact"])
+				landed.append(f)
 	for f: RampageSim.Fall in landed:
 		sim.falls.erase(f)
 		_land(f)
@@ -251,6 +261,8 @@ func _land(f: RampageSim.Fall) -> void:
 	# A carved scrap (less than a chunk's worth, "scrap"): it lands, and smashes nothing.
 	var scrap := f.cells.is_empty()
 	event["scrap"] = scrap
+	if f.contact != "":  # it broke up against a neighbour or the kaiju before it came down
+		event["contact"] = f.contact
 	if f.kind == "topple":
 		var strip := _strip(f)
 		var start: Vector2 = strip[0]
@@ -281,7 +293,10 @@ func _strip(f: RampageSim.Fall) -> Array:
 	var across := Vector2(-f.dir.y, f.dir.x)
 	var b := sim.buildings[f.building]
 	var width := f.width if f.width >= 0.0 else _width_across(b, f.cells, across)
-	return [start, start + f.dir * f.height, width * 0.5 + 0.5]
+	var reach := f.height  # one stopped by what it hit reaches only as far as it leant
+	if f.contact != "" and f.t < f.duration:
+		reach = f.height * sin(FallContact.tilt(_topple_cfg, f.t, f.duration))
+	return [start, start + f.dir * reach, width * 0.5 + 0.5]
 
 
 func _width_across(b: RampageSim.Building, cells: Array[Vector3i], across: Vector2) -> float:
