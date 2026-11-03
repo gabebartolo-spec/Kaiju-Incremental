@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-30 · D-401 · Director · The tail lash takes the signature button; the breath gets Q / pad X
+Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
+button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
+already shares). Where is the ring? "Behind-and-around" (the half ring behind and beside him). The automatic whip goes
+and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328). Animation: "Cascadeur clip first",
+for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
+procedural whip stands in until they land. Amended the same day: "Merge now" (the lash merges with the
+procedural whip; the clips follow).
+
 ## 2026-10-30 · D-400 · Director · The 20 Tripo street props ship, at half the buildings' cube
 His words (10-30), on P01-P20 (D-266): "theyre good, ship"; cube size: "Half (~19 cm)". Every prop is its baked
 `.kvox` (`tools/street_props/bake.sh`) at voxel 0.0625, half the buildings' 0.125: pavement furniture along every

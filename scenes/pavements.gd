@@ -13,6 +13,7 @@ var links: Array[Array] = []
 var in_road := PackedByteArray()  # per node: 1 when the corner lies in a carriageway
 ## The walkers' stream (StreetLife's), for next_corner.
 var rng: RandomNumberGenerator
+var wary := 0.0  # m: within this of the kaiju no walker turns toward it (StreetSteps sets it)
 
 
 ## Pavement corners round every block of the playable city (4 per block), linked round the
@@ -145,16 +146,20 @@ func flee_corner(here: int, kaiju: Vector2) -> int:
 
 ## The corner a walker at `here` (come from `from`) heads for next: never straight back unless
 ## it must; fleeing, flee_corner; else round its block or, by CROSS_CHANCE,
-## across the street (StreetLife's walkers; draws from rng in that order).
+## across the street (StreetLife's walkers; draws from rng in that order). Within `wary` of the
+## kaiju a walker (one just calmed) takes no corner toward it while another is left (D-453).
 func next_corner(here: int, from: int, kaiju: Vector2, fleeing: bool) -> int:
 	if fleeing:
 		return flee_corner(here, kaiju)
+	var at := nodes[here]
+	var near := at.distance_squared_to(kaiju) < wary * wary
 	var options: Array[int] = []
 	for n: int in links[here]:
-		if n != from:
+		if n != from and not (near and (nodes[n] - at).dot(at - kaiju) < 0.0):
 			options.append(n)
 	if options.is_empty():
-		return from
+		var back := not near or (nodes[from] - at).dot(at - kaiju) >= 0.0
+		return from if back else here
 	var lot := here >> 2
 	var crossings: Array[int] = []
 	var round_lot: Array[int] = []
