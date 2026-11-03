@@ -35,6 +35,7 @@ func run_checks() -> void:
 	await _t("_check_bonus_in_combat")
 	await _t("_check_states")
 	await _t("_check_conquer")
+	await _t("_check_titan_unlocks")
 	await _t("_check_stage_words")
 
 
@@ -267,3 +268,21 @@ func _check_stage_words() -> void:
 			var scale: Dictionary = pick["scale"]
 			for stat: String in scale:
 				check(Content.bonus_line(stat) != "", "%s has a bonus line" % stat)
+
+
+## D-423: the Komodo joins titans_unlocked after the first conquest and the serpent after the
+## second, whichever continents those were; the croc is never added (it starts unlocked).
+func _check_titan_unlocks() -> void:
+	var key := str(Content.section("creation")["save_key"])
+	var save := SaveFile.campaign()
+	var none: Array = save.get(key, [])
+	check(none.is_empty(), "a fresh campaign unlocks none")
+	save = Campaign.conquer(save, Content.continent("ostia_minor"), "")
+	var one: Array = save[key]
+	check(one == ["komodo"], "the first conquest unlocks the Komodo: %s" % [one])
+	save = Campaign.conquer(save, Content.continent("thule"), "")
+	var two: Array = save[key]
+	check(two == ["komodo", "serpent"], "the second, Thule first, unlocks the serpent: %s" % [two])
+	save = Campaign.conquer(save, Content.continent("carthago"), "")
+	var three: Array = save[key]
+	check(three == ["komodo", "serpent"], "a third adds nothing: %s" % [three])
