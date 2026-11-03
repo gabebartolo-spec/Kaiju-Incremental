@@ -50,6 +50,7 @@ enum Key {
 	SOLAR,
 	FRAME_METAL,
 	FRAME_WOOD,
+	FRAME_JAMB,
 	NEON0,
 	KEY_COUNT = NEON0 + 1, // neon0 .. neon<n-1> follow
 };
@@ -169,8 +170,9 @@ struct Gen {
 
 	Spec brick(int r, int q, int floor_n) const {
 		const bool balcony = floor_n % 2 == 0 && q >= 1 && q <= 6;
-		if (q >= 2 && q <= 6 && r >= 2 && r <= 6) return { -2, sash(r, q), K_NONE, K_NONE };
-		if (r == 7 && q >= 2 && q <= 6) return { FRAME, K_NONE, FRAME, K_NONE };
+		if (q >= 2 && q <= 5 && r >= 2 && r <= 6) return { -2, sash(r, q), K_NONE, K_NONE };
+		if (q == 6 && r >= 2 && r <= 6) return { FRAME_JAMB, K_NONE, K_NONE, K_NONE };
+		if (r == 7 && q >= 2 && q <= 5) return { FRAME, K_NONE, FRAME, K_NONE };
 		if (r == 1 && q >= 1 && q <= 6) return { WALL, K_NONE, balcony ? RAIL : SILL, balcony ? RAIL : K_NONE };
 		if (r == 0 && balcony) return { WALL, K_NONE, SLAB, SLAB };
 		return { WALL, K_NONE, K_NONE, K_NONE };
@@ -179,9 +181,10 @@ struct Gen {
 	Spec stone(int r, int q, bool course, bool top_row) const {
 		if (course) return { TRIM, K_NONE, TRIM, top_row ? TRIM : K_NONE };
 		if (q == 0) return { PILLAR, K_NONE, PILLAR, K_NONE };
-		if (q >= 2 && q <= 6 && r >= 2 && r <= 6) return { -2, sash(r, q), K_NONE, K_NONE };
-		if (r == 1 && q >= 2 && q <= 6) return { WALL, K_NONE, SILL, K_NONE };
-		if (r == 7 && q >= 3 && q <= 5) return { TRIM, K_NONE, TRIM, K_NONE };
+		if (q >= 2 && q <= 5 && r >= 2 && r <= 6) return { -2, sash(r, q), K_NONE, K_NONE };
+		if (q == 6 && r >= 2 && r <= 6) return { FRAME_JAMB, K_NONE, K_NONE, K_NONE };
+		if (r == 1 && q >= 2 && q <= 5) return { WALL, K_NONE, SILL, K_NONE };
+		if (r == 7 && q >= 3 && q <= 4) return { TRIM, K_NONE, TRIM, K_NONE };
 		return { WALL, K_NONE, K_NONE, K_NONE };
 	}
 
@@ -196,7 +199,8 @@ struct Gen {
 				return brick(r, q, y / res);
 			case GLASS:
 				if (q == 0 || r == 0) return { MULLION, K_NONE, K_NONE, K_NONE };
-				if (r == 4 || q == 4) return { MULLION, K_NONE, K_NONE, K_NONE };
+				if (r == 4) return { FRAME, K_NONE, K_NONE, K_NONE };
+				if (q == 4) return { MULLION, K_NONE, K_NONE, K_NONE };
 				return { GLASS_K, K_NONE, K_NONE, K_NONE };
 			default:
 				return stone(r, q, top_row || (r == 0 && (y / res) % 5 == 0), top_row);

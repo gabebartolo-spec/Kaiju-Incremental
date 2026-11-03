@@ -110,6 +110,7 @@ func _make_palette(base: Color) -> void:
 func _add_sashes() -> void:
 	for key: String in ["frame_metal", "frame_wood"]:
 		palette[key] = Look.color("window_" + key)
+	palette["frame_jamb"] = palette["frame_wood"]  # the sash's flush side (BuildingLayout._sash)
 
 
 ## The share of windows lit (Look "window_lit"); a test view overrides it to 0.

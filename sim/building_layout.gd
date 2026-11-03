@@ -150,8 +150,10 @@ func _upper(y: int, p: int) -> Array[String]:
 		GLASS:
 			if q == 0 or r == 0:
 				return ["mullion", "", "", ""]
-			if r == 4 or q == 4:
-				return ["mullion", "", "", ""]  # transom and centre mullion: 2x2 panes a bay
+			if r == 4:
+				return ["frame", "", "", ""]  # transom
+			if q == 4:
+				return ["mullion", "", "", ""]  # centre mullion: 2x2 panes a bay
 			return ["lit" if _lit_panel(p, y) else "glass", "", "", ""]
 	return _stone(r, q, top_row or (r == 0 and floori(float(y) / res) % 5 == 0), top_row)
 
@@ -172,9 +174,11 @@ func _office(r: int, q: int, top_row: bool) -> Array[String]:
 ## Punched windows with sills and lintels; a balcony with a railing every other floor.
 func _brick(r: int, q: int, floor_n: int) -> Array[String]:
 	var balcony := floor_n % 2 == 0 and _in(q, 1, 6)
-	var punched := _in(q, 2, 6)
+	var punched := _in(q, 2, 5)
 	if punched and _in(r, 2, 6):
 		return ["recess", _sash(r, q, "frame_wood"), "", ""]
+	if q == 6 and _in(r, 2, 6):
+		return ["frame_jamb", "", "", ""]
 	if r == 7 and punched:
 		return ["frame", "", "frame", ""]  # lintel
 	if r == 1 and _in(q, 1, 6):
@@ -190,17 +194,21 @@ func _stone(r: int, q: int, course: bool, top_row: bool) -> Array[String]:
 		return ["trim", "", "trim", "trim" if top_row else ""]
 	if q == 0:
 		return ["pillar", "", "pillar", ""]
-	if _in(q, 2, 6) and _in(r, 2, 6):
+	if _in(q, 2, 5) and _in(r, 2, 6):
 		return ["recess", _sash(r, q, "frame_wood"), "", ""]
-	if r == 1 and _in(q, 2, 6):
+	if q == 6 and _in(r, 2, 6):
+		return ["frame_jamb", "", "", ""]
+	if r == 1 and _in(q, 2, 5):
 		return ["wall", "", "sill", ""]
-	if r == 7 and _in(q, 3, 5):
+	if r == 7 and _in(q, 3, 4):
 		return ["trim", "", "trim", ""]  # keystone
 	return ["wall", "", "", ""]
 
 
-## A closed window in a 5x5 opening (q 2..6, r 2..6): an outer frame and a cross mullion round
-## 2x2 panes (director 2026-11-03, C:/kt/ref/closed_window_inspo: shape only).
+## A closed window in a 5x5 sash (q 2..6, r 2..6): an outer frame and a cross mullion round
+## 2x2 panes (director 2026-11-03, C:/kt/ref/closed_window_inspo: shape only). The opening
+## stays q 2..5; its q 6 side is a structural jamb flush with the wall (frame_jamb), so the sim's
+## structure is the same as before the sash.
 static func _sash(r: int, q: int, frame: String) -> String:
 	return frame if q % 2 == 0 or r % 2 == 0 else "window"
 
