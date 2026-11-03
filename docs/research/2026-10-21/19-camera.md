@@ -4,7 +4,7 @@ Context read first (read-only): `scenes/rampage.gd` (`_place_camera`, shake, foo
 `scenes/building_fade.gd`, `scenes/vehicle_fade.gd`, `scenes/building_baked.gdshader` and `scenes/voxel.gdshader`
 (Bayer screen-door `discard`), `data/tuning.json` "camera" `{"offset": [0, 16, 30], "fov": 60.0}`, `sim/growth.gd`
 (`body_scale = young_scale 0.5 x (1 + 0.8 x (size-1)) x (1 + 0.02 x growth)`), `docs/DECISIONS.md` D-105, and
-`docs/roadmap/2026-10-20-build2-playtest.md` row 7. **b2-7 is already decided for the rest angle:** the director
+`docs/archive/roadmap-notes/2026-10-20-build2-playtest.md` row 7. **b2-7 is already decided for the rest angle:** the director
 said "the camera doesnt let us see much of the city, reconsider its angle and distance" (build2 #7) and picked
 framing C, "low and cinematic", offset (0, 16, 30), FOV 60 (D-105). These notes therefore cover what D-105 did not:
 the per-stage schedule, look-ahead, occlusion and shake.

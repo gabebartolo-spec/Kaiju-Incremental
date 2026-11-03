@@ -1,6 +1,6 @@
 # Suno and ElevenLabs for Kaiju Incremental: what to buy, what to make where, how to ship it
 
-Researched 2026-10-21 (pages read live that day). Answers director comments #20, #22, #23 (docs/roadmap/2026-10-21-director-comments.md).
+Researched 2026-10-21 (pages read live that day). Answers director comments #20, #22, #23 (docs/archive/roadmap-notes/2026-10-21-director-comments.md).
 Marks: "(secondary)" = a blog or forum, not the vendor; "(guess)" = my inference, test before relying on it.
 Not legal advice. The licence facts below are the vendors' own words as of the dates shown; the register row must cite the version.
 

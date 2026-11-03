@@ -39,5 +39,5 @@ Method: per branch, commits vs origin/main, files changed vs merge base compared
 | window-flicker | not landed; your open complaint | finish and PR (D-322) | fresh lead session |
 | destruction-2 | roadmap row | after #328 (destruction stage 1) lands | destruction |
 | croc-young-casc, croc-lids | roadmap rows | after casc-s2 and croc-claw land | rigger |
-| croc-tail-lag (new today) | pushed a033fa46, no PR: a measure tool and docs/roadmap/2026-10-28-tail-lag.md; no turn draft meets all five tail bars yet, the game is unchanged | fresh lead decides the next tail-lag method (two rounds failed: change method) | rigger |
+| croc-tail-lag (new today) | pushed a033fa46, no PR: a measure tool and docs/archive/roadmap-notes/2026-10-28-tail-lag.md; no turn draft meets all five tail bars yet, the game is unchanged | fresh lead decides the next tail-lag method (two rounds failed: change method) | rigger |
 | (follow-up) | croc_standing logs "object does not have any meta values with the key fade" from scenes/fx_decals.gd, also before #332 | fix at its cause | fresh lead session |
