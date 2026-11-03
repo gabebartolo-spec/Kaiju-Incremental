@@ -38,6 +38,8 @@ func _init(rng: RandomNumberGenerator, cap: int) -> void:
 
 func _process(delta: float) -> void:
 	_clock += delta
+	if _bodies.is_empty() and _head == 0 and _queue.is_empty():
+		return  # idle: the last _draw already left every mesh at 0
 	for _n: int in mini(SPAWN_PER_FRAME, pending()):
 		var item: Array = _queue[_head]
 		_head += 1
