@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-03 · D-453 · Director · Calmed civilians never walk back toward the kaiju
+Follows D-450 ("civilians sometimes flee toward the kaiju"). Remaining cause: a runner calmed past calm_radius (32 m)
+and its plain walk picked any corner at random, often back toward the kaiju, to re-panic at 25 m: it read as fleeing
+at him. A: new street.wary_radius (64 m, scaled like calm_radius); within it no walker takes a corner toward the kaiju
+while another is left (else it goes back only if that leads away, or stands). GDScript only (KaijuWalk calls
+Pavements.next_corner). tests/run_flee_tests.gd _check_calmed_keep_away (worst 0.016 m closer before, 0 after).
+
 ## 2026-11-03 · D-452 · Director · Dusk grade copied from Shin Godzilla
 Reference: Shin Godzilla GKIDS trailer, frames A C D H I (director's pick; frames stay local). Base grade copies
 A/C/D, measured with grade.py: black 0.003-0.070, mid 0.17-0.38, white 0.52-0.84, sat ~0.20, warm olive
@@ -388,12 +395,3 @@ tools/plan_ci_shards.sh, tools/ci_retime.py, tools/run_touched.py, .github/workf
 With the 1.3 s walk-start ease (D-355) a Behemoth stepping at the lock was only 2.2 from it after 1 s and was hit. Asked
 what gives: "Longer grown lock (Recommended)". `taskforce.railgun.lock_seconds_by_stage` 0.6 / 0.75 / 1.0 becomes
 0.6 / 1.0 / 1.3; the ease stays 1.3 s. The dodge test waits the stage's lock, not a fixed second.
-
-## 2026-10-30 · D-401 · Director · The tail lash takes the signature button; the breath gets Q / pad X
-Building the D-280 lash (the render plan is done, so D-329's wait is over). Asked: the breath fired from the signature
-button, so where does it go? "Breath on a new button"; which keys? "Q / pad X" (photo mode's Q and X stay, as E
-already shares). Where is the ring? "Behind-and-around" (the half ring behind and beside him). The automatic whip goes
-and its nodes (r_tail, r_shear, the Colossus tail nodes) upgrade the lash (D-328). Animation: "Cascadeur clip first",
-for "All three stages": the lash does not ship until the young croc, Behemoth and Colossus each have a lash clip; the
-procedural whip stands in until they land. Amended the same day: "Merge now" (the lash merges with the
-procedural whip; the clips follow).

@@ -15,7 +15,7 @@ static func result(sim: RampageSim) -> Dictionary:
 		"buildings": sim.collapse.destroyed_buildings(),
 		"seconds": sim.elapsed,
 		"tanks": sim.tanks_destroyed,
-		"helis": sim.air.destroyed,
+		"helis": sim.air.destroyed + sim.army_units.taskforce.gunships.kills,
 		"rooftops": sim.army_units.rooftops_destroyed,
 		"agents": sim.army_units.taskforce.kills,
 		"mechs": sim.army_units.taskforce.mechs.kills,

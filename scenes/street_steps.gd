@@ -8,6 +8,7 @@ extends RefCounted
 static func walk(s: StreetLife, delta: float, kaiju: Vector2) -> void:
 	var panic := panic_radius(s)
 	var calm := panic * Num.f(s._cfg["calm_radius"]) / Num.f(s._cfg["panic_radius"])
+	s._pavements.wary = panic * Num.f(s._cfg["wary_radius"]) / Num.f(s._cfg["panic_radius"])
 	var gawk := Num.f(s._cfg["panic_gawk"])
 	var run := Num.f(s._cfg["run_speed"])
 	var walk := Num.f(s._cfg["walk_speed"])

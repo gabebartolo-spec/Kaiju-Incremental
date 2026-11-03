@@ -13,6 +13,7 @@ var links: Array[Array] = []
 var in_road := PackedByteArray()  # per node: 1 when the corner lies in a carriageway
 ## The walkers' stream (StreetLife's), for next_corner.
 var rng: RandomNumberGenerator
+var wary := 0.0  # m: within this of the kaiju no walker turns toward it (StreetSteps sets it)
 
 
 ## Pavement corners round every block of the playable city (4 per block), linked round the
@@ -145,16 +146,14 @@ func flee_corner(here: int, kaiju: Vector2) -> int:
 
 ## The corner a walker at `here` (come from `from`) heads for next: never straight back unless
 ## it must; fleeing, flee_corner; else round its block or, by CROSS_CHANCE,
-## across the street (StreetLife's walkers; draws from rng in that order).
+## across the street (StreetLife's walkers; draws from rng in that order). Within `wary` of the
+## kaiju a walker (one just calmed) takes no corner toward it while another is left (D-453).
 func next_corner(here: int, from: int, kaiju: Vector2, fleeing: bool) -> int:
 	if fleeing:
 		return flee_corner(here, kaiju)
-	var options: Array[int] = []
-	for n: int in links[here]:
-		if n != from:
-			options.append(n)
+	var options := _walk_options(here, from, kaiju)
 	if options.is_empty():
-		return from
+		return from if _not_toward(here, from, kaiju) else here
 	var lot := here >> 2
 	var crossings: Array[int] = []
 	var round_lot: Array[int] = []
@@ -167,6 +166,25 @@ func next_corner(here: int, from: int, kaiju: Vector2, fleeing: bool) -> int:
 	if round_lot.is_empty() or (not crossings.is_empty() and rng.randf() < CROSS_CHANCE):
 		pick = crossings
 	return pick[rng.randi_range(0, pick.size() - 1)]
+
+
+## The corners a walker at `here` (come from `from`) may turn to: not straight back, and within
+## `wary` of the kaiju none toward it (D-453).
+func _walk_options(here: int, from: int, kaiju: Vector2) -> Array[int]:
+	var out: Array[int] = []
+	for n: int in links[here]:
+		if n != from and _not_toward(here, n, kaiju):
+			out.append(n)
+	return out
+
+
+## Whether the pavement from `here` to `n` is allowed by wary: outside it any is, within it only one
+## whose first step does not lead toward the kaiju.
+func _not_toward(here: int, n: int, kaiju: Vector2) -> bool:
+	var at := nodes[here]
+	if at.distance_squared_to(kaiju) >= wary * wary:
+		return true
+	return (nodes[n] - at).dot(at - kaiju) >= 0.0
 
 
 func _link(a: int, b: int) -> void:

@@ -5,8 +5,9 @@ extends Node3D
 ## on its roof chunk, or in the air along its flight. A railgun's aiming line is a thin blue box
 ## from the agent to where it points. Adult city: a gas soldier's box is gas-tinted, a gas cloud
 ## is a soft blue-black dome, a walking mech a knee-high obsidian box, and each laser bomb on its
-## way down an electric-blue target ring on the street. Presentation only: it reads
-## sim.army_units.taskforce and decides nothing.
+## way down an electric-blue target ring on the street; a Taskforce gunship an obsidian box at the
+## helicopters' height, its laser cannon a blue line to the kaiju for LASER_S after each shot.
+## Presentation only: it reads sim.army_units.taskforce and decides nothing.
 
 const OBSIDIAN := Color(0.04, 0.04, 0.06)
 const BLUE := Color(0.1, 0.5, 1.0)
@@ -17,6 +18,9 @@ const CLOUD := Color(0.06, 0.08, 0.16, 0.55)
 ## A mech's box as shares of the kaiju's reach height (knee-high, D-143).
 const MECH := Vector3(0.12, 0.25, 0.12)
 const RING := 0.15
+const SHIP := Vector3(3.0, 1.2, 1.2)
+const LASER := 0.12
+const LASER_S := 0.2  # placeholder look: how long a shot's line shows
 
 var _sim: RampageSim
 var _boxes: Dictionary = {}  # agent id -> MeshInstance3D
@@ -26,6 +30,10 @@ var _marks: Array[MeshInstance3D] = []  # gas clouds and target rings, rebuilt t
 var _live: Dictionary = {}  # reused each frame: agent id -> true
 var _aiming: Dictionary = {}  # reused each frame: agent id -> aiming
 var _live_mechs: Dictionary = {}  # reused each frame: mech id -> true
+var _ships: Dictionary = {}  # gunship id -> MeshInstance3D
+var _lasers: Dictionary = {}  # gunship id -> MeshInstance3D (a shot's line)
+var _live_ships: Dictionary = {}  # reused each frame: gunship id -> true
+var _firing: Dictionary = {}  # reused each frame: gunship id -> its line shows
 
 
 func _init(sim: RampageSim) -> void:
@@ -46,6 +54,7 @@ func _process(_delta: float) -> void:
 	_drop(_boxes, live)
 	_drop(_lines, aiming)
 	_draw_mechs()
+	_draw_ships()
 	_draw_marks()
 
 
@@ -59,6 +68,31 @@ func _draw_mechs() -> void:
 		box.position = Vector3(mech.pos.x, size.y * 0.5, mech.pos.y)
 		box.rotation.y = atan2(-mech.facing.y, mech.facing.x)
 	_drop(_mechs, live)
+
+
+func _draw_ships() -> void:
+	var live := _live_ships
+	var firing := _firing
+	live.clear()
+	firing.clear()
+	var gunships := _sim.army_units.taskforce.gunships
+	var shot_gap := Num.f(_sim.air.cfg["fire_interval"])
+	for ship: AirWing.Heli in gunships.ships:
+		live[ship.id] = true
+		var box := _box(_ships, ship.id, SHIP, _plain(OBSIDIAN))
+		box.position = Vector3(ship.pos.x, gunships.altitude(), ship.pos.y)
+		box.rotation.y = -ship.heading
+		firing[ship.id] = ship.cooldown > shot_gap - LASER_S
+		if firing[ship.id]:
+			var from := box.position
+			var to := Vector3(_sim.kaiju_pos.x, _sim.stand_y + 2.0, _sim.kaiju_pos.y)
+			_line(
+				_box(_lasers, ship.id, Vector3(LASER, LASER, 1.0), CityView.glow(BLUE, 6.0)),
+				from,
+				to
+			)
+	_drop(_ships, live)
+	_drop(_lasers, firing)
 
 
 ## One mark per standing cloud and per falling bomb, reused in order.
@@ -118,7 +152,11 @@ func _aim(agent: Taskforce.Agent) -> void:
 		return
 	var from := Vector3(agent.pos.x, agent.y + SIZE.y, agent.pos.y)
 	var to := Vector3(agent.aim_at.x, _sim.stand_y + 2.0, agent.aim_at.y)
-	var line := _box(_lines, agent.id, Vector3(LINE, LINE, 1.0), CityView.glow(BLUE, 6.0))
+	_line(_box(_lines, agent.id, Vector3(LINE, LINE, 1.0), CityView.glow(BLUE, 6.0)), from, to)
+
+
+## Stretches a unit-long line box from `from` to `to`.
+func _line(line: MeshInstance3D, from: Vector3, to: Vector3) -> void:
 	line.position = from.lerp(to, 0.5)
 	line.scale = Vector3(1.0, 1.0, from.distance_to(to))
 	if from.distance_to(to) > 0.01:
