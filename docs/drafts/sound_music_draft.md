@@ -113,7 +113,7 @@ References name qualities only (D-182): copy a proven style, never the work itse
 - Globe: sterile, techy electronic music with ominous droning (not the theme on low strings).
 - City music: keep the current three tracks for the demo; only fill gaps.
 - Sourcing: free CC0 sources plus the existing ElevenLabs and Suno credits (D-273). New paid packs still need a written yes.
-- Still open: question 7 (stems on bar line).
+- Stems: keep coming in the moment the phase is reached, as now.
 - Load: the globe drone carries under the city load and fades into the city.
 - Collapses: sound by size (shop, tower, landmark), with the landmark the loudest after the roar.
 - Soldiers: silent apart from their gunfire.
