@@ -106,3 +106,11 @@ References name qualities only (D-182): copy a proven style, never the work itse
 7. Should drums and brass enter on the next bar line (cleaner, up to about 3.5 s late) or the moment the phase is reached (as now)?
 8. Is the current city music the demo's music, or is this the "revisit music later" pass with new Suno takes?
 9. For the gaps, may sessions use free CC0 sources and ElevenLabs credits under D-273, or do you approve each pack?
+
+## Director answers (2026-11-03)
+
+- Roars: each kaiju gets its own roar (croc clicking growl, Komodo snort, serpent hiss).
+- Globe: sterile, techy electronic music with ominous droning (not the theme on low strings).
+- City music: keep the current three tracks for the demo; only fill gaps.
+- Sourcing: free CC0 sources plus the existing ElevenLabs and Suno credits (D-273). New paid packs still need a written yes.
+- Still open: questions 2 (load transition), 4 (collapse by size), 5 (soldier voices), 6 (results stamps), 7 (stems on bar line).
