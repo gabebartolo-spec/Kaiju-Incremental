@@ -13,11 +13,14 @@ extends RefCounted
 
 ## The tilt (radians) t seconds into a topple the sim times at `duration` (tuning topple_fx): a
 ## shudder that creeps to lean_deg, then a lean that accelerates (sinh) to 90 deg at `duration`.
-static func tilt(cfg: Dictionary, t: float, duration: float) -> float:
+## `wobble` false: the shudder's lean alone (what contact reads, below).
+static func tilt(cfg: Dictionary, t: float, duration: float, wobble_on := true) -> float:
 	var shudder := minf(Num.f(cfg["shudder_s"]), duration * Num.f(cfg["shudder_max_share"]))
 	var lean := deg_to_rad(Num.f(cfg["lean_deg"]))
 	if t < shudder:
 		var k := t / shudder
+		if not wobble_on:
+			return lean * k * k
 		var wobble := (
 			sin(t * TAU * Num.f(cfg["shudder_hz"])) * deg_to_rad(Num.f(cfg["shudder_deg"]))
 		)
@@ -29,7 +32,11 @@ static func tilt(cfg: Dictionary, t: float, duration: float) -> float:
 
 ## The part's pose at t: world = pose * (chunk centre - pivot). A topple turns about the level
 ## axis across its direction (FallMotion's); both kinds fall their drop with the square of time.
-static func pose(f: RampageSim.Fall, t: float, topple_cfg: Dictionary) -> Transform3D:
+## Contact reads it without the shudder's wobble (`wobble` false): its +-shudder_deg throes
+## against a wall the tower shares are not a fall into it, and would stop it on its first tick.
+static func pose(
+	f: RampageSim.Fall, t: float, topple_cfg: Dictionary, wobble := true
+) -> Transform3D:
 	var k := clampf(t / maxf(0.05, f.duration), 0.0, 1.0)
 	var origin := f.pivot - Vector3(0, f.drop * k * k, 0)
 	if f.kind != "topple":
@@ -37,7 +44,7 @@ static func pose(f: RampageSim.Fall, t: float, topple_cfg: Dictionary) -> Transf
 	var axis := Vector3(f.dir.y, 0, -f.dir.x)
 	if axis.is_zero_approx():
 		axis = Vector3.RIGHT
-	return Transform3D(Basis(axis.normalized(), tilt(topple_cfg, t, f.duration)), origin)
+	return Transform3D(Basis(axis.normalized(), tilt(topple_cfg, t, f.duration, wobble)), origin)
 
 
 ## The kaiju's hide: [foot centre, head centre, radius] (a capsule, world).
@@ -126,7 +133,7 @@ static func probe(
 	carve: bool
 ) -> Dictionary:
 	var own := sim.buildings[f.building]
-	var xf := pose(f, t, topple_cfg)
+	var xf := pose(f, t, topple_cfg, false)
 	var box := xf * _span(f, own)  # its whole box first: most ticks touch nothing and stop here
 	var lo := box.position
 	var hi := box.end
@@ -144,8 +151,8 @@ static func probe(
 	)
 	var near: Array[int] = []
 	# Neighbours from the first tick: the shudder creeps to lean_deg, which on a tall tower puts
-	# its upper floors more than a chunk into a neighbour beside it (a point that began inside a
-	# wall it shares never counts, below, so the wobble against that wall is not a contact).
+	# its upper floors more than a chunk into a neighbour beside it (read without the wobble, and
+	# a point that began inside a wall it shares never counts).
 	if f.kind == "topple":
 		for i: int in sim.grid.in_rect(Vector2(lo.x, lo.z), Vector2(hi.x, hi.z)):
 			var nb := sim.buildings[i]
