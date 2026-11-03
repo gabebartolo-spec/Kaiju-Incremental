@@ -16,6 +16,7 @@ static func walk(s: StreetLife, delta: float, kaiju: Vector2) -> void:
 		return
 	# Without the extension, far people step every few frames (StreetLod, D-254).
 	var speeds := PackedFloat64Array([walk, run])
+	var radii := PackedFloat64Array([panic, calm, gawk])
 	for i: int in range(s.pos.size() - 1, -1, -1):
 		if s.cop[i] == 1:
 			walk_cop(s, i, delta, kaiju)
@@ -26,13 +27,7 @@ static func walk(s: StreetLife, delta: float, kaiju: Vector2) -> void:
 		var dt := step_time(s, i, at, kaiju, delta)
 		if dt < 0.0:  # a far person's frame off
 			continue
-		var d := at.distance_to(kaiju)
-		if s.fleeing[i] == 0 and d < panic:
-			startle(s, i, at, kaiju, gawk)
-		elif s.fleeing[i] == 1 and d > calm:
-			s.fleeing[i] = 0
-		elif s.fleeing[i] == 1 and (s._nodes[s.to_node[i]] - at).dot(kaiju - at) > 0.0:
-			reverse(s, i)  # its corner lies toward the kaiju (it moved, or a wreck spawn): turn
+		update_flee(s, i, at, kaiju, radii)
 		var to := s._nodes[s.to_node[i]] - at
 		var step := speeds[s.fleeing[i]] * s.pace[i] * dt  # fleeing 1: running
 		if to.length() > step:
@@ -44,6 +39,22 @@ static func walk(s: StreetLife, delta: float, kaiju: Vector2) -> void:
 		var next := s._pavements.next_corner(s.to_node[i], s.from_node[i], kaiju, s.fleeing[i] == 1)
 		s.from_node[i] = s.to_node[i]
 		s.to_node[i] = next
+
+
+## Person i's flee state this frame: startle inside the panic radius, calm past the calm radius,
+## and a runner whose corner lies toward the kaiju (it moved, or a wreck spawn) turns back (D-450).
+## radii: panic radius, calm radius, gawk time.
+static func update_flee(
+	s: StreetLife, i: int, at: Vector2, kaiju: Vector2, radii: PackedFloat64Array
+) -> void:
+	var d := at.distance_to(kaiju)
+	if s.fleeing[i] == 0:
+		if d < radii[0]:
+			startle(s, i, at, kaiju, radii[2])
+	elif d > radii[1]:
+		s.fleeing[i] = 0
+	elif (s._nodes[s.to_node[i]] - at).dot(kaiju - at) > 0.0:
+		reverse(s, i)
 
 
 ## Person i's step time this frame (StreetLod, D-254): far from the kaiju and the camera, one step
