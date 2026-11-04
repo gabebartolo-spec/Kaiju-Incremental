@@ -72,6 +72,15 @@ static func _unlock_titans(save: Dictionary, count: int) -> void:
 	save[key] = opened
 
 
+## D-466: unlocks are meta progression; a New Kaiju keeps the titans the slot already opened.
+static func carry_unlocks(old: Dictionary, fresh: Dictionary) -> Dictionary:
+	var key := str(Content.section("creation")["save_key"])
+	var opened: Array = old.get(key, [])
+	if not opened.is_empty():
+		fresh[key] = opened.duplicate()
+	return fresh
+
+
 ## True once every continent but the capital has fallen (D-422).
 static func _capital_opens(conquered: Array) -> bool:
 	for def: Dictionary in Content.continents():
