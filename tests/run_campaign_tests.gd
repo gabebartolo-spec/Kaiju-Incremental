@@ -357,6 +357,8 @@ func _check_unlocks_survive_new_kaiju() -> void:
 	var fresh := Campaign.carry_unlocks(old, SaveFile.new_save("reptilian", 1))
 	var kept: Array = fresh.get(key, [])
 	check(kept == ["komodo"], "a New Kaiju keeps the Komodo: %s" % [kept])
+
+
 ## Bug bash 2026-11-05: the capital offers no bonuses (D-422), so WIN used to clear the screen and
 ## leave no button at all, with the globe's input off. WIN on a bonus-less row now ends it won.
 func _check_capital_win() -> void:
