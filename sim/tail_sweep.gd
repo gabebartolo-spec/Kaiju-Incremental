@@ -41,7 +41,9 @@ func step(dt: float) -> void:
 		sim.events.append({"type": "tail_auto_windup", "side": -_side})
 	if _timer > 0.0 or busy:
 		return
-	_timer += Num.f(cfg["sweep_interval"])
+	# The timer ran on through a leap; one sweep on landing, then the normal rhythm (bug bash
+	# 2026-11-05: a leap longer than the interval used to fire two sweeps one frame apart).
+	_timer = maxf(_timer, 0.0) + Num.f(cfg["sweep_interval"])
 	_wound = false
 	_sweep()
 

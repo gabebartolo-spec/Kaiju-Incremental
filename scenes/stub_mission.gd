@@ -49,9 +49,12 @@ func start(def: Dictionary, line := "") -> void:
 
 ## The won screen: one button per bonus the continent offers; pressing one keeps it.
 func _pick(def: Dictionary) -> void:
+	var offered: Array = def["bonuses"]
+	if offered.is_empty():  # the capital offers none (D-422): WIN conquers it at once
+		won.emit(id, "")
+		return
 	_clear()
 	_column.add_child(UiKit.header(tr(str(def["name"])).to_upper(), UiKit.SIZE_TITLE))
-	var offered: Array = def["bonuses"]
 	for pick: Dictionary in offered:
 		var b := UiKit.button(MissionPanel.bonus_text(pick, self), UiKit.SIZE_BODY)
 		b.pressed.connect(func() -> void: won.emit(id, str(pick["id"])))
