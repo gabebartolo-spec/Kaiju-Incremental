@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
+A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
+the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city
+only (the far skyline keeps its shader pattern), and a longer load: "i dont really care if the load screen goes for
+10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
+and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
+cached).
+
 ## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
 Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
 fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim

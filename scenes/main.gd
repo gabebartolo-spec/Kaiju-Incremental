@@ -122,7 +122,7 @@ func _new_game(n: int) -> void:
 
 
 func _on_species_chosen(species_id: String) -> void:
-	_save = SaveFile.new_save(species_id, SaveFile.fresh_seed())
+	_save = Campaign.carry_unlocks(_save, SaveFile.new_save(species_id, SaveFile.fresh_seed()))
 	_save["demo"] = Demo.enabled()  # a demo save never continues in the full game (D-145)
 	SaveSystem.save_game(_save)
 	_continue()

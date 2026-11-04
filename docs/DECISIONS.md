@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-05 · D-466 · Director · Titan unlocks are meta progression: a New Kaiju keeps them
+"it should stay unlocked its like a form of meta progression in the first playthrough / once you beat the game once youll
+have unlocked all the options". A New Kaiju on a slot keeps that slot's `titans_unlocked` (`Campaign.carry_unlocks`).
+The director also named the full roster, 7 unlocks with 3 you start with: starting croc/lightning/trex, play unlocks
+poison, fire, komodo, serpent, ankylosaurus, triceratops, and finally the mecha kaiju boss at the end. NOT built: how
+those map to slots and conquests is unruled. Changes: `sim/campaign.gd`, `scenes/main.gd`.
+
 ## 2026-11-04 · D-463 · Director · The globe is the loop; a city is a normal rampage that banks; WIN or LOSE lands on the tree
 Flow: title -> creation (or Continue) -> globe -> a city -> results -> WIN or LOSE -> the tree (upgrades), reached after a
 city, not before it. The tree's START goes to the globe: there is no plain rampage from START (a plain rampage stays only
@@ -386,11 +393,3 @@ the water burst". The pre-rise spray column is removed; arcs of the kaiju's purp
 more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
 round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
 surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.
-
-## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
-A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
-the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city
-only (the far skyline keeps its shader pattern), and a longer load: "i dont really care if the load screen goes for
-10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
-and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
-cached).
