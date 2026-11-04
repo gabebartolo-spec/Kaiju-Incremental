@@ -4,9 +4,10 @@ extends RefCounted
 ## really suit him anyway, refocus damage around the tail"). It took the claw rake's slot (D-095)
 ## and keeps its cadence: every sweep_interval the tail swings out to one side, the sides
 ## alternating, and hits the ground and floors beside and behind the body (the lash's half ring,
-## D-329: within the tail's reach, all round past sweep_arc_dot, the 360 clip), up to sweep_top. It never
-## touches his position or speed, so the run is never broken. Each level of the tail nodes hits
-## harder (sweep_damage) and reaches further (sweep_width); a body without the stats never sweeps.
+## D-329: within the tail's reach, all round past sweep_arc_dot, the 360 clip), up to
+## sweep_top. It never touches his position or speed, so the run is never broken. Each level of
+## the tail nodes hits harder (sweep_damage) and reaches further (sweep_width); a body without
+## the stats never sweeps.
 ## Separate from the signature lash (SpeciesPowers.lash): its own counters and events. Part of
 ## SpeciesPowers; pure, no randomness.
 

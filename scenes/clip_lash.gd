@@ -14,8 +14,9 @@ const FADE_SECONDS := 0.3
 const TWIST_PREFIXES: Array[String] = ["pelvis", "spine", "lumbar", "chest", "neck", "head"]
 
 var clips: KaijuClips
-## True when the clips also carry the keyed tail 360 ("sweep_r", "sweep_l": the automatic sweep, from
-## the T-rex clip attack_tail, director 2026-11-04). Without them the sweep plays the lash.
+## True when the clips also carry the keyed tail 360 ("sweep_r", "sweep_l": the automatic
+## sweep, from the T-rex clip attack_tail, director 2026-11-04). Without them the sweep plays
+## the lash.
 var sweeps := false
 ## True when the clips carry both keyed lashes (then BipedSwing.clip_lash is this).
 var on := false
