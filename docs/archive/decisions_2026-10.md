@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-410 · Director · Reference motion may be copied exactly onto our rigs
+"you can copy the examples EXACTLY if thats best practice, dont be obtuse, its still an invisible skeleton in an
+original model". Godzilla, T-rex and other reference motion is retargeted key for key onto our original kaiju; no
+licence check and no credit needed for the motion. Replaces D-302's licence line for motion references.
+
 ## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
 Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
 stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).

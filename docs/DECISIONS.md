@@ -396,8 +396,3 @@ the button keeps instant damage or plays the curl first: picked "Full windup (Re
 tail_windup, the hit lands lash_windup (1.5 s) later with the keyed strike; lash_cooldown 1.2 -> 3.5 s. Adult and baby
 play the Cascadeur take (lash_r, mirrored lash_l); the adolescent keeps the code whip until its y7 skeleton ships.
 Proof waived by the director ("i dont care for the proof just merge it").
-
-## 2026-10-31 · D-410 · Director · Reference motion may be copied exactly onto our rigs
-"you can copy the examples EXACTLY if thats best practice, dont be obtuse, its still an invisible skeleton in an
-original model". Godzilla, T-rex and other reference motion is retargeted key for key onto our original kaiju; no
-licence check and no credit needed for the motion. Replaces D-302's licence line for motion references.

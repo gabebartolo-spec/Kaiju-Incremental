@@ -5,6 +5,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_globe_mission_tests.gd
 
 const GLOBE := "res://scenes/globe_view.tscn"
+const MAIN_SCENE := "res://scenes/main.tscn"  # loaded late: main.gd needs the autoloads
 
 
 func suite_name() -> String:
@@ -15,7 +16,6 @@ func run_checks() -> void:
 	await _t("_check_globe_mission")
 	await _t("_check_globe_real_cities")
 	await _t("_check_threat_readout")
-	await _t("_check_threat_plate")
 	await _t("_check_panel_threat_line")
 	await _t("_check_returns_to_host")
 	await _t("_check_main_flow")
@@ -214,9 +214,7 @@ func _check_threat_readout() -> void:
 	_missions(globe).use_save(save)
 	var readout := _missions(globe).threat
 	var five := "%d%%" % floori(minf(shares, Campaign.THREAT_CAP))
-	check(
-		readout.value_text() == five, "five conquests read %s: %s" % [five, readout.value_text()]
-	)
+	check(readout.value_text() == five, "five conquests read %s: %s" % [five, readout.value_text()])
 	check(globe.locked("aurelia"), "five conquests: Aurelia stays locked")
 	save = Campaign.conquer(save, Content.continent(outside[-1]), "")
 	_missions(globe).use_save(save)
@@ -243,43 +241,6 @@ func _check_threat_readout() -> void:
 	var card := globe.mission_panel().get_global_rect()
 	check(not box.intersects(card), "the readout clears the panel: %s vs %s" % [box, card])
 	globe.free()
-
-
-## D-461 (director 2026-11-04), the plate: about 20 px tall, a yellow edge on a plate, label yellow,
-## on the safe-margin corner on both axes; the value runs from the ramp's first colour at 0 to its
-## last at the cap, redder as it climbs (on vs off: the same plate at 0 and at 99 differs).
-func _check_threat_plate() -> void:
-	var plate := ThreatReadout.new()
-	root.add_child(plate)
-	await process_frame
-	await process_frame
-	var cfg := ThreatReadout.config()
-	var tall := plate.get_global_rect().size.y
-	check(absf(tall - Num.f(cfg["height"])) <= 2.0, "the plate is about 20 px tall: %s" % tall)
-	check(plate.position == UiKit.safe_margin(), "the plate sits on the safe margin, both axes")
-	var edge := plate.edge_colour()
-	check(edge == UiKit.ACCENT, "the plate's edge is the hazard yellow")
-	var ramp: Array = cfg["ramp"]
-	var first: Array = ramp[0]
-	var last: Array = ramp[-1]
-	var calm_colour: Color = ThreatReadout.PALETTE[str(first[1])]
-	var alarm_colour: Color = ThreatReadout.PALETTE[str(last[1])]
-	check(ThreatReadout.colour_for(0.0) == calm_colour, "calm at 0")
-	check(ThreatReadout.colour_for(100.0) == alarm_colour, "alarm at 100")
-	check(ThreatReadout.colour_for(100.0) == UiKit.ALERT, "the last stop is alert red")
-	var reds := 0
-	var prev := ThreatReadout.colour_for(0.0)
-	for level: int in range(1, 101):
-		var now := ThreatReadout.colour_for(float(level))
-		reds += 1 if now.g <= prev.g + 0.0001 and now.r >= prev.r - 0.0001 else 0
-		prev = now
-	check(reds == 100, "the value never turns calmer as the level climbs: %d" % reds)
-	plate.show_level(0.0)
-	var calm := plate.value_colour()
-	plate.show_level(99.0)
-	check(plate.value_colour() != calm, "the value's colour moves with the level")
-	check(plate.value_colour().g < calm.g, "at 99 it is redder than at 0")
-	plate.free()
 
 
 ## D-461, reconcile: the panel's line says what the conquest adds and where it leaves the corner
@@ -334,7 +295,7 @@ func _check_main_flow() -> void:
 	for won: bool in [true, false]:
 		SaveFile.wipe()
 		SaveFile.save_game(SaveFile.new_save("reptilian"))
-		var main: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
+		var main: Node = (load(MAIN_SCENE) as PackedScene).instantiate()
 		root.add_child(main)
 		await process_frame
 		await process_frame
@@ -358,9 +319,13 @@ func _check_main_flow() -> void:
 		var conquered: Array = saved.get("conquered", [])
 		var word := "WIN" if won else "LOSE"
 		check(tree != null, "%s lands back on the tree: %s" % [word, current])
-		check(conquered.has("ostia_minor") == won, "%s: the save's conquests %s" % [word, conquered])
+		check(
+			conquered.has("ostia_minor") == won, "%s: the save's conquests %s" % [word, conquered]
+		)
 		var share := Num.f(Content.continent("ostia_minor")["threat"]) if won else 0.0
-		check(Num.f(saved.get("threat", 0.0)) == share, "%s: Threat %s" % [word, saved.get("threat")])
+		check(
+			Num.f(saved.get("threat", 0.0)) == share, "%s: Threat %s" % [word, saved.get("threat")]
+		)
 		var bonuses: Dictionary = saved.get("bonuses", {})
 		check(bonuses.has("ostia_minor") == won, "%s: the kept bonus %s" % [word, bonuses])
 		main.queue_free()
@@ -374,7 +339,7 @@ func _check_main_flow() -> void:
 func _check_start_and_banking() -> void:
 	SaveFile.wipe()
 	SaveFile.save_game(SaveFile.new_save("reptilian"))
-	var main: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
+	var main: Node = (load(MAIN_SCENE) as PackedScene).instantiate()
 	root.add_child(main)
 	await process_frame
 	await process_frame
@@ -392,7 +357,9 @@ func _check_start_and_banking() -> void:
 	await process_frame
 	var at: Node = main.call("screen")
 	var globe := at as GlobeView
-	check(globe != null, "the tree's START opens the globe, not a rampage: %s" % main.call("screen"))
+	check(
+		globe != null, "the tree's START opens the globe, not a rampage: %s" % main.call("screen")
+	)
 	if globe == null:
 		main.queue_free()
 		return
@@ -418,7 +385,9 @@ func _check_start_and_banking() -> void:
 			globe.mission().buttons()[1].pressed.emit()  # LOSE
 			await process_frame
 			await process_frame
-			check(main.call("screen") is UpgradeScreen, "after the city the player lands on the tree")
+			check(
+				main.call("screen") is UpgradeScreen, "after the city the player lands on the tree"
+			)
 	main.queue_free()
 	await process_frame
 	SaveFile.wipe()

@@ -4,7 +4,8 @@ extends PanelContainer
 ## the mission panel's, label in hazard yellow, the value coloured by how near the cap it is
 ## (calm at 0, alarm red toward 100; 99 and 100 are the same red on purpose: the level holds at 99
 ## until the capital opens, so only the number changes) and the cap it counts to. Its size, edge and
-## colour ramp are data (tuning ui "threat_readout"). Sits at the title-safe corner (UiKit.safe_margin).
+## colour ramp are data (tuning ui "threat_readout"). Sits at the title-safe corner
+## (UiKit.safe_margin).
 
 ## The palette names the ramp may use (UiKit colours).
 const PALETTE := {

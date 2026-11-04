@@ -13,12 +13,12 @@ const GLOBE := preload("res://scenes/globe_view.tscn")
 
 const WANT_SIZE := Vector2i(1920, 1080)  # D-339: 1080p is the baseline the readout is judged at
 const WARMUP_S := 1.0  # seconds for the globe to settle before the first still
+## The levels shown (percent of the cap).
+const LEVELS: Array[float] = [0.0, 10.0, 50.0, 80.0, 99.0, 100.0]
 
 var _globe: GlobeView
 var _missions: GlobeMissions
 var _fails: Array[String] = []
-## The levels shown (percent of the cap).
-const LEVELS: Array[float] = [0.0, 10.0, 50.0, 80.0, 99.0, 100.0]
 ## The first continent in the globe's sequence (its panel is the one shown).
 var _panel_id := ""
 
@@ -93,7 +93,9 @@ func _show(out: String, level: float) -> Dictionary:
 		_fails.append("%s: the plate is %d px tall, not about %d" % [want, box.size.y, tall])
 	var margin := UiKit.safe_margin()
 	if box.position != margin:
-		_fails.append("%s: the plate sits at %s, not the safe margin %s" % [want, box.position, margin])
+		_fails.append(
+			"%s: the plate sits at %s, not the safe margin %s" % [want, box.position, margin]
+		)
 	return {
 		"threat": level,
 		"text": plate.value_text(),
@@ -114,7 +116,9 @@ func _check_edge(path: String, box: Rect2, want: String) -> void:
 			if img.get_pixel(x, y).to_html(false) != edge.to_html(false):
 				bad += 1
 	if bad > 0:
-		_fails.append("%s: %d border pixels on the bottom %d rows are not yellow" % [want, bad, rows])
+		_fails.append(
+			"%s: %d border pixels on the bottom %d rows are not yellow" % [want, bad, rows]
+		)
 
 
 func _still(path: String) -> void:

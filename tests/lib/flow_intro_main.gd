@@ -5,6 +5,7 @@ extends RefCounted
 ## ("intro_size"). Driven by real clicks (Continue, Slot 1, RAMPAGE). Seeded by design: no
 ## randomness is read; the saves are fixtures.
 
+const CreationWalk := preload("res://tests/lib/creation_walk.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 
@@ -39,11 +40,11 @@ static func _case(
 	var slots: Node = main.call("screen")  # the save slots
 	await GuiInput.click(tree, GuiInput.button(slots, "SLOT 1"))
 	await _frames(tree, 3)
-	await preload("res://tests/lib/creation_walk.gd").globe_to_tree(tree, main)
+	await CreationWalk.globe_to_tree(tree, main)
 	var screen: Node = main.call("screen")
 	if screen is UpgradeScreen:
 		await GuiInput.click(tree, GuiInput.button(screen, "RAMPAGE"))
-		await preload("res://tests/lib/creation_walk.gd").globe_to_run(tree, main)
+		await CreationWalk.globe_to_run(tree, main)
 		screen = main.call("screen")
 	var rampage := screen as Rampage
 	if rampage != null:

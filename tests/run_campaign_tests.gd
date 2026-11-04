@@ -5,8 +5,9 @@ extends "res://tests/lib/runner.gd"
 ## id is a key the save's campaign can hold. Plan row F4: a picked bonus reaches combat through
 ## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. Plan row G3: which
 ## continents are locked, available and conquered follows D-420 and D-422 (Campaign). D-454 / D-435:
-## exactly Ostia Minor, Carthago and Thule are real cities, with the ruled layouts and four landmark spots. The hologram
-## globe's checks (rows G1..G4) live in run_globe_tests.gd. Seeded, no clock.
+## exactly Ostia Minor, Carthago and Thule are real cities, with the ruled layouts and four
+## landmark spots. The hologram globe's checks (rows G1..G4) live in run_globe_tests.gd. Seeded,
+## no clock.
 ##   godot --headless --path . --script tests/run_campaign_tests.gd
 
 const ORDER := [
@@ -86,13 +87,19 @@ func _check_layouts() -> void:
 	var thule: Dictionary = Content.continent("thule")["tuning"]["city"]
 	var thule_kind: String = thule["layout"]["kind"]
 	check(thule_kind == D435_FJORD, "Thule's water is a fjord (D-435)")
-	check(not Content.continent("ostia_minor").has("tuning"), "Ostia Minor keeps today's beach, bay and river")
+	check(
+		not Content.continent("ostia_minor").has("tuning"),
+		"Ostia Minor keeps today's beach, bay and river"
+	)
 	var default_spots: Dictionary = Content.tuning()["city"]["landmark_spots"]
 	var want := _spot_keys(default_spots)
 	for cid: String in ["carthago", "thule"]:
 		var spots: Dictionary = Content.continent(cid)["tuning"]["city"]["landmark_spots"]
 		var keys := _spot_keys(spots)
-		check(keys == want, "%s has the default plan's landmark spots %s (D-436): %s" % [cid, want, keys])
+		check(
+			keys == want,
+			"%s has the default plan's landmark spots %s (D-436): %s" % [cid, want, keys]
+		)
 
 
 ## The spot names of a landmark_spots table, sorted (notes skipped).

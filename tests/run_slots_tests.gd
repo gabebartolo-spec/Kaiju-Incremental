@@ -103,9 +103,8 @@ func _check_campaign_round_trip() -> void:
 	SaveFile.save_game(loaded, 2)
 	var again := SaveFile.load_game(2)
 	check(_same(again, want), "saved and loaded again it is unchanged: %s" % [again])
-	var newer := CAMPAIGN_FILE.replace('"version": 6', '"version": 7')
 	file = FileAccess.open(SaveFile.path(3), FileAccess.WRITE)
-	file.store_string(newer)
+	file.store_string(CAMPAIGN_FILE.replace('"version": 6', '"version": 7'))
 	file.close()
 	check(SaveFile.load_game(3).is_empty(), "the same save marked v7 is refused, never half-read")
 	SaveFile.wipe()
@@ -229,7 +228,7 @@ func _check_continue_picks_slot() -> void:
 	await GuiInput.click(self, two)
 	await _frames(3)
 	check(_screen(main) is GlobeView, "continuing a slot opens the globe (D-462)")
-	await preload("res://tests/lib/creation_walk.gd").globe_to_tree(self, main)
+	await CreationWalk.globe_to_tree(self, main)
 	var tree := _screen(main) as UpgradeScreen
 	check(
 		tree != null and tree.rubble == 321 and SaveFile.slot == 2,
