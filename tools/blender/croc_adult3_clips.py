@@ -14,7 +14,7 @@ it (turns slerped, points blended between the two nearest keyed frames), and a c
   taken out of the pose. The mirrored turn is appended too (turn_left <-> turn_right).
 - layer: in place as keyed, played over the other clips (the tail lash, lash_r); its entry carries "layer": true,
   the hit frame (where the sim's blow lands) and the trail's first and last frames (the streak), given as keyed frames
-  from <first> and stored as clip frames. The mirrored layer is appended too (lash_r <-> lash_l). The claw rake
+  from <first> and stored as clip frames. The mirrored layer is appended too (lash_r <-> lash_l, sweep_r <-> sweep_l; the sweep and the leap are T-rex clips copied onto the rig by tools/blender/trex_retarget.py). The claw rake
   layer (rake_r/rake_l) is gone with the croc's claws (D-459) and is never baked again.
 - move: a one-shot that travels and turns as keyed (walk start, leap, slam stop, walking turns): the pelvis's flat travel
   from the first frame (root, per frame) and its heading (yaw) are taken out of the pose, so the sim moves the body.
@@ -48,7 +48,8 @@ PLANT_SLIDE = 0.5  # m a keyed frame: a planted toe tip holds still (the peel mo
 BASE_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1", "arm_l2", "leg_l0", "leg_l1", "leg_l2",
               "arm_r0", "arm_r1", "arm_r2", "leg_r0", "leg_r1", "leg_r2"] + [f"tail{i}" for i in range(9)] + ["jaw"]
 IDENTITY = struct.pack("<4h", 0, 0, 0, 32767)
-MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "lash_r": "lash_l", "lash_l": "lash_r"}
+MIRROR = {"turn_left": "turn_right", "turn_right": "turn_left", "lash_r": "lash_l", "lash_l": "lash_r", "sweep_r": "sweep_l",
+          "sweep_l": "sweep_r"}
 arm = bpy.data.objects["croc_rig"]; ad = arm.data
 mesh = bpy.data.objects["croc_mesh"]; me = mesh.data
 scene = bpy.context.scene

@@ -89,7 +89,7 @@ func strike(limb: String, side: float) -> void:
 		return
 	if clip_lash != null:
 		clip_lash.cue(limb, side)
-	elif limb == "tail":
+	elif limb == "tail" or limb == "tail_sweep":
 		whip(side)  # the code whip waits for the strike
 
 

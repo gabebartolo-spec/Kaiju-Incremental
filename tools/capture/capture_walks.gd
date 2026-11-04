@@ -173,9 +173,9 @@ func _run() -> void:
 func _cue(kaiju: KaijuModel, event: Dictionary) -> void:
 	match str(event["type"]):
 		"tail_auto_windup":
-			kaiju.tail_sweep(Num.f(event["side"]), "tail_windup")
+			kaiju.tail_sweep(Num.f(event["side"]), "tail_sweep_windup")
 		"tail_auto":
-			kaiju.tail_sweep(Num.f(event["side"]))
+			kaiju.tail_sweep(Num.f(event["side"]), "tail_sweep")
 
 
 ## The drawn kaiju's height on screen (px): its ground point to its head.

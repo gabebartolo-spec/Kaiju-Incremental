@@ -77,7 +77,7 @@ func _check_topple() -> void:
 func _check_chew_seeds() -> void:
 	for city_seed: int in CHEW_SEEDS:
 		var sim: RampageSim = _make_seeded.call("reptilian", {}, {}, Vector2i(city_seed, 0))
-		var chew := _chew_to_topple(sim)
+		var chew := _chew_to_topple(sim, true)
 		var tower := Num.i(chew["tower"])
 		var fall: RampageSim.Fall = chew["fall"]
 		var b: RampageSim.Building = sim.buildings[tower] if tower >= 0 else null
@@ -114,7 +114,13 @@ func _check_chew_seeds() -> void:
 ## rows without tipping it sooner, red-115, senior dev review): {"steps", "worst" (most chunks
 ## inside the body after a step), "fall" (or null), "tower" (building index, -1 none found),
 ## "backed" (how far the body backed off its first spot, -1 if it found no clear one)}.
-func _chew_to_topple(sim: RampageSim) -> Dictionary:
+##
+## any_fall (the other cities): the tower coming down counts however it goes, a topple or its
+## floors dropping. The automatic tail sweep (D-459) cuts a band of floors above the body's own
+## chew, so in a city whose tower the sweep reaches the cut-through floors drop straight down
+## where the chew alone tips the whole tower over (seed 8: a 5x4x10 tower drops at 39.6 s; the
+## fiction is "the baby can bring a tower down", D-091, not which way it falls).
+func _chew_to_topple(sim: RampageSim, any_fall := false) -> Dictionary:
 	sim.body.use_species("reptilian")
 	var out := {"steps": 0, "worst": 0, "fall": null, "tower": -1, "backed": -1.0}
 	var index := Fixture.nearest_tower(sim)
@@ -140,7 +146,7 @@ func _chew_to_topple(sim: RampageSim) -> Dictionary:
 		sim.step(DT, into, false)
 		worst = maxi(worst, Fixture.count(sim.body.inside(sim.kaiju_pos, sim.body.heading)))
 		for f: RampageSim.Fall in sim.falls:
-			if f.building == index and f.kind == "topple":
+			if f.building == index and (any_fall or f.kind == "topple"):
 				fall = f
 		steps += 1
 	out["steps"] = steps

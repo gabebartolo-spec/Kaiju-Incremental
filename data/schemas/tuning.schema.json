@@ -900,6 +900,7 @@
         "lash_sweep_share": {"$ref": "#/$defs/num"},
         "sweep_interval": {"$ref": "#/$defs/num"},
         "sweep_windup": {"$ref": "#/$defs/num"},
+        "sweep_arc_dot": {"$ref": "#/$defs/num"},
         "sweep_top": {"$ref": "#/$defs/num"},
         "tail_reach": {"$ref": "#/$defs/num"},
         "tail_floor_lo": {"$ref": "#/$defs/num"},
@@ -1005,7 +1006,7 @@
         "fire", "body_radius", "block_radius", "block_street_margin", "beam_move_mult",
         "tail_arc_dot", "tail_floors_per_scale", "ram_reach_extra", "coat_reach_mult",
         "block_slow", "lash_cooldown", "lash_windup", "lash_damage", "lash_sweep_share",
-        "sweep_interval", "sweep_windup", "sweep_top",
+        "sweep_interval", "sweep_windup", "sweep_arc_dot", "sweep_top",
         "tail_reach", "tail_floor_lo", "tail_floors", "ram_interval", "ram_min", "knockback",
         "ultimate_cooldown", "beam_seconds", "beam_range", "beam_half_width", "beam_turn_speed",
         "burn_seconds", "burn_dps", "glide_speed_mult", "climb_dig", "ink_unit_mult", "momentum"

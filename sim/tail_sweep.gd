@@ -4,7 +4,7 @@ extends RefCounted
 ## really suit him anyway, refocus damage around the tail"). It took the claw rake's slot (D-095)
 ## and keeps its cadence: every sweep_interval the tail swings out to one side, the sides
 ## alternating, and hits the ground and floors beside and behind the body (the lash's half ring,
-## D-329: within the tail's reach, nothing ahead past tail_arc_dot), up to sweep_top. It never
+## D-329: within the tail's reach, all round past sweep_arc_dot, the 360 clip), up to sweep_top. It never
 ## touches his position or speed, so the run is never broken. Each level of the tail nodes hits
 ## harder (sweep_damage) and reaches further (sweep_width); a body without the stats never sweeps.
 ## Separate from the signature lash (SpeciesPowers.lash): its own counters and events. Part of
@@ -22,7 +22,7 @@ var _side := 1.0
 var _wound := false
 
 
-## cfg: the "powers" tuning (sweep_interval, sweep_windup, sweep_top, tail_reach, tail_arc_dot).
+## cfg: the "powers" tuning (sweep_interval, sweep_windup, sweep_top, tail_reach, sweep_arc_dot).
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
 	sim = p_sim
 	cfg = p_cfg
@@ -57,7 +57,7 @@ func _sweep() -> void:
 	var top := sim.stand_y + Num.f(cfg["sweep_top"]) * bs
 	var centre := sim.kaiju_pos
 	var ahead := sim.facing
-	var arc := Num.f(cfg["tail_arc_dot"])
+	var arc := Num.f(cfg["sweep_arc_dot"])  # 1.0: the tail-360 clip passes the front too
 	_side = -_side
 	sweeps += 1
 	sim.events.append({"type": "tail_auto", "side": _side, "reach": far, "top": top})
