@@ -129,7 +129,7 @@ const HELD := 1
 const ULTIMATE := 2
 ## The breath's own button (D-280: the lash took the signature; Q / pad X).
 const BREATH := 8
-## The tail sweep's button (D-466: F / pad RB).
+## The tail sweep's button (D-467: F / pad RB).
 const SWEEP := 16
 ## A tank's footprint radius for area hits.
 const TANK_RADIUS := 0.6

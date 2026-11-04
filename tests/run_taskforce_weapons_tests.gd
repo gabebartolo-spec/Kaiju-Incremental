@@ -201,7 +201,7 @@ func _check_swat() -> void:
 	_open(sim)
 	var tf := sim.army_units.taskforce
 	var mid := sim.powers.sweep.reach() * 0.5
-	sim.powers.sweep.held = true  # the sweep's own button, held (D-466)
+	sim.powers.sweep.held = true  # the sweep's own button, held (D-467)
 	var agent := tf.place_agent(_roof(sim, tf), Vector3i.ZERO)
 	agent.state = Taskforce.HOP  # mid-air, behind the kaiju, within the tail sweep's reach
 	agent.pos = sim.kaiju_pos - sim.facing * mid

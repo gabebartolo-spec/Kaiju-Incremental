@@ -46,6 +46,7 @@ func run_checks() -> void:
 	await _t("_check_states")
 	await _t("_check_conquer")
 	await _t("_check_titan_unlocks")
+	await _t("_check_unlocks_survive_new_kaiju")
 	await _t("_check_stage_words")
 	await _t("_check_capital_win")
 
@@ -347,6 +348,15 @@ func _check_titan_unlocks() -> void:
 	save = Campaign.conquer(save, Content.continent("carthago"), "")
 	var three: Array = save[key]
 	check(three == ["komodo", "serpent"], "a third adds nothing: %s" % [three])
+
+
+## D-466: a New Kaiju on a slot keeps the titans that slot already unlocked.
+func _check_unlocks_survive_new_kaiju() -> void:
+	var key := str(Content.section("creation")["save_key"])
+	var old := Campaign.conquer(SaveFile.campaign(), Content.continent("ostia_minor"), "")
+	var fresh := Campaign.carry_unlocks(old, SaveFile.new_save("reptilian", 1))
+	var kept: Array = fresh.get(key, [])
+	check(kept == ["komodo"], "a New Kaiju keeps the Komodo: %s" % [kept])
 
 
 ## Bug bash 2026-11-05: the capital offers no bonuses (D-422), so WIN used to clear the screen and

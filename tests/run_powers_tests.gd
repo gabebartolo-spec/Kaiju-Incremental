@@ -161,7 +161,7 @@ func _check_tail_sweep() -> void:
 		var sim := _sim("reptilian", {"claws": 3}, layout, Vector2.ZERO)
 		if not on:
 			sim.stats["sweep_damage"] = 0.0
-		sim.powers.sweep.held = run[1]  # its own button since D-466
+		sim.powers.sweep.held = run[1]  # its own button since D-467
 		var seen := _run(sim, 6.0, Vector2.ZERO)
 		var row := {"sweeps": sim.powers.sweep.sweeps, "seen": seen}
 		row["behind"] = _alive(sim, 0)
@@ -178,7 +178,7 @@ func _check_tail_sweep() -> void:
 	)
 	check(
 		Num.i(idle["sweeps"]) == 0 and Num.i(idle["behind"]) == Num.i(miss["behind"]),
-		"no press, no sweep, D-466 (%d sweeps in 6 s)" % Num.i(idle["sweeps"])
+		"no press, no sweep, D-467 (%d sweeps in 6 s)" % Num.i(idle["sweeps"])
 	)
 	check(
 		(
@@ -214,7 +214,7 @@ func _check_tail_sweep() -> void:
 func _check_sweep_after_leap() -> void:
 	var sim := _sim("reptilian", {"claws": 3}, [], Vector2.ZERO)
 	var sweep: TailSweep = sim.powers.sweep
-	sweep.held = true  # the button held through the leap (D-466)
+	sweep.held = true  # the button held through the leap (D-467)
 	var dt := 1.0 / 60.0
 	sim.airborne = true
 	for i: int in 180:  # a 3 s leap

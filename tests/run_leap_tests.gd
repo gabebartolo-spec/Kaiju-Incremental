@@ -185,7 +185,7 @@ func _check_tower_wall() -> void:
 			break
 		sim.step(DT, away, false, 0)
 	var swept := sim.powers.sweep.sweeps
-	sim.powers.sweep.held = true  # the sweep's own button, held (D-466)
+	sim.powers.sweep.held = true  # the sweep's own button, held (D-467)
 	for _n: int in roundi(TAIL_CHEW_S / DT):
 		sim.step(DT, Vector2.ZERO, false, 0)
 	var left := b.frame.alive_count

@@ -4,7 +4,7 @@ extends SceneTree
 ## head leads by turn_left), walks a course on an empty lot while a camera dollies with it.
 ## --course=straight (7 s), zigzag (the stick swings 70 deg every 1.5 s), turn90 (a walking 90 deg
 ## turn left) or sweep (it stands with a level of Swinging Tail: the tail sweep's button held
-## (a sweep every 2 s, D-459/D-466), its wind-up and sweep cued to the model as the rampage
+## (a sweep every 2 s, D-459/D-467), its wind-up and sweep cued to the model as the rampage
 ## does, PowersView).
 ## --cam=side (low, square to the walk) or front34 (ahead
 ## and to one side, head height) or game (the rampage camera: CameraTuning offset and zoom, eased
@@ -108,7 +108,7 @@ func _run() -> void:
 		{"x": 38.0, "z": 38.0, "w": 2, "d": 2, "h": 2, "tier": 1, "style": 0}
 	]
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
-	sim.powers.sweep.held = _course == "sweep"  # its own button since D-466, held
+	sim.powers.sweep.held = _course == "sweep"  # its own button since D-467, held
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2(0, 30)
 	var world := Node3D.new()

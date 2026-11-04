@@ -4,7 +4,7 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-11-05 · D-466 · Director · The tail sweep is a button (F / pad RB), not automatic
+## 2026-11-05 · D-467 · Director · The tail sweep is a button (F / pad RB), not automatic
 The automatic sweep every 2 s (D-459) curled the Colossus into a ball on every walk and turn. Director: "make it a
 button click instead and see if it stops". A press (or hold) of tail_sweep winds up and sweeps, cooldown
 sweep_interval; autoplay presses it with the signature. turn90 at dusk with it unpressed: no curl.
@@ -25,6 +25,12 @@ travel from the planted toes). The other adult clips are re-headed onto the new 
 Why: the director approved each part (paint, teeth, eye, body fixes, run flaws) and said "Export the croc". The
 teenage kaiju (Behemoth) reuses this skeleton and these animations with its own model (director 11-05), so one rig
 serves two stages. Changes: reptilian_adult kvox/rig/weights/kclip, `tools/blender/croc_trex_*.py`, licence row.
+## 2026-11-05 · D-466 · Director · Titan unlocks are meta progression: a New Kaiju keeps them
+"it should stay unlocked its like a form of meta progression in the first playthrough / once you beat the game once youll
+have unlocked all the options". A New Kaiju on a slot keeps that slot's `titans_unlocked` (`Campaign.carry_unlocks`).
+The director also named the full roster, 7 unlocks with 3 you start with: starting croc/lightning/trex, play unlocks
+poison, fire, komodo, serpent, ankylosaurus, triceratops, and finally the mecha kaiju boss at the end. NOT built: how
+those map to slots and conquests is unruled. Changes: `sim/campaign.gd`, `scenes/main.gd`.
 
 ## 2026-11-04 · D-463 · Director · The globe is the loop; a city is a normal rampage that banks; WIN or LOSE lands on the tree
 Flow: title -> creation (or Continue) -> globe -> a city -> results -> WIN or LOSE -> the tree (upgrades), reached after a
@@ -388,8 +394,3 @@ the pair. Difficulty always climbs and the choice is real (16 paths; the sixth p
 Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
 Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
 adolescent, adult)" in DESIGN.
-
-## 2026-10-31 · D-418 · Director · Seven continents on Tellus Nova
-Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
-Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
-Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".

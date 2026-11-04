@@ -1,7 +1,7 @@
 class_name TailSweep
 extends RefCounted
 ## The tail sweep (D-459, director 2026-11-03: "lets remove claw from our croc, doesnt really suit
-## him anyway, refocus damage around the tail"); on its own button since D-466 (director
+## him anyway, refocus damage around the tail"); on its own button since D-467 (director
 ## 2026-11-05: the automatic sweep every 2 s curled him into a ball on every walk). A press winds
 ## the tail up for sweep_windup, then it swings out to one side, the sides alternating,
 ## and hits the ground and floors beside and behind the body
