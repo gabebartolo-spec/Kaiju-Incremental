@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-05 · D-466 · Director · The tail sweep is a button (F / pad RB), not automatic
+The automatic sweep every 2 s (D-459) curled the Colossus into a ball on every walk and turn. Director: "make it a
+button click instead and see if it stops". A press (or hold) of tail_sweep winds up and sweeps, cooldown
+sweep_interval; autoplay presses it with the signature. turn90 at dusk with it unpressed: no curl.
+
 ## 2026-11-05 · D-465 · Director · Modular kaiju: dinosaur base × reptile DNA × element replaces the three fixed presets
 The player mixes a dinosaur base (skeletal frame and mechanical hook: T-rex biped striker, Triceratops quadruped
 frontal charge/defence, Ankylosaurus wide armoured tank with AoE tail-slam), reptile DNA (Crocodile, Serpent, Komodo)
@@ -388,26 +393,3 @@ adolescent, adult)" in DESIGN.
 Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
 Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
 Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".
-
-## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
-On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
-Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
-.kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
-"Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
-(tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".
-
-## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
-Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
-surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
-the water burst". The pre-rise spray column is removed; arcs of the kaiju's purple bolt (D-357) skate over the water,
-more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
-round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
-surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.
-
-## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
-A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
-the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city
-only (the far skyline keeps its shader pattern), and a longer load: "i dont really care if the load screen goes for
-10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
-and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
-cached).

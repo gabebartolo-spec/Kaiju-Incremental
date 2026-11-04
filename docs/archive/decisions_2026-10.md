@@ -2,6 +2,29 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
+On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
+Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
+.kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
+"Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
+(tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".
+
+## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
+Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
+surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
+the water burst". The pre-rise spray column is removed; arcs of the kaiju's purple bolt (D-357) skate over the water,
+more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
+round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
+surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.
+
+## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
+A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
+the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city
+only (the far skyline keeps its shader pattern), and a longer load: "i dont really care if the load screen goes for
+10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
+and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
+cached).
+
 ## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
 Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
 fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim

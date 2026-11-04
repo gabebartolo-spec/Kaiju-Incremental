@@ -3,7 +3,7 @@ extends RefCounted
 ## One physics frame's input for Rampage (moved out of it, unchanged): the player's actions, or a
 ## capture's scripted input, or autoplay's walk; then the InputLatch, which keeps a tap made while
 ## the rise from the river holds the sim back for its first live tick. Returns {"move",
-## "signature", "held", "ultimate", "breath", "dash"}.
+## "signature", "held", "ultimate", "breath", "dash", "sweep"}.
 
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
 const AUTOPLAY_GLIDE_CYCLE := 90
@@ -29,9 +29,11 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 	var ultimate := Input.is_action_just_pressed("ultimate")
 	var breath := Input.is_action_just_pressed("breath")
 	var dash := Input.is_action_just_pressed("dash")
+	var sweep := Input.is_action_just_pressed("tail_sweep")
 	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "breath", "dash"}
 		var input: Dictionary = scripted.call(sim)
 		dash = input.get("dash", false)
+		sweep = input.get("sweep", false)
 		move = input.get("move", Vector2.ZERO)
 		signature = input.get("signature", false)
 		held = input.get("held", false)
@@ -43,8 +45,11 @@ func read(run: Rampage, steps: int, delta: float) -> Dictionary:
 		held = signature_on and steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
 		ultimate = signature_on
 		breath = signature_on and sim.breath_ready_in <= 0.0
+		sweep = signature_on
 	# The sim ignores input while it rises from the river: a tap before the handover is kept.
-	var now := {"signature": signature, "ultimate": ultimate, "breath": breath, "dash": dash}
+	var now := {
+		"signature": signature, "ultimate": ultimate, "breath": breath, "dash": dash, "sweep": sweep
+	}
 	now = _latch.through(sim.emerge.active, now, delta)
 	now["move"] = move
 	now["held"] = held
@@ -57,7 +62,9 @@ static func buttons(now: Dictionary) -> int:
 	var held: bool = now["held"]
 	var ultimate: bool = now["ultimate"]
 	var breath: bool = now.get("breath", false)
+	var sweep: bool = now.get("sweep", false)
 	var out := Dash.BUTTON if dash else 0
 	out |= RampageSim.HELD if held else 0
 	out |= RampageSim.BREATH if breath else 0
+	out |= RampageSim.SWEEP if sweep else 0
 	return out | (RampageSim.ULTIMATE if ultimate else 0)

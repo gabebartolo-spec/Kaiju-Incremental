@@ -116,6 +116,7 @@ head = {b.name: AW @ b.head_local for b in ad.bones}
 tail = {b.name: AW @ b.tail_local for b in ad.bones}
 for _s in "LR":  # the foot bone stands upright; the game toe tip (leg_x3 tail) is the middle toe's tip
     tail[f"Foot_{_s}"] = tail[f"ToeMiddle_{_s}"]
+    tail[f"Thigh_{_s}"] = head[f"Knee_{_s}"]  # Randaling's knee sits 3.9 off the thigh tip; the leg solve needs a chain
 ROOT = np.array([0.0, norm(head["Hips_C"])[1], 0.0])
 skin = lambda p: GAME @ (norm(p) - ROOT)
 for h, s in zip(HELPERS, ("L", "R")):  # the helper turns about the hip joint (the thigh's head)

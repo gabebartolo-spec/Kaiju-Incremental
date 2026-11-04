@@ -14,6 +14,8 @@ assert MODE in ("still", "walk", "turn", "layer", "move"), MODE
 MARKS = [float(x) for x in a[5:8]]  # layer: hit, trail from, trail to (keyed frames from FIRST)
 assert MODE != "layer" or len(MARKS) == 3, "layer needs <hit> <trail from> <trail to>"
 KEYED_FPS = 24
+# hip heights the walk is lowered: the Randaling run plants a straight leg (reach 0.98), which locks the game knee
+CROUCH = float(__import__("os").environ.get("CROUCH", "0.06"))
 # m (100 m model): toe tip height over its rest height that still counts as down. The tall3 walk (r13f) rolls the
 # trailing toe up to 0.69 m off before the other foot lands, so 0.1 left 7 frames a step with no foot down.
 PLANT_UP = 0.75
@@ -219,6 +221,7 @@ for i in range(M):
     if MODE == "move":
         keyed_root = root
     off = inv @ (pelvis - keyed_root - lead) - heads["spine0"]
+    off.y -= CROUCH * (heads["leg_l0"].y - REST_TOE[0])  # knees keep a bend (motion gate stretch_max)
     toes = [inv @ (ft - keyed_root - lead) for ft in feet]
     frames.append((quats, off, toes, planted, math.degrees(yaw), root))
     lows.append("".join("L" if planted[0] else "-") + ("R" if planted[1] else "-"))

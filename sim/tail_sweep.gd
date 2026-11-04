@@ -1,13 +1,15 @@
 class_name TailSweep
 extends RefCounted
-## The automatic tail sweep (D-459, director 2026-11-03: "lets remove claw from our croc, doesnt
-## really suit him anyway, refocus damage around the tail"). It took the claw rake's slot (D-095)
-## and keeps its cadence: every sweep_interval the tail swings out to one side, the sides
-## alternating, and hits the ground and floors beside and behind the body (the lash's half ring,
+## The tail sweep (D-459, director 2026-11-03: "lets remove claw from our croc, doesnt really suit
+## him anyway, refocus damage around the tail"); on its own button since D-466 (director
+## 2026-11-05: the automatic sweep every 2 s curled him into a ball on every walk). A press winds
+## the tail up for sweep_windup, then it swings out to one side, the sides alternating,
+## and hits the ground and floors beside and behind the body
+## (the lash's half ring,
 ## D-329: within the tail's reach, all round past sweep_arc_dot, the 360 clip), up to
 ## sweep_top. It never touches his position or speed, so the run is never broken. Each level of
 ## the tail nodes hits harder (sweep_damage) and reaches further (sweep_width); a body without
-## the stats never sweeps.
+## the stats never sweeps. sweep_interval is the cooldown between presses.
 ## Separate from the signature lash (SpeciesPowers.lash): its own counters and events. Part of
 ## SpeciesPowers; pure, no randomness.
 
@@ -18,32 +20,39 @@ var sweeps := 0
 var cut := 0
 ## Fine cells the sweeps carved themselves (carving on, D-094 WP7).
 var carved := 0
-var _timer := 0.0
+## This step's press (RampageSim.SWEEP); held: the button kept down (a sweep every cooldown).
+var pressed := false
+var held := false
+## Seconds until a press sweeps again; the wind-up's seconds left (< 0: not winding up).
+var ready_in := 0.0
 var _side := 1.0
-var _wound := false
+var _wind := -1.0
 
 
 ## cfg: the "powers" tuning (sweep_interval, sweep_windup, sweep_top, tail_reach, sweep_arc_dot).
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
 	sim = p_sim
 	cfg = p_cfg
-	_timer = Num.f(cfg["sweep_interval"])
 
 
 func step(dt: float) -> void:
+	var press := pressed or held
+	pressed = false
 	if sim.stat("sweep_damage") <= 0.0:
 		return
-	_timer -= dt
-	var busy := sim.airborne or sim.body.dash.on()  # nor a sweep through a leap
-	if not _wound and _timer <= Num.f(cfg["sweep_windup"]) and not busy:
-		# The tail draws back this long before the sweep lands (presentation's cue only).
-		_wound = true
-		sim.events.append({"type": "tail_auto_windup", "side": -_side})
-	if _timer > 0.0 or busy:
+	ready_in = maxf(0.0, ready_in - dt)
+	if _wind >= 0.0:
+		_wind -= dt
+		if _wind < 0.0:
+			_sweep()
 		return
-	_timer += Num.f(cfg["sweep_interval"])
-	_wound = false
-	_sweep()
+	var busy := sim.airborne or sim.body.dash.on()  # nor a sweep through a leap
+	if not press or busy or ready_in > 0.0:
+		return
+	# The tail draws back this long before the sweep lands (presentation's cue only).
+	ready_in = Num.f(cfg["sweep_interval"])
+	_wind = Num.f(cfg["sweep_windup"])
+	sim.events.append({"type": "tail_auto_windup", "side": -_side})
 
 
 ## How far the sweep reaches from his centre now (world units).
