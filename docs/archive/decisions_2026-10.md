@@ -2,6 +2,21 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-412 · Director · The Lightning Breath is a purple column that chains over what it hits
+"Make the lightning breath look like a dragon fire lamp": a dense purple column that pools and chains along the ground
+and climbs the buildings it strikes. Sheet at dusk: "looks good". The sim's damage stays (a measured breath fells two
+18-19 floor towers whole and slices seven more).
+Asked "does it damage what the VFX touches?": the bolt is now cut where it meets a chunk the sim left standing, so
+it is drawn only through what the strike broke (frame-by-frame audit: 0 of 94,612 points in standing chunks). Same PR: the breath gets its own input bit (BREATH 4 -> 8); since
+#455 it shared the dash bit, so every breath also leapt and the croc floated ("why hes floating in the air").
+
+## 2026-10-31 · D-411 · Director · The tail lash winds up 1.5 s, then lands; cooldown 3.5 s
+The keyed fix3 lash ("looks great … looks shippable") curls the tail round for ~1.4 s before it strikes. Asked whether
+the button keeps instant damage or plays the curl first: picked "Full windup (Recommended)". The press emits
+tail_windup, the hit lands lash_windup (1.5 s) later with the keyed strike; lash_cooldown 1.2 -> 3.5 s. Adult and baby
+play the Cascadeur take (lash_r, mirrored lash_l); the adolescent keeps the code whip until its y7 skeleton ships.
+Proof waived by the director ("i dont care for the proof just merge it").
+
 ## 2026-10-31 · D-410 · Director · Reference motion may be copied exactly onto our rigs
 "you can copy the examples EXACTLY if thats best practice, dont be obtuse, its still an invisible skeleton in an
 original model". Godzilla, T-rex and other reference motion is retargeted key for key onto our original kaiju; no

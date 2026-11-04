@@ -391,18 +391,3 @@ the first 10 m, then to wading depth 2.5 m by 40 m. Final shoreline: "Yes, ship 
 "Retune, then reclip", then "Yes, ship it" on the 1080p dusk river clip. A boat fled his wake at up to ~8.8 u/s, he
 walks ~2.5, so none ever capsized in play. data/tuning.json boats: flee_push 6 -> 2, drag 0.5 -> 1.0 (top speed
 ~1.5 u/s), wake_rock_deg 22 -> 35. Clip camera: "Fixed side camera" (tools/capture/capture_boats.gd --side).
-
-## 2026-10-31 · D-412 · Director · The Lightning Breath is a purple column that chains over what it hits
-"Make the lightning breath look like a dragon fire lamp": a dense purple column that pools and chains along the ground
-and climbs the buildings it strikes. Sheet at dusk: "looks good". The sim's damage stays (a measured breath fells two
-18-19 floor towers whole and slices seven more).
-Asked "does it damage what the VFX touches?": the bolt is now cut where it meets a chunk the sim left standing, so
-it is drawn only through what the strike broke (frame-by-frame audit: 0 of 94,612 points in standing chunks). Same PR: the breath gets its own input bit (BREATH 4 -> 8); since
-#455 it shared the dash bit, so every breath also leapt and the croc floated ("why hes floating in the air").
-
-## 2026-10-31 · D-411 · Director · The tail lash winds up 1.5 s, then lands; cooldown 3.5 s
-The keyed fix3 lash ("looks great … looks shippable") curls the tail round for ~1.4 s before it strikes. Asked whether
-the button keeps instant damage or plays the curl first: picked "Full windup (Recommended)". The press emits
-tail_windup, the hit lands lash_windup (1.5 s) later with the keyed strike; lash_cooldown 1.2 -> 3.5 s. Adult and baby
-play the Cascadeur take (lash_r, mirrored lash_l); the adolescent keeps the code whip until its y7 skeleton ships.
-Proof waived by the director ("i dont care for the proof just merge it").
