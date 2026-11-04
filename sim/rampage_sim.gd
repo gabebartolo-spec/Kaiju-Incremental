@@ -127,10 +127,8 @@ class Tank:
 ## step() button flags.
 const HELD := 1
 const ULTIMATE := 2
-## The breath's own button (D-280: the lash took the signature; Q / pad X).
-const BREATH := 8
-## The tail sweep's button (D-467: F / pad RB).
-const SWEEP := 16
+const BREATH := 8  # the breath's own button (D-280: the lash took the signature; Q / pad X)
+const SWEEP := 16  # the tail sweep's own button (D-467: F / pad RB)
 ## A tank's footprint radius for area hits.
 const TANK_RADIUS := 0.6
 
@@ -285,8 +283,7 @@ func result() -> Dictionary:
 	return out
 
 
-## Advances the rampage by dt (move, signature pressed,
-## buttons HELD/ULTIMATE/BREATH/SWEEP/Dash.BUTTON).
+## Advances the rampage by dt (move, signature pressed, the button flags above, Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	_events = []
 	water.step(self, dt, _events)  # the liquid moves under every frame, the rise and death too
