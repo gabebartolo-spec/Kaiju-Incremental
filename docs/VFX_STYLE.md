@@ -2,7 +2,7 @@
 
 Cap: 200 lines. Owner: the VFX lead (director 2026-10-23; rulings D-151); changed by PR, reviewed by the lead.
 The one canonical look for every effect family: what material, texture and particle setup defines it, its colour
-ramp, its scale rules and the files that own it. Evidence: `docs/captures/2026-10-23-vfx/vfx_families.png` (every
+ramp, its scale rules and the files that own it. Evidence (in git history, culled 2026-11-04): `vfx_families.png` (every
 family at the game camera, night and noon, from `tools/capture/capture_vfx_sheet.gd` + `vfx_sheet.py`).
 
 ## Three equal pillars (every effect passes all three, or it fails)
