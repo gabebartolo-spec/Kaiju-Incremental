@@ -22,6 +22,7 @@ func run_checks() -> void:
 	await _t("_check_tail")
 	await _t("_check_tail_touch")
 	await _t("_check_tail_sweep")
+	await _t("_check_sweep_after_leap")
 	await _h("TailCity", func() -> void: TailCity.check(check))
 	await _h("TurnWeight", func() -> void: TurnWeight.check(check, _sim))
 	await _h("Bolt", func() -> void: Bolt.check(check))
@@ -206,6 +207,23 @@ func _check_tail_sweep() -> void:
 			% [with.powers.lash_damage(), without.powers.lash_damage()]
 		)
 	)
+
+
+## Bug bash 2026-11-05: through a leap longer than the sweep interval the timer ran on below 0; on
+## landing it fired two sweeps one frame apart. Now one sweep lands, the next a full interval on.
+func _check_sweep_after_leap() -> void:
+	var sim := _sim("reptilian", {"claws": 3}, [], Vector2.ZERO)
+	var sweep: TailSweep = sim.powers.sweep
+	sweep.held = true  # the button held through the leap (D-466)
+	var dt := 1.0 / 60.0
+	sim.airborne = true
+	for i: int in 180:  # a 3 s leap
+		sweep.step(dt)
+	sim.airborne = false
+	var before := sweep.sweeps
+	for i: int in 90:  # 1.5 s after landing: past the 1.15 s wind-up, under the 2 s cooldown
+		sweep.step(dt)
+	check(sweep.sweeps - before == 1, "one sweep after a long leap: %d" % (sweep.sweeps - before))
 
 
 ## Momentum's node (D-337: the run is always on, the node a boost to it): charging down a
