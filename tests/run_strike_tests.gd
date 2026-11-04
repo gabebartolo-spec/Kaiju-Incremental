@@ -31,7 +31,7 @@ func run_checks() -> void:
 ## band reaches further as he grows, and these checks watch the strikes alone.
 func _croc(levels: Dictionary, layout: Array[Dictionary], at: Vector2) -> RampageSim:
 	var sim := _sim("reptilian", levels, layout, at)
-	sim.stats["swipe_damage"] = 0.0
+	sim.stats["sweep_damage"] = 0.0
 	return sim
 
 

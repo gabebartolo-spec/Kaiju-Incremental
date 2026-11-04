@@ -14,6 +14,10 @@ const FADE_SECONDS := 0.3
 const TWIST_PREFIXES: Array[String] = ["pelvis", "spine", "lumbar", "chest", "neck", "head"]
 
 var clips: KaijuClips
+## True when the clips also carry the keyed tail 360 ("sweep_r", "sweep_l": the automatic
+## sweep, from the T-rex clip attack_tail, director 2026-11-04). Without them the sweep plays
+## the lash.
+var sweeps := false
 ## True when the clips carry both keyed lashes (then BipedSwing.clip_lash is this).
 var on := false
 ## The lash playing ("lash_r" or "lash_l"; "" when none) and its time (clip frames; negative while
@@ -22,6 +26,7 @@ var clip := ""
 var clip_time := 0.0
 var _age := 0.0
 var _windup := 0.0
+var _sweep_windup := 0.0
 var _tail: Array[int] = []
 var _twist: Array[int] = []
 var _rest: Dictionary = {}
@@ -35,24 +40,31 @@ func _init(p_clips: KaijuClips, swing: BipedSwing) -> void:
 	if not on:
 		return
 	swing.clip_lash = self
-	_windup = Num.f(Content.section("powers")["lash_windup"])
+	var powers := Content.section("powers")
+	_windup = Num.f(powers["lash_windup"])
+	_sweep_windup = Num.f(powers["sweep_windup"])
+	sweeps = true
+	for sweep: String in ["sweep_r", "sweep_l"]:
+		sweeps = sweeps and clips.has_clip(sweep) and clips.is_layer(sweep)
 	for i: int in clips.bones.size():
 		var bone_name := clips.bones[i]
 		if bone_name.begins_with("tail"):
 			_tail.append(i)
 		elif TWIST_PREFIXES.any(func(p: String) -> bool: return bone_name.begins_with(p)):
 			_twist.append(i)
-	for lash: String in ["lash_r", "lash_l"]:
+	for lash: String in ["lash_r", "lash_l"] + (["sweep_r", "sweep_l"] if sweeps else []):
 		_rest[lash] = clips.pose_at(lash, 0.0)
 
 
 ## The sim's cue: "tail_windup" starts the lash to that side, "tail" puts it at its hit frame
-## (starting it there if none was wound up).
+## (starting it there if none was wound up). "tail_sweep_windup" and "tail_sweep" do the same for
+## the automatic sweep's tail 360 (sweep_windup before its hit), or the lash on a body without it.
 func cue(limb: String, side: float) -> void:
-	var want := "lash_r" if side > 0.0 else "lash_l"
-	if limb == "tail_windup":
+	var sweep := limb.begins_with("tail_sweep") and sweeps
+	var want := ("sweep_" if sweep else "lash_") + ("r" if side > 0.0 else "l")
+	if limb.ends_with("windup"):
 		clip = want
-		clip_time = clips.hit_frame(want) - _windup * clips.fps
+		clip_time = clips.hit_frame(want) - (_sweep_windup if sweep else _windup) * clips.fps
 		_age = 0.0
 	elif clip != want:
 		clip = want

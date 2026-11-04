@@ -1,8 +1,8 @@
 extends SceneTree
 ## The adult croc (Colossus) standing still in a real autoplay-less rampage at the game camera, HUD
-## on: no input, so the sim's own stomps (every 0.7 s) and claw rakes (every 2 s) are all that
-## happens. Prints when the rise from the river ends (the frame to cut a clip from), and with
-## --shots saves a still of the first stomp that plants a foot and of the first rake mid-swing,
+## on: no input, so the sim's own stomps (every 0.7 s) and tail sweeps (every 2 s, D-459) are all
+## that happens. Prints when the rise from the river ends (the frame to cut a clip from), and with
+## --shots saves a still of the first stomps that plant a foot,
 ## each with a 2x crop round the croc. Needs a window; pair with --write-movie for a clip.
 ## --walk=S: he first walks north for S seconds of the rampage, then stands (walking, then
 ## stomping, in one clip). --stand=S: he stands S seconds after the rise before that walk.
@@ -15,10 +15,6 @@ extends SceneTree
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const ADULT_LEVELS := 2  ## Kit.STAGE_LEVELS: the Colossus
 const CROP := Vector2i(560, 420)
-## Seconds into a rake (_rake_clock) where the arm is across the front: shot mid-swing.
-const RAKE_MID := 0.33
-## ... and where it is lifted up and out wide of the body (the arm shows beside the chest).
-const RAKE_LIFT := 0.2
 ## Frames after a stomp lands that its still is taken: the ring and cracks have opened.
 const STOMP_SHOT_DELAY := 5
 const LOG_MOVE := 0.05  ## world units a frame, --log
@@ -90,15 +86,13 @@ func _run() -> void:
 	var start := Engine.get_process_frames()
 	var gait: ClipGait = rampage._kaiju._rig.gait
 	var stomps := 0
-	var raked := false
-	var lifted := false
 	var wait := -1  # frames before the latest stomp's still: the ring has opened by then
 	while Engine.get_process_frames() - start < int(_seconds * 60.0):
 		await process_frame
 		if _feet:
 			_log_feet(rampage, gait, Engine.get_process_frames() - start)
 		if _log:
-			_log_camera(rampage, gait, float(Engine.get_process_frames() - start) / 60.0)
+			_log_camera(rampage, float(Engine.get_process_frames() - start) / 60.0)
 		if not _shots:
 			continue
 		wait -= 1
@@ -109,16 +103,7 @@ func _run() -> void:
 			if _log:
 				print("stomp %d landed: %d street rings alive" % [stomps, _rings(rampage)])
 			wait = STOMP_SHOT_DELAY if stomps <= STOMP_SHOTS else -1
-		var rake_t := _rake_clock(gait)
-		var arms := gait.rig.bone("arm_l0").global_position
-		arms = (arms + gait.rig.bone("arm_r0").global_position) * 0.5
-		if not lifted and rake_t > RAKE_LIFT and rake_t < RAKE_MID:
-			lifted = true
-			_snap(rampage, "rake_lift", arms)
-		if not raked and rake_t > RAKE_MID:
-			raked = true
-			_snap(rampage, "rake_across", arms)
-	print("capture_croc_standing: stomps landed on a foot %d, rake shot %s" % [stomps, raked])
+	print("capture_croc_standing: stomps landed on a foot %d" % stomps)
 	quit()
 
 
@@ -130,26 +115,15 @@ func _snap(rampage: Rampage, shot_name: String, at: Vector3) -> void:
 
 
 ## --log: a line per frame the camera moves a pixel or more, or a dip or shake is on, with the
-## rake's clock, to tie a jump on screen to its source (footfall dip, shake, rake).
-func _log_camera(rampage: Rampage, gait: ClipGait, at: float) -> void:
+## stomp count, to tie a jump on screen to its source (footfall dip, shake).
+func _log_camera(rampage: Rampage, at: float) -> void:
 	var cam := rampage._camera
 	var moved := cam.global_position.distance_to(_last_cam)
 	_last_cam = cam.global_position
 	if moved > LOG_MOVE or rampage._step_dip > LOG_DIP or rampage.shake.trauma > LOG_DIP:
 		var line := "t=%.2f cam_moved=%.3f " % [at, moved]
 		line += "dip=%.3f trauma=%.3f" % [rampage._step_dip, rampage.shake.trauma]
-		print(line, " rake_t=%.2f stomps=%d" % [_rake_clock(gait), rampage.stomp_ring_at.size()])
-
-
-## Seconds into the rake on the code rake's clock (BipedSwing._rake_t: RAKE_LIFT lifted, RAKE_MID
-## across the front); the keyed rake (ClipRake) is put on it by its hit frame. -1 while none runs.
-func _rake_clock(gait: ClipGait) -> float:
-	var rake := gait.rake
-	if not rake.on:
-		return gait.swing._rake_t
-	if rake.weight() <= 0.0:
-		return -1.0
-	return RAKE_MID + (rake.clip_time - rake.clips.hit_frame(rake.clip)) / rake.clips.fps
+		print(line, " stomps=%d" % rampage.stomp_ring_at.size())
 
 
 ## --feet: one line a frame: state, clip frame, speed, then each foot (1 down, 0 up) and its spot.

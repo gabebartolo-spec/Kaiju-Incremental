@@ -1,7 +1,7 @@
 extends "res://tests/lib/sim_suite.gd"
 ## Sim suite: the upgrade tree, the city generator and the rampage, all headless and seeded.
 ## Includes the player-effect fixtures: an upgrade or a species changes what a scripted
-## rampage achieves. The claw swipe scenarios and the save migration run in
+## rampage achieves. The tail sweep scenarios and the save migration run in
 ## tests/run_sim_play_tests.gd; the shared set-up is tests/lib/sim_suite.gd.
 ##   godot --headless --path . --script tests/run_sim_tests.gd
 
@@ -110,8 +110,11 @@ func _check_tree() -> void:
 		Content.section("kaiju"), Content.species_def("reptilian"), _tree({"claws": 2})
 	)
 	check(
-		is_equal_approx(Num.f(stats["swipe_damage"]), 18.0),
-		"two levels of claws add 10 swipe power to a reptilian's 8, got %s" % stats["swipe_damage"]
+		is_equal_approx(Num.f(stats["sweep_damage"]), 18.0),
+		(
+			"two levels of Swinging Tail add 10 sweep power to a croc's 8, got %s"
+			% stats["sweep_damage"]
+		)
 	)
 	var clamped := _tree({"claws": 99, "ghost": 3})
 	check(

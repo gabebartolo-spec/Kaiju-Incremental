@@ -14,6 +14,9 @@ const FIXTURE_SHARES: Array[float] = [0.3, 0.4, 0.5, 0.6, 0.7]
 ## north of it (the first spot after the Tripo pool, #409, walks into a pool cluster: leap 86,
 ## walk 137), five are the city (1242 vs 1041).
 const FIXTURE_STARTS := 5
+## Seconds the young croc stands with his back to a tower that dwarfs him (_check_tower_wall):
+## ten sweeps; his tail wears its first chunks through on about the ninth (D-460).
+const TAIL_CHEW_S := 20.0
 
 ## _city_start's take-offs by "<dir> <skip>", found once per suite run.
 var _starts := {}

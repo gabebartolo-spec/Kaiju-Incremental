@@ -2,14 +2,14 @@ class_name AirFlight
 extends RefCounted
 ## How the military helicopters fly (D-183 "Stand-off gunships", motion first D-177). Each one
 ## has its own position, velocity and nose and steers for its firing position: a slot on a ring
-## well beyond the kaiju's claws (`standoff` x body scale, so it grows with him) that goes where
+## well beyond the kaiju's reach (`standoff` x body scale, so it grows with him) that goes where
 ## he goes, `lead_seconds` of his walk ahead of him. It is never pinned to him: its speed,
 ## acceleration and nose turn are limited (`heli_speed`, `heli_accel`, `heli_turn_deg`), so it
 ## glides to its slot, matches the kaiju's walk, backs off in front of him when he walks at it
 ## and hovers facing him when he stops. When he comes within `pull_back` of it, its slot is
 ## straight behind it. After `hold_seconds` it glides along the ring to another slot (`glide_deg`).
 ## Now and then (`strafe_gap`) ONE helicopter makes a strafing pass: a fly-by at full speed along a
-## straight flank line along the camera's view that passes `strafe_close` from him, inside his claw
+## straight flank line along the camera's view that passes `strafe_close` from him, inside his tail
 ## reach, aimed at where he will be (his smoothed walk); it never brakes, is over `strafe_exit` past
 ## him and turns back out to its slot. Slots keep `clear_arc` (and `clear_lead_deg` more) off the
 ## camera's side (`camera_bearing`); a pass flies a flank line that never crosses the corridor

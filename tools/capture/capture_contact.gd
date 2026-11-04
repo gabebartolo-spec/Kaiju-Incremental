@@ -4,7 +4,7 @@ extends SceneTree
 ## stomp-only contact). Same city and seed both ways, so a pair is a before/after. Saves a still
 ## every --every frames into --out for 2x crops. Needs a window and the no-focus override.cfg.
 ## --dash=N dashes on walk step N (note 4).
-## --both: the walk-through (claw swipes) and then the tower topple in one clip, for one CI run.
+## --both: the walk-through (tail sweeps) and then the tower topple in one clip, for one CI run.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <out>.avi \
 ##     --script tools/capture/capture_contact.gd -- --body=off --out=<dir>
@@ -104,10 +104,10 @@ func _play(tower: bool) -> void:
 			var still := root.get_texture().get_image()
 			var tag := ("tower" if _tower else "walk") if _both else ("on" if _body else "off")
 			still.save_png("%s/%s_%04d.png" % [_out, tag, frames])
-		var swipes := rampage.sim.powers.swipe.swipes
+		var swipes := rampage.sim.powers.sweep.sweeps
 		if swipes != events[0]:
 			events[0] = swipes
-			print("swipe %d at take frame %d" % [swipes, frames])
+			print("tail sweep %d at take frame %d" % [swipes, frames])
 		if rampage.sim.collapse.toppled != events[1]:
 			events[1] = rampage.sim.collapse.toppled
 			print("topple starts at take frame %d" % frames)

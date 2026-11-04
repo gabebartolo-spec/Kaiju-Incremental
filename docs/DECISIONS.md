@@ -4,6 +4,32 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-04 · D-461 · Director · Sweep and leap from two CC-BY T-rex clips; the sweep reaches the front
+"Sweep can reach front if the animation caters to that"; the old lash clip never came closer than 58 deg to ahead, so
+he chose the sources: the tail 360 is attack_tail (Rampaging Tyrannosaurus Rex, Sketchfab 4abe5f31267a4fde8cd7eb1f9c41d938)
+and the leap is loopAttackjumpJaw (Tyrannosaurus rex, Sketchfab 5454151e22db4ae9966db7a5a98ffb09), both CC-BY 4.0 by
+slang107123456789 (docs/LICENSING_REGISTER.md). tools/blender/trex_retarget.py copies each bone's world turn onto the
+adult rig (no invented pose); the sweep clip is fitted to sweep_windup 1.15 s and the 2.0 s interval, and its tail tip
+crosses straight ahead at the hit. The sim's sweep zone is the whole ring (sweep_arc_dot 1.0; the signature lash keeps
+tail_arc_dot).
+
+## 2026-11-04 · D-460 · Director · Tail hits add up: the young croc's tail chews big towers, slowly
+"Tail hits add up". Each tail sweep wears a chunk down until it breaks, so his tail chews a tower that dwarfs him,
+slowly (D-459 with D-091). The sim already does this: Carving keeps each cell's wear (Carving.wear_column) and the
+plain chunk grid its hp (Structure.damage), so no sim change. The leap suite's tower check now watches the tail do
+it: the young croc lands short of a tier-3 tower, turns his back and his sweeps break its first chunks on about the
+ninth (20 chunks in 20 s; the half ring reaches about a metre into the wall).
+
+## 2026-11-03 · D-459 · Director · The croc loses his claws; his damage moves to the tail
+"lets remove claw from our croc, doesnt really suit him anyway, refocus damage around the tail". The claw rake is gone
+at every stage (sim, arm pose, keyed rake layer, claw slash and trail VFX). Its slot is an automatic tail sweep on the
+rake's 2 s cadence: it hits the lash's half ring beside and behind him and never breaks his run. The signature lash
+also gains the sweep's damage (lash_sweep_share). The claw nodes keep their ids (saves load unchanged) and become tail
+nodes: Swinging Tail, Long Sweep, Butcher Tail, Wide Sweep, Skyscraper Tail; "Tail Sweep" is renamed Heavy Lash. All
+numbers are the rake's, carried over as placeholders. For the croc this supersedes D-095 (claw swipe), D-096 (swipes
+undermine towers: dropped), D-190 (swipe straight ahead), D-259's claw line, D-243's claw trail, and D-328's "the
+automatic whip is gone". The Komodo's forearm claws are untouched.
+
 ## 2026-11-03 · D-458 · Director (roadmap M3) · Helicopter deaths: a Taskforce gunship dies as a helicopter does
 A gunship downed by the kaiju now takes AirWing's fates and numbers (D-140, D-141, D-145, D-437) instead of vanishing:
 a blow of burst_blow blows it apart in the air; a lighter one sets it burning and spinning down as one of AirWing's
@@ -365,33 +391,3 @@ the first 10 m, then to wading depth 2.5 m by 40 m. Final shoreline: "Yes, ship 
 "Retune, then reclip", then "Yes, ship it" on the 1080p dusk river clip. A boat fled his wake at up to ~8.8 u/s, he
 walks ~2.5, so none ever capsized in play. data/tuning.json boats: flee_push 6 -> 2, drag 0.5 -> 1.0 (top speed
 ~1.5 u/s), wake_rock_deg 22 -> 35. Clip camera: "Fixed side camera" (tools/capture/capture_boats.gd --side).
-
-## 2026-10-31 · D-412 · Director · The Lightning Breath is a purple column that chains over what it hits
-"Make the lightning breath look like a dragon fire lamp": a dense purple column that pools and chains along the ground
-and climbs the buildings it strikes. Sheet at dusk: "looks good". The sim's damage stays (a measured breath fells two
-18-19 floor towers whole and slices seven more).
-Asked "does it damage what the VFX touches?": the bolt is now cut where it meets a chunk the sim left standing, so
-it is drawn only through what the strike broke (frame-by-frame audit: 0 of 94,612 points in standing chunks). Same PR: the breath gets its own input bit (BREATH 4 -> 8); since
-#455 it shared the dash bit, so every breath also leapt and the croc floated ("why hes floating in the air").
-
-## 2026-10-31 · D-411 · Director · The tail lash winds up 1.5 s, then lands; cooldown 3.5 s
-The keyed fix3 lash ("looks great … looks shippable") curls the tail round for ~1.4 s before it strikes. Asked whether
-the button keeps instant damage or plays the curl first: picked "Full windup (Recommended)". The press emits
-tail_windup, the hit lands lash_windup (1.5 s) later with the keyed strike; lash_cooldown 1.2 -> 3.5 s. Adult and baby
-play the Cascadeur take (lash_r, mirrored lash_l); the adolescent keeps the code whip until its y7 skeleton ships.
-Proof waived by the director ("i dont care for the proof just merge it").
-
-## 2026-10-31 · D-410 · Director · Reference motion may be copied exactly onto our rigs
-"you can copy the examples EXACTLY if thats best practice, dont be obtuse, its still an invisible skeleton in an
-original model". Godzilla, T-rex and other reference motion is retargeted key for key onto our original kaiju; no
-licence check and no credit needed for the motion. Replaces D-302's licence line for motion references.
-
-## 2026-10-31 · D-409 · Director · Keyed stomps are judged on the take, not the procedural bars
-Wiring the Colossus Cascadeur stomps (roadmap row 1), the take missed four croc_standing bars written for the code-built
-stomp (lift 0.31 < 0.4 hip, toe 0.023 hip off at the footfall, body 0.020 hip off calm 0.3 s on, six stomps identical).
-Asked: change the take or the checks? "Change the checks": lift > 0.3 hip, toe and body within 0.03 hip, no
-variation bar (one take plays the same each time). Landing inside STOMP_WAIT and alternating feet stay.
-
-## 2026-10-31 · D-407 · Director · Colour-blind cues move to after the demo
-"push colour blind fixes to after demo". The check found #229's options carry no colour-blind setting; the threat
-meter (#234) already reads by segment count. The colour-blind pass is a post-demo roadmap row, not a demo gate.

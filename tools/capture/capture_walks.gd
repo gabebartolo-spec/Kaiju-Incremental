@@ -3,8 +3,9 @@ extends SceneTree
 ## real sim at 60 Hz the way the rampage scene drives it (BodyContact.steer turns it on arcs, the
 ## head leads by turn_left), walks a course on an empty lot while a camera dollies with it.
 ## --course=straight (7 s), zigzag (the stick swings 70 deg every 1.5 s), turn90 (a walking 90 deg
-## turn left) or rake (it stands with a level of Claws: the sim's claw rake every 2 s, cued to the
-## model as the rampage does, PowersView). --cam=side (low, square to the walk) or front34 (ahead
+## turn left) or sweep (it stands with a level of Swinging Tail: the sim's automatic tail sweep
+## every 2 s, D-459, its wind-up and sweep cued to the model as the rampage does, PowersView).
+## --cam=side (low, square to the walk) or front34 (ahead
 ## and to one side, head height) or game (the rampage camera: CameraTuning offset and zoom, eased
 ## focus, no shake). The side and front34 cameras follow the walk's heading, eased, so a turn
 ## swings them round; side34 sits to one side and a little ahead, so both feet show.
@@ -73,7 +74,7 @@ func _initialize() -> void:
 
 ## The stick at time t (zero: stand).
 func _stick(t: float) -> Vector2:
-	if t < WALK_FROM or _course == "rake":
+	if t < WALK_FROM or _course == "sweep":
 		return Vector2.ZERO
 	match _course:
 		"zigzag":
@@ -93,7 +94,7 @@ func _run() -> void:
 	var def := Content.species_def("reptilian")
 	var levels: Dictionary = LEVELS.get(_stage, {})
 	levels = levels.duplicate()
-	if _course == "rake":
+	if _course == "sweep":
 		levels["claws"] = 1
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), def, tree)
@@ -168,14 +169,13 @@ func _run() -> void:
 	quit()
 
 
-## The sim's claw rake to the model, as the rampage hands it on (PowersView.on_event): the windup
-## cue, then the rake.
+## The sim's tail sweep to the model, as the rampage hands it on (PowersView.on_event, D-459).
 func _cue(kaiju: KaijuModel, event: Dictionary) -> void:
 	match str(event["type"]):
-		"swipe_windup":
-			kaiju.tail_sweep(Num.f(event["side"]), "claw_windup")
-		"swipe":
-			kaiju.tail_sweep(Num.f(event["side"]), "claw")
+		"tail_auto_windup":
+			kaiju.tail_sweep(Num.f(event["side"]), "tail_sweep_windup")
+		"tail_auto":
+			kaiju.tail_sweep(Num.f(event["side"]), "tail_sweep")
 
 
 ## The drawn kaiju's height on screen (px): its ground point to its head.

@@ -1,9 +1,9 @@
 extends RefCounted
-## The sim suite's claw swipe checks (Claws, D-095), split out to keep the runner small: five
-## levels of Claws make the young reptilian's swipe break clearly more, with the body on (each
-## run in its own city, _fixture_sim).
-## Includes the player-effect fixture "kaiju.swipe":
-## the same seeded rampages with the swipe off destroy less of the city. Both swipe comparisons
+## The sim suite's tail sweep checks (Swinging Tail, D-459), split out to keep the runner
+## small: five levels of Swinging Tail make the young reptilian's sweep break clearly more, with
+## the body on (each run in its own city, _fixture_sim).
+## Includes the player-effect fixture "kaiju.tail_sweep":
+## the same seeded rampages with the sweep off destroy less of the city. Both sweep comparisons
 ## average FIXTURE_RUNS seeded run indices: one seed alone flips with chaos (PR #89: towers the
 ## body undermines fall by their own physics, D-099).
 
@@ -32,75 +32,75 @@ func run() -> void:
 	var active := true
 	for run: int in FIXTURE_RUNS:
 		var base := _fixture_sim(run)
-		var claws := _fixture_sim(run, {"claws": 5})
+		var tail := _fixture_sim(run, {"claws": 5})
 		_autoplay.call(base)
-		_autoplay.call(claws)
-		active = active and base.body.active() and claws.body.active()
-		cut += claws.powers.swipe.cut
-		base_cut += base.powers.swipe.cut
-		carved += claws.powers.swipe.carved
-		base_carved += base.powers.swipe.carved
-		pairs.append("%d/%d" % [claws.powers.swipe.carved, base.powers.swipe.carved])
-	(
-		_check
-		. call(
-			active and (cut > base_cut * 1.15 or carved > base_carved * 1.15),
+		_autoplay.call(tail)
+		active = active and base.body.active() and tail.body.active()
+		cut += tail.powers.sweep.cut
+		base_cut += base.powers.sweep.cut
+		carved += tail.powers.sweep.carved
+		base_carved += base.powers.sweep.carved
+		pairs.append("%d/%d" % [tail.powers.sweep.carved, base.powers.sweep.carved])
+	_check.call(
+		active and (cut > base_cut * 1.15 or carved > base_carved * 1.15),
+		(
 			(
-				(
-					"five levels of claws: the swipe breaks clearly more, with the body on: chunks %.1f vs %.1f,"
-					% [float(cut) / FIXTURE_RUNS, float(base_cut) / FIXTURE_RUNS]
-				)
-				+ " carved cells over %d seeds (%s)" % [FIXTURE_RUNS, ", ".join(pairs)]
+				"five levels of Swinging Tail: the sweep breaks more, body on: chunks %.1f vs %.1f,"
+				% [float(cut) / FIXTURE_RUNS, float(base_cut) / FIXTURE_RUNS]
 			)
+			+ " carved cells over %d seeds (%s)" % [FIXTURE_RUNS, ", ".join(pairs)]
 		)
 	)
 	_check_fixture()
 
 
-## "kaiju.swipe": the swipe on vs off over FIXTURE_RUNS seeded rampages, each in its own city
+## "kaiju.tail_sweep": the sweep on vs off over FIXTURE_RUNS seeded rampages, each in its own city
 ## (city and army seed = the run index); the mean destroyed share must be higher with it (the same
 ## bar as the single-seed check it replaces). Its own cities because the army seed alone changes
 ## nothing in the 40 s scripted run: five army seeds on city 0 gave five identical pairs, one
 ## sample, and that one flipped to 0.160/0.161 when the body turned on arcs (turn-weight), while
-## cities 1-11 kept the swipe ahead (probe, lead 10, 2026-10-21).
+## cities 1-11 kept the claw swipe ahead (D-095) (probe, lead 10, 2026-10-21).
 func _check_fixture() -> void:
 	var on_sum := 0.0
 	var off_sum := 0.0
-	var swipes := 0
-	var off_swipes := 0
+	var sweeps := 0
+	var off_sweeps := 0
 	var pairs: Array[String] = []
 	for run: int in FIXTURE_RUNS:
 		var on := _fixture_sim(run)
 		var off := _fixture_sim(run)
-		off.stats["swipe_damage"] = 0.0
+		off.stats["sweep_damage"] = 0.0
 		var on_end: Dictionary = _autoplay.call(on)
 		var off_end: Dictionary = _autoplay.call(off)
 		on_sum += Num.f(on_end["destruction"])
 		off_sum += Num.f(off_end["destruction"])
-		swipes += on.powers.swipe.swipes
-		off_swipes += off.powers.swipe.swipes
+		sweeps += on.powers.sweep.sweeps
+		off_sweeps += off.powers.sweep.sweeps
 		pairs.append("%.3f/%.3f" % [Num.f(on_end["destruction"]), Num.f(off_end["destruction"])])
-	_check.call(
-		swipes > 0 and off_swipes == 0 and on_sum > off_sum,
-		(
+	(
+		_check
+		. call(
+			sweeps > 0 and off_sweeps == 0 and on_sum > off_sum,
 			(
-				"the young croc's swipe destroys more of the city than the same runs without it:"
-				+ " mean %.3f vs %.3f over %d seeds (%s), %d swipes"
+				(
+					"the young croc's tail sweep destroys more of the city than the same runs without it:"
+					+ " mean %.3f vs %.3f over %d seeds (%s), %d sweeps"
+				)
+				% [
+					on_sum / FIXTURE_RUNS,
+					off_sum / FIXTURE_RUNS,
+					FIXTURE_RUNS,
+					", ".join(pairs),
+					sweeps
+				]
 			)
-			% [
-				on_sum / FIXTURE_RUNS,
-				off_sum / FIXTURE_RUNS,
-				FIXTURE_RUNS,
-				", ".join(pairs),
-				swipes
-			]
 		)
 	)
 
 
 ## The young reptilian (with `levels`) in city `run` with army seed `run`: the runner's _sim, but
 ## in its own city (the runner's always builds city 0, so its run indices were one sample: the
-## claws pairs came out five times the same, and flipped when the turn slowed, turn-step).
+## sweep pairs came out five times the same, and flipped when the turn slowed, turn-step).
 func _fixture_sim(run: int, levels: Dictionary = {}) -> RampageSim:
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(

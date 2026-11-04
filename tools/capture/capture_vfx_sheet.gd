@@ -119,7 +119,6 @@ func _run(run: int) -> void:
 		10,
 		func(p: Vector3) -> void: _rampage.ability_fx.leap_land(p, 3.0 * bs, 1.0)
 	)
-	await _shot("ability_claw", 8, func(_p: Vector3) -> void: _claw(city, bs))
 	await _shot(
 		"ability_regen",
 		40,
@@ -265,13 +264,6 @@ func _debris(city: CityView, p: Vector3) -> void:
 		var out := Vector3.FORWARD.rotated(Vector3.UP, TAU * n / 14.0)
 		var color := Color("8a8780") if n % 2 == 0 else Color("b9a58a")
 		city.debris(p + out * 0.6 + Vector3(0, 1.0, 0), color, out + Vector3(0, 1.4, 0))
-
-
-func _claw(city: CityView, bs: float) -> void:
-	var event := {
-		"side": 1.0, "near": 1.5 * bs, "far": 6.0 * bs, "width": 2.0 * bs, "top": 4.0 * bs
-	}
-	ClawSlash.play(city, _feet(), _ahead(), event, {})
 
 
 func _city() -> CityView:

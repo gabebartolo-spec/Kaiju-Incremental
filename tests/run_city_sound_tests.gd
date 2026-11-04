@@ -11,7 +11,8 @@ extends "res://tests/lib/runner.gd"
 
 const Run := preload("res://tests/lib/city_sound_run.gd")
 ## Long enough for the young city (Run.YOUNG_CITY) to reach its ruin (phase 0.96 at 120 s, 10-28).
-const SECONDS := 120.0
+## D-459 moved the claws' damage to the tail: 0.79 at 120 s, 0.80 at 130 s, 0.87 at 150 s (11-04).
+const SECONDS := 150.0
 ## The panic beds must peak in the first share of the run and fall this far below the peak.
 const EARLY := 0.6
 const DROP_DB := 25.0
@@ -118,7 +119,7 @@ func _check_panic_then_quiet() -> void:
 	)
 	var last: Dictionary = series[series.size() - 1]
 	check(
-		Num.f(last["phase"]) > 0.8,  # 0.83 once fled counts each person once (D-456)
+		Num.f(last["phase"]) > 0.8,  # 0.87 at 150 s since D-459 (0.83 at 120 s before it)
 		"the run reached the ruined city: phase %.2f" % Num.f(last["phase"])
 	)
 	var first_phase := 1.0

@@ -122,9 +122,9 @@ func _check_upgrade_screen() -> void:
 	var claws: Button = null
 	for node: Node in buttons:
 		var b: Button = node
-		if b.text.begins_with("Sharpened Claws"):
+		if b.text.begins_with("Swinging Tail"):
 			claws = b
-	check(claws != null, "Sharpened Claws is on the tree")
+	check(claws != null, "Swinging Tail is on the tree")
 	var texts: Array[String] = []
 	for node: Node in buttons:
 		var b: Button = node
@@ -144,7 +144,7 @@ func _check_upgrade_screen() -> void:
 		)
 		check(  # level 1 at the species' price (cost_mult, D-167)
 			tree.level("claws") == 1 and screen.rubble == left,
-			"pressing Sharpened Claws buys it at its price (rubble %d)" % screen.rubble
+			"pressing Swinging Tail buys it at its price (rubble %d)" % screen.rubble
 		)
 		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)  # level 2 costs more than what is left
@@ -254,7 +254,7 @@ func _check_rampage() -> void:
 
 
 ## Each signature attack plays its own effect; the upgraded kaiju also shows its upgrades
-## (cracking stomps, or the croc's claw swipe (D-095), ready pulse, glancing shells, healing
+## (cracking stomps, or the croc's tail sweep (D-459), ready pulse, glancing shells, healing
 ## motes) and a plain one does not crack the street.
 func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void:
 	var species := Content.species_def(species_id)
@@ -270,11 +270,11 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	rampage.sfx.live = true  # past the start gate (FlowSfx.gate checks the gate itself)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var swipes := Num.f(stats.get("swipe_damage", 0.0)) > 0.0
-	# Claws sounds as the swipe's rake for the croc, as heavier, cracking stomps for the others.
+	var sweeps := Num.f(stats.get("sweep_damage", 0.0)) > 0.0
+	# Claws sounds as the tail sweep for the croc, as heavier, cracking stomps for the others.
 	var cues: Array[String] = ["ready", "deflect", "regen_loop", "tank_fire"]
-	cues.append_array(["lash"] if swipes else ["stomp_2", "stomp_crack"])
-	var marks: Array[String] = ["swipe" if swipes else "cracks", "ready", "deflect", "regen"]
+	cues.append_array(["lash"] if sweeps else ["stomp_2", "stomp_crack"])
+	var marks: Array[String] = ["tail_auto" if sweeps else "cracks", "ready", "deflect", "regen"]
 	var powers: PowersView = rampage.get("_powers")
 	var frames := 0
 	var want: Array[String] = [kind]

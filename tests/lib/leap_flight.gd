@@ -14,9 +14,9 @@ func _check_phases() -> void:
 		var seen := {}
 		var apex := 0.0
 		var steps := 1
-		var blows := 0  # stomps and claw rakes during the leap
+		var blows := 0  # stomps and tail sweeps during the leap
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, BUTTON):
-			blows += 1 if str(event["type"]) in ["stomp", "swipe", "swipe_windup"] else 0
+			blows += 1 if str(event["type"]) in ["stomp", "tail_auto", "tail_auto_windup"] else 0
 		var air_from := sim.kaiju_pos
 		while sim.body.dash.on() and steps < roundi(6.0 / DT):
 			var phase := sim.body.dash.phase()
@@ -25,10 +25,14 @@ func _check_phases() -> void:
 			for event: Dictionary in sim.step(DT, Vector2(1, 0), false, 0):  # pushed east
 				var kind := str(event["type"])
 				blows += (
-					1 if kind in ["stomp", "swipe", "swipe_windup"] and sim.body.dash.on() else 0
+					1
+					if kind in ["stomp", "tail_auto", "tail_auto_windup"] and sim.body.dash.on()
+					else 0
 				)
 			steps += 1
-		check(blows == 0, "%s: no stomp or claw from crouch to recovery (%d)" % [stage, blows])
+		check(
+			blows == 0, "%s: no stomp or tail sweep from crouch to recovery (%d)" % [stage, blows]
+		)
 		var sideways := absf(sim.kaiju_pos.x - air_from.x)
 		for phase: String in Dash.PHASES:
 			var want := Num.f(data[phase + "_s"])

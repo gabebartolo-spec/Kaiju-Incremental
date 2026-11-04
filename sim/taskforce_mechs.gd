@@ -4,7 +4,7 @@ extends RefCounted
 ## at a time, walk the tanks' roads (RoadGraph) toward the kaiju and stop at `standoff`. From
 ## there each fires laser-bomb volleys: electric-blue target rings appear round the kaiju and the
 ## bombs land `warn` seconds later, hurting him if he still stands in a ring and breaking the city
-## under it. Any blow of his that reaches a mech kills it (one stomp, claw swipe or the Thunder
+## under it. Any blow of his that reaches a mech kills it (one stomp, tail sweep or the Thunder
 ## Beam), and so does a toppled tower falling on it; a dead mech blows up, breaking the buildings
 ## round it, and pays biomass. Part of Taskforce; pure and seeded. Events: mech_spawned,
 ## mech_volley (rings), mech_bomb, mech_died.
