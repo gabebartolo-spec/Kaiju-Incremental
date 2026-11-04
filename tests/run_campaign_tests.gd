@@ -48,6 +48,7 @@ func run_checks() -> void:
 	await _t("_check_titan_unlocks")
 	await _t("_check_unlocks_survive_new_kaiju")
 	await _t("_check_stage_words")
+	await _t("_check_capital_win")
 
 
 func _check_seven_in_order() -> void:
@@ -356,3 +357,21 @@ func _check_unlocks_survive_new_kaiju() -> void:
 	var fresh := Campaign.carry_unlocks(old, SaveFile.new_save("reptilian", 1))
 	var kept: Array = fresh.get(key, [])
 	check(kept == ["komodo"], "a New Kaiju keeps the Komodo: %s" % [kept])
+## Bug bash 2026-11-05: the capital offers no bonuses (D-422), so WIN used to clear the screen and
+## leave no button at all, with the globe's input off. WIN on a bonus-less row now ends it won.
+func _check_capital_win() -> void:
+	var mission := StubMission.new()
+	root.add_child(mission)
+	var got: Array = []
+	mission.won.connect(func(i: String, b: String) -> void: got.append([i, b]))
+	var capital: Dictionary = {}
+	for def: Dictionary in Content.continents():
+		var offered: Array = def["bonuses"]
+		if offered.is_empty():
+			capital = def
+	check(not capital.is_empty(), "a continent with no bonuses (the capital) exists")
+	mission.start(capital)
+	mission.buttons()[0].pressed.emit()  # WIN
+	check(got == [[str(capital["id"]), ""]], "WIN on the capital conquers it: %s" % [got])
+	mission.queue_free()
+	await process_frame

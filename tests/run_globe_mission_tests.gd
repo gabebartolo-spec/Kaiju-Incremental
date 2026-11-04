@@ -20,7 +20,6 @@ func run_checks() -> void:
 	await _t("_check_returns_to_host")
 	await _t("_check_main_flow")
 	await _t("_check_start_and_banking")
-	await _t("_check_capital_win")
 
 
 ## The globe's mission flow (GlobeMissions), the scene's child.
@@ -392,23 +391,3 @@ func _check_start_and_banking() -> void:
 	main.queue_free()
 	await process_frame
 	SaveFile.wipe()
-
-
-## Bug bash 2026-11-05: the capital offers no bonuses (D-422), so WIN used to clear the screen and
-## leave no button at all, with the globe's input off. WIN on a bonus-less row now ends it won.
-func _check_capital_win() -> void:
-	var mission := StubMission.new()
-	root.add_child(mission)
-	var got: Array = []
-	mission.won.connect(func(i: String, b: String) -> void: got.append([i, b]))
-	var capital: Dictionary = {}
-	for def: Dictionary in Content.continents():
-		var offered: Array = def["bonuses"]
-		if offered.is_empty():
-			capital = def
-	check(not capital.is_empty(), "a continent with no bonuses (the capital) exists")
-	mission.start(capital)
-	mission.buttons()[0].pressed.emit()  # WIN
-	check(got == [[str(capital["id"]), ""]], "WIN on the capital conquers it: %s" % [got])
-	mission.queue_free()
-	await process_frame

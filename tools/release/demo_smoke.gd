@@ -111,8 +111,9 @@ func _walk_end() -> void:
 	_press(_screen(), "CONTINUE")
 	_press(_screen(), "SLOT 1")
 	await _frames(12)
+	await _globe_to_tree()
 	var tree := _screen()
-	_check("Continue lands on the tree", tree is UpgradeScreen, str(tree))
+	_check("Continue, then a city, lands on the tree", tree is UpgradeScreen, str(tree))
 	if not tree is UpgradeScreen:
 		return
 	(tree as UpgradeScreen).node_button(last).pressed.emit()
@@ -160,6 +161,7 @@ func _walk_end() -> void:
 	_press(_screen(), "CONTINUE")
 	_press(_screen(), "SLOT 1")
 	await _frames(30)
+	await _globe_to_tree()
 	_check(
 		"Continue lands on the tree with ENDLESS MODE",
 		_texts(_screen()).has("ENDLESS MODE"),
@@ -220,6 +222,14 @@ func _press(node: Node, prefix: String) -> void:
 			return
 	print("FAIL  no button %s" % prefix)
 	_fails += 1
+
+
+## Continue lands on the globe (D-463: the globe is the loop); a city's WIN or LOSE then opens the
+## tree. The smoke checks the tree, so it steps past the city as tests/lib/creation_walk.gd does.
+func _globe_to_tree() -> void:
+	if _screen() is GlobeView:
+		_main.call("_show_tree")
+	await _frames(3)
 
 
 func _frames(n: int) -> void:
