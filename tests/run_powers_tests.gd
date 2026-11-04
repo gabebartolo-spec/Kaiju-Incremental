@@ -147,7 +147,8 @@ func _check_tail_touch() -> void:
 
 
 ## D-459: the automatic tail sweep (Swinging Tail's slot, was the claw rake) hits the buildings
-## beside and behind the standing croc and not the one ahead; off (sweep_damage 0) it hits none.
+## beside and behind the standing croc, and since D-461 (the T-rex tail 360, director 2026-11-04)
+## the one ahead too; off (sweep_damage 0) it hits none.
 ## The sweep's damage also rides on the signature lash (lash_sweep_share).
 func _check_tail_sweep() -> void:
 	var out: Array[Dictionary] = []
@@ -182,9 +183,9 @@ func _check_tail_sweep() -> void:
 		)
 	)
 	check(
-		Num.i(hit["ahead"]) == Num.i(miss["ahead"]) and Num.i(miss["sweeps"]) == 0,
+		Num.i(hit["ahead"]) < Num.i(miss["ahead"]) and Num.i(miss["sweeps"]) == 0,
 		(
-			"the tail sweep leaves the building ahead (%d vs %d standing)"
+			"the tail sweep reaches the building ahead, D-461 (%d vs %d standing off)"
 			% [hit["ahead"], miss["ahead"]]
 		)
 	)

@@ -34,6 +34,9 @@ func _sim() -> RampageSim:
 	)
 	var sim := RampageSim.new(stats, Content.tuning(), [TOWER.duplicate()], Seeds.make("army", 0))
 	sim.ability_type = str(Content.species_def("reptilian")["ability"]["type"])
+	# The topple is staged (_cut_base); since D-461 the tail sweep reaches the tower ahead too and
+	# would chew its base first, so it is off here.
+	sim.stats["sweep_damage"] = 0.0
 	return sim
 
 
