@@ -242,3 +242,26 @@ static func merge_best(best: Dictionary, result: Dictionary) -> Dictionary:
 		if result.has(key):
 			out[key] = maxf(Num.f(out.get(key, 0.0)), Num.f(result[key]))
 	return out
+
+
+## Banks a rampage `result` into `save` (main.gd and the globe's real cities share it, so a city
+## played from the globe counts as any rampage): every death makes the next rise a new specimen
+## (note_end, Endless too); a normal rampage adds its biomass, one run, the Taskforce's clock, the
+## best record and, in the demo, the thanks screen's totals (Demo.add). Endless banks nothing else.
+## Returns the best record before it ({} on a first rampage), for the results screen.
+static func bank(save: Dictionary, result: Dictionary, endless: bool) -> Dictionary:
+	var previous: Dictionary = save.get("best", {})
+	if Num.i(save.get("runs", 0)) == 0:
+		previous = {}
+	note_end(save, result)
+	if endless:
+		return previous
+	save["rubble"] = Num.i(save.get("rubble", 0)) + Num.i(result.get("rubble", 0))
+	save["runs"] = Num.i(save.get("runs", 0)) + 1
+	var clock := Num.f(save.get("city_seconds", 0.0))
+	save["city_seconds"] = Num.f(result.get("city_seconds", clock))  # the Taskforce's clock
+	save["best"] = merge_best(previous, result)
+	if Demo.enabled():
+		var totals: Dictionary = save.get("totals", {})
+		save["totals"] = Demo.add(totals, result)
+	return previous

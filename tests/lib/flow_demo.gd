@@ -353,6 +353,7 @@ func _check_continue_after() -> void:
 		main.queue_free()
 		return
 	await GuiInput.click(t, GuiInput.button(tree, "RAMPAGE"))
+	await preload("res://tests/lib/creation_walk.gd").globe_to_run(t, main)
 	var run := _screen(main) as Rampage
 	await _settled(run)
 	check.call(run.sim.endless == null, "RAMPAGE is the normal mode")

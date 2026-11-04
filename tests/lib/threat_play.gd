@@ -226,7 +226,7 @@ func _by_input() -> void:
 	check.call(tree != null, "time's up leads through the report to the tree")
 	if tree != null:
 		await GuiInput.click(t, GuiInput.button(tree, "RAMPAGE"))
-		await _frames(2)
+		await preload("res://tests/lib/creation_walk.gd").globe_to_run(t, main)
 		await _lab_card(main)
 	main.queue_free()
 	await _frames(2)

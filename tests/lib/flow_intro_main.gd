@@ -43,7 +43,7 @@ static func _case(
 	var screen: Node = main.call("screen")
 	if screen is UpgradeScreen:
 		await GuiInput.click(tree, GuiInput.button(screen, "RAMPAGE"))
-		await _frames(tree, 3)
+		await preload("res://tests/lib/creation_walk.gd").globe_to_run(tree, main)
 		screen = main.call("screen")
 	var rampage := screen as Rampage
 	if rampage != null:

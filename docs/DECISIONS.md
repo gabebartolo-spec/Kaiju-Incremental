@@ -4,11 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-11-04 · D-462 · Director · The globe sits after title and creation; a city's WIN or LOSE lands on the tree
-Flow: title -> creation (or Continue) -> globe -> a city -> WIN or LOSE -> the tree (upgrades), reached after a city, not
-before it. Main hosts the globe (`GlobeView.returned`); the D-454 stand-in missions (Silvania, Mons Ferrata, Neptunia,
-Aurelia) stay. NOT built, still unruled: the demo-end rule (Q4) and the win rule (Q5). Changes: `scenes/main.gd`,
-`docs/DESIGN.md` (Campaign bullet), `docs/ROADMAP.md`.
+## 2026-11-04 · D-462 · Director · The globe is the loop; a city is a normal rampage that banks; WIN or LOSE lands on the tree
+Flow: title -> creation (or Continue) -> globe -> a city -> results -> WIN or LOSE -> the tree (upgrades), reached after a
+city, not before it. The tree's START goes to the globe: there is no plain rampage from START (a plain rampage stays only
+as Endless). A globe city is a normal rampage: its results, rubble, runs, bests, lab card and specimen death bank into
+the save exactly as any rampage's (`SaveFile.bank`, `RunStart`), win or lose. Main hosts the globe (`GlobeView.returned`);
+the D-454 stand-in missions (Silvania, Mons Ferrata, Neptunia, Aurelia) stay. NOT built, still unruled: the demo-end rule
+(Q4) and the win rule (Q5). Changes: `scenes/main.gd`, `scenes/globe_missions.gd`, `autoload/save_file.gd`,
+`scenes/run_start.gd`, `docs/DESIGN.md` (Campaign bullet), `docs/ROADMAP.md`.
 
 ## 2026-11-04 · D-461 · Director · The Threat readout is a plate like the mission panel's
 Yellow border and plate, label yellow, value coloured; about 20 px tall (not 30); at `UiKit.safe_margin` on both axes

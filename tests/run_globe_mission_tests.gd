@@ -19,6 +19,7 @@ func run_checks() -> void:
 	await _t("_check_panel_threat_line")
 	await _t("_check_returns_to_host")
 	await _t("_check_main_flow")
+	await _t("_check_start_and_banking")
 
 
 ## The globe's mission flow (GlobeMissions), the scene's child.
@@ -102,7 +103,25 @@ func _play(globe: GlobeView, won: bool) -> void:
 	check(not mission.visible, "no WIN / LOSE while the city plays")
 	await city.wait_loaded()
 	check(str(city.sim.stats.get("continent", "")) == id, "the rampage plays Ostia Minor's city")
-	city.finished.emit({})
+	# A city is a normal rampage (D-462): its result banks into the save, and its results show over
+	# the wrecked city before the WIN / LOSE.
+	var save := globe.save()
+	var rubble_before := Num.i(save.get("rubble", 0))
+	var runs_before := Num.i(save.get("runs", 0))
+	city.finished.emit({"rubble": 40, "reason": "hunted"})
+	await process_frame
+	await process_frame
+	check(
+		Num.i(save.get("rubble", 0)) == rubble_before + 40,
+		"the city's rubble banks: %s -> %s" % [rubble_before, save.get("rubble")]
+	)
+	check(Num.i(save.get("runs", 0)) == runs_before + 1, "the city counts as a run")
+	var best: Dictionary = save.get("best", {})
+	check(Num.f(best.get("rubble", 0.0)) >= 40.0, "the city sets the bests")
+	var shown := _missions(globe).results
+	check(shown != null and not mission.visible, "the results show before WIN / LOSE")
+	if shown != null:
+		shown.continued.emit()
 	await process_frame
 	await process_frame
 	check(globe.visible and _missions(globe).city == null, "the rampage over, the globe is back")
@@ -118,12 +137,12 @@ func _play(globe: GlobeView, won: bool) -> void:
 	var want: Array = [id] if won else []
 	check(conquered == want, "%s: conquered %s" % [result, conquered])
 	check(globe.locked("carthago") != won, "%s: Carthago is open: %s" % [result, won])
-	var shown := "%d%%" % floori(Num.f(globe.save().get("threat", 0.0)))
+	var shown_text := "%d%%" % floori(Num.f(globe.save().get("threat", 0.0)))
 	var want_text := "%d%%" % (share if won else 0)
 	check(readout.visible, "%s: the Threat readout is back with the globe" % result)
 	check(
-		readout.value_text() == want_text and readout.value_text() == shown,
-		"%s: Threat reads %s (save %s): %s" % [result, want_text, shown, readout.value_text()]
+		readout.value_text() == want_text and readout.value_text() == shown_text,
+		"%s: Threat reads %s (save %s): %s" % [result, want_text, shown_text, readout.value_text()]
 	)
 	check(globe.marker(id).ink() == UiKit.ACCENT, "%s: Ostia Minor's marker stays lit" % result)
 	if won:
@@ -238,7 +257,7 @@ func _check_threat_plate() -> void:
 	var tall := plate.get_global_rect().size.y
 	check(absf(tall - Num.f(cfg["height"])) <= 2.0, "the plate is about 20 px tall: %s" % tall)
 	check(plate.position == UiKit.safe_margin(), "the plate sits on the safe margin, both axes")
-	var edge := (plate.get_theme_stylebox("panel") as StyleBoxFlat).border_color
+	var edge := plate.edge_colour()
 	check(edge == UiKit.ACCENT, "the plate's edge is the hazard yellow")
 	var ramp: Array = cfg["ramp"]
 	var first: Array = ramp[0]
@@ -346,4 +365,60 @@ func _check_main_flow() -> void:
 		check(bonuses.has("ostia_minor") == won, "%s: the kept bonus %s" % [word, bonuses])
 		main.queue_free()
 		await process_frame
+	SaveFile.wipe()
+
+
+## D-462, the globe is the loop: the tree's START goes to the globe (no plain rampage), and a city
+## played from it banks like any rampage into the slot's file (biomass, run, best), then lands on
+## the tree. Nothing is banked before the city ends (on vs off).
+func _check_start_and_banking() -> void:
+	SaveFile.wipe()
+	SaveFile.save_game(SaveFile.new_save("reptilian"))
+	var main: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
+	root.add_child(main)
+	await process_frame
+	await process_frame
+	main.call("_continue_slot", 1)
+	check(main.call("screen") is GlobeView, "Continue opens the globe")
+	main.call("_show_tree")
+	var now: Node = main.call("screen")
+	var tree := now as UpgradeScreen
+	check(tree != null, "the tree opens")
+	if tree == null:
+		main.queue_free()
+		return
+	tree.start_pressed.emit()
+	await process_frame
+	await process_frame
+	var at: Node = main.call("screen")
+	var globe := at as GlobeView
+	check(globe != null, "the tree's START opens the globe, not a rampage: %s" % main.call("screen"))
+	if globe == null:
+		main.queue_free()
+		return
+	check(Num.i(SaveFile.load_game().get("runs", 0)) == 0, "nothing banked before a city ends")
+	globe.mission_panel().show_for(Content.continent("ostia_minor"))
+	globe.mission_panel().launch_button().pressed.emit()
+	var city := _missions(globe).city
+	check(city != null, "LAUNCH starts the city from a hosted globe")
+	if city != null:
+		await city.wait_loaded()
+		city.finished.emit({"rubble": 25, "reason": "hunted"})
+		await process_frame
+		await process_frame
+		var banked := SaveFile.load_game()
+		check(Num.i(banked.get("runs", 0)) == 1, "the city banks one run: %s" % banked.get("runs"))
+		check(Num.i(banked.get("rubble", 0)) == 25, "the city banks its rubble")
+		var shown := _missions(globe).results
+		check(shown != null, "its results show")
+		if shown != null:
+			shown.continued.emit()
+			await process_frame
+			await process_frame
+			globe.mission().buttons()[1].pressed.emit()  # LOSE
+			await process_frame
+			await process_frame
+			check(main.call("screen") is UpgradeScreen, "after the city the player lands on the tree")
+	main.queue_free()
+	await process_frame
 	SaveFile.wipe()

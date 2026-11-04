@@ -157,6 +157,11 @@ func use_save(save_in: Dictionary) -> void:
 	_missions.use_save(save_in)
 
 
+## Plays on the host's save and writes every change to the slot (D-462: one save).
+func host(save_in: Dictionary) -> void:
+	_missions.host(save_in)
+
+
 ## Emitted when a mission resolves (GlobeMissions.returned): the host moves on.
 func returned() -> Signal:
 	return _missions.returned
@@ -386,6 +391,10 @@ func _place_markers() -> void:
 		if m.visible:
 			m.position = _camera.unproject_position(world)
 			m.modulate.a = smoothstep(0.0, MARKER_FADE, facing)
+			# A name under the open mission panel would show clipped: hide it instead.
+			var panel := _missions.panel
+			if panel.visible and panel.get_global_rect().intersects(m.footprint()):
+				m.visible = false
 
 
 func _set_hovered(id: String) -> void:

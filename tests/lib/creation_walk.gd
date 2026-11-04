@@ -44,3 +44,14 @@ static func globe_to_tree(tree: SceneTree, main: Node) -> void:
 		main.call("_show_tree")
 	for _i: int in 3:
 		await tree.process_frame
+
+
+## The tree's START opens the globe (D-462: the globe is the loop); the checks about a run go on
+## from it to the plain rampage the globe's city is (Main._start_rampage banks it the same way).
+static func globe_to_run(tree: SceneTree, main: Node) -> void:
+	for _i: int in 3:
+		await tree.process_frame
+	if main.call("screen") is GlobeView:
+		main.call("_start_rampage")
+	for _i: int in 3:
+		await tree.process_frame

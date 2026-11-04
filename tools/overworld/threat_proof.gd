@@ -78,8 +78,10 @@ func _show(out: String, level: float) -> Dictionary:
 	_missions.use_save({"conquered": [], "bonuses": {}, "threat": level})
 	var plate := _missions.threat
 	var want := "%d%%" % floori(level)
-	await _still(out.path_join("threat_%d.png" % floori(level)))
+	var path := out.path_join("threat_%d.png" % floori(level))
+	await _still(path)
 	var box := plate.get_global_rect()
+	_check_edge(path, box, want)
 	if plate.value_text() != want:
 		_fails.append("%s: the readout says %s" % [want, plate.value_text()])
 	if plate.value_colour() != ThreatReadout.colour_for(level):
@@ -98,6 +100,21 @@ func _show(out: String, level: float) -> Dictionary:
 		"colour": plate.value_colour().to_html(false),
 		"rect": [box.position.x, box.position.y, box.size.x, box.size.y],
 	}
+
+
+## The border is whole: its bottom two rows are the edge colour along the plate's full width.
+func _check_edge(path: String, box: Rect2, want: String) -> void:
+	var img := Image.load_from_file(path)
+	var edge := UiKit.ACCENT
+	var bad := 0
+	var rows := Num.i(ThreatReadout.config()["border"])
+	for n: int in rows:
+		var y := int(box.end.y) - 1 - n
+		for x: int in range(int(box.position.x), int(box.end.x)):
+			if img.get_pixel(x, y).to_html(false) != edge.to_html(false):
+				bad += 1
+	if bad > 0:
+		_fails.append("%s: %d border pixels on the bottom %d rows are not yellow" % [want, bad, rows])
 
 
 func _still(path: String) -> void:
