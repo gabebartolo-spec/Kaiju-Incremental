@@ -4,6 +4,23 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-05 · D-465 · Director · Modular kaiju: dinosaur base × reptile DNA × element replaces the three fixed presets
+The player mixes a dinosaur base (skeletal frame and mechanical hook: T-rex biped striker, Triceratops quadruped
+frontal charge/defence, Ankylosaurus wide armoured tank with AoE tail-slam), reptile DNA (Crocodile, Serpent, Komodo)
+and an element (visual shader + passive: Fire, Poison, Lightning). Demo: Crocodile DNA + T-rex base, all 3 elements.
+Full game: Crocodile, Serpent, Komodo × T-rex, Triceratops, Ankylosaurus × the 3 elements; every category may grow
+if the game succeeds. DNA and element effects: to be decided when the demo needs them.
+Why: director 11-05, with concept art (fire/croc/rex, poison/croc/rex, baby komodo/rex per element).
+Changes: the croc/rex export (D-464) is the demo body; DESIGN.md gets the modular section in the PR that builds it.
+
+## 2026-11-05 · D-464 · Director · The approved croc (croc head on the Randaling T-rex body) is the adult; the Behemoth reuses its skeleton and clips
+The adult croc (`reptilian_adult`) is now the approved croc_run21 model: croc head on the Randaling T-rex body, 12 tail
+bones and eyelids, painted voxels. Its run is the Randaling run (96 frames, three strides, keyed in place; the game takes
+travel from the planted toes). The other adult clips are re-headed onto the new skeleton until each gets its own take.
+Why: the director approved each part (paint, teeth, eye, body fixes, run flaws) and said "Export the croc". The
+teenage kaiju (Behemoth) reuses this skeleton and these animations with its own model (director 11-05), so one rig
+serves two stages. Changes: reptilian_adult kvox/rig/weights/kclip, `tools/blender/croc_trex_*.py`, licence row.
+
 ## 2026-11-04 · D-463 · Director · The globe is the loop; a city is a normal rampage that banks; WIN or LOSE lands on the tree
 Flow: title -> creation (or Continue) -> globe -> a city -> results -> WIN or LOSE -> the tree (upgrades), reached after a
 city, not before it. The tree's START goes to the globe: there is no plain rampage from START (a plain rampage stays only

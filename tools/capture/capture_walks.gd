@@ -50,6 +50,7 @@ var _show_label := true
 var _log := false  # --log: print the yaw-rate steps, the framing drift and the walk-off ramp
 var _focus := Vector3.INF  # the game camera's eased focus
 var _side_fit := Vector3.INF  # the side camera's fit: (box middle ahead, its height, distance)
+var _time := ""  # --time=dusk etc.: PlayerSettings.time_of_day for the run (captures at dusk, D-359)
 
 
 func _initialize() -> void:
@@ -68,6 +69,8 @@ func _initialize() -> void:
 			_log = true
 		elif arg.begins_with("--seconds="):
 			_seconds = float(arg.substr(10))
+		elif arg.begins_with("--time="):
+			_time = arg.substr(7)
 	_label = "%s  %s  %s" % [_stage, _course, _cam_kind]
 	_run.call_deferred()
 
@@ -91,6 +94,8 @@ func _stick(t: float) -> Vector2:
 
 func _run() -> void:
 	await process_frame
+	if not _time.is_empty():
+		PlayerSettings.time_of_day = _time
 	var def := Content.species_def("reptilian")
 	var levels: Dictionary = LEVELS.get(_stage, {})
 	levels = levels.duplicate()

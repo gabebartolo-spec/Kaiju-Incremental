@@ -26,6 +26,7 @@ static func target(g: ClipGait, i: int, pose: KaijuClips.Pose, dt: float) -> Vec
 		if not g._stomp.catching(i):  # on the street this frame: it plants now, not a frame on
 			planted = pose.planted[i]
 			toe = put_down(g, i, toe, clip_toe) if planted else toe
+		g._air_at[i] = toe  # a catch step that ends aloft: its swing eases on from here
 	elif planted:
 		toe = _land(g, i, clip_toe)
 	else:
