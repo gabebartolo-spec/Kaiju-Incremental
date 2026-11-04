@@ -17,6 +17,7 @@ signal continent_picked(id: String)
 const HOLOGRAM := preload("res://scenes/globe_hologram.gdshader")
 const LAND := preload("res://scenes/globe_land.gdshader")
 const MASK := preload("res://assets/overworld/tellus_nova_mask.png")
+const Anchors := preload("res://scenes/globe_anchors.gd")
 
 const RADIUS := 1.0
 const LAND_LIFT := 1.003  # the land sphere's radius over the shell's, so the two never fight
@@ -31,8 +32,6 @@ const IDLE_SPIN := 0.25  # rad/s
 const DRAG_RAD_PER_PX := 0.006
 const CLICK_SLOP_PX := 6.0  # a press that moves further than this is a drag, not a pick
 const FLY_S := 0.7  # the fly-to and fly-out time, eased in and out
-## Mask px between candidate anchors; an anchor's 8 neighbours this far away share its value.
-const ANCHOR_STEP := 4
 ## A marker fades over this much of the facing range (dot of the surface normal with the view
 ## direction) as its anchor turns toward the globe's edge; at or below 0 it is hidden.
 const MARKER_FADE := 0.25
@@ -150,6 +149,21 @@ func mission() -> StubMission:
 
 func save() -> Dictionary:
 	return _missions.save()
+
+
+## Plays on from this save (the host's, D-463) instead of the slot's file.
+func use_save(save_in: Dictionary) -> void:
+	_missions.use_save(save_in)
+
+
+## Plays on the host's save and writes every change to the slot (D-463: one save).
+func host(save_in: Dictionary) -> void:
+	_missions.host(save_in)
+
+
+## Emitted when a mission resolves (GlobeMissions.returned): the host moves on.
+func returned() -> Signal:
+	return _missions.returned
 
 
 func _process(delta: float) -> void:
@@ -287,58 +301,9 @@ static func id_at_uv(mask: Image, uv: Vector2) -> int:
 	return roundi(mask.get_pixel(x, y).r * 255.0)
 
 
-## Each mask value's anchor (index 0 the sea, 1..count the continents) as a unit-sphere point: the
-## texel well inside its area (its 8 neighbours ANCHOR_STEP px away share it) nearest the area's
-## mean direction, so an island chain's marker still stands on land. One pass over the mask.
+## Each mask value's anchor as a unit-sphere point (scenes/globe_anchors.gd).
 static func anchors(mask: Image, count: int) -> Array[Vector3]:
-	var w := mask.get_width()
-	var h := mask.get_height()
-	var px := mask.get_data()
-	var means: Array[Vector3] = []
-	var cands: Array[Array] = []
-	for v in count + 1:
-		means.append(Vector3.ZERO)
-		cands.append([])
-	var s := ANCHOR_STEP
-	for y in range(s, h - s, s):
-		for x in range(0, w, s):
-			var v: int = px[y * w + x]
-			if v > count:
-				continue
-			var p := point_of(_texel_uv(x, y, w, h))
-			means[v] += p
-			if _inside(px, x, y, w, v):
-				cands[v].append(p)
-	var out: Array[Vector3] = []
-	for v in count + 1:
-		out.append(_nearest(cands[v], means[v].normalized()))
-	return out
-
-
-## True when the 8 texels ANCHOR_STEP px round (x, y) all hold v; x wraps, y stays in range.
-static func _inside(px: PackedByteArray, x: int, y: int, w: int, v: int) -> bool:
-	var s := ANCHOR_STEP
-	for dy: int in [-s, 0, s]:
-		var row := (y + dy) * w
-		for dx: int in [-s, 0, s]:
-			if (dx != 0 or dy != 0) and px[row + posmod(x + dx, w)] != v:
-				return false
-	return true
-
-
-## The point nearest dir (largest dot), or ZERO when there are none.
-static func _nearest(points: Array, dir: Vector3) -> Vector3:
-	var best := Vector3.ZERO
-	var best_dot := -2.0
-	for p: Vector3 in points:
-		if p.dot(dir) > best_dot:
-			best_dot = p.dot(dir)
-			best = p
-	return best
-
-
-static func _texel_uv(x: int, y: int, w: int, h: int) -> Vector2:
-	return Vector2((x + 0.5) / w, (y + 0.5) / h)
+	return Anchors.anchors(mask, count)
 
 
 ## The continent under a screen point, or "" over sea, off the globe or on a locked continent.
@@ -351,7 +316,7 @@ func _click(id: String) -> void:
 	if id != "":
 		continent_picked.emit(id)
 		fly_to(id)
-		_missions.panel.show_for(Content.continent(id))
+		_missions.show_panel(id)
 	elif selected != "":
 		fly_out()
 
@@ -376,6 +341,10 @@ func _place_markers() -> void:
 		if m.visible:
 			m.position = _camera.unproject_position(world)
 			m.modulate.a = smoothstep(0.0, MARKER_FADE, facing)
+			# A name under the open mission panel would show clipped: hide it instead.
+			var panel := _missions.panel
+			if panel.visible and panel.get_global_rect().intersects(m.footprint()):
+				m.visible = false
 
 
 func _set_hovered(id: String) -> void:

@@ -53,6 +53,8 @@ func _run() -> void:
 		if _screen() != lab:
 			break
 		await process_frame
+	if _screen() is GlobeView:  # creation opens the globe (D-462); START begins the run
+		_main.call("_start_rampage")
 	if _screen() is UpgradeScreen:
 		(_screen() as UpgradeScreen).start_pressed.emit()
 		await _frames(4)

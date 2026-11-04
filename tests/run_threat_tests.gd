@@ -33,6 +33,7 @@ func run_checks() -> void:
 	await _t("_check_tower_totals")
 	await _t("_check_lines")
 	await _t("_check_lab_card_save")
+	await _t("_check_threat_plate")
 	await _h("Threat play", func() -> void: await ThreatPlay.new(self, check).run())
 
 
@@ -210,3 +211,40 @@ func _check_lab_card_save() -> void:
 		SpecimenCard.fill("K-{lost} LOST, K-{next} RELEASED", 2) == "K-01 LOST, K-02 RELEASED",
 		"the headline names the lost specimen and the next"
 	)
+
+
+## D-462 (director 2026-11-04), the plate: about 20 px tall, a yellow edge on a plate, label yellow,
+## on the safe-margin corner on both axes; the value runs from the ramp's first colour at 0 to its
+## last at the cap, redder as it climbs (on vs off: the same plate at 0 and at 99 differs).
+func _check_threat_plate() -> void:
+	var plate := ThreatReadout.new()
+	root.add_child(plate)
+	await process_frame
+	await process_frame
+	var cfg := ThreatReadout.config()
+	var tall := plate.get_global_rect().size.y
+	check(absf(tall - Num.f(cfg["height"])) <= 2.0, "the plate is about 20 px tall: %s" % tall)
+	check(plate.position == UiKit.safe_margin(), "the plate sits on the safe margin, both axes")
+	var edge := plate.edge_colour()
+	check(edge == UiKit.ACCENT, "the plate's edge is the hazard yellow")
+	var ramp: Array = cfg["ramp"]
+	var first: Array = ramp[0]
+	var last: Array = ramp[-1]
+	var calm_colour: Color = ThreatReadout.PALETTE[str(first[1])]
+	var alarm_colour: Color = ThreatReadout.PALETTE[str(last[1])]
+	check(ThreatReadout.colour_for(0.0) == calm_colour, "calm at 0")
+	check(ThreatReadout.colour_for(100.0) == alarm_colour, "alarm at 100")
+	check(ThreatReadout.colour_for(100.0) == UiKit.ALERT, "the last stop is alert red")
+	var reds := 0
+	var prev := ThreatReadout.colour_for(0.0)
+	for level: int in range(1, 101):
+		var now := ThreatReadout.colour_for(float(level))
+		reds += 1 if now.g <= prev.g + 0.0001 and now.r >= prev.r - 0.0001 else 0
+		prev = now
+	check(reds == 100, "the value never turns calmer as the level climbs: %d" % reds)
+	plate.show_level(0.0)
+	var calm := plate.value_colour()
+	plate.show_level(99.0)
+	check(plate.value_colour() != calm, "the value's colour moves with the level")
+	check(plate.value_colour().g < calm.g, "at 99 it is redder than at 0")
+	plate.free()

@@ -1,10 +1,11 @@
 {
-	"_note": "The campaign's continents on Tellus Nova (Content.continents(); D-418..D-422; Overworld plan row F3). Placeholder rows: the names, stages, order and Threat shares are ruled, the bonus ids are stand-ins until the director picks the bonuses (D-421: the plan's lists are proposals). In the globe's fixed sequence (D-420): Ostia Minor first, then the two lowest unconquered of Carthago..Neptunia are offered; the capital is last. id: the save's key (SaveFile campaign conquered/bonuses). stage: the growth stage the city plays at, an index of tuning growth.stages (0 young, 1 Behemoth, 2 Colossus; D-419). threat: Threat Level percent its conquest adds (D-422; the six sum to 80, in-mission noise adds the rest, capped at 99). bonuses: the three bonuses its conquest offers, the player keeps one (D-421); none for the capital. Each: id (the save's bonuses value) and scale, stat -> fraction added to that stat after upgrades (0.15 = +15%; picks on one stat add before multiplying; UpgradeTree.apply, plan row F4). Only Ostia Minor's three carry test scales; the rest are {} until the bonuses are picked. stage_words: the stages in game words by index, as the mission panel names them (plan row G5). bonus_lines: each bonus stat as a phrase with its percent inside (%d, D-432: 'Moves 10% faster', not '+10% Moves faster'); every stat a bonus scales needs one. capital: Aurelia, opened when the sixth conquest sets Threat to 100 (D-422). real_city (optional, D-454): LAUNCH starts this continent's real city at its stage (true for Ostia Minor, Carthago and Thule); without it LAUNCH opens the stand-in WIN / LOSE mission. tuning (optional): keys over the stage's tuning, section by section, for this continent's city (CityGrowth.tuning_for, D-435): Ostia Minor plays today's beach, bay and river as tuned; Carthago a round harbour mid-city (layout kind cothon) with one 14 m canal south to the map edge and two 13 deg spokes meeting at a plaza; Thule a narrow fjord through ice lengthways (kind fjord) among rough, uneven blocks; each sets its own landmark_spots (one a quadrant, the same sizes as Ostia's); the rest the default plan for now.",
+	"_note": "The campaign's continents on Tellus Nova (Content.continents(); D-418..D-422; Overworld plan row F3). Ruled: the names and order (D-418, D-420), the stage per continent (D-419), the capital last with no bonuses (D-422), the real cities and their layouts (D-454, D-435). Still placeholders, listed per row in _placeholder: the bonus ids and scales (D-421: the plan's lists are proposals), and the stand-in mission and missing layout of the four continents without a real city. In the globe's fixed sequence (D-420): Ostia Minor first, then the two lowest unconquered of Carthago..Neptunia are offered; the capital is last. id: the save's key (SaveFile campaign conquered/bonuses). stage: the growth stage the city plays at, an index of tuning growth.stages (0 young, 1 Behemoth, 2 Colossus; D-419). threat: Threat Level percent its conquest adds (D-422; the six sum to 80, in-mission noise adds the rest, capped at 99). bonuses: the three bonuses its conquest offers, the player keeps one (D-421); none for the capital. Each: id (the save's bonuses value) and scale, stat -> fraction added to that stat after upgrades (0.15 = +15%; picks on one stat add before multiplying; UpgradeTree.apply, plan row F4). Only Ostia Minor's three carry test scales; the rest are {} until the bonuses are picked. stage_words: the stages in game words by index, as the mission panel names them (plan row G5). bonus_lines: each bonus stat as a phrase with its percent inside (%d, D-432: 'Moves 10% faster', not '+10% Moves faster'); every stat a bonus scales needs one. capital: Aurelia, opened when the sixth conquest sets Threat to 100 (D-422). real_city (optional, D-454): LAUNCH starts this continent's real city at its stage (true for Ostia Minor, Carthago and Thule); without it LAUNCH opens the stand-in WIN / LOSE mission. tuning (optional): keys over the stage's tuning, section by section, for this continent's city (CityGrowth.tuning_for, D-435): Ostia Minor plays today's beach, bay and river as tuned; Carthago a round harbour mid-city (layout kind cothon) with one 14 m canal south to the map edge and two 13 deg spokes meeting at a plaza; Thule a narrow fjord through ice lengthways (kind fjord) among rough, uneven blocks; each sets its own landmark_spots (one a quadrant, the same sizes as Ostia's); the rest the default plan for now.",
 	"stage_words": ["Young croc", "Behemoth", "Colossus"],
 	"bonus_lines": {"stomp_damage": "Stomps hit %d%% harder", "hp": "%d%% more health", "speed": "Moves %d%% faster"},
 	"continents": [
 		{
 			"id": "ostia_minor",
+			"_placeholder": "bonus ids stand-ins; scales are test values, not picked bonuses (D-421, D-363)",
 			"name": "Ostia Minor",
 			"stage": 0,
 			"threat": 10,
@@ -18,6 +19,7 @@
 		},
 		{
 			"id": "carthago",
+			"_placeholder": "bonus ids stand-ins; scales {} until picked (D-421)",
 			"name": "Carthago",
 			"stage": 1,
 			"threat": 12,
@@ -32,6 +34,7 @@
 		},
 		{
 			"id": "thule",
+			"_placeholder": "bonus ids stand-ins; scales {} until picked (D-421)",
 			"name": "Thule",
 			"stage": 1,
 			"threat": 12,
@@ -46,6 +49,7 @@
 		},
 		{
 			"id": "silvania",
+			"_placeholder": "bonus ids stand-ins; scales {} until picked (D-421); no city: stand-in WIN / LOSE mission, no layout or emerge (D-454)",
 			"name": "Silvania",
 			"stage": 2,
 			"threat": 14,
@@ -58,6 +62,7 @@
 		},
 		{
 			"id": "mons_ferrata",
+			"_placeholder": "bonus ids stand-ins; scales {} until picked (D-421); no city: stand-in WIN / LOSE mission, no layout or emerge (D-454)",
 			"name": "Mons Ferrata",
 			"stage": 2,
 			"threat": 16,
@@ -70,6 +75,7 @@
 		},
 		{
 			"id": "neptunia",
+			"_placeholder": "bonus ids stand-ins; scales {} until picked (D-421); no city: stand-in WIN / LOSE mission, no layout or emerge (D-454)",
 			"name": "Neptunia",
 			"stage": 2,
 			"threat": 16,
@@ -82,6 +88,7 @@
 		},
 		{
 			"id": "aurelia",
+			"_placeholder": "no city: stand-in WIN / LOSE mission, no layout or emerge (D-454); no GODBREAKER field (D-422), the mecha is not built",
 			"name": "Aurelia",
 			"stage": 2,
 			"threat": 0,

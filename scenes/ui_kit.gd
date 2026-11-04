@@ -17,6 +17,8 @@ const ALERT := Color("ff3b30")
 ## The news crawl's strip: alert red dark enough that white body text reads at 5:1 (ALERT gives
 ## 3.6:1, fine for the big clock digits, not for 24 px text).
 const CRAWL_RED := Color("d42a1f")
+## Orange: between the warning yellow and alert red (the Threat plate's ramp).
+const ORANGE := Color("ff8a1f")
 const GOOD := Color("7dff6a")
 const WARN := Color("ffd84a")
 const BAD := Color("ff3b30")

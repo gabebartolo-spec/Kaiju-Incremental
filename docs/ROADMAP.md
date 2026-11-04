@@ -33,7 +33,7 @@ Still open on the overworld:
 
 - the stub mission becomes the real mission flow
 - continent rows hold real data, not placeholders
-- a globe readout for the Threat Level (logic built; UI unverified)
+- a globe readout for the Threat Level (built, D-462); the globe hosted after creation, a city landing on the tree, the tree's START going to the globe, a city banking as any rampage (built, D-463); still open: demo-end rule (Q4), win rule (Q5)
 - continent bonuses: later (balance, D-363)
 
 **Cities, C1:** Phase 0 is done (#538). Three demo layouts: Ostia beach, Carthago harbour and Thule fjord (D-435).

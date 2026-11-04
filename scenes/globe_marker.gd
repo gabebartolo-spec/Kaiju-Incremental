@@ -28,6 +28,15 @@ func _ready() -> void:
 	_name.position = Vector2(LEADER.x + LEADER_RUN + NAME_GAP, LEADER.y - size_px.y / 2.0)
 
 
+## The marker's footprint in its parent's space: diamond, leader and name.
+func footprint() -> Rect2:
+	var size_px := _name.get_combined_minimum_size()
+	var right := _name.position.x + size_px.x
+	var top_left := position + Vector2(-DIAMOND_PX, LEADER.y - size_px.y)
+	var extent := Vector2(right + DIAMOND_PX, size_px.y * 2.0 + DIAMOND_PX)
+	return Rect2(top_left, extent)
+
+
 ## Grey for a locked continent, yellow otherwise.
 func set_locked(on: bool) -> void:
 	_ink = UiKit.LOCKED if on else UiKit.ACCENT

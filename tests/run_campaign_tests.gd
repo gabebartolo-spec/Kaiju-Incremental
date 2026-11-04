@@ -4,8 +4,10 @@ extends "res://tests/lib/runner.gd"
 ## the capital, last, none; the six conquests' Threat shares leave room for mission noise; every
 ## id is a key the save's campaign can hold. Plan row F4: a picked bonus reaches combat through
 ## the upgrade path (UpgradeTree), on vs off, with no combat code of its own. Plan row G3: which
-## continents are locked, available and conquered follows D-420 and D-422 (Campaign). The hologram
-## globe's checks (rows G1..G4) live in run_globe_tests.gd. Seeded, no clock.
+## continents are locked, available and conquered follows D-420 and D-422 (Campaign). D-454 / D-435:
+## exactly Ostia Minor, Carthago and Thule are real cities, with the ruled layouts and four
+## landmark spots. The hologram globe's checks (rows G1..G4) live in run_globe_tests.gd. Seeded,
+## no clock.
 ##   godot --headless --path . --script tests/run_campaign_tests.gd
 
 const ORDER := [
@@ -17,6 +19,12 @@ const NAMES := [
 const STAGES := [0, 1, 1, 2, 2, 2, 2]  # D-419: young, Behemoth x2, Colossus x3 and the capital
 ## D-422: conquests and noise cap below 100; only the sixth conquest opens Aurelia.
 const THREAT_CAP := 99.0
+## D-435's words: a circular harbour (kind cothon), one canal south, 14 m wide, to the map's edge;
+## Thule a fjord through ice. The test pins what the decision text says, not a second guess.
+const D435_HARBOUR := "cothon"
+const D435_CANALS := ["s"]
+const D435_CANAL_WIDTH := 14
+const D435_FJORD := "fjord"
 const SPECIES := "reptilian"
 const ATTACK := "bonus_ostia_minor_1"  # the test bonus: stomp_damage +15%
 
@@ -30,6 +38,8 @@ func run_checks() -> void:
 	await _t("_check_stages")
 	await _t("_check_bonuses_and_capital")
 	await _t("_check_threat_shares")
+	await _t("_check_real_cities")
+	await _t("_check_layouts")
 	await _t("_check_save_keys")
 	await _t("_check_bonus_scales_stats")
 	await _t("_check_bonus_in_combat")
@@ -50,6 +60,56 @@ func _check_seven_in_order() -> void:
 		str(Content.continent("thule").get("name", "")) == "Thule", "continent(id) finds one by id"
 	)
 	check(Content.continent("atlantis").is_empty(), "an unknown id gives {}")
+
+
+func _check_real_cities() -> void:
+	var real: Array = []
+	for c: Dictionary in Content.continents():
+		if Campaign.real_city(c):
+			real.append(str(c["id"]))
+	check(
+		real == ["ostia_minor", "carthago", "thule"],
+		"exactly Ostia Minor, Carthago and Thule are real cities (D-454): %s" % [real]
+	)
+
+
+## D-435 rules Carthago's harbour (one canal, south, 14 m wide, to the map's edge) and Thule's
+## fjord; D-436 keeps every landmark spot standing, the same four as the default plan's.
+func _check_layouts() -> void:
+	var carthago: Dictionary = Content.continent("carthago")["tuning"]["city"]
+	var layout: Dictionary = carthago["layout"]
+	var kind: String = layout["kind"]
+	var canals: Array = layout["canals"]
+	var width: int = layout["canal_width"]
+	check(kind == D435_HARBOUR, "Carthago's harbour is a cothon (D-435)")
+	check(canals == D435_CANALS, "with one canal, south (D-435): %s" % [canals])
+	check(width == D435_CANAL_WIDTH, "%d m wide (D-435): %d" % [D435_CANAL_WIDTH, width])
+	var thule: Dictionary = Content.continent("thule")["tuning"]["city"]
+	var thule_kind: String = thule["layout"]["kind"]
+	check(thule_kind == D435_FJORD, "Thule's water is a fjord (D-435)")
+	check(
+		not Content.continent("ostia_minor").has("tuning"),
+		"Ostia Minor keeps today's beach, bay and river"
+	)
+	var default_spots: Dictionary = Content.tuning()["city"]["landmark_spots"]
+	var want := _spot_keys(default_spots)
+	for cid: String in ["carthago", "thule"]:
+		var spots: Dictionary = Content.continent(cid)["tuning"]["city"]["landmark_spots"]
+		var keys := _spot_keys(spots)
+		check(
+			keys == want,
+			"%s has the default plan's landmark spots %s (D-436): %s" % [cid, want, keys]
+		)
+
+
+## The spot names of a landmark_spots table, sorted (notes skipped).
+func _spot_keys(spots: Dictionary) -> Array:
+	var keys: Array = []
+	for k: String in spots:
+		if not k.begins_with("_"):
+			keys.append(k)
+	keys.sort()
+	return keys
 
 
 func _check_stages() -> void:

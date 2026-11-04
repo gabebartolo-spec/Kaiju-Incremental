@@ -98,6 +98,8 @@ func _run() -> void:
 	await Kit.frames(self, 2)
 	_shot("05_black")
 	print("CUES %s" % [lab.cues])
+	await _until(func() -> bool: return _main.call("screen") is GlobeView)
+	_main.call("_start_rampage")  # the globe is next (D-462); the tree's START begins the run
 	await _until(func() -> bool: return _main.call("screen") is Rampage)
 	var run: Rampage = _main.call("screen")
 	await _until(func() -> bool: return run.is_loaded)

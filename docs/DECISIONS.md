@@ -4,6 +4,21 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-04 · D-463 · Director · The globe is the loop; a city is a normal rampage that banks; WIN or LOSE lands on the tree
+Flow: title -> creation (or Continue) -> globe -> a city -> results -> WIN or LOSE -> the tree (upgrades), reached after a
+city, not before it. The tree's START goes to the globe: there is no plain rampage from START (a plain rampage stays only
+as Endless). A globe city is a normal rampage: its results, rubble, runs, bests, lab card and specimen death bank into
+the save exactly as any rampage's (`SaveFile.bank`, `RunStart`), win or lose. Main hosts the globe (`GlobeView.returned`);
+the D-454 stand-in missions (Silvania, Mons Ferrata, Neptunia, Aurelia) stay. NOT built, still unruled: the demo-end rule
+(Q4) and the win rule (Q5). Changes: `scenes/main.gd`, `scenes/globe_missions.gd`, `autoload/save_file.gd`,
+`scenes/run_start.gd`, `docs/DESIGN.md` (Campaign bullet), `docs/ROADMAP.md`.
+
+## 2026-11-04 · D-462 · Director · The Threat readout is a plate like the mission panel's
+Yellow border and plate, label yellow, value coloured; about 20 px tall (not 30); at `UiKit.safe_margin` on both axes
+(same corner as the other HUD). The value runs from calm (0%) to alarm red toward 100%, colours from the UI palette and
+stops in data (tuning ui "threat_readout"). It reads "THREAT 12% / 100%" so 100% reads as the cap, and the mission
+panel's line reads "Threat +N% (to M%)", coloured by M like the plate in the same units. Changes: `scenes/threat_readout.gd`,
+`scenes/globe_missions.gd`, `scenes/mission_panel.gd`, `data/tuning.json`.
 ## 2026-11-04 · D-461 · Director · Sweep and leap from two CC-BY T-rex clips; the sweep reaches the front
 "Sweep can reach front if the animation caters to that"; the old lash clip never came closer than 58 deg to ahead, so
 he chose the sources: the tail 360 is attack_tail (Rampaging Tyrannosaurus Rex, Sketchfab 4abe5f31267a4fde8cd7eb1f9c41d938)
@@ -379,15 +394,3 @@ only (the far skyline keeps its shader pattern), and a longer load: "i dont real
 10-15 seconds as long as the gameplay is smooth" (replaces his earlier "Up to 3 s"). The facade is baked at load
 and cached on disk; he accepted that only the first visit to the largest city bakes longer (stage 3: 32 s cold, 0.19 s
 cached).
-
-## 2026-10-31 · D-414 · Director · The water is real liquid: waves, run-up, splash, a massive fountain; no flooding
-Asked for real physical water (waves, lapping at the shore, splash physics, ripples, no flooding, water still puts out
-fire, the kaiju emerging in a massive fountain), replacing the looks-only water of D-244/D-122. A shallow-water sim
-(sim/water_sim.gd, 2 m cells, seeded) carries every wave; his body displaces it, stomps and the rise throw splashes.
-Water never floods the city. The painted swash is removed ("Yes, remove it"): the waterline is where the sheet passes
-under the sand, with a wet sand band above it. On a sand bar he chose "Steeper near shore": the seabed drops 1.2 m in
-the first 10 m, then to wading depth 2.5 m by 40 m. Final shoreline: "Yes, ship it".
-## 2026-10-31 · D-413 · Director · Boats slow enough to catch; rock that shows
-"Retune, then reclip", then "Yes, ship it" on the 1080p dusk river clip. A boat fled his wake at up to ~8.8 u/s, he
-walks ~2.5, so none ever capsized in play. data/tuning.json boats: flee_push 6 -> 2, drag 0.5 -> 1.0 (top speed
-~1.5 u/s), wake_rock_deg 22 -> 35. Clip camera: "Fixed side camera" (tools/capture/capture_boats.gd --side).

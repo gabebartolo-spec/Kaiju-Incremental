@@ -166,7 +166,7 @@ func _sequence_ok(main: Node, lab: Node) -> void:
 	await GuiInput.pad(self, JOY_BUTTON_A)
 	var ticks := 2  # GuiInput.pad waited a frame for the press and one for the release
 	var crack_black := false
-	while not (_screen(main) is Rampage) and ticks < STEP_CAP:
+	while not (_screen(main) is GlobeView) and ticks < STEP_CAP:
 		if not crack_black and cues.has("egg_crack") and is_instance_valid(lab):
 			crack_black = Num.f(lab.call("black")) >= 0.99
 		await physics_frame
@@ -175,8 +175,10 @@ func _sequence_ok(main: Node, lab: Node) -> void:
 	check(crack_black, "the egg crack is heard over a black screen")
 	check(
 		absi(ticks - want) <= TICK_SLACK,
-		"injection to the run takes the data's %d ticks, took %d" % [want, ticks]
+		"injection to the globe takes the data's %d ticks, took %d" % [want, ticks]
 	)
+	check(_screen(main) is GlobeView, "the injection opens the globe, not a run (D-462)")
+	main.call("_start_rampage")  # the tree's START path
 	var rampage := _screen(main) as Rampage
 	check(
 		rampage != null and str(rampage.species["id"]) == "reptilian",

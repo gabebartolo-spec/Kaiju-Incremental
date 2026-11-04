@@ -247,7 +247,7 @@ func _check_endings_by_input() -> void:
 		if tree == null:
 			break
 		await GuiInput.click(self, GuiInput.button(tree, "RAMPAGE"))
-		await _frames(2)
+		await CreationWalk.globe_to_run(self, main)
 		await _past_lab_card(main)
 	_slot_after_endings()
 	main.queue_free()

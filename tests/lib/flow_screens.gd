@@ -80,11 +80,13 @@ func _check_new_game() -> void:
 	check.call(_screen(main) is TitleScreen, "Esc in Kaiju Creation goes back to the title")
 	await GuiInput.click(t, GuiInput.button(_screen(main), "NEW KAIJU"))
 	await _frames(2)
-	await CreationWalk.walk(t, main)
+	await CreationWalk.walk(t, main, false)
+	check.call(_screen(main) is GlobeView, "the croc genome and the injection open the globe")
+	main.call("_start_rampage")  # the tree's START path
 	var rampage := _screen(main) as Rampage
 	check.call(
 		rampage != null and str(rampage.species["id"]) == "reptilian",
-		"the croc genome and the injection start a reptilian rampage"
+		"a reptilian rampage starts from there"
 	)
 	if rampage == null:
 		main.queue_free()
@@ -242,6 +244,8 @@ func _check_evolution_and_continue() -> void:
 	await GuiInput.click(t, cont)
 	await GuiInput.click(t, GuiInput.button(title, "SLOT 1"))
 	await _frames(3)
+	check.call(_screen(main) is GlobeView, "Continue on a played save opens the globe (D-462)")
+	await CreationWalk.globe_to_tree(t, main)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(tree != null, "Continue on a played save opens the evolution tree")
 	if tree == null:
@@ -330,6 +334,7 @@ func _check_evolution_and_continue() -> void:
 	await GuiInput.click(t, GuiInput.button(_screen(again), "CONTINUE"))
 	await GuiInput.click(t, GuiInput.button(_screen(again), "SLOT 1"))
 	await _frames(3)
+	await CreationWalk.globe_to_tree(t, again)
 	var reloaded := _screen(again) as UpgradeScreen
 	check.call(
 		(
