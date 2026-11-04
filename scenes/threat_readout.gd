@@ -1,6 +1,6 @@
 class_name ThreatReadout
 extends PanelContainer
-## The globe's Threat Level plate (D-422, D-461; director 2026-11-04): a thin bordered plate like
+## The globe's Threat Level plate (D-422, D-462; director 2026-11-04): a thin bordered plate like
 ## the mission panel's, label in hazard yellow, the value coloured by how near the cap it is
 ## (calm at 0, alarm red toward 100; 99 and 100 are the same red on purpose: the level holds at 99
 ## until the capital opens, so only the number changes) and the cap it counts to. Its size, edge and

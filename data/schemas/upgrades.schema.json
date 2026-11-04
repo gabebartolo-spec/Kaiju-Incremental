@@ -19,8 +19,8 @@
           "effects": {
             "type": "object",
             "properties": {
-              "swipe_damage": {"$ref": "#/$defs/num"},
-              "swipe_width": {"$ref": "#/$defs/num"},
+              "sweep_damage": {"$ref": "#/$defs/num"},
+              "sweep_width": {"$ref": "#/$defs/num"},
               "hp": {"$ref": "#/$defs/num"},
               "speed": {"$ref": "#/$defs/num"},
               "stomp_radius": {"$ref": "#/$defs/num"},

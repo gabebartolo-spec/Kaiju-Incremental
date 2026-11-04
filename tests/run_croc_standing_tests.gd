@@ -2,13 +2,11 @@ extends "res://tests/lib/runner.gd"
 ## Croc standing suite (D-047): the clip-driven croc titan, at every stage, does what the sim asks
 ## of a body that stands. Each sim stomp lifts one foot, alternating, and plants it inside the
 ## scene's wait for it (Rampage.STOMP_WAIT) at a stomp's weight, so the ring and cracks land under
-## a foot, and no foot slides; the claw rake swings the raking arm over the clip's pose and comes
-## back to rest, its streak only while it sweeps (CrocClawRake); with no rake called the arms
-## match a calm kaiju's. Fixed 60 Hz steps, no clock, no randomness.
+## a foot, and no foot slides (the claw rake and its check went with D-459). Fixed 60 Hz
+## steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_standing_tests.gd
 
 const CrocStompCentre := preload("res://tests/lib/croc_stomp_centre.gd")
-const CrocClawRake := preload("res://tests/lib/croc_claw_rake.gd")
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
 ## Stomps on the sim's 0.7 s beat, and the footfall weight below which a step is not a stomp.
@@ -26,9 +24,6 @@ func run_checks() -> void:
 	await _t("_check_stomp_shape")
 	await _t("_check_stomp_landing")
 	await _h("CrocStompCentre", func() -> void: await CrocStompCentre.new(self, check).run())
-	await _h(
-		"CrocClawRake", func() -> void: await CrocClawRake.new(self, check, _model, _step).run()
-	)
 
 
 func _model(stage: String) -> KaijuModel:

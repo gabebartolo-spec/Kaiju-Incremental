@@ -7,7 +7,7 @@ extends RefCounted
 ## straight for the map edge so that the whole flight takes about `window_seconds`. Bringing it down
 ## pays `payout` (about a city block's worth, Tuning "vip"); letting it reach the edge costs only
 ## that payout. How it dies (one blow, no hit points, D-437): any area attack that reaches its
-## height (the breath, the Thunder Beam; a stomp or claw only while it is still low over the
+## height (the breath, the Thunder Beam; a stomp or tail only while it is still low over the
 ## roofs) or a toppling tower sweeping its height. It falls like any gunship (AirWing's fates and
 ## wreck), under its own id. Own file and own seeded stream, so it never shifts the army's or the
 ## air wing's draws. Part of RampageSim.

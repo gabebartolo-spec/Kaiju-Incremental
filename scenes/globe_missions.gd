@@ -8,22 +8,22 @@ extends CanvasLayer
 ## globe ignores the pointer meanwhile. A win stores the conquest in the save (Campaign.conquer;
 ## written back when there is a save on disk), the continents take their new states and the camera
 ## flies back out; a loss returns to the panel with nothing changed. Either way the mission is
-## over and `returned` tells the host (Main: the tree is next, D-462). A city is a normal rampage
-## (D-462): it starts as any run does (RunStart: the lab card after a death, the clock, time of day,
+## over and `returned` tells the host (Main: the tree is next, D-463). A city is a normal rampage
+## (D-463): it starts as any run does (RunStart: the lab card after a death, the clock, time of day,
 ## weather, the intro) and its end is banked as any rampage's (SaveFile.bank: biomass, runs, bests,
 ## specimen), its results shown over the wrecked city before WIN / LOSE. One save: a host hands its
 ## own in (host()) and every write goes to the slot; run alone, the globe reads the slot's. The
 ## global Threat Level (D-422, Campaign.conquer) reads on a ThreatReadout plate in the top-left
-## corner while the globe is up (D-461).
+## corner while the globe is up (D-462).
 
-## A mission resolved (WIN with its bonus kept, or LOSE): the host moves on (D-462).
+## A mission resolved (WIN with its bonus kept, or LOSE): the host moves on (D-463).
 signal returned(won: bool)
 
 const LAYER := 2  # over the markers' layer (1)
 
 var panel: MissionPanel
 var mission: StubMission
-## The global Threat Level readout (D-422, D-461).
+## The global Threat Level readout (D-422, D-462).
 var threat: ThreatReadout
 
 ## The real city's rampage under way (null when none).
@@ -86,7 +86,7 @@ func _show_threat() -> void:
 
 
 ## Opens a continent's panel, its Threat line reconciled with the readout: what the conquest adds
-## and the level it would leave (D-461).
+## and the level it would leave (D-462).
 func show_panel(id: String) -> void:
 	var def := Content.continent(id)
 	var after: float = Campaign.conquer(_save, def, "")["threat"]

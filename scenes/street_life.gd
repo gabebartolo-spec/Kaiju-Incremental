@@ -180,7 +180,7 @@ func tune(key: String) -> float:
 	return Num.f(_cfg[key])
 
 
-## People the kaiju itself crushed on the streets (stomps, falls, claws): not the tanks' run-overs.
+## People the kaiju itself crushed on the streets (stomps, falls, tail): not the tanks' run-overs.
 func kaiju_killed() -> int:
 	return killed - run_over
 

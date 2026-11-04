@@ -39,14 +39,14 @@ func _init(buildings: Array[RampageSim.Building], views: Callable) -> void:
 	_index()
 
 
-## The kaiju's destruction field now: the longest reach of his attacks (stomp, signature, claw
-## swipe, tail sweep), in metres from where he stands.
+## The kaiju's destruction field now: the longest reach of his attacks (stomp, signature, tail
+## lash and the automatic tail sweep, D-459), in metres from where he stands.
 static func field(sim: RampageSim) -> float:
 	var cfg := sim.powers_cfg
 	var bs := sim.body_scale()
 	var tail := (Num.f(cfg["tail_reach"]) + sim.stat("tail_reach")) * bs
-	var swipe := Num.f(cfg["swipe_far"]) * bs
-	return maxf(maxf(sim.stomp_radius(), sim.ability_reach()), maxf(tail, swipe))
+	var sweep := sim.powers.sweep.reach()
+	return maxf(maxf(sim.stomp_radius(), sim.ability_reach()), maxf(tail, sweep))
 
 
 ## The sphere's radius for a camera at `eye` and a kaiju standing at `kaiju` with destruction

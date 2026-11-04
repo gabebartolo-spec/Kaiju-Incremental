@@ -1,6 +1,6 @@
 extends Node
-## Game flow: title -> Kaiju Creation (new game) -> the globe (D-462; Continue goes there too) ->
-## a city's rampage (a normal rampage, banked as any: D-462) -> results -> WIN / LOSE -> evolution
+## Game flow: title -> Kaiju Creation (new game) -> the globe (D-463; Continue goes there too) ->
+## a city's rampage (a normal rampage, banked as any: D-463) -> results -> WIN / LOSE -> evolution
 ## tree (evolution reveal on an evolution). The tree's START goes back to the globe: the globe is
 ## the loop. A plain rampage with no globe is Endless only.
 ## The demo (D-050, data/tuning.json "demo") offers its species only. Buying its final upgrade (the
@@ -143,7 +143,7 @@ func _build_tree() -> void:
 	_tree = UpgradeTree.new(GameData.upgrades, levels, str(_save.get("species", "")), picked)
 
 
-## The globe, where a game goes from the title and from Kaiju Creation (D-462): the player picks a
+## The globe, where a game goes from the title and from Kaiju Creation (D-463): the player picks a
 ## continent and plays its city. A city's WIN or LOSE lands on the tree (_on_globe_returned).
 func _show_globe() -> void:
 	var globe := (load(GLOBE_SCENE) as PackedScene).instantiate() as GlobeView
@@ -152,7 +152,7 @@ func _show_globe() -> void:
 	globe.returned().connect(_on_globe_returned.bind(globe), CONNECT_DEFERRED)
 
 
-## A globe mission is over, won or lost (D-462): the globe's save (the conquest and the bonus
+## A globe mission is over, won or lost (D-463): the globe's save (the conquest and the bonus
 ## kept, on a WIN) is the game's now, and the player lands on the tree.
 func _on_globe_returned(_won: bool, globe: GlobeView) -> void:
 	_save = globe.save()
@@ -218,7 +218,7 @@ func _show_tree() -> void:
 	var screen := UpgradeScreen.new()
 	screen.setup(_tree, Num.i(_save.get("rubble", 0)), _species(), _base_stats())
 	screen.bought.connect(func(id: String) -> void: _on_bought(screen, id))
-	screen.start_pressed.connect(_show_globe)  # the globe is the loop (D-462)
+	screen.start_pressed.connect(_show_globe)  # the globe is the loop (D-463)
 	screen.endless_unlocked = _save.get("demo_done", false) == true
 	screen.endless_pressed.connect(_start_rampage.bind(true))
 	screen.menu_pressed.connect(_show_title)

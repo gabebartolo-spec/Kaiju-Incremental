@@ -38,7 +38,7 @@ func _init() -> void:
 
 ## Shows one continent's mission (a Content.continents() row). `after`: the Threat Level its
 ## conquest would leave, shown beside what it adds so the line reads in the corner readout's own
-## units (D-461); negative leaves it out.
+## units (D-462); negative leaves it out.
 func show_for(def: Dictionary, after := -1.0) -> void:
 	id = str(def["id"])
 	for child: Node in _lines.get_children():

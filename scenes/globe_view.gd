@@ -151,12 +151,12 @@ func save() -> Dictionary:
 	return _missions.save()
 
 
-## Plays on from this save (the host's, D-462) instead of the slot's file.
+## Plays on from this save (the host's, D-463) instead of the slot's file.
 func use_save(save_in: Dictionary) -> void:
 	_missions.use_save(save_in)
 
 
-## Plays on the host's save and writes every change to the slot (D-462: one save).
+## Plays on the host's save and writes every change to the slot (D-463: one save).
 func host(save_in: Dictionary) -> void:
 	_missions.host(save_in)
 

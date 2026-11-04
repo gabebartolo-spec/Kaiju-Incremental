@@ -6,7 +6,7 @@ extends RefCounted
 ## Layout: "KCLP", u32 version, u32 header length, the header (JSON: bones in rig.json order, the
 ## skin bones each gathers, rest heads in metres, fps, stride per walk cycle, the clip table; a clip
 ## may name its widest-jaw frame "jaw_peak" and say "tail_slam": false; a "layer" clip, laid over
-## the others (ClipRake: the keyed claw rake), names its "hit" frame and its "trail" [first, last]
+## the others (ClipLash: the keyed tail lash), names its "hit" frame and its "trail" [first, last]
 ## frames), then FRAME_BYTES per frame: int16[4] quaternion per bone, int16[3] pelvis offset,
 ## int16[6] left and right toe tips, int16 root yaw (centidegrees), int16[2] root travel (dm;
 ## unused), u8 planted bits, u8 pad.
@@ -138,18 +138,18 @@ func slams(clip: String) -> bool:
 	return not _no_slam.has(clip)
 
 
-## True for a clip laid over the others ("layer": the keyed claw rake, ClipRake).
+## True for a clip laid over the others ("layer": the keyed tail lash, ClipLash).
 func is_layer(clip: String) -> bool:
 	return _layers.has(clip)
 
 
-## A layer clip's hit frame (the claws cross the snout line, where the sim's rake lands).
+## A layer clip's hit frame (where the sim's blow lands).
 func hit_frame(clip: String) -> float:
 	var marks: Vector3 = _layers[clip]
 	return marks.x
 
 
-## A layer clip's first and last frames of the claw's streak.
+## A layer clip's first and last marked frames.
 func trail_span(clip: String) -> Vector2:
 	var marks: Vector3 = _layers[clip]
 	return Vector2(marks.y, marks.z)

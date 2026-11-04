@@ -47,7 +47,6 @@ var walk_frames := 0.0
 ## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
 var tail_shown := 0.0
-var rake: ClipRake  # the claw rake keyed in Cascadeur, over the clips (D-185)
 var lash: ClipLash  # the tail lash keyed in Cascadeur, over the clips
 var takes: ClipTakes  # the keyed walk start, run, slam stop and walking turns
 var _from := ""
@@ -120,7 +119,6 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)
 	_leap = ClipLeap.new(clips)
-	rake = ClipRake.new(rig, clips, swing)  # and the claw's streak (ClawTrail)
 	lash = ClipLash.new(clips, swing)
 	takes = ClipTakes.new(clips)
 
@@ -144,7 +142,7 @@ func update(delta: float) -> void:
 	pose = _leap.grounded(pose)  # (and the leap's hold ends with this frame)
 	pose = takes.layer(pose, turn_ahead, state == "walk", dt)
 	pose = takes.roar_over(pose, state == "roar", dt)
-	_apply(lash.layer(rake.layer(pose, dt), dt), dt)
+	_apply(lash.layer(pose, dt), dt)
 	takes.look_ahead(self, dt)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
@@ -263,7 +261,6 @@ func _steer_turn() -> void:
 func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 	_jaw_hold = clampf(_jaw_hold + (dt if head.held_open else -dt) / JAW_HOLD_SECONDS, 0.0, 1.0)
 	swing.tick_whip(dt)
-	swing.tick_rake(dt)
 	var drop := Vector3.DOWN * _stomp.dip(dt) * hip_height  # a stomp landing sinks the body
 	for i: int in clips.bones.size():
 		var bone_name := clips.bones[i]
@@ -279,7 +276,6 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		var offset := pose.offset * clips.rig_scale + drop if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
 	swing.youth = clampf((ADULT_SCALE - s) / (ADULT_SCALE - BABY_SCALE), 0.0, 1.0)
-	swing.pose_rake(dt)  # the code claw rake over the clip's arms, or the keyed rake's streak
 
 
 ## A roar keyed with a tail slam (KaijuClips.slams) lands it as a heavy footfall at the tip.

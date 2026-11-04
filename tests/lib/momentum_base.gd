@@ -20,7 +20,7 @@ const DWARFS := 2  # a building tier that dwarfs the young croc (Growth.dwarf_mu
 ## The croc at `levels` on `layout`, the claws idle, with the run on (his entry) or off (none).
 func _runner(levels: Dictionary, layout: Array[Dictionary], on: bool = true) -> RampageSim:
 	var sim := _croc(levels, layout)
-	sim.stats["swipe_damage"] = 0.0
+	sim.stats["sweep_damage"] = 0.0
 	if not on:
 		sim.powers.run.titan = {}
 	return sim

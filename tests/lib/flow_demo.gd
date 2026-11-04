@@ -137,7 +137,7 @@ func _buy_final(main: Node, last: String) -> DemoEnd:
 	await GuiInput.click(t, GuiInput.button(_screen(main), "CONTINUE"))
 	await GuiInput.click(t, GuiInput.button(_screen(main), "SLOT 1"))
 	await _frames(3)
-	await CreationWalk.globe_to_tree(t, main)  # Continue lands on the globe (D-462)
+	await CreationWalk.globe_to_tree(t, main)  # Continue lands on the globe (D-463)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(
 		tree != null and GuiInput.button(tree, "ENDLESS MODE") == null,
@@ -163,7 +163,7 @@ func _check_thanks_flow() -> void:
 	await GuiInput.click(t, GuiInput.button(_screen(main), "CONTINUE"))
 	await GuiInput.click(t, GuiInput.button(_screen(main), "SLOT 1"))
 	await _frames(3)
-	await CreationWalk.globe_to_tree(t, main)  # Continue lands on the globe (D-462)
+	await CreationWalk.globe_to_tree(t, main)  # Continue lands on the globe (D-463)
 	var tree := _screen(main) as UpgradeScreen
 	await GuiInput.click(t, tree.node_button("evolve1"))
 	await _frames(EvolutionReveal.END_FRAME + 4)
@@ -340,7 +340,7 @@ func _check_continue_after() -> void:
 	await GuiInput.click(t, GuiInput.button(_screen(main), "CONTINUE"))
 	await GuiInput.click(t, GuiInput.button(_screen(main), "SLOT 1"))
 	await _frames(3)
-	await CreationWalk.globe_to_tree(t, main)  # Continue lands on the globe (D-462)
+	await CreationWalk.globe_to_tree(t, main)  # Continue lands on the globe (D-463)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(
 		tree != null and GuiInput.button(tree, "ENDLESS MODE") != null,

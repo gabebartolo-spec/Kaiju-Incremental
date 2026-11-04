@@ -4,7 +4,7 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
-## 2026-11-04 · D-462 · Director · The globe is the loop; a city is a normal rampage that banks; WIN or LOSE lands on the tree
+## 2026-11-04 · D-463 · Director · The globe is the loop; a city is a normal rampage that banks; WIN or LOSE lands on the tree
 Flow: title -> creation (or Continue) -> globe -> a city -> results -> WIN or LOSE -> the tree (upgrades), reached after a
 city, not before it. The tree's START goes to the globe: there is no plain rampage from START (a plain rampage stays only
 as Endless). A globe city is a normal rampage: its results, rubble, runs, bests, lab card and specimen death bank into
@@ -13,12 +13,37 @@ the D-454 stand-in missions (Silvania, Mons Ferrata, Neptunia, Aurelia) stay. NO
 (Q4) and the win rule (Q5). Changes: `scenes/main.gd`, `scenes/globe_missions.gd`, `autoload/save_file.gd`,
 `scenes/run_start.gd`, `docs/DESIGN.md` (Campaign bullet), `docs/ROADMAP.md`.
 
-## 2026-11-04 · D-461 · Director · The Threat readout is a plate like the mission panel's
+## 2026-11-04 · D-462 · Director · The Threat readout is a plate like the mission panel's
 Yellow border and plate, label yellow, value coloured; about 20 px tall (not 30); at `UiKit.safe_margin` on both axes
 (same corner as the other HUD). The value runs from calm (0%) to alarm red toward 100%, colours from the UI palette and
 stops in data (tuning ui "threat_readout"). It reads "THREAT 12% / 100%" so 100% reads as the cap, and the mission
 panel's line reads "Threat +N% (to M%)", coloured by M like the plate in the same units. Changes: `scenes/threat_readout.gd`,
 `scenes/globe_missions.gd`, `scenes/mission_panel.gd`, `data/tuning.json`.
+## 2026-11-04 · D-461 · Director · Sweep and leap from two CC-BY T-rex clips; the sweep reaches the front
+"Sweep can reach front if the animation caters to that"; the old lash clip never came closer than 58 deg to ahead, so
+he chose the sources: the tail 360 is attack_tail (Rampaging Tyrannosaurus Rex, Sketchfab 4abe5f31267a4fde8cd7eb1f9c41d938)
+and the leap is loopAttackjumpJaw (Tyrannosaurus rex, Sketchfab 5454151e22db4ae9966db7a5a98ffb09), both CC-BY 4.0 by
+slang107123456789 (docs/LICENSING_REGISTER.md). tools/blender/trex_retarget.py copies each bone's world turn onto the
+adult rig (no invented pose); the sweep clip is fitted to sweep_windup 1.15 s and the 2.0 s interval, and its tail tip
+crosses straight ahead at the hit. The sim's sweep zone is the whole ring (sweep_arc_dot 1.0; the signature lash keeps
+tail_arc_dot).
+
+## 2026-11-04 · D-460 · Director · Tail hits add up: the young croc's tail chews big towers, slowly
+"Tail hits add up". Each tail sweep wears a chunk down until it breaks, so his tail chews a tower that dwarfs him,
+slowly (D-459 with D-091). The sim already does this: Carving keeps each cell's wear (Carving.wear_column) and the
+plain chunk grid its hp (Structure.damage), so no sim change. The leap suite's tower check now watches the tail do
+it: the young croc lands short of a tier-3 tower, turns his back and his sweeps break its first chunks on about the
+ninth (20 chunks in 20 s; the half ring reaches about a metre into the wall).
+
+## 2026-11-03 · D-459 · Director · The croc loses his claws; his damage moves to the tail
+"lets remove claw from our croc, doesnt really suit him anyway, refocus damage around the tail". The claw rake is gone
+at every stage (sim, arm pose, keyed rake layer, claw slash and trail VFX). Its slot is an automatic tail sweep on the
+rake's 2 s cadence: it hits the lash's half ring beside and behind him and never breaks his run. The signature lash
+also gains the sweep's damage (lash_sweep_share). The claw nodes keep their ids (saves load unchanged) and become tail
+nodes: Swinging Tail, Long Sweep, Butcher Tail, Wide Sweep, Skyscraper Tail; "Tail Sweep" is renamed Heavy Lash. All
+numbers are the rake's, carried over as placeholders. For the croc this supersedes D-095 (claw swipe), D-096 (swipes
+undermine towers: dropped), D-190 (swipe straight ahead), D-259's claw line, D-243's claw trail, and D-328's "the
+automatic whip is gone". The Komodo's forearm claws are untouched.
 
 ## 2026-11-03 · D-458 · Director (roadmap M3) · Helicopter deaths: a Taskforce gunship dies as a helicopter does
 A gunship downed by the kaiju now takes AirWing's fates and numbers (D-140, D-141, D-145, D-437) instead of vanishing:
@@ -381,18 +406,3 @@ the first 10 m, then to wading depth 2.5 m by 40 m. Final shoreline: "Yes, ship 
 "Retune, then reclip", then "Yes, ship it" on the 1080p dusk river clip. A boat fled his wake at up to ~8.8 u/s, he
 walks ~2.5, so none ever capsized in play. data/tuning.json boats: flee_push 6 -> 2, drag 0.5 -> 1.0 (top speed
 ~1.5 u/s), wake_rock_deg 22 -> 35. Clip camera: "Fixed side camera" (tools/capture/capture_boats.gd --side).
-
-## 2026-10-31 · D-412 · Director · The Lightning Breath is a purple column that chains over what it hits
-"Make the lightning breath look like a dragon fire lamp": a dense purple column that pools and chains along the ground
-and climbs the buildings it strikes. Sheet at dusk: "looks good". The sim's damage stays (a measured breath fells two
-18-19 floor towers whole and slices seven more).
-Asked "does it damage what the VFX touches?": the bolt is now cut where it meets a chunk the sim left standing, so
-it is drawn only through what the strike broke (frame-by-frame audit: 0 of 94,612 points in standing chunks). Same PR: the breath gets its own input bit (BREATH 4 -> 8); since
-#455 it shared the dash bit, so every breath also leapt and the croc floated ("why hes floating in the air").
-
-## 2026-10-31 · D-411 · Director · The tail lash winds up 1.5 s, then lands; cooldown 3.5 s
-The keyed fix3 lash ("looks great … looks shippable") curls the tail round for ~1.4 s before it strikes. Asked whether
-the button keeps instant damage or plays the curl first: picked "Full windup (Recommended)". The press emits
-tail_windup, the hit lands lash_windup (1.5 s) later with the keyed strike; lash_cooldown 1.2 -> 3.5 s. Adult and baby
-play the Cascadeur take (lash_r, mirrored lash_l); the adolescent keeps the code whip until its y7 skeleton ships.
-Proof waived by the director ("i dont care for the proof just merge it").

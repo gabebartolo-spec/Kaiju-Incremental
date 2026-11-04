@@ -120,10 +120,9 @@ func _build_dust() -> void:
 
 ## Holds every effect material compiled for the run (see ShaderKeep).
 func _keep_materials() -> void:
-	var claws := ClawSlash.marks_material(Content.section("claw_fx"))
 	var kept: Array[Material] = [_dust_mat, _step_mat, _slam_mat, _spark_mat, _tree_mat]
 	kept.append_array([_tree_mesh.material, _spark_mesh.material, _step_mesh.material])
-	kept.append_array([claws, LandmarkBurst.chunk_material()])
+	kept.append(LandmarkBurst.chunk_material())
 	for mat: Material in kept:
 		keep.hold(str(mat.get_instance_id()), mat)
 

@@ -5,7 +5,7 @@ extends RefCounted
 ## nearest the city's middle, crossing the river on its own deck, with one station. Trains (a
 ## locomotive and its carriages, coupled at a fixed spacing) run on a schedule: they speed up,
 ## cruise, brake into the station, dwell and go on, one each way. A hit strong enough (a stomp,
-## tail, breath, swipe: RampageSim.hit_area) on a car derails its train: the hit car is kicked
+## tail, breath, sweep: RampageSim.hit_area) on a car derails its train: the hit car is kicked
 ## sideways, the cars behind fold the other way and back again (the jackknife), all slide on with
 ## their momentum against friction, roll, and any car off the deck falls to the street; the
 ## couplers are gone, a car that runs into the one ahead shares its speed (the concertina). The

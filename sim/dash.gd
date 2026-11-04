@@ -269,7 +269,7 @@ func _in_tower(pose: Vector2, ahead: Vector2, lift: float) -> bool:
 func _next() -> void:
 	match phase():
 		"crouch":
-			sim.airborne = true  # stomps, claws and the body's sweep wait for the landing
+			sim.airborne = true  # stomps, tail sweeps and the body's sweep wait for the landing
 			sim.events.append({"type": "leap_off", "at": from})
 		"flight":
 			sim.kaiju_pos = to

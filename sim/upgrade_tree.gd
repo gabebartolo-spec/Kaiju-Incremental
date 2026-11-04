@@ -234,8 +234,8 @@ static func run_stats(base: Dictionary, species: Dictionary, tree: UpgradeTree) 
 	return out
 
 
-## An upgrade's effects for a species: its "species_effects" entry when it has one (Claws rakes
-## for the reptilian and stomps harder for the others, D-095), else its "effects".
+## An upgrade's effects for a species: its "species_effects" entry when it has one (an upgrade
+## that differs by species), else its "effects".
 static func effects_for(def: Dictionary, species_id: String) -> Dictionary:
 	var own: Dictionary = def.get("species_effects", {})
 	var effects: Dictionary = own.get(species_id, def.get("effects", {}))

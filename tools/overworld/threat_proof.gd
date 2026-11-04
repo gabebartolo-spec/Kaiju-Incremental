@@ -1,5 +1,5 @@
 extends Node
-## Threat Level readout evidence (D-422, D-461): runs scenes/globe_view.tscn in a real window and
+## Threat Level readout evidence (D-422, D-462): runs scenes/globe_view.tscn in a real window and
 ## shows the plate at 0, 10, 50, 80, 99 and 100 percent (value, colour, size, place), then with
 ## Ostia Minor's panel open (its Threat line reads in the plate's units). Quits (exit 0 = every
 ## check passed). Run behind the GPU slot (D-376) with the 1080p off-screen

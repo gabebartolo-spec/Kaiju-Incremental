@@ -268,6 +268,8 @@ func _check_contact_like_buildings() -> void:
 func _cross(z: float) -> Array:
 	var sim := _scene()
 	sim.stats["stomp_damage"] = 0.0
+	# The body's carve alone: since D-461 the tail sweep reaches ahead too and would bite the deck.
+	sim.stats["sweep_damage"] = 0.0
 	var x := sim.rail.centre_x()
 	sim.kaiju_pos = Vector2(x - 12.0, z)
 	sim.facing = EAST

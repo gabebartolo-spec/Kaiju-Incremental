@@ -216,8 +216,8 @@ func _biggest_near(sim: RampageSim) -> int:
 func _tally(sim: RampageSim) -> void:
 	tally["stomps"] = rampage.stomp_ring_at.size()
 	tally["falls"] = sim.next_fall_id
-	if sim.powers != null and sim.powers.swipe != null:
-		tally["swipes"] = sim.powers.swipe.swipes
+	if sim.powers != null and sim.powers.sweep != null:
+		tally["swipes"] = sim.powers.sweep.sweeps
 	if sim.ability_ready_in > _breath_ready + 0.5:
 		tally["breaths"] += 1
 	_breath_ready = sim.ability_ready_in

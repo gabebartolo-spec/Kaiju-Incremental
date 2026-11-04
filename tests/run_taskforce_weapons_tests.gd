@@ -1,7 +1,7 @@
 extends "res://tests/lib/taskforce_suite.gd"
 ## The Anti Kaiju Taskforce's weapons (D-145, D-152): the railgun tracks, locks and hits
 ## for 8% of max health only if the kaiju stays (a late step dodges it); frost refreshes, never
-## stacks, and the dash shatters it; a claw swipe swats an agent out of the air. The agents
+## stacks, and the dash shatters it; a tail sweep swats an agent out of the air. The agents
 ## themselves are in tests/run_taskforce_tests.gd (the same set-up, tests/lib/taskforce_suite.gd).
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
@@ -200,11 +200,10 @@ func _check_swat() -> void:
 	var sim := _adolescent("reptilian", {"evolve1": 1, "claws": 5})
 	_open(sim)
 	var tf := sim.army_units.taskforce
-	var bs := sim.body_scale()
-	var mid := (Num.f(sim.powers_cfg["swipe_near"]) + Num.f(sim.powers_cfg["swipe_far"])) * 0.5 * bs
+	var mid := sim.powers.sweep.reach() * 0.5
 	var agent := tf.place_agent(_roof(sim, tf), Vector3i.ZERO)
-	agent.state = Taskforce.HOP  # mid-air, in front of the kaiju, within the swipe's reach
-	agent.pos = sim.kaiju_pos + sim.facing * mid
+	agent.state = Taskforce.HOP  # mid-air, behind the kaiju, within the tail sweep's reach
+	agent.pos = sim.kaiju_pos - sim.facing * mid
 	agent.y = 1.0
 	agent.from = Vector3(agent.pos.x, agent.y, agent.pos.y)
 	agent.to = agent.from
@@ -213,10 +212,10 @@ func _check_swat() -> void:
 	var before := sim.rubble
 	var events := _run(sim, 8.0, "agent_died")
 	var died := _first(events, "agent_died")
-	check(not _first(events, "swipe").is_empty(), "the claw swipe came round")
+	check(not _first(events, "tail_auto").is_empty(), "the tail sweep came round")
 	check(
 		not died.is_empty() and str(died["kind"]) == "swatted" and Num.i(died["agent"]) == agent.id,
-		"a claw swipe swats an agent out of the air: %s" % [died]
+		"a tail sweep swats an agent out of the air: %s" % [died]
 	)
 	check(died.has("wall") and died.has("hit"), "it spins into a nearby wall: %s" % [died])
 	check(not tf.agents.has(agent) and tf.kills == 1, "the swatted agent is gone, one kill")

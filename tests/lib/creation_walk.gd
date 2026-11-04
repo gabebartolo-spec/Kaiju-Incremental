@@ -2,7 +2,7 @@ extends RefCounted
 ## Walks Kaiju Creation (D-207) the way a player does, for checks that start a new game through
 ## Main: click the croc genome, wait for the pour, click INJECT SPECIAL K, then wait out the
 ## takeover, the zoom and the black until Main shows the next screen. Real input only. That screen
-## is the globe (D-462); `to_run` goes on from it to a plain rampage the way the tree's START does
+## is the globe (D-463); `to_run` goes on from it to a plain rampage the way the tree's START does
 ## (Main._start_rampage), for the checks about the run.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
@@ -38,7 +38,7 @@ static func walk(tree: SceneTree, main: Node, to_run := true) -> void:
 		await tree.physics_frame
 
 
-## Continue lands on the globe (D-462): on from it to the tree the way a city's end does.
+## Continue lands on the globe (D-463): on from it to the tree the way a city's end does.
 static func globe_to_tree(tree: SceneTree, main: Node) -> void:
 	if main.call("screen") is GlobeView:
 		main.call("_show_tree")
@@ -46,7 +46,7 @@ static func globe_to_tree(tree: SceneTree, main: Node) -> void:
 		await tree.process_frame
 
 
-## The tree's START opens the globe (D-462: the globe is the loop); the checks about a run go on
+## The tree's START opens the globe (D-463: the globe is the loop); the checks about a run go on
 ## from it to the plain rampage the globe's city is (Main._start_rampage banks it the same way).
 static func globe_to_run(tree: SceneTree, main: Node) -> void:
 	for _i: int in 3:

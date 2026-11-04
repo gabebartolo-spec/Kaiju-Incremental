@@ -213,7 +213,7 @@ func _check_lab_card_save() -> void:
 	)
 
 
-## D-461 (director 2026-11-04), the plate: about 20 px tall, a yellow edge on a plate, label yellow,
+## D-462 (director 2026-11-04), the plate: about 20 px tall, a yellow edge on a plate, label yellow,
 ## on the safe-margin corner on both axes; the value runs from the ramp's first colour at 0 to its
 ## last at the cap, redder as it climbs (on vs off: the same plate at 0 and at 99 differs).
 func _check_threat_plate() -> void:

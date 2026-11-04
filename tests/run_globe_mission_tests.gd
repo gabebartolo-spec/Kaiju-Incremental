@@ -103,7 +103,7 @@ func _play(globe: GlobeView, won: bool) -> void:
 	check(not mission.visible, "no WIN / LOSE while the city plays")
 	await city.wait_loaded()
 	check(str(city.sim.stats.get("continent", "")) == id, "the rampage plays Ostia Minor's city")
-	# A city is a normal rampage (D-462): its result banks into the save, and its results show over
+	# A city is a normal rampage (D-463): its result banks into the save, and its results show over
 	# the wrecked city before the WIN / LOSE.
 	var save := globe.save()
 	var rubble_before := Num.i(save.get("rubble", 0))
@@ -243,7 +243,7 @@ func _check_threat_readout() -> void:
 	globe.free()
 
 
-## D-461, reconcile: the panel's line says what the conquest adds and where it leaves the corner
+## D-462, reconcile: the panel's line says what the conquest adds and where it leaves the corner
 ## value (the same percent units, out of the cap).
 func _check_panel_threat_line() -> void:
 	var globe: GlobeView = (load(GLOBE) as PackedScene).instantiate()
@@ -265,7 +265,7 @@ func _check_panel_threat_line() -> void:
 	globe.free()
 
 
-## D-462: a mission resolving hands back to the host: WIN (bonus kept) and LOSE each emit
+## D-463: a mission resolving hands back to the host: WIN (bonus kept) and LOSE each emit
 ## `returned`; the host's save carries the conquest on a WIN and nothing on a LOSE.
 func _check_returns_to_host() -> void:
 	for won: bool in [true, false]:
@@ -287,7 +287,7 @@ func _check_returns_to_host() -> void:
 		globe.free()
 
 
-## D-462, the game's flow through Main: a new game's creation and Continue both land on the globe;
+## D-463, the game's flow through Main: a new game's creation and Continue both land on the globe;
 ## a city's WIN or LOSE lands on the TREE, the WIN carrying its conquest and kept bonus into the
 ## game's save (on vs off: LOSE leaves the save as it was). No file is written for the slot but
 ## the one this check makes.
@@ -333,7 +333,7 @@ func _check_main_flow() -> void:
 	SaveFile.wipe()
 
 
-## D-462, the globe is the loop: the tree's START goes to the globe (no plain rampage), and a city
+## D-463, the globe is the loop: the tree's START goes to the globe (no plain rampage), and a city
 ## played from it banks like any rampage into the slot's file (biomass, run, best), then lands on
 ## the tree. Nothing is banked before the city ends (on vs off).
 func _check_start_and_banking() -> void:
