@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-04 · D-461 · Director · Sweep and leap from two CC-BY T-rex clips; the sweep reaches the front
+"Sweep can reach front if the animation caters to that"; the old lash clip never came closer than 58 deg to ahead, so
+he chose the sources: the tail 360 is attack_tail (Rampaging Tyrannosaurus Rex, Sketchfab 4abe5f31267a4fde8cd7eb1f9c41d938)
+and the leap is loopAttackjumpJaw (Tyrannosaurus rex, Sketchfab 5454151e22db4ae9966db7a5a98ffb09), both CC-BY 4.0 by
+slang107123456789 (docs/LICENSING_REGISTER.md). tools/blender/trex_retarget.py copies each bone's world turn onto the
+adult rig (no invented pose); the sweep clip is fitted to sweep_windup 1.15 s and the 2.0 s interval, and its tail tip
+crosses straight ahead at the hit. The sim's sweep zone is the whole ring (sweep_arc_dot 1.0; the signature lash keeps
+tail_arc_dot).
+
 ## 2026-11-04 · D-460 · Director · Tail hits add up: the young croc's tail chews big towers, slowly
 "Tail hits add up". Each tail sweep wears a chunk down until it breaks, so his tail chews a tower that dwarfs him,
 slowly (D-459 with D-091). The sim already does this: Carving keeps each cell's wear (Carving.wear_column) and the
