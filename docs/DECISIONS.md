@@ -395,8 +395,3 @@ Same ruling set. Ostia Minor comes first; after it the globe always offers the t
 in the fixed sequence Carthago, Thule, Silvania, Mons Ferrata, Neptunia: conquer one and the next in sequence joins
 the pair. Difficulty always climbs and the choice is real (16 paths; the sixth pick is forced). Aurelia is last
 (D-422).
-
-## 2026-10-31 · D-419 · Director · A continent fixes the growth stage
-Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
-Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
-adolescent, adult)" in DESIGN.
