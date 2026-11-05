@@ -55,7 +55,7 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 - Taskforce: gunships in the adult city, up to 2, laser cannon (#556; D-143, D-145, D-152); with gas soldiers and mechs (#450) the full Taskforce is in.
 - Overworld: Komodo and serpent unlocks (#558, D-423); globe LAUNCH starts the real city (#561, D-454).
 - Cleanup: octopus and insectoid code removed (#535, D-438).
-- In review: bug bash, nine verified bugs fixed with tests (#560).
+- In review: bug bash, nine verified bugs fixed with tests (#560); approved croc export (#579).
 
 ## Open work
 
@@ -63,7 +63,8 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 |---|---|---|
 | 0 | Adult croc (Colossus) walk stutter: each foot swings back, plants and pushes off before the forward step (director 2026-11-03) | open |
 | 0b | Croc thigh still warps at extreme leg movements, and the thigh passes through the torso: enters at the hip and pokes out the top of the back (director 2026-11-03 stills; see kaiju-thigh-skinning skill) | open |
-| 1 | Croc animation (Cascadeur, reference copied exactly, D-410) | open |
+| 1 | Croc animation (Cascadeur, reference copied exactly, D-410) | replaced by 1a (D-464) |
+| 1a | Approved croc (croc head on the Randaling T-rex, D-464) in game as the adult; tail sweep on its own button F / RB (D-467) | in review (#579): CI red, the run's airborne steps break turning (motion, smoke, sim); director to rule: keep them or rebake a walk with one foot always down |
 | 2 | Bay-coast junctions | done (#431; bridge removed #527) |
 | 3 | Destruction: landmarks and bridges carve, varied collapse, stadium crowd | done (#421 D-387 D-388, #427 D-389, #537) |
 | 4 | Random cities (city_seed, pool and spots, D-375) | moved into C1 Phases 1 to 4 |

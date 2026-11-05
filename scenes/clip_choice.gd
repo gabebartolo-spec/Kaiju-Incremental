@@ -8,7 +8,11 @@ extends RefCounted
 ## The clip to play now: a queued roar, a roar or turn played out, else walk, or idle with a turn
 ## in place when the body is off the heading.
 static func pick(g: ClipGait) -> void:
-	var moving := g.speed >= ClipGait.STAND_SPEED * g.hip_height * g.s
+	var stand := ClipGait.STAND_SPEED * g.hip_height * g.s
+	if OS.has_environment("PURE") and g.speed > g._was_speed:  # setting off: legs go with the body
+		stand *= 0.05
+	g._was_speed = g.speed
+	var moving := g.speed >= stand
 	if g._roar_queued:
 		g._roar_queued = false
 		g._go("roar", 0.0)

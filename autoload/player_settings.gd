@@ -19,6 +19,7 @@ const CONTROLS: Array[Array] = [
 	["Signature attack", "Space", "A"],
 	["Breath (croc)", "Q", "X", "reptilian"],
 	["Leap", "Shift", "B"],
+	["Tail sweep (croc)", "F", "RB", "reptilian"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
 	["Fullscreen", "F11", "-"],

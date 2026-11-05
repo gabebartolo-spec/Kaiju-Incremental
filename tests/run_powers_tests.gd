@@ -153,13 +153,15 @@ func _check_tail_touch() -> void:
 ## The sweep's damage also rides on the signature lash (lash_sweep_share).
 func _check_tail_sweep() -> void:
 	var out: Array[Dictionary] = []
-	for on: bool in [true, false]:
+	for run: Array in [[true, true], [false, true], [true, false]]:  # [stats, button held]
+		var on: bool = run[0]
 		var layout: Array[Dictionary] = [
 			_b(0, 6, Vector3i(3, 3, 4)), _b(6, 0, Vector3i(3, 3, 4)), _b(0, -7, Vector3i(3, 3, 4))
 		]
 		var sim := _sim("reptilian", {"claws": 3}, layout, Vector2.ZERO)
 		if not on:
 			sim.stats["sweep_damage"] = 0.0
+		sim.powers.sweep.held = run[1]  # its own button since D-467
 		var seen := _run(sim, 6.0, Vector2.ZERO)
 		var row := {"sweeps": sim.powers.sweep.sweeps, "seen": seen}
 		row["behind"] = _alive(sim, 0)
@@ -168,10 +170,15 @@ func _check_tail_sweep() -> void:
 		out.append(row)
 	var hit: Dictionary = out[0]
 	var miss: Dictionary = out[1]
+	var idle: Dictionary = out[2]
 	var hit_seen: Dictionary = hit["seen"]
 	check(
 		Num.i(hit["sweeps"]) >= 2 and Num.i(hit_seen.get("tail_auto", 0)) >= 2,
-		"the tail sweeps on its own about every 2 s (%d sweeps in 6 s)" % Num.i(hit["sweeps"])
+		"the button held, the tail sweeps about every 2 s (%d sweeps in 6 s)" % Num.i(hit["sweeps"])
+	)
+	check(
+		Num.i(idle["sweeps"]) == 0 and Num.i(idle["behind"]) == Num.i(miss["behind"]),
+		"no press, no sweep, D-467 (%d sweeps in 6 s)" % Num.i(idle["sweeps"])
 	)
 	check(
 		(
@@ -207,13 +214,14 @@ func _check_tail_sweep() -> void:
 func _check_sweep_after_leap() -> void:
 	var sim := _sim("reptilian", {"claws": 3}, [], Vector2.ZERO)
 	var sweep: TailSweep = sim.powers.sweep
+	sweep.held = true  # the button held through the leap (D-467)
 	var dt := 1.0 / 60.0
 	sim.airborne = true
 	for i: int in 180:  # a 3 s leap
 		sweep.step(dt)
 	sim.airborne = false
 	var before := sweep.sweeps
-	for i: int in 60:  # the second after landing, under one 2 s interval
+	for i: int in 90:  # 1.5 s after landing: past the 1.15 s wind-up, under the 2 s cooldown
 		sweep.step(dt)
 	check(sweep.sweeps - before == 1, "one sweep after a long leap: %d" % (sweep.sweeps - before))
 

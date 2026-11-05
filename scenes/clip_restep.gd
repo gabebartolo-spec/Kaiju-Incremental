@@ -69,7 +69,12 @@ static func walk_entry(gait: ClipGait) -> float:
 		var cost := 0.0
 		for i: int in mini(gait.legs.size(), 2):
 			var now := to_rig * gait.rig.tail_world(gait.legs[i].tip)
-			cost += (gait.clips.to_rig(pose.feet[i]) - now).length()
+			var spot := gait.clips.to_rig(pose.feet[i])
+			cost += (spot - now).length()
+			if OS.has_environment("PURE") and not pose.planted[i]:  # a lifted foot never swings back
+				var ahead := gait.clips.to_rig(gait.clips.pose_at("walk", t + 1).feet[i]) - spot
+				if (spot - now).dot(ahead) < 0.0:
+					cost = INF
 		if cost < best_cost:
 			best_cost = cost
 			best = t

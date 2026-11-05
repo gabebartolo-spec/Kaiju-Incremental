@@ -2,6 +2,31 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-419 · Director · A continent fixes the growth stage
+Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
+Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
+adolescent, adult)" in DESIGN.
+
+## 2026-10-31 · D-418 · Director · Seven continents on Tellus Nova
+Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
+Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
+Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".
+
+## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
+On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
+Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
+.kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
+"Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
+(tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".
+
+## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
+Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
+surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
+the water burst". The pre-rise spray column is removed; arcs of the kaiju's purple bolt (D-357) skate over the water,
+more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
+round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
+surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.
+
 ## 2026-10-31 · D-415 · Director · Stand-in boxes show the real facade; the swap is invisible
 A streamed building's stand-in box shows the building's real windows (the same lit and dark windows as its voxels), so
 the swap to voxels has no pop-in. He chose a hard swap that "should be invisible" (no dither fade), the playable city

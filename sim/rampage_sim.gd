@@ -127,8 +127,8 @@ class Tank:
 ## step() button flags.
 const HELD := 1
 const ULTIMATE := 2
-## The breath's own button (D-280: the lash took the signature; Q / pad X).
-const BREATH := 8
+const BREATH := 8  # the breath's own button (D-280: the lash took the signature; Q / pad X)
+const SWEEP := 16  # the tail sweep's own button (D-467: F / pad RB)
 ## A tank's footprint radius for area hits.
 const TANK_RADIUS := 0.6
 
@@ -283,7 +283,7 @@ func result() -> Dictionary:
 	return out
 
 
-## Advances the rampage by dt (move, signature pressed, buttons HELD/ULTIMATE/BREATH/Dash.BUTTON).
+## Advances the rampage by dt (move, signature pressed, the button flags above, Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	_events = []
 	water.step(self, dt, _events)  # the liquid moves under every frame, the rise and death too
@@ -299,6 +299,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		var speed := stat("speed") * powers.speed_mult() * stride
 		kaiju_pos = _ashore(kaiju_pos, clamp_to_arena(kaiju_pos + body.heading * speed * dt))
 		body.walked(speed * dt, dt)
+	powers.sweep.pressed = buttons & SWEEP != 0
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
 	tail.step(dt)

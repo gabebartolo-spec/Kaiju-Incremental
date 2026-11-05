@@ -3,8 +3,9 @@ extends SceneTree
 ## real sim at 60 Hz the way the rampage scene drives it (BodyContact.steer turns it on arcs, the
 ## head leads by turn_left), walks a course on an empty lot while a camera dollies with it.
 ## --course=straight (7 s), zigzag (the stick swings 70 deg every 1.5 s), turn90 (a walking 90 deg
-## turn left) or sweep (it stands with a level of Swinging Tail: the sim's automatic tail sweep
-## every 2 s, D-459, its wind-up and sweep cued to the model as the rampage does, PowersView).
+## turn left) or sweep (it stands with a level of Swinging Tail: the tail sweep's button held
+## (a sweep every 2 s, D-459/D-467), its wind-up and sweep cued to the model as the rampage
+## does, PowersView).
 ## --cam=side (low, square to the walk) or front34 (ahead
 ## and to one side, head height) or game (the rampage camera: CameraTuning offset and zoom, eased
 ## focus, no shake). The side and front34 cameras follow the walk's heading, eased, so a turn
@@ -50,6 +51,7 @@ var _show_label := true
 var _log := false  # --log: print the yaw-rate steps, the framing drift and the walk-off ramp
 var _focus := Vector3.INF  # the game camera's eased focus
 var _side_fit := Vector3.INF  # the side camera's fit: (box middle ahead, its height, distance)
+var _time := ""  # --time=dusk etc.: the run's time of day (captures at dusk, D-359)
 
 
 func _initialize() -> void:
@@ -68,6 +70,8 @@ func _initialize() -> void:
 			_log = true
 		elif arg.begins_with("--seconds="):
 			_seconds = float(arg.substr(10))
+		elif arg.begins_with("--time="):
+			_time = arg.substr(7)
 	_label = "%s  %s  %s" % [_stage, _course, _cam_kind]
 	_run.call_deferred()
 
@@ -91,6 +95,8 @@ func _stick(t: float) -> Vector2:
 
 func _run() -> void:
 	await process_frame
+	if not _time.is_empty():
+		PlayerSettings.time_of_day = _time
 	var def := Content.species_def("reptilian")
 	var levels: Dictionary = LEVELS.get(_stage, {})
 	levels = levels.duplicate()
@@ -102,6 +108,7 @@ func _run() -> void:
 		{"x": 38.0, "z": 38.0, "w": 2, "d": 2, "h": 2, "tier": 1, "style": 0}
 	]
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	sim.powers.sweep.held = _course == "sweep"  # its own button since D-467, held
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2(0, 30)
 	var world := Node3D.new()

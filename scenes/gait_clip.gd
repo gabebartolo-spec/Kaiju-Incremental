@@ -21,6 +21,8 @@ const TURN_PAD := 6
 const TURN_SETTLE := 24
 ## How fast a lifted foot's toes swing back to the clip's yaw after the body turned over them (1/s).
 const FOOT_YAW_DECAY := 12.0
+## 1/s: a stopped foot's held offset eases out while that foot swings on setting off.
+const PIN_DECAY := 8.0
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam; a clip file
 ## that names its own (KaijuClips.jaw_peak: the adult's Cascadeur roar) wins.
 const ROAR_PEAK_FRAME := 47.0
@@ -52,6 +54,7 @@ var takes: ClipTakes  # the keyed walk start, run, slam stop and walking turns
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
+var _was_speed := 0.0  # last frame's speed (ClipChoice: setting off or stopping)
 var _roar_queued := false
 var _turn_from := 0.0
 var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
@@ -68,6 +71,8 @@ var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 ## foot rolls; back to the clip's in the air.
 var _plant_heading: Array[float] = [0.0, 0.0]
 var _yaw_fix: Array[float] = [0.0, 0.0]
+var _pin: Array[Vector3] = [Vector3.INF, Vector3.INF]  # a stopped foot's world spot
+var _pin_off: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _was_planted: Array[bool] = [false, false]
 var _stomp := ClipStomp.new()  # catch steps, and the standing stomp
 var _restep := ClipRestep.new()  # when a planted foot takes one
@@ -140,12 +145,17 @@ func update(delta: float) -> void:
 		for i: int in 2:  # the new clip's lifted foot lifts at once: held down, it caught up later
 			pose.planted[i] = pose.planted[i] and to.planted[i]
 	pose = _leap.grounded(pose)  # (and the leap's hold ends with this frame)
-	pose = takes.layer(pose, turn_ahead, state == "walk", dt)
-	pose = takes.roar_over(pose, state == "roar", dt)
-	_apply(lash.layer(pose, dt), dt)
+	var pure := OS.has_environment("PURE")
+	if not pure:
+		pose = takes.layer(pose, turn_ahead, state == "walk", dt)
+		pose = takes.roar_over(pose, state == "roar", dt)
+	_apply(pose if pure else lash.layer(pose, dt), dt)
 	takes.look_ahead(self, dt)
 	_slam_tail(roar_was)
-	_plant_feet(pose, dt)
+	if not pure:
+		_plant_feet(pose, dt)
+	else:
+		_pin_feet(pose, dt)
 	_measure_slide()
 
 
@@ -219,10 +229,11 @@ func _choose(dt: float) -> void:
 ## The walk clip's clock: the sim's step clock when it gives one (the footfalls land where it
 ## turns), else the distance walked.
 func _walk_clock(dt: float) -> void:
-	var cycles := speed * dt / maxf(stride(), 0.0001)
+	var went := moved if OS.has_environment("PURE") else speed * dt  # planted feet stay put
+	var cycles := went / maxf(stride(), 0.0001)
 	walk_cycles += cycles
 	var was := clip_time
-	if step_phase != INF:
+	if step_phase != INF and not OS.has_environment("PURE"):
 		clip_time = _steps.frame_at(step_phase)
 	else:
 		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
@@ -230,7 +241,7 @@ func _walk_clock(dt: float) -> void:
 
 
 func _go(next: String, at: float) -> void:
-	if state == "walk" and next == "idle":
+	if state == "walk" and next == "idle" and not OS.has_environment("PURE"):
 		_stomp.settle()  # the weight settles as he stops
 	_restep.go(next == "walk" and state != "walk" and step_phase == INF)
 	if state == "walk_start" and next == "walk":  # the walk start into the walk: the feet ease
@@ -245,6 +256,8 @@ func _go(next: String, at: float) -> void:
 ## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
 ## feet (ClipRestep.walk_entry).
 func _walk_start() -> float:
+	if OS.has_environment("PURE"):
+		return ClipRestep.walk_entry(self)
 	return _steps.frame_at(step_phase) if step_phase != INF else ClipRestep.walk_entry(self)
 
 
@@ -320,6 +333,23 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		_yaw_fix[i] = _hold.held(legs[i], s, targets[i], fixes[i]) if planted else fixes[i]
 		_ik.reach(self, i, targets[i], _yaw_fix[i])
 	_feet_primed = true
+
+
+## Standing, a planted foot holds where it stopped (the idle's stance differs from the walk's);
+## setting off, a foot's offset from its clip spot eases out while it swings.
+func _pin_feet(pose: KaijuClips.Pose, dt: float) -> void:
+	for i: int in mini(legs.size(), 2):
+		var clip_toe := rig.global_transform * clips.to_rig(pose.feet[i])
+		if state == "idle" and pose.planted[i]:
+			if _pin[i] == Vector3.INF:
+				_pin[i] = clip_toe
+			_pin_off[i] = _pin[i] - clip_toe
+		else:
+			_pin[i] = Vector3.INF
+			if not pose.planted[i]:
+				_pin_off[i] *= exp(-PIN_DECAY * dt)
+		if _pin_off[i].length() > 0.001 * s:
+			_ik.reach(self, i, clip_toe + _pin_off[i], 0.0)
 
 
 ## A clip foot spot, its fore-aft travel shortened to the sim's step (ClipSteps.shortened); a smooth

@@ -18,6 +18,7 @@ func _ready() -> void:
 	_button_action("ultimate", [KEY_E], JOY_BUTTON_Y)
 	_button_action("breath", [KEY_Q], JOY_BUTTON_X)  # the lash took the signature (D-280)
 	_button_action("dash", [KEY_SHIFT], JOY_BUTTON_B)
+	_button_action("tail_sweep", [KEY_F], JOY_BUTTON_RIGHT_SHOULDER)  # D-467
 	_button_action("pause", [KEY_ESCAPE, KEY_P], JOY_BUTTON_START)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
 	# Photo mode's own keys (PhotoMode, D-259): it moves on the move keys and turns on the mouse.

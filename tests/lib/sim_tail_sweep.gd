@@ -33,6 +33,8 @@ func run() -> void:
 	for run: int in FIXTURE_RUNS:
 		var base := _fixture_sim(run)
 		var tail := _fixture_sim(run, {"claws": 5})
+		base.powers.sweep.held = true  # the sweep's own button, held (D-467)
+		tail.powers.sweep.held = true
 		_autoplay.call(base)
 		_autoplay.call(tail)
 		active = active and base.body.active() and tail.body.active()
@@ -70,6 +72,8 @@ func _check_fixture() -> void:
 		var on := _fixture_sim(run)
 		var off := _fixture_sim(run)
 		off.stats["sweep_damage"] = 0.0
+		on.powers.sweep.held = true  # the sweep's own button, held (D-467)
+		off.powers.sweep.held = true
 		var on_end: Dictionary = _autoplay.call(on)
 		var off_end: Dictionary = _autoplay.call(off)
 		on_sum += Num.f(on_end["destruction"])

@@ -7,9 +7,9 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_skin_helpers_tests.gd
 ## Seeded by design: fixed poses, no clock.
 
-## The Colossus: five helpers a leg (tools/blender/croc_adult3_helpers.json).
+## The Colossus: one hip helper a leg (tools/blender/croc_trex_export.py HELPERS).
 const COLOSSUS := "res://assets/kaiju/reptilian_adult"
-const COLOSSUS_HELPERS := 10
+const COLOSSUS_HELPERS := 2
 ## The young croc: hip, knee, ankle and belly a leg (tools/blender/croctitan_baby_helpers.json).
 const YOUNG := "res://assets/kaiju/reptilian_baby"
 const YOUNG_HELPERS := 8

@@ -16,7 +16,7 @@ const ClipSetOff := preload("res://tests/lib/clip_set_off.gd")
 const CLIPS := "res://assets/kaiju/reptilian_adult.kclip"
 ## Each croc titan stage and its Blender skin export (assets/kaiju/test/<name>.skin.json).
 const STAGES := {
-	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent", "adult": "croc_adult3"
+	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent", "adult": "croc_trex"
 }
 const DT := 1.0 / 60.0
 ## The adult's clips keyed in Cascadeur on rig r11 that the director approved (D-199, D-216;

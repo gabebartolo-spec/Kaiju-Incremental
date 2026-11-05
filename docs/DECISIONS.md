@@ -4,6 +4,33 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-05 · D-468 · Director · The croc walks the Cascadeur Dracorex sample's walk, copied
+"Copy the Dracorex walk ... its a free sample they dont care." The croc's walk is the Dracorex walk sample (Cascadeur),
+copied frame by frame onto the croc rig: legs and feet take the sample's joint aims and toe heights (scaled by hip
+height), body, neck, tail and arms take its motion about their cycle mean. Overrides D-306's study-only rule for this
+sample. Fixes the back foot's tiptoe before each step.
+
+## 2026-11-05 · D-467 · Director · The tail sweep is a button (F / pad RB), not automatic
+The automatic sweep every 2 s (D-459) curled the Colossus into a ball on every walk and turn. Director: "make it a
+button click instead and see if it stops". A press (or hold) of tail_sweep winds up and sweeps, cooldown
+sweep_interval; autoplay presses it with the signature. turn90 at dusk with it unpressed: no curl.
+
+## 2026-11-05 · D-465 · Director · Modular kaiju: dinosaur base × reptile DNA × element replaces the three fixed presets
+The player mixes a dinosaur base (skeletal frame and mechanical hook: T-rex biped striker, Triceratops quadruped
+frontal charge/defence, Ankylosaurus wide armoured tank with AoE tail-slam), reptile DNA (Crocodile, Serpent, Komodo)
+and an element (visual shader + passive: Fire, Poison, Lightning). Demo: Crocodile DNA + T-rex base, all 3 elements.
+Full game: Crocodile, Serpent, Komodo × T-rex, Triceratops, Ankylosaurus × the 3 elements; every category may grow
+if the game succeeds. DNA and element effects: to be decided when the demo needs them.
+Why: director 11-05, with concept art (fire/croc/rex, poison/croc/rex, baby komodo/rex per element).
+Changes: the croc/rex export (D-464) is the demo body; DESIGN.md gets the modular section in the PR that builds it.
+
+## 2026-11-05 · D-464 · Director · The approved croc (croc head on the Randaling T-rex body) is the adult; the Behemoth reuses its skeleton and clips
+The adult croc (`reptilian_adult`) is now the approved croc_run21 model: croc head on the Randaling T-rex body, 12 tail
+bones and eyelids, painted voxels. Its run is the Randaling run (96 frames, three strides, keyed in place; the game takes
+travel from the planted toes). The other adult clips are re-headed onto the new skeleton until each gets its own take.
+Why: the director approved each part (paint, teeth, eye, body fixes, run flaws) and said "Export the croc". The
+teenage kaiju (Behemoth) reuses this skeleton and these animations with its own model (director 11-05), so one rig
+serves two stages. Changes: reptilian_adult kvox/rig/weights/kclip, `tools/blender/croc_trex_*.py`, licence row.
 ## 2026-11-05 · D-466 · Director · Titan unlocks are meta progression: a New Kaiju keeps them
 "it should stay unlocked its like a form of meta progression in the first playthrough / once you beat the game once youll
 have unlocked all the options". A New Kaiju on a slot keeps that slot's `titans_unlocked` (`Campaign.carry_unlocks`).
@@ -368,28 +395,3 @@ Same ruling set. Ostia Minor comes first; after it the globe always offers the t
 in the fixed sequence Carthago, Thule, Silvania, Mons Ferrata, Neptunia: conquer one and the next in sequence joins
 the pair. Difficulty always climbs and the choice is real (16 paths; the sixth pick is forced). Aurelia is last
 (D-422).
-
-## 2026-10-31 · D-419 · Director · A continent fixes the growth stage
-Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
-Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
-adolescent, adult)" in DESIGN.
-
-## 2026-10-31 · D-418 · Director · Seven continents on Tellus Nova
-Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
-Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
-Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".
-
-## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
-On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
-Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
-.kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
-"Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
-(tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".
-
-## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
-Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
-surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
-the water burst". The pre-rise spray column is removed; arcs of the kaiju's purple bolt (D-357) skate over the water,
-more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
-round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
-surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.

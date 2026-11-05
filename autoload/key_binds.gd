@@ -23,6 +23,7 @@ const ACTIONS: Array[Array] = [
 	["breath", "Breath", true],
 	["stomp", "Stomp", true],
 	["dash", "Leap", true],
+	["tail_sweep", "Tail sweep", true],
 	["ultimate", "Ultimate", true],
 	["pause", "Pause", true],
 ]
@@ -34,6 +35,7 @@ const ROWS := {
 	"Breath (croc)": ["breath"],
 	"Stomp": ["stomp"],
 	"Leap": ["dash"],
+	"Tail sweep (croc)": ["tail_sweep"],
 	"Ultimate": ["ultimate"],
 	"Pause": ["pause"],
 }
