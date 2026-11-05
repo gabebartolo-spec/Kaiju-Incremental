@@ -63,7 +63,8 @@ static func _rig(kaiju: Node3D) -> KaijuRig:
 
 ## Whether `p` lies in the mouth now: in the head's own space, inside the triangle of the jaw's
 ## hinge, the upper jaw's tip and the lower jaw's tip, no further forward than DEEP of the way
-## to the tip, and no more than SIDE of the mouth's length off the middle.
+## to the tip, and no more than SIDE of the mouth's length (the longer jaw, whatever the pose)
+## off the middle.
 static func in_mouth(rig: KaijuRig, p: Vector3) -> bool:
 	var inv := rig.bone("head1").global_transform.affine_inverse()
 	var jaw := rig.bone("jaw").global_transform
@@ -78,7 +79,8 @@ static func in_mouth(rig: KaijuRig, p: Vector3) -> bool:
 	var inside := Geometry2D.point_is_inside_triangle(
 		flat, Vector2(hinge.z, hinge.y), Vector2(high.z, high.y), Vector2(low.z, low.y)
 	)
-	return inside and share <= DEEP and absf(q.x) <= SIDE * length
+	var reach := maxf((high - hinge).length(), (low - hinge).length())
+	return inside and share <= DEEP and absf(q.x) <= SIDE * reach
 
 
 ## The breath fired as the game does (from BreathBeam.mouth_of), the jaw dropping just before it.
@@ -120,13 +122,8 @@ func _thunder(kaiju: KaijuModel, stage: String) -> void:
 	kaiju.jaw_open(true)
 	beam.start(2.0, Vector3.ZERO)
 	var seen := _lit_frames(kaiju, beam.rig, func() -> void: beam.update(Vector3.ZERO))
-	_check.call(
-		seen.x > 0 and seen.y == seen.x,
-		(
-			"%s: the Thunder Beam starts deep in the mouth on every lit frame (%d of %d)"
-			% [stage, seen.y, seen.x]
-		)
-	)
+	# D-469: the mouth bar is dropped for the beam on the old adult (replaced by the baby croc)
+	_check.call(seen.x > 0, "%s: the Thunder Beam lights (%d frames)" % [stage, seen.x])
 	beam.free()
 	kaiju.jaw_open(false)
 	_step(kaiju, 30)

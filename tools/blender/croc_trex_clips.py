@@ -45,6 +45,8 @@ def game_bone(n):  # croc_trex_export.py game_bone()
         return fixed[n]
     if n.startswith("Tail"):
         k = int(n[4]); return f"tail{2 * k - 2 + (1 if n[5] == 'b' else 0)}"
+    if n.startswith("Claw"):  # the toe's tip segment bends on its own (the ostrich toe roll, roadmap 0b peel)
+        return f"toe_{sd}" + {"Middle": "0", "Inner": "1", "Outter": "2"}[n[4:-2]]
     part = {"Clavicle": f"clavicle_{sd}", "Shoulder": f"arm_{sd}0", "Elbow": f"arm_{sd}1", "Wrist": f"arm_{sd}2",
             "Thigh": f"leg_{sd}0", "Knee": f"leg_{sd}1", "Ankle": f"leg_{sd}2", "Foot": f"leg_{sd}3"}
     return part.get(n[:-2])
@@ -72,7 +74,7 @@ skin = lambda p: G3 @ ((V(tuple(p)) - C) * S - V((0.0, ROOT_Y, 0.0)))
 deform = [b for b in ad.bones if game_bone(b.name)]
 # The rig's own game bones follow, in the order they were added, then by chain and number (rig_from_skin.py
 # extra_order and bone_names, so the rig.json and the clips list the bones in one order).
-LATER = ("lid_", "clavicle_", "neck")
+LATER = ("lid_", "clavicle_", "neck", "toe_")
 EXTRA = lambda n: (next((i + 1 for i, p in enumerate(LATER) if n.startswith(p)), 0), n.rstrip("0123456789"),
                    int(n[len(n.rstrip("0123456789")):] or 0))
 GAME_BONES = BASE_BONES + sorted({game_bone(b.name) for b in deform} - set(BASE_BONES), key=EXTRA)
@@ -411,6 +413,8 @@ def drop(name):
 # A walk may hold several strides (the baby's 90 frames hold two): one per lift of the left foot, so the
 # game's stride_m is one cycle's travel and its step clock does not run at half the keyed pace.
 cycles = max(1, sum(1 for k in range(M) if frames[k - 1][3][0] and not frames[k][3][0])) if MODE == "walk" else 1
+for gone in filter(None, __import__("os").environ.get("DROP", "").split(",")):  # retired clips
+    drop(gone)
 clips = [(NAME, frames)] + ([(MIRROR[NAME], [mirror(r) for r in frames])] if MODE in ("turn", "layer") else [])
 for name, recs in clips:
     drop(name)
@@ -427,7 +431,7 @@ for name, recs in clips:
         entry["trail"] = [round(MARKS[1] / STEP, 2), round(MARKS[2] / STEP, 2)]
     header["clips"].append(entry)
     body += pack(recs)
-if MODE == "walk" and not TREAD:  # an in-place run plays on the walk's step clock: the walk's stride stays
+if MODE == "walk" and (not TREAD or NAME == "walk"):  # an in-place run on the walk's clock keeps its stride
     header["stride_m"] = round(travel.length / cycles, 4)
 if MODE == "move":
     travel = frames[-1][5]

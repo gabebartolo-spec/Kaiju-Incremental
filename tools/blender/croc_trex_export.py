@@ -7,10 +7,10 @@ and the files the repo's import tools take, in the same format as tools/blender/
   helper joint hlp_hip_x (scenes/voxel_skin_helpers.gd), posed half way from spine0 to leg_x0, its skin its own column.
 - <out>/croc_trex_landmarks.json: motion_test landmarks at the rig's joints.
 blender -b croc_run21_ok.blend --python tools/blender/croc_trex_export.py -- <out_dir> [height_vox=320]"""
-import bpy, sys, json
+import bpy, os, sys, json
 from pathlib import Path
 import numpy as np
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 a = sys.argv[sys.argv.index("--") + 1:]
 OUT = Path(a[0]); OUT.mkdir(parents=True, exist_ok=True)
@@ -36,6 +36,8 @@ def game_bone(n):
         return fixed[n]
     if n.startswith("Tail"):  # Tail1_C, Tail1b_C .. Tail6b_C -> tail0..tail11
         k = int(n[4]); return f"tail{2 * k - 2 + (1 if n[5] == 'b' else 0)}"
+    if n.startswith("Claw"):  # the toe's tip segment bends on its own (the ostrich toe roll, roadmap 0b peel)
+        return f"toe_{sd}" + {"Middle": "0", "Inner": "1", "Outter": "2"}[n[4:-2]]
     part = {"Clavicle": f"clavicle_{sd}", "Shoulder": f"arm_{sd}0", "Elbow": f"arm_{sd}1", "Wrist": f"arm_{sd}2",
             "Thigh": f"leg_{sd}0", "Knee": f"leg_{sd}1", "Ankle": f"leg_{sd}2", "Foot": f"leg_{sd}3"}
     return part.get(n[:-2])
@@ -56,7 +58,7 @@ def fold(n):
         return f"Thigh_{sd}"
     if n.startswith(("Finger", "HandClaw")):
         return f"Wrist_{sd}"
-    if n.startswith(("Toe", "Claw")):
+    if n.startswith("Toe"):
         return f"Foot_{sd}"
     return None  # _rootJoint, Hips, Cog_C: no skin
 
@@ -85,7 +87,7 @@ def visit(n):  # parents first, along the game's parents
         order.append(b); visit(b.name)
 visit(None)
 NAMES = [b.name for b in order]
-assert len(NAMES) == 40, NAMES
+assert len(NAMES) == 46, NAMES
 HELPERS = [{"name": f"hlp_hip_{s}", "a": "spine0", "b": f"leg_{s}0", "frac": HIP_FRAC, "grow": False,
             "centre": None, "push": [0.0, 0.0, 0.0], "per_turn": [[0.0, 0.0, 0.0]] * 3} for s in ("l", "r")]
 HNAMES = [h["name"] for h in HELPERS]
@@ -117,6 +119,17 @@ tail = {b.name: AW @ b.tail_local for b in ad.bones}
 for _s in "LR":  # the foot bone stands upright; the game toe tip (leg_x3 tail) is the middle toe's tip
     tail[f"Foot_{_s}"] = tail[f"ToeMiddle_{_s}"]
     tail[f"Thigh_{_s}"] = head[f"Knee_{_s}"]  # Randaling's knee sits 3.9 off the thigh tip; the leg solve needs a chain
+# Head 10% smaller (director 2026-11-05): the head part (skull, jaw, lids) scales about the neck joint (Head_C's head),
+# each vertex by its share of head weight so the neck blends in; after LO/HI so the body's size is unchanged.
+HEAD_SCALE = float(os.environ.get("HEAD_SCALE", "0.9"))
+PIV = np.array(head["Head_C"])
+_hc = [i for i, n in enumerate(COLS) if n in NAMES and (game_bone(n) in ("head1", "jaw") or game_bone(n).startswith("lid_"))]
+_wh = W[:, _hc].sum(1) / W.sum(1)
+P = PIV + (P - PIV) * (1.0 - (1.0 - HEAD_SCALE) * _wh)[:, None]
+for n in NAMES:
+    if n in [COLS[i] for i in _hc]:
+        head[n] = Vector(PIV + (np.array(head[n]) - PIV) * HEAD_SCALE)
+        tail[n] = Vector(PIV + (np.array(tail[n]) - PIV) * HEAD_SCALE)
 ROOT = np.array([0.0, norm(head["Hips_C"])[1], 0.0])
 skin = lambda p: GAME @ (norm(p) - ROOT)
 for h, s in zip(HELPERS, ("L", "R")):  # the helper turns about the hip joint (the thigh's head)
@@ -146,7 +159,7 @@ rec["p"], rec["b"], rec["w"] = g, idx, top.astype(np.float32)
 with open(OUT / f"{STEM}.skinw", "wb") as f:
     f.write(b"KSKW" + np.array([1, len(g)], "<u4").tobytes() + np.array([len(COLS)], "<u2").tobytes())
     f.write(rec.tobytes())
-sc = (HV - 1) / (HI[2] - LO[2])
+sc = (HV - 1) / (HI[2] - LO[2])  # the unshrunk box: the game kvox keeps its grid (head_shrink.py moves its head voxels)
 origin = np.array([(LO[0] + HI[0]) / 2, (LO[1] + HI[1]) / 2, LO[2]])
 def cell_to_skin(gc):
     k = np.array([-(gc[0] + 1), gc[2], gc[1]], float)
@@ -182,6 +195,8 @@ lm = {"spine": [nl("Hips_C"), nl("Spine1_C"), nl("Spine2_C"), nl("Neck1_C")],
 dup = bpy.data.objects.new(STEM, me.copy())
 bpy.context.scene.collection.objects.link(dup)
 dup.data.transform(MW)
+for _v, _p in zip(dup.data.vertices, P):  # the shrunk head
+    _v.co = Vector(tuple(_p))
 dup.vertex_groups.clear()
 for o in bpy.context.scene.objects:
     o.select_set(o is dup)

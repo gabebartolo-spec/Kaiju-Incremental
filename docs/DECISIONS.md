@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-05 · D-468 · Director · The croc walks the Cascadeur Dracorex sample's walk, copied
+"Copy the Dracorex walk ... its a free sample they dont care." The croc's walk is the Dracorex walk sample (Cascadeur),
+copied frame by frame onto the croc rig: legs and feet take the sample's joint aims and toe heights (scaled by hip
+height), body, neck, tail and arms take its motion about their cycle mean. Overrides D-306's study-only rule for this
+sample. Fixes the back foot's tiptoe before each step.
+
 ## 2026-11-05 · D-467 · Director · The tail sweep is a button (F / pad RB), not automatic
 The automatic sweep every 2 s (D-459) curled the Colossus into a ball on every walk and turn. Director: "make it a
 button click instead and see if it stops". A press (or hold) of tail_sweep winds up and sweeps, cooldown

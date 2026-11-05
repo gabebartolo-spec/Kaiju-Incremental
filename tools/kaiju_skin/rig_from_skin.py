@@ -41,7 +41,7 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
 # the r12 tail tip and hind toes (D-307), then the eyelids (lid_*, D-335 blinks), then the collar bones (clavicle_l/_r,
 # lead 2026-10-28 call A: the Cascadeur rise's shrug, no longer folded into spine2), then neck1 and neck2 (head0 is now
 # neck0 alone; roadmap row 3, the baby jaw: the folded neck bent as one bone and tore the baby's head skin).
-LATER = ("lid_", "clavicle_", "neck")
+LATER = ("lid_", "clavicle_", "neck", "toe_")
 
 
 def extra_order(name):
