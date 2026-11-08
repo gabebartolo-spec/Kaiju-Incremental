@@ -11,8 +11,8 @@ namespace Kaiju.Sim
         long id;
         public long GetInstanceId() => id != 0 ? id : (id = System.Threading.Interlocked.Increment(ref nextId));
         public virtual bool HasMethod(string name) => false;
-        // Only the native voxel extension answers this, and it is not linked until U3.
-        public Variant Call(string name, params Variant[] args) => throw new InvalidOperationException(name);
+        // Only the native classes (Native.cs) answer this.
+        public virtual Variant Call(string name, params Variant[] args) => throw new InvalidOperationException(name);
     }
 
     public interface IGArray

@@ -13,6 +13,14 @@ static class Program
 
     static int Main()
     {
+        // SIM_NATIVE: off replays on the C# passes alone; on fails without the DLL, which CI needs,
+        // since a replay that quietly fell back would pass without testing the DLL at all.
+        string mode = Environment.GetEnvironmentVariable("SIM_NATIVE");
+        ClassDB.UseNative = mode != "off";
+        bool native = ClassDB.ClassExists("KaijuSettle");
+        Console.WriteLine("native DLL: " + (native ? "on" : "off"));
+        if (mode == "on" && !native) return 1;
+        if (native) failures += BeamCheck.Run();
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;

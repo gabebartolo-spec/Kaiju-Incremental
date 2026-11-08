@@ -142,14 +142,25 @@ jobs:
           pip install --quiet "gdtoolkit==4.*"
           python tools/unity/gd2cs.py --check \
             || { echo "C# sim is stale: run bash tools/unity/regen_sim.sh"; exit 1; }
-      - name: The C# sim plays Godot's rampages bit for bit
+      - name: The sim's native DLL builds
+        shell: cmd
+        run: unity\native\build.bat
+      - name: The C# sim plays Godot's rampages bit for bit, with the DLL
         shell: bash
         env:
           SIM_LOG_TEXT: simlog
+          SIM_NATIVE: 'on'
         run: |
           mkdir -p simlog
           dotnet run --project unity/SimTests -c Release \
             || { echo "Golden logs differ: run bash tools/unity/regen_sim.sh"; exit 1; }
+      - name: And without it
+        shell: bash
+        env:
+          SIM_NATIVE: 'off'
+        run: |
+          dotnet run --project unity/SimTests -c Release --no-build \
+            || { echo "The C# passes differ from Godot's log"; exit 1; }
       - name: Keep the text logs of a failed replay
         if: failure()
         uses: actions/upload-artifact@v4
