@@ -62,12 +62,12 @@ namespace Kaiju.Sim
         public double LengthSquared() => (float)((float)(_x * _x) + (float)(_y * _y));
         public double DistanceTo(Vector2 o)
         {
-            float dx = _x - o._x, dy = _y - o._y;
+            float dx = (float)(_x - o._x), dy = (float)(_y - o._y);
             return MathF.Sqrt((float)((float)(dx * dx) + (float)(dy * dy)));
         }
         public double DistanceSquaredTo(Vector2 o)
         {
-            float dx = _x - o._x, dy = _y - o._y;
+            float dx = (float)(_x - o._x), dy = (float)(_y - o._y);
             return (float)((float)(dx * dx) + (float)(dy * dy));
         }
         public double AngleTo(Vector2 o) => Gd.Atan232((float)Cross(o), (float)Dot(o));
@@ -95,7 +95,7 @@ namespace Kaiju.Sim
             new Vector2(Gd.Clamp32(_x, lo._x, hi._x), Gd.Clamp32(_y, lo._y, hi._y));
         public Vector2 LimitLength(double length = 1.0)
         {
-            float len = (float)length, l = MathF.Sqrt((float)((float)(_x * _x) + (float)(_y * _y)));
+            float len = (float)length, l = (float)(MathF.Sqrt((float)((float)(_x * _x) + (float)(_y * _y))));
             Vector2 v = this;
             if (l > 0f && len < l)
             {
@@ -108,9 +108,9 @@ namespace Kaiju.Sim
         {
             float d = (float)delta;
             Vector2 vd = to - this;
-            float len = MathF.Sqrt((float)((float)(vd._x * vd._x) + (float)(vd._y * vd._y)));
+            float len = (float)(MathF.Sqrt((float)((float)(vd._x * vd._x) + (float)(vd._y * vd._y))));
             if (len <= d || len < (float)Gd.CMP_EPSILON) return to;
-            float tx = vd._x / len, ty = vd._y / len;
+            float tx = (float)(vd._x / len), ty = (float)(vd._y / len);
             return new Vector2(_x + (float)(tx * d), _y + (float)(ty * d));
         }
         public Vector2 Lerp(Vector2 to, double weight)
@@ -124,7 +124,7 @@ namespace Kaiju.Sim
             float startSq = (float)((float)(_x * _x) + (float)(_y * _y)), endSq = (float)((float)(to._x * to._x) + (float)(to._y * to._y));
             if (startSq == 0f || endSq == 0f) return Lerp(to, weight);
             float start = MathF.Sqrt(startSq), end = MathF.Sqrt(endSq);
-            float result = start + (float)((float)(end - start) * w);
+            float result = (float)(start + (float)((float)(end - start) * w));
             float angle = (float)AngleTo(to);
             return Rotated((float)(angle * w)) * (float)(result / start);
         }
@@ -220,14 +220,14 @@ namespace Kaiju.Sim
         public double Dot(Vector3 o) => (float)((float)((float)(_x * o._x) + (float)(_y * o._y)) + (float)(_z * o._z));
         public Vector3 Cross(Vector3 o) =>
             new Vector3((float)((float)(_y * o._z) - (float)(_z * o._y)), (float)((float)(_z * o._x) - (float)(_x * o._z)), (float)((float)(_x * o._y) - (float)(_y * o._x)));
-        public double LengthSquared() { float a = _x * _x, b = _y * _y, c = _z * _z; return (float)((float)(a + b) + c); }
-        public double Length() { float a = _x * _x, b = _y * _y, c = _z * _z; return MathF.Sqrt((float)((float)(a + b) + c)); }
+        public double LengthSquared() { float a = (float)(_x * _x), b = (float)(_y * _y), c = (float)(_z * _z); return (float)((float)(a + b) + c); }
+        public double Length() { float a = (float)(_x * _x), b = (float)(_y * _y), c = (float)(_z * _z); return MathF.Sqrt((float)((float)(a + b) + c)); }
         public double DistanceTo(Vector3 o) => (o - this).Length();
         public double DistanceSquaredTo(Vector3 o) => (o - this).LengthSquared();
         public Vector3 Normalized()
         {
             if (!float.IsFinite(_x) || !float.IsFinite(_y) || !float.IsFinite(_z)) return ZERO;
-            float a = _x * _x, b = _y * _y, c = _z * _z, l = (float)((float)(a + b) + c);
+            float a = (float)(_x * _x), b = (float)(_y * _y), c = (float)(_z * _z), l = (float)((float)(a + b) + c);
             if (l == 0f) return ZERO;
             l = MathF.Sqrt(l);
             return new Vector3(_x / l, _y / l, _z / l);

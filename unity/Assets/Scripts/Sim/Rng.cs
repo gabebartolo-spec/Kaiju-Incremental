@@ -50,9 +50,9 @@ namespace Kaiju.Sim
         /// Godot does this sum in 32-bit floats, and so must the copy.
         public float RandfRange(float from, float to)
         {
-            float span = to - from;
-            float scaled = Randf() * span;
-            return scaled + from;
+            float span = (float)(to - from);
+            float scaled = (float)(Randf() * span);
+            return (float)(scaled + from);
         }
 
         public int RandiRange(int from, int to)

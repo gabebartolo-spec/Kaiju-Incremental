@@ -180,10 +180,10 @@ namespace Kaiju.Sim
             else
             {
                 Vector3 c = n0.Cross(n1);
-                float s = MathF.Sqrt((float)((float)(1f + d) * 2f)), rs = 1f / s;
+                float s = (float)(MathF.Sqrt((float)((float)(1f + d) * 2f))), rs = (float)(1f / s);
                 X = c.X * rs; Y = c.Y * rs; Z = c.Z * rs; W = s * 0.5f;
             }
-            float l = MathF.Sqrt((float)((float)((float)((float)(X * X) + (float)(Y * Y)) + (float)(Z * Z)) + (float)(W * W)));
+            float l = (float)(MathF.Sqrt((float)((float)((float)((float)(X * X) + (float)(Y * Y)) + (float)(Z * Z)) + (float)(W * W))));
             X /= l; Y /= l; Z /= l; W /= l;
         }
     }
@@ -202,26 +202,26 @@ namespace Kaiju.Sim
         public Basis(Vector3 axis, double angle)
         {
             float a = (float)angle;
-            float sx = axis.X * axis.X, sy = axis.Y * axis.Y, sz = axis.Z * axis.Z;
+            float sx = (float)(axis.X * axis.X), sy = (float)(axis.Y * axis.Y), sz = (float)(axis.Z * axis.Z);
             float cosine = Gd.Cos32(a);
-            float m00 = sx + (float)(cosine * (float)(1f - sx)), m11 = sy + (float)(cosine * (float)(1f - sy)), m22 = sz + (float)(cosine * (float)(1f - sz));
-            float sine = Gd.Sin32(a), t = 1f - cosine;
-            float xyzt = (float)(axis.X * axis.Y) * t, zyxs = axis.Z * sine;
-            float m01 = xyzt - zyxs, m10 = xyzt + zyxs;
-            xyzt = (float)(axis.X * axis.Z) * t; zyxs = axis.Y * sine;
-            float m02 = xyzt + zyxs, m20 = xyzt - zyxs;
-            xyzt = (float)(axis.Y * axis.Z) * t; zyxs = axis.X * sine;
-            float m12 = xyzt - zyxs, m21 = xyzt + zyxs;
+            float m00 = (float)(sx + (float)(cosine * (float)(1f - sx))), m11 = (float)(sy + (float)(cosine * (float)(1f - sy))), m22 = (float)(sz + (float)(cosine * (float)(1f - sz)));
+            float sine = Gd.Sin32(a), t = (float)(1f - cosine);
+            float xyzt = (float)((float)(axis.X * axis.Y) * t), zyxs = (float)(axis.Z * sine);
+            float m01 = (float)(xyzt - zyxs), m10 = (float)(xyzt + zyxs);
+            xyzt = (float)((float)(axis.X * axis.Z) * t); zyxs = (float)(axis.Y * sine);
+            float m02 = (float)(xyzt + zyxs), m20 = (float)(xyzt - zyxs);
+            xyzt = (float)((float)(axis.Y * axis.Z) * t); zyxs = (float)(axis.X * sine);
+            float m12 = (float)(xyzt - zyxs), m21 = (float)(xyzt + zyxs);
             R0 = new Vector3(m00, m01, m02); R1 = new Vector3(m10, m11, m12); R2 = new Vector3(m20, m21, m22);
         }
 
         public Basis(Quaternion q)
         {
-            float d = (float)((float)((float)((float)(q.X * q.X) + (float)(q.Y * q.Y)) + (float)(q.Z * q.Z)) + (float)(q.W * q.W)), s = 2f / d;
-            float xs = q.X * s, ys = q.Y * s, zs = q.Z * s;
-            float wx = q.W * xs, wy = q.W * ys, wz = q.W * zs;
-            float xx = q.X * xs, xy = q.X * ys, xz = q.X * zs;
-            float yy = q.Y * ys, yz = q.Y * zs, zz = q.Z * zs;
+            float d = (float)((float)((float)((float)(q.X * q.X) + (float)(q.Y * q.Y)) + (float)(q.Z * q.Z)) + (float)(q.W * q.W)), s = (float)(2f / d);
+            float xs = (float)(q.X * s), ys = (float)(q.Y * s), zs = (float)(q.Z * s);
+            float wx = (float)(q.W * xs), wy = (float)(q.W * ys), wz = (float)(q.W * zs);
+            float xx = (float)(q.X * xs), xy = (float)(q.X * ys), xz = (float)(q.X * zs);
+            float yy = (float)(q.Y * ys), yz = (float)(q.Y * zs), zz = (float)(q.Z * zs);
             R0 = new Vector3(1f - (float)(yy + zz), xy - wz, xz + wy);
             R1 = new Vector3(xy + wz, 1f - (float)(xx + zz), yz - wx);
             R2 = new Vector3(xz - wy, yz + wx, 1f - (float)(xx + yy));
@@ -267,7 +267,7 @@ namespace Kaiju.Sim
                 lo[i] = hi[i] = t.origin.At(i);
                 for (int j = 0; j < 3; j++)
                 {
-                    float e = row.At(j) * min.At(j), f = row.At(j) * max.At(j);
+                    float e = (float)(row.At(j) * min.At(j)), f = (float)(row.At(j) * max.At(j));
                     if (e < f) { lo[i] += e; hi[i] += f; }
                     else { lo[i] += f; hi[i] += e; }
                 }
@@ -303,7 +303,7 @@ namespace Kaiju.Sim
             Vector2 at = p - a, n = b - a;
             float l2 = (float)((float)(n.X * n.X) + (float)(n.Y * n.Y));
             if (l2 < 1e-20f) return a;
-            float d = (float)((float)(n.X * at.X) + (float)(n.Y * at.Y)) / l2;
+            float d = (float)((float)((float)(n.X * at.X) + (float)(n.Y * at.Y)) / l2);
             if (d <= 0f) return a;
             if (d >= 1f) return b;
             return a + n * d;
@@ -315,13 +315,13 @@ namespace Kaiju.Sim
             Vector2 B = toA - fromA, C = fromB - fromA, D = toB - fromA;
             float abLen = (float)((float)(B.X * B.X) + (float)(B.Y * B.Y));
             if (abLen <= 0f) return false;
-            float nx = B.X / abLen, ny = B.Y / abLen;
+            float nx = (float)(B.X / abLen), ny = (float)(B.Y / abLen);
             float cx = (float)((float)(C.X * nx) + (float)(C.Y * ny)), cy = (float)((float)(C.Y * nx) - (float)(C.X * ny));
             float dx = (float)((float)(D.X * nx) + (float)(D.Y * ny)), dy = (float)((float)(D.Y * nx) - (float)(D.X * ny));
             float eps = (float)Gd.CMP_EPSILON;
             if ((cy < -eps && dy < -eps) || (cy > eps && dy > eps)) return false;
             if (Gd.IsEqual32(cy, dy)) return false;
-            float pos = dx + (float)((float)((float)(cx - dx) * dy) / (float)(dy - cy));
+            float pos = (float)(dx + (float)((float)((float)(cx - dx) * dy) / (float)(dy - cy)));
             if (pos < 0f || pos > 1f) return false;
             result = fromA + B * pos;
             return true;
