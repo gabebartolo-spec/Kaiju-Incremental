@@ -266,10 +266,11 @@ namespace Kaiju.Sim
             GArray<Variant> o = new GArray<Variant>();
             if (nx <= 0 || n % nx != 0 || depth.Size() != n || body.Size() != n || flow.Size() != n * 4) return o;
             Rect2i r = a[5];
-            PackedFloat32Array d = depth.Duplicate(), f = flow.Duplicate();
-            double stir = KaijuNative.kc_water_step(floorY.Raw, d.Raw, body.Raw, f.Raw, n, nx, r.position.X, r.position.Y, r.size.X, r.size.Y, a[6], a[7], a[8], a[9], a[10], a[11], a[12] ? 1 : 0);
-            o.Append(d);
-            o.Append(f);
+            // Steps depth and flow in place, unlike Godot's copy-on-write returns: its one caller
+            // (WaterSim) takes them straight back, and copying them is 1 MB of garbage a tick.
+            double stir = KaijuNative.kc_water_step(floorY.Raw, depth.Raw, body.Raw, flow.Raw, n, nx, r.position.X, r.position.Y, r.size.X, r.size.Y, a[6], a[7], a[8], a[9], a[10], a[11], a[12] ? 1 : 0);
+            o.Append(depth);
+            o.Append(flow);
             o.Append(stir);
             return o;
         }

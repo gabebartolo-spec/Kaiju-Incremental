@@ -21,6 +21,7 @@ static class Program
         Console.WriteLine("native DLL: " + (native ? "on" : "off"));
         if (mode == "on" && !native) return 1;
         if (native) failures += BeamCheck.Run();
+        if (native) failures += WaterCheck.Run();
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;

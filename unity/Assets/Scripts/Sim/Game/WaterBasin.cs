@@ -77,10 +77,15 @@ namespace Kaiju.Sim
 
         public double Deepest(Rect2i r)
         {
-            double most = 0.0;
-            foreach (long j in Gd.Range(r.position.y, r.end.y))
+            float[] d = depth.Raw;
+            float most = 0f;
+            for (long j = r.position.y; j < r.end.y; j++)
             {
-                most = Gd.Maxf(most, Num.F(new GArray<Variant>(depth.Slice(j * nx + r.position.x, j * nx + r.end.x)).Max()));
+                long end = j * nx + r.end.x;
+                for (long k = j * nx + r.position.x; k < end; k++)
+                {
+                    if (d[k] > most) most = d[k];
+                }
             }
             return most;
         }
