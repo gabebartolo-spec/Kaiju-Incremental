@@ -69,7 +69,9 @@ static func _digest_building(n: int, one: Dictionary, rng: RandomNumberGenerator
 		var labelled: Array = settle.call("label", cells, frame.fixtures, dims, frame.has_fixtures)
 		var labels: PackedInt32Array = labelled[0]
 		var count: int = labelled[1]
-		var parts: Array = settle.call("islands", labels, cells, frame.fixtures, dims, frame.has_fixtures)
+		var parts: Array = settle.call(
+			"islands", labels, cells, frame.fixtures, dims, frame.has_fixtures
+		)
 		var floors: Dictionary = settle.call("floors", labels, cells, frame.fixtures, dims, count)
 		var mass: PackedInt64Array = floors["mass"]
 		var sx: PackedInt64Array = floors["sx"]
@@ -113,13 +115,16 @@ static func _tip_rows(tips: Array[Dictionary]) -> Array:
 	for t: Dictionary in tips:
 		var pivot: Vector3 = t["pivot"]
 		var dir: Vector2i = t["dir"]
-		rows.append(
-			{
-				"part": t["label"],
-				"level": t["level"],
-				"dir": [dir.x, dir.y],
-				"pivot": [pivot.x, pivot.y, pivot.z],
-			}
+		(
+			rows
+			. append(
+				{
+					"part": t["label"],
+					"level": t["level"],
+					"dir": [dir.x, dir.y],
+					"pivot": [pivot.x, pivot.y, pivot.z],
+				}
+			)
 		)
 	return rows
 

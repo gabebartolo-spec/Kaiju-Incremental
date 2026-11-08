@@ -198,7 +198,12 @@ func _export_croc() -> void:
 		var bind := _to_rig(rig, rig.bone(bone_name)).affine_inverse()
 		var rest := rig.rest_of(bone_name)
 		bones.append(
-			{"name": bone_name, "parent": rig.parent_of(bone_name), "rest": _xf(rest), "bind": _xf(bind)}
+			{
+				"name": bone_name,
+				"parent": rig.parent_of(bone_name),
+				"rest": _xf(rest),
+				"bind": _xf(bind)
+			}
 		)
 	_write_json(
 		"rig.json",
@@ -222,10 +227,18 @@ func _to_rig(rig: Node3D, node: Node3D) -> Transform3D:
 
 func _xf(t: Transform3D) -> Array:
 	return [
-		t.basis.x.x, t.basis.x.y, t.basis.x.z,
-		t.basis.y.x, t.basis.y.y, t.basis.y.z,
-		t.basis.z.x, t.basis.z.y, t.basis.z.z,
-		t.origin.x, t.origin.y, t.origin.z,
+		t.basis.x.x,
+		t.basis.x.y,
+		t.basis.x.z,
+		t.basis.y.x,
+		t.basis.y.y,
+		t.basis.y.z,
+		t.basis.z.x,
+		t.basis.z.y,
+		t.basis.z.z,
+		t.origin.x,
+		t.origin.y,
+		t.origin.z,
 	]
 
 
