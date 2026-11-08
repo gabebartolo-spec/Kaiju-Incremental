@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-09 · D-470 · Director · Kaiju moves from Godot to Unity; Godot stays the working game until the port catches up
+Ruled after first-hand tests on the director's criteria: "i care if it makes the game better", judged on ease for
+Claude Code, free assets, animation and graphics options, not cost or frames. Found: Unity retargeted a Mixamo-named
+clip on a default import, where Godot needed a scripted bone table and a removed Armature track. Free results for
+explosion, fire and destruction: Unity Asset Store 192, 353, 126; Godot Asset Library 0, 15, 4 (counts only; quality
+and licences not checked). Ease for Claude Code is split. The director declined a flame side-by-side before ruling, and
+VFX Graph can only be authored from code through an internal API, so flames port first and are the gate. PR #579
+carries on in Godot. All hard rules stand. Changes: `docs/ROADMAP.md` (Unity port), `docs/DESIGN.md`, `CLAUDE.md`.
+
 ## 2026-11-05 · D-466 · Director · Titan unlocks are meta progression: a New Kaiju keeps them
 "it should stay unlocked its like a form of meta progression in the first playthrough / once you beat the game once youll
 have unlocked all the options". A New Kaiju on a slot keeps that slot's `titans_unlocked` (`Campaign.carry_unlocks`).
@@ -385,11 +394,3 @@ Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py
 .kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
 "Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
 (tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".
-
-## 2026-10-31 · D-416 · Director · Purple electricity crackles on the water before the rise, not spray
-Seeing spray rise before the head broke the surface: "why would there be bubbles coming up / instead, have the waters
-surface start crackling with purple electricity / then, as he emerges ... incorporate the same purple electricity into
-the water burst". The pre-rise spray column is removed; arcs of the kaiju's purple bolt (D-357) skate over the water,
-more as the rise nears (scenes/intro_crackle.gd, tuning intro.water crackle_*). At the break the burst is thrown up
-round his body and the same arcs climb it; on "the lightning lingers way too long" they thin to none 0.5 s after he
-surfaces (burst_arc_seconds). "Yes, ship it". Amends D-414's fountain.

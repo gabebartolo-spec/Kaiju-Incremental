@@ -57,6 +57,24 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 - Cleanup: octopus and insectoid code removed (#535, D-438).
 - In review: bug bash, nine verified bugs fixed with tests (#560).
 
+## Unity port (D-470)
+
+Godot stays the working game until U6 passes. Each row ports its own tests. To move, measured on main at 0d96162fc:
+about 87,000 lines of GDScript (scenes 46,800, tools 20,000, sim 18,800, autoload 1,400), 47,700 lines of tests, 53
+shaders (3,600 lines) and 2,900 lines of C++. Only 8 `.tscn` files exist, so most of this is a language port. No ETA
+until U2's first module gives a measured rate. Unknown until U0: Unity licensing in GitHub Actions, and whether the
+sim runs under `dotnet test` (dotnet 10 is on this PC; untested).
+
+| # | Row | Status |
+|---|---|---|
+| U0 | Foundation: commit the slice, register Unity and the AgX fit, the director rules URP or HDRP, CI for `unity/` | open |
+| U1 | Flames, the gate: tall flames (D-190) and VFX_STYLE fire in the ruled pipeline, by VFX Graph or by hand-written C# and HLSL. The director judges a 1080p dusk clip beside Godot's. If Unity loses, back to the director before anything else ports | open |
+| U2 | Sim: `sim/` to plain C# with no UnityEngine reference; Godot's RNG copied exactly; the same seed gives the same event log as Godot | open |
+| U3 | Native: carve, mesher, settle, walk and water off godot-cpp, onto a plain DLL as in the slice | open |
+| U4 | Rampage on screen: city, destruction, croc, water, smoke, Taskforce, camera, shaders | open |
+| U5 | Game flow: title, creation, globe, results, tree, UI, audio, saves, Windows export; capture and bake tools | open |
+| U6 | Parity and switch: the director plays both and rules; CI and these rules rewritten; Godot retired | open |
+
 ## Open work
 
 | # | Row | Status |
