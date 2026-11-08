@@ -21,6 +21,22 @@ from lark import Token, Tree
 
 SKIP = {"sim_teardown.gd"}  # breaks RefCounted cycles; the C# garbage collector has none to break
 OUT = "unity/Assets/Scripts/Sim/Game"
+# Methods whose C# body is written here: the GDScript idiom is right for Godot and wrong for C#. The
+# golden logs still hold these to Godot's numbers on every tick (D-470).
+REWRITTEN = {
+    # GDScript's Array(slice).max() runs natively; in C# it is a heap copy of each row, every tick.
+    ("WaterBasin", "deepest"): """float[] d = depth.Raw;
+float most = 0f;
+for (long j = r.position.y; j < r.end.y; j++)
+{
+    long end = j * nx + r.end.x;
+    for (long k = j * nx + r.position.x; k < end; k++)
+    {
+        if (d[k] > most) most = d[k];
+    }
+}
+return most;""",
+}
 
 KEYWORDS = set(
     """abstract as base bool break byte case catch char checked class const continue decimal default
@@ -1261,7 +1277,16 @@ class Emitter:
                 elif name in self.cls.subclassed:
                     mods += " virtual"
             self.w(f"{mods} {self.cs_type(self.fn_ret)} {pascal(name)}({sig})")
-            self.block_stmts_braced(body)
+            written = REWRITTEN.get((self.cls.name, name))
+            if written:
+                self.w("{")
+                self.ind += 1
+                for line in written.splitlines():
+                    self.w(line)
+                self.ind -= 1
+                self.w("}")
+            else:
+                self.block_stmts_braced(body)
             if not all_literal:
                 self.overloads(m, params, mods.replace(" virtual", "").replace(" override", ""))
         self.pop()
