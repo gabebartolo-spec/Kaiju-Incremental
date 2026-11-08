@@ -128,6 +128,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      # The rampages stamp the baked buildings in assets/ (LFS); pointers read as empty buildings.
+      - uses: ./.github/actions/lfs-files
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -144,13 +146,12 @@ jobs:
         shell: bash
         env:
           SIM_LOG_TEXT: simlog
-          SIM_PROBE: simlog/probe_ci.bin
         run: |
           mkdir -p simlog
           dotnet run --project unity/SimTests -c Release \
             || { echo "Golden logs differ: run bash tools/unity/regen_sim.sh"; exit 1; }
-      - name: Keep the text logs of the replay
-        if: always()
+      - name: Keep the text logs of a failed replay
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: sim-text-logs

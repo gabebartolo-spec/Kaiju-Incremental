@@ -13,8 +13,6 @@ static class Program
 
     static int Main()
     {
-        string probe = Environment.GetEnvironmentVariable("SIM_PROBE");
-        if (probe != null) MathProbe.Run(probe);
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;
