@@ -62,13 +62,15 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 Godot stays the working game until U6 passes. Each row ports its own tests. To move, measured on main at 0d96162fc:
 about 87,000 lines of GDScript (scenes 46,800, tools 20,000, sim 18,800, autoload 1,400), 47,700 lines of tests, 53
 shaders (3,600 lines) and 2,900 lines of C++. Only 8 `.tscn` files exist, so most of this is a language port. No ETA
-until U2's first module gives a measured rate. Unknown until U0: Unity licensing in GitHub Actions, and whether the
-sim runs under `dotnet test` (dotnet 10 is on this PC; untested).
+until U2's first module gives a measured rate. The demo ships from Unity, so M3 and M4 finish in the port; Godot takes
+only bug fixes and open PRs (D-472). `unity/` is on HDRP (D-471). CI runs no Unity editor yet: a Personal licence in
+GitHub Actions needs a Unity login stored as secrets, and plain C# runs under dotnet 10 without one, so U2's sim tests
+need no licence. Rendering checks stay on this PC. A fresh checkout builds the slice with `unity/README.md`.
 
 | # | Row | Status |
 |---|---|---|
-| U0 | Foundation: commit the slice, register Unity and the AgX fit, the director rules URP or HDRP, CI for `unity/` | open |
-| U1 | Flames, the gate: tall flames (D-190) and VFX_STYLE fire in the ruled pipeline, by VFX Graph or by hand-written C# and HLSL. The director judges a 1080p dusk clip beside Godot's. If Unity loses, back to the director before anything else ports | open |
+| U0 | Foundation: the slice committed on HDRP, Unity and the AgX fit registered, `unity/` skips the Godot jobs and takes the lints | done |
+| U1 | Flames, the gate: tall flames (D-190) and VFX_STYLE fire in HDRP, by hand-written C# and HLSL (VFX Graph can only be authored through an internal API). The director judges a 1080p dusk clip beside Godot's. If Unity loses, back to the director before anything else ports | open |
 | U2 | Sim: `sim/` to plain C# with no UnityEngine reference; Godot's RNG copied exactly; the same seed gives the same event log as Godot | open |
 | U3 | Native: carve, mesher, settle, walk and water off godot-cpp, onto a plain DLL as in the slice | open |
 | U4 | Rampage on screen: city, destruction, croc, water, smoke, Taskforce, camera, shaders | open |
@@ -101,13 +103,13 @@ sim runs under `dotnet test` (dotnet 10 is on this PC; untested).
 
 - **M1: feel pass**
 - **M2: Taskforce agents**
-- **M3: demo complete**, which needs all of these:
+- **M3: demo complete**, finished in the Unity port (D-472), which needs all of these:
   - done: full Taskforce (gas soldiers and walking mechs #450, gunships #556; D-143, D-145, D-152)
   - textures
   - helicopter deaths (gunships fall and crash, D-458, #563)
   - the overworld loop: globe, real mission, conquest
   - done: graphics preview (D-393), load art (D-427), end screen, feedback link (D-395)
-- **M4: Itch release candidate**
+- **M4: Itch release candidate**, shipped from Unity (D-472)
   - done: build and release tooling, draft page, RC checklist (D-457, docs/release/)
   - open: icon, page approval, price, RC play test, upload
 

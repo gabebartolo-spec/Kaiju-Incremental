@@ -1,0 +1,10 @@
+{
+    "name": "Slice",
+    "references": [
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Config.Runtime"
+    ],
+    "allowUnsafeCode": true,
+    "autoReferenced": true
+}

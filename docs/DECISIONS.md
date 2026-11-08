@@ -4,6 +4,15 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-09 · D-472 · Director · The Itch demo ships from Unity; Godot takes only bug fixes and open PRs
+"Ship from Unity": nothing gets built twice. Textures and the overworld loop, the open M3 work, are finished in the
+port, and M4 follows it. Godot stays playable until U6 passes. Changes: `docs/ROADMAP.md`, `CLAUDE.md`.
+
+## 2026-11-09 · D-471 · Director · Unity's render pipeline is HDRP
+"HDRP": the ruling was on quality, with frames not a criterion. The slice's voxel surfaces run on HDRP's own Lit through
+a generated wrapper (`tools/unity/build_lit_shader.py`), so they keep its lighting, shadows, SSAO and fog; AgX is a
+custom post process. Changes: `docs/ROADMAP.md`, `docs/LICENSING_REGISTER.md`.
+
 ## 2026-11-09 · D-470 · Director · Kaiju moves from Godot to Unity; Godot stays the working game until the port catches up
 Ruled after first-hand tests on the director's criteria: "i care if it makes the game better", judged on ease for
 Claude Code, free assets, animation and graphics options, not cost or frames. Found: Unity retargeted a Mixamo-named
@@ -387,10 +396,3 @@ adolescent, adult)" in DESIGN.
 Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
 Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
 Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".
-
-## 2026-10-31 · D-417 · Director · Kaiju legs skin with centre-of-rotation; adult thighs thickened 1.3x
-On the thigh deforming badly (thin tube, pinched at the belly, creased when the leg swings back): "Yes, build CoR".
-Blend weights now pivot about baked centres of rotation (tools/kaiju_skin/cor.py, voxel_skin QLERP, render_opt
-.kaiju_cor_skinning), which stops the volume collapse; the thigh stayed thin standing because the model is thin, so
-"Thicken + keep CoR": thicken.py pushes leg_x0/x1 voxels out about the femur, tapered to the knee and into the hip
-(tuning skin_bake.thicken). Of 1.0/1.15/1.3/1.45 side by side the director picked "1.3".

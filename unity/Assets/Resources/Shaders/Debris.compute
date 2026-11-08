@@ -1,0 +1,42 @@
+// Falling debris: gravity, then landing on a heightfield that grows with every grain, so rubble piles up.
+// A landed particle's colour loses its alpha byte and stays where it is.
+#pragma kernel Step
+
+struct Particle
+{
+    float3 pos;
+    uint color;
+    float3 vel;
+    uint seed;
+};
+
+RWStructuredBuffer<Particle> _Particles;
+RWStructuredBuffer<uint> _Height;
+float _Dt, _Gravity, _GridStep, _Grain;
+float2 _GridMin;
+uint _Count;
+int _GridCells;
+
+[numthreads(256, 1, 1)]
+void Step(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x;
+    if (i >= _Count) return;
+    Particle p = _Particles[i];
+    if ((p.color >> 24) == 0u) return;
+    p.vel.y -= _Gravity * _Dt;
+    p.pos += p.vel * _Dt;
+    int2 c = (int2)floor((p.pos.xz - _GridMin) / _GridStep);
+    bool inside = c.x >= 0 && c.y >= 0 && c.x < _GridCells && c.y < _GridCells;
+    uint at = inside ? uint(c.x + c.y * _GridCells) : 0u;
+    float ground = inside ? float(_Height[at]) * _Grain : 0.0;
+    if (p.pos.y <= ground && p.vel.y < 0.0)
+    {
+        p.pos.y = ground;
+        p.vel = 0;
+        p.color &= 0x00FFFFFFu;
+        if (p.color == 0u) p.color = 1u; // pure black stays drawn: zero means an unused slot
+        if (inside) InterlockedAdd(_Height[at], 1u);
+    }
+    _Particles[i] = p;
+}

@@ -20,6 +20,8 @@ on:
     paths-ignore:
       - "docs/**"
       - "**/*.md"
+      - "unity/**"
+      - "tools/unity/**"
   # By hand, for any branch (the demo build comes from here): exports `ref` (default: the
   # branch the run is dispatched on) and uploads KaijuEvolution-<sha> for 7 days.
   #   gh workflow run build.yml --ref main [-f ref=<branch or sha>]

@@ -32,6 +32,8 @@ on:
     paths-ignore:
       - "docs/**"
       - "**/*.md"
+      - "unity/**"
+      - "tools/unity/**"
   workflow_dispatch:
 
 # A pull request's newer push cancels its older run; every push to main gets its own verdict.
@@ -63,7 +65,7 @@ jobs:
           # a pull request ref (tools/ci_reuse_pr_run.sh).
           fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
 
-      # Anything outside docs/ and *.md files counts as code.
+      # Anything outside docs/, *.md files and the Unity port counts as code (D-470: Godot never reads unity/).
       - name: Check for code changes
         id: changes
         env:
@@ -77,9 +79,9 @@ jobs:
             if [ "$IS_DRAFT" = "true" ]; then
               code=false
               reason="draft pull request: the Godot checks run when it is marked ready for review"
-            elif ! git diff --name-only HEAD^1 HEAD | grep -qvE '^docs/|\.md$'; then
+            elif ! git diff --name-only HEAD^1 HEAD | grep -qvE '^docs/|\.md$|^unity/|^tools/unity/'; then
               code=false
-              reason="documentation only"
+              reason="documentation or the Unity port only"
             else
               reused=$(bash tools/ci_reuse_dispatch_run.sh HEAD "$PR_HEAD" || true)
               if [ -n "$reused" ]; then

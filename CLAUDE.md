@@ -1,6 +1,6 @@
 # Kaiju Incremental: working rules for every Claude Code session
 
-Godot 4.7.2, GDScript (static typing on); moving to Unity, Godot stays the working game until then (D-470). Read this file, your worktree's handoff (one file in `~/.claude/handoffs/`, named by the SessionStart hook, outside git), the
+Godot 4.7.2, GDScript (static typing on); moving to Unity, Godot stays the working game until then and takes only bug fixes and open PRs (D-470, D-472). Read this file, your worktree's handoff (one file in `~/.claude/handoffs/`, named by the SessionStart hook, outside git), the
 `docs/DESIGN.md` sections your task changes or relies on, the `docs/ROADMAP.md` index and only the rows your task names;
 grep the rest. No read-receipt message.
 Shared rules: `~/.claude/CLAUDE.md`; this file holds only what is true for Kaiju Incremental.
