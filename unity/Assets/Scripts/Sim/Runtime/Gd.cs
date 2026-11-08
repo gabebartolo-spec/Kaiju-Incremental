@@ -48,6 +48,11 @@ namespace Kaiju.Sim
         public static double Clampf(double v, double lo, double hi) => v < lo ? lo : (v > hi ? hi : v);
         public static long Clampi(long v, long lo, long hi) => v < lo ? lo : (v > hi ? hi : v);
         public static double Cos(double v) => Math.Cos(v);
+        // Godot's 32-bit sin, cos and atan2 equal the 64-bit result narrowed (200,000 inputs, 0 differ);
+        // MathF's come from each platform's C library and differ between runtimes and machines.
+        public static float Sin32(float v) => (float)Math.Sin((double)v);
+        public static float Cos32(float v) => (float)Math.Cos((double)v);
+        public static float Atan232(float y, float x) => (float)Math.Atan2((double)y, (double)x);
         public static double DegToRad(double y) => y * (PI / 180.0);
         public static double Exp(double v) => Math.Exp(v);
         public static double Floor(double v) => Math.Floor(v);

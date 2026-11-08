@@ -28,7 +28,7 @@ namespace Kaiju.Sim
         public static Vector2 FromAngle(double angle)
         {
             float a = (float)angle;
-            return new Vector2(MathF.Cos(a), MathF.Sin(a));
+            return new Vector2(Gd.Cos32(a), Gd.Sin32(a));
         }
 
         public static Vector2 operator +(Vector2 a, Vector2 b) => new Vector2(a._x + b._x, a._y + b._y);
@@ -55,26 +55,26 @@ namespace Kaiju.Sim
             get => i == 0 ? _x : _y;
             set { if (i == 0) _x = (float)value; else _y = (float)value; }
         }
-        public double Angle() => MathF.Atan2(_y, _x);
-        public double Dot(Vector2 o) => _x * o._x + _y * o._y;
-        public double Cross(Vector2 o) => _x * o._y - _y * o._x;
-        public double Length() => MathF.Sqrt(_x * _x + _y * _y);
-        public double LengthSquared() => _x * _x + _y * _y;
+        public double Angle() => Gd.Atan232(_y, _x);
+        public double Dot(Vector2 o) => (float)((float)(_x * o._x) + (float)(_y * o._y));
+        public double Cross(Vector2 o) => (float)((float)(_x * o._y) - (float)(_y * o._x));
+        public double Length() => MathF.Sqrt((float)((float)(_x * _x) + (float)(_y * _y)));
+        public double LengthSquared() => (float)((float)(_x * _x) + (float)(_y * _y));
         public double DistanceTo(Vector2 o)
         {
             float dx = _x - o._x, dy = _y - o._y;
-            return MathF.Sqrt(dx * dx + dy * dy);
+            return MathF.Sqrt((float)((float)(dx * dx) + (float)(dy * dy)));
         }
         public double DistanceSquaredTo(Vector2 o)
         {
             float dx = _x - o._x, dy = _y - o._y;
-            return dx * dx + dy * dy;
+            return (float)((float)(dx * dx) + (float)(dy * dy));
         }
-        public double AngleTo(Vector2 o) => MathF.Atan2((float)Cross(o), (float)Dot(o));
+        public double AngleTo(Vector2 o) => Gd.Atan232((float)Cross(o), (float)Dot(o));
         public Vector2 Normalized()
         {
             if (!float.IsFinite(_x) || !float.IsFinite(_y)) return ZERO;
-            float l = _x * _x + _y * _y;
+            float l = (float)((float)(_x * _x) + (float)(_y * _y));
             if (l == 0f) return ZERO;
             l = MathF.Sqrt(l);
             return new Vector2(_x / l, _y / l);
@@ -82,8 +82,8 @@ namespace Kaiju.Sim
         public Vector2 DirectionTo(Vector2 to) => (to - this).Normalized();
         public Vector2 Rotated(double by)
         {
-            float a = (float)by, sine = MathF.Sin(a), cosi = MathF.Cos(a);
-            return new Vector2(_x * cosi - _y * sine, _x * sine + _y * cosi);
+            float a = (float)by, sine = Gd.Sin32(a), cosi = Gd.Cos32(a);
+            return new Vector2((float)((float)(_x * cosi) - (float)(_y * sine)), (float)((float)(_x * sine) + (float)(_y * cosi)));
         }
         public Vector2 Orthogonal() => new Vector2(_y, -_x);
         public Vector2 Abs() => new Vector2(MathF.Abs(_x), MathF.Abs(_y));
@@ -95,7 +95,7 @@ namespace Kaiju.Sim
             new Vector2(Gd.Clamp32(_x, lo._x, hi._x), Gd.Clamp32(_y, lo._y, hi._y));
         public Vector2 LimitLength(double length = 1.0)
         {
-            float len = (float)length, l = MathF.Sqrt(_x * _x + _y * _y);
+            float len = (float)length, l = MathF.Sqrt((float)((float)(_x * _x) + (float)(_y * _y)));
             Vector2 v = this;
             if (l > 0f && len < l)
             {
@@ -108,25 +108,25 @@ namespace Kaiju.Sim
         {
             float d = (float)delta;
             Vector2 vd = to - this;
-            float len = MathF.Sqrt(vd._x * vd._x + vd._y * vd._y);
+            float len = MathF.Sqrt((float)((float)(vd._x * vd._x) + (float)(vd._y * vd._y)));
             if (len <= d || len < (float)Gd.CMP_EPSILON) return to;
             float tx = vd._x / len, ty = vd._y / len;
-            return new Vector2(_x + tx * d, _y + ty * d);
+            return new Vector2(_x + (float)(tx * d), _y + (float)(ty * d));
         }
         public Vector2 Lerp(Vector2 to, double weight)
         {
             float w = (float)weight;
-            return new Vector2(_x + (to._x - _x) * w, _y + (to._y - _y) * w);
+            return new Vector2(_x + (float)((float)(to._x - _x) * w), _y + (float)((float)(to._y - _y) * w));
         }
         public Vector2 Slerp(Vector2 to, double weight)
         {
             float w = (float)weight;
-            float startSq = _x * _x + _y * _y, endSq = to._x * to._x + to._y * to._y;
+            float startSq = (float)((float)(_x * _x) + (float)(_y * _y)), endSq = (float)((float)(to._x * to._x) + (float)(to._y * to._y));
             if (startSq == 0f || endSq == 0f) return Lerp(to, weight);
             float start = MathF.Sqrt(startSq), end = MathF.Sqrt(endSq);
-            float result = start + (end - start) * w;
+            float result = start + (float)((float)(end - start) * w);
             float angle = (float)AngleTo(to);
-            return Rotated(angle * w) * (result / start);
+            return Rotated((float)(angle * w)) * (float)(result / start);
         }
         public bool IsZeroApprox() => Gd.IsZero32(_x) && Gd.IsZero32(_y);
         public bool IsEqualApprox(Vector2 o) => Gd.IsEqual32(_x, o._x) && Gd.IsEqual32(_y, o._y);
@@ -217,17 +217,17 @@ namespace Kaiju.Sim
         public override int GetHashCode() => (_x.GetHashCode() * 397 ^ _y.GetHashCode()) * 397 ^ _z.GetHashCode();
         public override string ToString() => $"({Gd.Str32(_x)}, {Gd.Str32(_y)}, {Gd.Str32(_z)})";
 
-        public double Dot(Vector3 o) => _x * o._x + _y * o._y + _z * o._z;
+        public double Dot(Vector3 o) => (float)((float)((float)(_x * o._x) + (float)(_y * o._y)) + (float)(_z * o._z));
         public Vector3 Cross(Vector3 o) =>
-            new Vector3(_y * o._z - _z * o._y, _z * o._x - _x * o._z, _x * o._y - _y * o._x);
-        public double LengthSquared() { float a = _x * _x, b = _y * _y, c = _z * _z; return a + b + c; }
-        public double Length() { float a = _x * _x, b = _y * _y, c = _z * _z; return MathF.Sqrt(a + b + c); }
+            new Vector3((float)((float)(_y * o._z) - (float)(_z * o._y)), (float)((float)(_z * o._x) - (float)(_x * o._z)), (float)((float)(_x * o._y) - (float)(_y * o._x)));
+        public double LengthSquared() { float a = _x * _x, b = _y * _y, c = _z * _z; return (float)((float)(a + b) + c); }
+        public double Length() { float a = _x * _x, b = _y * _y, c = _z * _z; return MathF.Sqrt((float)((float)(a + b) + c)); }
         public double DistanceTo(Vector3 o) => (o - this).Length();
         public double DistanceSquaredTo(Vector3 o) => (o - this).LengthSquared();
         public Vector3 Normalized()
         {
             if (!float.IsFinite(_x) || !float.IsFinite(_y) || !float.IsFinite(_z)) return ZERO;
-            float a = _x * _x, b = _y * _y, c = _z * _z, l = a + b + c;
+            float a = _x * _x, b = _y * _y, c = _z * _z, l = (float)((float)(a + b) + c);
             if (l == 0f) return ZERO;
             l = MathF.Sqrt(l);
             return new Vector3(_x / l, _y / l, _z / l);
@@ -240,7 +240,7 @@ namespace Kaiju.Sim
         public Vector3 Lerp(Vector3 to, double weight)
         {
             float w = (float)weight;
-            return new Vector3(_x + (to._x - _x) * w, _y + (to._y - _y) * w, _z + (to._z - _z) * w);
+            return new Vector3(_x + (float)((float)(to._x - _x) * w), _y + (float)((float)(to._y - _y) * w), _z + (float)((float)(to._z - _z) * w));
         }
         public bool IsZeroApprox() => Gd.IsZero32(_x) && Gd.IsZero32(_y) && Gd.IsZero32(_z);
         internal Vector3 AnyPerpendicular() =>

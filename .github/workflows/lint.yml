@@ -142,9 +142,20 @@ jobs:
             || { echo "C# sim is stale: run bash tools/unity/regen_sim.sh"; exit 1; }
       - name: The C# sim plays Godot's rampages bit for bit
         shell: bash
+        env:
+          SIM_LOG_TEXT: simlog
+          SIM_PROBE: simlog/probe_ci.bin
         run: |
+          mkdir -p simlog
           dotnet run --project unity/SimTests -c Release \
             || { echo "Golden logs differ: run bash tools/unity/regen_sim.sh"; exit 1; }
+      - name: Keep the text logs of the replay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-text-logs
+          path: simlog/
+          retention-days: 7
 
   licence-register:
     runs-on: ubuntu-latest

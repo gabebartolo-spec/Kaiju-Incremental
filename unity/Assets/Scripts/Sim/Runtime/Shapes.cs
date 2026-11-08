@@ -53,20 +53,20 @@ namespace Kaiju.Sim
         public bool HasPoint(Vector2 p)
         {
             if (p.X < position.X || p.Y < position.Y) return false;
-            if (p.X >= position.X + size.X || p.Y >= position.Y + size.Y) return false;
+            if (p.X >= (float)(position.X + size.X) || p.Y >= (float)(position.Y + size.Y)) return false;
             return true;
         }
         public Rect2 Grow(double amount)
         {
             float a = (float)amount;
             return new Rect2(new Vector2(position.X - a, position.Y - a),
-                new Vector2(size.X + a * 2f, size.Y + a * 2f));
+                new Vector2(size.X + (float)(a * 2f), size.Y + (float)(a * 2f)));
         }
         public Rect2 GrowIndividual(double left, double top, double right, double bottom)
         {
             float l = (float)left, t = (float)top, r = (float)right, b = (float)bottom;
             return new Rect2(new Vector2(position.X - l, position.Y - t),
-                new Vector2(size.X + (l + r), size.Y + (t + b)));
+                new Vector2(size.X + (float)(l + r), size.Y + (float)(t + b)));
         }
         public Rect2 Expand(Vector2 v)
         {
@@ -143,7 +143,7 @@ namespace Kaiju.Sim
         public bool HasPoint(Vector3 p)
         {
             if (p.X < position.X || p.Y < position.Y || p.Z < position.Z) return false;
-            if (p.X > position.X + size.X || p.Y > position.Y + size.Y || p.Z > position.Z + size.Z) return false;
+            if (p.X > (float)(position.X + size.X) || p.Y > (float)(position.Y + size.Y) || p.Z > (float)(position.Z + size.Z)) return false;
             return true;
         }
         public AABB Merge(AABB o)
@@ -157,7 +157,7 @@ namespace Kaiju.Sim
         {
             float a = (float)by;
             return new AABB(new Vector3(position.X - a, position.Y - a, position.Z - a),
-                new Vector3(size.X + 2f * a, size.Y + 2f * a, size.Z + 2f * a));
+                new Vector3(size.X + (float)(2f * a), size.Y + (float)(2f * a), size.Z + (float)(2f * a)));
         }
     }
 
@@ -180,10 +180,10 @@ namespace Kaiju.Sim
             else
             {
                 Vector3 c = n0.Cross(n1);
-                float s = MathF.Sqrt((1f + d) * 2f), rs = 1f / s;
+                float s = MathF.Sqrt((float)((float)(1f + d) * 2f)), rs = 1f / s;
                 X = c.X * rs; Y = c.Y * rs; Z = c.Z * rs; W = s * 0.5f;
             }
-            float l = MathF.Sqrt(X * X + Y * Y + Z * Z + W * W);
+            float l = MathF.Sqrt((float)((float)((float)((float)(X * X) + (float)(Y * Y)) + (float)(Z * Z)) + (float)(W * W)));
             X /= l; Y /= l; Z /= l; W /= l;
         }
     }
@@ -203,32 +203,32 @@ namespace Kaiju.Sim
         {
             float a = (float)angle;
             float sx = axis.X * axis.X, sy = axis.Y * axis.Y, sz = axis.Z * axis.Z;
-            float cosine = MathF.Cos(a);
-            float m00 = sx + cosine * (1f - sx), m11 = sy + cosine * (1f - sy), m22 = sz + cosine * (1f - sz);
-            float sine = MathF.Sin(a), t = 1f - cosine;
-            float xyzt = axis.X * axis.Y * t, zyxs = axis.Z * sine;
+            float cosine = Gd.Cos32(a);
+            float m00 = sx + (float)(cosine * (float)(1f - sx)), m11 = sy + (float)(cosine * (float)(1f - sy)), m22 = sz + (float)(cosine * (float)(1f - sz));
+            float sine = Gd.Sin32(a), t = 1f - cosine;
+            float xyzt = (float)(axis.X * axis.Y) * t, zyxs = axis.Z * sine;
             float m01 = xyzt - zyxs, m10 = xyzt + zyxs;
-            xyzt = axis.X * axis.Z * t; zyxs = axis.Y * sine;
+            xyzt = (float)(axis.X * axis.Z) * t; zyxs = axis.Y * sine;
             float m02 = xyzt + zyxs, m20 = xyzt - zyxs;
-            xyzt = axis.Y * axis.Z * t; zyxs = axis.X * sine;
+            xyzt = (float)(axis.Y * axis.Z) * t; zyxs = axis.X * sine;
             float m12 = xyzt - zyxs, m21 = xyzt + zyxs;
             R0 = new Vector3(m00, m01, m02); R1 = new Vector3(m10, m11, m12); R2 = new Vector3(m20, m21, m22);
         }
 
         public Basis(Quaternion q)
         {
-            float d = q.X * q.X + q.Y * q.Y + q.Z * q.Z + q.W * q.W, s = 2f / d;
+            float d = (float)((float)((float)((float)(q.X * q.X) + (float)(q.Y * q.Y)) + (float)(q.Z * q.Z)) + (float)(q.W * q.W)), s = 2f / d;
             float xs = q.X * s, ys = q.Y * s, zs = q.Z * s;
             float wx = q.W * xs, wy = q.W * ys, wz = q.W * zs;
             float xx = q.X * xs, xy = q.X * ys, xz = q.X * zs;
             float yy = q.Y * ys, yz = q.Y * zs, zz = q.Z * zs;
-            R0 = new Vector3(1f - (yy + zz), xy - wz, xz + wy);
-            R1 = new Vector3(xy + wz, 1f - (xx + zz), yz - wx);
-            R2 = new Vector3(xz - wy, yz + wx, 1f - (xx + yy));
+            R0 = new Vector3(1f - (float)(yy + zz), xy - wz, xz + wy);
+            R1 = new Vector3(xy + wz, 1f - (float)(xx + zz), yz - wx);
+            R2 = new Vector3(xz - wy, yz + wx, 1f - (float)(xx + yy));
         }
 
         Vector3 Col(int i) => new Vector3(R0.At(i), R1.At(i), R2.At(i));
-        float TDot(Vector3 v, int i) => R0.At(i) * v.X + R1.At(i) * v.Y + R2.At(i) * v.Z;
+        float TDot(Vector3 v, int i) => (float)((float)((float)(R0.At(i) * v.X) + (float)(R1.At(i) * v.Y)) + (float)(R2.At(i) * v.Z));
 
         public static Basis operator *(Basis a, Basis b) => new Basis(
             new Vector3(b.TDot(a.R0, 0), b.TDot(a.R0, 1), b.TDot(a.R0, 2)),
@@ -301,9 +301,9 @@ namespace Kaiju.Sim
         public static Vector2 GetClosestPointToSegment(Vector2 p, Vector2 a, Vector2 b)
         {
             Vector2 at = p - a, n = b - a;
-            float l2 = n.X * n.X + n.Y * n.Y;
+            float l2 = (float)((float)(n.X * n.X) + (float)(n.Y * n.Y));
             if (l2 < 1e-20f) return a;
-            float d = (n.X * at.X + n.Y * at.Y) / l2;
+            float d = (float)((float)(n.X * at.X) + (float)(n.Y * at.Y)) / l2;
             if (d <= 0f) return a;
             if (d >= 1f) return b;
             return a + n * d;
@@ -313,15 +313,15 @@ namespace Kaiju.Sim
         {
             result = default;
             Vector2 B = toA - fromA, C = fromB - fromA, D = toB - fromA;
-            float abLen = B.X * B.X + B.Y * B.Y;
+            float abLen = (float)((float)(B.X * B.X) + (float)(B.Y * B.Y));
             if (abLen <= 0f) return false;
             float nx = B.X / abLen, ny = B.Y / abLen;
-            float cx = C.X * nx + C.Y * ny, cy = C.Y * nx - C.X * ny;
-            float dx = D.X * nx + D.Y * ny, dy = D.Y * nx - D.X * ny;
+            float cx = (float)((float)(C.X * nx) + (float)(C.Y * ny)), cy = (float)((float)(C.Y * nx) - (float)(C.X * ny));
+            float dx = (float)((float)(D.X * nx) + (float)(D.Y * ny)), dy = (float)((float)(D.Y * nx) - (float)(D.X * ny));
             float eps = (float)Gd.CMP_EPSILON;
             if ((cy < -eps && dy < -eps) || (cy > eps && dy > eps)) return false;
             if (Gd.IsEqual32(cy, dy)) return false;
-            float pos = dx + (cx - dx) * dy / (dy - cy);
+            float pos = dx + (float)((float)((float)(cx - dx) * dy) / (float)(dy - cy));
             if (pos < 0f || pos > 1f) return false;
             result = fromA + B * pos;
             return true;
