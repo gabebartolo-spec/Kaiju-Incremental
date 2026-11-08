@@ -118,6 +118,40 @@ public static class SliceBuild
         }
     }
 
+    // U4: the rampage's own scene, its data beside it, and its own player.
+    const string RAMPAGE_SCENE = "Assets/Rampage.unity";
+    const string RAMPAGE_EXE = "Build/KaijuRampage.exe";
+
+    public static void BuildRampage()
+    {
+        try
+        {
+            SetupRendering();
+            SetupPlayer();
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            new GameObject("rampage").AddComponent<RampageGame>();
+            EditorSceneManager.SaveScene(scene, RAMPAGE_SCENE);
+            string repo = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+            string to = Path.Combine(Application.streamingAssetsPath, "res", "data");
+            if (Directory.Exists(to)) Directory.Delete(to, true);
+            Directory.CreateDirectory(to);
+            foreach (string file in Directory.GetFiles(Path.Combine(repo, "data"), "*.json", SearchOption.AllDirectories))
+            {
+                string out_ = Path.Combine(to, Path.GetRelativePath(Path.Combine(repo, "data"), file));
+                Directory.CreateDirectory(Path.GetDirectoryName(out_));
+                File.Copy(file, out_);
+            }
+            AssetDatabase.SaveAssets();
+            Directory.CreateDirectory("Build");
+            BuildReport report = BuildPipeline.BuildPlayer(new[] { RAMPAGE_SCENE }, RAMPAGE_EXE, BuildTarget.StandaloneWindows64, BuildOptions.None);
+            Debug.Log($"rampage: build {report.summary.result}, {report.summary.totalErrors} errors, {report.summary.totalSize / (1024 * 1024)} MB");
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+    }
+
     static void SetupScene()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

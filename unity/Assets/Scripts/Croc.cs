@@ -407,7 +407,39 @@ public sealed class Croc
         Vector3 step = heading.normalized * (speed * dt);
         position += step;
         Velocity = new Vector3(step.x, 0, -step.z) / Mathf.Max(dt, 1e-4f);
-        float dist = step.magnitude;
+        Pose(step.magnitude, dt);
+    }
+
+    // The sim moved it: the same clips, the feet locked to the distance it actually covered, the body
+    // turning toward the sim's facing at the rig's own rate. feet in Godot axes, facing (Godot x, z).
+    public void Drive(Vector3 feet, Vector2 facing, float scale, float dt)
+    {
+        Stride *= scale / Scale;
+        Scale = scale;
+        Clip walk = clips["walk"], runClip = clips["run"];
+        float walkSpeed = Stride / ((float)walk.frames / walk.cycles / fps);
+        float runSpeed = Stride / ((float)runClip.frames / runClip.cycles / fps);
+        Vector3 step = feet - position;
+        step.y = 0;
+        position = feet;
+        float speed = step.magnitude / Mathf.Max(dt, 1e-4f);
+        float fade = 1f - Mathf.Exp(-dt / Mathf.Max(0.001f, tuning.clip_fade_s));
+        moveWeight = Mathf.Lerp(moveWeight, Mathf.Clamp01(speed / walkSpeed), fade);
+        runWeight = Mathf.Lerp(runWeight, Mathf.Clamp01((speed - walkSpeed) / Mathf.Max(0.001f, runSpeed - walkSpeed)), fade);
+        if (facing.sqrMagnitude > 1e-6f)
+        {
+            float want = Mathf.Atan2(-facing.x, -facing.y);
+            yaw += Mathf.Clamp(Mathf.DeltaAngle(yaw * Mathf.Rad2Deg, want * Mathf.Rad2Deg) * Mathf.Deg2Rad, -tuning.turn_rate * dt, tuning.turn_rate * dt);
+        }
+        Velocity = new Vector3(step.x, 0, -step.z) / Mathf.Max(dt, 1e-4f);
+        Pose(step.magnitude, dt);
+    }
+
+    void Pose(float dist, float dt)
+    {
+        Clip walk = clips["walk"], runClip = clips["run"], idle = clips["idle"];
+        float walkCycle = (float)walk.frames / walk.cycles;
+        float runCycle = (float)runClip.frames / runClip.cycles;
         walkFrame += dist / Stride * walkCycle;
         runFrame += dist / Stride * runCycle;
         idleFrame += dt * fps;

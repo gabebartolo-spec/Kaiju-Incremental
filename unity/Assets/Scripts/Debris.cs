@@ -49,7 +49,12 @@ public sealed unsafe class Debris
         keep = new NativeArray<int>(STAGING, Allocator.Persistent);
     }
 
-    public void Spawn(VoxelBody b, int* index, int n, Vector3 centre, Vector3 velocity, float burst, uint tick)
+    public float BurstSpeed => tuning.debris_burst;
+
+    public void Spawn(VoxelBody b, int* index, int n, Vector3 centre, Vector3 velocity, float burst, uint tick) =>
+        Spawn(b.mesher, b.transform.localToWorldMatrix, index, n, centre, velocity, burst, tick);
+
+    public void Spawn(System.IntPtr mesher, Matrix4x4 mat, int* index, int n, Vector3 centre, Vector3 velocity, float burst, uint tick)
     {
         int every = Mathf.Max(1, tuning.debris_keep_every);
         int room = STAGING - stagingCount;
@@ -57,10 +62,9 @@ public sealed unsafe class Debris
         int* picked = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(keep);
         int count = 0;
         for (int k = 0; k < n && count < room; k += every) picked[count++] = index[k];
-        Matrix4x4 mat = b.transform.localToWorldMatrix;
         KcParticle* output = (KcParticle*)NativeArrayUnsafeUtility.GetUnsafePtr(staging) + stagingCount;
         Vector3 v = velocity, c = centre;
-        stagingCount += Native.kc_debris(b.mesher, picked, count, (float*)&mat, (float*)&v, (float*)&c, burst, tuning.debris_up, tuning.debris_scatter, tick, output, room);
+        stagingCount += Native.kc_debris(mesher, picked, count, (float*)&mat, (float*)&v, (float*)&c, burst, tuning.debris_up, tuning.debris_scatter, tick, output, room);
     }
 
     public void Step(float dt)

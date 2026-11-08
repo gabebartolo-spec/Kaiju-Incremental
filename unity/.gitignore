@@ -14,3 +14,7 @@ SimTests/obj/
 *.sln
 Logs-*.txt
 Assets/Plugins/x86_64/kaiju_core.dll
+Assets/StreamingAssets/res/
+Assets/StreamingAssets/res.meta
+Assets/Rampage.unity
+Assets/Rampage.unity.meta
