@@ -1,0 +1,57 @@
+{
+  "_note": "The fire of the Godot game (scenes/fire.gd, flame.gdshader, ember.gdshader, smoke.gdshader), copied number for number. Godot's Curve clamps to 0..1, so the smoke's curve (0.7, 3.4 in fire.gd) really runs 0.7 to 1.0: this is what the game draws. spots: Godot axes, top-layer chunk centres of building 31 in the slice (RampageSim chunk_world, where the game lights a fire on a building).",
+  "wind": [2.2, 0.0, 0.9],
+  "tongue": [1.15, 2.7],
+  "tongue_lift": 0.44,
+  "grow": [0.7, 0.25, 0.75, 1.5],
+  "half_w": [0.4, 0.3],
+  "flame_height": 2.5,
+  "flame_heat": 0.88,
+  "alpha_in": 0.08,
+  "alpha_out": 0.82,
+  "ember_cube": 0.1,
+  "ember_heat": 1.4,
+  "ember_start": {"r": 1.0, "g": 0.6902, "b": 0.2510, "a": 1.0},
+  "ember_end": {"r": 1.0, "g": 0.4157, "b": 0.1020, "a": 1.0},
+  "smoke_quad_base": 1.4,
+  "smoke_quad_per_size": 0.5,
+  "smoke_quad_tall": 1.7,
+  "smoke_ramp": [
+    {"r": 0.05, "g": 0.05, "b": 0.05, "a": 0.0},
+    {"r": 0.1, "g": 0.1, "b": 0.11, "a": 0.46},
+    {"r": 0.2, "g": 0.2, "b": 0.22, "a": 0.32},
+    {"r": 0.22, "g": 0.23, "b": 0.25, "a": 0.0}
+  ],
+  "smoke_ramp_at": [0.0, 0.08, 0.6, 1.0],
+  "softness": 0.2,
+  "near_clear": 8.0,
+  "near_full": 22.0,
+  "centre_keep": 0.3,
+  "centre_radius": 0.32,
+  "focus_clear": 0.55,
+  "focus_full": 1.0,
+  "soft_contact_m": 1.5,
+  "light_color": {"r": 1.0, "g": 0.6039, "b": 0.2902, "a": 1.0},
+  "light": [2.5, 1.2, 4.0, 2.0, 1.0, 0.5],
+  "flicker": [0.75, 0.15, 17.0, 0.1, 31.0],
+  "light_match_m": 2.0,
+  "draw_bounds": 120.0,
+  "flame": {
+    "count": 18, "life": 1.0, "box": 0.4, "box_y": 0.32, "spread": 5.0, "rise": 0.6, "wind_share": 0.0,
+    "speed": [0.4, 1.0], "scale": [0.8, 1.25], "curve": [0.55, 0.2, 1.0, 0.8], "y": 0.2, "queue": 3000
+  },
+  "ember": {
+    "count": 45, "life": 3.2, "box": 0.8, "box_y": 0.2, "spread": 35.0, "rise": 1.2, "wind_share": 0.6,
+    "speed": [1.5, 4.0], "scale": [0.4, 1.0], "curve": [1.0, 0.0, 1.0, 0.3], "y": 0.2, "queue": 3001
+  },
+  "smoke": {
+    "count": 70, "life": 10.0, "box": 0.5, "box_y": 0.2, "spread": 6.0, "rise": 2.2, "wind_share": 0.8,
+    "speed": [2.5, 4.0], "scale": [1.6, 3.0], "curve": [0.7, 0.0, 0.7, 1.0], "y": 1.8, "queue": 3002
+  },
+  "clip_kaiju": [-255.0, 266.5],
+  "spots": [
+    {"x": -192.5, "y": 1.5, "z": 234.5, "size": 1.2, "seed": 1.3},
+    {"x": -190.5, "y": 1.5, "z": 234.5, "size": 1.2, "seed": 4.1},
+    {"x": -192.5, "y": 1.5, "z": 236.5, "size": 1.2, "seed": 7.7}
+  ]
+}

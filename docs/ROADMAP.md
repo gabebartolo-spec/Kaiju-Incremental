@@ -70,7 +70,7 @@ need no licence. Rendering checks stay on this PC. A fresh checkout builds the s
 | # | Row | Status |
 |---|---|---|
 | U0 | Foundation: the slice committed on HDRP, Unity and the AgX fit registered, `unity/` skips the Godot jobs and takes the lints | done |
-| U1 | Flames, the gate: tall flames (D-190) and VFX_STYLE fire in HDRP, by hand-written C# and HLSL (VFX Graph can only be authored through an internal API). The director judges a 1080p dusk clip beside Godot's. If Unity loses, back to the director before anything else ports | open |
+| U1 | Flames, the gate: tall flames (D-190) and VFX_STYLE fire in HDRP, by hand-written C# and HLSL (VFX Graph can only be authored through an internal API). The director judges a 1080p dusk clip beside Godot's. If Unity loses, back to the director before anything else ports. Unity won (D-473) | done |
 | U2 | Sim: `sim/` to plain C# with no UnityEngine reference; Godot's RNG copied exactly; the same seed gives the same event log as Godot | open |
 | U3 | Native: carve, mesher, settle, walk and water off godot-cpp, onto a plain DLL as in the slice | open |
 | U4 | Rampage on screen: city, destruction, croc, water, smoke, Taskforce, camera, shaders | open |

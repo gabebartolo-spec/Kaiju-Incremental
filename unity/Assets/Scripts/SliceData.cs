@@ -57,6 +57,7 @@ public sealed class Tuning
     public float spawn_x = -206;
     public float spawn_z = 248;
     public float bloom_intensity = 0.6f;
+    public float agx_white = 16.29f;
     public float hdrp_ev = 9.5f;
     public float sky_diffusion = 1f;
     public float ssao_intensity = 1.2f;
