@@ -8,6 +8,9 @@ native/build/
 Assets/StreamingAssets/slice/
 Assets/StreamingAssets/slice.meta
 *.csproj
+!SimTests/SimTests.csproj
+SimTests/bin/
+SimTests/obj/
 *.sln
 Logs-*.txt
 Assets/Plugins/x86_64/kaiju_core.dll
