@@ -510,9 +510,13 @@ namespace Kaiju.Sim
 
     public static class ClassDB
     {
-        // No native extension in the plain C# sim until U3: the sim takes its GDScript fallback.
-        public static bool ClassExists(string name) => false;
-        public static RefCounted Instantiate(string name) => null;
+        // The DLL's classes (Native.cs). Without the DLL, or with UseNative off, the sim takes its
+        // own C# passes, which give the same results.
+        public static bool UseNative = true;
+        public static bool ClassExists(string name) =>
+            UseNative && (name == "KaijuSettle" || name == "KaijuWater") && KaijuNative.Available;
+        public static RefCounted Instantiate(string name) =>
+            !ClassExists(name) ? null : name == "KaijuSettle" ? (RefCounted)new KaijuSettle() : new KaijuWater();
     }
 
     public static class SimTeardown

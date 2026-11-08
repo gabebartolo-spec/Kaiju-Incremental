@@ -13,5 +13,6 @@
     <Compile Include="*.cs" />
     <Compile Include="../Assets/Scripts/Sim/**/*.cs" />
     <None Include="golden/**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Assets/Plugins/x86_64/kaiju_core.dll" Condition="Exists('../Assets/Plugins/x86_64/kaiju_core.dll')" Link="kaiju_core.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
