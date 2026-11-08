@@ -1,0 +1,13 @@
+Library/
+Temp/
+Logs/
+Obj/
+UserSettings/
+Build/
+native/build/
+Assets/StreamingAssets/slice/
+Assets/StreamingAssets/slice.meta
+*.csproj
+*.sln
+Logs-*.txt
+Assets/Plugins/x86_64/kaiju_core.dll
