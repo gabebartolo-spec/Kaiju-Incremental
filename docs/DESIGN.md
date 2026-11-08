@@ -25,7 +25,7 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - **Combo (D-259, D-263):** small and quick: any kill or building break keeps a ~3 s window going, cap about x2, a pop on the biomass figure.
 - **Results:** a headline per ending (the city falls / AIRSTRIKE / lost to the army); biomass and best combo, destruction tally, body count, personal bests (D-259, D-263).
 - **Controls:** move; stomps land on their own under every footfall (D-280); one signature button; the croc's breath on its own button (Q / pad X, D-401); the ultimate on its own button (E / pad Y, long cooldown); the leap (Shift / B; player copy says "Leap", D-262). Keyboard and controller, readable on a TV (D-004, D-040).
-- **Platform:** PC, built and judged at 1080p, the common player screen; 4K is supported and checked at each playtest build (D-339); the director plays on a 4K 120 Hz TV (RTX 4070 SUPER), fullscreen from code in exports, UI a 1920x1080 canvas at 2x (D-027). Godot 4.7.2.
+- **Platform:** PC, built and judged at 1080p, the common player screen; 4K is supported and checked at each playtest build (D-339); the director plays on a 4K 120 Hz TV (RTX 4070 SUPER), fullscreen from code in exports, UI a 1920x1080 canvas at 2x (D-027). Godot 4.7.2 until the Unity port reaches parity (D-470).
 - **Not:** a clicker, idle, infinite exponential numbers, a city builder, a Godzilla copy.
 
 ## The kaiju
