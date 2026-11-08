@@ -14,6 +14,8 @@ public sealed class SliceGame : MonoBehaviour
     City city;
     Croc croc;
     Debris debris;
+    Fires fires;
+    float fireClock;
     Camera cam;
     Mesh groundMesh, instanceCubeGodot, instanceCubeUnity;
     Material groundMat;
@@ -82,6 +84,7 @@ public sealed class SliceGame : MonoBehaviour
 
         BuildCamera(slice);
         BuildWorld(look);
+        fires = new Fires(FireTuning.Load(), Resources.Load<Shader>("Shaders/Flame"), ExposureUnit());
         Debug.Log($"slice: loaded {buildings.Count} buildings, {croc.CubeCount} croc cubes, spawn {croc.position}");
     }
 
@@ -127,15 +130,19 @@ public sealed class SliceGame : MonoBehaviour
         sun.intensity = SliceData.F(look, "sun_energy", 1) * Mathf.PI * ExposureUnit();
         sun.shadows = LightShadows.Soft;
         sunGo.AddComponent<HDAdditionalLightData>();
+        Shader.SetGlobalVector("_FireSunDir", -sunGo.transform.forward);
+        Shader.SetGlobalVector("_FireSunColor", sun.color.linear * SliceData.F(look, "sun_energy", 1));
 
         profile = ScriptableObject.CreateInstance<VolumeProfile>();
         var environment = profile.Add<VisualEnvironment>(true);
         environment.skyType.Override((int)SkyType.Gradient);
         environment.skyAmbientMode.Override(SkyAmbientMode.Static);
         var sky = profile.Add<GradientSky>(true);
-        sky.top.Override(Lin(SliceData.Hex(look["sky_top"])));
-        sky.middle.Override(Lin(SliceData.Hex(look["sky_horizon"])));
-        sky.bottom.Override(Lin(SliceData.Hex(look["sky_horizon"])));
+        // Godot's fog covers its sky whole (fog_sky_affect 1), so what shows is the fog's colour.
+        Color skyColor = Lin(SliceData.Hex(look["fog_color"]));
+        sky.top.Override(skyColor);
+        sky.middle.Override(skyColor);
+        sky.bottom.Override(skyColor);
         sky.gradientDiffusion.Override(tuning.sky_diffusion);
         sky.skyIntensityMode.Override(SkyIntensityMode.Multiplier);
         sky.multiplier.Override(ExposureUnit());
@@ -147,6 +154,7 @@ public sealed class SliceGame : MonoBehaviour
         var agx = profile.Add<AgxTonemap>(true);
         agx.exposure.Override(SliceData.F(look, "exposure", 1));
         agx.contrast.Override(SliceData.F(look, "agx_contrast", 1));
+        agx.white.Override(tuning.agx_white);
         agx.saturation.Override(SliceData.F(look, "saturation", 1));
         agx.postContrast.Override(SliceData.F(look, "post_contrast", 1));
         Bloom bloom = profile.Add<Bloom>(true);
@@ -296,6 +304,9 @@ public sealed class SliceGame : MonoBehaviour
         croc.Draw();
         debris.Draw();
         FollowCamera(dt);
+        fireClock += dt;
+        SetSmokeFocus();
+        fires.Draw(fireClock);
 
         FrameTimingManager.CaptureFrameTimings();
         if (FrameTimingManager.GetLatestTimings(1, timing) > 0)
@@ -314,6 +325,16 @@ public sealed class SliceGame : MonoBehaviour
     }
 
     void QuitNow() => Application.Quit();
+
+    // For a clip of the empty block: Godot axes, like croc.position.
+    public void MoveCroc(float x, float z) => croc.position = new Vector3(x, 0, z);
+
+    // Smoke between the camera and the kaiju thins out (Godot: CityView, smoke_focus).
+    public void SetSmokeFocus()
+    {
+        var feet = new Vector3(croc.position.x, 0, -croc.position.z);
+        fires.SetFocus(Vector3.Dot(feet - cam.transform.position, cam.transform.forward));
+    }
 
     void FollowCamera(float dt)
     {
@@ -365,6 +386,7 @@ public sealed class SliceGame : MonoBehaviour
         city?.Dispose();
         croc?.Dispose();
         debris?.Dispose();
+        fires?.Dispose();
         if (groundMesh != null) Destroy(groundMesh);
         if (instanceCubeGodot != null) Destroy(instanceCubeGodot);
         if (instanceCubeUnity != null) Destroy(instanceCubeUnity);

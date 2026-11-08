@@ -1,5 +1,7 @@
-// The game's AgX (Godot's tonemapper) as an HDRP custom post process. The curve and matrices are Minimal AgX:
-// MIT License, Copyright (c) 2024 Missing Deadlines (Benjamin Wrensch). Permission is hereby granted, free of charge,
+// The game's tone map as an HDRP custom post process: Godot's own AgX and grade (servers/rendering, tonemap.glsl),
+// copied line for line and checked against Godot's output on a radiance ramp (0.007 at most on 8-bit values).
+// MIT License, Copyright (c) 2014-present Godot Engine contributors, Copyright (c) 2007-2014 Juan Linietsky, Ariel
+// Manzur. Permission is hereby granted, free of charge,
 // to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the
 // Software without restriction, including without limitation the rights to use, copy, modify, merge, publish,
 // distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished
@@ -18,7 +20,7 @@ Shader "Hidden/Slice/Agx"
     #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl"
 
     TEXTURE2D_X(_Source);
-    float _AgxExposure, _AgxContrast, _AgxSaturation, _AgxPostContrast;
+    float _AgxExposure, _AgxContrast, _AgxWhite, _AgxSaturation, _AgxPostContrast;
 
     struct Attributes
     {
@@ -41,42 +43,56 @@ Shader "Hidden/Slice/Agx"
         return output;
     }
 
-    float3 AgxCurve(float3 x)
+    // allenwp_curve; its four constants are what Godot's renderer works out from contrast and white.
+    float3 AllenwpCurve(float3 x)
     {
-        float3 x2 = x * x;
-        float3 x4 = x2 * x2;
-        return 15.5 * x4 * x2 - 40.14 * x4 * x + 31.96 * x4 - 6.868 * x2 * x + 0.4298 * x2 + 0.1191 * x - 0.00232;
+        const float crossover = 0.18;
+        const float shoulderMax = 1.0 - crossover;
+        float contrastAt = pow(crossover, _AgxContrast);
+        float toeA = (1.0 / crossover - 1.0) * contrastAt;
+        float denom = contrastAt + toeA;
+        float slope = _AgxContrast * pow(crossover, _AgxContrast - 1.0) * toeA / (denom * denom);
+        float w = (_AgxWhite - crossover) * (_AgxWhite - crossover) / shoulderMax * slope;
+
+        float3 s = x - crossover;
+        float3 slopeS = slope * s;
+        s = slopeS * (1.0 + s / w) / (1.0 + slopeS / shoulderMax) + crossover;
+        float3 t = pow(x, _AgxContrast);
+        t = t / (t + toeA);
+        return x < crossover ? t : s;
     }
 
-    float3 Agx(float3 color)
+    // tonemap_agx. The matrices are written as Godot's columns: mul(row vector, M) is its M * v.
+    float3 TonemapAgx(float3 color)
     {
-        const float3x3 toAgx = float3x3(
-            0.842479062253094, 0.0423282422610123, 0.0423756549057051,
-            0.0784335999999992, 0.878468636469772, 0.0784336,
-            0.0792237451477643, 0.0791661274605434, 0.879142973793104);
-        const float3x3 fromAgx = float3x3(
-            1.19687900512017, -0.0528968517574562, -0.0529716355144438,
-            -0.0980208811401368, 1.15190312990417, -0.0980434501171241,
-            -0.0990297440797205, -0.0989611768448433, 1.15107367264116);
-        const float minEv = -12.47393, maxEv = 4.026069;
-        color = mul(color, toAgx);
-        color = clamp(log2(max(color, 1e-10)), minEv, maxEv);
-        color = (color - minEv) / (maxEv - minEv);
-        color = AgxCurve(color);
-        // The look: contrast as a power, then saturation about luma.
-        color = pow(max(color, 0), _AgxContrast);
-        float luma = dot(color, float3(0.2126, 0.7152, 0.0722));
-        color = luma + _AgxSaturation * (color - luma);
-        color = mul(color, fromAgx);
-        return max(color, 0);
+        const float3x3 inset = float3x3(
+            0.544814746488245, 0.140416948464053, 0.0888104196149096,
+            0.373787398372697, 0.754137554567394, 0.178871756420858,
+            0.0813978551390581, 0.105445496968552, 0.732317823964232);
+        const float3x3 outset = float3x3(
+            1.96488741169489, -0.299313364904742, -0.164352742528393,
+            -0.855988495690215, 1.32639796461980, -0.238183969428088,
+            -0.108898916004672, -0.0270845997150571, 1.40253671195648);
+        color = mul(max(color, 0.0), inset);
+        color = min(1.0, AllenwpCurve(max(color, 0.0)));
+        return mul(color, outset);
+    }
+
+    // linear_to_srgb: keeps the negatives the outset leaves, for the saturation step after it.
+    float3 EncodeSrgb(float3 color)
+    {
+        return color < 0.0031308 ? 12.92 * color : 1.055 * pow(abs(color), 1.0 / 2.4) - 0.055;
     }
 
     float4 Frag(Varyings input) : SV_Target
     {
         UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
         float4 source = LOAD_TEXTURE2D_X(_Source, input.positionCS.xy);
-        float3 display = saturate(Agx(source.rgb * _AgxExposure));
-        display = saturate(0.5 + (display - 0.5) * _AgxPostContrast);
+        // Godot's tonemap pass in order: exposure, AgX, sRGB, then contrast and saturation in sRGB.
+        float3 display = EncodeSrgb(TonemapAgx(source.rgb * _AgxExposure));
+        display = 0.5 + (display - 0.5) * _AgxPostContrast;
+        float mean = dot(float3(1.0, 1.0, 1.0), display) / 3.0;
+        display = saturate(mean + _AgxSaturation * (display - mean));
         return float4(SRGBToLinear(display), source.a);
     }
     ENDHLSL

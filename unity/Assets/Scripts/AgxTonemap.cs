@@ -9,6 +9,7 @@ public sealed class AgxTonemap : CustomPostProcessVolumeComponent, IPostProcessC
 {
     public FloatParameter exposure = new FloatParameter(1f);
     public FloatParameter contrast = new FloatParameter(1f);
+    public FloatParameter white = new FloatParameter(1f);
     public FloatParameter saturation = new FloatParameter(1f);
     public FloatParameter postContrast = new FloatParameter(1f);
     Material material;
@@ -25,6 +26,7 @@ public sealed class AgxTonemap : CustomPostProcessVolumeComponent, IPostProcessC
     {
         material.SetFloat("_AgxExposure", exposure.value);
         material.SetFloat("_AgxContrast", contrast.value);
+        material.SetFloat("_AgxWhite", white.value);
         material.SetFloat("_AgxSaturation", saturation.value);
         material.SetFloat("_AgxPostContrast", postContrast.value);
         material.SetTexture("_Source", source);

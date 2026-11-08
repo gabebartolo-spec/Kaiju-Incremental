@@ -30,6 +30,7 @@
   "spawn_x": -206,
   "spawn_z": 248,
   "bloom_intensity": 0.6,
+  "agx_white": 16.29,
   "hdrp_ev": 9.5,
   "sky_diffusion": 1.0,
   "ssao_intensity": 1.2,
