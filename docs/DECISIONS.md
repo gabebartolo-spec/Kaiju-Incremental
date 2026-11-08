@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-09 · D-474 · Director · Build from scratch in Unity where that is faster than porting
+"if it would be faster to simply create something from scratch in unity, rather than porting a pre-existing system, then
+feel free". The sim stays translated, because the same seed must give the same log as Godot (U2); rendering, UI, camera
+and effects are built new in U4 and U5. Changes: `docs/ROADMAP.md`.
+
 ## 2026-11-09 · D-473 · Director · Unity's flames beat Godot's: the U1 gate passes
 "for me the unity flames look better", judged on the 1080p dusk clip of the exact copy of `fire.gd` beside Godot's, with
 HDRP's own extras off. Changes: `docs/ROADMAP.md` (U1 done).
@@ -390,8 +395,3 @@ Same ruling set. Ostia Minor comes first; after it the globe always offers the t
 in the fixed sequence Carthago, Thule, Silvania, Mons Ferrata, Neptunia: conquer one and the next in sequence joins
 the pair. Difficulty always climbs and the choice is real (16 paths; the sixth pick is forced). Aurelia is last
 (D-422).
-
-## 2026-10-31 · D-419 · Director · A continent fixes the growth stage
-Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
-Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
-adolescent, adult)" in DESIGN.

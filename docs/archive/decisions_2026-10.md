@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-419 · Director · A continent fixes the growth stage
+Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
+Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
+adolescent, adult)" in DESIGN.
+
 ## 2026-10-31 · D-418 · Director · Seven continents on Tellus Nova
 Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
 Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
