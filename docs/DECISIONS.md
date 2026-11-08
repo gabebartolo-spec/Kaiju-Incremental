@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-09 · D-473 · Director · Unity's flames beat Godot's: the U1 gate passes
+"for me the unity flames look better", judged on the 1080p dusk clip of the exact copy of `fire.gd` beside Godot's, with
+HDRP's own extras off. Changes: `docs/ROADMAP.md` (U1 done).
+
 ## 2026-11-09 · D-472 · Director · The Itch demo ships from Unity; Godot takes only bug fixes and open PRs
 "Ship from Unity": nothing gets built twice. Textures and the overworld loop, the open M3 work, are finished in the
 port, and M4 follows it. Godot stays playable until U6 passes. Changes: `docs/ROADMAP.md`, `CLAUDE.md`.
@@ -391,8 +395,3 @@ the pair. Difficulty always climbs and the choice is real (16 paths; the sixth p
 Same ruling set. Each continent plays at one growth stage: Ostia Minor young; Carthago and Thule Behemoth; Silvania,
 Mons Ferrata, Neptunia and Aurelia Colossus. Seven cities, not three per stage. Replaces "three cities (baby,
 adolescent, adult)" in DESIGN.
-
-## 2026-10-31 · D-418 · Director · Seven continents on Tellus Nova
-Same ruling set, the first act of the Overworld (plan rows F1-F4): the campaign is a hologram globe of the planet
-Tellus Nova with seven continents, six conquerable and the capital Aurelia, ancient-Rome named: Ostia Minor, Carthago,
-Thule, Silvania, Mons Ferrata, Neptunia, Aurelia. Each continent is one city mission. Changes D-212's "three cities".
