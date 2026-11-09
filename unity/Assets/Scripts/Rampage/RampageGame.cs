@@ -334,9 +334,7 @@ public sealed class RampageGame : MonoBehaviour
         if (!crownKnown)
         {
             crownKnown = true;
-            Vector3 head = croc.BoneAt(HEAD_BONE), hips = croc.BoneAt(croc.RootBone);
-            Vector2 ahead = Facing();
-            crown = new Vector2((head.x - hips.x) * ahead.x + (head.z - hips.z) * ahead.y, head.y - feet.y);
+            crown = croc.RestCrown(HEAD_BONE, scale);
             introWater = new IntroWater(sim, fx, Resources.Load<Shader>("Shaders/Bolt"), crown.x);
         }
         croc.Draw();

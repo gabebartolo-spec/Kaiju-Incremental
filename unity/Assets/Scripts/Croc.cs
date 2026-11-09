@@ -452,11 +452,21 @@ public sealed class Croc
     // Godot axes: where a bone is drawn now.
     public Vector3 BoneAt(string name)
     {
-        Vector3 at = WorldMatrix().MultiplyPoint3x4(global[System.Array.IndexOf(names, name)].GetColumn(3));
-        return new Vector3(at.x, at.y, -at.z);
+        return WorldMatrix().MultiplyPoint3x4(global[System.Array.IndexOf(names, name)].GetColumn(3));
     }
 
     public string RootBone => names[0];
+
+    // The head's crown in the rest pose (scenes/rampage_rise.gd head_at): x ahead of the hips, y over the
+    // feet, world units. The model faces -z.
+    public Vector2 RestCrown(string name, float scale)
+    {
+        var at = new Matrix4x4[rest.Length];
+        foreach (int i in order)
+            at[i] = parents[i] >= 0 ? at[parents[i]] * rest[i] : rest[i];
+        Vector4 head = at[System.Array.IndexOf(names, name)].GetColumn(3), hips = at[0].GetColumn(3);
+        return new Vector2(hips.z - head.z, head.y) * scale;
+    }
 
     // One clip by the sim's clock (scenes/rampage_rise.gd rise): the keyed rise from the bay.
     public void DriveClip(Vector3 feet, Vector2 facing, float scale, string name, float seconds)
