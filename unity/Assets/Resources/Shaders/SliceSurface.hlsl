@@ -7,9 +7,12 @@
 float4 _SliceAmbient;
 void SliceSetup() {}
 
-#if defined(SLICE_BUILDING)
+#if defined(SLICE_BUILDING) || defined(SLICE_FACADE)
 float4 _VoxelOrigin, _WinUnit, _WinAlign;
 float _VoxelSize, _Salt, _Noise;
+float _BubbleCut;
+float _BubbleRadius;
+float _BubbleCore;
 float _VoxelAoStrength, _VoxelAoLightAffect, _WindowGlow, _ColorInside, _WinCount, _WinPaletteOn;
 float4 _FinishRoughness, _WinGain;
 float4 _WinColors[8];
@@ -207,7 +210,10 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 #else
     Particle p = _Particles[0];
 #endif
-    input.positionOS = p.color == 0u ? float3(0, -1000, 0) : p.pos + input.positionOS;
+    // Broken pieces, not gravel: mostly small, a few big lumps (scenes/debris_field.gd's mix of sizes).
+    uint sized = (p.seed >> 16) & 255u;
+    float grain = sized < 20u ? 2.6 : 0.6 + float(sized) / 255.0;
+    input.positionOS = p.color == 0u ? float3(0, -1000, 0) : p.pos + input.positionOS * grain;
 #ifdef ATTRIBUTES_NEED_TANGENT
     input.tangentOS = float4(1, 0, 0, 1);
 #endif
@@ -219,12 +225,22 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 #endif
 
 #if defined(SLICE_GROUND)
-float4 _GroundColor;
+#include "Assets/Resources/Shaders/CityGround.hlsl"
+#endif
+
+#if defined(SLICE_FACADE)
+#include "Assets/Resources/Shaders/Facade.hlsl"
 #endif
 
 void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
 {
     Orig_GetSurfaceAndBuiltinData(input, V, posInput, surfaceData, builtinData);
+#if defined(SLICE_BUILDING) && SHADERPASS != SHADERPASS_SHADOWS
+    // The camera bubble (D-283): cut in every view pass, never in the shadow's. Nothing is ever
+    // drawn inside the core, a toppling piece swinging through the eye included.
+    if (length(GetCameraRelativePositionWS(posInput.positionWS)) < max(_BubbleRadius * _BubbleCut, _BubbleCore))
+        discard;
+#endif
 #if SHADERPASS == SHADERPASS_GBUFFER || SHADERPASS == SHADERPASS_FORWARD
     float3 n = input.tangentToWorld[2];
     float3 albedo = 1.0;
@@ -275,8 +291,19 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     roughness = _KaijuRoughness;
     #elif defined(SLICE_DEBRIS)
     albedo = SRGBToLinear(input.color.rgb);
+    #elif defined(SLICE_FACADE)
+    float3 facadeAt = TransformWorldToObject(posInput.positionWS);
+    float3 facadeN = TransformWorldToObjectNormal(n);
+    facadeAt.z = -facadeAt.z;
+    facadeN.z = -facadeN.z;
+    FacadeSurface(facadeAt, facadeN, input.color, input.texCoord0.xy, input.texCoord1.xy, albedo, emission);
     #elif defined(SLICE_GROUND)
-    albedo = _GroundColor.rgb;
+    float3 groundAt = TransformWorldToObject(posInput.positionWS);
+    float3 groundN = TransformWorldToObjectNormal(n);
+    groundAt.z = -groundAt.z;
+    groundN.z = -groundN.z;
+    float groundDepth = -TransformWorldToView(posInput.positionWS).z;
+    CityGroundSurface(input.texCoord0.xy, input.texCoord1.xy, groundAt, groundN, groundDepth, albedo, roughness, emission);
     #endif
 
     surfaceData.baseColor = albedo;

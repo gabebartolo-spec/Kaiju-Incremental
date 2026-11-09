@@ -45,10 +45,11 @@ public sealed class Fires : IDisposable
 {
     const int QUAD_VERTS = 6, CUBE_VERTS = 36;
 
-    sealed class Burning
+    public sealed class Burning
     {
         public Vector3 at;
-        public float seed, energy;
+        public float seed, energy, fade = 1f, fadeRate, gone = float.PositiveInfinity;
+        public bool isOut, showEmbers = true;
         public Light light;
         public Bounds bounds;
         public MaterialPropertyBlock flame, ember, smoke;
@@ -59,11 +60,16 @@ public sealed class Fires : IDisposable
     readonly float exposureUnit;
     readonly Material flameMat, emberMat, smokeMat;
     readonly List<Burning> fires = new List<Burning>();
+    readonly Stack<Burning> free = new Stack<Burning>();
+    float lastTime;
 
     static readonly int TIME = Shader.PropertyToID("_FireTime");
     static readonly int FOCUS = Shader.PropertyToID("_SmokeFocus");
+    static readonly int START = Shader.PropertyToID("_FireStart"), END = Shader.PropertyToID("_FireEnd");
+    // Longer than any game: a fire that never starts or stops inside the clock.
+    const float ALWAYS = 1e7f;
 
-    public Fires(FireTuning tuning, Shader shader, float exposureUnit)
+    public Fires(FireTuning tuning, Shader shader, float exposureUnit, bool spots = true)
     {
         this.tuning = tuning;
         this.exposureUnit = exposureUnit;
@@ -81,7 +87,7 @@ public sealed class Fires : IDisposable
         Shader.SetGlobalVector("_EmberEnd", tuning.ember_end);
         Shader.SetGlobalFloat("_FlameHeat", tuning.flame_heat);
         Shader.SetGlobalFloat("_EmberHeat", tuning.ember_heat);
-        foreach (FireSpot spot in tuning.spots) Add(spot);
+        if (spots) foreach (FireSpot spot in tuning.spots) Add(spot, -ALWAYS);
     }
 
     static Material Make(Shader shader, string keyword, FireSystem system)
@@ -94,15 +100,50 @@ public sealed class Fires : IDisposable
     // Unity's world is Godot's with z negated.
     static Vector3 Flip(Vector3 v) => new Vector3(v.x, v.y, -v.z);
 
-    void Add(FireSpot spot)
+    // A fire starting now, Godot axes (scenes/city_view.gd fire).
+    public Burning Light(Vector3 at, float size, float seed, float time)
+    {
+        return Add(new FireSpot { x = at.x, y = at.y, z = at.z, size = size, seed = seed }, time);
+    }
+
+    // scenes/fire.gd go_out: no new particles, those in the air finish; the light fades over `fade`.
+    public void GoOut(Burning fire, float fade, float time)
+    {
+        if (fire.isOut) return;
+        fire.isOut = true;
+        Stop(fire.flame, time);
+        Stop(fire.ember, time);
+        Stop(fire.smoke, time);
+        if (fade > 0f)
+        {
+            fire.showEmbers = false;
+            fire.fadeRate = 1f / fade;
+        }
+        else
+        {
+            fire.fade = 0f;
+        }
+        fire.gone = time + Mathf.Max(tuning.smoke.life, fade);
+    }
+
+    static void Stop(MaterialPropertyBlock block, float time) => block.SetFloat(END, time);
+
+    Burning Add(FireSpot spot, float start)
     {
         float size = spot.size;
         float[] g = tuning.grow;
         float grow = Mathf.Clamp(g[0] + g[1] * size, g[2], g[3]);
-        var burning = new Burning { at = Flip(new Vector3(spot.x, spot.y, spot.z)), seed = spot.seed };
+        Burning burning = free.Count > 0 ? free.Pop() : new Burning();
+        burning.at = Flip(new Vector3(spot.x, spot.y, spot.z));
+        burning.seed = spot.seed;
+        burning.fade = 1f;
+        burning.fadeRate = 0f;
+        burning.gone = float.PositiveInfinity;
+        burning.isOut = false;
+        burning.showEmbers = true;
         burning.bounds = new Bounds(burning.at, Vector3.one * tuning.draw_bounds);
 
-        burning.flame = Block(burning, tuning.flame, size, grow);
+        burning.flame = Block(burning.flame, burning, tuning.flame, size, grow, start);
         burning.flame.SetVector("_FireQuad", new Vector4(tuning.tongue[0] * grow, tuning.tongue[1] * grow, tuning.tongue_lift, 0));
         burning.flame.SetVector("_FireFlame", new Vector4(burning.at.y + tuning.flame.y, tuning.flame_height * grow, size * tuning.half_w[0] + tuning.half_w[1] * grow, 0));
         burning.flame.SetVector("_FireXZ", new Vector4(burning.at.x, burning.at.z, 0, 0));
@@ -110,36 +151,44 @@ public sealed class Fires : IDisposable
         burning.flame.SetFloat("_AlphaOut", tuning.alpha_out);
         burning.flameCount = Mathf.RoundToInt(tuning.flame.count * Mathf.Max(1f, size));
 
-        burning.ember = Block(burning, tuning.ember, size, 1f);
+        burning.ember = Block(burning.ember, burning, tuning.ember, size, 1f, start);
         burning.ember.SetVector("_FireQuad", new Vector4(tuning.ember_cube, 0, 0, 0));
         burning.emberCount = Mathf.RoundToInt(tuning.ember.count * Mathf.Max(1f, size));
 
-        burning.smoke = Block(burning, tuning.smoke, size, 1f);
+        burning.smoke = Block(burning.smoke, burning, tuning.smoke, size, 1f, start);
         float quad = tuning.smoke_quad_base + size * tuning.smoke_quad_per_size;
         burning.smoke.SetVector("_FireQuad", new Vector4(quad, quad * tuning.smoke_quad_tall, 0, 0));
         burning.smokeCount = Mathf.RoundToInt(tuning.smoke.count * Mathf.Max(1f, size));
 
         float[] l = tuning.light;  // energy base, energy per size, range base, range per size, y base, y per size
         burning.energy = l[0] + l[1] * size;
-        var go = new GameObject("fire light");
+        if (burning.light == null)
+        {
+            var made = new GameObject("fire light");
+            burning.light = made.AddComponent<Light>();
+            burning.light.type = LightType.Point;
+            burning.light.color = tuning.light_color;
+            burning.light.shadows = LightShadows.None;
+            burning.light.lightUnit = LightUnit.Candela;
+            made.AddComponent<HDAdditionalLightData>();
+        }
+        GameObject go = burning.light.gameObject;
+        go.SetActive(true);
         go.transform.position = burning.at + Vector3.up * (l[4] + l[5] * size);
-        burning.light = go.AddComponent<Light>();
-        burning.light.type = LightType.Point;
-        burning.light.color = tuning.light_color;
         burning.light.range = l[2] + l[3] * size;
-        burning.light.shadows = LightShadows.None;
-        burning.light.lightUnit = LightUnit.Candela;
-        go.AddComponent<HDAdditionalLightData>();
         Color lit = tuning.light_color.linear * burning.energy;
         Vector3 p = go.transform.position;
         burning.smoke.SetVector("_FireLightPos", new Vector4(p.x, p.y, p.z, burning.light.range));
         burning.smoke.SetVector("_FireLightColor", lit);
         fires.Add(burning);
+        return burning;
     }
 
-    MaterialPropertyBlock Block(Burning burning, FireSystem s, float size, float scaleBy)
+    MaterialPropertyBlock Block(MaterialPropertyBlock reuse, Burning burning, FireSystem s, float size, float scaleBy, float start)
     {
-        var b = new MaterialPropertyBlock();
+        MaterialPropertyBlock b = reuse ?? new MaterialPropertyBlock();
+        b.SetFloat(START, start);
+        b.SetFloat(END, ALWAYS);
         Vector3 wind = Flip(new Vector3(tuning.wind[0], tuning.wind[1], tuning.wind[2])) * s.wind_share;
         b.SetVector("_FireOrigin", burning.at + Vector3.up * s.y);
         b.SetVector("_EmitBox", new Vector4(size * s.box, s.box_y, size * s.box, 0));
@@ -166,20 +215,34 @@ public sealed class Fires : IDisposable
     {
         Shader.SetGlobalFloat(TIME, time);
         float[] f = tuning.flicker;
-        foreach (Burning fire in fires)
+        float dt = Mathf.Max(0f, time - lastTime);
+        lastTime = time;
+        for (int i = fires.Count - 1; i >= 0; i--)
         {
+            Burning fire = fires[i];
+            if (time > fire.gone)
+            {
+                fire.light.gameObject.SetActive(false);
+                fires[i] = fires[fires.Count - 1];
+                fires.RemoveAt(fires.Count - 1);
+                free.Push(fire);
+                continue;
+            }
+            fire.fade = Mathf.Max(0f, fire.fade - fire.fadeRate * dt);
             Graphics.DrawProcedural(flameMat, fire.bounds, MeshTopology.Triangles, QUAD_VERTS, fire.flameCount, null, fire.flame, ShadowCastingMode.Off, false, 0);
-            Graphics.DrawProcedural(emberMat, fire.bounds, MeshTopology.Triangles, CUBE_VERTS, fire.emberCount, null, fire.ember, ShadowCastingMode.Off, false, 0);
+            if (fire.showEmbers) Graphics.DrawProcedural(emberMat, fire.bounds, MeshTopology.Triangles, CUBE_VERTS, fire.emberCount, null, fire.ember, ShadowCastingMode.Off, false, 0);
             Graphics.DrawProcedural(smokeMat, fire.bounds, MeshTopology.Triangles, QUAD_VERTS, fire.smokeCount, null, fire.smoke, ShadowCastingMode.Off, false, 0);
             float flicker = f[0] + f[1] * Mathf.Sin(time * f[2] + fire.seed) + f[3] * Mathf.Sin(time * f[4] + fire.seed * 2f);
             // Godot's omni falls off as 1/d, HDRP's as 1/d^2: equal at light_match_m.
-            fire.light.intensity = fire.energy * flicker * Mathf.PI * exposureUnit * tuning.light_match_m;
+            fire.light.intensity = fire.energy * fire.fade * flicker * Mathf.PI * exposureUnit * tuning.light_match_m;
         }
     }
 
     public void Dispose()
     {
         foreach (Burning fire in fires)
+            if (fire.light != null) UnityEngine.Object.Destroy(fire.light.gameObject);
+        foreach (Burning fire in free)
             if (fire.light != null) UnityEngine.Object.Destroy(fire.light.gameObject);
         UnityEngine.Object.Destroy(flameMat);
         UnityEngine.Object.Destroy(emberMat);

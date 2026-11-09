@@ -64,7 +64,7 @@ public sealed class SliceGame : MonoBehaviour
         Physics.gravity = new Vector3(0, -tuning.gravity, 0);
         var slice = SliceData.LoadJson("slice.json");
         var look = MiniJson.Obj(slice["look"]);
-        ApplyLook(slice, look);
+        profile = ApplyLook(tuning, slice, look);
 
         instanceCubeGodot = CubeMesh(1f, true);
         Debug.Log($"slice: core version {Native.kc_version()}");
@@ -84,11 +84,11 @@ public sealed class SliceGame : MonoBehaviour
 
         BuildCamera(slice);
         BuildWorld(look);
-        fires = new Fires(FireTuning.Load(), Resources.Load<Shader>("Shaders/Flame"), ExposureUnit());
+        fires = new Fires(FireTuning.Load(), Resources.Load<Shader>("Shaders/Flame"), ExposureUnit(tuning));
         Debug.Log($"slice: loaded {buildings.Count} buildings, {croc.CubeCount} croc cubes, spawn {croc.position}");
     }
 
-    void ApplyLook(Dictionary<string, object> slice, Dictionary<string, object> look)
+    public static VolumeProfile ApplyLook(Tuning tuning, Dictionary<string, object> slice, Dictionary<string, object> look)
     {
         Color ambient = Lin(SliceData.Hex(look["ambient_color"])) * SliceData.F(look, "ambient", 1);
         Shader.SetGlobalVector("_SliceAmbient", ambient);
@@ -127,13 +127,13 @@ public sealed class SliceGame : MonoBehaviour
         sun.type = LightType.Directional;
         sun.color = SliceData.Hex(look["sun_color"]);
         sun.lightUnit = LightUnit.Lux;
-        sun.intensity = SliceData.F(look, "sun_energy", 1) * Mathf.PI * ExposureUnit();
+        sun.intensity = SliceData.F(look, "sun_energy", 1) * Mathf.PI * ExposureUnit(tuning);
         sun.shadows = LightShadows.Soft;
         sunGo.AddComponent<HDAdditionalLightData>();
         Shader.SetGlobalVector("_FireSunDir", -sunGo.transform.forward);
         Shader.SetGlobalVector("_FireSunColor", sun.color.linear * SliceData.F(look, "sun_energy", 1));
 
-        profile = ScriptableObject.CreateInstance<VolumeProfile>();
+        VolumeProfile profile = ScriptableObject.CreateInstance<VolumeProfile>();
         var environment = profile.Add<VisualEnvironment>(true);
         environment.skyType.Override((int)SkyType.Gradient);
         environment.skyAmbientMode.Override(SkyAmbientMode.Static);
@@ -145,7 +145,7 @@ public sealed class SliceGame : MonoBehaviour
         sky.bottom.Override(skyColor);
         sky.gradientDiffusion.Override(tuning.sky_diffusion);
         sky.skyIntensityMode.Override(SkyIntensityMode.Multiplier);
-        sky.multiplier.Override(ExposureUnit());
+        sky.multiplier.Override(ExposureUnit(tuning));
         var exposure = profile.Add<Exposure>(true);
         exposure.mode.Override(ExposureMode.Fixed);
         exposure.fixedExposure.Override(tuning.hdrp_ev);
@@ -170,7 +170,7 @@ public sealed class SliceGame : MonoBehaviour
         var fog = profile.Add<Fog>(true);
         fog.enabled.Override(true);
         fog.colorMode.Override(FogColorMode.ConstantColor);
-        fog.color.Override(Lin(SliceData.Hex(look["fog_color"])) * ExposureUnit());
+        fog.color.Override(Lin(SliceData.Hex(look["fog_color"])) * ExposureUnit(tuning));
         fog.meanFreePath.Override(1f / Mathf.Max(SliceData.F(look, "fog_density", 0), 1e-5f));
         fog.baseHeight.Override(0f);
         fog.maximumHeight.Override(tuning.fog_height);
@@ -179,10 +179,11 @@ public sealed class SliceGame : MonoBehaviour
         Volume volume = volumeGo.AddComponent<Volume>();
         volume.isGlobal = true;
         volume.sharedProfile = profile;
+        return profile;
     }
 
     // One unit of Godot radiance in HDRP's physical units: the fixed exposure divides everything by this.
-    float ExposureUnit() => 1.2f * Mathf.Pow(2f, tuning.hdrp_ev);
+    public static float ExposureUnit(Tuning tuning) => 1.2f * Mathf.Pow(2f, tuning.hdrp_ev);
 
     void BuildCamera(Dictionary<string, object> slice)
     {
@@ -227,7 +228,7 @@ public sealed class SliceGame : MonoBehaviour
 
     // Godot's BoxMesh turned so the mirror at the shader leaves it facing out (godot: formula cross
     // points inward; unity: outward).
-    static Mesh CubeMesh(float size, bool godot)
+    public static Mesh CubeMesh(float size, bool godot)
     {
         var verts = new List<Vector3>();
         var normals = new List<Vector3>();

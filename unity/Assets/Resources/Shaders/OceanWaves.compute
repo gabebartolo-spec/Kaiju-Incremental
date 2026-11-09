@@ -1,0 +1,254 @@
+// The bay's open sea: GodotOceanWaves by Ethan Truong (MIT, scenes/ocean/LICENSE_GodotOceanWaves.txt), its
+// compute shaders (scenes/ocean/*.glsl) in HLSL, kernel for kernel. The source's butterfly factors are made
+// once on the CPU (OceanWaves.cs). Differences HLSL forces: map size comes from a constant, not the dispatch's
+// group count; the FFT's idle threads guard each stage (FXC refuses an early return before a barrier); foam
+// lives in its own single-channel map, the only kind of typed UAV FXC can read back.
+#pragma kernel SpectrumCompute
+#pragma kernel SpectrumModulate
+#pragma kernel FftCompute
+#pragma kernel Transpose
+#pragma kernel FftUnpack
+
+#define PI (3.141592653589793)
+#define G (9.81)
+#define NUM_SPECTRA (4u)
+#define MAX_MAP_SIZE (1024u)
+#define TRANSPOSE_TILE (32u)
+#define UNPACK_TILE (16u)
+
+struct Butterfly
+{
+    uint r0, r1;
+    float2 twiddle;
+};
+
+RWTexture2DArray<float4> _Spectrum;
+Texture2DArray<float4> _SpectrumIn;
+RWStructuredBuffer<float2> _Data;
+StructuredBuffer<Butterfly> _Butterfly;
+RWTexture2DArray<float4> _Disp;
+RWTexture2DArray<float4> _Normals;
+RWTexture2DArray<float> _Foam;
+
+uint _Map, _Stages, _Cascade;
+int _SeedX, _SeedY;
+float _TileX, _TileZ, _Alpha, _PeakFrequency, _WindSpeed, _Angle, _Depth, _Swell, _Detail, _SpreadShare, _Time0;
+float _Whitecap, _FoamGrow, _FoamDecay;
+
+#define DATA_SPAN (_Map * _Map * NUM_SPECTRA * 2u)
+#define DATA_FIRST(x, y, layer) (_Cascade * DATA_SPAN + (layer) * _Map * _Map + (y) * _Map + (x))
+#define DATA_SECOND(x, y, layer) (_Cascade * DATA_SPAN + NUM_SPECTRA * _Map * _Map + (layer) * _Map * _Map + (y) * _Map + (x))
+
+float2 MulComplex(float2 a, float2 b)
+{
+    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+// ---- spectrum_compute ----
+
+float2 Hash(uint2 x)
+{
+    uint h32 = x.y + 374761393u + x.x * 3266489917u;
+    h32 = 2246822519u * (h32 ^ (h32 >> 15));
+    h32 = 3266489917u * (h32 ^ (h32 >> 13));
+    uint n = h32 ^ (h32 >> 16);
+    uint2 rz = uint2(n, n * 48271u);
+    return float2((rz >> 1) & uint2(0x7FFFFFFFu, 0x7FFFFFFFu)) / 2147483647.0;
+}
+
+// FXC expands tanh as sinh/cosh, which is inf/inf (NaN) for large arguments; GLSL's is safe there.
+float SafeTanh(float x)
+{
+    return abs(x) > 10.0 ? sign(x) : tanh(x);
+}
+
+float2 Gaussian(float2 x)
+{
+    float r = sqrt(-2.0 * log(x.x));
+    float theta = 2.0 * PI * x.y;
+    return float2(r * cos(theta), r * sin(theta));
+}
+
+float2 DispersionRelation(float k)
+{
+    float a = k * _Depth;
+    float b = SafeTanh(a);
+    float d = sqrt(G * k * b);
+    return float2(d, 0.5 * G * (b + a * (1.0 - b * b)) / d);
+}
+
+float LonguetHigginsNormalization(float s)
+{
+    float a = sqrt(s);
+    return (s < 0.4) ? (0.5 / PI) + s * (0.220636 + s * (-0.109 + s * 0.090)) : (1.0 / sqrt(PI)) * (a * 0.5 + (1.0 / a) * 0.0625);
+}
+
+float LonguetHiggins(float s, float theta)
+{
+    return LonguetHigginsNormalization(s) * pow(abs(cos(theta * 0.5)), 2.0 * s);
+}
+
+float HasselmannSpread(float w, float w_p, float wind, float theta)
+{
+    float p = w / w_p;
+    float s = (w <= w_p) ? 6.97 * pow(abs(p), 4.06) : 9.77 * pow(abs(p), -2.33 - 1.45 * (wind * w_p / G - 1.17));
+    float s_xi = 16.0 * SafeTanh(w_p / w) * _Swell * _Swell;
+    return LonguetHiggins(s + s_xi, theta - _Angle);
+}
+
+float TmaSpectrum(float w, float w_p, float alpha)
+{
+    float beta = 1.25;
+    float gamma = 3.3;
+    float sigma = (w <= w_p) ? 0.07 : 0.09;
+    float r = exp(-(w - w_p) * (w - w_p) / (2.0 * sigma * sigma * w_p * w_p));
+    float jonswap = (alpha * G * G) / pow(w, 5.0) * exp(-beta * pow(w_p / w, 4.0)) * pow(gamma, r);
+    float w_h = min(w * sqrt(_Depth / G), 2.0);
+    float kitaigorodskii = (w_h <= 1.0) ? 0.5 * w_h * w_h : 1.0 - 0.5 * (2.0 - w_h) * (2.0 - w_h);
+    return jonswap * kitaigorodskii;
+}
+
+float2 Amplitude(int2 id, int2 dims)
+{
+    float2 dk = 2.0 * PI / float2(_TileX, _TileZ);
+    float2 k_vec = (float2(id) - float2(dims) * 0.5) * dk;
+    // The k = 0 texel has no wave, and FXC's atan2(0, 0) is NaN. One NaN texel poisons the whole FFT.
+    if (k_vec.x == 0.0 && k_vec.y == 0.0) return float2(0.0, 0.0);
+    float k = length(k_vec) + 1e-6;
+    float theta = atan2(k_vec.x, k_vec.y);
+    float2 dispersion = DispersionRelation(k);
+    float w = dispersion.x;
+    float w_norm = dispersion.y / k * dk.x * dk.y;
+    float s = TmaSpectrum(w, _PeakFrequency, _Alpha);
+    float d = lerp(0.5 / PI, HasselmannSpread(w, _PeakFrequency, _WindSpeed, theta), 1.0 - _SpreadShare)
+        * exp(-(1.0 - _Detail) * (1.0 - _Detail) * k * k);
+    return Gaussian(Hash(uint2(id + int2(_SeedX, _SeedY)))) * sqrt(2.0 * s * d * w_norm);
+}
+
+[numthreads(16, 16, 1)]
+void SpectrumCompute(uint3 thread : SV_DispatchThreadID)
+{
+    int2 dims = int2(_Map, _Map);
+    int2 id0 = int2(thread.xy);
+    int2 id1 = (dims - id0) % dims;  // the source's mod(-id0, dims)
+    float2 a = Amplitude(id0, dims);
+    float2 b = Amplitude(id1, dims);
+    _Spectrum[uint3(thread.xy, _Cascade)] = float4(a, b.x, -b.y);
+}
+
+// ---- spectrum_modulate ----
+
+[numthreads(16, 16, 1)]
+void SpectrumModulate(uint3 thread : SV_DispatchThreadID)
+{
+    uint x = thread.x, y = thread.y;
+    float2 k_vec = (float2(thread.xy) - float(_Map) * 0.5) * 2.0 * PI / float2(_TileX, _TileZ);
+    float k = length(k_vec) + 1e-6;
+    float2 k_unit = k_vec / k;
+
+    float4 h0 = _SpectrumIn.Load(int4(thread.xy, _Cascade, 0));
+    float dispersion = sqrt(G * k * SafeTanh(k * _Depth)) * _Time0;
+    float2 modulation = float2(cos(dispersion), sin(dispersion));
+    float2 h = MulComplex(h0.xy, modulation) + MulComplex(h0.zw, float2(modulation.x, -modulation.y));
+    float2 h_inv = float2(-h.y, h.x);
+
+    float2 hx = h_inv * k_unit.y;
+    float2 hy = h;
+    float2 hz = h_inv * k_unit.x;
+
+    float2 dhy_dx = h_inv * k_vec.y;
+    float2 dhy_dz = h_inv * k_vec.x;
+    float2 dhx_dx = -h * k_vec.y * k_unit.y;
+    float2 dhz_dz = -h * k_vec.x * k_unit.x;
+    float2 dhz_dx = -h * k_vec.y * k_unit.x;
+
+    _Data[DATA_FIRST(x, y, 0u)] = float2(hx.x - hy.y, hx.y + hy.x);
+    _Data[DATA_FIRST(x, y, 1u)] = float2(hz.x - dhy_dx.y, hz.y + dhy_dx.x);
+    _Data[DATA_FIRST(x, y, 2u)] = float2(dhy_dz.x - dhx_dx.y, dhy_dz.y + dhx_dx.x);
+    _Data[DATA_FIRST(x, y, 3u)] = float2(dhz_dz.x - dhz_dx.y, dhz_dz.y + dhz_dx.x);
+}
+
+// ---- fft_compute ----
+
+groupshared float2 row_shared[2u * MAX_MAP_SIZE];
+
+[numthreads(1024, 1, 1)]
+void FftCompute(uint3 block : SV_GroupID, uint3 local : SV_GroupThreadID)
+{
+    uint col = local.x, row = block.y, spectrum = block.z;
+    bool used = col < _Map;
+    if (used) row_shared[col] = _Data[DATA_FIRST(col, row, spectrum)];
+    for (uint stage = 0u; stage < _Stages; ++stage)
+    {
+        GroupMemoryBarrierWithGroupSync();
+        if (used)
+        {
+            uint read = (stage % 2u) * MAX_MAP_SIZE, write = ((stage + 1u) % 2u) * MAX_MAP_SIZE;
+            Butterfly b = _Butterfly[stage * _Map + col];
+            float2 upper = row_shared[read + b.r0];
+            float2 lower = row_shared[read + b.r1];
+            row_shared[write + col] = upper + MulComplex(lower, b.twiddle);
+        }
+    }
+    if (used) _Data[DATA_SECOND(col, row, spectrum)] = row_shared[(_Stages % 2u) * MAX_MAP_SIZE + col];
+}
+
+// ---- transpose ----
+
+groupshared float2 tile_transpose[TRANSPOSE_TILE * (TRANSPOSE_TILE + 1u)];
+
+[numthreads(32, 32, 1)]
+void Transpose(uint3 thread : SV_DispatchThreadID, uint3 block : SV_GroupID, uint3 local : SV_GroupThreadID)
+{
+    uint spectrum = thread.z;
+    tile_transpose[local.y * (TRANSPOSE_TILE + 1u) + local.x] = _Data[DATA_SECOND(thread.x, thread.y, spectrum)];
+    GroupMemoryBarrierWithGroupSync();
+    uint2 at = block.yx * TRANSPOSE_TILE + local.xy;
+    _Data[DATA_FIRST(at.x, at.y, spectrum)] = tile_transpose[local.x * (TRANSPOSE_TILE + 1u) + local.y];
+}
+
+// ---- fft_unpack ----
+
+groupshared float2 tile_unpack[NUM_SPECTRA * UNPACK_TILE * UNPACK_TILE];
+
+#define UNPACK_AT(s, local) ((s) * UNPACK_TILE * UNPACK_TILE + (local).y * UNPACK_TILE + (local).x)
+
+[numthreads(16, 16, 2)]
+void FftUnpack(uint3 thread : SV_DispatchThreadID, uint3 local : SV_GroupThreadID)
+{
+    uint3 id = uint3(thread.xy, _Cascade);
+    float sign_shift = -2.0 * float((id.x & 1u) ^ (id.y & 1u)) + 1.0;
+
+    tile_unpack[UNPACK_AT(local.z * 2u, local)] = _Data[DATA_SECOND(id.x, id.y, local.z * 2u)];
+    tile_unpack[UNPACK_AT(local.z * 2u + 1u, local)] = _Data[DATA_SECOND(id.x, id.y, local.z * 2u + 1u)];
+    GroupMemoryBarrierWithGroupSync();
+
+    if (local.z == 0u)
+    {
+        float2 t0 = tile_unpack[UNPACK_AT(0u, local)];
+        float hz = tile_unpack[UNPACK_AT(1u, local)].x;
+        _Disp[id] = float4(t0.x, t0.y, hz, 0.0) * sign_shift;
+    }
+    else
+    {
+        float2 t1 = tile_unpack[UNPACK_AT(1u, local)];
+        float2 t2 = tile_unpack[UNPACK_AT(2u, local)];
+        float2 t3 = tile_unpack[UNPACK_AT(3u, local)];
+        float dhy_dx = t1.y * sign_shift;
+        float dhy_dz = t2.x * sign_shift;
+        float dhx_dx = t2.y * sign_shift;
+        float dhz_dz = t3.x * sign_shift;
+        float dhz_dx = t3.y * sign_shift;
+
+        float jacobian = (1.0 + dhx_dx) * (1.0 + dhz_dz) - dhz_dx * dhz_dx;
+        float foam_factor = -min(0.0, jacobian - _Whitecap);
+        float foam = _Foam[id];
+        foam *= exp(-_FoamDecay);
+        foam += foam_factor * _FoamGrow;
+        foam = saturate(foam);
+        _Foam[id] = foam;
+
+        float2 gradient = float2(dhy_dx, dhy_dz) / (1.0 + abs(float2(dhx_dx, dhz_dz)));
+        _Normals[id] = float4(gradient, dhx_dx, foam);
+    }
+}

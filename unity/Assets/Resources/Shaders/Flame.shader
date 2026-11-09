@@ -49,6 +49,7 @@ Shader "Hidden/Slice/Flame"
             float4 _FireXZ;
             float _FireSeed, _FireCount, _FireLife, _FireSpread;
             float _SpeedMin, _SpeedMax, _ScaleMin, _ScaleMax, _AlphaIn, _AlphaOut;
+            float _FireStart, _FireEnd;  // particles born outside these never show (scenes/fire.gd go_out)
 
             struct Varyings
             {
@@ -110,6 +111,8 @@ Shader "Hidden/Slice/Flame"
                 float age = frac(phase);
                 uint life = (uint)floor(phase);
                 float t = age * _FireLife;
+                float born = _FireTime - t;
+                if (born < _FireStart || born > _FireEnd) return (Varyings)0;
 
                 float3 box = float3(Rnd(instanceID, life, 1u), Rnd(instanceID, life, 2u), Rnd(instanceID, life, 3u)) * 2.0 - 1.0;
                 float a1 = (Rnd(instanceID, life, 4u) * 2.0 - 1.0) * _FireSpread;
