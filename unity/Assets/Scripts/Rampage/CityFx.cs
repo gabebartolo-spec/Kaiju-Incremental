@@ -211,6 +211,18 @@ public sealed class CityFx : IDisposable
             Dust(Vector3.Lerp(from, to, (float)i / steps) + Vector3.up * DUST_LINE_LIFT, width * 0.6f, hasTint, tint);
     }
 
+    // scenes/fx_particles.gd sparks(tint) with a direction: the breath's burst off the struck face.
+    public void AimedSparks(Color tint, Vector3 aim, Vector3 at, int count, float life)
+    {
+        Color dark = Color.Lerp(tint, Color.black, SPARK_DARKEN);
+        var style = new BurstStyle
+        {
+            glow = true, aim = aim, spread = SPARK_SPREAD, gravity = new Vector3(0, -18f, 0), vmin = 8f, vmax = 16f, dmin = 0.5f, dmax = 1.5f,
+            smin = 0.6f, smax = 1f, unit = SPARK_CUBE, heat = EMBER_HEAT,
+        }.Size(0f, 1f, 1f, 0f).Colors(new[] { 0f, SPARK_WHITE, 1f }, Color.white, tint, dark);
+        Spray(style, at, Vector3.zero, count, life, (1f - EXPLOSIVENESS) * life);
+    }
+
     public void Sparks(Vector3 at) => bursts.Spawn(spark, at, Vector3.zero, SPARK_COUNT, SPARK_LIFE, (1f - EXPLOSIVENESS) * SPARK_LIFE, Now, Seed());
 
     public void Shockwave(Vector3 at, float radius, bool tail = false, bool foot = false)

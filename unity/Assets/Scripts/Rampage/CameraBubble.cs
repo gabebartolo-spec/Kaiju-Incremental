@@ -23,6 +23,7 @@ public sealed class CameraBubble
     bool first = true;
 
     public int Open => open.Count;
+    public IEnumerable<int> OpenNow => open.Keys;
 
     public CameraBubble(S.RampageSim simulation, CityDraw draw)
     {
