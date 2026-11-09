@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-10 · D-476 · Director · Finish the Unity port first; polish the visuals after it
+"not much point in analysing every visual yet, until the full game is ported to unity, a lot is missing that ties the
+visuals together". Changes: port pieces merge without a clip or look verdict each; known gaps, such as the lash ("it
+needs work, but its a good first step"), wait for the polish pass.
+
 ## 2026-11-09 · D-475 · Director · The follow camera sits slightly higher: offset (0, 18, 30), was (0, 16, 30)
 "slightly higher"; eye 24.1 to 27.2 at scale 1.90, in both games. Changes: `data/tuning.json`, `docs/DESIGN.md`.
 
@@ -392,9 +397,3 @@ unchanged.
 ## 2026-10-31 · D-421 · Director · A conquest bonus is a pick of one from three
 Same ruling set. Conquering a continent offers three bonuses and the player keeps one. The bonus lists in the plan
 are proposals, still to be reacted to.
-
-## 2026-10-31 · D-420 · Director · The globe offers the two lowest-tier unconquered continents in sequence
-Same ruling set. Ostia Minor comes first; after it the globe always offers the two lowest-tier unconquered continents
-in the fixed sequence Carthago, Thule, Silvania, Mons Ferrata, Neptunia: conquer one and the next in sequence joins
-the pair. Difficulty always climbs and the choice is real (16 paths; the sixth pick is forced). Aurelia is last
-(D-422).
