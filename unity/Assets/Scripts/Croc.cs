@@ -89,6 +89,24 @@ public sealed class Croc
     int sweepSide;
     bool seeded;
 
+    // scenes/clip_takes.gd: the roar's upper-body bones, how long it fades; which clip holds the jaw open.
+    static readonly string[] ROAR_PREFIXES = { "spine", "neck", "head", "clavicle", "arm", "tail", "jaw" };
+    const float ROAR_FADE_S = 0.4f;
+    const string ROAR_CLIP = "roar", JAW_CLIP = "beam_jaw", JAW_BONE = "jaw";
+    // HDRP's first user stencil bit: what lands on the street (the scorch) leaves the hide alone.
+    public const int BODY_STENCIL = 64;
+    readonly bool[] roarBone;
+    readonly int jawClip = -1, jawIndex = -1, upperIndex = -1;
+    bool jawKnown;
+    Quaternion jawHeld;
+    float roarTime = -1f, roarAge, jawOpen, jawTarget, jawEase = 0.25f;
+    // Each cube's rest position and heaviest bone, for the ridge and the jaws' tips.
+    readonly Vector3[] cubeAt;
+    readonly byte[] cubeBone;
+    int[] ridgeBones = new int[0];
+    Vector3[] ridgeRest = new Vector3[0];
+    Vector3 jawTip, upperTip;
+
     public Croc(Tuning t, Dictionary<string, object> slice, Shader litShader, Mesh cubeMesh, float inset)
     {
         tuning = t;
@@ -160,6 +178,15 @@ public sealed class Croc
         turnsB = new Quaternion[clipBones.Count];
         turnsC = new Quaternion[clipBones.Count];
         turnsOut = new Quaternion[clipBones.Count];
+        roarBone = new bool[clipBones.Count];
+        for (int i = 0; i < clipBones.Count; i++)
+        {
+            string name = (string)clipBones[i];
+            if (name == JAW_BONE) jawClip = i;
+            foreach (string prefix in ROAR_PREFIXES) roarBone[i] |= name.StartsWith(prefix);
+        }
+        jawIndex = byName.TryGetValue(JAW_BONE, out int jawAt) ? jawAt : -1;
+        upperIndex = jawIndex >= 0 ? parents[jawIndex] : -1;
 
         byte[] skin = File.ReadAllBytes(Path.Combine(SliceData.Dir, "croc.vskin"));
         ushort boneCount = BitConverter.ToUInt16(skin, 16);
@@ -183,6 +210,8 @@ public sealed class Croc
         float noise = MiniJson.F(MiniJson.Obj(slice["look"])["color_noise"]);
         var look = MiniJson.Obj(slice["look"]);
         var data = new NativeArray<Cube>(cubeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        cubeAt = new Vector3[cubeCount];
+        cubeBone = new byte[cubeCount];
         for (int i = 0; i < cubeCount; i++)
         {
             int k = HEADER + i * CELL_BYTES;
@@ -210,6 +239,9 @@ public sealed class Croc
                 c.corFlag = BitConverter.ToSingle(skin, q + 12);
             }
             data[i] = c;
+            cubeAt[i] = new Vector3(c.cx, c.cy, c.cz);
+            float w2 = 1f - c.w0 - c.w1;
+            cubeBone[i] = skin[k + 10 + (c.w0 >= c.w1 && c.w0 >= w2 ? 0 : c.w1 >= w2 ? 1 : 2)];
         }
         cubeBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, cubeCount, 52);
         cubeBuffer.SetData(data);
@@ -222,6 +254,12 @@ public sealed class Croc
         fillMat = new Material(litShader);
         fillMat.EnableKeyword("SLICE_FILL");
         fill = BuildFill(skin, fillVertsAt, fillVerts, fillIndexAt, fillIndices);
+        foreach (Material m in new[] { cubeMat, fillMat })
+            foreach (string pass in new[] { "", "GBuffer", "Depth" })
+            {
+                m.SetInt("_StencilRef" + pass, m.GetInt("_StencilRef" + pass) | BODY_STENCIL);
+                m.SetInt("_StencilWriteMask" + pass, m.GetInt("_StencilWriteMask" + pass) | BODY_STENCIL);
+            }
 
         Shader.SetGlobalFloat("_HideCell", voxel * SliceData.F(look, "kaiju_hide_cell_voxels", 3));
         Shader.SetGlobalFloat("_HideSeed", SliceData.F(look, "kaiju_hide_seed", 0));
@@ -457,6 +495,168 @@ public sealed class Croc
 
     public string RootBone => names[0];
 
+    Vector4[] restSpheres;
+
+    // Godot axes, capture only: the body as one sphere per bone (xyz centre, w radius), from the cubes each bone
+    // carries, so a framing check can tell when the croc stands between a camera and its own mouth.
+    public void BodySpheres(List<Vector4> into)
+    {
+        if (restSpheres == null)
+        {
+            restSpheres = new Vector4[pose.Length];
+            for (int b = 0; b < pose.Length; b++)
+            {
+                Vector3 sum = Vector3.zero;
+                int count = 0;
+                for (int i = 0; i < cubeAt.Length; i++)
+                    if (cubeBone[i] == b) { sum += cubeAt[i]; count++; }
+                if (count == 0) continue;
+                Vector3 mid = sum / count;
+                var far = new List<float>(count);
+                for (int i = 0; i < cubeAt.Length; i++)
+                    if (cubeBone[i] == b) far.Add((cubeAt[i] - mid).magnitude);
+                far.Sort();
+                restSpheres[b] = new Vector4(mid.x, mid.y, mid.z, far[(count * 3) / 4]);
+            }
+        }
+        into.Clear();
+        Matrix4x4 world = WorldMatrix();
+        float scale = world.lossyScale.y;
+        for (int b = 0; b < restSpheres.Length; b++)
+        {
+            if (restSpheres[b].w <= 0f) continue;
+            Vector3 at = world.MultiplyPoint3x4(pose[b].MultiplyPoint3x4(restSpheres[b]));
+            into.Add(new Vector4(at.x, at.y, at.z, restSpheres[b].w * scale));
+        }
+    }
+
+    // The ridge from tail tip to head (scenes/spine_charge.gd _find_ridge): on each bone, the highest cell
+    // of its middle stretch at rest, lifted clear of the hide. This rig's bones carry no direction, so the
+    // stretch runs from the bone's head to its farthest cell.
+    public void FindRidge(IList<string> bones, float low, float high, float liftVoxels)
+    {
+        var at = new List<int>();
+        var tops = new List<Vector3>();
+        float voxel = cubeMat.GetFloat("_CubeSize");
+        foreach (string bone in bones)
+        {
+            int b = System.Array.IndexOf(names, bone);
+            if (b < 0) continue;
+            Vector3 head = RestHead(b), axis = FarCell(b) - head;
+            bool found = false;
+            Vector3 best = Vector3.zero;
+            for (int i = 0; i < cubeAt.Length; i++)
+            {
+                if (cubeBone[i] != b) continue;
+                float along = Vector3.Dot(cubeAt[i] - head, axis) / Mathf.Max(axis.sqrMagnitude, 1e-4f);
+                if (along < low || along > high || (found && cubeAt[i].y <= best.y)) continue;
+                best = cubeAt[i];
+                found = true;
+            }
+            if (!found) continue;
+            at.Add(b);
+            tops.Add(best + Vector3.up * (liftVoxels * voxel));
+        }
+        ridgeBones = at.ToArray();
+        ridgeRest = tops.ToArray();
+        if (jawIndex >= 0) jawTip = FarCell(jawIndex);
+        if (upperIndex >= 0) upperTip = FarCell(upperIndex);
+    }
+
+    public int RidgeSize => ridgeBones.Length;
+
+    // Godot axes: ridge point `i` (tail tip 0 .. head) now.
+    public Vector3 RidgeAt(int i) => WorldMatrix().MultiplyPoint3x4(pose[ridgeBones[i]].MultiplyPoint3x4(ridgeRest[i]));
+
+    Vector3 RestHead(int bone) => bind[bone].inverse.GetColumn(3);
+
+    Vector3 FarCell(int bone)
+    {
+        Vector3 head = RestHead(bone), far = head;
+        float most = -1f;
+        for (int i = 0; i < cubeAt.Length; i++)
+        {
+            if (cubeBone[i] != bone) continue;
+            float d = (cubeAt[i] - head).sqrMagnitude;
+            if (d > most) { most = d; far = cubeAt[i]; }
+        }
+        return far;
+    }
+
+    // Godot axes: where the bolt leaves (scenes/breath_beam.gd throat_of): out from the hinge a share of
+    // the way to the jaws' tips, and a share of the way from the lower to the upper.
+    public Vector3 ThroatAt(float along, float up)
+    {
+        Matrix4x4 world = WorldMatrix();
+        Vector3 hinge = world.MultiplyPoint3x4(global[jawIndex].GetColumn(3));
+        Vector3 low = Vector3.Lerp(hinge, world.MultiplyPoint3x4(pose[jawIndex].MultiplyPoint3x4(jawTip)), along);
+        Vector3 high = Vector3.Lerp(hinge, world.MultiplyPoint3x4(pose[upperIndex].MultiplyPoint3x4(upperTip)), along);
+        return Vector3.Lerp(low, high, up);
+    }
+
+    // The bolt leaves an open maw (scenes/spine_charge.gd _open_jaw): the jaw as keyed at its widest in
+    // the beam's own take, laid over whatever plays, over `seconds`.
+    public void JawOpen(bool open, float seconds)
+    {
+        if (jawClip < 0) return;
+        if (!jawKnown)
+        {
+            jawKnown = true;
+            jawHeld = WidestJaw();
+        }
+        jawTarget = open ? 1f : 0f;
+        jawEase = Mathf.Max(seconds, 0.01f);
+    }
+
+    Quaternion WidestJaw()
+    {
+        Clip c = clips[JAW_CLIP];
+        var turns = new Quaternion[turnsOut.Length];
+        FrameTurns(c.first, turns, out Vector3 _);
+        Quaternion shut = turns[jawClip], best = shut;
+        float most = -1f;
+        for (int f = 0; f < c.frames; f++)
+        {
+            FrameTurns(c.first + f, turns, out Vector3 _);
+            float a = Quaternion.Angle(shut, turns[jawClip]);
+            if (a > most) { most = a; best = turns[jawClip]; }
+        }
+        return best;
+    }
+
+    // scenes/clip_takes.gd roar_over: the clip whole while standing, its upper body and jaw alone over a walk.
+    public void Roar()
+    {
+        roarTime = 0f;
+        roarAge = 0f;
+    }
+
+    void LayRoar(float dt, ref Vector3 offset)
+    {
+        if (roarTime < 0f) return;
+        Clip c = clips[ROAR_CLIP];
+        roarTime += dt * fps;
+        roarAge += dt;
+        float end = c.frames - 1;
+        if (roarTime >= end)
+        {
+            roarTime = -1f;
+            return;
+        }
+        ClipPose(c, roarTime, turnsA, out Vector3 roarOffset);
+        float w = Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, (end - roarTime) / (ROAR_FADE_S * fps))) * Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, roarAge / ROAR_FADE_S));
+        float whole = w * (1f - moveWeight);
+        for (int i = 0; i < turnsOut.Length; i++)
+            turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], roarBone[i] ? w : whole);
+        offset = Vector3.Lerp(offset, roarOffset, whole);
+    }
+
+    void LayJaw(float dt)
+    {
+        jawOpen = Mathf.MoveTowards(jawOpen, jawTarget, dt / jawEase);
+        if (jawClip >= 0 && jawOpen > 0f) turnsOut[jawClip] = Quaternion.Slerp(turnsOut[jawClip], jawHeld, Mathf.SmoothStep(0f, 1f, jawOpen));
+    }
+
     // The head's crown in the rest pose (scenes/rampage_rise.gd head_at): x ahead of the hips, y over the
     // feet, world units. The model faces -z.
     public Vector2 RestCrown(string name, float scale)
@@ -516,6 +716,8 @@ public sealed class Croc
             }
         }
 
+        LayRoar(dt, ref offset);
+        LayJaw(dt);
         Finish(offset);
         WatchFeet();
     }

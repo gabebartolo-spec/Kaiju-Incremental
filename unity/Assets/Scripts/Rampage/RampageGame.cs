@@ -53,6 +53,7 @@ public sealed class RampageGame : MonoBehaviour
     CityTrees trees;
     CitySkyline skyline;
     IntroWater introWater;
+    BreathView breath;
     S.Vector2 walked;
     Vector3 feetFrom, feetTo;
     float accumulator, age, simMs;
@@ -71,6 +72,8 @@ public sealed class RampageGame : MonoBehaviour
     string statsPath;
     float quitAfter;
     float[] fixedEye;  // capture only: eye and aim, Godot axes (x,y,z,x,y,z)
+    string scoutPath;  // capture only: dry run, see CaptureScout
+    CaptureScout scout;
 
     static string Arg(string[] args, string name)
     {
@@ -91,6 +94,7 @@ public sealed class RampageGame : MonoBehaviour
         string[] args = Environment.GetCommandLineArgs();
         auto = args.Contains("-rampage-auto");
         clipDir = Arg(args, "-rampage-clip");
+        scoutPath = Arg(args, "-rampage-scout");
         clipFrames = ArgInt(args, "-rampage-frames", 300);
         clipSkip = ArgInt(args, "-rampage-skip", 0);
         blastEvery = ArgInt(args, "-rampage-blasts", 0);
@@ -182,8 +186,14 @@ public sealed class RampageGame : MonoBehaviour
         trees = new CityTrees(sim, fx, army, lit, root.transform, seed);
         skyline = new CitySkyline(sim.city, lit, root.transform, seed);
         Debug.Log($"skyline: {skyline.Boxes} boxes");
+        breath = new BreathView(sim, fx, croc, trees, seed, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m);
         walked = sim.kaijuPos;
         if (clipDir != null) BeginClip();
+        if (scoutPath != null)
+        {
+            scout = new CaptureScout(scoutPath, clipFrames, sim, croc, WIDTH, HEIGHT);
+            Time.captureFramerate = 30;
+        }
         Debug.Log($"rampage: stage {stage} seed {seed}, body scale {sim.BodyScale():F2}, kaiju at {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1}");
     }
 
@@ -280,7 +290,7 @@ public sealed class RampageGame : MonoBehaviour
         int ran = 0;
         bool signature = Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0);
         bool held = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0);
-        bool ultimate = Input.GetKeyDown(KeyCode.Q), breath = Input.GetKeyDown(KeyCode.E), dash = Input.GetKeyDown(KeyCode.LeftShift);
+        bool ultimate = Input.GetKeyDown(KeyCode.Q), breathKey = Input.GetKeyDown(KeyCode.E), dash = Input.GetKeyDown(KeyCode.LeftShift);
         if (Input.anyKeyDown && !auto) intro.Skip();
         while (accumulator >= TICK && ran < MAX_STEPS)
         {
@@ -290,7 +300,7 @@ public sealed class RampageGame : MonoBehaviour
             bool first = ran == 1;
             // One read a physics frame, however many ticks the intro runs on it (scenes/rampage.gd _step).
             S.Vector2 move = ReadMove();
-            bool sign = signature && first, hold = held, ult = ultimate && first, br = breath && first, da = dash && first;
+            bool sign = signature && first, hold = held, ult = ultimate && first, br = breathKey && first, da = dash && first;
             if (auto)
             {
                 sign = sim.abilityReadyIn <= 0.0;
@@ -311,6 +321,7 @@ public sealed class RampageGame : MonoBehaviour
                 city.OnEvent(e);
                 eventFx.OnEvent(e, Feet());
                 army.OnEvent(e, Feet());
+                breath.OnEvent(e);
                 if (S.Gd.Str(e["type"]) == "stomp") trees.Crush(Feet(), (float)(double)S.Num.F(e["radius"]));
                 string kind = S.Gd.Str(e["type"]);
                 if (kind == "tail_sweep" || kind == "tail_auto") croc.StartSweep();
@@ -325,7 +336,7 @@ public sealed class RampageGame : MonoBehaviour
         }
         simMs = (float)watch.Elapsed.TotalMilliseconds;
         if (statsPath != null && Time.frameCount % STATS_EVERY == 0)
-            File.AppendAllText(statsPath, $"frame {Time.frameCount} dt {Time.unscaledDeltaTime * 1000f:F1} ms sim {simMs:F1} mesh {city.lastMeshMs:F1} regions {city.lastRegions} promoted {city.promoted} falling {city.Falling} alive {AliveBuildings()} debris {debris.Live} bursts {fx.LiveBursts} fires {fx.LiveFires} stomps {sim.body.stomps} trees {trees.Count} tanks {sim.tanks.Size()} helis {sim.air.helis.Size()} target {autoTarget.x:F1},{autoTarget.y:F1} reach {sim.body.StompReaches(autoTarget)} walking {sim.body.Walking()} steps {steps} feet {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1} y {sim.standY:F2} facing {sim.facing.x:F2},{sim.facing.y:F2} cam {cam.transform.position} gc {GC.GetTotalMemory(false) / (1 << 20)} MB\n");
+            File.AppendAllText(statsPath, $"frame {Time.frameCount} dt {Time.unscaledDeltaTime * 1000f:F1} ms sim {simMs:F1} mesh {city.lastMeshMs:F1} regions {city.lastRegions} promoted {city.promoted} falling {city.Falling} alive {AliveBuildings()} debris {debris.Live} bursts {fx.LiveBursts} fires {fx.LiveFires} stomps {sim.body.stomps} breaths {breath.Breaths} trees {trees.Count} tanks {sim.tanks.Size()} helis {sim.air.helis.Size()} target {autoTarget.x:F1},{autoTarget.y:F1} reach {sim.body.StompReaches(autoTarget)} walking {sim.body.Walking()} steps {steps} feet {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1} y {sim.standY:F2} facing {sim.facing.x:F2},{sim.facing.y:F2} cam {cam.transform.position} gc {GC.GetTotalMemory(false) / (1 << 20)} MB\n");
         city.Animate(dt);
         city.Remesh();
         debris.Step(dt);
@@ -345,6 +356,7 @@ public sealed class RampageGame : MonoBehaviour
             introWater = new IntroWater(sim, fx, Resources.Load<Shader>("Shaders/Bolt"), crown.x);
         }
         croc.Draw();
+        breath.Step(dt);
         fx.Tick(age, dt);
         eventFx.Step(dt);
         introWater.Step(dt);
@@ -400,6 +412,7 @@ public sealed class RampageGame : MonoBehaviour
 
     void LateUpdate()
     {
+        if (scout != null && error == null && scout.Step(cam, bubble)) Application.Quit();
         if (clipDir == null || error != null || clipTarget == null) return;
         if (clipSkip > 0) { clipSkip--; return; }
         cam.targetTexture = clipTarget;
@@ -434,6 +447,7 @@ public sealed class RampageGame : MonoBehaviour
         ground?.Dispose();
         water?.Dispose();
         fx?.Dispose();
+        breath?.Dispose();
         if (cubeMesh != null) Destroy(cubeMesh);
         if (profile != null) Destroy(profile);
         if (clipTarget != null) Destroy(clipTarget);

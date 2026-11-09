@@ -140,6 +140,12 @@ Shader "Hidden/Slice/Burst"
                     float a1 = (Rnd(instanceID, 4u) * 2.0 - 1.0) * _BVel.z;
                     float a2 = (Rnd(instanceID, 5u) * 2.0 - 1.0) * _BVel.z;
                     float3 dir = float3(sin(a1) * cos(a2), cos(a1) * cos(a2), sin(a2));
+                    if (dot(_BClear.yzw, _BClear.yzw) > 0.0)
+                    {
+                        float3 ay = normalize(_BClear.yzw);
+                        float3 ax = normalize(cross(ay, abs(ay.y) > 0.9 ? float3(1, 0, 0) : float3(0, 1, 0)));
+                        dir = ax * dir.x + ay * dir.y + cross(ax, ay) * dir.z;
+                    }
                     float speed = lerp(_BVel.x, _BVel.y, Rnd(instanceID, 6u));
                     float damp = lerp(_BDamp.x, _BDamp.y, Rnd(instanceID, 7u));
                     // Godot takes damping off the speed each step: a straight line down to a stop. Once

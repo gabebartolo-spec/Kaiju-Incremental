@@ -25,7 +25,7 @@ Shader "Hidden/Slice/Bolt"
 
             float4 _BoltTint, _BoltFringe, _BoltCore;
             float _BoltWidth, _BoltLevel, _BoltBoost, _BoltFringeBoost, _BoltWhiteTo, _BoltTintTo;
-            float _BoltWobble, _BoltWobbleHz, _BoltMinPx, _BoltAlpha;
+            float _BoltWobble, _BoltWobbleHz, _BoltMinPx, _BoltAlpha, _BoltSoft;
 
             struct Attributes
             {
@@ -42,6 +42,7 @@ Shader "Hidden/Slice/Bolt"
                 float lw : TEXCOORD1;
                 float wpx : TEXCOORD2;
                 float2 shade : TEXCOORD3;
+                float eye : TEXCOORD4;
             };
 
             Varyings Vert(Attributes v)
@@ -66,6 +67,7 @@ Shader "Hidden/Slice/Bolt"
                 o2.lw = len / w;
                 o2.wpx = w / perPx;
                 o2.shade = v.info.yz;
+                o2.eye = -at.z;
                 o2.positionCS = TransformWViewToHClip(at);
                 return o2;
             }
@@ -81,7 +83,10 @@ Shader "Hidden/Slice/Bolt"
                 float3 color = lerp(edge, _BoltCore.rgb * _BoltBoost, white);
                 float flick = 1.0 - _BoltWobble * 0.5 * (1.0 + sin(_Time.y * _BoltWobbleHz * 6.2832 + i.shade.y * 37.0));
                 color *= i.shade.x * flick * lerp(0.6, 1.0, saturate(_BoltLevel));
-                return float4(color, cover * smoothstep(0.0, 0.12, _BoltLevel) * _BoltAlpha);
+                float k = 1.0;
+                if (_BoltSoft > 0.0)
+                    k = saturate((LinearEyeDepth(LoadCameraDepth(i.positionCS.xy), _ZBufferParams) - i.eye) / _BoltSoft);
+                return float4(color, cover * smoothstep(0.0, 0.12, _BoltLevel) * _BoltAlpha * k);
             }
             ENDHLSL
         }
