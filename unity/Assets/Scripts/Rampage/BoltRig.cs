@@ -24,12 +24,17 @@ public sealed class BoltRig : IDisposable
     const int QUEUE_ARC = BoltView.QUEUE_BOLT, QUEUE_BRANCH = BoltView.QUEUE_BOLT + 1, QUEUE_MAIN = BoltView.QUEUE_BOLT + 2;
     const int QUEUE_FLARE = BoltView.QUEUE_BOLT + 3;
     const int HOP_ROUNDS = 3;
+    const float DEFAULT_STRAND_SWAY = 0.2f;
 
     // How far along (from, from + span) the first standing thing is, 0..1.
     public Func<Vector3, Vector3, float> blocker;
     // The drawn lines cut short at what the sim left standing.
     public Func<List<List<Vector3>>, List<List<Vector3>>> wallCut;
     public BoltCone cone;
+    // (rng, count): where this play's branches strike. Null: across the cone.
+    public Func<S.RandomNumberGenerator, int, List<Vector3>> ends;
+    // A stroke fired, and where the bolt lands.
+    public Action<Vector3> stroked;
     public float power = 1f;
 
     public bool Live { get; private set; }
@@ -57,6 +62,9 @@ public sealed class BoltRig : IDisposable
     static float F(S.GDict d, string key) => (float)(double)S.Num.F(d[key]);
 
     static float At(S.GArray<S.Variant> a, int i) => (float)(double)S.Num.F(a[i]);
+
+    // scenes/bolt_branches.gd _row.get: the Thunder Beam's row leaves these out.
+    float Opt(string key, float fallback) => row.Has(key) ? F(row, key) : fallback;
 
     static int Roll(S.RandomNumberGenerator rng, S.GArray<S.Variant> range) => (int)rng.RandiRange(S.Num.I(range[0]), S.Num.I(range[1]));
 
@@ -222,7 +230,7 @@ public sealed class BoltRig : IDisposable
 
     void Recrackle(float dt)
     {
-        float every = F(row, "reroll");
+        float every = Opt("reroll", 0f);
         if (every <= 0f || index == 0) return;
         crackle -= dt;
         if (crackle > 0f) return;
@@ -284,11 +292,12 @@ public sealed class BoltRig : IDisposable
         since = 0f;
         reveal = 1f;
         RollBranches();
-        crackle = F(row, "reroll");
+        crackle = Opt("reroll", 0f);
         dirty = true;
         next = t + F(cfg, "stroke_gap") + (float)rng.Randf() * F(cfg, "gap_jitter");
         if (next > end - F(cfg, "end_margin")) next = float.PositiveInfinity;
         Impact();
+        stroked?.Invoke(hit);
     }
 
     // scenes/bolt_impact.gd: what each stroke throws where it lands.
@@ -337,11 +346,11 @@ public sealed class BoltRig : IDisposable
     void RollBranches()
     {
         branches.Clear();
-        if (cone == null) return;
+        if (cone == null && ends == null) return;
         List<Vector3> main = MainWorld();
         S.GArray<S.Variant> range = row["branches"];
         int n = Roll(rng, range);
-        List<Vector3> targets = BoltShape.FanEnds(rng, cone, n, F(row, "fan_spread"), F(row, "fan_near"));
+        List<Vector3> targets = ends != null ? ends(rng, n) : BoltShape.FanEnds(rng, cone, n, F(row, "fan_spread"), F(row, "fan_near"));
         int branchDepth = (int)S.Num.I(cfg["branch_depth"]);
         float branchSway = F(row, "branch_sway");
         foreach (Vector3 target in targets)
@@ -393,9 +402,10 @@ public sealed class BoltRig : IDisposable
 
     void Strands(List<Vector3> main, int depth)
     {
+        if (!row.Has("strands")) return;
         S.GArray<S.Variant> range = row["strands"];
         int count = Roll(rng, range);
-        float reach = F(row, "strand_spread") * scale, sway = F(row, "strand_sway");
+        float reach = Opt("strand_spread", 0f) * scale, sway = Opt("strand_sway", DEFAULT_STRAND_SWAY);
         for (int i = 0; i < count; i++)
         {
             var off = new Vector3(Range(rng, -1f, 1f), Range(rng, -0.5f, 1f), Range(rng, -1f, 1f));
@@ -407,11 +417,12 @@ public sealed class BoltRig : IDisposable
     // The lightning spreading across the street where it lands, climbing what it meets.
     void Pool(int depth)
     {
+        if (!row.Has("pool")) return;
         int count = (int)S.Num.I(row["pool"]);
-        float radius = F(row, "pool_radius") * scale, sway = F(row, "strand_sway");
+        float radius = Opt("pool_radius", 0f) * scale, sway = Opt("strand_sway", DEFAULT_STRAND_SWAY);
         float y = cone != null ? cone.y : hit.y;
-        int chain = (int)S.Num.I(row["chain"]);
-        float chainStep = F(row, "chain_step") * scale;
+        int chain = (int)Opt("chain", 0f);
+        float chainStep = Opt("chain_step", 0f) * scale;
         for (int i = 0; i < count; i++)
         {
             float ang = Mathf.PI * 2f * (i + (float)rng.Randf()) / count;

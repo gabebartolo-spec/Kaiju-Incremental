@@ -38,7 +38,7 @@ public sealed class Croc
     {
         public int first, frames, cycles;
         public bool loop;
-        public float trailFirst, trailLast;
+        public float trailFirst, trailLast, hit;
     }
 
     public Vector3 position; // Godot axes
@@ -76,6 +76,12 @@ public sealed class Croc
     readonly int cubeCount;
     readonly MaterialPropertyBlock cubeBlock = new MaterialPropertyBlock(), fillBlock = new MaterialPropertyBlock();
     readonly List<int> tailClipBones = new List<int>();
+    // scenes/clip_lash.gd: these add the layer's twist to their own turn (the tail takes its turns outright).
+    static readonly string[] TWIST_PREFIXES = { "pelvis", "spine", "lumbar", "chest", "neck", "head" };
+    const float LAYER_FADE_S = 0.3f;
+    readonly List<int> twistClipBones = new List<int>();
+    readonly Dictionary<Clip, Quaternion[]> layerRest = new Dictionary<Clip, Quaternion[]>();
+    float sweepFade = LAYER_FADE_S;
 
     readonly List<(int bone, float r)> bodySpheres = new List<(int, float)>();
     readonly List<(int bone, float r)> tailSpheres = new List<(int, float)>();
@@ -160,6 +166,7 @@ public sealed class Croc
                 clip.trailFirst = MiniJson.F(trail[0]);
                 clip.trailLast = MiniJson.F(trail[1]);
             }
+            if (c.TryGetValue("hit", out object hitAt) && hitAt is double) clip.hit = MiniJson.F(hitAt);
             clips[(string)c["name"]] = clip;
             total = Mathf.Max(total, clip.first + clip.frames);
         }
@@ -171,6 +178,7 @@ public sealed class Croc
             string name = (string)clipBones[i];
             clipToRig[i] = byName[name];
             if (name.StartsWith("tail")) tailClipBones.Add(i);
+            else if (Array.Exists(TWIST_PREFIXES, name.StartsWith)) twistClipBones.Add(i);
         }
         Stride = MiniJson.F(header["stride_m"]) * rigScale * Scale;
         for (int i = 0; i < FOOT_BONES.Length; i++) footBone[i] = byName.TryGetValue(FOOT_BONES[i], out int foot) ? foot : -1;
@@ -433,6 +441,37 @@ public sealed class Croc
         sweep = clips[sweepSide == 0 ? "sweep_r" : "sweep_l"];
         sweepTime = 0;
         sweepAge = 0;
+        sweepFade = tuning.sweep_fade_s;
+    }
+
+    // scenes/clip_lash.gd cue: "tail_windup" starts the lash to that side, windup seconds before its hit frame, "tail"
+    // puts it at the hit frame (starting it there if none was wound up); "tail_sweep_windup" and "tail_sweep" the same
+    // for the automatic sweep's tail 360.
+    public void Cue(string limb, float side, float windup)
+    {
+        Clip want = clips[(limb.StartsWith("tail_sweep") ? "sweep_" : "lash_") + (side > 0f ? "r" : "l")];
+        sweepFade = LAYER_FADE_S;
+        if (limb.EndsWith("windup"))
+        {
+            sweep = want;
+            sweepTime = want.hit - windup * fps;
+            sweepAge = 0f;
+        }
+        else if (sweep != want)
+        {
+            sweep = want;
+            sweepAge = 0f;
+            sweepTime = want.hit;
+        }
+    }
+
+    Quaternion[] LayerRest(Clip c)
+    {
+        if (layerRest.TryGetValue(c, out Quaternion[] held)) return held;
+        var pose = new Quaternion[turnsA.Length];
+        ClipPose(c, 0f, pose, out Vector3 _);
+        layerRest[c] = pose;
+        return pose;
     }
 
     // move: world direction (Godot x, z), length 0 or 1; run: Shift held.
@@ -709,10 +748,19 @@ public sealed class Croc
             }
             else
             {
-                ClipPose(sweep, sweepTime, turnsA, out Vector3 _);
-                float tail = (sweep.frames - 1 - sweepTime) / (tuning.sweep_fade_s * fps);
-                float w = Mathf.SmoothStep(0, 1, sweepAge / tuning.sweep_fade_s) * Mathf.SmoothStep(0, 1, tail);
-                foreach (int i in tailClipBones) turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], w);
+                float tail = (sweep.frames - 1 - sweepTime) / (sweepFade * fps);
+                float w = sweepTime < 0f ? 0f : Mathf.SmoothStep(0, 1, sweepAge / sweepFade) * Mathf.SmoothStep(0, 1, tail);
+                if (w > 0f)
+                {
+                    ClipPose(sweep, sweepTime, turnsA, out Vector3 _);
+                    Quaternion[] restPose = LayerRest(sweep);
+                    foreach (int i in tailClipBones) turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], w);
+                    foreach (int i in twistClipBones)
+                    {
+                        Quaternion twist = turnsA[i] * Quaternion.Inverse(restPose[i]);
+                        turnsOut[i] = Quaternion.Normalize(Quaternion.Slerp(Quaternion.identity, twist, w) * turnsOut[i]);
+                    }
+                }
             }
         }
 
