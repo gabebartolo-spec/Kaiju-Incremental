@@ -60,6 +60,7 @@ public sealed class RampageGame : MonoBehaviour
     IntroWater introWater;
     BreathView breath;
     ThunderView thunder;
+    const float TAIL_AUTO_CRUSH = 0.5f;
     S.Vector2 walked;
     Vector3 feetFrom, feetTo;
     float accumulator, age, simMs;
@@ -351,8 +352,7 @@ public sealed class RampageGame : MonoBehaviour
                 breath.OnEvent(e);
                 thunder.OnEvent(e, Feet());
                 if (S.Gd.Str(e["type"]) == "stomp") trees.Crush(Feet(), (float)(double)S.Num.F(e["radius"]));
-                string kind = S.Gd.Str(e["type"]);
-                if (kind == "tail_sweep" || kind == "tail_auto") croc.StartSweep();
+                TailCue(e);
             }
             }
         }
@@ -406,6 +406,20 @@ public sealed class RampageGame : MonoBehaviour
         fx.SetFocus(Vector3.Dot(new Vector3(feet.x, feet.y, -feet.z) - cam.transform.position, cam.transform.forward));
         fx.Draw(age);
         if (quitAfter > 0f && age >= quitAfter) Application.Quit();
+    }
+
+    // scenes/powers_view.gd _acted: the sim's tail events cue the keyed clips; the automatic sweep crushes behind him.
+    void TailCue(S.GDict e)
+    {
+        string kind = S.Gd.Str(e["type"]);
+        string limb = kind == "tail_windup" ? "tail_windup" : kind == "tail_auto_windup" ? "tail_sweep_windup" : kind == "tail_sweep" ? "tail" : kind == "tail_auto" ? "tail_sweep" : null;
+        if (limb == null) return;
+        Debug.Log($"tail {kind} at frame {Time.frameCount}: side {S.Num.F(e["side"])}");
+        float windup = (float)(double)S.Num.F(sim.powersCfg[limb == "tail_sweep_windup" ? "sweep_windup" : "lash_windup"]);
+        croc.Cue(limb, (float)(double)S.Num.F(e["side"]), windup);
+        if (kind != "tail_auto") return;
+        float reach = (float)(double)S.Num.F(e["reach"]);
+        trees.Crush(Feet() - new Vector3((float)(double)sim.facing.x, 0f, (float)(double)sim.facing.y) * reach * TAIL_AUTO_CRUSH, reach * TAIL_AUTO_CRUSH);
     }
 
     // scenes/thunder_beam.gd wire: a kick on every stroke of the beam's bolt and the breath's.
