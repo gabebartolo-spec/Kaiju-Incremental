@@ -141,6 +141,16 @@ public static class SliceBuild
                 Directory.CreateDirectory(Path.GetDirectoryName(out_));
                 File.Copy(file, out_);
             }
+            // The sim carves these models: without them a pool building or landmark has no cells.
+            foreach (string kind in new[] { "city_buildings", "landmarks", "vehicles" })
+            {
+                string models = Path.Combine(Application.streamingAssetsPath, "res", "assets", kind);
+                if (Directory.Exists(models)) Directory.Delete(models, true);
+                Directory.CreateDirectory(models);
+                foreach (string file in Directory.GetFiles(Path.Combine(repo, "assets", kind), "*.*"))
+                    if (file.EndsWith(".kvox") || file.EndsWith(".parts.json"))
+                        File.Copy(file, Path.Combine(models, Path.GetFileName(file)));
+            }
             AssetDatabase.SaveAssets();
             Directory.CreateDirectory("Build");
             BuildReport report = BuildPipeline.BuildPlayer(new[] { RAMPAGE_SCENE }, RAMPAGE_EXE, BuildTarget.StandaloneWindows64, BuildOptions.None);

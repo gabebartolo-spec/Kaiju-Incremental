@@ -50,7 +50,13 @@ public sealed class Tuning
     public float debris_size = 0.11f;
     public bool debris_shadows = false;
     public float debris_grid_cell = 0.25f;
-    public float debris_grid_span = 400;
+    public float debris_grid_span = 480;
+    // How high a landed cube raises its column, as a share of its size (under 1: cubes overlap, no gaps).
+    public float debris_pile = 0.6f;
+    // Cubes of height difference a pile holds before one rolls to the lower neighbour.
+    public int debris_slide = 3;
+    public string debris_tint = "b8b0a0";
+    public float debris_tint_mix = 0.55f;
     public float impact_burst = 3;
     public float pusher_scale = 0.8f;
     public float sweep_margin_frames = 4;

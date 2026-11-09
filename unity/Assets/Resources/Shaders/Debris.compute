@@ -13,9 +13,34 @@ struct Particle
 RWStructuredBuffer<Particle> _Particles;
 RWStructuredBuffer<uint> _Height;
 float _Dt, _Gravity, _GridStep, _Grain;
+uint _Slide, _TintR, _TintG, _TintB, _TintMix;
 float2 _GridMin;
 uint _Count;
 int _GridCells;
+
+uint HeightAt(int2 c)
+{
+    bool inside = c.x >= 0 && c.y >= 0 && c.x < _GridCells && c.y < _GridCells;
+    return inside ? _Height[uint(c.x + c.y * _GridCells)] : 0xFFFFFFFFu;
+}
+
+// Landed rubble is dusted (Godot's topple_fx.rubble_tint), then broken up as scenes/rubble.gdshader does: lumps
+// lighter and darker, one chip in twenty brick, plaster or soot. r lowest byte, as SliceSurface reads it.
+uint Dusted(uint color, uint seed)
+{
+    uint keep = 256u - _TintMix;
+    float3 c = float3(
+        ((color & 255u) * keep + _TintR * _TintMix) >> 8,
+        (((color >> 8) & 255u) * keep + _TintG * _TintMix) >> 8,
+        (((color >> 16) & 255u) * keep + _TintB * _TintMix) >> 8);
+    uint chip = (seed >> 24) & 255u;
+    c *= 0.7 + 0.6 * float(chip) / 255.0;
+    if (chip < 13u) c = lerp(c, float3(77.0, 31.0, 19.0), 0.85);
+    else if (chip < 26u) c = lerp(c, float3(158.0, 153.0, 140.0), 0.8);
+    else if (chip < 38u) c *= 0.45;
+    uint3 o = (uint3)min(c, 255.0);
+    return o.r | (o.g << 8) | (o.b << 16);
+}
 
 [numthreads(256, 1, 1)]
 void Step(uint3 id : SV_DispatchThreadID)
@@ -34,7 +59,31 @@ void Step(uint3 id : SV_DispatchThreadID)
     {
         p.pos.y = ground;
         p.vel = 0;
-        p.color &= 0x00FFFFFFu;
+        if (inside && _Slide > 0u)
+        {
+            // A sandpile: a cube on a cell standing proud of its lowest neighbour rolls down to it.
+            uint here = _Height[at];
+            int2 low = c;
+            uint lowest = here;
+            int2 ways[4] = { int2(1, 0), int2(-1, 0), int2(0, 1), int2(0, -1) };
+            uint first = p.seed & 3u;
+            for (uint k = 0u; k < 4u; k++)
+            {
+                int2 n = c + ways[(first + k) & 3u];
+                uint h = HeightAt(n);
+                if (h < lowest) { lowest = h; low = n; }
+            }
+            if (here >= lowest + _Slide)
+            {
+                p.pos.xz = _GridMin + ((float2)low + 0.5) * _GridStep;
+                p.vel.y = -0.01;
+                _Particles[i] = p;
+                return;
+            }
+            float2 rough = float2(float(p.seed & 255u), float((p.seed >> 8) & 255u)) / 255.0 - 0.5;
+            p.pos.xz = _GridMin + ((float2)c + 0.5 + rough * 0.3) * _GridStep;
+        }
+        p.color = Dusted(p.color & 0x00FFFFFFu, p.seed);
         if (p.color == 0u) p.color = 1u; // pure black stays drawn: zero means an unused slot
         if (inside) InterlockedAdd(_Height[at], 1u);
     }

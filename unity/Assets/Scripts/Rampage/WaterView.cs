@@ -81,6 +81,12 @@ public sealed class WaterView : IDisposable
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = mat;
+            // The sheets' settings live outside UnityPerMaterial, so the SRP Batcher would draw one sheet with the last
+            // sheet's values whenever the camera swaps their sort order (the sea flipped to the river's look). A property
+            // block takes these renderers out of the batcher.
+            var perDraw = new MaterialPropertyBlock();
+            perDraw.SetFloat("_WaterSeed", seed);
+            renderer.SetPropertyBlock(perDraw);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.lightProbeUsage = LightProbeUsage.Off;
         }

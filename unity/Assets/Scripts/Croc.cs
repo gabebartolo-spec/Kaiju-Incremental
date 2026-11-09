@@ -45,6 +45,17 @@ public sealed class Croc
     public float yaw;
     public float Scale { get; private set; }
     public float Stride { get; private set; }
+    // How much of a walk's speed it is doing (scenes/gait_clip.gd speed_k).
+    public float SpeedShare => moveWeight;
+    // Metres of claw above the street at body scale 1: down below the first, lifted past the second.
+    const float FOOT_DOWN_M = 0.25f, FOOT_UP_M = 0.6f;
+    static readonly string[] FOOT_BONES = { "toe_l1", "toe_r1" };
+    static readonly string[] FOOT_SIDES = { "left", "right" };
+    readonly int[] footBone = { -1, -1 };
+    readonly bool[] footDown = { true, true };
+    bool footPrimed, footfallPending;
+    string footfallSide;
+    Vector3 footfallAt;
     public Vector3 Velocity { get; private set; }
     public bool Sweeping => sweep != null;
     public int CubeCount => cubeCount;
@@ -144,6 +155,7 @@ public sealed class Croc
             if (name.StartsWith("tail")) tailClipBones.Add(i);
         }
         Stride = MiniJson.F(header["stride_m"]) * rigScale * Scale;
+        for (int i = 0; i < FOOT_BONES.Length; i++) footBone[i] = byName.TryGetValue(FOOT_BONES[i], out int foot) ? foot : -1;
         turnsA = new Quaternion[clipBones.Count];
         turnsB = new Quaternion[clipBones.Count];
         turnsC = new Quaternion[clipBones.Count];
@@ -435,6 +447,32 @@ public sealed class Croc
         Pose(step.magnitude, dt);
     }
 
+    public float ClipSeconds(string name) => clips.TryGetValue(name, out Clip c) ? (float)(c.frames - 1) / fps : 0f;
+
+    // Godot axes: where a bone is drawn now.
+    public Vector3 BoneAt(string name)
+    {
+        Vector3 at = WorldMatrix().MultiplyPoint3x4(global[System.Array.IndexOf(names, name)].GetColumn(3));
+        return new Vector3(at.x, at.y, -at.z);
+    }
+
+    public string RootBone => names[0];
+
+    // One clip by the sim's clock (scenes/rampage_rise.gd rise): the keyed rise from the bay.
+    public void DriveClip(Vector3 feet, Vector2 facing, float scale, string name, float seconds)
+    {
+        Stride *= scale / Scale;
+        Scale = scale;
+        position = feet;
+        moveWeight = 0f;
+        runWeight = 0f;
+        Velocity = Vector3.zero;
+        if (facing.sqrMagnitude > 1e-6f) yaw = Mathf.Atan2(-facing.x, -facing.y);
+        ClipPose(clips[name], seconds * fps, turnsOut, out Vector3 offset);
+        Finish(offset);
+        footPrimed = false;
+    }
+
     void Pose(float dist, float dt)
     {
         Clip walk = clips["walk"], runClip = clips["run"], idle = clips["idle"];
@@ -468,6 +506,12 @@ public sealed class Croc
             }
         }
 
+        Finish(offset);
+        WatchFeet();
+    }
+
+    void Finish(Vector3 offset)
+    {
         for (int i = 0; i < rest.Length; i++) local[i] = rest[i];
         for (int i = 0; i < turnsOut.Length; i++)
         {
@@ -484,6 +528,41 @@ public sealed class Croc
         for (int i = 0; i < global.Length; i++) pose[i] = global[i] * bind[i];
         for (int k = 0; k < helpers.Length; k++) pose[global.Length + k] = HelperPose(helpers[k]);
         boneBuffer.SetData(pose);
+    }
+
+    // A foot is down when its middle claw is at the street, up again when it has lifted clear; each
+    // landing goes out once (scenes/clip_feet.gd put_down; the kclip here carries no planted flags).
+    void WatchFeet()
+    {
+        Matrix4x4 world = WorldMatrix();
+        for (int i = 0; i < FOOT_BONES.Length; i++)
+        {
+            if (footBone[i] < 0) continue;
+            Vector3 toe = world.MultiplyPoint3x4(global[footBone[i]].GetColumn(3));
+            float height = (toe.y - position.y) / Mathf.Max(Scale, 0.01f);
+            if (footDown[i] && height > FOOT_UP_M) footDown[i] = false;
+            else if (!footDown[i] && height < FOOT_DOWN_M)
+            {
+                footDown[i] = true;
+                if (footPrimed)
+                {
+                    footfallPending = true;
+                    footfallSide = FOOT_SIDES[i];
+                    footfallAt = new Vector3(toe.x, position.y, -toe.z);
+                }
+            }
+        }
+        footPrimed = true;
+    }
+
+    // The newest footfall since the last call: side, and where (Godot axes).
+    public bool TakeFootfall(out string side, out Vector3 at)
+    {
+        side = footfallSide;
+        at = footfallAt;
+        bool had = footfallPending;
+        footfallPending = false;
+        return had;
     }
 
     Matrix4x4 HelperPose(in Helper h)

@@ -19,9 +19,12 @@ public sealed class RampageGame : MonoBehaviour
     // scenes/run_input.gd autoplay: re-aim every 15 steps; the signature's duty cycle.
     const int AUTO_AIM_EVERY = 15;
     // No emerge intro yet: autoplay walks before its first signature, or the first frame is the blast.
-    const float AUTO_SIGNATURE_AFTER = 5f;
     const int AUTOPLAY_GLIDE_CYCLE = 90, AUTOPLAY_GLIDE_HELD = 50;
     const int STATS_EVERY = 60;
+    const double TEST_BLAST_AHEAD = 8.0, TEST_BLAST_RADIUS = 5.0;
+    // scenes/clip_feet.gd put_down: 0.2 + speed_k.
+    const float FOOT_STRENGTH_BASE = 0.2f;
+    const string HEAD_BONE = "head1";
 
     S.RampageSim sim;
     CityDraw city;
@@ -35,6 +38,20 @@ public sealed class RampageGame : MonoBehaviour
     Mesh cubeMesh, crocCube;
     CityGround ground;
     WaterView water;
+    CityFx fx;
+    // Capture only: every this many frames a bomb, a firework, a chem lab and a fuel silo go off by the kaiju.
+    int blastEvery, blastsFired, blastWait;
+    RunIntro intro;
+    Vector2 crown;
+    bool crownKnown;
+    // scenes/kaiju_model.gd RISE_CLIP.
+    const string RISE_CLIP = "rise_bay";
+    EventFx eventFx;
+    ArmyView army;
+    CityTrees trees;
+    CitySkyline skyline;
+    IntroWater introWater;
+    S.Vector2 walked;
     Vector3 feetFrom, feetTo;
     float accumulator, age, simMs;
     int steps;
@@ -74,6 +91,7 @@ public sealed class RampageGame : MonoBehaviour
         clipDir = Arg(args, "-rampage-clip");
         clipFrames = ArgInt(args, "-rampage-frames", 300);
         clipSkip = ArgInt(args, "-rampage-skip", 0);
+        blastEvery = ArgInt(args, "-rampage-blasts", 0);
         statsPath = Arg(args, "-rampage-stats");
         quitAfter = ArgInt(args, "-rampage-seconds", 0);
         string eye = Arg(args, "-rampage-eye");
@@ -132,13 +150,15 @@ public sealed class RampageGame : MonoBehaviour
         sim = new S.RampageSim(stats, S.CityGrowth.ForStats(stats), layout, S.Seeds.Make("army", seed));
 
         Shader lit = Resources.Load<Shader>("Shaders/SliceLit");
-        cubeMesh = SliceGame.CubeMesh(tuning.debris_size, false);
-        var centre = new Vector3((float)(double)sim.kaijuPos.x, 0, -(float)(double)sim.kaijuPos.y);
-        debris = new Debris(tuning, Resources.Load<ComputeShader>("Shaders/Debris"), lit, cubeMesh, centre);
-        var root = new GameObject("city");
-        city = new CityDraw(sim, lit, debris, root.transform);
         crocCube = SliceGame.CubeMesh(1f, true);
         croc = new Croc(tuning, slice, lit, crocCube, SliceData.F(look, "voxel_inset", 0.99f));
+        // Rises from the bay, D-270 (scenes/rampage.gd); before the city, which it prepares a way through.
+        sim.emerge.Start(sim, croc.ClipSeconds(RISE_CLIP));
+        intro = new RunIntro(sim, !auto);
+        cubeMesh = SliceGame.CubeMesh(tuning.debris_size, false);
+        debris = new Debris(tuning, Resources.Load<ComputeShader>("Shaders/Debris"), lit, cubeMesh, Vector3.zero);
+        var root = new GameObject("city");
+        city = new CityDraw(sim, lit, debris, root.transform);
         feetFrom = feetTo = Feet();
         croc.position = feetTo;
         croc.yaw = Mathf.Atan2(-Facing().x, -Facing().y);
@@ -147,8 +167,34 @@ public sealed class RampageGame : MonoBehaviour
         Debug.Log($"rampage: ground {ground.SlabCount} slabs, {ground.VertexCount} verts; water {ground.Sheets.Count} sheets, {water.VertexCount} verts");
         BuildCamera();
         bubble = new CameraBubble(sim, city);
+        FireTuning fireTuning = FireTuning.Load();
+        var fires = new Fires(fireTuning, Resources.Load<Shader>("Shaders/Flame"), SliceGame.ExposureUnit(tuning), false);
+        fx = new CityFx(Resources.Load<Shader>("Shaders/Burst"), fires, SliceData.F(look, "sun_energy", 1), SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, seed);
+        eventFx = new EventFx(sim, fx, seed);
+        army = new ArmyView(sim, fx, lit, root.transform, seed);
+        trees = new CityTrees(sim, fx, army, lit, root.transform, seed);
+        skyline = new CitySkyline(sim.city, lit, root.transform, seed);
+        Debug.Log($"skyline: {skyline.Boxes} boxes");
+        walked = sim.kaijuPos;
         if (clipDir != null) BeginClip();
         Debug.Log($"rampage: stage {stage} seed {seed}, body scale {sim.BodyScale():F2}, kaiju at {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1}");
+    }
+
+    // Whatever the body walks over goes down on that frame (scenes/city_decor.gd, D-065).
+    void Trample()
+    {
+        if (sim.kaijuPos != walked && !sim.airborne)
+        {
+            float bs = (float)sim.BodyScale();
+            foreach (S.GArray<S.Variant> disc in sim.body.Discs())
+            {
+                float along = (float)(double)S.Num.F(disc[0]) * bs;
+                var at = new Vector3((float)(double)sim.kaijuPos.x + (float)(double)sim.facing.x * along, 0f, (float)(double)sim.kaijuPos.y + (float)(double)sim.facing.y * along);
+                trees.Crush(at, (float)(double)S.Num.F(disc[1]) * bs);
+            }
+        }
+        walked = sim.kaijuPos;
+        trees.Tick();
     }
 
     Vector3 Feet() => new Vector3((float)(double)sim.kaijuPos.x, (float)(double)sim.standY, (float)(double)sim.kaijuPos.y);
@@ -179,6 +225,15 @@ public sealed class RampageGame : MonoBehaviour
             return;
         }
         Vector3 eye = follow.Eye(), aim = follow.LookAt(scale);
+        cam.fieldOfView = follow.fov;
+        if (sim.emerge.active)
+        {
+            var rest = new RunIntro.View { eye = eye, aim = aim, fov = follow.fov };
+            RunIntro.View shot = intro.AboveWater(intro.Shot(Vector3.Lerp(feetFrom, feetTo, accumulator / TICK), rest, crown, croc.BoneAt(HEAD_BONE), accumulator / TICK));
+            eye = shot.eye;
+            aim = shot.aim;
+            cam.fieldOfView = shot.fov;
+        }
         cam.transform.position = new Vector3(eye.x, eye.y, -eye.z);
         cam.transform.LookAt(new Vector3(aim.x, aim.y, -aim.z));
     }
@@ -193,7 +248,7 @@ public sealed class RampageGame : MonoBehaviour
                 autoTarget = sim.NearestStanding(sim.kaijuPos);
                 hasAutoTarget = true;
             }
-            if (double.IsInfinity((double)autoTarget.x) || autoTarget == sim.kaijuPos) return S.Vector2.ZERO;
+            if (double.IsInfinity((double)autoTarget.x) || sim.body.StompReaches(autoTarget)) return S.Vector2.ZERO;
             return (autoTarget - sim.kaijuPos).Normalized();
         }
         float x = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
@@ -219,15 +274,17 @@ public sealed class RampageGame : MonoBehaviour
         bool signature = Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0);
         bool held = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0);
         bool ultimate = Input.GetKeyDown(KeyCode.Q), breath = Input.GetKeyDown(KeyCode.E), dash = Input.GetKeyDown(KeyCode.LeftShift);
+        if (Input.anyKeyDown && !auto) intro.Skip();
         while (accumulator >= TICK && ran < MAX_STEPS)
         {
             accumulator -= TICK;
             ran++;
-            steps++;
             feetFrom = feetTo;
             bool first = ran == 1;
+            // One read a physics frame, however many ticks the intro runs on it (scenes/rampage.gd _step).
+            S.Vector2 move = ReadMove();
             bool sign = signature && first, hold = held, ult = ultimate && first, br = breath && first, da = dash && first;
-            if (auto && age > AUTO_SIGNATURE_AFTER)
+            if (auto)
             {
                 sign = sim.abilityReadyIn <= 0.0;
                 hold = steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD;
@@ -235,19 +292,33 @@ public sealed class RampageGame : MonoBehaviour
                 br = sim.breathReadyIn <= 0.0;
             }
             long buttons = (da ? S.Dash.BUTTON : 0) | (hold ? S.RampageSim.HELD : 0) | (br ? S.RampageSim.BREATH : 0) | (ult ? S.RampageSim.ULTIMATE : 0);
-            S.GArray<S.GDict> events = sim.Step(TICK, ReadMove(), sign, buttons);
+            steps++;
+            int ticks = intro.Ticks();
+            for (int k = 0; k < ticks; k++)
+            {
+            if (k > 0 && !sim.emerge.active) break;
+            S.GArray<S.GDict> events = sim.Step(TICK, move, sign, buttons);
             feetTo = Feet();
             foreach (S.GDict e in events)
             {
                 city.OnEvent(e);
+                eventFx.OnEvent(e, Feet());
+                army.OnEvent(e, Feet());
+                if (S.Gd.Str(e["type"]) == "stomp") trees.Crush(Feet(), (float)(double)S.Num.F(e["radius"]));
                 string kind = S.Gd.Str(e["type"]);
                 if (kind == "tail_sweep" || kind == "tail_auto") croc.StartSweep();
             }
+            }
         }
         if (ran == MAX_STEPS) accumulator = 0f;
+        if (blastEvery > 0 && !sim.emerge.active && ++blastWait >= blastEvery)
+        {
+            blastWait = 0;
+            eventFx.OnEvent(TestBlast(blastsFired++), Feet());
+        }
         simMs = (float)watch.Elapsed.TotalMilliseconds;
         if (statsPath != null && Time.frameCount % STATS_EVERY == 0)
-            File.AppendAllText(statsPath, $"frame {Time.frameCount} dt {Time.unscaledDeltaTime * 1000f:F1} ms sim {simMs:F1} mesh {city.lastMeshMs:F1} regions {city.lastRegions} promoted {city.promoted} falling {city.Falling} debris {debris.Live} feet {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1} y {sim.standY:F2} facing {sim.facing.x:F2},{sim.facing.y:F2} cam {cam.transform.position} gc {GC.GetTotalMemory(false) / (1 << 20)} MB\n");
+            File.AppendAllText(statsPath, $"frame {Time.frameCount} dt {Time.unscaledDeltaTime * 1000f:F1} ms sim {simMs:F1} mesh {city.lastMeshMs:F1} regions {city.lastRegions} promoted {city.promoted} falling {city.Falling} alive {AliveBuildings()} debris {debris.Live} bursts {fx.LiveBursts} fires {fx.LiveFires} stomps {sim.body.stomps} trees {trees.Count} tanks {sim.tanks.Size()} helis {sim.air.helis.Size()} target {autoTarget.x:F1},{autoTarget.y:F1} reach {sim.body.StompReaches(autoTarget)} walking {sim.body.Walking()} steps {steps} feet {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1} y {sim.standY:F2} facing {sim.facing.x:F2},{sim.facing.y:F2} cam {cam.transform.position} gc {GC.GetTotalMemory(false) / (1 << 20)} MB\n");
         city.Animate(dt);
         city.Remesh();
         debris.Step(dt);
@@ -256,12 +327,62 @@ public sealed class RampageGame : MonoBehaviour
         // The body between the last two ticks, so it moves every frame at any frame rate.
         Vector3 feet = Vector3.Lerp(feetFrom, feetTo, accumulator / TICK);
         float scale = (float)sim.BodyScale();
-        croc.Drive(feet, Facing(), scale, dt);
+        if (sim.emerge.active && sim.emerge.Risen() < 1.0)
+            croc.DriveClip(feet, Facing(), scale, RISE_CLIP, (float)(sim.emerge.Progress() * sim.emerge.Total()) + accumulator);
+        else
+            croc.Drive(feet, Facing(), scale, dt);
+        if (!crownKnown)
+        {
+            crownKnown = true;
+            Vector3 head = croc.BoneAt(HEAD_BONE), hips = croc.BoneAt(croc.RootBone);
+            Vector2 ahead = Facing();
+            crown = new Vector2((head.x - hips.x) * ahead.x + (head.z - hips.z) * ahead.y, head.y - feet.y);
+            introWater = new IntroWater(sim, fx, Resources.Load<Shader>("Shaders/Bolt"), crown.x);
+        }
         croc.Draw();
-        follow.Step(feet, Facing(), feet, scale, sim.body.dash.On(), dt);
+        fx.Tick(age, dt);
+        eventFx.Step(dt);
+        introWater.Step(dt);
+        army.Update(dt, Feet());
+        Trample();
+        if (croc.TakeFootfall(out string side, out Vector3 footAt))
+            eventFx.Footfall(side, Mathf.Clamp01(FOOT_STRENGTH_BASE + croc.SpeedShare), footAt);
+        follow.Step(feet, Facing(), feet, scale, sim.body.dash.On() || sim.emerge.active, dt);
         PlaceCamera(scale);
         bubble.Step(cam, feet, dt);
+        fx.SetFocus(Vector3.Dot(new Vector3(feet.x, feet.y, -feet.z) - cam.transform.position, cam.transform.forward));
+        fx.Draw(age);
         if (quitAfter > 0f && age >= quitAfter) Application.Quit();
+    }
+
+    int AliveBuildings()
+    {
+        int n = 0;
+        for (int i = 0; i < sim.buildings.Size(); i++) if (sim.buildings[i].frame.aliveCount > 0) n++;
+        return n;
+    }
+
+    S.GDict TestBlast(int n)
+    {
+        S.Vector2 ahead = sim.kaijuPos + sim.facing * (double)(TEST_BLAST_AHEAD * sim.BodyScale());
+        var e = new S.GDict();
+        e["x"] = (double)ahead.x;
+        e["z"] = (double)ahead.y;
+        e["radius"] = TEST_BLAST_RADIUS;
+        string[] kinds = { "airstrike_bomb", "firework_burst", "explosion", "explosion" };
+        e["type"] = kinds[n % kinds.Length];
+        if (n % kinds.Length < 2) return e;
+        int building = 0;
+        double best = double.MaxValue;
+        for (int i = 0; i < sim.buildings.Size(); i++)
+        {
+            S.RampageSim.Building b = sim.buildings[i];
+            double far = (b.x - ahead.x) * (b.x - ahead.x) + (b.z - ahead.y) * (b.z - ahead.y);
+            if (b.frame.aliveCount > 0 && far < best) { best = far; building = i; }
+        }
+        e["building"] = (long)building;
+        e["kind"] = n % kinds.Length == 2 ? "chem_lab" : "fuel_silo";
+        return e;
     }
 
     void BeginClip()
@@ -307,6 +428,7 @@ public sealed class RampageGame : MonoBehaviour
         if (crocCube != null) Destroy(crocCube);
         ground?.Dispose();
         water?.Dispose();
+        fx?.Dispose();
         if (cubeMesh != null) Destroy(cubeMesh);
         if (profile != null) Destroy(profile);
         if (clipTarget != null) Destroy(clipTarget);

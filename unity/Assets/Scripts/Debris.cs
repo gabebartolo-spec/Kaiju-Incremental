@@ -87,8 +87,13 @@ public sealed unsafe class Debris
         compute.SetInt("_GridCells", gridCells);
         compute.SetFloats("_GridMin", gridMin.x, gridMin.z);
         compute.SetFloat("_GridStep", tuning.debris_grid_cell);
-        float grain = tuning.debris_size * tuning.debris_size * tuning.debris_size * Mathf.Max(1, tuning.debris_keep_every) / (tuning.debris_grid_cell * tuning.debris_grid_cell);
-        compute.SetFloat("_Grain", grain);
+        compute.SetFloat("_Grain", tuning.debris_size * tuning.debris_pile);
+        compute.SetInt("_Slide", tuning.debris_slide);
+        ColorUtility.TryParseHtmlString("#" + tuning.debris_tint, out Color tint);
+        compute.SetInt("_TintR", Mathf.RoundToInt(tint.r * 255f));
+        compute.SetInt("_TintG", Mathf.RoundToInt(tint.g * 255f));
+        compute.SetInt("_TintB", Mathf.RoundToInt(tint.b * 255f));
+        compute.SetInt("_TintMix", Mathf.RoundToInt(tuning.debris_tint_mix * 256f));
         compute.Dispatch(kernel, Mathf.CeilToInt(Live / 256f), 1, 1);
     }
 

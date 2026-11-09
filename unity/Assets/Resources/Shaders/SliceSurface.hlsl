@@ -7,7 +7,7 @@
 float4 _SliceAmbient;
 void SliceSetup() {}
 
-#if defined(SLICE_BUILDING)
+#if defined(SLICE_BUILDING) || defined(SLICE_FACADE)
 float4 _VoxelOrigin, _WinUnit, _WinAlign;
 float _VoxelSize, _Salt, _Noise;
 float _BubbleCut;
@@ -210,7 +210,10 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 #else
     Particle p = _Particles[0];
 #endif
-    input.positionOS = p.color == 0u ? float3(0, -1000, 0) : p.pos + input.positionOS;
+    // Broken pieces, not gravel: mostly small, a few big lumps (scenes/debris_field.gd's mix of sizes).
+    uint sized = (p.seed >> 16) & 255u;
+    float grain = sized < 20u ? 2.6 : 0.6 + float(sized) / 255.0;
+    input.positionOS = p.color == 0u ? float3(0, -1000, 0) : p.pos + input.positionOS * grain;
 #ifdef ATTRIBUTES_NEED_TANGENT
     input.tangentOS = float4(1, 0, 0, 1);
 #endif
@@ -223,6 +226,10 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 
 #if defined(SLICE_GROUND)
 #include "Assets/Resources/Shaders/CityGround.hlsl"
+#endif
+
+#if defined(SLICE_FACADE)
+#include "Assets/Resources/Shaders/Facade.hlsl"
 #endif
 
 void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
@@ -284,6 +291,12 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     roughness = _KaijuRoughness;
     #elif defined(SLICE_DEBRIS)
     albedo = SRGBToLinear(input.color.rgb);
+    #elif defined(SLICE_FACADE)
+    float3 facadeAt = TransformWorldToObject(posInput.positionWS);
+    float3 facadeN = TransformWorldToObjectNormal(n);
+    facadeAt.z = -facadeAt.z;
+    facadeN.z = -facadeN.z;
+    FacadeSurface(facadeAt, facadeN, input.color, input.texCoord0.xy, input.texCoord1.xy, albedo, emission);
     #elif defined(SLICE_GROUND)
     float3 groundAt = TransformWorldToObject(posInput.positionWS);
     float3 groundN = TransformWorldToObjectNormal(n);

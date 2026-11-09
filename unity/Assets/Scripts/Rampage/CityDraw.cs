@@ -116,7 +116,8 @@ public sealed unsafe class CityDraw : IDisposable
         public Vector3 origin;
         public int ox, oy, oz;
         public NativeArray<byte> palette, finish;
-        public int[] lit, shopLit, hidden;
+        public int[] lit, shopLit, hidden, tinted;
+        public byte[] tintIds;
         public GameObject shell;
         public Mesh shellMesh;
         public FineBody fine;
@@ -161,6 +162,7 @@ public sealed unsafe class CityDraw : IDisposable
     readonly Color[] styles;
     readonly float litShare;
     readonly Color lit, window, roof;
+    readonly Dictionary<string, Color> fixedColors = new Dictionary<string, Color>();
     uint tick;
 
     public CityDraw(S.RampageSim simulation, Shader buildingShader, Debris debrisField, Transform parent)
@@ -195,6 +197,7 @@ public sealed unsafe class CityDraw : IDisposable
         var raw = (S.GArray<S.Variant>)look["styles"];
         styles = new Color[raw.Size()];
         for (int i = 0; i < styles.Length; i++) styles[i] = Hex(raw[i]);
+        ReadFixedColors(look);
 
         int count = (int)sim.buildings.Size();
         sites = new Site[count];
@@ -205,6 +208,38 @@ public sealed unsafe class CityDraw : IDisposable
             sites[n] = new Site { b = b, party = party[n] };
         }
         BakeAll();
+    }
+
+    void ReadFixedColors(S.GDict look)
+    {
+        // scenes/bridge_voxels.gd: the deck in the street's asphalt, the stone a little lighter than the lot.
+        Color stone = Lighter(Hex(look["lot"]), 0.12f);
+        fixedColors["bridge_deck"] = Hex(look["asphalt"]);
+        fixedColors["bridge_parapet"] = stone;
+        fixedColors["bridge_pier"] = stone;
+        // scenes/rail_voxels.gd.
+        S.GDict rail = S.Content.Section("rail_look")["colors"];
+        string[,] railway =
+        {
+            { "viaduct_concrete", "concrete" }, { "viaduct_seam", "seam_concrete" }, { "viaduct_parapet", "parapet" },
+            { "viaduct_ballast", "ballast" }, { "viaduct_sleeper", "sleeper" }, { "viaduct_rail", "rail" },
+            { "viaduct_column", "column" }, { "station_platform", "platform" }, { "station_edge", "platform_edge" },
+            { "station_canopy", "canopy" }, { "station_rib", "canopy_rib" }, { "station_sign", "sign" }, { "station_stair", "stair" },
+        };
+        for (int i = 0; i < railway.GetLength(0); i++) fixedColors[railway[i, 0]] = Hex(rail[railway[i, 1]]);
+        Color sign = fixedColors["station_sign"];
+        sign.a = 0f;
+        fixedColors["station_sign"] = sign;
+        // scenes/hazard_voxels.gd COLORS: bright warning paint, lamps and the chem glow lit (alpha 0).
+        string[,] hazard =
+        {
+            { "hz_pad", "8d8b85" }, { "hz_steel", "d9d7cf" }, { "hz_yellow", "f2c21b" }, { "hz_black", "222224" },
+            { "hz_red", "c8312a" }, { "hz_brick", "7a3b2e" }, { "hz_blue", "2f62c9" }, { "hz_green", "3fae49" },
+            { "hz_white", "e6e9e3" }, { "hz_drum", "2d5ca3" },
+        };
+        for (int i = 0; i < hazard.GetLength(0); i++) fixedColors[hazard[i, 0]] = Hex(hazard[i, 1]);
+        fixedColors["hz_lamp"] = new Color(1f, 0.18f, 0.12f, 0f);
+        fixedColors["hz_glow"] = new Color(0.42f, 1f, 0.36f, 0f);
     }
 
     static Color Hex(S.Variant v)
@@ -229,9 +264,8 @@ public sealed unsafe class CityDraw : IDisposable
         return new S.BuildingCells(b, party);
     }
 
-    // scenes/building_voxels.gd _make_palette and scenes/cell_mesher.gd _fill_palette. A material the
-    // plain palette does not name (a landmark's, a rail's) draws in the building's base colour until
-    // their voxel kinds are ported.
+    // scenes/building_voxels.gd _make_palette, scenes/cell_mesher.gd _fill_palette, and the colours of
+    // bridge_voxels.gd, rail_voxels.gd and hazard_voxels.gd. A model's cells are painted by ModelColors.
     void FillPalette(Site s)
     {
         S.RampageSim.Building b = s.b;
@@ -257,6 +291,7 @@ public sealed unsafe class CityDraw : IDisposable
             { "heater", Hex("e6e8e4") }, { "heater_hi", Hex("f8faf6") }, { "solar", Hex("1b2538") },
             { "beacon", beacon }, { "sign_frame", Hex("1c1e22") },
         };
+        foreach (KeyValuePair<string, Color> fixedColor in fixedColors) named[fixedColor.Key] = fixedColor.Value;
         for (int i = 0; i < neon.Length; i++)
         {
             Color c = Hex(neon[i]);
@@ -312,6 +347,11 @@ public sealed unsafe class CityDraw : IDisposable
                 else if ((int)c.x < 0 || (int)c.z < 0 || (int)c.x >= footX || (int)c.z >= footZ) hides.Add(i);
             }
         }
+        s.tinted = new int[0];
+        s.tintIds = new byte[0];
+        if (s.b.landmark != "" || s.b.model != "")
+            ModelColors.Paint(s.b, new Vector3Int((int)grid.dims.x, (int)grid.dims.y, (int)grid.dims.z),
+                new Vector3Int((int)grid.offset.x, (int)grid.offset.y, (int)grid.offset.z), s.palette, s.finish, out s.tinted, out s.tintIds);
         s.lit = lits.ToArray();
         s.shopLit = shops.ToArray();
         s.hidden = hides.ToArray();
@@ -337,6 +377,7 @@ public sealed unsafe class CityDraw : IDisposable
         byte[] raw = grid.cells.Raw;
         NativeArray<byte>.Copy(raw, drawn, size);
         NativeArray<byte>.Copy(raw, looks, size);
+        for (int k = 0; k < s.tinted.Length; k++) looks[s.tinted[k]] = s.tintIds[k];
         foreach (int i in s.lit) looks[i] = LIT;
         foreach (int i in s.shopLit) looks[i] = SHOP_LIT;
         foreach (int i in s.hidden) drawn[i] = 0;
@@ -416,6 +457,9 @@ public sealed unsafe class CityDraw : IDisposable
         var watch = Stopwatch.StartNew();
         // The first alone: the sim's content caches fill once, off the workers' path.
         if (sites.Length > 0) Bake(sites[0]);
+        // LandmarkCells._Model's cache has no lock: every landmark's model is read here, before the workers.
+        foreach (Site s in sites)
+            if (s.b.landmark != "") S.LandmarkCells._Model(s.b.landmark);
         var options = new ParallelOptions { MaxDegreeOfParallelism = Mathf.Max(1, SystemInfo.processorCount - 2) };
         Parallel.For(1, sites.Length, options, n => Bake(sites[n]));
         double bakeMs = watch.Elapsed.TotalMilliseconds;
@@ -500,6 +544,7 @@ public sealed unsafe class CityDraw : IDisposable
         NativeArray<byte>.Copy(raw, cells, size);
         NativeArray<byte>.Copy(raw, drawn, size);
         NativeArray<byte>.Copy(raw, looks, size);
+        for (int k = 0; k < s.tinted.Length; k++) looks[s.tinted[k]] = s.tintIds[k];
         foreach (int i in s.lit) looks[i] = LIT;
         foreach (int i in s.shopLit) looks[i] = SHOP_LIT;
         foreach (int i in s.hidden) drawn[i] = 0;

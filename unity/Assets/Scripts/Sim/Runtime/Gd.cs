@@ -246,6 +246,8 @@ namespace Kaiju.Sim
         {
             if (typeof(T) == typeof(string)) return (T)(object)"";
             if (typeof(T) == typeof(GDict)) return (T)(object)new GDict();
+            // A typed array of arrays resizes to empty arrays, never nulls (LandmarkCells._members).
+            if (typeof(IGArray).IsAssignableFrom(typeof(T))) return System.Activator.CreateInstance<T>();
             return default;
         }
 
