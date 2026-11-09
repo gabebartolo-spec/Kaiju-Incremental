@@ -59,6 +59,7 @@ public sealed class RampageGame : MonoBehaviour
     CitySkyline skyline;
     IntroWater introWater;
     BreathView breath;
+    ThunderView thunder;
     S.Vector2 walked;
     Vector3 feetFrom, feetTo;
     float accumulator, age, simMs;
@@ -71,6 +72,7 @@ public sealed class RampageGame : MonoBehaviour
     float smoothDt = TICK;
 
     string clipDir;
+    string ownExtra;
     int clipFrames, clipFrame, clipSkip;
     RenderTexture clipTarget;
     Texture2D clipImage;
@@ -99,6 +101,7 @@ public sealed class RampageGame : MonoBehaviour
         string[] args = Environment.GetCommandLineArgs();
         auto = args.Contains("-rampage-auto");
         clipDir = Arg(args, "-rampage-clip");
+        ownExtra = Arg(args, "-rampage-own");
         scoutPath = Arg(args, "-rampage-scout");
         clipFrames = ArgInt(args, "-rampage-frames", 300);
         clipSkip = ArgInt(args, "-rampage-skip", 0);
@@ -125,9 +128,11 @@ public sealed class RampageGame : MonoBehaviour
     }
 
     // tools/capture/capture_kit.gd STAGE_LEVELS: the upgrades that reach each stage, for a run started here.
-    static S.GDict Levels(int stage)
+    // ownExtra (-rampage-own id): one more upgrade owned, to film a power the stage's build leaves out.
+    S.GDict Levels(int stage)
     {
         var d = new S.GDict();
+        if (ownExtra != null) d[ownExtra] = 1;
         if (stage == 1)
         {
             d["claws"] = 2;
@@ -192,6 +197,8 @@ public sealed class RampageGame : MonoBehaviour
         skyline = new CitySkyline(sim.city, lit, root.transform, seed);
         Debug.Log($"skyline: {skyline.Boxes} boxes");
         breath = new BreathView(sim, fx, croc, trees, seed, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m);
+        thunder = new ThunderView(sim, fx, croc, seed, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, BoltKick);
+        breath.Stroked = BoltKick;
         walked = sim.kaijuPos;
         if (clipDir != null) BeginClip();
         if (scoutPath != null)
@@ -342,6 +349,7 @@ public sealed class RampageGame : MonoBehaviour
                 ShakeFor(e);
                 army.OnEvent(e, Feet());
                 breath.OnEvent(e);
+                thunder.OnEvent(e, Feet());
                 if (S.Gd.Str(e["type"]) == "stomp") trees.Crush(Feet(), (float)(double)S.Num.F(e["radius"]));
                 string kind = S.Gd.Str(e["type"]);
                 if (kind == "tail_sweep" || kind == "tail_auto") croc.StartSweep();
@@ -377,6 +385,7 @@ public sealed class RampageGame : MonoBehaviour
         }
         croc.Draw();
         breath.Step(dt);
+        thunder.Step(Feet(), dt);
         fx.Tick(age, dt);
         eventFx.Step(dt);
         introWater.Step(dt);
@@ -398,6 +407,9 @@ public sealed class RampageGame : MonoBehaviour
         fx.Draw(age);
         if (quitAfter > 0f && age >= quitAfter) Application.Quit();
     }
+
+    // scenes/thunder_beam.gd wire: a kick on every stroke of the beam's bolt and the breath's.
+    void BoltKick(Vector3 at) => shake.AddAt("bolt_stroke", at, Focus(Feet()), (float)sim.BodyScale());
 
     static float StompKick() => (float)S.Num.F(S.Content.Section("clip_stomp")["kick_deg"]);
 
@@ -493,6 +505,7 @@ public sealed class RampageGame : MonoBehaviour
         water?.Dispose();
         fx?.Dispose();
         breath?.Dispose();
+        thunder?.Dispose();
         if (cubeMesh != null) Destroy(cubeMesh);
         if (profile != null) Destroy(profile);
         if (clipTarget != null) Destroy(clipTarget);

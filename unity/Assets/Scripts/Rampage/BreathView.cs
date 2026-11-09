@@ -16,6 +16,7 @@ public sealed class BreathView : IDisposable
     const string SPECIES = "reptilian";
 
     public int Breaths { get; private set; }
+    public Action<Vector3> Stroked { set => rig.stroked = value; }
 
     readonly S.RampageSim sim;
     readonly CityFx fx;
@@ -69,6 +70,12 @@ public sealed class BreathView : IDisposable
         if (type == "strike_windup" && S.Gd.Str(e["kind"]) == S.Strikes.BREATH)
         {
             charge.Start(F(e, "strike_in"), (float)(double)S.Num.F(tune["beam_seconds"]), S.Seeds.Make("bolt_charge", seed * BoltRig.SEEDS_PER_RUN + charges));
+            charges++;
+        }
+        else if (type == "strike_windup" && S.Gd.Str(e["kind"]) == S.Strikes.BEAM)
+        {
+            // scenes/thunder_beam.gd: the same arcs before the beam, whose own end shuts the jaw.
+            charge.Start(F(e, "strike_in"), 0f, S.Seeds.Make("bolt_charge", seed * BoltRig.SEEDS_PER_RUN + charges));
             charges++;
         }
         else if (type == "ability")
