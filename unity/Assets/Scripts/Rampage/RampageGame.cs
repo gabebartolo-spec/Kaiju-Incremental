@@ -41,6 +41,8 @@ public sealed class RampageGame : MonoBehaviour
     CityFx fx;
     // Capture only: every this many frames a bomb, a firework, a chem lab and a fuel silo go off by the kaiju.
     int blastEvery, blastsFired, blastWait;
+    const string SPECIES = "reptilian";
+
     RunIntro intro;
     Vector2 crown;
     bool crownKnown;
@@ -144,7 +146,8 @@ public sealed class RampageGame : MonoBehaviour
         var look = MiniJson.Obj(slice["look"]);
         profile = SliceGame.ApplyLook(tuning, slice, look);
 
-        S.GDict stats = S.UpgradeTree.RunStats(S.Content.Section("kaiju"), S.Content.SpeciesDef("reptilian"), new S.UpgradeTree(S.Content.Upgrades(), Levels(stage)));
+        S.GDict species = S.Content.SpeciesDef(SPECIES);
+        S.GDict stats = S.UpgradeTree.RunStats(S.Content.Section("kaiju"), species, new S.UpgradeTree(S.Content.Upgrades(), Levels(stage), SPECIES));
         S.GArray<S.GDict> layout = S.CityGrowth.Layout(S.Content.Tuning(), stage, S.Seeds.Make("city", seed));
         S.Content.SetTime("dusk");
         sim = new S.RampageSim(stats, S.CityGrowth.ForStats(stats), layout, S.Seeds.Make("army", seed));
@@ -152,6 +155,10 @@ public sealed class RampageGame : MonoBehaviour
         Shader lit = Resources.Load<Shader>("Shaders/SliceLit");
         crocCube = SliceGame.CubeMesh(1f, true);
         croc = new Croc(tuning, slice, lit, crocCube, SliceData.F(look, "voxel_inset", 0.99f));
+        // scenes/rampage.gd _take_sim: the species' attack and body first, since the rise is placed by the body's length.
+        S.GDict ability = species["ability"];
+        sim.abilityType = S.Gd.Str(ability["type"]);
+        sim.body.UseSpecies(SPECIES);
         // Rises from the bay, D-270 (scenes/rampage.gd); before the city, which it prepares a way through.
         sim.emerge.Start(sim, croc.ClipSeconds(RISE_CLIP));
         intro = new RunIntro(sim, !auto);
