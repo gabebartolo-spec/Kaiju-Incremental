@@ -59,7 +59,8 @@ public sealed class EventFx
     }
 
     // A foot came down: a little dust, a ring, and the waiting stomp lands under it (scenes/rampage_footfall.gd).
-    public void Footfall(string side, float strength, Vector3 at)
+    // True when this foot delivered the waiting stomp.
+    public bool Footfall(string side, float strength, Vector3 at)
     {
         bool stomped = stompWait > 0f && (stompSide == "" || stompSide == side);
         if (stomped) stompWait = 0f;
@@ -68,6 +69,7 @@ public sealed class EventFx
         fx.Footfall(at + Vector3.up * FOOTFALL_LIFT, FOOTFALL_DUST * size);
         float ring = stomped ? stompRadius * STOMP_REACH * STOMP_RING : FOOTFALL_RING * size;
         fx.Shockwave(at, ring, false, stomped);
+        return stomped;
     }
 
     public void OnEvent(S.GDict e, Vector3 kaiju)

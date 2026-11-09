@@ -4,6 +4,9 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-09 · D-475 · Director · The follow camera sits slightly higher: offset (0, 18, 30), was (0, 16, 30)
+"slightly higher"; eye 24.1 to 27.2 at scale 1.90, in both games. Changes: `data/tuning.json`, `docs/DESIGN.md`.
+
 ## 2026-11-09 · D-474 · Director · Build from scratch in Unity where that is faster than porting
 "if it would be faster to simply create something from scratch in unity, rather than porting a pre-existing system, then
 feel free". The sim stays translated, because the same seed must give the same log as Godot (U2); rendering, UI, camera

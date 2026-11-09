@@ -33,6 +33,11 @@ public sealed class RampageGame : MonoBehaviour
     Debris debris;
     Camera cam;
     FollowCam follow;
+    CameraShake shake;
+    readonly List<Vector4> bodySpheres = new List<Vector4>();
+    float stepDip;
+    // scenes/rampage.gd: how far a footfall dips the camera and how it recovers.
+    const float FOOTFALL_DIP = 0.35f, FOOTFALL_DIP_FLOOR = 1f, DIP_RECOVER = 4f, DIP_CREEP = 0.05f;
     Tuning tuning;
     VolumeProfile profile;
     Mesh cubeMesh, crocCube;
@@ -220,6 +225,7 @@ public sealed class RampageGame : MonoBehaviour
     {
         float scale = (float)sim.BodyScale();
         follow = new FollowCam(Feet(), scale);
+        shake = new CameraShake();
         var go = new GameObject("camera");
         cam = go.AddComponent<Camera>();
         cam.fieldOfView = follow.fov;
@@ -227,13 +233,20 @@ public sealed class RampageGame : MonoBehaviour
         cam.farClipPlane = 3000;
         HDAdditionalCameraData data = go.AddComponent<HDAdditionalCameraData>();
         data.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
-        follow.Step(Feet(), Facing(), Feet(), scale, false, TICK);
+        follow.Step(Feet(), Facing(), Feet(), scale, false, 0f, 0f, TICK);
         PlaceCamera(scale);
+    }
+
+    // KaijuModel.focus: the body as drawn, its root bone over the feet.
+    Vector3 Focus(Vector3 feet)
+    {
+        Vector3 root = croc.BoneAt(croc.RootBone);
+        return new Vector3(root.x, feet.y, root.z);
     }
 
     Vector2 Facing() => new Vector2((float)(double)sim.facing.x, (float)(double)sim.facing.y);
 
-    void PlaceCamera(float scale)
+    void PlaceCamera(float scale, float dt = 0f)
     {
         if (fixedEye != null)
         {
@@ -242,6 +255,11 @@ public sealed class RampageGame : MonoBehaviour
             return;
         }
         Vector3 eye = follow.Eye(), aim = follow.LookAt(scale);
+        if (dt > 0f)
+        {
+            croc.BodySpheres(bodySpheres);
+            aim = follow.Aim(eye, aim, follow.fov, shake.Turn(scale).y, bodySpheres, dt);
+        }
         cam.fieldOfView = follow.fov;
         if (sim.emerge.active)
         {
@@ -253,6 +271,7 @@ public sealed class RampageGame : MonoBehaviour
         }
         cam.transform.position = new Vector3(eye.x, eye.y, -eye.z);
         cam.transform.LookAt(new Vector3(aim.x, aim.y, -aim.z));
+        shake.Apply(cam.transform, scale);
     }
 
     // The stick is the camera's: up walks where the camera looks (scenes/run_input.gd).
@@ -320,6 +339,7 @@ public sealed class RampageGame : MonoBehaviour
             {
                 city.OnEvent(e);
                 eventFx.OnEvent(e, Feet());
+                ShakeFor(e);
                 army.OnEvent(e, Feet());
                 breath.OnEvent(e);
                 if (S.Gd.Str(e["type"]) == "stomp") trees.Crush(Feet(), (float)(double)S.Num.F(e["radius"]));
@@ -363,13 +383,38 @@ public sealed class RampageGame : MonoBehaviour
         army.Update(dt, Feet());
         Trample();
         if (croc.TakeFootfall(out string side, out Vector3 footAt))
-            eventFx.Footfall(side, Mathf.Clamp01(FOOT_STRENGTH_BASE + croc.SpeedShare), footAt);
-        follow.Step(feet, Facing(), feet, scale, sim.body.dash.On() || sim.emerge.active, dt);
-        PlaceCamera(scale);
+        {
+            float strength = Mathf.Clamp01(FOOT_STRENGTH_BASE + croc.SpeedShare);
+            if (eventFx.Footfall(side, strength, footAt)) shake.Kick(StompKick() * Mathf.Deg2Rad);
+            stepDip = Mathf.Max(stepDip, FOOTFALL_DIP * Mathf.Max(FOOTFALL_DIP_FLOOR, scale) * strength);
+        }
+        shake.Update(dt);
+        stepDip = Mathf.MoveTowards(stepDip, 0f, dt * DIP_RECOVER * stepDip + dt * DIP_CREEP);
+        follow.Step(Focus(feet), Facing(), feet, scale, sim.body.dash.On() || sim.emerge.active, stepDip * shake.motion,
+            auto || sim.emerge.active ? 0f : follow.PlayerTurn(), dt);
+        PlaceCamera(scale, dt);
         bubble.Step(cam, feet, dt);
         fx.SetFocus(Vector3.Dot(new Vector3(feet.x, feet.y, -feet.z) - cam.transform.position, cam.transform.forward));
         fx.Draw(age);
         if (quitAfter > 0f && age >= quitAfter) Application.Quit();
+    }
+
+    static float StompKick() => (float)S.Num.F(S.Content.Section("clip_stomp")["kick_deg"]);
+
+    // scenes/rampage.gd add_trauma's sources, for the events the port draws so far.
+    void ShakeFor(S.GDict e)
+    {
+        switch (S.Gd.Str(e["type"]))
+        {
+            case "stomp": shake.Add("stomp"); break;
+            case "ability": shake.Add("ability"); break;
+            case "leap_land": shake.Add("leap_land"); break;
+            case "tank_fired": shake.Add("tank_fire"); break;
+            case "fall_land":
+                S.RampageSim.Building b = sim.buildings[S.Num.I(e["building"])];
+                shake.AddAt(S.Gd.Str(e["kind"]) == "topple" ? "topple" : "drop", new Vector3((float)(double)b.x, 0f, (float)(double)b.z), Focus(Feet()), (float)sim.BodyScale());
+                break;
+        }
     }
 
     int AliveBuildings()
