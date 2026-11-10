@@ -534,6 +534,17 @@ public sealed class Croc
 
     public string RootBone => names[0];
 
+    // Rooftop rounds (scenes/rooftop_aim.gd): a bone's index or -1, the rest cubes it carries, and where one is now (Godot axes).
+    public int StrikeBone(string name) => System.Array.IndexOf(names, name);
+
+    public void StrikeCubes(int bone, List<Vector3> into)
+    {
+        for (int i = 0; i < cubeAt.Length; i++)
+            if (cubeBone[i] == bone) into.Add(cubeAt[i]);
+    }
+
+    public Vector3 StrikePoint(int bone, Vector3 rest) => WorldMatrix().MultiplyPoint3x4(pose[bone].MultiplyPoint3x4(rest));
+
     Vector4[] restSpheres;
 
     // Godot axes, capture only: the body as one sphere per bone (xyz centre, w radius), from the cubes each bone
@@ -722,6 +733,85 @@ public sealed class Croc
         footPrimed = false;
     }
 
+    // scenes/clip_leap.gd on the sim's dash (KaijuModel.leap): the keyed leap, its frame from LeapFrames, the
+    // clip's own rise taken out since the sim lifts the body. scenes/kaiju_clips.gd: the planted bits sit 24
+    // bytes past a frame's turns.
+    const string LEAP_CLIP = "leap";
+    const int PLANTED_AT = 24;
+    bool leapKnown;
+    int leapOff, leapLand;
+    float leapRestY;
+    Clip heldClip;
+    float heldClipTime, heldClipAge;
+
+    public bool HasClip(string name) => clips.ContainsKey(name);
+
+    // phase and t (0..1 through it) are the sim's; settleShare = settle seconds / (settle + recover).
+    public void DriveLeap(Vector3 feet, Vector2 facing, float scale, string phase, float t, float settleShare, float dt)
+    {
+        if (!clips.TryGetValue(LEAP_CLIP, out Clip c))
+        {
+            Drive(feet, facing, scale, dt);
+            return;
+        }
+        if (!leapKnown)
+        {
+            leapKnown = true;
+            var planted = new byte[c.frames];
+            int bits = dataAt + c.first * frameBytes + clipToRig.Length * 8 + PLANTED_AT;
+            for (int f = 0; f < c.frames; f++) planted[f] = (byte)(clipRaw[bits + f * frameBytes] & 3);
+            LeapFrames.Air(planted, out leapOff, out leapLand);
+            FrameTurns(c.first, turnsOut, out Vector3 standing);
+            leapRestY = standing.y;
+        }
+        Stride *= scale / Scale;
+        Scale = scale;
+        Vector3 step = feet - position;
+        step.y = 0;
+        position = feet;
+        moveWeight = 0f;
+        runWeight = 0f;
+        Velocity = new Vector3(step.x, 0, -step.z) / Mathf.Max(dt, 1e-4f);
+        if (facing.sqrMagnitude > 1e-6f)
+        {
+            float want = Mathf.Atan2(-facing.x, -facing.y);
+            yaw += Mathf.Clamp(Mathf.DeltaAngle(yaw * Mathf.Rad2Deg, want * Mathf.Rad2Deg) * Mathf.Deg2Rad, -tuning.turn_rate * dt, tuning.turn_rate * dt);
+        }
+        ClipPose(c, (float)LeapFrames.Frame(phase, t, settleShare, leapOff, leapLand, c.frames - 1), turnsOut, out Vector3 offset);
+        offset.y = (float)LeapFrames.Grounded(offset.y, leapRestY);
+        heldClip = null;
+        LayJaw(dt);
+        Finish(offset);
+        footPrimed = false;
+    }
+
+    // scenes/gait_clip.gd run: a momentum slam stops the body in a keyed take, played once to its end over
+    // whatever the gait does (scenes/clip_choice.gd holds "slam_stop" until it has played out).
+    public void Hold(string name)
+    {
+        clips.TryGetValue(name, out heldClip);
+        heldClipTime = 0f;
+        heldClipAge = 0f;
+    }
+
+    void LayHeld(float dt, ref Vector3 offset)
+    {
+        if (heldClip == null) return;
+        heldClipTime += dt * fps;
+        heldClipAge += dt;
+        float end = heldClip.frames - 1;
+        if (heldClipTime >= end)
+        {
+            heldClip = null;
+            return;
+        }
+        ClipPose(heldClip, heldClipTime, turnsA, out Vector3 heldOffset);
+        float fadeS = Mathf.Max(0.001f, tuning.clip_fade_s);
+        float w = Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, (end - heldClipTime) / (fadeS * fps))) * Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, heldClipAge / fadeS));
+        for (int i = 0; i < turnsOut.Length; i++) turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], w);
+        offset = Vector3.Lerp(offset, heldOffset, w);
+    }
+
     void Pose(float dist, float dt)
     {
         Clip walk = clips["walk"], runClip = clips["run"], idle = clips["idle"];
@@ -764,6 +854,7 @@ public sealed class Croc
             }
         }
 
+        LayHeld(dt, ref offset);
         LayRoar(dt, ref offset);
         LayJaw(dt);
         Finish(offset);

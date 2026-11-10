@@ -12,6 +12,9 @@ public sealed class CitySkyline
     const float LATTICE_HEIGHT = 130f, SUPERTALL = 1.8f, CAP_KNEE = 0.6f, BEACON_ABOVE = 60f;
     const float STYLE_PLAIN = -1f, STYLE_BEACON = -2f;
     const float NEAR_GRAIN = 4f, FAR_GRAIN = 1.2f, GRAIN_UNIT = 32f, SEED_STEPS = 1024f;
+    // scenes/city_skyline.gd DETAIL_REACH and _roof_clutter; scenes/skyline_roof_tank.gd CELL and colours.
+    const float DETAIL_REACH = 200f, GEAR_LIGHTEN = 0.15f, GEAR_CELL = 0.125f, GEAR_DARKEN = 0.25f;
+    const string GEAR_WOOD = "6a5040", GEAR_WHITE = "e6e8e4", GEAR_GLASS = "1b2538";
 
     sealed class Tile
     {
@@ -84,8 +87,48 @@ public sealed class CitySkyline
                 int style = (int)S.Num.I(l["style"]);
                 int pick = Mathf.Abs(style + Mathf.RoundToInt(x * 3f + z)) % styles.Count;
                 Facade(new Vector3(x, h * 0.5f, z), new Vector3(w, h, d), styles[pick], style % 4, Lit(), h > 18f);
+                if (new Vector2(x, z).magnitude < DETAIL_REACH) RoofClutter(new Vector3(x, h, z), new Vector2(w, d));
             }
         }
+    }
+
+    // city_skyline.gd _roof_clutter: up to two pieces of gear on a near roof, so the roofs the camera looks down on
+    // are not bare: a stair hut first, then a water tower or a heater (scenes/skyline_roof_tank.gd).
+    void RoofClutter(Vector3 top, Vector2 size)
+    {
+        Color gear = Color.Lerp(Hex(S.Gd.Str(S.Content.Look()["roof"])), Color.white, GEAR_LIGHTEN);
+        int count = (int)rng.RandiRange(0, 2);
+        for (int n = 0; n < count; n++)
+        {
+            float sx = Rand(0.6f, 1.4f), sy = Rand(0.4f, 1f), sz = Rand(0.6f, 1.4f);
+            float ox = Rand(-0.5f, 0.5f) * Mathf.Max(0f, size.x - sx - 0.6f);
+            float oz = Rand(-0.5f, 0.5f) * Mathf.Max(0f, size.y - sz - 0.6f);
+            if (n == 0)
+            {
+                Plain(top + new Vector3(ox, sy * 0.5f, oz), new Vector3(sx, sy, sz), Vector2.right, gear);
+                continue;
+            }
+            Vector3 at = top + new Vector3(ox, 0f, oz);
+            if (S.RoofTank.WoodenAt(at.x, at.z))
+            {
+                Color wood = Hex(GEAR_WOOD), dark = Color.Lerp(wood, Color.black, GEAR_DARKEN);
+                GearPart(at, new Vector3(5, 3, 5), 0, gear);
+                GearPart(at, new Vector3(5, 6, 5), 3, wood);
+                GearPart(at, new Vector3(7, 1, 7), 9, dark);
+                GearPart(at, new Vector3(3, 2, 3), 10, dark);
+                continue;
+            }
+            GearPart(at, new Vector3(9, 2, 7), 0, gear);
+            GearPart(at, new Vector3(9, 2, 7), 2, Hex(GEAR_GLASS));
+            GearPart(at + new Vector3(0f, 0f, 3 * GEAR_CELL), new Vector3(7, 2, 2), 4, Hex(GEAR_WHITE));
+        }
+    }
+
+    // skyline_roof_tank.gd _part: a box `cells` big standing `up` cells above the roof.
+    void GearPart(Vector3 at, Vector3 cells, int up, Color color)
+    {
+        Vector3 s = cells * GEAR_CELL;
+        Plain(at + new Vector3(0f, up * GEAR_CELL + s.y * 0.5f, 0f), s, Vector2.right, color);
     }
 
     void Freeways()

@@ -134,7 +134,20 @@ public sealed unsafe class CityDraw : IDisposable
         public string kind;
         public Vector2 dir;
         public float drop, duration, t, dropped, y;
+        // The crumble at a toppling tower's base (Crumble): its clock, the cells it sheds from, and whether
+        // it is a landmark, which sheds nothing.
+        public float crumble;
+        public int[] baseCells;
+        public bool landmark;
     }
+
+    // Where the crumble's dust goes; RampageGame sets it once the fx exist.
+    public CityFx crumbleFx;
+    public long Crumbles => crumbles;
+    long crumbles, landedId = -1;
+    Vector3 landedAt;
+    // scenes/topple_fx.gd crumble: the shed cells' upward speed.
+    const float CRUMBLE_UP = 0.3f;
 
     public long totalVerts;
     public int promoted;
@@ -556,6 +569,84 @@ public sealed unsafe class CityDraw : IDisposable
 
     public void SetCut(int n, float cut) => sites[n].mat.SetFloat("_BubbleCut", cut);
 
+    // Building n's colour for a material by name, as its walls are drawn (RubbleView's heaps and strips).
+    public bool MaterialColor(int n, string material, out Color32 c)
+    {
+        c = default;
+        if (n < 0 || n >= sites.Length || !sites[n].palette.IsCreated || !materialIds.TryGetValue(material, out int id)) return false;
+        NativeArray<byte> p = sites[n].palette;
+        c = new Color32(p[id * 4], p[id * 4 + 1], p[id * 4 + 2], 255);
+        return true;
+    }
+
+    // Up to `max` of a model building's own baked colours, spread evenly over the ones it uses.
+    public void ModelColorsOf(int n, int max, List<Color32> into)
+    {
+        if (n < 0 || n >= sites.Length || !sites[n].palette.IsCreated || sites[n].tintIds == null) return;
+        var used = new SortedSet<byte>(sites[n].tintIds);
+        if (used.Count == 0 || max <= 0) return;
+        NativeArray<byte> p = sites[n].palette;
+        int every = Mathf.Max(1, used.Count / max), k = 0;
+        foreach (byte id in used)
+            if (k++ % every == 0 && into.Count < max) into.Add(new Color32(p[id * 4], p[id * 4 + 1], p[id * 4 + 2], 255));
+    }
+
+    // Where a piece's cell i is now, in Godot axes. The origin is cell 0's centre (kc_debris places a cell the same way).
+    Vector3 CellAt(FineBody p, int i)
+    {
+        int x = i % p.w, z = (i / p.w) % p.d, y = i / (p.w * p.d);
+        Vector3 at = p.go.transform.TransformPoint(new Vector3(p.origin.x + x * VOXEL, p.origin.y + y * VOXEL, -(p.origin.z + z * VOXEL)));
+        return new Vector3(at.x, at.y, -at.z);
+    }
+
+    // Where fall `id`, the last to land, came down (Godot axes): EventFx puts the landing dust there.
+    public bool Landed(long id, out Vector3 at)
+    {
+        at = landedAt;
+        return id == landedId;
+    }
+
+    // A toppling tower sheds a little masonry and dust at its base while it still shudders
+    // (scenes/topple_fx.gd crumble): every crumble_every, crumble_debris cells below crumble_floors above the
+    // hinge, and one puff at one of them. The cells stay on the piece: this only adds.
+    void Crumble(Fall f, float dt)
+    {
+        float window = Mathf.Min((float)S.Num.F(toppleCfg["shudder_s"]), f.duration * (float)S.Num.F(toppleCfg["shudder_max_share"]));
+        if (f.t > window) return;
+        f.crumble -= dt;
+        if (f.crumble > 0f) return;
+        f.crumble = Mathf.Max(0.01f, (float)S.Num.F(toppleCfg["crumble_every"]));
+        FineBody p = f.body;
+        if (f.baseCells == null)
+        {
+            int rows = Mathf.Clamp(Mathf.CeilToInt((f.y + (float)S.Num.F(toppleCfg["crumble_floors"]) - p.origin.y) * RES), 0, p.h);
+            var found = new List<int>();
+            byte* drawn = p.Drawn;
+            for (int i = 0, size = p.w * p.d * rows; i < size; i++)
+                if (drawn[i] != 0) found.Add(i);
+            f.baseCells = found.ToArray();
+        }
+        int count = Mathf.Min(f.baseCells.Length, (int)S.Num.F(toppleCfg["crumble_debris"]));
+        if (count <= 0) return;
+        tick++;
+        crumbles++;
+        int* picked = stackalloc int[count];
+        for (int k = 0; k < count; k++)
+            picked[k] = f.baseCells[(int)(RubbleShape.Hash((int)tick, k, f.baseCells.Length) % (uint)f.baseCells.Length)];
+        debris.SpawnAll(p.mesher, p.go.transform.localToWorldMatrix, picked, count, f.pivot.position, Vector3.up * CRUMBLE_UP, debris.BurstSpeed, tick);
+        if (crumbleFx != null) crumbleFx.Dust(CellAt(p, picked[0]), (float)S.Num.F(toppleCfg["crumble_dust"]));
+    }
+
+    // Building n's view moved off its rest by `offset` (Godot axes); zero puts it back (scenes/slam_view.gd _shudder).
+    public void Nudge(int n, Vector3 offset)
+    {
+        if (n < 0 || n >= sites.Length) return;
+        var local = new Vector3(offset.x, offset.y, -offset.z);
+        Site s = sites[n];
+        if (s.shell != null) s.shell.transform.localPosition = local;
+        if (s.fine != null && s.fine.go != null) s.fine.go.transform.localPosition = local;
+    }
+
     public void OnEvent(S.GDict e)
     {
         string type = S.Gd.Str(e["type"]);
@@ -651,6 +742,7 @@ public sealed unsafe class CityDraw : IDisposable
                 drop = (float)S.Num.F(e["drop"]),
                 duration = Mathf.Max(0.05f, (float)S.Num.F(e["duration"])),
                 y = at.y,
+                landmark = s.b.landmark != "",
             };
         }
     }
@@ -669,6 +761,7 @@ public sealed unsafe class CityDraw : IDisposable
                 float angle = (float)S.FallContact.Tilt(toppleCfg, f.t, f.duration);
                 var axis = new Vector3(f.dir.y, 0, f.dir.x);
                 f.pivot.rotation = Quaternion.AngleAxis(-angle * Mathf.Rad2Deg, axis.sqrMagnitude > 1e-6f ? axis.normalized : Vector3.right);
+                if (!f.landmark) Crumble(f, dt);
             }
             f.dropped = f.drop * k * k;
             Vector3 p = f.pivot.position;
@@ -690,6 +783,8 @@ public sealed unsafe class CityDraw : IDisposable
             if (drawn[i] != 0) keep.Add(i);
         tick++;
         int[] all = keep.ToArray();
+        landedId = id;
+        landedAt = all.Length > 0 ? CellAt(p, all[all.Length / 2]) : new Vector3(f.pivot.position.x, f.pivot.position.y, -f.pivot.position.z);
         if (all.Length > 0)
             fixed (int* ip = all)
                 debris.Spawn(p.mesher, p.go.transform.localToWorldMatrix, ip, all.Length, f.pivot.position, Vector3.up, debris.BurstSpeed, tick);

@@ -57,6 +57,26 @@ public sealed class Tuning
     public int debris_slide = 3;
     public string debris_tint = "b8b0a0";
     public float debris_tint_mix = 0.55f;
+    // The rubble a gone building and a toppled tower leave (RubbleView): the literals of scenes/ruin.gd heap
+    // and strip_plan and scenes/landmark_rubble.gd, in sim units. ruin_share is Unity's own: the share of
+    // Godot's height laid, since the carved cells' debris already lies on the lot.
+    public float ruin_peak_base = 2.4f;
+    public float ruin_peak_per_tier = 0.9f;
+    public float ruin_spill_cells = 2f;
+    public float ruin_wobble = 0.9f;
+    public float ruin_wobble_swing = 0.1f;
+    public float ruin_wobble_jitter = 0.04f;
+    public float ruin_fall_power = 0.8f;
+    public float ruin_height_jitter = 1.5f;
+    public float ruin_strip_height = 1.6f;
+    public string ruin_grey = "6e706e";
+    public float ruin_grey_mix = 0.8f;
+    public float ruin_share = 0.5f;
+    public float landmark_rubble_back = 2f;
+    public float landmark_rubble_reach = 0.6f;
+    public float landmark_rubble_reach_max = 2f;
+    public float landmark_rubble_peak = 1.4f;
+    public int landmark_rubble_colors = 24;
     public float impact_burst = 3;
     public float pusher_scale = 0.8f;
     public float sweep_margin_frames = 4;
@@ -69,6 +89,26 @@ public sealed class Tuning
     public float ssao_intensity = 1.2f;
     public float shadow_distance = 600f;
     public float fog_height = 70f;
+    // The run's dust trail (SlamView.cs): scenes/powers_view.gd update's literals.
+    public float momentum_dust_min = 0.5f;
+    public float momentum_dust_every_s = 0.15f;
+    public float momentum_dust_lift = 0.3f;
+    // The far aircraft lights (Aircraft.cs): scenes/aircraft.gd's literals, Godot axes.
+    public int aircraft_count = 3;
+    public float aircraft_x_range = 600f;
+    public float aircraft_y_min = 90f;
+    public float aircraft_y_max = 150f;
+    public float aircraft_z_first = -200f;
+    public float aircraft_z_step = -160f;
+    public float aircraft_speed_min = 18f;
+    public float aircraft_speed_max = 30f;
+    public float aircraft_wrap_x = 900f;
+    public float aircraft_wrap_to = 880f;
+    public float aircraft_blink_period = 1.4f;
+    public float aircraft_blink_on = 0.18f;
+    public float aircraft_light_size = 1.6f;
+    public string aircraft_red = "ff3326";
+    public string aircraft_white = "fff2d9";
     public SphereDef[] body = new SphereDef[0];
     public SphereDef[] tail = new SphereDef[0];
 }

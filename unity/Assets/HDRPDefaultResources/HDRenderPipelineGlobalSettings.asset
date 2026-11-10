@@ -335,6 +335,7 @@ MonoBehaviour:
           m_InjectionPoint: 2
           m_CustomPostProcessTypesAsString:
           - AgxTonemap, Slice, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+          - PostFxPass, Slice, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     - rid: 5808671744868220937
       type: {class: RenderingPathFrameSettings, ns: UnityEngine.Rendering.HighDefinition, asm: Unity.RenderPipelines.HighDefinition.Runtime}
       data:

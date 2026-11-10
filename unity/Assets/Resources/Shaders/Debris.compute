@@ -1,6 +1,8 @@
 // Falling debris: gravity, then landing on a heightfield that grows with every grain, so rubble piles up.
 // A landed particle's colour loses its alpha byte and stays where it is.
 #pragma kernel Step
+#pragma kernel PressHeight
+#pragma kernel PressGrains
 
 struct Particle
 {
@@ -87,5 +89,40 @@ void Step(uint3 id : SV_DispatchThreadID)
         if (p.color == 0u) p.color = 1u; // pure black stays drawn: zero means an unused slot
         if (inside) InterlockedAdd(_Height[at], 1u);
     }
+    _Particles[i] = p;
+}
+
+// A foot presses the rubble under it flat (scenes/ruin_yard.gd press, D-245): each column whose centre lies
+// within the radius keeps the share _PressKeep of its height (RubbleShape.Pressed is the same sum), and the
+// landed grains standing in it sink by the same share.
+
+float2 _PressAt;
+float _PressRadius, _PressKeep;
+int _PressMinX, _PressMinY;
+
+bool Pressed(int2 c)
+{
+    float2 d = _GridMin + ((float2)c + 0.5) * _GridStep - _PressAt;
+    return dot(d, d) <= _PressRadius * _PressRadius;
+}
+
+[numthreads(8, 8, 1)]
+void PressHeight(uint3 id : SV_DispatchThreadID)
+{
+    int2 c = int2(_PressMinX, _PressMinY) + (int2)id.xy;
+    if (c.x < 0 || c.y < 0 || c.x >= _GridCells || c.y >= _GridCells || !Pressed(c)) return;
+    uint at = uint(c.x + c.y * _GridCells);
+    _Height[at] = (uint)floor(float(_Height[at]) * _PressKeep);
+}
+
+[numthreads(256, 1, 1)]
+void PressGrains(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x;
+    if (i >= _Count) return;
+    Particle p = _Particles[i];
+    if ((p.color >> 24) != 0u || p.color == 0u) return;
+    if (!Pressed((int2)floor((p.pos.xz - _GridMin) / _GridStep))) return;
+    p.pos.y *= _PressKeep;
     _Particles[i] = p;
 }

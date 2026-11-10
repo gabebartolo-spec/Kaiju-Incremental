@@ -75,6 +75,10 @@ public static class SliceBuild
         object list = ordersType.GetField("m_AfterPostProcessCustomPostProcesses", ANY).GetValue(orders);
         MethodInfo add = list.GetType().GetMethod("Add", new[] { typeof(string) });
         bool added = (bool)add.Invoke(list, new object[] { typeof(AgxTonemap).AssemblyQualifiedName });
+        // After AgX in the list: the vignette and fringe work on the display picture.
+        bool addedPost = (bool)add.Invoke(list, new object[] { typeof(PostFxPass).AssemblyQualifiedName });
+        added |= addedPost;
+        Debug.Log($"slice: postfx registered, new {addedPost}");
         UnityEngine.Object global = GraphicsSettings.GetSettingsForRenderPipeline<HDRenderPipeline>();
         if (added && global != null) EditorUtility.SetDirty(global);
         Debug.Log($"slice: agx registered, new {added}, global settings {(global != null ? AssetDatabase.GetAssetPath(global) : "none")}");

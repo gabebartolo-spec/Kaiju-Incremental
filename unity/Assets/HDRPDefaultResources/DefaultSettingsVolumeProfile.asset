@@ -81,6 +81,34 @@ MonoBehaviour:
   ambientProbeDimmer:
     m_OverrideState: 1
     m_Value: 0.5
+--- !u!114 &-7982339227872091827
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b43b60250451d1e44bd68000d01437e7, type: 3}
+  m_Name: PostFxPass
+  m_EditorClassIdentifier: Slice::PostFxPass
+  active: 1
+  tint:
+    m_OverrideState: 1
+    m_Value: {r: 0, g: 0, b: 0, a: 1}
+  strength:
+    m_OverrideState: 1
+    m_Value: 0
+  inner:
+    m_OverrideState: 1
+    m_Value: 0.5
+  outer:
+    m_OverrideState: 1
+    m_Value: 1
+  fringePx:
+    m_OverrideState: 1
+    m_Value: 0
 --- !u!114 &-7920625462353180694
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -1342,6 +1370,7 @@ MonoBehaviour:
   - {fileID: -4070774955350422011}
   - {fileID: 8194729476529826811}
   - {fileID: -3994091595623894083}
+  - {fileID: -7982339227872091827}
 --- !u!114 &366781547590163796
 MonoBehaviour:
   m_ObjectHideFlags: 3
