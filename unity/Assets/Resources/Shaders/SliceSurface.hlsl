@@ -105,7 +105,7 @@ float _CubeSize;
 #define HAVE_MESH_MODIFICATION
 AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters)
 {
-#ifdef UNITY_ANY_INSTANCING_ENABLED
+#if UNITY_ANY_INSTANCING_ENABLED
     Cube c = _Cubes[input.instanceID];
 #else
     Cube c = _Cubes[0];
@@ -205,7 +205,7 @@ StructuredBuffer<Particle> _Particles;
 #define HAVE_MESH_MODIFICATION
 AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters)
 {
-#ifdef UNITY_ANY_INSTANCING_ENABLED
+#if UNITY_ANY_INSTANCING_ENABLED
     Particle p = _Particles[input.instanceID];
 #else
     Particle p = _Particles[0];

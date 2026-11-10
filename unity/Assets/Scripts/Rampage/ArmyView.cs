@@ -35,6 +35,8 @@ public sealed class ArmyView
         public bool falling;
         public Vector3 fallFrom, fallDrift;
         public float fallT, fallSeconds;
+        // helicopter_model.gd debris_paint: a wreck's chunks wear its own two paints.
+        public Color chunkA = HELI_PAINT, chunkB = HELI_PAINT;
     }
 
     sealed class Shell
@@ -158,10 +160,13 @@ public sealed class ArmyView
         return ModelColors.Read("res://assets/vehicles/" + S.Gd.Str(entry["kvox"]));
     }
 
-    public static Mesh Faces(ModelColors.Model model, float voxel, Vector3 pivot)
+    public static Mesh Faces(ModelColors.Model model, float voxel, Vector3 pivot) => Faces(model, voxel, pivot, null);
+
+    // glow: the voxels lit from within (vertex alpha 0), as helicopter_model.gd _paint marks the leader's; null for none.
+    public static Mesh Faces(ModelColors.Model model, float voxel, Vector3 pivot, bool[] glow)
     {
         int[] raw = model.xyz.Raw;
-        int count = raw.Length / 3;
+        int count = model.rgb.Length; // not raw.Length / 3: Raw is the growing buffer, longer than the cells after Append
         var solid = new HashSet<Vector3Int>();
         for (int i = 0; i < count; i++) solid.Add(new Vector3Int(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]));
         var verts = new List<Vector3>();
@@ -176,7 +181,7 @@ public sealed class ArmyView
             var cell = new Vector3Int(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]);
             Vector3 centre = Mirror(new Vector3(cell.x * voxel, (cell.y + 0.5f) * voxel, cell.z * voxel) - pivot);
             int c = model.rgb[i];
-            var color = new Color32((byte)(c >> 16), (byte)(c >> 8), (byte)c, 255);
+            var color = new Color32((byte)(c >> 16), (byte)(c >> 8), (byte)c, (byte)(glow != null && glow[i] ? 0 : 255));
             foreach (Vector3Int way in ways)
             {
                 if (solid.Contains(cell + way)) continue;
@@ -224,6 +229,20 @@ public sealed class ArmyView
         return go.transform;
     }
 
+    // A part whose voxels `paint` recolours: it gets its own copy of the colours (ModelColors' cache is shared)
+    // and returns which voxels glow (helicopter_model.gd vip_look).
+    Transform Part(S.GDict parts, string kind, string part, float voxel, Transform parent, Vector3 at, System.Func<string, ModelColors.Model, bool[]> paint)
+    {
+        string key = kind + part;
+        if (paint != null && !partMeshes.ContainsKey(key))
+        {
+            ModelColors.Model source = Model(parts, part);
+            var copy = new ModelColors.Model { xyz = source.xyz, rgb = (int[])source.rgb.Clone() };
+            partMeshes[key] = Faces(copy, voxel, Pivot(parts, part, voxel), paint(part, copy));
+        }
+        return Part(parts, kind, part, voxel, parent, at);
+    }
+
     Mesh Box(Color color, byte alpha)
     {
         Color32 c = color;
@@ -265,6 +284,7 @@ public sealed class ArmyView
             case "heli_spawned": SpawnHeli(S.Num.I(e["heli"])); break;
             case "heli_fired": HeliFired(S.Num.I(e["heli"])); break;
             case "heli_destroyed": HeliDown(e); break;
+            case "vip_down": HeliDown(e); break;  // the leader falls as a gunship does (VipView built it)
             case "heli_crashed": HeliCrashed(e); break;
             case "gunship_destroyed": Burst(EventAt(e, (float)sim.armyUnits.taskforce.gunships.Altitude()), OBSIDIAN); break;
         }
@@ -356,6 +376,42 @@ public sealed class ArmyView
         helis[id] = h;
     }
 
+    // A helicopter from another parts file under `id` (the leader's, VipView): the same body, rotors and flying
+    // lights, spun, strobed, dropped and crashed with the gunships, its wreck's chunks in chunkA and chunkB.
+    // `paint` recolours each part (see Part). It has no gun, so `id` must never be one of sim.air.helis.
+    public Transform BuildHeli(long id, S.GDict parts, string kind, Color chunkA, Color chunkB, System.Func<string, ModelColors.Model, bool[]> paint)
+    {
+        var body = new GameObject(kind).transform;
+        body.SetParent(root, false);
+        float v = F(vehicles, "heli_height") / Mathf.Max(1f, F(parts, "height") - 1f);
+        Vector3 hull = Pivot(parts, "body", v);
+        var centre = new Vector3(hull.x, 0f, hull.z);
+        Part(parts, kind, "body", v, body, hull - centre, paint);
+        var h = new Heli { root = body, chunkA = chunkA, chunkB = chunkB };
+        h.mainRotor = Part(parts, kind, "main_rotor", v, body, Pivot(parts, "main_rotor", v) - centre, paint);
+        h.tailRotor = Part(parts, kind, "tail_rotor", v, body, Pivot(parts, "tail_rotor", v) - centre, paint);
+        HeliLights(h, body);
+        helis[id] = h;
+        return body;
+    }
+
+    // A helicopter that left the sky whole (the leader past the map's edge).
+    public void RemoveHeli(long id)
+    {
+        if (!helis.TryGetValue(id, out Heli h)) return;
+        Object.Destroy(h.root.gameObject);
+        helis.Remove(id);
+    }
+
+    // The heading (Godot's yaw, radians) of a helicopter another view flies, so its fall spins on from it.
+    public void HeliYaw(long id, float yaw)
+    {
+        if (helis.TryGetValue(id, out Heli h)) h.yaw = yaw;
+    }
+
+    // A glowing box on the army's own material, for a view that hangs a lamp on a model built here.
+    public Transform GlowBox(Color color, Vector3 at, float size, Transform parent) => Lamp(color, at, size, parent);
+
     // helicopter_model.gd _add_lights: red left, green right, a white strobe on the tail, a pale belly lamp.
     void HeliLights(Heli h, Transform body)
     {
@@ -400,7 +456,7 @@ public sealed class ArmyView
                 Object.Destroy(h.root.gameObject);
                 helis.Remove(id);
             }
-            Burst(at, HELI_PAINT);
+            Burst(at, h != null ? h.chunkA : HELI_PAINT, h != null ? h.chunkB : HELI_PAINT);
             return;
         }
         h.falling = true;
@@ -428,7 +484,14 @@ public sealed class ArmyView
         fx.Fire(ground, F(wreck, "crash_fire"));
         fx.Dust(ground + Vector3.up * 0.4f, scale);
         fx.Shockwave(ground, scale * F(wreck, "crash_ring"));
-        Chunks(ground + Vector3.up * 0.8f, CRASH_CHUNKS, HELI_PAINT, HELI_PAINT);
+        Chunks(ground + Vector3.up * 0.8f, CRASH_CHUNKS, h != null ? h.chunkA : HELI_PAINT, h != null ? h.chunkB : HELI_PAINT);
+    }
+
+    void Burst(Vector3 at, Color a, Color b)
+    {
+        fx.FlashLight(at, CRASH_BLAST, F(wreck, "burst_light"), F(wreck, "burst_light_seconds"));
+        fx.Fireball(at, Vector3.one, F(wreck, "fireball_radius"));
+        Chunks(at, CRASH_CHUNKS, a, b);
     }
 
     void Burst(Vector3 at, Color paint)

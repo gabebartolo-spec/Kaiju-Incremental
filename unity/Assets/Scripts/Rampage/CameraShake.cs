@@ -43,6 +43,14 @@ public sealed class CameraShake
         trauma = Mathf.Clamp01(trauma + F(sources, source) * fade);
     }
 
+    // The same, the source's trauma times `mult` (scenes/slam_view.gd: source("slam") * strength).
+    public void AddScaledAt(string source, float mult, Vector3 at, Vector3 focus, float scale)
+    {
+        float n = near * scale, f = Mathf.Max(far * scale, n + 0.001f);
+        float fade = 1f - Mathf.Clamp01((Vector3.Distance(at, focus) - n) / (f - n));
+        trauma = Mathf.Clamp01(trauma + F(sources, source) * mult * fade);
+    }
+
     public void Kick(float rad)
     {
         kick = rad;

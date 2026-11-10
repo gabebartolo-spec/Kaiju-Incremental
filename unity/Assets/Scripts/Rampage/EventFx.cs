@@ -163,7 +163,10 @@ public sealed class EventFx
 
     void FallLand(S.GDict e)
     {
-        if (S.Gd.Str(e["kind"]) == "topple" && e.Has("from"))
+        S.RampageSim.Building site = sim.buildings[S.Num.I(e["building"])];
+        // scenes/city_falls.gd land: a piece that came down on the kaiju or a building, and a landmark's,
+        // gets the one plain puff below, not the street's dust line.
+        if (S.Gd.Str(e["kind"]) == "topple" && e.Has("from") && !e.Has("contact") && site.landmark == "")
         {
             S.Vector2 from = e["from"], to = e["to"];
             var a = new Vector3((float)from.x, 0f, (float)from.y);
@@ -174,9 +177,13 @@ public sealed class EventFx
             fx.DustLine(a, b, F(e, "width"), true, toppleTint);
             return;
         }
-        S.RampageSim.Building site = sim.buildings[S.Num.I(e["building"])];
-        fx.Dust(new Vector3((float)site.x, FALL_LIFT, (float)site.z), LAND_DUST);
+        var at = new Vector3((float)site.x, FALL_LIFT, (float)site.z);
+        if (City != null && City.Landed(S.Num.I(e["id"]), out Vector3 landed)) at = new Vector3(landed.x, FALL_LIFT, landed.z);
+        fx.Dust(at, LAND_DUST);
     }
+
+    // The city's drawing, for where a fallen piece came down; RampageGame sets it.
+    public CityDraw City;
 
     // scenes/powers_view.gd _coated: a few of the cells the beam coated burn on.
     void Coated(S.GDict e)

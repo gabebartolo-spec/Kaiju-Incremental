@@ -22,6 +22,9 @@ static class Program
         if (mode == "on" && !native) return 1;
         if (native) failures += BeamCheck.Run();
         if (native) failures += WaterCheck.Run();
+        failures += RubbleCheck.Run();
+        failures += PostFxCheck.Run(RepoRoot());
+        failures += StreetCheck.Run(RepoRoot());
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;
@@ -54,6 +57,12 @@ static class Program
         string text = Environment.GetEnvironmentVariable("SIM_LOG_TEXT");
         int differ = SimLog.Check(log, RepoRoot(), Console.WriteLine, text);
         Console.WriteLine($"{differ} ticks differ from Godot");
+        // After the replay, so its sims cannot disturb it.
+        failures += AirstrikeCheck.Run(RepoRoot());
+        failures += VipCheck.Run(RepoRoot());
+        failures += RailCheck.Run();
+        failures += RooftopCheck.Run();
+        failures += LeapCheck.Run(RepoRoot());
         return failures == 0 && differ == 0 ? 0 : 1;
     }
 

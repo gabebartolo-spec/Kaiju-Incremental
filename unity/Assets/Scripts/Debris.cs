@@ -51,6 +51,59 @@ public sealed unsafe class Debris
 
     public float BurstSpeed => tuning.debris_burst;
 
+    // The rubble look (RubbleView): the grid a laid grain stands on, and how much one raises its column.
+    int pressHeight = -1, pressGrains = -1;
+    long presses;
+    public long Presses => presses;
+    public float GridCell => tuning.debris_grid_cell;
+    public float GrainHeight => tuning.debris_size * tuning.debris_pile;
+
+    // One ready-made grain into this frame's batch; false when the batch is full (offer it again next frame).
+    public bool Add(KcParticle grain)
+    {
+        if (stagingCount >= STAGING) return false;
+        staging[stagingCount++] = grain;
+        return true;
+    }
+
+    // Spawn without the debris_keep_every thinning: for a handful of cells that must all show (the crumble).
+    public void SpawnAll(System.IntPtr mesher, Matrix4x4 mat, int* index, int n, Vector3 centre, Vector3 velocity, float burst, uint tick)
+    {
+        int room = STAGING - stagingCount;
+        if (room <= 0 || n <= 0) return;
+        KcParticle* output = (KcParticle*)NativeArrayUnsafeUtility.GetUnsafePtr(staging) + stagingCount;
+        Vector3 v = velocity, c = centre;
+        stagingCount += Native.kc_debris(mesher, index, Mathf.Min(n, room), (float*)&mat, (float*)&v, (float*)&c, burst, tuning.debris_up, tuning.debris_scatter, tick, output, room);
+    }
+
+    // A foot presses the landed rubble under it flat (scenes/ruin_yard.gd press, D-245): every column within
+    // `radius` of `at` (Unity axes) keeps the share `keep` of its height, and so do the grains lying in it.
+    public void Press(Vector3 at, float radius, float keep)
+    {
+        if (spawned == 0 || radius <= 0f) return;
+        if (pressHeight < 0)
+        {
+            pressHeight = compute.FindKernel("PressHeight");
+            pressGrains = compute.FindKernel("PressGrains");
+        }
+        float cell = tuning.debris_grid_cell;
+        int span = Mathf.CeilToInt(radius * 2f / cell) + 1;
+        compute.SetInt("_Count", Live);
+        compute.SetInt("_GridCells", gridCells);
+        compute.SetFloats("_GridMin", gridMin.x, gridMin.z);
+        compute.SetFloat("_GridStep", cell);
+        compute.SetFloats("_PressAt", at.x, at.z);
+        compute.SetFloat("_PressRadius", radius);
+        compute.SetFloat("_PressKeep", keep);
+        compute.SetInt("_PressMinX", Mathf.FloorToInt((at.x - radius - gridMin.x) / cell));
+        compute.SetInt("_PressMinY", Mathf.FloorToInt((at.z - radius - gridMin.z) / cell));
+        compute.SetBuffer(pressHeight, "_Height", heights);
+        compute.Dispatch(pressHeight, Mathf.CeilToInt(span / 8f), Mathf.CeilToInt(span / 8f), 1);
+        compute.SetBuffer(pressGrains, "_Particles", particles);
+        compute.Dispatch(pressGrains, Mathf.CeilToInt(Live / 256f), 1, 1);
+        presses++;
+    }
+
     public void Spawn(VoxelBody b, int* index, int n, Vector3 centre, Vector3 velocity, float burst, uint tick) =>
         Spawn(b.mesher, b.transform.localToWorldMatrix, index, n, centre, velocity, burst, tick);
 

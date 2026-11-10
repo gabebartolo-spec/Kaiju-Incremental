@@ -12,6 +12,15 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="../Assets/Scripts/Sim/**/*.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/RooftopAim.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/PostFxState.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/Pavements.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/BeachLayout.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/StreetPeople.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/VipPaint.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/AirstrikePath.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/RubbleShape.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/LeapFrames.cs" />
     <None Include="golden/**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Assets/Plugins/x86_64/kaiju_core.dll" Condition="Exists('../Assets/Plugins/x86_64/kaiju_core.dll')" Link="kaiju_core.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
