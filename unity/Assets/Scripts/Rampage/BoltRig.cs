@@ -210,7 +210,7 @@ public sealed class BoltRig : IDisposable
     void DrawFlare(MaterialPropertyBlock block, float fade)
     {
         if (fade <= 0f) return;
-        block.SetFloat("_FlareFade", fade);
+        block.SetFloat("_FlareFade", fade * SettingsApply.FlashScale);  // Reduce flashing (bolt_rig.gd)
         Graphics.DrawMesh(quad, Matrix4x4.identity, flareMat, 0, null, 0, block, ShadowCastingMode.Off, false);
     }
 
@@ -270,8 +270,8 @@ public sealed class BoltRig : IDisposable
         if (index == 0) flood = share * Mathf.Clamp01(t / first) * fade;
         float follow = 1f - Mathf.Exp(-dt * F(cfg, "light_follow"));
         S.GArray<S.Variant> mouthRow = lightRow["mouth"], impactRow = lightRow["impact"];
-        mouthEnergy = Mathf.Lerp(mouthEnergy, At(mouthRow, 0) * flood, follow);
-        hitEnergy = Mathf.Lerp(hitEnergy, At(impactRow, 0) * flood, follow);
+        mouthEnergy = Mathf.Lerp(mouthEnergy, At(mouthRow, 0) * flood * SettingsApply.FlashScale, follow);
+        hitEnergy = Mathf.Lerp(hitEnergy, At(impactRow, 0) * flood * SettingsApply.FlashScale, follow);
         Light(mouthLight, mouthEnergy, At(mouthRow, 1));
         Light(hitLight, hitEnergy, At(impactRow, 1));
 

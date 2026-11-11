@@ -326,10 +326,10 @@ public sealed class CityFx : IDisposable
         f.light.transform.position = new Vector3(at.x, at.y, -at.z);
         f.light.color = color;
         f.light.range = 3f + energy;
-        f.energy = energy;
+        f.energy = energy * SettingsApply.FlashScale;  // Reduce flashing (city_view.gd flash)
         f.seconds = seconds;
         f.left = seconds;
-        f.light.intensity = energy * Mathf.PI * exposureUnit * lightMatch;
+        f.light.intensity = f.energy * Mathf.PI * exposureUnit * lightMatch;
         flashes.Add(f);
     }
 

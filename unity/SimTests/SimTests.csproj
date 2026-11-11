@@ -12,6 +12,7 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="../Assets/Scripts/Sim/**/*.cs" />
+    <Compile Include="../Assets/Scripts/GameLogic/**/*.cs" />
     <Compile Include="../Assets/Scripts/Rampage/RooftopAim.cs" />
     <Compile Include="../Assets/Scripts/Rampage/PostFxState.cs" />
     <Compile Include="../Assets/Scripts/Rampage/Pavements.cs" />
