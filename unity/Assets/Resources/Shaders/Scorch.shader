@@ -1,6 +1,6 @@
 // scenes/fx_decals.gd's wedge as a decal: a box drawn over the depth buffer, each pixel looked up by where
-// the world behind it stands. Soot darkens; the crack lines glow and cool. Never on the kaiju (stencil bit
-// 64, Croc.BODY_STENCIL).
+// the world behind it stands. Soot darkens; the crack lines glow and cool. Never on the kaiju: what stands
+// in the croc's body box, above its feet, is skipped (Croc.Draw sets the box).
 Shader "Hidden/Slice/Scorch"
 {
     SubShader
@@ -14,13 +14,6 @@ Shader "Hidden/Slice/Scorch"
             ZWrite Off
             ZTest Always
             Cull Front
-            Stencil
-            {
-                Ref 0
-                ReadMask 64
-                Comp Equal
-            }
-
             HLSLPROGRAM
             #pragma target 4.5
             #pragma vertex Vert
@@ -35,6 +28,8 @@ Shader "Hidden/Slice/Scorch"
             float4 _ScorchTint;
             float4 _ScorchSoot;
             float _ScorchMix, _ScorchGlow;
+            float4x4 _CrocBodyInv;
+            float4 _CrocBodyMin, _CrocBodyMax;
 
             struct Attributes
             {
@@ -59,6 +54,9 @@ Shader "Hidden/Slice/Scorch"
                 float depth = LoadCameraDepth(i.positionCS.xy);
                 PositionInputs pos = GetPositionInput(i.positionCS.xy, _ScreenSize.zw, depth, UNITY_MATRIX_I_VP, UNITY_MATRIX_V);
                 float3 ws = GetAbsolutePositionWS(pos.positionWS);
+                float3 body = mul(_CrocBodyInv, float4(ws.x, ws.y, -ws.z, 1.0)).xyz;
+                if (all(body > _CrocBodyMin.xwz) && all(body < _CrocBodyMax.xyz))
+                    discard;
                 float3 rel = ws - _ScorchAt.xyz;
                 rel.z = -rel.z;  // Godot axes from here
                 float y = rel.y / _ScorchDir.z;

@@ -99,8 +99,9 @@ public sealed class Croc
     static readonly string[] ROAR_PREFIXES = { "spine", "neck", "head", "clavicle", "arm", "tail", "jaw" };
     const float ROAR_FADE_S = 0.4f;
     const string ROAR_CLIP = "roar", JAW_CLIP = "beam_jaw", JAW_BONE = "jaw";
-    // HDRP's first user stencil bit: what lands on the street (the scorch) leaves the hide alone.
-    public const int BODY_STENCIL = 64;
+    // The rest pose's box, one voxel wider: what lands on the street (the scorch) skips what stands in it.
+    // The materials stay stock: a stencil bit on them crashed the D3D12 player on quit.
+    readonly Vector4 bodyMin, bodyMax; // bodyMin.w: the floor, a voxel above the soles, so the street under it still takes soot
     readonly bool[] roarBone;
     readonly int jawClip = -1, jawIndex = -1, upperIndex = -1;
     bool jawKnown;
@@ -262,12 +263,10 @@ public sealed class Croc
         fillMat = new Material(litShader);
         fillMat.EnableKeyword("SLICE_FILL");
         fill = BuildFill(skin, fillVertsAt, fillVerts, fillIndexAt, fillIndices);
-        foreach (Material m in new[] { cubeMat, fillMat })
-            foreach (string pass in new[] { "", "GBuffer", "Depth" })
-            {
-                m.SetInt("_StencilRef" + pass, m.GetInt("_StencilRef" + pass) | BODY_STENCIL);
-                m.SetInt("_StencilWriteMask" + pass, m.GetInt("_StencilWriteMask" + pass) | BODY_STENCIL);
-            }
+        var body = new Bounds(cubeAt[0], Vector3.zero);
+        foreach (Vector3 centre in cubeAt) body.Encapsulate(centre);
+        bodyMin = new Vector4(body.min.x - voxel, body.min.y, body.min.z - voxel, body.min.y + voxel);
+        bodyMax = body.max + Vector3.one * voxel;
 
         Shader.SetGlobalFloat("_HideCell", voxel * SliceData.F(look, "kaiju_hide_cell_voxels", 3));
         Shader.SetGlobalFloat("_HideSeed", SliceData.F(look, "kaiju_hide_seed", 0));
@@ -1047,6 +1046,9 @@ public sealed class Croc
         cubeBlock.SetMatrix("_CrocWorld", world);
         fillBlock.SetBuffer("_Bones", boneBuffer);
         fillBlock.SetMatrix("_CrocWorld", world);
+        Shader.SetGlobalMatrix("_CrocBodyInv", world.inverse);
+        Shader.SetGlobalVector("_CrocBodyMin", bodyMin);
+        Shader.SetGlobalVector("_CrocBodyMax", bodyMax);
         var box = new Bounds(new Vector3(position.x, position.y + 10, -position.z), Vector3.one * 120);
         // The cubes are in absolute world space, and this call offsets the object by the bounds' centre: keep it at the origin.
         Graphics.DrawMeshInstancedProcedural(cube, 0, cubeMat, new Bounds(Vector3.zero, Vector3.one * 8000), cubeCount, cubeBlock, ShadowCastingMode.On, true);
