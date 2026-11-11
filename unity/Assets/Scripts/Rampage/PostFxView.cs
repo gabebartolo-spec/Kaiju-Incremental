@@ -9,7 +9,7 @@ public sealed class PostFxView
 {
     // Off draws nothing (scenes/post_fx.gd `enabled`, the benchmark's baseline; no setting turns it off).
     public bool Enabled = true;
-    // Reduce flashing hides the fringe (autoload/player_settings.gd fringe_on); on until the options are ported.
+    // A capture's own switch; Reduce flashing hides the fringe through SettingsApply.FringeOn (post_fx.gd update).
     public bool FringeAllowed = true;
 
     public int Fringes => state.fringes;
@@ -71,7 +71,7 @@ public sealed class PostFxView
         state.Update(dt, hpShare, motion);
         if (state.fringes > before) Began("hurt");
         pass.strength.Override((float)state.vignetteAlpha);
-        pass.fringePx.Override(FringeAllowed ? (float)state.fringePx : 0f);
+        pass.fringePx.Override(FringeAllowed && SettingsApply.FringeOn ? (float)state.fringePx : 0f);
     }
 
     void Began(string cause) => Debug.Log($"fringe {state.fringes} at frame {Time.frameCount}: {cause}");

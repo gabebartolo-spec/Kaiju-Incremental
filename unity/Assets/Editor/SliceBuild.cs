@@ -122,21 +122,29 @@ public static class SliceBuild
         }
     }
 
-    // U4: the rampage's own scene, its data beside it, and its own player.
-    const string RAMPAGE_SCENE = "Assets/Rampage.unity";
+    // U5: the game's own scene (GameFlow alone: the flow, with the rampage inside it), its data and assets beside
+    // it, and its player. Rampage.unity, the scene of the U4 builds, is no longer made or built.
+    const string GAME_SCENE = "Assets/Game.unity";
     const string RAMPAGE_EXE = "Build/KaijuRampage.exe";
+    // The sim carves these models: without them a pool building or landmark has no cells.
+    static readonly string[] MODEL_KINDS = { "city_buildings", "landmarks", "vehicles" };
+    // What the screens and the audio read at run time, copied whole (Godot's .import files left behind).
+    static readonly string[] ASSET_KINDS = { "sfx", "music", "overworld", "lab", "title", "ui", "loading", "kaiju" };
+    // kaiju: the bodies' cells, clips and skins (.kclip, .skinf, .skinw, .vskin).
+    static readonly string[] ASSET_TYPES = { ".ogg", ".png", ".jpg", ".kvox", ".json", ".kclip", ".skinf", ".skinw", ".vskin" };
+    // The kit's fonts load through Resources (UiKit.Font), so they are copied into the project, not beside it.
+    const string FONTS = "Assets/Resources/Fonts";
 
     public static void BuildRampage()
     {
+        bool ok = false;
         try
         {
             SetupRendering();
             SetupPlayer();
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            new GameObject("rampage").AddComponent<RampageGame>();
-            EditorSceneManager.SaveScene(scene, RAMPAGE_SCENE);
             string repo = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
-            string to = Path.Combine(Application.streamingAssetsPath, "res", "data");
+            string res = Path.Combine(Application.streamingAssetsPath, "res");
+            string to = Path.Combine(res, "data");
             if (Directory.Exists(to)) Directory.Delete(to, true);
             Directory.CreateDirectory(to);
             foreach (string file in Directory.GetFiles(Path.Combine(repo, "data"), "*.json", SearchOption.AllDirectories))
@@ -145,25 +153,67 @@ public static class SliceBuild
                 Directory.CreateDirectory(Path.GetDirectoryName(out_));
                 File.Copy(file, out_);
             }
-            // The sim carves these models: without them a pool building or landmark has no cells.
-            foreach (string kind in new[] { "city_buildings", "landmarks", "vehicles" })
+            // The text table (Tr.Load).
+            Directory.CreateDirectory(Path.Combine(to, "i18n"));
+            File.Copy(Path.Combine(repo, "data", "i18n", "strings.csv"), Path.Combine(to, "i18n", "strings.csv"), true);
+            foreach (string kind in MODEL_KINDS)
             {
-                string models = Path.Combine(Application.streamingAssetsPath, "res", "assets", kind);
+                string models = Path.Combine(res, "assets", kind);
                 if (Directory.Exists(models)) Directory.Delete(models, true);
                 Directory.CreateDirectory(models);
                 foreach (string file in Directory.GetFiles(Path.Combine(repo, "assets", kind), "*.*"))
                     if (file.EndsWith(".kvox") || file.EndsWith(".parts.json"))
                         File.Copy(file, Path.Combine(models, Path.GetFileName(file)));
             }
+            int copied = 0;
+            foreach (string kind in ASSET_KINDS)
+            {
+                string from = Path.Combine(repo, "assets", kind);
+                string into = Path.Combine(res, "assets", kind);
+                if (Directory.Exists(into)) Directory.Delete(into, true);
+                if (!Directory.Exists(from))
+                {
+                    Debug.LogWarning($"rampage: no assets/{kind} to copy");
+                    continue;
+                }
+                foreach (string file in Directory.GetFiles(from, "*.*", SearchOption.AllDirectories))
+                {
+                    if (Array.IndexOf(ASSET_TYPES, Path.GetExtension(file).ToLowerInvariant()) < 0) continue;
+                    string out_ = Path.Combine(into, Path.GetRelativePath(from, file));
+                    Directory.CreateDirectory(Path.GetDirectoryName(out_));
+                    File.Copy(file, out_);
+                    copied++;
+                }
+            }
+            int fonts = 0;
+            Directory.CreateDirectory(FONTS);
+            string fontsFrom = Path.Combine(repo, "assets", "fonts");
+            if (Directory.Exists(fontsFrom))
+            {
+                foreach (string file in Directory.GetFiles(fontsFrom, "*.ttf"))
+                {
+                    File.Copy(file, Path.Combine(FONTS, Path.GetFileName(file)), true);
+                    fonts++;
+                }
+            }
+            Debug.Log($"rampage: copied {copied} asset files, {fonts} fonts");
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            new GameObject("game").AddComponent<GameFlow>();
+            EditorSceneManager.SaveScene(scene, GAME_SCENE);
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(GAME_SCENE, true) };
             AssetDatabase.SaveAssets();
             Directory.CreateDirectory("Build");
-            BuildReport report = BuildPipeline.BuildPlayer(new[] { RAMPAGE_SCENE }, RAMPAGE_EXE, BuildTarget.StandaloneWindows64, BuildOptions.None);
+            BuildReport report = BuildPipeline.BuildPlayer(new[] { GAME_SCENE }, RAMPAGE_EXE, BuildTarget.StandaloneWindows64, BuildOptions.None);
             Debug.Log($"rampage: build {report.summary.result}, {report.summary.totalErrors} errors, {report.summary.totalSize / (1024 * 1024)} MB");
+            ok = report.summary.result == BuildResult.Succeeded;
         }
         catch (Exception e)
         {
             Debug.LogException(e);
         }
+        // A failed build must fail the command that ran it; an editor someone has open is left open.
+        if (!ok && Application.isBatchMode) EditorApplication.Exit(1);
     }
 
     static void SetupScene()

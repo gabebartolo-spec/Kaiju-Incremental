@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compiles the Unity game scripts against the editor's own assemblies, without opening the editor:
+       a compile error shows in seconds instead of after a nine-minute player build. Local only: it needs the
+       Unity install and a Library the editor has filled once. Run: bash tools/unity/typecheck.sh -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
+    <DefineConstants>UNITY_6000;UNITY_6000_3;UNITY_STANDALONE;UNITY_STANDALONE_WIN;UNITY_64;ENABLE_MONO;UNITY_ASSERTIONS</DefineConstants>
+    <NoWarn>$(NoWarn);CS0649;CS0414;CS0169;CS0108;CS1701;CS1702;MSB3277;MSB3243;CS0436</NoWarn>
+    <UnityEditorData Condition="'$(UnityEditorData)' == ''">C:/Program Files/Unity/Hub/Editor/6000.3.23f1/Editor/Data</UnityEditorData>
+    <UnityProject>$(MSBuildThisFileDirectory)../../../unity</UnityProject>
+    <OutputPath>$(UnityProject)/Obj/typecheck/bin/</OutputPath>
+    <BaseIntermediateOutputPath>$(UnityProject)/Obj/typecheck/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(UnityProject)/Assets/Scripts/**/*.cs" />
+    <Reference Include="$(UnityEditorData)/Managed/UnityEngine/UnityEngine*.dll" Private="false" />
+    <Reference Include="$(UnityProject)/Library/ScriptAssemblies/Unity.*.dll" Exclude="$(UnityProject)/Library/ScriptAssemblies/*Editor*.dll;$(UnityProject)/Library/ScriptAssemblies/*CodeGen*.dll;$(UnityProject)/Library/ScriptAssemblies/*Test*.dll" Private="false" />
+    <Reference Include="$(UnityProject)/Library/ScriptAssemblies/UnityEngine.UI.dll" Private="false" />
+    <!-- The Library's HDRP assembly is the editor build: its volume types name an editor interface. -->
+    <Reference Include="$(UnityEditorData)/Managed/UnityEngine/UnityEditor.CoreModule.dll" Private="false" />
+  </ItemGroup>
+</Project>

@@ -25,6 +25,10 @@ static class Program
         failures += RubbleCheck.Run();
         failures += PostFxCheck.Run(RepoRoot());
         failures += StreetCheck.Run(RepoRoot());
+        // The game logic outside the sim (GameLogic/): saves, settings and what a rampage takes from the save.
+        failures += SaveCheck.Run(RepoRoot());
+        failures += SettingsCheck.Run(RepoRoot());
+        failures += RunStartCheck.Run(RepoRoot());
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;
