@@ -71,11 +71,9 @@ public sealed class CityFx : IDisposable
         this.exposureUnit = exposureUnit;
         this.lightMatch = lightMatch;
         rng = new System.Random(seed);
-        S.GDict tuning = S.Content.Tuning();
-        S.GDict graphics = tuning["display"];
-        graphics = graphics["graphics"];
-        graphics = graphics["max"];
-        maxFires = (int)S.Num.I(graphics["max_fires"]);
+        // The run's frozen graphics preset: fires burning at once, and every burst's and fire's share of particles.
+        maxFires = (int)Kaiju.Game.GraphicsPreset.Cap("max_fires");
+        bursts.particles = fires.particles = (float)Kaiju.Game.GraphicsPreset.Cap("particles");
         S.GDict fx = S.Content.Section("fx");
         S.GDict ring = fx["shockwave"];
         ringScale = F(ring, "radius_scale");

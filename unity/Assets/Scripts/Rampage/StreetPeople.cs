@@ -72,14 +72,8 @@ public sealed class StreetPeople
         beachPeople = people.Count - streetPeople;
     }
 
-    // Civilians per lot building at Godot's medium graphics preset (Unity has no presets).
-    public static int PerLot()
-    {
-        S.GDict display = S.Content.Section("display");
-        S.GDict graphics = display["graphics"];
-        S.GDict medium = graphics["medium"];
-        return (int)S.Num.I(medium["civilians"]);
-    }
+    // Civilians per lot building: the run's graphics preset (street_life.gd, GraphicsPresets.cap("civilians")).
+    public static int PerLot() => (int)Kaiju.Game.GraphicsPreset.Cap("civilians");
 
     // One more person at the end of the list, standing at the origin; returns its index.
     public int AddPerson()

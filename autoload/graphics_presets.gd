@@ -22,6 +22,7 @@ const KEYS := {
 	"sun_angular": "float",  # the sun's angular size, degrees (above 0 = soft PCSS shadows)
 	"ssao": "bool",
 	"ssil": "bool",
+	"ssgi": "bool",  # Unity's SSGI only (D-481); Godot checks it but never draws it
 	"far_blur": "far_blur",  # the far-only blur's quality (FarDepth); "off" drops it
 	# Counts (R 18.3), frozen at each rampage start (start_run) so nothing pops mid-run:
 	"debris_pool": "int",  # flying debris pieces (CityView's DebrisField)

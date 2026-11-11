@@ -52,6 +52,8 @@ public sealed class Bursts : IDisposable
     const float BOUNDS_PAD = 20f;
     // scenes/fx.gd draws with the smoke's own queue, and glow over it (fire.json's ember and smoke queues).
     const int QUEUE_DUST = 3002, QUEUE_GLOW = 3001, QUEUE_RING = 3000;
+    // The share of each burst's particles drawn (the graphics preset's particles, Godot's amount_ratio).
+    public float particles = 1f;
 
     sealed class Live
     {
@@ -100,6 +102,7 @@ public sealed class Bursts : IDisposable
     public void Spawn(BurstStyle s, Vector3 at, Vector3 box, int count, float life, float window, float time, float seed)
     {
         if (count <= 0) return;
+        count = Mathf.Max(1, Mathf.RoundToInt(count * particles));
         Live b = Take();
         b.mat = s.glow ? glowMat : dustMat;
         b.verts = s.glow ? CUBE_VERTS : QUAD_VERTS;

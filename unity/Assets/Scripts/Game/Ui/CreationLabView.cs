@@ -95,7 +95,7 @@ public sealed class CreationLabView
         cam.farClipPlane = FAR;
         cam.depth = CAMERA_DEPTH;
         HDAdditionalCameraData data = go.AddComponent<HDAdditionalCameraData>();
-        data.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+        GraphicsView.UseCamera(data);
         // creation_set.gd environment: the room is a flat near-black, the ambient its own colour.
         data.clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
         data.backgroundColorHDR = Hex("background").linear * unit;
