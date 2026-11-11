@@ -2,6 +2,20 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-426 · Director · The whole bay is water: native step, open mouth, swell lifts the sheet
+On the sea lying flat except one rectangle of waves round the kaiju (the sim stepped only an 80 m window by him,
+walled at its edge): "investigate why all the water is flat except for this rectangle then fix it so all water is
+behaving like water", and of the options he picked "Whole bay + real swell (Recommended)". The bay's shallow water
+is stepped whole every frame by native code (KaijuWater, bit for bit the GDScript pipes; 1.8 ms at most for the
+436x50 cells), its mouth is open sea (a wave runs out there instead of bouncing back), and the shader's swell lifts
+the sheet itself everywhere, dying out over the shelf, so the whole sea rolls even when he is still.
+
+## 2026-10-31 · D-425 · Director · The demo is Ostia Minor plus one pick of Carthago or Thule
+Asked which continents the croc-only demo covers, he picked "Ostia to Carthago/Thule", then, told that both play at
+Behemoth (D-419) so the demo has no Colossus stage, "Ostia + one pick": Ostia Minor (young), then the player picks
+Carthago or Thule (Behemoth) and the demo ends after that conquest. Young and Behemoth only. Changes D-212's "the
+full croc game" and the demo's "three cities" (D-050, D-145, D-156).
+
 ## 2026-10-31 · D-424 · Director · One kaiju per mission
 Ruled with the Overworld plan (claude.ai artifact PcHHG2EhRYsKfBzC2ZkQkV, "Settled on 31 Oct"): a mission is played by
 one kaiju; there is no tag-team or second kaiju in the same city.

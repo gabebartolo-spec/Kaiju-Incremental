@@ -31,6 +31,7 @@ static class GraphicsPresetCheck
         S.GDict table = (S.GDict)((S.GDict)tuning["display"])["graphics"];
         foreach (S.Variant level in table.Keys()) RowValues(S.Gd.Str(level), (S.GDict)table[level]);
         PotatoAgainstMax((S.GDict)table["potato"], (S.GDict)table["max"]);
+        SsgiHighUp((S.GDict)table["medium"], (S.GDict)table["high"]);
         Rejects((S.GDict)table["high"]);
         Freezes();
         Readers((S.GDict)tuning["rain"], (S.GDict)table["potato"]);
@@ -58,10 +59,17 @@ static class GraphicsPresetCheck
         Check(p.cascades == cascades, at + $"sun_splits {splits} = {p.cascades} cascades");
         Check(p.cascadeSize == (cascades == 1 ? p.shadowSize : p.shadowSize / 2), at + $"cascade size {p.cascadeSize} of atlas {p.shadowSize}");
         Check(p.sunAngular == S.Num.F(row["sun_angular"]), at + "sun_angular");
-        Check(p.ssao == (bool)row["ssao"] && p.ssgi == (bool)row["ssil"], at + "ssao, ssil");
+        Check(p.ssao == (bool)row["ssao"] && p.ssgi == (bool)row["ssgi"], at + "ssao, ssgi");
         Check((p.farBlur == GraphicsPreset.OFF) == (S.Gd.Str(row["far_blur"]) == "off"), at + "far_blur");
         foreach (string key in GraphicsPreset.CAPS) Check(p.counts[key] == S.Num.F(row[key]), at + key);
         Check(p.Line().Contains("cascades " + p.cascades), at + "the log line carries the cascades");
+    }
+
+    // SSGI is high and max only (D-481): medium keeps SSAO but not the bounce light.
+    static void SsgiHighUp(S.GDict mediumRow, S.GDict highRow)
+    {
+        GraphicsPreset mid = GraphicsPreset.Of("medium", mediumRow), high = GraphicsPreset.Of("high", highRow);
+        Check(mid.ssao && !mid.ssgi && high.ssgi, $"ssgi medium {mid.ssgi}, high {high.ssgi}");
     }
 
     // The fixture: every mapped look field and every count comes out lower on potato than on max.

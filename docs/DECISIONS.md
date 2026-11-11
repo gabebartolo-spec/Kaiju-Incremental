@@ -4,6 +4,16 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-12 · D-482 · Director · Unity phase B starts with traffic, then police, ported from Godot
+"Traffic, police, props", "Port Godot's", "Police first": the cars are ported as they are (one-way lanes, avenues,
+fleeing, queues; a stepped-on car flattens, Godot has no flips), then the police waves, then the street props and the stadium. The stage bodies are baked from the approved croc in the
+croc-export worktree, not the repo's `reptilian_adult`. Changes: the U6 phase B order.
+
+## 2026-11-12 · D-481 · Director · Where Unity's presets differ from Godot's
+SSGI is on at high and max only ("High and max only", to keep the 60 fps Medium bar), read from its own `ssgi` key;
+Godot keeps reading `ssil`. Shadows reach 160 m ("Keep 160 m"); SMAA stands in for MSAA ("SMAA is fine"); the GPU
+rubble is not capped by `debris_pool` ("Uncapped"). Changes: `data/tuning.json`, the Unity preset mapping.
+
 ## 2026-11-12 · D-480 · Director · A ratchet stops new bare numbers in the Unity C# code
 "Add the ratchet" (asked with the count shown: 762 literals in 76 of 153 files, worst CityFx 91). Hard rule 4 for the
 port: the count may only go down; new numbers go to `data/`. Changes: a C# magic-number lint with a baseline.
@@ -381,17 +391,3 @@ kaiju forms / then edit the photos to be more epic", then "remove the ui from th
 contrast and vignette), he picked "All 12", grade "Keep as is" and "Random each load". The loading overlay shows one
 4K still (assets/loading) behind INCOMING and the meter, never the same twice in a row (comment #92, D-140, D-359).
 The band sits just above the crawl so the kaiju in mid-frame stays in view.
-
-## 2026-10-31 · D-426 · Director · The whole bay is water: native step, open mouth, swell lifts the sheet
-On the sea lying flat except one rectangle of waves round the kaiju (the sim stepped only an 80 m window by him,
-walled at its edge): "investigate why all the water is flat except for this rectangle then fix it so all water is
-behaving like water", and of the options he picked "Whole bay + real swell (Recommended)". The bay's shallow water
-is stepped whole every frame by native code (KaijuWater, bit for bit the GDScript pipes; 1.8 ms at most for the
-436x50 cells), its mouth is open sea (a wave runs out there instead of bouncing back), and the shader's swell lifts
-the sheet itself everywhere, dying out over the shelf, so the whole sea rolls even when he is still.
-
-## 2026-10-31 · D-425 · Director · The demo is Ostia Minor plus one pick of Carthago or Thule
-Asked which continents the croc-only demo covers, he picked "Ostia to Carthago/Thule", then, told that both play at
-Behemoth (D-419) so the demo has no Colossus stage, "Ostia + one pick": Ostia Minor (young), then the player picks
-Carthago or Thule (Behemoth) and the demo ends after that conquest. Young and Behemoth only. Changes D-212's "the
-full croc game" and the demo's "three cities" (D-050, D-145, D-156).

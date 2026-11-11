@@ -90,7 +90,7 @@ namespace Kaiju.Game
             p.Msaa(level, row);
             p.Shadows(level, row);
             p.ssao = Flag(level, row, "ssao");
-            p.ssgi = Flag(level, row, "ssil");
+            p.ssgi = Flag(level, row, "ssgi");  // its own key: SSGI is high and max only (D-481); Godot reads ssil
             p.farBlurName = Name(level, row, "far_blur");
             p.farBlur = Pick(FAR_BLURS, level, "far_blur", p.farBlurName);
             foreach (string key in CAPS) p.counts[key] = Number(level, row, key);

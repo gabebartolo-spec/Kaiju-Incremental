@@ -178,6 +178,7 @@
                 "sun_angular": {"$ref": "#/$defs/num"},
                 "ssao": {"$ref": "#/$defs/bool"},
                 "ssil": {"$ref": "#/$defs/bool"},
+                "ssgi": {"$ref": "#/$defs/bool"},
                 "far_blur": {"$ref": "#/$defs/str"},
                 "debris_pool": {"$ref": "#/$defs/num"},
                 "max_fires": {"$ref": "#/$defs/num"},
@@ -190,7 +191,7 @@
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
-                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
+                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "ssgi", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
                 "crowd_max", "civilians", "fsr_sharpness"
               ],
@@ -211,6 +212,7 @@
                 "sun_angular": {"$ref": "#/$defs/num"},
                 "ssao": {"$ref": "#/$defs/bool"},
                 "ssil": {"$ref": "#/$defs/bool"},
+                "ssgi": {"$ref": "#/$defs/bool"},
                 "far_blur": {"$ref": "#/$defs/str"},
                 "debris_pool": {"$ref": "#/$defs/num"},
                 "max_fires": {"$ref": "#/$defs/num"},
@@ -223,7 +225,7 @@
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
-                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
+                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "ssgi", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
                 "crowd_max", "civilians", "fsr_sharpness"
               ],
@@ -244,6 +246,7 @@
                 "sun_angular": {"$ref": "#/$defs/num"},
                 "ssao": {"$ref": "#/$defs/bool"},
                 "ssil": {"$ref": "#/$defs/bool"},
+                "ssgi": {"$ref": "#/$defs/bool"},
                 "far_blur": {"$ref": "#/$defs/str"},
                 "debris_pool": {"$ref": "#/$defs/num"},
                 "max_fires": {"$ref": "#/$defs/num"},
@@ -256,7 +259,7 @@
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
-                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
+                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "ssgi", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
                 "crowd_max", "civilians", "fsr_sharpness"
               ],
@@ -277,6 +280,7 @@
                 "sun_angular": {"$ref": "#/$defs/num"},
                 "ssao": {"$ref": "#/$defs/bool"},
                 "ssil": {"$ref": "#/$defs/bool"},
+                "ssgi": {"$ref": "#/$defs/bool"},
                 "far_blur": {"$ref": "#/$defs/str"},
                 "debris_pool": {"$ref": "#/$defs/num"},
                 "max_fires": {"$ref": "#/$defs/num"},
@@ -289,7 +293,7 @@
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
-                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
+                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "ssgi", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
                 "crowd_max", "civilians", "fsr_sharpness"
               ],
@@ -310,6 +314,7 @@
                 "sun_angular": {"$ref": "#/$defs/num"},
                 "ssao": {"$ref": "#/$defs/bool"},
                 "ssil": {"$ref": "#/$defs/bool"},
+                "ssgi": {"$ref": "#/$defs/bool"},
                 "far_blur": {"$ref": "#/$defs/str"},
                 "debris_pool": {"$ref": "#/$defs/num"},
                 "max_fires": {"$ref": "#/$defs/num"},
@@ -322,7 +327,7 @@
               },
               "required": [
                 "scale", "scaler", "msaa", "screen_aa", "shadow_size", "shadow_filter",
-                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "far_blur",
+                "shadow_distance", "sun_splits", "sun_angular", "ssao", "ssil", "ssgi", "far_blur",
                 "debris_pool", "max_fires", "debris_live", "debris_static", "particles",
                 "crowd_max", "civilians", "fsr_sharpness"
               ],
