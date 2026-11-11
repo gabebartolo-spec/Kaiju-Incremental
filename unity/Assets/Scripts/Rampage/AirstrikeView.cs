@@ -101,7 +101,7 @@ public sealed class AirstrikeView : System.IDisposable
             }
             S.Vector2 at = Place(jet, share);
             if (!jet.lead || jet.overhead || share < 0.5) continue;
-            // The lead passes over him: where scenes/airstrike_view.gd plays sonic_boom (no sound in Unity yet).
+            // The lead passes over the kaiju: logged here; RampageAudio.Jets plays its sonic_boom.
             jet.overhead = true;
             double off = at.DistanceTo(sim.kaijuPos), frame = jet.from.DistanceTo(jet.to) / System.Math.Max(0.01, jet.seconds) * dt;
             Debug.Log($"airstrike lead overhead at {at.x:F1},{at.y:F1} y {jet.altitude:F1}: {off:F2} m from the kaiju, one frame is {frame:F2} m, view clock {clock:F3}");

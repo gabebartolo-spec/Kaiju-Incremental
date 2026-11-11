@@ -69,7 +69,7 @@ class LicenceRegisterSmoke(unittest.TestCase):
         self.assertIn("1 files are DEV ONLY", out)
         exit_code, out = check(rows, files, "--release")
         self.assertEqual(exit_code, 1, out)
-        self.assertIn("DEV ONLY files in a release tree", out)
+        self.assertIn("DEV ONLY files are in the tree; a release build may not ship them", out)
 
     def test_dev_only_row_beats_a_cleared_glob(self):
         rows = (
@@ -80,7 +80,7 @@ class LicenceRegisterSmoke(unittest.TestCase):
         self.assertEqual(exit_code, 1, out)
         self.assertIn("1 files are DEV ONLY", out)
         self.assertIn("trial_roar.kclip", out)
-        self.assertIn("DEV ONLY files in a release tree", out)
+        self.assertIn("DEV ONLY files are in the tree; a release build may not ship them", out)
 
     def test_own_self_test_passes(self):
         exit_code, out = check(FONTS, [], "--self-test")

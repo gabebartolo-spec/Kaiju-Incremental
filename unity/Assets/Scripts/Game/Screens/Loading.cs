@@ -36,7 +36,7 @@ public static class Loading
     static LoadingHost host;
     static RectTransform root;
     static Texture2D still;
-    static readonly System.Random rng = new System.Random();
+    static readonly System.Random rng = new System.Random(); // seed-ok: which loading still shows, never the run
     // The still shown last, so the next load picks another; and the loads shown so far.
     static int last = -1;
     static int shows;

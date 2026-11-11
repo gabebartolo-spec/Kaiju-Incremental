@@ -43,7 +43,7 @@ namespace Kaiju.Sim
             IGArray script = (IGArray)run["script"].Obj;
             IGArray digests = (IGArray)run["digests"].Obj;
             List<string> text = new List<string>();
-            Stopwatch clock = Stopwatch.StartNew();
+            Stopwatch clock = Stopwatch.StartNew(); // seed-ok: timing print only, not in the log
             long ticks = digests.Size();
             long count = script.Size();
             int bad = 0, at = 0;

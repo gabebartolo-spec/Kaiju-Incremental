@@ -9,7 +9,8 @@ data), then the Unity batch build the lead runs
 unity/Build (KaijuRampage.exe, its _Data folder and the Unity runtime beside it; the U4 slice player and the
 Burst DoNotShip folders are left out) is copied into dist/KaijuEvolution-<version>-windows-unity/ and zipped to
 dist/KaijuEvolution-<version>-windows-unity.zip. The version is config/version in project.godot, where
-tools/build_release.py reads it. dist/ is git-ignored.
+tools/build_release.py reads it; the build gets it as -kaijuVersion and writes it to res/version.txt, which the
+player's feedback report reads (stage checks the two match). dist/ is git-ignored.
 
     KAIJU_CROC=<dir>/reptilian_adult python tools/unity/build_release.py   # bake, build, stage, zip
     python tools/unity/build_release.py --skip-build    # stage and zip an existing unity/Build
@@ -35,6 +36,9 @@ DATA = "KaijuRampage_Data"
 RUNTIME = "UnityPlayer.dll"
 # The data the build bundles (SliceBuild.BuildRampage); without it the game cannot boot.
 BUNDLED = os.path.join(DATA, "StreamingAssets", "res", "data")
+# The version the build writes for the player's feedback report (SliceBuild.BuildRampage, FeedbackReport.BuildVersion).
+VERSION_TXT = os.path.join(DATA, "StreamingAssets", "res", "version.txt")
+VERSION_ARG = "-kaijuVersion"
 # The slice the rampage loads (RampageGame, Croc, CreationLabView); git-ignored, written by bake_slice.sh.
 SLICE = os.path.join(DATA, "StreamingAssets", "slice")
 SLICE_FILES = ("slice.json", "rig.json", "croc.vskin", "croc.kclip", "buildings.bin")
@@ -75,7 +79,7 @@ def check_log(path: str) -> None:
     print(f"{path}: {SUCCEEDED}, no compile errors")
 
 
-def build(root: str, croc: str) -> None:
+def build(root: str, croc: str, version: str) -> None:
     """The release checks, the slice bake, then the Unity batch build (needs bash, git lfs, dotnet and Unity)."""
     if not croc:
         sys.exit("FAIL: no croc for the slice bake (pass --croc=<dir>/reptilian_adult or set KAIJU_CROC)")
@@ -87,7 +91,7 @@ def build(root: str, croc: str) -> None:
     log = os.path.join(root, LOG)
     if os.path.exists(log):
         os.remove(log)
-    cmd = [UNITY, "-batchmode", "-quit", "-projectPath", "unity", "-executeMethod", "SliceBuild.BuildRampage", "-logFile", log]
+    cmd = [UNITY, "-batchmode", "-quit", "-projectPath", "unity", "-executeMethod", "SliceBuild.BuildRampage", "-logFile", log, VERSION_ARG, version]
     print("== " + " ".join(cmd))
     code = subprocess.call(cmd, cwd=root)
     check_log(log)
@@ -109,12 +113,16 @@ def shipped(name: str) -> bool:
 def stage(root: str, version: str) -> str:
     """Copies the player into dist/<name>/ and zips it; returns the zip path."""
     src = os.path.join(root, "unity", "Build")
-    needs = [EXE, RUNTIME, BUNDLED] + [os.path.join(SLICE, f) for f in SLICE_FILES]
+    needs = [EXE, RUNTIME, BUNDLED, VERSION_TXT] + [os.path.join(SLICE, f) for f in SLICE_FILES]
     for need in needs:
         path = os.path.join(src, need)
         if not os.path.exists(path) or (os.path.isfile(path) and os.path.getsize(path) == 0):
             hint = "run tools/unity/bake_slice.sh <croc>, then build" if SLICE in need else "run without --skip-build"
             sys.exit(f"FAIL: no {path} ({hint})")
+    with open(os.path.join(src, VERSION_TXT), encoding="utf-8") as f:
+        bundled = f.read().strip()
+    if bundled != version:
+        sys.exit(f"FAIL: {VERSION_TXT} says {bundled!r}, project_version() says {version!r} (run without --skip-build)")
     name = f"KaijuEvolution-{version}-windows-unity"
     dist = os.path.join(root, "dist")
     folder = os.path.join(dist, name)
@@ -149,7 +157,7 @@ def main() -> int:
     args = ap.parse_args()
     version = project_version(ROOT)
     if not args.skip_build:
-        build(ROOT, args.croc)
+        build(ROOT, args.croc, version)
     stage(ROOT, version)
     return 0
 

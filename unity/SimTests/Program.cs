@@ -28,6 +28,7 @@ static class Program
         // The game logic outside the sim (GameLogic/): saves, settings and what a rampage takes from the save.
         failures += SaveCheck.Run(RepoRoot());
         failures += SettingsCheck.Run(RepoRoot());
+        failures += MotionCheck.Run(RepoRoot());
         failures += RunStartCheck.Run(RepoRoot());
         // The screens' plain logic (GameLogic/): what each screen shows and decides, against the Godot game's data.
         failures += TitleCheck.Run(RepoRoot());
