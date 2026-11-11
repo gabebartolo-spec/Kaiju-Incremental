@@ -34,21 +34,38 @@ public sealed class RampageGame : MonoBehaviour
     public static bool HostAuto;
     public static int HostTimeUp;
     // Raised once when the sim is over, with the result (sim.Result() and the street's counts, as rampage_hud.gd result()).
+    // With the HUD up, that is when its end beat is done (rampage.gd: _hud.beat_done.connect(finished.emit)).
     public Action<S.GDict> Finished;
+    // Raised every frame after the sim stepped, with the frame's seconds (0 while paused): the HUD reads the sim then.
+    public event Action<float> Ticked;
     // Hosted only: the player pressed pause (Esc) in a run that can pause; the host shows its menu and sets Paused.
     public Action PauseRequested;
     // Stops the sim, its clock and every view's time; Time.timeScale is left alone. Captures never set it.
     public bool Paused;
     public bool Hosted => request != null;
+    // The run the host asked for (null alone): what the sound seeds itself from after the host let go of Request.
+    public RunRequest Run => request;
     public bool Over => over;
     // The result the run ended with; null until it is over.
     public S.GDict Result { get; private set; }
     public S.RampageSim Sim => sim;
     public StreetPeople People => street?.people;
     public string Error => error;
+    // The run's species row (data/species.json), for the HUD's colours.
+    public S.GDict Species { get; private set; }
+    public float ExposureUnit => SliceGame.ExposureUnit(tuning);
 
     RunRequest request;
     bool over;
+    // The game's HUD: hosted, or alone with -rampage-hud; never in a clip or a dry run.
+    bool hudFlag, audioFlag;
+    Hud hudView;
+    // The rampage's sound: hosted, or alone with -rampage-audio; never in a clip or a dry run.
+    RampageAudio audio;
+    // scenes/run_input.gd: a tap made while he rises is kept for the first live tick; the held move as hold or toggle.
+    HudLatch latch;
+    readonly HudHeld heldButton = new HudHeld();
+    readonly Dictionary<string, bool> taps = new Dictionary<string, bool>();
     S.RampageSim sim;
     CityDraw city;
     Croc croc;
@@ -144,6 +161,8 @@ public sealed class RampageGame : MonoBehaviour
         string[] args = Environment.GetCommandLineArgs();
         request = Request;
         auto = args.Contains("-rampage-auto") || (request != null && HostAuto);
+        hudFlag = args.Contains("-rampage-hud");
+        audioFlag = args.Contains("-rampage-audio");
         clipDir = Arg(args, "-rampage-clip");
         ownExtra = Arg(args, "-rampage-own");
         scoutPath = Arg(args, "-rampage-scout");
@@ -210,6 +229,7 @@ public sealed class RampageGame : MonoBehaviour
         // A hosted run is the save's: its species, stats and city (scenes/main.gd, globe_missions.gd); else the flags'.
         string speciesId = request != null ? S.Gd.Str(S.Content.SpeciesDef(request.species)["id"]) : SPECIES;
         S.GDict species = S.Content.SpeciesDef(speciesId);
+        Species = species;
         S.GDict stats;
         S.GArray<S.GDict> layout;
         if (request != null)
@@ -297,6 +317,9 @@ public sealed class RampageGame : MonoBehaviour
             Debug.Log(FormattableString.Invariant($"rampage: request species={speciesId} tier={request.tier} seed={request.seed} run={request.runIndex} continent={(request.continent != "" ? request.continent : "none")} time={S.Content._timeId} weather={S.Content.WeatherId()} endless={request.endless} full_intro={request.fullIntro} city_seconds={request.citySeconds:F1} buildings={sim.buildings.Size()} run_seconds={sim.timeLeft:F1} body_scale={sim.BodyScale():F2}"));
         // Only the croc is drawn so far: another species plays its own sim under the croc's body.
         if (speciesId != SPECIES) Debug.LogWarning($"rampage: species {speciesId} has no Unity body yet; the croc is drawn");
+        latch = new HudLatch(S.Num.F(S.Content.Section("emerge")["input_latch_seconds"]));
+        if ((Hosted || hudFlag) && clipDir == null && scoutPath == null) hudView = Hud.Attach(this);
+        if ((Hosted || audioFlag) && clipDir == null && scoutPath == null) audio = RampageAudio.Attach(this);
     }
 
     // Whatever the body walks over goes down on that frame (scenes/city_decor.gd, D-065).
@@ -405,11 +428,27 @@ public sealed class RampageGame : MonoBehaviour
 
     Presses pressed;
 
-    // INPUT SEAM: the only place the rampage reads the keyboard and mouse buttons. The input piece replaces this
-    // body with Inputs (KeyBinds, pad). Breath is Q and the ultimate E (DESIGN.md; KeyBinds' defaults).
+    // INPUT SEAM: the only place the rampage reads its input. Hosted, the player's bindings and the pad (Inputs,
+    // as scenes/run_input.gd reads its actions); alone, the fixed keys the captures and dry runs were made with.
     Presses ReadPresses()
     {
         var p = new Presses();
+        if (Hosted)
+        {
+            Inputs.Poll();
+            Vector2 m = Inputs.Move();
+            p.stick = new Vector2(m.x, -m.y);
+            p.signature = Inputs.Down("signature");
+            // Not while paused: run_input.gd reads it in _physics_process, which a paused tree skips, and the
+            // menu's confirm (Space / pad A) is the signature key, so a menu press must not flip the toggle latch.
+            if (!Paused) p.held = heldButton.Read(Inputs.Held("signature"), p.signature, PlayerSettings.HoldToggle);
+            p.breath = Inputs.Down("breath");
+            p.ultimate = Inputs.Down("ultimate");
+            p.dash = Inputs.Down("dash");
+            p.pause = Inputs.Down("pause");
+            p.any = Inputs.AnyDown();
+            return p;
+        }
         p.stick = new Vector2((Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0), (Input.GetKey(KeyCode.S) ? 1 : 0) - (Input.GetKey(KeyCode.W) ? 1 : 0));
         p.signature = Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0);
         p.held = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0);
@@ -440,7 +479,12 @@ public sealed class RampageGame : MonoBehaviour
         over = true;
         Result = ResultNow();
         Debug.Log(FormattableString.Invariant($"rampage: over reason={sim.endReason} biomass={S.Num.I(Result["rubble"])} destruction={S.Num.F(Result["destruction"]):F3} buildings={S.Num.I(Result["buildings"])} seconds={S.Num.F(Result["seconds"]):F1} city_seconds={S.Num.F(Result["city_seconds"]):F1} civilians={S.Num.I(Result["civilians"])} fled={S.Num.I(Result["fled"])} step={steps} frame={Time.frameCount}"));
-        Finished?.Invoke(Result);
+        if (hudView != null)
+        {
+            hudView.BeatDone = r => Finished?.Invoke(r);
+            hudView.RunOver(sim.endReason);
+        }
+        else Finished?.Invoke(Result);
         if (!Hosted && clipDir == null && scoutPath == null && quitAfter <= 0f && (auto || timeUpAt > 0)) Application.Quit();
     }
 
@@ -483,6 +527,18 @@ public sealed class RampageGame : MonoBehaviour
             // One read a physics frame, however many ticks the intro runs on it (scenes/rampage.gd _step).
             S.Vector2 move = ReadMove();
             bool sign = signature && first, hold = held, ult = ultimate && first, br = breathKey && first, da = dash && first;
+            if (Hosted && !auto)
+            {
+                taps["signature"] = sign;
+                taps["ultimate"] = ult;
+                taps["breath"] = br;
+                taps["dash"] = da;
+                Dictionary<string, bool> now = latch.Through(sim.emerge.active, taps, TICK);
+                sign = now["signature"];
+                ult = now["ultimate"];
+                br = now["breath"];
+                da = now["dash"];
+            }
             if (auto)
             {
                 sign = sim.abilityReadyIn <= 0.0;
@@ -518,6 +574,9 @@ public sealed class RampageGame : MonoBehaviour
                 if (S.Gd.Str(e["type"]) == "stomp") trees.Crush(Feet(), (float)(double)S.Num.F(e["radius"]));
                 TailCue(e);
                 street.OnEvent(e);
+                audio?.OnEvent(e);
+                hudView?.OnEvent(e);
+                if (Hosted) HudRumble.OnEvent(e);
             }
             }
             rooftops.Tick(TICK, cam);  // once a physics frame, as rooftop_view.gd _physics_process
@@ -528,7 +587,9 @@ public sealed class RampageGame : MonoBehaviour
         if (blastEvery > 0 && !sim.emerge.active && ++blastWait >= blastEvery)
         {
             blastWait = 0;
-            eventFx.OnEvent(TestBlast(blastsFired++), Feet());
+            S.GDict blast = TestBlast(blastsFired++);
+            eventFx.OnEvent(blast, Feet());
+            audio?.OnEvent(blast);
         }
         simMs = (float)watch.Elapsed.TotalMilliseconds;
         if (statsPath != null && Time.frameCount % STATS_EVERY == 0)
@@ -574,10 +635,14 @@ public sealed class RampageGame : MonoBehaviour
             float strength = Mathf.Clamp01(FOOT_STRENGTH_BASE + croc.SpeedShare);
             // The foot flattens the rubble under it for good (scenes/rampage.gd _on_footfall, D-245). footAt is Godot axes.
             debris.Press(new Vector3(footAt.x, 0f, -footAt.z), rubblePress * scale, rubbleKeep);
-            if (eventFx.Footfall(side, strength, footAt))
+            if (Hosted) HudRumble.Footfall(side, sim);
+            bool stomped = eventFx.Footfall(side, strength, footAt);
+            audio?.Footfall(strength, stomped);
+            if (stomped)
             {
                 shake.Kick(StompKick() * Mathf.Deg2Rad);
                 postFx.Stomp();
+                if (Hosted) HudRumble.Stomp(sim);
             }
             stepDip = Mathf.Max(stepDip, FOOTFALL_DIP * Mathf.Max(FOOTFALL_DIP_FLOOR, scale) * strength);
         }
@@ -585,13 +650,21 @@ public sealed class RampageGame : MonoBehaviour
         postFx.Step(dt, shake.motion);
         stepDip = Mathf.MoveTowards(stepDip, 0f, dt * DIP_RECOVER * stepDip + dt * DIP_CREEP);
         follow.Step(Focus(feet), Facing(), feet, scale, sim.body.dash.On() || sim.emerge.active, stepDip * shake.motion,
-            auto || sim.emerge.active || Paused ? 0f : follow.PlayerTurn(), dt);
+            auto || sim.emerge.active || Paused ? 0f : follow.PlayerTurn() + PadTurn(dt), dt);
         PlaceCamera(scale, dt);
         bubble.Step(cam, feet, dt);
         street.Draw(cam);
         fx.SetFocus(Vector3.Dot(new Vector3(feet.x, feet.y, -feet.z) - cam.transform.position, cam.transform.forward));
         fx.Draw(age);
+        Ticked?.Invoke(dt);
         if (quitAfter > 0f && age >= quitAfter) Application.Quit();
+    }
+
+    // scenes/camera_follow.gd: the pad's right stick swings the camera (tuning camera.swing_deg_per_s). Hosted only.
+    float PadTurn(float dt)
+    {
+        if (!Hosted) return 0f;
+        return -Inputs.Look().x * (float)S.Num.F(S.Content.Section("camera")["swing_deg_per_s"]) * Mathf.Deg2Rad * dt;
     }
 
     // scenes/powers_view.gd _acted: the sim's tail events cue the keyed clips; the automatic sweep crushes behind him.
@@ -717,6 +790,7 @@ public sealed class RampageGame : MonoBehaviour
 
     void OnDestroy()
     {
+        if (hudView != null) Destroy(hudView.gameObject);
         city?.Dispose();
         debris?.Dispose();
         croc?.Dispose();
