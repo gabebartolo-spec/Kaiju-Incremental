@@ -29,6 +29,16 @@ static class Program
         failures += SaveCheck.Run(RepoRoot());
         failures += SettingsCheck.Run(RepoRoot());
         failures += RunStartCheck.Run(RepoRoot());
+        // The screens' plain logic (GameLogic/): what each screen shows and decides, against the Godot game's data.
+        failures += TitleCheck.Run(RepoRoot());
+        failures += OptionsRowsCheck.Run(RepoRoot());
+        failures += CreationCheck.Run(RepoRoot());
+        failures += GlobeCheck.Run(RepoRoot());
+        failures += ResultsCheck.Run(RepoRoot());
+        failures += TreeCheck.Run(RepoRoot());
+        failures += HudCheck.Run(RepoRoot());
+        failures += AudioCheck.Run(RepoRoot());
+        failures += LoadingCheck.Run(RepoRoot());
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;
