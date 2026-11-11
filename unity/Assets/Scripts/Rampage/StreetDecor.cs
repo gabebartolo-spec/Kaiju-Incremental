@@ -7,11 +7,12 @@ using S = Kaiju.Sim;
 // scenes/decor_cars.gd): parked cars on both kerbs out as far as the camera sees, now and then one stopped in the
 // lane, cars in the parking lots, and a streetlight at every crossing and down the long blocks. All crushable.
 // Not ported yet: the Tripo street props and vehicles (scenes/street_props.gd), the lamps' lights, the street trees'
-// parking clearance, the greenery, quays and traffic islands. Presentation only.
+// parking clearance, the greenery, quays and traffic islands. Presentation only. The moving cars and the diagonal's
+// parked row are Traffic's (TrafficView draws them in this file's car shape).
 public sealed class StreetDecor
 {
     // scenes/city_decor.gd PROP_VOXEL, CROSSING_CLEAR, LAMP_EVERY, CAR_HALF and its palette.
-    const float PROP_VOXEL = 0.25f;
+    internal const float PROP_VOXEL = 0.25f;
     const double CROSSING_CLEAR = 3.0, LAMP_EVERY = 13.0, CAR_HALF_ACROSS = 0.375, CAR_HALF_ALONG = 0.75;
     const int GLASS = 0x2b3640, WHEEL = 0x1a1a1a, IVORY = 0xb8b2a0, TAIL = 0x6a1a1a, POLE = 0x4a4c4e, LAMP = 0xffdb99;
 
@@ -166,7 +167,7 @@ public sealed class StreetDecor
     }
 
     // scenes/city_decor.gd car: about 1.5 long, nose to -z (to -x when alongX).
-    static Dictionary<Vector3Int, int> Car(int paint, bool alongX)
+    internal static Dictionary<Vector3Int, int> Car(int paint, bool alongX)
     {
         var local = new Dictionary<Vector3Int, int>();
         PropTiles.Box(local, new Vector3Int(-1, 0, -3), new Vector3Int(1, 1, 2), paint);

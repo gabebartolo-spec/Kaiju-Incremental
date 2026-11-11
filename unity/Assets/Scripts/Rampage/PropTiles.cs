@@ -118,6 +118,14 @@ public sealed class PropTiles
         return true;
     }
 
+    // Every prop's base in Godot axes (x, -z), as diagonal_parking.gd _props_near reads CityDecor's.
+    public List<S.Vector2> Bases()
+    {
+        var bases = new List<S.Vector2>(props.Count);
+        foreach (Prop prop in props) bases.Add(new S.Vector2(prop.at.x, -prop.at.z));
+        return bases;
+    }
+
     readonly List<Vector3> vBuf = new List<Vector3>(), nBuf = new List<Vector3>();
     readonly List<Color32> cBuf = new List<Color32>();
     readonly List<Vector2> uBuf = new List<Vector2>();

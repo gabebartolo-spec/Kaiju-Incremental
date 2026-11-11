@@ -18,6 +18,10 @@
     <Compile Include="../Assets/Scripts/Rampage/Pavements.cs" />
     <Compile Include="../Assets/Scripts/Rampage/BeachLayout.cs" />
     <Compile Include="../Assets/Scripts/Rampage/StreetPeople.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/TrafficNet.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/Traffic.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/TankKeepOut.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/DiagonalParking.cs" />
     <Compile Include="../Assets/Scripts/Rampage/VipPaint.cs" />
     <Compile Include="../Assets/Scripts/Rampage/AirstrikePath.cs" />
     <Compile Include="../Assets/Scripts/Rampage/RubbleShape.cs" />
