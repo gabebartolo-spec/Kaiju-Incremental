@@ -1,0 +1,67 @@
+name: unity
+
+# The Unity port's checks (D-470): the C# sim is the translator's output of sim/ and replays Godot's
+# golden rampage logs bit for bit, with and without the native DLL. Pull requests and pushes to main.
+# No paths filter, so the job always reports (a filtered required check would wait forever).
+# The view code (unity/Assets/Scripts outside Sim/GameLogic) needs the Unity editor's assemblies, which CI
+# does not install: tools/lint/push_gate.sh compiles it locally with tools/unity/typecheck.sh before a push.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A pull request's newer push cancels its older run; every push to main gets its own verdict.
+concurrency:
+  group: unity-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  sim-csharp:
+    # Windows, as the golden logs are: sin and cos come from the platform's C library.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      # The rampages stamp the baked buildings in assets/ (LFS); pointers read as empty buildings.
+      - uses: ./.github/actions/lfs-files
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: The C# sim is what the translator makes of sim/
+        shell: bash
+        run: |
+          pip install --quiet "gdtoolkit==4.*"
+          python tools/unity/gd2cs.py --check \
+            || { echo "C# sim is stale: run bash tools/unity/regen_sim.sh"; exit 1; }
+      - name: The sim's native DLL builds
+        shell: cmd
+        run: unity\native\build.bat
+      - name: The C# sim plays Godot's rampages bit for bit, with the DLL
+        shell: bash
+        env:
+          SIM_LOG_TEXT: simlog
+          SIM_NATIVE: 'on'
+        run: |
+          mkdir -p simlog
+          dotnet run --project unity/SimTests -c Release \
+            || { echo "Golden logs differ: run bash tools/unity/regen_sim.sh"; exit 1; }
+      - name: And without it
+        shell: bash
+        env:
+          SIM_NATIVE: 'off'
+        run: |
+          dotnet run --project unity/SimTests -c Release --no-build \
+            || { echo "The C# passes differ from Godot's log"; exit 1; }
+      - name: Keep the text logs of a failed replay
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-text-logs
+          path: simlog/
+          retention-days: 7

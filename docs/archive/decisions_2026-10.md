@@ -2,6 +2,26 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-31 · D-424 · Director · One kaiju per mission
+Ruled with the Overworld plan (claude.ai artifact PcHHG2EhRYsKfBzC2ZkQkV, "Settled on 31 Oct"): a mission is played by
+one kaiju; there is no tag-team or second kaiju in the same city.
+
+## 2026-10-31 · D-423 · Director · Komodo after the first conquest, serpent after the second
+Same ruling set. Species unlocks ride the path, not the map: the Komodo dragon unlocks after the first continent
+conquered, the serpent after the second, whichever continents those were. Rewords D-197 ("finishing the first city
+unlocks the Komodo, the next city the serpent"), since cities no longer come in a fixed order (D-420).
+
+## 2026-10-31 · D-422 · Director · Global Threat Level; the sixth conquest sets 100% and opens Aurelia with GODBREAKER
+Same ruling set. One campaign-wide Threat Level: each conquest adds its share and in-mission noise adds the rest, but
+noise caps at 99%; only the sixth conquest sets 100%. At 100% the capital Aurelia opens with the mecha boss inside,
+named GODBREAKER (its loss card reads K-07 LOST · GODBREAKER DEPLOYED; prestige faces GODBREAKER Mk II). Replaces
+D-211's trigger ("once every upgrade of all three reptilians is unlocked"); the mecha itself (D-211, D-227, D-230) is
+unchanged.
+
+## 2026-10-31 · D-421 · Director · A conquest bonus is a pick of one from three
+Same ruling set. Conquering a continent offers three bonuses and the player keeps one. The bonus lists in the plan
+are proposals, still to be reacted to.
+
 ## 2026-10-31 · D-420 · Director · The globe offers the two lowest-tier unconquered continents in sequence
 Same ruling set. Ostia Minor comes first; after it the globe always offers the two lowest-tier unconquered continents
 in the fixed sequence Carthago, Thule, Silvania, Mons Ferrata, Neptunia: conquer one and the next in sequence joins

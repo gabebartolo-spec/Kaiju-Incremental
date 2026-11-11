@@ -176,8 +176,8 @@ public sealed class VipView
             F(look, "pitch") * (float)vip.speed * Mathf.Rad2Deg, -yaw * Mathf.Rad2Deg, -F(look, "bank") * (float)vip.turnRate * Mathf.Rad2Deg);
     }
 
-    // A stand-in for scenes/news_ticker.gd until the HUD is ported: the red strip, the black BREAKING tag and
-    // the held line, sliding down off the screen over its last slide_seconds. Call from OnGUI.
+    // The VIP's own headline in scenes/news_ticker.gd's look (the HUD's crawl is Game/Hud/HudNews.cs): the red
+    // strip, the black BREAKING tag and the held line, sliding down off the screen over its last slide_seconds. Call from OnGUI.
     public void DrawHeadline()
     {
         if (headline == null) return;

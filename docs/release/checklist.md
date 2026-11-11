@@ -12,7 +12,8 @@ English only (D-406), Windows exe on Itch, about 2 h. Tick each box in the relea
 - [ ] Open M3 rows done or explicitly cut by the director (Taskforce, textures, helicopter deaths, overworld loop).
 
 ## Build
-- [ ] `config/version` in project.godot bumped; export_presets.cfg file/product version match.
+- [ ] `config/version` in project.godot bumped; export_presets.cfg file/product version match; the Unity build
+      carries it to res/version.txt (tools/unity/build_release.py checks they match).
 - [ ] `python tools/lint/licence_register.py --release` passes (no DEV ONLY files, D-301).
 - [ ] release.yml run on the tag (`git tag vX.Y && git push origin vX.Y`, or `gh workflow run release.yml`) is green:
       export, pack check, headless launch reaches the main scene.

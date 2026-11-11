@@ -41,6 +41,7 @@ static class FeedbackCheck
         try
         {
             Version();
+            VersionSources(dir);
             Text();
             Folders();
             Reader(dir);
@@ -72,6 +73,42 @@ static class FeedbackCheck
         Check(FeedbackReport.ProjectVersion("[other]\nconfig/version=\"9\"\n") == "unversioned",
             "a config/version outside [application] is not the version");
         Check(FeedbackReport.ProjectVersion("") == "unversioned", "no project file reads as unversioned");
+    }
+
+    // Where the version comes from (U6 step 5: the build's version.txt, so the player no longer needs project.godot):
+    // version.txt present -> its value; absent -> project.godot's; neither -> "unversioned". Each case is a res root
+    // of its own under the scratch folder.
+    static void VersionSources(string dir)
+    {
+        const string project = "[application]\nconfig/version=\"0.1-demo\"\n";
+        string oldRoot = SimFiles.Root;
+        try
+        {
+            SimFiles.Root = ResRoot(dir, "both", " 2.0-test \n", project);
+            Check(FeedbackReport.BuildVersion() == "2.0-test",
+                "version.txt present: its first line, trimmed, wins over project.godot: " + FeedbackReport.BuildVersion());
+            SimFiles.Root = ResRoot(dir, "project_only", null, project);
+            Check(FeedbackReport.BuildVersion() == "0.1-demo",
+                "version.txt absent: project.godot's config/version: " + FeedbackReport.BuildVersion());
+            SimFiles.Root = ResRoot(dir, "neither", null, null);
+            Check(FeedbackReport.BuildVersion() == "unversioned",
+                "neither file: unversioned: " + FeedbackReport.BuildVersion());
+        }
+        finally
+        {
+            SimFiles.Root = oldRoot;
+        }
+        Check(FeedbackReport.VersionOf("", project) == "0.1-demo", "an empty version.txt falls back to project.godot");
+    }
+
+    // A res root holding version.txt and project.godot with the given text (null: no such file).
+    static string ResRoot(string dir, string key, string versionText, string projectText)
+    {
+        string root = Path.Combine(dir, "res_" + key);
+        Directory.CreateDirectory(root);
+        if (versionText != null) File.WriteAllText(Path.Combine(root, FeedbackReport.VERSION_NAME), versionText);
+        if (projectText != null) File.WriteAllText(Path.Combine(root, "project.godot"), projectText);
+        return root;
     }
 
     static void Text()
@@ -134,7 +171,7 @@ static class FeedbackCheck
     // tests/lib/ui_report.gd _reader_flags_bad_reports: the reader passes a good report and fails planted bad ones.
     static void Reader(string dir)
     {
-        string version = FeedbackReport.ProjectVersion(File.ReadAllText(Path.Combine(SimFiles.Root, "project.godot")));
+        string version = FeedbackReport.BuildVersion();
         string head = "Version: " + FeedbackReport.Version() + "\n";
         string facts = string.Join("\n", Array.ConvertAll(FeedbackReport.FACT_LABELS, l => l + ": x"));
         string good = head + facts + "\n" + "hello" + "\n";

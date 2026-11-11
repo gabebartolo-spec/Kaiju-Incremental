@@ -1,16 +1,18 @@
 using UnityEngine;
+using Kaiju.Game;
 using S = Kaiju.Sim;
 
 // The gameplay camera's shake, scenes/camera_shake.gd: hits add trauma 0..1, the camera turns by trauma
 // squared on smooth noise, rotation only, so the framing never drifts. Godot's simplex noise is Unity's
-// Perlin here: the shape on screen is the same smooth wander, the exact values differ. Presentation only.
+// Perlin here: the shape on screen is the same smooth wander, the exact values differ. The player's camera-motion
+// setting (PlayerSettings.Motion(), read each frame as Godot does) scales the shake and the kick; the sizes are
+// GameLogic/ShakeMotion.cs. Presentation only.
 public sealed class CameraShake
 {
     const float NOISE_ROW_A = 0.37f, NOISE_ROW_B = 100.37f, NOISE_SEED_SPAN = 1000f;
 
     readonly S.GDict cfg, sources;
-    readonly float decay, kickS, rise, gain, hz, degPerRoot, maxDeg, near, far, seedAt;
-    public readonly float motion;
+    readonly float decay, kickS, rise, gain, hz, near, far, seedAt;
     float trauma, shown, time, kick, kickLeft;
 
     static float F(S.GDict c, string key) => (float)S.Num.F(c[key]);
@@ -24,13 +26,14 @@ public sealed class CameraShake
         rise = F(cfg, "rise_per_s");
         gain = F(cfg, "noise_gain");
         hz = F(cfg, "noise_hz");
-        degPerRoot = F(cfg, "deg_per_root_scale");
-        maxDeg = F(cfg, "max_deg");
         near = F(cfg, "near_per_scale");
         far = F(cfg, "far_per_scale");
-        motion = F(cfg, "default_motion");
         seedAt = Mathf.Repeat(F(cfg, "noise_seed"), NOISE_SEED_SPAN);
+        Debug.Log($"camera shake: motion {motion:F2} (setting {PlayerSettings.CameraMotion:F2}, -1 = tuning default)");
     }
+
+    // The player's camera-motion setting now (0..1): the post effects and the follow camera's dip read it here too.
+    public float motion => (float)PlayerSettings.Motion();
 
     // A named source at the kaiju: full strength.
     public void Add(string source) => trauma = Mathf.Clamp01(trauma + F(sources, source));
@@ -69,10 +72,9 @@ public sealed class CameraShake
     // This frame's turn in radians: x yaw, y pitch (up positive).
     public Vector2 Turn(float scale)
     {
-        float share = Mathf.Clamp01(kickLeft / kickS);
-        Vector2 nod = new Vector2(0f, -kick * share * share * Mathf.Clamp01(motion));
-        float deg = Mathf.Min(maxDeg, degPerRoot * Mathf.Sqrt(Mathf.Max(scale, 0f)));
-        float amp = deg * Mathf.Deg2Rad * shown * Mathf.Clamp01(motion);
+        float m = motion;
+        Vector2 nod = new Vector2(0f, -(float)ShakeMotion.Nod(kick, kickLeft / kickS, m));
+        float amp = (float)ShakeMotion.Amplitude(cfg, scale, shown, m);
         if (amp <= 0f) return nod;
         float t = time * hz + seedAt;
         Vector2 wave = new Vector2(Mathf.PerlinNoise(t, NOISE_ROW_A) * 2f - 1f, Mathf.PerlinNoise(t, NOISE_ROW_B) * 2f - 1f);

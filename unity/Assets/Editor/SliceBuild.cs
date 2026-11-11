@@ -134,6 +134,30 @@ public static class SliceBuild
     static readonly string[] ASSET_TYPES = { ".ogg", ".png", ".jpg", ".kvox", ".json", ".kclip", ".skinf", ".skinw", ".vskin" };
     // The kit's fonts load through Resources (UiKit.Font), so they are copied into the project, not beside it.
     const string FONTS = "Assets/Resources/Fonts";
+    // The command-line flag tools/unity/build_release.py passes the release version with.
+    const string VERSION_ARG = "-kaijuVersion";
+
+    // The version, one line, in res/version.txt (FeedbackReport.BuildVersion reads it first): the value
+    // tools/unity/build_release.py project_version() passes as -kaijuVersion. The old project.godot copy goes.
+    static void WriteVersion(string repo, string res)
+    {
+        File.WriteAllText(Path.Combine(res, Kaiju.Game.FeedbackReport.VERSION_NAME), BuildVersion(repo) + "\n");
+        string staleProject = Path.Combine(res, "project.godot");
+        if (File.Exists(staleProject)) File.Delete(staleProject);
+    }
+
+    // The release version: -kaijuVersion's value (build_release.py project_version()), else project.godot's
+    // config/version read as the player would (a lead's direct batch build), else "unversioned".
+    static string BuildVersion(string repo)
+    {
+        string[] args = Environment.GetCommandLineArgs();
+        int at = Array.IndexOf(args, VERSION_ARG);
+        if (at >= 0 && at + 1 < args.Length) return args[at + 1];
+        string project = Path.Combine(repo, "project.godot");
+        string version = Kaiju.Game.FeedbackReport.ProjectVersion(File.Exists(project) ? File.ReadAllText(project) : "");
+        Debug.LogWarning($"rampage: no {VERSION_ARG}, version {version} from project.godot");
+        return version;
+    }
 
     public static void BuildRampage()
     {
@@ -156,8 +180,8 @@ public static class SliceBuild
             // The text table (Tr.Load).
             Directory.CreateDirectory(Path.Combine(to, "i18n"));
             File.Copy(Path.Combine(repo, "data", "i18n", "strings.csv"), Path.Combine(to, "i18n", "strings.csv"), true);
-            // The game's version (FeedbackReport.Version reads [application] config/version, as Godot's report does).
-            File.Copy(Path.Combine(repo, "project.godot"), Path.Combine(res, "project.godot"), true);
+            // The game's version for the feedback report (FeedbackReport.BuildVersion).
+            WriteVersion(repo, res);
             foreach (string kind in MODEL_KINDS)
             {
                 string models = Path.Combine(res, "assets", kind);

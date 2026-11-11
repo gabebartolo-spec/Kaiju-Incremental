@@ -206,13 +206,13 @@ public static class UiKit
 
     // ---- text -------------------------------------------------------------------------------------------
 
-    // Kaiju Claw for headings at or above DISPLAY_MIN_SIZE, else Kaiju Block. A missing face falls back to
-    // the engine's built-in one and says so once.
+    // Kaiju Claw for headings at or above DISPLAY_MIN_SIZE, else Kaiju Block, each falling back to the Chinese
+    // subset (CjkFont). A missing face falls back to the engine's built-in one and says so once.
     public static UnityEngine.Font Font(int size)
     {
         bool display = size >= DISPLAY_MIN_SIZE;
-        if (display && displayFont == null) displayFont = Resources.Load<UnityEngine.Font>(DISPLAY_FONT);
-        if (!display && bodyFont == null) bodyFont = Resources.Load<UnityEngine.Font>(BODY_FONT);
+        if (display && displayFont == null) displayFont = CjkFont.Attach(Resources.Load<UnityEngine.Font>(DISPLAY_FONT));
+        if (!display && bodyFont == null) bodyFont = CjkFont.Attach(Resources.Load<UnityEngine.Font>(BODY_FONT));
         UnityEngine.Font font = display ? displayFont : bodyFont;
         if (font != null) return font;
         if (!fontWarned)

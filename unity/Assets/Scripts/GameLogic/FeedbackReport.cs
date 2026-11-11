@@ -23,8 +23,11 @@ namespace Kaiju.Game
     {
         public const string TEXT_FILE = "report.txt";
         public const string SHOT_FILE = "screenshot.png";
-        // Godot's version lives in project.godot ([application] config/version); the build copies the file beside the
-        // data (res root). Without it the version reads as Godot's own fallback.
+        // The build writes the version, one line, to version.txt at the res root (SliceBuild.BuildRampage, the value
+        // tools/unity/build_release.py project_version() reads). Without it the version comes from Godot's
+        // project.godot ([application] config/version), else Godot's own fallback.
+        public const string VERSION_NAME = "version.txt";
+        public const string VERSION_FILE = "res://" + VERSION_NAME;
         public const string PROJECT_FILE = "res://project.godot";
         const string VERSION_SECTION = "application";
         const string VERSION_KEY = "config/version";
@@ -44,11 +47,20 @@ namespace Kaiju.Game
         public static S.GDict Cfg() => S.Content.Section("feedback");
 
         // The game's version line: "Kaiju Evolution 0.1-demo".
-        public static string Version()
+        public static string Version() => S.Gd.Str(Cfg()["game"]) + " " + BuildVersion();
+
+        // The version alone ("0.1-demo"): version.txt, else project.godot, else "unversioned".
+        public static string BuildVersion() => VersionOf(ReadRes(VERSION_FILE), ReadRes(PROJECT_FILE));
+
+        // The same from the two files' text (null when a file is absent): version.txt's first line trimmed when it
+        // has one, else project.godot's config/version.
+        public static string VersionOf(string versionText, string projectText)
         {
-            string text = S.FileAccess.FileExists(PROJECT_FILE) ? S.FileAccess.GetFileAsString(PROJECT_FILE) : "";
-            return S.Gd.Str(Cfg()["game"]) + " " + ProjectVersion(text);
+            string line = (versionText ?? "").Split('\n')[0].Trim();
+            return line.Length > 0 ? line : ProjectVersion(projectText);
         }
+
+        static string ReadRes(string path) => S.FileAccess.FileExists(path) ? S.FileAccess.GetFileAsString(path) : null;
 
         // config/version under [application] in a project.godot's text; "unversioned" when it has none.
         public static string ProjectVersion(string projectText)
@@ -156,7 +168,7 @@ namespace Kaiju.Game
         // The local date and time as 2026-10-23T14:05:33 (Time.get_datetime_string_from_system).
         public static string Stamp(DateTime at) => at.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture);
 
-        public static string StampNow() => Stamp(DateTime.Now);
+        public static string StampNow() => Stamp(DateTime.Now); // seed-ok: report folder stamp, not sim state
 
         static string FreeFolder(string root, string name)
         {
@@ -271,7 +283,7 @@ namespace Kaiju.Game
             {
                 string text = File.ReadAllText(textPath);
                 string first = text.Split('\n')[0];
-                string version = ProjectVersion(S.FileAccess.FileExists(PROJECT_FILE) ? S.FileAccess.GetFileAsString(PROJECT_FILE) : "");
+                string version = BuildVersion();
                 if (!first.StartsWith("Version: ", StringComparison.Ordinal) || version == NO_VERSION || !first.EndsWith(version, StringComparison.Ordinal))
                     out_.Add($"the first line is not the Version line ({first})");
                 if (!string.IsNullOrEmpty(typed) && !text.Contains(typed)) out_.Add("the typed text is not in report.txt");

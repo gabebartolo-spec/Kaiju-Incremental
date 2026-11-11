@@ -4,6 +4,24 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-12 · D-480 · Director · A ratchet stops new bare numbers in the Unity C# code
+"Add the ratchet" (asked with the count shown: 762 literals in 76 of 153 files, worst CityFx 91). Hard rule 4 for the
+port: the count may only go down; new numbers go to `data/`. Changes: a C# magic-number lint with a baseline.
+
+## 2026-11-12 · D-479 · Director · Unity-generated HDRP files are CLEARED under the Unity Companion License
+"Clear them": the HDRP default volume profile and global settings, `SliceHdrp.asset`, and `SliceLit.shader` /
+`SliceWater.shader` (generated from HDRP's Lit.shader). Changes: `docs/LICENSING_REGISTER.md`; the release no longer
+blocks on them.
+
+## 2026-11-12 · D-478 · Director · Unity's graphics presets map Godot's preset values one for one
+"Map one for one": each `display.graphics` value in `data/tuning.json` drives its HDRP equivalent (render scale and
+upscaler, MSAA/SMAA, sun shadow size, distance, cascades and filter, AO, SSGI, far depth of field); the crowd, debris,
+fire and particle counts are used as they are. Changes: the Unity settings apply the preset.
+
+## 2026-11-12 · D-477 · Director · The Unity C# sim tests are a required check
+"Make it required": the `sim-csharp` job (SimTests and `gd2cs.py --check`) must pass before a PR merges, beside
+`test`, `doc-caps` and `gitleaks`. Changes: main's branch protection.
+
 ## 2026-11-10 · D-476 · Director · Finish the Unity port first; polish the visuals after it
 "not much point in analysing every visual yet, until the full game is ported to unity, a lot is missing that ties the
 visuals together". Changes: port pieces merge without a clip or look verdict each; known gaps, such as the lash ("it
@@ -377,23 +395,3 @@ Asked which continents the croc-only demo covers, he picked "Ostia to Carthago/T
 Behemoth (D-419) so the demo has no Colossus stage, "Ostia + one pick": Ostia Minor (young), then the player picks
 Carthago or Thule (Behemoth) and the demo ends after that conquest. Young and Behemoth only. Changes D-212's "the
 full croc game" and the demo's "three cities" (D-050, D-145, D-156).
-
-## 2026-10-31 · D-424 · Director · One kaiju per mission
-Ruled with the Overworld plan (claude.ai artifact PcHHG2EhRYsKfBzC2ZkQkV, "Settled on 31 Oct"): a mission is played by
-one kaiju; there is no tag-team or second kaiju in the same city.
-
-## 2026-10-31 · D-423 · Director · Komodo after the first conquest, serpent after the second
-Same ruling set. Species unlocks ride the path, not the map: the Komodo dragon unlocks after the first continent
-conquered, the serpent after the second, whichever continents those were. Rewords D-197 ("finishing the first city
-unlocks the Komodo, the next city the serpent"), since cities no longer come in a fixed order (D-420).
-
-## 2026-10-31 · D-422 · Director · Global Threat Level; the sixth conquest sets 100% and opens Aurelia with GODBREAKER
-Same ruling set. One campaign-wide Threat Level: each conquest adds its share and in-mission noise adds the rest, but
-noise caps at 99%; only the sixth conquest sets 100%. At 100% the capital Aurelia opens with the mecha boss inside,
-named GODBREAKER (its loss card reads K-07 LOST · GODBREAKER DEPLOYED; prestige faces GODBREAKER Mk II). Replaces
-D-211's trigger ("once every upgrade of all three reptilians is unlocked"); the mecha itself (D-211, D-227, D-230) is
-unchanged.
-
-## 2026-10-31 · D-421 · Director · A conquest bonus is a pick of one from three
-Same ruling set. Conquering a continent offers three bonuses and the player keeps one. The bonus lists in the plan
-are proposals, still to be reacted to.

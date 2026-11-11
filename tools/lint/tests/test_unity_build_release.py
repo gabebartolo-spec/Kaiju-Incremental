@@ -2,7 +2,8 @@
 
 Builds a fake unity/Build in a scratch checkout and checks the staging: the game's exe, data and the Unity
 runtime ship, the U4 slice player and the Burst DoNotShip folder do not, the zip holds the folder under its
-versioned name; a build without its bundled data or its baked slice fails; the build refuses to start without a croc; the build log check passes a good log and fails one
+versioned name; a build without its bundled data or its baked slice fails; a build whose bundled version.txt is
+missing or differs from project_version() fails; the build refuses to start without a croc; the build log check passes a good log and fails one
 with a compile error or no success line.
 """
 
@@ -29,7 +30,7 @@ TOOL = load_tool()
 SLICE_FILES = ("slice.json", "rig.json", "croc.vskin", "croc.kclip", "buildings.bin")
 
 
-def fake_build(root, data=True, slice_files=SLICE_FILES):
+def fake_build(root, data=True, slice_files=SLICE_FILES, version="9.9-test"):
     helpers.write(root, "project.godot", 'config/name="Kaiju"\nconfig/version="9.9-test"\n')
     b = "unity/Build/"
     helpers.write(root, b + "KaijuRampage.exe", "exe")
@@ -40,6 +41,8 @@ def fake_build(root, data=True, slice_files=SLICE_FILES):
     helpers.write(root, b + "KaijuRampage_Data/globalgamemanagers", "ggm")
     if data:
         helpers.write(root, b + "KaijuRampage_Data/StreamingAssets/res/data/tuning.json", "{}")
+    if version is not None:
+        helpers.write(root, b + "KaijuRampage_Data/StreamingAssets/res/version.txt", version + "\n")
     for f in slice_files:
         helpers.write(root, b + "KaijuRampage_Data/StreamingAssets/slice/" + f, "x")
     helpers.write(root, b + "KaijuSlice.exe", "slice")
@@ -70,6 +73,7 @@ class UnityBuildReleaseSmoke(unittest.TestCase):
                 "D3D12/D3D12Core.dll",
                 "MonoBleedingEdge/EmbedRuntime/mono-2.0-bdwgc.dll",
                 "KaijuRampage_Data/StreamingAssets/res/data/tuning.json",
+                "KaijuRampage_Data/StreamingAssets/res/version.txt",
                 "KaijuRampage_Data/StreamingAssets/slice/croc.vskin",
             ):
                 self.assertIn(top + want, names)
@@ -92,10 +96,24 @@ class UnityBuildReleaseSmoke(unittest.TestCase):
             self.assertIn("rig.json", str(e.exception.code))
             self.assertIn("bake_slice.sh", str(e.exception.code))
 
+    def test_stage_fails_on_a_stale_version(self):
+        with helpers.scratch() as root:
+            fake_build(root, version="0.0-old")
+            with self.assertRaises(SystemExit) as e:
+                quiet(TOOL.stage, str(root), "9.9-test")
+            self.assertIn("0.0-old", str(e.exception.code))
+
+    def test_stage_fails_without_version_file(self):
+        with helpers.scratch() as root:
+            fake_build(root, version=None)
+            with self.assertRaises(SystemExit) as e:
+                quiet(TOOL.stage, str(root), "9.9-test")
+            self.assertIn("version.txt", str(e.exception.code))
+
     def test_build_needs_a_croc(self):
         with helpers.scratch() as root:
             with self.assertRaises(SystemExit) as e:
-                quiet(TOOL.build, str(root), "")
+                quiet(TOOL.build, str(root), "", "9.9-test")
             self.assertIn("KAIJU_CROC", str(e.exception.code))
 
     def test_log_check(self):

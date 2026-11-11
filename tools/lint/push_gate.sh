@@ -2,7 +2,8 @@
 # push_gate.sh: the seconds-long CI checks every push passes first (director 2026-10-30: "sessions keep failing
 # CI in predictable ways"). Run by the PreToolUse hook in .claude/settings.json on any `git push`; a fail blocks
 # the push and the session reads why. Covers what went red most: doc line caps and gdformat/gdlint (lint.yml),
-# the repo checks and the Python lints prepush step 2 runs. No Godot here: the touched suites are tools/run_touched.py (D-403).
+# the repo checks, the Unity C# lints (C1-C3) and the Python lints prepush step 2 runs. No Godot here (the Unity
+# typecheck runs when unity/Assets/ changed): the touched suites are tools/run_touched.py (D-403).
 # The selftests run only when tools/lint/ changed (they take minutes on Windows).
 #   bash tools/lint/push_gate.sh          # changed files against origin/main
 set -u
@@ -48,6 +49,9 @@ run "workflow timeouts" python tools/lint/workflow_timeouts.py
 run "tuning keys" python tools/lint/tuning_keys.py
 run "licence register" python tools/lint/licence_register.py
 run "complexity ratchet" python tools/lint/complexity_ratchet.py
+run "cs determinism" python tools/lint/cs_determinism.py
+run "cs complexity ratchet" python tools/lint/cs_complexity_ratchet.py
+run "cs meta" python tools/lint/cs_meta.py
 run "data schemas" python tools/lint/data_schemas.py
 run tools/lint/check_thread_resources.sh bash tools/lint/check_thread_resources.sh
 # The slow repo checks run only when the push touches what they read (check_uids 60 s, check_lfs 20 s on Windows).
@@ -57,6 +61,10 @@ if printf '%s\n' "$changed" | grep -qvE '\.(md|gd|uid|py|sh|json|yml|cfg|txt|tsc
 fi
 # check_i18n reads the Chinese font, which stays an LFS pointer unless pulled (CI pulls it).
 run tools/lint/check_i18n.sh bash tools/lint/check_i18n.sh
+# The Unity view code compiles in no CI job (CI has no Unity install): typecheck unity/Assets/Scripts against the
+# local editor's assemblies when the push touches unity/Assets/ (3 s warm on this PC, 2026-11-11).
+if printf '%s
+' "$changed" | grep -q '^unity/Assets/'; then run "tools/unity/typecheck.sh (unity/Assets changed)" bash tools/unity/typecheck.sh; fi
 if printf '%s\n' "$changed" | grep -q '^tools/lint/'; then run "tools/lint/run_all.sh (tools/lint changed)" bash tools/lint/run_all.sh; fi
 
 if [ "${#failed[@]}" -gt 0 ]; then

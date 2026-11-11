@@ -166,7 +166,7 @@ namespace Kaiju.Game
             {
                 return PinnedSeed;
             }
-            byte[] bytes = Guid.NewGuid().ToByteArray();
+            byte[] bytes = Guid.NewGuid().ToByteArray(); // seed-ok: a new run's seed is picked here, then logged
             return BitConverter.ToUInt32(bytes, 0);
         }
 

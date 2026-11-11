@@ -5,8 +5,10 @@ the English text is the key, so a Label or Button showing a key shows it in the 
 
 A text enters the table when the code asks for it by name: tr("...") or
 TranslationServer.translate("...") with a string literal, in scenes/ and autoload/ (a format
-string is the key, tr("%d STOREYS") % n, never the formatted result), or when it is one of the
-DATA_FIELDS of a data file.
+string is the key, tr("%d STOREYS") % n, never the formatted result), when the Unity port asks
+for it with Tr.T("...") or Tr.F("...", args) in hand-written C# under unity/Assets/Scripts
+(Sim/Game is gd2cs output; Tr.Format formats without translating; a // comment is not code), or
+when it is one of the DATA_FIELDS of a data file.
 
     python tools/i18n/strings.py           # check: every text has a row, every row its English
     python tools/i18n/strings.py --update  # add new texts (languages empty), drop rows no longer used
@@ -44,6 +46,29 @@ DATA_FIELDS: dict[str, list[str]] = {
 }
 PLACEHOLDER = re.compile(r"%[-0-9.]*[dsf%]")
 CALL = re.compile(r'(?:\btr|TranslationServer\.translate)\(\s*"((?:[^"\\]|\\.)*)"')
+CS_CALL = re.compile(r'\bTr\.[TF]\(\s*"((?:[^"\\]|\\.)*)"')
+CS_SCRIPTS = os.path.join(ROOT, "unity", "Assets", "Scripts")
+CS_GENERATED = os.path.join(CS_SCRIPTS, "Sim", "Game")
+
+
+def _unescape(text: str) -> str:
+    return text.replace('\\"', '"').replace("\\n", "\n")
+
+
+def _cs_code(line: str) -> str:
+    """A C# line without its // comment (a // inside a string literal stays)."""
+    quoted = False
+    i = 0
+    while i < len(line):
+        if quoted and line[i] == "\\":
+            i += 2
+            continue
+        if line[i] == '"':
+            quoted = not quoted
+        elif not quoted and line.startswith("//", i):
+            return line[:i]
+        i += 1
+    return line
 
 
 def code_texts() -> set[str]:
@@ -53,7 +78,14 @@ def code_texts() -> set[str]:
     ):
         with open(path, encoding="utf-8") as f:
             for m in CALL.finditer(f.read()):
-                out.add(m.group(1).replace('\\"', '"').replace("\\n", "\n"))
+                out.add(_unescape(m.group(1)))
+    for path in glob.glob(os.path.join(CS_SCRIPTS, "**", "*.cs"), recursive=True):
+        if os.path.commonpath([os.path.abspath(path), CS_GENERATED]) == CS_GENERATED:
+            continue
+        with open(path, encoding="utf-8-sig") as f:
+            for line in f:
+                for m in CS_CALL.finditer(_cs_code(line)):
+                    out.add(_unescape(m.group(1)))
     return out
 
 
