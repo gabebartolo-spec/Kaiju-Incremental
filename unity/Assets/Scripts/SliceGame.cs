@@ -20,6 +20,7 @@ public sealed class SliceGame : MonoBehaviour
     Mesh groundMesh, instanceCubeGodot, instanceCubeUnity;
     Material groundMat;
     VolumeProfile profile;
+    public static HDAdditionalLightData Sun;  // the sun ApplyLook made last (GraphicsView sets its shadows)
     readonly List<City.Sphere> spheres = new List<City.Sphere>();
     float accumulator, camYaw, orbit, zoom, followS, turnFollow, lookUp;
     Vector3 camOffset, focus, focusVel;
@@ -129,7 +130,7 @@ public sealed class SliceGame : MonoBehaviour
         sun.lightUnit = LightUnit.Lux;
         sun.intensity = SliceData.F(look, "sun_energy", 1) * Mathf.PI * ExposureUnit(tuning);
         sun.shadows = LightShadows.Soft;
-        sunGo.AddComponent<HDAdditionalLightData>();
+        Sun = sunGo.AddComponent<HDAdditionalLightData>();
         Shader.SetGlobalVector("_FireSunDir", -sunGo.transform.forward);
         Shader.SetGlobalVector("_FireSunColor", sun.color.linear * SliceData.F(look, "sun_energy", 1));
 
@@ -199,8 +200,7 @@ public sealed class SliceGame : MonoBehaviour
         cam.fieldOfView = SliceData.F(c, "fov", 60);
         cam.nearClipPlane = 0.5f;
         cam.farClipPlane = 3000;
-        HDAdditionalCameraData data = go.AddComponent<HDAdditionalCameraData>();
-        data.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+        GraphicsView.UseCamera(go.AddComponent<HDAdditionalCameraData>());  // the graphics preset's AA, scale, SSAO, SSGI
         focus = croc.position;
         camYaw = croc.yaw;
         PlaceCamera();

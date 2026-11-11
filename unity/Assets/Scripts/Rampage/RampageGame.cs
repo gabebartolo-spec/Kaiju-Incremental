@@ -232,7 +232,7 @@ public sealed class RampageGame : MonoBehaviour
         tuning = SliceData.LoadTuning();
         var slice = SliceData.LoadJson("slice.json");
         var look = MiniJson.Obj(slice["look"]);
-        profile = SliceGame.ApplyLook(tuning, slice, look);
+        profile = GraphicsView.StartRun(SliceGame.ApplyLook(tuning, slice, look), SliceGame.Sun);  // counts frozen for this run
 
         // A hosted run is the save's: its species, stats and city (scenes/main.gd, globe_missions.gd); else the flags'.
         string speciesId = request != null ? S.Gd.Str(S.Content.SpeciesDef(request.species)["id"]) : SPECIES;
@@ -368,8 +368,7 @@ public sealed class RampageGame : MonoBehaviour
         cam.fieldOfView = follow.fov;
         cam.nearClipPlane = 0.5f;
         cam.farClipPlane = 3000;
-        HDAdditionalCameraData data = go.AddComponent<HDAdditionalCameraData>();
-        data.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+        GraphicsView.UseCamera(go.AddComponent<HDAdditionalCameraData>());
         follow.Step(Feet(), Facing(), Feet(), scale, false, 0f, 0f, TICK);
         PlaceCamera(scale);
     }
@@ -825,7 +824,7 @@ public sealed class RampageGame : MonoBehaviour
         aircraft?.Dispose();
         weather?.Dispose();
         if (cubeMesh != null) Destroy(cubeMesh);
-        if (profile != null) Destroy(profile);
+        GraphicsView.EndRun(profile);
         if (clipTarget != null) Destroy(clipTarget);
         if (clipImage != null) Destroy(clipImage);
     }

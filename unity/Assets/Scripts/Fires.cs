@@ -62,6 +62,8 @@ public sealed class Fires : IDisposable
     readonly List<Burning> fires = new List<Burning>();
     readonly Stack<Burning> free = new Stack<Burning>();
     float lastTime;
+    // The share of each system's particles drawn (the graphics preset's particles, Godot's amount_ratio; 1 in the slice).
+    public float particles = 1f;
 
     static readonly int TIME = Shader.PropertyToID("_FireTime");
     static readonly int FOCUS = Shader.PropertyToID("_SmokeFocus");
@@ -89,6 +91,9 @@ public sealed class Fires : IDisposable
         Shader.SetGlobalFloat("_EmberHeat", tuning.ember_heat);
         if (spots) foreach (FireSpot spot in tuning.spots) Add(spot, -ALWAYS);
     }
+
+    // A system's particles for a fire of `size`, at the preset's share (never under one).
+    float Amount(FireSystem s, float size) => Mathf.Max(1f, Mathf.Round(s.count * Mathf.Max(1f, size) * particles));
 
     static Material Make(Shader shader, string keyword, FireSystem system)
     {
@@ -149,16 +154,16 @@ public sealed class Fires : IDisposable
         burning.flame.SetVector("_FireXZ", new Vector4(burning.at.x, burning.at.z, 0, 0));
         burning.flame.SetFloat("_AlphaIn", tuning.alpha_in);
         burning.flame.SetFloat("_AlphaOut", tuning.alpha_out);
-        burning.flameCount = Mathf.RoundToInt(tuning.flame.count * Mathf.Max(1f, size));
+        burning.flameCount = (int)Amount(tuning.flame, size);
 
         burning.ember = Block(burning.ember, burning, tuning.ember, size, 1f, start);
         burning.ember.SetVector("_FireQuad", new Vector4(tuning.ember_cube, 0, 0, 0));
-        burning.emberCount = Mathf.RoundToInt(tuning.ember.count * Mathf.Max(1f, size));
+        burning.emberCount = (int)Amount(tuning.ember, size);
 
         burning.smoke = Block(burning.smoke, burning, tuning.smoke, size, 1f, start);
         float quad = tuning.smoke_quad_base + size * tuning.smoke_quad_per_size;
         burning.smoke.SetVector("_FireQuad", new Vector4(quad, quad * tuning.smoke_quad_tall, 0, 0));
-        burning.smokeCount = Mathf.RoundToInt(tuning.smoke.count * Mathf.Max(1f, size));
+        burning.smokeCount = (int)Amount(tuning.smoke, size);
 
         float[] l = tuning.light;  // energy base, energy per size, range base, range per size, y base, y per size
         burning.energy = l[0] + l[1] * size;
@@ -195,7 +200,7 @@ public sealed class Fires : IDisposable
         b.SetVector("_FireGravity", wind + Vector3.up * s.rise);
         b.SetVector("_FireCurve", new Vector4(s.curve[0], s.curve[1], s.curve[2], s.curve[3]));
         b.SetFloat("_FireSeed", burning.seed);
-        b.SetFloat("_FireCount", Mathf.Round(s.count * Mathf.Max(1f, size)));
+        b.SetFloat("_FireCount", Amount(s, size));
         b.SetFloat("_FireLife", s.life);
         b.SetFloat("_FireSpread", s.spread * Mathf.Deg2Rad);
         b.SetFloat("_SpeedMin", s.speed[0]);

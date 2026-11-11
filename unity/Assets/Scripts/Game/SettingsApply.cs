@@ -28,7 +28,7 @@ public static class SettingsApply
     public static bool ForcedWindowed { get; private set; }
     public static bool Booted { get; private set; }
 
-    static string graphicsNow, lineNow;
+    static string graphicsNow, lineNow, forcedGraphics;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ReadFlags()
@@ -40,13 +40,19 @@ public static class SettingsApply
         FringeOn = true;
         UiScale = 1f;
         Standalone = Filming = ForcedWindowed = false;
-        foreach (string arg in Environment.GetCommandLineArgs())
+        forcedGraphics = null;
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length; i++)
         {
+            string arg = args[i];
             if (arg.StartsWith("-rampage-", StringComparison.Ordinal)) Standalone = true;
             if (arg == "-rampage-clip") Filming = true;
             if (arg == "-windowed" || arg == "-flow-smoke") ForcedWindowed = true;
+            if (arg == "-graphics" && i + 1 < args.Length) forcedGraphics = args[i + 1];
         }
         ForcedWindowed |= Standalone;
+        // Set now for a standalone run, which never boots the settings; tuning is not loaded yet, so no check.
+        if (forcedGraphics != null) Opt.Graphics = forcedGraphics;
     }
 
     // Loads settings.json and applies it. Call once S.Content holds the tuning and UserDir.Root is set; a
@@ -62,9 +68,20 @@ public static class SettingsApply
             Opt.Changed += Apply;
             // The shipped game starts fullscreen (D-027); editor runs stay windowed.
             Opt.LoadSaved(!Application.isEditor);  // raises Changed, so Apply has run
+            if (ForceGraphics()) Apply();
             return;
         }
         Apply();
+    }
+
+    // -graphics <level> (dev and test runs): that preset for this run, over the saved one; never saved unless the
+    // player changes the level. A name tuning does not know is reported and ignored.
+    static bool ForceGraphics()
+    {
+        if (forcedGraphics == null) return false;
+        Opt.Graphics = forcedGraphics;
+        if (Opt.GraphicsLevel() != forcedGraphics) Debug.LogWarning($"settings: -graphics {forcedGraphics} is not a level");
+        return true;
     }
 
     // Every setting that is not per-frame, onto the engine.
@@ -80,8 +97,7 @@ public static class SettingsApply
         if (level != graphicsNow)
         {
             graphicsNow = level;
-            // The Godot rows (scale, MSAA, shadows, SSAO...) have no ruled HDRP meaning yet: nothing is applied.
-            Debug.Log($"settings: graphics level {level} (HDRP table not ruled yet)");
+            GraphicsView.Apply();  // the row onto HDRP (D-478); logs "settings: graphics <level> applied: ..."
         }
         // Volume is left out of the change test: a dragged slider would log every step.
         string line = string.Format(CultureInfo.InvariantCulture,

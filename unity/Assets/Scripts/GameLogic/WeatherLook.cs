@@ -105,7 +105,7 @@ namespace Kaiju.Game
         public static int Count(double n, double ratio) => Math.Max(1, (int)Math.Round(n * ratio, MidpointRounding.AwayFromZero));
 
         // The graphics preset's particles ratio (GraphicsPresets.cap("particles")).
-        public static double ParticlesRatio() => Num.F(PlayerSettings.GraphicsRow()["particles"]);
+        public static double ParticlesRatio() => GraphicsPreset.Cap("particles");
 
         // The three depth layers of data/tuning.json rain.layers, near first; wind is Fire.WIND (Godot axes, x and z).
         public static List<RainLayer> Layers(GDict cfg, double ratio, double windX, double windZ)

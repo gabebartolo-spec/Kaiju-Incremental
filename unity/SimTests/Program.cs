@@ -29,6 +29,7 @@ static class Program
         failures += SaveCheck.Run(RepoRoot());
         failures += SettingsCheck.Run(RepoRoot());
         failures += MotionCheck.Run(RepoRoot());
+        failures += GraphicsPresetCheck.Run(RepoRoot());
         failures += RunStartCheck.Run(RepoRoot());
         // The screens' plain logic (GameLogic/): what each screen shows and decides, against the Godot game's data.
         failures += TitleCheck.Run(RepoRoot());
