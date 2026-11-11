@@ -1,7 +1,7 @@
 // The pause menu (scenes/pause_menu.gd) and its "Are you sure?" (scenes/end_confirm.gd, D-155): RESUME,
-// SETTINGS and END RAMPAGE over the stopped rampage. Pause (Esc, Start) or cancel (Esc, pad B) resumes while
-// the menu's own card is up; behind the settings or the confirm they belong to those. Photo mode and the
-// feedback report are a later wave: their rows are not here.
+// SETTINGS, PHOTO MODE (D-259), the bug / feedback report (D-145) and END RAMPAGE over the stopped rampage. Pause
+// (Esc, Start) or cancel (Esc, pad B) resumes while the menu's own card is up; behind the settings, photo mode, the
+// report or the confirm they belong to those.
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,8 +19,9 @@ public static class PauseMenu
 
     // onResume: RESUME, pause or cancel. onSettings: SETTINGS; the card hides itself first, so call
     // SettingsClosed when the settings page closes. onEndRun: END RAMPAGE then YES, END IT (the caller unpauses
-    // and ends the sim's run). onQuit: never called; Godot's pause menu has no quit-to-menu row.
-    public static RectTransform Show(Action onResume, Action onSettings, Action onEndRun, Action onQuit)
+    // and ends the sim's run). onQuit: never called; Godot's pause menu has no quit-to-menu row. game: the run
+    // being paused (pause_menu.gd photo, sim, species_id); null: no PHOTO MODE or report row.
+    public static RectTransform Show(Action onResume, Action onSettings, Action onEndRun, Action onQuit, RampageGame game = null)
     {
         RectTransform screen = UiKit.Screen("Pause");
         PauseKeys keys = screen.gameObject.AddComponent<PauseKeys>();
@@ -44,15 +45,28 @@ public static class PauseMenu
             Debug.Log("flow: pause settings opened");
             onSettings();
         }, "Settings");
+        // pause_menu.gd: PHOTO MODE (D-259), then the bug / feedback report (D-145, its label from tuning
+        // feedback.label), both only over a run (the report describes its sim).
+        KitButton photo = null, report = null;
+        if (game != null)
+        {
+            photo = MenuButton(card, "PHOTO MODE", UiKit.PANEL_EDGE, () => OpenPhoto(screen, keys, game, photo), "Photo");
+            if (game.Sim != null)
+            {
+                string speciesId = game.Species != null ? S.Gd.Str(game.Species["id"]) : "";
+                report = MenuButton(card, S.Gd.Str(FeedbackReport.Cfg()["label"]), UiKit.PANEL_EDGE, () => Report(keys, screen, game.Sim, speciesId, report), "Report");
+            }
+        }
         KitButton end = MenuButton(card, "END RAMPAGE", UiKit.PANEL_EDGE, () => Confirm(keys), "End");
         Text note = UiKit.Label(card, "You keep the biomass", UiKit.SIZE_BODY, UiKit.MUTED);
         note.alignment = TextAnchor.MiddleCenter;
         keys.resume = resume;
-        UiFocus.Column(resume, settings, end);
+        UiFocus.Column(resume, settings, photo, report, end);
         // On the card, so cancel is the settings' or the confirm's while the card is hidden.
         UiFocus.OnCancel(card.gameObject, keys.Resume);
         UiKit.Focus(resume);
-        Debug.Log("flow: pause shown, 3 buttons (Resume, Settings, End)");
+        string rows = "Resume, Settings" + (photo != null ? ", Photo" : "") + (report != null ? ", Report" : "") + ", End";
+        Debug.Log($"flow: pause shown, {rows.Split(',').Length} buttons ({rows})");
         return screen;
     }
 
@@ -61,6 +75,42 @@ public static class PauseMenu
     {
         PauseKeys keys = screen != null ? screen.GetComponent<PauseKeys>() : null;
         if (keys != null) keys.Restore();
+    }
+
+    // pause_menu.gd _open_photo: photo mode over the frozen world; the menu and its dim go, and Esc / B there bring
+    // them back with PHOTO MODE in focus (Restore keeps that press from also resuming).
+    static void OpenPhoto(RectTransform screen, PauseKeys keys, RampageGame game, KitButton photo)
+    {
+        if (PhotoMode.Current != null) return;
+        screen.gameObject.SetActive(false);
+        PhotoMode mode = PhotoMode.Open(game, () =>
+        {
+            if (screen == null) return;
+            screen.gameObject.SetActive(true);
+            keys.Restore();
+            UiKit.Focus(photo);
+            Debug.Log("flow: pause photo mode closed");
+        });
+        if (mode == null)
+        {
+            screen.gameObject.SetActive(true);
+            return;
+        }
+        Debug.Log("flow: pause photo mode opened");
+    }
+
+    // pause_menu.gd _open_report: the card goes (no stray click or key), the panel takes the picture with the dim off,
+    // then opens over the dim; closing it brings the card back with the report button in focus.
+    static void Report(PauseKeys keys, RectTransform screen, S.RampageSim sim, string speciesId, KitButton report)
+    {
+        keys.card.SetActive(false);
+        Transform dim = screen.Find("Dim");
+        Debug.Log("flow: pause report opened");
+        FeedbackPanel.Show(screen, sim, speciesId, () =>
+        {
+            keys.Restore();
+            UiKit.Focus(report);
+        }, dim != null ? dim.gameObject : null);
     }
 
     static KitButton MenuButton(Transform parent, string text, Color fill, Action onPress, string name)

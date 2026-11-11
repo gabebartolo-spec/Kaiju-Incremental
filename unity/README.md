@@ -5,6 +5,7 @@ Unity 6000.3.23f1, HDRP (D-471). The slice runs on data generated from the Godot
 1. `unity/native/build.bat` builds `kaiju_core.dll` into `Assets/Plugins/x86_64`.
 2. `godot --headless --path . --script tools/unity/export_slice.gd -- --croc=<dir>/reptilian_adult` writes
    `Assets/StreamingAssets/slice/`. The approved croc's export is on PR #579 until it merges.
+   Without Godot, `bash tools/unity/bake_slice.sh <dir>/reptilian_adult` writes the same files (C#, `tools/unity/slicebake`).
 3. `Unity.exe -batchmode -quit -projectPath unity -executeMethod SliceBuild.Build` sets the project up and builds
    `Build/KaijuSlice.exe`. `SliceBuild.Setup` does the setup alone.
 
