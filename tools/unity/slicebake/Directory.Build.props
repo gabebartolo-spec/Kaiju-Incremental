@@ -1,0 +1,7 @@
+<Project>
+  <!-- Build files go under unity/Obj (git-ignored), set before the SDK reads them so restore's
+       files land there too. -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../../unity/Obj/slicebake/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

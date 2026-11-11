@@ -117,8 +117,8 @@ public sealed class CreationDriver : MonoBehaviour
     {
         if (steps == null || handed) return;
         // The smoke run needs no hands: the first genome, then the injection.
-        if (smoke && steps.Step == CreationStep.Rack && rack.Count > 0) rack[0].onClick.Invoke();
-        if (smoke && steps.Step == CreationStep.Dish && shown == CreationStep.Dish) inject.onClick.Invoke();
+        if (smoke && !FlowStills.Busy && steps.Step == CreationStep.Rack && rack.Count > 0) rack[0].onClick.Invoke();
+        if (smoke && !FlowStills.Busy && steps.Step == CreationStep.Dish && shown == CreationStep.Dish) inject.onClick.Invoke();
         if (steps.Step == CreationStep.Rack)
             for (int i = 0; i < rack.Count; i++)
                 if (UiFocus.Current == rack[i] && steps.Lab.Focused != i) steps.Lab.Focus(i);

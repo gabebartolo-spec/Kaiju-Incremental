@@ -35,10 +35,14 @@ static class Program
         failures += CreationCheck.Run(RepoRoot());
         failures += GlobeCheck.Run(RepoRoot());
         failures += ResultsCheck.Run(RepoRoot());
+        failures += DemoCardCheck.Run(RepoRoot());
         failures += TreeCheck.Run(RepoRoot());
         failures += HudCheck.Run(RepoRoot());
         failures += AudioCheck.Run(RepoRoot());
         failures += LoadingCheck.Run(RepoRoot());
+        failures += FeedbackCheck.Run(RepoRoot());
+        failures += PhotoCheck.Run(RepoRoot());
+        failures += WeatherCheck.Run(RepoRoot());
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;

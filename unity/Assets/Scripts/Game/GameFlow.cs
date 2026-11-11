@@ -44,7 +44,7 @@ public sealed class GameFlow : MonoBehaviour
     static int smokeRuns;
     static long smokeEarned;
     // What the smoke run has done so far, for its last line.
-    static bool smokeSettings, smokePaused;
+    static bool smokeSettings, smokePaused, smokePhoto, smokeReported, smokeDemoEnd;
     static string smokeLost = "", smokeWon = "";
     static GameFlow live;
 
@@ -67,7 +67,7 @@ public sealed class GameFlow : MonoBehaviour
         booted = smoke = gallery = smokeOver = false;
         smokeRuns = 0;
         smokeEarned = 0;
-        smokeSettings = smokePaused = false;
+        smokeSettings = smokePaused = smokePhoto = smokeReported = smokeDemoEnd = false;
         smokeLost = smokeWon = "";
         live = null;
     }
@@ -131,6 +131,7 @@ public sealed class GameFlow : MonoBehaviour
             string[] args = Environment.GetCommandLineArgs();
             smoke = args.Contains("-flow-smoke");
             gallery = args.Contains("-ui-gallery");
+            FlowStills.Boot(args);
             dataRoot = DataRoot();
             S.FileAccess.Root = dataRoot;
             AudioHost.Ensure();
@@ -195,8 +196,7 @@ public sealed class GameFlow : MonoBehaviour
             case State.Rampage: StartScene(); break;
             case State.Tree: ShowTree(); break;
             case State.DemoEnd:
-                Shown(state, StubDemoEnd.Show(Save, () => StartRampage(null, true), () => Enter(State.Tree)));
-                Debug.Log($"flow: demo end shown, biomass {Biomass()}");
+                Shown(state, DemoEndScreen.Show(Save, () => StartRampage(null, true), () => Enter(State.Tree)));
                 break;
             default:
                 // Results are only shown over the rampage that just ended.
@@ -204,6 +204,7 @@ public sealed class GameFlow : MonoBehaviour
                 Enter(State.Tree);
                 break;
         }
+        if (Now == state) FlowStills.Want(state);
     }
 
     static long Biomass() => S.Num.I(Save.Get("rubble", 0L));
@@ -232,6 +233,7 @@ public sealed class GameFlow : MonoBehaviour
             settings = null;
             closed?.Invoke();
         });
+        FlowStills.Want("settings", () => SettingsScreen.IsOpen);
     }
 
     // main.gd _continue_slot.
@@ -301,6 +303,7 @@ public sealed class GameFlow : MonoBehaviour
         if (smoke) Pending.fullIntro = false;  // the short cut, as the -rampage-auto runs the time-up path is proven on
         // The loading screen is drawn before the scene reload is asked for, and outlives it.
         Loading.ShowThen(Pending, () => Go(State.Rampage));
+        FlowStills.Want("loading", () => Loading.Shown, 0);
     }
 
     // The fresh scene's rampage, hosted: it reads the request as it wakes.
@@ -351,6 +354,7 @@ public sealed class GameFlow : MonoBehaviour
                 Go(State.Tree);
             });
         });
+        FlowStills.Want("results", () => Now == State.Results, FlowStills.SETTLE, () => !ResultsScreen.Counting(screen));
         Debug.Log($"flow: results shown, reason {S.Gd.Str(result.Get("reason", ""))}, earned {S.Num.I(result.Get("rubble", 0L))}, biomass {Biomass()}, runs {Runs()}");
         if (smoke) SmokeBanked(result);
     }
@@ -374,7 +378,7 @@ public sealed class GameFlow : MonoBehaviour
         {
             Unpause();
             game.Sim.End("ended");  // rampage_hud.gd _end_now
-        }, null);
+        }, null, game);
     }
 
     void Resume()
@@ -459,6 +463,7 @@ public sealed class GameFlow : MonoBehaviour
                 if (waited >= SMOKE_GALLERY) Pass("gallery on show");
                 return;
             }
+            if (FlowStills.Busy) return;  // -flow-still: no press until the screen's still is taken
             if (now - stepAt < SMOKE_WAIT) return;
             switch (Now)
             {
@@ -468,6 +473,7 @@ public sealed class GameFlow : MonoBehaviour
                 case State.Rampage: SmokeRampage(now); break;
                 case State.Results: SmokeResults(); break;
                 case State.Tree: SmokeTree(); break;
+                case State.DemoEnd: SmokeDemoEnd(); break;
             }
         }
         catch (Exception e)
@@ -499,7 +505,8 @@ public sealed class GameFlow : MonoBehaviour
         }
     }
 
-    // The first rampage is paused once and resumed by the menu's own RESUME, on a later frame as a player would.
+    // The first rampage is paused once; PHOTO MODE flies its camera and comes back; the report is written into the
+    // smoke's own user folder and read back; then the menu's own RESUME, each on a later frame as a player would.
     void SmokeRampage(float now)
     {
         if (smokeRuns > 0 || game == null || game.Error != null) return;
@@ -518,9 +525,74 @@ public sealed class GameFlow : MonoBehaviour
                 break;
             case 2:
                 Step();
+                Press("Photo", pause);
+                Expect(PhotoMode.Current != null && game.Paused && !pause.gameObject.activeSelf, "PHOTO MODE did not open photo mode over the paused run");
+                break;
+            case 3:
+            {
+                Step();
+                PhotoMode photo = PhotoMode.Current;
+                Vector3 saved = photo.SavedEye;
+                Vector3 eye = photo.Fly(photo.View.transform.forward * (float)photo.Rules.radius * 4f);
+                float far = Vector3.Distance(eye, photo.Centre), flew = Vector3.Distance(eye, saved);
+                Expect(far <= (float)photo.Rules.radius + 0.01f && eye.y >= (float)photo.Rules.floorY - 0.01f && flew > 1f, $"photo mode's camera did not fly inside its space ({far:F2} of {photo.Rules.radius:F2}, flew {flew:F2})");
+                photo.Close();
+                Expect(PhotoMode.Current == null && game.Paused && pause != null && pause.gameObject.activeSelf && game.GameCamera.transform.position == saved, "leaving photo mode did not put the camera and the pause menu back");
+                Debug.Log($"flow: photo mode entered and left, flew {flew:F1} to {far:F1} of radius {photo.Rules.radius:F1}, camera back");
+                smokePhoto = true;
+                break;
+            }
+            case 4:
+                Step();
+                Press("Report", pause);
+                break;
+            case 5:
+            {
+                Step();
+                FeedbackResult sent = FeedbackPanel.SmokeSend(pause, "flow smoke report");
+                Expect(sent != null, "the feedback panel did not open");
+                Expect(sent.ok, "the feedback report was not written: " + sent.error);
+                List<string> bad = FeedbackReport.Problems(sent.path, "flow smoke report");
+                Expect(bad.Count == 0, "the feedback report is bad: " + string.Join("; ", bad));
+                Debug.Log($"flow: smoke feedback report ok at {sent.path}");
+                Press("Done", pause);
+                Expect(game.Paused && pause != null && pause.GetComponentInChildren<FeedbackKeys>() == null, "DONE on the feedback panel did not close it back to the pause menu");
+                smokeReported = true;
+                break;
+            }
+            case 6:
+                Step();
                 Press("Resume", pause);
                 Expect(!game.Paused && pause == null, "RESUME did not resume the rampage");
                 smokePaused = true;
+                break;
+        }
+    }
+
+    // The thanks card: focus on TRY ENDLESS MODE, LEAVE FEEDBACK opens the data's link (opener swapped, so no browser
+    // opens), then KEEP PLAYING back to the tree.
+    void SmokeDemoEnd()
+    {
+        switch (smokeStep)
+        {
+            case 0:
+            {
+                Step();
+                Expect(UiFocus.Current != null && UiFocus.Current.name == DemoCard.ENDLESS, "the demo end did not open on Try Endless mode");
+                string opened = null;
+                Action<string> opener = DemoEndScreen.Opener;
+                DemoEndScreen.Opener = url => opened = url;
+                try { Press(DemoCard.FEEDBACK); }
+                finally { DemoEndScreen.Opener = opener; }
+                Expect(opened == S.Demo.FeedbackUrl(), $"LEAVE FEEDBACK opened '{opened}', not the data's link");
+                Debug.Log($"flow: smoke demo end feedback opens {opened}");
+                break;
+            }
+            case 1:
+                Step();
+                smokeDemoEnd = true;
+                Press(DemoCard.KEEP);
+                Expect(Now == State.Tree, "KEEP PLAYING did not return to the tree");
                 break;
         }
     }
@@ -558,10 +630,14 @@ public sealed class GameFlow : MonoBehaviour
         if (smokeStep != 0) return;
         Step();
         if (smokeRuns < SMOKE_RUNS) { Press("Rampage"); return; }
+        // The smoke never buys out the tree, so the thanks card is visited once by hand before the pass.
+        if (!smokeDemoEnd) { Debug.Log("flow: smoke opens the demo end"); Enter(State.DemoEnd); return; }
         Expect(smokeSettings, "the settings were never opened");
         Expect(smokePaused, "the rampage was never paused");
+        Expect(smokePhoto, "photo mode was never entered");
+        Expect(smokeReported, "no feedback report was written");
         Expect(smokeLost != "" && smokeWon != "", $"the missions did not end (lost '{smokeLost}', won '{smokeWon}')");
-        Pass($"{smokeRuns} rampages, biomass {Biomass()}, runs {Runs()}, settings opened and closed, paused and resumed, lost {smokeLost}, won {smokeWon}");
+        Pass($"{smokeRuns} rampages, biomass {Biomass()}, runs {Runs()}, settings opened and closed, paused and resumed, photo mode entered and left, feedback report written, lost {smokeLost}, won {smokeWon}, demo end visited");
     }
 
     // After a city's WIN / LOSE: the file on disk holds the continent as the answer left it.

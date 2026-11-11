@@ -156,6 +156,8 @@ public static class SliceBuild
             // The text table (Tr.Load).
             Directory.CreateDirectory(Path.Combine(to, "i18n"));
             File.Copy(Path.Combine(repo, "data", "i18n", "strings.csv"), Path.Combine(to, "i18n", "strings.csv"), true);
+            // The game's version (FeedbackReport.Version reads [application] config/version, as Godot's report does).
+            File.Copy(Path.Combine(repo, "project.godot"), Path.Combine(res, "project.godot"), true);
             foreach (string kind in MODEL_KINDS)
             {
                 string models = Path.Combine(res, "assets", kind);

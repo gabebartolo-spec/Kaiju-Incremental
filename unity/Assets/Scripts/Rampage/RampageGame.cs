@@ -54,6 +54,12 @@ public sealed class RampageGame : MonoBehaviour
     // The run's species row (data/species.json), for the HUD's colours.
     public S.GDict Species { get; private set; }
     public float ExposureUnit => SliceGame.ExposureUnit(tuning);
+    // Photo mode (Game/PhotoMode.cs, D-259): set while it flies the camera; the run then neither places its camera
+    // nor ticks the HUD (so the breath's aim wedge goes) nor draws the VIP headline.
+    public PhotoMode Photo;
+    public Camera GameCamera => cam;
+    // The kaiju's feet in Unity's axes (photo mode's centre; rampage.gd _kaiju_at).
+    public Vector3 KaijuAt { get { Vector3 f = Feet(); return new Vector3(f.x, f.y, -f.z); } }
 
     RunRequest request;
     bool over;
@@ -115,6 +121,8 @@ public sealed class RampageGame : MonoBehaviour
     int timeUpAt;
     bool timeUpDone;
     PostFxView postFx;
+    // The run's weather look (scenes/weather_view.gd); null when the weather has no layer (clear).
+    WeatherView weather;
     RailView rail;
     // Capture only (-rampage-derail step): the first running train is derailed at that sim step.
     int derailAt;
@@ -246,6 +254,9 @@ public sealed class RampageGame : MonoBehaviour
             stats = S.UpgradeTree.RunStats(S.Content.Section("kaiju"), species, new S.UpgradeTree(S.Content.Upgrades(), Levels(stage), SPECIES));
             layout = S.CityGrowth.Layout(S.Content.Tuning(), stage, S.Seeds.Make("city", seed));
             S.Content.SetTime("dusk");
+            // Capture/dry-run only: -rampage-weather <id> plays that weather (data/looks.json weather order); time stays dusk.
+            string weatherArg = Arg(Environment.GetCommandLineArgs(), "-rampage-weather");
+            if (weatherArg != null) S.Content.SetWeather(weatherArg);
         }
         sim =new S.RampageSim(stats, S.CityGrowth.ForStats(stats), layout, S.Seeds.Make("army", seed));
 
@@ -304,6 +315,7 @@ public sealed class RampageGame : MonoBehaviour
         leap = new LeapView(sim, croc, trees);
         slam = new SlamView(sim, city, fx, shake, croc, tuning);
         postFx = new PostFxView(sim, profile);
+        weather = WeatherView.Attach(profile, Resources.Load<Shader>("Shaders/Rain"), fireTuning.wind, SliceGame.ExposureUnit(tuning));
         walked = sim.kaijuPos;
         if (clipDir != null) BeginClip();
         if (scoutPath != null)
@@ -649,14 +661,20 @@ public sealed class RampageGame : MonoBehaviour
         shake.Update(dt);
         postFx.Step(dt, shake.motion);
         stepDip = Mathf.MoveTowards(stepDip, 0f, dt * DIP_RECOVER * stepDip + dt * DIP_CREEP);
-        follow.Step(Focus(feet), Facing(), feet, scale, sim.body.dash.On() || sim.emerge.active, stepDip * shake.motion,
-            auto || sim.emerge.active || Paused ? 0f : follow.PlayerTurn() + PadTurn(dt), dt);
-        PlaceCamera(scale, dt);
+        // Photo mode flies the camera itself (PhotoMode); the follow waits where it was.
+        if (Photo == null)
+        {
+            follow.Step(Focus(feet), Facing(), feet, scale, sim.body.dash.On() || sim.emerge.active, stepDip * shake.motion,
+                auto || sim.emerge.active || Paused ? 0f : follow.PlayerTurn() + PadTurn(dt), dt);
+            PlaceCamera(scale, dt);
+        }
         bubble.Step(cam, feet, dt);
         street.Draw(cam);
         fx.SetFocus(Vector3.Dot(new Vector3(feet.x, feet.y, -feet.z) - cam.transform.position, cam.transform.forward));
         fx.Draw(age);
-        Ticked?.Invoke(dt);
+        weather?.Step(dt, cam);
+        // Not under photo mode: the HUD's tick draws the breath's aim wedge (Godot hides _aim there).
+        if (Photo == null) Ticked?.Invoke(dt);
         if (quitAfter > 0f && age >= quitAfter) Application.Quit();
     }
 
@@ -781,7 +799,7 @@ public sealed class RampageGame : MonoBehaviour
     {
         if (clipDir != null) return;
         if (hud == null) hud = new GUIStyle(GUI.skin.label) { fontSize = 16, normal = { textColor = Color.white } };
-        vip?.DrawHeadline();
+        if (Photo == null) vip?.DrawHeadline();
         if (error != null) { GUI.Label(new Rect(10, 10, Screen.width - 20, Screen.height - 20), error, hud); return; }
         if (Hosted) return;  // the game's own HUD is the host's
         string text = $"{1f / smoothDt:F0} fps  sim {simMs:F1} ms  mesh {city.lastMeshMs:F1} ms ({city.lastRegions})\npromoted {city.promoted}  falling {city.Falling}  debris {debris.Live:N0}\nWASD walk  Space signature (hold)  Q breath  E ultimate  Shift dash  R restart  Esc quit";
@@ -805,6 +823,7 @@ public sealed class RampageGame : MonoBehaviour
         rail?.Dispose();
         strike?.Dispose();
         aircraft?.Dispose();
+        weather?.Dispose();
         if (cubeMesh != null) Destroy(cubeMesh);
         if (profile != null) Destroy(profile);
         if (clipTarget != null) Destroy(clipTarget);
