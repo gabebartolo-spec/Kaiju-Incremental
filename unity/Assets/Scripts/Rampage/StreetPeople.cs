@@ -6,7 +6,7 @@ using S = Kaiju.Sim;
 // beach_crowd.gd): civilians walk the pavement round every block and cross at the corners; when the kaiju comes near
 // they stare a moment, then run from it. Stomps, falling sections and tank tracks crush them. Presentation only: the
 // sim never knows any of them exist. No UnityEngine here: unity/SimTests compiles this file (StreetCheck).
-// Not ported yet: police, traffic, the stadium match, and the far people's slower step (StreetLod).
+// Not ported yet: police, the stadium match, and the far people's slower step (StreetLod). Traffic is Traffic.cs.
 public sealed class StreetPeople
 {
     // scenes/street_life.gd SIDE_STEP, PACE_SPREAD, WALK_HZ, RUN_HZ, MAX_PUFFS_PER_CRUSH.

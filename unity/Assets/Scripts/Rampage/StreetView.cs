@@ -4,9 +4,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using S = Kaiju.Sim;
 
-// The street's people, parked cars, lamps and the beach's props on screen (scenes/street_life.gd with street_lod.gd,
-// city_decor.gd and beach_props.gd): StreetPeople walks them, this draws them, one instanced batch per outfit and
-// pose, and passes on what the kaiju, the army and the falling buildings crush. Presentation only (hard rule 3).
+// The street's people, parked cars, lamps, moving traffic and the beach's props on screen (scenes/street_life.gd
+// with street_lod.gd, city_decor.gd and beach_props.gd): StreetPeople walks them, this draws them, one instanced batch
+// per outfit and pose, owns Traffic (drawn by TrafficView), and passes on what the kaiju, the army and the falling
+// buildings crush. Presentation only (hard rule 3).
 public sealed class StreetView
 {
     // scenes/voxel_person.gd OUTFITS (the six civilians): shirt, pants, hair, skin; and _bake's shoe.
@@ -33,6 +34,7 @@ public sealed class StreetView
     const float PUFF_Y = 0.15f;
 
     public readonly StreetPeople people;
+    public readonly Traffic traffic;
     readonly S.RampageSim sim;
     readonly CityFx fx;
     readonly Material material;
@@ -43,6 +45,7 @@ public sealed class StreetView
     readonly float viewMargin;
     readonly StreetDecor decor;
     readonly PropTiles beach, courts;
+    readonly TrafficView trafficView;
     int tankStep;
 
     public int Drawn { get; private set; }
@@ -68,6 +71,10 @@ public sealed class StreetView
                 batches[k] = new List<Matrix4x4[]>();
             }
         decor = new StreetDecor(sim, shader, parent);
+        // After the decor, as street_life.gd: the diagonal's parked row keeps clear of its props.
+        traffic = new Traffic(sim, S.Seeds.Make("traffic", 0));
+        traffic.Populate(decor.props.Bases());
+        trafficView = new TrafficView(traffic, sim, shader);
         S.GDict plan = S.CityGen.Map(sim.city);
         if (plan.Has("harbour"))
         {
@@ -138,10 +145,11 @@ public sealed class StreetView
         if (field.Crush(at, radius, out Vector3 first) > 0) fx.Puff(first);
     }
 
-    // People and props within `radius` of `at` (Godot axes) are crushed (city_view.gd crush).
+    // People, cars and props within `radius` of `at` (Godot axes) are crushed (city_view.gd crush).
     public void Crush(Vector3 at, float radius, bool byTank = false, bool byArmy = false)
     {
         Trample(at, radius);
+        traffic.Crush(new S.Vector2(at.x, at.z), radius);
         people.Crush(at.x, at.z, radius, byTank, byArmy);
     }
 
@@ -149,7 +157,11 @@ public sealed class StreetView
 
     void CrushSpots(List<S.Vector3> at)
     {
-        foreach (S.Vector3 s in at) Trample(new Vector3((float)s.x, 0f, (float)s.y), (float)s.z);
+        foreach (S.Vector3 s in at)
+        {
+            Trample(new Vector3((float)s.x, 0f, (float)s.y), (float)s.z);
+            traffic.Crush(new S.Vector2(s.x, s.y), s.z);  // street_life.gd crush_all, spot by spot
+        }
         people.CrushAll(at);
     }
 
@@ -202,6 +214,7 @@ public sealed class StreetView
             foreach (S.RampageSim.Tank tank in sim.tanks)
                 if (tank.height <= 0.0) Crush(new Vector3((float)tank.pos.x, 0f, (float)tank.pos.y), TANK_CRUSH, true);
         tankStep = steps;
+        traffic.Step(dt);  // before the people, as street_life.gd
         people.Step(dt, sim.kaijuPos, sim.BodyScale(), sim.emerge.surfaced || !sim.emerge.active);
         decor.props.Tick();
         if (beach != null) beach.Tick();
@@ -234,6 +247,7 @@ public sealed class StreetView
         for (int bucket = 0; bucket < counts.Length; bucket++)
             for (int from = 0; from < counts[bucket]; from += BATCH)
                 Graphics.DrawMeshInstanced(meshes[bucket], 0, material, batches[bucket][from / BATCH], Mathf.Min(BATCH, counts[bucket] - from), null, ShadowCastingMode.On, true);
+        trafficView.Draw(cam);
     }
 
     public void Dispose()
@@ -241,6 +255,7 @@ public sealed class StreetView
         foreach (Mesh mesh in meshes)
             if (mesh != null) UnityEngine.Object.Destroy(mesh);
         UnityEngine.Object.Destroy(material);
+        trafficView.Dispose();
         decor.props.Dispose();
         beach?.Dispose();
         courts?.Dispose();

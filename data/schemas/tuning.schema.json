@@ -5651,7 +5651,45 @@
         "max_police_cars": {"$ref": "#/$defs/num"},
         "far_radius": {"$ref": "#/$defs/num"},
         "far_every": {"$ref": "#/$defs/num"},
-        "view_margin": {"$ref": "#/$defs/num"}
+        "view_margin": {"$ref": "#/$defs/num"},
+        "car_accel": {"$ref": "#/$defs/num"},
+        "car_brake": {"$ref": "#/$defs/num"},
+        "car_back_share": {"$ref": "#/$defs/num"},
+        "car_lane_half": {"$ref": "#/$defs/num"},
+        "police_arrive_s": {"$ref": "#/$defs/num"},
+        "police_flash_hz": {"$ref": "#/$defs/num"},
+        "car_crushed": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 3, "maxItems": 3},
+        "car_lane_hop": {"$ref": "#/$defs/num"},
+        "car_spawn_tries": {"$ref": "#/$defs/num"},
+        "car_min_street": {"$ref": "#/$defs/num"},
+        "car_spawn_end": {"$ref": "#/$defs/num"},
+        "car_spawn_clear": {"$ref": "#/$defs/num"},
+        "car_crush_margin": {"$ref": "#/$defs/num"},
+        "police_face_at": {"$ref": "#/$defs/num"},
+        "car_turn_rate": {"$ref": "#/$defs/num"},
+        "car_two_way_lane": {"$ref": "#/$defs/num"},
+        "car_city_slack": {"$ref": "#/$defs/num"},
+        "tank_keep": {"$ref": "#/$defs/num"},
+        "tank_lane": {"$ref": "#/$defs/num"},
+        "police_pull_back": {"$ref": "#/$defs/num"},
+        "car_half_tank": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 2, "maxItems": 2},
+        "police_glow": {"$ref": "#/$defs/num"},
+        "police_paint": {
+          "type": "object",
+          "properties": {
+            "police": {"$ref": "#/$defs/hex6"},
+            "police_low": {"$ref": "#/$defs/hex6"},
+            "bar": {"$ref": "#/$defs/hex6"},
+            "red": {"$ref": "#/$defs/hex6"},
+            "blue": {"$ref": "#/$defs/hex6"},
+            "red_lit": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 3, "maxItems": 3},
+            "blue_lit": {"type": "array", "items": {"$ref": "#/$defs/num"}, "minItems": 3, "maxItems": 3}
+          },
+          "required": ["police", "police_low", "bar", "red", "blue", "red_lit", "blue_lit"],
+          "additionalProperties": false
+        },
+        "diagonal_start_jitter": {"$ref": "#/$defs/num"},
+        "diagonal_water_clear": {"$ref": "#/$defs/num"}
       },
       "required": [
         "person_voxel", "walk_speed", "run_speed", "panic_radius", "calm_radius", "wary_radius", "stomp_catch",
@@ -5659,7 +5697,11 @@
         "car_gap", "jam_wreck_s", "jam_queue_s", "rubble_press", "rubble_keep",
         "blockade_interval", "blockade_distance", "max_blockades", "cops_per_blockade",
         "cop_hold_radius", "cop_fire_interval", "max_police_cars", "far_radius", "far_every",
-        "view_margin"
+        "view_margin", "car_accel", "car_brake", "car_back_share", "car_lane_half", "police_arrive_s",
+        "police_flash_hz", "car_crushed", "car_lane_hop", "car_spawn_tries", "car_min_street", "car_spawn_end",
+        "car_spawn_clear", "car_crush_margin", "police_face_at", "car_turn_rate", "car_two_way_lane",
+        "car_city_slack", "tank_keep", "tank_lane", "police_pull_back", "car_half_tank", "police_glow",
+        "police_paint", "diagonal_start_jitter", "diagonal_water_clear"
       ],
       "patternProperties": {"^_": {"$ref": "#/$defs/str"}},
       "additionalProperties": false
