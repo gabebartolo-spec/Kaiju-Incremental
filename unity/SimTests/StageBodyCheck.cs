@@ -19,6 +19,7 @@ static class StageBodyCheck
         Tiers();
         Fallback();
         Takes(repoRoot);
+        Spheres(repoRoot);
         Console.WriteLine(failed == 0 ? $"stage bodies: ok ({checks} checks)" : $"stage bodies: {failed} of {checks} failed");
         return failed;
     }
@@ -78,6 +79,29 @@ static class StageBodyCheck
             Check(CrocStages.Sweeps(layers) == want.sweep, $"the {stage} sweeps: {CrocStages.Sweeps(layers)}, want {want.sweep}");
             Check(names.Contains("run") == want.run, $"the {stage} has a keyed run: {names.Contains("run")}, want {want.run}");
             Check(names.Contains("rise_bay") == want.rise, $"the {stage} has the keyed rise: {names.Contains("rise_bay")}, want {want.rise}");
+        }
+    }
+
+    // Croc.cs's pushers: each stage keeps the tuning spheres whose bones its rig carries and skips the rest. Every
+    // stage keeps the trunk, head and each leg down to leg_x2 and the tail to tail8; only the baby and adult keep the rest.
+    static void Spheres(string repoRoot)
+    {
+        using JsonDocument tuning = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "unity", "Assets", "StreamingAssets", "tuning.json")));
+        var wanted = new List<string>();
+        foreach (string list in new[] { "body", "tail" })
+            foreach (JsonElement s in tuning.RootElement.GetProperty(list).EnumerateArray()) wanted.Add(s.GetProperty("bone").GetString()!);
+        string[] every = { "spine0", "spine1", "spine2", "head0", "leg_l0", "leg_r0", "leg_l1", "leg_r1", "leg_l2", "leg_r2", "tail0", "tail2", "tail4", "tail6", "tail8" };
+        foreach (string stage in CrocStages.STAGES)
+        {
+            string path = Path.Combine(repoRoot, "assets", "kaiju", $"reptilian_{stage}.rig.json");
+            if (!File.Exists(path)) { Check(false, $"{path} is missing"); continue; }
+            using JsonDocument rig = JsonDocument.Parse(File.ReadAllText(path));
+            var bones = new HashSet<string>();
+            foreach (JsonElement b in rig.RootElement.GetProperty("bones").EnumerateArray()) bones.Add(b.GetProperty("name").GetString()!);
+            var kept = new HashSet<string>(wanted.FindAll(bones.Contains));
+            foreach (string bone in every) Check(kept.Contains(bone), $"the {stage} keeps its {bone} sphere");
+            Check(stage == "adolescent" ? kept.Count == every.Length : kept.Count == wanted.Count,
+                $"the {stage} keeps {kept.Count} of {wanted.Count} spheres");
         }
     }
 

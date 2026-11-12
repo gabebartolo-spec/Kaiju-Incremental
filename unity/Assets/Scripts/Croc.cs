@@ -282,8 +282,9 @@ public sealed partial class Croc
         Shader.SetGlobalFloat("_HideTone", SliceData.F(look, "kaiju_hide_tone", 0));
         Shader.SetGlobalFloat("_KaijuRoughness", SliceData.F(look, "kaiju_roughness", 0.85f));
 
-        foreach (SphereDef s in t.body) bodySpheres.Add((byName[s.bone], s.r));
-        foreach (SphereDef s in t.tail) tailSpheres.Add((byName[s.bone], s.r));
+        // A stage without a sphere's bone (the Behemoth has no leg_x3, tail9-11) skips it: its chain ends at its own tip.
+        foreach (SphereDef s in t.body) if (byName.TryGetValue(s.bone, out int b)) bodySpheres.Add((b, s.r));
+        foreach (SphereDef s in t.tail) if (byName.TryGetValue(s.bone, out int b)) tailSpheres.Add((b, s.r));
         prevBody = new Vector3[bodySpheres.Count];
         prevTail = new Vector3[tailSpheres.Count];
         pushers = new Rigidbody[bodySpheres.Count];
