@@ -1,6 +1,7 @@
 // tools/unity/export_slice.gd without Godot: one real city block (grids, looks, palettes, window
 // grids), the dusk look, the camera's tuning, the approved croc (skin, clips, rest pose and binds),
-// and the digests tools/unity/check_core.py replays. Same steps, same order, same bytes.
+// and the digests tools/unity/check_core.py replays. Same steps, same order, same bytes (but the baby's and
+// adolescent's relaxed arms, which may differ in a double's last bit: the same values once read as floats).
 //   dotnet run --project tools/unity/slicebake -c Release -- --out=<dir> [--croc=<dir>/reptilian_adult]
 using System;
 using System.Collections.Generic;
