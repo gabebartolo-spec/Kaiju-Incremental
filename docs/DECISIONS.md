@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-13 · D-484 · Director · Unity port: death next as Godot's, the Behemoth re-rigged after, Godot archived at the switch
+Asked eight port questions, the director ruled. Next piece: "Death next", copied from Godot exactly ("Copy Godot
+exactly"); then the far city, then boats, wildlife and wet streets. The parity playtest comes "After phase B", not per
+piece. The Behemoth, which ports with Godot's walk-and-roar takes only, gets the lash, sweep and run "after port" by
+"Re-rig the Behemoth": the full adult skeleton (leg_x3, tail9-11 and the rest), then the Colossus takes as they are.
+When U6 passes, Godot's last main goes to an "Archive branch" and its code leaves main. Changes: the phase B order,
+a post-port Behemoth re-rig task, the U6 retirement step.
+
 ## 2026-11-12 · D-483 · Director · Unity port: light pool and colour shade now, and how the rest runs
 Asked twelve port questions at once, the director ruled. Police: the first roadblock comes "As Godot" (4.5 s in, no
 wait for the croc to surface). Beacons: "Port the pool", so Unity gets Godot's light pool (the 24 lights nearest
@@ -385,12 +393,3 @@ colour states for G3) and "Turn + zoom in" (a click turns the continent to the c
 0.7 s, eased; the spin holds while one is selected; a click on sea or Esc flies back out and the spin resumes). Shown the stills, "Keep both": Aurelia's pin (the south polar cap)
 stays out of view at the default lean until the globe is dragged down, and Neptunia's one pin stays on its southern
 islands with the northern islet chain unmarked.
-
-## 2026-11-01 · D-428 · Director · The open sea is a copied FFT ocean; the sim's waves ride on top
-Of the whole-bay water (D-426) "looks functional but ugly and not very realistic", and he picked "Copy a proven ocean
-(Recommended)": the GodotOceanWaves Tessendorf FFT ocean (MIT, 2Retr0, commit a171446f; licence register row) runs
-as OceanWaves, map 256, waves heading -107 degrees (in from the open sea). It is Froude-scaled by 0.1 (tuning
-water.ocean.scale: tile, fetch and depth x0.1, wind x sqrt 0.1), so troughs stay under a metre and never bare the
-seabed, while slopes stay those of the real sea. It fades out over the shelf where the sim's swell takes over. Its
-wind-wave crest lights the water at 0.15 weight, as the sim's does: at full weight crest_light 1.4 drove a trough's
-colour below zero, which the premultiplied blend drew as black blotches by the shore.
