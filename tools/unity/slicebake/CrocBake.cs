@@ -21,7 +21,26 @@ static class CrocBake
         public Transform3D rest;
     }
 
-    public static string Export(string croc, string outDir, string repo)
+    static readonly string[] STAGES = { "baby", "adolescent", "adult" };
+
+    // export_slice.gd _stages and _stage_base: every growth stage (D-014) beside an ..._adult croc that has its
+    // files, else the one croc given as the adult; each written as croc_<stage>.*.
+    public static string ExportStages(string croc, string outDir, string repo)
+    {
+        const string ADULT = "_adult";
+        bool beside = croc.EndsWith(ADULT, StringComparison.Ordinal);
+        foreach (string stage in STAGES)
+        {
+            string stageBase = beside ? croc.Substring(0, croc.Length - ADULT.Length) + "_" + stage : croc;
+            if (!beside && stage != "adult") continue;
+            if (beside && !(File.Exists(stageBase + ".rig.json") && File.Exists(stageBase + ".kclip"))) continue;
+            string why = Export(stageBase, stage, outDir, repo);
+            if (why != "") return why;
+        }
+        return "";
+    }
+
+    static string Export(string croc, string stage, string outDir, string repo)
     {
         foreach (string ext in new[] { ".rig.json", ".kvox", ".kclip", ".vskin" })
         {
@@ -47,11 +66,12 @@ static class CrocBake
             rows.Append(new GDict { { "name", b.name }, { "parent", b.parent }, { "rest", Xf(b.rest) }, { "bind", Xf(bind) } });
         }
         var rig = new GDict { { "bones", rows }, { "rig_scale", scale }, { "rig_origin", Gd.Arr(origin.x, origin.y, origin.z) } };
-        File.WriteAllBytes(Path.Combine(outDir, "rig.json"), new UTF8Encoding(false).GetBytes(GodotJson.Stringify(rig)));
+        string name = "croc_" + stage;
+        File.WriteAllBytes(Path.Combine(outDir, name + ".rig.json"), new UTF8Encoding(false).GetBytes(GodotJson.Stringify(rig)));
         using (var gz = new GZipStream(File.OpenRead(croc + ".vskin"), CompressionMode.Decompress))
-        using (var plain = File.Create(Path.Combine(outDir, "croc.vskin")))
+        using (var plain = File.Create(Path.Combine(outDir, name + ".vskin")))
             gz.CopyTo(plain);
-        File.Copy(croc + ".kclip", Path.Combine(outDir, "croc.kclip"), true);
+        File.Copy(croc + ".kclip", Path.Combine(outDir, name + ".kclip"), true);
         return "";
     }
 

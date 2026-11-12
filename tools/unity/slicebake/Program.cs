@@ -60,7 +60,7 @@ static class Program
         WriteJson(outDir, "digests.json", SliceDigests.Of(built));
         if (croc != "")
         {
-            string why = CrocBake.Export(croc, outDir, repo);
+            string why = CrocBake.ExportStages(croc, outDir, repo);
             if (why != "")
             {
                 Console.Error.WriteLine("slicebake: " + why);

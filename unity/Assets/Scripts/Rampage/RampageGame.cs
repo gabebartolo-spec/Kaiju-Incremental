@@ -262,7 +262,8 @@ public sealed class RampageGame : MonoBehaviour
 
         Shader lit = Resources.Load<Shader>("Shaders/SliceLit");
         crocCube = SliceGame.CubeMesh(1f, true);
-        croc = new Croc(tuning, slice, lit, crocCube, SliceData.F(look, "voxel_inset", 0.99f));
+        // scenes/rampage.gd: the body of the sim's growth stage (KaijuModel.stage_for).
+        croc = new Croc(tuning, slice, lit, crocCube, SliceData.F(look, "voxel_inset", 0.99f), Croc.BodyStage(sim.SizeTier()));
         // scenes/rampage.gd _take_sim: the species' attack and body first, since the rise is placed by the body's length.
         S.GDict ability = species["ability"];
         sim.abilityType = S.Gd.Str(ability["type"]);
@@ -324,9 +325,9 @@ public sealed class RampageGame : MonoBehaviour
             Time.captureFramerate = 30;
         }
         if (request == null)
-            Debug.Log($"rampage: stage {stage} seed {seed}, body scale {sim.BodyScale():F2}, kaiju at {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1}");
+            Debug.Log($"rampage: stage {stage} seed {seed}, body {croc.Stage}, body scale {sim.BodyScale():F2}, kaiju at {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1}");
         else
-            Debug.Log(FormattableString.Invariant($"rampage: request species={speciesId} tier={request.tier} seed={request.seed} run={request.runIndex} continent={(request.continent != "" ? request.continent : "none")} time={S.Content._timeId} weather={S.Content.WeatherId()} endless={request.endless} full_intro={request.fullIntro} city_seconds={request.citySeconds:F1} buildings={sim.buildings.Size()} run_seconds={sim.timeLeft:F1} body_scale={sim.BodyScale():F2}"));
+            Debug.Log(FormattableString.Invariant($"rampage: request species={speciesId} tier={request.tier} seed={request.seed} run={request.runIndex} continent={(request.continent != "" ? request.continent : "none")} time={S.Content._timeId} weather={S.Content.WeatherId()} endless={request.endless} full_intro={request.fullIntro} city_seconds={request.citySeconds:F1} buildings={sim.buildings.Size()} run_seconds={sim.timeLeft:F1} body={croc.Stage} body_scale={sim.BodyScale():F2}"));
         // Only the croc is drawn so far: another species plays its own sim under the croc's body.
         if (speciesId != SPECIES) Debug.LogWarning($"rampage: species {speciesId} has no Unity body yet; the croc is drawn");
         latch = new HudLatch(S.Num.F(S.Content.Section("emerge")["input_latch_seconds"]));
@@ -614,7 +615,8 @@ public sealed class RampageGame : MonoBehaviour
         // The body between the last two ticks, so it moves every frame at any frame rate.
         Vector3 feet = Vector3.Lerp(feetFrom, feetTo, accumulator / TICK);
         float scale = (float)sim.BodyScale();
-        if (sim.emerge.active && sim.emerge.Risen() < 1.0)
+        // scenes/rampage_rise.gd rise: a body without the keyed rise walks while the sim lifts it.
+        if (sim.emerge.active && sim.emerge.Risen() < 1.0 && croc.HasClip(RISE_CLIP))
             croc.DriveClip(feet, Facing(), scale, RISE_CLIP, (float)(sim.emerge.Progress() * sim.emerge.Total()) + accumulator);
         else if (sim.body.dash.On())
             leap.Pose(feet, Facing(), scale, dt);
