@@ -44,7 +44,7 @@ unity/Assets/Scripts/Rampage/BoltRig.cs 19
 unity/Assets/Scripts/Rampage/BoltView.cs 3
 unity/Assets/Scripts/Rampage/BreathView.cs 32
 unity/Assets/Scripts/Rampage/CameraBubble.cs 1
-unity/Assets/Scripts/Rampage/CameraShake.cs 2
+unity/Assets/Scripts/Rampage/CameraShake.cs 1
 unity/Assets/Scripts/Rampage/CaptureScout.cs 1
 unity/Assets/Scripts/Rampage/CityDraw.cs 43
 unity/Assets/Scripts/Rampage/CityFx.cs 91

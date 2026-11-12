@@ -11,7 +11,7 @@ using Kaiju.Game;
 
 // One rampage: a live RampageSim at its fixed tick; everything on screen reads it. Input goes in, events
 // come out, and the views draw them (hard rule 3). scenes/rampage.gd's shape, built new (D-474).
-public sealed class RampageGame : MonoBehaviour
+public sealed partial class RampageGame : MonoBehaviour
 {
     // The sim's tick: Godot's physics rate, what every replay and balance number runs at.
     const float TICK = 1f / 60f;
@@ -605,7 +605,7 @@ public sealed class RampageGame : MonoBehaviour
         }
         simMs = (float)watch.Elapsed.TotalMilliseconds;
         if (statsPath != null && Time.frameCount % STATS_EVERY == 0)
-            File.AppendAllText(statsPath, $"frame {Time.frameCount} dt {Time.unscaledDeltaTime * 1000f:F1} ms sim {simMs:F1} mesh {city.lastMeshMs:F1} regions {city.lastRegions} promoted {city.promoted} falling {city.Falling} alive {AliveBuildings()} debris {debris.Live} ruins {rubble.Heaps} strips {rubble.Strips} grains {rubble.Grains} presses {debris.Presses} crumbles {city.Crumbles} bursts {fx.LiveBursts} fires {fx.LiveFires} stomps {sim.body.stomps} breaths {breath.Breaths} trees {trees.Count} people {street.people.Civilians()} people_drawn {street.Drawn} fled {street.people.fled} panicking {street.Panicking} people_killed {street.CiviliansKilled} stadium {street.StadiumStats()} run_over {street.people.runOver} army_killed {street.people.armyKilled} beach_held {street.people.Held()} props {street.Props} street_props {street.StreetProps} props_crushed {street.PropsCrushed} traffic_cars {street.traffic.cars.Count} traffic_fled {street.traffic.fled} traffic_crushed {street.traffic.Crushed()} blockades {street.police.blockadesMade} police_shots {street.police.shots} cops {street.people.Officers()} lights {fx.Lights.Live()}/{fx.Lights.Count} tanks {sim.tanks.Size()} helis {sim.air.helis.Size()} trains {rail.Trains} cars {rail.Cars} derailed {sim.rail.derailed} jets {strike.Flown} jets_live {strike.Live} planes_lit {aircraft.Lit} target {autoTarget.x:F1},{autoTarget.y:F1} reach {sim.body.StompReaches(autoTarget)} walking {sim.body.Walking()} steps {steps} feet {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1} y {sim.standY:F2} facing {sim.facing.x:F2},{sim.facing.y:F2} leaps {sim.body.dash.landings} slams {sim.powers.run.slams} momentum {sim.powers.run.value:F2} air {sim.body.dash.Height():F2} cam {cam.transform.position}fringes {postFx.Fringes} fringe_px {postFx.FringePx:F2} vignette {postFx.VignetteAlpha:F2} post_draws {postFx.Draws} vip {sim.vip.state} {sim.vip.pos.x:F1},{sim.vip.pos.y:F1} alt {sim.vip.Altitude():F1} vips {vip.Spawned} vip_down {vip.Downed} vip_out {vip.Escaped} squads {sim.armyUnits.squads.Size()} volleys {sim.armyUnits.volleys} roofshots {rooftops.Shots} roofdrawn {rooftops.Drawn} rooflanded {rooftops.Landed} gc {GC.GetTotalMemory(false) / (1 << 20)} MB\n");
+            File.AppendAllText(statsPath, $"frame {Time.frameCount} dt {Time.unscaledDeltaTime * 1000f:F1} ms sim {simMs:F1} mesh {city.lastMeshMs:F1} regions {city.lastRegions} promoted {city.promoted} falling {city.Falling} alive {AliveBuildings()} debris {debris.Live} ruins {rubble.Heaps} strips {rubble.Strips} grains {rubble.Grains} presses {debris.Presses} crumbles {city.Crumbles} bursts {fx.LiveBursts} fires {fx.LiveFires} stomps {sim.body.stomps} breaths {breath.Breaths} trees {trees.Count} people {street.people.Civilians()} people_drawn {street.Drawn} fled {street.people.fled} panicking {street.Panicking} people_killed {street.CiviliansKilled} stadium {street.StadiumStats()} run_over {street.people.runOver} army_killed {street.people.armyKilled} beach_held {street.people.Held()} props {street.Props} street_props {street.StreetProps} props_crushed {street.PropsCrushed} traffic_cars {street.traffic.cars.Count} traffic_fled {street.traffic.fled} traffic_crushed {street.traffic.Crushed()} blockades {street.police.blockadesMade} police_shots {street.police.shots} cops {street.people.Officers()} lights {fx.Lights.Live()}/{fx.Lights.Count} tanks {sim.tanks.Size()} helis {sim.air.helis.Size()} trains {rail.Trains} cars {rail.Cars} derailed {sim.rail.derailed} jets {strike.Flown} jets_live {strike.Live} planes_lit {aircraft.Lit} target {autoTarget.x:F1},{autoTarget.y:F1} reach {sim.body.StompReaches(autoTarget)} walking {sim.body.Walking()} steps {steps} feet {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1} y {sim.standY:F2} facing {sim.facing.x:F2},{sim.facing.y:F2} leaps {sim.body.dash.landings} slams {sim.powers.run.slams} momentum {sim.powers.run.value:F2} air {sim.body.dash.Height():F2} cam {cam.transform.position}fringes {postFx.Fringes} fringe_px {postFx.FringePx:F2} vignette {postFx.VignetteAlpha:F2} post_draws {postFx.Draws} vip {sim.vip.state} {sim.vip.pos.x:F1},{sim.vip.pos.y:F1} alt {sim.vip.Altitude():F1} vips {vip.Spawned} vip_down {vip.Downed} vip_out {vip.Escaped} squads {sim.armyUnits.squads.Size()} volleys {sim.armyUnits.volleys} roofshots {rooftops.Shots} roofdrawn {rooftops.Drawn} rooflanded {rooftops.Landed} death {sim.death.phase} {DeathStats()} gc {GC.GetTotalMemory(false) / (1 << 20)} MB\n");
         city.Animate(dt);
         city.Remesh();
         rubble.Tick();
@@ -615,12 +615,7 @@ public sealed class RampageGame : MonoBehaviour
         // The body between the last two ticks, so it moves every frame at any frame rate.
         Vector3 feet = Vector3.Lerp(feetFrom, feetTo, accumulator / TICK);
         float scale = (float)sim.BodyScale();
-        if (KeyedRise())
-            croc.DriveClip(feet, Facing(), scale, RISE_CLIP, (float)(sim.emerge.Progress() * sim.emerge.Total()) + accumulator);
-        else if (sim.body.dash.On())
-            leap.Pose(feet, Facing(), scale, dt);
-        else
-            croc.Drive(feet, Facing(), scale, dt);
+        DriveCroc(feet, scale, dt);
         if (!crownKnown)
         {
             crownKnown = true;
@@ -820,6 +815,8 @@ public sealed class RampageGame : MonoBehaviour
         thunder?.Dispose();
         rooftops?.Dispose();
         street?.Dispose();
+        death?.Dispose();
+        death?.Dispose();
         rail?.Dispose();
         strike?.Dispose();
         aircraft?.Dispose();

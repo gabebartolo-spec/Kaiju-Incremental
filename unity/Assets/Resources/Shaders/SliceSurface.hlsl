@@ -85,8 +85,30 @@ float4 WindowPick(uint h)
 }
 #endif
 
-#if defined(SLICE_CUBE) || defined(SLICE_FILL)
+#if defined(SLICE_CUBE) || defined(SLICE_FILL) || defined(SLICE_STONE)
 #include "Assets/Resources/Shaders/SkinCommon.hlsl"
+// The Special K overload as he dies (scenes/voxel_skin.gdshader, CrocDeath.Overload): _Overload 0..1 lights a share
+// of the cubes violet, flickering cube by cube; _Stone 0..1 turns him to stone from the feet up to _BodyTop (rest
+// height), a ragged front cube by cube. The stone itself is scenes/stone_body.gdshaderinc's, one formula with the
+// pieces he shatters into (SLICE_STONE).
+float _Overload, _Stone, _BodyTop, _CrackleShare, _CrackleHz, _CrackleEnergy, _StoneVary, _StoneKeep;
+float4 _OverloadColor, _StoneColor;
+
+float StoneHash(float3 p) { return frac(sin(dot(p, float3(12.9898, 78.233, 37.719))) * 43758.5453); }
+
+// The stone for one cube: `tint` its own sRGB colour, `n` its 0..1 hash. Linear albedo.
+float3 StoneRock(float3 tint, float n)
+{
+    float shade = dot(tint, float3(0.299, 0.587, 0.114));
+    float3 rock = _StoneColor.rgb * (1.0 + (n - 0.5) * 2.0 * _StoneVary);
+    return lerp(rock, rock * (0.6 + shade), _StoneKeep);
+}
+
+// The stone front at rest height `y` for a cube or point of hash `n`: 1 once the stone has reached it.
+float Stoned(float y, float n)
+{
+    return _Stone > 0.0 ? step(y / _BodyTop, _Stone * 1.1 - 0.05 + (n - 0.5) * 0.1) : 0.0;
+}
 #endif
 
 #if defined(SLICE_CUBE)
@@ -141,7 +163,11 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
     input.uv0 = rest.xy;
 #endif
 #ifdef ATTRIBUTES_NEED_TEXCOORD1
-    input.uv1 = float2(rest.z, 0);
+    // The cube's whole death in one flat value: its hash, + 2 once stoned, + 4 while its crackle is lit.
+    float3 cell = floor(c.centre * 64.0);
+    float n = StoneHash(cell);
+    float lit = _Overload > 0.0 ? step(1.0 - _CrackleShare * _Overload, StoneHash(cell + floor(_Time.y * _CrackleHz))) : 0.0;
+    input.uv1 = float2(rest.z, n + 2.0 * Stoned(c.centre.y, n) + 4.0 * lit);
 #endif
     return input;
 }
@@ -224,8 +250,54 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 }
 #endif
 
-#if defined(SLICE_GROUND)
+#if defined(SLICE_GROUND) || defined(SLICE_STONE)
 #include "Assets/Resources/Shaders/CityGround.hlsl"
+#endif
+
+#if defined(SLICE_STONE)
+// scenes/death_stone.gdshader: the jagged chunks he shatters into (DeathView). Per piece (Godot axes): its turn's
+// columns scaled to its size, its middle in their w, and in tint its own sRGB colour with a 0..1 hash in alpha.
+// The pattern is in the chunk's own space at world size, shifted by the hash, nudged inside the facet; uv1.y names
+// the facet's plane for sd_plane (0 xz, 1 zy, 2 xy), all flat across a facet.
+struct Piece
+{
+    float4 col0, col1, col2, tint;
+};
+StructuredBuffer<Piece> _Pieces;
+float _StoneVoxel;
+#define HAVE_MESH_MODIFICATION
+AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters)
+{
+#if UNITY_ANY_INSTANCING_ENABLED
+    Piece p = _Pieces[input.instanceID];
+#else
+    Piece p = _Pieces[0];
+#endif
+    float3 v = input.positionOS;
+    float size = length(p.col0.xyz);
+#ifdef ATTRIBUTES_NEED_NORMAL
+    float3 n = input.normalOS;
+    input.normalOS = normalize(Mirror(p.col0.xyz * n.x + p.col1.xyz * n.y + p.col2.xyz * n.z));
+#else
+    float3 n = float3(0, 1, 0);
+#endif
+    input.positionOS = Mirror(p.col0.xyz * v.x + p.col1.xyz * v.y + p.col2.xyz * v.z + float3(p.col0.w, p.col1.w, p.col2.w));
+    float3 q = v * size - n * 0.001 + p.tint.a * float3(47.0, 31.0, 59.0);
+    float3 a = abs(n);
+#ifdef ATTRIBUTES_NEED_TANGENT
+    input.tangentOS = float4(1, 0, 0, 1);
+#endif
+#ifdef ATTRIBUTES_NEED_COLOR
+    input.color = p.tint;
+#endif
+#ifdef ATTRIBUTES_NEED_TEXCOORD0
+    input.uv0 = q.xy;
+#endif
+#ifdef ATTRIBUTES_NEED_TEXCOORD1
+    input.uv1 = float2(q.z, a.y > 0.5 ? 0.0 : a.x > a.z ? 1.0 : 2.0);
+#endif
+    return input;
+}
 #endif
 
 #if defined(SLICE_FACADE)
@@ -284,11 +356,31 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     }
     #elif defined(SLICE_CUBE)
     albedo = SRGBToLinear(input.color.rgb) * HideGrain(float3(input.texCoord0.xy, input.texCoord1.x));
-    roughness = _KaijuRoughness;
+    float code = input.texCoord1.y;
+    float crackle = code > 3.5 ? 1.0 : 0.0;
+    code -= 4.0 * crackle;
+    float stoned = code > 1.5 ? 1.0 : 0.0;
+    albedo = lerp(albedo, StoneRock(input.color.rgb, code - 2.0 * stoned), stoned);
+    roughness = lerp(_KaijuRoughness, 1.0, stoned);
+    emission = _OverloadColor.rgb * _CrackleEnergy * _Overload * crackle * (1.0 - 0.6 * stoned);
     #elif defined(SLICE_FILL)
     n = FacetNormal(input, posInput.positionWS);
-    albedo = SRGBToLinear(input.color.rgb) * HideGrain(float3(input.texCoord0.xy, input.texCoord1.x));
+    float3 fillRest = float3(input.texCoord0.xy, input.texCoord1.x);
+    albedo = SRGBToLinear(input.color.rgb) * HideGrain(fillRest);
+    float fillN = StoneHash(floor(fillRest * 64.0));
+    float fillStoned = Stoned(fillRest.y, fillN);
+    albedo = lerp(albedo, StoneRock(input.color.rgb, fillN), fillStoned);
     roughness = _KaijuRoughness;
+    #elif defined(SLICE_STONE)
+    float3 q = float3(input.texCoord0.xy, input.texCoord1.x);
+    float plane = input.texCoord1.y;
+    float2 pc = sd_cell(plane < 0.5 ? q.xz : plane < 1.5 ? float2(q.z, q.y) : q.xy);
+    float3 col = StoneRock(input.color.rgb, StoneHash(floor(q / max(0.001, _StoneVoxel))));
+    float crack = abs(sd_vn(pc / 0.45 + 17.0) - 0.5);
+    col *= 1.0 - 0.35 * (1.0 - smoothstep(0.012, 0.03, crack));
+    col *= 1.0 + (sd_fbm(pc, 1.3) - 0.5) * 0.3;
+    albedo = col * sd_grain(q, -TransformWorldToView(posInput.positionWS).z);
+    roughness = 1.0;
     #elif defined(SLICE_DEBRIS)
     albedo = SRGBToLinear(input.color.rgb);
     #elif defined(SLICE_FACADE)

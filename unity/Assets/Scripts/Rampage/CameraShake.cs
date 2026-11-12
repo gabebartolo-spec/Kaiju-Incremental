@@ -39,19 +39,18 @@ public sealed class CameraShake
     public void Add(string source) => trauma = Mathf.Clamp01(trauma + F(sources, source));
 
     // A named source at `at`, faded by its distance from `focus` for a body of `scale`.
-    public void AddAt(string source, Vector3 at, Vector3 focus, float scale)
-    {
-        float n = near * scale, f = Mathf.Max(far * scale, n + 0.001f);
-        float fade = 1f - Mathf.Clamp01((Vector3.Distance(at, focus) - n) / (f - n));
-        trauma = Mathf.Clamp01(trauma + F(sources, source) * fade);
-    }
+    public void AddAt(string source, Vector3 at, Vector3 focus, float scale) => AddAmountAt(F(sources, source), at, focus, scale);
 
     // The same, the source's trauma times `mult` (scenes/slam_view.gd: source("slam") * strength).
-    public void AddScaledAt(string source, float mult, Vector3 at, Vector3 focus, float scale)
+    public void AddScaledAt(string source, float mult, Vector3 at, Vector3 focus, float scale) =>
+        AddAmountAt(F(sources, source) * mult, at, focus, scale);
+
+    // A trauma `amount` at `at`, faded the same way (scenes/rampage.gd add_trauma: the death's own amounts).
+    public void AddAmountAt(float amount, Vector3 at, Vector3 focus, float scale)
     {
         float n = near * scale, f = Mathf.Max(far * scale, n + 0.001f);
         float fade = 1f - Mathf.Clamp01((Vector3.Distance(at, focus) - n) / (f - n));
-        trauma = Mathf.Clamp01(trauma + F(sources, source) * mult * fade);
+        trauma = Mathf.Clamp01(trauma + amount * fade);
     }
 
     public void Kick(float rad)
