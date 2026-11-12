@@ -129,9 +129,9 @@ public static class SliceBuild
     // The sim carves these models: without them a pool building or landmark has no cells.
     static readonly string[] MODEL_KINDS = { "city_buildings", "landmarks", "vehicles", "street_props" };
     // What the screens and the audio read at run time, copied whole (Godot's .import files left behind).
-    static readonly string[] ASSET_KINDS = { "sfx", "music", "overworld", "lab", "title", "ui", "loading", "kaiju" };
+    static readonly string[] ASSET_KINDS = { "sfx", "music", "overworld", "lab", "title", "ui", "loading", "kaiju", "death" };
     // kaiju: the bodies' cells, clips and skins (.kclip, .skinf, .skinw, .vskin).
-    static readonly string[] ASSET_TYPES = { ".ogg", ".png", ".jpg", ".kvox", ".json", ".kclip", ".skinf", ".skinw", ".vskin" };
+    static readonly string[] ASSET_TYPES = { ".ogg", ".png", ".jpg", ".kvox", ".json", ".kclip", ".skinf", ".skinw", ".vskin", ".obj" };
     // The kit's fonts load through Resources (UiKit.Font), so they are copied into the project, not beside it.
     const string FONTS = "Assets/Resources/Fonts";
     // The command-line flag tools/unity/build_release.py passes the release version with.

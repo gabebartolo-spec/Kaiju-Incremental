@@ -5,8 +5,8 @@ unity/Assets/Editor/SliceBuild.cs::BuildRampage 79 18
 unity/Assets/Scripts/City.cs::<file> 512 0
 unity/Assets/Scripts/City.cs::ApplySettle 46 12
 unity/Assets/Scripts/City.cs::Remesh 83 14
-unity/Assets/Scripts/Croc.cs::<file> 1076 0
-unity/Assets/Scripts/Croc.cs::Croc 171 38
+unity/Assets/Scripts/Croc.cs::<file> 1022 0
+unity/Assets/Scripts/Croc.cs::Croc 165 30
 unity/Assets/Scripts/Croc.cs::Pose 45 8
 unity/Assets/Scripts/Fires.cs::Add 51 3
 unity/Assets/Scripts/Game/Audio/AudioHost.cs::<file> 458 0
@@ -67,8 +67,8 @@ unity/Assets/Scripts/Rampage/CityDraw.cs::FillEnclosed 32 33
 unity/Assets/Scripts/Rampage/CityDraw.cs::FillPalette 45 5
 unity/Assets/Scripts/Rampage/CityDraw.cs::ReadLooks 34 20
 unity/Assets/Scripts/Rampage/CityDraw.cs::Remesh 64 13
-unity/Assets/Scripts/Rampage/CityFx.cs::<file> 410 0
-unity/Assets/Scripts/Rampage/CityFx.cs::CityFx 69 4
+unity/Assets/Scripts/Rampage/CityFx.cs::<file> 409 0
+unity/Assets/Scripts/Rampage/CityFx.cs::CityFx 66 4
 unity/Assets/Scripts/Rampage/CityGround.cs::<file> 1014 0
 unity/Assets/Scripts/Rampage/CityGround.cs::Beach 74 12
 unity/Assets/Scripts/Rampage/CityGround.cs::Block 37 13
@@ -82,9 +82,9 @@ unity/Assets/Scripts/Rampage/OceanWaves.cs::OceanWaves 46 2
 unity/Assets/Scripts/Rampage/Pavements.cs::Pavements 40 14
 unity/Assets/Scripts/Rampage/PersonMesh.cs::Rifleman 43 4
 unity/Assets/Scripts/Rampage/RailView.cs::SideCell 9 14
-unity/Assets/Scripts/Rampage/RampageGame.cs::<file> 832 0
+unity/Assets/Scripts/Rampage/RampageGame.cs::<file> 829 0
 unity/Assets/Scripts/Rampage/RampageGame.cs::Load 97 21
-unity/Assets/Scripts/Rampage/RampageGame.cs::Update 169 68
+unity/Assets/Scripts/Rampage/RampageGame.cs::Update 164 65
 unity/Assets/Scripts/Rampage/RooftopView.cs::<file> 404 0
 unity/Assets/Scripts/Rampage/RooftopView.cs::RooftopView 43 7
 unity/Assets/Scripts/Rampage/StreetPeople.cs::<file> 424 0

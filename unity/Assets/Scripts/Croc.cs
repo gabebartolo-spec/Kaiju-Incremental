@@ -116,7 +116,8 @@ public sealed partial class Croc
     float roarTime = -1f, roarAge, jawOpen, jawTarget, jawEase = 0.25f;
     // Each cube's rest position and heaviest bone, for the ridge and the jaws' tips.
     readonly Vector3[] cubeAt;
-    readonly byte[] cubeBone;
+    readonly byte[] cubeBone, cubeFirst;
+    readonly Color[] cubeTint; // sRGB, the burst's colours (CrocDeath.BodyPoints)
     int[] ridgeBones = new int[0];
     Vector3[] ridgeRest = new Vector3[0];
     Vector3 jawTip, upperTip;
@@ -226,6 +227,8 @@ public sealed partial class Croc
         var data = new NativeArray<Cube>(cubeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         cubeAt = new Vector3[cubeCount];
         cubeBone = new byte[cubeCount];
+        cubeFirst = new byte[cubeCount];
+        cubeTint = new Color[cubeCount];
         for (int i = 0; i < cubeCount; i++)
         {
             int k = HEADER + i * CELL_BYTES;
@@ -254,6 +257,8 @@ public sealed partial class Croc
             }
             data[i] = c;
             cubeAt[i] = new Vector3(c.cx, c.cy, c.cz);
+            cubeFirst[i] = skin[k + 10];
+            cubeTint[i] = new Color(c.r, c.g, c.b);
             float w2 = 1f - c.w0 - c.w1;
             cubeBone[i] = skin[k + 10 + (c.w0 >= c.w1 && c.w0 >= w2 ? 0 : c.w1 >= w2 ? 1 : 2)];
         }
@@ -801,6 +806,7 @@ public sealed partial class Croc
 
     void Finish(Vector3 offset)
     {
+        lastOffset = offset;
         for (int i = 0; i < rest.Length; i++) local[i] = rest[i];
         for (int i = 0; i < turnsOut.Length; i++)
         {
@@ -979,6 +985,7 @@ public sealed partial class Croc
 
     public void Draw()
     {
+        if (!Visible) return;
         Matrix4x4 world = WorldMatrix();
         cubeBlock.SetBuffer("_Cubes", cubeBuffer);
         cubeBlock.SetBuffer("_Bones", boneBuffer);

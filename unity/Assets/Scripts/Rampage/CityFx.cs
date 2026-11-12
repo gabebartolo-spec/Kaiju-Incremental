@@ -28,7 +28,7 @@ public sealed class CityFx : IDisposable
     readonly Fires fires;
     readonly float exposureUnit, lightMatch;
     readonly int maxFires;
-    readonly Color dustTone, dustLight;
+    public readonly Color dustTone, dustLight;
     readonly float tintScale;
     readonly float ringScale, ringSeconds, ringAlpha, ringSoft, ringFootStart, stepAlpha, stepRise, stepSeconds;
     readonly int stepMaxLive;

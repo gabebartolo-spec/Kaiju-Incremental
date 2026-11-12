@@ -312,7 +312,7 @@ Shader "Slice/Lit"
 
 
     HLSLINCLUDE
-    #pragma multi_compile_local SLICE_BUILDING SLICE_CUBE SLICE_FILL SLICE_DEBRIS SLICE_GROUND SLICE_FACADE
+    #pragma multi_compile_local SLICE_BUILDING SLICE_CUBE SLICE_FILL SLICE_DEBRIS SLICE_GROUND SLICE_FACADE SLICE_STONE
     #pragma instancing_options procedural:SliceSetup
     #if defined(SLICE_BUILDING)
     #define _DOUBLESIDED_ON
