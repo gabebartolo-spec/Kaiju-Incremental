@@ -66,7 +66,7 @@ unity/Assets/Scripts/Rampage/RubbleShape.cs 13
 unity/Assets/Scripts/Rampage/RubbleView.cs 3
 unity/Assets/Scripts/Rampage/RunIntro.cs 4
 unity/Assets/Scripts/Rampage/SlamView.cs 1
-unity/Assets/Scripts/Rampage/StreetDecor.cs 19
+unity/Assets/Scripts/Rampage/StreetDecor.cs 18
 unity/Assets/Scripts/Rampage/StreetPeople.cs 3
 unity/Assets/Scripts/Rampage/StreetView.cs 2
 unity/Assets/Scripts/Rampage/ThunderView.cs 1

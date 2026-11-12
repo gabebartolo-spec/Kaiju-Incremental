@@ -63,6 +63,7 @@ static class GlobeCheck
         Check(Math.Abs(u - 0.25) < EPS && Math.Abs(v - 0.5) < EPS, $"+x is uv (0.25, 0.5): ({u}, {v})");
         GlobeMath.UvOf(-1, 0, 0, out u, out v);
         Check(Math.Abs(u - 0.75) < EPS, $"-x wraps to u 0.75 (fposmod): {u}");
+        Check(BitConverter.DoubleToInt64Bits(Gd.Fposmod(-0.0, 1.0)) == 0L, "fposmod of -0.0 is 0.0, as Godot (its sign bit is clear)");
         GlobeMath.UvOf(0, 2, 0, out u, out v);
         Check(Math.Abs(v) < EPS, $"the north pole is v 0, whatever the length: {v}");
         double worst = 0.0;

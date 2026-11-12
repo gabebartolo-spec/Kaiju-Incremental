@@ -127,7 +127,7 @@ public static class SliceBuild
     const string GAME_SCENE = "Assets/Game.unity";
     const string RAMPAGE_EXE = "Build/KaijuRampage.exe";
     // The sim carves these models: without them a pool building or landmark has no cells.
-    static readonly string[] MODEL_KINDS = { "city_buildings", "landmarks", "vehicles" };
+    static readonly string[] MODEL_KINDS = { "city_buildings", "landmarks", "vehicles", "street_props" };
     // What the screens and the audio read at run time, copied whole (Godot's .import files left behind).
     static readonly string[] ASSET_KINDS = { "sfx", "music", "overworld", "lab", "title", "ui", "loading", "kaiju" };
     // kaiju: the bodies' cells, clips and skins (.kclip, .skinf, .skinw, .vskin).

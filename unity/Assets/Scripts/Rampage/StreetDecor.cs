@@ -6,9 +6,11 @@ using S = Kaiju.Sim;
 // The static street decor (scenes/city_decor.gd _streets, _kerb_lamps, _light_crossing and _blocks' parking, with
 // scenes/decor_cars.gd): parked cars on both kerbs out as far as the camera sees, now and then one stopped in the
 // lane, cars in the parking lots, and a streetlight at every crossing and down the long blocks. All crushable.
-// Not ported yet: the Tripo street props and vehicles (scenes/street_props.gd), the lamps' lights, the street trees'
-// parking clearance, the greenery, quays and traffic islands. Presentation only. The moving cars and the diagonal's
-// parked row are Traffic's (TrafficView draws them in this file's car shape).
+// The Tripo street props (StreetProps, scenes/street_props.gd) stand on their own finer field: pavement furniture,
+// Tripo cars among the parked ones, a traffic light across each lit crossing and the lamp model on every lamp.
+// Not ported yet: the lamps' lights, the street trees' clearance (parking and pavement props), the greenery, quays
+// and traffic islands. Presentation only. The moving cars and the diagonal's parked row are Traffic's (TrafficView
+// draws them in this file's car shape).
 public sealed class StreetDecor
 {
     // scenes/city_decor.gd PROP_VOXEL, CROSSING_CLEAR, LAMP_EVERY, CAR_HALF and its palette.
@@ -17,10 +19,13 @@ public sealed class StreetDecor
     const int GLASS = 0x2b3640, WHEEL = 0x1a1a1a, IVORY = 0xb8b2a0, TAIL = 0x6a1a1a, POLE = 0x4a4c4e, LAMP = 0xffdb99;
 
     public readonly PropTiles props;
+    // The Tripo street props: where they stand, and their field at half the buildings' cube (city.street_props.voxel).
+    public readonly StreetProps street;
+    public readonly PropTiles streetTiles;
     public int Cars { get; private set; }
     public int Lamps { get; private set; }
-    public int Count => props.Count;
-    public int Crushed => props.Crushed;
+    public int Count => props.Count + streetTiles.Count;
+    public int Crushed => props.Crushed + streetTiles.Crushed;
 
     readonly S.RampageSim sim;
     readonly S.GDict plan;
@@ -30,6 +35,7 @@ public sealed class StreetDecor
     readonly int[] carShapes;
     readonly int paints;
     readonly Dictionary<Vector2Int, int> lampShapes = new Dictionary<Vector2Int, int>();
+    readonly List<S.Vector2> lampSpots = new List<S.Vector2>();
 
     public StreetDecor(S.RampageSim sim, Shader shader, Transform parent)
     {
@@ -38,6 +44,8 @@ public sealed class StreetDecor
         half = S.CityGen.HalfExtent(sim.city);
         view = sim.arenaHalf + S.Num.F(sim.city["view_beyond"]);
         props = new PropTiles("street decor", shader, parent, PROP_VOXEL, 0f);
+        street = new StreetProps(sim.city, rng.seed);
+        streetTiles = new PropTiles("street props", shader, parent, (float)street.voxel, 0f);
         foreach (S.Rect2 basin in S.CityHarbour.Basin(plan)) props.keepOut.Add(basin.Grow(0.3));
         foreach (S.RampageSim.Building b in sim.LotBuildings())
             blocked.Add(new S.Rect2(new S.Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5), new S.Vector2(b.w, b.d)).Grow(0.4));
@@ -53,7 +61,46 @@ public sealed class StreetDecor
         }
         Streets();
         Parking();
+        Plant();
+        Tick();
+    }
+
+    public void Tick()
+    {
         props.Tick();
+        streetTiles.Tick();
+    }
+
+    public void Dispose()
+    {
+        props.Dispose();
+        streetTiles.Dispose();
+    }
+
+    // Draws the placed street props: one shape per model and quarter turn, as street_props.gd shares them.
+    void Plant()
+    {
+        var shapes = new Dictionary<(string, int), int>();
+        foreach (StreetProps.Placed prop in street.placed)
+        {
+            if (!shapes.TryGetValue((prop.id, prop.turns), out int shape))
+                shapes[(prop.id, prop.turns)] = shape = streetTiles.AddShape(Turned(ModelColors.Read(StreetProps.File(prop.id)), prop.turns));
+            streetTiles.Add(new Vector2((float)prop.at.x, (float)prop.at.y), shape);
+        }
+    }
+
+    // street_props.gd _turned: a model's cells turned `turns` quarters about y, colours kept.
+    static Dictionary<Vector3Int, int> Turned(ModelColors.Model model, int turns)
+    {
+        var cells = new Dictionary<Vector3Int, int>(model.rgb.Length);
+        int[] xyz = model.xyz.Raw;
+        for (int i = 0; i < model.rgb.Length; i++)
+        {
+            int x = xyz[i * 3], z = xyz[i * 3 + 2];
+            StreetProps.Turn(ref x, ref z, turns);
+            cells[new Vector3Int(x, xyz[i * 3 + 1], z)] = model.rgb[i];
+        }
+        return cells;
     }
 
     bool Inside(S.Vector2 p, double margin) => Math.Max(Math.Abs(p.x), Math.Abs(p.y)) <= half + margin;
@@ -88,18 +135,48 @@ public sealed class StreetDecor
             if (!playable) continue;  // past the edge: cars only
             if (kind != S.CityGen.DIAGONAL)
             {
-                if (lit.Add(from)) Lamp(a + (dir + side) * (width * 0.5 + 0.7), (dir + side) * -1.0);
-                if (lit.Add(to)) Lamp(b + (dir + side) * (width * 0.5 + 0.7), (dir + side) * -1.0);
+                if (lit.Add(from)) LightCrossing(a, dir + side, width);
+                if (lit.Add(to)) LightCrossing(b, dir + side, width);
             }
-            double t = LAMP_EVERY, flip = 1.0;
-            double length = a.DistanceTo(b);
-            while (t < length - LAMP_EVERY * 0.6)
-            {
-                Lamp(a + dir * t + side * (flip * (width * 0.5 + 0.6)), side * -flip);
-                flip = -flip;
-                t += LAMP_EVERY;
-            }
+            KerbLamps(a, b, width);
+            this.street.Kerb(a, b, width, PavementFree);
         }
+    }
+
+    // scenes/city_decor.gd _kerb_lamps: lamps along the street a..b, every LAMP_EVERY, swapping kerbs.
+    void KerbLamps(S.Vector2 a, S.Vector2 b, double width)
+    {
+        S.Vector2 dir = (b - a).Normalized();
+        var side = new S.Vector2(-dir.y, dir.x);
+        double t = LAMP_EVERY, flip = 1.0;
+        double length = a.DistanceTo(b);
+        while (t < length - LAMP_EVERY * 0.6)
+        {
+            Lamp(a + dir * t + side * (flip * (width * 0.5 + 0.6)), side * -flip);
+            flip = -flip;
+            t += LAMP_EVERY;
+        }
+    }
+
+    // scenes/city_decor.gd _light_crossing: a crossing's corner lamp, its arm toward the crossing, and a traffic
+    // light across from it.
+    void LightCrossing(S.Vector2 node, S.Vector2 corner, double width)
+    {
+        S.Vector2 out_ = corner * (width * 0.5 + 0.7);
+        Lamp(node + out_, corner * -1.0);
+        if (!OnBuilding(node - out_)) street.Put(street.Signals, node - out_, ArmFace(corner));
+    }
+
+    // scenes/city_decor.gd _arm_face: the front a lamp or signal model faces so its arm (its -X) reaches `toward`.
+    static S.Vector2 ArmFace(S.Vector2 toward) => new S.Vector2(-toward.y, toward.x);
+
+    // scenes/city_decor.gd _pavement_free: in the city, off the buildings and water, `apart` clear of every lamp.
+    bool PavementFree(S.Vector2 p, double apart)
+    {
+        if (!Inside(p, 0.0) || OnBuilding(p)) return false;
+        foreach (S.Vector2 lamp in lampSpots)
+            if (lamp.DistanceTo(p) < apart) return false;
+        return true;
     }
 
     // scenes/decor_cars.gd park_kerb: one kerb's parked and stopped cars along the street a..b.
@@ -115,22 +192,24 @@ public sealed class StreetDecor
         while (t < length - CROSSING_CLEAR || Math.Abs(t - length * 0.5) < 1e-5)
         {
             double lane = width * 0.5 - 0.6;
-            if (rng.Randf() < stop) lane = width * 0.25;  // stopped in the traffic lane
-            TryCar(a + dir * t + side * (kerb * lane), dir, playable);
+            bool stopped = rng.Randf() < stop;
+            if (stopped) lane = width * 0.25;  // stopped in the traffic lane
+            TryCar(a + dir * t + side * (kerb * lane), dir, playable, stopped);
             t += rng.RandfRange(S.Num.F(gap[0]), S.Num.F(gap[1]));
         }
     }
 
     // scenes/decor_cars.gd try_car: a car in one of the paints when the odds allow, off the playable diagonal, in
-    // view and off the buildings.
-    void TryCar(S.Vector2 p, S.Vector2 dir, bool playable)
+    // view and off the buildings; a Tripo car when the street props' draw says so.
+    void TryCar(S.Vector2 p, S.Vector2 dir, bool playable, bool stopped)
     {
         double chance = S.Num.F(sim.city[playable ? "parked_chance" : "parked_chance_beyond"]);
         bool alongX = Math.Abs(dir.x) > 0.5;
         int paint = (int)rng.RandiRange(0, paints - 1);
         bool onDiagonal = playable && S.CityGen.DiagonalDistance(plan, p) < S.CityGen.WidthOf(S.CityGen.DIAGONAL, sim.city) * 0.5 + 1.0;
         bool seen = Inside(p, view - half) && !OnBuilding(p);
-        if (rng.Randf() < chance && !onDiagonal && seen && props.Add(new Vector2((float)p.x, (float)p.y), carShapes[paint * 2 + (alongX ? 1 : 0)])) Cars++;
+        if (!(rng.Randf() < chance && !onDiagonal && seen)) return;
+        if (street.Vehicle(p, dir, stopped) || props.Add(new Vector2((float)p.x, (float)p.y), carShapes[paint * 2 + (alongX ? 1 : 0)])) Cars++;
     }
 
     // scenes/city_decor.gd _blocks: two rows of cars in every parking lot.
@@ -161,6 +240,12 @@ public sealed class StreetDecor
     void Lamp(S.Vector2 p, S.Vector2 toward)
     {
         if (OnBuilding(p)) return;
+        lampSpots.Add(p);
+        if (street.Put(street.Lamps, p, ArmFace(toward)))
+        {
+            Lamps++;
+            return;
+        }
         var arm = new Vector2Int(Math.Sign(toward.x), Math.Sign(toward.y));
         if (!lampShapes.TryGetValue(arm, out int shape)) lampShapes[arm] = shape = props.AddShape(Streetlight(arm));
         if (props.Add(new Vector2((float)p.x, (float)p.y), shape)) Lamps++;
