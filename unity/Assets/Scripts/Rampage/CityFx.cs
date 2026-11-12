@@ -167,6 +167,7 @@ public sealed class CityFx : IDisposable
     }
 
     public void SetFocus(float depth) => fires.SetFocus(depth);
+    public LightPool Lights => fires.pool;  // shared with the police beacons (scenes/light_pool.gd)
 
     // A billowing dust cloud; size ~ the width of what came down. tint: a toppled tower's pale concrete.
     public void Dust(Vector3 at, float size, bool hasTint = false, Color tint = default)

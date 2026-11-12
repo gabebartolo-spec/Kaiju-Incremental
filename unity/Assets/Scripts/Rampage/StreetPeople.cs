@@ -4,16 +4,16 @@ using S = Kaiju.Sim;
 
 // The people in the streets and on the sand (scenes/street_life.gd, street_steps.gd, street_brace.gd and
 // beach_crowd.gd): civilians walk the pavement round every block and cross at the corners; when the kaiju comes near
-// they stare a moment, then run from it. Stomps, falling sections and tank tracks crush them. Presentation only: the
-// sim never knows any of them exist. No UnityEngine here: unity/SimTests compiles this file (StreetCheck).
-// Not ported yet: police, the stadium match, and the far people's slower step (StreetLod). Traffic is Traffic.cs.
-public sealed class StreetPeople
+// they stare a moment, then run from it. Officers join them (StreetOfficers.cs). Stomps, falling sections and tank
+// tracks crush them. Presentation only: the sim never knows of them. No UnityEngine here: unity/SimTests compiles
+// this file (StreetCheck). Not ported yet: the stadium match, the far people's slower step (StreetLod).
+public sealed partial class StreetPeople
 {
     // scenes/street_life.gd SIDE_STEP, PACE_SPREAD, WALK_HZ, RUN_HZ, MAX_PUFFS_PER_CRUSH.
     const double SIDE_STEP = 0.2, PACE_SPREAD = 0.2, WALK_HZ = 3.0, RUN_HZ = 6.0;
     const int MAX_PUFFS_PER_CRUSH = 1;
-    // scenes/voxel_person.gd COP (the civilian outfits come before it) and Pose.
-    public const int OUTFITS = 6, POSES = 4, WALK_A = 0, RUN_A = 2;
+    // scenes/voxel_person.gd COP (the civilian outfits come before it), the outfits with it, and Pose.
+    public const int COP = 6, OUTFITS = 7, POSES = 5, WALK_A = 0, RUN_A = 2, AIM = 4;
     // scenes/beach_crowd.gd HELD: pinned until the beach is released.
     const double HELD = 1.0e9;
     // scenes/city_falls.gd DROP_REACH: a dropped section crushes people this far out from its walls.
@@ -25,6 +25,7 @@ public sealed class StreetPeople
         public int outfit, from, to;
         public double phase, side, pace, pinnedUntil;
         public bool fleeing, hasFled;
+        public Police.Officer officer;  // null for a civilian (Godot's cop and officers columns)
     }
 
     public readonly List<Person> people = new List<Person>();
@@ -34,6 +35,8 @@ public sealed class StreetPeople
     public int fled, killed, runOver, armyKilled, beachPeople;
     // Called where a crushed person's dust puff goes (Godot axes, x and z).
     public Action<S.Vector2> Puffed;
+    // Steps the officers (set by StreetView once Police exists; null where there are no police).
+    public Police police;
 
     readonly S.GDict cfg;
     readonly S.GDict city;
@@ -84,8 +87,6 @@ public sealed class StreetPeople
 
     public List<S.Vector2> RingNodes() => pavements.RingNodes();
 
-    public int Civilians() => people.Count;
-
     // People the kaiju itself crushed (stomps, falls, tail): not the tanks' run-overs.
     public int KaijuKilled() => killed - runOver;
 
@@ -94,7 +95,7 @@ public sealed class StreetPeople
     {
         int n = 0;
         foreach (Person p in people)
-            if (p.fleeing) n++;
+            if (p.fleeing && p.officer == null) n++;
         return n;
     }
 
@@ -116,7 +117,7 @@ public sealed class StreetPeople
         p.to = (p.from & ~3) + ((p.from + 1) & 3);
         p.pos = nodes[p.from] + (nodes[p.to] - nodes[p.from]) * rng.Randf();
         p.heading = (nodes[p.to] - nodes[p.from]).Normalized();
-        p.outfit = (int)rng.RandiRange(0, OUTFITS - 1);
+        p.outfit = (int)rng.RandiRange(0, COP - 1);
         p.phase = rng.Randf();
         p.side = rng.RandfRange(-SIDE_STEP, SIDE_STEP);
         p.pace = rng.RandfRange(1.0 - PACE_SPREAD, 1.0 + PACE_SPREAD);
@@ -171,7 +172,7 @@ public sealed class StreetPeople
         p.heading = facing;
         p.from = (near & ~3) + ((near + 3) & 3);
         p.to = near;
-        p.outfit = (int)beachRng.RandiRange(0, OUTFITS - 1);
+        p.outfit = (int)beachRng.RandiRange(0, COP - 1);
         p.phase = beachRng.Randf();
         p.pace = beachRng.RandfRange(1.0 - PACE_SPREAD, 1.0 + PACE_SPREAD);
         p.pinnedUntil = HELD;
@@ -196,7 +197,7 @@ public sealed class StreetPeople
 
     // ---------- The walk (scenes/street_steps.gd) ----------
 
-    // Everyone's step this frame, last first. risen: the kaiju's head is out of the water (or it never rose from
+    // Everyone's step this frame, last first; officers take Police's step. risen: the kaiju's head is out of the water (or it never rose from
     // the sea), which frees the beach.
     public void Step(double dt, S.Vector2 kaiju, double bodyScale, bool risen)
     {
@@ -213,6 +214,7 @@ public sealed class StreetPeople
         for (int i = people.Count - 1; i >= 0; i--)
         {
             Person p = people[i];
+            if (p.officer != null) { WalkCop(i, dt, kaiju); continue; }
             if (p.pinnedUntil > clock) continue;
             S.Vector2 at = p.pos;
             if (UpdateFlee(ref p, at, kaiju, panic, calm))
@@ -271,10 +273,11 @@ public sealed class StreetPeople
         p.to = swap;
     }
 
-    // A person's pose: standing (gawking, frozen or held), running arms up, else a stride (street_life.gd pose).
+    // A person's pose (street_life.gd pose): an officer's; standing (gawking, frozen or held), running, else a stride.
     public int Pose(int i)
     {
         Person p = people[i];
+        if (p.officer != null) return OfficerPose(p);
         if (p.pinnedUntil > clock) return WALK_A;
         if (p.fleeing) return RUN_A + (int)(clock * RUN_HZ + p.phase * 2.0) % 2;
         return WALK_A + (int)(clock * WALK_HZ + p.phase * 2.0) % 2;
@@ -334,9 +337,11 @@ public sealed class StreetPeople
         return dead;
     }
 
-    // Person i leaves the street: the last one moves in.
+    // Person i leaves the street: the last one moves in. An officer at the blockade no longer holds it.
     void Remove(int i)
     {
+        Police.Officer o = people[i].officer;
+        if (o != null && o.state < 2 && o.blockade != null) o.blockade.holding--;
         int last = people.Count - 1;
         people[i] = people[last];
         people.RemoveAt(last);
@@ -350,6 +355,7 @@ public sealed class StreetPeople
         for (int i = 0; i < people.Count; i++)
         {
             Person p = people[i];
+            if (p.officer != null) continue;
             S.Vector2 q = S.Geometry2D.GetClosestPointToSegment(p.pos, from, to);
             if (p.pos.DistanceTo(q) > radius) continue;
             p.pinnedUntil = clock + seconds + 0.5;

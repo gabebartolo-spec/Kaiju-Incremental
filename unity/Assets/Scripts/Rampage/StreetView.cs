@@ -19,10 +19,13 @@ public sealed class StreetView
         new[] { 0xc08a2e, 0x2a2a2e, 0x3a2a20, 0xc58c5f },
         new[] { 0x4f6a46, 0x4a4a50, 0xb8a888, 0xe0b48e },
         new[] { 0x6a4a6e, 0x1f2630, 0x1a1714, 0xa06a46 },
+        new[] { 0x1f2a44, 0x18202f, 0x101418, 0xc58c5f },  // COP: uniform, trousers, cap, skin
     };
     const int SHOE = 0x1a1a1a;
-    // scenes/voxel_person.gd _body: each pose's stride (WALK_A, WALK_B, RUN_A, RUN_B).
-    static readonly int[] STRIDE = { 1, -1, 2, -2 };
+    // scenes/voxel_person.gd COP's belt and pistol.
+    const int BELT = 0x0e0e0e, GUN = 0x161616;
+    // scenes/voxel_person.gd _body: each pose's stride (WALK_A, WALK_B, RUN_A, RUN_B, AIM).
+    static readonly int[] STRIDE = { 1, -1, 2, -2, 1 };
     // Graphics.DrawMeshInstanced's most per call.
     const int BATCH = 1023;
     // scenes/tank_yard.gd: a tank on the street flattens what is within 1.4 of it, every tenth step.
@@ -46,13 +49,17 @@ public sealed class StreetView
     readonly StreetDecor decor;
     readonly PropTiles beach, courts;
     readonly TrafficView trafficView;
+    public readonly Police police;
+    readonly PoliceView policeView;
     int tankStep;
+    // Where the camera was at the last Draw: the light pool picks the lights nearest it.
+    Vector3 eye;
 
     public int Drawn { get; private set; }
     public int Props => decor.Count + (beach != null ? beach.Count : 0);
     public int PropsCrushed => decor.Crushed + (beach != null ? beach.Crushed : 0);
 
-    public StreetView(S.RampageSim sim, CityFx fx, Shader shader, Transform parent)
+    public StreetView(S.RampageSim sim, CityFx fx, Shader shader, Transform parent, float exposureUnit, float lightMatch)
     {
         this.sim = sim;
         this.fx = fx;
@@ -63,11 +70,12 @@ public sealed class StreetView
         people.Puffed = at => fx.Puff(new Vector3((float)at.x, PUFF_Y, (float)at.y));
         material = ArmyView.PlainMaterial(shader, voxel);
         material.enableInstancing = true;
+        double noise = S.Num.F(S.Content.Look().Get("color_noise", 0.0));
         for (int outfit = 0; outfit < StreetPeople.OUTFITS; outfit++)
             for (int pose = 0; pose < StreetPeople.POSES; pose++)
             {
                 int k = outfit * StreetPeople.POSES + pose;
-                meshes[k] = ArmyView.Faces(PropTiles.Model(Body(outfit, pose)), voxel, new Vector3(-0.5f * voxel, 0f, -0.5f * voxel));
+                meshes[k] = ArmyView.Faces(PropTiles.Model(Shaded(Body(outfit, pose), k, noise)), voxel, new Vector3(-0.5f * voxel, 0f, -0.5f * voxel));
                 batches[k] = new List<Matrix4x4[]>();
             }
         decor = new StreetDecor(sim, shader, parent);
@@ -75,6 +83,10 @@ public sealed class StreetView
         traffic = new Traffic(sim, S.Seeds.Make("traffic", 0));
         traffic.Populate(decor.props.Bases());
         trafficView = new TrafficView(traffic, sim, shader);
+        // After the traffic and the people, as street_life.gd builds police.gd.
+        police = new Police(people, traffic, S.Seeds.Make("police", 0));
+        people.police = police;
+        policeView = new PoliceView(police, shader, parent, fx.Lights, exposureUnit, lightMatch);
         S.GDict plan = S.CityGen.Map(sim.city);
         if (plan.Has("harbour"))
         {
@@ -88,6 +100,15 @@ public sealed class StreetView
             beach.Tick();
             courts.Tick();
         }
+    }
+
+    // scenes/voxel_person.gd mesh: each cell a touch lighter or darker, by the outfit and pose (VoxelBuilder.salt).
+    static Dictionary<Vector3Int, int> Shaded(Dictionary<Vector3Int, int> cells, int salt, double noise)
+    {
+        var shaded = new Dictionary<Vector3Int, int>(cells.Count);
+        foreach (KeyValuePair<Vector3Int, int> cell in cells)
+            shaded[cell.Key] = VoxelJitter.Shade(cell.Value, cell.Key.x, cell.Key.y, cell.Key.z, salt, noise);
+        return shaded;
     }
 
     // scenes/voxel_person.gd _body: one civilian's cells in a pose, feet on y = 0, facing Godot -z.
@@ -106,12 +127,36 @@ public sealed class StreetView
             cells[new Vector3Int(x, 2, Math.Abs(f) > 1 ? Math.Sign(f) : 0)] = pants;
             PropTiles.Box(cells, new Vector3Int(x, 3, 0), new Vector3Int(x, 4, 0), pants);
         }
-        PropTiles.Box(cells, new Vector3Int(-2, 5, -1), new Vector3Int(1, 5, 0), pants);
+        bool cop = outfit == StreetPeople.COP;
+        PropTiles.Box(cells, new Vector3Int(-2, 5, -1), new Vector3Int(1, 5, 0), cop ? BELT : pants);
         PropTiles.Box(cells, new Vector3Int(-2, 6, -1), new Vector3Int(1, 8, 0), shirt);
         PropTiles.Box(cells, new Vector3Int(-1, 9, -1), new Vector3Int(0, 9, -1), skin);
         PropTiles.Box(cells, new Vector3Int(-1, 9, 0), new Vector3Int(0, 9, 0), hair);
         PropTiles.Box(cells, new Vector3Int(-1, 10, -1), new Vector3Int(0, 10, 0), hair);
-        if (pose >= StreetPeople.RUN_A)
+        if (cop) PropTiles.Box(cells, new Vector3Int(-1, 10, -2), new Vector3Int(0, 10, -2), hair);  // cap brim
+        if (pose == StreetPeople.AIM) Aim(cells, shirt, skin);
+        else Arms(cells, pose, stride, shirt, skin);
+        return cells;
+    }
+
+    // voxel_person.gd _body, Pose.AIM: both hands forward on a pistol.
+    static void Aim(Dictionary<Vector3Int, int> cells, int shirt, int skin)
+    {
+        for (int side = 0; side < 2; side++)
+        {
+            int x = side == 0 ? -3 : 2, step = side == 0 ? 1 : -1;
+            cells[new Vector3Int(x, 8, -1)] = shirt;
+            cells[new Vector3Int(x + step, 8, -2)] = shirt;
+            cells[new Vector3Int(x + step * 2, 8, -3)] = skin;
+        }
+        PropTiles.Box(cells, new Vector3Int(-1, 8, -4), new Vector3Int(0, 8, -4), GUN);
+        cells[new Vector3Int(-1, 9, -4)] = GUN;
+    }
+
+    // voxel_person.gd _body: arms flung up in panic (running), else swinging against the legs.
+    static void Arms(Dictionary<Vector3Int, int> cells, int pose, int stride, int shirt, int skin)
+    {
+        if (pose == StreetPeople.RUN_A || pose == StreetPeople.RUN_A + 1)
         {
             for (int side = 0; side < 2; side++)
             {
@@ -119,7 +164,7 @@ public sealed class StreetView
                 PropTiles.Box(cells, new Vector3Int(x, 8, 0), new Vector3Int(x, 10, 0), shirt);
                 cells[new Vector3Int(x, 11, 0)] = skin;
             }
-            return cells;
+            return;
         }
         for (int side = 0; side < 2; side++)
         {
@@ -128,7 +173,6 @@ public sealed class StreetView
             cells[new Vector3Int(ax, 6, ay)] = shirt;
             cells[new Vector3Int(ax, 5, ay)] = skin;
         }
-        return cells;
     }
 
     // ---------- Crushing ----------
@@ -214,8 +258,11 @@ public sealed class StreetView
             foreach (S.RampageSim.Tank tank in sim.tanks)
                 if (tank.height <= 0.0) Crush(new Vector3((float)tank.pos.x, 0f, (float)tank.pos.y), TANK_CRUSH, true);
         tankStep = steps;
-        traffic.Step(dt);  // before the people, as street_life.gd
+        traffic.Step(dt);  // before the police and the people, as street_life.gd
+        police.Update(dt, sim.kaijuPos);
         people.Step(dt, sim.kaijuPos, sim.BodyScale(), sim.emerge.surfaced || !sim.emerge.active);
+        fx.Lights.Step(dt, eye.x, eye.y, eye.z);  // the fires' lights and the beacons (scenes/light_pool.gd)
+        policeView.Step();
         decor.props.Tick();
         if (beach != null) beach.Tick();
     }
@@ -223,6 +270,7 @@ public sealed class StreetView
     // Everyone the camera sees, one instanced draw per outfit and pose (scenes/street_lod.gd draw).
     public void Draw(Camera cam)
     {
+        eye = cam.transform.position;
         GeometryUtility.CalculateFrustumPlanes(cam, planes);
         Array.Clear(counts, 0, counts.Length);
         Drawn = 0;
@@ -248,6 +296,7 @@ public sealed class StreetView
             for (int from = 0; from < counts[bucket]; from += BATCH)
                 Graphics.DrawMeshInstanced(meshes[bucket], 0, material, batches[bucket][from / BATCH], Mathf.Min(BATCH, counts[bucket] - from), null, ShadowCastingMode.On, true);
         trafficView.Draw(cam);
+        policeView.Draw();
     }
 
     public void Dispose()
@@ -256,6 +305,7 @@ public sealed class StreetView
             if (mesh != null) UnityEngine.Object.Destroy(mesh);
         UnityEngine.Object.Destroy(material);
         trafficView.Dispose();
+        policeView.Dispose();
         decor.props.Dispose();
         beach?.Dispose();
         courts?.Dispose();

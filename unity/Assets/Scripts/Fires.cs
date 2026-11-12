@@ -51,6 +51,7 @@ public sealed class Fires : IDisposable
         public float seed, energy, fade = 1f, fadeRate, gone = float.PositiveInfinity;
         public bool isOut, showEmbers = true;
         public Light light;
+        public LightPool.Slot slot;  // null where there is no pool: an ordinary light
         public Bounds bounds;
         public MaterialPropertyBlock flame, ember, smoke;
         public int flameCount, emberCount, smokeCount;
@@ -71,8 +72,11 @@ public sealed class Fires : IDisposable
     // Longer than any game: a fire that never starts or stops inside the clock.
     const float ALWAYS = 1e7f;
 
-    public Fires(FireTuning tuning, Shader shader, float exposureUnit, bool spots = true)
+    public readonly LightPool pool;  // null: every fire is an ordinary light
+
+    public Fires(FireTuning tuning, Shader shader, float exposureUnit, bool spots = true, LightPool pool = null)
     {
+        this.pool = pool;
         this.tuning = tuning;
         this.exposureUnit = exposureUnit;
         flameMat = Make(shader, "FIRE_FLAME", tuning.flame);
@@ -182,11 +186,23 @@ public sealed class Fires : IDisposable
         go.transform.position = burning.at + Vector3.up * (l[4] + l[5] * size);
         burning.light.range = l[2] + l[3] * size;
         Color lit = tuning.light_color.linear * burning.energy;
-        Vector3 p = go.transform.position;
+        Vector3 p = Pooled(burning, go.transform.position);
         burning.smoke.SetVector("_FireLightPos", new Vector4(p.x, p.y, p.z, burning.light.range));
         burning.smoke.SetVector("_FireLightColor", lit);
         fires.Add(burning);
         return burning;
+    }
+
+    // The fire's light joins the pool, if there is one; returns where it is.
+    Vector3 Pooled(Burning burning, Vector3 at)
+    {
+        if (pool == null) return at;
+        burning.slot = pool.Add();
+        burning.slot.x = at.x;
+        burning.slot.y = at.y;
+        burning.slot.z = at.z;
+        burning.slot.energy = burning.energy;
+        return at;
     }
 
     MaterialPropertyBlock Block(MaterialPropertyBlock reuse, Burning burning, FireSystem s, float size, float scaleBy, float start)
@@ -228,6 +244,8 @@ public sealed class Fires : IDisposable
             if (time > fire.gone)
             {
                 fire.light.gameObject.SetActive(false);
+                if (fire.slot != null) pool.Remove(fire.slot);
+                fire.slot = null;
                 fires[i] = fires[fires.Count - 1];
                 fires.RemoveAt(fires.Count - 1);
                 free.Push(fire);
@@ -239,7 +257,15 @@ public sealed class Fires : IDisposable
             Graphics.DrawProcedural(smokeMat, fire.bounds, MeshTopology.Triangles, QUAD_VERTS, fire.smokeCount, null, fire.smoke, ShadowCastingMode.Off, false, 0);
             float flicker = f[0] + f[1] * Mathf.Sin(time * f[2] + fire.seed) + f[3] * Mathf.Sin(time * f[4] + fire.seed * 2f);
             // Godot's omni falls off as 1/d, HDRP's as 1/d^2: equal at light_match_m.
-            fire.light.intensity = fire.energy * fire.fade * flicker * Mathf.PI * exposureUnit * tuning.light_match_m;
+            // LightPool: only the nearest fires are real lights; the rest wait, and fade in when picked.
+            float weight = 1f;
+            if (fire.slot != null)
+            {
+                fire.slot.energy = fire.energy * fire.fade;
+                weight = fire.slot.weight;
+                fire.light.enabled = weight > 0f;
+            }
+            fire.light.intensity = fire.energy * fire.fade * flicker * weight * Mathf.PI * exposureUnit * tuning.light_match_m;
         }
     }
 
