@@ -57,6 +57,8 @@ public sealed class StreetView
 
     public int Drawn { get; private set; }
     public int Props => decor.Count + (beach != null ? beach.Count : 0);
+    // The Tripo street props standing in this city (street_props.gd placed).
+    public int StreetProps => decor.street.placed.Count;
     public int PropsCrushed => decor.Crushed + (beach != null ? beach.Crushed : 0);
 
     public StreetView(S.RampageSim sim, CityFx fx, Shader shader, Transform parent, float exposureUnit, float lightMatch)
@@ -181,6 +183,7 @@ public sealed class StreetView
     public void Trample(Vector3 at, float radius)
     {
         Flatten(decor.props, at, radius);
+        Flatten(decor.streetTiles, at, radius);
         if (beach != null) Flatten(beach, at, radius);
     }
 
@@ -263,7 +266,7 @@ public sealed class StreetView
         people.Step(dt, sim.kaijuPos, sim.BodyScale(), sim.emerge.surfaced || !sim.emerge.active);
         fx.Lights.Step(dt, eye.x, eye.y, eye.z);  // the fires' lights and the beacons (scenes/light_pool.gd)
         policeView.Step();
-        decor.props.Tick();
+        decor.Tick();
         if (beach != null) beach.Tick();
     }
 
@@ -306,7 +309,7 @@ public sealed class StreetView
         UnityEngine.Object.Destroy(material);
         trafficView.Dispose();
         policeView.Dispose();
-        decor.props.Dispose();
+        decor.Dispose();
         beach?.Dispose();
         courts?.Dispose();
     }

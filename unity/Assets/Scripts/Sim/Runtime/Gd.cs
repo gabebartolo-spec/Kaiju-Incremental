@@ -62,7 +62,7 @@ namespace Kaiju.Sim
         {
             double value = CFmod(x, y);
             if ((value < 0 && y > 0) || (value > 0 && y < 0)) value += y;
-            return value;
+            return value + 0.0;  // Godot's fposmod: -0.0 becomes 0.0
         }
         static double CFmod(double x, double y) => x % y;
         public static long Posmod(long x, long y)

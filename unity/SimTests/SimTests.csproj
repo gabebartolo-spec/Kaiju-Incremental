@@ -23,6 +23,7 @@
     <Compile Include="../Assets/Scripts/Rampage/Police.cs" />
     <Compile Include="../Assets/Scripts/Rampage/StreetOfficers.cs" />
     <Compile Include="../Assets/Scripts/Rampage/LightPool.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/StreetProps.cs" />
     <Compile Include="../Assets/Scripts/Rampage/VoxelJitter.cs" />
     <Compile Include="../Assets/Scripts/Rampage/TankKeepOut.cs" />
     <Compile Include="../Assets/Scripts/Rampage/DiagonalParking.cs" />
