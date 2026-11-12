@@ -101,6 +101,7 @@ public sealed class RampageGame : MonoBehaviour
     bool crownKnown;
     // scenes/kaiju_model.gd RISE_CLIP.
     const string RISE_CLIP = "rise_bay";
+    bool KeyedRise() => sim.emerge.active && sim.emerge.Risen() < 1.0 && croc.HasClip(RISE_CLIP); // rampage_rise.gd rise: else it walks
     EventFx eventFx;
     ArmyView army;
     RooftopView rooftops;
@@ -262,7 +263,6 @@ public sealed class RampageGame : MonoBehaviour
 
         Shader lit = Resources.Load<Shader>("Shaders/SliceLit");
         crocCube = SliceGame.CubeMesh(1f, true);
-        // scenes/rampage.gd: the body of the sim's growth stage (KaijuModel.stage_for).
         croc = new Croc(tuning, slice, lit, crocCube, SliceData.F(look, "voxel_inset", 0.99f), Croc.BodyStage(sim.SizeTier()));
         // scenes/rampage.gd _take_sim: the species' attack and body first, since the rise is placed by the body's length.
         S.GDict ability = species["ability"];
@@ -615,8 +615,7 @@ public sealed class RampageGame : MonoBehaviour
         // The body between the last two ticks, so it moves every frame at any frame rate.
         Vector3 feet = Vector3.Lerp(feetFrom, feetTo, accumulator / TICK);
         float scale = (float)sim.BodyScale();
-        // scenes/rampage_rise.gd rise: a body without the keyed rise walks while the sim lifts it.
-        if (sim.emerge.active && sim.emerge.Risen() < 1.0 && croc.HasClip(RISE_CLIP))
+        if (KeyedRise())
             croc.DriveClip(feet, Facing(), scale, RISE_CLIP, (float)(sim.emerge.Progress() * sim.emerge.Total()) + accumulator);
         else if (sim.body.dash.On())
             leap.Pose(feet, Facing(), scale, dt);
