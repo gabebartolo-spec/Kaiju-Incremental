@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-12 · D-483 · Director · Unity port: light pool and colour shade now, and how the rest runs
+Asked twelve port questions at once, the director ruled. Police: the first roadblock comes "As Godot" (4.5 s in, no
+wait for the croc to surface). Beacons: "Port the pool", so Unity gets Godot's light pool (the 24 lights nearest
+the camera are real, the rest fade; fires and beacons join it). The per-voxel colour shade on people: "Now"
+(civilians, officers and the rooftop riflemen, by Godot's own hash). Next piece: "Street props". The croc is baked
+"From the worktree" (croc-export). The Cascadeur-trial clip: "use it for now, ill buy the license later, we are far
+from release"; no release questions until a release is being made. A playable build: "Only at the end". The white
+dry-run window: fixed after police. Phase D tests: "Hand-port all". Stand-ins: "All 14" before the switch. Boats,
+wildlife and wet streets stay in phase B. The Fposmod fix rides with the next port PR. Changes: the police PR's
+scope, the phase C and D plans.
+
 ## 2026-11-12 · D-482 · Director · Unity phase B starts with traffic, then police, ported from Godot
 "Traffic, police, props", "Port Godot's", "Police first": the cars are ported as they are (one-way lanes, avenues,
 fleeing, queues; a stepped-on car flattens, Godot has no flips), then the police waves, then the street props and the stadium. The stage bodies are baked from the approved croc in the
@@ -383,11 +394,3 @@ water.ocean.scale: tile, fetch and depth x0.1, wind x sqrt 0.1), so troughs stay
 seabed, while slopes stay those of the real sea. It fades out over the shelf where the sim's swell takes over. Its
 wind-wave crest lights the water at 0.15 weight, as the sim's does: at full weight crest_light 1.4 drove a trough's
 colour below zero, which the premultiplied blend drew as black blotches by the shore.
-
-## 2026-11-01 · D-427 · Director · Load screen: 12 graded dusk stills, random each load
-His shot list for load-screen art: "get caps of the powers / destruction / the city from panoramic angles / all three
-kaiju forms / then edit the photos to be more epic", then "remove the ui from the screencaps". Shown the board of 12
-(tools/capture/capture_load_art.gd: paused dusk rampage, staged cameras, no UI; graded for bloom, split tone,
-contrast and vignette), he picked "All 12", grade "Keep as is" and "Random each load". The loading overlay shows one
-4K still (assets/loading) behind INCOMING and the meter, never the same twice in a row (comment #92, D-140, D-359).
-The band sits just above the crawl so the kaiju in mid-frame stays in view.

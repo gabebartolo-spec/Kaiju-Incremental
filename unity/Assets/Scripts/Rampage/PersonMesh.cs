@@ -3,7 +3,7 @@ using UnityEngine;
 using S = Kaiju.Sim;
 
 // scenes/voxel_person.gd: a voxel person built from cells. Here the rooftop rifleman only (pose AIM with a
-// rifle), in the five ROOFTOP_OUTFITS. The per-cell colour jitter (salt 97 + outfit) is not ported.
+// rifle), in the five ROOFTOP_OUTFITS. Each cell is shaded by VoxelJitter (salt 97 + outfit).
 public static class PersonMesh
 {
     // scenes/voxel_person.gd ROOFTOP_OUTFITS: shirt, pants, hair, skin.
@@ -17,6 +17,10 @@ public static class PersonMesh
     };
     // scenes/voxel_person.gd _bake
     const int SHOE = 0x1a1a1a, GUN = 0x161616;
+    // scenes/voxel_person.gd rifleman: v.salt = 97 + outfit.
+    const int SALT = 97;
+
+    static double Noise => S.Num.F(S.Content.Look().Get("color_noise", 0.0));
 
     public static int RooftopOutfits => ROOFTOP_OUTFITS.Length;
 
@@ -61,7 +65,7 @@ public static class PersonMesh
             model.xyz.Append(c.x);
             model.xyz.Append(c.y);
             model.xyz.Append(c.z);
-            model.rgb[i] = cells[c];
+            model.rgb[i] = VoxelJitter.Shade(cells[c], c.x, c.y, c.z, SALT + outfit, Noise);
         }
         // The body is symmetric about cell x = -0.5 and z = -0.5: centre it on the origin (_bake).
         Mesh mesh = ArmyView.Faces(model, voxel, new Vector3(-voxel * 0.5f, 0f, -voxel * 0.5f));
