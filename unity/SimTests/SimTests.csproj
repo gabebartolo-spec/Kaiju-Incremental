@@ -25,6 +25,11 @@
     <Compile Include="../Assets/Scripts/Rampage/LightPool.cs" />
     <Compile Include="../Assets/Scripts/Rampage/StreetProps.cs" />
     <Compile Include="../Assets/Scripts/Rampage/VoxelJitter.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/PitchProps.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/StadiumMatch.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/StadiumCrowd.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/CrowdBuild.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/CrowdPose.cs" />
     <Compile Include="../Assets/Scripts/Rampage/TankKeepOut.cs" />
     <Compile Include="../Assets/Scripts/Rampage/DiagonalParking.cs" />
     <Compile Include="../Assets/Scripts/Rampage/VipPaint.cs" />
