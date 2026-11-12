@@ -1,7 +1,7 @@
 # Bare numeric literals per hand-written Unity C# file (hard rule 4, D-480): `path count`.
 # May only go down; new numbers go to data/. tools/lint/cs_magic_numbers.py --update lowers rows.
 unity/Assets/Scripts/City.cs 4
-unity/Assets/Scripts/Croc.cs 75
+unity/Assets/Scripts/Croc.cs 74
 unity/Assets/Scripts/Debris.cs 8
 unity/Assets/Scripts/Game/Audio/AudioHost.cs 4
 unity/Assets/Scripts/Game/Audio/RampageAudio.cs 6

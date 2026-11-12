@@ -29,6 +29,6 @@ if [ -n "$out" ]; then set -- "$@" "$out"; fi
 if [ -n "$croc" ]; then
 	set -- "$@" "--croc=$croc"
 else
-	echo "bake_slice: no croc given (argument or KAIJU_CROC); rig.json, croc.vskin and croc.kclip are left as they are" >&2
+	echo "bake_slice: no croc given (argument or KAIJU_CROC); the croc_<stage> files are left as they are" >&2
 fi
 dotnet run "$@"

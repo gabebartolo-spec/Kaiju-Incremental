@@ -6,9 +6,11 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// The approved croc: the voxel-skin cubes and filler from croc.vskin, posed from croc.kclip on the rig in
-// rig.json. Everything is computed in Godot axes; the shaders negate z last.
-public sealed class Croc
+// The croc at one growth stage (scenes/kaiju_model.gd): the voxel-skin cubes and filler from croc_<stage>.vskin,
+// posed from croc_<stage>.kclip on the rig in croc_<stage>.rig.json. A stage's kclip may lack the adult's takes
+// (run, sweep, beam jaw, leap, rise); each then falls back as Godot's has_clip checks do. Everything is computed
+// in Godot axes; the shaders negate z last.
+public sealed partial class Croc
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct Cube
@@ -49,9 +51,12 @@ public sealed class Croc
     public float SpeedShare => moveWeight;
     // Metres of claw above the street at body scale 1: down below the first, lifted past the second.
     const float FOOT_DOWN_M = 0.25f, FOOT_UP_M = 0.6f;
-    static readonly string[] FOOT_BONES = { "toe_l1", "toe_r1" };
+    // The middle claw, else the leg's tip (scenes/biped_leg.gd: leg_x3, else leg_x2), per side.
+    static readonly string[][] FOOT_BONES = { new[] { "toe_l1", "leg_l3", "leg_l2" }, new[] { "toe_r1", "leg_r3", "leg_r2" } };
     static readonly string[] FOOT_SIDES = { "left", "right" };
     readonly int[] footBone = { -1, -1 };
+    // A leg tip's rest height (rig units), so its height reads as a claw's would; 0 for a claw.
+    readonly float[] footRest = { 0f, 0f };
     readonly bool[] footDown = { true, true };
     bool footPrimed, footfallPending;
     string footfallSide;
@@ -104,7 +109,9 @@ public sealed class Croc
     readonly Vector4 bodyMin, bodyMax; // bodyMin.w: the floor, a voxel above the soles, so the street under it still takes soot
     readonly bool[] roarBone;
     readonly int jawClip = -1, jawIndex = -1, upperIndex = -1;
-    bool jawKnown;
+    bool jawKnown, jawDrop;
+    // scenes/biped_head.gd JAW_OPEN: radians a body without the beam's take drops its jaw about x.
+    const float JAW_DROP_RAD = 1.0f;
     Quaternion jawHeld;
     float roarTime = -1f, roarAge, jawOpen, jawTarget, jawEase = 0.25f;
     // Each cube's rest position and heaviest bone, for the ridge and the jaws' tips.
@@ -114,12 +121,21 @@ public sealed class Croc
     Vector3[] ridgeRest = new Vector3[0];
     Vector3 jawTip, upperTip;
 
-    public Croc(Tuning t, Dictionary<string, object> slice, Shader litShader, Mesh cubeMesh, float inset)
+    // KaijuModel._init: the stage's body, else the first one up that the slice carries.
+    public static string BodyStage(long sizeTier) =>
+        CrocStages.BodyStage(sizeTier, stage => File.Exists(Path.Combine(SliceData.Dir, "croc_" + stage + ".rig.json")));
+
+    public readonly string Stage;
+    readonly bool hasRun, lashes, sweeps;
+    readonly HashSet<string> layers = new HashSet<string>();
+
+    public Croc(Tuning t, Dictionary<string, object> slice, Shader litShader, Mesh cubeMesh, float inset, string stage = "adult")
     {
         tuning = t;
+        Stage = stage;
         Scale = MiniJson.F(slice["body_scale"]);
 
-        var rig = SliceData.LoadJson("rig.json");
+        var rig = SliceData.LoadJson("croc_" + stage + ".rig.json");
         rigScale = MiniJson.F(rig["rig_scale"]);
         List<object> bones = MiniJson.Arr(rig["bones"]);
         int count = bones.Count;
@@ -146,7 +162,7 @@ public sealed class Croc
         }
         order = TopologicalOrder(parents);
 
-        clipRaw = File.ReadAllBytes(Path.Combine(SliceData.Dir, "croc.kclip"));
+        clipRaw = File.ReadAllBytes(Path.Combine(SliceData.Dir, "croc_" + stage + ".kclip"));
         int headerLength = BitConverter.ToInt32(clipRaw, 8);
         var header = MiniJson.Obj(MiniJson.Parse(System.Text.Encoding.UTF8.GetString(clipRaw, 12, headerLength)));
         fps = MiniJson.F(header["fps"]);
@@ -154,21 +170,7 @@ public sealed class Croc
         int total = 0;
         foreach (object o in MiniJson.Arr(header["clips"]))
         {
-            var c = MiniJson.Obj(o);
-            var clip = new Clip
-            {
-                first = MiniJson.I(c["first"]),
-                frames = MiniJson.I(c["frames"]),
-                loop = c.TryGetValue("loop", out object l) && l is bool lb && lb,
-                cycles = c.TryGetValue("cycles", out object cy) && cy is double ? MiniJson.I(cy) : 1,
-            };
-            if (c.TryGetValue("trail", out object tr) && tr is List<object> trail)
-            {
-                clip.trailFirst = MiniJson.F(trail[0]);
-                clip.trailLast = MiniJson.F(trail[1]);
-            }
-            if (c.TryGetValue("hit", out object hitAt) && hitAt is double) clip.hit = MiniJson.F(hitAt);
-            clips[(string)c["name"]] = clip;
+            Clip clip = ReadClip(MiniJson.Obj(o));
             total = Mathf.Max(total, clip.first + clip.frames);
         }
         dataAt = clipRaw.Length - total * frameBytes;
@@ -182,7 +184,10 @@ public sealed class Croc
             else if (Array.Exists(TWIST_PREFIXES, name.StartsWith)) twistClipBones.Add(i);
         }
         Stride = MiniJson.F(header["stride_m"]) * rigScale * Scale;
-        for (int i = 0; i < FOOT_BONES.Length; i++) footBone[i] = byName.TryGetValue(FOOT_BONES[i], out int foot) ? foot : -1;
+        hasRun = clips.ContainsKey("run");
+        lashes = CrocStages.Lashes(layers);
+        sweeps = CrocStages.Sweeps(layers);
+        FindFeet(byName);
         turnsA = new Quaternion[clipBones.Count];
         turnsB = new Quaternion[clipBones.Count];
         turnsC = new Quaternion[clipBones.Count];
@@ -197,7 +202,7 @@ public sealed class Croc
         jawIndex = byName.TryGetValue(JAW_BONE, out int jawAt) ? jawAt : -1;
         upperIndex = jawIndex >= 0 ? parents[jawIndex] : -1;
 
-        byte[] skin = File.ReadAllBytes(Path.Combine(SliceData.Dir, "croc.vskin"));
+        byte[] skin = File.ReadAllBytes(Path.Combine(SliceData.Dir, "croc_" + stage + ".vskin"));
         ushort boneCount = BitConverter.ToUInt16(skin, 16);
         float voxel = BitConverter.ToSingle(skin, 18);
         cubeCount = BitConverter.ToInt32(skin, 22);
@@ -277,8 +282,9 @@ public sealed class Croc
         Shader.SetGlobalFloat("_HideTone", SliceData.F(look, "kaiju_hide_tone", 0));
         Shader.SetGlobalFloat("_KaijuRoughness", SliceData.F(look, "kaiju_roughness", 0.85f));
 
-        foreach (SphereDef s in t.body) bodySpheres.Add((byName[s.bone], s.r));
-        foreach (SphereDef s in t.tail) tailSpheres.Add((byName[s.bone], s.r));
+        // A stage without a sphere's bone (the Behemoth has no leg_x3, tail9-11) skips it: its chain ends at its own tip.
+        foreach (SphereDef s in t.body) if (byName.TryGetValue(s.bone, out int b)) bodySpheres.Add((b, s.r));
+        foreach (SphereDef s in t.tail) if (byName.TryGetValue(s.bone, out int b)) tailSpheres.Add((b, s.r));
         prevBody = new Vector3[bodySpheres.Count];
         prevTail = new Vector3[tailSpheres.Count];
         pushers = new Rigidbody[bodySpheres.Count];
@@ -403,6 +409,41 @@ public sealed class Croc
         return mesh;
     }
 
+    // One clip from the kclip header, kept by name; a layer clip is noted as one.
+    Clip ReadClip(Dictionary<string, object> c)
+    {
+        var clip = new Clip
+        {
+            first = MiniJson.I(c["first"]),
+            frames = MiniJson.I(c["frames"]),
+            loop = c.TryGetValue("loop", out object l) && l is bool lb && lb,
+            cycles = c.TryGetValue("cycles", out object cy) && cy is double ? MiniJson.I(cy) : 1,
+        };
+        if (c.TryGetValue("trail", out object tr) && tr is List<object> trail)
+        {
+            clip.trailFirst = MiniJson.F(trail[0]);
+            clip.trailLast = MiniJson.F(trail[1]);
+        }
+        if (c.TryGetValue("hit", out object hitAt) && hitAt is double) clip.hit = MiniJson.F(hitAt);
+        if (c.TryGetValue("layer", out object ly) && ly is bool lyb && lyb) layers.Add((string)c["name"]);
+        clips[(string)c["name"]] = clip;
+        return clip;
+    }
+
+    // Each side's foot bone, the first of FOOT_BONES the rig has.
+    void FindFeet(Dictionary<string, int> byName)
+    {
+        for (int i = 0; i < FOOT_BONES.Length; i++)
+        {
+            for (int k = 0; k < FOOT_BONES[i].Length && footBone[i] < 0; k++)
+            {
+                if (!byName.TryGetValue(FOOT_BONES[i][k], out int foot)) continue;
+                footBone[i] = foot;
+                footRest[i] = k == 0 ? 0f : bind[foot].inverse.GetColumn(3).y;
+            }
+        }
+    }
+
     void FrameTurns(int frame, Quaternion[] into, out Vector3 offset)
     {
         int at = dataAt + frame * frameBytes;
@@ -433,9 +474,12 @@ public sealed class Croc
         offset = Vector3.Lerp(o0, o1, a);
     }
 
+    // The keyed run, or the walk where the stage has none (its weight then stays 0).
+    Clip RunClip => hasRun ? clips["run"] : clips["walk"];
+
     public void StartSweep()
     {
-        if (sweep != null) return;
+        if (sweep != null || !sweeps) return;
         sweepSide = 1 - sweepSide;
         sweep = clips[sweepSide == 0 ? "sweep_r" : "sweep_l"];
         sweepTime = 0;
@@ -448,7 +492,9 @@ public sealed class Croc
     // for the automatic sweep's tail 360.
     public void Cue(string limb, float side, float windup)
     {
-        Clip want = clips[(limb.StartsWith("tail_sweep") ? "sweep_" : "lash_") + (side > 0f ? "r" : "l")];
+        bool isSweep = limb.StartsWith("tail_sweep");
+        if (!(isSweep ? sweeps : lashes)) return;
+        Clip want = clips[(isSweep ? "sweep_" : "lash_") + (side > 0f ? "r" : "l")];
         sweepFade = LAYER_FADE_S;
         if (limb.EndsWith("windup"))
         {
@@ -476,7 +522,7 @@ public sealed class Croc
     // move: world direction (Godot x, z), length 0 or 1; run: Shift held.
     public void Step(Vector2 move, bool run, float dt)
     {
-        Clip walk = clips["walk"], runClip = clips["run"], idle = clips["idle"];
+        Clip walk = clips["walk"], runClip = RunClip;
         float walkCycle = (float)walk.frames / walk.cycles;
         float runCycle = (float)runClip.frames / runClip.cycles;
         float walkSpeed = Stride / (walkCycle / fps);
@@ -484,7 +530,7 @@ public sealed class Croc
         bool moving = move.sqrMagnitude > 0.01f;
         float fade = 1f - Mathf.Exp(-dt / Mathf.Max(0.001f, tuning.clip_fade_s));
         moveWeight = Mathf.Lerp(moveWeight, moving ? 1 : 0, fade);
-        runWeight = Mathf.Lerp(runWeight, run ? 1 : 0, fade);
+        runWeight = Mathf.Lerp(runWeight, run && hasRun ? 1 : 0, fade);
         float speed = Mathf.Lerp(walkSpeed, runSpeed, runWeight) * moveWeight;
         if (moving)
         {
@@ -504,7 +550,7 @@ public sealed class Croc
     {
         Stride *= scale / Scale;
         Scale = scale;
-        Clip walk = clips["walk"], runClip = clips["run"];
+        Clip walk = clips["walk"], runClip = RunClip;
         float walkSpeed = Stride / ((float)walk.frames / walk.cycles / fps);
         float runSpeed = Stride / ((float)runClip.frames / runClip.cycles / fps);
         Vector3 step = feet - position;
@@ -513,7 +559,7 @@ public sealed class Croc
         float speed = step.magnitude / Mathf.Max(dt, 1e-4f);
         float fade = 1f - Mathf.Exp(-dt / Mathf.Max(0.001f, tuning.clip_fade_s));
         moveWeight = Mathf.Lerp(moveWeight, Mathf.Clamp01(speed / walkSpeed), fade);
-        runWeight = Mathf.Lerp(runWeight, Mathf.Clamp01((speed - walkSpeed) / Mathf.Max(0.001f, runSpeed - walkSpeed)), fade);
+        runWeight = hasRun ? Mathf.Lerp(runWeight, Mathf.Clamp01((speed - walkSpeed) / Mathf.Max(0.001f, runSpeed - walkSpeed)), fade) : 0f;
         if (facing.sqrMagnitude > 1e-6f)
         {
             float want = Mathf.Atan2(-facing.x, -facing.y);
@@ -525,129 +571,16 @@ public sealed class Croc
 
     public float ClipSeconds(string name) => clips.TryGetValue(name, out Clip c) ? (float)(c.frames - 1) / fps : 0f;
 
-    // Godot axes: where a bone is drawn now.
-    public Vector3 BoneAt(string name)
-    {
-        return WorldMatrix().MultiplyPoint3x4(global[System.Array.IndexOf(names, name)].GetColumn(3));
-    }
-
-    public string RootBone => names[0];
-
-    // Rooftop rounds (scenes/rooftop_aim.gd): a bone's index or -1, the rest cubes it carries, and where one is now (Godot axes).
-    public int StrikeBone(string name) => System.Array.IndexOf(names, name);
-
-    public void StrikeCubes(int bone, List<Vector3> into)
-    {
-        for (int i = 0; i < cubeAt.Length; i++)
-            if (cubeBone[i] == bone) into.Add(cubeAt[i]);
-    }
-
-    public Vector3 StrikePoint(int bone, Vector3 rest) => WorldMatrix().MultiplyPoint3x4(pose[bone].MultiplyPoint3x4(rest));
-
-    Vector4[] restSpheres;
-
-    // Godot axes, capture only: the body as one sphere per bone (xyz centre, w radius), from the cubes each bone
-    // carries, so a framing check can tell when the croc stands between a camera and its own mouth.
-    public void BodySpheres(List<Vector4> into)
-    {
-        if (restSpheres == null)
-        {
-            restSpheres = new Vector4[pose.Length];
-            for (int b = 0; b < pose.Length; b++)
-            {
-                Vector3 sum = Vector3.zero;
-                int count = 0;
-                for (int i = 0; i < cubeAt.Length; i++)
-                    if (cubeBone[i] == b) { sum += cubeAt[i]; count++; }
-                if (count == 0) continue;
-                Vector3 mid = sum / count;
-                var far = new List<float>(count);
-                for (int i = 0; i < cubeAt.Length; i++)
-                    if (cubeBone[i] == b) far.Add((cubeAt[i] - mid).magnitude);
-                far.Sort();
-                restSpheres[b] = new Vector4(mid.x, mid.y, mid.z, far[(count * 3) / 4]);
-            }
-        }
-        into.Clear();
-        Matrix4x4 world = WorldMatrix();
-        float scale = world.lossyScale.y;
-        for (int b = 0; b < restSpheres.Length; b++)
-        {
-            if (restSpheres[b].w <= 0f) continue;
-            Vector3 at = world.MultiplyPoint3x4(pose[b].MultiplyPoint3x4(restSpheres[b]));
-            into.Add(new Vector4(at.x, at.y, at.z, restSpheres[b].w * scale));
-        }
-    }
-
-    // The ridge from tail tip to head (scenes/spine_charge.gd _find_ridge): on each bone, the highest cell
-    // of its middle stretch at rest, lifted clear of the hide. This rig's bones carry no direction, so the
-    // stretch runs from the bone's head to its farthest cell.
-    public void FindRidge(IList<string> bones, float low, float high, float liftVoxels)
-    {
-        var at = new List<int>();
-        var tops = new List<Vector3>();
-        float voxel = cubeMat.GetFloat("_CubeSize");
-        foreach (string bone in bones)
-        {
-            int b = System.Array.IndexOf(names, bone);
-            if (b < 0) continue;
-            Vector3 head = RestHead(b), axis = FarCell(b) - head;
-            bool found = false;
-            Vector3 best = Vector3.zero;
-            for (int i = 0; i < cubeAt.Length; i++)
-            {
-                if (cubeBone[i] != b) continue;
-                float along = Vector3.Dot(cubeAt[i] - head, axis) / Mathf.Max(axis.sqrMagnitude, 1e-4f);
-                if (along < low || along > high || (found && cubeAt[i].y <= best.y)) continue;
-                best = cubeAt[i];
-                found = true;
-            }
-            if (!found) continue;
-            at.Add(b);
-            tops.Add(best + Vector3.up * (liftVoxels * voxel));
-        }
-        ridgeBones = at.ToArray();
-        ridgeRest = tops.ToArray();
-        if (jawIndex >= 0) jawTip = FarCell(jawIndex);
-        if (upperIndex >= 0) upperTip = FarCell(upperIndex);
-    }
-
-    public int RidgeSize => ridgeBones.Length;
-
-    // Godot axes: ridge point `i` (tail tip 0 .. head) now.
-    public Vector3 RidgeAt(int i) => WorldMatrix().MultiplyPoint3x4(pose[ridgeBones[i]].MultiplyPoint3x4(ridgeRest[i]));
-
-    Vector3 RestHead(int bone) => bind[bone].inverse.GetColumn(3);
-
-    Vector3 FarCell(int bone)
-    {
-        Vector3 head = RestHead(bone), far = head;
-        float most = -1f;
-        for (int i = 0; i < cubeAt.Length; i++)
-        {
-            if (cubeBone[i] != bone) continue;
-            float d = (cubeAt[i] - head).sqrMagnitude;
-            if (d > most) { most = d; far = cubeAt[i]; }
-        }
-        return far;
-    }
-
-    // Godot axes: where the bolt leaves (scenes/breath_beam.gd throat_of): out from the hinge a share of
-    // the way to the jaws' tips, and a share of the way from the lower to the upper.
-    public Vector3 ThroatAt(float along, float up)
-    {
-        Matrix4x4 world = WorldMatrix();
-        Vector3 hinge = world.MultiplyPoint3x4(global[jawIndex].GetColumn(3));
-        Vector3 low = Vector3.Lerp(hinge, world.MultiplyPoint3x4(pose[jawIndex].MultiplyPoint3x4(jawTip)), along);
-        Vector3 high = Vector3.Lerp(hinge, world.MultiplyPoint3x4(pose[upperIndex].MultiplyPoint3x4(upperTip)), along);
-        return Vector3.Lerp(low, high, up);
-    }
-
     // The bolt leaves an open maw (scenes/spine_charge.gd _open_jaw): the jaw as keyed at its widest in
     // the beam's own take, laid over whatever plays, over `seconds`.
     public void JawOpen(bool open, float seconds)
     {
         if (jawClip < 0) return;
+        if (!jawKnown && !clips.ContainsKey(JAW_CLIP))
+        {
+            jawKnown = true;
+            jawDrop = true;
+        }
         if (!jawKnown)
         {
             jawKnown = true;
@@ -683,7 +616,11 @@ public sealed class Croc
     void LayRoar(float dt, ref Vector3 offset)
     {
         if (roarTime < 0f) return;
-        Clip c = clips[ROAR_CLIP];
+        if (!clips.TryGetValue(ROAR_CLIP, out Clip c))
+        {
+            roarTime = -1f;
+            return;
+        }
         roarTime += dt * fps;
         roarAge += dt;
         float end = c.frames - 1;
@@ -703,7 +640,9 @@ public sealed class Croc
     void LayJaw(float dt)
     {
         jawOpen = Mathf.MoveTowards(jawOpen, jawTarget, dt / jawEase);
-        if (jawClip >= 0 && jawOpen > 0f) turnsOut[jawClip] = Quaternion.Slerp(turnsOut[jawClip], jawHeld, Mathf.SmoothStep(0f, 1f, jawOpen));
+        if (jawClip < 0 || jawOpen <= 0f) return;
+        Quaternion held = jawDrop ? turnsOut[jawClip] * Quaternion.AngleAxis(-JAW_DROP_RAD * Mathf.Rad2Deg, Vector3.right) : jawHeld;
+        turnsOut[jawClip] = Quaternion.Slerp(turnsOut[jawClip], held, Mathf.SmoothStep(0f, 1f, jawOpen));
     }
 
     // The head's crown in the rest pose (scenes/rampage_rise.gd head_at): x ahead of the hips, y over the
@@ -813,7 +752,7 @@ public sealed class Croc
 
     void Pose(float dist, float dt)
     {
-        Clip walk = clips["walk"], runClip = clips["run"], idle = clips["idle"];
+        Clip walk = clips["walk"], runClip = RunClip, idle = clips["idle"];
         float walkCycle = (float)walk.frames / walk.cycles;
         float runCycle = (float)runClip.frames / runClip.cycles;
         walkFrame += dist / Stride * walkCycle;
@@ -889,7 +828,7 @@ public sealed class Croc
         {
             if (footBone[i] < 0) continue;
             Vector3 toe = world.MultiplyPoint3x4(global[footBone[i]].GetColumn(3));
-            float height = (toe.y - position.y) / Mathf.Max(Scale, 0.01f);
+            float height = (toe.y - position.y) / Mathf.Max(Scale, 0.01f) - footRest[i];
             if (footDown[i] && height > FOOT_UP_M) footDown[i] = false;
             else if (!footDown[i] && height < FOOT_DOWN_M)
             {

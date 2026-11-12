@@ -27,7 +27,7 @@ def load_tool():
 TOOL = load_tool()
 
 
-SLICE_FILES = ("slice.json", "rig.json", "croc.vskin", "croc.kclip", "buildings.bin")
+SLICE_FILES = ("slice.json", "croc_adult.rig.json", "croc_adult.vskin", "croc_adult.kclip", "buildings.bin")
 
 
 def fake_build(root, data=True, slice_files=SLICE_FILES, version="9.9-test"):
@@ -74,7 +74,7 @@ class UnityBuildReleaseSmoke(unittest.TestCase):
                 "MonoBleedingEdge/EmbedRuntime/mono-2.0-bdwgc.dll",
                 "KaijuRampage_Data/StreamingAssets/res/data/tuning.json",
                 "KaijuRampage_Data/StreamingAssets/res/version.txt",
-                "KaijuRampage_Data/StreamingAssets/slice/croc.vskin",
+                "KaijuRampage_Data/StreamingAssets/slice/croc_adult.vskin",
             ):
                 self.assertIn(top + want, names)
             self.assertFalse([n for n in names if "Slice" in n], names)
@@ -93,7 +93,7 @@ class UnityBuildReleaseSmoke(unittest.TestCase):
             fake_build(root, slice_files=("slice.json", "buildings.bin"))
             with self.assertRaises(SystemExit) as e:
                 quiet(TOOL.stage, str(root), "9.9-test")
-            self.assertIn("rig.json", str(e.exception.code))
+            self.assertIn("croc_adult.rig.json", str(e.exception.code))
             self.assertIn("bake_slice.sh", str(e.exception.code))
 
     def test_stage_fails_on_a_stale_version(self):

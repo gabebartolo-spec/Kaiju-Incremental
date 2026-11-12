@@ -56,7 +56,8 @@ func _run() -> void:
 	_write_json("slice.json", _slice_json(sim, meta))
 	_write_json("digests.json", Digests.of(built))
 	if _croc != "":
-		_export_croc()
+		for stage: String in _stages():
+			_export_croc(_stage_base(stage), stage)
 	print("exported %d buildings to %s" % [picked.size(), OUT_DIR])
 	quit(0)
 
@@ -185,11 +186,29 @@ func _slice_json(sim: RampageSim, meta: Array) -> Dictionary:
 	}
 
 
-## The croc as the game loads it: the rig's rest pose and binds (after its arms relax, as VoxelSkin
-## binds them), the clips' fit, and the skin and clip files.
-func _export_croc() -> void:
-	var rig := KaijuRig.load_from(_croc, KaijuModel.MODEL_HEIGHT, 0.0)
-	var clips := KaijuClips.read(_croc + ".kclip")
+## The growth stages to export (D-014): every stage beside an ..._adult croc that has its files,
+## else the one croc given, as the adult.
+func _stages() -> Array[String]:
+	if not _croc.ends_with("_adult"):
+		return ["adult"]
+	var out: Array[String] = []
+	for stage: String in ["baby", "adolescent", "adult"]:
+		var base := _stage_base(stage)
+		if FileAccess.file_exists(base + ".rig.json") and FileAccess.file_exists(base + ".kclip"):
+			out.append(stage)
+	return out
+
+
+## A stage's files beside the croc given (kaiju_model.gd's <species>_<stage>).
+func _stage_base(stage: String) -> String:
+	return _croc.trim_suffix("_adult") + "_" + stage if _croc.ends_with("_adult") else _croc
+
+
+## One stage's croc as the game loads it, written as croc_<stage>.*: the rig's rest pose and binds
+## (after its arms relax, as VoxelSkin binds them), the clips' fit, and the skin and clip files.
+func _export_croc(base: String, stage: String) -> void:
+	var rig := KaijuRig.load_from(base, KaijuModel.MODEL_HEIGHT, 0.0)
+	var clips := KaijuClips.read(base + ".kclip")
 	var fit_error := clips.fit(rig)
 	if fit_error != "":
 		push_error("clips do not fit the rig: " + fit_error)
@@ -205,14 +224,15 @@ func _export_croc() -> void:
 				"bind": _xf(bind)
 			}
 		)
+	var out := "croc_" + stage
 	_write_json(
-		"rig.json",
+		out + ".rig.json",
 		{"bones": bones, "rig_scale": clips.rig_scale, "rig_origin": _v3(clips.rig_origin)}
 	)
-	var raw := FileAccess.get_file_as_bytes(_croc + ".vskin")
+	var raw := FileAccess.get_file_as_bytes(base + ".vskin")
 	var plain := raw.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
-	_write_bytes("croc.vskin", plain)
-	_write_bytes("croc.kclip", FileAccess.get_file_as_bytes(_croc + ".kclip"))
+	_write_bytes(out + ".vskin", plain)
+	_write_bytes(out + ".kclip", FileAccess.get_file_as_bytes(base + ".kclip"))
 	rig.free()
 
 
