@@ -29,6 +29,7 @@ static class Program
         failures += PoliceCheck.Run(RepoRoot());
         failures += LightPoolCheck.Run(RepoRoot());
         failures += StreetPropsCheck.Run(RepoRoot());
+        failures += StadiumCheck.Run(RepoRoot());
         // The game logic outside the sim (GameLogic/): saves, settings and what a rampage takes from the save.
         failures += SaveCheck.Run(RepoRoot());
         failures += SettingsCheck.Run(RepoRoot());

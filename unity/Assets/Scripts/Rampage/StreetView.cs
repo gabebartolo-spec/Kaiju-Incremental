@@ -10,7 +10,7 @@ using S = Kaiju.Sim;
 // buildings crush. Presentation only (hard rule 3).
 public sealed class StreetView
 {
-    // scenes/voxel_person.gd OUTFITS (the six civilians): shirt, pants, hair, skin; and _bake's shoe.
+    // scenes/voxel_person.gd OUTFITS (the six civilians): shirt, pants, hair, skin (PersonCells builds them).
     static readonly int[][] OUTFITS =
     {
         new[] { 0x8a3a32, 0x2f3440, 0x2a1f18, 0xe0b48e },
@@ -21,11 +21,6 @@ public sealed class StreetView
         new[] { 0x6a4a6e, 0x1f2630, 0x1a1714, 0xa06a46 },
         new[] { 0x1f2a44, 0x18202f, 0x101418, 0xc58c5f },  // COP: uniform, trousers, cap, skin
     };
-    const int SHOE = 0x1a1a1a;
-    // scenes/voxel_person.gd COP's belt and pistol.
-    const int BELT = 0x0e0e0e, GUN = 0x161616;
-    // scenes/voxel_person.gd _body: each pose's stride (WALK_A, WALK_B, RUN_A, RUN_B, AIM).
-    static readonly int[] STRIDE = { 1, -1, 2, -2, 1 };
     // Graphics.DrawMeshInstanced's most per call.
     const int BATCH = 1023;
     // scenes/tank_yard.gd: a tank on the street flattens what is within 1.4 of it, every tenth step.
@@ -51,6 +46,7 @@ public sealed class StreetView
     readonly TrafficView trafficView;
     public readonly Police police;
     readonly PoliceView policeView;
+    readonly List<StadiumView> stadiums = new List<StadiumView>();
     int tankStep;
     // Where the camera was at the last Draw: the light pool picks the lights nearest it.
     Vector3 eye;
@@ -59,9 +55,45 @@ public sealed class StreetView
     public int Props => decor.Count + (beach != null ? beach.Count : 0);
     // The Tripo street props standing in this city (street_props.gd placed).
     public int StreetProps => decor.street.placed.Count;
+    // scenes/city_view.gd: the salt of the sport's stream off the run's presentation stream.
+    const long SPORT_SALT = 0x5907;
+
+    // street_life.gd civilians_killed and panicking: the streets', the pitch's and the stands' (fans crushed or gone
+    // with their stand).
+    public int CiviliansKilled
+    {
+        get
+        {
+            int n = people.killed;
+            foreach (StadiumView s in stadiums) n += s.match.killed + (s.match.crowd != null ? s.match.crowd.killed + s.match.crowd.fallen : 0);
+            return n;
+        }
+    }
+
+    public int Panicking
+    {
+        get
+        {
+            int n = people.Panicking();
+            foreach (StadiumView s in stadiums) n += s.match.crowd != null ? s.match.crowd.Running() : 0;
+            return n;
+        }
+    }
+
+    // The first stadium's match for the stats line: players on the pitch and escaped, kicks, then the fans in view,
+    // running, fallen, out and drawn.
+    public string StadiumStats()
+    {
+        if (stadiums.Count == 0) return "none";
+        StadiumMatch m = stadiums[0].match;
+        StadiumCrowd c = m.crowd;
+        string fans = c == null ? "no crowd" : $"fans {c.InStands()} fans_running {c.Running()} fans_fallen {c.fallen} fans_out {c.escaped} fans_killed {c.killed} fans_drawn {stadiums[0].FansDrawn}";
+        return $"{S.Gd.Str(m.sport["id"])} pitch {m.OnPitch()} players_out {m.escaped} kicks {m.kicks} {fans}";
+    }
+
     public int PropsCrushed => decor.Crushed + (beach != null ? beach.Crushed : 0);
 
-    public StreetView(S.RampageSim sim, CityFx fx, Shader shader, Transform parent, float exposureUnit, float lightMatch)
+    public StreetView(S.RampageSim sim, CityFx fx, Shader shader, Transform parent, float exposureUnit, float lightMatch, long seed)
     {
         this.sim = sim;
         this.fx = fx;
@@ -77,7 +109,7 @@ public sealed class StreetView
             for (int pose = 0; pose < StreetPeople.POSES; pose++)
             {
                 int k = outfit * StreetPeople.POSES + pose;
-                meshes[k] = ArmyView.Faces(PropTiles.Model(Shaded(Body(outfit, pose), k, noise)), voxel, new Vector3(-0.5f * voxel, 0f, -0.5f * voxel));
+                meshes[k] = PersonCells.Mesh(PersonCells.Body(OUTFITS[outfit], pose, outfit == StreetPeople.COP), k, voxel, noise);
                 batches[k] = new List<Matrix4x4[]>();
             }
         decor = new StreetDecor(sim, shader, parent);
@@ -89,11 +121,11 @@ public sealed class StreetView
         police = new Police(people, traffic, S.Seeds.Make("police", 0));
         people.police = police;
         policeView = new PoliceView(police, shader, parent, fx.Lights, exposureUnit, lightMatch);
+        Stadiums(shader, seed);
         S.GDict plan = S.CityGen.Map(sim.city);
         if (plan.Has("harbour"))
         {
-            S.GDict harbour = sim.city["harbour"];
-            S.GDict props = harbour["props"];
+            S.GDict props = ((S.GDict)sim.city["harbour"])["props"];
             float cell = (float)S.Num.F(props["voxel"]);
             float y = (float)BeachLayout.FloorY(plan);
             beach = new PropTiles("beach props", shader, parent, cell, y);
@@ -104,77 +136,14 @@ public sealed class StreetView
         }
     }
 
-    // scenes/voxel_person.gd mesh: each cell a touch lighter or darker, by the outfit and pose (VoxelBuilder.salt).
-    static Dictionary<Vector3Int, int> Shaded(Dictionary<Vector3Int, int> cells, int salt, double noise)
+    // street_life.gd: a match on every stadium's pitch, its sport off the run's presentation stream (city_view.gd).
+    void Stadiums(Shader shader, long seed)
     {
-        var shaded = new Dictionary<Vector3Int, int>(cells.Count);
-        foreach (KeyValuePair<Vector3Int, int> cell in cells)
-            shaded[cell.Key] = VoxelJitter.Shade(cell.Value, cell.Key.x, cell.Key.y, cell.Key.z, salt, noise);
-        return shaded;
-    }
-
-    // scenes/voxel_person.gd _body: one civilian's cells in a pose, feet on y = 0, facing Godot -z.
-    static Dictionary<Vector3Int, int> Body(int outfit, int pose)
-    {
-        int[] o = OUTFITS[outfit];
-        int shirt = o[0], pants = o[1], hair = o[2], skin = o[3];
-        var cells = new Dictionary<Vector3Int, int>();
-        int stride = STRIDE[pose];
-        for (int leg = 0; leg < 2; leg++)
-        {
-            int x = leg == 0 ? -2 : 1, f = leg == 0 ? stride : -stride;
-            cells[new Vector3Int(x, 0, f)] = SHOE;
-            cells[new Vector3Int(x, 0, f - 1)] = SHOE;
-            cells[new Vector3Int(x, 1, f)] = pants;
-            cells[new Vector3Int(x, 2, Math.Abs(f) > 1 ? Math.Sign(f) : 0)] = pants;
-            PropTiles.Box(cells, new Vector3Int(x, 3, 0), new Vector3Int(x, 4, 0), pants);
-        }
-        bool cop = outfit == StreetPeople.COP;
-        PropTiles.Box(cells, new Vector3Int(-2, 5, -1), new Vector3Int(1, 5, 0), cop ? BELT : pants);
-        PropTiles.Box(cells, new Vector3Int(-2, 6, -1), new Vector3Int(1, 8, 0), shirt);
-        PropTiles.Box(cells, new Vector3Int(-1, 9, -1), new Vector3Int(0, 9, -1), skin);
-        PropTiles.Box(cells, new Vector3Int(-1, 9, 0), new Vector3Int(0, 9, 0), hair);
-        PropTiles.Box(cells, new Vector3Int(-1, 10, -1), new Vector3Int(0, 10, 0), hair);
-        if (cop) PropTiles.Box(cells, new Vector3Int(-1, 10, -2), new Vector3Int(0, 10, -2), hair);  // cap brim
-        if (pose == StreetPeople.AIM) Aim(cells, shirt, skin);
-        else Arms(cells, pose, stride, shirt, skin);
-        return cells;
-    }
-
-    // voxel_person.gd _body, Pose.AIM: both hands forward on a pistol.
-    static void Aim(Dictionary<Vector3Int, int> cells, int shirt, int skin)
-    {
-        for (int side = 0; side < 2; side++)
-        {
-            int x = side == 0 ? -3 : 2, step = side == 0 ? 1 : -1;
-            cells[new Vector3Int(x, 8, -1)] = shirt;
-            cells[new Vector3Int(x + step, 8, -2)] = shirt;
-            cells[new Vector3Int(x + step * 2, 8, -3)] = skin;
-        }
-        PropTiles.Box(cells, new Vector3Int(-1, 8, -4), new Vector3Int(0, 8, -4), GUN);
-        cells[new Vector3Int(-1, 9, -4)] = GUN;
-    }
-
-    // voxel_person.gd _body: arms flung up in panic (running), else swinging against the legs.
-    static void Arms(Dictionary<Vector3Int, int> cells, int pose, int stride, int shirt, int skin)
-    {
-        if (pose == StreetPeople.RUN_A || pose == StreetPeople.RUN_A + 1)
-        {
-            for (int side = 0; side < 2; side++)
-            {
-                int x = side == 0 ? -3 : 2;
-                PropTiles.Box(cells, new Vector3Int(x, 8, 0), new Vector3Int(x, 10, 0), shirt);
-                cells[new Vector3Int(x, 11, 0)] = skin;
-            }
-            return;
-        }
-        for (int side = 0; side < 2; side++)
-        {
-            int ax = side == 0 ? -3 : 2, ay = side == 0 ? -Math.Sign(stride) : Math.Sign(stride);
-            PropTiles.Box(cells, new Vector3Int(ax, 7, 0), new Vector3Int(ax, 8, 0), shirt);
-            cells[new Vector3Int(ax, 6, ay)] = shirt;
-            cells[new Vector3Int(ax, 5, ay)] = skin;
-        }
+        string landmark = S.Gd.Str(((S.GDict)S.Content.Sports()["pitch"])["landmark"]);
+        S.RandomNumberGenerator rng = S.Seeds.Derive(S.Seeds.Make("fx", seed), SPORT_SALT);
+        int max = (int)Kaiju.Game.GraphicsPreset.Cap("crowd_max");
+        for (int i = 0; i < sim.buildings.Size(); i++)
+            if (sim.buildings[i].landmark == landmark) stadiums.Add(new StadiumView(sim, i, fx, shader, rng, max));
     }
 
     // ---------- Crushing ----------
@@ -197,6 +166,7 @@ public sealed class StreetView
     {
         Trample(at, radius);
         traffic.Crush(new S.Vector2(at.x, at.z), radius);
+        foreach (StadiumView stadium in stadiums) stadium.match.Crush(new S.Vector3(at.x, 0.0, at.z), radius);
         people.Crush(at.x, at.z, radius, byTank, byArmy);
     }
 
@@ -208,6 +178,7 @@ public sealed class StreetView
         {
             Trample(new Vector3((float)s.x, 0f, (float)s.y), (float)s.z);
             traffic.Crush(new S.Vector2(s.x, s.y), s.z);  // street_life.gd crush_all, spot by spot
+            foreach (StadiumView stadium in stadiums) stadium.match.Crush(new S.Vector3(s.x, 0.0, s.y), s.z);
         }
         people.CrushAll(at);
     }
@@ -266,6 +237,7 @@ public sealed class StreetView
         people.Step(dt, sim.kaijuPos, sim.BodyScale(), sim.emerge.surfaced || !sim.emerge.active);
         fx.Lights.Step(dt, eye.x, eye.y, eye.z);  // the fires' lights and the beacons (scenes/light_pool.gd)
         policeView.Step();
+        foreach (StadiumView stadium in stadiums) stadium.Step(dt);
         decor.Tick();
         if (beach != null) beach.Tick();
     }
@@ -300,6 +272,7 @@ public sealed class StreetView
                 Graphics.DrawMeshInstanced(meshes[bucket], 0, material, batches[bucket][from / BATCH], Mathf.Min(BATCH, counts[bucket] - from), null, ShadowCastingMode.On, true);
         trafficView.Draw(cam);
         policeView.Draw();
+        foreach (StadiumView stadium in stadiums) stadium.Draw();
     }
 
     public void Dispose()
@@ -309,6 +282,7 @@ public sealed class StreetView
         UnityEngine.Object.Destroy(material);
         trafficView.Dispose();
         policeView.Dispose();
+        foreach (StadiumView stadium in stadiums) stadium.Dispose();
         decor.Dispose();
         beach?.Dispose();
         courts?.Dispose();

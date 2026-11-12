@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Kaiju.Sim
 {
-    static class GodotSort
+    public static class GodotSort
     {
         const long Threshold = 16;
 
