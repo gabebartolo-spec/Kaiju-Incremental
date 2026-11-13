@@ -41,7 +41,8 @@ VERSION_TXT = os.path.join(DATA, "StreamingAssets", "res", "version.txt")
 VERSION_ARG = "-kaijuVersion"
 # The slice the rampage loads (RampageGame, Croc, CreationLabView); git-ignored, written by bake_slice.sh.
 SLICE = os.path.join(DATA, "StreamingAssets", "slice")
-SLICE_FILES = ("slice.json", "croc_adult.rig.json", "croc_adult.vskin", "croc_adult.kclip", "buildings.bin")
+SLICE_FILES = ("slice.json", "croc_adult.rig.json", "croc_adult.vskin", "croc_adult.kclip", "buildings.bin",
+               "far_beast.rig.json", "far_beast.vskin")
 # Other exes in unity/Build that are not the game's: only the crash handler ships.
 SHIPPED_EXES = (EXE, "UnityCrashHandler64.exe")
 LOG = os.path.join("unity", "Logs-release.txt")

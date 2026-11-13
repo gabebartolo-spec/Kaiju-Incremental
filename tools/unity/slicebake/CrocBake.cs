@@ -12,7 +12,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kaiju.Sim;
 
-static class CrocBake
+static partial class CrocBake
 {
     sealed class Bone
     {

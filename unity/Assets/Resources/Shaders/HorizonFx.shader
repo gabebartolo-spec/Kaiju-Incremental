@@ -1,7 +1,7 @@
 // The far rampage across the bay (SkylineRampage, D-484): its fires and the warm wash they throw on the haze
 // (scenes/horizon_fire.gdshader), its smoke columns and collapse dust (horizon_smoke.gdshaderinc, in the same air
 // as the far towers: the engine's fog on top), and the far city's window light on the bay
-// (bay_glow.gdshader). Camera-facing quads placed here from the elapsed time (_FarNow); a quad's data sits in
+// (bay_glow.gdshader), and the far beast's picture (FarBeast; far_impostor.gdshaderinc). Camera-facing quads placed here from the elapsed time (_FarNow); a quad's data sits in
 // _FarQuads (Godot axes), three float4 each: (centre or base xyz, size x), Godot's INSTANCE_CUSTOM, (size y).
 // Display units straight out: HDRP's colour buffer is pre-exposed.
 Shader "Hidden/Slice/HorizonFx"
@@ -11,6 +11,7 @@ Shader "Hidden/Slice/HorizonFx"
         [HideInInspector] _SrcBlend("", Float) = 5
         [HideInInspector] _DstBlend("", Float) = 10
         [HideInInspector] _ZTest("", Float) = 4
+        [HideInInspector] _ZWrite("", Float) = 0
     }
     HLSLINCLUDE
     #pragma target 4.5
@@ -28,14 +29,14 @@ Shader "Hidden/Slice/HorizonFx"
             Name "ForwardOnly"
             Tags { "LightMode" = "ForwardOnly" }
             Blend [_SrcBlend] [_DstBlend], One OneMinusSrcAlpha
-            ZWrite Off
+            ZWrite [_ZWrite]
             ZTest [_ZTest]
             Cull Off
 
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_local FAR_FIRE FAR_SMOKE BAY_GLOW
+            #pragma multi_compile_local FAR_FIRE FAR_SMOKE BAY_GLOW FAR_BEAST
             #define SHADERPASS SHADERPASS_FORWARD_UNLIT
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Material.hlsl"
             #include "Assets/Resources/Shaders/CityGround.hlsl"
@@ -53,6 +54,16 @@ Shader "Hidden/Slice/HorizonFx"
             // The glow lies on the bay's waves as Godot's pass on the same mesh does: drawn without the depth test,
             // it gives way only where the scene is this share of its depth nearer (the croc, the near city).
             #define GLOW_SLACK 0.15
+            // The far beast's picture (far_impostor.gdshaderinc): the little world's render, keyed off its black
+            // clear (the colour buffer has no alpha), on a quad facing the player (Unity axes, frame-scaled).
+            TEXTURE2D(_BeastView);
+            SAMPLER(sampler_BeastView);
+            float4 _BeastCentre, _BeastRight, _BeastUp;
+            float4 _BeastShape;  // shade, rim, px, rim_width
+            float4 _BeastRim;    // the fire's rim colour (linear)
+            float4 _FarHaze, _FarHazeColor;  // CitySkyline.FarAir: haze, start, base, base_height; colour (linear)
+            #define BEAST_KEY 64.0
+            #define BEAST_CUT 0.01
 
             struct Varyings
             {
@@ -91,6 +102,15 @@ Shader "Hidden/Slice/HorizonFx"
                 float3 godot = float3(lerp(_GlowRect.x, _GlowRect.z, c.x), _GlowShape.x, lerp(_GlowRect.y, _GlowRect.w, c.y));
                 o.data.x = godot.z - _GlowShape.y;
                 o.positionRWS = GetCameraRelativePositionWS(Mirror(godot));
+                o.positionCS = TransformWorldToHClip(o.positionRWS);
+                return o;
+            #elif defined(FAR_BEAST)
+                uint corner = vertexID % 6u;
+                float2 c = float2(corner == 1u || corner == 2u || corner == 4u ? 1.0 : 0.0, corner == 2u || corner >= 4u ? 1.0 : 0.0);
+                float3 world = _BeastCentre.xyz + _BeastRight.xyz * (c.x - 0.5) + _BeastUp.xyz * (c.y - 0.5);
+                o.uv = c;  // a render texture's v runs up
+                o.data.x = world.y;
+                o.positionRWS = GetCameraRelativePositionWS(world);
                 o.positionCS = TransformWorldToHClip(o.positionRWS);
                 return o;
             #else
@@ -157,6 +177,15 @@ Shader "Hidden/Slice/HorizonFx"
                 return color;
             }
 
+            // far_haze.gdshaderinc: the far skyline's own haze and its height fog (SliceSurface.hlsl FarHazeShare).
+            float BeastHaze(float dist, float height)
+            {
+                float f = clamp(1.0 - exp(-max(dist - _FarHaze.y, 0.0) * _FarHaze.x), 0.0, 0.94);
+                float foot = _FarHaze.z * exp(-max(height, 0.0) / _FarHaze.w);
+                return clamp(f + (1.0 - f) * foot * smoothstep(_FarHaze.y * 0.5, _FarHaze.y, dist), 0.0, 0.97);
+            }
+
+
             float4 Frag(Varyings i) : SV_Target
             {
             #if defined(BAY_GLOW)
@@ -164,6 +193,22 @@ Shader "Hidden/Slice/HorizonFx"
                 if (scene < i.positionCS.w * (1.0 - GLOW_SLACK)) discard;
                 float alpha = _GlowShape.w * (1.0 - smoothstep(0.0, _GlowShape.z, max(i.data.x, 0.0)));
                 return float4(Fogged(i, _FarColor.rgb), alpha);
+            #elif defined(FAR_BEAST)
+                float3 seen = SAMPLE_TEXTURE2D(_BeastView, sampler_BeastView, i.uv).rgb;
+                float alpha = saturate(max(max(seen.r, seen.g), seen.b) * BEAST_KEY);
+                clip(alpha - BEAST_CUT);
+                float2 d = _BeastShape.w / _BeastShape.z;
+                float around = 0.0;
+                for (int k = 0; k < 8; k++)
+                {
+                    float a = k * 0.785398;
+                    float3 near = SAMPLE_TEXTURE2D(_BeastView, sampler_BeastView, i.uv + float2(cos(a), sin(a)) * d).rgb;
+                    around += saturate(max(max(near.r, near.g), near.b) * BEAST_KEY);
+                }
+                float edge = alpha * (1.0 - around / 8.0);
+                float3 lit = seen * _BeastShape.x + _BeastRim.rgb * edge * _BeastShape.y;
+                float f = BeastHaze(length(i.positionRWS), i.data.x);
+                return float4(Fogged(i, lit * (1.0 - f) + _FarHazeColor.rgb * f), alpha);
             #elif defined(FAR_FIRE)
                 float2 p = i.uv * 2.0 - 1.0;
                 float r = length(p);

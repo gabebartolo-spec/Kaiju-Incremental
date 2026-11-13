@@ -163,17 +163,3 @@ static class VoxelAO
         return o;
     }
 }
-
-// Constants the export reads from scenes/ GDScript (the scripts are the source; never copied here).
-static class GdConst
-{
-    public static double ModelHeight() => Read("scenes/kaiju_model.gd", "MODEL_HEIGHT");
-
-    static double Read(string script, string name)
-    {
-        string text = File.ReadAllText(Path.Combine(Kaiju.Sim.FileAccess.Root, script));
-        Match m = Regex.Match(text, @"^const\s+" + name + @"\s*:?=\s*([-0-9.eE+]+)\s*$", RegexOptions.Multiline);
-        if (!m.Success) throw new InvalidOperationException($"slicebake: no const {name} in {script}");
-        return Strtod.Parse(m.Groups[1].Value);
-    }
-}
