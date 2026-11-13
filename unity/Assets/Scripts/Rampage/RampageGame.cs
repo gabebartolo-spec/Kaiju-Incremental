@@ -305,8 +305,7 @@ public sealed partial class RampageGame : MonoBehaviour
         street = new StreetView(sim, fx, lit, root.transform, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, seed);
         Debug.Log($"street: {street.people.Civilians()} people ({street.people.beachPeople} on the beach), {street.Props} props");
         rail = new RailView(sim, fx, army, lit, root.transform, WreckKick);
-        skyline = new CitySkyline(sim.city, lit, root.transform, seed);
-        Debug.Log($"skyline: {skyline.Boxes} boxes");
+        BuildFarCity(lit, seed, root.transform);
         strike = new AirstrikeView(sim, lit, root.transform);
         aircraft = new Aircraft(tuning, lit, root.transform, seed);
         breath = new BreathView(sim, fx, croc, trees, seed, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m);
@@ -634,7 +633,7 @@ public sealed partial class RampageGame : MonoBehaviour
         rail.Update();
         vip.Step(dt);
         strike.Step(dt);
-        aircraft.Step(dt);
+        StepBackdrop(dt);
         Trample();
         street.Step(dt, steps);
         if (croc.TakeFootfall(out string side, out Vector3 footAt))
@@ -816,7 +815,7 @@ public sealed partial class RampageGame : MonoBehaviour
         rooftops?.Dispose();
         street?.Dispose();
         death?.Dispose();
-        death?.Dispose();
+        DisposeFarCity();
         rail?.Dispose();
         strike?.Dispose();
         aircraft?.Dispose();

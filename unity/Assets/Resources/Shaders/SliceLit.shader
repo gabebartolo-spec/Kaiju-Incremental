@@ -317,6 +317,10 @@ Shader "Slice/Lit"
     #if defined(SLICE_BUILDING)
     #define _DOUBLESIDED_ON
     #endif
+    #if defined(SLICE_FACADE)
+    // Every pass, depth and shadow included: uv0 names the far box whose fall moves the vertex.
+    #define ATTRIBUTES_NEED_TEXCOORD0
+    #endif
     ENDHLSL
     SubShader
     {

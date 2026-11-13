@@ -3,8 +3,10 @@ using UnityEngine;
 using S = Kaiju.Sim;
 
 // Everything past the playable edge (scenes/city_skyline.gd): painted stand-in boxes on the plan's outer blocks,
-// two freeways winding through the outskirts, and a far shore across the bay with a lattice tower. One box
-// per building, merged per tile. Never destroyed; presentation only. Godot axes in, mirrored at the mesh.
+// two freeways winding through the outskirts, a far shore across the bay with a lattice tower, and lamp heads
+// down the outer streets (scenes/skyline_lamps.gd). One box per building, merged per tile; the far shore's boxes
+// carry a code (uv0.x: style + 16 x code; 1 far, 2 + i the far box i's fall) that SliceSurface.hlsl hazes as
+// the far air (FarHaze) and topples by SkylineRampage's falls. Presentation only. Godot axes in, mirrored at the mesh.
 public sealed class CitySkyline
 {
     const float TILE = 128f, QUAY_CLEAR = 17f, FREEWAY_CLEAR = 6f, DECK_Y = 7f, DECK_WIDTH = 5f;
@@ -15,6 +17,14 @@ public sealed class CitySkyline
     // scenes/city_skyline.gd DETAIL_REACH and _roof_clutter; scenes/skyline_roof_tank.gd CELL and colours.
     const float DETAIL_REACH = 200f, GEAR_LIGHTEN = 0.15f, GEAR_CELL = 0.125f, GEAR_DARKEN = 0.25f;
     const string GEAR_WOOD = "6a5040", GEAR_WHITE = "e6e8e4", GEAR_GLASS = "1b2538";
+    // The uv0.x code (SliceSurface.hlsl FacadeCode): far, and the far box whose fall a box follows.
+    const float CODE_STRIDE = 16f, CODE_FAR = 1f, CODE_FALLS = 2f, FALL_BOUNDS = 60f;
+    // scenes/city_skyline.gd _lattice_tower's tip (a blinking box, never falls); skyline_lamps.gd's lamps.
+    const float TIP_SEED = 0.3f, LAMP_START = 3f, LAMP_EVERY = 9f, LAMP_Y = 2.6f, LAMP_OUT = 0.5f;
+    const float LAMP_ON_DECK = 2.2f, FREEWAY_LAMP_REACH = 1.5f, STYLE_GLOW = -3f, LAMP_ENERGY = 4f;
+    const int PILLAR_EVERY = 3;
+    static readonly Vector3 TIP = new Vector3(1f, 2f, 1f), LAMP_HEAD = new Vector3(0.35f, 0.2f, 0.35f);
+    const string LAMP_COLOR = "ffd59a";
 
     sealed class Tile
     {
@@ -22,6 +32,7 @@ public sealed class CitySkyline
         public readonly List<Color32> c = new List<Color32>();
         public readonly List<Vector2> a = new List<Vector2>(), b = new List<Vector2>();
         public readonly List<int> t = new List<int>();
+        public bool far;
     }
 
     readonly S.GDict cfg, plan;
@@ -30,9 +41,18 @@ public sealed class CitySkyline
     readonly List<Color> styles = new List<Color>();
     readonly float coast, windowLit, half;
     readonly Color lot;
-    float grain = NEAR_GRAIN;
+    readonly List<Vector3> lamps = new List<Vector3>();
+    float grain = NEAR_GRAIN, code;
 
     public int Boxes { get; private set; }
+    public int Lamps => lamps.Count;
+    // Two float4 per far box (SliceSurface.hlsl _FarFalls), every one standing until SkylineRampage topples it.
+    public ComputeBuffer Falls { get; private set; }
+    public const int FALL_STRIDE = 2;
+    // The far skyline's boxes in city_skyline.gd _far's order (SkylineRampage topples them), Godot axes.
+    public readonly List<SkylineRampagePlan.Box> Far = new List<SkylineRampagePlan.Box>();
+    // The far shore's quay edge (coast - bay_width), Godot z.
+    public float Shore => coast - F(cfg, "bay_width");
 
     static float F(S.GDict d, string key) => (float)(double)S.Num.F(d[key]);
     static Color Hex(string s)
@@ -41,11 +61,12 @@ public sealed class CitySkyline
         return c;
     }
 
-    public CitySkyline(S.GDict city, Shader shader, Transform parent, int seed)
+    // city_view.gd: the skyline's stream is the same every run (Seeds.make("skyline", 0)).
+    public CitySkyline(S.GDict city, Shader shader, Transform parent)
     {
         cfg = city;
         plan = S.CityGen.Map(city);
-        rng = S.Seeds.Make("skyline", seed);
+        rng = S.Seeds.Make("skyline", 0);
         coast = F(cfg, "coast_z");
         half = F(cfg, "half");
         S.GDict look = S.Content.Look();
@@ -61,8 +82,31 @@ public sealed class CitySkyline
         OuterBlocks();
         Freeways();
         FarShore();
+        code = 0f;
+        OuterStreetLamps();
+        Color head = Hex(LAMP_COLOR);
+        foreach (Vector3 at in lamps) Box(at, LAMP_HEAD, Vector2.right, head, STYLE_GLOW, LAMP_ENERGY, 0f);
         Build(shader, parent);
+        FarAir(look);
+        Falls = new ComputeBuffer(Mathf.Max(1, Far.Count) * FALL_STRIDE, sizeof(float) * 4);
+        var standing = new Vector4[Falls.count];
+        for (int i = 1; i < standing.Length; i += FALL_STRIDE) standing[i] = new Vector4(-1f, 0f, 0f, 0f);
+        Falls.SetData(standing);
+        Shader.SetGlobalBuffer("_FarFalls", Falls);
     }
+
+    // far_haze.gd apply_default (tuning city far_fog): the far skyline in the same air as the bay, its own built haze
+    // (city far_haze) kept at own_haze, and the height fog at its foot; off, its built haze alone.
+    void FarAir(S.GDict look)
+    {
+        S.GDict fog = cfg["far_fog"];
+        bool on = fog["on"];
+        float haze = F(cfg, "far_haze") * (on ? F(fog, "own_haze") : 1f);
+        Shader.SetGlobalVector("_FarHaze", new Vector4(haze, F(fog, "start"), on ? F(fog, "base") : 0f, F(fog, "base_height")));
+        Shader.SetGlobalVector("_FarHazeColor", Hex(S.Gd.Str(look["fog_color"])).linear);
+    }
+
+    public void Dispose() => Falls?.Release();
 
     float Rand(float a, float b) => (float)(double)rng.RandfRange(a, b);
     float Lit() => windowLit * Rand(0.6f, 1.4f);
@@ -151,7 +195,9 @@ public sealed class CitySkyline
                 var off = new Vector2(-dir.y, dir.x) * PARAPET;
                 Plain(new Vector3(mid.x + off.x, DECK_Y + 0.65f, mid.y + off.y), new Vector3(length, 0.6f, 0.3f), dir, rail);
                 Plain(new Vector3(mid.x - off.x, DECK_Y + 0.65f, mid.y - off.y), new Vector3(length, 0.6f, 0.3f), dir, rail);
-                if (i % 3 == 0) Plain(new Vector3(a.x, DECK_Y * 0.5f, a.y), new Vector3(1.2f, DECK_Y, 1.6f), Vector2.right, deck);
+                if (i % PILLAR_EVERY != 0) continue;  // a pillar every 18 units, and a lamp on it
+                Plain(new Vector3(a.x, DECK_Y * 0.5f, a.y), new Vector3(1.2f, DECK_Y, 1.6f), Vector2.right, deck);
+                if (a.magnitude < DETAIL_REACH * FREEWAY_LAMP_REACH) lamps.Add(new Vector3(a.x, DECK_Y + LAMP_ON_DECK, a.y));
             }
         }
     }
@@ -166,7 +212,8 @@ public sealed class CitySkyline
     void FarShore()
     {
         grain = FAR_GRAIN;
-        float shore = coast - F(cfg, "bay_width");
+        code = CODE_FAR;
+        float shore = Shore;
         Plain(new Vector3(0f, -0.2f, shore - 200f), new Vector3(2400f, 2f, 400f), Vector2.right, lot * 0.8f);
         for (float x = -700f; x < 700f; x += Rand(14f, 26f))
         {
@@ -179,14 +226,51 @@ public sealed class CitySkyline
                 if (Rand(0f, 1f) < downtown * 0.15f) tall *= SUPERTALL;
                 tall = Capped(tall);
                 var at = new Vector3(x + Rand(-4f, 4f), tall * 0.5f, shore - 12f - r * 26f - d * 0.5f);
-                int style = Mathf.FloorToInt(Rand(0f, 4f));
+                int style = (int)rng.RandiRange(0, 3);
                 Color tint = styles[style % styles.Count];
+                int index = Far.Count;
+                code = CODE_FALLS + index;
+                FarBox(at, new Vector3(w, tall, d), -1);
                 Facade(at, new Vector3(w, tall, d), tint * 0.85f, style, Lit() * 0.7f, tall > BEACON_ABOVE);
-                if (tall > 90f)  // a stepped crown on the supertalls, New York style
-                    Facade(at + new Vector3(0f, tall * 0.56f, 0f), new Vector3(w * 0.6f, tall * 0.12f, d * 0.6f), tint, style, Lit(), true);
+                if (tall <= 90f) continue;
+                // A stepped crown on the supertalls, New York style; it falls with its tower.
+                var crownAt = at + new Vector3(0f, tall * 0.56f, 0f);
+                var crown = new Vector3(w * 0.6f, tall * 0.12f, d * 0.6f);
+                FarBox(crownAt, crown, index);
+                Facade(crownAt, crown, tint, style, Lit(), true);
             }
         }
+        code = CODE_FAR;
         Lattice(new Vector3(-160f, 0f, shore - 70f));
+    }
+
+    void FarBox(Vector3 at, Vector3 size, int crownOf) => Far.Add(new SkylineRampagePlan.Box
+    {
+        at = new S.Vector3(at.x, at.y, at.z), size = new S.Vector3(size.x, size.y, size.z), crownOf = crownOf,
+    });
+
+    // skyline_lamps.gd outer_streets: a lamp every 9 units down each outer street within DETAIL_REACH (inside the
+    // playable city the decor puts real ones), none on the waterfront.
+    void OuterStreetLamps()
+    {
+        S.GArray<S.Vector2> nodes = plan["nodes"];
+        S.GArray<S.GDict> streets = plan["streets"];
+        foreach (S.GDict street in streets)
+        {
+            if (S.Gd.Str(street["kind"]) == S.CityGen.ALLEY) continue;
+            S.Vector2 ga = nodes[(int)S.Num.I(street["from"])], gb = nodes[(int)S.Num.I(street["to"])];
+            var a = new Vector2((float)ga.x, (float)ga.y);
+            var b = new Vector2((float)gb.x, (float)gb.y);
+            if (Mathf.Max(Mathf.Abs(a.x), Mathf.Abs(a.y)) <= half + 1f && Mathf.Max(Mathf.Abs(b.x), Mathf.Abs(b.y)) <= half + 1f) continue;
+            if (Mathf.Min(a.y, b.y) < coast) continue;
+            Vector2 dir = (b - a).normalized;
+            Vector2 side = new Vector2(-dir.y, dir.x) * (F(street, "width") * 0.5f + LAMP_OUT);
+            for (float t = LAMP_START; t < Vector2.Distance(a, b); t += LAMP_EVERY)
+            {
+                Vector2 p = a + dir * t + side;
+                if (p.magnitude < DETAIL_REACH) lamps.Add(new Vector3(p.x, LAMP_Y, p.y));
+            }
+        }
     }
 
     // A red-and-white lattice broadcast tower (a Tokyo Tower silhouette).
@@ -208,13 +292,18 @@ public sealed class CitySkyline
             }
             if (i == 9 || i == 17) Plain(foot + new Vector3(0f, y, 0f), new Vector3(w * 2.4f, 3f, w * 2.4f), Vector2.right, white);
         }
+        // Its blinking tip, a far box of its own (never falls: under SkylineRampagePlan's least height).
+        var tip = foot + new Vector3(0f, height + TIP.y * 0.5f, 0f);
+        code = CODE_FALLS + Far.Count;
+        FarBox(tip, TIP, -1);
+        Facade(tip, TIP, red, 0, 0f, true, TIP_SEED);
     }
 
     // ---------- Boxes ----------
 
-    void Facade(Vector3 centre, Vector3 size, Color wall, int style, float lit, bool beacon)
+    void Facade(Vector3 centre, Vector3 size, Color wall, int style, float lit, bool beacon, float drawn = -1f)
     {
-        float seed = Mathf.Round(Rand(0f, 1f) * SEED_STEPS) / SEED_STEPS;
+        float seed = Mathf.Round((drawn >= 0f ? drawn : Rand(0f, 1f)) * SEED_STEPS) / SEED_STEPS;
         Box(centre, size, Vector2.right, wall, style, lit, seed);
         if (beacon)
             Box(centre + new Vector3(0f, size.y * 0.5f + 0.05f, 0f), new Vector3(1.2f, 0.1f, 1.2f), Vector2.right, Color.red, STYLE_BEACON, 0f, seed);
@@ -227,6 +316,8 @@ public sealed class CitySkyline
     {
         Vector2Int key = new Vector2Int(Mathf.FloorToInt(centre.x / TILE), Mathf.FloorToInt(centre.z / TILE));
         if (!tiles.TryGetValue(key, out Tile tile)) tiles[key] = tile = new Tile();
+        tile.far |= code > 0f;
+        style += CODE_STRIDE * code;
         Boxes++;
         var ux = new Vector3(along.x, 0f, -along.y) * (size.x * 0.5f);   // mirrored into Unity
         var uz = new Vector3(along.y, 0f, along.x) * (size.z * 0.5f);
@@ -279,6 +370,12 @@ public sealed class CitySkyline
             mesh.SetUVs(0, tile.a);
             mesh.SetUVs(1, tile.b);
             mesh.SetTriangles(tile.t, 0);
+            if (tile.far)  // a far tower leans and sinks out of its box as it falls
+            {
+                Bounds bounds = mesh.bounds;
+                bounds.Expand(FALL_BOUNDS * 2f);
+                mesh.bounds = bounds;
+            }
             mesh.UploadMeshData(true);
             var go = new GameObject("tile");
             go.transform.SetParent(root, false);

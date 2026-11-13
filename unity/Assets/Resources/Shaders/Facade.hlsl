@@ -1,7 +1,7 @@
 // The stand-in buildings past the playable edge (scenes/facade.gdshaderinc): one box per building,
 // its facade painted in world space at the voxels' grid: slab line, two window rows, lintel. Vertex
 // colour = wall (sRGB), alpha = grain / 32; uv0 = (style, share of windows lit), uv1 = (roof height, seed).
-// Style -1 is a plain box (concrete), -2 a blinking roof beacon. Godot axes throughout.
+// Style -1 is a plain box (concrete), -2 a blinking roof beacon, -3 a glowing lamp head. Godot axes throughout.
 float4 _FacadeRoof, _FacadeWindow;
 float _FacadeFilterStart, _FacadeFilterCells;
 
@@ -94,7 +94,12 @@ void FacadeSurface(float3 world, float3 n, float4 color, float2 data, float2 box
     float seed = floor(box.y * 1024.0 + 0.5) / 1024.0;
     float2 at = float2(abs(n.x) > 0.5 ? world.z : world.x, world.y);
     float2 foot = max(fwidth(at) * grain, 1e-5);
-    if (data.x < -1.5)
+    if (data.x < -2.5)
+    {
+        // A glowing lamp head (city_view.gd glow): the wall colour, lit at data.y.
+        emit = wall * data.y;
+    }
+    else if (data.x < -1.5)
     {
         float blink = step(0.5, frac(_Time.y * 0.6 + seed * 7.0));
         albedo = float3(0.4, 0.05, 0.03);
