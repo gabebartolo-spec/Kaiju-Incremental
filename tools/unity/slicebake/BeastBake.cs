@@ -24,7 +24,7 @@ static partial class CrocBake
         long height = KvoxHeight(model + ".kvox");
         if (height <= 0) return model + ".kvox has no height";
         using JsonDocument spec = JsonDocument.Parse(File.ReadAllText(model + ".rig.json"));
-        List<Bone> bones = Build(spec.RootElement, GdConst.ModelHeight() / height);
+        List<Bone> bones = Build(spec.RootElement, BodyData.ModelHeight() / height);
         string plan = spec.RootElement.TryGetProperty("type", out JsonElement t) ? t.GetString() ?? "biped" : "biped";
         if (plan != "biped") LowerArms(bones);
         var byName = new Dictionary<string, Bone>();
@@ -42,7 +42,7 @@ static partial class CrocBake
                 { "rest", Xf(b.rest) }, { "bind", Xf(AffineInverse(ToRig(b, byName))) },
             });
         }
-        var rig = new GDict { { "bones", rows }, { "type", plan }, { "species", species }, { "model_height", GdConst.ModelHeight() } };
+        var rig = new GDict { { "bones", rows }, { "type", plan }, { "species", species }, { "model_height", BodyData.ModelHeight() } };
         File.WriteAllBytes(Path.Combine(outDir, "far_beast.rig.json"), new UTF8Encoding(false).GetBytes(GodotJson.Stringify(rig)));
         using (var gz = new GZipStream(File.OpenRead(model + ".vskin"), CompressionMode.Decompress))
         using (var plain = File.Create(Path.Combine(outDir, "far_beast.vskin")))

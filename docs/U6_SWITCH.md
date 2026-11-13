@@ -34,17 +34,21 @@ workflows and two composite actions, project.godot, export_presets.cfg, .gdlintr
 
 ## Blockers to cut first
 `python tools/unity/retire_godot.py --blockers` lists kept code that still reads a leaving file (exit 1 while any
-remain). On 2026-11-13, 17 files:
+remain). On 2026-11-13, 17 files; the U6 blocker PR cut all but these 7, which go in the switch PR itself:
 
-| Kept file | Reads | Cut |
+| Kept file | Reads | Cut at the switch |
 |---|---|---|
-| unity/Assets/Scripts/GameLogic/FeedbackReport.cs, unity/SimTests/FeedbackCheck.cs, unity/Assets/Editor/SliceBuild.cs, tools/unity/build_release.py (+ its test) | project.godot (the version) | a root `version.txt`, already read first by FeedbackReport |
-| tools/unity/slicebake/Program.cs | project.godot (finds the repo root) | look for `unity/ProjectSettings` instead |
-| tools/unity/slicebake/GdConst.cs, CrocBake.cs | consts in scenes/kaiju_model.gd, scenes/biped_swing.gd | move the numbers to data/ (hard rule 4) |
-| tools/kaiju_skin/bake_all.sh | Godot runs dump_rest.gd | port the rest dump to Python or C#, or freeze the skins |
-| .github/workflows/unity.yml | gd2cs `--check` | drop the step: the C# is the source after the switch |
-| tools/run_touched.py, tools/lint/push_gate.sh | run_tests.sh, GDScript lints | the Unity-only versions (below) |
-| data/tuning.json, data/motion_gate.json, StreamingAssets/fire.json, GraphicsView.cs | Godot file names in notes and a warning | reword |
+| .github/workflows/unity.yml | gd2cs `--check` | drop the step (on `claude/u6-unity-only-rules`) |
+| tools/run_touched.py, tools/lint/push_gate.sh | run_tests.sh, GDScript lints | the Unity-only versions (on that branch) |
+| unity/Assets/Scripts/GameLogic/FeedbackReport.cs, unity/SimTests/FeedbackCheck.cs (VersionSources) | project.godot, the version fallback after version.txt | drop the fallback and its checks together |
+| unity/Assets/Editor/SliceBuild.cs | deletes an old build's stale res/project.godot | drop the two lines |
+| unity/Assets/Scripts/Game/GraphicsView.cs | far_depth.gd in a warning | reword |
+
+Cut by that PR: the version is a root `version.txt` (build_release.py, SliceBuild.cs, FeedbackCheck.Version;
+`tools/lint/tests/test_godot_mirror.py` holds it equal to project.godot until then); slicebake finds the repo by
+`unity/ProjectSettings` and reads the model height and relaxed arm directions from `data/tuning.json` `kaiju_body`
+(the same test holds them equal to the Godot consts); `tools/kaiju_skin/bake_all.sh` gets the rest poses from
+`slicebake --rest` (RestDump.cs) instead of Godot's dump_rest.gd; the data files' "_note" keys no longer count.
 
 ## The rules rewrite
 Landed now (safe while Godot runs): `tools/run_touched.py` also runs `unity/SimTests` under dotnet when the Unity sim

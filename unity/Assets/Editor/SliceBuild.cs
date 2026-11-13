@@ -146,16 +146,16 @@ public static class SliceBuild
         if (File.Exists(staleProject)) File.Delete(staleProject);
     }
 
-    // The release version: -kaijuVersion's value (build_release.py project_version()), else project.godot's
-    // config/version read as the player would (a lead's direct batch build), else "unversioned".
+    // The release version: -kaijuVersion's value (build_release.py project_version()), else the repo's version.txt
+    // read as the player would (a direct batch build), else "unversioned".
     static string BuildVersion(string repo)
     {
         string[] args = Environment.GetCommandLineArgs();
         int at = Array.IndexOf(args, VERSION_ARG);
         if (at >= 0 && at + 1 < args.Length) return args[at + 1];
-        string project = Path.Combine(repo, "project.godot");
-        string version = Kaiju.Game.FeedbackReport.ProjectVersion(File.Exists(project) ? File.ReadAllText(project) : "");
-        Debug.LogWarning($"rampage: no {VERSION_ARG}, version {version} from project.godot");
+        string file = Path.Combine(repo, Kaiju.Game.FeedbackReport.VERSION_NAME);
+        string version = Kaiju.Game.FeedbackReport.VersionOf(File.Exists(file) ? File.ReadAllText(file) : null, null);
+        Debug.LogWarning($"rampage: no {VERSION_ARG}, version {version} from version.txt");
         return version;
     }
 

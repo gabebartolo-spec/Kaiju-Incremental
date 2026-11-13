@@ -32,7 +32,7 @@ SLICE_FILES = ("slice.json", "croc_adult.rig.json", "croc_adult.vskin", "croc_ad
 
 
 def fake_build(root, data=True, slice_files=SLICE_FILES, version="9.9-test"):
-    helpers.write(root, "project.godot", 'config/name="Kaiju"\nconfig/version="9.9-test"\n')
+    helpers.write(root, "version.txt", "9.9-test\n")
     b = "unity/Build/"
     helpers.write(root, b + "KaijuRampage.exe", "exe")
     helpers.write(root, b + "UnityPlayer.dll", "dll")

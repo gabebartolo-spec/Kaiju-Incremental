@@ -9,7 +9,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Kaiju.Sim;
 
 static partial class CrocBake
@@ -48,11 +47,11 @@ static partial class CrocBake
         }
         long height = KvoxHeight(croc + ".kvox");
         if (height <= 0) return croc + ".kvox has no height";
-        double voxel = GdConst.ModelHeight() / height;
+        double voxel = BodyData.ModelHeight() / height;
         using JsonDocument spec = JsonDocument.Parse(File.ReadAllText(croc + ".rig.json"));
         List<Bone> bones = Build(spec.RootElement, voxel);
         string plan = spec.RootElement.TryGetProperty("type", out JsonElement t) ? t.GetString() ?? "biped" : "biped";
-        if (plan == "biped") RelaxArms(bones, repo);
+        if (plan == "biped") RelaxArms(bones);
 
         (double scale, Vector3 origin, string why) = Fit(croc + ".kclip", bones);
         if (why != "") return "clips do not fit the rig: " + why;
@@ -110,13 +109,12 @@ static partial class CrocBake
         return o;
     }
 
-    // KaijuRig._relax_arms with BipedSwing.rest_arm_bases (scenes/biped_swing.gd ARM_* directions).
-    static void RelaxArms(List<Bone> bones, string repo)
+    // KaijuRig._relax_arms with BipedSwing.rest_arm_bases (the arm directions: data/tuning.json kaiju_body.arm_rest).
+    static void RelaxArms(List<Bone> bones)
     {
         var byName = new Dictionary<string, Bone>();
         foreach (Bone b in bones) byName[b.name] = b;
-        string swing = File.ReadAllText(Path.Combine(repo, "scenes", "biped_swing.gd"));
-        Vector3[] dirs = { ArmConst(swing, "ARM_UPPER"), ArmConst(swing, "ARM_FORE"), ArmConst(swing, "ARM_HAND") };
+        Vector3[] dirs = { BodyData.ArmRest("upper"), BodyData.ArmRest("fore"), BodyData.ArmRest("hand") };
         var bases = new List<(string, Basis)>();
         foreach (string side in new[] { "l", "r" })
         {
@@ -133,13 +131,6 @@ static partial class CrocBake
             }
         }
         foreach ((string n, Basis b) in bases) byName[n].rest = new Transform3D(b, byName[n].rest.origin);
-    }
-
-    static Vector3 ArmConst(string script, string name)
-    {
-        Match m = Regex.Match(script, @"^const\s+" + name + @"\s*:?=\s*Vector3\(([^,]+),([^,]+),([^)]+)\)", RegexOptions.Multiline);
-        if (!m.Success) throw new InvalidOperationException("slicebake: no const " + name + " in scenes/biped_swing.gd");
-        return new Vector3(Strtod.Parse(m.Groups[1].Value.Trim()), Strtod.Parse(m.Groups[2].Value.Trim()), Strtod.Parse(m.Groups[3].Value.Trim()));
     }
 
     // export_slice.gd _to_rig: the bone's transform through its parents, up to the rig.

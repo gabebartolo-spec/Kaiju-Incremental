@@ -8,8 +8,8 @@ data), then the Unity batch build the lead runs
 (SliceBuild.BuildRampage), whose log must say "rampage: build Succeeded" and hold no "error CS". The player in
 unity/Build (KaijuRampage.exe, its _Data folder and the Unity runtime beside it; the U4 slice player and the
 Burst DoNotShip folders are left out) is copied into dist/KaijuEvolution-<version>-windows-unity/ and zipped to
-dist/KaijuEvolution-<version>-windows-unity.zip. The version is config/version in project.godot, where
-tools/build_release.py reads it; the build gets it as -kaijuVersion and writes it to res/version.txt, which the
+dist/KaijuEvolution-<version>-windows-unity.zip. The version is the first line of version.txt at the repo root
+(tools/build_release.py reads Godot's project.godot); the build gets it as -kaijuVersion and writes it to res/version.txt, which the
 player's feedback report reads (stage checks the two match). dist/ is git-ignored.
 
     KAIJU_CROC=<dir>/reptilian_adult python tools/unity/build_release.py   # bake, build, stage, zip
@@ -22,7 +22,6 @@ Exit 0 on success, nonzero on any failure.
 
 import argparse
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -51,12 +50,16 @@ COMPILE_ERROR = "error CS"
 
 
 def project_version(root: str) -> str:
-    """config/version from project.godot (e.g. 0.1-demo), as tools/build_release.py reads it."""
-    with open(os.path.join(root, "project.godot"), encoding="utf-8") as f:
-        m = re.search(r'^config/version="([^"]+)"', f.read(), re.MULTILINE)
-    if not m:
-        sys.exit("FAIL: no config/version in project.godot")
-    return m.group(1)
+    """The release version (e.g. 0.1-demo): version.txt's first line at the repo root (U6: it was project.godot's
+    config/version, which tools/lint/tests/test_godot_mirror.py keeps it equal to while Godot is on main)."""
+    path = os.path.join(root, "version.txt")
+    line = ""
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            line = f.readline().strip()
+    if not line:
+        sys.exit("FAIL: no version in version.txt")
+    return line
 
 
 def run(cmd: list, root: str, what: str) -> None:

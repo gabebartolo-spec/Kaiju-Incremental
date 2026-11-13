@@ -36,8 +36,10 @@ class CodeText(unittest.TestCase):
         self.assertNotIn("export_slice", rg.code_text("x.csproj", xml))
 
     def test_blockers_name_the_kept_reader(self):
-        found = rg.blockers(["tools/unity/slicebake/GdConst.cs"], {"scenes/kaiju_model.gd"})
-        self.assertEqual(found, {"tools/unity/slicebake/GdConst.cs": ["scenes/kaiju_model.gd"]})
+        files = {"tools/unity/x/Bake.cs": 'var h = Read("scenes/kaiju_model.gd");',
+                 "data/x.json": '{"_note": "moved from scenes/a.gd", "path": "scenes/b.gd"}'}
+        found = rg.blockers(sorted(files), {"scenes/kaiju_model.gd", "scenes/a.gd", "scenes/b.gd"}, files.get)
+        self.assertEqual(found, {"tools/unity/x/Bake.cs": ["scenes/kaiju_model.gd"], "data/x.json": ["scenes/b.gd"]})
 
 
 if __name__ == "__main__":
