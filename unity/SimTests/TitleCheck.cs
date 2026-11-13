@@ -31,6 +31,7 @@ static class TitleCheck
             News();
             Rows();
             Art(repoRoot);
+            Check(TitleCityCheck.Godot(), "the burning city is Godot's (golden/title_city.txt)");
             Tr.Language = "es";
             Check(TitleMenu.PlateText(Slot(2, false)) == "RANURA 2\nEMPTY", "a plate's head is in the player's language");
             Check(TitleMenu.Who(Unreadable(1)) == "partida ilegible", "an unreadable save is named in the player's language");
