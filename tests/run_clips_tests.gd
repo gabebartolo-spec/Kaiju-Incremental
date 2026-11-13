@@ -372,7 +372,10 @@ func _check_tail_slam() -> void:
 		await process_frame
 	check(
 		counts["adult"] == 0 and counts["adolescent"] == 0,
-		"the keyed roar lands no slam (adult %d, Behemoth %d)" % [counts["adult"], counts["adolescent"]]
+		(
+			"the keyed roar lands no slam (adult %d, Behemoth %d)"
+			% [counts["adult"], counts["adolescent"]]
+		)
 	)
 
 
