@@ -1,7 +1,7 @@
 // The croc's growth-stage bodies (Rampage/CrocStages.cs, scenes/kaiju_model.gd): each size tier draws its own
 // stage's body, a missing stage falls back to the next one up, and a stage's takes decide what it plays. On the
-// repo's own reptilian_<stage>.kclip files: the baby lashes but cannot sweep, the Behemoth (adolescent) does
-// neither, the Colossus (adult) does both, and only the Colossus has the keyed run and rise from the bay.
+// repo's own reptilian_<stage>.kclip files: the baby lashes but cannot sweep; the Behemoth (adolescent), on the
+// adult skeleton playing the Colossus's takes (D-484), and the Colossus (adult) both do, with the keyed run and rise.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -51,7 +51,7 @@ static class StageBodyCheck
         var expect = new Dictionary<string, (bool lash, bool sweep, bool run, bool rise)>
         {
             ["baby"] = (true, false, false, false),
-            ["adolescent"] = (false, false, false, false),
+            ["adolescent"] = (true, true, true, true),  // the Colossus's takes (D-484)
             ["adult"] = (true, true, true, true),
         };
         foreach (string stage in CrocStages.STAGES)
@@ -83,7 +83,8 @@ static class StageBodyCheck
     }
 
     // Croc.cs's pushers: each stage keeps the tuning spheres whose bones its rig carries and skips the rest. Every
-    // stage keeps the trunk, head and each leg down to leg_x2 and the tail to tail8; only the baby and adult keep the rest.
+    // stage keeps the trunk, head and each leg down to leg_x2 and the tail to tail8, and on the adult skeleton (all
+    // three since the Behemoth's re-rig, D-484) the rest too.
     static void Spheres(string repoRoot)
     {
         using JsonDocument tuning = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "unity", "Assets", "StreamingAssets", "tuning.json")));
@@ -100,8 +101,7 @@ static class StageBodyCheck
             foreach (JsonElement b in rig.RootElement.GetProperty("bones").EnumerateArray()) bones.Add(b.GetProperty("name").GetString()!);
             var kept = new HashSet<string>(wanted.FindAll(bones.Contains));
             foreach (string bone in every) Check(kept.Contains(bone), $"the {stage} keeps its {bone} sphere");
-            Check(stage == "adolescent" ? kept.Count == every.Length : kept.Count == wanted.Count,
-                $"the {stage} keeps {kept.Count} of {wanted.Count} spheres");
+            Check(kept.Count == wanted.Count, $"the {stage} keeps {kept.Count} of {wanted.Count} spheres");
         }
     }
 
