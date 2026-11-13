@@ -15,6 +15,7 @@ public sealed partial class RampageGame
 
     void BuildFarCity(Shader lit, int seed, Transform root)
     {
+        BuildBoats(lit, root);
         skyline = new CitySkyline(sim.city, lit, root);
         S.GDict city = S.Content.Section("city");
         S.GDict cfg = S.Content.Section("skyline_rampage");
@@ -60,6 +61,7 @@ public sealed partial class RampageGame
     void StepBackdrop(float dt)
     {
         aircraft.Step(dt);
+        boats.Step(dt);
         Vector3 ear = cam.transform.position;
         farRampage?.Step(dt, new Vector3(ear.x, ear.y, -ear.z));
         foreach ((Material mat, Bounds bounds) in bayGlow)
@@ -74,5 +76,6 @@ public sealed partial class RampageGame
         farRampage?.Dispose();
         skyline?.Dispose();
         foreach ((Material mat, Bounds _) in bayGlow) Destroy(mat);
+        DisposeBoats();
     }
 }
