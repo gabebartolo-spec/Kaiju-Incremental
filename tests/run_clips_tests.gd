@@ -348,8 +348,9 @@ func _check_tail_owner() -> void:
 	await process_frame
 
 
-## A roar keyed without a tail slam ("tail_slam": false) lands none: the adult's Cascadeur roar arches its tail up,
-## and the Behemoth plays that roar too since its re-rig onto the adult skeleton (D-484; its old Blender roar slammed).
+## A roar keyed without a tail slam ("tail_slam": false) lands none: the adult's Cascadeur
+## roar arches its tail up, and the Behemoth plays that roar too since its re-rig onto the
+## adult skeleton (D-484; its old Blender roar slammed).
 func _check_tail_slam() -> void:
 	var counts: Dictionary[String, int] = {}
 	for stage: String in ["adolescent", "adult"]:

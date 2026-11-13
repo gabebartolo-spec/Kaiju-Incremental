@@ -3,13 +3,13 @@ extends "res://tests/lib/runner.gd"
 ## leap plays its clip on the sim's Dash phases: the crouch sinks the body, the feet leave the
 ## street through the flight and the settle, the clip's own rise is left to the sim, and the kaiju
 ## is back to idle after it; without the hook the body keeps its standing pose (on vs off). A
-## standing stomp plays the keyed stomp of the foot the sim chose: that foot rises high and lands
-## as the stomp's footfall inside the scene's wait, on the Colossus and on the Behemoth, which plays the Colossus's
-## takes on the adult skeleton (D-484); the baby, with no keyed stomp, lifts its
-## foot in code and stays idle (on vs off). Walking (PR3): from standing the walk start plays about
+## standing stomp plays the keyed stomp of the foot the sim chose: that foot rises high and lands as
+## the stomp's footfall inside the scene's wait, on the Colossus and on the Behemoth, which plays
+## the Colossus's takes on the adult skeleton (D-484); the baby, with no keyed stomp, lifts its foot
+## in code and stays idle (on vs off). Walking (PR3): from standing the walk start plays about
 ## 1.3 s, then the walk (the baby walks at once); momentum blends the walk into the keyed run
-## (blend 1 vs 0); a slam plays the slam stop to its end; a walking turn lays head_look (mirrored
-## for a right turn) or the 90 deg walk turn over the upper body (vs no turn).
+## (blend 1 vs 0); a slam plays the slam stop to its end; a walking turn lays head_look
+## (mirrored for a right turn) or the 90 deg walk turn over the upper body (vs no turn).
 ## Fixed 60 Hz steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_takes_tests.gd
 
@@ -104,7 +104,10 @@ func _check_walk_start() -> void:
 			on.states.slice(0, 3) == ["idle", "walk_start", "walk"]
 			and behemoth.states.slice(0, 3) == on.states.slice(0, 3)
 		),
-		"standing to walking: %s (the Behemoth: %s, the baby: %s)" % [on.states, behemoth.states, off.states]
+		(
+			"standing to walking: %s (the Behemoth: %s, the baby: %s)"
+			% [on.states, behemoth.states, off.states]
+		)
 	)
 	check(
 		(

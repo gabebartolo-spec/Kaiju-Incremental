@@ -1,10 +1,12 @@
 extends SceneTree
-## The Behemoth (the croc's middle stage) on the adult skeleton playing the Colossus's takes (D-484), in its own
-## city at the game camera: it walks north long enough for the walk to blend into the run, lashes on the signature
-## button (--lash=S, seconds after the rise, comma list), stands, and sweeps its tail (the tail stat on, so the
-## automatic sweep plays). Prints each clip state change ("TAKE t <state> <layer>"), for cutting the clip.
-##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/b.avi \
-##     --script tools/capture/capture_behemoth_takes.gd -- --seconds=22 [--walk=12] [--lash=4,9]
+## The Behemoth (the croc's middle stage) on the adult skeleton playing the Colossus's takes
+## (D-484), in its own city at the game camera: it walks north long enough for the walk to blend
+## into the run, lashes on the signature button (--lash=S, seconds after the rise, comma list),
+## stands, and sweeps its tail (the tail stat on, so the automatic sweep plays). Prints each clip
+## state change ("TAKE t <state> <layer>"), for cutting the clip.
+##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
+##     --write-movie <dir>/b.avi --script tools/capture/capture_behemoth_takes.gd \
+##     -- --seconds=22 [--walk=12] [--lash=4,9]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const BEHEMOTH_LEVELS := 1  ## Kit.STAGE_LEVELS: the Behemoth
@@ -84,8 +86,8 @@ func _run() -> void:
 	quit()
 
 
-## Every half second: the croc's snout, pelvis, tail tip and toes, and the camera (eye, turn in degrees, fov), so a
-## shot's framing is checked from the logged positions before filming.
+## Every half second: the croc's snout, pelvis, tail tip and toes, and the camera (eye, turn in
+## degrees, fov), so a shot's framing is checked from the logged positions before filming.
 func _log_frame(rampage: Rampage, gait: ClipGait, frame: int) -> void:
 	var rig := gait.rig
 	var pts: Array[String] = []
