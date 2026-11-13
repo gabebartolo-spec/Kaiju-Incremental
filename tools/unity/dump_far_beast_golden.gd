@@ -1,11 +1,13 @@
 extends SceneTree
-## Writes where Godot's far beast (the insectoid adult KaijuModel, HexapodGait) puts its feet down, standing and
-## walking, so the Unity port (unity/Assets/Scripts/Rampage/FarBeast*.cs) can be checked against it frame for frame.
+## Writes where Godot's far beast (the insectoid adult KaijuModel, HexapodGait) puts its
+## feet down, standing and walking, so the Unity port
+## (unity/Assets/Scripts/Rampage/FarBeast*.cs) can be checked against it frame for frame.
 ##
 ##   godot --headless --fixed-fps 60 --path . --script tools/unity/dump_far_beast_golden.gd
 ##
-## Output: unity/SimTests/golden/far_beast.txt, read by FarBeastCheck (`dotnet run --project unity/SimTests`).
-## One line per footfall: mode, frame, foot, strength, x, y, z (the model's own units); END the thorax at the last frame.
+## Output: unity/SimTests/golden/far_beast.txt, read by FarBeastCheck
+## (`dotnet run --project unity/SimTests`). One line per footfall: mode, frame, foot,
+## strength, x, y, z (the model's own units); END the thorax at the last frame.
 
 const OUT := "res://unity/SimTests/golden/far_beast.txt"
 const FRAMES := 300
