@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # push_gate.sh: the seconds-long CI checks every push passes first (director 2026-10-30: "sessions keep failing
 # CI in predictable ways"). Run by the PreToolUse hook in .claude/settings.json on any `git push`; a fail blocks
-# the push and the session reads why. Covers what went red most: doc line caps and gdformat/gdlint (lint.yml),
+# the push and the session reads why. Covers what went red most: doc line caps (lint.yml),
 # the repo checks, the Unity C# lints (C1-C3, C7) and the Python lints prepush step 2 runs. No Godot here (the Unity
 # typecheck runs when unity/Assets/ changed): the touched suites are tools/run_touched.py (D-403).
 # The selftests run only when tools/lint/ changed (they take minutes on Windows).
@@ -35,29 +35,16 @@ caps() {
 run "doc line caps" caps
 
 changed=$(git diff --name-only --diff-filter=ACMR "$BASE"...HEAD)
-gd=$(printf '%s\n' "$changed" | grep -E '\.gd$' | grep -vE '^(\.godot|\.claude|tests/fixtures/lint)/' || true)
-if [ -n "$gd" ]; then
-	snake() { printf '%s\n' "$gd" | grep -vE '(^|/)[a-z0-9]+(_[a-z0-9]+)*\.gd$' && return 1 || return 0; }
-	run "snake_case file names" snake
-	# shellcheck disable=SC2086 # one path per word, no spaces in .gd paths (snake_case)
-	run "gdlint" python -m gdtoolkit.linter $gd
-	# shellcheck disable=SC2086
-	run "gdformat --check (fix: python -m gdtoolkit.formatter <file>)" python -m gdtoolkit.formatter --check $gd
-fi
-
 run "workflow timeouts" python tools/lint/workflow_timeouts.py
 run "tuning keys" python tools/lint/tuning_keys.py
 run "licence register" python tools/lint/licence_register.py
-run "complexity ratchet" python tools/lint/complexity_ratchet.py
 run "cs determinism" python tools/lint/cs_determinism.py
 run "cs complexity ratchet" python tools/lint/cs_complexity_ratchet.py
 run "cs magic numbers" python tools/lint/cs_magic_numbers.py
 run "cs meta" python tools/lint/cs_meta.py
 run "data schemas" python tools/lint/data_schemas.py
-run tools/lint/check_thread_resources.sh bash tools/lint/check_thread_resources.sh
-# The slow repo checks run only when the push touches what they read (check_uids 60 s, check_lfs 20 s on Windows).
-if printf '%s\n' "$changed" | grep -qE '\.(gd|gdshader|gdshaderinc|uid)$'; then run tools/lint/check_uids.sh bash tools/lint/check_uids.sh; fi
-if printf '%s\n' "$changed" | grep -qvE '\.(md|gd|uid|py|sh|json|yml|cfg|txt|tscn|tres|gdshader|gdshaderinc)$'; then
+# check_lfs reads every LFS file (20 s on Windows): only when the push touches a binary.
+if printf '%s\n' "$changed" | grep -qvE '\.(md|py|sh|json|yml|cfg|txt|cs|meta|asset|unity|prefab|mat|shader|hlsl|cpp|bat)$'; then
 	run tools/lint/check_lfs.sh bash tools/lint/check_lfs.sh
 fi
 # check_i18n reads the Chinese font, which stays an LFS pointer unless pulled (CI pulls it).

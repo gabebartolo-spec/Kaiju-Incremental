@@ -60,43 +60,6 @@ jobs:
           python tools/lint/workflow_timeouts.py --self-test
           python tools/lint/workflow_timeouts.py
 
-  gdlint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install gdtoolkit
-        run: pip install "gdtoolkit==4.*"
-      - name: List GDScript files
-        shell: bash
-        run: |
-          # Every .gd file outside .godot/, .claude/ and tests/fixtures/lint/ (planted lookalikes for
-          # the project lints, not production code). Limits live in .gdlintrc (docs/05).
-          find . -name '*.gd' -not -path './.godot/*' -not -path './.claude/*' -not -path './tests/fixtures/lint/*' | sort > gd_files.txt
-          echo "$(wc -l < gd_files.txt) GDScript files"
-      - name: File names are snake_case (docs/05)
-        shell: bash
-        run: |
-          # gdlint has no file-name rule; docs/05 wants snake_case.gd.
-          bad=$(grep -v -E '/[a-z0-9]+(_[a-z0-9]+)*\.gd$' gd_files.txt || true)
-          if [ -n "$bad" ]; then
-            echo "$bad" | sed 's/^/::error::not snake_case: /'
-            exit 1
-          fi
-      - name: gdlint
-        shell: bash
-        run: xargs -a gd_files.txt gdlint
-      - name: gdformat --check
-        shell: bash
-        run: xargs -a gd_files.txt gdformat --check
-
-  # Secret scan: the default gitleaks rules plus the project's own in .gitleaks.toml
-  # (the fake-secret pattern the gate plants, and a generic sk- key rule), over the PR's commits.
-  # The MIT gitleaks CLI, pinned and checksum-checked; not gitleaks-action, whose v2 is under a
-  # proprietary EULA (tech debt row 26).
   gitleaks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
