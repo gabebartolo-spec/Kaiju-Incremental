@@ -16,7 +16,7 @@ const ClipSetOff := preload("res://tests/lib/clip_set_off.gd")
 const CLIPS := "res://assets/kaiju/reptilian_adult.kclip"
 ## Each croc titan stage and its Blender skin export (assets/kaiju/test/<name>.skin.json).
 const STAGES := {
-	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent", "adult": "croc_adult3"
+	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent_y9", "adult": "croc_adult3"
 }
 const DT := 1.0 / 60.0
 ## The adult's clips keyed in Cascadeur on rig r11 that the director approved (D-199, D-216;
@@ -348,12 +348,10 @@ func _check_tail_owner() -> void:
 	await process_frame
 
 
-## The roar's tail slam lands once, as a heavy footfall at the tail tip on the street (the scene's
-## dust, ring and camera dip), not as damage, for a roar keyed with one (the adolescent's Blender
-## roar); the adult's Cascadeur roar arches its tail up and lands no slam.
+## A roar keyed without a tail slam ("tail_slam": false) lands none: the adult's Cascadeur roar arches its tail up,
+## and the Behemoth plays that roar too since its re-rig onto the adult skeleton (D-484; its old Blender roar slammed).
 func _check_tail_slam() -> void:
 	var counts: Dictionary[String, int] = {}
-	var behind := true
 	for stage: String in ["adolescent", "adult"]:
 		var kaiju := _model("reptilian", stage)
 		var rig := _rig_of(kaiju)
@@ -369,18 +367,12 @@ func _check_tail_slam() -> void:
 		for frame: int in 420:
 			kaiju.animate(DT, 0.0)
 		counts[stage] = slams.size()
-		for at: Vector3 in slams:
-			behind = behind and (at - rig.global_position).length() > kaiju.hip_height()
 		kaiju.queue_free()
 		await process_frame
 	check(
-		counts["adolescent"] == 1 and behind,
-		(
-			"the Blender roar's tail slam lands once, behind the kaiju (%d slams)"
-			% counts["adolescent"]
-		)
+		counts["adult"] == 0 and counts["adolescent"] == 0,
+		"the keyed roar lands no slam (adult %d, Behemoth %d)" % [counts["adult"], counts["adolescent"]]
 	)
-	check(counts["adult"] == 0, "the adult's keyed roar lands no slam (%d slams)" % counts["adult"])
 
 
 func _step(kaiju: KaijuModel, rig: KaijuRig) -> bool:
