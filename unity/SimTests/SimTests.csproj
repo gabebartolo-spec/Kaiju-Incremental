@@ -39,6 +39,17 @@
     <Compile Include="../Assets/Scripts/Rampage/RubbleShape.cs" />
     <Compile Include="../Assets/Scripts/Rampage/LeapFrames.cs" />
     <Compile Include="../Assets/Scripts/Rampage/CrocStages.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/FarBeastMath.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/FarBeastRig.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/FarBeastGait.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/FarBeastGait.Legs.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/FarBeastUpper.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/FarBeastWalk.cs" />
+    <!-- The far beast's rig, baked as the slice bake bakes it (FarBeastCheck). -->
+    <Compile Include="../../tools/unity/slicebake/CrocBake.cs" />
+    <Compile Include="../../tools/unity/slicebake/BeastBake.cs" />
+    <Compile Include="../../tools/unity/slicebake/GodotJson.cs" />
+    <Compile Include="../../tools/unity/slicebake/GdConst.cs" />
     <None Include="golden/**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Assets/Plugins/x86_64/kaiju_core.dll" Condition="Exists('../Assets/Plugins/x86_64/kaiju_core.dll')" Link="kaiju_core.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

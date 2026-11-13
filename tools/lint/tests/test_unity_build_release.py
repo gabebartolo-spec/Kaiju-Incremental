@@ -27,7 +27,8 @@ def load_tool():
 TOOL = load_tool()
 
 
-SLICE_FILES = ("slice.json", "croc_adult.rig.json", "croc_adult.vskin", "croc_adult.kclip", "buildings.bin")
+SLICE_FILES = ("slice.json", "croc_adult.rig.json", "croc_adult.vskin", "croc_adult.kclip", "buildings.bin",
+               "far_beast.rig.json", "far_beast.vskin")
 
 
 def fake_build(root, data=True, slice_files=SLICE_FILES, version="9.9-test"):

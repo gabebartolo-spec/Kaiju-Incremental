@@ -9,6 +9,7 @@ using S = Kaiju.Sim;
 public sealed partial class RampageGame
 {
     const int GLOW_VERTS = 6;
+    const float VOXEL_INSET = 0.99f;  // slice look voxel_inset when unset, as the croc's
     SkylineRampage farRampage;
     readonly List<(Material mat, Bounds bounds)> bayGlow = new List<(Material mat, Bounds bounds)>();
 
@@ -16,9 +17,18 @@ public sealed partial class RampageGame
     {
         skyline = new CitySkyline(sim.city, lit, root);
         S.GDict city = S.Content.Section("city");
-        if (S.Content.Section("skyline_rampage")["on"]) farRampage = new SkylineRampage(skyline, city, seed);
+        S.GDict cfg = S.Content.Section("skyline_rampage");
+        if (cfg["on"]) farRampage = new SkylineRampage(skyline, city, seed, Beast(cfg, lit));
         BayGlow(city["far_reflect"], skyline.Shore);
         Debug.Log($"skyline: {skyline.Boxes} boxes, far rampage {(farRampage == null ? "off" : farRampage.plan.falls.Count + " falls, " + farRampage.plan.fires.Count + " fires")}, bay glow {bayGlow.Count}");
+    }
+
+    // The far rampage's beast (FarBeast), skinned as the croc is: its cube, inset, colour noise and seams.
+    FarBeast Beast(S.GDict cfg, Shader lit)
+    {
+        var look = MiniJson.Obj(SliceData.LoadJson("slice.json")["look"]);
+        return FarBeast.Load(cfg, lit, crocCube, SliceData.F(look, "voxel_inset", VOXEL_INSET), MiniJson.F(look["color_noise"]),
+            tuning.seam_dark, SliceGame.ExposureUnit(tuning));
     }
 
     // FarWaterGlow.cover: a faint band of the window light over each bay sheet, `reach` metres out from the far shore.
@@ -59,6 +69,8 @@ public sealed partial class RampageGame
     void DisposeFarCity()
     {
         if (farRampage != null) Debug.Log($"far rampage: {farRampage.Fallen()} of {farRampage.plan.falls.Count} towers down at {farRampage.Elapsed:F1} s");
+        FarBeast beast = farRampage?.Beast;
+        if (beast != null) Debug.Log($"far beast: {beast.walk.Footfalls} footfalls, walked x {beast.MinX:F1}..{beast.MaxX:F1} at z {farRampage.plan.pathZ:F1}");
         farRampage?.Dispose();
         skyline?.Dispose();
         foreach ((Material mat, Bounds _) in bayGlow) Destroy(mat);

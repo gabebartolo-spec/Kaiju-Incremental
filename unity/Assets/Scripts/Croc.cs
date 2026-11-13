@@ -13,7 +13,7 @@ using UnityEngine.Rendering;
 public sealed partial class Croc
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    struct Cube
+    internal struct Cube
     {
         public float cx, cy, cz, w0, r, g, b, w1;
         public uint bones;
@@ -329,7 +329,7 @@ public sealed partial class Croc
         return list.ToArray();
     }
 
-    static float JitterT(int x, int y, int z, uint salt)
+    internal static float JitterT(int x, int y, int z, uint salt)
     {
         uint h = salt * 0x9E3779B1u;
         h = (h ^ (uint)x) * 0xcc9e2d51u;
@@ -374,7 +374,7 @@ public sealed partial class Croc
         return new Vector3(BitConverter.ToSingle(raw, at), BitConverter.ToSingle(raw, at + 4), BitConverter.ToSingle(raw, at + 8));
     }
 
-    static Mesh BuildFill(byte[] raw, int vertsAt, int verts, int indexAt, int indices)
+    internal static Mesh BuildFill(byte[] raw, int vertsAt, int verts, int indexAt, int indices)
     {
         var v = new NativeArray<FillVertex>(verts, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         for (int i = 0; i < verts; i++)

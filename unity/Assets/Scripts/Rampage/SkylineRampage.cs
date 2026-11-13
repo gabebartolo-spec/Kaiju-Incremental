@@ -4,15 +4,15 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using S = Kaiju.Sim;
 
-// The far rampage across the bay (scenes/skyline_rampage.gd, D-484; its beast, FarBeast, comes in its own port):
-// the towers in its way drop, fires and smoke columns rise where they fell and on towers nearby, and faint booms
-// arrive late, as from that far. A pure function of the elapsed time and the run's seeded stream (JumpTo), so a
+// The far rampage across the bay (scenes/skyline_rampage.gd, D-484): its beast (FarBeast) paces the skyline, the
+// towers in its way drop, fires and smoke columns rise where they fell and on towers nearby, and faint booms
+// and its footfalls arrive late, as from that far; a tower it smashes makes it stomp. A pure function of the elapsed time and the run's seeded stream (JumpTo), so a
 // capture can show any moment. Presentation only: the towers fall in CitySkyline's mesh (its Falls buffer, read by
 // SliceSurface.hlsl), the fires and smoke are camera-facing quads (HorizonFx.shader).
 public sealed class SkylineRampage : IDisposable
 {
     const long SKYLINE_SALT = 16;  // the far rampage's stream, drawn from the run's fx seed
-    const string BOOM = "assets/sfx/collapse.ogg";
+    const string BOOM = "assets/sfx/collapse.ogg", THUD = "assets/sfx/stomp_0.ogg";
     const string BUS = "SFX";
     const float TILT = 0.5f;  // a falling tower's lean at the end of its fall (radians)
     const int VOICES = 4;
@@ -43,16 +43,22 @@ public sealed class SkylineRampage : IDisposable
     readonly ComputeBuffer fireQuads, smokeQuads;
     readonly Material fireMat, smokeMat;
     readonly Bounds bounds = new Bounds(Vector3.zero, Vector3.one * BOUNDS);
-    readonly List<(double at, double db)> pending = new List<(double at, double db)>();
+    readonly List<(double at, string file, double db)> pending = new List<(double at, string file, double db)>();
+    readonly FarBeast beast;
+    public FarBeast Beast => beast;
+    Vector3 ear;  // the player's camera, Godot axes (_ear)
     readonly AudioChannel[] voices = new AudioChannel[VOICES];
     int nextVoice, nextFall;
 
     double F(string key) => S.Num.F(cfg[key]);
 
     // `city` tuning city (its far haze), `seed` the run's (its fx stream).
-    public SkylineRampage(CitySkyline skyline, S.GDict city, long seed)
+    // `beast` null: the far rampage without its beast (its bake missing).
+    public SkylineRampage(CitySkyline skyline, S.GDict city, long seed, FarBeast beast)
     {
         this.skyline = skyline;
+        this.beast = beast;
+        if (beast != null) beast.walk.FootPlanted += Footfall;
         cfg = S.Content.Section("skyline_rampage");
         S.RandomNumberGenerator rng = S.Seeds.Derive(S.Seeds.Make("fx", seed), SKYLINE_SALT);
         plan = new SkylineRampagePlan(cfg, skyline.Far, skyline.Shore, rng, PUFF);
@@ -140,9 +146,11 @@ public sealed class SkylineRampage : IDisposable
     // One frame: `dt` seconds on (0 while paused), the camera at `ear` (Godot axes).
     public void Step(float dt, Vector3 ear)
     {
+        this.ear = ear;
         Elapsed += dt;
         Apply();
-        Hear(ear);
+        Walk(dt);
+        Hear();
         if (plan.fires.Count > 0)
             Graphics.DrawProcedural(fireMat, bounds, MeshTopology.Triangles, QUAD_VERTS, plan.fires.Count * 2, null, null, ShadowCastingMode.Off, false, 0);
         if (plan.puffs.Count > 0)
@@ -157,7 +165,18 @@ public sealed class SkylineRampage : IDisposable
         while (nextFall < plan.falls.Count && plan.falls[nextFall].at <= Elapsed) nextFall++;
         pending.Clear();
         Apply();
+        Walk(0f);
     }
+
+    // The beast's feet where the plan has it now (_walk): side-on while it walks, turning to the bay as it slows.
+    void Walk(float dt)
+    {
+        if (beast == null) return;
+        double yaw = FarBeastWalk.Yaw(plan.Velocity(Elapsed), F("speed"));
+        beast.Walk(dt, new BV(plan.BeastX(Elapsed), SkylineRampagePlan.GROUND_Y, plan.pathZ), yaw, ear);
+    }
+
+    void Footfall(string side, double strength, BV at) => Send(THUD, new Vector3((float)at.x, (float)at.y, (float)at.z), F("step_db"));
 
     // How many towers have dropped by now (captures and tests).
     public int Fallen()
@@ -201,29 +220,37 @@ public sealed class SkylineRampage : IDisposable
         falls[index * CitySkyline.FALL_STRIDE + 1] = state;
     }
 
-    // Collapses reach the camera at the speed of sound, faint with distance (_hear, _send).
-    void Hear(Vector3 ear)
+    // Footfalls and collapses reach the camera at the speed of sound, faint with distance (_hear); a tower the
+    // beast smashes makes it stomp.
+    void Hear()
     {
         while (nextFall < plan.falls.Count && plan.falls[nextFall].at <= Elapsed)
         {
-            S.Vector3 at = skyline.Far[plan.falls[nextFall].index].at;
-            double dist = Math.Max(Vector3.Distance(Godot(at), ear), REF_DIST);
-            pending.Add((Elapsed + dist / F("sound_speed"), F("boom_db") - DB_PER_DECADE * Math.Log10(dist / REF_DIST)));
-            pending.Sort((a, b) => a.at.CompareTo(b.at));
+            Send(BOOM, Godot(skyline.Far[plan.falls[nextFall].index].at), F("boom_db"));
+            if (plan.falls[nextFall].smash) beast?.Stomp();
             nextFall++;
         }
         while (pending.Count > 0 && pending[0].at <= Elapsed)
         {
-            double db = pending[0].db;
+            (double _, string file, double db) = pending[0];
             pending.RemoveAt(0);
             AudioChannel voice = voices[nextVoice];
             nextVoice = (nextVoice + 1) % VOICES;
-            if (voice != null) AudioHost.I.Begin(voice, "far_boom", BOOM, BUS, db, F("boom_pitch"), 0.0, false);
+            if (voice != null) AudioHost.I.Begin(voice, "far_boom", file, BUS, db, F("boom_pitch"), 0.0, false);
         }
+    }
+
+    void Send(string file, Vector3 from, double db)
+    {
+        double dist = Math.Max(Vector3.Distance(from, ear), REF_DIST);
+        pending.Add((Elapsed + dist / F("sound_speed"), file, db - DB_PER_DECADE * Math.Log10(dist / REF_DIST)));
+        pending.Sort((a, b) => a.at.CompareTo(b.at));
     }
 
     public void Dispose()
     {
+        if (beast != null) beast.walk.FootPlanted -= Footfall;
+        beast?.Dispose();
         fireQuads?.Release();
         smokeQuads?.Release();
         if (fireMat != null) UnityEngine.Object.Destroy(fireMat);
