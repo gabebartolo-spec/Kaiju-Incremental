@@ -8,7 +8,9 @@ not pull the whole tree in). A changed data or asset file counts as the code fil
 file no code names (tools, workflows) runs nothing here and is reported. The slow pr_skip suites never run here
 (D-382: main runs them). Engine suites (the "engine" line in
 tools/ci_timings.txt: scene, camera and capture) run only when touched and --engine is given; windowed or not, they
-start Godot, so they follow the machine rules in CLAUDE.md.
+start Godot, so they follow the machine rules in CLAUDE.md. A change to the Unity sim side (UNITY_SIM: the C# sim and
+its checks, the native DLL, the slice bake, sim/ and data/) also runs unity/SimTests under dotnet, as sim-csharp does
+(with SIM_NATIVE=off when the DLL is not built).
 
     python tools/run_touched.py                 # vs origin/main, sim suites only
     python tools/run_touched.py --list          # print the suites, run nothing
@@ -25,6 +27,9 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 CODE = (".gd", ".tscn", ".tres")
 STRING = re.compile(r'"(?:[^"\\]|\\.)*"')
 RUNNER = re.compile(r"^tests/run_(\w+)_tests\.gd$")
+UNITY_SIM = ("unity/SimTests/", "unity/Assets/Scripts/Sim/", "unity/Assets/Scripts/GameLogic/", "unity/native/",
+             "tools/unity/slicebake/", "sim/", "data/")
+DLL = "unity/Assets/Plugins/x86_64/kaiju_core.dll"
 
 
 def git(*args: str) -> str:
@@ -144,12 +149,25 @@ def main(argv: list[str]) -> int:
         print("No code change against " + base + ": nothing to run.")
         return 0
     suites, lost = pick(paths, "--engine" in argv, "--all" in argv)
+    unity = [p for p in paths if p.startswith(UNITY_SIM)]
+    lost = [p for p in lost if p not in unity]
     print(f"{len(paths)} changed files; {len(suites)} suites: {' '.join(suites) or '-'}")
+    if unity:
+        print(f"Unity sim side changed ({len(unity)} files): unity/SimTests runs under dotnet")
     if lost:
         print(f"No suite reads {len(lost)} of them (CI covers these): {' '.join(lost[:8])}{' ...' if len(lost) > 8 else ''}")
-    if "--list" in argv or not suites:
+    if "--list" in argv:
         return 0
-    return subprocess.run(["bash", "tools/run_tests.sh", *suites], cwd=ROOT, env={**os.environ, "SUITES_ONLY": "1"}, check=False).returncode
+    code = 0
+    sys.stdout.flush()
+    if unity:
+        native = "on" if os.path.exists(os.path.join(ROOT, DLL)) else "off"
+        sim = ["dotnet", "run", "--project", "unity/SimTests", "-c", "Release"]
+        code = subprocess.run(sim, cwd=ROOT, env={**os.environ, "SIM_NATIVE": native}, check=False).returncode
+    if suites:
+        env = {**os.environ, "SUITES_ONLY": "1"}
+        code = subprocess.run(["bash", "tools/run_tests.sh", *suites], cwd=ROOT, env=env, check=False).returncode or code
+    return code
 
 
 if __name__ == "__main__":
