@@ -48,6 +48,7 @@ static class Program
         failures += OptionsRowsCheck.Run(RepoRoot());
         failures += CreationCheck.Run(RepoRoot());
         failures += GlobeCheck.Run(RepoRoot());
+        failures += GlobeHoloCheck.Run(RepoRoot());
         failures += ResultsCheck.Run(RepoRoot());
         failures += DemoCardCheck.Run(RepoRoot());
         failures += TreeCheck.Run(RepoRoot());

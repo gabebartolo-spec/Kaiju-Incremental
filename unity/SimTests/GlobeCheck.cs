@@ -256,7 +256,7 @@ static class GlobeCheck
     }
 
     // An 8-bit greyscale PNG's bytes, row 0 at the top (the mask's format); null when it is anything else.
-    static byte[] Png(string file, out int w, out int h)
+    internal static byte[] Png(string file, out int w, out int h)
     {
         w = h = 0;
         if (!File.Exists(file)) return null;
