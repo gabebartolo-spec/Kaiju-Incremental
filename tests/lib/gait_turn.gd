@@ -25,7 +25,9 @@ const MIN_LIFTS := 2
 ## A real step moves its foot more than REAL_STEP of a foot length (the drawn foot bone, toe tip to
 ## foot joint, measured by the VFX lead 2026-10-23) from where it last stood; at least MIN_REAL
 ## real steps in a row, alternating feet, each turning the body at most MAX_STEP_YAW degrees.
-const FOOT_LENGTH := {"Behemoth": 2.072, "Colossus": 3.706}
+## The Behemoth's is re-measured on the adult skeleton (D-484): leg_l3 30.29 of the rig's 260 x
+## its drawn height 9.18.
+const FOOT_LENGTH := {"Behemoth": 1.069, "Colossus": 3.706}
 const REAL_STEP := 0.3
 const MIN_REAL := 4
 const MAX_STEP_YAW := 40.0

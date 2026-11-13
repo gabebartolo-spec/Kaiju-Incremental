@@ -3,12 +3,13 @@ extends "res://tests/lib/runner.gd"
 ## leap plays its clip on the sim's Dash phases: the crouch sinks the body, the feet leave the
 ## street through the flight and the settle, the clip's own rise is left to the sim, and the kaiju
 ## is back to idle after it; without the hook the body keeps its standing pose (on vs off). A
-## standing stomp plays the keyed stomp of the foot the sim chose: that foot rises high and lands
-## as the stomp's footfall inside the scene's wait; the adolescent, with no keyed stomp, lifts its
-## foot in code and stays idle (on vs off). Walking (PR3): from standing the walk start plays about
-## 1.3 s, then the walk (the adolescent walks at once); momentum blends the walk into the keyed run
-## (blend 1 vs 0); a slam plays the slam stop to its end; a walking turn lays head_look (mirrored
-## for a right turn) or the 90 deg walk turn over the upper body (vs no turn).
+## standing stomp plays the keyed stomp of the foot the sim chose: that foot rises high and lands as
+## the stomp's footfall inside the scene's wait, on the Colossus and on the Behemoth, which plays
+## the Colossus's takes on the adult skeleton (D-484); the baby, with no keyed stomp, lifts its foot
+## in code and stays idle (on vs off). Walking (PR3): from standing the walk start plays about
+## 1.3 s, then the walk (the baby walks at once); momentum blends the walk into the keyed run
+## (blend 1 vs 0); a slam plays the slam stop to its end; a walking turn lays head_look
+## (mirrored for a right turn) or the 90 deg walk turn over the upper body (vs no turn).
 ## Fixed 60 Hz steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_takes_tests.gd
 
@@ -63,42 +64,50 @@ func _check_leap() -> void:
 	)
 
 
-## Each foot's keyed stomp on the adult (on) and the adolescent's code stomp (off): the clip
-## played, the foot's top height (hip heights), and the footfall it lands.
+## Each foot's keyed stomp on the adult and the Behemoth (on) and the baby's code stomp (off): the
+## clip played, the foot's top height (hip heights), and the footfall it lands.
 func _check_stomp() -> void:
-	for side: String in ["left", "right"]:
-		var on: Stomp = await _stomp("adult", side)
-		check(
-			on.states.has("stomp_" + side[0]) and on.landed == side and on.after == "idle",
-			(
-				"the adult's %s stomp plays its keyed clip and lands that foot (%s, landed %s)"
-				% [side, on.states, on.landed]
+	for stage: String in ["adult", "adolescent"]:
+		for side: String in ["left", "right"]:
+			var on: Stomp = await _stomp(stage, side)
+			check(
+				on.states.has("stomp_" + side[0]) and on.landed == side and on.after == "idle",
+				(
+					"the %s's %s stomp plays its keyed clip and lands that foot (%s, landed %s)"
+					% [stage, side, on.states, on.landed]
+				)
 			)
-		)
-		check(
-			on.landed_at < Rampage.STOMP_WAIT and is_equal_approx(on.strength, on.weight),
-			(
-				"it lands as a stomp's footfall inside the scene's wait (%.2f s, strength %.2f of %.2f)"
-				% [on.landed_at, on.strength, on.weight]
+			check(
+				on.landed_at < Rampage.STOMP_WAIT and is_equal_approx(on.strength, on.weight),
+				(
+					"it lands as a stomp's footfall inside the scene's wait (%.2f s, strength %.2f of %.2f)"
+					% [on.landed_at, on.strength, on.weight]
+				)
 			)
-		)
-		check(on.top > 0.2, "the stomping foot rises %.2f hip heights" % on.top)
-	var off: Stomp = await _stomp("adolescent", "left")
+			check(on.top > 0.2, "the stomping foot rises %.2f hip heights" % on.top)
+	var off: Stomp = await _stomp("baby", "left")
 	check(
 		off.states == ["idle"] and off.landed == "left",
 		"without keyed stomps the foot is lifted in code (%s, landed %s)" % [off.states, off.landed]
 	)
 
 
-## From standing, the adult plays the walk start's first steps, then the walk; the adolescent
-## (no take) walks at once.
+## From standing, the adult and the Behemoth play the walk start's first steps, then the walk; the
+## baby (no take) walks at once.
 func _check_walk_start() -> void:
 	var on: Walk = await _walk("adult", 3.0)
-	var off: Walk = await _walk("adolescent", 3.0)
+	var behemoth: Walk = await _walk("adolescent", 3.0)
+	var off: Walk = await _walk("baby", 3.0)
 	var start: float = on.seconds.get("walk_start", 0.0)
 	check(
-		on.states.slice(0, 3) == ["idle", "walk_start", "walk"],
-		"standing to walking: %s (the adolescent: %s)" % [on.states, off.states]
+		(
+			on.states.slice(0, 3) == ["idle", "walk_start", "walk"]
+			and behemoth.states.slice(0, 3) == on.states.slice(0, 3)
+		),
+		(
+			"standing to walking: %s (the Behemoth: %s, the baby: %s)"
+			% [on.states, behemoth.states, off.states]
+		)
 	)
 	check(
 		(
