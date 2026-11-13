@@ -58,6 +58,14 @@ jobs:
         run: |
           dotnet run --project unity/SimTests -c Release --no-build \
             || { echo "The C# passes differ from Godot's log"; exit 1; }
+      # The slice the Unity game loads, baked with no Godot (U6): the repo's croc, into the git-ignored
+      # unity/Assets/StreamingAssets/slice/, then the DLL replays the bake's carve digests.
+      - name: The slice bakes without Godot
+        shell: bash
+        run: bash tools/unity/bake_slice.sh assets/kaiju/reptilian_adult
+      - name: The C++ core replays the slice's digests
+        shell: bash
+        run: python tools/unity/check_core.py
       - name: Keep the text logs of a failed replay
         if: failure()
         uses: actions/upload-artifact@v4

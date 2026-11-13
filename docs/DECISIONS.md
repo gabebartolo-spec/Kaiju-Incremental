@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. The lead owns the wording; a decision goes in the PR that acts on it (any PR may carry it).
 
+## 2026-11-13 · D-485 · Director · Unity port: the parity playtest is parked until the port is finished
+"idc about the playtest, park it until after the port is 100% finished": U6's playtest (D-484 put it after phase B)
+waits until U4 and U5 are done; U6's CI, rules and retirement prep start now. Changes: the U6 order.
+
 ## 2026-11-13 · D-484 · Director · Unity port: death next as Godot's, the Behemoth re-rigged after, Godot archived at the switch
 Asked eight port questions, the director ruled. Next piece: "Death next", copied from Godot exactly ("Copy Godot
 exactly"); then the far city, then boats, wildlife and wet streets. The parity playtest comes "After phase B", not per
@@ -378,18 +382,3 @@ words, Threat +N%, WIN ONE: and its three bonuses in plain words, and LAUNCH. Th
 out until plan rows C1..C5 make them. LAUNCH opens a plain stand-in mission with WIN and LOSE until real cities start
 from the globe: WIN offers the three bonuses, the player keeps one (D-421), and the globe returns with the continent
 conquered, its bonus kept and Threat raised by its share (D-422); LOSE returns with nothing changed.
-
-## 2026-11-01 · D-430 · Director · Globe continent states: grey coastline locked, pulsing yellow available, green conquered
-Overworld plan row G3, his picks: "Grey / yellow / green" and, for locked, "Coastline only". A locked continent draws
-only its coastline in UiKit LOCKED grey, no fill; an available one fills in ACCENT yellow and pulses slowly (one
-breath every 2 s); a conquered one fills steady in UiKit GOOD green. Which continents are available follows D-420 and
-D-422 (Campaign.states, read from the save's conquered list). Locked continents' markers turn LOCKED grey and the
-continent neither lights on hover nor answers a click (his pick: "Grey, not clickable").
-
-## 2026-11-01 · D-429 · Director · Globe mission markers: pin and name on all seven, click turns and zooms in
-Overworld plan row G4, his picks: "Pin + name" (a small yellow diamond on the continent, a leader line up and right
-to its name in caps, ACCENT yellow with a dark outline), "All seven now" (the offered-pair filter waits for T1, the
-colour states for G3) and "Turn + zoom in" (a click turns the continent to the centre and closes the camera in over
-0.7 s, eased; the spin holds while one is selected; a click on sea or Esc flies back out and the spin resumes). Shown the stills, "Keep both": Aurelia's pin (the south polar cap)
-stays out of view at the default lean until the globe is dragged down, and Neptunia's one pin stays on its southern
-islands with the northern islet chain unmarked.

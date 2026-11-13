@@ -2,6 +2,21 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-11-01 · D-430 · Director · Globe continent states: grey coastline locked, pulsing yellow available, green conquered
+Overworld plan row G3, his picks: "Grey / yellow / green" and, for locked, "Coastline only". A locked continent draws
+only its coastline in UiKit LOCKED grey, no fill; an available one fills in ACCENT yellow and pulses slowly (one
+breath every 2 s); a conquered one fills steady in UiKit GOOD green. Which continents are available follows D-420 and
+D-422 (Campaign.states, read from the save's conquered list). Locked continents' markers turn LOCKED grey and the
+continent neither lights on hover nor answers a click (his pick: "Grey, not clickable").
+
+## 2026-11-01 · D-429 · Director · Globe mission markers: pin and name on all seven, click turns and zooms in
+Overworld plan row G4, his picks: "Pin + name" (a small yellow diamond on the continent, a leader line up and right
+to its name in caps, ACCENT yellow with a dark outline), "All seven now" (the offered-pair filter waits for T1, the
+colour states for G3) and "Turn + zoom in" (a click turns the continent to the centre and closes the camera in over
+0.7 s, eased; the spin holds while one is selected; a click on sea or Esc flies back out and the spin resumes). Shown the stills, "Keep both": Aurelia's pin (the south polar cap)
+stays out of view at the default lean until the globe is dragged down, and Neptunia's one pin stays on its southern
+islands with the northern islet chain unmarked.
+
 ## 2026-11-01 · D-428 · Director · The open sea is a copied FFT ocean; the sim's waves ride on top
 Of the whole-bay water (D-426) "looks functional but ugly and not very realistic", and he picked "Copy a proven ocean
 (Recommended)": the GodotOceanWaves Tessendorf FFT ocean (MIT, 2Retr0, commit a171446f; licence register row) runs

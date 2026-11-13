@@ -65,7 +65,7 @@ shaders (3,600 lines) and 2,900 lines of C++. Only 8 `.tscn` files exist, so mos
 until U2's first module gives a measured rate. The demo ships from Unity, so M3 and M4 finish in the port; Godot takes
 only bug fixes and open PRs (D-472). `unity/` is on HDRP (D-471). CI runs no Unity editor yet: a Personal licence in
 GitHub Actions needs a Unity login stored as secrets, and plain C# runs under dotnet 10 without one, so U2's sim tests
-need no licence. Rendering checks stay on this PC. A fresh checkout builds the slice with `unity/README.md`. Rendering, UI, camera and effects are built new in U4 and U5, not
+need no licence. The required `sim-csharp` job gates the Unity side without one: the C# sim against Godot's logs (with the DLL and `SIM_NATIVE=off`), the DLL build, and the slice bake with no Godot (U6). Rendering checks stay on this PC. A fresh checkout builds the slice with `unity/README.md`. Rendering, UI, camera and effects are built new in U4 and U5, not
 ported (D-474).
 
 | # | Row | Status |
