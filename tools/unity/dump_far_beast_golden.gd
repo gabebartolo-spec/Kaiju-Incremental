@@ -23,9 +23,13 @@ func _initialize() -> void:
 
 func _run() -> void:
 	for mode: String in ["stand", "walk"]:
-		var def: Dictionary = Content.species_def(str(Content.section("skyline_rampage")["species"]))
+		var def: Dictionary = Content.species_def(
+			str(Content.section("skyline_rampage")["species"])
+		)
 		var colors: Dictionary = def["colors"]
-		var model := KaijuModel.new(str(Content.section("skyline_rampage")["species"]), colors, "adult")
+		var model := KaijuModel.new(
+			str(Content.section("skyline_rampage")["species"]), colors, "adult"
+		)
 		root.add_child(model)
 		await process_frame
 		model.foot_planted.connect(_planted.bind(mode))
@@ -49,4 +53,6 @@ func _run() -> void:
 
 
 func _planted(id: String, strength: float, at: Vector3, mode: String) -> void:
-	_lines.append("FF %s %d %s %.4f %.4f %.4f %.4f" % [mode, _frame, id, strength, at.x, at.y, at.z])
+	_lines.append(
+		"FF %s %d %s %.4f %.4f %.4f %.4f" % [mode, _frame, id, strength, at.x, at.y, at.z]
+	)
