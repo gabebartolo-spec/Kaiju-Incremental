@@ -91,6 +91,8 @@ public sealed class StreetView
         return $"{S.Gd.Str(m.sport["id"])} pitch {m.OnPitch()} players_out {m.escaped} kicks {m.kicks} {fans}";
     }
 
+    // The standing streetlights' lights, for the wet streets' smears (WeatherView).
+    public IReadOnlyList<WetStreets.Lamp> LampLights => decor.lampLights;
     public int PropsCrushed => decor.Crushed + (beach != null ? beach.Crushed : 0);
 
     public StreetView(S.RampageSim sim, CityFx fx, Shader shader, Transform parent, float exposureUnit, float lightMatch, long seed)
@@ -154,6 +156,7 @@ public sealed class StreetView
         Flatten(decor.props, at, radius);
         Flatten(decor.streetTiles, at, radius);
         if (beach != null) Flatten(beach, at, radius);
+        WetStreets.Crush(decor.lampLights, at.x, at.z, radius);
     }
 
     void Flatten(PropTiles field, Vector3 at, float radius)

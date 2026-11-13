@@ -8,9 +8,9 @@ using S = Kaiju.Sim;
 // lane, cars in the parking lots, and a streetlight at every crossing and down the long blocks. All crushable.
 // The Tripo street props (StreetProps, scenes/street_props.gd) stand on their own finer field: pavement furniture,
 // Tripo cars among the parked ones, a traffic light across each lit crossing and the lamp model on every lamp.
-// Not ported yet: the lamps' lights, the street trees' clearance (parking and pavement props), the greenery, quays
-// and traffic islands. Presentation only. The moving cars and the diagonal's parked row are Traffic's (TrafficView
-// draws them in this file's car shape).
+// Not ported yet: the lamps' lights (only their place, colour and energy, for the wet streets' smears), the
+// street trees' clearance (parking and pavement props), the greenery, quays and traffic islands. Presentation only.
+// The moving cars and the diagonal's parked row are Traffic's (TrafficView draws them in this file's car shape).
 public sealed class StreetDecor
 {
     // scenes/city_decor.gd PROP_VOXEL, CROSSING_CLEAR, LAMP_EVERY, CAR_HALF and its palette.
@@ -36,6 +36,12 @@ public sealed class StreetDecor
     readonly int paints;
     readonly Dictionary<Vector2Int, int> lampShapes = new Dictionary<Vector2Int, int>();
     readonly List<S.Vector2> lampSpots = new List<S.Vector2>();
+    // city_decor.gd _lamps: every standing streetlight's light, in the order they were made; a trampled one leaves.
+    public readonly List<WetStreets.Lamp> lampLights = new List<WetStreets.Lamp>();
+    readonly double lampEnergy = S.Num.F(S.Content.Look()["lamp_energy"]);
+    // city_decor.gd _lamp: the light hangs this far out along the arm, this high, in this colour.
+    const double LAMP_LIGHT_OUT = 0.5, LAMP_LIGHT_Y = 2.4;
+    static readonly double[] LAMP_LIGHT_COLOR = Kaiju.Game.WeatherLook.Hex("ffd59a");
 
     public StreetDecor(S.RampageSim sim, Shader shader, Transform parent)
     {
@@ -240,13 +246,19 @@ public sealed class StreetDecor
     void Lamp(S.Vector2 p, S.Vector2 toward)
     {
         if (OnBuilding(p)) return;
+        var arm = new Vector2Int(Math.Sign(toward.x), Math.Sign(toward.y));
         lampSpots.Add(p);
+        // Its pooled light: only what the wet streets' smears read (WetStreets); the light itself is not ported yet.
+        lampLights.Add(new WetStreets.Lamp
+        {
+            x = p.x + arm.x * LAMP_LIGHT_OUT, y = LAMP_LIGHT_Y, z = p.y + arm.y * LAMP_LIGHT_OUT,
+            r = LAMP_LIGHT_COLOR[0], g = LAMP_LIGHT_COLOR[1], b = LAMP_LIGHT_COLOR[2], energy = lampEnergy,
+        });
         if (street.Put(street.Lamps, p, ArmFace(toward)))
         {
             Lamps++;
             return;
         }
-        var arm = new Vector2Int(Math.Sign(toward.x), Math.Sign(toward.y));
         if (!lampShapes.TryGetValue(arm, out int shape)) lampShapes[arm] = shape = props.AddShape(Streetlight(arm));
         if (props.Add(new Vector2((float)p.x, (float)p.y), shape)) Lamps++;
     }

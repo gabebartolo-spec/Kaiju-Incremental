@@ -48,6 +48,7 @@
     <Compile Include="../Assets/Scripts/Rampage/FarBeastWalk.cs" />
     <Compile Include="../Assets/Scripts/Rampage/Wildlife.cs" />
     <Compile Include="../Assets/Scripts/Rampage/Wildlife.Whale.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/WetStreets.cs" />
     <!-- The far beast's rig, baked as the slice bake bakes it (FarBeastCheck). -->
     <Compile Include="../../tools/unity/slicebake/CrocBake.cs" />
     <Compile Include="../../tools/unity/slicebake/BeastBake.cs" />

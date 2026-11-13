@@ -523,7 +523,7 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     groundAt.z = -groundAt.z;
     groundN.z = -groundN.z;
     float groundDepth = -TransformWorldToView(posInput.positionWS).z;
-    CityGroundSurface(input.texCoord0.xy, input.texCoord1.xy, groundAt, groundN, groundDepth, albedo, roughness, emission);
+    CityGroundSurface(input.texCoord0.xy, input.texCoord1.xy, groundAt, groundN, groundDepth, dot(n, V), albedo, roughness, emission);
     #endif
 
     surfaceData.baseColor = albedo;
