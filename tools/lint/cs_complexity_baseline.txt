@@ -82,9 +82,9 @@ unity/Assets/Scripts/Rampage/OceanWaves.cs::OceanWaves 46 2
 unity/Assets/Scripts/Rampage/Pavements.cs::Pavements 40 14
 unity/Assets/Scripts/Rampage/PersonMesh.cs::Rifleman 43 4
 unity/Assets/Scripts/Rampage/RailView.cs::SideCell 9 14
-unity/Assets/Scripts/Rampage/RampageGame.cs::<file> 829 0
+unity/Assets/Scripts/Rampage/RampageGame.cs::<file> 794 0
 unity/Assets/Scripts/Rampage/RampageGame.cs::Load 97 21
-unity/Assets/Scripts/Rampage/RampageGame.cs::Update 164 65
+unity/Assets/Scripts/Rampage/RampageGame.cs::Update 161 61
 unity/Assets/Scripts/Rampage/RooftopView.cs::<file> 404 0
 unity/Assets/Scripts/Rampage/RooftopView.cs::RooftopView 43 7
 unity/Assets/Scripts/Rampage/StreetPeople.cs::<file> 424 0
