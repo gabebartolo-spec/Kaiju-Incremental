@@ -22,6 +22,7 @@ public sealed partial class RampageGame
         if (cfg["on"]) farRampage = new SkylineRampage(skyline, city, seed, Beast(cfg, lit));
         BayGlow(city["far_reflect"], skyline.Shore);
         Debug.Log($"skyline: {skyline.Boxes} boxes, far rampage {(farRampage == null ? "off" : farRampage.plan.falls.Count + " falls, " + farRampage.plan.fires.Count + " fires")}, bay glow {bayGlow.Count}");
+        BuildWildlife(lit);
     }
 
     // The far rampage's beast (FarBeast), skinned as the croc is: its cube, inset, colour noise and seams.
@@ -66,10 +67,12 @@ public sealed partial class RampageGame
         farRampage?.Step(dt, new Vector3(ear.x, ear.y, -ear.z));
         foreach ((Material mat, Bounds bounds) in bayGlow)
             Graphics.DrawProcedural(mat, bounds, MeshTopology.Triangles, GLOW_VERTS, 1, null, null, ShadowCastingMode.Off, false, 0);
+        wildlife.Step(dt);
     }
 
     void DisposeFarCity()
     {
+        DisposeWildlife();
         if (farRampage != null) Debug.Log($"far rampage: {farRampage.Fallen()} of {farRampage.plan.falls.Count} towers down at {farRampage.Elapsed:F1} s");
         FarBeast beast = farRampage?.Beast;
         if (beast != null) Debug.Log($"far beast: {beast.walk.Footfalls} footfalls, walked x {beast.MinX:F1}..{beast.MaxX:F1} at z {farRampage.plan.pathZ:F1}");

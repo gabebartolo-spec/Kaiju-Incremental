@@ -582,7 +582,7 @@ public sealed partial class RampageGame : MonoBehaviour
                 rail.OnEvent(e);
                 strike.OnEvent(e);
                 postFx.OnEvent(e);
-                if (S.Gd.Str(e["type"]) == "stomp") trees.Crush(Feet(), (float)(double)S.Num.F(e["radius"]));
+                Nature(e);
                 TailCue(e);
                 street.OnEvent(e);
                 audio?.OnEvent(e);

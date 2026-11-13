@@ -85,7 +85,7 @@ float4 WindowPick(uint h)
 }
 #endif
 
-#if defined(SLICE_CUBE) || defined(SLICE_FILL) || defined(SLICE_STONE)
+#if defined(SLICE_CUBE) || defined(SLICE_FILL) || defined(SLICE_STONE) || defined(SLICE_BIRD)
 #include "Assets/Resources/Shaders/SkinCommon.hlsl"
 // The Special K overload as he dies (scenes/voxel_skin.gdshader, CrocDeath.Overload): _Overload 0..1 lights a share
 // of the cubes violet, flickering cube by cube; _Stone 0..1 turns him to stone from the feet up to _BodyTop (rest
@@ -250,7 +250,7 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 }
 #endif
 
-#if defined(SLICE_GROUND) || defined(SLICE_STONE)
+#if defined(SLICE_GROUND) || defined(SLICE_STONE) || defined(SLICE_BIRD)
 #include "Assets/Resources/Shaders/CityGround.hlsl"
 #endif
 
@@ -372,6 +372,50 @@ float FarHazeShare(float dist, float height)
 }
 #endif
 
+#if defined(SLICE_BIRD)
+// scenes/bird.gdshader: a creature of WildlifeView (gull, pigeon, the whale). Per instance (Godot axes): its basis
+// columns (scale in them) with its position in their w, and in custom its beat phase (0..1) and beat on/off (0: perched
+// or gliding, the wings held; always 0 on the whale). The wings beat in the vertex stage: uv0.x is a vertex's share of
+// the way out along a wing (Godot's COLOR.r). The city's surface grain sits on it in model space (uv0.xy, uv1.x).
+struct BirdPose
+{
+    float4 col0, col1, col2, custom;
+};
+StructuredBuffer<BirdPose> _Birds;
+float4 _BirdColor;
+float _BirdRoughness, _FlapRate, _FlapLift;
+#define HAVE_MESH_MODIFICATION
+AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters)
+{
+#if UNITY_ANY_INSTANCING_ENABLED
+    BirdPose p = _Birds[input.instanceID];
+#else
+    BirdPose p = _Birds[0];
+#endif
+    float3 v = input.positionOS;
+    float3 local = v;
+    float beat = sin(timeParameters.x * _FlapRate + p.custom.x * 6.2832) * p.custom.y;
+    v.y += beat * _FlapLift * input.uv0.x * abs(v.x);
+    input.positionOS = Mirror(p.col0.xyz * v.x + p.col1.xyz * v.y + p.col2.xyz * v.z + float3(p.col0.w, p.col1.w, p.col2.w));
+#ifdef ATTRIBUTES_NEED_NORMAL
+    // The normal matrix (inverse transpose) of a turn times a scale: each column over its own length squared.
+    float3 n = input.normalOS;
+    float3 c0 = p.col0.xyz / dot(p.col0.xyz, p.col0.xyz), c1 = p.col1.xyz / dot(p.col1.xyz, p.col1.xyz), c2 = p.col2.xyz / dot(p.col2.xyz, p.col2.xyz);
+    input.normalOS = normalize(Mirror(c0 * n.x + c1 * n.y + c2 * n.z));
+#endif
+#ifdef ATTRIBUTES_NEED_TANGENT
+    input.tangentOS = float4(1, 0, 0, 1);
+#endif
+#ifdef ATTRIBUTES_NEED_COLOR
+    input.color = 1.0;
+#endif
+    input.uv0 = local.xy;
+#ifdef ATTRIBUTES_NEED_TEXCOORD1
+    input.uv1 = float2(local.z, 0.0);
+#endif
+    return input;
+}
+#endif
 void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
 {
     Orig_GetSurfaceAndBuiltinData(input, V, posInput, surfaceData, builtinData);
@@ -451,6 +495,11 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     roughness = 1.0;
     #elif defined(SLICE_DEBRIS)
     albedo = SRGBToLinear(input.color.rgb);
+    #elif defined(SLICE_BIRD)
+    if (!input.isFrontFace) n = -n;
+    float3 birdAt = float3(input.texCoord0.xy, input.texCoord1.x);
+    albedo = _BirdColor.rgb * sd_grain(birdAt + 0.001, -TransformWorldToView(posInput.positionWS).z);
+    roughness = _BirdRoughness;
     #elif defined(SLICE_FACADE)
     float3 facadeAt = TransformWorldToObject(posInput.positionWS);
     float3 facadeN = TransformWorldToObjectNormal(n);
