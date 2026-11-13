@@ -302,6 +302,74 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 
 #if defined(SLICE_FACADE)
 #include "Assets/Resources/Shaders/Facade.hlsl"
+// The far skyline (CitySkyline: uv0.x = style + 16 x code; 0 near, 1 far, 2 + i the far box i's fall) and
+// SkylineRampage's falls (skyline_rampage.gd _draw_tower), two entries per far box: (base x, y, z in Godot axes,
+// its tower's height) and (share of the fall q, -1 standing; dir +-1; 1 once gone). A falling tower sinks
+// height x q^2 into its footprint, leaning TILT x q^2 away from the blow about Godot's BACK, which turns x and y
+// alone, so the same formulas hold in Unity's mirrored axes; a gone one folds away under the ground.
+StructuredBuffer<float4> _FarFalls;
+float _FarTilt;
+// FarHaze (far_haze.gdshaderinc): the far skyline's own haze (per metre from start) and its height fog.
+float4 _FarHaze;       // haze, start, base, base_height
+float4 _FarHazeColor;  // linear
+
+float FacadeCode(float x) { return floor((x + 8.0) / 16.0); }
+
+// The fall of far box `index` now: x the sink, y the lean angle, z 1 once gone; w 0 if it stands.
+float4 FarFall(float index, out float3 base)
+{
+    float4 a = _FarFalls[(uint)index * 2u], b = _FarFalls[(uint)index * 2u + 1u];
+    base = float3(a.x, a.y, -a.z);
+    float q = max(b.x, 0.0);
+    return float4(a.w * q * q, -_FarTilt * q * q * b.y, b.z, b.x < 0.0 ? 0.0 : 1.0);
+}
+
+float2 Turned(float2 v, float angle)
+{
+    float c = cos(angle), s = sin(angle);
+    return float2(v.x * c - v.y * s, v.x * s + v.y * c);
+}
+
+#define HAVE_MESH_MODIFICATION
+AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters)
+{
+    float code = FacadeCode(input.uv0.x);
+    if (code < 1.5) return input;
+    float3 base;
+    float4 fall = FarFall(code - 2.0, base);
+    if (fall.w < 0.5) return input;
+    if (fall.z > 0.5)
+    {
+        input.positionOS = base - float3(0, 50, 0) + (input.positionOS - base) * 0.001;
+        return input;
+    }
+    float3 v = input.positionOS - base;
+    input.positionOS = base + float3(Turned(v.xy, fall.y), v.z) - float3(0, fall.x, 0);
+#ifdef ATTRIBUTES_NEED_NORMAL
+    input.normalOS = float3(Turned(input.normalOS.xy, fall.y), input.normalOS.z);
+#endif
+    return input;
+}
+
+// Where a far box's point and normal (Godot axes, as drawn) stood before its fall, so its windows ride with it.
+void FarStood(float code, inout float3 at, inout float3 n)
+{
+    if (code < 1.5) return;
+    float3 base;
+    float4 fall = FarFall(code - 2.0, base);
+    if (fall.w < 0.5) return;
+    base.z = -base.z;
+    float3 v = at - base + float3(0, fall.x, 0);
+    at = base + float3(Turned(v.xy, -fall.y), v.z);
+    n = float3(Turned(n.xy, -fall.y), n.z);
+}
+
+float FarHazeShare(float dist, float height)
+{
+    float f = clamp(1.0 - exp(-max(dist - _FarHaze.y, 0.0) * _FarHaze.x), 0.0, 0.94);
+    float foot = _FarHaze.z * exp(-max(height, 0.0) / _FarHaze.w);
+    return clamp(f + (1.0 - f) * foot * smoothstep(_FarHaze.y * 0.5, _FarHaze.y, dist), 0.0, 0.97);
+}
 #endif
 
 void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData)
@@ -388,7 +456,18 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     float3 facadeN = TransformWorldToObjectNormal(n);
     facadeAt.z = -facadeAt.z;
     facadeN.z = -facadeN.z;
-    FacadeSurface(facadeAt, facadeN, input.color, input.texCoord0.xy, input.texCoord1.xy, albedo, emission);
+    float facadeCode = FacadeCode(input.texCoord0.x);
+    float facadeY = facadeAt.y;
+    FarStood(facadeCode, facadeAt, facadeN);
+    float2 facadeData = float2(input.texCoord0.x - 16.0 * facadeCode, input.texCoord0.y);
+    FacadeSurface(facadeAt, facadeN, input.color, facadeData, input.texCoord1.xy, albedo, emission);
+    if (facadeCode > 0.5)
+    {
+        // The far skyline fades by its own curve; lights burn through it more than walls do.
+        float f = FarHazeShare(length(GetCameraRelativePositionWS(posInput.positionWS)), facadeY);
+        albedo *= 1.0 - f;
+        emission = emission * (1.0 - f * 0.6) + _FarHazeColor.rgb * f;
+    }
     #elif defined(SLICE_GROUND)
     float3 groundAt = TransformWorldToObject(posInput.positionWS);
     float3 groundN = TransformWorldToObjectNormal(n);
