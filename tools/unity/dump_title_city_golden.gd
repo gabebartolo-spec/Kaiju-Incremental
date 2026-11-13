@@ -1,18 +1,20 @@
 extends SceneTree
-## Writes the title's burning city as Godot places it (scenes/title_fires.gd, title_burning_windows.gd,
-## title_shore.gd lamps, title_sky_smoke.gd, title_ambience.gd with title_backdrop.gd's flashes and
-## colossus reveals), so the Unity port (unity/Assets/Scripts/GameLogic/TitleCity.cs) can be checked
-## against it number for number.
+## Writes the title's burning city as Godot places it (scenes/title_fires.gd,
+## title_burning_windows.gd, title_shore.gd lamps, title_sky_smoke.gd, title_ambience.gd with
+## title_backdrop.gd's flashes and colossus reveals), so the Unity port
+## (unity/Assets/Scripts/GameLogic/TitleCity.cs) can be checked against it number for number.
 ##
 ##   godot --headless --path . --script tools/unity/dump_title_city_golden.gd
 ##
-## Output: unity/SimTests/golden/title_city.txt, read by TitleCheck (`dotnet run --project unity/SimTests`).
-## FAR_Z: the far shore's edge; BOX: a far stand-in tower (x y z, size x y z) made here, the ones the
-## fires choose from; LIT: the x of each burning tower; F: a fire (x y z, seed, size, smoke density);
-## P: a burning pane (set 0 window fires / 1 hero, x y z, width, shade); LIT, F and P carry "real" (tuning's
-## foci) or "probe" (the foci moved onto the front rows at PROBE_Z); LAMP: x, glow scale;
-## SMOKE: a sky puff (layer, size, x y z); BEACH: the sand's two wave phases; A: an ambience event
-## (step, kind, two values); FLASH: a far spot (step, kind, x y z); REVEAL: the next reveal wait.
+## Output: unity/SimTests/golden/title_city.txt, read by TitleCheck
+## (`dotnet run --project unity/SimTests`).
+## FAR_Z: the far shore's edge; BOX: a far stand-in tower (x y z, size x y z) made here, the ones
+## the fires choose from; LIT: the x of each burning tower; F: a fire (x y z, seed, size, smoke
+## density); P: a burning pane (set 0 window fires / 1 hero, x y z, width, shade); LIT, F and P
+## carry "real" (tuning's foci) or "probe" (the foci moved onto the front rows at PROBE_Z);
+## LAMP: x, glow scale; SMOKE: a sky puff (layer, size, x y z); BEACH: the sand's two wave
+## phases; A: an ambience event (step, kind, two values); FLASH: a far spot (step, kind, x y z);
+## REVEAL: the next reveal wait.
 
 const OUT := "res://unity/SimTests/golden/title_city.txt"
 const DT := 1.0 / 60.0
@@ -32,7 +34,9 @@ func _run() -> void:
 	var title: Dictionary = Content.section("title")
 	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(title["city_tier"]))
 	var city_cfg: Dictionary = tuning["city"]
-	var layout := CityGrowth.layout(Content.tuning(), Num.i(title["city_tier"]), Seeds.make("city", 0))
+	var layout := CityGrowth.layout(
+		Content.tuning(), Num.i(title["city_tier"]), Seeds.make("city", 0)
+	)
 	var sim := RampageSim.new({}, tuning, layout, Seeds.make("army", 0))
 	var far_z := Num.f(sim.city["coast_z"]) - Num.f(sim.city["bay_width"])
 	_lines.append("FAR_Z %.4f" % far_z)
@@ -50,23 +54,32 @@ func _run() -> void:
 	quit(0)
 
 
-## Far towers made here around the foci (some outside the burning radius or the front rows), the real
-## TitleFires lighting them and the real TitleBurningWindows painting their panes.
+## Far towers made here around the foci (some outside the burning radius or the front rows), the
+## real TitleFires lighting them and the real TitleBurningWindows painting their panes.
 func _fires(title: Dictionary, city_cfg: Dictionary, far_z: float) -> void:
 	var made := Seeds.make("title_dump", 0)
 	var ground := CityGround.new(city_cfg)
 	var skyline := CitySkyline.new(ground, Seeds.make("city_skyline", 0))
 	var boxes: Array[Dictionary] = []
 	for i: int in BOXES:
-		var size := Vector3(made.randf_range(10.0, 30.0), made.randf_range(20.0, 140.0), made.randf_range(10.0, 30.0))
-		var at := Vector3(made.randf_range(-60.0, 170.0), size.y * 0.5, far_z - made.randf_range(-10.0, 90.0))
+		var size := Vector3(
+			made.randf_range(10.0, 30.0),
+			made.randf_range(20.0, 140.0),
+			made.randf_range(10.0, 30.0)
+		)
+		var at := Vector3(
+			made.randf_range(-60.0, 170.0), size.y * 0.5, far_z - made.randf_range(-10.0, 90.0)
+		)
 		boxes.append({"at": at, "size": size})
-		_lines.append("BOX %.4f %.4f %.4f %.4f %.4f %.4f" % [at.x, at.y, at.z, size.x, size.y, size.z])
+		_lines.append(
+			"BOX %.4f %.4f %.4f %.4f %.4f %.4f" % [at.x, at.y, at.z, size.x, size.y, size.z]
+		)
 	skyline._far = boxes
 	var fire_cfg: Dictionary = title["fires"]
 	_light(skyline, fire_cfg, far_z, "real")
-	# Today's foci lie short of the far shore (the bay widened, D-377), so nothing lights: the same cfg
-	# with each focus moved onto the front rows lights the district, so the placement itself is checked.
+	# Today's foci lie short of the far shore (the bay widened, D-377), so nothing lights: the same
+	# cfg with each focus moved onto the front rows lights the district, so the placement itself is
+	# checked.
 	var probe: Dictionary = fire_cfg.duplicate(true)
 	var foci: Array = probe["foci"]
 	var z := far_z - Num.f(probe["depth"]) * 0.5
@@ -82,7 +95,8 @@ func _light(skyline: CitySkyline, fire_cfg: Dictionary, far_z: float, tag: Strin
 	var city := Node3D.new()
 	city.add_child(skyline)
 	var lit := TitleFires.new(city, fire_cfg, far_z).light()
-	_lines.append("LIT %s %s" % [tag, " ".join(Array(lit).map(func(x: float) -> String: return "%.4f" % x))])
+	var xs := Array(lit).map(func(x: float) -> String: return "%.4f" % x)
+	_lines.append("LIT %s %s" % [tag, " ".join(xs)])
 	var group := 0
 	for node: Node in city.get_children():
 		if node is FarFire:
@@ -91,8 +105,13 @@ func _light(skyline: CitySkyline, fire_cfg: Dictionary, far_z: float, tag: Strin
 				(
 					"F %s %.4f %.4f %.4f %.6f %.4f %.4f"
 					% [
-						tag, fire.position.x, fire.position.y, fire.position.z, fire._seed,
-						Num.f(fire._cfg["size"]), Num.f(fire._cfg["smoke_density"])
+						tag,
+						fire.position.x,
+						fire.position.y,
+						fire.position.z,
+						fire._seed,
+						Num.f(fire._cfg["size"]),
+						Num.f(fire._cfg["smoke_density"])
 					]
 				)
 			)
@@ -109,7 +128,15 @@ func _light(skyline: CitySkyline, fire_cfg: Dictionary, far_z: float, tag: Strin
 					_lines.append(
 						(
 							"P %s %d %.4f %.4f %.4f %.4f %.4f"
-							% [tag, group, spot.x + k * cell, spot.y, spot.z + TitleBurningWindows.OUT, cell, share]
+							% [
+								tag,
+								group,
+								spot.x + k * cell,
+								spot.y,
+								spot.z + TitleBurningWindows.OUT,
+								cell,
+								share
+							]
 						)
 					)
 			group += 1
@@ -122,8 +149,12 @@ func _lamps(title: Dictionary, far_z: float, coast_z: float) -> void:
 	var shore := TitleShore.new(
 		shore_cfg,
 		{
-			"shore_z": far_z, "coast_z": coast_z, "cam": Vector3.ZERO, "fires": PackedFloat32Array(),
-			"ripple": title["ripple"], "water": title["variants"][str(title["variant"])]["water"]
+			"shore_z": far_z,
+			"coast_z": coast_z,
+			"cam": Vector3.ZERO,
+			"fires": PackedFloat32Array(),
+			"ripple": title["ripple"],
+			"water": title["variants"][str(title["variant"])]["water"]
 		}
 	)
 	for spot: Vector2 in shore._lamp_spots(Num.f(shore_cfg["half_span"])):
@@ -151,7 +182,8 @@ func _smoke(title: Dictionary) -> void:
 
 
 ## The real TitleAmbience stepped by hand, its signals driving title_backdrop.gd's flash spots and
-## colossus reveals as the backdrop draws them (title_screen.gd wires them; the backdrop processes first).
+## colossus reveals as the backdrop draws them (title_screen.gd wires them; the backdrop processes
+## first).
 func _ambience(title: Dictionary, far_z: float) -> void:
 	var sound := TitleAmbience.new()
 	root.add_child(sound)
@@ -170,7 +202,8 @@ func _ambience(title: Dictionary, far_z: float) -> void:
 		_lines.append("FLASH %d %s %.4f %.4f %.4f" % [state["step"], kind, at.x, at.y, at.z])
 	sound.shot.connect(
 		func() -> void:
-			_lines.append("A %d shot %.6f %.6f" % [state["step"], sound._gun.pitch_scale, sound._gun.volume_db])
+			var gun: AudioStreamPlayer = sound._gun
+			_lines.append("A %d shot %.6f %.6f" % [state["step"], gun.pitch_scale, gun.volume_db])
 			if state["loaded"]:
 				spot.call("shot", 0.0, 0.0)
 	)
@@ -188,7 +221,10 @@ func _ambience(title: Dictionary, far_z: float) -> void:
 	)
 	sound.stomped.connect(
 		func() -> void:
-			_lines.append("A %d stomp %.6f %.6f" % [state["step"], sound._stomp.pitch_scale, sound._stomp.volume_db])
+			var stomp: AudioStreamPlayer = sound._stomp
+			_lines.append(
+				"A %d stomp %.6f %.6f" % [state["step"], stomp.pitch_scale, stomp.volume_db]
+			)
 	)
 	for s: int in STEPS:
 		state["step"] = s
