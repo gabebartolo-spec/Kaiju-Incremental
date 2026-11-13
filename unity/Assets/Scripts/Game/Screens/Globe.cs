@@ -1,6 +1,6 @@
 // The globe (scenes/globe_view.gd, globe_missions.gd, mission_panel.gd, threat_readout.gd): the world's continents
 // in their campaign states, the Threat Level plate at the title-safe corner, the mission panel down the right
-// margin for the continent picked, and LAUNCH. The world is drawn flat in this first version (GlobeMap).
+// margin for the continent picked, and LAUNCH. The world is the 3D hologram globe (GlobeHologram).
 using System;
 using System.Collections.Generic;
 using Kaiju.Game;
@@ -19,12 +19,11 @@ public static class Globe
     public static RectTransform Show(S.GDict save, Action<S.GDict> onLaunch, Action<MissionOutcome> onReturned, bool preselect = false)
     {
         RectTransform screen = UiKit.Screen("Globe");
-        UiKit.Backdrop(screen);
         Vector2 safe = UiKit.SafeMargin();
         S.GDict[] held = { save };
         S.GDict states = GlobeMissions.States(save);
-        // The land spans the title-safe width, half as high (the mask is 2:1).
-        GlobeMap map = GlobeMap.Make(screen, UiKit.CANVAS_WIDTH - 2f * safe.x);
+        // globe_view.gd: no backdrop, the globe's own near-black background behind the spheres.
+        GlobeHologram map = GlobeHologram.Make(screen);
         map.SetStates(states);
         Text threat = ThreatPlate(screen, safe);
         ShowThreat(threat, S.Num.F(save.Get("threat", 0.0)));
@@ -37,21 +36,21 @@ public static class Globe
         KitButton launch = UiKit.Button(panel, "LAUNCH", () =>
         {
             S.GDict def = S.Content.Continent(map.Selected);
-            if (def.IsEmpty() || !map.enabled) return;
+            if (def.IsEmpty() || !map.Interactive) return;
             // globe_missions.gd _launch: a real city plays; any other continent opens the stand-in mission.
             if (GlobeMissions.StartsCity(def))
             {
                 onLaunch?.Invoke(def);
                 return;
             }
-            map.enabled = false;
+            map.Interactive = false;
             RectTransform[] over = new RectTransform[1];
             over[0] = MissionResult.Show(GlobeMissions.StandIn(held[0], def), done =>
             {
                 UnityEngine.Object.Destroy(over[0].gameObject);
                 // globe_missions.gd _won / _lost: the states and the Threat plate follow the save, the pick is let go.
                 held[0] = done.save;
-                map.enabled = true;
+                map.Interactive = true;
                 map.SetStates(GlobeMissions.States(done.save));
                 ShowThreat(threat, done.threat);
                 map.Deselect();
@@ -73,7 +72,7 @@ public static class Globe
             UiKit.Focus(launch);
         };
         // globe_view.gd _unhandled_input: cancel lets go of the pick; with none it does nothing here.
-        UiFocus.OnCancel(screen.gameObject, () => { if (map.enabled) map.Deselect(); });
+        UiFocus.OnCancel(screen.gameObject, () => { if (map.Interactive) map.Deselect(); });
         if (preselect)
         {
             string first = GlobeMissions.FirstRealCity(save);

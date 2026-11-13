@@ -20,7 +20,7 @@ unity/Assets/Scripts/Game/PhotoMode.cs::Update 33 14
 unity/Assets/Scripts/Game/Screens/CreationScreen.cs::Open 50 5
 unity/Assets/Scripts/Game/Screens/CreationScreen.cs::Update 25 21
 unity/Assets/Scripts/Game/Screens/FeedbackKeys.cs::Update 28 16
-unity/Assets/Scripts/Game/Screens/Globe.cs::Show 62 10
+unity/Assets/Scripts/Game/Screens/Globe.cs::Show 61 10
 unity/Assets/Scripts/Game/Screens/GlobeMissionResult.cs::Show 62 8
 unity/Assets/Scripts/Game/Screens/OptionsControls.cs::Update 28 13
 unity/Assets/Scripts/Game/Screens/PauseMenu.cs::Show 43 7
@@ -32,8 +32,6 @@ unity/Assets/Scripts/Game/Screens/TreeScreen.cs::Show 65 5
 unity/Assets/Scripts/Game/Screens/TreeScreen.cs::Wire 37 22
 unity/Assets/Scripts/Game/SettingsApply.cs::Tick 16 15
 unity/Assets/Scripts/Game/Ui/CreationLabView.cs::Injector 51 14
-unity/Assets/Scripts/Game/Ui/GlobeMap.cs::Load 55 14
-unity/Assets/Scripts/Game/Ui/GlobeMap.cs::Paint 26 13
 unity/Assets/Scripts/Game/Ui/HazardBox.cs::OnPopulateMesh 43 12
 unity/Assets/Scripts/Game/Ui/KitButton.cs::Show 46 9
 unity/Assets/Scripts/Game/Ui/KitText.cs::ModifyMesh 28 16
