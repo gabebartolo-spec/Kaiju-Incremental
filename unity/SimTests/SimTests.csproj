@@ -16,6 +16,7 @@
     <Compile Include="../Assets/Scripts/Rampage/RooftopAim.cs" />
     <Compile Include="../Assets/Scripts/Rampage/DeathPieces.cs" />
     <Compile Include="../Assets/Scripts/Rampage/SkylineRampagePlan.cs" />
+    <Compile Include="../Assets/Scripts/Rampage/Boats.cs" />
     <Compile Include="../Assets/Scripts/Rampage/PostFxState.cs" />
     <Compile Include="../Assets/Scripts/Rampage/Pavements.cs" />
     <Compile Include="../Assets/Scripts/Rampage/BeachLayout.cs" />
