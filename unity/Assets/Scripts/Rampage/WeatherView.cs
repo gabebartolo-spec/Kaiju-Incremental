@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
@@ -14,8 +15,9 @@ using S = Kaiju.Sim;
 // counts x the graphics preset's particles ratio, thinned round the camera, the screen centre and in front of the
 // kaiju (Rain.shader). WeatherLook holds the numbers. Presentation only: it reads Content.WeatherId(), never the
 // sim's state, and its clock is the frames' own delta, so it stops when the run is paused.
-// Not ported yet (D-476 first version): the wet streets (ground_slab.gdshader `wet` and sheen; CityGround.hlsl has
-// no weather switch) and the lamp and window smears on the wet road (rain_smear.gdshader).
+// Wet streets (D-484): the ground's `wet` and the sky it mirrors (CityGround.hlsl, ground_slab.gdshader), and with
+// the rain the glowing smears of the streetlights and lit buildings on the wet road (RainSmear.shader,
+// rain_smear.gdshader), re-placed on a timer round the camera (WetStreets).
 public sealed class WeatherView : IDisposable
 {
     public readonly string id;
@@ -29,6 +31,18 @@ public sealed class WeatherView : IDisposable
     readonly MaterialPropertyBlock splashBlock;
     readonly Material streakMat, splashMat;
     float time;
+    readonly WetStreets wet;
+    readonly Material smearMat;
+    readonly GraphicsBuffer smearBuffer;
+    readonly Vector4[] smearData;
+    readonly List<WetStreets.Smear> placed = new List<WetStreets.Smear>();
+    readonly StreetView street;
+    readonly S.RampageSim sim;
+    readonly float smearEvery, smearAlpha, exposure;
+    float smearWait;
+    bool smearLogged;
+    public int Smears => placed.Count;
+    public Color Sheen { get; private set; } = Color.black;
 
     const int QUAD_VERTS = 6;
     // weather_view.gd custom_aabb: the streak volume's bounds reach this far past it on each side.
@@ -40,30 +54,57 @@ public sealed class WeatherView : IDisposable
     static readonly int SPLASH = Shader.PropertyToID("_RainSplash"), FADE = Shader.PropertyToID("_RainFade");
     static readonly int CLEAR = Shader.PropertyToID("_RainClear"), TINT = Shader.PropertyToID("_RainTint");
     static readonly int AMBIENT = Shader.PropertyToID("_SliceAmbient");
+    static readonly int SMEARS = Shader.PropertyToID("_Smears"), TOWARD = Shader.PropertyToID("_SmearToward");
+    // RainSmear.shader: three float4 a smear.
+    const int SMEAR_ROWS = 3;
+    // weather_view.gd custom_aabb: the smears' bounds, round the city.
+    static readonly Bounds SMEAR_BOUNDS = new Bounds(Vector3.zero, new Vector3(4000f, 10f, 4000f));
 
     // Builds the current weather's view (weather_view.gd attach) over `profile` (the look SliceGame.ApplyLook made,
-    // after its sun exists). wind: Fire.WIND (fire.json "wind", Godot axes); exposureUnit: SliceGame.ExposureUnit.
+    // after its sun exists). wind: Fire.WIND (fire.json "wind", Godot axes); exposureUnit: SliceGame.ExposureUnit;
+    // ground: the city's ground (wetted); street: its streetlights; sim: its buildings (the lit windows' smears); smear: RainSmear.shader.
     // Returns null when the weather has no layer (clear): nothing is changed then. Logs one line either way.
-    public static WeatherView Attach(VolumeProfile profile, Shader rain, float[] wind, float exposureUnit)
+    public static WeatherView Attach(VolumeProfile profile, Shader rain, float[] wind, float exposureUnit,
+        CityGround ground, StreetView street, S.RampageSim sim, Shader smear)
     {
         string id = S.Content.WeatherId();
         S.GDict found = WeatherLook.LayerOf(id);
         if (found.IsEmpty())
         {
             Debug.Log($"rampage: weather {(id != "" ? id : "none")}, no layer, rain 0 drops");
+            Debug.Log($"wet streets: dry (weather {(id != "" ? id : "none")}), 0 smears");
             return null;
         }
-        var view = new WeatherView(id, found, profile, rain, wind, exposureUnit);
-        Debug.Log(FormattableString.Invariant($"rampage: weather {id}, rain {view.Drops} drops ({string.Join(", ", view.layers.ConvertAll(l => $"{l.name} {l.count}"))}), splashes {view.SplashCount}, particles x{WeatherLook.ParticlesRatio():F2}, sun x{WeatherLook.Value(found, "sun_mul", 1.0):F2}, fog x{WeatherLook.Value(found, "fog_mul", 1.0):F2}; wet streets and lamp smears not ported"));
+        var view = new WeatherView(id, found, profile, rain, wind, exposureUnit, ground, street, sim, smear);
+        Debug.Log(FormattableString.Invariant($"rampage: weather {id}, rain {view.Drops} drops ({string.Join(", ", view.layers.ConvertAll(l => $"{l.name} {l.count}"))}), splashes {view.SplashCount}, particles x{WeatherLook.ParticlesRatio():F2}, sun x{WeatherLook.Value(found, "sun_mul", 1.0):F2}, fog x{WeatherLook.Value(found, "fog_mul", 1.0):F2}"));
+        string smears = view.smearMat != null ? $"up to {view.wet.max}" : "none";
+        int lamps = street != null ? street.LampLights.Count : 0;
+        Debug.Log(FormattableString.Invariant($"wet streets: wet {view.wet.wet:F2} (ground {(ground != null ? ground.WetNow : 0f):F2}), sheen {view.Sheen.r:F3} {view.Sheen.g:F3} {view.Sheen.b:F3}, smears {smears}, {lamps} lamps"));
         return view;
     }
 
-    WeatherView(string id, S.GDict found, VolumeProfile profile, Shader rain, float[] wind, float exposureUnit)
+    WeatherView(string id, S.GDict found, VolumeProfile profile, Shader rain, float[] wind, float exposureUnit,
+        CityGround ground, StreetView street, S.RampageSim sim, Shader smear)
     {
         this.id = id;
         layer = found;
+        this.street = street;
+        this.sim = sim;
+        exposure = exposureUnit;
         DullTheSky(profile, exposureUnit);
+        wet = new WetStreets(found);
+        WetTheGround(profile, ground);
         if (!WeatherLook.Rains(found) || rain == null) return;
+        S.GDict smearCfg = S.Content.Section("rain")["smear"];
+        smearEvery = (float)S.Num.F(smearCfg["every_s"]);
+        smearAlpha = (float)S.Num.F(smearCfg["alpha"]);
+        if (wet.smears && smear != null)
+        {
+            smearMat = new Material(smear);
+            smearBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, wet.max * SMEAR_ROWS, Marshal.SizeOf<Vector4>());
+            smearData = new Vector4[wet.max * SMEAR_ROWS];
+            smearMat.SetBuffer(SMEARS, smearBuffer);
+        }
         S.GDict cfg = S.Content.Section("rain");
         double ratio = WeatherLook.ParticlesRatio();
         double[] tint = WeatherLook.StreakColor();
@@ -124,6 +165,15 @@ public sealed class WeatherView : IDisposable
         }
     }
 
+    // weather_view.gd _wet_the_ground and _sheen_colour: the ground's wet, and the sky colour the wet road gives
+    // back (the horizon, after the dulling; black where there is no sky). Other weathers leave the ground dry.
+    void WetTheGround(VolumeProfile profile, CityGround ground)
+    {
+        if (wet.wet <= 0.0 || ground == null) return;
+        if (profile != null && profile.TryGet(out GradientSky sky)) Sheen = sky.middle.value;
+        ground.Wet((float)wet.wet, Sheen);
+    }
+
     // A linear colour scaled by `unit`, dulled as Godot dulls its sRGB value (WeatherLook.Dulled), back again.
     static Color Dulled(Color linearScaled, double grey, double dim, float unit)
     {
@@ -163,11 +213,42 @@ public sealed class WeatherView : IDisposable
         float reach = (float)(splashes.size * splashes.scaleMax);
         var area = new Bounds(new Vector3(s.x, (float)splashes.y, s.z), new Vector3((float)splashes.areaX + 2f * reach, 2f, (float)splashes.areaZ + 2f * reach));
         Graphics.DrawProcedural(splashMat, area, MeshTopology.Triangles, QUAD_VERTS, splashes.count, null, splashBlock, ShadowCastingMode.Off, false, 0);
+        if (smearMat == null) return;
+        // Godot axes: toward the camera is -flat, z negated.
+        smearMat.SetVector(TOWARD, new Vector4(-flat.x, flat.z, smearAlpha, exposure));
+        smearWait -= dt;
+        if (smearWait <= 0f)
+        {
+            smearWait = smearEvery;
+            PlaceSmears(eye);
+        }
+        if (placed.Count > 0)
+            Graphics.DrawProcedural(smearMat, SMEAR_BOUNDS, MeshTopology.Triangles, QUAD_VERTS, placed.Count, null, null, ShadowCastingMode.Off, false, 0);
+    }
+
+    // weather_view.gd _place_smears: the lamps and lit buildings round the camera (Godot axes), uploaded.
+    void PlaceSmears(Vector3 eye)
+    {
+        double lit = S.Num.F(S.Content.Look().Get("window_lit", 0.0));
+        wet.Place(eye.x, -eye.z, street != null ? street.LampLights : Array.Empty<WetStreets.Lamp>(), sim, lit, placed);
+        for (int i = 0; i < placed.Count; i++)
+        {
+            WetStreets.Smear m = placed[i];
+            smearData[i * SMEAR_ROWS] = new Vector4((float)m.x, (float)m.y, (float)m.z, (float)m.width);
+            smearData[i * SMEAR_ROWS + 1] = new Vector4((float)m.r, (float)m.g, (float)m.b, (float)m.a);
+            smearData[i * SMEAR_ROWS + 2] = new Vector4((float)m.length, 0f, 0f, 0f);
+        }
+        if (placed.Count > 0) smearBuffer.SetData(smearData, 0, 0, placed.Count * SMEAR_ROWS);
+        if (smearLogged) return;
+        smearLogged = true;
+        Debug.Log(FormattableString.Invariant($"wet streets: first smears {placed.Count} round ({eye.x:F1}, {-eye.z:F1}), window_lit {lit:F2}"));
     }
 
     public void Dispose()
     {
         if (streakMat != null) UnityEngine.Object.Destroy(streakMat);
         if (splashMat != null) UnityEngine.Object.Destroy(splashMat);
+        if (smearMat != null) UnityEngine.Object.Destroy(smearMat);
+        smearBuffer?.Dispose();
     }
 }

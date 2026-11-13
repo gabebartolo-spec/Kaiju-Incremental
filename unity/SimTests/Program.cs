@@ -32,6 +32,7 @@ static class Program
         failures += StadiumCheck.Run(RepoRoot());
         failures += BoatCheck.Run(RepoRoot());
         failures += WildlifeCheck.Run(RepoRoot());
+        failures += WetStreetsCheck.Run(RepoRoot());
         failures += StageBodyCheck.Run(RepoRoot());
         failures += DeathCheck.Run(RepoRoot());
         failures += FarCityCheck.Run(RepoRoot());

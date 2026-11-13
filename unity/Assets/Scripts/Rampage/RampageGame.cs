@@ -315,7 +315,8 @@ public sealed partial class RampageGame : MonoBehaviour
         leap = new LeapView(sim, croc, trees);
         slam = new SlamView(sim, city, fx, shake, croc, tuning);
         postFx = new PostFxView(sim, profile);
-        weather = WeatherView.Attach(profile, Resources.Load<Shader>("Shaders/Rain"), fireTuning.wind, SliceGame.ExposureUnit(tuning));
+        weather = WeatherView.Attach(profile, Resources.Load<Shader>("Shaders/Rain"), fireTuning.wind, SliceGame.ExposureUnit(tuning),
+            ground, street, sim, Resources.Load<Shader>("Shaders/RainSmear"));
         walked = sim.kaijuPos;
         if (clipDir != null) BeginClip();
         if (scoutPath != null)

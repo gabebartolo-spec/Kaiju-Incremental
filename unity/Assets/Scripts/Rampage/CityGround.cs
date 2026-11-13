@@ -8,7 +8,7 @@ using S = Kaiju.Sim;
 // diagonal_paving, harbour_view, road_paint), the same slabs in the same places. Godot lays them as instanced boxes;
 // here they are one static mesh whose vertices name their slab, and the slabs' colour and kind sit in a buffer
 // (CityGround.hlsl). Everything is laid in Godot's axes; z is negated once, where a vertex is written.
-public sealed class CityGround : IDisposable
+public sealed partial class CityGround : IDisposable
 {
     const float PAVE_TOP = 0.1f, DIAG_TOP = 0.003f, PLAZA_RISE = 0.01f, PAINT = 0.02f, WATER_Y = -0.8f, RIVER_QUAY = 0.6f;
     const float PARAPET_H = 0.9f, PARAPET_W = 0.3f, FAR = 1400f, ROAD_TOP = 0.005f, CROSSING_TOP = 0.006f, KERB = 0.3f;

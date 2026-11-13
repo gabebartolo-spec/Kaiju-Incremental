@@ -13,6 +13,11 @@ float g_block, g_block_noise, g_patch_noise, g_speck_chance, g_speck_dark, g_sea
 float g_mottle, g_track, g_tar, g_patch_dark, g_stain, g_gutter, g_panel, g_damp, g_streak, g_soil, g_paving;
 float g_band_h, g_night_floor, g_river_y, g_seed;
 float g_wet_dark, g_wet_rough;
+// The weather's wet streets (ground_slab.gdshader `wet` and `sheen_color`, set only by WeatherView, D-155): 0 dry,
+// 1 soaked; the sky colour the wet road gives back (linear). The road paint and the beach's sand stay dry, as
+// Godot's paint and sand materials are not in its wet group.
+float g_wet;
+float4 g_sheen;
 
 static const float JUNCTION_BLEND = 1.5;
 static const float BAND_DARKEN = 0.78;
@@ -30,8 +35,27 @@ static const float BAND_NIGHT_LOW = 0.3;
 static const float BAND_NIGHT_GRAIN = -0.2;
 static const float GRAIN_SHADE = 0.065;
 static const float GRAIN_TILE = 64.0;
+// ground_slab.gdshader: the wet look's identity (how wet each weather is, is data).
+static const float WET_DARKEN = 0.62;
+static const float WET_ROUGHNESS = 0.18;
+static const float WET_PUDDLE_SCALE = 0.16;  // puddle patches per metre
+static const float WET_PUDDLE_ROUGHNESS = 0.03;
+static const float WET_SHEEN = 0.55;  // how much of the sky colour the glancing road gives back
+static const float WET_NIGHT_KEEP = 0.5;  // the night glow a soaked road keeps
 
 float sd_mod(float a, float b) { return a - b * floor(a / b); }
+
+// ground_slab.gdshader wet_hash, wet_noise: the puddles' value noise.
+float wet_hash(float2 p) { return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453); }
+
+float wet_noise(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return lerp(lerp(wet_hash(i), wet_hash(i + float2(1.0, 0.0)), f.x),
+        lerp(wet_hash(i + float2(0.0, 1.0)), wet_hash(i + float2(1.0, 1.0)), f.x), f.y);
+}
 
 float sd_h(float2 p)
 {
@@ -287,8 +311,9 @@ float3 sd_junction(float3 base, float2 pc, float2 wc, float2 centre, float2 half
 }
 
 // One pixel of the city's ground. world and normal in Godot's axes; local: where it is on its slab from the
-// slab's centre (m); up01: a beach corner's metres up the sand over the wet strip (0..1); depth: view depth.
-void CityGroundSurface(float2 uv0, float2 local, float3 world, float3 normal, float depth,
+// slab's centre (m); up01: a beach corner's metres up the sand over the wet strip (0..1); depth: view depth;
+// ndv: the surface normal's dot with the direction to the eye (Godot's dot(NORMAL, VIEW)).
+void CityGroundSurface(float2 uv0, float2 local, float3 world, float3 normal, float depth, float ndv,
     out float3 albedo, out float roughness, out float3 emission)
 {
     CitySlab s = _Slabs[(uint)round(uv0.x)];
@@ -377,9 +402,20 @@ void CityGroundSurface(float2 uv0, float2 local, float3 world, float3 normal, fl
         col = sd_paint(base, pc);
     }
     col *= sd_grain(q, depth);
-    albedo = col;
-    roughness = lerp(lerp(1.0, 0.45, polish), BAND_ROUGHNESS, band_wet);
+    // Wet goes last (ground_slab.gdshader): the same darkening and gloss whatever the surface; the paint stays dry.
+    float wet = (kind > 5.5 && kind < 6.5) ? 0.0 : g_wet;
+    albedo = col * (1.0 - wet * WET_DARKEN);
+    // Godot's SPECULAR (0.5 dry, 0.9 wet) has no match in HDRP's metallic Lit: its F0 stays at 4%.
+    roughness = lerp(lerp(lerp(1.0, 0.45, polish), BAND_ROUGHNESS, band_wet), WET_ROUGHNESS, wet);
     float ratio = dot(col, float3(0.3, 0.55, 0.15)) / max(dot(base, float3(0.3, 0.55, 0.15)), 0.0001);
-    emission = base * g_night_floor * pow(max(ratio, 0.0), 0.3) * ((kind < 1.5 || (kind > 4.5 && (up || kind > 5.5))) ? 1.0 : 0.0);
-    emission += base * g_night_floor * BAND_NIGHT_GLOW * band_glow * pow(max(ratio, 0.0001), BAND_NIGHT_GRAIN);
+    float keep = 1.0 - wet * WET_NIGHT_KEEP;
+    emission = base * g_night_floor * pow(max(ratio, 0.0), 0.3) * ((kind < 1.5 || (kind > 4.5 && (up || kind > 5.5))) ? 1.0 : 0.0) * keep;
+    emission += base * g_night_floor * BAND_NIGHT_GLOW * band_glow * pow(max(ratio, 0.0001), BAND_NIGHT_GRAIN) * keep;
+    // Wet only: puddle patches are mirror-smooth and give the sky back at a glancing angle (fresnel), the rest of
+    // the road a faint sheen. Both are 0 when dry.
+    float2 ground = world.xz;
+    float puddle = smoothstep(0.45, 0.7, wet_noise(ground * WET_PUDDLE_SCALE) * 0.65 + wet_noise(ground * WET_PUDDLE_SCALE * 3.7) * 0.35);
+    roughness = lerp(roughness, WET_PUDDLE_ROUGHNESS, wet * puddle);
+    float glance = pow(1.0 - saturate(ndv), 2.5);
+    emission += g_sheen.rgb * wet * WET_SHEEN * glance * (0.35 + 0.65 * puddle);
 }
