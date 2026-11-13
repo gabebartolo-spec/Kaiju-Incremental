@@ -60,12 +60,11 @@ static class FeedbackCheck
     static List<KeyValuePair<string, string>> SampleFacts() =>
         FeedbackReport.FactsOf(Species, 1, 7301, 120.0, 55.4, "Windows 10.0", "Test GPU", "medium", 0.75, 1920, 1080, 1920, 1080);
 
-    // The version comes from project.godot's [application] config/version, after the game's name from data.
+    // The version comes from the repo's version.txt (one line), after the game's name from data.
     static void Version()
     {
-        string project = File.ReadAllText(Path.Combine(SimFiles.Root, "project.godot"));
-        string version = FeedbackReport.ProjectVersion(project);
-        Check(version != "unversioned" && version.Length > 0, "project.godot has a config/version: " + version);
+        string version = File.ReadAllText(Path.Combine(SimFiles.Root, FeedbackReport.VERSION_NAME)).Split('\n')[0].Trim();
+        Check(version.Length > 0 && FeedbackReport.BuildVersion() == version, "version.txt has the version: " + version);
         Check(FeedbackReport.Version() == Gd.Str(Content.Section("feedback")["game"]) + " " + version,
             "the version line is the game's name and the project's version: " + FeedbackReport.Version());
         Check(FeedbackReport.ProjectVersion("[application]\nconfig/name=\"X\"\nconfig/version=\"1.2-demo\"\n") == "1.2-demo",

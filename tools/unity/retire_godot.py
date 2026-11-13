@@ -9,6 +9,7 @@
 A file leaves when it is Godot's: a Godot file type anywhere outside unity/, a Godot-only folder, or a tool named in
 GODOT_TOOLS. Everything else stays (data/, assets/ media, docs/, unity/, the Python asset pipelines).
 """
+import json
 import os
 import re
 import subprocess
@@ -35,7 +36,7 @@ GODOT_TOOLS = {
     "tools/lint/check_uids.sh", "tools/lint/selftest_uids.sh", "tools/lint/log_smoke.sh",
     "tools/lint/selftest_log_smoke.sh", "tools/lint/complexity_ratchet.py", "tools/lint/complexity_baseline.txt",
     "tools/lint/check_thread_resources.sh", "tools/lint/selftest_thread_resources.sh",
-    "tools/lint/thread_resources.py",
+    "tools/lint/thread_resources.py", "tools/lint/tests/test_godot_mirror.py",
     ".github/workflows/tests.yml", ".github/workflows/build.yml", ".github/workflows/release.yml",
     ".github/workflows/capture.yml", ".github/workflows/pacing.yml", ".github/workflows/native-cache.yml",
 }
@@ -49,9 +50,31 @@ STRING = re.compile(r'"(?:[^"\\\n]|\\.)*"' + r"|'(?:[^'\\\n]|\\.)*'")
 # Comments are provenance ("ported from scenes/x.gd"), not reads: only code counts. In C-like and Python files
 # a path must sit in a string literal; in shell, YAML and the rest, on a line that is not a comment.
 QUOTED = (".py", ".cs", ".cpp", ".h", ".json", ".csproj", ".props", ".asmdef")
+# This planner and its test name the leaving paths on purpose.
+SELF = ("tools/unity/retire_godot.py", "tools/lint/tests/test_retire_godot.py")
+
+
+def json_values(node, out: list[str]) -> None:
+    """A data file's string values, minus the "_note"-style keys (prose about the code, not a read)."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if not str(k).startswith("_"):
+                json_values(v, out)
+    elif isinstance(node, list):
+        for v in node:
+            json_values(v, out)
+    elif isinstance(node, str):
+        out.append(node)
 
 
 def code_text(path: str, body: str) -> str:
+    if path.endswith(".json"):
+        try:
+            values: list[str] = []
+            json_values(json.loads(body), values)
+            return "\n".join(values)
+        except ValueError:
+            pass
     if path.endswith(QUOTED):
         if path.endswith(".py"):
             body = re.sub(r'"""[\s\S]*?"""', "", body)
@@ -75,17 +98,23 @@ def leaves(path: str) -> bool:
     return path in GODOT_TOOLS or path.startswith(GODOT_DIRS) or path.endswith(GODOT_EXT)
 
 
-def blockers(paths: list[str], gone: set[str]) -> dict[str, list[str]]:
+def read(path: str) -> str | None:
+    try:
+        with open(os.path.join(ROOT, path), encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    except OSError:
+        return None
+
+
+def blockers(paths: list[str], gone: set[str], text=read) -> dict[str, list[str]]:
     """Kept code that names a leaving file or folder: each must be cut before the switch."""
     gone_dirs = {d.rstrip("/") for d in GODOT_DIRS}
     found: dict[str, list[str]] = {}
     for p in paths:
-        if p in gone or PROSE.search(p) or not p.endswith(TEXT) or p.startswith("tools/lint/tests/fixtures"):
+        if p in gone or p in SELF or PROSE.search(p) or not p.endswith(TEXT) or p.startswith("tools/lint/tests/fixtures"):
             continue
-        try:
-            with open(os.path.join(ROOT, p), encoding="utf-8", errors="replace") as fh:
-                body = fh.read()
-        except OSError:
+        body = text(p)
+        if body is None:
             continue
         body = code_text(p, body)
         hits = sorted({m for m in PATHLIKE.findall(body) if m in gone or m.rstrip("/") in gone_dirs})

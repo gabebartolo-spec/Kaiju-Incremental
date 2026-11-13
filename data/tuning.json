@@ -269,6 +269,7 @@
 		"box_width": 900,
 		"max_chars": 4000
 	},
+	"kaiju_body": {"_note": "The kaiju body's fixed measures the bakes read (tools/unity/slicebake; U6 moved them here from scenes/kaiju_model.gd and scenes/biped_swing.gd, which keep their own consts until Godot leaves main; tools/lint/tests/test_godot_mirror.py holds the two equal). model_height: the model's height in floors at scale 1. arm_rest: the relaxed arm's upper, fore and hand directions (x outward on the left side, mirrored for the right).", "model_height": 10.0, "arm_rest": {"upper": [0.15, -0.92, -0.35], "fore": [-0.25, -0.2, -0.95], "hand": [-0.2, -0.55, -0.8]}},
 	"kaiju": {
 		"hp": 100,
 		"speed": 5.0,

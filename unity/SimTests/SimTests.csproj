@@ -53,7 +53,7 @@
     <Compile Include="../../tools/unity/slicebake/CrocBake.cs" />
     <Compile Include="../../tools/unity/slicebake/BeastBake.cs" />
     <Compile Include="../../tools/unity/slicebake/GodotJson.cs" />
-    <Compile Include="../../tools/unity/slicebake/GdConst.cs" />
+    <Compile Include="../../tools/unity/slicebake/BodyData.cs" />
     <None Include="golden/**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Assets/Plugins/x86_64/kaiju_core.dll" Condition="Exists('../Assets/Plugins/x86_64/kaiju_core.dll')" Link="kaiju_core.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

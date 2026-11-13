@@ -4,6 +4,7 @@
 // same order, same bytes (but the baby's and adolescent's relaxed arms, which may differ in a double's last bit:
 // the same values once read as floats).
 //   dotnet run --project tools/unity/slicebake -c Release -- --out=<dir> [--croc=<dir>/reptilian_adult]
+//   dotnet run --project tools/unity/slicebake -c Release -- --rest=<out.json>   (RestDump.cs)
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,15 +21,17 @@ static class Program
 
     static int Main(string[] args)
     {
-        string outDir = "", croc = "";
+        string outDir = "", croc = "", rest = "";
         foreach (string arg in args)
         {
             if (arg.StartsWith("--out=", StringComparison.Ordinal)) outDir = arg.Substring(6);
             if (arg.StartsWith("--croc=", StringComparison.Ordinal)) croc = arg.Substring(7);
+            if (arg.StartsWith("--rest=", StringComparison.Ordinal)) rest = arg.Substring(7);
         }
         string repo = RepoRoot();
         if (outDir == "") outDir = Path.Combine(repo, "unity", "Assets", "StreamingAssets", "slice");
         Kaiju.Sim.FileAccess.Root = repo;
+        if (rest != "") return CrocBake.DumpRest(rest, repo);  // the skin bake's rest poses (tools/kaiju_skin/bake_all.sh)
         ClassDB.UseNative = true;
         if (!ClassDB.ClassExists("KaijuSettle"))
         {
@@ -161,7 +164,7 @@ static class Program
             { "destruction", Content.Section("destruction") },
             { "time", TIME },
             { "body_scale", sim.BodyScale() },
-            { "model_height", GdConst.ModelHeight() },
+            { "model_height", BodyData.ModelHeight() },
             { "window_palette", windows },
             { "window_gain", Gd.Arr((double)gain[0], (double)gain[1]) },
             { "window_palette_on", WindowPalette.On() },
@@ -175,8 +178,9 @@ static class Program
     static string RepoRoot()
     {
         string dir = AppContext.BaseDirectory;
-        while (dir != null && !File.Exists(Path.Combine(dir, "project.godot"))) dir = Path.GetDirectoryName(dir);
-        if (dir == null) throw new InvalidOperationException("slicebake: no project.godot above " + AppContext.BaseDirectory);
+        // The repo root holds the Unity project (unity/ProjectSettings) and data/; Godot's project.godot leaves at U6.
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "unity", "ProjectSettings"))) dir = Path.GetDirectoryName(dir);
+        if (dir == null) throw new InvalidOperationException("slicebake: no unity/ProjectSettings above " + AppContext.BaseDirectory);
         return dir;
     }
 }

@@ -1,7 +1,7 @@
 """Bakes each rigged kaiju's voxels into a skin for scenes/voxel_skin.gd (D-041: voxel cubes on a
 smooth skin). Run by tools/kaiju_skin/bake_all.sh after any .kvox or .rig.json change:
 
-    python tools/kaiju_skin/bake.py <rest.json from dump_rest.gd> <assets/kaiju dir>
+    python tools/kaiju_skin/bake.py <rest.json from slicebake --rest (RestDump.cs)> <assets/kaiju dir>
 
 For every kaiju in rest.json it reads <name>.kvox (the voxels and their bone split, from
 rig_voxel.py) and writes <name>.vskin:
