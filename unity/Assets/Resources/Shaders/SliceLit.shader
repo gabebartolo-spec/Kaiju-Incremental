@@ -312,10 +312,14 @@ Shader "Slice/Lit"
 
 
     HLSLINCLUDE
-    #pragma multi_compile_local SLICE_BUILDING SLICE_CUBE SLICE_FILL SLICE_DEBRIS SLICE_GROUND SLICE_FACADE SLICE_STONE
+    #pragma multi_compile_local SLICE_BUILDING SLICE_CUBE SLICE_FILL SLICE_DEBRIS SLICE_GROUND SLICE_FACADE SLICE_STONE SLICE_BIRD
     #pragma instancing_options procedural:SliceSetup
-    #if defined(SLICE_BUILDING)
+    #if defined(SLICE_BUILDING) || defined(SLICE_BIRD)
     #define _DOUBLESIDED_ON
+    #endif
+    #if defined(SLICE_BIRD)
+    // Every pass, depth and shadow included: uv0.x is a vertex's share of the way out along a wing, for the beat.
+    #define ATTRIBUTES_NEED_TEXCOORD0
     #endif
     #if defined(SLICE_FACADE)
     // Every pass, depth and shadow included: uv0 names the far box whose fall moves the vertex.

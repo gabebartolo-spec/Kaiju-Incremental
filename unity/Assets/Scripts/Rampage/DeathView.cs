@@ -33,8 +33,8 @@ public sealed class DeathView : IDisposable
     // Color.GRAY: a shard's colour when no cube was found near it.
     const float GODOT_GRAY = 0.745f;
     // surface_detail.gdshaderinc defaults, the stone's grain (death_stone.gdshader sets none).
-    static readonly string[] GRAIN_KEYS = { "g_block", "g_block_noise", "g_patch_noise", "g_speck_chance", "g_speck_dark", "g_seam", "g_fade_near", "g_fade_far", "g_seed" };
-    static readonly float[] GRAIN_VALUES = { 0.125f, 0.09f, 0.05f, 0.04f, 0.72f, 0.05f, 35f, 80f, 0f };
+    internal static readonly string[] GRAIN_KEYS = { "g_block", "g_block_noise", "g_patch_noise", "g_speck_chance", "g_speck_dark", "g_seam", "g_fade_near", "g_fade_far", "g_seed" };
+    internal static readonly float[] GRAIN_VALUES = { 0.125f, 0.09f, 0.05f, 0.04f, 0.72f, 0.05f, 35f, 80f, 0f };
 
     // One set of chunks (his cubes, or the sim's shards), drawn one instanced draw per chunk kind.
     sealed class Group
