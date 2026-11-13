@@ -218,5 +218,43 @@ namespace Kaiju.Game
             }
             return puffs;
         }
+
+        // title_colossus.gd _place: the feet after `steps` footfalls (out along "step" for "steps_out", then back).
+        public static S.Vector3 ColossusFeet(S.GDict cfg, long steps)
+        {
+            S.GArray<S.Variant> start = cfg["start"], stride = cfg["step"];
+            long count = S.Num.I(cfg["steps_out"]);
+            long along = ((steps % (count * 2)) + count * 2) % (count * 2);
+            if (along > count) along = count * 2 - along;
+            return new S.Vector3(S.Num.F(start[0]) + S.Num.F(stride[0]) * along, S.Num.F(cfg["ground_y"]), S.Num.F(start[1]) + S.Num.F(stride[1]) * along);
+        }
+
+        // title_colossus.gd burst_point: behind the colossus and high, where a revealing explosion goes off.
+        public static S.Vector3 BurstPoint(S.GDict cfg, long steps)
+        {
+            S.Vector3 feet = ColossusFeet(cfg, steps);
+            return new S.Vector3(feet.x, feet.y + S.Num.F(cfg["burst_height"]), feet.z - S.Num.F(cfg["burst_back"]));
+        }
+
+        // How far (screen shares, u and v) the card and its eye move once the feet have taken `steps`.
+        public static float[] ColossusShift(S.GDict title, long steps, double aspect)
+        {
+            S.GDict cfg = title["colossus"], cam = title["camera"];
+            S.GArray<S.Variant> position = cam["position"], target = cam["look"];
+            double[] eye = { S.Num.F(position[0]), S.Num.F(position[1]), S.Num.F(position[2]) };
+            double[] look = { S.Num.F(target[0]), S.Num.F(target[1]), S.Num.F(target[2]) };
+            S.Vector3 rest = ColossusFeet(cfg, 0), now = ColossusFeet(cfg, steps);
+            TitleMenu.Project(eye, look, S.Num.F(cam["fov"]), aspect, new[] { rest.x, rest.y, rest.z }, out double u0, out double v0, out _);
+            TitleMenu.Project(eye, look, S.Num.F(cam["fov"]), aspect, new[] { now.x, now.y, now.z }, out double u1, out double v1, out _);
+            return new[] { (float)(u1 - u0), (float)(v1 - v0) };
+        }
+
+        // title_colossus.gd _process: how lit the colossus is (0 hidden .. 1 clear) with `left` of `reveal_s` to go.
+        public static double RevealAmount(S.GDict cfg, double left)
+        {
+            if (left <= 0.0) return 0.0;
+            double age = S.Num.F(cfg["reveal_s"]) - left;
+            return Math.Min(1.0, age / S.Num.F(cfg["rise_s"])) * Math.Min(1.0, left / S.Num.F(cfg["fall_s"]));
+        }
     }
 }

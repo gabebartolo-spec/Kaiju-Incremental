@@ -195,7 +195,7 @@ public static class Sfx
     }
 
     // The title's bed (scenes/title_ambience.gd): the far crowd and siren fading in, and the theme. The
-    // gunfire, far booms and footfalls it scatters on top are not ported.
+    // gunfire, far booms and footfalls it scatters on top play from TitleCityView (TitleClock).
     public static void TitleBed(bool on)
     {
         S.GDict cfg = S.Content.Section("title")["ambience"];

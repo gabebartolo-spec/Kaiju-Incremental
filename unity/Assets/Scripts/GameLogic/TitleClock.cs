@@ -1,7 +1,7 @@
 // The title's timing without the engine (scenes/title_ambience.gd's gunfire bursts, far booms and stomps, and
 // title_backdrop.gd's answers to them: a flash at a far spot, now and then the colossus revealed, the bay's
 // shiver, the fade-in), stepped as Godot steps them (the backdrop before the ambience) on Godot's seeded streams.
-// Game/Title/TitleCityView.cs plays and draws what each step says; SimTests TitleCheck holds it to Godot's run.
+// Game/Ui/TitleCityView.cs plays and draws what each step says; SimTests TitleCheck holds it to Godot's run.
 using System;
 using System.Collections.Generic;
 using S = Kaiju.Sim;

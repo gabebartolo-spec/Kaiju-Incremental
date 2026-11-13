@@ -3,6 +3,9 @@
 // colour = wall (sRGB), alpha = grain / 32; uv0 = (style, share of windows lit), uv1 = (roof height, seed).
 // Style -1 is a plain box (concrete), -2 a blinking roof beacon, -3 a glowing lamp head. Godot axes throughout.
 float4 _FacadeRoof, _FacadeWindow;
+// The title's power cut (facade.gdshaderinc blackout, lit_color, glow, window_palette_on off; title_backdrop.gd
+// _dim_windows): x share of window blocks dark, y glow (0 = no cut, the palette as usual); colour linear.
+float4 _FacadeCut, _FacadeCutColor;
 float _FacadeFilterStart, _FacadeFilterCells;
 
 float FacadeHash(float3 p)
@@ -60,7 +63,14 @@ void FacadeWall(float2 at, float top, float3 wall, float seed, float share, int 
         float3 pane = _FacadeWindow.rgb;
         if (style == 2) pane = lerp(pane, wall, 0.3) * 1.1;
         albedo = pane * jitter;
-        if (FacadeHash(float3(floor(cell / 2.0), floor(y4 / 4.0), seed * 31.0)) < share)
+        bool lit = FacadeHash(float3(floor(cell / 2.0), floor(y4 / 4.0), seed * 31.0)) < share;
+        bool dark = FacadeHash(float3(floor(cell / 14.0), floor(y4 / 12.0), seed * 17.0 + 5.0)) < _FacadeCut.x;
+        if (lit && _FacadeCut.y > 0.0 && !dark)
+        {
+            albedo = _FacadeCutColor.rgb;
+            emit = _FacadeCutColor.rgb * _FacadeCut.y;
+        }
+        else if (lit && _FacadeCut.y <= 0.0)
         {
             uint h = WindowMix(uint(int(seed * 65536.0)) ^ 40503u);
             h = WindowMix(h ^ uint(int(floor(cell / 2.0))));

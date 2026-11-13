@@ -1,7 +1,8 @@
 // The title's still art (scenes/title_screen.gd _add_sky and _add_live_city, scenes/title_colossus.gd at rest):
-// the night sky gradient, the fire glows low on the right, the colossus's baked silhouette where the title
-// camera sees it with its one slow red eye, and the dark pool of shade behind the logo and buttons. The live
-// burning city (Godot's TitleBackdrop: towers, fires, flashes that reveal the colossus) is not drawn here.
+// the night sky gradient, the fire glows low on the right, the live burning city fading in over them
+// (TitleCityView, Godot's TitleBackdrop), the colossus's baked silhouette where the title camera sees it with its
+// one slow red eye (title_colossus.gd: a step along its path per far stomp, lit when a big boom reveals it), and
+// the dark pool of shade behind the logo and buttons.
 using System.IO;
 using Kaiju.Game;
 using UnityEngine;
@@ -20,7 +21,10 @@ public sealed class TitleBackdrop : MonoBehaviour
 
     static bool warned;
     Texture2D sky, glow, shade, colossus, disc;
-    RawImage eye;
+    RawImage eye, card;
+    TitleCityView city;
+    S.GDict title;
+    float[] cardBox, eyeBox;
     Color eyeColour;
     S.GDict eyeCfg;
     float t;
@@ -37,7 +41,7 @@ public sealed class TitleBackdrop : MonoBehaviour
 
     void Build()
     {
-        S.GDict title = S.Content.Section("title");
+        title = S.Content.Section("title");
         S.GDict skyCfg = title["sky"];
         sky = Vertical(Hex(S.Gd.Str(skyCfg["top"]), 1f), Hex(S.Gd.Str(skyCfg["bottom"]), 1f));
         UiKit.FullRect(Picture("Sky", sky, Color.white).rectTransform);
@@ -51,6 +55,7 @@ public sealed class TitleBackdrop : MonoBehaviour
             Place(Picture("Glow", glow, Color.white).rectTransform, TitleMenu.GlowBox(S.Num.F(g[0]), S.Num.F(g[1]), S.Num.F(g[2])));
         }
 
+        city = TitleCityView.Create(transform);
         AddColossus(title);
 
         S.GDict shadeCfg = title["shade"];
@@ -82,8 +87,9 @@ public sealed class TitleBackdrop : MonoBehaviour
         S.GDict cfg = title["colossus"];
         // The camera keeps its height, so a wider window sees more to the sides (Godot's keep-height).
         double aspect = Screen.height > 0 ? (double)Screen.width / Screen.height : UiKit.CANVAS_WIDTH / UiKit.CANVAS_HEIGHT;
-        RawImage card = Picture("Colossus", colossus, new Color(1f, 1f, 1f, (float)S.Num.F(cfg["idle_alpha"])));
-        Place(card.rectTransform, TitleMenu.ColossusBox(title, aspect, colossus.width, colossus.height));
+        card = Picture("Colossus", colossus, new Color(1f, 1f, 1f, (float)S.Num.F(cfg["idle_alpha"])));
+        cardBox = TitleMenu.ColossusBox(title, aspect, colossus.width, colossus.height);
+        Place(card.rectTransform, cardBox);
 
         eyeCfg = cfg["eye"];
         eyeColour = Hex(S.Gd.Str(eyeCfg["colour"]), 1f);
@@ -91,7 +97,8 @@ public sealed class TitleBackdrop : MonoBehaviour
         disc = Radial(EYE_TEXELS, 0.5f, 0.5f, Color.white, new Color(1f, 1f, 1f, 0f));
         eye = Picture("Eye", disc, eyeColour);
         float halfV = at[2] * 0.5f, halfU = halfV / (float)aspect;
-        Place(eye.rectTransform, new[] { at[0] - halfU, at[1] - halfV, at[0] + halfU, at[1] + halfV });
+        eyeBox = new[] { at[0] - halfU, at[1] - halfV, at[0] + halfU, at[1] + halfV };
+        Place(eye.rectTransform, eyeBox);
         ShowEye();
     }
 
@@ -102,10 +109,23 @@ public sealed class TitleBackdrop : MonoBehaviour
         ShowEye();
     }
 
+    // title_colossus.gd _show: the body at least its idle faintness, the eye from its slow pulse to its peak as
+    // the reveal lights it, both under the city's fade; moved along by its steps.
     void ShowEye()
     {
-        eye.color = new Color(eyeColour.r, eyeColour.g, eyeColour.b, TitleMenu.EyeAlpha(eyeCfg, t));
+        float fade = city != null ? city.Fade : 1f, amount = city != null ? (float)city.RevealAmount : 0f;
+        S.GDict cfg = title["colossus"];
+        card.color = new Color(1f, 1f, 1f, Mathf.Max((float)S.Num.F(cfg["idle_alpha"]), amount) * fade);
+        float glint = Mathf.Lerp(TitleMenu.EyeAlpha(eyeCfg, t), (float)S.Num.F(eyeCfg["peak"]), amount);
+        eye.color = new Color(eyeColour.r, eyeColour.g, eyeColour.b, glint * fade);
+        if (city == null) return;
+        double aspect = Screen.height > 0 ? (double)Screen.width / Screen.height : UiKit.CANVAS_WIDTH / UiKit.CANVAS_HEIGHT;
+        float[] shift = TitleCity.ColossusShift(title, city.Steps, aspect);
+        Place(card.rectTransform, Shifted(cardBox, shift));
+        Place(eye.rectTransform, Shifted(eyeBox, shift));
     }
+
+    static float[] Shifted(float[] box, float[] by) => new[] { box[0] + by[0], box[1] + by[1], box[2] + by[0], box[3] + by[1] };
 
     void OnDestroy()
     {
