@@ -12,9 +12,14 @@ real prepush.sh and a stub for each step's tool, runs it, and checks the last li
 PASS <sha>; for each step a run killed from outside (taskkill /F on Windows, SIGKILL elsewhere), a run that
 exits 0 with no success line, a success line with a non-zero exit, a failure summary, and a success line that
 is not the last line -> FAIL <step>.
+
+The scratch repo is built once and copied per case, and the 26 cases run four at a time in setUpClass; each
+test then checks its own case's result.
 """
 
+import concurrent.futures
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -98,6 +103,7 @@ NATIVE = {
     "stale_after_fetch": '[ "$1" = check ] && { echo "native_dll: FAIL stale"; exit 1; }\nexit 0\n',
 }
 
+
 def find_bash():
     git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
     if os.name == "nt" and git_bash.exists():
@@ -111,7 +117,7 @@ def script(root, rel, body):
     return path
 
 
-def project(
+def write_tools(
     root,
     run_tests=SUITES["ok"],
     check_scripts=COMPILE["ok"],
@@ -120,8 +126,7 @@ def project(
     picks="",
     native_dll=NATIVE["ok"],
 ):
-    """A scratch repo whose tools/prepush.sh is the real one and everything it calls is a stub."""
-    root = Path(root)
+    """Writes the real tools/prepush.sh and a stub for everything it calls into root."""
     helpers.write(root, "tools/prepush.sh", PREPUSH.read_text(encoding="utf-8"))
     # prepush.sh sources tools/speed_gate.sh (D-299); the real one, made a no-op by SPEED_GATE in prepush_env.
     helpers.write(root, "tools/speed_gate.sh", Path(helpers.tool("tools", "speed_gate.sh")).read_text(encoding="utf-8"))
@@ -138,6 +143,14 @@ def project(
     for suite in ("alpha", "beta", "gamma"):
         helpers.write(root, f"tests/run_{suite}_tests.gd", "")
     helpers.write(root, "tools/ci_timings.txt", "")
+
+
+def project(root):
+    """A scratch repo with an origin whose tools/prepush.sh is the real one and everything it calls is a stub;
+    returns its sha. Built once per run: each case copies it (copy_case), since git init + commit + push costs
+    seven process starts, which take seconds on Windows."""
+    root = Path(root)
+    write_tools(root)
     origin = root.parent / (root.name + "_origin.git")
     subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
     git = [*GIT, "-C", str(root)]
@@ -149,6 +162,14 @@ def project(
     subprocess.run([*git, "push", "-q", "origin", "main"], check=True)
     sha = subprocess.run([*git, "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
     return sha
+
+
+def copy_case(template, dest, **stubs):
+    """A copy of the template repo with `stubs` written over its tools. prepush reads only committed changes
+    (git diff BASE...HEAD), so a stub changed in the working tree runs without a commit of its own."""
+    shutil.copytree(template, dest)
+    write_tools(dest, **stubs)
+    return dest
 
 
 def prepush_env(root):
@@ -205,13 +226,16 @@ def stop_prepush(proc):
 
 
 def kill_from_outside(root, proc):
-    """Waits for the stub step to leave its pid, then kills it. No clock: it waits while prepush runs; if prepush
-    ends before the step is running, that is a plain failure carrying its output."""
+    """Waits for the stub step to leave its pid, then kills it. Waits while prepush runs, up to the RUN_TIMEOUT
+    hang guard; if prepush ends before the step is running, that is a plain failure carrying its output."""
     files = [Path(root) / "rt.pid"] + ([Path(root) / "rt.winpid"] if os.name == "nt" else [])
+    deadline = time.monotonic() + RUN_TIMEOUT
     while not all(f.exists() and f.read_text().strip() for f in files):
         if proc.poll() is not None:
             out, _ = proc.communicate()
             raise AssertionError("prepush ended before the step to kill was running:\n" + out)
+        if time.monotonic() > deadline:
+            raise AssertionError(f"the step to kill never started within {RUN_TIMEOUT} s")
         time.sleep(0.05)
     kill_tree(files[-1].read_text().strip())
 
@@ -239,39 +263,80 @@ def run_prepush_and_kill_the_step(root):
     return proc.returncode, out
 
 
+# Git Bash could not start a process (Windows short of resources when the PC is busy): prepush died before
+# the step under test, so the run says nothing about the guard and is run again (2026-11-14: exit 254,
+# "dofork: child -1 - CreateProcessW failed ... fork: File too large", on a different case each run).
+FORK_FAILED = re.compile(r"CreateProcessW failed|dofork:|: fork: ")
+TRIES = 3
+
+# Cases run side by side (each prepush is mostly waiting on process starts): 26 runs one after another took
+# 9-23 min on Windows, 4 at a time a quarter of that.
+WORKERS = 4
+
+# name -> (killed?, stubs for copy_case, extra env for prepush)
+CASES = {
+    "pass": (False, {}, {}),
+    "picks_gamma": (False, {"picks": ["gamma"]}, {"SUITES": "alpha"}),
+    "dll_stale_until_fetched": (False, {"native_dll": NATIVE["stale_until_fetched"]}, {}),
+    "dll_stale_after_fetch": (False, {"native_dll": NATIVE["stale_after_fetch"]}, {}),
+}
+for _step, _stubs in (("suites", SUITES), ("import", IMPORT), ("compile", COMPILE), ("lints", LINTS)):
+    for _name, _body in _stubs.items():
+        if _name != "ok":
+            CASES[f"{_step}:{_name}"] = (_name == "killed", {KEYWORD[_step]: _body}, {})
+
+
+def run_case(base, name):
+    """Runs one case on its own copy of the template; returns (exit code, output)."""
+    killed, stubs, env_extra = CASES[name]
+    for attempt in range(TRIES):
+        root = copy_case(base / "template", base / f"case{list(CASES).index(name)}_{attempt}", **stubs)
+        try:
+            code, out = run_prepush_and_kill_the_step(root) if killed else run_prepush(root, **env_extra)
+        except (AssertionError, subprocess.TimeoutExpired) as e:  # fails this case's test, not the whole class
+            code, out = None, f"{type(e).__name__}: {e}"
+        if code == 0 or not FORK_FAILED.search(out):
+            break
+    return code, out
+
+
 class PrepushGuard(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._scratch = helpers.scratch()
+        base = cls._scratch.__enter__()
+        cls.sha = project(base / "template")
+        with concurrent.futures.ThreadPoolExecutor(WORKERS) as pool:
+            futures = {name: pool.submit(run_case, base, name) for name in CASES}
+        cls.results = {name: future.result() for name, future in futures.items()}
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._scratch.__exit__(None, None, None)
+
     def check_fail(self, step, out, code):
         self.assertEqual(code, 1, out)
         self.assertRegex(last_line(out), FAIL_LINE[step], out)
         self.assertNotIn("prepush: PASS", out)
 
     def case(self, step, stubs, name):
-        """Runs prepush with `name`'s stub as the step's tool; the other steps are normal."""
-        with helpers.scratch() as root:
-            project(root, **{KEYWORD[step]: stubs[name]})
-            code, out = run_prepush(root)
+        """prepush with `name`'s stub as the step's tool (the other steps normal) fails at that step."""
+        code, out = self.results[f"{step}:{name}"]
         self.check_fail(step, out, code)
 
     def killed(self, step, stubs):
-        with helpers.scratch() as root:
-            project(root, **{KEYWORD[step]: stubs["killed"]})
-            code, out = run_prepush_and_kill_the_step(root)
-        self.check_fail(step, out, code)
+        self.case(step, stubs, "killed")
 
     def test_normal_pass_prints_pass_and_the_sha(self):
-        with helpers.scratch() as root:
-            sha = project(root)
-            code, out = run_prepush(root)
+        code, out = self.results["pass"]
         self.assertEqual(code, 0, out)
-        self.assertEqual(last_line(out), f"prepush: PASS {sha}", out)
+        self.assertEqual(last_line(out), f"prepush: PASS {self.sha}", out)
 
     def test_suites_prepush_picks_count_too(self):
         # SUITES names alpha, the picks add gamma: run_tests is asked for 2 suites and must say so.
-        with helpers.scratch() as root:
-            sha = project(root, picks=["gamma"])
-            code, out = run_prepush(root, SUITES="alpha")
+        code, out = self.results["picks_gamma"]
         self.assertEqual(code, 0, out)
-        self.assertEqual(last_line(out), f"prepush: PASS {sha}", out)
+        self.assertEqual(last_line(out), f"prepush: PASS {self.sha}", out)
         self.assertIn("suites: alpha gamma", out)
 
     # step 5: the suites (run_tests.sh)
@@ -301,30 +366,22 @@ class PrepushGuard(unittest.TestCase):
         self.killed("import", IMPORT)
 
     def test_import_exit_0_with_no_progress_log_is_fail(self):
-        with helpers.scratch() as root:
-            project(root, godot=IMPORT["silent"])
-            code, out = run_prepush(root)
+        code, out = self.results["import:silent"]
         self.check_fail("import", out, code)
         self.assertEqual(last_line(out), "prepush: FAIL import (exit 0, never finished)", out)
 
     def test_import_exit_0_that_stops_before_the_done_line_is_fail(self):
-        with helpers.scratch() as root:
-            project(root, godot=IMPORT["unfinished"])
-            code, out = run_prepush(root)
+        code, out = self.results["import:unfinished"]
         self.assertEqual(code, 1, out)
         self.assertEqual(last_line(out), "prepush: FAIL import (exit 0, never finished)", out)
 
     def test_import_done_line_but_nonzero_exit_is_fail(self):
-        with helpers.scratch() as root:
-            project(root, godot=IMPORT["done_line_but_exit_1"])
-            code, out = run_prepush(root)
+        code, out = self.results["import:done_line_but_exit_1"]
         self.assertEqual(code, 1, out)
         self.assertEqual(last_line(out), "prepush: FAIL import (exit 1)", out)
 
     def test_import_script_error_is_still_fail(self):
-        with helpers.scratch() as root:
-            project(root, godot=IMPORT["script_error"])
-            code, out = run_prepush(root)
+        code, out = self.results["import:script_error"]
         self.assertEqual(code, 1, out)
         self.assertEqual(last_line(out), "prepush: FAIL import (exit 0)", out)
 
@@ -360,24 +417,20 @@ class PrepushGuard(unittest.TestCase):
     def test_repo_lints_ok_line_that_is_not_the_last_line_is_fail(self):
         self.case("lints", LINTS, "marker_not_last")
 
-
     # step 1b: tools/native_dll.sh (the DLL against main's CI build), before every slow step
     def test_stale_dll_is_fetched_and_the_run_passes(self):
-        with helpers.scratch() as root:
-            sha = project(root, native_dll=NATIVE["stale_until_fetched"])
-            code, out = run_prepush(root)
+        code, out = self.results["dll_stale_until_fetched"]
         self.assertEqual(code, 0, out)
-        self.assertEqual(last_line(out), f"prepush: PASS {sha}", out)
+        self.assertEqual(last_line(out), f"prepush: PASS {self.sha}", out)
         self.assertIn("native DLL is not main's CI build: fetching it", out)
 
     def test_dll_still_stale_after_a_fetch_fails_before_the_import(self):
-        with helpers.scratch() as root:
-            project(root, native_dll=NATIVE["stale_after_fetch"])
-            code, out = run_prepush(root)
+        code, out = self.results["dll_stale_after_fetch"]
         self.assertEqual(code, 1, out)
         self.assertRegex(last_line(out), r"^prepush: FAIL native DLL \(still not main's CI build", out)
         self.assertNotIn("== 2 ", out)
         self.assertNotIn("== 4 ", out)
+
 
 if __name__ == "__main__":
     unittest.main()
