@@ -96,8 +96,9 @@ public sealed class FlowStills : MonoBehaviour
             case GameFlow.State.DemoEnd: name = "demo_end"; break;
             default: return;
         }
-        // The title's own still is the title alone, never the settings over it.
-        Want(name, () => GameFlow.Now == state && !SettingsScreen.IsOpen);
+        // The title's own still is the title alone, never the settings over it, once its city stands
+        // (capture_title.gd waits for TitleBackdrop.is_loaded).
+        Want(name, () => GameFlow.Now == state && !SettingsScreen.IsOpen, SETTLE, () => state != GameFlow.State.Title || TitleCityView.Settled);
     }
 
     // A still of `name` once `settle` frames have passed and `ready` holds, if `on` still holds then (the screen

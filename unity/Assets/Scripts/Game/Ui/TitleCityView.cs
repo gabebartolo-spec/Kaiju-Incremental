@@ -49,6 +49,9 @@ public sealed class TitleCityView : MonoBehaviour
     // The colossus's footsteps so far and how lit it is now (title_colossus.gd _steps, _show amount).
     public long Steps { get; private set; }
     public double RevealAmount { get; private set; }
+    // The city stands and has faded in, or none is drawn: what the title's still waits for (capture_title.gd
+    // waits for TitleBackdrop.is_loaded).
+    public static bool Settled { get; private set; }
 
     public static TitleCityView Create(Transform parent)
     {
@@ -66,6 +69,7 @@ public sealed class TitleCityView : MonoBehaviour
     // title_backdrop.gd _build: night, the title's tier and haze; the plan and the sim on a worker.
     void Begin()
     {
+        Settled = false;
         title = S.Content.Section("title");
         colossusCfg = title["colossus"];
         S.Content.SetTime("night");
@@ -79,7 +83,8 @@ public sealed class TitleCityView : MonoBehaviour
         foreach (S.Variant key in titleFog.Keys()) fog[key] = titleFog[key];
         city["far_fog"] = fog;
         clock = new TitleClock(title, S.Num.F(city["coast_z"]) - S.Num.F(city["bay_width"]), Siren());
-        if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;  // headless: the sounds only
+        Settled = SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
+        if (Settled) return;  // headless: the sounds only
         S.Content.Look();
         build = Task.Run(() => new S.RampageSim(new S.GDict(), tuning, S.CityGrowth.Layout(all, tier, S.Seeds.Make("city", 0)), S.Seeds.Make("army", 0)));
     }
@@ -100,6 +105,8 @@ public sealed class TitleCityView : MonoBehaviour
         foreach (TitleClock.Event e in clock.events) Play(e);
         if (!clock.Loaded) return;
         image.color = new Color(1f, 1f, 1f, Fade);
+        if (!Settled && Fade >= 1f) Debug.Log($"title: city stands and faded in at {Time.realtimeSinceStartup:F1} s");
+        Settled = Fade >= 1f;
         Frame(dt);
     }
 
