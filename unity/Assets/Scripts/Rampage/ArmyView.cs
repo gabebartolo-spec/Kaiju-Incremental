@@ -5,7 +5,7 @@ using S = Kaiju.Sim;
 // The sim's army on screen: tank_model.gd, tank_yard.gd, tank_fx.gd, helicopter_model.gd, powers_view.gd's
 // helicopters, heli_wreck.gd's fall and crash, and taskforce_view.gd's placeholder boxes (D-143). It reads the
 // sim and its events and never decides an outcome. Positions arrive in Godot axes; z flips at Mirror().
-public sealed class ArmyView
+public sealed partial class ArmyView
 {
     // scenes/tank_model.gd, tank_fx.gd, helicopter_model.gd, taskforce_view.gd and ui_kit.gd.
     static readonly Color TANK_PAINT = Hex("6d7854"), HELI_PAINT = Hex("748059"), ACCENT = Hex("ffcc00"), WARN = Hex("ffd84a");
@@ -42,9 +42,9 @@ public sealed class ArmyView
     sealed class Shell
     {
         public Transform box;
-        public Vector3 from, to;
+        public Vector3 from, to, tank;
         public float t;
-        public bool miss;
+        public bool miss, armoured;
     }
 
     sealed class Chunk
@@ -282,7 +282,7 @@ public sealed class ArmyView
             case "tank_fired": TankFired(e, kaiju); break;
             case "stray_landed": Stray(e); break;
             case "heli_spawned": SpawnHeli(S.Num.I(e["heli"])); break;
-            case "heli_fired": HeliFired(S.Num.I(e["heli"])); break;
+            case "heli_fired": HeliFired(S.Num.I(e["heli"]), kaiju); break;
             case "heli_destroyed": HeliDown(e); break;
             case "vip_down": HeliDown(e); break;  // the leader falls as a gunship does (VipView built it)
             case "heli_crashed": HeliCrashed(e); break;
@@ -345,7 +345,7 @@ public sealed class ArmyView
         Vector3 muzzle = Mirror(t.barrel.TransformPoint(Mirror(new Vector3(0f, 0f, t.muzzleZ))));
         Transform shell = MakeBox(WARN, 0, null);
         shell.localScale = Vector3.one * SHELL_SIZE;
-        shells.Add(new Shell { box = shell, from = muzzle, to = target, miss = e.Has("miss") && (bool)e["miss"] });
+        shells.Add(Armour(new Shell { box = shell, from = muzzle, to = target, miss = e.Has("miss") && (bool)e["miss"] }, t));
         fx.FlashLight(muzzle, MUZZLE_FLASH, MUZZLE_LIGHT, MUZZLE_LIGHT_S);
     }
 
@@ -436,13 +436,6 @@ public sealed class ArmyView
         box.localScale = Vector3.one * size;
         box.localPosition = at;
         return box;
-    }
-
-    void HeliFired(long id)
-    {
-        if (!helis.TryGetValue(id, out Heli h)) return;
-        Vector3 muzzle = Mirror(h.gun.TransformPoint(Mirror(new Vector3(0f, 0f, h.muzzleZ))));
-        fx.FlashLight(muzzle, MUZZLE_FLASH, MUZZLE_LIGHT, MUZZLE_LIGHT_S);
     }
 
     void HeliDown(S.GDict e)
@@ -620,7 +613,7 @@ public sealed class ArmyView
             s.t += dt / shellFlight;
             s.box.position = Mirror(Vector3.Lerp(s.from, s.to, Mathf.Min(s.t, 1f)));
             if (s.t < 1f) continue;
-            if (!s.miss) fx.Sparks(s.to);
+            if (!s.miss) fx.HideHit.Shell(s.from, s.to, s.tank, s.armoured);
             Object.Destroy(s.box.gameObject);
             shells.RemoveAt(i);
         }

@@ -17,8 +17,6 @@ public sealed class RooftopView : IDisposable
     static readonly Vector3 TRAIL = new Vector3(1f, 0.55f, 0.25f);
     // scenes/rooftop_impacts.gd MAX
     const int MAX_ROUNDS = 48;
-    // scenes/fx.gd sparks: the life of a spark burst.
-    const float SPARK_LIFE = 0.5f;
 
     struct Strike
     {
@@ -60,8 +58,7 @@ public sealed class RooftopView : IDisposable
     readonly Croc croc;
     readonly S.RandomNumberGenerator rng;
     readonly float voxel;
-    readonly int squadSize, maxDrawn, sparkCount;
-    readonly Color sparkTint;
+    readonly int squadSize, maxDrawn;
     readonly Mesh[] meshes;
     readonly Mesh quad;
     readonly Material figureMat, flareMat, tracerMat;
@@ -101,9 +98,6 @@ public sealed class RooftopView : IDisposable
         squadSize = (int)S.Num.I(cfg["squad_size"]);
         maxDrawn = (int)S.Num.I(cfg["max_drawn"]);
         voxel = (float)(double)S.Num.F(S.Content.Section("street")["person_voxel"]);
-        S.GDict hide = S.Content.Section("fx")["hide_hit"];
-        sparkCount = (int)S.Num.I(hide["spark_count"]);
-        sparkTint = Hex(S.Gd.Str(hide["spark_tint"]));
 
         meshes = new Mesh[PersonMesh.RooftopOutfits];
         for (int i = 0; i < meshes.Length; i++) meshes[i] = PersonMesh.Rifleman(i, voxel);
@@ -368,12 +362,8 @@ public sealed class RooftopView : IDisposable
         }
     }
 
-    // Stand-in for scenes/hide_hit.gd HideHit.land (not ported: no hide ray, mist or wound): sparks thrown back
-    // off the point the round was aimed at.
-    void Hit(Vector3 from, Vector3 aim)
-    {
-        fx.AimedSparks(sparkTint, (from - aim).normalized, aim, sparkCount, SPARK_LIFE);
-    }
+    // rooftop_impacts.gd: HideHit.land(fx, body, from, aim), the round on the real hide (HideHitView).
+    void Hit(Vector3 from, Vector3 aim) => fx.HideHit.Land(from, aim);
 
     public void Dispose()
     {
@@ -383,8 +373,6 @@ public sealed class RooftopView : IDisposable
         UnityEngine.Object.Destroy(flareMat);
         UnityEngine.Object.Destroy(tracerMat);
     }
-
-    static Color Hex(string hex) => ColorUtility.TryParseHtmlString("#" + hex, out Color c) ? c : Color.white;
 
     static S.Vector3 Sim(Vector3 v) => new S.Vector3(v.x, v.y, v.z);
 

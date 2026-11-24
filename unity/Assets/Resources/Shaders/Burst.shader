@@ -1,5 +1,6 @@
-// One-shot effects in HDRP (D-474): dust puffs, glowing voxels and the ground ring, copied from the
-// Godot game (scenes/smoke.gdshader, ember.gdshader, shockwave.gdshader; emitters scenes/fx.gd, blast_parts.gd).
+// One-shot effects in HDRP (D-474): dust puffs, glowing voxels, the ground ring and a shot's flash on the hide,
+// copied from the Godot game (scenes/smoke.gdshader, ember.gdshader, shockwave.gdshader, hide_hit.gdshader; emitters
+// scenes/fx.gd, blast_parts.gd, hide_hit.gd).
 // A particle's whole life is a function of its index and the clock, as Flame.shader's: Bursts.cs fills
 // one property block per burst and draws it until its last particle is gone.
 Shader "Hidden/Slice/Burst"
@@ -27,7 +28,7 @@ Shader "Hidden/Slice/Burst"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_local BURST_DUST BURST_GLOW BURST_RING
+            #pragma multi_compile_local BURST_DUST BURST_GLOW BURST_RING BURST_FLASH
             #define SHADERPASS SHADERPASS_FORWARD_UNLIT
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Material.hlsl"
 
@@ -53,6 +54,8 @@ Shader "Hidden/Slice/Burst"
             float4 _RCentre;   // xyz, half width
             float4 _RTime;     // start progress, seconds, tint alpha unused, soft
             float4 _RTint;     // rgb, peak
+            float4 _FAcross;   // a flash's xyz width on the surface, seconds
+            float4 _FAlong;    // a flash's xyz height on the surface
 
             struct Varyings
             {
@@ -128,6 +131,12 @@ Shader "Hidden/Slice/Burst"
                     o.uv = c;
                     o.color = _RTint;
                     o.progress = lerp(_RTime.x, 1.0, saturate((_BurstTime - _BOrigin.w) / _RTime.y));
+                #elif defined(BURST_FLASH)
+                    // A QuadMesh lying on the hide: UV (0, 0) at its -X, +Y corner, as Godot's.
+                    world = _BOrigin.xyz + _FAcross.xyz * (c.x - 0.5) + _FAlong.xyz * (c.y - 0.5);
+                    o.uv = float2(c.x, 1.0 - c.y);
+                    o.color = _RTint;
+                    o.progress = saturate((_BurstTime - _BOrigin.w) / _FAcross.w);
                 #else
                     float count = _BVel.w;
                     float birth = _BGravity.w * (float)instanceID / count;
@@ -236,12 +245,24 @@ Shader "Hidden/Slice/Burst"
                 return float4(dust * lerp(0.8, 1.25, rim) * (0.88 + 0.24 * grain), body * fade * i.color.a * (0.85 + 0.3 * grain));
             }
 
+            // scenes/hide_hit.gdshader: a tiny ragged disc, unshaded and alpha-blended, its colour held under the bloom
+            // threshold; `fade` (1 - progress) runs 1 -> 0 over its life.
+            float4 FlashOut(Varyings i)
+            {
+                float2 p = i.uv * 2.0 - 1.0;
+                float ragged = (Hash(floor(i.uv * 6.0)) - 0.5) * 0.45;
+                float mask = 1.0 - smoothstep(0.35, 1.0, length(p) + ragged);
+                return float4(Fogged(i, i.color.rgb), mask * i.color.a * (1.0 - i.progress));
+            }
+
             float4 Frag(Varyings i) : SV_Target
             {
                 #if defined(BURST_RING)
                     return RingOut(i);
                 #elif defined(BURST_GLOW)
                     return float4(Fogged(i, i.color.rgb * _BDamp.w), i.color.a);
+                #elif defined(BURST_FLASH)
+                    return FlashOut(i);
                 #else
                     return DustOut(i);
                 #endif
