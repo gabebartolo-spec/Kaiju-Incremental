@@ -37,6 +37,7 @@ static class Program
         failures += DeathCheck.Run(RepoRoot());
         failures += FarCityCheck.Run(RepoRoot());
         failures += FarBeastCheck.Run(RepoRoot());
+        failures += HideHitCheck.Run(RepoRoot());
         // The game logic outside the sim (GameLogic/): saves, settings and what a rampage takes from the save.
         failures += SaveCheck.Run(RepoRoot());
         failures += SettingsCheck.Run(RepoRoot());

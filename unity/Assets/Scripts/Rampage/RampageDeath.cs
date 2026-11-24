@@ -10,6 +10,7 @@ public sealed partial class RampageGame
     // leap, or the gait.
     void DriveCroc(Vector3 feet, float scale, float dt)
     {
+        croc.AgeHide(dt);
         if (sim.death.Active())
         {
             death ??= new DeathView(sim, croc, fx, street, trees, Resources.Load<Shader>("Shaders/SliceLit"),

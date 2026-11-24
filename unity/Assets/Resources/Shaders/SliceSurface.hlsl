@@ -124,6 +124,12 @@ struct Cube
 };
 StructuredBuffer<Cube> _Cubes;
 float _CubeSize;
+// Faint wounds (scenes/voxel_skin.gdshader wounds, SkinHits via CrocHide): xyz a point in the cubes' rest space (it
+// rides the bones), w its strength (0 = none, fading over minutes). A cube within _WoundRadius of one darkens to a
+// wet, dull mark of _WoundTint (linear).
+float4 _Wounds[48];
+float _WoundRadius;
+float4 _WoundTint;
 #define HAVE_MESH_MODIFICATION
 AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters)
 {
@@ -474,6 +480,19 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     float stoned = code > 1.5 ? 1.0 : 0.0;
     albedo = lerp(albedo, StoneRock(input.color.rgb, code - 2.0 * stoned), stoned);
     roughness = lerp(_KaijuRoughness, 1.0, stoned);
+    float3 woundRest = float3(input.texCoord0.xy, input.texCoord1.x);
+    float mark = 0.0;
+    for (int w = 0; w < 48; w++)
+    {
+        if (_Wounds[w].w <= 0.0)
+            continue;
+        // A ragged edge: the radius wobbles with the point's own position, the same every frame.
+        float wobble = 0.75 + 0.5 * frac(sin(dot(floor(woundRest / (_WoundRadius * 0.35)), float3(12.9, 78.2, 37.7))) * 43758.5);
+        float d = distance(woundRest, _Wounds[w].xyz) / (_WoundRadius * wobble);
+        mark = max(mark, _Wounds[w].w * (1.0 - smoothstep(0.55, 1.0, d)));
+    }
+    albedo = lerp(albedo, _WoundTint.rgb, mark * 0.8);
+    roughness = lerp(roughness, 0.3, mark);
     emission = _OverloadColor.rgb * _CrackleEnergy * _Overload * crackle * (1.0 - 0.6 * stoned);
     #elif defined(SLICE_FILL)
     n = FacetNormal(input, posInput.positionWS);

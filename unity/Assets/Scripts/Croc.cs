@@ -203,7 +203,7 @@ public sealed partial class Croc
         jawIndex = byName.TryGetValue(JAW_BONE, out int jawAt) ? jawAt : -1;
         upperIndex = jawIndex >= 0 ? parents[jawIndex] : -1;
 
-        byte[] skin = File.ReadAllBytes(Path.Combine(SliceData.Dir, "croc_" + stage + ".vskin"));
+        byte[] skin = HideSkin(File.ReadAllBytes(Path.Combine(SliceData.Dir, "croc_" + stage + ".vskin")));
         ushort boneCount = BitConverter.ToUInt16(skin, 16);
         float voxel = BitConverter.ToSingle(skin, 18);
         cubeCount = BitConverter.ToInt32(skin, 22);

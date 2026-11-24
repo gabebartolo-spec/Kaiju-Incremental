@@ -48,7 +48,7 @@ unity/Assets/Scripts/GameLogic/PlayerSettings.cs::Save 45 1
 unity/Assets/Scripts/GameLogic/SaveFile.cs::Migrate 46 11
 unity/Assets/Scripts/GameLogic/Tr.cs::Format 48 36
 unity/Assets/Scripts/GameLogic/Tr.cs::Parse 33 19
-unity/Assets/Scripts/Rampage/ArmyView.cs::<file> 729 0
+unity/Assets/Scripts/Rampage/ArmyView.cs::<file> 722 0
 unity/Assets/Scripts/Rampage/ArmyView.cs::Faces 52 9
 unity/Assets/Scripts/Rampage/ArmyView.cs::Taskforce 54 15
 unity/Assets/Scripts/Rampage/BoltRig.cs::<file> 588 0
@@ -83,8 +83,6 @@ unity/Assets/Scripts/Rampage/RailView.cs::SideCell 9 14
 unity/Assets/Scripts/Rampage/RampageGame.cs::<file> 794 0
 unity/Assets/Scripts/Rampage/RampageGame.cs::Load 97 21
 unity/Assets/Scripts/Rampage/RampageGame.cs::Update 161 61
-unity/Assets/Scripts/Rampage/RooftopView.cs::<file> 404 0
-unity/Assets/Scripts/Rampage/RooftopView.cs::RooftopView 43 7
 unity/Assets/Scripts/Rampage/StreetPeople.cs::<file> 424 0
 unity/Assets/Scripts/Rampage/StreetPeople.cs::CrushAll 39 14
 unity/Assets/Scripts/Rampage/WaterView.cs::Grid 50 6

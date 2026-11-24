@@ -64,7 +64,7 @@ public sealed class Bursts : IDisposable
         public float end;
     }
 
-    readonly Material dustMat, glowMat, ringMat;
+    readonly Material dustMat, glowMat, ringMat, flashMat;
     readonly List<Live> live = new List<Live>();
     readonly Stack<Live> free = new Stack<Live>();
 
@@ -77,6 +77,7 @@ public sealed class Bursts : IDisposable
     static readonly int COLOR_AT = Shader.PropertyToID("_BColorAt"), SHADE = Shader.PropertyToID("_BShade");
     static readonly int R_CENTRE = Shader.PropertyToID("_RCentre"), R_TIME = Shader.PropertyToID("_RTime");
     static readonly int R_TINT = Shader.PropertyToID("_RTint");
+    static readonly int F_ACROSS = Shader.PropertyToID("_FAcross"), F_ALONG = Shader.PropertyToID("_FAlong");
 
     public int Count => live.Count;
 
@@ -85,6 +86,7 @@ public sealed class Bursts : IDisposable
         dustMat = Make(shader, "BURST_DUST", QUEUE_DUST);
         glowMat = Make(shader, "BURST_GLOW", QUEUE_GLOW);
         ringMat = Make(shader, "BURST_RING", QUEUE_RING);
+        flashMat = Make(shader, "BURST_FLASH", QUEUE_GLOW);
     }
 
     static Material Make(Shader shader, string keyword, int queue)
@@ -147,6 +149,25 @@ public sealed class Bursts : IDisposable
         live.Add(b);
     }
 
+    // scenes/hide_hit.gd _flash: a shot's ragged disc lying on the hide at `at` (Godot axes), `across` and `along`
+    // its full width and height on the surface, fading out over `seconds`. `tint` linear, `peak` its alpha.
+    public void Flash(Vector3 at, Vector3 across, Vector3 along, float seconds, Color tint, float peak, float time)
+    {
+        Live b = Take();
+        b.mat = flashMat;
+        b.verts = QUAD_VERTS;
+        b.count = 1;
+        b.end = time + seconds;
+        Vector3 o = Flip(at), x = Flip(across), y = Flip(along);
+        MaterialPropertyBlock m = b.block;
+        m.SetVector(ORIGIN, new Vector4(o.x, o.y, o.z, time));
+        m.SetVector(F_ACROSS, new Vector4(x.x, x.y, x.z, seconds));
+        m.SetVector(F_ALONG, new Vector4(y.x, y.y, y.z, 0f));
+        m.SetVector(R_TINT, new Vector4(tint.r, tint.g, tint.b, peak));
+        b.bounds = new Bounds(o, Vector3.one * (x.magnitude + y.magnitude));
+        live.Add(b);
+    }
+
     public void Draw(float time)
     {
         Shader.SetGlobalFloat(TIME, time);
@@ -169,5 +190,6 @@ public sealed class Bursts : IDisposable
         UnityEngine.Object.Destroy(dustMat);
         UnityEngine.Object.Destroy(glowMat);
         UnityEngine.Object.Destroy(ringMat);
+        UnityEngine.Object.Destroy(flashMat);
     }
 }

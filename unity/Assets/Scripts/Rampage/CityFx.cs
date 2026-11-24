@@ -6,7 +6,7 @@ using S = Kaiju.Sim;
 
 // The rampage's effects, called in Godot axes (scenes/fx.gd, the fires and flashes of scenes/city_view.gd,
 // the parts of scenes/blast_parts.gd). Presentation only: what happened comes from the sim's events.
-public sealed class CityFx : IDisposable
+public sealed partial class CityFx : IDisposable
 {
     // scenes/fx.gd: the street's dust, by time of day.
     const string STREET_DUST = "8a6f4e", NIGHT_DUST = "6a5238";
