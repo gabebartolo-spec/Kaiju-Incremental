@@ -60,6 +60,16 @@ namespace Kaiju.Game
             float[,] b = Basis(euler, scale);
             float sign = Math.Sign(Determinant(b));
             scale = new N.Vector3(Length(Column(b, 0)), Length(Column(b, 1)), Length(Column(b, 2))) * sign;
+            return Angles(b);
+        }
+
+        // get_euler_normalized (YXZ) of the basis with columns `bx`, `by`, `bz`: the angles a node turned so reads
+        // back (a model part's rotation when it is thrown).
+        public static N.Vector3 Euler(N.Vector3 bx, N.Vector3 by, N.Vector3 bz) =>
+            Angles(new float[,] { { bx.X, by.X, bz.X }, { bx.Y, by.Y, bz.Y }, { bx.Z, by.Z, bz.Z } });
+
+        static N.Vector3 Angles(float[,] b)
+        {
             // orthonormalize: Gram-Schmidt on the columns.
             N.Vector3 x = Normalize(Column(b, 0)), y = Column(b, 1), z = Column(b, 2);
             y = Normalize(y - x * Dot(x, y));

@@ -164,6 +164,7 @@ public sealed partial class CityFx : IDisposable
     {
         bursts.Draw(time);
         fires.Draw(time);
+        DrawHeliFlashes();
     }
 
     public void SetFocus(float depth) => fires.SetFocus(depth);
@@ -272,11 +273,6 @@ public sealed partial class CityFx : IDisposable
             Out(timed[i].Value, 0f);
             timed.RemoveAt(i);
         }
-    }
-
-    void Out(Fires.Burning f, float fade)
-    {
-        if (burning.Remove(f)) fires.GoOut(f, fade, Now);
     }
 
     // A fire the sim lit on one chunk: it goes out when that chunk breaks or falls.
@@ -403,6 +399,7 @@ public sealed partial class CityFx : IDisposable
     {
         bursts.Dispose();
         fires.Dispose();
+        DisposeHeliFx();
         foreach (Flash f in flashes) if (f.light != null) UnityEngine.Object.Destroy(f.light.gameObject);
         foreach (Flash f in flashPool) if (f.light != null) UnityEngine.Object.Destroy(f.light.gameObject);
     }

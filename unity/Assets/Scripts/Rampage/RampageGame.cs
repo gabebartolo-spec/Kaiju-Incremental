@@ -125,6 +125,8 @@ public sealed partial class RampageGame : MonoBehaviour
     // Capture only (-rampage-derail step): the first running train is derailed at that sim step.
     int derailAt;
     bool derailDone;
+    // Capture only (-rampage-heli-deaths): capture_heli_deaths.gd's staged clip, see HeliDeathsCapture.
+    HeliDeathsCapture heliDeaths;
     const float TAIL_AUTO_CRUSH = 0.5f;
     S.Vector2 walked;
     Vector3 feetFrom, feetTo;
@@ -185,6 +187,7 @@ public sealed partial class RampageGame : MonoBehaviour
         try
         {
             Load(ArgInt(args, "-rampage-stage", 3), ArgInt(args, "-rampage-seed", 0));
+            heliDeaths = HeliDeathsCapture.From(args, sim, Fan);
         }
         catch (Exception e)
         {
@@ -515,32 +518,10 @@ public sealed partial class RampageGame : MonoBehaviour
             if (k > 0 && !sim.emerge.active) break;
             S.GArray<S.GDict> events = sim.Step(TICK, move, sign, buttons);
             feetTo = Feet();
-            foreach (S.GDict e in events)
-            {
-                city.OnEvent(e);
-                rubble.OnEvent(e);
-                eventFx.OnEvent(e, Feet());
-                ShakeFor(e);
-                army.OnEvent(e, Feet());
-                vip.OnEvent(e);
-                breath.OnEvent(e);
-                thunder.OnEvent(e, Feet());
-                rooftops.OnEvent(e, Feet());
-                leap.OnEvent(e);
-                slam.OnEvent(e, Focus(Feet()));
-                rail.OnEvent(e);
-                strike.OnEvent(e);
-                postFx.OnEvent(e);
-                Nature(e);
-                TailCue(e);
-                street.OnEvent(e);
-                audio?.OnEvent(e);
-                hudView?.OnEvent(e);
-                slowmo.OnEvent(e);
-                if (Hosted) HudRumble.OnEvent(e);
-            }
+            foreach (S.GDict e in events) Fan(e);
             }
             rooftops.Tick(TICK, cam);  // once a physics frame, as rooftop_view.gd _physics_process
+            heliDeaths?.Step();
         }
         if (ran == MAX_STEPS) accumulator = 0f;
         if (sim.over && !over) EndRun();
@@ -643,6 +624,32 @@ public sealed partial class RampageGame : MonoBehaviour
 
     // scenes/rail_view.gd _derailed: a derailment shakes like a toppling building, by its distance.
     void WreckKick(Vector3 at) => shake.AddAt("topple", at, Focus(Feet()), (float)sim.BodyScale());
+
+    // One sim event to every view, as a step hands them over (and a capture's staging does).
+    void Fan(S.GDict e)
+    {
+        city.OnEvent(e);
+        rubble.OnEvent(e);
+        eventFx.OnEvent(e, Feet());
+        ShakeFor(e);
+        army.OnEvent(e, Feet());
+        vip.OnEvent(e);
+        breath.OnEvent(e);
+        thunder.OnEvent(e, Feet());
+        rooftops.OnEvent(e, Feet());
+        leap.OnEvent(e);
+        slam.OnEvent(e, Focus(Feet()));
+        rail.OnEvent(e);
+        strike.OnEvent(e);
+        postFx.OnEvent(e);
+        Nature(e);
+        TailCue(e);
+        street.OnEvent(e);
+        audio?.OnEvent(e);
+        hudView?.OnEvent(e);
+        slowmo.OnEvent(e);
+        if (Hosted) HudRumble.OnEvent(e);
+    }
 
     // Capture only: the first running train leaves its rail where it is; the track under it stays whole.
     void DerailFirst()

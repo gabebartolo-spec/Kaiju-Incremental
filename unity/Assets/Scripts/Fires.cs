@@ -137,6 +137,35 @@ public sealed class Fires : IDisposable
 
     static void Stop(MaterialPropertyBlock block, float time) => block.SetFloat(END, time);
 
+    public FireTuning Tuning => tuning;
+
+    // scenes/fire.gd moved by its owner (heli_wreck.gd's flames riding a falling body, heli_debris.gd's burning
+    // pieces): the fire's origin, light and smoke light follow `at` (Godot axes). Godot's particles are world-space
+    // and stay where they were born; these are worked out from the origin, so those in the air move with it.
+    public void Move(Burning fire, Vector3 at)
+    {
+        Vector3 to = Flip(at), by = to - fire.at;
+        if (by == Vector3.zero) return;
+        fire.at = to;
+        fire.bounds.center = to;
+        foreach (MaterialPropertyBlock b in new[] { fire.flame, fire.ember, fire.smoke })
+            b.SetVector("_FireOrigin", b.GetVector("_FireOrigin") + (Vector4)by);
+        Vector4 flame = fire.flame.GetVector("_FireFlame");
+        flame.x += by.y;
+        fire.flame.SetVector("_FireFlame", flame);
+        fire.flame.SetVector("_FireXZ", new Vector4(to.x, to.z, 0, 0));
+        Vector3 lit = fire.light.transform.position + by;
+        fire.light.transform.position = lit;
+        if (fire.slot != null)
+        {
+            fire.slot.x = lit.x;
+            fire.slot.y = lit.y;
+            fire.slot.z = lit.z;
+        }
+        Vector4 smoke = fire.smoke.GetVector("_FireLightPos");
+        fire.smoke.SetVector("_FireLightPos", new Vector4(lit.x, lit.y, lit.z, smoke.w));
+    }
+
     Burning Add(FireSpot spot, float start)
     {
         float size = spot.size;

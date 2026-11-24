@@ -19,6 +19,8 @@ const OUTFITS: Array[Dictionary] = [
 	{"shirt": "1f2a44", "pants": "18202f", "hair": "101418", "skin": "c58c5f", "cop": true},
 ]
 const COP := 6
+## RUN_A, RUN_B: the raised hands' cell; their tops are a cell higher, where a chute's lines hold.
+const HANDS_UP := 11
 
 ## Rooftop defenders (D-063): armed citizens in their street clothes, and soldiers in drab with
 ## a helmet (the "hair" cell row).
@@ -116,7 +118,7 @@ static func _body(v: VoxelBuilder, pose: int, cop: bool) -> void:
 		Pose.RUN_A, Pose.RUN_B:  # arms flung up in panic
 			for x: int in [-3, 2]:
 				v.box(Vector3i(x, 8, 0), Vector3i(x, 10, 0), "shirt")
-				v.put(Vector3i(x, 11, 0), "skin")
+				v.put(Vector3i(x, HANDS_UP, 0), "skin")
 		Pose.AIM:  # both hands forward on a pistol
 			for side: Vector2i in [Vector2i(-3, 1), Vector2i(2, -1)]:  # (shoulder x, inward step)
 				v.put(Vector3i(side.x, 8, -1), "shirt")

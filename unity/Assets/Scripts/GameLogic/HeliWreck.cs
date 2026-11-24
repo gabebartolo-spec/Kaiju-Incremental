@@ -15,6 +15,8 @@ namespace Kaiju.Game
     {
         public float spin, pitchDeg, rollDeg, swing, gravity, throwMin, throwMax, upMin, upMax, restSeconds, fadeSeconds;
         public float partFire, shardFire, chuteSpeed, canopyHang, trailOffset;
+        // Tuning "street" person_voxel: the crew's cell, which sets where the shroud lines hold.
+        public float personVoxel;
         // GDScript works these out in doubles: the dome's rim is round(width / 2 / voxel), 7.5 cells, a half.
         public double canopyVoxel, canopyWidth;
 
@@ -29,6 +31,7 @@ namespace Kaiju.Game
                 restSeconds = F("rest_seconds"), fadeSeconds = F("fade_seconds"), partFire = F("part_fire"),
                 shardFire = F("shard_fire"), chuteSpeed = F("chute_speed"), canopyVoxel = D("canopy_voxel"),
                 canopyWidth = D("canopy_width"), canopyHang = F("canopy_hang"), trailOffset = F("trail_offset"),
+                personVoxel = (float)(double)S.Num.F(S.Content.Section("street")["person_voxel"]),
             };
         }
     }
@@ -153,11 +156,16 @@ namespace Kaiju.Game
         public const float CREW_APART = 7f, CREW_DROP = 0.5f, CREW_BACK = 1.5f, CREW_DRIFT = 0.5f, CREW_MIDDLE = 0.5f;
         // _process: a chute swings at this rate and reach.
         public const double SWING_RATE = 2.0, SWING_REACH = 0.15;
-        // _canopy: the dome rises this share of its rim; 8 panels; the lines run from 0.4 of the width to 0.45 of
-        // the hang.
+        // _canopy: the dome rises this share of its rim; 8 panels; the lines run from 0.4 of the width down to the
+        // tops of the raised hands (voxel_person.gd HANDS_UP 11, a cell higher).
         public const double CANOPY_RISE = 0.55;
         public const int CANOPY_PANELS = 8;
-        public const float LINE_SPREAD = 0.4f, LINE_FOOT = 0.45f;
+        public const float LINE_SPREAD = 0.4f;
+        public const int HANDS_TOP = 12;
+        // crashed: the body drops where it lands (break_up at 0.6), shards fly 0.7 as far from 0.8 m up, 2 of them burning.
+        public const double CRASH_REACH = 0.6, CRASH_SHARD_REACH = 0.7;
+        public const float CRASH_LIFT = 0.8f;
+        public const int CRASH_BURNING = 2;
         const double TAU = 2 * Math.PI;
 
         // _break_up: the model's four parts thrown out from where they are (`reach` scales the throw; `inAir`: the
@@ -319,13 +327,13 @@ namespace Kaiju.Game
         }
 
         // _canopy: shroud line `corner` (0..3: (1, 1), (-1, 1), (1, -1), (-1, -1)) from the dome's edge to the
-        // soldier's shoulders.
+        // tops of the soldier's raised hands.
         public static void Line(int corner, in HeliTuning tuning, out N.Vector3 from, out N.Vector3 to)
         {
             float cx = corner % 2 == 0 ? 1f : -1f, cz = corner < 2 ? 1f : -1f;
             float reach = (float)(tuning.canopyWidth * LINE_SPREAD);
             from = new N.Vector3(cx * reach, tuning.canopyHang, cz * reach);
-            to = new N.Vector3(0f, tuning.canopyHang * LINE_FOOT, 0f);
+            to = new N.Vector3(0f, HANDS_TOP * tuning.personVoxel, 0f);
         }
     }
 }

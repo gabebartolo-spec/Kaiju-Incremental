@@ -38,7 +38,7 @@ unity/Assets/Scripts/MiniJson.cs 1
 unity/Assets/Scripts/Rampage/Aircraft.cs 1
 unity/Assets/Scripts/Rampage/AirstrikePath.cs 1
 unity/Assets/Scripts/Rampage/AirstrikeView.cs 1
-unity/Assets/Scripts/Rampage/ArmyView.cs 17
+unity/Assets/Scripts/Rampage/ArmyView.cs 12
 unity/Assets/Scripts/Rampage/BeachProps.cs 1
 unity/Assets/Scripts/Rampage/BoltRig.cs 19
 unity/Assets/Scripts/Rampage/BoltView.cs 3

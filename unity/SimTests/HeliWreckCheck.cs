@@ -50,12 +50,12 @@ static class HeliWreckCheck
                     N.Vector3 at = V(w, 1);
                     port.Add($"{w[0]} {Vs(at)} {w[4]} {w[5]}");
                     var pieces = new List<HeliPiece>();
-                    HeliWreck.BreakUp(rng, tuning, burst ? 1.0 : CRASH_REACH, burst, pieces);
+                    HeliWreck.BreakUp(rng, tuning, burst ? 1.0 : HeliWreck.CRASH_REACH, burst, pieces);
                     if (burst)
                         HeliWreck.Shards(rng, tuning, at, (int)S.Num.I(cfg["burst_shards"]), (int)S.Num.I(cfg["burst_burning"]), 1.0, pieces);
                     else
-                        HeliWreck.Shards(rng, tuning, at + new N.Vector3(0f, CRASH_LIFT, 0f), (int)S.Num.I(cfg["crash_shards"]), CRASH_BURNING,
-                            CRASH_SHARD_REACH, pieces);
+                        HeliWreck.Shards(rng, tuning, at + new N.Vector3(0f, HeliWreck.CRASH_LIFT, 0f), (int)S.Num.I(cfg["crash_shards"]), HeliWreck.CRASH_BURNING,
+                            HeliWreck.CRASH_SHARD_REACH, pieces);
                     Pieces(port, golden, i + 1, pieces, new[] { w[4], HeliWreck.CHARCOAL_RGB.ToString("x6"),
                         HeliWreck.SCORCH_RGB.ToString("x6"), w[5] }, dt, tuning);
                     break;
@@ -107,12 +107,6 @@ static class HeliWreckCheck
             : $"heli wreck: {failed} differences in {checks} lines{note}");
         return failed == 0 ? 0 : 1;
     }
-
-    // heli_wreck.gd crashed: the parts fly at 0.6 of a burst's reach and the chunks at 0.7, starting 0.8 m up, two
-    // burning.
-    const double CRASH_REACH = 0.6, CRASH_SHARD_REACH = 0.7;
-    const float CRASH_LIFT = 0.8f;
-    const int CRASH_BURNING = 2;
 
     static void Fall(List<string> port, N.Vector3 from, N.Vector3 drift, double seconds, double dt, in HeliTuning tuning)
     {
