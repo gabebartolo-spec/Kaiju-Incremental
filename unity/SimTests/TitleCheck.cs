@@ -87,6 +87,10 @@ static class TitleCheck
         Check(read && godot == mine, $"{name} is Godot's {text}, mine {mine.ToString(CultureInfo.InvariantCulture)}");
     }
 
+    // A float const as Godot's text writes it: its shortest round-trip print read back as a double (0.42f -> 0.42).
+    // (double)(decimal)float gave 0.41999998688697815 on the 2026-11-16 runner image, 0.42 before.
+    static double Printed(float f) => double.Parse(f.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+
     static void Numbers(string repoRoot)
     {
         string title = File.ReadAllText(Path.Combine(repoRoot, "scenes", "title_screen.gd"));
@@ -98,12 +102,12 @@ static class TitleCheck
         Number(title, "GEAR_SIZE", TitleMenu.GEAR_SIZE);
         Number(title, "GEAR_CORNER", TitleMenu.GEAR_CORNER);
         Number(title, "EXIT_LIFT", TitleMenu.EXIT_LIFT);
-        Number(title, "ALONE_SHARE", (double)(decimal)TitleMenu.ALONE_SHARE);
+        Number(title, "ALONE_SHARE", Printed(TitleMenu.ALONE_SHARE));
         Number(title, "ALONE_HEIGHT", TitleMenu.ALONE_HEIGHT);
         Number(title, "LOGO_SIZE", TitleMenu.LOGO_SIZE);
         Number(title, "LOGO_GAP", TitleMenu.LOGO_GAP);
         Number(title, "COLUMN_WIDTH", TitleMenu.COLUMN_WIDTH);
-        Number(title, "COLUMN_TOP", (double)(decimal)TitleMenu.COLUMN_TOP);
+        Number(title, "COLUMN_TOP", Printed(TitleMenu.COLUMN_TOP));
         Number(title, "GLOW_TEXELS", TitleMenu.GLOW_TEXELS);
         Check(Gd(title, "EXIT_TEXT") == TitleMenu.EXIT_TEXT, "EXIT_TEXT is Godot's");
         Check(title.Contains("UiKit.label(\"" + TitleMenu.LOGO + "\", LOGO_SIZE, UiKit.ACCENT)"), "the logo is Godot's");
