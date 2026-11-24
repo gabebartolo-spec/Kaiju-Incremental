@@ -14,12 +14,14 @@ extends SceneTree
 ## _spin jumps them; both are copied here because _spin also lights the city's effects.
 ##
 ## Output: unity/SimTests/golden/heli_wreck.txt, read by HeliWreckCheck
-## (`dotnet run --project unity/SimTests`). RATE: steps a second. FALL: from, drift, seconds, then FPOSE
-## per sampled step (time, position, basis x, y, z). BURST / CRASH: where, then one PIECE per
-## piece thrown, in the order Godot threw them (part number or -1 for a chunk, position, rotation,
-## scale, velocity, spin, half, lie, flat, fire seed or -1, chunk colour or -, a part's start position, rotation and scale as float bits or -), then per sampled step one
-## STEP per piece still there (piece, position, basis x, y, z, burning) and GONE when it faded.
-## CREW: where the hit was and the drift, then for each of two jumpers CHUTE: from, to, seconds, then CPOSE per sampled step (time, position, swing) and LANDED.
+## (`dotnet run --project unity/SimTests`). RATE: steps a second. FALL: from, drift, seconds,
+## then FPOSE per sampled step (time, position, basis x, y, z). BURST / CRASH: where, then one
+## PIECE per piece thrown, in the order Godot threw them (part number or -1 for a chunk,
+## position, rotation, scale, velocity, spin, half, lie, flat, fire seed or -1, chunk colour
+## or -, a part's start position, rotation and scale as float bits or -), then per sampled
+## step one STEP per piece still there (piece, position, basis x, y, z, burning) and GONE when
+## it faded. CREW: where the hit was and the drift, then for each of two jumpers CHUTE: from,
+## to, seconds, then CPOSE per sampled step (time, position, swing) and LANDED.
 ## CANOPY: one CELL per dome cube (cell, dark panel) and one LINE per shroud line (middle,
 ## length).
 
@@ -64,9 +66,7 @@ func _run() -> void:
 		var start := _wreck._debris._pieces.size()
 		_wreck._break_up(_model(BURSTS[k], YAWS[k]), 1.0, true)
 		_wreck._debris.shards(
-			BURSTS[k],
-			Vector2i(Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"])),
-			paint
+			BURSTS[k], Vector2i(Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"])), paint
 		)
 		_pieces(start)
 	for k: int in CRASHES.size():
@@ -118,7 +118,10 @@ func _falls() -> void:
 			if s % EVERY == 0 or s == steps - 1:
 				var b := node.basis
 				_lines.append(
-					"FPOSE %s %s %s %s %s" % [_f(fall.t), _v(node.position), _v(b.x), _v(b.y), _v(b.z)]
+					(
+						"FPOSE %s %s %s %s %s"
+						% [_f(fall.t), _v(node.position), _v(b.x), _v(b.y), _v(b.z)]
+					)
 				)
 		fall.trail.free()
 		node.free()
@@ -133,26 +136,35 @@ func _pieces(start: int) -> void:
 		var part := -1
 		var colour := "-"
 		if node is MeshInstance3D:
-			colour = _c(((node as MeshInstance3D).material_override as StandardMaterial3D).albedo_color)
+			colour = _c(
+				((node as MeshInstance3D).material_override as StandardMaterial3D).albedo_color
+			)
 		else:
 			part = n
-		_lines.append(
-			(
-				"PIECE %d %s %s %s %s %s %s %s %d %s %s %s"
-				% [
-					part,
-					_v(node.global_position),
-					_v(node.rotation),
-					_v(node.scale),
-					_v(p.vel),
-					_v(p.spin),
-					_f(p.half),
-					_f(p.lie),
-					1 if p.flat else 0,
-					_f(p.fire._seed) if p.fire != null else "-1",
-					colour,
-					_bits([node.global_position, node.rotation, node.scale]) if part >= 0 else "-",
-				]
+		(
+			_lines
+			. append(
+				(
+					"PIECE %d %s %s %s %s %s %s %s %d %s %s %s"
+					% [
+						part,
+						_v(node.global_position),
+						_v(node.rotation),
+						_v(node.scale),
+						_v(p.vel),
+						_v(p.spin),
+						_f(p.half),
+						_f(p.lie),
+						1 if p.flat else 0,
+						_f(p.fire._seed) if p.fire != null else "-1",
+						colour,
+						(
+							_bits([node.global_position, node.rotation, node.scale])
+							if part >= 0
+							else "-"
+						),
+					]
+				)
 			)
 		)
 	var live: Array[bool] = []
@@ -230,9 +242,7 @@ func _canopy(canopy: Node3D) -> void:
 		_lines.append("CELL %d %d %d %d" % [roundi(cell.x), roundi(cell.y), roundi(cell.z), dark])
 	for k: int in range(1, canopy.get_child_count()):
 		var line := canopy.get_child(k) as MeshInstance3D
-		_lines.append(
-			"LINE %s %s" % [_v(line.position), _f((line.mesh as BoxMesh).size.z)]
-		)
+		_lines.append("LINE %s %s" % [_v(line.position), _f((line.mesh as BoxMesh).size.z)])
 
 
 static func _f(x: float) -> String:
@@ -243,8 +253,9 @@ static func _v(v: Vector3) -> String:
 	return "%s %s %s" % [_f(v.x), _f(v.y), _f(v.z)]
 
 
-## A part's start exactly (position, rotation, scale as the float bits Godot holds), so the port starts each part's
-## tumble from the same angles: near a quarter turn of pitch the reading back of the angles magnifies the last digit.
+## A part's start exactly (position, rotation, scale as the float bits Godot holds), so the
+## port starts each part's tumble from the same angles: near a quarter turn of pitch the
+## reading back of the angles magnifies the last digit.
 static func _bits(vs: Array[Vector3]) -> String:
 	var out := PackedFloat32Array()
 	for v: Vector3 in vs:
