@@ -93,7 +93,9 @@ public sealed class HideHitView
         point = aim;
         Vector3 normal = -dir;
         float unit = Kaiju != null ? Kaiju.VoxelWorld() : GODOT_VOXEL;
-        bool got = Kaiju != null && Find(from, aim, out SkinHit hit, out bool eye);
+        SkinHit hit = default;
+        bool eye = false;
+        bool got = Kaiju != null && Find(from, aim, out hit, out eye);
         if (got)
         {
             point = V(hit.point);

@@ -41,7 +41,9 @@ func _run() -> void:
 	var skin: VoxelSkin = model._skin
 	var hits := skin.hits
 	var rig: Transform3D = model._rig.global_transform
-	_lines.append("VOXEL %s BONES %d EYE %s" % [_g(hits.voxel), skin.pose.size(), str(colors["eye"])])
+	_lines.append(
+		"VOXEL %s BONES %d EYE %s" % [_g(hits.voxel), skin.pose.size(), str(colors["eye"])]
+	)
 	_lines.append("RIG %s" % _xf(rig))
 	for b: int in skin.pose.size():
 		_lines.append("POSE %d %s" % [b, _xf(Transform3D(skin.pose[b]))])
@@ -67,8 +69,20 @@ func _run() -> void:
 		_lines.append(
 			(
 				line
-				+ " HIT %s %s %s %s %d %d %d %d %d"
-				% [_g(t), _v(point), _v(normal), _v(rest), bone, c.x, c.y, c.z, 1 if on_eye else 0]
+				+ (
+					" HIT %s %s %s %s %d %d %d %d %d"
+					% [
+						_g(t),
+						_v(point),
+						_v(normal),
+						_v(rest),
+						bone,
+						c.x,
+						c.y,
+						c.z,
+						1 if on_eye else 0
+					]
+				)
 			)
 		)
 		if not on_eye:
@@ -112,7 +126,17 @@ func _targets(model: KaijuModel, hits: SkinHits, rng: RandomNumberGenerator) -> 
 		var cell: Vector3i = pick[1]
 		var rest := Vector3(cell.x, cell.y + 0.5, cell.z) * hits.voxel
 		var p := skin.pose[b]
-		var full := rig * Transform3D(Basis(Vector3(p.x.x, p.x.y, p.x.z), Vector3(p.y.x, p.y.y, p.y.z), Vector3(p.z.x, p.z.y, p.z.z)), Vector3(p.w.x, p.w.y, p.w.z))
+		var full := (
+			rig
+			* Transform3D(
+				Basis(
+					Vector3(p.x.x, p.x.y, p.x.z),
+					Vector3(p.y.x, p.y.y, p.y.z),
+					Vector3(p.z.x, p.z.y, p.z.z)
+				),
+				Vector3(p.w.x, p.w.y, p.w.z)
+			)
+		)
 		var at := full * rest
 		var dir := Vector3.FORWARD.rotated(Vector3.RIGHT, rng.randf_range(-0.6, 0.9))
 		dir = dir.rotated(Vector3.UP, rng.randf_range(-PI, PI))
