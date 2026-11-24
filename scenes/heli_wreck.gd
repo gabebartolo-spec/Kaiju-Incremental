@@ -245,8 +245,8 @@ func _jump(from: Vector3, drift: Vector3) -> void:
 
 
 ## A voxel dome of pale fabric in alternating panels (one MultiMesh of cubes, widest at the rim),
-## shroud lines down to the tops of the soldier's raised hands (`person_voxel` a cell). It catches a little light of its own so it reads at
-## night, under the bloom.
+## shroud lines down to the tops of the soldier's raised hands (`person_voxel` a cell). It
+## catches a little light of its own so it reads at night, under the bloom.
 func _canopy(person_voxel: float) -> Node3D:
 	var out := Node3D.new()
 	var voxel := Num.f(_cfg["canopy_voxel"])
