@@ -298,7 +298,7 @@ public sealed partial class RampageGame : MonoBehaviour
         rubbleKeep = (float)S.Num.F(S.Content.Section("street")["rubble_keep"]);
         army = new ArmyView(sim, fx, lit, root.transform, seed);
         vip = new VipView(sim, army, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m);
-        trees = new CityTrees(sim, fx, army, lit, root.transform, seed);
+        trees = new CityTrees(sim, fx, lit, root.transform, seed);
         street = new StreetView(sim, fx, lit, root.transform, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, seed);
         Debug.Log($"street: {street.people.Civilians()} people ({street.people.beachPeople} on the beach), {street.Props} props");
         rail = new RailView(sim, fx, army, lit, root.transform, WreckKick);
@@ -332,20 +332,10 @@ public sealed partial class RampageGame : MonoBehaviour
         if ((Hosted || audioFlag) && clipDir == null && scoutPath == null) audio = RampageAudio.Attach(this);
     }
 
-    // Whatever the body walks over goes down on that frame (scenes/city_decor.gd, D-065).
+    // Whatever the body walks over goes down on that frame (scenes/city_decor.gd, D-065; RampageTrample.cs).
     void Trample()
     {
-        if (sim.kaijuPos != walked && !sim.airborne)
-        {
-            float bs = (float)sim.BodyScale();
-            foreach (S.GArray<S.Variant> disc in sim.body.Discs())
-            {
-                float along = (float)(double)S.Num.F(disc[0]) * bs;
-                var at = new Vector3((float)(double)sim.kaijuPos.x + (float)(double)sim.facing.x * along, 0f, (float)(double)sim.kaijuPos.y + (float)(double)sim.facing.y * along);
-                trees.Crush(at, (float)(double)S.Num.F(disc[1]) * bs);
-                street.Trample(at, (float)(double)S.Num.F(disc[1]) * bs);
-            }
-        }
+        if (sim.kaijuPos != walked && !sim.airborne) TrampleBox();
         walked = sim.kaijuPos;
         trees.Tick();
     }

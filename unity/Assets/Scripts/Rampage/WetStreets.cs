@@ -129,6 +129,12 @@ public sealed class WetStreets
         return lamps.RemoveAll(l => Length(l.x - x, l.z - z) <= radius);
     }
 
+    // city_decor.gd _process: the lamps whose base lies under the walking body's ground box go out for good.
+    public static int CrushBox(List<Lamp> lamps, System.Numerics.Matrix4x4 body, Kaiju.Game.FootRect foot)
+    {
+        return lamps.RemoveAll(l => Kaiju.Game.PropCrush.Under(body, foot, new System.Numerics.Vector3((float)l.x, 0f, (float)l.z)));
+    }
+
     // Godot's Vector2.length(): float components.
     static double Length(double dx, double dz)
     {

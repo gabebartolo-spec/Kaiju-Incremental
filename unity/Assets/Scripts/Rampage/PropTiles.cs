@@ -4,8 +4,9 @@ using S = Kaiju.Sim;
 
 // A field of small crushable voxel props, built new for Unity (D-474) in place of scenes/prop_field.gd: each prop is
 // one of a few baked shapes at a spot, merged per ground tile as CityTrees merges its trees; a tile remakes its mesh
-// when a prop in it is crushed. A crushed prop is gone (Godot flattens it; polish later, D-476). Presentation only.
-public sealed class PropTiles
+// when a prop in it is crushed. A crushed prop flattens where it stands, or folds and falls over (PropTiles.Crush.cs,
+// scenes/prop_field.gd _crush_group). Presentation only.
+public sealed partial class PropTiles
 {
     const float TILE = 32f;
 
@@ -22,6 +23,8 @@ public sealed class PropTiles
         public Vector3 at;
         public int shape;
         public bool down;
+        // Its crushed cells, baked when it went down.
+        public Shape flat;
     }
 
     sealed class Tile
@@ -93,9 +96,11 @@ public sealed class PropTiles
         return model;
     }
 
-    // A shape from its cells (Godot axes, colours 0xrrggbb); returns its index for Add.
-    public int AddShape(Dictionary<Vector3Int, int> cells)
+    // A shape from its cells (Godot axes, colours 0xrrggbb); returns its index for Add. `folds`: the colours whose cells
+    // close on the pole and fall over when crushed (prop_field.gd add's folds), not flatten.
+    public int AddShape(Dictionary<Vector3Int, int> cells, ICollection<int> folds = null)
     {
+        Keep(cells, folds);
         Mesh mesh = ArmyView.Faces(Model(cells), voxel, Vector3.zero);
         var uvs = new List<Vector2>();
         mesh.GetUVs(0, uvs);
@@ -142,14 +147,8 @@ public sealed class PropTiles
         foreach (int index in tile.props)
         {
             Prop prop = props[index];
-            if (prop.down) continue;
-            Shape shape = shapes[prop.shape];
-            int at = vBuf.Count;
-            foreach (Vector3 v in shape.verts) vBuf.Add(v + prop.at);
-            nBuf.AddRange(shape.normals);
-            cBuf.AddRange(shape.colors);
-            uBuf.AddRange(shape.uvs);
-            foreach (int t in shape.tris) tBuf.Add(t + at);
+            if (prop.down) Append(prop.flat, Vector3.zero);
+            else Append(shapes[prop.shape], prop.at);
         }
         if (tile.mesh == null)
         {
@@ -167,7 +166,18 @@ public sealed class PropTiles
         tile.mesh.SetTriangles(tBuf, 0);
     }
 
-    // Every prop whose base lies within `radius` of `at` (Godot axes) goes; returns how many, and where the first was.
+    void Append(Shape shape, Vector3 offset)
+    {
+        int at = vBuf.Count;
+        foreach (Vector3 v in shape.verts) vBuf.Add(v + offset);
+        nBuf.AddRange(shape.normals);
+        cBuf.AddRange(shape.colors);
+        uBuf.AddRange(shape.uvs);
+        foreach (int t in shape.tris) tBuf.Add(t + at);
+    }
+
+    // Every prop whose base lies within `radius` of `at` (Godot axes) is crushed from `at`; returns how many, and where
+    // the first was.
     public int Crush(Vector3 at, float radius, out Vector3 first)
     {
         first = at;
@@ -182,9 +192,7 @@ public sealed class PropTiles
                 {
                     Prop prop = props[index];
                     if (prop.down || (prop.at - unity).magnitude > radius) continue;
-                    prop.down = true;
-                    props[index] = prop;
-                    tile.dirty = true;
+                    Down(index, tile, at);
                     if (n++ == 0) first = new Vector3(prop.at.x, at.y, -prop.at.z);
                 }
             }

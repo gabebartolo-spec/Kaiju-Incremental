@@ -159,6 +159,15 @@ public sealed class StreetView
         WetStreets.Crush(decor.lampLights, at.x, at.z, radius);
     }
 
+    // The props and lamps under the walking body's ground box (city_decor.gd _process): no puff, as there.
+    public void TrampleBox(System.Numerics.Matrix4x4 body, Kaiju.Game.FootRect foot)
+    {
+        decor.props.CrushBox(body, foot);
+        decor.streetTiles.CrushBox(body, foot);
+        beach?.CrushBox(body, foot);
+        WetStreets.CrushBox(decor.lampLights, body, foot);
+    }
+
     void Flatten(PropTiles field, Vector3 at, float radius)
     {
         if (field.Crush(at, radius, out Vector3 first) > 0) fx.Puff(first);
