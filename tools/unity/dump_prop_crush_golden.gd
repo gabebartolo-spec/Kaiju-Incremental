@@ -13,7 +13,13 @@ extends SceneTree
 ## share and the box (x, y, w, h). STOMP: a stomp's point and radius, then one PROP per prop it
 ## crushed (base, offset) and one CELL per cell (origin, folds, the transform drawn: basis
 ## diagonal, origin). BODY: a body transform (basis x, y, z, origin) and the box it walks with,
-## then every prop base (BASE) and whether crush_box took it.
+## then every prop base (BASE) and whether crush_box took it. TREES: the crushed-tree tuning
+## (throw, leaf speed, leaf spread, leaf and bark piece scale) and the debris voxel; then per
+## felled tree BURST (base, blow), one TCELL per drawn cell (origin, height, bark, hidden, cut-top
+## colour), one PIECE per piece thrown (from, bark, away) and its SPAWN as DebrisField threw it
+## (size, position, velocity, spin, seconds before it shrinks). Jolt applies an impulse on the
+## next physics step, so the pieces fly two steps in a space with no gravity, damping or
+## collisions before their velocity is read.
 
 const OUT := "res://unity/SimTests/golden/prop_crush.txt"
 const SPECIES: Array[String] = ["reptilian", "insectoid"]
@@ -36,8 +42,24 @@ const BODIES: Array[Vector4] = [  # x, z, yaw, scale
 	Vector4(4.1, -2.6, -2.2, 0.8),
 	Vector4(1.0, 5.0, 3.0, 2.1),
 ]
+const TREES: Array[Vector3] = [
+	Vector3(-6.3, 0.0, -4.1),
+	Vector3(-1.2, 0.0, 2.6),
+	Vector3(3.9, 0.0, -0.7),
+	Vector3(8.4, 0.0, 5.2),
+]
+const BLOWS: Array[Vector4] = [  # one tree each; the second lands on its base (no blow direction)
+	Vector4(-5.0, 0.0, -3.0, 2.5),
+	Vector4(3.9, 0.0, -0.7, 0.4),
+	Vector4(0.0, 0.0, 3.0, 1.8),
+	Vector4(9.9, 0.0, 6.0, 2.0),
+	Vector4(20.0, 0.0, 20.0, 1.0),
+]
+
+const VELOCITY := "<velocity>"  # a SPAWN's velocity, filled in once the pieces have flown
 
 var _lines: PackedStringArray = []
+var _thrown: Array[Array] = []  # [line index, body] per SPAWN
 
 
 func _initialize() -> void:
@@ -61,6 +83,7 @@ func _run() -> void:
 		model.free()
 	_stomps()
 	_bodies(foot)
+	await _trees()
 	var f := FileAccess.open(OUT, FileAccess.WRITE)
 	f.store_string("\n".join(_lines) + "\n")
 	f.close()
@@ -170,3 +193,104 @@ static func _v(v: Vector3) -> String:
 
 static func _rect(r: Rect2) -> String:
 	return "%s %s %s %s" % [_f(r.position.x), _f(r.position.y), _f(r.size.x), _f(r.size.y)]
+
+
+## Felled trees, one per blow, and every piece their DebrisFields throw.
+func _trees() -> void:
+	var field := PropField.new(VOXEL)
+	field.configure(Content.section("city"))
+	for at: Vector3 in TREES:
+		field.add(at, _tree, true)
+	var palette := {
+		"bark": Color(0.4, 0.3, 0.2),
+		"leaf": Color(0.3, 0.6, 0.2),
+		"leaf_dark": Color(0.2, 0.4, 0.1),
+	}
+	root.add_child(field.build(palette, 7, 0.0))
+	root.add_child(field.leaf_field)
+	root.add_child(field.bark_field)
+	var space := root.get_world_3d().space
+	for param: int in [
+		PhysicsServer3D.AREA_PARAM_GRAVITY,
+		PhysicsServer3D.AREA_PARAM_LINEAR_DAMP,
+		PhysicsServer3D.AREA_PARAM_ANGULAR_DAMP,
+	]:
+		PhysicsServer3D.area_set_param(space, param, 0.0)
+	var sizes: Array[float] = [field.leaf_field.size_scale, field.bark_field.size_scale]
+	var speeds: Array[float] = [field.throw_speed, field.leaf_speed, field.leaf_spread]
+	_lines.append(
+		(
+			"TREES %s %s %s %s %s %s"
+			% [
+				_f(speeds[0]),
+				_f(speeds[1]),
+				_f(speeds[2]),
+				_f(sizes[0]),
+				_f(sizes[1]),
+				_f(BuildingVoxels.VOXEL)
+			]
+		)
+	)
+	for b: Vector4 in BLOWS:
+		var at := Vector3(b.x, b.y, b.z)
+		var before := _crushed(field)
+		field.crush(at, b.w)
+		for k: int in field._groups.size():
+			if not before[k] and field._groups[k].get("crushed", false):
+				_burst(field, field._groups[k], at)
+		for piece: Array in field.debris:
+			_spawn(field, piece)
+		field.debris.clear()
+	await physics_frame
+	await physics_frame
+	for thrown: Array in _thrown:
+		var at: int = thrown[0]
+		var body: RigidBody3D = thrown[1]
+		_lines[at] = _lines[at].replace(VELOCITY, _v(body.linear_velocity))
+
+
+func _burst(field: PropField, group: Dictionary, at: Vector3) -> void:
+	var base: Vector3 = group["at"]
+	_lines.append("BURST %s %s" % [_v(base), _v(at)])
+	var tile: int = group["tile"]
+	var mm := field._tiles[tile].multimesh
+	var ids: PackedInt32Array = group["ids"]
+	var heights: PackedInt32Array = group["heights"]
+	var origins: PackedVector3Array = group["origins"]
+	var keys: PackedStringArray = group["keys"]
+	for k: int in ids.size():
+		var hidden := mm.get_instance_transform(ids[k]).basis.x.length() == 0.0
+		var cut := mm.get_instance_color(ids[k]) == field.stump_color
+		var bark := keys[k] == "bark"
+		_lines.append(
+			"TCELL %s %d %d %d %d" % [_v(origins[k]), heights[k], int(bark), int(hidden), int(cut)]
+		)
+
+
+func _spawn(field: PropField, piece: Array) -> void:
+	var from: Vector3 = piece[0]
+	var tint: Color = piece[1]
+	var away: Vector3 = piece[2]
+	var bark := tint == field.bark_color
+	_lines.append("PIECE %s %d %s" % [_v(from), int(bark), _v(away)])
+	var debris := field.bark_field if bark else field.leaf_field
+	debris._spawn_now(from, tint, away)
+	var body: RigidBody3D = debris._bodies[-1]
+	var shape: BoxShape3D = (body.get_child(0) as CollisionShape3D).shape
+	var life: float = debris._ends[-1] - debris._clock
+	body.collision_layer = 0
+	body.collision_mask = 0
+	_thrown.append([_lines.size(), body])
+	_lines.append(
+		(
+			"SPAWN %s %s %s %s %s"
+			% [_f(shape.size.x), _v(body.position), VELOCITY, _v(body.angular_velocity), _f(life)]
+		)
+	)
+
+
+## city_trees.gd _tree at its middle height and crown: a two-blob crown on a 2x2 trunk.
+static func _tree(v: VoxelBuilder) -> void:
+	v.box(Vector3i(0, 0, 0), Vector3i(1, 5, 1), "bark")
+	v.blob(Vector3(0.5, 5.0 + 3.1 * 0.8, 0.5), Vector3(3.1, 3.1 * 0.85, 3.1), "leaf")
+	v.blob(Vector3(0.5 + 1.55, 5.0 + 1.55, 0.0), Vector3(2.17, 1.86, 2.17), "leaf_dark")

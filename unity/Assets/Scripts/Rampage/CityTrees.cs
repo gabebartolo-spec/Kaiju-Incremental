@@ -4,13 +4,13 @@ using S = Kaiju.Sim;
 
 // The city's trees, built new for Unity (D-474) on the rules of scenes/kerb_trees.gd, city_trees.gd and
 // city_greenery.gd: kerb rows out to the edge of the view, park lawns, plaza rings and the diagonal's rows.
-// Merged per ground tile; a tile remakes its mesh when a tree in it falls. Presentation only.
-public sealed class CityTrees
+// Merged per ground tile; a tile remakes its mesh when a tree in it falls, drawing its stump (CityTrees.Burst.cs).
+// Presentation only.
+public sealed partial class CityTrees
 {
     const float VOXEL = 0.25f, TILE = 32f, BLOCK_CELL = 16f;
     const float PARK_INSET = 1.6f, PARK_AREA_PER_TREE = 9f, PARK_PATH = 1.2f, RING_INSET = 1.2f, DIAG_STEP = 4f, DIAG_ROW = 2.5f, DIAG_KERB = 0.6f, DIAG_BACK_ROW = 0.45f;
     const int RING_STEPS = 5, VARIANTS = 3, LEANS = 4;
-    const float CHUNK_HEIGHT = 2f;
     static readonly int[] LeanX = { 1, -1, 0, 0 }, LeanZ = { 0, 0, 1, -1 };
     const int BARK = 0x5a4030, LEAF = 0x55703f, LEAF_DARK = 0x3f5832;
 
@@ -40,7 +40,6 @@ public sealed class CityTrees
     readonly Transform root;
     readonly Material material;
     readonly CityFx fx;
-    readonly ArmyView army;
     readonly System.Random rng;
     readonly Shape[] shapes;
     readonly List<Tree> trees = new List<Tree>();
@@ -56,10 +55,9 @@ public sealed class CityTrees
 
     static float F(S.GDict d, string key) => (float)(double)S.Num.F(d[key]);
 
-    public CityTrees(S.RampageSim sim, CityFx fx, ArmyView army, Shader shader, Transform parent, int seed)
+    public CityTrees(S.RampageSim sim, CityFx fx, Shader shader, Transform parent, int seed)
     {
         this.fx = fx;
-        this.army = army;
         city = sim.city;
         rng = new System.Random(seed);
         root = new GameObject("trees").transform;
@@ -265,7 +263,7 @@ public sealed class CityTrees
                 var c = new Vector3(lx, tall + r * 0.6f, lz);
                 Blob(cells, c, new Vector3(r, r * 0.8f, r), LEAF);
                 Blob(cells, c + new Vector3(r * 0.4f, -r * 0.25f, 0f), new Vector3(r * 0.6f, r * 0.5f, r * 0.6f), LEAF_DARK);
-                made[lean * VARIANTS + v] = Bake(cells);
+                made[lean * VARIANTS + v] = Keep(cells);
             }
         for (int v = 0; v < VARIANTS; v++)
         {
@@ -277,7 +275,7 @@ public sealed class CityTrees
             float r = Between(2.6f, 3.6f);
             Blob(cells, new Vector3(0.5f, tall + r * 0.8f, 0.5f), new Vector3(r, r * 0.85f, r), LEAF);
             Blob(cells, new Vector3(0.5f + r * 0.5f, tall + r * 0.5f, 0f), new Vector3(r * 0.7f, r * 0.6f, r * 0.7f), LEAF_DARK);
-            made[LEANS * VARIANTS + v] = Bake(cells);
+            made[LEANS * VARIANTS + v] = Keep(cells);
         }
         return made;
     }
@@ -342,8 +340,7 @@ public sealed class CityTrees
         foreach (int index in tile.trees)
         {
             Tree tree = trees[index];
-            if (tree.down) continue;
-            Shape shape = shapes[tree.shape];
+            Shape shape = tree.down ? stumps[tree.shape] : shapes[tree.shape];
             int at = vBuf.Count;
             foreach (Vector3 v in shape.verts) vBuf.Add(v + tree.at);
             nBuf.AddRange(shape.normals);
@@ -365,34 +362,5 @@ public sealed class CityTrees
         tile.mesh.SetColors(cBuf);
         tile.mesh.SetUVs(0, uBuf);
         tile.mesh.SetTriangles(tBuf, 0);
-    }
-
-    // Every tree whose base lies within `radius` of `at` falls (Godot axes): a puff and a few chunks.
-    public void Crush(Vector3 at, float radius)
-    {
-        Vector3 unity = new Vector3(at.x, 0f, -at.z);
-        Vector2Int lo = Cell(unity.x - radius, unity.z - radius, TILE), hi = Cell(unity.x + radius, unity.z + radius, TILE);
-        for (int x = lo.x; x <= hi.x; x++)
-            for (int z = lo.y; z <= hi.y; z++)
-            {
-                if (!tiles.TryGetValue(new Vector2Int(x, z), out Tile tile)) continue;
-                foreach (int index in tile.trees)
-                {
-                    Tree tree = trees[index];
-                    if (tree.down || (tree.at - unity).magnitude > radius) continue;
-                    tree.down = true;
-                    trees[index] = tree;
-                    tile.dirty = true;
-                    var godot = new Vector3(tree.at.x, CHUNK_HEIGHT, -tree.at.z);
-                    fx.Puff(godot);
-                    army.Chunks(godot, 3, leafChunk, barkChunk);
-                }
-            }
-    }
-
-    public void Tick()
-    {
-        foreach (Tile tile in tiles.Values)
-            if (tile.dirty) Remake(tile);
     }
 }

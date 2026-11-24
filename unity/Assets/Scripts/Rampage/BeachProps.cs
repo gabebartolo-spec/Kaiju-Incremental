@@ -16,7 +16,9 @@ public static class BeachProps
         S.GDict colors = cfg["colors"];
         float voxel = (float)S.Num.F(cfg["voxel"]);
         var umbrellas = new int[4];
-        for (int paint = 0; paint < 4; paint++) umbrellas[paint] = props.AddShape(Umbrella(cfg, colors, paint));
+        // beach_props.gd: the pole and canopy fold shut and fall over when crushed; the lounger flattens.
+        for (int paint = 0; paint < 4; paint++)
+            umbrellas[paint] = props.AddShape(Umbrella(cfg, colors, paint), new[] { Hex(colors, "pole"), Hex(colors, "umbrella" + paint) });
         List<S.Vector2> spots = BeachLayout.Spots(plan, view);
         for (int n = 0; n < spots.Count; n++)
             props.Add(new Vector2((float)spots[n].x, (float)spots[n].y), umbrellas[n % 4]);

@@ -1,13 +1,16 @@
 // The crushed props and the trample box (GameLogic/PropCrush.cs, KaijuFootprint.cs; scenes/prop_field.gd
 // _crush_group, _fallen, crush_box and scenes/kaiju_footprint.gd of). Against Godot's own output
 // (golden/prop_crush.txt, tools/unity/dump_prop_crush_golden.gd): every species' ground box at every size tier and
-// share, every cell a stomp flattened or folded lies where Godot drew it, and a walking body's box takes the same
-// props Godot's crush_box takes.
+// share, every cell a stomp flattened or folded lies where Godot drew it, a walking body's box takes the same
+// props Godot's crush_box takes, and a felled tree (GameLogic/TreeBurst.cs; prop_field.gd _burst, debris_field.gd
+// _spawn_now) keeps the same stump and throws the same pieces from the same places at the same speeds.
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Kaiju.Game;
 using N = System.Numerics;
+using S = Kaiju.Sim;
 
 static class PropCrushCheck
 {
@@ -30,6 +33,22 @@ static class PropCrushCheck
         N.Matrix4x4 body = default;
         FootRect box = default;
         int feet = 0, cells = 0, cellsOk = 0, bases = 0, basesOk = 0, under = 0;
+        // prop_field.gd's streams: where leaves start, and each debris field's own draws.
+        S.RandomNumberGenerator burstRng = S.Seeds.Make("tree_burst"), leafRng = S.Seeds.Make("tree_leaf"),
+            barkRng = S.Seeds.Make("tree_bark");
+        BurstTuning tuning = default;
+        float leafScale = 0f, barkScale = 0f, debrisVoxel = 0f;
+        N.Vector3 treeBase = default, blow = default;
+        var treeCells = new List<BurstCell>();
+        var thrown = new List<BurstPiece>();
+        int bursts = 0, tcells = 0, tcellsOk = 0, pieces = 0, piecesOk = 0, spawns = 0, spawnsOk = 0, next = -1;
+        bool pieceBark = false;
+        N.Vector3 pieceFrom = default, pieceAway = default;
+        void EndBurst()
+        {
+            if (next >= 0) Check(next == thrown.Count, $"tree at {treeBase}: Godot threw {next} pieces, the port {thrown.Count}");
+            next = -1;
+        }
         foreach (string line in golden)
         {
             string[] w = line.Split(' ');
@@ -77,8 +96,63 @@ static class PropCrushCheck
                     if (took == godot && inReach) basesOk++;
                     else if (failed < 8) Check(false, $"base {b}: under {took} (reach {inReach}), Godot {godot}");
                     break;
+                case "TREES":
+                    tuning = new BurstTuning { throwSpeed = F(w[1]), leafSpeed = F(w[2]), leafSpread = F(w[3]) };
+                    leafScale = F(w[4]);
+                    barkScale = F(w[5]);
+                    debrisVoxel = F(w[6]);
+                    break;
+                case "BURST":
+                    EndBurst();
+                    bursts++;
+                    treeBase = V(w, 1);
+                    blow = V(w, 4);
+                    treeCells.Clear();
+                    thrown.Clear();
+                    break;
+                case "TCELL":
+                    tcells++;
+                    int height = int.Parse(w[4]);
+                    treeCells.Add(new BurstCell { origin = V(w, 1), height = height, bark = w[5] == "1" });
+                    if (TreeBurst.Stands(height) == (w[6] == "0") && TreeBurst.CutTop(height) == (w[7] == "1")) tcellsOk++;
+                    else if (failed < 8) Check(false, $"tree cell {V(w, 1)} height {height}: hidden {w[6]}, cut {w[7]} in Godot");
+                    break;
+                case "PIECE":
+                    if (next < 0)
+                    {
+                        TreeBurst.Burst(treeCells, treeBase, blow, voxel, tuning, burstRng, thrown);
+                        next = 0;
+                    }
+                    pieces++;
+                    pieceFrom = V(w, 1);
+                    pieceBark = w[4] == "1";
+                    pieceAway = V(w, 5);
+                    BurstPiece mine = next < thrown.Count ? thrown[next] : default;
+                    next++;
+                    if (mine.bark == pieceBark && Near(mine.from, pieceFrom) && Near(mine.away, pieceAway)) piecesOk++;
+                    else if (failed < 8)
+                        Check(false, $"piece {next - 1} of the tree at {treeBase}: {mine.from} away {mine.away} (bark {mine.bark}), "
+                            + $"Godot {pieceFrom} away {pieceAway} (bark {pieceBark})");
+                    break;
+                case "SPAWN":
+                    spawns++;
+                    DebrisPiece spawned = DebrisSpawn.Draw(pieceBark ? barkRng : leafRng, pieceBark ? barkScale : leafScale, pieceAway);
+                    if (Near(spawned.size, F(w[1])) && Near(pieceFrom, V(w, 2)) && Near(spawned.velocity, V(w, 5))
+                        && Near(spawned.angular, V(w, 8)) && Near(spawned.life, F(w[11])))
+                        spawnsOk++;
+                    else if (failed < 8)
+                        Check(false, $"spawn {spawns}: size {spawned.size} at {pieceFrom} velocity {spawned.velocity} spin "
+                            + $"{spawned.angular} life {spawned.life}, Godot {w[1]} at {V(w, 2)} velocity {V(w, 5)} spin {V(w, 8)} life {w[11]}");
+                    break;
             }
         }
+        EndBurst();
+        Check(debrisVoxel == DebrisSpawn.VOXEL, $"debris voxel {DebrisSpawn.VOXEL}, Godot {debrisVoxel}");
+        Check(bursts > 0 && tcells > 0 && pieces > 0 && spawns == pieces,
+            $"the golden log has felled trees, their cells and pieces ({bursts}, {tcells}, {pieces}, {spawns})");
+        Check(tcellsOk == tcells, $"{tcellsOk} of {tcells} tree cells stand, hide and show cut wood as in Godot");
+        Check(piecesOk == pieces, $"{piecesOk} of {pieces} tree pieces start where Godot threw them, at its push");
+        Check(spawnsOk == spawns, $"{spawnsOk} of {spawns} debris pieces take Godot's size, start, velocity, spin and life");
         Check(voxel > 0f && feet > 0 && cells > 0 && bases > 0 && under > 0 && under < bases,
             $"the golden log has a voxel, boxes, cells and bases both in and out ({feet}, {cells}, {under}/{bases})");
         Check(cellsOk == cells, $"{cellsOk} of {cells} crushed cells lie where Godot drew them");
