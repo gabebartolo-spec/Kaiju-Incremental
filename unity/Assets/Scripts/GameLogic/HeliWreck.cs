@@ -14,18 +14,21 @@ namespace Kaiju.Game
     public struct HeliTuning
     {
         public float spin, pitchDeg, rollDeg, swing, gravity, throwMin, throwMax, upMin, upMax, restSeconds, fadeSeconds;
-        public float partFire, shardFire, chuteSpeed, canopyVoxel, canopyWidth, canopyHang, trailOffset;
+        public float partFire, shardFire, chuteSpeed, canopyHang, trailOffset;
+        // GDScript works these out in doubles: the dome's rim is round(width / 2 / voxel), 7.5 cells, a half.
+        public double canopyVoxel, canopyWidth;
 
         public static HeliTuning Of(S.GDict cfg)
         {
             float F(string key) => (float)(double)S.Num.F(cfg[key]);
+            double D(string key) => S.Num.F(cfg[key]);
             return new HeliTuning
             {
                 spin = F("spin"), pitchDeg = F("pitch_deg"), rollDeg = F("roll_deg"), swing = F("swing"), gravity = F("gravity"),
                 throwMin = F("throw_min"), throwMax = F("throw_max"), upMin = F("up_min"), upMax = F("up_max"),
                 restSeconds = F("rest_seconds"), fadeSeconds = F("fade_seconds"), partFire = F("part_fire"),
-                shardFire = F("shard_fire"), chuteSpeed = F("chute_speed"), canopyVoxel = F("canopy_voxel"),
-                canopyWidth = F("canopy_width"), canopyHang = F("canopy_hang"), trailOffset = F("trail_offset"),
+                shardFire = F("shard_fire"), chuteSpeed = F("chute_speed"), canopyVoxel = D("canopy_voxel"),
+                canopyWidth = D("canopy_width"), canopyHang = F("canopy_hang"), trailOffset = F("trail_offset"),
             };
         }
     }
@@ -320,7 +323,7 @@ namespace Kaiju.Game
         public static void Line(int corner, in HeliTuning tuning, out N.Vector3 from, out N.Vector3 to)
         {
             float cx = corner % 2 == 0 ? 1f : -1f, cz = corner < 2 ? 1f : -1f;
-            float reach = tuning.canopyWidth * LINE_SPREAD;
+            float reach = (float)(tuning.canopyWidth * LINE_SPREAD);
             from = new N.Vector3(cx * reach, tuning.canopyHang, cz * reach);
             to = new N.Vector3(0f, tuning.canopyHang * LINE_FOOT, 0f);
         }

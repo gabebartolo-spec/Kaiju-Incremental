@@ -61,11 +61,11 @@ static class HeliWreckCheck
                     break;
                 case "CREW":
                     port.Add(golden[i]);
-                    for (int n = 0; n < 2; n++) Chute(port, HeliWreck.Chute(n, V(w, 1), V(w, 4), tuning), dt);
-                    break;
-                case "CANOPY":
-                    canopy = true;
-                    Canopy(port, tuning);
+                    // Godot writes the canopy right after the first jumper's CHUTE line (windowed runs only).
+                    bool withCanopy = i + 2 < golden.Length && golden[i + 2].StartsWith("CANOPY ");
+                    canopy |= withCanopy;
+                    for (int n = 0; n < 2; n++)
+                        Chute(port, HeliWreck.Chute(n, V(w, 1), V(w, 4), tuning), dt, n == 0 && withCanopy ? tuning : (HeliTuning?)null);
                     break;
             }
         }
@@ -176,9 +176,10 @@ static class HeliWreckCheck
     // dump_heli_wreck_golden.gd STEPS: how long the pieces are followed.
     const int STEPS = 360;
 
-    static void Chute(List<string> port, HeliChute chute, double dt)
+    static void Chute(List<string> port, HeliChute chute, double dt, HeliTuning? canopy)
     {
         port.Add($"CHUTE {Vs(chute.from)} {Vs(chute.to)} {F(chute.seconds)}");
+        if (canopy is HeliTuning tuning) Canopy(port, tuning);
         double t = 0;
         for (int s = 0; ; s++)
         {
