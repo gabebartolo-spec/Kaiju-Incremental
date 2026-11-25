@@ -1,5 +1,6 @@
 extends SceneTree
-## Writes how Godot's body bite tears a piece off a building (scenes/body_bite.gd, BuildingView.chip),
+## Writes how Godot's body bite tears a piece off a building (scenes/body_bite.gd,
+## BuildingView.chip),
 ## so the Unity port (unity/Assets/Scripts/GameLogic/BodyBite.cs) can be checked against it.
 ##
 ##   godot --path . --script tools/unity/dump_body_bite_golden.gd
@@ -22,9 +23,11 @@ const STAGE := 2
 const SETTLE := 240
 const STEP := 1.0 / 60.0
 const MAX_STEPS := 600
-
+## Each case's rng seed (the CASE line carries it for BodyBiteCheck).
+const SEEDS := {"wall": 101, "low": 202, "landmark": 303}
 
 var _lines: PackedStringArray = []
+var _sim: RampageSim
 var _view: CityView
 var _debris: DebrisField
 var _seen := 0
@@ -49,6 +52,7 @@ func _run() -> void:
 	root.add_child(rampage)
 	await process_frame
 	var sim := rampage.sim
+	_sim = sim
 	_view = _find(rampage, "CityView")
 	for _i: int in SETTLE:
 		await physics_frame
@@ -61,12 +65,12 @@ func _run() -> void:
 	var b: RampageSim.Building = sim.buildings[plain]
 	var y := b.height - 2
 	var side: Array[Vector3i] = [Vector3i(0, y, 0), Vector3i(0, y, 1)]
-	_case(sim, plain, "wall", 101, side, Vector3(b.x - b.w * 0.5 - 3.0, 0.0, b.z + 0.25))
+	_case(plain, "wall", side, Vector3(b.x - b.w * 0.5 - 3.0, 0.0, b.z + 0.25))
 	var low: Array[Vector3i] = [Vector3i(1, 0, 0)]
-	_case(sim, plain, "low", 202, low, Vector3(b.x + 0.5, 0.0, b.z - b.d * 0.5 - 2.5))
+	_case(plain, "low", low, Vector3(b.x + 0.5, 0.0, b.z - b.d * 0.5 - 2.5))
 	var m: RampageSim.Building = sim.buildings[mark]
 	var pair: Array[Vector3i] = [Vector3i(0, 1, 0), Vector3i(1, 1, 0)]
-	_case(sim, mark, "landmark", 303, pair, Vector3(m.x - 9.0, 0.0, m.z - 7.0))
+	_case(mark, "landmark", pair, Vector3(m.x - 9.0, 0.0, m.z - 7.0))
 	var file := FileAccess.open(OUT, FileAccess.WRITE)
 	file.store_string("\n".join(_lines) + "\n")
 	file.close()
@@ -96,16 +100,10 @@ func _pick(sim: RampageSim, landmark: bool) -> int:
 	return best
 
 
-func _case(
-	sim: RampageSim,
-	index: int,
-	name: String,
-	rng_seed: int,
-	cells: Array[Vector3i],
-	kaiju_at: Vector3
-) -> void:
-	var b: RampageSim.Building = sim.buildings[index]
+func _case(index: int, name: String, cells: Array[Vector3i], kaiju_at: Vector3) -> void:
+	var b: RampageSim.Building = _sim.buildings[index]
 	var view := _bv(index)
+	var rng_seed: int = SEEDS[name]
 	_lines.append("CASE %s %d" % [name, rng_seed])
 	_lines.append(
 		(
