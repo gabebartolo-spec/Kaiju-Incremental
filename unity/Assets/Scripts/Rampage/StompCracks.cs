@@ -9,7 +9,8 @@ using S = Kaiju.Sim;
 // DISC mark (ScorchMarks) that lands at once and cools over fx "crack_seconds"; Godot axes. Presentation only.
 public sealed class StompCracks : IDisposable
 {
-    // scenes/ability_fx.gd: MOLTEN, and stomp_cracks' soot.
+    // scenes/ability_fx.gd: MOLTEN, and stomp_cracks' soot. Godot hands a Decal's modulate to the shader as it is,
+    // not converted to linear, so the tint goes in unconverted too: the hot core reads peach-white, as in Godot.
     static readonly Color MOLTEN = new Color32(0xff, 0x7a, 0x2a, 0xff);
     const float SOOT = 0.5f;
 
@@ -40,7 +41,7 @@ public sealed class StompCracks : IDisposable
     bool Crack(Vector3 at, float radius, double power)
     {
         if (!StompCrack.Cracks(power, out double glow)) return false;
-        marks.Disc(at, radius * (float)StompCrack.SIZE, StompCrack.CRACKS, seconds, (float)glow, SOOT, MOLTEN.linear);
+        marks.Disc(at, radius * (float)StompCrack.SIZE, StompCrack.CRACKS, seconds, (float)glow, SOOT, MOLTEN);
         Made++;
         return true;
     }
