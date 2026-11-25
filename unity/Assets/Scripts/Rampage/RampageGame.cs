@@ -518,6 +518,7 @@ public sealed partial class RampageGame : MonoBehaviour
             if (k > 0 && !sim.emerge.active) break;
             S.GArray<S.GDict> events = sim.Step(TICK, move, sign, buttons);
             feetTo = Feet();
+            city.FrameEvents(events);  // a carve looks at the break after it (CityDraw.BodyBite)
             foreach (S.GDict e in events) Fan(e);
             }
             rooftops.Tick(TICK, cam);  // once a physics frame, as rooftop_view.gd _physics_process

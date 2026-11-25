@@ -138,7 +138,13 @@ public sealed class EventFx
     {
         long index = S.Num.I(e["building"]);
         S.GArray<S.Vector3i> cells = e["cells"];
-        // city_view.gd chunks_broken: a fresh blast's chunks are its break's (no collapse dust, no fires out).
+        // city_view.gd chunks_broken: chunks under the body are its bite's (no collapse dust; their fires go out).
+        if (City != null && City.BiteTakes(index, cells))
+        {
+            Broke(index, cells);
+            return;
+        }
+        // A fresh blast's chunks are its break's (no collapse dust, no fires out).
         if (City != null && City.BlastTakes(index, cells)) return;
         S.RampageSim.Building b = sim.buildings[index];
         if (cells.Size() >= COLLAPSE_MIN_CELLS)
