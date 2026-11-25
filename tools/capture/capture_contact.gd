@@ -68,6 +68,12 @@ func _play(tower: bool) -> void:
 	rampage.setup(
 		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 0
 	)
+	# The take starts on the promenade where the rise from the sea bay ends (emergence.gd _land):
+	# the rise itself is not what it films, and holds the walk back.
+	var bank: Vector2 = rampage.sim.emerge.get("_bank")
+	rampage.sim.kaiju_pos = rampage.sim.clamp_to_arena(bank)
+	rampage.sim.emerge.active = false
+	rampage.sim.stand_y = 0.0
 	if not _body:
 		rampage.sim.body.use_species("")  # no volume: the stomp-only contact the demo shipped
 	var target := rampage.sim.nearest_standing(rampage.sim.kaiju_pos)
