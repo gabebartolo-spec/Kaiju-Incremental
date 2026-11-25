@@ -832,7 +832,7 @@ public sealed partial class Croc
                 {
                     footfallPending = true;
                     footfallSide = FOOT_SIDES[i];
-                    footfallAt = new Vector3(toe.x, position.y, -toe.z);
+                    footfallAt = new Vector3(toe.x, position.y, toe.z);
                 }
             }
         }

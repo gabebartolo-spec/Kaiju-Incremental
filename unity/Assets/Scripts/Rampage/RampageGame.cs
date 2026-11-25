@@ -291,7 +291,7 @@ public sealed partial class RampageGame : MonoBehaviour
         FireTuning fireTuning = FireTuning.Load();
         var fires = new Fires(fireTuning, Resources.Load<Shader>("Shaders/Flame"), SliceGame.ExposureUnit(tuning), false, new LightPool());
         fx = HideHitFx(new CityFx(Resources.Load<Shader>("Shaders/Burst"), fires, SliceData.F(look, "sun_energy", 1), SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, seed));
-        eventFx = new EventFx(sim, fx, seed);
+        eventFx = new EventFx(sim, fx, seed, species);
         // The rubble look: heaps and strips laid on the debris field, the crumble's dust, the landing puff's
         // place, and the foot's press (data/tuning.json street.rubble_press, rubble_keep; D-245).
         rubble = new RubbleView(sim, tuning, city, debris);
@@ -775,6 +775,7 @@ public sealed partial class RampageGame : MonoBehaviour
         water?.Dispose();
         fx?.Dispose();
         breath?.Dispose();
+        eventFx?.Dispose();
         thunder?.Dispose();
         rooftops?.Dispose();
         street?.Dispose();
