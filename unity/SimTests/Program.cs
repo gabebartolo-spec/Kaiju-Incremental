@@ -42,6 +42,7 @@ static class Program
         failures += HeliWreckCheck.Run(RepoRoot());
         failures += LandmarkBurstCheck.Run(RepoRoot());
         failures += BlastBreakCheck.Run(RepoRoot());
+        failures += BodyBiteCheck.Run(RepoRoot());
         // The game logic outside the sim (GameLogic/): saves, settings and what a rampage takes from the save.
         failures += SaveCheck.Run(RepoRoot());
         failures += SettingsCheck.Run(RepoRoot());

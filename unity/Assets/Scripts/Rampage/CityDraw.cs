@@ -677,6 +677,7 @@ public sealed unsafe partial class CityDraw : IDisposable
         int[] index = ((S.PackedInt32Array)e["index"]).Raw;
         int n = (int)((S.PackedInt32Array)e["index"]).Size();
         if (n == 0) return;
+        if (BiteCarved(e, S.Num.I(e["building"]), s, f, index, n)) return;  // the body's bite lifts them (CityDraw.BodyBite)
         byte* drawn = f.Drawn, cells = f.Cells;
         for (int k = 0; k < n; k++)
         {
@@ -766,6 +767,7 @@ public sealed unsafe partial class CityDraw : IDisposable
         }
         StepBursts(dt);
         StepBlast();
+        StepBites(dt);
     }
 
     // It hit the ground: its cells go to debris and the piece goes. Rubble and the slower break-up follow.
