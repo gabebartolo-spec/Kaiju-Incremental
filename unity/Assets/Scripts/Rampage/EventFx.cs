@@ -3,7 +3,7 @@ using S = Kaiju.Sim;
 
 // Reads the sim's events and draws them: scenes/rampage.gd _on_event, blast_fx.gd, powers_view.gd, topple_fx.gd,
 // city_falls.gd, leap_view.gd and rampage_footfall.gd. Everything here is in Godot axes. It never decides an outcome.
-public sealed class EventFx
+public sealed class EventFx : System.IDisposable
 {
     // scenes/rampage.gd and scenes/fx.gd.
     const float FOOTFALL_DUST = 1.1f, FOOTFALL_RING = 1.4f, STOMP_WAIT = 0.6f, STOMP_RING = 3f, STOMP_REACH = 1.3f;
@@ -33,7 +33,8 @@ public sealed class EventFx
         return c;
     }
 
-    public EventFx(S.RampageSim sim, CityFx fx, int seed)
+    // species: the run's species (data/species.json), whose own stomp_damage the cracks weigh a stomp against.
+    public EventFx(S.RampageSim sim, CityFx fx, int seed, S.GDict species)
     {
         this.sim = sim;
         this.fx = fx;
@@ -47,11 +48,13 @@ public sealed class EventFx
         chunkFade = F(fire, "view_out_fade");
         viewSize = F(fire, "view_size");
         viewSpacing = F(fire, "view_spacing");
+        Cracks = new StompCracks(sim, F(species["stats"], "stomp_damage"));
     }
 
     public void Step(float dt)
     {
         fx.PutOutExpired();
+        Cracks.Step(dt);
         if (stompWait > 0f) stompWait -= dt;
         flashLeft0 -= dt;
         flashLeft1 -= dt;
@@ -64,6 +67,7 @@ public sealed class EventFx
     {
         bool stomped = stompWait > 0f && (stompSide == "" || stompSide == side);
         if (stomped) stompWait = 0f;
+        if (stomped) Cracks.Stomp(at, stompRadius);  // land_stomp: the cracks, if it is heavy enough
         float bs = (float)sim.BodyScale();
         float size = bs * (FOOTFALL_BASE + strength);
         fx.Footfall(at + Vector3.up * FOOTFALL_LIFT, FOOTFALL_DUST * size);
@@ -109,8 +113,7 @@ public sealed class EventFx
                 fx.Dust(new Vector3((float)off.x, LEAP_DUST_Y, (float)off.y), bs * LEAP_DUST);
                 break;
             case "leap_land":
-                S.Vector2 land = e["at"];
-                fx.Shockwave(new Vector3((float)land.x, 0f, (float)land.y), F(e, "radius") * STOMP_REACH * STOMP_RING, false, true);
+                LeapLand(e);
                 break;
             case "explosion":
                 Explode(S.Gd.Str(e["kind"]), e);
@@ -201,6 +204,18 @@ public sealed class EventFx
 
     // The city's drawing, for where a fallen piece came down; RampageGame sets it.
     public CityDraw City;
+    public readonly StompCracks Cracks;
+
+    public void Dispose() => Cracks.Dispose();
+
+    // leap_view.gd "leap_land": one ripple, and the landing cracks the street as heavy as its blow is to a stomp.
+    void LeapLand(S.GDict e)
+    {
+        S.Vector2 land = e["at"];
+        var at = new Vector3((float)land.x, 0f, (float)land.y);
+        fx.Shockwave(at, F(e, "radius") * STOMP_REACH * STOMP_RING, false, true);
+        Cracks.Leap(at, F(e, "radius"), F(e, "damage"));
+    }
 
     // scenes/powers_view.gd _coated: a few of the cells the beam coated burn on.
     void Coated(S.GDict e)
