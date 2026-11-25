@@ -63,6 +63,17 @@ func piece(event: Dictionary) -> Node3D:
 	return node
 
 
+## A carved part's debris samples now, as its piece's will be (CarveJob.samples), for what
+## must burst on its break frame (LandmarkBurst), before the job has made them; empty when the
+## building has no mesher yet (its piece is lifted from its chunks, which has its own).
+func samples(event: Dictionary) -> Array[Dictionary]:
+	var site: Site = _sites.get(Num.i(event["building"]), null)
+	if site == null or site.mesher == null or not event.has("index"):
+		return []
+	var index: PackedInt32Array = event["index"]
+	return CarveJob.samples(site.mesher, index)
+
+
 ## The body tears off what this frame's blow carved from `view` (BodyBite): a node pivoting at
 ## `mid`, drawn from exactly those cells, or null (not on its fine view: BodyBite lifts chunks).
 func bite(view: BuildingView, mid: Vector3) -> Node3D:

@@ -164,9 +164,12 @@ public sealed class EventFx
     void FallLand(S.GDict e)
     {
         S.RampageSim.Building site = sim.buildings[S.Num.I(e["building"])];
-        // scenes/city_falls.gd land: a piece that came down on the kaiju or a building, and a landmark's,
+        // A landmark's section burst on its break frame and has nothing left to land (city_falls.gd: no parts, so
+        // no landing debris and no dust).
+        if (site.landmark != "") return;
+        // scenes/city_falls.gd land: a piece that came down on the kaiju or a building
         // gets the one plain puff below, not the street's dust line.
-        if (S.Gd.Str(e["kind"]) == "topple" && e.Has("from") && !e.Has("contact") && site.landmark == "")
+        if (S.Gd.Str(e["kind"]) == "topple" && e.Has("from") && !e.Has("contact"))
         {
             S.Vector2 from = e["from"], to = e["to"];
             var a = new Vector3((float)from.x, 0f, (float)from.y);
