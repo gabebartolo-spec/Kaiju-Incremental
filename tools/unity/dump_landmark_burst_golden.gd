@@ -58,32 +58,38 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	var cfg := Content.section("landmark_burst")
-	_lines.append(
-		(
-			"TUNING chunks %d voxels %s %s speed %s %s life %s shade %s dark %s share %s"
-			% [
-				Num.i(cfg["chunks"]),
-				_f(cfg["chunk_voxels"][0]),
-				_f(cfg["chunk_voxels"][1]),
-				_f(cfg["chunk_speed"][0]),
-				_f(cfg["chunk_speed"][1]),
-				_f(cfg["chunk_life"]),
-				_f(cfg["chunk_shade"]),
-				_f(cfg["chunk_dark"]),
-				_f(cfg["chunk_dark_share"]),
-			]
+	(
+		_lines
+		. append(
+			(
+				"TUNING chunks %d voxels %s %s speed %s %s life %s shade %s dark %s share %s"
+				% [
+					Num.i(cfg["chunks"]),
+					_f(cfg["chunk_voxels"][0]),
+					_f(cfg["chunk_voxels"][1]),
+					_f(cfg["chunk_speed"][0]),
+					_f(cfg["chunk_speed"][1]),
+					_f(cfg["chunk_life"]),
+					_f(cfg["chunk_shade"]),
+					_f(cfg["chunk_dark"]),
+					_f(cfg["chunk_dark_share"]),
+				]
+			)
 		)
 	)
-	_lines.append(
-		(
-			"TUNING fragments %d clouds %d alpha %s cloud_life %s cloud_max %s"
-			% [
-				Num.i(cfg["fragments"]),
-				Num.i(cfg["clouds"]),
-				_f(cfg["cloud_alpha"]),
-				_f(cfg["cloud_life"]),
-				_f(cfg["cloud_max"]),
-			]
+	(
+		_lines
+		. append(
+			(
+				"TUNING fragments %d clouds %d alpha %s cloud_life %s cloud_max %s"
+				% [
+					Num.i(cfg["fragments"]),
+					Num.i(cfg["clouds"]),
+					_f(cfg["cloud_alpha"]),
+					_f(cfg["cloud_life"]),
+					_f(cfg["cloud_max"]),
+				]
+			)
 		)
 	)
 	var rampage := Rampage.new()
@@ -186,10 +192,7 @@ func _section(view: CityView, b: RampageSim.Building, e: Dictionary) -> void:
 	var sites: Dictionary = view.carve.get("_sites")
 	var mesher: CellMesher = sites[Num.i(e["building"])].mesher
 	_lines.append(
-		(
-			"SECTION %d %s %s %d %s"
-			% [Num.i(e["id"]), _f(b.x), _f(b.z), index.size(), str(e["kind"])]
-		)
+		"SECTION %d %s %s %d %s" % [Num.i(e["id"]), _f(b.x), _f(b.z), index.size(), str(e["kind"])]
 	)
 	_lines.append(
 		"GRID %d %d %s %s" % [mesher.dims.x, mesher.dims.z, _v(mesher.origin), _f(mesher.voxel)]
@@ -211,9 +214,7 @@ func _section(view: CityView, b: RampageSim.Building, e: Dictionary) -> void:
 		var c := Vector3i(roundi((pos - mesher.origin).x / mesher.voxel), 0, 0)
 		c.y = roundi((pos - mesher.origin).y / mesher.voxel)
 		c.z = roundi((pos - mesher.origin).z / mesher.voxel)
-		_lines.append(
-			"SAMPLE %d %s %s" % [c.x + c.z * w + c.y * plan, _v(pos), _c(col)]
-		)
+		_lines.append("SAMPLE %d %s %s" % [c.x + c.z * w + c.y * plan, _v(pos), _c(col)])
 	# The burst itself, from an empty piece: LandmarkBurst takes the samples from the cells.
 	var piece := Node3D.new()
 	piece.set_meta("parts", [])
@@ -264,10 +265,7 @@ func _section(view: CityView, b: RampageSim.Building, e: Dictionary) -> void:
 		var live_spray: bool = burst.get("_spray") != null
 		var live_cloud: bool = burst.get("_clouds") != null
 		_lines.append(
-			(
-				"STEP %d %s %d %d"
-				% [frame, _f(burst.get("_t")), int(live_spray), int(live_cloud)]
-			)
+			"STEP %d %s %d %d" % [frame, _f(burst.get("_t")), int(live_spray), int(live_cloud)]
 		)
 		if live_spray:
 			for i: int in mm_spray.instance_count:
