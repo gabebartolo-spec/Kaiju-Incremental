@@ -205,7 +205,7 @@ namespace Kaiju.Game
             var parts = new List<BurstPart>();
             foreach (S.Vector3i c in cells) parts.AddRange(site.Parts(c));
             foreach (S.Vector3i c in cells) site.SetState(c, 0f);
-            var shot = new BlastBreakShot { site = site, cells = cells, bitten = Chip(site, cells, parts) };
+            var shot = new BlastBreakShot { site = site, cells = cells, bitten = Chip(site, cells, parts, rng) };
             if (parts.Count == 0) return shot;
             int budget = Math.Min(parts.Count, cells.Count * tuning.perChunk);
             for (int n = 0; n < budget; n++)
@@ -223,8 +223,9 @@ namespace Kaiju.Game
         }
 
         // BuildingView.chip: some standing neighbours of the broken chunks are bitten (their state drops to BITTEN)
-        // and a third of their samples join `parts`. Not for a landmark (no draws).
-        List<S.Vector3i> Chip(IBlastSite site, List<S.Vector3i> broken, List<BurstPart> parts)
+        // and a third of their samples join `parts`. Not for a landmark (no draws). The body's bite chips too (BodyBite).
+        public static List<S.Vector3i> Chip(IBlastSite site, IReadOnlyList<S.Vector3i> broken, List<BurstPart> parts,
+            S.RandomNumberGenerator rng)
         {
             var bitten = new List<S.Vector3i>();
             if (site.Landmark) return bitten;
