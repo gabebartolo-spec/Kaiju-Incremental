@@ -80,6 +80,12 @@ namespace Kaiju.Sim
             Vector2 begin = new Vector2(bx, by);
             return new Rect2(begin, new Vector2(ex, ey) - begin);
         }
+        public bool Encloses(Rect2 r)
+        {
+            return r.position.X >= position.X && r.position.Y >= position.Y
+                && (float)(r.position.X + r.size.X) <= (float)(position.X + size.X)
+                && (float)(r.position.Y + r.size.Y) <= (float)(position.Y + size.Y);
+        }
     }
 
     public struct Rect2i : IEquatable<Rect2i>
