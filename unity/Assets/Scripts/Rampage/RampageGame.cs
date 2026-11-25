@@ -536,7 +536,7 @@ public sealed partial class RampageGame : MonoBehaviour
         city.Remesh();
         rubble.Tick();
         debris.Step(dt);
-        debris.Draw();
+        DrawDebrisAndBollards();
         water.Step(dt);
         // The body between the last two ticks, so it moves every frame at any frame rate.
         Vector3 feet = Vector3.Lerp(feetFrom, feetTo, accumulator / TICK);

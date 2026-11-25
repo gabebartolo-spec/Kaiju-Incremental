@@ -43,6 +43,8 @@ public sealed partial class CityTrees
     readonly System.Random rng;
     readonly Shape[] shapes;
     readonly List<Tree> trees = new List<Tree>();
+    // The kerb trees planted, Godot axes as Kerbs() places them (KerbTrees.all(), read by ArenaEdge.trees_of).
+    readonly List<S.Vector2> kerbTrunks = new List<S.Vector2>();
     readonly Dictionary<Vector2Int, Tile> tiles = new Dictionary<Vector2Int, Tile>();
     readonly Dictionary<Vector2Int, List<S.Rect2>> blocked = new Dictionary<Vector2Int, List<S.Rect2>>();
     readonly Dictionary<Vector2Int, List<Vector2>> taken = new Dictionary<Vector2Int, List<Vector2>>();
@@ -52,6 +54,7 @@ public sealed partial class CityTrees
     readonly Color leafChunk, barkChunk;
 
     public int Count => trees.Count;
+    public IReadOnlyList<S.Vector2> KerbTrunks => kerbTrunks;
 
     static float F(S.GDict d, string key) => (float)(double)S.Num.F(d[key]);
 
@@ -167,7 +170,7 @@ public sealed partial class CityTrees
                 {
                     Vector2 p = a + dir * t + side * s * kerb;
                     if (Inside(p) && (float)S.CityGen.DiagonalDistance(plan, new S.Vector2(p.x, p.y)) > diagonal)
-                        Plant(p, lean * VARIANTS + rng.Next(VARIANTS), apart);
+                        if (Plant(p, lean * VARIANTS + rng.Next(VARIANTS), apart)) kerbTrunks.Add(new S.Vector2(p.x, p.y));
                 }
             }
         }
