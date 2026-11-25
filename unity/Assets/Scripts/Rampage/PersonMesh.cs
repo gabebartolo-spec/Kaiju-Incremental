@@ -73,6 +73,50 @@ public static class PersonMesh
         return mesh;
     }
 
+    // voxel_person.gd Pose.RUN_A and dressed(): v.salt = 53 + pose; its stride (the left foot's z) is 2.
+    // _body(RUN_A): the arms run up the body's sides from the shoulder (y 8) to y 10, the hands at y 11.
+    const int RUN_A = 2, DRESSED_SALT = 53, RUN_STRIDE = 2, ARM_LOW = 8, ARM_HIGH = 10, HAND = 11;
+
+    // voxel_person.gd dressed(ROOFTOP_OUTFITS[outfit], RUN_A, voxel): arms flung up (heli_wreck.gd's bailing crew).
+    public static Mesh Runner(int outfit, float voxel)
+    {
+        int[] o = ROOFTOP_OUTFITS[outfit];
+        int shirt = o[0], pants = o[1], hair = o[2], skin = o[3];
+        var cells = new Dictionary<Vector3Int, int>();
+        var order = new List<Vector3Int>();
+        foreach (Vector2Int leg in new[] { new Vector2Int(-2, RUN_STRIDE), new Vector2Int(1, -RUN_STRIDE) })
+        {
+            int x = leg.x, f = leg.y;
+            Put(cells, order, x, 0, f, SHOE);
+            Put(cells, order, x, 0, f - 1, SHOE);
+            Put(cells, order, x, 1, f, pants);
+            Put(cells, order, x, 2, System.Math.Abs(f) > 1 ? System.Math.Sign(f) : 0, pants);  // knee
+            Box(cells, order, x, 3, 0, x, 4, 0, pants);
+        }
+        Box(cells, order, -2, 5, -1, 1, 5, 0, pants);
+        Box(cells, order, -2, 6, -1, 1, 8, 0, shirt);
+        Box(cells, order, -1, 9, -1, 0, 9, -1, skin);
+        Box(cells, order, -1, 9, 0, 0, 9, 0, hair);
+        Box(cells, order, -1, 10, -1, 0, 10, 0, hair);
+        foreach (int x in new[] { -3, 2 })
+        {
+            Box(cells, order, x, ARM_LOW, 0, x, ARM_HIGH, 0, shirt);
+            Put(cells, order, x, HAND, 0, skin);
+        }
+        var model = new ModelColors.Model { xyz = new S.PackedInt32Array(), rgb = new int[order.Count] };
+        for (int i = 0; i < order.Count; i++)
+        {
+            Vector3Int c = order[i];
+            model.xyz.Append(c.x);
+            model.xyz.Append(c.y);
+            model.xyz.Append(c.z);
+            model.rgb[i] = VoxelJitter.Shade(cells[c], c.x, c.y, c.z, DRESSED_SALT + RUN_A, Noise);
+        }
+        Mesh mesh = ArmyView.Faces(model, voxel, new Vector3(-voxel * 0.5f, 0f, -voxel * 0.5f));
+        mesh.name = "runner " + outfit;
+        return mesh;
+    }
+
     // A later put at the same cell replaces the earlier one, as VoxelBuilder.put does.
     static void Put(Dictionary<Vector3Int, int> cells, List<Vector3Int> order, int x, int y, int z, int rgb)
     {

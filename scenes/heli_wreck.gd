@@ -234,7 +234,7 @@ func _jump(from: Vector3, drift: Vector3) -> void:
 		VoxelPerson.ROOFTOP_OUTFITS[CREW_OUTFIT], VoxelPerson.Pose.RUN_A, voxel
 	)
 	add_child(person)
-	person.add_child(_canopy())
+	person.add_child(_canopy(voxel))
 	var seconds := from.y / Num.f(_cfg["chute_speed"])
 	var chute := Chute.new()
 	chute.node = person
@@ -245,9 +245,9 @@ func _jump(from: Vector3, drift: Vector3) -> void:
 
 
 ## A voxel dome of pale fabric in alternating panels (one MultiMesh of cubes, widest at the rim),
-## shroud lines down to the soldier's shoulders. It catches a little light of its own so it reads at
-## night, under the bloom.
-func _canopy() -> Node3D:
+## shroud lines down to the tops of the soldier's raised hands (`person_voxel` a cell). It
+## catches a little light of its own so it reads at night, under the bloom.
+func _canopy(person_voxel: float) -> Node3D:
 	var out := Node3D.new()
 	var voxel := Num.f(_cfg["canopy_voxel"])
 	var width := Num.f(_cfg["canopy_width"])
@@ -285,7 +285,7 @@ func _canopy() -> Node3D:
 	out.add_child(dome)
 	for corner: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
 		var from := Vector3(corner.x * width * 0.4, hang, corner.y * width * 0.4)
-		out.add_child(_line(from, Vector3(0, hang * 0.45, 0), mat))
+		out.add_child(_line(from, Vector3(0, (VoxelPerson.HANDS_UP + 1) * person_voxel, 0), mat))
 	return out
 
 

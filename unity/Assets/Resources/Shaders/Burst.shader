@@ -47,6 +47,8 @@ Shader "Hidden/Slice/Burst"
             float4 _BDamp;     // damping min, max, seed, heat
             float4 _BScale;    // scale min, max, unit size, self-lit
             float4 _BClear;    // 1: the smoke's centre and focus clearing, 2: focus only (centre_keep 1), 0: off (at the kaiju's foot)
+            float4 _BKeep;     // x 1: y is this burst's own centre_keep (smoke.gdshader), 0: the fires' _SmokeClear.z
+            float4 _BGrade;    // glow only: base_y, flame_h, 1 to grade by height as flame.gdshader (0: by life)
             float _BSizeT[8], _BSizeV[8];
             float4 _BColor[4];
             float4 _BColorAt;
@@ -176,6 +178,17 @@ Shader "Hidden/Slice/Burst"
                         float3 v = float3(axis == 1u, axis == 2u, axis == 0u);
                         world = at + (n + u * (2.0 * c.x - 1.0) + v * (2.0 * c.y - 1.0)) * 0.5 * scale;
                         o.uv = c;
+                        // scenes/flame.gdshader (heli_fx.gd fireball): the colour graded by height above the ball's
+                        // foot, each tongue 0.9..1.1 as bright; the life ramp keeps only the alpha. No heart (the
+                        // fireball leaves fire_xz far away) and no rim (a cube has no tongue edge).
+                        if (_BGrade.z > 0.5)
+                        {
+                            float hw = saturate((world.y - _BGrade.x) / _BGrade.y);
+                            float3 g = lerp(float3(0.70, 0.20, 0.05), float3(1.0, 0.40, 0.06), smoothstep(0.02, 0.2, hw));
+                            g = lerp(g, float3(0.94, 0.23, 0.05), smoothstep(0.3, 0.55, hw));
+                            g = lerp(g, float3(0.50, 0.11, 0.06), smoothstep(0.62, 0.95, hw));
+                            o.color.rgb = g * (0.9 + 0.2 * Rnd(instanceID, 10u));
+                        }
                     #else
                         float3 right = UNITY_MATRIX_V[0].xyz;
                         float3 up = UNITY_MATRIX_V[1].xyz;
@@ -214,7 +227,8 @@ Shader "Hidden/Slice/Burst"
                 float near = smoothstep(_SmokeClear.x, _SmokeClear.y, eye);
                 float2 screen = i.positionCS.xy * _ScreenSize.zw;
                 float2 off = (screen - 0.5) * float2(_ScreenSize.x / _ScreenSize.y, 1.0);
-                float centre = _BClear.x > 1.5 ? 1.0 : lerp(_SmokeClear.z, 1.0, smoothstep(_SmokeClear.w * 0.4, _SmokeClear.w, length(off)));
+                float keep = _BKeep.x > 0.5 ? _BKeep.y : _SmokeClear.z;
+                float centre = _BClear.x > 1.5 ? 1.0 : lerp(keep, 1.0, smoothstep(_SmokeClear.w * 0.4, _SmokeClear.w, length(off)));
                 float front = smoothstep(_SmokeFocus.z * _SmokeFocus.x, _SmokeFocus.z * _SmokeFocus.y, eye);
                 float clear = lerp(1.0, centre * front, saturate(_BClear.x));
                 float behind = LinearEyeDepth(LoadCameraDepth(i.positionCS.xy), _ZBufferParams);

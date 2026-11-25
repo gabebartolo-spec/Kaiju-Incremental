@@ -48,7 +48,7 @@ unity/Assets/Scripts/GameLogic/PlayerSettings.cs::Save 45 1
 unity/Assets/Scripts/GameLogic/SaveFile.cs::Migrate 46 11
 unity/Assets/Scripts/GameLogic/Tr.cs::Format 48 36
 unity/Assets/Scripts/GameLogic/Tr.cs::Parse 33 19
-unity/Assets/Scripts/Rampage/ArmyView.cs::<file> 722 0
+unity/Assets/Scripts/Rampage/ArmyView.cs::<file> 654 0
 unity/Assets/Scripts/Rampage/ArmyView.cs::Faces 52 9
 unity/Assets/Scripts/Rampage/ArmyView.cs::Taskforce 54 15
 unity/Assets/Scripts/Rampage/BoltRig.cs::<file> 588 0
@@ -65,7 +65,7 @@ unity/Assets/Scripts/Rampage/CityDraw.cs::FillEnclosed 32 33
 unity/Assets/Scripts/Rampage/CityDraw.cs::FillPalette 45 5
 unity/Assets/Scripts/Rampage/CityDraw.cs::ReadLooks 34 20
 unity/Assets/Scripts/Rampage/CityDraw.cs::Remesh 64 13
-unity/Assets/Scripts/Rampage/CityFx.cs::<file> 409 0
+unity/Assets/Scripts/Rampage/CityFx.cs::<file> 406 0
 unity/Assets/Scripts/Rampage/CityFx.cs::CityFx 66 4
 unity/Assets/Scripts/Rampage/CityGround.cs::<file> 1014 0
 unity/Assets/Scripts/Rampage/CityGround.cs::Beach 74 12

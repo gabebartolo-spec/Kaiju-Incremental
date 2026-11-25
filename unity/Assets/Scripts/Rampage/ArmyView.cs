@@ -3,21 +3,21 @@ using UnityEngine;
 using S = Kaiju.Sim;
 
 // The sim's army on screen: tank_model.gd, tank_yard.gd, tank_fx.gd, helicopter_model.gd, powers_view.gd's
-// helicopters, heli_wreck.gd's fall and crash, and taskforce_view.gd's placeholder boxes (D-143). It reads the
+// helicopters, heli_wreck.gd's wrecks (ArmyView.HeliWreck) and taskforce_view.gd's placeholder boxes (D-143). It reads the
 // sim and its events and never decides an outcome. Positions arrive in Godot axes; z flips at Mirror().
 public sealed partial class ArmyView
 {
     // scenes/tank_model.gd, tank_fx.gd, helicopter_model.gd, taskforce_view.gd and ui_kit.gd.
     static readonly Color TANK_PAINT = Hex("6d7854"), HELI_PAINT = Hex("748059"), ACCENT = Hex("ffcc00"), WARN = Hex("ffd84a");
     static readonly Color OBSIDIAN = new Color(0.04f, 0.04f, 0.06f), GAS_SUIT = new Color(0.08f, 0.12f, 0.22f), BLUE = new Color(0.1f, 0.5f, 1f);
-    static readonly Color WRECK_FLASH = Hex("ff8a3a"), MUZZLE_FLASH = Hex("ffc070"), CRASH_BLAST = Hex("ff8a3a");
+    static readonly Color WRECK_FLASH = Hex("ff8a3a"), MUZZLE_FLASH = Hex("ffc070");
     static readonly Vector3 AGENT = new Vector3(0.5f, 1f, 0.5f), MECH = new Vector3(0.12f, 0.25f, 0.12f), SHIP = new Vector3(3f, 1.2f, 1.2f);
     const float SHELL_SIZE = 0.35f, BARREL_DROP = -0.1f, WRECK_LIFT = 0.5f, AIM_HEIGHT = 2f, HIT_HEIGHT = 4f, HELI_AIM_HEIGHT = 3f;
     const float WRECK_LIGHT = 7f, WRECK_LIGHT_S = 0.5f, WRECK_FIRE = 0.6f, MUZZLE_LIGHT = 4f, MUZZLE_LIGHT_S = 0.12f;
     const float STRAY_LIGHT = 9f, STRAY_LIGHT_S = 0.45f, STRAY_DUST = 1.2f, STRAY_FIRE = 0.35f;
     const float LASER_WIDTH = 0.12f, LASER_SECONDS = 0.2f, AIM_LINE_WIDTH = 0.06f, CHEST = 2f, BOMB_RING_BOXES = 32f, BOMB_BOX = 0.3f;
-    const int WRECK_CHUNKS = 8, CRASH_CHUNKS = 14;
-    const float CHUNK_SIZE = 0.3f, GAS_PUFF_EVERY = 0.5f, FALL_SPIN = 3f, FALL_PITCH = 0.9f, FALL_ROLL = 0.7f;
+    const int WRECK_CHUNKS = 8;
+    const float CHUNK_SIZE = 0.3f, GAS_PUFF_EVERY = 0.5f;
 
     sealed class Tank
     {
@@ -32,9 +32,6 @@ public sealed partial class ArmyView
         public Transform root, mainRotor, tailRotor, gun;
         public GameObject strobe;
         public float yaw, spin, clock, muzzleZ;
-        public bool falling;
-        public Vector3 fallFrom, fallDrift;
-        public float fallT, fallSeconds;
         // helicopter_model.gd debris_paint: a wreck's chunks wear its own two paints.
         public Color chunkA = HELI_PAINT, chunkB = HELI_PAINT;
     }
@@ -115,6 +112,7 @@ public sealed partial class ArmyView
         upMax = F(wreck, "up_max");
         chunkRest = F(wreck, "rest_seconds");
         beaconsOn = F(S.Content.Look(), "lamp_energy") > 0f;
+        WreckSetup(shader);
     }
 
     // The city's voxel surface with no windows or jitter, for models that bring their own colours.
@@ -286,7 +284,7 @@ public sealed partial class ArmyView
             case "heli_destroyed": HeliDown(e); break;
             case "vip_down": HeliDown(e); break;  // the leader falls as a gunship does (VipView built it)
             case "heli_crashed": HeliCrashed(e); break;
-            case "gunship_destroyed": Burst(EventAt(e, (float)sim.armyUnits.taskforce.gunships.Altitude()), OBSIDIAN); break;
+            case "gunship_destroyed": GunshipDown(e); break;
         }
     }
 
@@ -438,62 +436,7 @@ public sealed partial class ArmyView
         return box;
     }
 
-    void HeliDown(S.GDict e)
-    {
-        long id = S.Num.I(e["heli"]);
-        Vector3 at = EventAt(e, (float)sim.air.Altitude());
-        if (!helis.TryGetValue(id, out Heli h) || !e.Has("fate") || S.Gd.Str(e["fate"]) != "spin")
-        {
-            if (h != null)
-            {
-                Object.Destroy(h.root.gameObject);
-                helis.Remove(id);
-            }
-            Burst(at, h != null ? h.chunkA : HELI_PAINT, h != null ? h.chunkB : HELI_PAINT);
-            return;
-        }
-        h.falling = true;
-        h.fallFrom = at;
-        h.fallDrift = new Vector3((float)(double)S.Num.F(e["dx"]), 0f, (float)(double)S.Num.F(e["dz"]));
-        h.fallSeconds = (float)(double)S.Num.F(e["seconds"]);
-        h.fallT = 0f;
-        fx.FlashLight(at, CRASH_BLAST, F(wreck, "hit_light"), 0.3f);
-        fx.Dust(at, F(wreck, "hit_smoke") * 0.1f);
-        fx.Fire(at, F(wreck, "trail_fire"), h.fallSeconds);
-    }
-
-    void HeliCrashed(S.GDict e)
-    {
-        long id = S.Num.I(e["heli"]);
-        Vector3 ground = EventAt(e, 0f);
-        if (helis.TryGetValue(id, out Heli h))
-        {
-            Object.Destroy(h.root.gameObject);
-            helis.Remove(id);
-        }
-        float scale = F(wreck, "crash_scale");
-        fx.FlashLight(ground + Vector3.up * 2f, CRASH_BLAST, F(wreck, "crash_light"), F(wreck, "crash_light_seconds"));
-        fx.Fireball(ground + Vector3.up, Vector3.one, F(wreck, "crash_fireball") * F(wreck, "fireball_radius"));
-        fx.Fire(ground, F(wreck, "crash_fire"));
-        fx.Dust(ground + Vector3.up * 0.4f, scale);
-        fx.Shockwave(ground, scale * F(wreck, "crash_ring"));
-        Chunks(ground + Vector3.up * 0.8f, CRASH_CHUNKS, h != null ? h.chunkA : HELI_PAINT, h != null ? h.chunkB : HELI_PAINT);
-    }
-
-    void Burst(Vector3 at, Color a, Color b)
-    {
-        fx.FlashLight(at, CRASH_BLAST, F(wreck, "burst_light"), F(wreck, "burst_light_seconds"));
-        fx.Fireball(at, Vector3.one, F(wreck, "fireball_radius"));
-        Chunks(at, CRASH_CHUNKS, a, b);
-    }
-
-    void Burst(Vector3 at, Color paint)
-    {
-        fx.FlashLight(at, CRASH_BLAST, F(wreck, "burst_light"), F(wreck, "burst_light_seconds"));
-        fx.Fireball(at, Vector3.one, F(wreck, "fireball_radius"));
-        Chunks(at, CRASH_CHUNKS, paint, paint);
-    }
-
+    // Chunks of a tank, a stray shell's crater or the railway (Godot's city.debris family, not ported here).
     public void Chunks(Vector3 at, int count, Color a, Color b)
     {
         for (int n = 0; n < count; n++)
@@ -515,6 +458,7 @@ public sealed partial class ArmyView
         Tanks(dt, kaiju);
         Helis(dt, kaiju);
         Shells(dt);
+        Wrecks(dt);
         Debris(dt);
         Taskforce(dt, kaiju);
     }
@@ -590,19 +534,7 @@ public sealed partial class ArmyView
             h.tailRotor.localRotation = Quaternion.Euler(-h.spin * F(vehicles, "tail_rotor_spin") * Mathf.Rad2Deg, 0f, 0f);
             S.GDict lights = vehicles["heli_lights"];
             h.strobe.SetActive(Mathf.Repeat(h.clock, F(lights, "strobe_period")) < F(lights, "strobe_on"));
-            if (h.falling) Fall(h, dt);
         }
-    }
-
-    // heli_wreck.gd _fall: its height drops slowly then fast, it pitches nose down, rolls and spins up.
-    static void Fall(Heli h, float dt)
-    {
-        h.fallT += dt;
-        float u = Mathf.Clamp01(h.fallT / Mathf.Max(h.fallSeconds, 0.01f));
-        Vector3 at = h.fallFrom + h.fallDrift * h.fallT - new Vector3(0f, h.fallFrom.y * u * u, 0f);
-        h.root.position = Mirror(at);
-        h.yaw += FALL_SPIN * (1f + u) * dt;
-        h.root.rotation = Quaternion.Euler(-FALL_PITCH * u * Mathf.Rad2Deg, -h.yaw * Mathf.Rad2Deg, FALL_ROLL * u * Mathf.Rad2Deg);
     }
 
     void Shells(float dt)

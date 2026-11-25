@@ -11,6 +11,11 @@ public sealed class BurstStyle
     // Godot axes: where the spread points; zero is straight up.
     public Vector3 aim;
     public float vmin, vmax, spread, dmin, dmax, smin, smax, unit = 1f, heat = 1f, selfLit = 1f, clear = 1f;
+    // smoke.gdshader centre_keep for this burst's quads (how much of the smoke stays at the screen's middle); below 0:
+    // the fires' own (fire.json centre_keep).
+    public float keep = -1f;
+    // Glow only, above 0: flame.gdshader's flame_h, the colour graded by height from the burst box's foot up.
+    public float flameH;
     public readonly float[] sizeAt = new float[8], size = new float[8];
     public readonly Vector4[] colors = new Vector4[4];
     public Vector4 colorAt;
@@ -77,6 +82,7 @@ public sealed class Bursts : IDisposable
     static readonly int COLOR_AT = Shader.PropertyToID("_BColorAt"), SHADE = Shader.PropertyToID("_BShade");
     static readonly int R_CENTRE = Shader.PropertyToID("_RCentre"), R_TIME = Shader.PropertyToID("_RTime");
     static readonly int R_TINT = Shader.PropertyToID("_RTint");
+    static readonly int KEEP = Shader.PropertyToID("_BKeep"), GRADE = Shader.PropertyToID("_BGrade");
     static readonly int F_ACROSS = Shader.PropertyToID("_FAcross"), F_ALONG = Shader.PropertyToID("_FAlong");
 
     public int Count => live.Count;
@@ -120,6 +126,8 @@ public sealed class Bursts : IDisposable
         m.SetVector(SCALE, new Vector4(s.smin, s.smax, s.unit, s.selfLit));
         Vector3 aim = Flip(s.aim);
         m.SetVector(CLEAR, new Vector4(s.clear, aim.x, aim.y, aim.z));
+        m.SetVector(KEEP, new Vector4(s.keep >= 0f ? 1f : 0f, s.keep, 0f, 0f));
+        m.SetVector(GRADE, new Vector4(o.y - box.y, s.flameH, s.flameH > 0f ? 1f : 0f, 0f));
         m.SetFloatArray(SIZE_T, s.sizeAt);
         m.SetFloatArray(SIZE_V, s.size);
         m.SetVectorArray(COLOR, s.colors);
