@@ -13,17 +13,18 @@ extends SceneTree
 ##
 ## Output: unity/SimTests/golden/landmark_burst.txt, read by LandmarkBurstCheck
 ## (`dotnet run --project unity/SimTests`). TUNING: the landmark_burst section. Per section:
-## SECTION (event id, building middle x z, cell count), GRID (w, d, origin, voxel), INDEX (every
-## cell, in the event's order; RUN start count for a made-up one), SAMPLE per sample (cell, pos, colour), CHUNK per thrown chunk
-## (from, velocity, colour, size), CLOUD per puff (position) and CLOUDSIZE, FRAG per fragment
-## (pos, colour, away), DUST (centre, size); then per sampled frame of a 60 Hz clock STEP (frame,
-## t, spray alive, clouds alive), SPRAY per SPRAY_EVERY-th chunk (number, basis x, y, z, origin) and PUFF per cloud
-## (scale, colour alpha).
+## SECTION (event id, building middle x z, cell count), GRID (w, d, origin, voxel), INDEX
+## (every cell, in the event's order; RUN start count for a made-up one), SAMPLE per sample
+## (cell, pos, colour), CHUNK per thrown chunk (from, velocity, colour, size), CLOUD per puff
+## (position) and CLOUDSIZE, FRAG per fragment (pos, colour, away), DUST (centre, size); then per
+## sampled frame of a 60 Hz clock STEP (frame, t, spray alive, clouds alive), SPRAY per
+## SPRAY_EVERY-th chunk (number, basis x, y, z, origin) and PUFF per cloud (scale, colour alpha).
 
 const OUT := "res://unity/SimTests/golden/landmark_burst.txt"
 const STAGE := 2  # the first stage whose city holds the stadium (D-271)
 const SETTLE := 240  # flow_stadium's PLAY_FRAMES: the emerge is over
-const FINE_WAIT := 1200  # most frames after the poke for the fine view to come up (its job is threaded)
+## Most frames after the poke for the fine view to come up (its job is threaded).
+const FINE_WAIT := 1200
 const SMASH_EVERY := 30  # frames between blows down the west side
 const SMASH_FRAMES := 360
 const FLOORS := 3  # each blow takes this many floors of one column
@@ -138,8 +139,9 @@ func _run() -> void:
 			events.append(e)
 	print("landmark_burst dump: %d fine-view sections" % events.size())
 	var picked := _pick(events)
-	# The real sections here are small (one sample each), so two made-up ones of the same grid, big enough that
-	# the throw and the fragments skip samples, walk every branch: an id and a run of cells, as a fall_start has.
+	# The real sections here are small (one sample each), so two made-up ones of the same grid,
+	# big enough that the throw and the fragments skip samples, walk every branch: an id and a
+	# run of cells, as a fall_start has.
 	for n: int in BIG:
 		var index := PackedInt32Array()
 		for i: int in n:
