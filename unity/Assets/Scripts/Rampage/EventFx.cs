@@ -138,6 +138,8 @@ public sealed class EventFx
     {
         long index = S.Num.I(e["building"]);
         S.GArray<S.Vector3i> cells = e["cells"];
+        // city_view.gd chunks_broken: a fresh blast's chunks are its break's (no collapse dust, no fires out).
+        if (City != null && City.BlastTakes(index, cells)) return;
         S.RampageSim.Building b = sim.buildings[index];
         if (cells.Size() >= COLLAPSE_MIN_CELLS)
         {
@@ -239,6 +241,7 @@ public sealed class EventFx
         Blast(high, half, at, Mathf.Max(half.x, half.z) * 2f, radius, kind == "chem_lab" ? "chem_color" : "color");
         S.GDict burn = blast["fire"];
         fx.Fire(at, F(burn, "size") * radius / 5f, F(burn, "seconds"));
+        City?.SiteThrow(kind, high, half);  // blast_fx.gd _throw: the site's skin, before its floors follow
     }
 
     void Bomb(S.GDict e)
@@ -260,6 +263,7 @@ public sealed class EventFx
         S.GDict ring = shock["ring"];
         float reach = Mathf.Max(span * F(ring, "footprint_scale") * 0.5f, radius * 2f);
         fx.Shockwave(at, reach);
+        City?.Blew(at, reach);  // blast_fx.gd blew: what breaks within reach soon blows apart (CityDraw.BlastBreak)
         int puffs = (int)S.Num.I(ring["puffs"]);
         for (int k = 0; k < puffs; k++)
         {
