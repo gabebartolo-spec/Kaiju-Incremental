@@ -685,6 +685,7 @@ public sealed unsafe partial class CityDraw : IDisposable
             cells[i] = 0;
             f.MarkCell(i);
         }
+        if (BlastCarved(S.Num.I(e["building"]), index, n)) return;  // a blast's break throws its debris (CityDraw.BlastBreak)
         tick++;
         fixed (int* ip = index)
         {
@@ -764,6 +765,7 @@ public sealed unsafe partial class CityDraw : IDisposable
             f.pivot.position = p;
         }
         StepBursts(dt);
+        StepBlast();
     }
 
     // It hit the ground: its cells go to debris and the piece goes. Rubble and the slower break-up follow.
