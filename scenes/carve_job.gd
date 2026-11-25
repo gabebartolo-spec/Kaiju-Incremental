@@ -86,16 +86,7 @@ func _piece(index: PackedInt32Array, mats: PackedByteArray, box: Array[Vector3i]
 	own.fill(0)
 	for k: int in index.size():
 		own[index[k]] = mats[k]
-	var w := mesher.dims.x
-	var d := mesher.dims.z
-	var plan := w * d
-	var count := clampi(ceili(float(index.size()) * SAMPLES / CHUNK_CELLS), 1, index.size())
-	var parts: Array[Dictionary] = []
-	for j: int in count:
-		var i := index[j * index.size() / count]
-		var c := Vector3i(i % w, i / plan, (i / w) % d)
-		var pos := mesher.origin + Vector3(c) * mesher.voxel
-		parts.append({"pos": pos, "color": mesher.palette[mesher.looks[i]]})
+	var parts := samples(mesher, index)
 	var half := Vector3.ONE * mesher.voxel * 0.5
 	var at := mesher.origin + Vector3(box[0]) * mesher.voxel - half
 	var size := Vector3(box[1] - box[0] + Vector3i.ONE) * mesher.voxel
@@ -106,3 +97,21 @@ func _piece(index: PackedInt32Array, mats: PackedByteArray, box: Array[Vector3i]
 		"parts": parts,
 		"box": AABB(at, size),
 	}
+
+
+## A piece's debris samples: SAMPLES per structural chunk's worth of its cells, spread evenly
+## along `index` (at least one), each {"pos": the cell's corner, "color": its look}.
+static func samples(mesher: CellMesher, index: PackedInt32Array) -> Array[Dictionary]:
+	var parts: Array[Dictionary] = []
+	if index.is_empty():
+		return parts
+	var w := mesher.dims.x
+	var d := mesher.dims.z
+	var plan := w * d
+	var count := clampi(ceili(float(index.size()) * SAMPLES / CHUNK_CELLS), 1, index.size())
+	for j: int in count:
+		var i := index[j * index.size() / count]
+		var c := Vector3i(i % w, i / plan, (i / w) % d)
+		var pos := mesher.origin + Vector3(c) * mesher.voxel
+		parts.append({"pos": pos, "color": mesher.palette[mesher.looks[i]]})
+	return parts

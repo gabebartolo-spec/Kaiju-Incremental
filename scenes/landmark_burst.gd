@@ -49,6 +49,10 @@ func _init(piece: Node3D, view: CityView, event: Dictionary) -> void:
 	_cfg = Content.section("landmark_burst")
 	var b := view.sim.buildings[Num.i(event["building"])]
 	var parts := PieceParts.of(piece)
+	if parts.is_empty() and view.carve != null:
+		# A piece of the fine view has no samples until its job is done: they are taken from its
+		# cells now (director, 2026-11-25: "Carve-job rule", "Fix both"), or it would vanish.
+		parts = view.carve.samples(event)
 	piece.queue_free()
 	if parts.is_empty():
 		return

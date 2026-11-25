@@ -46,7 +46,7 @@ Shader "Hidden/Slice/Burst"
             float4 _BVel;      // speed min, max, spread (radians), count
             float4 _BDamp;     // damping min, max, seed, heat
             float4 _BScale;    // scale min, max, unit size, self-lit
-            float4 _BClear;    // 1: the smoke's centre and focus clearing, 0: off (at the kaiju's foot)
+            float4 _BClear;    // 1: the smoke's centre and focus clearing, 2: focus only (centre_keep 1), 0: off (at the kaiju's foot)
             float _BSizeT[8], _BSizeV[8];
             float4 _BColor[4];
             float4 _BColorAt;
@@ -214,9 +214,9 @@ Shader "Hidden/Slice/Burst"
                 float near = smoothstep(_SmokeClear.x, _SmokeClear.y, eye);
                 float2 screen = i.positionCS.xy * _ScreenSize.zw;
                 float2 off = (screen - 0.5) * float2(_ScreenSize.x / _ScreenSize.y, 1.0);
-                float centre = lerp(_SmokeClear.z, 1.0, smoothstep(_SmokeClear.w * 0.4, _SmokeClear.w, length(off)));
+                float centre = _BClear.x > 1.5 ? 1.0 : lerp(_SmokeClear.z, 1.0, smoothstep(_SmokeClear.w * 0.4, _SmokeClear.w, length(off)));
                 float front = smoothstep(_SmokeFocus.z * _SmokeFocus.x, _SmokeFocus.z * _SmokeFocus.y, eye);
-                float clear = lerp(1.0, centre * front, _BClear.x);
+                float clear = lerp(1.0, centre * front, saturate(_BClear.x));
                 float behind = LinearEyeDepth(LoadCameraDepth(i.positionCS.xy), _ZBufferParams);
                 float soft = smoothstep(0.0, _SmokeFocus.w, behind - eye);
                 return float4(Fogged(i, color), i.color.a * mask * near * clear * soft);
