@@ -14,7 +14,7 @@ using S = Kaiju.Sim;
 // fed in order with every cell the sim takes (cells_carved, fall_start). A falling section is exactly
 // its cells. Reads the sim's grid and events and decides nothing (hard rule 3). Godot axes inside the
 // grids, z negated at the mesher (mirror 1).
-public sealed unsafe class CityDraw : IDisposable
+public sealed unsafe partial class CityDraw : IDisposable
 {
     const int REGION = 16;
     const int RES = 8;
@@ -108,7 +108,7 @@ public sealed unsafe class CityDraw : IDisposable
     }
 
     // One building: what its shell and its fine view are drawn from.
-    sealed class Site
+    sealed partial class Site
     {
         public S.RampageSim.Building b;
         public S.GDict party;
@@ -134,11 +134,9 @@ public sealed unsafe class CityDraw : IDisposable
         public string kind;
         public Vector2 dir;
         public float drop, duration, t, dropped, y;
-        // The crumble at a toppling tower's base (Crumble): its clock, the cells it sheds from, and whether
-        // it is a landmark, which sheds nothing.
+        // The crumble at a toppling tower's base (Crumble): its clock and the cells it sheds from.
         public float crumble;
         public int[] baseCells;
-        public bool landmark;
     }
 
     // Where the crumble's dust goes; RampageGame sets it once the fx exist.
@@ -390,12 +388,11 @@ public sealed unsafe class CityDraw : IDisposable
         byte[] raw = grid.cells.Raw;
         NativeArray<byte>.Copy(raw, drawn, size);
         NativeArray<byte>.Copy(raw, looks, size);
-        for (int k = 0; k < s.tinted.Length; k++) looks[s.tinted[k]] = s.tintIds[k];
-        foreach (int i in s.lit) looks[i] = LIT;
-        foreach (int i in s.shopLit) looks[i] = SHOP_LIT;
+        Tint(s, looks);
         foreach (int i in s.hidden) drawn[i] = 0;
         byte* dp = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(drawn);
         FillEnclosed(dp, w, h, d);
+        s.ground = GroundCells(s, raw, looks, w, h, d);
 
         IntPtr mesher = Native.kc_mesher_create(w, h, d, s.ox, s.oy, s.oz, s.origin.x, s.origin.y, s.origin.z, VOXEL,
             (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(looks),
@@ -514,6 +511,7 @@ public sealed unsafe class CityDraw : IDisposable
             var mr = s.shell.AddComponent<MeshRenderer>();
             mr.sharedMaterial = s.mat;
         }
+        MakeGround(s);
         s.verts = null;
         s.index = null;
     }
@@ -557,9 +555,7 @@ public sealed unsafe class CityDraw : IDisposable
         NativeArray<byte>.Copy(raw, cells, size);
         NativeArray<byte>.Copy(raw, drawn, size);
         NativeArray<byte>.Copy(raw, looks, size);
-        for (int k = 0; k < s.tinted.Length; k++) looks[s.tinted[k]] = s.tintIds[k];
-        foreach (int i in s.lit) looks[i] = LIT;
-        foreach (int i in s.shopLit) looks[i] = SHOP_LIT;
+        Tint(s, looks);
         foreach (int i in s.hidden) drawn[i] = 0;
         s.fine = Body("fine", w, h, d, s.origin, s.mat, cells, drawn, looks, s.palette, s.finish, s.ox, s.oy, s.oz, root);
         s.fine.building = true;
@@ -659,7 +655,7 @@ public sealed unsafe class CityDraw : IDisposable
                 Carved(e);
                 break;
             case "fall_start":
-                FallStart(e);
+                if (!BurstStart(e)) FallStart(e);  // a landmark's section bursts where it stands (city_falls.gd start)
                 break;
             case "fall_land":
                 FallLand(e);
@@ -742,7 +738,6 @@ public sealed unsafe class CityDraw : IDisposable
                 drop = (float)S.Num.F(e["drop"]),
                 duration = Mathf.Max(0.05f, (float)S.Num.F(e["duration"])),
                 y = at.y,
-                landmark = s.b.landmark != "",
             };
         }
     }
@@ -761,13 +756,14 @@ public sealed unsafe class CityDraw : IDisposable
                 float angle = (float)S.FallContact.Tilt(toppleCfg, f.t, f.duration);
                 var axis = new Vector3(f.dir.y, 0, f.dir.x);
                 f.pivot.rotation = Quaternion.AngleAxis(-angle * Mathf.Rad2Deg, axis.sqrMagnitude > 1e-6f ? axis.normalized : Vector3.right);
-                if (!f.landmark) Crumble(f, dt);
+                Crumble(f, dt);
             }
             f.dropped = f.drop * k * k;
             Vector3 p = f.pivot.position;
             p.y = f.y - f.dropped;
             f.pivot.position = p;
         }
+        StepBursts(dt);
     }
 
     // It hit the ground: its cells go to debris and the piece goes. Rubble and the slower break-up follow.
