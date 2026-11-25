@@ -14,6 +14,7 @@ public sealed class IntroWater
     readonly S.GDict cfg;
     readonly BoltView view;
     readonly BurstStyle spray;
+    readonly RiverView rings;
     readonly S.RandomNumberGenerator rng = S.Seeds.Make("intro_crackle", 0);
     readonly List<List<Vector3>> arcs = new List<List<Vector3>>();
     readonly bool active;
@@ -39,6 +40,8 @@ public sealed class IntroWater
         this.fx = fx;
         S.GDict intro = S.Content.Section("intro");
         cfg = intro["water"];
+        S.GArray<S.Variant> tones = cfg["colors"];
+        rings = new RiverView(sim, fx, ahead, Tone(tones[1]));  // scenes/rampage_rise.gd: beside IntroWater, its foam
         active = sim.emerge.active;
         if (!active) return;
         scale = (float)sim.BodyScale();
@@ -74,6 +77,7 @@ public sealed class IntroWater
 
     public void Step(float dt)
     {
+        rings.Step();
         if (!active) return;
         S.Emergence emerge = sim.emerge;
         float t = (float)emerge.Progress() * (float)emerge.Total();

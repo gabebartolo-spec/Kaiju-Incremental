@@ -237,7 +237,7 @@ public sealed partial class CityFx : IDisposable
             }
             return;
         }
-        bursts.Ring(at + Vector3.up * RING_LIFT, radius * ringScale * RING_PLANE * 0.5f, foot ? ringFootStart : 0f, ringSeconds, dustTone.linear, ringAlpha, ringSoft, Now);
+        RingOf(at, radius, foot ? ringFootStart : 0f, dustTone.linear);
     }
 
     public void ShockwaveTo(Vector3 at, float reach) => Shockwave(at, reach / (ringScale * RING_REACH));
