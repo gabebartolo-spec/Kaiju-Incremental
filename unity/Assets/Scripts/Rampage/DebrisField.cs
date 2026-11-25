@@ -47,6 +47,8 @@ public sealed class DebrisField
     float clock;
 
     public int Live => pieces.Count;
+    // keep_out: pos (Godot axes) moved clear of a body pieces must never start inside (CityDraw: the kaiju's hide).
+    public System.Func<Vector3, Vector3> keepOut;
 
     public DebrisField(S.RandomNumberGenerator rng, int cap, float sizeScale, bool shadows, Material material, Transform parent, string name)
     {
@@ -108,7 +110,8 @@ public sealed class DebrisField
         DebrisPiece d = DebrisSpawn.Draw(rng, sizeScale, new System.Numerics.Vector3(item.away.x, item.away.y, item.away.z));
         var go = new GameObject("piece");
         go.transform.SetParent(root, false);
-        go.transform.position = new Vector3(item.pos.x, item.pos.y, -item.pos.z);
+        Vector3 pos = keepOut != null ? keepOut(item.pos) : item.pos;
+        go.transform.position = new Vector3(pos.x, pos.y, -pos.z);
         var box = go.AddComponent<BoxCollider>();
         box.size = Vector3.one * d.size;
         box.sharedMaterial = surface;

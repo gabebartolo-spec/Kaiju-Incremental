@@ -78,6 +78,7 @@ public sealed unsafe partial class CityDraw
         // accepted the fragments' scatter differing from Godot's shared city stream, 2026-11-25).
         DebrisField.Ground(root);
         cityDebris = new DebrisField(S.Seeds.Make("city_debris"), (int)GraphicsPreset.Cap("debris_pool"), 1f, true, burstMaterial, root, "city debris");
+        HideStart();
     }
 
     // The chunks grouped by colour, each colour one glowing cube (vertex alpha 0: lit from within, as Godot's

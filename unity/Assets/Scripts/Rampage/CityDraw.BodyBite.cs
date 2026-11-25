@@ -90,17 +90,12 @@ public sealed unsafe partial class CityDraw
                 (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(pd),
                 (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(pl));
             for (int k = 0; k < n; k++) f.MarkCell(ip[k]);
-            var hinge = new GameObject("bite");
-            hinge.transform.SetParent(root, false);
-            hinge.transform.position = at;
-            var holder = new GameObject("rest").transform;
-            holder.SetParent(hinge.transform, false);
-            holder.localPosition = -at;
+            Transform hinge = Hinge("bite", at, out Transform holder);
             Vector3 origin = f.origin + new Vector3(lo[0], lo[1], lo[2]) * VOXEL;
             FineBody piece = Body("piece", nw, nh, nd, origin, f.mat, pc, pd, pl, s.palette, s.finish, 0, ABOVE_GROUND, 0, holder);
             piece.shown = true;
             piece.MarkAll();
-            return new Bite { body = piece, hinge = hinge.transform };
+            return new Bite { body = piece, hinge = hinge };
         }
     }
 
