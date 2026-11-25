@@ -972,6 +972,16 @@ public sealed partial class Croc
         }
     }
 
+    // Regeneration's rings over the hide (scenes/ability_fx.gd's rim overlay, UpgradeCues): `strength` 0 is none.
+    public void SetRegen(float strength, Color tint)
+    {
+        foreach (MaterialPropertyBlock b in new[] { cubeBlock, fillBlock })
+        {
+            b.SetFloat("_RegenStrength", strength);
+            b.SetVector("_RegenTint", tint.linear);
+        }
+    }
+
     public void Draw()
     {
         if (!Visible) return;

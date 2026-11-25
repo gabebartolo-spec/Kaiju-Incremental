@@ -93,6 +93,18 @@ float4 WindowPick(uint h)
 // pieces he shatters into (SLICE_STONE).
 float _Overload, _Stone, _BodyTop, _CrackleShare, _CrackleHz, _CrackleEnergy, _StoneVary, _StoneKeep;
 float4 _OverloadColor, _StoneColor;
+// Regeneration (scenes/rim.gdshader, laid over the kaiju's voxels while it heals; UpgradeCues): thin rings in
+// _RegenTint run up the body and nothing between them is lit, so the hide stays readable. _RegenStrength 0: none.
+float _RegenStrength;
+float4 _RegenTint;
+static const float REGEN_SPACING = 1.4, REGEN_SPEED = 4.0, REGEN_SHARP = 12.0, REGEN_GAIN = 2.5;
+float3 RegenRings(float worldY)
+{
+    if (_RegenStrength <= 0.0)
+        return 0.0;
+    float ring = pow(0.5 + 0.5 * sin(worldY * REGEN_SPACING - _Time.y * REGEN_SPEED), REGEN_SHARP);
+    return _RegenTint.rgb * _RegenStrength * ring * REGEN_GAIN;
+}
 
 float StoneHash(float3 p) { return frac(sin(dot(p, float3(12.9898, 78.233, 37.719))) * 43758.5453); }
 
@@ -545,6 +557,9 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     CityGroundSurface(input.texCoord0.xy, input.texCoord1.xy, groundAt, groundN, groundDepth, dot(n, V), albedo, roughness, emission);
     #endif
 
+    #if defined(SLICE_CUBE) || defined(SLICE_FILL)
+    emission += RegenRings(GetAbsolutePositionWS(posInput.positionWS).y);
+    #endif
     surfaceData.baseColor = albedo;
     surfaceData.normalWS = n;
     surfaceData.geomNormalWS = n;
