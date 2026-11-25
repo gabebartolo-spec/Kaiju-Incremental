@@ -189,7 +189,13 @@ public sealed class EventFx
             return;
         }
         var at = new Vector3((float)site.x, FALL_LIFT, (float)site.z);
-        if (City != null && City.Landed(S.Num.I(e["id"]), out Vector3 landed)) at = new Vector3(landed.x, FALL_LIFT, landed.z);
+        bool shattered = e.Has("contact") && S.Gd.Str(e["contact"]) != "";
+        if (City != null && City.Landed(S.Num.I(e["id"]), out Vector3 landed, out bool dust))
+        {
+            if (!dust) return;
+            // city_falls.gd _shatter: where its first fragment flies, as it is (it broke up off the ground).
+            at = shattered ? landed : new Vector3(landed.x, FALL_LIFT, landed.z);
+        }
         fx.Dust(at, LAND_DUST);
     }
 

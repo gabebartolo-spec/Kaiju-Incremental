@@ -127,7 +127,7 @@ public sealed unsafe partial class CityDraw : IDisposable
         public int nv, ni;
     }
 
-    sealed class Fall
+    sealed partial class Fall
     {
         public FineBody body;
         public Transform pivot;
@@ -142,8 +142,7 @@ public sealed unsafe partial class CityDraw : IDisposable
     // Where the crumble's dust goes; RampageGame sets it once the fx exist.
     public CityFx crumbleFx;
     public long Crumbles => crumbles;
-    long crumbles, landedId = -1;
-    Vector3 landedAt;
+    long crumbles;
     // scenes/topple_fx.gd crumble: the shed cells' upward speed.
     const float CRUMBLE_UP = 0.3f;
 
@@ -595,13 +594,6 @@ public sealed unsafe partial class CityDraw : IDisposable
         return new Vector3(at.x, at.y, -at.z);
     }
 
-    // Where fall `id`, the last to land, came down (Godot axes): EventFx puts the landing dust there.
-    public bool Landed(long id, out Vector3 at)
-    {
-        at = landedAt;
-        return id == landedId;
-    }
-
     // A toppling tower sheds a little masonry and dust at its base while it still shudders
     // (scenes/topple_fx.gd crumble): every crumble_every, crumble_debris cells below crumble_floors above the
     // hinge, and one puff at one of them. The cells stay on the piece: this only adds.
@@ -704,6 +696,7 @@ public sealed unsafe partial class CityDraw : IDisposable
         var indexArray = (S.PackedInt32Array)e["index"];
         int n = (int)indexArray.Size();
         if (f == null || n == 0) return;
+        List<Kaiju.Game.BurstPart> parts = FallParts(s, f, indexArray.Raw);
         int* lo = stackalloc int[3];
         int* hi = stackalloc int[3];
         fixed (int* ip = indexArray.Raw)
@@ -720,12 +713,7 @@ public sealed unsafe partial class CityDraw : IDisposable
             for (int k = 0; k < n; k++) f.MarkCell(ip[k]);
             S.Vector3 pivot = e["pivot"];
             var at = new Vector3((float)pivot.x, (float)pivot.y, -(float)pivot.z);
-            var hinge = new GameObject("fall");
-            hinge.transform.SetParent(root, false);
-            hinge.transform.position = at;
-            var holder = new GameObject("rest").transform;
-            holder.SetParent(hinge.transform, false);
-            holder.localPosition = -at;
+            Transform hinge = Hinge("fall", at, out Transform holder);
             Vector3 origin = f.origin + new Vector3(lo[0], lo[1], lo[2]) * VOXEL;
             FineBody piece = Body("piece", nw, nh, nd, origin, f.mat, cells, drawn, looks, s.palette, s.finish, 0, ABOVE_GROUND, 0, holder);
             piece.shown = true;
@@ -734,12 +722,14 @@ public sealed unsafe partial class CityDraw : IDisposable
             falls[id] = new Fall
             {
                 body = piece,
-                pivot = hinge.transform,
+                pivot = hinge,
                 kind = S.Gd.Str(e["kind"]),
                 dir = new Vector2((float)dir.x, (float)dir.y),
                 drop = (float)S.Num.F(e["drop"]),
                 duration = Mathf.Max(0.05f, (float)S.Num.F(e["duration"])),
                 y = at.y,
+                pivotAt = new System.Numerics.Vector3((float)pivot.x, (float)pivot.y, (float)pivot.z),
+                parts = parts,
             };
         }
     }
@@ -776,6 +766,7 @@ public sealed unsafe partial class CityDraw : IDisposable
         long id = S.Num.I(e["id"]);
         if (!falls.TryGetValue(id, out Fall f)) return;
         falls.Remove(id);
+        if (Shatter(id, f, e)) return;
         FineBody p = f.body;
         var keep = new List<int>();
         byte* drawn = p.Drawn;

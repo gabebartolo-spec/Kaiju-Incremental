@@ -91,7 +91,6 @@ public sealed partial class Croc
     readonly List<(int bone, float r)> bodySpheres = new List<(int, float)>();
     readonly List<(int bone, float r)> tailSpheres = new List<(int, float)>();
     readonly Vector3[] prevBody, prevTail;
-    readonly Rigidbody[] pushers;
 
     Quaternion[] turnsA, turnsB, turnsC, turnsOut, scratch0, scratch1;
     float walkFrame, runFrame, idleFrame, moveWeight, runWeight;
@@ -292,16 +291,6 @@ public sealed partial class Croc
         foreach (SphereDef s in t.tail) if (byName.TryGetValue(s.bone, out int b)) tailSpheres.Add((b, s.r));
         prevBody = new Vector3[bodySpheres.Count];
         prevTail = new Vector3[tailSpheres.Count];
-        pushers = new Rigidbody[bodySpheres.Count];
-        for (int i = 0; i < pushers.Length; i++)
-        {
-            var go = new GameObject("pusher");
-            var sphere = go.AddComponent<SphereCollider>();
-            sphere.radius = bodySpheres[i].r * tuning.pusher_scale;
-            Rigidbody rb = go.AddComponent<Rigidbody>();
-            rb.isKinematic = true;
-            pushers[i] = rb;
-        }
     }
 
     static Matrix4x4 Matrix(List<object> f)
@@ -955,7 +944,7 @@ public sealed partial class Croc
     public void CollectSpheres(List<City.Sphere> into)
     {
         AddSpheres(into, bodySpheres, prevBody);
-        for (int i = 0; i < pushers.Length; i++) pushers[i].MovePosition(prevBody[i]);
+        MovePushers();
         bool tailOn = sweep != null && sweepTime >= sweep.trailFirst - tuning.sweep_margin_frames && sweepTime <= sweep.trailLast + tuning.sweep_margin_frames;
         if (tailOn)
         {
@@ -1015,8 +1004,6 @@ public sealed partial class Croc
         UnityEngine.Object.Destroy(cubeMat);
         UnityEngine.Object.Destroy(fillMat);
         UnityEngine.Object.Destroy(fill);
-        foreach (Rigidbody rb in pushers)
-            if (rb != null)
-                UnityEngine.Object.Destroy(rb.gameObject);
+        DropPushers();
     }
 }
