@@ -53,6 +53,7 @@ public sealed class WaterView : IDisposable
 
     public long VertexCount { get; private set; }
 
+    // oceanShader: the open sea's waves on the bay (scenes/ocean_waves.gd, the run's only); null: the bay rolls its swell.
     public WaterView(S.RampageSim sim, List<WaterRect> sheets, Shader shader, ComputeShader oceanShader, S.GDict city, Transform parent)
     {
         this.sim = sim;
@@ -66,7 +67,7 @@ public sealed class WaterView : IDisposable
         for (int n = 0; n < count; n++) MakeBasin(n);
         Fill(true);
 
-        ocean = new OceanWaves(oceanShader);
+        ocean = oceanShader != null ? new OceanWaves(oceanShader) : null;
         float seed = (float)(S.Num.I(city["map_seed"]) % 1000);
         foreach (WaterRect sheet in sheets)
         {
@@ -97,7 +98,7 @@ public sealed class WaterView : IDisposable
 
     public void Step(float dt)
     {
-        ocean.Step(dt);
+        ocean?.Step(dt);
         Fill(false);
         sim.water.splashes.Clear();
     }
@@ -266,7 +267,7 @@ public sealed class WaterView : IDisposable
             mat.SetFloat("_WhitecapSlope", F(simCfg["whitecap_slope"]));
             mat.SetFloat("_WhitecapLift", F(simCfg["whitecap_lift"]));
         }
-        if (sheet.bay) ocean.Bind(mat);
+        if (sheet.bay) ocean?.Bind(mat);
         return mat;
     }
 

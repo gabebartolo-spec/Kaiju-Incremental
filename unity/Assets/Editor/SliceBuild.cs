@@ -126,8 +126,8 @@ public static class SliceBuild
     // it, and its player. Rampage.unity, the scene of the U4 builds, is no longer made or built.
     const string GAME_SCENE = "Assets/Game.unity";
     const string RAMPAGE_EXE = "Build/KaijuRampage.exe";
-    // The sim carves these models: without them a pool building or landmark has no cells.
-    static readonly string[] MODEL_KINDS = { "city_buildings", "landmarks", "vehicles", "street_props" };
+    // The sim carves these models (without them a pool building or landmark has no cells); boats draw on the bay.
+    static readonly string[] MODEL_KINDS = { "city_buildings", "landmarks", "vehicles", "street_props", "boats" };
     // What the screens and the audio read at run time, copied whole (Godot's .import files left behind).
     static readonly string[] ASSET_KINDS = { "sfx", "music", "overworld", "lab", "title", "ui", "loading", "kaiju", "death" };
     // kaiju: the bodies' cells, clips and skins (.kclip, .skinf, .skinw, .vskin).

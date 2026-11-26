@@ -118,7 +118,7 @@ public static class TitleScreen
         else
         {
             fresh = Add(row, "NEW KAIJU", UiKit.ACCENT, () => OnNew(v), "NewKaiju");
-            UiKit.Size(fresh, Mathf.Max(Natural(fresh), TitleMenu.AloneWidth(v.rowWidth)), TitleMenu.ALONE_HEIGHT);
+            UiKit.Size(fresh, Mathf.Max(Natural(fresh), TitleMenu.AloneWidth(v.rowWidth)), TitleMenu.ALONE_HEIGHT).flexibleWidth = 0f; // SIZE_SHRINK_BEGIN
         }
         // title_screen.gd _wire_focus: the gear above, the exit below.
         KitButton first = cont != null ? cont : fresh;
@@ -353,13 +353,13 @@ public static class TitleScreen
         v.buttons.gameObject.AddComponent<LayoutElement>().minWidth = v.rowWidth;
     }
 
-    // One button without the focus pointer, `height` px at least (title_screen.gd _add, slot_list.gd _button).
+    // One button without the focus pointer, `height` px tall, never stretched (title_screen.gd _add, slot_list.gd _button).
     static KitButton Add(Transform into, string text, Color fill, Action action, string name, float height = TitleMenu.BUTTON_HEIGHT)
     {
         KitButton b = UiKit.Button(into, text, action, UiKit.SIZE_BODY, fill);
         b.name = name;
         b.DropPointer();
-        UiKit.Size(b, 0f, height);
+        UiKit.Size(b, 0f, height).flexibleHeight = 0f;
         return b;
     }
 
