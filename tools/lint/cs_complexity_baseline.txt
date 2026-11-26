@@ -7,7 +7,6 @@ unity/Assets/Scripts/City.cs::ApplySettle 46 12
 unity/Assets/Scripts/City.cs::Remesh 83 14
 unity/Assets/Scripts/Croc.cs::<file> 1022 0
 unity/Assets/Scripts/Croc.cs::Croc 165 30
-unity/Assets/Scripts/Croc.cs::Pose 45 8
 unity/Assets/Scripts/Fires.cs::Add 51 3
 unity/Assets/Scripts/Game/Audio/AudioHost.cs::<file> 458 0
 unity/Assets/Scripts/Game/Audio/AudioHost.cs::Update 30 13
