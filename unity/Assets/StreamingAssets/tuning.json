@@ -37,6 +37,7 @@
   "hdrp_ev": 9.5,
   "sky_diffusion": 1.0,
   "ssao_intensity": 1.2,
+  "lab_key_match_m": 2.48, "lab_rim_match_m": 1.0, "lab_screens_match_m": 0.54, "lab_focus_match_m": 0.36, "lab_wash_match_m": 1.0,
   "shadow_distance": 600,
   "fog_height": 70,
   "momentum_dust_min": 0.5, "momentum_dust_every_s": 0.15, "momentum_dust_lift": 0.3,

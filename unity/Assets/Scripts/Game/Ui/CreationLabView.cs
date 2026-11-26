@@ -38,7 +38,7 @@ public sealed class CreationLabView
     Camera cam;
     Transform carriage;
     Light screens, focus;
-    float unit;
+    float unit; Tuning tuning;
     Shader lit;
     readonly Dictionary<float, Material> materials = new Dictionary<float, Material>();
     readonly List<UnityEngine.Object> owned = new List<UnityEngine.Object>();
@@ -86,7 +86,7 @@ public sealed class CreationLabView
     void Make(CreationLab lab)
     {
         root = new GameObject("creation_lab");
-        Tuning tuning = SliceData.LoadTuning();
+        tuning = SliceData.LoadTuning();
         unit = SliceGame.ExposureUnit(tuning);
         lit = Resources.Load<Shader>("Shaders/SliceLit");
         if (lit == null) throw new InvalidOperationException("Shaders/SliceLit is missing");
@@ -155,8 +155,8 @@ public sealed class CreationLabView
         volume.sharedProfile = profile;
     }
 
-    // One unit of Godot light energy as HDRP candela (the rampage's lamps use the same).
-    float Candela(double energy) => (float)energy * Mathf.PI * unit;
+    // Godot energy as HDRP candela for lamp `name`, matched to Godot at its subject (tuning.json lab_*_match_m).
+    float Candela(double energy, string name) => (float)energy * Mathf.PI * unit * tuning.LabMatch(name);
 
     Light Lamp(string name, LightType type, Color colour, double energy, float range, CreationVec at)
     {
@@ -170,7 +170,7 @@ public sealed class CreationLabView
         go.AddComponent<HDAdditionalLightData>();
         light.color = colour;
         light.range = range;
-        light.intensity = Candela(energy);
+        light.intensity = Candela(energy, name);
         return light;
     }
 
@@ -372,10 +372,10 @@ public sealed class CreationLabView
             carriage.localPosition = U(lab.CarriageAt());
             carriage.localRotation = Turn(lab.Yaw);
         }
-        if (screens != null) screens.intensity = Candela(lab.ScreensEnergy);
+        if (screens != null) screens.intensity = Candela(lab.ScreensEnergy, "screens");
         if (focus != null)
         {
-            focus.intensity = Candela(lab.Focused >= 0 ? CreationLab.Energy("focus") : 0.0);
+            focus.intensity = Candela(lab.Focused >= 0 ? CreationLab.Energy("focus") : 0.0, "focus");
             focus.transform.position = U(CreationLab.VialPoint(Math.Max(lab.Focused, 0)) + FOCUS_OFF);
         }
         if (cam == null) return;
