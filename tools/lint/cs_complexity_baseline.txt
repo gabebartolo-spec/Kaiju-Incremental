@@ -12,9 +12,9 @@ unity/Assets/Scripts/Game/Audio/AudioHost.cs::<file> 458 0
 unity/Assets/Scripts/Game/Audio/AudioHost.cs::Update 30 13
 unity/Assets/Scripts/Game/Audio/RampageAudio.cs::<file> 578 0
 unity/Assets/Scripts/Game/Audio/RampageAudio.cs::OnEvent 102 39
-unity/Assets/Scripts/Game/GameFlow.cs::<file> 686 0
+unity/Assets/Scripts/Game/GameFlow.cs::<file> 645 0
 unity/Assets/Scripts/Game/GameFlow.cs::SmokeRampage 60 24
-unity/Assets/Scripts/Game/GameFlow.cs::SmokeTick 30 15
+unity/Assets/Scripts/Game/GameFlow.cs::SmokeTick 30 14
 unity/Assets/Scripts/Game/PhotoMode.cs::Update 33 14
 unity/Assets/Scripts/Game/Screens/CreationScreen.cs::Open 50 5
 unity/Assets/Scripts/Game/Screens/CreationScreen.cs::Update 25 21
