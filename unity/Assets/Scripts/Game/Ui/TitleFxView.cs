@@ -24,8 +24,7 @@ public sealed class TitleFxView : IDisposable
     // title_sky_smoke.gdshader's morph default; title_sky_smoke.gd noise_texture: FastNoiseLite's numbers.
     const float SMOKE_MORPH = 0.03f;
     const int NOISE_SIDE = 256, NOISE_OCTAVES = 4, NOISE_SEED = 7;
-    const float FLAT = 1e-6f;
-    const float NOISE_FREQ = 0.012f, NOISE_GAIN = 0.5f, NOISE_LACUNARITY = 2f, NOISE_SHIFT = 97.3f;
+    const float NOISE_FREQ = 0.012f, NOISE_GAIN = 0.5f, NOISE_LACUNARITY = 2f, NOISE_SKIRT = 0.1f;
     // title_burning_windows.gdshader's flicker_hz default (the gd never sets it).
     const float PANE_FLICKER_HZ = 7f;
 
@@ -257,44 +256,15 @@ public sealed class TitleFxView : IDisposable
         Graphics.DrawProcedural(mat, bounds, MeshTopology.Triangles, QUAD_VERTS, data.Count / STRIDE, null, null, ShadowCastingMode.Off, false, 0);
     }
 
-    // title_sky_smoke.gd noise_texture: FastNoiseLite (simplex, 0.012, 4 octaves, seed 7) is not in Unity; this
-    // fractal Perlin (BreathView's stand-in) in its place, made seamless by blending across the tile.
+    // title_sky_smoke.gd noise_texture: FastNoiseLite simplex smooth (0.012, 4 octaves, seed 7) through
+    // get_seamless_image(256, 256), Godot's own bytes (Sim/GodotNoise.cs).
     internal static Texture2D Noise()
     {
         var tex = new Texture2D(NOISE_SIDE, NOISE_SIDE, TextureFormat.R8, false, true) { wrapMode = TextureWrapMode.Repeat };
-        var raw = new float[NOISE_SIDE * NOISE_SIDE];
-        float low = float.MaxValue, high = float.MinValue;
-        for (int y = 0; y < NOISE_SIDE; y++)
-            for (int x = 0; x < NOISE_SIDE; x++)
-            {
-                float u = (float)x / NOISE_SIDE, v = (float)y / NOISE_SIDE;
-                float n = Fractal(x, y) * (1f - u) * (1f - v) + Fractal(x - NOISE_SIDE, y) * u * (1f - v)
-                    + Fractal(x, y - NOISE_SIDE) * (1f - u) * v + Fractal(x - NOISE_SIDE, y - NOISE_SIDE) * u * v;
-                raw[y * NOISE_SIDE + x] = n;
-                low = Mathf.Min(low, n);
-                high = Mathf.Max(high, n);
-            }
-        var px = new Color[raw.Length];
-        for (int i = 0; i < raw.Length; i++)
-        {
-            float g = (raw[i] - low) / Mathf.Max(high - low, FLAT);
-            px[i] = new Color(g, g, g, 1f);
-        }
-        tex.SetPixels(px);
+        tex.LoadRawTextureData(S.GodotNoise.SeamlessImage(NOISE_SIDE, NOISE_SIDE, NOISE_SEED, NOISE_FREQ, NOISE_OCTAVES,
+            NOISE_LACUNARITY, NOISE_GAIN, NOISE_SKIRT));
         tex.Apply(false, true);
         return tex;
-    }
-
-    static float Fractal(float x, float y)
-    {
-        float sum = 0f, amp = 1f, f = NOISE_FREQ;
-        for (int i = 0; i < NOISE_OCTAVES; i++)
-        {
-            sum += Mathf.PerlinNoise(x * f + NOISE_SEED * NOISE_SHIFT, y * f + NOISE_SEED) * amp;
-            amp *= NOISE_GAIN;
-            f *= NOISE_LACUNARITY;
-        }
-        return sum;
     }
 
     public void Dispose()

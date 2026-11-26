@@ -67,6 +67,7 @@ static class Program
         failures += FeedbackCheck.Run(RepoRoot());
         failures += PhotoCheck.Run(RepoRoot());
         failures += WeatherCheck.Run(RepoRoot());
+        failures += NoiseCheck.Run();
         string path = Path.Combine(AppContext.BaseDirectory, "golden", "rng.json");
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = doc.RootElement;
