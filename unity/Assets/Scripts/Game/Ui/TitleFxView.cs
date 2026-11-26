@@ -3,7 +3,9 @@
 //             (far_fire.gd _glow_sprite), the colossus's great fire glow (title_colossus.gd _glow_sprite) and
 //             the flashes (far_flash.gd: shots, booms, their white cores, additive; the booms' smoke, mixed);
 //   smoke     the sky's smoke banks (title_sky_smoke.gd), one draw per layer at its own priority;
-//   panes     the burning windows (title_burning_windows.gd), one draw per group.
+//   panes     the burning windows (title_burning_windows.gd), one draw per group;
+//   colossus  the silhouette's card (title_colossus.gd _card_sprite, Resources/Shaders/TitleColossus) and its eye,
+//             in the scene behind the skyline, depth-tested, at Godot's render priorities.
 // The district fires' own flames and embers (far_fire.gd's zoomed Fire) are not drawn here.
 using System;
 using System.Collections.Generic;
@@ -16,8 +18,6 @@ public sealed class TitleFxView : IDisposable
 {
     const int QUAD_VERTS = 6, STRIDE = 3;
     const float BOUNDS = 4000f;
-    // The sky glow draws after every other transparent (HDRP sorts within Transparent +-50 priority).
-    const int SKY_LAST = 50;
     // far_fire.gd: a fire's glow is GLOW_SHAPE of its size wide and tall, GLOW_LIFT of it up, at GLOW_ALPHA.
     const float GLOW_ALPHA = 0.15f, GLOW_WIDE = 0.55f, GLOW_TALL = 1.5f, GLOW_LIFT = 0.45f;
     const float GLOW_BEAT = 0.2f, GLOW_HELD = 0.8f, BEAT_HZ = 2.3f;
@@ -35,27 +35,41 @@ public sealed class TitleFxView : IDisposable
         public Vector3 at;
         public Color color;
         public float size, life, rise, grow = 1f, age, bright = 1f;
-        public bool additive = true, sky;
+        public bool additive = true;
     }
 
     readonly Shader shader;
     readonly List<Material> mats = new List<Material>();
     readonly List<ComputeBuffer> buffers = new List<ComputeBuffer>();
     readonly List<Flash> flashes = new List<Flash>();
-    readonly List<Vector4> quads = new List<Vector4>(), mixed = new List<Vector4>(), sky = new List<Vector4>();
-    readonly Material glowMat, mixMat, skyMat;
+    readonly List<Vector4> quads = new List<Vector4>(), mixed = new List<Vector4>();
+    readonly Material glowMat, mixMat;
     readonly List<(Material mat, int count)> smoke = new List<(Material mat, int count)>(), panes = new List<(Material mat, int count)>();
     readonly List<TitleShoreView.Head> lamps;
     readonly Color lampColor;
     readonly List<TitleCity.Fire> fires;
     readonly Texture2D noise;
-    ComputeBuffer glowBuf, mixBuf, skyBuf;
+    ComputeBuffer glowBuf, mixBuf;
     float time;
 
     // The colossus's glow this frame (title_colossus.gd _show): where (Godot axes), how big, its colour and alpha.
     public Vector3 colossusAt;
     public float colossusSize;
     public Color colossusColor;
+    // The colossus card this frame (title_colossus.gd _place and _show): its feet (Godot axes), its width and
+    // height in metres and how much of it shows; its eye: where (Godot axes), how big, its colour and alpha.
+    public Vector3 colossusFeet, eyeAt;
+    public Vector2 colossusCard;
+    public float colossusAmount, eyeSize;
+    public Color eyeColor;
+
+    // title_colossus.gd: the card at FarFire.FLAME_PRIORITY - 1, its eye at FLAME_PRIORITY.
+    const int CARD_PRIORITY = 1, EYE_PRIORITY = 2;
+    // title_colossus.gdshader's body_colour (title_colossus.gd never sets it).
+    static readonly Color BODY_COLOUR = new Color(0.02f, 0.012f, 0.014f);
+    Material cardMat, eyeMat;
+    ComputeBuffer eyeBuf;
+    readonly List<Vector4> eye = new List<Vector4>();
 
     public TitleFxView(Shader shader, TitleShoreView shore, TitleCity.District district, S.GDict title, float smokeStrength)
     {
@@ -65,9 +79,6 @@ public sealed class TitleFxView : IDisposable
         fires = district.fires;
         glowMat = Make("TITLE_GLOW", BlendMode.SrcAlpha, BlendMode.One, (int)RenderQueue.Transparent);
         mixMat = Make("TITLE_GLOW", BlendMode.SrcAlpha, BlendMode.OneMinusSrcAlpha, (int)RenderQueue.Transparent);
-        // title_backdrop.gd _light_sky: a glow over the picture, so nothing in the city hides it.
-        skyMat = Make("TITLE_GLOW", BlendMode.SrcAlpha, BlendMode.One, (int)RenderQueue.Transparent + SKY_LAST);
-        skyMat.SetFloat("_ZTest", (float)CompareFunction.Always);
         noise = Noise();
         Smoke(title["sky_smoke"], smokeStrength);
         S.GDict fireCfg = title["fires"], windows = fireCfg["windows"];
@@ -138,6 +149,28 @@ public sealed class TitleFxView : IDisposable
         panes.Add((mat, data.Count / STRIDE));
     }
 
+    // title_colossus.gd _card_sprite and _eye_sprite: the silhouette `body` on its card with the body shader's
+    // numbers (tuning title colossus), and the eye's additive soft disc (no fog, as Godot's disable_fog).
+    public void Colossus(Texture2D body, S.GDict cfg)
+    {
+        cardMat = new Material(Resources.Load<Shader>("Shaders/TitleColossus")) { renderQueue = (int)RenderQueue.Transparent + CARD_PRIORITY };
+        mats.Add(cardMat);
+        cardMat.SetTexture("_Body", body);
+        cardMat.SetTexture("_Noise", noise);
+        S.GDict crown = cfg["crown"];
+        S.GArray<S.Variant> light = cfg["rim_light"];
+        cardMat.SetVector("_RimColour", SliceData.Hex(S.Gd.Str(cfg["rim_colour"])).linear);
+        cardMat.SetVector("_CrownColour", SliceData.Hex(S.Gd.Str(crown["colour"])).linear);
+        cardMat.SetVector("_BodyColour", BODY_COLOUR.linear);
+        cardMat.SetVector("_Rim", new Vector4(N(cfg, "rim_width"), N(cfg, "rim_strength"), N(cfg, "rim_min"), 0f));
+        cardMat.SetVector("_RimLight", (Vector4)new Vector2((float)S.Num.F(light[0]), (float)S.Num.F(light[1])).normalized);
+        cardMat.SetVector("_Crown", new Vector4(N(crown, "px"), N(crown, "strength"), N(crown, "extent"), 0f));
+        cardMat.SetVector("_Smog", new Vector4(N(cfg, "smog"), N(cfg, "smog_tail"), 0f, 0f));
+        eyeMat = Make("TITLE_GLOW", BlendMode.SrcAlpha, BlendMode.One, (int)RenderQueue.Transparent + EYE_PRIORITY);
+    }
+
+    static float N(S.GDict d, string key) => (float)S.Num.F(d[key]);
+
     // A flash at `at` (Godot axes): far_flash.gd with its spec; an additive one takes the player's flash scale.
     public void Add(Vector3 at, Color color, float size, float life, float grow = 1f, float rise = 0f, bool additive = true)
     {
@@ -148,20 +181,12 @@ public sealed class TitleFxView : IDisposable
         });
     }
 
-    // title_backdrop.gd _light_sky: an explosion's light over the picture, `size` across where `at` is seen,
-    // its alpha going to nothing over `life` (a tween, so linear, and no flash scale).
-    public void Sky(Vector3 at, Color color, float size, float life)
-    {
-        flashes.Add(new Flash { at = at, color = color.linear, size = size, life = life, sky = true });
-    }
-
     public void Step(float dt)
     {
         time += dt;
         Shader.SetGlobalFloat("_TitleTime", time);
         quads.Clear();
         mixed.Clear();
-        sky.Clear();
         foreach (TitleShoreView.Head h in lamps) Quad(quads, h.at, h.size, h.size, lampColor);
         FireGlows();
         if (colossusSize > 0f) Quad(quads, colossusAt, colossusSize, colossusSize, colossusColor);
@@ -173,7 +198,14 @@ public sealed class TitleFxView : IDisposable
             Graphics.DrawProcedural(mat, bounds, MeshTopology.Triangles, QUAD_VERTS, count, null, null, ShadowCastingMode.Off, false, 0);
         Draw(glowMat, ref glowBuf, quads, bounds);
         Draw(mixMat, ref mixBuf, mixed, bounds);
-        Draw(skyMat, ref skyBuf, sky, bounds);
+        if (cardMat == null) return;
+        cardMat.SetVector("_Feet", new Vector4(colossusFeet.x, colossusFeet.y, -colossusFeet.z, 0f));
+        cardMat.SetVector("_Card", new Vector4(colossusCard.x, colossusCard.y, 0f, 0f));
+        cardMat.SetFloat("_Amount", colossusAmount);
+        Graphics.DrawProcedural(cardMat, bounds, MeshTopology.Triangles, QUAD_VERTS, 1, null, null, ShadowCastingMode.Off, false, 0);
+        eye.Clear();
+        Quad(eye, eyeAt, eyeSize, eyeSize, eyeColor);
+        Draw(eyeMat, ref eyeBuf, eye, bounds);
     }
 
     // far_fire.gd _process: each fire's glow breathes with its own beat.
@@ -201,11 +233,6 @@ public sealed class TitleFxView : IDisposable
             if (t >= 1f)
             {
                 flashes.RemoveAt(i);
-                continue;
-            }
-            if (f.sky)
-            {
-                Quad(sky, f.at, f.size, f.size, new Vector4(f.color.r, f.color.g, f.color.b, f.color.a * (1f - t)));
                 continue;
             }
             f.at.y += f.rise / f.life * dt;
