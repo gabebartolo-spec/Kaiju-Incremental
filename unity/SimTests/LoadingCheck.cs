@@ -22,8 +22,31 @@ static class LoadingCheck
         Picks();
         News(repoRoot);
         Meter(repoRoot);
+        FirstLoads();
         Console.WriteLine($"loading: {checks} checks, {failed} failed");
         return failed;
+    }
+
+    // The note is Godot's words, shows until a load finishes on this build, and again after a new build.
+    static void FirstLoads()
+    {
+        string gd = File.ReadAllText(Path.Combine(S.FileAccess.Root, "scenes", "loading_overlay.gd"));
+        Check(gd.Contains("\"" + FirstLoad.NOTE + "\""), "the first-load note is Godot's text");
+        string keep = UserDir.Root;
+        UserDir.Root = Path.Combine(Path.GetTempPath(), "kaiju_firstload_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(UserDir.Root);
+        try
+        {
+            Check(FirstLoad.Pending("1.0"), "a new player sees the note");
+            Check(FirstLoad.Done("1.0"), "the first finished load is marked");
+            Check(!FirstLoad.Pending("1.0"), "the next load on the same build shows no note");
+            Check(FirstLoad.Pending("1.1"), "a new build shows the note again");
+        }
+        finally
+        {
+            Directory.Delete(UserDir.Root, true);
+            UserDir.Root = keep;
+        }
     }
 
     static void Check(bool ok, string what)

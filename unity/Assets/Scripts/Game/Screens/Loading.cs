@@ -1,6 +1,6 @@
 // What the player sees while a rampage builds its city (scenes/loading_overlay.gd): the broadcast backdrop, one
 // still of a real dusk rampage (random, never the same twice running), the INCOMING header and a meter on a dark
-// band low on the screen, and the news crawl (tuning "ui" loading_news).
+// band low on the screen, the first-load note (FirstLoad), and the news crawl (tuning "ui" loading_news).
 // The screen is on a canvas of its own that outlives the scene reload, is drawn before the reload is asked for
 // (ShowThen), moves its meter as each of the rampage's stages is built (Advance, RampageLoad.cs; one frame is
 // drawn between stages), and goes once the rampage has drawn (HideWhenDrawn). A long stage holds the crawl
@@ -85,6 +85,8 @@ public static class Loading
         done = 0;
         bar = UiKit.Bar(band, UiKit.ACCENT, LoadingCard.BAR_HEIGHT, true);
         UiKit.Size(bar, LoadingCard.BAR_WIDTH, LoadingCard.BAR_HEIGHT);
+        // loading_overlay.gd: the first load (here, the first on this build) says it takes longer.
+        if (FirstLoad.Pending(Application.version)) UiKit.Label(band, Tr.T(FirstLoad.NOTE)).alignment = TextAnchor.MiddleCenter;
 
         List<string> news = LoadingCard.News(UiKit.Ui());
         var lines = new List<string>();
@@ -129,6 +131,7 @@ public static class Loading
     {
         if (host == null) return;
         host.hideAt = Time.frameCount + HIDE_FRAMES;
+        FirstLoad.Done(Application.version);
     }
 
     // The screen goes now.
