@@ -12,7 +12,7 @@ unity/Assets/Scripts/Game/Audio/AudioHost.cs::<file> 458 0
 unity/Assets/Scripts/Game/Audio/AudioHost.cs::Update 30 13
 unity/Assets/Scripts/Game/Audio/RampageAudio.cs::<file> 578 0
 unity/Assets/Scripts/Game/Audio/RampageAudio.cs::OnEvent 102 39
-unity/Assets/Scripts/Game/GameFlow.cs::<file> 645 0
+unity/Assets/Scripts/Game/GameFlow.cs::<file> 644 0
 unity/Assets/Scripts/Game/GameFlow.cs::SmokeRampage 60 24
 unity/Assets/Scripts/Game/GameFlow.cs::SmokeTick 30 14
 unity/Assets/Scripts/Game/PhotoMode.cs::Update 33 14
@@ -77,9 +77,8 @@ unity/Assets/Scripts/Rampage/OceanWaves.cs::OceanWaves 46 2
 unity/Assets/Scripts/Rampage/Pavements.cs::Pavements 40 14
 unity/Assets/Scripts/Rampage/PersonMesh.cs::Rifleman 43 4
 unity/Assets/Scripts/Rampage/RailView.cs::SideCell 9 14
-unity/Assets/Scripts/Rampage/RampageGame.cs::<file> 794 0
-unity/Assets/Scripts/Rampage/RampageGame.cs::Load 97 21
-unity/Assets/Scripts/Rampage/RampageGame.cs::Update 161 61
+unity/Assets/Scripts/Rampage/RampageGame.cs::<file> 706 0
+unity/Assets/Scripts/Rampage/RampageGame.cs::Update 140 61
 unity/Assets/Scripts/Rampage/StreetPeople.cs::<file> 424 0
 unity/Assets/Scripts/Rampage/StreetPeople.cs::CrushAll 39 14
 unity/Assets/Scripts/Rampage/WaterView.cs::Grid 50 6

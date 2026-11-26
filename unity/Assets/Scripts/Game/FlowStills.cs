@@ -21,6 +21,8 @@ public sealed class FlowStills : MonoBehaviour
     // Seconds a still waits to settle before it is given up (the smoke run is not held past it).
     const float GIVE_UP = 60f;
     const int WIDTH = 1920, HEIGHT = 1080;
+    // The loading meter's still waits for this many of its stages (part full).
+    const int LOADING_METER_STAGE = 3;
     public static readonly string[] SCREENS = { "title", "settings", "creation", "globe", "loading", "results", "tree", "demo_end" };
 
     sealed class Ask
@@ -103,6 +105,13 @@ public sealed class FlowStills : MonoBehaviour
 
     // A still of `name` once `settle` frames have passed and `ready` holds, if `on` still holds then (the screen
     // is still on show; otherwise it is asked again the next time it shows). Taken once per name.
+    // The loading screen as it shows, and again with its meter part full (LOADING_METER_STAGE stages built).
+    public static void WantLoading()
+    {
+        Want("loading", () => Loading.Shown, 0);
+        Want("loading_meter", () => Loading.Shown, 0, () => Loading.Done >= LOADING_METER_STAGE);
+    }
+
     public static void Want(string name, Func<bool> on, int settle = SETTLE, Func<bool> ready = null)
     {
         if (!On || taken.Contains(name) || owed.Any(a => a.name == name)) return;
