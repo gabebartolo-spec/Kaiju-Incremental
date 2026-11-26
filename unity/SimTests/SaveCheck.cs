@@ -380,6 +380,14 @@ static class SaveCheck
         Check(SaveFile.LoadGame(2).IsEmpty() && !SaveFile.Info(2).Readable, "a file that is not an object is unreadable");
         UserDir.WriteText(SaveFile.PathOf(2), CampaignFile.Substring(0, CampaignFile.Length / 2));
         Check(SaveFile.LoadGame(2).IsEmpty() && !SaveFile.Info(2).Readable, "a save cut off half way is unreadable");
+        // Cut off at every length (a crash mid-write): never a throw, always unreadable, slot 1's file untouched.
+        int readable = 0;
+        for (int cut = 1; cut < CampaignFile.Length; cut++)
+        {
+            UserDir.WriteText(SaveFile.PathOf(2), CampaignFile.Substring(0, cut));
+            if (SaveFile.Info(2).Readable) readable++;
+        }
+        Check(readable == 0 && UserDir.ReadText(SaveFile.PathOf(1)) == NotJson, readable + " cut-off saves read as a kaiju");
         SaveFile.Wipe();
     }
 

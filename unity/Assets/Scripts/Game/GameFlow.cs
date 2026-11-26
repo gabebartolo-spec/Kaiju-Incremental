@@ -5,7 +5,8 @@
 // screens get what they need through Show(...) and report back by delegate. Entering or leaving a rampage
 // reloads the scene with the next state in statics: the rampage is only proven to start from a fresh scene.
 // Any -rampage-* flag is a standalone capture run: RampageGame alone, as before the flow existed.
-// -ui-gallery shows the kit's gallery; -flow-smoke plays the whole loop unattended on a throwaway save folder.
+// -ui-gallery shows the kit's gallery; -flow-smoke plays the whole loop unattended on a throwaway save folder,
+// and -flow-smoke -flow-continue resumes that folder's kaiju in a second process (GameFlow.Paths.cs).
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,7 @@ using Opt = Kaiju.Game.PlayerSettings;
 using S = Kaiju.Sim;
 
 [DefaultExecutionOrder(-100)]  // Inputs.Poll before any screen reads a press
-public sealed class GameFlow : MonoBehaviour
+public sealed partial class GameFlow : MonoBehaviour
 {
     public enum State { Title, Creation, Globe, Rampage, Results, Tree, DemoEnd }
 
@@ -69,6 +70,7 @@ public sealed class GameFlow : MonoBehaviour
         smokeEarned = 0;
         smokeSettings = smokePaused = smokePhoto = smokeReported = smokeDemoEnd = false;
         smokeLost = smokeWon = "";
+        ResetPaths();
         live = null;
     }
 
@@ -135,20 +137,8 @@ public sealed class GameFlow : MonoBehaviour
             dataRoot = DataRoot();
             S.FileAccess.Root = dataRoot;
             AudioHost.Ensure();
-            if (smoke)
-            {
-                // Never the player's saves or settings: a folder of its own, emptied first, and a pinned city seed.
-                string dir = Path.Combine(Application.temporaryCachePath, SMOKE_DIR);
-                if (Directory.Exists(dir)) Directory.Delete(dir, true);
-                Directory.CreateDirectory(dir);
-                UserDir.Root = dir;
-                SaveFile.PinnedSeed = 0;
-                Application.logMessageReceived += SmokeLog;
-            }
-            else
-            {
-                UserDir.Root = Application.persistentDataPath;
-            }
+            if (smoke) SmokeBoot(args);
+            else UserDir.Root = Application.persistentDataPath;
             string csv = Path.Combine(dataRoot, "data", "i18n", "strings.csv");
             if (File.Exists(csv)) Tr.Load(File.ReadAllText(csv));
             else Debug.LogWarning("flow: no text table at " + csv);
@@ -292,6 +282,7 @@ public sealed class GameFlow : MonoBehaviour
         {
             SaveFile.SaveGame(Save);
             Debug.Log($"flow: lab card owed for specimen {S.Num.I(Save.Get("specimen", 1L))}");
+            if (smoke) smokeLabCard = S.Num.I(Save.Get("specimen", 1L));
             if (screen != null) Destroy(screen.gameObject);
             // The card is owed once, so the second call goes straight on to the rampage.
             screen = LabCard.Show(Save, () => StartRampage(continent, endless));
@@ -469,7 +460,7 @@ public sealed class GameFlow : MonoBehaviour
             {
                 case State.Title: SmokeTitle(); break;
                 // Creation plays itself under -flow-smoke (CreationDriver: the first genome, then INJECT).
-                case State.Globe: if (smokeStep == 0) { Step(); Press("Launch"); } break;
+                case State.Globe: SmokeGlobe(); break;
                 case State.Rampage: SmokeRampage(now); break;
                 case State.Results: SmokeResults(); break;
                 case State.Tree: SmokeTree(); break;
@@ -482,9 +473,10 @@ public sealed class GameFlow : MonoBehaviour
         }
     }
 
-    // The settings opened and closed once from the gear, then NEW KAIJU.
+    // The settings opened and closed once from the gear, then NEW KAIJU into slot 1 (GameFlow.Paths.cs).
     void SmokeTitle()
     {
+        if (smokeContinue) { SmokeContinueTitle(); return; }
         switch (smokeStep)
         {
             case 0:
@@ -501,6 +493,10 @@ public sealed class GameFlow : MonoBehaviour
             case 2:
                 Step();
                 Press("NewKaiju");
+                break;
+            case 3:
+                Step();
+                SmokeNewSlot();
                 break;
         }
     }
@@ -623,43 +619,6 @@ public sealed class GameFlow : MonoBehaviour
                 if (screen != null && Find(screen, "Bonus0") != null) Press("Bonus0");
                 break;
         }
-    }
-
-    void SmokeTree()
-    {
-        if (smokeStep != 0) return;
-        Step();
-        if (smokeRuns < SMOKE_RUNS) { Press("Rampage"); return; }
-        // The smoke never buys out the tree, so the thanks card is visited once by hand before the pass.
-        if (!smokeDemoEnd) { Debug.Log("flow: smoke opens the demo end"); Enter(State.DemoEnd); return; }
-        Expect(smokeSettings, "the settings were never opened");
-        Expect(smokePaused, "the rampage was never paused");
-        Expect(smokePhoto, "photo mode was never entered");
-        Expect(smokeReported, "no feedback report was written");
-        Expect(smokeLost != "" && smokeWon != "", $"the missions did not end (lost '{smokeLost}', won '{smokeWon}')");
-        Pass($"{smokeRuns} rampages, biomass {Biomass()}, runs {Runs()}, settings opened and closed, paused and resumed, photo mode entered and left, feedback report written, lost {smokeLost}, won {smokeWon}, demo end visited");
-    }
-
-    // After a city's WIN / LOSE: the file on disk holds the continent as the answer left it.
-    static void SmokeMission(MissionOutcome done)
-    {
-        long want = done.won ? S.Campaign.State.CONQUERED : S.Campaign.State.AVAILABLE;
-        long onDisk = GlobeMissions.StateOf(GlobeMissions.States(SaveFile.LoadGame()), done.id);
-        if (onDisk != want) { Fail($"slot {SaveFile.Slot} on disk holds {done.id} in state {onDisk} after it was {(done.won ? "won" : "lost")}, not {want}"); return; }
-        if (done.won) smokeWon = done.id;
-        else smokeLost = done.id;
-        Debug.Log($"flow: smoke save ok after mission, {done.id} {(done.won ? "conquered" : "still open")} on disk");
-    }
-
-    // After each bank: the save in memory and the file on disk both hold what the rampages earned.
-    static void SmokeBanked(S.GDict result)
-    {
-        smokeRuns++;
-        smokeEarned += S.Num.I(result.Get("rubble", 0L));
-        S.GDict disk = SaveFile.LoadGame();
-        if (Biomass() != smokeEarned || Runs() != smokeRuns) Fail($"the save holds biomass {Biomass()} after {Runs()} runs, the rampages earned {smokeEarned} in {smokeRuns}");
-        else if (S.Num.I(disk.Get("rubble", -1L)) != smokeEarned || S.Num.I(disk.Get("runs", -1L)) != smokeRuns) Fail($"slot {SaveFile.Slot} on disk holds biomass {S.Num.I(disk.Get("rubble", -1L))} after {S.Num.I(disk.Get("runs", -1L))} runs, not {smokeEarned} after {smokeRuns}");
-        else Debug.Log($"flow: smoke save ok after run {smokeRuns}, biomass {smokeEarned} in memory and on disk");
     }
 
     static void SmokeLog(string text, string stack, LogType type)
