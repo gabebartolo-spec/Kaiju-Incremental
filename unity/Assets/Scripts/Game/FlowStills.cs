@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using S = Kaiju.Sim;
 
 public sealed class FlowStills : MonoBehaviour
 {
@@ -21,6 +22,14 @@ public sealed class FlowStills : MonoBehaviour
     // Seconds a still waits to settle before it is given up (the smoke run is not held past it).
     const float GIVE_UP = 60f;
     const int WIDTH = 1920, HEIGHT = 1080;
+    // capture_demo.gd: the thanks still is taken SETTLE frames after the buy and ROAR_SHOT_FRAME more, mid-roar.
+    const int DEMO_SETTLE = 12, ROAR_SHOT_FRAME = 50;
+    // capture_demo.gd TOTALS: the stand-in totals its thanks still shows (a ~2 h demo playthrough), so the two
+    // stills compare. Capture only: the game shows the save's own totals.
+    static readonly (string key, long value)[] DEMO_TOTALS =
+    {
+        ("biomass", 482310), ("buildings", 1286), ("eaten", 9740), ("fled", 21365), ("military", 413), ("seconds", 7350),
+    };
     public static readonly string[] SCREENS = { "title", "settings", "creation", "globe", "loading", "results", "tree", "demo_end" };
 
     sealed class Ask
@@ -98,7 +107,20 @@ public sealed class FlowStills : MonoBehaviour
         }
         // The title's own still is the title alone, never the settings over it, once its city stands
         // (capture_title.gd waits for TitleBackdrop.is_loaded).
-        Want(name, () => GameFlow.Now == state && !SettingsScreen.IsOpen, SETTLE, () => state != GameFlow.State.Title || TitleCityView.Settled);
+        int settle = state == GameFlow.State.DemoEnd ? DEMO_SETTLE + ROAR_SHOT_FRAME : SETTLE;
+        Want(name, () => GameFlow.Now == state && !SettingsScreen.IsOpen, settle, () => state != GameFlow.State.Title || TitleCityView.Settled);
+    }
+
+    // The save the demo card is shown from while stills are on: a copy with capture_demo.gd's stand-in totals.
+    public static S.GDict DemoSave(S.GDict save)
+    {
+        if (!On) return save;
+        var copy = new S.GDict();
+        copy.Merge(save);
+        var totals = new S.GDict();
+        foreach ((string key, long value) in DEMO_TOTALS) totals[key] = value;
+        copy["totals"] = totals;
+        return copy;
     }
 
     // A still of `name` once `settle` frames have passed and `ready` holds, if `on` still holds then (the screen
