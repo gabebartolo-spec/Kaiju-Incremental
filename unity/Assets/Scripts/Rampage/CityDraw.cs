@@ -330,7 +330,8 @@ public sealed unsafe partial class CityDraw : IDisposable
         palette[id * 4 + 3] = (byte)Mathf.Clamp(Mathf.RoundToInt(c.a * 255f), 0, 255);
     }
 
-    // Which cells draw lit or not at all (scenes/cell_mesher.gd _read_looks), kept as short lists: a
+    // Which cells draw lit or not at all (scenes/cell_mesher.gd _read_looks; WindowLights lays them as
+    // BuildingLayout does, without its dictionary of every cell), kept as short lists: a
     // promotion rebuilds its looks from them at once, with no layout pass in the frame of the first blow.
     void ReadLooks(Site s, S.CellGrid grid)
     {
@@ -341,21 +342,18 @@ public sealed unsafe partial class CityDraw : IDisposable
         {
             int gw = (int)grid.dims.x, gh = (int)grid.dims.y, gd = (int)grid.dims.z;
             int ox = (int)grid.offset.x, oy = (int)grid.offset.y, oz = (int)grid.offset.z;
-            int footX = (int)s.b.w * RES, footZ = (int)s.b.d * RES;
-            var laid = new S.BuildingLayout(s.b, RES, s.party, litShare);
-            foreach (S.Variant key in laid.cells.Keys())
+            WindowLights.Result laid = WindowLights.Read(s.b, RES, s.party, litShare);
+            void Keep(List<S.Vector3i> cells, List<int> into)
             {
-                string what = S.Gd.Str(laid.cells[key]);
-                bool isLit = what == "lit", isShop = what == "shop_lit", isSlab = what == "slab";
-                if (!isLit && !isShop && !isSlab) continue;
-                S.Vector3i c = key;
-                int x = (int)c.x - ox, y = (int)c.y - oy, z = (int)c.z - oz;
-                if (x < 0 || y < 0 || z < 0 || x >= gw || y >= gh || z >= gd) continue;
-                int i = x + z * gw + y * gw * gd;
-                if (isLit) lits.Add(i);
-                else if (isShop) shops.Add(i);
-                else if ((int)c.x < 0 || (int)c.z < 0 || (int)c.x >= footX || (int)c.z >= footZ) hides.Add(i);
+                foreach (S.Vector3i c in cells)
+                {
+                    int x = (int)c.x - ox, y = (int)c.y - oy, z = (int)c.z - oz;
+                    if (x >= 0 && y >= 0 && z >= 0 && x < gw && y < gh && z < gd) into.Add(x + z * gw + y * gw * gd);
+                }
             }
+            Keep(laid.lit, lits);
+            Keep(laid.shopLit, shops);
+            Keep(laid.hiddenSlab, hides);
         }
         s.tinted = new int[0];
         s.tintIds = new byte[0];
