@@ -55,15 +55,15 @@ namespace Kaiju.Game
         public bool BarrelIsSpecialK = true;
         // The dish: how far the gene has settled, the takeover's front, the overload's burn (each 0..1).
         public double Settle, Takeover_, Overload;
-        // The screens' green spill (light energy) and the focused vial (-1: none lit).
+        // The screens' green spill (light energy), the focused vial (-1: none lit), the picked gene's titan (-1: none).
         public double ScreensEnergy;
-        public int Focused;
+        public int Focused, Picked = -1;
 
         readonly int titans;
         readonly GDict cfg, injector;
         readonly CreationVec tipLocal;
         int flashAge = -1, tick;
-        bool struck, overloaded, poured;
+        bool struck, overloaded;
 
         public CreationLab(int titanCount)
         {
@@ -325,9 +325,9 @@ namespace Kaiju.Game
         // the gene into the agar, which settles from the needle out.
         public void Place(int index, double t)
         {
-            if (!poured)
+            if (Picked < 0)
             {
-                poured = true;
+                Picked = index;
                 BarrelIsSpecialK = false;
             }
             Trip(t, "place", VialPoint(index), Num.F(injector["vial_tip"]), Clear(Num.F(injector["vial_top"])), Num.F(injector["dish_tip"]), out double draw, out double dispense);

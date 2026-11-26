@@ -200,6 +200,8 @@ static class CreationCheck
             Near(lab.Tip.y, Num.F(inj["vial_tip"]), $"the needle's depth in vial {index}");
             Near(lab.Vials[index], 0.5, $"vial {index}'s level half way through the draw");
             Near(lab.Barrel, 0.5, $"the barrel's level half way through vial {index}'s draw");
+            // The barrel fills in that titan's genome (the view colours it by Picked), not Special K.
+            Check(lab.Picked == index && !lab.BarrelIsSpecialK, $"the barrel does not carry vial {index}'s gene (picked {lab.Picked})");
             // _heights: the swing is max(vial_top, cradle_top, park_tip) + clear = 0.35 + 0.06.
             lab.Place(index, 0.6);
             Near(lab.Tip.y, 0.41, $"the swing height back from vial {index}");
