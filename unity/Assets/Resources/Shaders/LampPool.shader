@@ -32,7 +32,7 @@ Shader "Hidden/Slice/LampPool"
             #include "Assets/Resources/Shaders/CityGround.hlsl"
 
             float4 _PoolTint;   // rgb: the tint (linear); a: the look's ground_lamp_pool
-            float4 _PoolShape;  // x: the radius (m); y: the exposure unit
+            float _PoolRadius;  // m
 
             struct Attributes
             {
@@ -60,11 +60,13 @@ Shader "Hidden/Slice/LampPool"
             {
                 float3 world = GetAbsolutePositionWS(i.positionRWS);
                 float2 xz = float2(world.x, -world.z);  // Godot axes
-                float d = length(xz - i.centre) / _PoolShape.x;
+                float d = length(xz - i.centre) / _PoolRadius;
                 float fall = pow(saturate(1.0 - d), 1.5);
                 float2 pc = sd_cell(xz);
                 float grain = 0.6 + 0.8 * sd_fbm(pc, 1.3) + (sd_h(floor(pc / g_block)) - 0.5) * 0.35;
-                float3 glow = _PoolTint.rgb * _PoolTint.a * fall * grain * _PoolShape.y;
+                // Written straight into HDRP's colour buffer, which is already pre-exposed (in Godot's radiance units): no
+                // exposure unit here, unlike a light's intensity or a lit surface's emission.
+                float3 glow = _PoolTint.rgb * _PoolTint.a * fall * grain;
                 PositionInputs pos = GetPositionInput(i.positionCS.xy, _ScreenSize.zw, i.positionCS.z, i.positionCS.w, i.positionRWS, uint2(0, 0));
                 float3 fogColor, fogOpacity;
                 if (EvaluateAtmosphericScattering(pos, GetWorldSpaceNormalizeViewDir(i.positionRWS), fogColor, fogOpacity))

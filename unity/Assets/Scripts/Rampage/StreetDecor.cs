@@ -45,7 +45,7 @@ public sealed class StreetDecor
     const double LAMP_LIGHT_OUT = 0.5, LAMP_LIGHT_Y = 2.4;
     static readonly double[] LAMP_LIGHT_COLOR = Kaiju.Game.WeatherLook.Hex("ffd59a");
 
-    public StreetDecor(S.RampageSim sim, Shader shader, Transform parent, float exposureUnit)
+    public StreetDecor(S.RampageSim sim, Shader shader, Transform parent)
     {
         this.sim = sim;
         plan = S.CityGen.Map(sim.city);
@@ -68,7 +68,7 @@ public sealed class StreetDecor
             carShapes[paint * 2 + 1] = props.AddShape(Car(color, true));
         }
         Streets();
-        pools = new LampPools(lampSpots, exposureUnit, parent);
+        pools = new LampPools(lampSpots, parent);
         Parking();
         Plant();
         Tick();

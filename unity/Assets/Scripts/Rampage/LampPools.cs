@@ -22,7 +22,7 @@ public sealed class LampPools : IDisposable
     readonly Mesh mesh;
     readonly Material mat;
 
-    public LampPools(IReadOnlyList<S.Vector2> spots, float exposureUnit, Transform parent)
+    public LampPools(IReadOnlyList<S.Vector2> spots, Transform parent)
     {
         S.GDict look = S.Content.Look();
         float strength = (float)S.Num.F(look.Get("ground_lamp_pool", 0.0));
@@ -51,7 +51,7 @@ public sealed class LampPools : IDisposable
         mat = new Material(Resources.Load<Shader>("Shaders/LampPool"));
         Color tint = TINT.linear;  // a source_color uniform: Godot hands it to the shader linear
         mat.SetVector("_PoolTint", new Vector4(tint.r, tint.g, tint.b, strength));
-        mat.SetVector("_PoolShape", new Vector4(RADIUS, exposureUnit, 0f, 0f));
+        mat.SetFloat("_PoolRadius", RADIUS);
         // ground_kit.gd apply_look: the ground's block and seed, so the pools' grain is the ground's.
         mat.SetFloat("g_block", (float)S.Num.F(look["ground_block"]));
         mat.SetFloat("g_seed", S.Num.I(S.Content.Section("city")["map_seed"]) % SEED_MOD);

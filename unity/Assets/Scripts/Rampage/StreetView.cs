@@ -114,7 +114,7 @@ public sealed class StreetView
                 meshes[k] = PersonCells.Mesh(PersonCells.Body(OUTFITS[outfit], pose, outfit == StreetPeople.COP), k, voxel, noise);
                 batches[k] = new List<Matrix4x4[]>();
             }
-        decor = new StreetDecor(sim, shader, parent, exposureUnit);
+        decor = new StreetDecor(sim, shader, parent);
         // After the decor, as street_life.gd: the diagonal's parked row keeps clear of its props.
         traffic = new Traffic(sim, S.Seeds.Make("traffic", 0));
         traffic.Populate(decor.props.Bases());
