@@ -38,7 +38,7 @@ public sealed class WeatherView : IDisposable
     readonly List<WetStreets.Smear> placed = new List<WetStreets.Smear>();
     readonly StreetView street;
     readonly S.RampageSim sim;
-    readonly float smearEvery, smearAlpha, exposure;
+    readonly float smearEvery, smearAlpha;
     float smearWait;
     bool smearLogged;
     public int Smears => placed.Count;
@@ -90,7 +90,6 @@ public sealed class WeatherView : IDisposable
         layer = found;
         this.street = street;
         this.sim = sim;
-        exposure = exposureUnit;
         DullTheSky(profile, exposureUnit);
         wet = new WetStreets(found);
         WetTheGround(profile, ground);
@@ -108,7 +107,9 @@ public sealed class WeatherView : IDisposable
         S.GDict cfg = S.Content.Section("rain");
         double ratio = WeatherLook.ParticlesRatio();
         double[] tint = WeatherLook.StreakColor();
-        Color lin = new Color(Mathf.GammaToLinearSpace((float)tint[0]), Mathf.GammaToLinearSpace((float)tint[1]), Mathf.GammaToLinearSpace((float)tint[2])) * exposureUnit;
+        // Drawn straight into HDRP's colour buffer, already pre-exposed (as LampPool.shader): no exposure unit, which
+        // made every streak and splash ~870 times too bright (a white wall of rain).
+        Color lin = new Color(Mathf.GammaToLinearSpace((float)tint[0]), Mathf.GammaToLinearSpace((float)tint[1]), Mathf.GammaToLinearSpace((float)tint[2]));
         streakMat = new Material(rain);
         streakMat.EnableKeyword("RAIN_STREAK");
         splashMat = new Material(rain);
@@ -215,7 +216,7 @@ public sealed class WeatherView : IDisposable
         Graphics.DrawProcedural(splashMat, area, MeshTopology.Triangles, QUAD_VERTS, splashes.count, null, splashBlock, ShadowCastingMode.Off, false, 0);
         if (smearMat == null) return;
         // Godot axes: toward the camera is -flat, z negated.
-        smearMat.SetVector(TOWARD, new Vector4(-flat.x, flat.z, smearAlpha, exposure));
+        smearMat.SetVector(TOWARD, new Vector4(-flat.x, flat.z, smearAlpha, 0f));
         smearWait -= dt;
         if (smearWait <= 0f)
         {
