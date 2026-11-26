@@ -2,7 +2,7 @@
 // only forwards to the slot in play). Each slot is one file: species, rubble bank, upgrade levels, run history,
 // the best rampage so far, the specimen number (K-01, +1 each time the kaiju dies) and the campaign.
 // A save from a newer version is refused, never half-loaded; an older one is migrated.
-// Not ported: the pre-slots save.json adoption (the Unity game starts from a fresh folder).
+// The one save before slots (save.json) moves into the first empty slot, kept as a backup (SaveFile.Legacy.cs).
 using System;
 using System.Collections.Generic;
 using Kaiju.Sim;
@@ -29,7 +29,7 @@ namespace Kaiju.Game
         public string Summary = "";
     }
 
-    public static class SaveFile
+    public static partial class SaveFile
     {
         public const string SlotPath = "save_slot_{0}.json";
         public const int Version = 6;
@@ -59,7 +59,11 @@ namespace Kaiju.Game
         public static string PathOf(int n) => string.Format(System.Globalization.CultureInfo.InvariantCulture, SlotPath, n);
         public static string PathOf() => PathOf(Slot);
 
-        public static bool HasSave(int n) => UserDir.Exists(PathOf(n));
+        public static bool HasSave(int n)
+        {
+            AdoptLegacy();
+            return UserDir.Exists(PathOf(n));
+        }
         public static bool HasSave() => HasSave(Slot);
 
         // False when the file could not be written (the slot then still holds what it held).
@@ -90,13 +94,14 @@ namespace Kaiju.Game
         public static void DeleteSave(int n) => UserDir.Delete(PathOf(n));
         public static void DeleteSave() => DeleteSave(Slot);
 
-        // Every slot emptied (tests start from nothing).
+        // Every slot emptied, the legacy file and its backup too (tests start from nothing).
         public static void Wipe()
         {
             for (int n = 1; n <= SlotCount(); n++)
             {
                 DeleteSave(n);
             }
+            WipeLegacy();
         }
 
         // The slot written most recently among those holding a save that `keep` accepts, or 0.

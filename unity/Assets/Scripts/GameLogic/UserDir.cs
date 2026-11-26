@@ -1,5 +1,5 @@
 // The player's own folder (Godot's user://): saves and settings live here. Plain C#, so the tests point Root at a
-// temp folder and the Unity host at Application.persistentDataPath (a fresh folder: Godot saves are not adopted).
+// temp folder and the Unity host at Application.persistentDataPath.
 using System;
 using System.IO;
 using System.Text;
@@ -72,6 +72,20 @@ namespace Kaiju.Game
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
+            }
+        }
+
+        // Renames `from` to `to` (DirAccess.rename_absolute); false when it could not, both then as they were.
+        public static bool Rename(string from, string to)
+        {
+            try
+            {
+                File.Move(Path(from), Path(to));
+                return true;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return false;
             }
         }
 
