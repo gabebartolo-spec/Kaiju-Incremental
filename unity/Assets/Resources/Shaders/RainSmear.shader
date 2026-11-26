@@ -34,7 +34,7 @@ Shader "Hidden/Slice/RainSmear"
             // Three per smear: foot x, y, z (Godot axes) and width; colour rgb (Godot's numbers) and how much is on;
             // length, unused.
             StructuredBuffer<float4> _Smears;
-            float4 _SmearToward;  // xy: toward the camera, flat, unit (Godot axes); z: rain_smear alpha; w: exposure unit
+            float4 _SmearToward;  // xy: toward the camera, flat, unit (Godot axes); z: rain_smear alpha
 
             struct Varyings
             {
@@ -49,7 +49,7 @@ Shader "Hidden/Slice/RainSmear"
                 PositionInputs pos = GetPositionInput(positionCS.xy, _ScreenSize.zw, positionCS.z, positionCS.w, positionRWS, uint2(0, 0));
                 float3 fogColor, fogOpacity;
                 if (EvaluateAtmosphericScattering(pos, GetWorldSpaceNormalizeViewDir(positionRWS), fogColor, fogOpacity))
-                    color = color * (1.0 - fogOpacity) + fogColor;
+                    color = color * (1.0 - fogOpacity);  // added light: the fog hides it, its colour is already there
                 return color;
             }
 
@@ -82,8 +82,9 @@ Shader "Hidden/Slice/RainSmear"
                 float body = smoothstep(1.0, 0.0, across / (0.35 + 0.65 * t));
                 float tail = pow(1.0 - t, 1.5);
                 float ripple = 0.7 + 0.3 * sin(t * 30.0 + i.uv.x * 4.0);
-                // Added light: a light can never add more than its own colour.
-                float3 glow = i.color.rgb * i.color.a * _SmearToward.z * body * tail * ripple * _SmearToward.w;
+                // Added light: a light can never add more than its own colour. Written into the pre-exposed colour buffer
+                // as LampPool.shader: no exposure unit.
+                float3 glow = i.color.rgb * i.color.a * _SmearToward.z * body * tail * ripple;
                 return float4(Fogged(i.positionCS, i.positionRWS, glow), 1.0);
             }
             ENDHLSL
