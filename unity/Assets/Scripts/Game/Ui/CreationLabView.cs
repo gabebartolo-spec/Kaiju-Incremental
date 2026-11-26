@@ -2,7 +2,8 @@
 // the cradle with its dish, the rack of vials, the monitors, the Special K canister and the injector (a post and
 // a carriage that rises, turns and slides), under the key lamp and the rim, seen by the lab's own camera. It
 // draws what CreationLab (the numbers) says each tick. The room round it (CreationRoom), the props despeckled and
-// the monitors' readouts painted (CreationPaint); no liquids, genome or lightning yet.
+// the monitors' readouts, the serums and the Special K painted (CreationPaint), the dish cleaned (CreationDish);
+// the liquids stand full (no draining yet), and no genome or lightning yet.
 using System;
 using System.Collections.Generic;
 using Kaiju.Game;
@@ -29,6 +30,7 @@ public sealed class CreationLabView
 
     static readonly HashSet<string> warned = new HashSet<string>();
 
+    IList<CreationTitan> titans;
     GameObject root;
     Camera cam;
     Transform carriage;
@@ -42,9 +44,9 @@ public sealed class CreationLabView
     public int Props { get; private set; }
 
     // Builds the set for `lab`; null (said once in the log) when it cannot be built, and the screen shows its flat backdrop.
-    public static CreationLabView Build(CreationLab lab)
+    public static CreationLabView Build(CreationLab lab, IList<CreationTitan> titans)
     {
-        var view = new CreationLabView();
+        var view = new CreationLabView { titans = titans };
         try
         {
             view.Make(lab);
@@ -256,12 +258,26 @@ public sealed class CreationLabView
     }
 
     // creation_set.gd place: the prop at its `at` (or `where`), turned by its yaw.
+    // creation_lab.gd _add_props: the dish cleaned, the screens lit, the serums and the Special K in their glass.
+    bool[] Paint(string prop, ref ModelColors.Model model)
+    {
+        if (prop == "monitors") return CreationPaint.Screens(model, Rgb(Hex("screen")), Rgb(Hex("screen_glass")));
+        Dictionary<Vector3Int, int> cells = CreationPaint.Cells(model);
+        HashSet<Vector3Int> glowing = null;
+        if (prop == "cradle") CreationDish.Clean(cells);
+        else if (prop == "rack") glowing = CreationPaint.Rack(cells, titans);
+        else if (prop == "canister") glowing = CreationPaint.Canister(cells);
+        else return null;
+        model = CreationPaint.Model(cells, glowing, out bool[] glow);
+        return glow;
+    }
+
     void Place(string prop, CreationVec? where)
     {
         ModelColors.Model model = Read(prop, out float voxel);
         if (model == null) return;
         CreationLab.Placed(prop, out CreationVec at, out double yaw);
-        bool[] glow = prop == "monitors" ? CreationPaint.Screens(model, Rgb(Hex("screen")), Rgb(Hex("screen_glass"))) : null;
+        bool[] glow = Paint(prop, ref model);
         Transform t = Show(prop, ArmyView.Faces(model, voxel, Vector3.zero, glow), voxel, root.transform, true);
         t.position = U(where ?? at);
         t.rotation = Turn(yaw);

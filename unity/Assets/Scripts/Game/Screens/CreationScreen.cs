@@ -50,7 +50,7 @@ public sealed class CreationDriver : MonoBehaviour
     {
         created = onCreated;
         steps = new CreationSteps(save);
-        view = CreationLabView.Build(steps.Lab);
+        view = CreationLabView.Build(steps.Lab, steps.Titans);
         // The canvas covers the lab's camera, so the flat backdrop is only for a lab that could not be built.
         if (view == null) UiKit.Backdrop(screen);
         white = UiKit.Fill(screen, new Color(1f, 1f, 1f, 0f), "Flash");

@@ -1,6 +1,9 @@
 // What creation_set.gd does to a lab prop's colours before it is built: read's despeckle (lone off-colour
-// blocks take their neighbours' average) and the monitors' screen_color (the glass inside the data's
-// rectangles turns dark green with rows of lit readout bars). Works on a copy: ModelColors' cache is shared.
+// blocks take their neighbours' average), the monitors' screen_color (the glass inside the data's rectangles
+// turns dark green with rows of lit readout bars), the rack's vial_color (each titan's serum glowing in its
+// genome's colour, a needle port over its vial) and the canister's Special K (glowing violet, a port in its lid).
+// The liquids stand full: CreationLiquid's draining is not drawn yet. Works on a copy: ModelColors' cache is
+// shared.
 using System;
 using System.Collections.Generic;
 using Kaiju.Game;
@@ -23,6 +26,125 @@ public static class CreationPaint
         { Vector3Int.left, Vector3Int.right, Vector3Int.up, Vector3Int.down, new Vector3Int(0, 0, -1), new Vector3Int(0, 0, 1) };
 
     public static ModelColors.Model Copy(ModelColors.Model m) => new ModelColors.Model { xyz = m.xyz, rgb = (int[])m.rgb.Clone() };
+
+    // A model as cell -> colour (and back), for the paints that cut or add cells.
+    public static Dictionary<Vector3Int, int> Cells(ModelColors.Model m)
+    {
+        var cells = new Dictionary<Vector3Int, int>();
+        int[] raw = m.xyz.Raw;
+        for (int i = 0; i < m.rgb.Length; i++) cells[Cell(raw, i)] = m.rgb[i];
+        return cells;
+    }
+
+    public static ModelColors.Model Model(Dictionary<Vector3Int, int> cells, HashSet<Vector3Int> glowing, out bool[] glow)
+    {
+        var xyz = new S.PackedInt32Array();
+        xyz.Resize(cells.Count * 3);
+        int[] raw = xyz.Raw;
+        var rgb = new int[cells.Count];
+        glow = new bool[cells.Count];
+        int i = 0;
+        foreach (KeyValuePair<Vector3Int, int> cell in cells)
+        {
+            raw[i * 3] = cell.Key.x;
+            raw[i * 3 + 1] = cell.Key.y;
+            raw[i * 3 + 2] = cell.Key.z;
+            glow[i] = glowing != null && glowing.Contains(cell.Key);
+            rgb[i++] = cell.Value;
+        }
+        return new ModelColors.Model { xyz = xyz, rgb = rgb };
+    }
+
+    public static void Hsv(int c, out float h, out float s, out float v) => Color.RGBToHSV(Rgb(c), out h, out s, out v);
+
+    static int Lab(string key) => Hex(S.Gd.Str(((S.GDict)CreationLab.Cfg()["colors"])[key]));
+
+    static int I(S.Variant v) => (int)S.Num.I(v);
+
+    static int I(S.GArray<S.Variant> a, int k) => (int)S.Num.I(a[k]);
+
+    // creation_set.gd paint(rack, vial_color) and take_liquid's port over each titan's vial; returns the glowing cells.
+    public static HashSet<Vector3Int> Rack(Dictionary<Vector3Int, int> rack, IList<CreationTitan> titans)
+    {
+        S.GDict v = CreationLab.Cfg()["vials"];
+        S.GArray<S.Variant> by = v["box_y"], slots = v["titan_slots"];
+        var glowing = new HashSet<Vector3Int>();
+        foreach (Vector3Int cell in new List<Vector3Int>(rack.Keys))
+        {
+            int col = rack[cell];
+            Hsv(col, out _, out _, out float value);
+            if (cell.y > I(by, 1) && value < S.Num.F(v["cap_dark"])) rack[cell] = Lab("rack_cap");
+            else if (Liquid(col, v) || HelixPrint(cell, col, v))
+            {
+                int titan = TitanIn(Slot(cell, v), slots);
+                bool shown = titan >= 0 && titan < titans.Count;
+                rack[cell] = shown ? Hex(titans[titan].Genome) : Lab("locked");
+                if (shown) glowing.Add(cell);
+            }
+        }
+        for (int t = 0; t < titans.Count && t < slots.Size(); t++)
+        {
+            S.GArray<S.Variant> xs = ((S.GArray<S.Variant>)v["columns_x"])[I(slots, t)];
+            S.GArray<S.Variant> zs = v["column_z"];
+            var centre = new Vector2(I(xs, 0) + I(xs, 1), I(zs, 0) + I(zs, 1)) * 0.5f;
+            Port(rack, glowing, centre, (float)S.Num.F(v["port_radius"]), I(v["port_from_y"]));
+        }
+        return glowing;
+    }
+
+    // take_liquid / take_canister_liquid: the cells within `radius` of the axis at `centre`, from `fromY` up, go.
+    static void Port(Dictionary<Vector3Int, int> cells, HashSet<Vector3Int> glowing, Vector2 centre, float radius, int fromY)
+    {
+        foreach (Vector3Int cell in new List<Vector3Int>(cells.Keys))
+        {
+            if (cell.y < fromY || Vector2.Distance(new Vector2(cell.x, cell.z), centre) > radius) continue;
+            cells.Remove(cell);
+            glowing.Remove(cell);
+        }
+    }
+
+    static bool Liquid(int col, S.GDict v)
+    {
+        Hsv(col, out float h, out float s, out float value);
+        S.GArray<S.Variant> hues = v["hue_range"];
+        return s > S.Num.F(v["min_saturation"]) && value > S.Num.F(v["min_value"]) && h > S.Num.F(hues[0]) && h < S.Num.F(hues[1]);
+    }
+
+    // _helix_print: the model's pale DNA print, inside the liquid columns only.
+    static bool HelixPrint(Vector3Int cell, int col, S.GDict v)
+    {
+        S.GArray<S.Variant> by = v["box_y"], bz = v["column_z"];
+        bool inside = cell.y >= I(by, 0) && cell.y <= I(by, 1) && Within(cell.x, v["columns_x"]) && cell.z >= I(bz, 0) && cell.z <= I(bz, 1);
+        Hsv(col, out _, out float s, out float value);
+        return inside && value > S.Num.F(v["print_value"]) && s < S.Num.F(v["min_saturation"]);
+    }
+
+    // slot: which of the rack's three vials a cell belongs to (0 = the left vial seen from the front).
+    static int Slot(Vector3Int cell, S.GDict v) => cell.x > I(v["split_hi"]) ? 0 : cell.x >= I(v["split_lo"]) ? 1 : 2;
+
+    static int TitanIn(int vial, S.GArray<S.Variant> slots)
+    {
+        for (int i = 0; i < slots.Size(); i++)
+            if (I(slots, i) == vial) return i;
+        return -1;
+    }
+
+    // take_canister_liquid: the violet glass glows Special K, and the lid has its port; returns the glowing cells.
+    public static HashSet<Vector3Int> Canister(Dictionary<Vector3Int, int> can)
+    {
+        S.GDict c = CreationLab.Cfg()["canister"];
+        S.GArray<S.Variant> hues = c["hue"];
+        var glowing = new HashSet<Vector3Int>();
+        foreach (Vector3Int cell in new List<Vector3Int>(can.Keys))
+        {
+            Hsv(can[cell], out float h, out float s, out _);
+            if (h <= S.Num.F(hues[0]) || h >= S.Num.F(hues[1]) || s <= S.Num.F(c["min_saturation"])) continue;
+            can[cell] = Lab("special_k");
+            glowing.Add(cell);
+        }
+        Port(can, glowing, Vector2.zero, (float)S.Num.F(c["port_radius"]), I(c["port_from_y"]));
+        return glowing;
+    }
 
     static Vector3Int Cell(int[] raw, int i) => new Vector3Int(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]);
 
