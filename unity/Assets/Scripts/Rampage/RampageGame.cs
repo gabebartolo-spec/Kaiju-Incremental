@@ -184,16 +184,10 @@ public sealed partial class RampageGame : MonoBehaviour
         derailAt = ArgInt(args, "-rampage-derail", 0);
         string eye = Arg(args, "-rampage-eye");
         if (eye != null) fixedEye = eye.Split(',').Select(v => float.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
-        try
-        {
-            Load(ArgInt(args, "-rampage-stage", 3), ArgInt(args, "-rampage-seed", 0));
-            heliDeaths = HeliDeathsCapture.From(args, sim, Fan);
-        }
-        catch (Exception e)
-        {
-            error = e.ToString();
-            Debug.LogException(e);
-        }
+        loadStage = ArgInt(args, "-rampage-stage", 3);
+        // Behind the loading screen the stages are drawn one by one (RampageLoad.cs); otherwise all now.
+        if (Hosted && Loading.Shown) StartCoroutine(LoadStaged(loadStage, ArgInt(args, "-rampage-seed", 0)));
+        else LoadNow(loadStage, ArgInt(args, "-rampage-seed", 0));
     }
 
     static string DataRoot()
@@ -227,105 +221,23 @@ public sealed partial class RampageGame : MonoBehaviour
         return d;
     }
 
-    void Load(int stage, int seed)
+    // The capture hooks (RampageLoad.cs RestStage).
+    void Hooks()
     {
-        S.FileAccess.Root = DataRoot();
-        tuning = SliceData.LoadTuning();
-        var slice = SliceData.LoadJson("slice.json");
-        var look = MiniJson.Obj(slice["look"]);
-        profile = GraphicsView.StartRun(SliceGame.ApplyLook(tuning, slice, look), SliceGame.Sun);  // counts frozen for this run
-
-        // A hosted run is the save's: its species, stats and city (scenes/main.gd, globe_missions.gd); else the flags'.
-        string speciesId = request != null ? S.Gd.Str(S.Content.SpeciesDef(request.species)["id"]) : SPECIES;
-        S.GDict species = S.Content.SpeciesDef(speciesId);
-        Species = species;
-        S.GDict stats;
-        S.GArray<S.GDict> layout;
-        if (request != null)
-        {
-            // Rampage.setup_later seeds the army and the views by the run number.
-            seed = request.runIndex;
-            stats = RunStart.Stats(request);
-            S.Content.SetTime(request.time != "" ? request.time : "dusk");
-            if (request.weather != "") S.Content.SetWeather(request.weather);
-            layout = RunStart.Layout(request);
-        }
-        else
-        {
-            stats = S.UpgradeTree.RunStats(S.Content.Section("kaiju"), species, new S.UpgradeTree(S.Content.Upgrades(), Levels(stage), SPECIES));
-            layout = S.CityGrowth.Layout(S.Content.Tuning(), stage, S.Seeds.Make("city", seed));
-            S.Content.SetTime(Arg(Environment.GetCommandLineArgs(), "-rampage-time", "dusk"));
-            // Capture/dry-run only: -rampage-time <id> and -rampage-weather <id> play that time (dusk without it) and weather.
-            string weatherArg = Arg(Environment.GetCommandLineArgs(), "-rampage-weather");
-            if (weatherArg != null) S.Content.SetWeather(weatherArg);
-        }
-        sim =new S.RampageSim(stats, S.CityGrowth.ForStats(stats), layout, S.Seeds.Make("army", seed));
-
-        Shader lit = Resources.Load<Shader>("Shaders/SliceLit");
-        crocCube = SliceGame.CubeMesh(1f, true);
-        croc = new Croc(tuning, slice, lit, crocCube, SliceData.F(look, "voxel_inset", 0.99f), Croc.BodyStage(sim.SizeTier()));
-        // scenes/rampage.gd _take_sim: the species' attack and body first, since the rise is placed by the body's length.
-        S.GDict ability = species["ability"];
-        sim.abilityType = S.Gd.Str(ability["type"]);
-        if (request != null)
-        {
-            sim.armyUnits.taskforce.carried = request.citySeconds;  // rampage time in this city so far (D-160)
-            if (request.endless) sim.endless = new S.Endless();  // the demo's Endless mode (D-156)
-        }
-        sim.body.UseSpecies(speciesId);
-        // Rises from the bay, D-270 (scenes/rampage.gd); before the city, which it prepares a way through.
-        sim.emerge.Start(sim, croc.ClipSeconds(RISE_CLIP));
-        intro = new RunIntro(sim, request != null ? request.fullIntro : !auto);
-        cubeMesh = SliceGame.CubeMesh(tuning.debris_size, false);
-        debris = new Debris(tuning, Resources.Load<ComputeShader>("Shaders/Debris"), lit, cubeMesh, Vector3.zero);
-        var root = new GameObject("city");
-        city = new CityDraw(sim, lit, debris, root.transform);
-        feetFrom = feetTo = Feet();
-        croc.position = feetTo;
-        croc.yaw = Mathf.Atan2(-Facing().x, -Facing().y);
-        ground = new CityGround(sim.city, lit, root.transform);
-        water = new WaterView(sim, ground.Sheets, Resources.Load<Shader>("Shaders/SliceWater"), Resources.Load<ComputeShader>("Shaders/OceanWaves"), sim.city, root.transform);
-        Debug.Log($"rampage: ground {ground.SlabCount} slabs, {ground.VertexCount} verts; water {ground.Sheets.Count} sheets, {water.VertexCount} verts");
-        BuildCamera();
-        bubble = new CameraBubble(sim, city);
-        FireTuning fireTuning = FireTuning.Load();
-        var fires = new Fires(fireTuning, Resources.Load<Shader>("Shaders/Flame"), SliceGame.ExposureUnit(tuning), false, new LightPool());
-        fx = HideHitFx(new CityFx(Resources.Load<Shader>("Shaders/Burst"), fires, SliceData.F(look, "sun_energy", 1), SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, seed));
-        eventFx = new EventFx(sim, fx, seed, species);
-        // The rubble look: heaps and strips laid on the debris field, the crumble's dust, the landing puff's
-        // place, and the foot's press (data/tuning.json street.rubble_press, rubble_keep; D-245).
-        rubble = new RubbleView(sim, tuning, city, debris);
-        city.crumbleFx = fx;
-        eventFx.City = city;
-        rubblePress = (float)S.Num.F(S.Content.Section("street")["rubble_press"]);
-        rubbleKeep = (float)S.Num.F(S.Content.Section("street")["rubble_keep"]);
-        army = new ArmyView(sim, fx, lit, root.transform, seed);
-        vip = new VipView(sim, army, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m);
-        trees = new CityTrees(sim, fx, lit, root.transform, seed);
-        street = new StreetView(sim, fx, lit, root.transform, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, seed);
-        Debug.Log($"street: {street.people.Civilians()} people ({street.people.beachPeople} on the beach), {street.Props} props");
-        rail = new RailView(sim, fx, army, street.people, lit, root.transform, WreckKick);
-        BuildFarCity(lit, seed, root.transform);
-        strike = new AirstrikeView(sim, lit, root.transform);
-        aircraft = new Aircraft(tuning, lit, root.transform, seed);
-        breath = new BreathView(sim, fx, croc, trees, seed, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m);
-        thunder = new ThunderView(sim, fx, croc, seed, SliceGame.ExposureUnit(tuning), fireTuning.light_match_m, BoltKick);
-        breath.Stroked = BoltKick;
-        rooftops = new RooftopView(sim, fx, croc, lit, seed);
-        leap = new LeapView(sim, croc, trees);
-        slam = new SlamView(sim, city, fx, shake, croc, tuning);
-        postFx = new PostFxView(sim, profile);
-        weather = WeatherView.Attach(profile, Resources.Load<Shader>("Shaders/Rain"), fireTuning.wind, SliceGame.ExposureUnit(tuning),
-            ground, street, sim, Resources.Load<Shader>("Shaders/RainSmear"));
-        walked = sim.kaijuPos;
         if (clipDir != null) BeginClip();
         if (scoutPath != null)
         {
             scout = new CaptureScout(scoutPath, clipFrames, sim, croc, WIDTH, HEIGHT);
             Time.captureFramerate = 30;
         }
+        heliDeaths = HeliDeathsCapture.From(Environment.GetCommandLineArgs(), sim, Fan);
+    }
+
+    // The load's last step (RampageLoad.cs RestStage): the log line, the HUD and the sound.
+    void Started()
+    {
         if (request == null)
-            Debug.Log($"rampage: stage {stage} seed {seed}, body {croc.Stage}, body scale {sim.BodyScale():F2}, kaiju at {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1}");
+            Debug.Log($"rampage: stage {loadStage} seed {loadSeed}, body {croc.Stage}, body scale {sim.BodyScale():F2}, kaiju at {sim.kaijuPos.x:F1},{sim.kaijuPos.y:F1}");
         else
             Debug.Log(FormattableString.Invariant($"rampage: request species={speciesId} tier={request.tier} seed={request.seed} run={request.runIndex} continent={(request.continent != "" ? request.continent : "none")} time={S.Content._timeId} weather={S.Content.WeatherId()} endless={request.endless} full_intro={request.fullIntro} city_seconds={request.citySeconds:F1} buildings={sim.buildings.Size()} run_seconds={sim.timeLeft:F1} body={croc.Stage} body_scale={sim.BodyScale():F2}"));
         // Only the croc is drawn so far: another species plays its own sim under the croc's body.

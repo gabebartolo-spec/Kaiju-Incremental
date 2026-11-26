@@ -1,10 +1,10 @@
 // What the player sees while a rampage builds its city (scenes/loading_overlay.gd): the broadcast backdrop, one
-// still of a real dusk rampage (random, never the same twice running), the INCOMING header on a dark band low
-// on the screen, and a headline from tuning "ui" loading_news.
-// The Unity rampage builds on the main thread right after a scene reload, so nothing can move while it does:
-// the screen is on a canvas of its own that outlives the reload, is drawn before the reload is asked for
-// (ShowThen), and goes once the rampage has drawn (HideWhenDrawn). For the same reason there is no meter (it
-// could not move) and the headline is held still, the next one each load, instead of crawling.
+// still of a real dusk rampage (random, never the same twice running), the INCOMING header and a meter on a dark
+// band low on the screen, and the news crawl (tuning "ui" loading_news).
+// The screen is on a canvas of its own that outlives the scene reload, is drawn before the reload is asked for
+// (ShowThen), moves its meter as each of the rampage's stages is built (Advance, RampageLoad.cs; one frame is
+// drawn between stages), and goes once the rampage has drawn (HideWhenDrawn). A long stage holds the crawl
+// still, as Godot's does.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -30,16 +30,15 @@ public static class Loading
     public const int GO_FRAMES = 2;
     public const int HIDE_FRAMES = 2;
 
-    // The continent's name under the header. Godot's screen has no such line; false leaves it out.
-    public static bool PlaceLine = true;
-
     static LoadingHost host;
     static RectTransform root;
     static Texture2D still;
+    static KitBar bar;
+    // The stages built so far.
+    static int done;
     static readonly System.Random rng = new System.Random(); // seed-ok: which loading still shows, never the run
-    // The still shown last, so the next load picks another; and the loads shown so far.
+    // The still shown last, so the next load picks another.
     static int last = -1;
-    static int shows;
     static float shownAt;
     static readonly HashSet<string> warned = new HashSet<string>();
 
@@ -49,15 +48,16 @@ public static class Loading
         host = null;
         root = null;
         still = null;
+        bar = null;
         last = -1;
-        shows = 0;
+        done = 0;
     }
 
     // True from Show until Hide.
     public static bool Shown => host != null;
 
-    // Shows the loading screen for `request` (null: no place line) and returns it. Shown twice it is the same one.
-    public static RectTransform Show(RunRequest request)
+    // Shows the loading screen and returns it. Shown twice it is the same one.
+    public static RectTransform Show()
     {
         if (host != null) return root;
         GameObject go = new GameObject("Loading");
@@ -82,30 +82,42 @@ public static class Loading
 
         RectTransform band = Band(root);
         UiKit.Header(band, "INCOMING");
-        string place = PlaceLine ? LoadingCard.Place(request) : "";
-        if (place != "") UiKit.Label(band, place).alignment = TextAnchor.MiddleCenter;
+        done = 0;
+        bar = UiKit.Bar(band, UiKit.ACCENT, LoadingCard.BAR_HEIGHT, true);
+        UiKit.Size(bar, LoadingCard.BAR_WIDTH, LoadingCard.BAR_HEIGHT);
 
         List<string> news = LoadingCard.News(UiKit.Ui());
-        int tip = LoadingCard.Tip(shows, news.Count);
-        shows++;
-        // Held still: a crawl would stop dead when the load starts and look like a hung game.
-        if (tip >= 0) NewsTicker.Create(root, new[] { Tr.T(news[tip]) }, false);
+        var lines = new List<string>();
+        foreach (string line in news) lines.Add(Tr.T(line));
+        if (lines.Count > 0) NewsTicker.Create(root, lines);
 
         shownAt = Time.realtimeSinceStartup;
-        Debug.Log($"flow: loading shown, tip {(tip >= 0 ? tip.ToString(CultureInfo.InvariantCulture) : "none")} of {news.Count}, still {pick} {Path.GetFileName(LoadingCard.STILLS[pick])}{(drawn ? "" : " (missing)")}, place {(place != "" ? place : "none")}");
+        Debug.Log($"flow: loading shown, {news.Count} headlines, still {pick} {Path.GetFileName(LoadingCard.STILLS[pick])}{(drawn ? "" : " (missing)")}");
         return root;
     }
 
+    // One more of the rampage's stages is built: the meter moves (full at LoadingCard.STAGES).
+    public static void Advance()
+    {
+        if (host == null) return;
+        done++;
+        if (bar != null) bar.Value = (float)done / LoadingCard.STAGES;
+        Debug.Log($"flow: loading stage {done} of {LoadingCard.STAGES} at {(Time.realtimeSinceStartup - shownAt).ToString("F1", CultureInfo.InvariantCulture)} s");
+    }
+
+    // The stages built so far.
+    public static int Done => done;
+
     // Shows the screen, lets it be drawn (GO_FRAMES frames), then calls `go`, which starts the load. A second
     // call while one waits is dropped: the button under the screen was pressed twice.
-    public static void ShowThen(RunRequest request, Action go)
+    public static void ShowThen(Action go)
     {
         if (host != null && host.go != null)
         {
             Debug.LogWarning("flow: loading already waits to start a rampage, the second ask is dropped");
             return;
         }
-        Show(request);
+        Show();
         // No key or pad press reaches the menu under the screen while it waits.
         UiFocus.Paused = true;
         host.go = go;
@@ -130,6 +142,7 @@ public static class Loading
         host = null;
         root = null;
         still = null;
+        bar = null;
         Debug.Log("flow: loading hidden after " + seconds.ToString("F1", CultureInfo.InvariantCulture) + " s");
     }
 

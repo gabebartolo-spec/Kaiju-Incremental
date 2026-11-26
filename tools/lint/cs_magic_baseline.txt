@@ -60,7 +60,7 @@ unity/Assets/Scripts/Rampage/OceanWaves.cs 7
 unity/Assets/Scripts/Rampage/PostFxState.cs 3
 unity/Assets/Scripts/Rampage/PostFxView.cs 1
 unity/Assets/Scripts/Rampage/RailView.cs 2
-unity/Assets/Scripts/Rampage/RampageGame.cs 12
+unity/Assets/Scripts/Rampage/RampageGame.cs 11
 unity/Assets/Scripts/Rampage/RooftopView.cs 2
 unity/Assets/Scripts/Rampage/RubbleShape.cs 13
 unity/Assets/Scripts/Rampage/RubbleView.cs 3

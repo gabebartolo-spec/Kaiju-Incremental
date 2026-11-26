@@ -1,7 +1,7 @@
 // The loading screen's choices (GameLogic/LoadingCard.cs, after scenes/loading_overlay.gd) are plain C#, so
 // they are held here: the stills are Godot's twelve and all on disk, a pick never repeats the last one and
-// reaches every other, the headlines are tuning's, the header is in the text table, each load shows the next one,
-// and the place is the continent's name.
+// reaches every other, the headlines are tuning's, the header is in the text table, and the meter's stages and
+// size are Godot's.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,7 +21,7 @@ static class LoadingCheck
         Stills(repoRoot);
         Picks();
         News(repoRoot);
-        Place();
+        Meter(repoRoot);
         Console.WriteLine($"loading: {checks} checks, {failed} failed");
         return failed;
     }
@@ -96,25 +96,16 @@ static class LoadingCheck
             Tr.Language = oldLanguage;
         }
 
-        Check(LoadingCard.Tip(0, 3) == 0 && LoadingCard.Tip(1, 3) == 1 && LoadingCard.Tip(2, 3) == 2 && LoadingCard.Tip(3, 3) == 0, "each load shows the next headline, round and round");
-        Check(LoadingCard.Tip(4, 0) == -1, "no headlines is tip -1");
     }
 
-    // The place is the continent's name from data/continents.json; none for a plain rampage or an unknown id.
-    static void Place()
+    // loading_overlay.gd STAGES and BAR_SIZE.
+    static void Meter(string repoRoot)
     {
-        Check(LoadingCard.Place(null) == "", "no request has no place");
-        Check(LoadingCard.Place(new RunRequest()) == "", "a plain rampage has no place");
-        Check(LoadingCard.Place(new RunRequest { continent = "no_such_continent" }) == "", "an unknown continent has no place");
-        int named = 0;
-        foreach (S.GDict def in S.Content.Continents())
-        {
-            string id = S.Gd.Str(def["id"]);
-            string name = LoadingCard.Place(new RunRequest { continent = id });
-            Check(name != "" && name == S.Gd.Str(def["name"]), $"{id} is named {name}");
-            named++;
-        }
-        Check(named == 7, $"7 continents named, got {named}");
-        Check(LoadingCard.Place(new RunRequest { continent = "ostia_minor" }) == "Ostia Minor", "ostia_minor is Ostia Minor");
+        string gd = File.ReadAllText(Path.Combine(repoRoot, "scenes", "loading_overlay.gd"));
+        Match stages = Regex.Match(gd, @"const STAGES := (\d+)");
+        Check(stages.Success && int.Parse(stages.Groups[1].Value) == LoadingCard.STAGES, $"the meter is full at Godot's {stages.Groups[1].Value} stages, Unity {LoadingCard.STAGES}");
+        Match size = Regex.Match(gd, @"const BAR_SIZE := Vector2\((\d+), (\d+)\)");
+        Check(size.Success && float.Parse(size.Groups[1].Value) == LoadingCard.BAR_WIDTH && float.Parse(size.Groups[2].Value) == LoadingCard.BAR_HEIGHT,
+            $"the meter is Godot's {size.Groups[1].Value}x{size.Groups[2].Value}, Unity {LoadingCard.BAR_WIDTH}x{LoadingCard.BAR_HEIGHT}");
     }
 }

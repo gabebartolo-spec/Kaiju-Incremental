@@ -293,8 +293,8 @@ public sealed partial class GameFlow : MonoBehaviour
         RunStart.Intro(Save, Pending);  // saved with the run's result
         if (smoke) Pending.fullIntro = false;  // the short cut, as the -rampage-auto runs the time-up path is proven on
         // The loading screen is drawn before the scene reload is asked for, and outlives it.
-        Loading.ShowThen(Pending, () => Go(State.Rampage));
-        FlowStills.Want("loading", () => Loading.Shown, 0);
+        Loading.ShowThen(() => Go(State.Rampage));
+        FlowStills.WantLoading();
     }
 
     // The fresh scene's rampage, hosted: it reads the request as it wakes.
@@ -313,7 +313,6 @@ public sealed partial class GameFlow : MonoBehaviour
         Debug.Log($"flow: rampage starting, run {Pending.runIndex}, continent {(Pending.continent != "" ? Pending.continent : "none")}, tier {Pending.tier}, endless {Pending.endless}, biomass {Biomass()}");
         game = new GameObject("rampage").AddComponent<RampageGame>();
         RampageGame.Request = null;
-        Loading.HideWhenDrawn();  // also over a rampage that did not load: its error shows instead
         game.Finished += OnFinished;
         game.PauseRequested += OnPause;
         if (game.Error != null) Debug.LogWarning("flow: the rampage did not load");
@@ -505,11 +504,11 @@ public sealed partial class GameFlow : MonoBehaviour
     // smoke's own user folder and read back; then the menu's own RESUME, each on a later frame as a player would.
     void SmokeRampage(float now)
     {
-        if (smokeRuns > 0 || game == null || game.Error != null) return;
+        if (smokeRuns > 0 || game == null || !game.Loaded) return;
         switch (smokeStep)
         {
             case 0:
-                // The load ran inside this state's first frame: the wait starts once the rampage is up.
+                // The wait starts once the rampage's stages are all built.
                 Step();
                 break;
             case 1:
