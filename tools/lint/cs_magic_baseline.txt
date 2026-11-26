@@ -12,7 +12,7 @@ unity/Assets/Scripts/Game/Screens/Loading.cs 1
 unity/Assets/Scripts/Game/Screens/TreeReveal.cs 1
 unity/Assets/Scripts/Game/Screens/TreeScreen.cs 1
 unity/Assets/Scripts/Game/Sfx.cs 2
-unity/Assets/Scripts/Game/Ui/CreationLabView.cs 10
+unity/Assets/Scripts/Game/Ui/CreationLabView.cs 9
 unity/Assets/Scripts/Game/Ui/HazardBox.cs 46
 unity/Assets/Scripts/Game/Ui/KitButton.cs 2
 unity/Assets/Scripts/Game/Ui/KitSlider.cs 1

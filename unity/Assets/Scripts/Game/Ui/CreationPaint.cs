@@ -2,8 +2,8 @@
 // blocks take their neighbours' average), the monitors' screen_color (the glass inside the data's rectangles
 // turns dark green with rows of lit readout bars), the rack's vial_color (each titan's serum glowing in its
 // genome's colour, a needle port over its vial) and the canister's Special K (glowing violet, a port in its lid).
-// The liquids stand full: CreationLiquid's draining is not drawn yet. Works on a copy: ModelColors' cache is
-// shared.
+// The serums and the Special K leave their props here, for CreationLiquid to drain. Works on a copy:
+// ModelColors' cache is shared.
 using System;
 using System.Collections.Generic;
 using Kaiju.Game;
@@ -63,8 +63,9 @@ public static class CreationPaint
 
     static int I(S.GArray<S.Variant> a, int k) => (int)S.Num.I(a[k]);
 
-    // creation_set.gd paint(rack, vial_color) and take_liquid's port over each titan's vial; returns the glowing cells.
-    public static HashSet<Vector3Int> Rack(Dictionary<Vector3Int, int> rack, IList<CreationTitan> titans)
+    // creation_set.gd paint(rack, vial_color) and take_liquid: the port over each titan's vial, and its serum moved
+    // out of the rack; returns each titan's serum, cell -> the dark glass it shows drained (CreationLiquid).
+    public static Dictionary<int, Dictionary<Vector3Int, int>> Rack(Dictionary<Vector3Int, int> rack, IList<CreationTitan> titans)
     {
         S.GDict v = CreationLab.Cfg()["vials"];
         S.GArray<S.Variant> by = v["box_y"], slots = v["titan_slots"];
@@ -82,14 +83,32 @@ public static class CreationPaint
                 if (shown) glowing.Add(cell);
             }
         }
+        var serums = new Dictionary<int, Dictionary<Vector3Int, int>>();
         for (int t = 0; t < titans.Count && t < slots.Size(); t++)
         {
-            S.GArray<S.Variant> xs = ((S.GArray<S.Variant>)v["columns_x"])[I(slots, t)];
+            int vial = I(slots, t);
+            S.GArray<S.Variant> xs = ((S.GArray<S.Variant>)v["columns_x"])[vial];
             S.GArray<S.Variant> zs = v["column_z"];
             var centre = new Vector2(I(xs, 0) + I(xs, 1), I(zs, 0) + I(zs, 1)) * 0.5f;
             Port(rack, glowing, centre, (float)S.Num.F(v["port_radius"]), I(v["port_from_y"]));
+            serums[t] = Take(rack, glowing, cell => Slot(cell, v) == vial);
         }
-        return glowing;
+        return serums;
+    }
+
+    // take_liquid's tail: the glowing cells `which` picks leave `cells`; returns them as cell -> the drained glass.
+    static Dictionary<Vector3Int, int> Take(Dictionary<Vector3Int, int> cells, HashSet<Vector3Int> glowing, Func<Vector3Int, bool> which)
+    {
+        var empties = new Dictionary<Vector3Int, int>();
+        int glass = Lab("locked");
+        foreach (Vector3Int cell in new List<Vector3Int>(glowing))
+        {
+            if (!which(cell)) continue;
+            empties[cell] = glass;
+            cells.Remove(cell);
+            glowing.Remove(cell);
+        }
+        return empties;
     }
 
     // take_liquid / take_canister_liquid: the cells within `radius` of the axis at `centre`, from `fromY` up, go.
@@ -129,8 +148,9 @@ public static class CreationPaint
         return -1;
     }
 
-    // take_canister_liquid: the violet glass glows Special K, and the lid has its port; returns the glowing cells.
-    public static HashSet<Vector3Int> Canister(Dictionary<Vector3Int, int> can)
+    // take_canister_liquid: the lid's port cut, and the violet glass moved out of the canister; returns it as
+    // cell -> the dark glass it shows once drawn (CreationLiquid fills it with Special K).
+    public static Dictionary<Vector3Int, int> Canister(Dictionary<Vector3Int, int> can)
     {
         S.GDict c = CreationLab.Cfg()["canister"];
         S.GArray<S.Variant> hues = c["hue"];
@@ -139,11 +159,10 @@ public static class CreationPaint
         {
             Hsv(can[cell], out float h, out float s, out _);
             if (h <= S.Num.F(hues[0]) || h >= S.Num.F(hues[1]) || s <= S.Num.F(c["min_saturation"])) continue;
-            can[cell] = Lab("special_k");
             glowing.Add(cell);
         }
         Port(can, glowing, Vector2.zero, (float)S.Num.F(c["port_radius"]), I(c["port_from_y"]));
-        return glowing;
+        return Take(can, glowing, _ => true);
     }
 
     static Vector3Int Cell(int[] raw, int i) => new Vector3Int(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]);

@@ -5,8 +5,8 @@ unity/Assets/Editor/SliceBuild.cs::BuildRampage 79 18
 unity/Assets/Scripts/City.cs::<file> 512 0
 unity/Assets/Scripts/City.cs::ApplySettle 46 12
 unity/Assets/Scripts/City.cs::Remesh 83 14
-unity/Assets/Scripts/Croc.cs::<file> 1022 0
-unity/Assets/Scripts/Croc.cs::Croc 165 30
+unity/Assets/Scripts/Croc.cs::<file> 970 0
+unity/Assets/Scripts/Croc.cs::Croc 155 29
 unity/Assets/Scripts/Fires.cs::Add 51 3
 unity/Assets/Scripts/Game/Audio/AudioHost.cs::<file> 458 0
 unity/Assets/Scripts/Game/Audio/AudioHost.cs::Update 30 13
@@ -30,7 +30,6 @@ unity/Assets/Scripts/Game/Screens/TitleScreen.cs::ShowSlots 62 15
 unity/Assets/Scripts/Game/Screens/TreeScreen.cs::Show 65 5
 unity/Assets/Scripts/Game/Screens/TreeScreen.cs::Wire 37 22
 unity/Assets/Scripts/Game/SettingsApply.cs::Tick 16 15
-unity/Assets/Scripts/Game/Ui/CreationLabView.cs::Injector 51 14
 unity/Assets/Scripts/Game/Ui/HazardBox.cs::OnPopulateMesh 43 12
 unity/Assets/Scripts/Game/Ui/KitButton.cs::Show 46 9
 unity/Assets/Scripts/Game/Ui/KitText.cs::ModifyMesh 28 16
@@ -55,10 +54,10 @@ unity/Assets/Scripts/Rampage/BoltView.cs::Rebuild 42 8
 unity/Assets/Scripts/Rampage/CameraBubble.cs::Share 24 15
 unity/Assets/Scripts/Rampage/CameraBubble.cs::Step 45 23
 unity/Assets/Scripts/Rampage/CaptureScout.cs::Step 45 11
-unity/Assets/Scripts/Rampage/CityDraw.cs::<file> 887 0
-unity/Assets/Scripts/Rampage/CityDraw.cs::Bake 58 12
+unity/Assets/Scripts/Rampage/CityDraw.cs::<file> 876 0
+unity/Assets/Scripts/Rampage/CityDraw.cs::Bake 57 9
 unity/Assets/Scripts/Rampage/CityDraw.cs::CityDraw 42 5
-unity/Assets/Scripts/Rampage/CityDraw.cs::FallStart 49 5
+unity/Assets/Scripts/Rampage/CityDraw.cs::FallStart 46 5
 unity/Assets/Scripts/Rampage/CityDraw.cs::FillEnclosed 32 33
 unity/Assets/Scripts/Rampage/CityDraw.cs::FillPalette 45 5
 unity/Assets/Scripts/Rampage/CityDraw.cs::Remesh 64 13
@@ -70,7 +69,7 @@ unity/Assets/Scripts/Rampage/CityGround.cs::Block 37 13
 unity/Assets/Scripts/Rampage/CityGround.cs::DiagonalPaving 35 19
 unity/Assets/Scripts/Rampage/CityGround.cs::Markings 43 14
 unity/Assets/Scripts/Rampage/CityGround.cs::Roads 60 28
-unity/Assets/Scripts/Rampage/EventFx.cs::OnEvent 55 16
+unity/Assets/Scripts/Rampage/EventFx.cs::OnEvent 54 16
 unity/Assets/Scripts/Rampage/FollowCam.cs::Step~2 44 9
 unity/Assets/Scripts/Rampage/ModelColors.cs::Paint 68 14
 unity/Assets/Scripts/Rampage/OceanWaves.cs::OceanWaves 46 2

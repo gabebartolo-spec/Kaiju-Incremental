@@ -3,7 +3,7 @@
 // a carriage that rises, turns and slides), under the key lamp and the rim, seen by the lab's own camera. It
 // draws what CreationLab (the numbers) says each tick. The room round it (CreationRoom), the props despeckled and
 // the monitors' readouts, the serums and the Special K painted (CreationPaint), the dish cleaned (CreationDish);
-// the liquids stand full (no draining yet), and no genome or lightning yet.
+// the serums, the Special K and the barrel drain and fill (CreationLiquid). No genome or lightning yet.
 using System;
 using System.Collections.Generic;
 using Kaiju.Game;
@@ -37,6 +37,11 @@ public sealed class CreationLabView
     GameObject root;
     Camera cam;
     Transform carriage;
+    // Each shown titan's serum, the Special K canister's and the injector's barrel.
+    readonly Dictionary<int, CreationLiquid> vials = new Dictionary<int, CreationLiquid>();
+    CreationLiquid specialK, barrel;
+    // What Paint took out of the prop it is painting, to drain on its own.
+    Dictionary<int, Dictionary<Vector3Int, int>> taken;
     Light screens, focus;
     float unit; Tuning tuning;
     Shader lit;
@@ -267,12 +272,11 @@ public sealed class CreationLabView
     {
         if (prop == "monitors") return CreationPaint.Screens(model, Rgb(Hex("screen")), Rgb(Hex("screen_glass")));
         Dictionary<Vector3Int, int> cells = CreationPaint.Cells(model);
-        HashSet<Vector3Int> glowing = null;
         if (prop == "cradle") CreationDish.Clean(cells);
-        else if (prop == "rack") glowing = CreationPaint.Rack(cells, titans);
-        else if (prop == "canister") glowing = CreationPaint.Canister(cells);
+        else if (prop == "rack") taken = CreationPaint.Rack(cells, titans);
+        else if (prop == "canister") taken = new Dictionary<int, Dictionary<Vector3Int, int>> { [0] = CreationPaint.Canister(cells) };
         else return null;
-        model = CreationPaint.Model(cells, glowing, out bool[] glow);
+        model = CreationPaint.Model(cells, null, out bool[] glow);
         return glow;
     }
 
@@ -281,61 +285,36 @@ public sealed class CreationLabView
         ModelColors.Model model = Read(prop, out float voxel);
         if (model == null) return;
         CreationLab.Placed(prop, out CreationVec at, out double yaw);
+        taken = null;
         bool[] glow = Paint(prop, ref model);
         Transform t = Show(prop, ArmyView.Faces(model, voxel, Vector3.zero, glow), voxel, root.transform, true);
         t.position = U(where ?? at);
         t.rotation = Turn(yaw);
         Props++;
+        if (taken == null) return;
+        foreach (KeyValuePair<int, Dictionary<Vector3Int, int>> liquid in taken)
+        {
+            CreationLiquid l = Liquid(prop, liquid.Value, voxel, t);
+            if (prop == "canister") specialK = l;
+            else vials[liquid.Key] = l;
+        }
     }
 
-    // creation_injector.gd _ready: the model split into the static post (its column carried on up, its foot clear
-    // of the cradle) and the carriage (the boom and the head, the needle lengthened in steel).
+    // A liquid drawn on its own under `parent` (creation_liquid.gd), shown full until Draw says otherwise.
+    CreationLiquid Liquid(string name, Dictionary<Vector3Int, int> empties, float voxel, Transform parent)
+    {
+        var liquid = new CreationLiquid(empties, voxel);
+        Show(name + "_liquid", liquid.Mesh, voxel, parent, false);
+        return liquid;
+    }
+
+    // creation_injector.gd _ready: the static post, the carriage that rises, turns and slides, and its glass barrel.
     void Injector(CreationLab lab)
     {
         ModelColors.Model model = Read("injector", out float voxel);
         if (model == null) return;
-        S.GDict cfg = CreationLab.Cfg()["injector"];
-        S.GArray<S.Variant> pv = cfg["pivot"];
-        var pivot = new Vector3Int((int)S.Num.I(pv[0]), 0, (int)S.Num.I(pv[1]));
-        int splitX = (int)S.Num.I(cfg["split_x"]), splitY = (int)S.Num.I(cfg["split_y"]);
-        var post = new Dictionary<Vector3Int, int>();
-        var head = new Dictionary<Vector3Int, int>();
-        int[] raw = model.xyz.Raw;
-        for (int i = 0; i < model.rgb.Length; i++)
-        {
-            var cell = new Vector3Int(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]);
-            bool onCarriage = cell.x >= splitX || cell.y >= splitY;
-            (onCarriage ? head : post)[cell - pivot] = model.rgb[i];
-        }
-        // _extend_post: the post's cross-section at profile_y repeated from split_y up, for the carriage to ride.
-        int profile = (int)S.Num.I(cfg["profile_y"]), extend = (int)S.Num.I(cfg["post_extend"]);
-        var ring = new List<KeyValuePair<Vector3Int, int>>();
-        foreach (KeyValuePair<Vector3Int, int> cell in post)
-            if (cell.Key.y == profile) ring.Add(cell);
-        for (int y = splitY; y < splitY + extend; y++)
-            foreach (KeyValuePair<Vector3Int, int> cell in ring)
-                post[new Vector3Int(cell.Key.x, y, cell.Key.z)] = cell.Value;
-        // _seat: the foot's blocks inside the cradle's rim go.
-        double seat = S.Num.F(cfg["post_seat"]), turn = lab.PostYaw();
-        foreach (Vector3Int cell in new List<Vector3Int>(post.Keys))
-        {
-            CreationVec w = new CreationVec(cell.x, 0.0, cell.z).Turned(turn) * voxel;
-            if ((lab.Post + w).FlatLength() < seat) post.Remove(cell);
-        }
-        // _lengthen: a cross, then one block at the point.
-        S.GArray<S.Variant> tc = cfg["tip"];
-        var tip = new Vector3Int((int)S.Num.I(tc[0]), (int)S.Num.I(tc[1]), (int)S.Num.I(tc[2])) - pivot;
-        int needle = (int)S.Num.I(cfg["needle"]);
-        Color32 steel32 = Hex("needle");
-        int steel = steel32.r << 16 | steel32.g << 8 | steel32.b;
-        Vector3Int[] sides = { Vector3Int.left, Vector3Int.right, new Vector3Int(0, 0, -1), new Vector3Int(0, 0, 1) };
-        for (int i = 1; i <= needle; i++)
-        {
-            Vector3Int at = tip - new Vector3Int(0, i, 0);
-            head[at] = steel;
-            if (i > needle - 3) continue;
-            foreach (Vector3Int d in sides) head[at + d] = steel;
-        }
+        Color32 steel = Hex("needle");
+        CreationInjector.Split(lab, model, voxel, CreationPaint.Pack(steel.r, steel.g, steel.b), out var post, out var head, out var glass);
         var holder = new GameObject("injector");
         holder.transform.SetParent(root.transform, false);
         holder.transform.position = U(lab.Post);
@@ -343,6 +322,7 @@ public sealed class CreationLabView
         Transform column = Show("post", ArmyView.Faces(Model(post), voxel, Vector3.zero), voxel, holder.transform, false);
         column.localRotation = Turn(lab.PostYaw());
         carriage = Show("carriage", ArmyView.Faces(Model(head), voxel, Vector3.zero), voxel, holder.transform, false);
+        barrel = Liquid("barrel", glass, voxel, carriage);
         Props++;
     }
 
@@ -372,6 +352,7 @@ public sealed class CreationLabView
             carriage.localPosition = U(lab.CarriageAt());
             carriage.localRotation = Turn(lab.Yaw);
         }
+        Liquids(lab);
         if (screens != null) screens.intensity = Candela(lab.ScreensEnergy, "screens");
         if (focus != null)
         {
@@ -387,6 +368,20 @@ public sealed class CreationLabView
         cam.fieldOfView = (float)lab.CameraFov;
     }
 
+    // creation_lab.gd place / inject / takeover: the serums drain, the Special K is drawn, the barrel fills and
+    // empties, in the picked genome's colour or Special K's.
+    void Liquids(CreationLab lab)
+    {
+        foreach (KeyValuePair<int, CreationLiquid> vial in vials)
+            if (vial.Key < lab.Vials.Length) vial.Value.Show(lab.Vials[vial.Key], Genome(vial.Key));
+        if (specialK != null) specialK.Show(lab.SpecialK, Hex("special_k"));
+        if (barrel == null) return;
+        bool genome = !lab.BarrelIsSpecialK && lab.Picked >= 0 && lab.Picked < titans.Count;
+        barrel.Show(lab.Barrel, genome ? Genome(lab.Picked) : Hex("special_k"));
+    }
+
+    Color Genome(int titan) => CreationPaint.Rgb(CreationPaint.Hex(titans[titan].Genome));
+
     // Takes the set, its camera and its lights away.
     public void Close()
     {
@@ -396,5 +391,7 @@ public sealed class CreationLabView
             if (o != null) UnityEngine.Object.Destroy(o);
         owned.Clear();
         materials.Clear();
+        vials.Clear();
+        specialK = barrel = null;
     }
 }
