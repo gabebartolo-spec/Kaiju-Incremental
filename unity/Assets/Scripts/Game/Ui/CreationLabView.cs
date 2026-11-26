@@ -1,8 +1,8 @@
 // The lab set of Kaiju Creation in 3D (scenes/creation_lab.gd, creation_set.gd, creation_injector.gd): the bench,
 // the cradle with its dish, the rack of vials, the monitors, the Special K canister and the injector (a post and
 // a carriage that rises, turns and slides), under the key lamp and the rim, seen by the lab's own camera. It
-// draws what CreationLab (the numbers) says each tick. First version (D-476): the models as they are on disk,
-// with no liquids, genome, lightning, room walls or screen paint yet.
+// draws what CreationLab (the numbers) says each tick. The room round it (CreationRoom), the props despeckled and
+// the monitors' readouts painted (CreationPaint); no liquids, genome or lightning yet.
 using System;
 using System.Collections.Generic;
 using Kaiju.Game;
@@ -24,6 +24,8 @@ public sealed class CreationLabView
     const float NEAR = 0.05f, FAR = 100f;
     // Drawn over any camera left in the scene.
     const float CAMERA_DEPTH = 10f;
+    // Over any other global volume left in the scene (the rampage's sky and fog read through as white).
+    const float VOLUME_PRIORITY = 100f;
 
     static readonly HashSet<string> warned = new HashSet<string>();
 
@@ -74,6 +76,8 @@ public sealed class CreationLabView
         return new Color(((v >> 16) & 255) / 255f, ((v >> 8) & 255) / 255f, (v & 255) / 255f, 1f);
     }
 
+    static int Rgb(Color32 c) => CreationPaint.Pack(c.r, c.g, c.b);
+
     void Make(CreationLab lab)
     {
         root = new GameObject("creation_lab");
@@ -84,6 +88,7 @@ public sealed class CreationLabView
         Environment(tuning);
         Lights();
         Bench();
+        Room();
         foreach (string prop in new[] { "cradle", "monitors", "rack" }) Place(prop, null);
         Place("canister", lab.CanisterAt);
         Injector(lab);
@@ -129,10 +134,18 @@ public sealed class CreationLabView
         agx.saturation.Override(SliceData.F(look, "saturation", 1));
         agx.postContrast.Override(SliceData.F(look, "post_contrast", 1));
         profile.Add<MotionBlur>(true).intensity.Override(0f);
+        // creation_set.gd environment: a thin haze lit only by the lamps, over the near-black room.
+        var fog = profile.Add<Fog>(true);
+        fog.enabled.Override(true);
+        fog.meanFreePath.Override(1f / (float)S.Num.F(CreationLab.Cfg()["fog"]));
+        fog.colorMode.Override(FogColorMode.ConstantColor);
+        fog.color.Override(Hex("background").linear * unit);
+        fog.enableVolumetricFog.Override(true);
         var go = new GameObject("volume");
         go.transform.SetParent(root.transform, false);
         Volume volume = go.AddComponent<Volume>();
         volume.isGlobal = true;
+        volume.priority = VOLUME_PRIORITY;
         volume.sharedProfile = profile;
     }
 
@@ -177,9 +190,19 @@ public sealed class CreationLabView
     {
         if (materials.TryGetValue(voxel, out Material known)) return known;
         Material m = ArmyView.PlainMaterial(lit, voxel);
+        m.SetFloat("_WindowGlow", (float)S.Num.F(CreationLab.Cfg()["glow"]));
         materials[voxel] = m;
         owned.Add(m);
         return m;
+    }
+
+    // creation_room.gd build: the walls, shelves, cables, screens and strip, and the strip's cold washes.
+    void Room()
+    {
+        CreationRoom room = CreationRoom.Build();
+        Show("room", ArmyView.Faces(room.Model(out bool[] glow), room.Voxel, Vector3.zero, glow), room.Voxel, root.transform, false);
+        foreach (CreationVec at in room.Washes())
+            Lamp("wash", LightType.Point, room.WashColour, room.WashEnergy, room.WashRange, at);
     }
 
     Transform Show(string name, Mesh mesh, float voxel, Transform parent, bool shadows)
@@ -222,7 +245,13 @@ public sealed class CreationLabView
         voxel = row.Has("voxel") ? (float)S.Num.F(row["voxel"]) : Voxel();
         string path = row.Has("model") ? S.Gd.Str(row["model"]) : "res://assets/lab/" + prop + ".kvox";
         ModelColors.Model model = ModelColors.Read(path);
-        if (model == null) Warn(path, "creation: " + path + " is missing, the lab is drawn without it");
+        if (model == null)
+        {
+            Warn(path, "creation: " + path + " is missing, the lab is drawn without it");
+            return null;
+        }
+        model = CreationPaint.Copy(model);
+        CreationPaint.Despeckle(model);
         return model;
     }
 
@@ -232,7 +261,8 @@ public sealed class CreationLabView
         ModelColors.Model model = Read(prop, out float voxel);
         if (model == null) return;
         CreationLab.Placed(prop, out CreationVec at, out double yaw);
-        Transform t = Show(prop, ArmyView.Faces(model, voxel, Vector3.zero), voxel, root.transform, true);
+        bool[] glow = prop == "monitors" ? CreationPaint.Screens(model, Rgb(Hex("screen")), Rgb(Hex("screen_glass"))) : null;
+        Transform t = Show(prop, ArmyView.Faces(model, voxel, Vector3.zero, glow), voxel, root.transform, true);
         t.position = U(where ?? at);
         t.rotation = Turn(yaw);
         Props++;
