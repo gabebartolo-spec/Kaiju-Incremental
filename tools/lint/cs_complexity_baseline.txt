@@ -61,7 +61,6 @@ unity/Assets/Scripts/Rampage/CityDraw.cs::CityDraw 42 5
 unity/Assets/Scripts/Rampage/CityDraw.cs::FallStart 49 5
 unity/Assets/Scripts/Rampage/CityDraw.cs::FillEnclosed 32 33
 unity/Assets/Scripts/Rampage/CityDraw.cs::FillPalette 45 5
-unity/Assets/Scripts/Rampage/CityDraw.cs::ReadLooks 34 20
 unity/Assets/Scripts/Rampage/CityDraw.cs::Remesh 64 13
 unity/Assets/Scripts/Rampage/CityFx.cs::<file> 406 0
 unity/Assets/Scripts/Rampage/CityFx.cs::CityFx 66 4

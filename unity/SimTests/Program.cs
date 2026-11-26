@@ -106,6 +106,7 @@ static class Program
         failures += RooftopCheck.Run();
         failures += LeapCheck.Run(RepoRoot());
         failures += SlowmoCheck.Run(RepoRoot());
+        failures += WindowLightsCheck.Run(RepoRoot());
         return failures == 0 && differ == 0 ? 0 : 1;
     }
 
