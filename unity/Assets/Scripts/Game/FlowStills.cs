@@ -149,7 +149,9 @@ public sealed class FlowStills : MonoBehaviour
             shot = ScreenCapture.CaptureScreenshotAsTexture();
             int w = shot.width, h = shot.height;
             // Always through a 1080p target: the size is fixed and any alpha the back buffer holds is dropped.
-            rt = RenderTexture.GetTemporary(WIDTH, HEIGHT, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            // The grab holds the screen's display bytes in a texture marked linear, so the target is linear too:
+            // an sRGB target encoded them a second time (the crawl red d42a1f saved as eb715d, every dark lifted).
+            rt = RenderTexture.GetTemporary(WIDTH, HEIGHT, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
             Graphics.Blit(shot, rt);
             RenderTexture before = RenderTexture.active;
             RenderTexture.active = rt;
