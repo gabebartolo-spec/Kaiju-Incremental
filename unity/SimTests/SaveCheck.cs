@@ -86,6 +86,7 @@ static class SaveCheck
             RoundTrip();
             Migrations();
             Unreadable();
+            Legacy();
             Delete();
             Latest();
             Specimen();
@@ -301,6 +302,60 @@ static class SaveCheck
         Check(SaveFile.Migrate(new GDict { { "version", 7L } }).IsEmpty(), "a save from a newer version is refused");
         Check(SaveFile.Migrate(new GDict { { "version", 0L } }).IsEmpty() && SaveFile.Migrate(new GDict { { "runs", 3L } }).IsEmpty() && SaveFile.Migrate(new GDict()).IsEmpty(),
             "a save with no version, or version 0, is refused");
+    }
+
+    static void WriteLegacy(GDict data) => UserDir.WriteText(SaveFile.LegacyPath, Json.Stringify(data, ""));
+
+    // The pre-slots save.json (tests/run_slots_tests.gd _check_legacy_*): adopted into the first empty slot,
+    // migrated, the old file renamed to a backup byte for byte, exactly once; never over a slot, never lost.
+    static void Legacy()
+    {
+        SaveFile.Wipe();
+        Check(!SaveFile.HasSave(1) && SaveFile.LoadGame(1).IsEmpty() && !UserDir.Exists(SaveFile.LegacyBackup),
+            "with no save.json nothing is adopted and no backup appears");
+
+        WriteLegacy(V4());
+        string before = UserDir.ReadText(SaveFile.LegacyPath);
+        GDict loaded = SaveFile.LoadGame(1);
+        Check(Same(loaded, SaveFile.Migrate(V4())) && Num.I(loaded["runs"]) == 7,
+            "the single save loads from slot 1, migrated, nothing lost: " + Json.Stringify(loaded, ""));
+        Check(!SaveFile.HasSave(2) && !SaveFile.HasSave(3), "slots 2 and 3 stay empty");
+        Check(!UserDir.Exists(SaveFile.LegacyPath) && UserDir.ReadText(SaveFile.LegacyBackup) == before,
+            "the old file is renamed to a backup, byte for byte, so it is adopted once");
+        Check(SaveFile.LatestSlot() == 1, "the title continues the adopted kaiju");
+
+        SaveFile.Wipe();
+        SaveFile.SaveGame(SaveFile.NewSave("reptilian"), 1);
+        WriteLegacy(V4());
+        Check(Num.I(SaveFile.LoadGame(2).Get("runs", 0L)) == 7 && Num.I(SaveFile.LoadGame(1).Get("runs", -1L)) == 0,
+            "with slot 1 taken the old save goes to slot 2, slot 1 untouched");
+
+        SaveFile.Wipe();
+        WriteLegacy(new GDict { { "version", (long)SaveFile.Version + 1 }, { "runs", 3L } });
+        Check(!SaveFile.HasSave(1) && UserDir.Exists(SaveFile.LegacyPath), "a save from a newer version stays where it is, never adopted or deleted");
+        SaveFile.Wipe();
+        UserDir.WriteText(SaveFile.LegacyPath, NotJson);
+        Check(!SaveFile.HasSave(1) && UserDir.ReadText(SaveFile.LegacyPath) == NotJson, "a corrupt old save stays where it is and every slot reads empty");
+
+        SaveFile.Wipe();
+        for (int n = 1; n <= 3; n++)
+        {
+            GDict save = SaveFile.NewSave("reptilian");
+            save["runs"] = (long)n;
+            SaveFile.SaveGame(save, n);
+        }
+        WriteLegacy(V4());
+        bool kept = true;
+        for (int n = 1; n <= 3; n++) kept &= Num.I(SaveFile.LoadGame(n).Get("runs", -1L)) == n;
+        Check(kept && UserDir.Exists(SaveFile.LegacyPath), "with every slot full the old save waits on disk, no slot overwritten");
+
+        SaveFile.Wipe();
+        UserDir.WriteText(SaveFile.LegacyBackup, "{}");
+        WriteLegacy(V4());
+        bool first = SaveFile.HasSave(1), again = SaveFile.HasSave(2);
+        Check(first && !again && !UserDir.Exists(SaveFile.LegacyPath) && UserDir.ReadText(SaveFile.LegacyBackup) != "{}",
+            "with a stale backup the old save is still adopted exactly once");
+        SaveFile.Wipe();
     }
 
     // A slot file that cannot be read never reads empty: it is taken, not readable, and kept byte for byte.
