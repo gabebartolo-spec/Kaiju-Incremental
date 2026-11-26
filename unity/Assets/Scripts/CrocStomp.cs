@@ -1,3 +1,4 @@
+using UnityEngine;
 using S = Kaiju.Sim;
 
 // The standing stomp (scenes/clip_stomp.gd stomp with the keyed r13f stomps, scenes/gait_clip.gd stomp,
@@ -47,6 +48,45 @@ public sealed partial class Croc
         if (side == stompFoot) stompFoot = "";
         if (side == "" || side != stompLifted) return false;
         stompLifted = "";
+        return true;
+    }
+    // scenes/gait_clip.gd run: a momentum slam stops the body in a keyed take, played once to its end over
+    // whatever the gait does (scenes/clip_choice.gd holds "slam_stop" until it has played out). A held take still
+    // playing keeps playing its tail under the new one (gait_clip.gd _go fades from the old state's pose), so a
+    // stomp chained off the last one's tail never snaps the legs back to the idle.
+    const float FADE_FLOOR_S = 0.001f;  // a zero clip_fade_s still divides
+    Clip heldFrom;
+    float heldFromTime, heldFromAge;
+
+    public void Hold(string name)
+    {
+        heldFrom = heldClip;
+        heldFromTime = heldClipTime;
+        heldFromAge = heldClipAge;
+        clips.TryGetValue(name, out heldClip);
+        heldClipTime = 0f;
+        heldClipAge = 0f;
+    }
+
+    void LayHeld(float dt, ref Vector3 offset)
+    {
+        if (!LayTake(heldFrom, dt, ref heldFromTime, ref heldFromAge, ref offset)) heldFrom = null;
+        if (!LayTake(heldClip, dt, ref heldClipTime, ref heldClipAge, ref offset)) heldClip = null;
+    }
+
+    // One held take over the pose, faded in from its start and out to its end (clip_fade_s); false once it has ended.
+    bool LayTake(Clip take, float dt, ref float time, ref float age, ref Vector3 offset)
+    {
+        if (take == null) return false;
+        time += dt * fps;
+        age += dt;
+        float end = take.frames - 1;
+        if (time >= end) return false;
+        ClipPose(take, time, turnsA, out Vector3 heldOffset);
+        float fadeS = Mathf.Max(FADE_FLOOR_S, tuning.clip_fade_s);
+        float w = Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, (end - time) / (fadeS * fps))) * Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, age / fadeS));
+        for (int i = 0; i < turnsOut.Length; i++) turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], w);
+        offset = Vector3.Lerp(offset, heldOffset, w);
         return true;
     }
 }
