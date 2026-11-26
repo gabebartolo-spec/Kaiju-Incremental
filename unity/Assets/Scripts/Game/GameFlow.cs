@@ -186,7 +186,7 @@ public sealed partial class GameFlow : MonoBehaviour
             case State.Rampage: StartScene(); break;
             case State.Tree: ShowTree(); break;
             case State.DemoEnd:
-                Shown(state, DemoEndScreen.Show(Save, () => StartRampage(null, true), () => Enter(State.Tree)));
+                Shown(state, DemoEndScreen.Show(FlowStills.DemoSave(Save), () => StartRampage(null, true), () => Enter(State.Tree)));
                 break;
             default:
                 // Results are only shown over the rampage that just ended.

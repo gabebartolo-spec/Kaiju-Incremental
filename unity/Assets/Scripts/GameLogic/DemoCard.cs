@@ -38,6 +38,15 @@ namespace Kaiju.Game
         public const string FEEDBACK = "Feedback", ENDLESS = "Endless", KEEP = "Keep";
         static readonly string[,] BUTTONS = { { FEEDBACK, "LEAVE FEEDBACK" }, { ENDLESS, "TRY ENDLESS MODE" }, { KEEP, "KEEP PLAYING" } };
 
+        // demo_end.gd setup: the base kaiju stats (main.gd _base_stats) at the data's thanks size, for the set.
+        public static GDict StageStats()
+        {
+            var stats = new GDict();
+            stats.Merge(Content.Section("kaiju"));
+            stats["size"] = Num.I(Content.Section("demo").Get("thanks_size", 1L));
+            return stats;
+        }
+
         // save: the save in play (main.gd _show_demo_end: _species(), _totals()).
         public static DemoCardModel Build(GDict save)
         {

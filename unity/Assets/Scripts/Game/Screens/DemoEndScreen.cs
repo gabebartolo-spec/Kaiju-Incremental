@@ -2,8 +2,9 @@
 // demo lines, the rampage totals (Demo.Rows, counted by the sim) and three buttons. LEAVE FEEDBACK opens the
 // data's Itch page (D-148, D-395), TRY ENDLESS MODE starts Endless mode, KEEP PLAYING returns to the tree. What
 // it says is built in plain C# (GameLogic/DemoCard.cs); this only draws it. The save is untouched.
-// First version (D-476): the words, totals and buttons at Godot's sizes, centred on the backdrop. The adult on
-// the reveal's set beside its tower (RevealStage) and its clip roar every 360 frames come with the 3D reveal.
+// Above the words, in the reveal's hazard frame (EvolutionReveal.frame_view / frame_around): the adult on the
+// reveal's set beside the tallest tower it topples (RevealStageView), roaring its clip on arrival and every
+// ROAR_EVERY frames after.
 using System;
 using Kaiju.Game;
 using UnityEngine;
@@ -22,6 +23,15 @@ public static class DemoEndScreen
     const float BUTTON_GAP = 24f;
     // Label and figure pairs on one line (demo_end.gd _stats_grid: four grid columns).
     const int PAIRS = 2;
+    // evolution_reveal.gd: the column's top and bottom margin and the frame's room round the view; demo_end.gd:
+    // the height kept for the words under it, the set's camera pulled back and moved over, the roar's pace.
+    const float EDGE_MARGIN = 48f, FRAME_EXTRA = 56f, TEXT_RESERVE = 480f, VIEW_BACK = 1.25f, VIEW_SHIFT = 0.1f;
+    const int ROAR_EVERY = 360;
+    // evolution_reveal.gd frame_around: the tape-topped frame's edge and its content margin.
+    const float FRAME_BORDER = 3f, FRAME_PAD = 8f;
+
+    // The set in the frame (the smoke reads its roars).
+    public static RevealStageView View { get; private set; }
 
     // Opens a URL (demo_end.gd opener: the smoke run swaps it so no browser opens).
     public static Action<string> Opener = Application.OpenURL;
@@ -33,8 +43,11 @@ public static class DemoEndScreen
         RectTransform screen = UiKit.Screen("DemoEnd");
         UiKit.Backdrop(screen);
         RectTransform col = UiKit.Column(screen, GAP, "Card");
-        col.anchorMin = col.anchorMax = col.pivot = new Vector2(0.5f, 0.5f);
-        UiKit.Fit(col);
+        UiKit.FullRect(col);
+        col.offsetMin = new Vector2(0f, EDGE_MARGIN);
+        col.offsetMax = new Vector2(0f, -EDGE_MARGIN);
+        col.GetComponent<VerticalLayoutGroup>().childForceExpandWidth = false;
+        View = Frame(col, screen);
         Text headline = UiKit.Label(col, "", UiKit.SIZE_TITLE, UiKit.ACCENT);
         headline.text = m.title;
         headline.alignment = TextAnchor.MiddleCenter;
@@ -42,8 +55,22 @@ public static class DemoEndScreen
         line.text = m.line;
         line.alignment = TextAnchor.MiddleCenter;
         StatsGrid(col, m);
+        Buttons(col, m, onEndless, onKeep);
+        string rows = string.Join(", ", m.rows.ConvertAll(r => r.key + " " + r.value));
+        Debug.Log($"flow: demo end shown, species {m.speciesId}, stage {m.stage}, title '{m.title}', line '{m.line}', "
+            + $"rows {m.rows.Count} ({rows}), view {View.Stage}, buttons {string.Join("/", m.buttons.ConvertAll(b => b.id))}, focus {m.focus}, feedback {m.feedbackUrl}");
+        return screen;
+    }
+
+    // LEAVE FEEDBACK, TRY ENDLESS MODE (focused) and KEEP PLAYING, centred in a row.
+    static void Buttons(Transform col, DemoCardModel m, Action onEndless, Action onKeep)
+    {
         RectTransform row = UiKit.Row(col, BUTTON_GAP, "Buttons");
         row.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+        // The column fills the screen now: the row keeps its buttons' own size instead of taking the rest of it
+        // (Godot's HBoxContainer in a VBox does not grow without an expand flag).
+        LayoutElement keep = row.gameObject.AddComponent<LayoutElement>();
+        keep.flexibleWidth = keep.flexibleHeight = 0f;
         Selectable[] buttons = new Selectable[m.buttons.Count];
         KitButton first = null;
         for (int i = 0; i < m.buttons.Count; i++)
@@ -60,10 +87,26 @@ public static class DemoEndScreen
         }
         UiFocus.Row(buttons);
         UiKit.Focus(first);
-        string rows = string.Join(", ", m.rows.ConvertAll(r => r.key + " " + r.value));
-        Debug.Log($"flow: demo end shown, species {m.speciesId}, stage {m.stage}, title '{m.title}', line '{m.line}', "
-            + $"rows {m.rows.Count} ({rows}), buttons {string.Join("/", m.buttons.ConvertAll(b => b.id))}, focus {m.focus}, feedback {m.feedbackUrl}");
-        return screen;
+    }
+
+    // evolution_reveal.gd frame_view and frame_around: the view as tall as the screen leaves room for (at most
+    // VIEW_MAX), at VIEW_MAX's aspect, in a frame of hazard tape on top and a yellow edge, centred.
+    static RevealStageView Frame(Transform col, RectTransform screen)
+    {
+        Canvas.ForceUpdateCanvases();
+        Vector2 max = RevealStageView.VIEW_MAX;
+        float h = Mathf.Min(max.y, screen.rect.height - 2f * EDGE_MARGIN - TEXT_RESERVE - FRAME_EXTRA);
+        HazardBox frame = UiKit.Hazard(col, UiKit.BG, UiKit.ACCENT, FRAME_BORDER, HazardBox.Band.Top, "Frame");
+        VerticalLayoutGroup g = frame.gameObject.AddComponent<VerticalLayoutGroup>();
+        int pad = Mathf.RoundToInt(FRAME_PAD);
+        g.padding = new RectOffset(pad, pad, Mathf.RoundToInt(UiKit.PANEL_BAND + FRAME_PAD), pad);
+        g.childControlWidth = g.childControlHeight = true;
+        g.childForceExpandWidth = g.childForceExpandHeight = false;
+        RectTransform holder = UiKit.Box(frame.transform, "View");
+        UiKit.Size(holder, h * max.x / max.y, h);
+        RevealStageView view = RevealStageView.Create(holder, DemoCard.StageStats(), VIEW_BACK, VIEW_SHIFT);
+        view.RoarEvery = ROAR_EVERY;
+        return view;
     }
 
     // The rampage totals, label left and figure right, two pairs a line; cells in one grid column share a width.
