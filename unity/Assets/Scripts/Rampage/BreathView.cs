@@ -27,6 +27,7 @@ public sealed class BreathView : IDisposable
     readonly BoltRig rig;
     readonly SpineCharge charge;
     readonly ScorchMarks scorch;
+    readonly UpgradeCues cues;  // the signature's ready pulse, and Regeneration's (power_cues.gd)
     readonly StandingCut cut;
     readonly Color tint;
     readonly float baseDamage, along, up;
@@ -62,6 +63,7 @@ public sealed class BreathView : IDisposable
         };
         charge = new SpineCharge(croc, boltShader, scale, bolt);
         scorch = new ScorchMarks(Resources.Load<Shader>("Shaders/Scorch"));
+        cues = new UpgradeCues(sim, fx, croc, tint);
     }
 
     public void OnEvent(S.GDict e)
@@ -163,12 +165,14 @@ public sealed class BreathView : IDisposable
         rig.Draw();
         charge.Step(dt);
         scorch.Step(dt);
+        cues.Step(dt, croc.position);
     }
 
     public void Dispose()
     {
         rig.Dispose();
         scorch.Dispose();
+        cues.Dispose();
     }
 }
 

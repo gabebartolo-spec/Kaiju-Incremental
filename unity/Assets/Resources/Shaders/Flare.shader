@@ -1,5 +1,5 @@
 // scenes/flare.gdshader: an additive camera-facing flare, white at the core, a tinted halo, an uneven rim,
-// fading where it meets what stands behind it.
+// fading where it meets what stands behind it; with _FlareRays, four short rays (the ready pulse, UpgradeCues).
 Shader "Hidden/Slice/Flare"
 {
     SubShader
@@ -24,8 +24,10 @@ Shader "Hidden/Slice/Flare"
             float4 _FlarePos;   // world xyz, full size w
             float4 _FlareTint;
             float _FlareFade, _FlareEdge, _FlareSoft;
+            float _FlareRays;   // flare.gdshader ray_gain: the four short rays (0: none, as the bolt's round glows)
 
             static const float CORE_WIDTH = 18.0, CORE_GAIN = 4.0, HALO_FALL = 4.0, HALO_GAIN = 0.5, EDGE_LOBES = 3.0;
+            static const float RAY_SHARP = 90.0, RAY_FROM = 0.2;
 
             struct Attributes
             {
@@ -60,6 +62,7 @@ Shader "Hidden/Slice/Flare"
                 float r = length(i.p);
                 float core = exp(-r * r * CORE_WIDTH);
                 float halo = exp(-r * HALO_FALL) * HALO_GAIN;
+                float rays = exp(-abs(i.p.x * i.p.y) * RAY_SHARP) * (1.0 - smoothstep(RAY_FROM, 1.0, r)) * _FlareRays;
                 float3 hot = lerp(_FlareTint.rgb, float3(1, 1, 1), core);
                 float k = _FlareFade;
                 if (_FlareEdge > 0.0)
@@ -71,7 +74,7 @@ Shader "Hidden/Slice/Flare"
                 }
                 if (_FlareSoft > 0.0)
                     k *= saturate((LinearEyeDepth(LoadCameraDepth(i.positionCS.xy), _ZBufferParams) - i.eye) / _FlareSoft);
-                return float4(hot * (core * CORE_GAIN + halo) * k, 0.0);
+                return float4(hot * (core * CORE_GAIN + halo + rays) * k, 0.0);
             }
             ENDHLSL
         }
