@@ -67,7 +67,7 @@ public sealed class EventFx : System.IDisposable
     {
         bool stomped = stompWait > 0f && (stompSide == "" || stompSide == side);
         if (stomped) stompWait = 0f;
-        if (stomped) Cracks.Stomp(at, stompRadius);  // land_stomp: the cracks, if it is heavy enough
+        if (stomped) Cracks.Stomp(at, stompRadius, side);  // land_stomp: the cracks, if it is heavy enough
         float bs = (float)sim.BodyScale();
         float size = bs * (FOOTFALL_BASE + strength);
         fx.Footfall(at + Vector3.up * FOOTFALL_LIFT, FOOTFALL_DUST * size);
