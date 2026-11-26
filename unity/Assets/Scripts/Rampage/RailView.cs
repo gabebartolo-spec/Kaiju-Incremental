@@ -26,6 +26,7 @@ public sealed class RailView : System.IDisposable
     readonly Material material;
     readonly Transform root;
     readonly System.Action<Vector3> kick;
+    public readonly WreckSurvivors survivors;
     readonly S.GDict colors;
     readonly Mesh locoMesh, carriageMesh;
     readonly Dictionary<long, Transform[]> cars = new Dictionary<long, Transform[]>();
@@ -52,8 +53,9 @@ public sealed class RailView : System.IDisposable
         return Quaternion.LookRotation(new Vector3((float)f.x, (float)f.y, -(float)f.z), new Vector3((float)u.x, (float)u.y, -(float)u.z));
     }
 
-    public RailView(S.RampageSim sim, CityFx fx, ArmyView army, Shader shader, Transform parent, System.Action<Vector3> kick)
+    public RailView(S.RampageSim sim, CityFx fx, ArmyView army, StreetPeople people, Shader shader, Transform parent, System.Action<Vector3> kick)
     {
+        survivors = new WreckSurvivors(sim, people);
         this.sim = sim;
         this.fx = fx;
         this.army = army;
@@ -165,8 +167,10 @@ public sealed class RailView : System.IDisposable
 
     // ---------- Per frame (rail_view.gd _process) ----------
 
-    public void Update()
+    public void Update(float dt)
     {
+        int out_ = survivors.Step(dt);
+        if (out_ > 0) Debug.Log($"rail: {out_} survivors crawl out ({survivors.Spilled} so far), frame {Time.frameCount}");
         seen.Clear();
         foreach (S.Rail.Train train in sim.rail.trains)
         {
@@ -237,6 +241,7 @@ public sealed class RailView : System.IDisposable
         fx.FlashLight(pos, DERAIL_FLASH, DERAIL_LIGHT, DERAIL_LIGHT_S);
         fx.Fire(pos, DERAIL_FIRE);
         kick?.Invoke(pos);
+        survivors.Derailed(S.Num.I(e["train"]));
         Derails++;
         Debug.Log($"rail: derail {Derails} train {S.Num.I(e["train"])} at {pos.x:F1},{pos.z:F1} frame {Time.frameCount}, fires {fx.LiveFires}");
     }
