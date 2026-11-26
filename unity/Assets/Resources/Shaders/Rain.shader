@@ -45,7 +45,7 @@ Shader "Hidden/Slice/Rain"
             float4 _RainSplash;  // splashes: quad size, scale min, scale max, lifetime spread
             float4 _RainFade;    // near_clear, near_full, far_begin, far_end
             float4 _RainClear;   // centre_keep, centre_radius, focus_clear, focus_full
-            float4 _RainTint;    // rgb (linear, exposure-scaled), alpha
+            float4 _RainTint;    // rgb (linear; the colour buffer is pre-exposed, so no exposure unit), alpha
 
             // rain_splash.gdshader rest_tolerance: metres a surface may sit off the puff's plane.
             #define REST_TOLERANCE 0.3
