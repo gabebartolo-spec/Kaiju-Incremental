@@ -539,16 +539,15 @@ public sealed partial class Croc
     {
         Stride *= scale / Scale;
         Scale = scale;
-        Clip walk = clips["walk"], runClip = RunClip;
+        Clip walk = clips["walk"];
         float walkSpeed = Stride / ((float)walk.frames / walk.cycles / fps);
-        float runSpeed = Stride / ((float)runClip.frames / runClip.cycles / fps);
         Vector3 step = feet - position;
         step.y = 0;
         position = feet;
         float speed = step.magnitude / Mathf.Max(dt, 1e-4f);
         float fade = 1f - Mathf.Exp(-dt / Mathf.Max(0.001f, tuning.clip_fade_s));
-        moveWeight = Mathf.Lerp(moveWeight, Mathf.Clamp01(speed / walkSpeed), fade);
-        runWeight = hasRun ? Mathf.Lerp(runWeight, Mathf.Clamp01((speed - walkSpeed) / Mathf.Max(0.001f, runSpeed - walkSpeed)), fade) : 0f;
+        moveWeight = Mathf.Lerp(moveWeight, SetOff ? Mathf.Clamp01(speed / walkSpeed) : 0f, fade);
+        runWeight = RunTake;
         if (facing.sqrMagnitude > 1e-6f)
         {
             float want = Mathf.Atan2(-facing.x, -facing.y);
@@ -715,11 +714,7 @@ public sealed partial class Croc
     void Pose(float dist, float dt)
     {
         Clip walk = clips["walk"], runClip = RunClip, idle = clips["idle"];
-        float walkCycle = (float)walk.frames / walk.cycles;
-        float runCycle = (float)runClip.frames / runClip.cycles;
-        walkFrame += dist / Stride * walkCycle;
-        runFrame += dist / Stride * runCycle;
-        idleFrame += dt * fps;
+        Clocks(dist, dt, walk, runClip);
 
         ClipPose(idle, idleFrame, turnsA, out Vector3 offA);
         ClipPose(walk, walkFrame, turnsB, out Vector3 offB);

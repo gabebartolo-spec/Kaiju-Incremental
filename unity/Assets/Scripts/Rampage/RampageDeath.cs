@@ -23,7 +23,10 @@ public sealed partial class RampageGame
         else if (sim.body.dash.On())
             leap.Pose(feet, Facing(), scale, dt);
         else
+        {
+            croc.FollowSteps(sim.body.StepClock(), (float)sim.powers.run.Blend());  // rampage_ability.gd follow_steps
             croc.Drive(feet, Facing(), scale, dt);
+        }
     }
 
     // scenes/rampage.gd add_trauma: an amount at a place, faded by its distance from him.
