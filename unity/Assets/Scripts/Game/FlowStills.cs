@@ -26,6 +26,8 @@ public sealed class FlowStills : MonoBehaviour
     const int LOADING_METER_STAGE = 3;
     // capture_demo.gd: the thanks still is taken SETTLE frames after the buy and ROAR_SHOT_FRAME more, mid-roar.
     const int DEMO_SETTLE = 12, ROAR_SHOT_FRAME = 50;
+    // capture_creation.gd DRAW_SHOT: share of the lab's trip at which its pour stills are taken.
+    const double DRAW_SHOT = 0.42;
     // capture_demo.gd TOTALS: the stand-in totals its thanks still shows (a ~2 h demo playthrough), so the two
     // stills compare. Capture only: the game shows the save's own totals.
     static readonly (string key, long value)[] DEMO_TOTALS =
@@ -127,6 +129,18 @@ public sealed class FlowStills : MonoBehaviour
 
     // A still of `name` once `settle` frames have passed and `ready` holds, if `on` still holds then (the screen
     // is still on show; otherwise it is asked again the next time it shows). Taken once per name.
+    // capture_creation.gd's 02_draw and 03b_canister: the lab mid-pour, DRAW_SHOT through the injector's trip to
+    // the vial (Place) and through the injection (Inject). Called after each lab tick; the lab stops ticking while
+    // a still is owed, so the shot lands on that tick.
+    public static void WantLab(Kaiju.Game.CreationSteps steps)
+    {
+        if (!On) return;
+        string name = steps.Step == Kaiju.Game.CreationStep.Place ? "creation_draw"
+            : steps.Step == Kaiju.Game.CreationStep.Inject ? "creation_canister" : null;
+        if (name == null || steps.StepTick != Kaiju.Game.CreationLab.Round(steps.Ticks(steps.Step) * DRAW_SHOT)) return;
+        Want(name, () => GameFlow.Now == GameFlow.State.Creation, 0);
+    }
+
     // The loading screen as it shows, and again with its meter part full (LOADING_METER_STAGE stages built).
     public static void WantLoading()
     {
