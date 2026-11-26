@@ -2,9 +2,9 @@
 // quay, seen by a still camera into a picture behind the menu. The plan and the sim build on a worker while the
 // sky and the menu draw; then the ground, the bay, the skyline with its far rampage, the boats, the night look
 // with the far windows' power cut, the burning district (TitleCity.Light), the shore (TitleShoreView), the sky's
-// smoke, the flashes and the colossus's glow (TitleFxView). The picture fades in over the sky (tuning "fade_s").
-// TitleClock times the gunfire, booms and stomps from the first frame; their sounds play here and, once the city
-// stands, their flashes. The colossus itself is TitleBackdrop's card: Steps and RevealAmount drive it.
+// smoke, the flashes and the colossus with its glow and eye (TitleFxView). The picture fades in over the sky
+// (tuning "fade_s"). TitleClock times the gunfire, booms and stomps from the first frame; their sounds play here
+// and, once the city stands, their flashes. Steps and RevealAmount drive the colossus.
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Kaiju.Game;
@@ -24,6 +24,17 @@ public sealed class TitleCityView : MonoBehaviour
     // The title variant's env keys laid over the run's look (title_backdrop.gd _apply_look).
     static readonly string[] ENV_COLOURS = { "ambient_color", "fog_color", "sun_color" };
     static readonly string[] ENV_NUMBERS = { "ambient", "fog_density", "sun_energy" };
+    // Resources/Shaders/TitleSky's SKY_MAX: the explosions' lights the picture carries at once (the newest kept).
+    const int SKY_MAX = 8;
+
+    // An explosion's light on the picture (title_backdrop.gd _light_sky): centre (u, v), radius (share of the
+    // height), its colour in display units, its alpha at the start, its life and its age.
+    sealed class SkyLight
+    {
+        public Vector2 at;
+        public float radius, alpha, life, age;
+        public Color colour;
+    }
 
     RawImage image;
     S.GDict title, colossusCfg;
@@ -42,6 +53,13 @@ public sealed class TitleCityView : MonoBehaviour
     TitleShoreView shore;
     TitleFxView fx;
     double revealLeft;
+    float eyeTime;
+    Material skyMat;
+    readonly List<SkyLight> skyLights = new List<SkyLight>();
+    readonly Vector4[] skyAt = new Vector4[SKY_MAX], skyColour = new Vector4[SKY_MAX];
+
+    // The colossus's baked silhouette (TitleBackdrop loads it; null draws none).
+    public Texture2D colossusArt;
 
     // The picture's fade (0 .. 1); 1 when no city is drawn, so the card stands as before.
     public float Fade => build == null && sim == null ? 1f : (float)clock.Fade;
@@ -62,6 +80,8 @@ public sealed class TitleCityView : MonoBehaviour
         image.enabled = false;
         TitleCityView v = rt.gameObject.AddComponent<TitleCityView>();
         v.image = image;
+        v.skyMat = new Material(Resources.Load<Shader>("Shaders/TitleSky"));
+        image.material = v.skyMat;
         v.Begin();
         return v;
     }
@@ -167,15 +187,35 @@ public sealed class TitleCityView : MonoBehaviour
         LightSky(at, colour, (float)S.Num.F(sky["glow_share"]), (float)S.Num.F(sky["glow_alpha"]), life);
     }
 
-    // title_backdrop.gd _light_sky: `share` of the picture's height across where the burst is seen (none when it
-    // is behind the camera), as wide in the world at the burst's depth.
+    // title_backdrop.gd _light_sky: a soft disc `share` of the picture's height across, added over the picture
+    // where the burst is seen (none when it is behind the camera), its alpha going to nothing over `life` (a
+    // tween, so linear). TitleSky adds it in display units, as Godot's canvas does.
     void LightSky(Vector3 at, Color colour, float share, float alpha, float life)
     {
-        Vector3 seen = new Vector3(at.x, at.y, -at.z) - cam.transform.position;
-        float depth = Vector3.Dot(seen, cam.transform.forward);
-        if (depth < cam.nearClipPlane) return;
-        float size = share * 2f * depth * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
-        fx.Sky(at, new Color(colour.r, colour.g, colour.b, alpha), size, life);
+        Vector3 seen = cam.WorldToViewportPoint(new Vector3(at.x, at.y, -at.z));
+        if (seen.z < cam.nearClipPlane) return;
+        if (skyLights.Count == SKY_MAX) skyLights.RemoveAt(0);
+        skyLights.Add(new SkyLight { at = seen, radius = share * 0.5f, colour = colour, alpha = alpha, life = life });
+    }
+
+    // The lights' ages, and what TitleSky draws this frame.
+    void StepSky(float dt)
+    {
+        for (int i = skyLights.Count - 1; i >= 0; i--)
+        {
+            skyLights[i].age += dt;
+            if (skyLights[i].age >= skyLights[i].life) skyLights.RemoveAt(i);
+        }
+        for (int i = 0; i < skyLights.Count; i++)
+        {
+            SkyLight l = skyLights[i];
+            skyAt[i] = new Vector4(l.at.x, l.at.y, l.radius, 0f);
+            skyColour[i] = new Vector4(l.colour.r, l.colour.g, l.colour.b, l.alpha * (1f - l.age / l.life));
+        }
+        skyMat.SetVectorArray("_SkyAt", skyAt);
+        skyMat.SetVectorArray("_SkyColour", skyColour);
+        skyMat.SetFloat("_SkyCount", skyLights.Count);
+        skyMat.SetFloat("_Aspect", (float)target.width / target.height);
     }
 
     // One drawn frame: the picture's size, the far rampage, boats, bay, shore and the soft lights.
@@ -192,7 +232,29 @@ public sealed class TitleCityView : MonoBehaviour
         fx.colossusAt = Godot(TitleCity.BurstPoint(cfg, Steps));
         fx.colossusSize = (float)S.Num.F(cfg["glow_size"]);
         fx.colossusColor = glow;
+        Colossus(dt);
         fx.Step(dt);
+        StepSky(dt);
+    }
+
+    // title_colossus.gd _place and _show: the card's feet a step along its path per stomp, the body at least its
+    // idle faintness, the eye from its slow pulse to its peak as the reveal lights it, on the picture's eye.
+    void Colossus(float dt)
+    {
+        if (colossusArt == null) return;
+        eyeTime += dt;
+        S.GDict cfg = colossusCfg, eyeCfg = cfg["eye"];
+        S.GArray<S.Variant> uv = eyeCfg["uv"];
+        float height = (float)S.Num.F(cfg["height"]), width = (float)TitleMenu.ColossusWidth(cfg, colossusArt.width, colossusArt.height);
+        Vector3 feet = Godot(TitleCity.ColossusFeet(cfg, Steps));
+        fx.colossusFeet = feet;
+        fx.colossusCard = new Vector2(width, height);
+        fx.colossusAmount = Mathf.Max((float)S.Num.F(cfg["idle_alpha"]), (float)RevealAmount);
+        fx.eyeAt = feet + new Vector3(((float)S.Num.F(uv[0]) - 0.5f) * width, (1f - (float)S.Num.F(uv[1])) * height, (float)S.Num.F(eyeCfg["forward"]));
+        fx.eyeSize = (float)S.Num.F(eyeCfg["size"]);
+        Color eye = Hex(eyeCfg["colour"]).linear;
+        eye.a = Mathf.Lerp(TitleMenu.EyeAlpha(eyeCfg, eyeTime), (float)S.Num.F(eyeCfg["peak"]), (float)RevealAmount);
+        fx.eyeColor = eye;
     }
 
     // title_backdrop.gd _make_city and _dress, in one frame once the sim stands.
@@ -296,6 +358,7 @@ public sealed class TitleCityView : MonoBehaviour
         views.Add(shore);
         fx = new TitleFxView(shader, shore, district, title, (float)S.Num.F(variant["sky_smoke"]));
         views.Add(fx);
+        if (colossusArt != null) fx.Colossus(colossusArt, colossusCfg);
     }
 
     // title_backdrop.gd _exit_tree: the worker waited for, the sim let go, everything made here undone.
@@ -308,6 +371,7 @@ public sealed class TitleCityView : MonoBehaviour
         foreach (Object o in made) if (o != null) Destroy(o);
         if (target != null) Destroy(target);
         if (root != null) Destroy(root);
+        if (skyMat != null) Destroy(skyMat);
         Shader.SetGlobalVector("_FacadeCut", Vector4.zero);
         Shader.SetGlobalVector("_FacadeCutColor", Vector4.zero);
     }
