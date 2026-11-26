@@ -150,10 +150,10 @@ public sealed partial class RampageGame : MonoBehaviour
     string scoutPath;  // capture only: dry run, see CaptureScout
     CaptureScout scout;
 
-    static string Arg(string[] args, string name)
+    static string Arg(string[] args, string name, string fallback = null)
     {
         int i = Array.IndexOf(args, name);
-        return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+        return i >= 0 && i + 1 < args.Length ? args[i + 1] : fallback;
     }
 
     static int ArgInt(string[] args, string name, int fallback)
@@ -254,8 +254,8 @@ public sealed partial class RampageGame : MonoBehaviour
         {
             stats = S.UpgradeTree.RunStats(S.Content.Section("kaiju"), species, new S.UpgradeTree(S.Content.Upgrades(), Levels(stage), SPECIES));
             layout = S.CityGrowth.Layout(S.Content.Tuning(), stage, S.Seeds.Make("city", seed));
-            S.Content.SetTime("dusk");
-            // Capture/dry-run only: -rampage-weather <id> plays that weather (data/looks.json weather order); time stays dusk.
+            S.Content.SetTime(Arg(Environment.GetCommandLineArgs(), "-rampage-time", "dusk"));
+            // Capture/dry-run only: -rampage-time <id> and -rampage-weather <id> play that time (dusk without it) and weather.
             string weatherArg = Arg(Environment.GetCommandLineArgs(), "-rampage-weather");
             if (weatherArg != null) S.Content.SetWeather(weatherArg);
         }

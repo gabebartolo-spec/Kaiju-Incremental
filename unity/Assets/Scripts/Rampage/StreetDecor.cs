@@ -8,8 +8,9 @@ using S = Kaiju.Sim;
 // lane, cars in the parking lots, and a streetlight at every crossing and down the long blocks. All crushable.
 // The Tripo street props (StreetProps, scenes/street_props.gd) stand on their own finer field: pavement furniture,
 // Tripo cars among the parked ones, a traffic light across each lit crossing and the lamp model on every lamp.
-// Not ported yet: the lamps' lights (only their place, colour and energy, for the wet streets' smears), the
-// street trees' clearance (parking and pavement props), the greenery, quays and traffic islands. Presentation only.
+// The lamps' pools of light on the ground at night are LampPools'. Not ported yet: the lamps' lights (only their
+// place, colour and energy, for the wet streets' smears), the street trees' clearance (parking and pavement props),
+// the greenery, quays and traffic islands. Presentation only.
 // The moving cars and the diagonal's parked row are Traffic's (TrafficView draws them in this file's car shape).
 public sealed class StreetDecor
 {
@@ -21,6 +22,7 @@ public sealed class StreetDecor
     public readonly PropTiles props;
     // The Tripo street props: where they stand, and their field at half the buildings' cube (city.street_props.voxel).
     public readonly StreetProps street;
+    readonly LampPools pools;
     public readonly PropTiles streetTiles;
     public int Cars { get; private set; }
     public int Lamps { get; private set; }
@@ -66,6 +68,7 @@ public sealed class StreetDecor
             carShapes[paint * 2 + 1] = props.AddShape(Car(color, true));
         }
         Streets();
+        pools = new LampPools(lampSpots, parent);
         Parking();
         Plant();
         Tick();
@@ -81,6 +84,7 @@ public sealed class StreetDecor
     {
         props.Dispose();
         streetTiles.Dispose();
+        pools.Dispose();
     }
 
     // Draws the placed street props: one shape per model and quarter turn, as street_props.gd shares them.
