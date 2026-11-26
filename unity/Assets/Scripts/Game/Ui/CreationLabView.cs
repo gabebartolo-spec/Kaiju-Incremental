@@ -48,6 +48,7 @@ public sealed class CreationLabView
     readonly Dictionary<float, Material> materials = new Dictionary<float, Material>();
     readonly List<UnityEngine.Object> owned = new List<UnityEngine.Object>();
 
+    public Transform Root => root != null ? root.transform : null;
     // How many of the set's five models were found and built.
     public int Props { get; private set; }
 

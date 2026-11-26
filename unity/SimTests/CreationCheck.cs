@@ -20,6 +20,7 @@ static class CreationCheck
         Steps();
         Injector();
         Card();
+        Genome();
         Console.WriteLine($"creation: {checks} checks, {failed} failed");
         return failed;
     }
@@ -229,6 +230,44 @@ static class CreationCheck
     }
 
     // specimen_card.gd fill and the copy in data/tuning.json news.specimen, ui.specimen_card.
+    // creation_genome.gd: the helix settles from the middle out; the takeover's bolt chars the blocks it reaches to
+    // the scales and burns the ones under its path white (on); untouched (off: before the strike) every block keeps
+    // the genome's own colour; the overload burns all of it white; the same seed lays the same bolt.
+    static void Genome()
+    {
+        var g = new CreationGenome();
+        GDict lab = CreationLab.Cfg();
+        GDict helix = lab["helix"], bolt = lab["bolt"];
+        Check(g.Helix.Count > Num.I(helix["length"]) * 2, $"the helix has {g.Helix.Count} blocks");
+        bool outward = true;
+        for (int i = 1; i < g.Helix.Count; i++)
+            outward &= g.Helix[i - 1].x * g.Helix[i - 1].x + g.Helix[i - 1].z * g.Helix[i - 1].z <= g.Helix[i].x * g.Helix[i].x + g.Helix[i].z * g.Helix[i].z;
+        Check(outward, "the helix does not settle from the middle out");
+        Check(g.Bolt.Count > 0 && g.Bolt.Count <= Num.I(bolt["max_cells"]), $"the bolt has {g.Bolt.Count} blocks");
+        g.Settle(0.5);
+        Check(g.HelixShown == (int)Gd.Roundi(g.Helix.Count * 0.5), $"half settled shows {g.HelixShown} of {g.Helix.Count}");
+        g.Settle(1.0);
+        double ov = Num.F(lab["overload_at"]);
+        Check(Array.TrueForAll(g.HelixState, s => s == CreationGenome.GENOME) && g.BoltShown == 0, "the genome changed before the strike");
+        double peak = 0.0;
+        for (int tick = 0; tick <= 100; tick++)
+        {
+            g.Step(ov * tick / 100.0 - 1e-9);
+            peak = Math.Max(peak, g.Light);
+        }
+        int scales = Array.FindAll(g.HelixState, s => s == CreationGenome.SCALES).Length;
+        int veins = Array.FindAll(g.HelixState, s => s == CreationGenome.HOT).Length;
+        Check(scales > 0 && veins > 0, $"the takeover left {scales} scale blocks and {veins} veins");
+        Check(g.BoltShown > g.Bolt.Count / 2, $"the bolt reached {g.BoltShown} of {g.Bolt.Count} blocks");
+        Check(peak > 0.0, "the dish light never lit");
+        g.Step(1.0);
+        Check(Array.TrueForAll(g.HelixState, s => s == CreationGenome.HOT) && g.BoltShown == g.Bolt.Count, "the overload did not burn the dish white");
+        var again = new CreationGenome();
+        bool same = again.Bolt.Count == g.Bolt.Count;
+        for (int i = 0; same && i < g.Bolt.Count; i++) same = again.Bolt[i].Equals(g.Bolt[i]);
+        Check(same, "the same seed laid a different bolt");
+    }
+
     static void Card()
     {
         Check(CreationCard.Fill("K-{lost} / K-{next}", 2) == "K-01 / K-02", "fill does not write two-digit numbers");

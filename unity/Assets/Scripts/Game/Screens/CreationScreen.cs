@@ -36,6 +36,7 @@ public sealed class CreationDriver : MonoBehaviour
 
     CreationSteps steps;
     CreationLabView view;
+    CreationGenomeView dish;
     Action<string> created;
     Image white, black;
     GameObject overlay, rackPanel, dishPanel;
@@ -52,7 +53,7 @@ public sealed class CreationDriver : MonoBehaviour
         steps = new CreationSteps(save);
         view = CreationLabView.Build(steps.Lab, steps.Titans);
         // The canvas covers the lab's camera, so the flat backdrop is only for a lab that could not be built.
-        if (view == null) UiKit.Backdrop(screen);
+        if (view == null) UiKit.Backdrop(screen); else dish = new CreationGenomeView(view.Root, steps.Genome);
         white = UiKit.Fill(screen, new Color(1f, 1f, 1f, 0f), "Flash");
         overlay = UiKit.Box(screen, "Overlay").gameObject;
         UiKit.FullRect((RectTransform)overlay.transform);
@@ -152,6 +153,7 @@ public sealed class CreationDriver : MonoBehaviour
         white.color = new Color(1f, 1f, 1f, Mathf.Clamp01((float)(steps.Lab.Flash * PlayerSettings.FlashScale())));
         black.color = new Color(0f, 0f, 0f, Mathf.Clamp01((float)steps.Black));
         if (view != null) view.Draw(steps.Lab);
+        if (dish != null) dish.Draw(steps.Genome, PickedGenome());
         if (steps.Step != CreationStep.Done) return;
         handed = true;
         Debug.Log("flow: creation made " + steps.Species + ", " + steps.Cues.Count + " sound cues");
@@ -225,5 +227,14 @@ public sealed class CreationDriver : MonoBehaviour
                 if (Sfx.Looping(id)) Sfx.Stop(id);
         if (view != null) view.Close();
         view = null;
+        if (dish != null) dish.Close();
+        dish = null;
+    }
+
+    // The genome colour the injector carries (white before a pick, as creation_genome.gd starts).
+    Color PickedGenome()
+    {
+        int i = steps.Lab.Picked;
+        return i >= 0 && i < steps.Titans.Count ? CreationPaint.Rgb(CreationPaint.Hex(steps.Titans[i].Genome)) : Color.white;
     }
 }
