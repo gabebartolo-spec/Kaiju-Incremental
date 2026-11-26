@@ -1,5 +1,5 @@
-// -flow-still <dir>: a 1080p PNG of each flow screen as it is shown, <dir>/<screen>.png (title, settings,
-// creation, globe, loading, results, tree, demo_end), what Godot's tools/capture/capture_screens.gd,
+// -flow-still <dir>: a 1080p PNG of each flow screen as it is shown, <dir>/<screen>.png (title, settings, slots,
+// creation, globe, loading, hud, pause, results, mission, tree, demo_end), what Godot's tools/capture/capture_screens.gd,
 // capture_title.gd, capture_results.gd and capture_tree.gd saved. Meant for -flow-smoke, which walks every screen
 // and waits while a still is owed (Busy), so it never presses on past a screen before its shot.
 // Each screen is taken once, the first time it is on show and settled: SETTLE frames, as capture_screens.gd and
@@ -21,7 +21,7 @@ public sealed class FlowStills : MonoBehaviour
     // Seconds a still waits to settle before it is given up (the smoke run is not held past it).
     const float GIVE_UP = 60f;
     const int WIDTH = 1920, HEIGHT = 1080;
-    public static readonly string[] SCREENS = { "title", "settings", "creation", "globe", "loading", "results", "tree", "demo_end" };
+    public static readonly string[] SCREENS = { "title", "settings", "slots", "creation", "globe", "loading", "hud", "pause", "results", "mission", "tree", "demo_end" };
 
     sealed class Ask
     {
@@ -83,7 +83,8 @@ public sealed class FlowStills : MonoBehaviour
         Debug.Log($"flow: stills on, {SCREENS.Length} screens into {dir}");
     }
 
-    // The still of the flow state just entered (the rampage has none; results are asked for by name).
+    // The still of the flow state just entered (results are asked for by name). The rampage's is its HUD SETTLE frames
+    // after the load (capture_screens.gd 2_rampage_start), inside the smoke's 6 s clock.
     public static void Want(GameFlow.State state)
     {
         string name;
@@ -92,6 +93,7 @@ public sealed class FlowStills : MonoBehaviour
             case GameFlow.State.Title: name = "title"; break;
             case GameFlow.State.Creation: name = "creation"; break;
             case GameFlow.State.Globe: name = "globe"; break;
+            case GameFlow.State.Rampage: name = "hud"; break;
             case GameFlow.State.Tree: name = "tree"; break;
             case GameFlow.State.DemoEnd: name = "demo_end"; break;
             default: return;

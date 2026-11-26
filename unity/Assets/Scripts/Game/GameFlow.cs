@@ -344,6 +344,7 @@ public sealed partial class GameFlow : MonoBehaviour
                 if (smoke) SmokeMission(done);
                 Go(State.Tree);
             });
+            FlowStills.Want("mission", () => Now == State.Results && screen != null);
         });
         FlowStills.Want("results", () => Now == State.Results, FlowStills.SETTLE, () => !ResultsScreen.Counting(screen));
         Debug.Log($"flow: results shown, reason {S.Gd.Str(result.Get("reason", ""))}, earned {S.Num.I(result.Get("rubble", 0L))}, biomass {Biomass()}, runs {Runs()}");
@@ -370,6 +371,7 @@ public sealed partial class GameFlow : MonoBehaviour
             Unpause();
             game.Sim.End("ended");  // rampage_hud.gd _end_now
         }, null, game);
+        FlowStills.Want("pause", () => pause != null && pause.gameObject.activeSelf && PhotoMode.Current == null);
     }
 
     void Resume()
@@ -493,6 +495,7 @@ public sealed partial class GameFlow : MonoBehaviour
             case 2:
                 Step();
                 Press("NewKaiju");
+                FlowStills.Want("slots", () => Now == State.Title && !SettingsScreen.IsOpen);
                 break;
             case 3:
                 Step();
