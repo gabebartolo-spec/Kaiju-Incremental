@@ -44,6 +44,9 @@ namespace Kaiju.Sim
             return Murmur((uint)(bits >> 32), h);
         }
 
+        /// hash(Vector2i(x, y)).
+        public static uint Vector2i(int x, int y) => Mix(Murmur(unchecked((uint)y), Murmur(unchecked((uint)x), MurmurSeed)));
+
         public static uint Vector4i(int x, int y, int z, int w)
         {
             uint h = Murmur(unchecked((uint)x), MurmurSeed);

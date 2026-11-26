@@ -1,8 +1,9 @@
 // The lab set of Kaiju Creation in 3D (scenes/creation_lab.gd, creation_set.gd, creation_injector.gd): the bench,
 // the cradle with its dish, the rack of vials, the monitors, the Special K canister and the injector (a post and
 // a carriage that rises, turns and slides), under the key lamp and the rim, seen by the lab's own camera. It
-// draws what CreationLab (the numbers) says each tick. First version (D-476): the models as they are on disk,
-// with no liquids, genome, lightning, room walls or screen paint yet.
+// draws what CreationLab (the numbers) says each tick. The room round it (CreationRoom), the props despeckled and
+// the monitors' readouts, the serums and the Special K painted (CreationPaint), the dish cleaned (CreationDish);
+// the liquids stand full (no draining yet), and no genome or lightning yet.
 using System;
 using System.Collections.Generic;
 using Kaiju.Game;
@@ -24,14 +25,20 @@ public sealed class CreationLabView
     const float NEAR = 0.05f, FAR = 100f;
     // Drawn over any camera left in the scene.
     const float CAMERA_DEPTH = 10f;
+    // Over any other global volume left in the scene (the rampage's sky and fog read through as white).
+    const float VOLUME_PRIORITY = 100f;
+    // creation_set.gd leaves Godot's AgX exposure and contrast at the engine's defaults (the look gives the rest).
+    const float GODOT_TONEMAP_EXPOSURE = 1f, GODOT_AGX_CONTRAST = 1.25f;
 
+    static readonly int SLICE_AMBIENT = Shader.PropertyToID("_SliceAmbient");  // SliceLit's flat ambient, set per scene
     static readonly HashSet<string> warned = new HashSet<string>();
 
+    IList<CreationTitan> titans;
     GameObject root;
     Camera cam;
     Transform carriage;
     Light screens, focus;
-    float unit;
+    float unit; Tuning tuning;
     Shader lit;
     readonly Dictionary<float, Material> materials = new Dictionary<float, Material>();
     readonly List<UnityEngine.Object> owned = new List<UnityEngine.Object>();
@@ -40,9 +47,9 @@ public sealed class CreationLabView
     public int Props { get; private set; }
 
     // Builds the set for `lab`; null (said once in the log) when it cannot be built, and the screen shows its flat backdrop.
-    public static CreationLabView Build(CreationLab lab)
+    public static CreationLabView Build(CreationLab lab, IList<CreationTitan> titans)
     {
-        var view = new CreationLabView();
+        var view = new CreationLabView { titans = titans };
         try
         {
             view.Make(lab);
@@ -74,16 +81,19 @@ public sealed class CreationLabView
         return new Color(((v >> 16) & 255) / 255f, ((v >> 8) & 255) / 255f, (v & 255) / 255f, 1f);
     }
 
+    static int Rgb(Color32 c) => CreationPaint.Pack(c.r, c.g, c.b);
+
     void Make(CreationLab lab)
     {
         root = new GameObject("creation_lab");
-        Tuning tuning = SliceData.LoadTuning();
+        tuning = SliceData.LoadTuning();
         unit = SliceGame.ExposureUnit(tuning);
         lit = Resources.Load<Shader>("Shaders/SliceLit");
         if (lit == null) throw new InvalidOperationException("Shaders/SliceLit is missing");
         Environment(tuning);
         Lights();
         Bench();
+        Room();
         foreach (string prop in new[] { "cradle", "monitors", "rack" }) Place(prop, null);
         Place("canister", lab.CanisterAt);
         Injector(lab);
@@ -105,6 +115,7 @@ public sealed class CreationLabView
     // creation_set.gd environment: ambient colour and energy, AgX with the look's contrast and saturation.
     void Environment(Tuning tuning)
     {
+        Shader.SetGlobalVector(SLICE_AMBIENT, Hex("ambient").linear * (float)CreationLab.Energy("ambient"));
         VolumeProfile profile = ScriptableObject.CreateInstance<VolumeProfile>();
         owned.Add(profile);
         var environment = profile.Add<VisualEnvironment>(true);
@@ -123,21 +134,29 @@ public sealed class CreationLabView
         profile.Add<Tonemapping>(true).mode.Override(TonemappingMode.None);
         Dictionary<string, object> look = MiniJson.Obj(SliceData.LoadJson("slice.json")["look"]);
         var agx = profile.Add<AgxTonemap>(true);
-        agx.exposure.Override(SliceData.F(look, "exposure", 1));
-        agx.contrast.Override(SliceData.F(look, "agx_contrast", 1));
+        agx.exposure.Override(GODOT_TONEMAP_EXPOSURE);
+        agx.contrast.Override(GODOT_AGX_CONTRAST);
         agx.white.Override(tuning.agx_white);
         agx.saturation.Override(SliceData.F(look, "saturation", 1));
-        agx.postContrast.Override(SliceData.F(look, "post_contrast", 1));
+        agx.postContrast.Override(SliceData.F(look, "contrast", 1));
         profile.Add<MotionBlur>(true).intensity.Override(0f);
+        // creation_set.gd environment: a thin haze lit only by the lamps, over the near-black room.
+        var fog = profile.Add<Fog>(true);
+        fog.enabled.Override(true);
+        fog.meanFreePath.Override(1f / (float)S.Num.F(CreationLab.Cfg()["fog"]));
+        fog.colorMode.Override(FogColorMode.ConstantColor);
+        fog.color.Override(Hex("background").linear * unit);
+        fog.enableVolumetricFog.Override(true);
         var go = new GameObject("volume");
         go.transform.SetParent(root.transform, false);
         Volume volume = go.AddComponent<Volume>();
         volume.isGlobal = true;
+        volume.priority = VOLUME_PRIORITY;
         volume.sharedProfile = profile;
     }
 
-    // One unit of Godot light energy as HDRP candela (the rampage's lamps use the same).
-    float Candela(double energy) => (float)energy * Mathf.PI * unit;
+    // Godot energy as HDRP candela for lamp `name`, matched to Godot at its subject (tuning.json lab_*_match_m).
+    float Candela(double energy, string name) => (float)energy * Mathf.PI * unit * tuning.LabMatch(name);
 
     Light Lamp(string name, LightType type, Color colour, double energy, float range, CreationVec at)
     {
@@ -151,7 +170,7 @@ public sealed class CreationLabView
         go.AddComponent<HDAdditionalLightData>();
         light.color = colour;
         light.range = range;
-        light.intensity = Candela(energy);
+        light.intensity = Candela(energy, name);
         return light;
     }
 
@@ -177,9 +196,19 @@ public sealed class CreationLabView
     {
         if (materials.TryGetValue(voxel, out Material known)) return known;
         Material m = ArmyView.PlainMaterial(lit, voxel);
+        m.SetFloat("_WindowGlow", (float)S.Num.F(CreationLab.Cfg()["glow"]));
         materials[voxel] = m;
         owned.Add(m);
         return m;
+    }
+
+    // creation_room.gd build: the walls, shelves, cables, screens and strip, and the strip's cold washes.
+    void Room()
+    {
+        CreationRoom room = CreationRoom.Build();
+        Show("room", ArmyView.Faces(room.Model(out bool[] glow), room.Voxel, Vector3.zero, glow), room.Voxel, root.transform, false);
+        foreach (CreationVec at in room.Washes())
+            Lamp("wash", LightType.Point, room.WashColour, room.WashEnergy, room.WashRange, at);
     }
 
     Transform Show(string name, Mesh mesh, float voxel, Transform parent, bool shadows)
@@ -222,17 +251,38 @@ public sealed class CreationLabView
         voxel = row.Has("voxel") ? (float)S.Num.F(row["voxel"]) : Voxel();
         string path = row.Has("model") ? S.Gd.Str(row["model"]) : "res://assets/lab/" + prop + ".kvox";
         ModelColors.Model model = ModelColors.Read(path);
-        if (model == null) Warn(path, "creation: " + path + " is missing, the lab is drawn without it");
+        if (model == null)
+        {
+            Warn(path, "creation: " + path + " is missing, the lab is drawn without it");
+            return null;
+        }
+        model = CreationPaint.Copy(model);
+        CreationPaint.Despeckle(model);
         return model;
     }
 
     // creation_set.gd place: the prop at its `at` (or `where`), turned by its yaw.
+    // creation_lab.gd _add_props: the dish cleaned, the screens lit, the serums and the Special K in their glass.
+    bool[] Paint(string prop, ref ModelColors.Model model)
+    {
+        if (prop == "monitors") return CreationPaint.Screens(model, Rgb(Hex("screen")), Rgb(Hex("screen_glass")));
+        Dictionary<Vector3Int, int> cells = CreationPaint.Cells(model);
+        HashSet<Vector3Int> glowing = null;
+        if (prop == "cradle") CreationDish.Clean(cells);
+        else if (prop == "rack") glowing = CreationPaint.Rack(cells, titans);
+        else if (prop == "canister") glowing = CreationPaint.Canister(cells);
+        else return null;
+        model = CreationPaint.Model(cells, glowing, out bool[] glow);
+        return glow;
+    }
+
     void Place(string prop, CreationVec? where)
     {
         ModelColors.Model model = Read(prop, out float voxel);
         if (model == null) return;
         CreationLab.Placed(prop, out CreationVec at, out double yaw);
-        Transform t = Show(prop, ArmyView.Faces(model, voxel, Vector3.zero), voxel, root.transform, true);
+        bool[] glow = Paint(prop, ref model);
+        Transform t = Show(prop, ArmyView.Faces(model, voxel, Vector3.zero, glow), voxel, root.transform, true);
         t.position = U(where ?? at);
         t.rotation = Turn(yaw);
         Props++;
@@ -322,10 +372,10 @@ public sealed class CreationLabView
             carriage.localPosition = U(lab.CarriageAt());
             carriage.localRotation = Turn(lab.Yaw);
         }
-        if (screens != null) screens.intensity = Candela(lab.ScreensEnergy);
+        if (screens != null) screens.intensity = Candela(lab.ScreensEnergy, "screens");
         if (focus != null)
         {
-            focus.intensity = Candela(lab.Focused >= 0 ? CreationLab.Energy("focus") : 0.0);
+            focus.intensity = Candela(lab.Focused >= 0 ? CreationLab.Energy("focus") : 0.0, "focus");
             focus.transform.position = U(CreationLab.VialPoint(Math.Max(lab.Focused, 0)) + FOCUS_OFF);
         }
         if (cam == null) return;
