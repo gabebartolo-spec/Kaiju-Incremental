@@ -68,10 +68,11 @@ public sealed class CreationDriver : MonoBehaviour
         column.pivot = new Vector2(0f, 0.5f);
         column.offsetMin = column.offsetMax = Vector2.zero;
         column.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-        UiKit.Header(column, "KAIJU CREATION", UiKit.SIZE_HEAD);
+        // kaiju_creation.gd's VBox: only the spacer grows (the header's row would claim a share of the height).
+        UiKit.Header(column, "KAIJU CREATION", UiKit.SIZE_HEAD).gameObject.AddComponent<LayoutElement>().flexibleHeight = 0f;
         // The spacer pushes the panels to the foot and holds the column's least width.
         UiKit.Size(UiKit.Box(column, "Spacer"), CreationScreen.PANEL_WIDTH, 0f).flexibleHeight = 1f;
-        RectTransform rackBox = UiKit.Panel(column, null, CreationScreen.LINE_GAP);
+        RectTransform rackBox = Filling(UiKit.Panel(column, null, CreationScreen.LINE_GAP));
         rackPanel = rackBox.gameObject;
         UiKit.Label(rackBox, "PICK A GENOME", UiKit.SIZE_HEAD, UiKit.ACCENT);
         for (int i = 0; i < steps.Titans.Count; i++)
@@ -82,7 +83,7 @@ public sealed class CreationDriver : MonoBehaviour
             b.interactable = steps.Titans[i].Selectable;
             rack.Add(b);
         }
-        RectTransform dishBox = UiKit.Panel(column, null, CreationScreen.LINE_GAP);
+        RectTransform dishBox = Filling(UiKit.Panel(column, null, CreationScreen.LINE_GAP));
         dishPanel = dishBox.gameObject;
         dishLine = UiKit.Label(dishBox, "", UiKit.SIZE_HEAD, UiKit.ACCENT);
         inject = UiKit.Button(dishBox, "INJECT SPECIAL K", Inject, UiKit.SIZE_BODY, UiKit.ACCENT);
@@ -97,6 +98,15 @@ public sealed class CreationDriver : MonoBehaviour
         smoke = Environment.GetCommandLineArgs().Contains("-flow-smoke");
         PlaySounds();
         Debug.Log("flow: creation shown, " + steps.Titans.Count + " genomes, lab " + (view != null ? view.Props + " of 5 models" : "flat"));
+    }
+
+    // A panel in the column is as wide as the column (Godot's VBox fills it), not its own content's width, and
+    // only as tall as its content: the spacer above takes the spare height.
+    static RectTransform Filling(RectTransform panel)
+    {
+        DestroyImmediate(panel.GetComponent<ContentSizeFitter>());
+        panel.gameObject.AddComponent<LayoutElement>().flexibleHeight = 0f;
+        return panel;
     }
 
     void Pick(int index)

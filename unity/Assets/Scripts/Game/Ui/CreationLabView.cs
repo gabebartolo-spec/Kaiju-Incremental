@@ -27,7 +27,10 @@ public sealed class CreationLabView
     const float CAMERA_DEPTH = 10f;
     // Over any other global volume left in the scene (the rampage's sky and fog read through as white).
     const float VOLUME_PRIORITY = 100f;
+    // creation_set.gd leaves Godot's AgX exposure and contrast at the engine's defaults (the look gives the rest).
+    const float GODOT_TONEMAP_EXPOSURE = 1f, GODOT_AGX_CONTRAST = 1.25f;
 
+    static readonly int SLICE_AMBIENT = Shader.PropertyToID("_SliceAmbient");  // SliceLit's flat ambient, set per scene
     static readonly HashSet<string> warned = new HashSet<string>();
 
     IList<CreationTitan> titans;
@@ -112,6 +115,7 @@ public sealed class CreationLabView
     // creation_set.gd environment: ambient colour and energy, AgX with the look's contrast and saturation.
     void Environment(Tuning tuning)
     {
+        Shader.SetGlobalVector(SLICE_AMBIENT, Hex("ambient").linear * (float)CreationLab.Energy("ambient"));
         VolumeProfile profile = ScriptableObject.CreateInstance<VolumeProfile>();
         owned.Add(profile);
         var environment = profile.Add<VisualEnvironment>(true);
@@ -130,11 +134,11 @@ public sealed class CreationLabView
         profile.Add<Tonemapping>(true).mode.Override(TonemappingMode.None);
         Dictionary<string, object> look = MiniJson.Obj(SliceData.LoadJson("slice.json")["look"]);
         var agx = profile.Add<AgxTonemap>(true);
-        agx.exposure.Override(SliceData.F(look, "exposure", 1));
-        agx.contrast.Override(SliceData.F(look, "agx_contrast", 1));
+        agx.exposure.Override(GODOT_TONEMAP_EXPOSURE);
+        agx.contrast.Override(GODOT_AGX_CONTRAST);
         agx.white.Override(tuning.agx_white);
         agx.saturation.Override(SliceData.F(look, "saturation", 1));
-        agx.postContrast.Override(SliceData.F(look, "post_contrast", 1));
+        agx.postContrast.Override(SliceData.F(look, "contrast", 1));
         profile.Add<MotionBlur>(true).intensity.Override(0f);
         // creation_set.gd environment: a thin haze lit only by the lamps, over the near-black room.
         var fog = profile.Add<Fog>(true);
