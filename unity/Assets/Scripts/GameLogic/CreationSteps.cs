@@ -73,6 +73,9 @@ namespace Kaiju.Game
         // How many ticks `step` lasts (0: it waits for the player).
         public int Ticks(CreationStep step) => ticks.TryGetValue(step, out int n) ? n : 0;
 
+        // Ticks the current step has run.
+        public int StepTick => tick;
+
         // Esc / B goes back until the injection.
         public bool CanBack => Step == CreationStep.Rack || Step == CreationStep.Dish;
 

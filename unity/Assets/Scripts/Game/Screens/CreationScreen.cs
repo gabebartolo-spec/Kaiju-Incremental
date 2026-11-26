@@ -123,6 +123,20 @@ public sealed class CreationDriver : MonoBehaviour
         overlay.SetActive(false);
     }
 
+    // The lab's fixed ticks owed since the last frame (Godot's physics steps, capped). -flow-still holds the lab on
+    // the tick a still is owed for.
+    void RunTicks()
+    {
+        owed += Time.deltaTime;
+        for (int n = 0; n < MAX_TICKS && owed >= TICK && !FlowStills.Busy; n++)
+        {
+            owed -= TICK;
+            steps.Tick();
+            FlowStills.WantLab(steps);
+        }
+        if (owed > TICK) owed = TICK;
+    }
+
     void Update()
     {
         if (steps == null || handed) return;
@@ -132,13 +146,7 @@ public sealed class CreationDriver : MonoBehaviour
         if (steps.Step == CreationStep.Rack)
             for (int i = 0; i < rack.Count; i++)
                 if (UiFocus.Current == rack[i] && steps.Lab.Focused != i) steps.Lab.Focus(i);
-        owed += Time.deltaTime;
-        for (int n = 0; n < MAX_TICKS && owed >= TICK; n++)
-        {
-            owed -= TICK;
-            steps.Tick();
-        }
-        if (owed > TICK) owed = TICK;
+        RunTicks();
         PlaySounds();
         if (steps.Step != shown) Stepped();
         white.color = new Color(1f, 1f, 1f, Mathf.Clamp01((float)(steps.Lab.Flash * PlayerSettings.FlashScale())));
