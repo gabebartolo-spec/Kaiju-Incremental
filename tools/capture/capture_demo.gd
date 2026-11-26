@@ -9,6 +9,7 @@ extends SceneTree
 ##     -- --only=thanks --out=<dir>
 ## or on CI: tools/capture/ci_capture.sh --resolution=1920x1080 capture_demo.gd
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const SETTLE := 12
 ## Frames of autoplayed adult rampage before the clock is cut.
@@ -86,6 +87,10 @@ func _run() -> void:
 	await _click(_button(_screen(), "CONTINUE"))
 	await _click(_button(_screen(), "SLOT 1"))
 	await _frames(SETTLE)
+	# A game goes to the globe now (D-463) and lands on the tree after a mission; open the tree
+	# as a mission's end does (capture_results.gd starts its runs the same way).
+	_main.call("_show_tree")
+	await _frames(SETTLE)
 	await _click((_screen() as UpgradeScreen).node_button(last))
 	await _frames(SETTLE)
 	print("demo: thanks screen is ", _screen_name())
@@ -149,6 +154,7 @@ func _frames(n: int) -> void:
 
 
 func _shot(name: String) -> void:
+	Kit.log_camera(self, name)
 	var image := root.get_texture().get_image()
 	var path := _out.path_join(name + ".png")
 	image.save_png(path)

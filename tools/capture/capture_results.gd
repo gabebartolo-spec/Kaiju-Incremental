@@ -10,6 +10,7 @@ extends SceneTree
 ##   godot --path . --script tools/capture/capture_results.gd -- --out=<dir>
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const ENDINGS: Array[String] = ["city_fallen", "time", "defeated", "ended"]
 const SETTLE := 12
@@ -59,7 +60,8 @@ func _run() -> void:
 	await GuiInput.click(self, GuiInput.button(_screen(), "SLOT 1"))
 	await _frames(SETTLE)
 	for reason: String in ENDINGS:
-		await GuiInput.click(self, GuiInput.button(_screen(), "RAMPAGE"))
+		# A game goes to the globe now (D-463); start the run as capture_creation.gd does.
+		_main.call("_start_rampage")
 		await _frames(2)
 		while _screen() is SpecimenCard:  # after a death: the 2 s lab card, then the rise
 			await process_frame
@@ -120,6 +122,7 @@ func _frames(n: int) -> void:
 
 
 func _shot(name: String) -> void:
+	Kit.log_camera(self, name)
 	var image := root.get_texture().get_image()
 	var path := _out.path_join(name + ".png")
 	image.save_png(path)

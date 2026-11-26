@@ -178,6 +178,26 @@ static func still(tree: SceneTree, dir: String, shot_name: String) -> String:
 	return path
 
 
+## Prints where the drawn 3D camera is for `shot_name` (a CAMLOG line: eye, rotation in degrees,
+## fov) and where each kaiju body stands, so a later capture's framing can be checked from logged
+## points. Every current Camera3D in the tree is logged, SubViewports included.
+static func log_camera(tree: SceneTree, shot_name: String) -> void:
+	for node: Node in tree.root.find_children("*", "Camera3D", true, false):
+		var cam := node as Camera3D
+		if not cam.is_current() or not cam.is_visible_in_tree():
+			continue
+		var eye := cam.global_position
+		var rot := cam.global_rotation_degrees
+		print(
+			"CAMLOG %s eye %.3f,%.3f,%.3f rot %.3f,%.3f,%.3f fov %.3f path %s"
+			% [shot_name, eye.x, eye.y, eye.z, rot.x, rot.y, rot.z, cam.fov, cam.get_path()]
+		)
+	for node: Node in tree.root.find_children("*", "Node3D", true, false):
+		if node is KaijuModel:
+			var at := (node as Node3D).global_position
+			print("CAMLOG %s kaiju %.3f,%.3f,%.3f" % [shot_name, at.x, at.y, at.z])
+
+
 ## Where `world` falls in an image of `size` grabbed from the root viewport.
 static func image_point(tree: SceneTree, cam: Camera3D, world: Vector3, size: Vector2) -> Vector2:
 	return cam.unproject_position(world) * size / tree.root.get_visible_rect().size

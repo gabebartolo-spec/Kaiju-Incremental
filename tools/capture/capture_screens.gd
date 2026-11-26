@@ -7,6 +7,7 @@ extends SceneTree
 ##     --script tools/capture/capture_screens.gd -- --out=<dir> --species=reptilian
 ## --only=select stops after the species select (a 4K still on CI finishes in time).
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 20
 
 var _out := "user://screens"
@@ -71,6 +72,7 @@ func _frames(n: int) -> void:
 
 
 func _shot(name: String) -> void:
+	Kit.log_camera(self, name)
 	var image := root.get_texture().get_image()
 	var path := _out.path_join(name + ".png")
 	image.save_png(path)

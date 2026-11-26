@@ -2,8 +2,10 @@ extends SceneTree
 ## Captures Kaiju Creation (D-207) through the real main scene by real input (keys and the pad,
 ## pushed the way a player's arrive): title -> New Kaiju -> the rack -> the injector draws the
 ## croc genome and puts it in the dish -> the injection -> the takeover -> the black with the egg
-## crack -> the run. Five stills (01_rack, 02_draw, 03_dish, 04_takeover, 05_black) and, with
-## --write-movie, the whole sequence at game speed. Local GPU, off-screen no_focus override.cfg,
+## crack -> the globe -> the run. Seven stills (01_rack, 02_draw, 03_dish, 04_takeover, 05_black,
+## 06_globe, 07_run: the play camera AFTER frames after the build), each with a CAMLOG line of its
+## camera, and, with --write-movie, the whole sequence at
+## game speed. Local GPU, off-screen no_focus override.cfg,
 ## fixed 60 fps:
 ##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_creation.gd -- --out=<dir>
@@ -99,6 +101,8 @@ func _run() -> void:
 	_shot("05_black")
 	print("CUES %s" % [lab.cues])
 	await _until(func() -> bool: return _main.call("screen") is GlobeView)
+	await Kit.frames(self, SETTLE)
+	_shot("06_globe")
 	_main.call("_start_rampage")  # the globe is next (D-462); the tree's START begins the run
 	await _until(func() -> bool: return _main.call("screen") is Rampage)
 	var run: Rampage = _main.call("screen")
@@ -111,6 +115,7 @@ func _run() -> void:
 		"INTRO handover on drawn frame %d, %d frames after the build" % [handover, handover - built]
 	)
 	await Kit.frames(self, maxi(0, _after - (handover - built)))
+	_shot("07_run")
 	print("CREATION_CAPTURE done -> %s" % _out)
 	quit(0)
 
@@ -140,6 +145,7 @@ func _ticks(key: String, share: float) -> int:
 
 
 func _shot(shot_name: String) -> void:
+	Kit.log_camera(self, shot_name)
 	if not _clip:
 		print("still %s" % Kit.still(self, _out, shot_name))
 
