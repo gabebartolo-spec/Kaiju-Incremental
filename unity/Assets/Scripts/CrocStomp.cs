@@ -9,8 +9,6 @@ using S = Kaiju.Sim;
 public sealed partial class Croc
 {
     static readonly string[] KEYED_STOMPS = { "stomp_l", "stomp_r" };
-    // gait_biped.gd STAND_SPEED (0.12 hip heights a second) is as good as still: here, the walk's weight this low.
-    const float STAND_SHARE = 0.1f;
     int stompNext;
     string stompLifted = "", stompFoot = "";  // the latest stomp's lifted foot; the keyed foot still to land
     Clip stompHeld;
@@ -38,7 +36,7 @@ public sealed partial class Croc
         bool stomping = heldClip != null && heldClip == stompHeld;
         if (!stomping) stompFoot = "";
         if (stompFoot != "" || !clips.ContainsKey(KEYED_STOMPS[0])) return false;
-        return stomping || (heldClip == null && roarTime < 0f && moveWeight < STAND_SHARE);
+        return stomping || (heldClip == null && roarTime < 0f && gait == Gait.Idle);
     }
 
     // stomp_landing.gd landed: the waiting stomp lands under `side`'s foot; whether it is the foot the standing
@@ -111,10 +109,4 @@ public sealed partial class Croc
     }
 
     static int Mix(int a, int b, float w) => w >= NEARER ? b : a;
-
-    // The feet down in the idle, walk and run Pose blends: scenes/clip_choice.gd plays the walk once he moves at
-    // all (STAND_SPEED, here STAND_SHARE), so its feet count from there, never the idle's under a slow walk;
-    // clip_takes.gd walk_pose mixes in the run.
-    int BasePlanted(Clip idle, Clip walk, Clip run) =>
-        moveWeight < STAND_SHARE ? Planted(idle, idleFrame) : Mix(Planted(walk, walkFrame), Planted(run, runFrame), runWeight);
 }

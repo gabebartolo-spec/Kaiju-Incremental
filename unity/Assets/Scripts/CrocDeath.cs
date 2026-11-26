@@ -101,15 +101,6 @@ public sealed partial class Croc
     public Vector3 HipFocus()
     {
         Vector3 root = BoneAt(RootBone);
-        float hips = 0f;
-        int legs = 0;
-        foreach (string leg in new[] { "leg_l0", "leg_r0" })
-        {
-            int b = System.Array.IndexOf(names, leg);
-            if (b < 0) continue;
-            hips += bind[b].inverse.GetColumn(3).y;
-            legs++;
-        }
-        return new Vector3(root.x, position.y + hips / Mathf.Max(1, legs) * Scale, root.z);
+        return new Vector3(root.x, position.y + HipHeight() * Scale, root.z);
     }
 }

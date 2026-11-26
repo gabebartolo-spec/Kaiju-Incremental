@@ -619,7 +619,7 @@ public sealed partial class Croc
         }
         ClipPose(c, roarTime, turnsA, out Vector3 roarOffset);
         float w = Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, (end - roarTime) / (ROAR_FADE_S * fps))) * Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, roarAge / ROAR_FADE_S));
-        float whole = w * (1f - moveWeight);
+        float whole = w * (1f - WalkShare);
         for (int i = 0; i < turnsOut.Length; i++)
             turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], roarBone[i] ? w : whole);
         offset = Vector3.Lerp(offset, roarOffset, whole);
@@ -651,7 +651,7 @@ public sealed partial class Croc
         Scale = scale;
         position = feet;
         moveWeight = 0f;
-        runWeight = 0f;
+        LeaveGait(Gait.Idle);
         Velocity = Vector3.zero;
         if (facing.sqrMagnitude > 1e-6f) yaw = Mathf.Atan2(-facing.x, -facing.y);
         ClipPose(clips[name], seconds * fps, turnsOut, out Vector3 offset);
@@ -696,7 +696,7 @@ public sealed partial class Croc
         step.y = 0;
         position = feet;
         moveWeight = 0f;
-        runWeight = 0f;
+        LeaveGait(Gait.Walk);
         Velocity = new Vector3(step.x, 0, -step.z) / Mathf.Max(dt, 1e-4f);
         if (facing.sqrMagnitude > 1e-6f)
         {
@@ -713,15 +713,10 @@ public sealed partial class Croc
 
     void Pose(float dist, float dt)
     {
-        Clip walk = clips["walk"], runClip = RunClip, idle = clips["idle"];
-        Clocks(dist, dt, walk, runClip);
-
-        ClipPose(idle, idleFrame, turnsA, out Vector3 offA);
-        ClipPose(walk, walkFrame, turnsB, out Vector3 offB);
-        ClipPose(runClip, runFrame, turnsC, out Vector3 offC);
-        for (int i = 0; i < turnsOut.Length; i++)
-            turnsOut[i] = Quaternion.Slerp(turnsA[i], Quaternion.Slerp(turnsB[i], turnsC[i], runWeight), moveWeight);
-        Vector3 offset = Vector3.Lerp(offA, Vector3.Lerp(offB, offC, runWeight), moveWeight);
+        Clip runClip = RunClip;
+        Clocks(dist, dt, clips["walk"], runClip);
+        Choose(dt);
+        int planted = BasePose(runClip, out Vector3 offset);
 
         if (sweep != null)
         {
@@ -749,7 +744,7 @@ public sealed partial class Croc
             }
         }
 
-        int planted = LayHeld(dt, ref offset, BasePlanted(idle, walk, runClip));
+        planted = LayHeld(dt, ref offset, planted);
         LayRoar(dt, ref offset);
         LayJaw(dt);
         Finish(offset);
