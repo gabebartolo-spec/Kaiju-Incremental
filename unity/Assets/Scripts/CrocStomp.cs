@@ -68,14 +68,16 @@ public sealed partial class Croc
         heldClipAge = 0f;
     }
 
-    void LayHeld(float dt, ref Vector3 offset)
+    // Lays the held takes over the pose; returns the feet down once they are on (planted: the feet down under them).
+    int LayHeld(float dt, ref Vector3 offset, int planted)
     {
-        if (!LayTake(heldFrom, dt, ref heldFromTime, ref heldFromAge, ref offset)) heldFrom = null;
-        if (!LayTake(heldClip, dt, ref heldClipTime, ref heldClipAge, ref offset)) heldClip = null;
+        if (!LayTake(heldFrom, dt, ref heldFromTime, ref heldFromAge, ref offset, ref planted)) heldFrom = null;
+        if (!LayTake(heldClip, dt, ref heldClipTime, ref heldClipAge, ref offset, ref planted)) heldClip = null;
+        return planted;
     }
 
     // One held take over the pose, faded in from its start and out to its end (clip_fade_s); false once it has ended.
-    bool LayTake(Clip take, float dt, ref float time, ref float age, ref Vector3 offset)
+    bool LayTake(Clip take, float dt, ref float time, ref float age, ref Vector3 offset, ref int planted)
     {
         if (take == null) return false;
         time += dt * fps;
@@ -87,6 +89,32 @@ public sealed partial class Croc
         float w = Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, (end - time) / (fadeS * fps))) * Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, age / fadeS));
         for (int i = 0; i < turnsOut.Length; i++) turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], w);
         offset = Vector3.Lerp(offset, heldOffset, w);
+        int mine = Planted(take, time), under = planted;
+        planted = Mix(under, mine, w);
+        if (age < fadeS) planted &= mine;  // gait_clip.gd update: fading in, its lifted foot lifts at once
+        else if (end - time < fadeS * fps) planted &= under;  // fading out to the pose under it, the same
         return true;
     }
+
+    // scenes/kaiju_clips.gd: each kclip frame says which feet are down (bit 0 the left, 1 the right). A time
+    // between two frames takes the nearer frame's (pose_at), a blend of two poses the heavier one's (mix).
+    const float NEARER = 0.5f;
+    const int BOTH_FEET = 3;
+
+    int Planted(Clip c, float t)
+    {
+        float at = c.loop ? Mathf.Repeat(t, c.frames) : Mathf.Clamp(t, 0, c.frames - 1);
+        int i0 = Mathf.FloorToInt(at);
+        int i1 = c.loop ? (i0 + 1) % c.frames : Mathf.Min(i0 + 1, c.frames - 1);
+        int f = at - i0 >= NEARER ? i1 : i0;
+        return clipRaw[dataAt + (c.first + f) * frameBytes + clipToRig.Length * 8 + PLANTED_AT] & BOTH_FEET;
+    }
+
+    static int Mix(int a, int b, float w) => w >= NEARER ? b : a;
+
+    // The feet down in the idle, walk and run Pose blends: scenes/clip_choice.gd plays the walk once he moves at
+    // all (STAND_SPEED, here STAND_SHARE), so its feet count from there, never the idle's under a slow walk;
+    // clip_takes.gd walk_pose mixes in the run.
+    int BasePlanted(Clip idle, Clip walk, Clip run) =>
+        moveWeight < STAND_SHARE ? Planted(idle, idleFrame) : Mix(Planted(walk, walkFrame), Planted(run, runFrame), runWeight);
 }

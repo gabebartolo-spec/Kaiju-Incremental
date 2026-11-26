@@ -49,14 +49,10 @@ public sealed partial class Croc
     public float Stride { get; private set; }
     // How much of a walk's speed it is doing (scenes/gait_clip.gd speed_k).
     public float SpeedShare => moveWeight;
-    // Metres of claw above the street at body scale 1: down below the first, lifted past the second.
-    const float FOOT_DOWN_M = 0.25f, FOOT_UP_M = 0.6f;
     // The middle claw, else the leg's tip (scenes/biped_leg.gd: leg_x3, else leg_x2), per side.
     static readonly string[][] FOOT_BONES = { new[] { "toe_l1", "leg_l3", "leg_l2" }, new[] { "toe_r1", "leg_r3", "leg_r2" } };
     static readonly string[] FOOT_SIDES = { "left", "right" };
     readonly int[] footBone = { -1, -1 };
-    // A leg tip's rest height (rig units), so its height reads as a claw's would; 0 for a claw.
-    readonly float[] footRest = { 0f, 0f };
     readonly bool[] footDown = { true, true };
     bool footPrimed, footfallPending;
     string footfallSide;
@@ -433,7 +429,6 @@ public sealed partial class Croc
             {
                 if (!byName.TryGetValue(FOOT_BONES[i][k], out int foot)) continue;
                 footBone[i] = foot;
-                footRest[i] = k == 0 ? 0f : bind[foot].inverse.GetColumn(3).y;
             }
         }
     }
@@ -759,11 +754,11 @@ public sealed partial class Croc
             }
         }
 
-        LayHeld(dt, ref offset);
+        int planted = LayHeld(dt, ref offset, BasePlanted(idle, walk, runClip));
         LayRoar(dt, ref offset);
         LayJaw(dt);
         Finish(offset);
-        WatchFeet();
+        WatchFeet(planted);
     }
 
     void Finish(Vector3 offset)
@@ -787,27 +782,20 @@ public sealed partial class Croc
         boneBuffer.SetData(pose);
     }
 
-    // A foot is down when its middle claw is at the street, up again when it has lifted clear; each
-    // landing goes out once (scenes/clip_feet.gd put_down; the kclip here carries no planted flags).
-    void WatchFeet()
+    // A foot is down while the pose's planted bit for it is set (Planted); the frame it comes down, its
+    // landing goes out once, at its middle claw (scenes/clip_feet.gd put_down on the clip's planted feet).
+    void WatchFeet(int planted)
     {
         Matrix4x4 world = WorldMatrix();
         for (int i = 0; i < FOOT_BONES.Length; i++)
         {
-            if (footBone[i] < 0) continue;
+            bool down = (planted >> i & 1) != 0, landed = down && !footDown[i];
+            footDown[i] = down;
+            if (!landed || !footPrimed || footBone[i] < 0) continue;
             Vector3 toe = world.MultiplyPoint3x4(global[footBone[i]].GetColumn(3));
-            float height = (toe.y - position.y) / Mathf.Max(Scale, 0.01f) - footRest[i];
-            if (footDown[i] && height > FOOT_UP_M) footDown[i] = false;
-            else if (!footDown[i] && height < FOOT_DOWN_M)
-            {
-                footDown[i] = true;
-                if (footPrimed)
-                {
-                    footfallPending = true;
-                    footfallSide = FOOT_SIDES[i];
-                    footfallAt = new Vector3(toe.x, position.y, toe.z);
-                }
-            }
+            footfallPending = true;
+            footfallSide = FOOT_SIDES[i];
+            footfallAt = new Vector3(toe.x, position.y, toe.z);
         }
         footPrimed = true;
     }
