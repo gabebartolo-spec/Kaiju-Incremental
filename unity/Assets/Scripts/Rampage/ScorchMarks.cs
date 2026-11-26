@@ -19,7 +19,7 @@ public sealed class ScorchMarks : IDisposable
     static readonly Vector3 SOOT = new Vector3(0.03f, 0.027f, 0.024f);
     // A disc lies flat and unturned: its texture's top row toward Godot -z, as an unturned Godot Decal's.
     static readonly Vector3 DISC_DIR = new Vector3(0f, 0f, -1f);
-    const float FAR_BOUNDS = 1e6f;
+    const float FAR_BOUNDS = 1e6f, FADE_MIN = 1e-3f;
 
     // scenes/fx_decals.gd _pixel and _crack: the ragged rim, the wedge's sides and tip, the cracks' wander and width.
     const float RIM_IN = 0.55f, EDGE_RAG = 0.3f, SIDE_RAG = 0.3f, SIDE_IN = 0.8f, SIDE_OUT = 1.1f;
@@ -34,6 +34,7 @@ public sealed class ScorchMarks : IDisposable
     {
         public readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
         public float age, seconds, sootIn, glowIn, energy, soot = 1f;
+        public float fadeS, fadeLeft;  // fx_decals.gd fade_out: going, over fadeS, fadeLeft still to go
     }
 
     readonly List<Mark> marks = new List<Mark>();
@@ -84,6 +85,12 @@ public sealed class ScorchMarks : IDisposable
 
     public int Live => marks.Count;
 
+    // fx_decals.gd fade_out: the mark's soot and glow go out over `seconds`, then it is gone.
+    public static void FadeOut(Mark m, float seconds)
+    {
+        m.fadeS = m.fadeLeft = Mathf.Max(seconds, FADE_MIN);
+    }
+
     public void Step(float dt)
     {
         for (int i = marks.Count - 1; i >= 0; i--)
@@ -92,7 +99,8 @@ public sealed class ScorchMarks : IDisposable
             m.age += dt;
             float lastsGlow = m.glowIn + m.seconds * GLOW_SHARE;
             float lasts = lastsGlow + m.seconds * FADE_SHARE;
-            if (m.age >= lasts)
+            if (m.fadeS > 0f) m.fadeLeft -= dt;
+            if (m.age >= lasts || (m.fadeS > 0f && m.fadeLeft <= 0f))
             {
                 marks.RemoveAt(i);
                 continue;
@@ -100,8 +108,9 @@ public sealed class ScorchMarks : IDisposable
             float glow = m.age < m.glowIn ? m.age / m.glowIn : Mathf.Max(0f, 1f - (m.age - m.glowIn) / (m.seconds * GLOW_SHARE));
             float soot = m.sootIn > 0f ? Mathf.Min(1f, m.age / m.sootIn) : 1f;  // no soot_in: it lands at once
             if (m.age > lastsGlow) soot *= 1f - (m.age - lastsGlow) / (m.seconds * FADE_SHARE);
-            m.block.SetFloat("_ScorchMix", soot * m.soot);
-            m.block.SetFloat("_ScorchGlow", glow * m.energy);
+            float going = m.fadeS > 0f ? m.fadeLeft / m.fadeS : 1f;
+            m.block.SetFloat("_ScorchMix", soot * m.soot * going);
+            m.block.SetFloat("_ScorchGlow", glow * m.energy * going);
             Graphics.DrawMesh(mesh, Matrix4x4.identity, mat, 0, null, 0, m.block, ShadowCastingMode.Off, false);
         }
     }

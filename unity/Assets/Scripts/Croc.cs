@@ -711,37 +711,10 @@ public sealed partial class Croc
         }
         ClipPose(c, (float)LeapFrames.Frame(phase, t, settleShare, leapOff, leapLand, c.frames - 1), turnsOut, out Vector3 offset);
         offset.y = (float)LeapFrames.Grounded(offset.y, leapRestY);
-        heldClip = null;
+        heldClip = heldFrom = null;
         LayJaw(dt);
         Finish(offset);
         footPrimed = false;
-    }
-
-    // scenes/gait_clip.gd run: a momentum slam stops the body in a keyed take, played once to its end over
-    // whatever the gait does (scenes/clip_choice.gd holds "slam_stop" until it has played out).
-    public void Hold(string name)
-    {
-        clips.TryGetValue(name, out heldClip);
-        heldClipTime = 0f;
-        heldClipAge = 0f;
-    }
-
-    void LayHeld(float dt, ref Vector3 offset)
-    {
-        if (heldClip == null) return;
-        heldClipTime += dt * fps;
-        heldClipAge += dt;
-        float end = heldClip.frames - 1;
-        if (heldClipTime >= end)
-        {
-            heldClip = null;
-            return;
-        }
-        ClipPose(heldClip, heldClipTime, turnsA, out Vector3 heldOffset);
-        float fadeS = Mathf.Max(0.001f, tuning.clip_fade_s);
-        float w = Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, (end - heldClipTime) / (fadeS * fps))) * Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, heldClipAge / fadeS));
-        for (int i = 0; i < turnsOut.Length; i++) turnsOut[i] = Quaternion.Slerp(turnsOut[i], turnsA[i], w);
-        offset = Vector3.Lerp(offset, heldOffset, w);
     }
 
     void Pose(float dist, float dt)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Kaiju.Game;
 using UnityEngine;
 using S = Kaiju.Sim;
@@ -17,7 +18,9 @@ public sealed class StompCracks : IDisposable
     readonly S.RampageSim sim;
     readonly ScorchMarks marks;
     readonly double own;
-    readonly float seconds;
+    readonly float seconds, fadeS;
+    // stomp_landing.gd _under: the crack each foot ("left", "right") left last time it stomped.
+    readonly Dictionary<string, ScorchMarks.Mark> under = new Dictionary<string, ScorchMarks.Mark>();
 
     // own: the species' own stomp_damage (rampage.gd _power's base).
     public StompCracks(S.RampageSim sim, double own)
@@ -25,6 +28,7 @@ public sealed class StompCracks : IDisposable
         this.sim = sim;
         this.own = own;
         seconds = (float)S.Num.F(S.Content.Section("fx")["crack_seconds"]);
+        fadeS = (float)S.Num.F(S.Content.Section("clip_stomp")["crack_fade_s"]);
         marks = new ScorchMarks(Resources.Load<Shader>("Shaders/Scorch"));
     }
 
@@ -32,18 +36,31 @@ public sealed class StompCracks : IDisposable
     public int Made { get; private set; }
     public int Live => marks.Live;
 
-    // rampage_footfall.gd land_stomp: the waiting stomp lands under the foot at `at`, with the stomp's radius.
-    public bool Stomp(Vector3 at, float radius) => Crack(at, radius, StompCrack.Power(sim.Stat("stomp_damage"), own));
+    // rampage_footfall.gd land_stomp: the waiting stomp lands under `side`'s foot at `at`, with the stomp's radius.
+    public bool Stomp(Vector3 at, float radius, string side)
+    {
+        ScorchMarks.Mark m = Crack(at, radius, StompCrack.Power(sim.Stat("stomp_damage"), own));
+        if (m != null) under[side] = m;
+        return m != null;
+    }
+
+    // stomp_landing.gd lift: the foot a standing stomp lifts lets its old crack go (it was hidden under the foot,
+    // and lifting it would show the crack pop in). "": none lifted.
+    public void Lift(string side)
+    {
+        if (!under.TryGetValue(side, out ScorchMarks.Mark old)) return;
+        ScorchMarks.FadeOut(old, fadeS);
+        under.Remove(side);
+    }
 
     // leap_view.gd "leap_land": the landing's blow (the event's damage) as heavy as it is to a stomp.
-    public bool Leap(Vector3 at, float radius, float damage) => Crack(at, radius, StompCrack.Power(damage, own));
+    public bool Leap(Vector3 at, float radius, float damage) => Crack(at, radius, StompCrack.Power(damage, own)) != null;
 
-    bool Crack(Vector3 at, float radius, double power)
+    ScorchMarks.Mark Crack(Vector3 at, float radius, double power)
     {
-        if (!StompCrack.Cracks(power, out double glow)) return false;
-        marks.Disc(at, radius * (float)StompCrack.SIZE, StompCrack.CRACKS, seconds, (float)glow, SOOT, MOLTEN);
+        if (!StompCrack.Cracks(power, out double glow)) return null;
         Made++;
-        return true;
+        return marks.Disc(at, radius * (float)StompCrack.SIZE, StompCrack.CRACKS, seconds, (float)glow, SOOT, MOLTEN);
     }
 
     public void Step(float dt) => marks.Step(dt);

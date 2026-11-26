@@ -573,7 +573,7 @@ public sealed partial class RampageGame : MonoBehaviour
             audio?.Footfall(strength, stomped);
             if (stomped)
             {
-                shake.Kick(StompKick() * Mathf.Deg2Rad);
+                if (croc.StompLanded(side)) shake.Kick(StompKick() * Mathf.Deg2Rad);  // stomp_landing.gd: standing only
                 postFx.Stomp();
                 if (Hosted) HudRumble.Stomp(sim);
             }
@@ -609,6 +609,7 @@ public sealed partial class RampageGame : MonoBehaviour
     // scenes/powers_view.gd _acted: the sim's tail events cue the keyed clips; the automatic sweep crushes behind him.
     void TailCue(S.GDict e)
     {
+        eventFx.Cracks.Lift(croc.StandingStomp(e));  // gait_clip.gd stomp, stomp_landing.gd lift
         string kind = S.Gd.Str(e["type"]);
         string limb = kind == "tail_windup" ? "tail_windup" : kind == "tail_auto_windup" ? "tail_sweep_windup" : kind == "tail_sweep" ? "tail" : kind == "tail_auto" ? "tail_sweep" : null;
         if (limb == null) return;
