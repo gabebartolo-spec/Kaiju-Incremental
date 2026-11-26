@@ -18,6 +18,10 @@ Shader "Hidden/Slice/TitleFx"
         [HideInInspector] _ZWrite("", Float) = 0
         [HideInInspector] _Cull("", Float) = 0
         [HideInInspector] _ZTest("", Float) = 4
+        // Per material (the sea wall, cap, promenade and posts each have their own); a bare global takes one
+        // material's values for every solid.
+        [HideInInspector] _SolidColor("", Vector) = (0, 0, 0, 1)
+        [HideInInspector] _SolidEmit("", Vector) = (0, 0, 0, 0)
     }
     HLSLINCLUDE
     #pragma target 4.5
