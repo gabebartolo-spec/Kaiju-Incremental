@@ -232,6 +232,7 @@ public sealed class TitleCityView : MonoBehaviour
         fx.colossusAt = Godot(TitleCity.BurstPoint(cfg, Steps));
         fx.colossusSize = (float)S.Num.F(cfg["glow_size"]);
         fx.colossusColor = glow;
+        if ((System.Environment.GetEnvironmentVariable("KAIJU_DBG") ?? "").Contains("noglowc")) fx.colossusSize = 0f;
         Colossus(dt);
         fx.Step(dt);
         StepSky(dt);
@@ -304,6 +305,7 @@ public sealed class TitleCityView : MonoBehaviour
         foreach (string key in ENV_COLOURS) look[key] = S.Gd.Str(env[key]);
         foreach (string key in ENV_NUMBERS) look[key] = S.Num.F(env[key]);
         profile = SliceGame.ApplyLook(tuning, slice, look);
+        if ((System.Environment.GetEnvironmentVariable("KAIJU_DBG") ?? "").Contains("nobloom") && profile.TryGet(out UnityEngine.Rendering.HighDefinition.Bloom dbgBloom)) dbgBloom.intensity.Override(0f);
         made.Add(profile);
         made.Add(SliceGame.Sun.gameObject);
         foreach (Volume v in FindObjectsByType<Volume>(FindObjectsSortMode.None))

@@ -187,12 +187,14 @@ public sealed class TitleFxView : IDisposable
         quads.Clear();
         mixed.Clear();
         foreach (TitleShoreView.Head h in lamps) Quad(quads, h.at, h.size, h.size, lampColor);
-        FireGlows();
+        if (!(System.Environment.GetEnvironmentVariable("KAIJU_DBG") ?? "").Contains("nofireglow")) FireGlows();
         if (colossusSize > 0f) Quad(quads, colossusAt, colossusSize, colossusSize, colossusColor);
         StepFlashes(dt);
         var bounds = new Bounds(Vector3.zero, Vector3.one * BOUNDS);
+        string dbgS = System.Environment.GetEnvironmentVariable("KAIJU_DBG") ?? ""; int dbgI = 0;
         foreach ((Material mat, int count) in smoke)
-            Graphics.DrawProcedural(mat, bounds, MeshTopology.Triangles, QUAD_VERTS, count, null, null, ShadowCastingMode.Off, false, 0);
+            if (!dbgS.Contains("nosmoke" + (dbgI++)))
+                Graphics.DrawProcedural(mat, bounds, MeshTopology.Triangles, QUAD_VERTS, count, null, null, ShadowCastingMode.Off, false, 0);
         foreach ((Material mat, int count) in panes)
             Graphics.DrawProcedural(mat, bounds, MeshTopology.Triangles, QUAD_VERTS, count, null, null, ShadowCastingMode.Off, false, 0);
         Draw(glowMat, ref glowBuf, quads, bounds);
