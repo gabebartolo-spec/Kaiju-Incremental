@@ -232,7 +232,7 @@ public sealed class TitleFxView : IDisposable
 
     // title_sky_smoke.gd noise_texture: FastNoiseLite (simplex, 0.012, 4 octaves, seed 7) is not in Unity; this
     // fractal Perlin (BreathView's stand-in) in its place, made seamless by blending across the tile.
-    static Texture2D Noise()
+    internal static Texture2D Noise()
     {
         var tex = new Texture2D(NOISE_SIDE, NOISE_SIDE, TextureFormat.R8, false, true) { wrapMode = TextureWrapMode.Repeat };
         var raw = new float[NOISE_SIDE * NOISE_SIDE];

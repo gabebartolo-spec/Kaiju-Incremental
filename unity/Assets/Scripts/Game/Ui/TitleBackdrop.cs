@@ -2,7 +2,8 @@
 // the night sky gradient, the fire glows low on the right, the live burning city fading in over them
 // (TitleCityView, Godot's TitleBackdrop), the colossus's baked silhouette where the title camera sees it with its
 // one slow red eye (title_colossus.gd: a step along its path per far stomp, lit when a big boom reveals it), and
-// the dark pool of shade behind the logo and buttons.
+// the dark pool of shade behind the logo and buttons. The card draws with title_colossus.gdshader's rim, crown and
+// smog (Resources/Shaders/TitleColossus).
 using System.IO;
 using Kaiju.Game;
 using UnityEngine;
@@ -15,12 +16,15 @@ public sealed class TitleBackdrop : MonoBehaviour
     const int SKY_TEXELS = 256;
     const int SHADE_TEXELS = 256;
     const int EYE_TEXELS = 64;
+    // title_colossus.gdshader's body_colour (title_colossus.gd never sets it).
+    static readonly Color BODY_COLOUR = new Color(0.02f, 0.012f, 0.014f);
 
     // True when the silhouette's picture was found and drawn.
     public bool artFound;
 
     static bool warned;
-    Texture2D sky, glow, shade, colossus, disc;
+    Texture2D sky, glow, shade, colossus, disc, noise;
+    Material body;
     RawImage eye, card;
     TitleCityView city;
     S.GDict title;
@@ -88,6 +92,7 @@ public sealed class TitleBackdrop : MonoBehaviour
         // The camera keeps its height, so a wider window sees more to the sides (Godot's keep-height).
         double aspect = Screen.height > 0 ? (double)Screen.width / Screen.height : UiKit.CANVAS_WIDTH / UiKit.CANVAS_HEIGHT;
         card = Picture("Colossus", colossus, new Color(1f, 1f, 1f, (float)S.Num.F(cfg["idle_alpha"])));
+        card.material = body = Body(cfg);
         cardBox = TitleMenu.ColossusBox(title, aspect, colossus.width, colossus.height);
         Place(card.rectTransform, cardBox);
 
@@ -129,8 +134,29 @@ public sealed class TitleBackdrop : MonoBehaviour
 
     void OnDestroy()
     {
-        foreach (Texture2D made in new[] { sky, glow, shade, colossus, disc }) if (made != null) Destroy(made);
+        foreach (Texture2D made in new[] { sky, glow, shade, colossus, disc, noise }) if (made != null) Destroy(made);
+        if (body != null) Destroy(body);
     }
+
+    // title_colossus.gd _card_sprite: the body's shader and its numbers (tuning title colossus).
+    Material Body(S.GDict cfg)
+    {
+        var mat = new Material(Resources.Load<Shader>("Shaders/TitleColossus"));
+        noise = TitleFxView.Noise();
+        mat.SetTexture("_Noise", noise);
+        S.GDict crown = cfg["crown"];
+        S.GArray<S.Variant> light = cfg["rim_light"];
+        mat.SetVector("_RimColour", Hex(S.Gd.Str(cfg["rim_colour"]), 1f).linear);
+        mat.SetVector("_CrownColour", Hex(S.Gd.Str(crown["colour"]), 1f).linear);
+        mat.SetVector("_BodyColour", BODY_COLOUR.linear);
+        mat.SetVector("_Rim", new Vector4(N(cfg, "rim_width"), N(cfg, "rim_strength"), N(cfg, "rim_min"), 0f));
+        mat.SetVector("_RimLight", (Vector4)new Vector2((float)S.Num.F(light[0]), (float)S.Num.F(light[1])).normalized);
+        mat.SetVector("_Crown", new Vector4(N(crown, "px"), N(crown, "strength"), N(crown, "extent"), 0f));
+        mat.SetVector("_Smog", new Vector4(N(cfg, "smog"), N(cfg, "smog_tail"), 0f, 0f));
+        return mat;
+    }
+
+    static float N(S.GDict d, string key) => (float)S.Num.F(d[key]);
 
     RawImage Picture(string name, Texture texture, Color colour)
     {

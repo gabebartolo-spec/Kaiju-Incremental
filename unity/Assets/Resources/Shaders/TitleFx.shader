@@ -162,7 +162,8 @@ Shader "Hidden/Slice/TitleFx"
                 return o;
             #else
                 Varyings o = (Varyings)0;
-                float3 world = TransformObjectToWorld(v.positionOS);
+                // HDRP's TransformObjectToWorld is camera-relative already; Place wants the absolute point.
+                float3 world = GetAbsolutePositionWS(TransformObjectToWorld(v.positionOS));
                 o.uv = v.uv;
                 o.normal = TransformObjectToWorldNormal(v.normalOS);
                 Place(world, o);

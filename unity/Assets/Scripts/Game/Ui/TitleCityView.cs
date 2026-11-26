@@ -206,7 +206,8 @@ public sealed class TitleCityView : MonoBehaviour
         ApplyLook(tuning);
         var ground = new CityGround(sim.city, lit, root.transform);
         views.Add(ground);
-        water = new WaterView(sim, ground.Sheets, Resources.Load<Shader>("Shaders/SliceWater"), Resources.Load<ComputeShader>("Shaders/OceanWaves"), sim.city, root.transform);
+        // No open sea here: Godot adds OceanWaves to the run only (rampage_rise.gd), so the title's bay rolls its swell.
+        water = new WaterView(sim, ground.Sheets, Resources.Load<Shader>("Shaders/SliceWater"), null, sim.city, root.transform);
         views.Add(water);
         boats = new BoatView(sim, lit, root.transform);
         views.Add(new Releaser(boats.Dispose));
@@ -260,7 +261,10 @@ public sealed class TitleCityView : MonoBehaviour
         cam.fieldOfView = (float)S.Num.F(cfg["fov"]);
         cam.nearClipPlane = (float)S.Num.F(cfg["near"]);
         cam.farClipPlane = CAMERA_FAR;
-        GraphicsView.UseCamera(go.AddComponent<HDAdditionalCameraData>());
+        // Godot's title SubViewport takes no graphics preset: full scale, no screen-space AA.
+        var hd = go.AddComponent<HDAdditionalCameraData>();
+        hd.antialiasing = HDAdditionalCameraData.AntialiasingMode.None;
+        hd.allowDynamicResolution = false;
         go.transform.position = Unity(cfg["position"]);
         go.transform.LookAt(Unity(cfg["look"]));
         Fit();
