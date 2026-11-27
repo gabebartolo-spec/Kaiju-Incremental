@@ -30,6 +30,8 @@ namespace Kaiju.Game
         public readonly List<CreationSound> Sounds = new List<CreationSound>();
         public readonly List<CreationTitan> Titans;
         public readonly CreationLab Lab;
+        // The dish: the genome and the takeover's lightning (creation_genome.gd).
+        public readonly CreationGenome Genome = new CreationGenome();
         public int Picked = -1;
         // How black the screen is (0..1): the zoom ends in full black, where the egg cracks.
         public double Black;
@@ -133,6 +135,7 @@ namespace Kaiju.Game
             {
                 case CreationStep.Place:
                     Lab.Place(Picked, t);
+                    Genome.Settle(Lab.Settle);
                     TripCue(t, "place");
                     break;
                 case CreationStep.Inject:
@@ -141,6 +144,7 @@ namespace Kaiju.Game
                     break;
                 case CreationStep.Takeover:
                     Lab.Takeover(t);
+                    Genome.Step(t);
                     OverloadCue(t);
                     break;
                 case CreationStep.Zoom:

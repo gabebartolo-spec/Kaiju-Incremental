@@ -89,14 +89,15 @@ public sealed class Tuning
     public float ssao_intensity = 1.2f;
     // The creation lab's lamps (CreationLabView): Godot's omni falls off as 1/d, HDRP's as 1/d^2, so each lamp
     // matches Godot at its own subject's distance (fire.json light_match_m does this for the rampage's fires).
-    // key: its aim point under the dish; screens: the monitors; focus: the lit vial; rim and wash: as measured.
+    // key: its aim point under the dish; screens: the monitors; focus: the lit vial; bolt: the agar under the dish
+    // light; rim and wash: as measured.
     // Values live only in tuning.json (as light_match_m does in fire.json).
-    public float lab_key_match_m, lab_rim_match_m, lab_screens_match_m, lab_focus_match_m, lab_wash_match_m;
+    public float lab_key_match_m, lab_rim_match_m, lab_screens_match_m, lab_focus_match_m, lab_wash_match_m, lab_bolt_match_m;
 
     public float LabMatch(string lamp) => lamp switch
     {
         "key" => lab_key_match_m, "rim" => lab_rim_match_m, "screens" => lab_screens_match_m,
-        "focus" => lab_focus_match_m, _ => lab_wash_match_m,
+        "focus" => lab_focus_match_m, "bolt" => lab_bolt_match_m, _ => lab_wash_match_m,
     };
     public float shadow_distance = 600f;
     public float fog_height = 70f;
