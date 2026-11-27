@@ -59,7 +59,7 @@ lints and sim suites, engine suites run on main (D-403). Test tools in #539 and 
 
 ## Unity port (D-470)
 
-Godot stays the working game until U6 passes. Each row ports its own tests. To move, measured on main at 0d96162fc:
+Godot stays the working game until U6 passes. Where the port stands and what is next: `docs/HANDOFF.md`. Each row ports its own tests. To move, measured on main at 0d96162fc:
 about 87,000 lines of GDScript (scenes 46,800, tools 20,000, sim 18,800, autoload 1,400), 47,700 lines of tests, 53
 shaders (3,600 lines) and 2,900 lines of C++. Only 8 `.tscn` files exist, so most of this is a language port. No ETA
 until U2's first module gives a measured rate. The demo ships from Unity, so M3 and M4 finish in the port; Godot takes
