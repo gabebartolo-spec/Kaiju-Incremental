@@ -74,8 +74,8 @@ ported (D-474).
 | U1 | Flames, the gate: tall flames (D-190) and VFX_STYLE fire in HDRP, by hand-written C# and HLSL (VFX Graph can only be authored through an internal API). The director judges a 1080p dusk clip beside Godot's. If Unity loses, back to the director before anything else ports. Unity won (D-473) | done |
 | U2 | Sim: `sim/` to plain C# with no UnityEngine reference; Godot's RNG copied exactly; the same seed gives the same event log as Godot. `tools/unity/gd2cs.py` generates it; after any `sim/` or `data/` change run `bash tools/unity/regen_sim.sh` | done |
 | U3 | Native: settle and water, the sim's two classes, off godot-cpp and onto the slice's plain DLL beside carve and mesher (`unity/native/kaiju_sim.cpp`); the same log with the DLL and without (`SIM_NATIVE=off`). Walk and buckets are only called from scenes, so they port with their views in U4 | done |
-| U4 | Rampage on screen: city, destruction, croc, water, smoke, Taskforce, camera, shaders. On screen: opening, breath, follow camera (D-475), Thunder Beam, lash and sweep (first step; the director says it needs work). Also on screen, first version each: leap and slam, rail, rooftops, VIP, airstrike, post effects, street life and beach, rubble, stadium match and crowd. Left: look polish (D-476) | open |
-| U5 | Game flow: title, creation, globe, results, tree, UI, audio, saves, Windows export; capture and bake tools | open |
+| U4 | Rampage on screen: city, destruction, croc, water, smoke, Taskforce, camera, shaders. On screen: opening, breath, follow camera (D-475), Thunder Beam, lash and sweep (first step; the director says it needs work). Also on screen, first version each: leap and slam, rail, rooftops, VIP, airstrike, post effects, street life and beach, rubble, stadium match and crowd. Since then (#617 to #640): landmark slow motion, hide hits and hide body, prop crush, helicopter wrecks, landmark bursts, blast breaks, body bite, arena bollards, stomp cracks, upgrade cues, river rise splashes, night lamp pools, train wreck survivors, the standing stomp, walking footfalls and the idle, walk start and walk clips. Left: look polish (D-476) | open |
+| U5 | Game flow: title, creation, globe, results, tree, UI, audio, saves, Windows export; capture and bake tools. Unity plays the whole loop with saves (3 slots, the old save.json adopted), loads a rampage in about 12 s with Godot's staged meter and first-load note, and has the title's city and smoke noise, the demo end frame and the lab's room, liquids, genome helix and lightning (#641 to #655). Left: a Unity build check of #655 on the PC; the screen-by-screen stills against Godot (title: colossus glow, bay fire streaks, the low smog bank, the exit button's UI blending, which needs the director's ruling); croc colours and ground shading; the lab's agar burn at the overload | open |
 | U6 | Parity and switch: the director plays both and rules; CI and these rules rewritten; Godot retired | open |
 
 ## Open work
@@ -84,7 +84,7 @@ ported (D-474).
 |---|---|---|
 | 0 | Adult croc (Colossus) walk stutter: each foot swings back, plants and pushes off before the forward step (director 2026-11-03) | open |
 | 0b | Croc thigh still warps at extreme leg movements, and the thigh passes through the torso: enters at the hip and pokes out the top of the back (director 2026-11-03 stills; see kaiju-thigh-skinning skill) | open |
-| 1 | Croc animation (Cascadeur, reference copied exactly, D-410) | open |
+| 1 | Croc animation (Cascadeur, reference copied exactly, D-410). The head-down charge (#575) waits for a rebake of `reptilian_adult.kclip` on the PC: its clip file conflicts with the tail's (#576) | open |
 | 2 | Bay-coast junctions | done (#431; bridge removed #527) |
 | 3 | Destruction: landmarks and bridges carve, varied collapse, stadium crowd | done (#421 D-387 D-388, #427 D-389, #537) |
 | 4 | Random cities (city_seed, pool and spots, D-375) | moved into C1 Phases 1 to 4 |
